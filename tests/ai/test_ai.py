@@ -282,3 +282,46 @@ def test_change_request_cannot_dodge_the_gate_by_tool_choice(store, study):
     assert out.status == "pending_human"
     assert "qpcr_decide used" in out.error
     assert store.card(study, "card_refset").decision is None
+
+
+class _Block:
+    def __init__(self, text):
+        self.text = text
+
+
+class _Reply:
+    content = [_Block("Hello from Claude")]
+
+
+def _anthropic_backend_with(create):
+    from qpilot.ai.client import AnthropicBackend
+
+    backend = AnthropicBackend.__new__(AnthropicBackend)
+    backend.model = "some-model"
+    backend._client = type(
+        "C", (), {"messages": type("M", (), {"create": staticmethod(create)})()}
+    )()
+    return backend
+
+
+def test_anthropic_backend_works_with_sdk_without_temperature():
+    seen = {}
+
+    def create(*, model, system, messages, max_tokens):  # the installed SDK's shape
+        seen.update(model=model, max_tokens=max_tokens)
+        return _Reply()
+
+    client = ModelClient(_anthropic_backend_with(create))
+    assert client.complete("s", [{"role": "user", "content": "hi"}]) == "Hello from Claude"
+    assert seen == {"model": "some-model", "max_tokens": 600}
+
+
+def test_anthropic_backend_passes_temperature_when_accepted():
+    seen = {}
+
+    def create(*, model, system, messages, max_tokens, temperature):
+        seen["temperature"] = temperature
+        return _Reply()
+
+    ModelClient(_anthropic_backend_with(create)).complete("s", [{"role": "user", "content": "x"}])
+    assert seen == {"temperature": 0.0}

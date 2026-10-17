@@ -36,6 +36,17 @@ def public_endpoint(url: str | None) -> str | None:
     return f"{parts.scheme}://{host}{port}{parts.path}" if parts.scheme else None
 
 
+def _accepts(func: Any, name: str) -> bool:
+    """True when ``func`` takes a parameter ``name`` (or ``**kwargs``)."""
+    import inspect
+
+    try:
+        params = inspect.signature(func).parameters
+    except (TypeError, ValueError):
+        return False
+    return name in params or any(p.kind is p.VAR_KEYWORD for p in params.values())
+
+
 class ModelUnavailable(RuntimeError):
     """No model is configured, or the configured one cannot be reached."""
 
@@ -105,14 +116,16 @@ class AnthropicBackend:
 
     def complete(self, system, messages, max_tokens, temperature) -> str:
         """Call the Messages API and join the text blocks."""
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "system": system,
+            "messages": messages,
+            "max_tokens": max_tokens,
+        }
+        if _accepts(self._client.messages.create, "temperature"):  # newer SDKs dropped it
+            kwargs["temperature"] = temperature
         try:
-            reply = self._client.messages.create(
-                model=self.model,
-                system=system,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
+            reply = self._client.messages.create(**kwargs)
         except Exception as err:  # network, auth, rate limit: all mean "use the template"
             raise ModelUnavailable(f"Anthropic call failed: {type(err).__name__}") from err
         return "".join(getattr(block, "text", "") for block in reply.content)
