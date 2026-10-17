@@ -1,0 +1,17 @@
+line-length = 100
+target-version = "py311"
+extend-exclude = ["qpilot/vendor"]
+
+[lint]
+select = ["E", "F", "I", "B", "UP", "D"]
+# Docstrings are required on public API only; these pydocstyle checks are too strict for that.
+ignore = ["D105", "D107", "D203", "D213"]
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[format]
+quote-style = "double"

@@ -1,0 +1,35 @@
+# Ownership mirrors team/00-TEAM-PLAN-OVERVIEW.md §3. One owner per path; the other developer
+# never edits these files. Dev 2's lines are commented until their GitHub username is added.
+
+# ---- Dev 1: engine, app & delivery ----
+*                                   @jeevithg090
+/qpilot/io/                         @jeevithg090
+/qpilot/vendor/                     @jeevithg090
+/qpilot/qpcr/                       @jeevithg090
+/qpilot/app.py                      @jeevithg090
+/qpilot/app_state.py                @jeevithg090
+/qpilot/explain/                    @jeevithg090
+/qpilot/cli/engine_cmds.py          @jeevithg090
+/validation/                        @jeevithg090
+/methods/                           @jeevithg090
+/tests/engine/                      @jeevithg090
+/tests/app/                         @jeevithg090
+/tests/fixtures/                    @jeevithg090
+/docs/                              @jeevithg090
+
+# ---- Dev 2: core, MCP & AI (uncomment and set the username) ----
+# /qpilot/core/                     @DEV2_USERNAME
+# /qpilot/mcp_server.py             @DEV2_USERNAME
+# /qpilot/ai/                       @DEV2_USERNAME
+# /qpilot/harness/                  @DEV2_USERNAME
+# /qpilot/schemas.py                @DEV2_USERNAME
+# /qpilot/qpcr/plan.py              @DEV2_USERNAME
+# /qpilot/qpcr/confidence_checks.py @DEV2_USERNAME
+# /qpilot/cli/core_cmds.py          @DEV2_USERNAME
+# /tests/core/                      @DEV2_USERNAME
+# /tests/contracts/                 @DEV2_USERNAME
+# /tests/ai/                        @DEV2_USERNAME
+# /THREAT_MODEL.md                  @DEV2_USERNAME
+# /SECURITY.md                      @DEV2_USERNAME
+# /docs/agents.md                   @DEV2_USERNAME
+# /docs/classroom/                  @DEV2_USERNAME

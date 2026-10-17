@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rdml [ <!ENTITY xxe SYSTEM "canary.txt"> ]>
+<rdml xmlns="http://www.rdml.org" version="1.3"><dateMade>2026-10-17T00:00:00</dateMade><id><publisher>&xxe;</publisher><serialNumber>xxe-test</serialNumber></id></rdml>

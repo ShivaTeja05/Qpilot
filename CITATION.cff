@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "qPilot: open, validated qPCR analysis that shows which choices could change the conclusion"
+message: "If you use qPilot, please cite it and the methods it builds on (see references)."
+type: software
+authors:
+  - name: "qPilot contributors"
+version: "0.1.0"
+license: Apache-2.0
+references:
+  - type: article
+    title: "Amplification efficiency: linking baseline and bias in the analysis of quantitative PCR data"
+    authors:
+      - family-names: Ruijter
+        given-names: J. M.
+    year: 2009
+    journal: "Nucleic Acids Research"
+  - type: article
+    title: "Accurate normalization of real-time quantitative RT-PCR data by geometric averaging of multiple internal control genes"
+    authors:
+      - family-names: Vandesompele
+        given-names: J.
+    year: 2002
+    journal: "Genome Biology"

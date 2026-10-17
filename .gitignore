@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Data: the demo dataset is fetched at runtime and never committed
+*.rdml
+!tests/fixtures/*.rdml
+.cache/
+*.tmp
+
+# Local outputs
+/out/
+/records/
+*.zip
+sbom.json
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

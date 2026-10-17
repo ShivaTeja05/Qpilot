@@ -1,0 +1,900 @@
+[
+ {
+  "evidence": {
+   "cutoff_M": 1.5,
+   "cutoff_V": 0.15,
+   "genorm_M": {
+    "ALUsq(Eurogentec)": 1.681587,
+    "HMBS": 1.957727,
+    "HPRT1": 1.634854,
+    "SDHA(1)": 1.988643,
+    "UBC(2)": 2.027457
+   },
+   "genorm_V": {
+    "V2/3": 0.556138,
+    "V3/4": 0.38743,
+    "V4/5": 0.32703
+   },
+   "genorm_order": [
+    "ALUsq(Eurogentec)",
+    "HPRT1",
+    "HMBS",
+    "SDHA(1)",
+    "UBC(2)"
+   ]
+  },
+  "facts": [
+   "f_order_1",
+   "f_m_1",
+   "f_worst_ref",
+   "f_fc_odc1_recommended",
+   "f_fc_odc1_worst",
+   "f_n_flipped_refset",
+   "f_n_genes",
+   "f_fc_odc1_recommended",
+   "f_fc_birc5_recommended",
+   "f_fc_ntrk1_recommended",
+   "f_fc_nm23a_recommended",
+   "f_fc_odc1_top2",
+   "f_fc_birc5_top2",
+   "f_fc_ntrk1_top2",
+   "f_fc_nm23a_top2",
+   "f_fc_odc1_alusq_eurogentec",
+   "f_fc_birc5_alusq_eurogentec",
+   "f_fc_ntrk1_alusq_eurogentec",
+   "f_fc_nm23a_alusq_eurogentec",
+   "f_fc_odc1_hmbs",
+   "f_fc_birc5_hmbs",
+   "f_fc_ntrk1_hmbs",
+   "f_fc_nm23a_hmbs",
+   "f_fc_odc1_hprt1",
+   "f_fc_birc5_hprt1",
+   "f_fc_ntrk1_hprt1",
+   "f_fc_nm23a_hprt1",
+   "f_fc_odc1_sdha_1",
+   "f_fc_birc5_sdha_1",
+   "f_fc_ntrk1_sdha_1",
+   "f_fc_nm23a_sdha_1",
+   "f_fc_odc1_ubc_2",
+   "f_fc_birc5_ubc_2",
+   "f_fc_ntrk1_ubc_2",
+   "f_fc_nm23a_ubc_2"
+  ],
+  "id": "card_refset",
+  "impact": {
+   "flips": true,
+   "max_delta_log2fc": 0.561329,
+   "n_genes_flipped": 31
+  },
+  "kind": "reference_set",
+  "options": [
+   {
+    "id": "recommended",
+    "label": "Recommended set (all five)",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       2.933477,
+       5.485491
+      ],
+      "conclusion": "up",
+      "fc": 4.011429,
+      "log2fc": 2.004116,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 5.04372e-14,
+      "t": 8.809942,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.754372,
+       2.728449
+      ],
+      "conclusion": "up",
+      "fc": 2.187856,
+      "log2fc": 1.129518,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 1.23809e-09,
+      "t": 7.080948,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.031684,
+       0.139479
+      ],
+      "conclusion": "down",
+      "fc": 0.066478,
+      "log2fc": -3.910983,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 1.3481e-09,
+      "t": -7.338882,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.416701,
+       5.332584
+      ],
+      "conclusion": "up",
+      "fc": 3.589883,
+      "log2fc": 1.843937,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 2.2866e-08,
+      "t": 6.465016,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "top2",
+    "label": "Top two by stability (ALUsq(Eurogentec), HPRT1)",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       3.004015,
+       6.243372
+      ],
+      "conclusion": "up",
+      "fc": 4.330725,
+      "log2fc": 2.114609,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 9.05442e-12,
+      "t": 7.974303,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.824015,
+       3.058667
+      ],
+      "conclusion": "up",
+      "fc": 2.362002,
+      "log2fc": 1.24001,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 9.11866e-09,
+      "t": 6.648997,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.034021,
+       0.143807
+      ],
+      "conclusion": "down",
+      "fc": 0.069947,
+      "log2fc": -3.837602,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 1.02898e-09,
+      "t": -7.403048,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.507851,
+       5.989383
+      ],
+      "conclusion": "up",
+      "fc": 3.875626,
+      "log2fc": 1.954429,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 5.86643e-08,
+      "t": 6.23135,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "alusq_eurogentec_alone",
+    "label": "ALUsq(Eurogentec) alone",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       2.666303,
+       5.636487
+      ],
+      "conclusion": "up",
+      "fc": 3.876671,
+      "log2fc": 1.954818,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 2.49239e-10,
+      "t": 7.200545,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.602748,
+       2.789281
+      ],
+      "conclusion": "up",
+      "fc": 2.114359,
+      "log2fc": 1.08022,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 9.15323e-07,
+      "t": 5.391612,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.030501,
+       0.131413
+      ],
+      "conclusion": "down",
+      "fc": 0.063311,
+      "log2fc": -3.981402,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 5.28487e-10,
+      "t": -7.579633,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.26388,
+       5.316516
+      ],
+      "conclusion": "up",
+      "fc": 3.469287,
+      "log2fc": 1.794639,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 2.38114e-07,
+      "t": 5.829441,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "hmbs_alone",
+    "label": "HMBS alone",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       2.01737,
+       4.364991
+      ],
+      "conclusion": "up",
+      "fc": 2.967457,
+      "log2fc": 1.569227,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 2.54809e-07,
+      "t": 5.60422,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.054939,
+       2.483024
+      ],
+      "conclusion": "none",
+      "fc": 1.618468,
+      "log2fc": 0.694629,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.0280993,
+      "t": 2.249388,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.017975,
+       0.122015
+      ],
+      "conclusion": "down",
+      "fc": 0.046832,
+      "log2fc": -4.416357,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 4.21594e-08,
+      "t": -6.414643,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       1.591524,
+       4.431165
+      ],
+      "conclusion": "up",
+      "fc": 2.655618,
+      "log2fc": 1.409048,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.000323818,
+      "t": 3.816031,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "hprt1_alone",
+    "label": "HPRT1 alone",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       3.196238,
+       7.322941
+      ],
+      "conclusion": "up",
+      "fc": 4.83796,
+      "log2fc": 2.274399,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 8.27134e-11,
+      "t": 7.57855,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.919635,
+       3.62698
+      ],
+      "conclusion": "up",
+      "fc": 2.638651,
+      "log2fc": 1.399801,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 9.3941e-08,
+      "t": 6.1063,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.036741,
+       0.162542
+      ],
+      "conclusion": "down",
+      "fc": 0.077278,
+      "log2fc": -3.693801,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 6.25388e-09,
+      "t": -6.9061,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.649857,
+       7.073994
+      ],
+      "conclusion": "up",
+      "fc": 4.329558,
+      "log2fc": 2.11422,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 1.57984e-07,
+      "t": 5.977542,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "sdha_1_alone",
+    "label": "SDHA(1) alone",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       2.218839,
+       5.782916
+      ],
+      "conclusion": "up",
+      "fc": 3.582089,
+      "log2fc": 1.840801,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 1.03178e-06,
+      "t": 5.303628,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.30945,
+       2.914895
+      ],
+      "conclusion": "none",
+      "fc": 1.953692,
+      "log2fc": 0.966203,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.00136855,
+      "t": 3.341067,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.029922,
+       0.130773
+      ],
+      "conclusion": "down",
+      "fc": 0.062554,
+      "log2fc": -3.998744,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 5.25042e-10,
+      "t": -7.533666,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       1.884609,
+       5.452727
+      ],
+      "conclusion": "up",
+      "fc": 3.205661,
+      "log2fc": 1.680622,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 4.57442e-05,
+      "t": 4.383283,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "ubc_2_alone",
+    "label": "UBC(2) alone",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       3.265829,
+       8.312146
+      ],
+      "conclusion": "up",
+      "fc": 5.210187,
+      "log2fc": 2.381335,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 7.1523e-10,
+      "t": 7.036844,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.950129,
+       4.140786
+      ],
+      "conclusion": "up",
+      "fc": 2.841666,
+      "log2fc": 1.506737,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 5.92191e-07,
+      "t": 5.540443,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.040198,
+       0.204121
+      ],
+      "conclusion": "down",
+      "fc": 0.090583,
+      "log2fc": -3.464609,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 2.29677e-07,
+      "t": -5.927538,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.872781,
+       7.567747
+      ],
+      "conclusion": "up",
+      "fc": 4.662669,
+      "log2fc": 2.221156,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 3.209e-08,
+      "t": 6.360774,
+      "target": "ODC1"
+     }
+    }
+   }
+  ],
+  "rank": 1,
+  "rationale_template": "refset_v1",
+  "recommended": "recommended",
+  "status": "open"
+ },
+ {
+  "evidence": {
+   "cuts": [
+    0.1,
+    0.15,
+    0.2
+   ],
+   "n_hi_by_cut": {
+    "cut_10": 35,
+    "cut_15": 53,
+    "cut_20": 70
+   }
+  },
+  "facts": [
+   "f_n_flipped_cutoff",
+   "f_n_genes",
+   "f_fc_odc1_cut_10",
+   "f_fc_birc5_cut_10",
+   "f_fc_ntrk1_cut_10",
+   "f_fc_nm23a_cut_10",
+   "f_fc_odc1_cut_15",
+   "f_fc_birc5_cut_15",
+   "f_fc_ntrk1_cut_15",
+   "f_fc_nm23a_cut_15",
+   "f_fc_odc1_cut_20",
+   "f_fc_birc5_cut_20",
+   "f_fc_ntrk1_cut_20",
+   "f_fc_nm23a_cut_20"
+  ],
+  "id": "card_cutoff",
+  "impact": {
+   "flips": true,
+   "max_delta_log2fc": 1.44443,
+   "n_genes_flipped": 17
+  },
+  "kind": "group_cutoff",
+  "options": [
+   {
+    "id": "cut_10",
+    "label": "Top 10 % by MYCN expression",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       3.460556,
+       6.163547
+      ],
+      "conclusion": "up",
+      "fc": 4.618366,
+      "log2fc": 2.207382,
+      "n_hi": 35,
+      "n_lo": 312,
+      "p": 3.42678e-16,
+      "t": 10.571863,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.86337,
+       3.130737
+      ],
+      "conclusion": "up",
+      "fc": 2.41531,
+      "log2fc": 1.272208,
+      "n_hi": 35,
+      "n_lo": 312,
+      "p": 2.80337e-08,
+      "t": 6.868722,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.011571,
+       0.063013
+      ],
+      "conclusion": "down",
+      "fc": 0.027002,
+      "log2fc": -5.210798,
+      "n_hi": 32,
+      "n_lo": 310,
+      "p": 4.71734e-10,
+      "t": -8.668159,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       3.471436,
+       8.796453
+      ],
+      "conclusion": "up",
+      "fc": 5.525968,
+      "log2fc": 2.466227,
+      "n_hi": 35,
+      "n_lo": 312,
+      "p": 7.26036e-09,
+      "t": 7.451111,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "cut_15",
+    "label": "Top 15 % by MYCN expression",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       2.933477,
+       5.485491
+      ],
+      "conclusion": "up",
+      "fc": 4.011429,
+      "log2fc": 2.004116,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 5.04372e-14,
+      "t": 8.809942,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.754372,
+       2.728449
+      ],
+      "conclusion": "up",
+      "fc": 2.187856,
+      "log2fc": 1.129518,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 1.23809e-09,
+      "t": 7.080948,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.031684,
+       0.139479
+      ],
+      "conclusion": "down",
+      "fc": 0.066478,
+      "log2fc": -3.910983,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 1.3481e-09,
+      "t": -7.338882,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.416701,
+       5.332584
+      ],
+      "conclusion": "up",
+      "fc": 3.589883,
+      "log2fc": 1.843937,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 2.2866e-08,
+      "t": 6.465016,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "cut_20",
+    "label": "Top 20 % by MYCN expression",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       2.516062,
+       4.669401
+      ],
+      "conclusion": "up",
+      "fc": 3.427609,
+      "log2fc": 1.777202,
+      "n_hi": 70,
+      "n_lo": 277,
+      "p": 9.81088e-13,
+      "t": 7.880191,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.490447,
+       2.245427
+      ],
+      "conclusion": "none",
+      "fc": 1.829396,
+      "log2fc": 0.871367,
+      "n_hi": 70,
+      "n_lo": 277,
+      "p": 7.53222e-08,
+      "t": 5.855301,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.069174,
+       0.253345
+      ],
+      "conclusion": "down",
+      "fc": 0.132381,
+      "log2fc": -2.917227,
+      "n_hi": 66,
+      "n_lo": 276,
+      "p": 2.87688e-08,
+      "t": -6.208101,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.040279,
+       4.085597
+      ],
+      "conclusion": "up",
+      "fc": 2.887171,
+      "log2fc": 1.529657,
+      "n_hi": 70,
+      "n_lo": 277,
+      "p": 4.00091e-08,
+      "t": 6.078142,
+      "target": "ODC1"
+     }
+    }
+   }
+  ],
+  "rank": 2,
+  "rationale_template": "cutoff_v1",
+  "recommended": "cut_15",
+  "status": "open"
+ },
+ {
+  "decided_by": "system",
+  "decision": "drop",
+  "evidence": {
+   "n_undetermined": 323,
+   "n_unknown_wells": 23424
+  },
+  "facts": [
+   "f_n_flipped_undetermined",
+   "f_n_undetermined",
+   "f_n_unknown_wells",
+   "f_pct_undetermined",
+   "f_fc_odc1_drop",
+   "f_fc_birc5_drop",
+   "f_fc_ntrk1_drop",
+   "f_fc_nm23a_drop",
+   "f_fc_odc1_cap",
+   "f_fc_birc5_cap",
+   "f_fc_ntrk1_cap",
+   "f_fc_nm23a_cap"
+  ],
+  "id": "card_undetermined",
+  "impact": {
+   "flips": false,
+   "max_delta_log2fc": 2.306021,
+   "n_genes_flipped": 0
+  },
+  "kind": "undetermined",
+  "options": [
+   {
+    "id": "drop",
+    "label": "Drop empty wells",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       2.933477,
+       5.485491
+      ],
+      "conclusion": "up",
+      "fc": 4.011429,
+      "log2fc": 2.004116,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 5.04372e-14,
+      "t": 8.809942,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.754372,
+       2.728449
+      ],
+      "conclusion": "up",
+      "fc": 2.187856,
+      "log2fc": 1.129518,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 1.23809e-09,
+      "t": 7.080948,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.031684,
+       0.139479
+      ],
+      "conclusion": "down",
+      "fc": 0.066478,
+      "log2fc": -3.910983,
+      "n_hi": 49,
+      "n_lo": 293,
+      "p": 1.3481e-09,
+      "t": -7.338882,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.416701,
+       5.332584
+      ],
+      "conclusion": "up",
+      "fc": 3.589883,
+      "log2fc": 1.843937,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 2.2866e-08,
+      "t": 6.465016,
+      "target": "ODC1"
+     }
+    }
+   },
+   {
+    "id": "cap",
+    "label": "Count empty wells as very low (cap)",
+    "per_gene": {
+     "BIRC5": {
+      "ci": [
+       2.933477,
+       5.485491
+      ],
+      "conclusion": "up",
+      "fc": 4.011429,
+      "log2fc": 2.004116,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 5.04372e-14,
+      "t": 8.809942,
+      "target": "BIRC5"
+     },
+     "NM23A": {
+      "ci": [
+       1.754372,
+       2.728449
+      ],
+      "conclusion": "up",
+      "fc": 2.187856,
+      "log2fc": 1.129518,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 1.23809e-09,
+      "t": 7.080948,
+      "target": "NM23A"
+     },
+     "NTRK1": {
+      "ci": [
+       0.022087,
+       0.103355
+      ],
+      "conclusion": "down",
+      "fc": 0.047779,
+      "log2fc": -4.387479,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 1.03254e-10,
+      "t": -7.892501,
+      "target": "NTRK1"
+     },
+     "ODC1": {
+      "ci": [
+       2.416701,
+       5.332584
+      ],
+      "conclusion": "up",
+      "fc": 3.589883,
+      "log2fc": 1.843937,
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 2.2866e-08,
+      "t": 6.465016,
+      "target": "ODC1"
+     }
+    }
+   }
+  ],
+  "rank": 3,
+  "rationale_template": "undetermined_auto_v1",
+  "reason": "This choice cannot change any conclusion on this study, so it was made automatically.",
+  "recommended": "drop",
+  "status": "auto_decided"
+ }
+]
