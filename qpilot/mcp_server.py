@@ -117,6 +117,15 @@ class QpilotTools:
             study_id = self.store.ensure_study(path)
         except ImportError:
             return {"error": "the qPCR engine is not installed in this build"}
+        except Exception as err:  # loader or engine refused the file: answer, never raise
+            from qpilot.io.rdml_io import RdmlLoadError
+
+            if isinstance(err, RdmlLoadError):
+                return {"error": f"could not read this RDML file: {err}"}
+            return {
+                "error": "could not analyse this file: it does not fit the demo study design "
+                f"({type(err).__name__})"
+            }
         result = self.store.get(study_id)
         cards = self.store.cards(study_id)
         fact_ids = sorted({f for c in cards for f in c.facts})
