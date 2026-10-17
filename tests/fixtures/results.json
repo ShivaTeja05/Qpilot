@@ -6437,6 +6437,13 @@
       "unit": "×",
       "value": 4.330725478480963
     },
+    "f_fc_birc5_top3": {
+      "fmt": "{:.2g}",
+      "id": "f_fc_birc5_top3",
+      "path": "cards.card_refset.top3.BIRC5.fc",
+      "unit": "×",
+      "value": 3.8179940096389324
+    },
     "f_fc_birc5_ubc_2": {
       "fmt": "{:.2g}",
       "id": "f_fc_birc5_ubc_2",
@@ -6717,6 +6724,13 @@
       "unit": "×",
       "value": 2.3620023986717555
     },
+    "f_fc_nm23a_top3": {
+      "fmt": "{:.2g}",
+      "id": "f_fc_nm23a_top3",
+      "path": "cards.card_refset.top3.NM23A.fc",
+      "unit": "×",
+      "value": 2.0823557285475274
+    },
     "f_fc_nm23a_ubc_2": {
       "fmt": "{:.2g}",
       "id": "f_fc_nm23a_ubc_2",
@@ -6815,6 +6829,13 @@
       "unit": "×",
       "value": 0.06994662702722579
     },
+    "f_fc_ntrk1_top3": {
+      "fmt": "{:.2g}",
+      "id": "f_fc_ntrk1_top3",
+      "path": "cards.card_refset.top3.NTRK1.fc",
+      "unit": "×",
+      "value": 0.06119171023245465
+    },
     "f_fc_ntrk1_ubc_2": {
       "fmt": "{:.2g}",
       "id": "f_fc_ntrk1_ubc_2",
@@ -6905,6 +6926,13 @@
       "path": "cards.card_refset.top2.ODC1.fc",
       "unit": "×",
       "value": 3.8756261747105487
+    },
+    "f_fc_odc1_top3": {
+      "fmt": "{:.2g}",
+      "id": "f_fc_odc1_top3",
+      "path": "cards.card_refset.top3.ODC1.fc",
+      "unit": "×",
+      "value": 3.416775686237894
     },
     "f_fc_odc1_ubc_2": {
       "fmt": "{:.2g}",
@@ -7080,6 +7108,13 @@
       "path": "contrasts.WSB1.fc",
       "unit": "×",
       "value": 0.5927740136012587
+    },
+    "f_genorm_v_min": {
+      "fmt": "{:.2f}",
+      "id": "f_genorm_v_min",
+      "path": "genorm.V",
+      "unit": "",
+      "value": 0.32702994817071
     },
     "f_holds_ahcy": {
       "fmt": "{:.0%}",
@@ -8796,6 +8831,20 @@
       "unit": "",
       "value": 31
     },
+    "f_n_flipped_refset_min3": {
+      "fmt": "{}",
+      "id": "f_n_flipped_refset_min3",
+      "path": "cards.card_refset.impact.n_genes_flipped_min3",
+      "unit": "",
+      "value": 17
+    },
+    "f_n_flipped_refset_single_only": {
+      "fmt": "{}",
+      "id": "f_n_flipped_refset_single_only",
+      "path": "cards.card_refset.impact.n_genes_flipped_single_only",
+      "unit": "",
+      "value": 5
+    },
     "f_n_flipped_undetermined": {
       "fmt": "{}",
       "id": "f_n_flipped_undetermined",
@@ -8860,11 +8909,25 @@
       "value": 64
     },
     "f_n_reactions": {
-      "fmt": "{}",
+      "fmt": "{:,}",
       "id": "f_n_reactions",
       "path": "study",
       "unit": "",
       "value": 24576
+    },
+    "f_n_ref_pairs": {
+      "fmt": "{}",
+      "id": "f_n_ref_pairs",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs",
+      "unit": "",
+      "value": 10
+    },
+    "f_n_ref_pairs_flagged": {
+      "fmt": "{}",
+      "id": "f_n_ref_pairs_flagged",
+      "path": "cards.card_refset.evidence.ref_group_effect.flagged",
+      "unit": "",
+      "value": 3
     },
     "f_n_samples": {
       "fmt": "{}",
@@ -8881,7 +8944,7 @@
       "value": 323
     },
     "f_n_unknown_wells": {
-      "fmt": "{}",
+      "fmt": "{:,}",
       "id": "f_n_unknown_wells",
       "path": "study",
       "unit": "",
@@ -9334,6 +9397,174 @@
       "path": "study",
       "unit": "%",
       "value": 1.3789275956284153
+    },
+    "f_ref_flag_fold": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_flag_fold",
+      "path": "cards.card_refset.evidence.ref_group_effect.flag_fold",
+      "unit": "×",
+      "value": 1.4142135623730951
+    },
+    "f_ref_pair_top": {
+      "fmt": "{}",
+      "id": "f_ref_pair_top",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).label",
+      "unit": "",
+      "value": "HMBS:UBC(2)"
+    },
+    "f_ref_ratio_alusq_eurogentec_hmbs": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_alusq_eurogentec_hmbs",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ALUsq(Eurogentec):HMBS.fold",
+      "unit": "×",
+      "value": 0.7654651417847602
+    },
+    "f_ref_ratio_alusq_eurogentec_hmbs_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_alusq_eurogentec_hmbs_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ALUsq(Eurogentec):HMBS.p",
+      "unit": "",
+      "value": 0.2583403480840867
+    },
+    "f_ref_ratio_alusq_eurogentec_hprt1": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_alusq_eurogentec_hprt1",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ALUsq(Eurogentec):HPRT1.fold",
+      "unit": "×",
+      "value": 1.2479676011484355
+    },
+    "f_ref_ratio_alusq_eurogentec_hprt1_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_alusq_eurogentec_hprt1_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ALUsq(Eurogentec):HPRT1.p",
+      "unit": "",
+      "value": 0.14214954115359332
+    },
+    "f_ref_ratio_alusq_eurogentec_sdha_1": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_alusq_eurogentec_sdha_1",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ALUsq(Eurogentec):SDHA(1).fold",
+      "unit": "×",
+      "value": 0.9240113666305696
+    },
+    "f_ref_ratio_alusq_eurogentec_sdha_1_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_alusq_eurogentec_sdha_1_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ALUsq(Eurogentec):SDHA(1).p",
+      "unit": "",
+      "value": 0.6294846143192222
+    },
+    "f_ref_ratio_alusq_eurogentec_ubc_2": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_alusq_eurogentec_ubc_2",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ALUsq(Eurogentec):UBC(2).fold",
+      "unit": "×",
+      "value": 1.343984738671558
+    },
+    "f_ref_ratio_alusq_eurogentec_ubc_2_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_alusq_eurogentec_ubc_2_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.ALUsq(Eurogentec):UBC(2).p",
+      "unit": "",
+      "value": 0.15068366629857258
+    },
+    "f_ref_ratio_hmbs_hprt1": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hmbs_hprt1",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:HPRT1.fold",
+      "unit": "×",
+      "value": 1.6303389050985089
+    },
+    "f_ref_ratio_hmbs_hprt1_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hmbs_hprt1_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:HPRT1.p",
+      "unit": "",
+      "value": 0.04457062930054571
+    },
+    "f_ref_ratio_hmbs_sdha_1": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hmbs_sdha_1",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:SDHA(1).fold",
+      "unit": "×",
+      "value": 1.207124029810351
+    },
+    "f_ref_ratio_hmbs_sdha_1_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hmbs_sdha_1_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:SDHA(1).p",
+      "unit": "",
+      "value": 0.5175480782888241
+    },
+    "f_ref_ratio_hmbs_ubc_2": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hmbs_ubc_2",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).fold",
+      "unit": "×",
+      "value": 1.7557752343077617
+    },
+    "f_ref_ratio_hmbs_ubc_2_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hmbs_ubc_2_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).p",
+      "unit": "",
+      "value": 0.05827911320778609
+    },
+    "f_ref_ratio_hprt1_sdha_1": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hprt1_sdha_1",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HPRT1:SDHA(1).fold",
+      "unit": "×",
+      "value": 0.740412944839475
+    },
+    "f_ref_ratio_hprt1_sdha_1_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hprt1_sdha_1_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HPRT1:SDHA(1).p",
+      "unit": "",
+      "value": 0.15367903524384205
+    },
+    "f_ref_ratio_hprt1_ubc_2": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hprt1_ubc_2",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HPRT1:UBC(2).fold",
+      "unit": "×",
+      "value": 1.0769388062917338
+    },
+    "f_ref_ratio_hprt1_ubc_2_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_hprt1_ubc_2_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HPRT1:UBC(2).p",
+      "unit": "",
+      "value": 0.745934517091589
+    },
+    "f_ref_ratio_sdha_1_ubc_2": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_sdha_1_ubc_2",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.SDHA(1):UBC(2).fold",
+      "unit": "×",
+      "value": 1.4545110452184498
+    },
+    "f_ref_ratio_sdha_1_ubc_2_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_sdha_1_ubc_2_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.SDHA(1):UBC(2).p",
+      "unit": "",
+      "value": 0.1277752464286493
+    },
+    "f_ref_ratio_top": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_top",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).fold",
+      "unit": "×",
+      "value": 1.7557752343077617
+    },
+    "f_ref_ratio_top_p": {
+      "fmt": "{:.2g}",
+      "id": "f_ref_ratio_top_p",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).p",
+      "unit": "",
+      "value": 0.05827911320778609
     },
     "f_v_2_3": {
       "fmt": "{:.2f}",

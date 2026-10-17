@@ -20,13 +20,212 @@
         "V3/4": 0.3874296046199954,
         "V4/5": 0.32702994817071
       },
+      "genorm_note": "geNorm M ranks stability across all samples; it cannot show whether a control gene differs between the groups. The pairwise ratios below check that.",
       "genorm_order": [
         "ALUsq(Eurogentec)",
         "HPRT1",
         "HMBS",
         "SDHA(1)",
         "UBC(2)"
-      ]
+      ],
+      "genorm_validated": false,
+      "not_recommended": [
+        "alusq_eurogentec_alone",
+        "hmbs_alone",
+        "hprt1_alone",
+        "sdha_1_alone",
+        "ubc_2_alone"
+      ],
+      "not_recommended_note": "MIQE recommends normalising to more than one validated reference gene; a single gene is what a ΔΔCt spreadsheet does",
+      "ref_group_effect": {
+        "flag_fold": 1.4142135623730951,
+        "flag_log2": 0.5,
+        "flagged": [
+          "HMBS:UBC(2)",
+          "HMBS:HPRT1",
+          "SDHA(1):UBC(2)"
+        ],
+        "note": "10 pairs, no multiple-testing correction",
+        "pairs": [
+          {
+            "diff": 0.8121081699847252,
+            "fold": 1.7557752343077617,
+            "genes": [
+              "HMBS",
+              "UBC(2)"
+            ],
+            "label": "HMBS:UBC(2)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.05827911320778609
+          },
+          {
+            "diff": 0.7051718944458072,
+            "fold": 1.6303389050985089,
+            "genes": [
+              "HMBS",
+              "HPRT1"
+            ],
+            "label": "HMBS:HPRT1",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.04457062930054571
+          },
+          {
+            "diff": 0.5405342519702785,
+            "fold": 1.4545110452184498,
+            "genes": [
+              "SDHA(1)",
+              "UBC(2)"
+            ],
+            "label": "SDHA(1):UBC(2)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.1277752464286493
+          },
+          {
+            "diff": -0.43359797643135956,
+            "fold": 0.740412944839475,
+            "genes": [
+              "HPRT1",
+              "SDHA(1)"
+            ],
+            "label": "HPRT1:SDHA(1)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.15367903524384205
+          },
+          {
+            "diff": 0.4265167559977243,
+            "fold": 1.343984738671558,
+            "genes": [
+              "ALUsq(Eurogentec)",
+              "UBC(2)"
+            ],
+            "label": "ALUsq(Eurogentec):UBC(2)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.15068366629857258
+          },
+          {
+            "diff": -0.38559141398699737,
+            "fold": 0.7654651417847602,
+            "genes": [
+              "ALUsq(Eurogentec)",
+              "HMBS"
+            ],
+            "label": "ALUsq(Eurogentec):HMBS",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.2583403480840867
+          },
+          {
+            "diff": 0.3195804804588036,
+            "fold": 1.2479676011484355,
+            "genes": [
+              "ALUsq(Eurogentec)",
+              "HPRT1"
+            ],
+            "label": "ALUsq(Eurogentec):HPRT1",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.14214954115359332
+          },
+          {
+            "diff": 0.27157391801444586,
+            "fold": 1.207124029810351,
+            "genes": [
+              "HMBS",
+              "SDHA(1)"
+            ],
+            "label": "HMBS:SDHA(1)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.5175480782888241
+          },
+          {
+            "diff": -0.11401749597255417,
+            "fold": 0.9240113666305696,
+            "genes": [
+              "ALUsq(Eurogentec)",
+              "SDHA(1)"
+            ],
+            "label": "ALUsq(Eurogentec):SDHA(1)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.6294846143192222
+          },
+          {
+            "diff": 0.10693627553891716,
+            "fold": 1.0769388062917338,
+            "genes": [
+              "HPRT1",
+              "UBC(2)"
+            ],
+            "label": "HPRT1:UBC(2)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.745934517091589
+          }
+        ],
+        "raw": {
+          "ALUsq(Eurogentec)": {
+            "diff": -0.38521307813600814,
+            "fold": 0.7656659055456486,
+            "genes": [
+              "ALUsq(Eurogentec)"
+            ],
+            "label": "ALUsq(Eurogentec)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.022280403792892187
+          },
+          "HMBS": {
+            "diff": 0.0003783358509990009,
+            "fold": 1.0002622768169762,
+            "genes": [
+              "HMBS"
+            ],
+            "label": "HMBS",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.9991122625910315
+          },
+          "HPRT1": {
+            "diff": -0.7047935585948082,
+            "fold": 0.613530275017597,
+            "genes": [
+              "HPRT1"
+            ],
+            "label": "HPRT1",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.0071423014142437315
+          },
+          "SDHA(1)": {
+            "diff": -0.27119558216344863,
+            "fold": 0.828632561456112,
+            "genes": [
+              "SDHA(1)"
+            ],
+            "label": "SDHA(1)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.35176844945051605
+          },
+          "UBC(2)": {
+            "diff": -0.8117298341337253,
+            "fold": 0.569698363020449,
+            "genes": [
+              "UBC(2)"
+            ],
+            "label": "UBC(2)",
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 0.0009724114095198904
+          }
+        }
+      }
     },
     "facts": [
       "f_order_1",
@@ -39,6 +238,10 @@
       "f_fc_birc5_recommended",
       "f_fc_ntrk1_recommended",
       "f_fc_nm23a_recommended",
+      "f_fc_odc1_top3",
+      "f_fc_birc5_top3",
+      "f_fc_ntrk1_top3",
+      "f_fc_nm23a_top3",
       "f_fc_odc1_top2",
       "f_fc_birc5_top2",
       "f_fc_ntrk1_top2",
@@ -62,13 +265,23 @@
       "f_fc_odc1_ubc_2",
       "f_fc_birc5_ubc_2",
       "f_fc_ntrk1_ubc_2",
-      "f_fc_nm23a_ubc_2"
+      "f_fc_nm23a_ubc_2",
+      "f_n_flipped_refset_min3",
+      "f_n_flipped_refset_single_only",
+      "f_ref_pair_top",
+      "f_ref_ratio_top",
+      "f_ref_ratio_top_p",
+      "f_n_ref_pairs_flagged",
+      "f_n_ref_pairs",
+      "f_ref_flag_fold"
     ],
     "id": "card_refset",
     "impact": {
       "flips": true,
       "max_delta_log2fc": 0.5613286745490336,
-      "n_genes_flipped": 31
+      "n_genes_flipped": 31,
+      "n_genes_flipped_min3": 17,
+      "n_genes_flipped_single_only": 5
     },
     "kind": "reference_set",
     "options": [
@@ -130,6 +343,68 @@
             "n_lo": 294,
             "p": 2.286597012225778e-08,
             "t": 6.465016374058806,
+            "target": "ODC1"
+          }
+        }
+      },
+      {
+        "id": "top3",
+        "label": "Top three by stability (ALUsq(Eurogentec), HPRT1, HMBS)",
+        "per_gene": {
+          "BIRC5": {
+            "ci": [
+              2.8087405194032375,
+              5.189898517480679
+            ],
+            "conclusion": "up",
+            "fc": 3.8179940096389324,
+            "log2fc": 1.9328148391821374,
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 1.1530565260052496e-13,
+            "t": 8.66338323798441,
+            "target": "BIRC5"
+          },
+          "NM23A": {
+            "ci": [
+              1.6268776609345161,
+              2.665354306803799
+            ],
+            "conclusion": "up",
+            "fc": 2.0823557285475274,
+            "log2fc": 1.0582165450894498,
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 1.4099925130221552e-07,
+            "t": 5.940300446960948,
+            "target": "NM23A"
+          },
+          "NTRK1": {
+            "ci": [
+              0.02819128438434902,
+              0.13282209317328914
+            ],
+            "conclusion": "down",
+            "fc": 0.06119171023245465,
+            "log2fc": -4.030519968500385,
+            "n_hi": 49,
+            "n_lo": 293,
+            "p": 2.040408290841923e-09,
+            "t": -7.232596122485437,
+            "target": "NTRK1"
+          },
+          "ODC1": {
+            "ci": [
+              2.2650075740496596,
+              5.154223863893567
+            ],
+            "conclusion": "up",
+            "fc": 3.416775686237894,
+            "log2fc": 1.7726355369170834,
+            "n_hi": 53,
+            "n_lo": 294,
+            "p": 1.464675769020912e-07,
+            "t": 5.98272880110251,
             "target": "ODC1"
           }
         }
