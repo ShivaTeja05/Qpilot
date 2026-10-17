@@ -31,6 +31,7 @@ kind                        subject            payload
 ``prism.project``           ``prism``          ``{"template_id": str, "genes": [...], ...}``
 ``prism.exclusion_reason``  ``gene/sample``    ``{"gene", "sample", "action": "exclude"|"restore"}``
 ``prism.value_edit``        ``gene/sample``    ``{"gene", "sample", "action": "restore"|"keep"}``
+``stage.confirm``           stage name         ``{"stage", "design_hash", "covers": [ids]}``
 ==========================  =================  ==================================================
 """
 
@@ -93,6 +94,7 @@ ProposalKind = Literal[
     "prism.project",
     "prism.exclusion_reason",
     "prism.value_edit",
+    "stage.confirm",
 ]
 PROPOSAL_KINDS: tuple[str, ...] = ProposalKind.__args__  # type: ignore[attr-defined]
 CheckStatus = Literal["consistent", "contradicted", "cannot_check"]
@@ -172,8 +174,13 @@ class Proposal(BaseModel):
         return {**self.payload, **(self.edits or {})}
 
     @property
-    def stage(self) -> Literal["design", "curve", "prism"]:
-        """The Studio stage the proposal belongs to (its kind's prefix)."""
+    def stage(self) -> Literal["design", "curve", "prism", "stage"]:
+        """The Studio stage the proposal belongs to (its kind's prefix).
+
+        ``stage.confirm`` proposals are the confirm click of a whole stage: the system proposes
+        one when the stage's items are settled, naming the design hash it confirms, and a
+        person accepts it. The blind stages stay closed until those are accepted.
+        """
         return self.kind.split(".", 1)[0]  # type: ignore[return-value]
 
 
