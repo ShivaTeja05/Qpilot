@@ -33,6 +33,10 @@ if TYPE_CHECKING:
 
 MAX_REASON = 500
 AUTO_REASON = "Decided automatically: no option on this card changes any conclusion."
+AUTO_REASON_ELSEWHERE = (
+    "Decided automatically: at the recommended settings no option on this card changes any "
+    "conclusion. At other settings it can, so an agent must ask a person to change it."
+)
 
 
 class DecisionError(ValueError):
@@ -111,13 +115,26 @@ def build_cards(
     option_sets: list[CardSpec],
     headline_items: list[str],
     autonomy: Autonomy = "suggest",
+    grid: Any = None,
 ) -> list[DecisionCard]:
-    """Build one Decision Card per spec, with each option's consequence, impact and rank."""
+    """Build one Decision Card per spec, with each option's consequence, impact and rank.
+
+    ``impact["flips"]`` (and the auto-decision) looks at the other choices at their
+    recommended settings; ``impact["flips_anywhere"]`` looks at every combination in the grid,
+    so a choice that can change a conclusion at some setting always needs a person when an
+    agent asks. ``grid`` is computed from ``space`` when not given.
+    """
+    from qpilot.core.robustness import flipped_anywhere, run_grid
+
+    grid = run_grid(space) if grid is None else grid
     cards = []
     for spec in option_sets:
         if spec.recommended not in {o.id for o in spec.options}:
             raise DecisionError(f"card {spec.card_id}: recommended option is not an option")
         impact = card_impact(grid_summary, spec.dimension)
+        anywhere = flipped_anywhere(grid, spec.dimension)
+        impact["flips_anywhere"] = bool(anywhere)
+        impact["n_genes_flipped_anywhere"] = len(anywhere)
         card = DecisionCard(
             id=spec.card_id,
             kind=spec.kind,
@@ -136,7 +153,7 @@ def build_cards(
                 update={
                     "status": "auto_decided",
                     "decision": spec.recommended,
-                    "reason": AUTO_REASON,
+                    "reason": AUTO_REASON_ELSEWHERE if anywhere else AUTO_REASON,
                     "decided_by": "system",
                 }
             )
@@ -145,8 +162,13 @@ def build_cards(
 
 
 def needs_human(card: DecisionCard) -> bool:
-    """True when the card can flip a conclusion (or is in teaching mode)."""
-    return bool(card.impact.get("flips")) or card.effective_autonomy == "teach"
+    """True when the card can flip a conclusion at any setting (or is in teaching mode)."""
+    impact = card.impact
+    return (
+        bool(impact.get("flips"))
+        or bool(impact.get("flips_anywhere"))
+        or card.effective_autonomy == "teach"
+    )
 
 
 def check_request(card: DecisionCard, option: str, reason: str) -> str:
@@ -179,6 +201,7 @@ def apply_decision(
     cleaned = check_request(card, option, reason)
     if actor != "human" and needs_human(card):
         return store.request_human(study_id, card_id, option, cleaned, actor, expected_head)
+    # the store also turns an agent's choice into a request while the study is in Suggest mode
     return store.append_decision(study_id, card_id, option, cleaned, actor, expected_head)
 
 

@@ -2,7 +2,7 @@ import pytest
 
 from qpilot.core import robustness as rb
 from qpilot.core.decisions import (
-    AUTO_REASON,
+    AUTO_REASON_ELSEWHERE,
     CardSpec,
     DecisionError,
     OptionSpec,
@@ -69,7 +69,9 @@ def test_card_that_flips_nothing_is_auto_decided():
     cards = build_cards(space, summary, toy_specs(), ["g1"])
     b = next(c for c in cards if c.id == "card_b")
     assert b.status == "auto_decided" and b.decided_by == "system"
-    assert b.decision == "x" and b.reason == AUTO_REASON
+    # at the primary settings nothing flips, but in the grid b does flip g3, so agents must ask
+    assert b.decision == "x" and b.reason == AUTO_REASON_ELSEWHERE
+    assert b.impact["flips_anywhere"] is True
 
 
 def test_build_cards_rejects_bad_specs():
@@ -161,7 +163,9 @@ def test_stale_head_refused(store, study):
     assert second.reason == "card changed since you read it"
     assert store.card(study, "card_refset").decision == "recommended"
     statuses = [e.status for e in store.entries(study)]
-    assert statuses == ["auto", "applied", "stale"]
+    assert statuses == ["auto", "applied"]  # a refused attempt never moves the chain head
+    assert second.chain_head == first.chain_head == store.chain_head(study)
+    assert [a["status"] for a in store.attempts(study)] == ["stale"]
 
 
 def test_reject_logs_every_refused_option_and_checks_head(store, study):

@@ -147,6 +147,17 @@ def min_flip_changes(grid: pd.DataFrame, space: DecisionSpace, item: str) -> int
     return int(distance.min())
 
 
+def flipped_anywhere(grid: pd.DataFrame, dimension: str) -> list[str]:
+    """Items whose conclusion changes with ``dimension`` at *some* setting of the others.
+
+    Two grid cells that differ only in ``dimension`` and give different conclusions are enough;
+    unlike :func:`impact_per_dimension`, the other choices need not be at their primary values.
+    """
+    others = [f"{n}{IDX_SUFFIX}" for n in _dimension_names(grid) if n != dimension]
+    counts = grid.groupby(["item", *others])["conclusion"].nunique()
+    return sorted(set(counts[counts > 1].index.get_level_values("item")))
+
+
 def flipped_by(summaries: dict[str, GeneRobustness], dimension: str) -> list[str]:
     """Items whose conclusion changes when only ``dimension`` changes."""
     return sorted(i for i, s in summaries.items() if s.impact[dimension]["flips"])
