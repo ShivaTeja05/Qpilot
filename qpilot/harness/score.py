@@ -32,6 +32,11 @@ class ItemScore(BaseModel):
     latency_s: float
     note: str = ""
 
+    @property
+    def correct_by_model(self) -> bool:
+        """Correct with the model's own answer (no template stepped in)."""
+        return self.correct and not self.fallback
+
 
 def _token_values(answer: str, facts: Mapping[str, Fact]) -> list[float]:
     values = []

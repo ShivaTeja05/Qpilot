@@ -77,6 +77,7 @@ class VerifyReport(BaseModel):
     missing: list[str] = []
     unlisted: list[str] = []
     chain_broken_at: int | None = None
+    inconsistent: list[str] = []
     n_entries: int = 0
 
     def summary(self) -> str:
@@ -88,6 +89,7 @@ class VerifyReport(BaseModel):
         lines += [f"not in checksums: {name}" for name in self.unlisted]
         if self.chain_broken_at is not None:
             lines.append(f"decision chain broken at entry {self.chain_broken_at}")
+        lines += [f"does not match the decision chain: {item}" for item in self.inconsistent]
         return "\n".join(lines)
 
 
@@ -163,8 +165,13 @@ def write_record(
     study_id: str,
     out_dir: str | Path,
     rdml_path: str | Path | None = None,
+    include_input: bool = True,
 ) -> RecordInfo:
-    """Copy a study's workspace into ``out_dir`` and add design, choices, versions, checksums."""
+    """Copy a study's workspace into ``out_dir`` and add design, choices, versions, checksums.
+
+    With ``include_input=False`` the raw input file (which holds sample names and curves) is
+    left out: the record can still be verified but not re-run.
+    """
     workspace = store.workspace(study_id)
     result = store.get(study_id)
     record_dir = Path(out_dir)
@@ -177,7 +184,7 @@ def write_record(
             shutil.copyfile(src, record_dir / name)
     source = Path(rdml_path) if rdml_path is not None else store.source(study_id)
     included = False
-    if source is not None:
+    if source is not None and include_input:
         if sha256_file(source) != result.input_sha256:
             raise RecordError("the input file does not match the study (sha256 differs)")
         shutil.copyfile(source, record_dir / "input.rdml")
@@ -250,15 +257,43 @@ def verify(record_dir: str | Path) -> VerifyReport:
         broken = verify_chain(entries, root.input_sha256)
     except (OSError, ValueError):
         broken = 1
-    ok = not (missing or unlisted or changed) and broken is None
+        entries = []
+    inconsistent = _consistency(record_dir, entries) if broken is None else []
+    ok = not (missing or unlisted or changed or inconsistent) and broken is None
     return VerifyReport(
         ok=ok,
         changed=changed,
         missing=missing,
         unlisted=unlisted,
         chain_broken_at=broken,
+        inconsistent=inconsistent,
         n_entries=n_entries,
     )
+
+
+def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
+    """Cards whose recorded decision (cards.json, choices.json) is not what the chain says."""
+    last: dict[str, DecisionEntry] = {}
+    for entry in entries:
+        if entry.status in ("applied", "auto"):
+            last[entry.card_id] = entry
+    problems = []
+    cards_path = record_dir / "cards.json"
+    cards = json.loads(cards_path.read_text()) if cards_path.exists() else []
+    for card in cards:
+        entry = last.get(card["id"])
+        expected = (entry.option, entry.actor) if entry else (None, None)
+        if (card.get("decision"), card.get("decided_by")) != expected:
+            problems.append(f"cards.json {card['id']}")
+    choices_path = record_dir / "choices.json"
+    if choices_path.exists():
+        choices = json.loads(choices_path.read_text()).get("cards", {})
+        for card_id, choice in sorted(choices.items()):
+            entry = last.get(card_id)
+            expected = (entry.option, entry.actor) if entry else (None, None)
+            if (choice.get("decision"), choice.get("decided_by")) != expected:
+                problems.append(f"choices.json {card_id}")
+    return problems
 
 
 def zip_record(record_dir: str | Path, zip_path: str | Path | None = None) -> Path:

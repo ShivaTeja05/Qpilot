@@ -120,6 +120,11 @@ def plan(
                 f"A {target:g}-fold change: with {n_per_group} per group the smallest change "
                 f"detected with {power:.0%} power is {mde:.1f}-fold."
             )
+    message += (
+        " These sizes are for a significant difference (p < alpha); qPilot's up/down call also"
+        " needs the observed change to reach that fold, so a true change of exactly that size is"
+        " called only about half the time. Plan for a somewhat larger effect."
+    )
     return PlanResult(
         n_needed=need, mde_fold=mde, cannot_detect=cannot, rules=rules, message=message
     )

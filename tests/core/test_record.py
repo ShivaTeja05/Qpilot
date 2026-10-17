@@ -198,3 +198,28 @@ def test_zip_bomb_refused(tmp_path, monkeypatch):
         zf.writestr("big.txt", "0" * 10_000)
     with pytest.raises(RecordError):
         unzip_record(zipped, tmp_path / "out")
+
+
+def test_choices_or_cards_edited_to_disagree_with_chain(record):
+    import hashlib
+
+    out, _ = record
+    choices = json.loads((out / "choices.json").read_text())
+    choices["cards"]["card_cutoff"].update(decision="cut_10", decided_by="human")
+    (out / "choices.json").write_text(json.dumps(choices))
+    # regenerate the checksums as a careful forger would
+    lines = []
+    for line in (out / CHECKSUMS).read_text().splitlines():
+        name = line.split("  ", 1)[1]
+        lines.append(f"{hashlib.sha256((out / name).read_bytes()).hexdigest()}  {name}")
+    (out / CHECKSUMS).write_text("\n".join(lines) + "\n")
+    report = verify(out)
+    assert not report.ok and report.changed == []
+    assert report.inconsistent == ["choices.json card_cutoff"]
+    assert "does not match the decision chain" in report.summary()
+
+
+def test_record_without_input(store, study_with_input, tmp_path):
+    info = write_record(store, study_with_input.study_id, tmp_path / "noin", include_input=False)
+    assert not info.input_included and not (tmp_path / "noin" / "input.rdml").exists()
+    assert verify(info.record_dir).ok

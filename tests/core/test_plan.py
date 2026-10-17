@@ -57,3 +57,7 @@ def test_bad_inputs(kwargs):
 
 def test_mde_shrinks_with_n():
     assert mde_fold(12, 1.0) < mde_fold(3, 1.0)
+
+
+def test_plan_states_the_conclusion_rule_caveat():
+    assert "about half the time" in plan(2, 1.0, 12).message

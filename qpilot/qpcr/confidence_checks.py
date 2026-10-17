@@ -152,7 +152,7 @@ def checks_for(
         Check(
             id="reporting",
             passed=True,
-            note="MIQE 2.0 items answerable from the record are listed with the record.",
+            note="Reporting completeness against MIQE 2.0 is not scored yet.",
             fact_ids=[],
         ),
     ]

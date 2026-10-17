@@ -40,6 +40,7 @@ def run(
     study_id: str,
     profile: Profile | None = None,
     profile_name: str | None = None,
+    run_at: str | None = None,
 ) -> Report:
     """Ask every item, score it, and summarise into a :class:`Report`."""
     scores: list[ItemScore] = []
@@ -58,4 +59,7 @@ def run(
             scores.append(
                 score_item(item, answer, {**facts, **answer.facts}, before != after, latency)
             )
-    return summarise(scores, profile_name or client.provider, client.provider, client.model)
+    endpoint = getattr(client.backend, "url", None)
+    return summarise(
+        scores, profile_name or client.provider, client.provider, client.model, endpoint, run_at
+    )

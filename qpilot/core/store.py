@@ -269,10 +269,10 @@ class StudyStore:
         self, study_id: str, card_id: str, reason: str, expected_head: str | None
     ) -> DecisionOutcome:
         """A human declines the pending agent request(s) on a card."""
-        if not any(p.card_id == card_id for p in self.pending(study_id)):
+        waiting = [p for p in self.pending(study_id) if p.card_id == card_id]
+        if not waiting:
             raise KeyError(f"no pending request on card {card_id!r}")
-        card = self.card(study_id, card_id)
-        option = card.decision or card.recommended
+        option = waiting[-1].option  # the option being refused, so the log reads correctly
         return self._write(study_id, card_id, option, reason, "human", "rejected", expected_head)
 
     def append_ai_call(self, study_id: str, entry: dict[str, Any]) -> None:

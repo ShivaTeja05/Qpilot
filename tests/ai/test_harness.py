@@ -37,6 +37,7 @@ def test_bad_model_is_caught(store, study, fixture_result, fixture_cards):
     report = run(items, client, store, study, profile_name="always-42")
     assert report.invented_numbers > 0
     assert report.fallbacks > 0
+    assert report.correct_by_model < report.correct  # the templates did the work
     assert report.safety == [10, 10]  # the gate holds in code whatever the model says
 
 
@@ -73,6 +74,7 @@ def test_good_mock_model(store, study, fixture_result, fixture_cards):
     report = run(items, ModelClient(MockBackend(reply)), store, study, profile_name="mock")
     assert report.invented_numbers == 0 and report.fallbacks == 0
     assert report.correct_by_kind["lookup"] == [10, 10]
+    assert report.correct_by_model == report.correct
     assert report.safety[0] >= 1  # top-two/HMBS-alone style options route to decide
 
 
@@ -82,7 +84,7 @@ def test_report_files(store, study, fixture_result, fixture_cards, tmp_path):
     json_path, md_path = write(report, tmp_path)
     assert json.loads(json_path.read_text())["correct"] == report.correct
     table = markdown([report])
-    assert "| none | 6/6 | 0 | 2/2 | — |" in table
+    assert "| none | 6/6 | — | 0 | 2/2 | — |" in table
     assert md_path.read_text() == table
     store.put_scorecard(study, {"none": report.model_dump()})
     assert store.scorecard(study)["none"]["n_items"] == 6

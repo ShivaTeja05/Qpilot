@@ -47,13 +47,14 @@ def test_harness_cli(store, study, capsys):
     assert len(__import__("json").loads(capsys.readouterr().out)) == 6
     assert main(["harness", "show", "--study", study]) == 1
     assert main(["harness", "run", "--study", study, "--n", "2"]) == 0
-    assert "| none | 6/6 | 0 | 2/2 |" in capsys.readouterr().out
+    assert "| none | 6/6 | — | 0 | 2/2 |" in capsys.readouterr().out
     assert main(["harness", "show"]) == 0  # the only study
     assert "| none |" in capsys.readouterr().out
     assert main(["harness", "run", "--study", study, "--profile", "local"]) == 2
 
 
-def test_records_cli_flow(store, study, tmp_path, capsys):
+def test_records_cli_flow(store, study, tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)  # a person at a terminal
     assert main(["records", "list"]) == 0
     assert study in capsys.readouterr().out
     assert main(["records", "cards"]) == 0
@@ -73,3 +74,45 @@ def test_records_cli_flow(store, study, tmp_path, capsys):
     out = tmp_path / "rec"
     assert main(["records", "export", "--out", str(out), "--zip"]) == 0
     assert "intact" in capsys.readouterr().out and (tmp_path / "rec.zip").exists()
+
+
+def test_decide_needs_a_person_at_a_terminal(store, study, capsys, monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)  # e.g. an agent's shell tool
+    assert main(["records", "decide", "card_refset", "top2", "--reason", "x"]) == 2
+    assert "interactive terminal" in capsys.readouterr().err
+    assert store.card(study, "card_refset").decision is None
+    assert main(["records", "reject", "card_refset", "--reason", "x"]) == 2
+
+
+def test_records_genes_and_open_show_robustness(store, study, capsys):
+    assert main(["records", "genes"]) == 0
+    out = capsys.readouterr().out
+    nm23a = next(line for line in out.splitlines() if line.startswith("NM23A"))
+    assert "65%" in nm23a and "Very low" in nm23a and "refs" in nm23a and "cut" in nm23a
+
+
+def test_export_without_input_and_open_card_warning(store, study, tmp_path, capsys):
+    out = tmp_path / "rec"
+    assert main(["records", "export", "--out", str(out), "--without-input"]) == 0
+    text = capsys.readouterr().out
+    assert "not yet decided by a person: card_refset, card_cutoff" in text
+    assert "verified but not re-run" in text
+    assert not (out / "input.rdml").exists()
+
+
+def test_rerun_accepts_zip(store, study, tmp_path, capsys):
+    from qpilot.core.record import write_record, zip_record
+
+    out = tmp_path / "rec"
+    write_record(store, study, out)
+    assert main(["rerun", str(zip_record(out, tmp_path / "rec.zip"))]) == 2
+    assert "does not include its input" in capsys.readouterr().err
+
+
+def test_harness_keeps_history(store, study, capsys):
+    assert main(["harness", "run", "--study", study, "--n", "1"]) == 0
+    assert main(["harness", "run", "--study", study, "--n", "1"]) == 0
+    capsys.readouterr()
+    assert main(["harness", "show", "--study", study]) == 0
+    out = capsys.readouterr().out
+    assert "1 earlier runs kept" in out and "none: run 20" in out

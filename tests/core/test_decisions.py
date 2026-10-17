@@ -119,6 +119,7 @@ def test_human_rejects_agent_request(store, study):
     apply_decision(store, study, "card_refset", "hmbs_alone", "try", "agent")
     out = reject_request(store, study, "card_refset", "HMBS alone is not stable here")
     assert out.status == "rejected"
+    assert store.entries(study)[-1].option == "hmbs_alone"  # the refused option is logged
     assert out.card.status == "open" and out.card.decision is None
     assert store.pending(study) == []
     with pytest.raises(KeyError):
