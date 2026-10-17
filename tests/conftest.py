@@ -8,10 +8,11 @@ from pathlib import Path
 
 import pytest
 
+from qpilot.io.datasets import VERMEULEN_FILENAME, default_cache_dir
 from qpilot.schemas import DecisionCard, Fact, StudyResult
 
 FIXTURES = Path(__file__).parent / "fixtures"
-DEMO_RDML = Path.home() / ".cache" / "qpilot" / "data_vermeulen_raw.rdml"
+DEMO_RDML = default_cache_dir() / VERMEULEN_FILENAME  # honours $QPILOT_CACHE_DIR
 
 
 @pytest.fixture
