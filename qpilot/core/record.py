@@ -31,13 +31,17 @@ from pydantic import BaseModel
 from qpilot import __version__
 from qpilot.core.store import (
     StudyStore,
+    _apply_entry,
     atomic_write,
     dump_json,
     entry_hash,
+    pending_after,
     read_entries,
     sha256_file,
 )
-from qpilot.schemas import DecisionEntry, StudyResult
+from qpilot.schemas import DecisionCard, DecisionEntry, StudyResult
+
+DECISION_FIELDS = ("status", "decision", "reason", "decided_by", "decided_at")
 
 CHECKSUMS = "CHECKSUMS.sha256"
 WORKSPACE_FILES = (
@@ -272,27 +276,63 @@ def verify(record_dir: str | Path) -> VerifyReport:
 
 
 def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
-    """Cards whose recorded decision (cards.json, choices.json) is not what the chain says."""
-    last: dict[str, DecisionEntry] = {}
-    for entry in entries:
-        if entry.status in ("applied", "auto"):
-            last[entry.card_id] = entry
-    problems = []
-    cards_path = record_dir / "cards.json"
-    cards = json.loads(cards_path.read_text()) if cards_path.exists() else []
-    for card in cards:
-        entry = last.get(card["id"])
-        expected = (entry.option, entry.actor) if entry else (None, None)
-        if (card.get("decision"), card.get("decided_by")) != expected:
-            problems.append(f"cards.json {card['id']}")
+    """What in cards.json, choices.json and pending.jsonl the decision chain does not support.
+
+    Each card's state is rebuilt by replaying the chain with the store's own logic and compared
+    field by field; the card sets must match and every card the chain mentions must exist.
+    Unreadable files are reported, never raised.
+    """
+    problems: list[str] = []
+    try:
+        cards = json.loads((record_dir / "cards.json").read_text())
+        by_id = {c["id"]: c for c in cards}
+    except (OSError, ValueError, TypeError, KeyError):
+        return ["cards.json unreadable"]
+    expected: dict[str, dict] = {}
+    for card_id, card in by_id.items():
+        state = DecisionCard.model_validate(
+            {
+                **card,
+                "status": "open",
+                "decision": None,
+                "reason": None,
+                "decided_by": None,
+                "decided_at": None,
+            }
+        )
+        for entry in entries:
+            if entry.card_id == card_id:
+                state = _apply_entry(state, entry)
+        expected[card_id] = {f: getattr(state, f) for f in DECISION_FIELDS}
+        if {f: card.get(f) for f in DECISION_FIELDS} != expected[card_id]:
+            problems.append(f"cards.json {card_id}")
+    problems += [
+        f"cards.json has no card {cid}" for cid in sorted({e.card_id for e in entries} - set(by_id))
+    ]
     choices_path = record_dir / "choices.json"
     if choices_path.exists():
-        choices = json.loads(choices_path.read_text()).get("cards", {})
-        for card_id, choice in sorted(choices.items()):
-            entry = last.get(card_id)
-            expected = (entry.option, entry.actor) if entry else (None, None)
-            if (choice.get("decision"), choice.get("decided_by")) != expected:
+        try:
+            choices = json.loads(choices_path.read_text())["cards"]
+            items = sorted(choices.items())
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            return [*problems, "choices.json unreadable"]
+        if set(choices) != set(by_id):
+            problems.append("choices.json lists different cards from cards.json")
+        for card_id, choice in items:
+            want = expected.get(card_id)
+            fields = ("status", "decision", "decided_by")
+            if want is None or not isinstance(choice, dict):
+                continue
+            if {f: choice.get(f) for f in fields} != {f: want[f] for f in fields}:
                 problems.append(f"choices.json {card_id}")
+    pending_path = record_dir / "pending.jsonl"
+    if pending_path.exists():
+        try:
+            recorded = [e.seq for e in read_entries(pending_path)]
+        except (OSError, ValueError):
+            return [*problems, "pending.jsonl unreadable"]
+        if recorded != [e.seq for e in pending_after(entries)]:
+            problems.append("pending.jsonl")
     return problems
 
 
@@ -313,7 +353,13 @@ def unzip_record(zip_path: str | Path, target_dir: str | Path) -> Path:
     """Unpack a record zip defensively: no absolute paths, ``..``, links, or zip bombs."""
     target = Path(target_dir).resolve()
     target.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(zip_path) as zf:
+    try:
+        archive = zipfile.ZipFile(zip_path)
+    except FileNotFoundError as err:
+        raise RecordError(f"no such record zip: {zip_path}") from err
+    except zipfile.BadZipFile as err:
+        raise RecordError(f"not a zip file: {zip_path}") from err
+    with archive as zf:
         members = zf.infolist()
         if len(members) > MAX_MEMBERS:
             raise RecordError("too many files in the record zip")
@@ -334,6 +380,9 @@ def unzip_record(zip_path: str | Path, target_dir: str | Path) -> Path:
             dest.parent.mkdir(parents=True, exist_ok=True)
             with zf.open(member) as src, open(dest, "wb") as out:
                 shutil.copyfileobj(src, out)
+    children = [c for c in target.iterdir()]
+    if not (target / CHECKSUMS).exists() and len(children) == 1 and children[0].is_dir():
+        return children[0]  # a zip made of the record folder itself (zip -r rec.zip rec)
     return target
 
 

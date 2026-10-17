@@ -19,5 +19,5 @@ Out of scope: a compromised host, multi-user hosting, and clinical or diagnostic
 
 ## What we claim, and what backs it
 - **Offline by default:** with provider `none`, the headless analysis path runs with network sockets disabled (`tests/core/test_offline.py`).
-- **Agents cannot make conclusion-changing decisions:** the MCP tool returns `pending_human`, enforced in code (`tests/core/test_decisions.py`, `tests/core/test_mcp_server.py`).
-- **Records are tamper-evident, not tamper-proof:** `qpilot verify` detects changed files and the first broken link in the decision chain (`tests/core/test_record.py`).
+- **Agents cannot make conclusion-changing decisions through MCP:** the tool returns `pending_human`, enforced in code (`tests/core/test_decisions.py`, `tests/core/test_mcp_server.py`). An agent that can run commands in your shell can act as you, so give agents MCP access, not your shell.
+- **Records are tamper-evident, not tamper-proof:** `qpilot verify` detects changed files, the first broken link in the decision chain, and card states the chain does not support (`tests/core/test_record.py`). Nothing is signed: a consistent rewrite of the whole record still passes.

@@ -116,3 +116,39 @@ def test_harness_keeps_history(store, study, capsys):
     assert main(["harness", "show", "--study", study]) == 0
     out = capsys.readouterr().out
     assert "1 earlier runs kept" in out and "none: run 20" in out
+
+
+def test_require_person_with_closed_stdin(store, study, capsys, monkeypatch):
+    monkeypatch.setattr("sys.stdin", None)
+    assert main(["records", "decide", "card_refset", "top2", "--reason", "x"]) == 2
+    assert "not a security boundary" in capsys.readouterr().err
+
+
+def test_export_note_for_human_decided_card_with_new_request(store, study, tmp_path, capsys):
+    from qpilot.core.decisions import apply_decision
+
+    apply_decision(store, study, "card_refset", "recommended", "keep", "human")
+    apply_decision(store, study, "card_cutoff", "cut_15", "keep", "human")
+    apply_decision(store, study, "card_refset", "hmbs_alone", "agent idea", "agent")
+    assert main(["records", "export", "--out", str(tmp_path / "r")]) == 0
+    out = capsys.readouterr().out
+    assert "not yet decided by a person" not in out
+    assert "agent requests still waiting on: card_refset" in out
+
+
+def test_open_errors_are_plain(store, tmp_path, capsys, fixtures_dir):
+    assert main(["records", "open", "--rdml", str(tmp_path / "missing.rdml")]) == 2
+    err = capsys.readouterr().err
+    assert "no such RDML file" in err and "demo study design" not in err
+    assert main(["records", "open", "--rdml", str(fixtures_dir / "test_mca_1_raw_data.rdml")]) == 2
+    assert "demo study design" in capsys.readouterr().err
+    with pytest.raises(SystemExit, match="demo study design"):
+        main(["harness", "make", "--rdml", str(fixtures_dir / "test_mca_1_raw_data.rdml")])
+
+
+@pytest.mark.demo_data
+def test_records_open_shows_genorm(capsys, tmp_studies_dir, demo_rdml_path):
+    assert main(["records", "open", "--rdml", str(demo_rdml_path)]) == 0
+    out = capsys.readouterr().out
+    assert "geNorm M (lower = steadier; cut-off 1.5): ALUsq(Eurogentec) 1.68" in out
+    assert "geNorm V (want < 0.15): V2/3 0.56" in out

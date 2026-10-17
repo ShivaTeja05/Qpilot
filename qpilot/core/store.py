@@ -38,6 +38,21 @@ STALE_REASON = "card changed since you read it"
 PENDING_REASON = "This choice can change a conclusion, so a human must decide it."
 
 
+def pending_after(entries: list[DecisionEntry]) -> list[DecisionEntry]:
+    """The agent requests still waiting after a log, replayed the way the store keeps them."""
+    pending: list[DecisionEntry] = []
+    for entry in entries:
+        if entry.status == "pending_human":
+            pending.append(entry)
+        elif entry.actor == "human" and entry.status == "applied":
+            pending = [p for p in pending if p.card_id != entry.card_id]
+        elif entry.actor == "human" and entry.status == "rejected":
+            pending = [
+                p for p in pending if not (p.card_id == entry.card_id and p.option == entry.option)
+            ]
+    return pending
+
+
 class StudyNotFound(KeyError):
     """No workspace exists for the requested study id."""
 
@@ -100,7 +115,7 @@ def _now() -> str:
 
 
 def _apply_entry(card: DecisionCard, entry: DecisionEntry) -> DecisionCard:
-    """The card state after one log entry."""
+    """The card state after one log entry (the store and ``verify`` both replay with this)."""
     if entry.status in ("applied", "auto"):
         return card.model_copy(
             update={
@@ -266,14 +281,33 @@ class StudyStore:
         return outcome
 
     def reject_pending(
-        self, study_id: str, card_id: str, reason: str, expected_head: str | None
+        self,
+        study_id: str,
+        card_id: str,
+        reason: str,
+        expected_head: str | None,
+        option: str | None = None,
     ) -> DecisionOutcome:
-        """A human declines the pending agent request(s) on a card."""
-        waiting = [p for p in self.pending(study_id) if p.card_id == card_id]
+        """A human declines pending agent requests on a card: one log entry per refused option.
+
+        With ``option`` only requests for that option are refused; otherwise all of them.
+        """
+        waiting = [
+            p
+            for p in self.pending(study_id)
+            if p.card_id == card_id and (option is None or p.option == option)
+        ]
         if not waiting:
             raise KeyError(f"no pending request on card {card_id!r}")
-        option = waiting[-1].option  # the option being refused, so the log reads correctly
-        return self._write(study_id, card_id, option, reason, "human", "rejected", expected_head)
+        outcome: DecisionOutcome | None = None
+        head = expected_head
+        for refused in dict.fromkeys(p.option for p in waiting):  # distinct, oldest first
+            outcome = self._write(study_id, card_id, refused, reason, "human", "rejected", head)
+            if outcome.status == "stale":
+                return outcome
+            head = outcome.chain_head
+        assert outcome is not None
+        return outcome
 
     def append_ai_call(self, study_id: str, entry: dict[str, Any]) -> None:
         """Append one model-call log line (no key, no raw payload unless opted in)."""
@@ -374,12 +408,9 @@ class StudyStore:
     @staticmethod
     def _update_pending(workspace: Path, entry: DecisionEntry) -> None:
         path = workspace / "pending.jsonl"
-        pending = read_entries(path)
-        if entry.status == "pending_human":
-            pending.append(entry)
-        elif entry.status in ("applied", "rejected") and entry.actor == "human":
-            pending = [p for p in pending if p.card_id != entry.card_id]
-        else:
+        before = read_entries(path)
+        pending = pending_after([*before, entry])
+        if [p.seq for p in pending] == [p.seq for p in before]:
             return
         text = "".join(canonical_json(p.model_dump(mode="json")) + "\n" for p in pending)
         atomic_write(path, text)

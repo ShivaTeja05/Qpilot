@@ -59,5 +59,12 @@ def test_mde_shrinks_with_n():
     assert mde_fold(12, 1.0) < mde_fold(3, 1.0)
 
 
-def test_plan_states_the_conclusion_rule_caveat():
-    assert "about half the time" in plan(2, 1.0, 12).message
+def test_plan_states_the_chance_of_a_call():
+    from qpilot.qpcr.plan import call_probability
+
+    assert call_probability(2, 1.0, 17) == pytest.approx(0.5, abs=0.02)
+    assert call_probability(1.5, 1.0, 47) < 0.05
+    assert call_probability(4, 1.95, 13) > 0.7
+    assert "called about 50% of the time" in plan(2, 1.0).message
+    assert "cannot call a change smaller than 2-fold" in plan(1.5, 1.0).message
+    assert "With the planned 12 per group" in plan(2, 1.0, 12).message

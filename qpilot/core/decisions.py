@@ -188,8 +188,9 @@ def reject_request(
     card_id: str,
     reason: str,
     expected_head: str | None = None,
+    option: str | None = None,
 ) -> DecisionOutcome:
-    """A human turns down an agent's pending request on a card, with a reason."""
+    """A human turns down agents' pending requests on a card (one option, or all), with a reason."""
     card = store.card(study_id, card_id)
-    cleaned = check_request(card, card.decision or card.recommended, reason)
-    return store.reject_pending(study_id, card_id, cleaned, expected_head)
+    cleaned = check_request(card, option or card.recommended, reason)
+    return store.reject_pending(study_id, card_id, cleaned, expected_head, option)

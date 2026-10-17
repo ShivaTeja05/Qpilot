@@ -109,13 +109,36 @@ def _plan(args: argparse.Namespace) -> int:
     return 0
 
 
+DESIGN_NOTE = (
+    "qPilot currently analyses the demo study design (experiment 'biomarker_set', MYCN-high vs "
+    "rest, five control genes); other designs are not configurable yet."
+)
+
+
+def _open_study(store, path: str) -> str:
+    """``ensure_study`` with plain-language errors instead of tracebacks (raises SystemExit)."""
+    from qpilot.io.rdml_io import RdmlLoadError
+
+    try:
+        return store.ensure_study(path)
+    except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
+        raise SystemExit(f"qpilot: no such RDML file: {path}") from None
+    except RdmlLoadError as err:
+        design = "no experiment" in str(err)
+        raise SystemExit(f"qpilot: {err}" + (f"\n{DESIGN_NOTE}" if design else "")) from None
+    except (KeyError, ValueError) as err:
+        raise SystemExit(
+            f"qpilot: this file does not fit the demo design ({err}).\n{DESIGN_NOTE}"
+        ) from None
+
+
 def _pick_study(args: argparse.Namespace):
-    """The store and study a harness command works on: --study, --rdml, or the only study."""
+    """The store and study a command works on: --study, --rdml, or the only study."""
     from qpilot.core.store import StudyStore
 
     store = StudyStore()
     if getattr(args, "rdml", None):
-        return store, store.ensure_study(args.rdml)
+        return store, _open_study(store, args.rdml)
     if getattr(args, "study", None):
         return store, args.study
     studies = store.list_studies()
@@ -136,7 +159,9 @@ def _harness_client(profile: str):
         return ModelClient(NoneBackend())
     env = ModelConfig.from_env()
     if profile == "anthropic":
-        config = ModelConfig(provider="anthropic", model=env.model, api_key=env.api_key)
+        config = ModelConfig(
+            provider="anthropic", endpoint=env.endpoint, model=env.model, api_key=env.api_key
+        )
     else:
         endpoint = os.environ.get("QPILOT_MODEL_ENDPOINT", "http://127.0.0.1:11434")
         config = ModelConfig(
@@ -240,14 +265,16 @@ def _records_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 INTERACTIVE_ONLY = (
-    "decisions are made by a person at an interactive terminal (or in the app); this one has "
-    "no terminal attached, so it may be an automated caller. AI agents ask through MCP instead."
+    "decide and reject are meant for a person at an interactive terminal (or the app), and no "
+    "terminal is attached here. AI agents should ask through MCP instead. (This is a guard "
+    "against accidental scripted use, not a security boundary: anything with full control of "
+    "your shell can act as you.)"
 )
 
 
 def _require_person() -> None:
-    """Refuse decide/reject when no terminal is attached (scripts and agents' shell tools)."""
-    if not sys.stdin.isatty():
+    """Refuse decide/reject when no terminal is attached; an accident guard, not a boundary."""
+    if sys.stdin is None or not sys.stdin.isatty():
         from qpilot.core.decisions import DecisionError
 
         raise DecisionError(INTERACTIVE_ONLY)
@@ -280,14 +307,9 @@ def _records(args: argparse.Namespace) -> int:
         store = StudyStore()
         path = args.rdml or str(default_cache_dir() / "data_vermeulen_raw.rdml")
         try:
-            study_id = store.ensure_study(path)
-        except Exception as err:  # loader and engine errors: report, don't dump a traceback
-            print(f"qpilot records open: {type(err).__name__}: {err}", file=sys.stderr)
-            print(
-                "qPilot currently analyses the demo study design (MYCN-high vs rest, five "
-                "control genes); other designs are not configurable yet.",
-                file=sys.stderr,
-            )
+            study_id = _open_study(store, path)
+        except SystemExit as err:
+            print(err, file=sys.stderr)
             return 2
         r = store.get(study_id)
         print(
@@ -318,7 +340,15 @@ def _records(args: argparse.Namespace) -> int:
             _print_cards(store, study_id)
         elif args.action == "genes":
             r = store.get(study_id)
-            print(f"{'gene':<16} {'fold':>7} {'call':<5} {'holds':>6} {'level':<9} flips via")
+            print("Under the recommended choices (decisions do not change these numbers yet).")
+            changed = [
+                f"{c.id} = {c.decision}"
+                for c in store.cards(study_id)
+                if c.decision and c.decision != c.recommended
+            ]
+            if changed:
+                print(f"Decided differently from the recommendation: {', '.join(changed)}")
+            print(f"{'gene':<16} {'fold':>7} {'call':<5} {'holds':>6} {'level':<9} flips alone via")
             rows = sorted(r.robustness.values(), key=lambda x: (x.holds, x.target))
             for rob in rows:
                 grade = r.confidence.get(rob.target)
@@ -365,11 +395,17 @@ def _records(args: argparse.Namespace) -> int:
             if not store.pending(study_id):
                 print("no requests waiting")
         elif args.action == "reject":
+            if not args.rest or len(args.rest) > 2:
+                raise DecisionError("usage: records reject <card_id> [option] --reason '...'")
             _require_person()
+            option = args.rest[1] if len(args.rest) == 2 else None
             out = reject_request(
-                store, study_id, args.rest[0] if args.rest else "", args.reason or ""
+                store, study_id, args.rest[0], args.reason or "", args.expected_head, option
             )
-            print(f"{out.status}: {out.card.id} stays {out.card.decision or 'undecided'}")
+            if out.status == "stale":
+                print(f"stale: {out.reason}; read the card again")
+            else:
+                print(f"{out.status}: {out.card.id} stays {out.card.decision or 'undecided'}")
         elif args.action == "log":
             for e in store.entries(study_id):
                 print(
@@ -380,13 +416,13 @@ def _records(args: argparse.Namespace) -> int:
             from qpilot.core.record import verify, write_record, zip_record
 
             out_dir = args.out or f"qpilot-record-{study_id}"
-            still_open = [
-                c.id
-                for c in store.cards(study_id)
-                if c.impact.get("flips") and c.status in ("open", "pending_human")
-            ]
-            if still_open:
-                print(f"warning: not yet decided by a person: {', '.join(still_open)}")
+            cards = store.cards(study_id)
+            undecided = [c.id for c in cards if c.impact.get("flips") and c.decided_by != "human"]
+            waiting = sorted({p.card_id for p in store.pending(study_id)})
+            if undecided:
+                print(f"warning: not yet decided by a person: {', '.join(undecided)}")
+            if waiting:
+                print(f"note: agent requests still waiting on: {', '.join(waiting)}")
             info = write_record(store, study_id, out_dir, include_input=not args.without_input)
             if not info.input_included:
                 print("input file left out: this record can be verified but not re-run")

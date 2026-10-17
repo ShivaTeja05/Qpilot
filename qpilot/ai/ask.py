@@ -55,6 +55,7 @@ class AskResult(BaseModel):
     error: str | None = None
     rejected_drafts: int = 0
     facts: dict[str, Fact] = {}
+    tool_from_model: bool = False
 
 
 def _fact(fid: str, value: Any, fmt: str = "{}", unit: str = "", path: str = "answer") -> Fact:
@@ -302,6 +303,7 @@ def ask(
     calls: list[dict[str, Any]] = []
     error = None
     model_used = client.available
+    tool_from_model = False
 
     tool, args = route(ctx, question)
     if model_used:
@@ -320,6 +322,7 @@ def ask(
                 error = f"the model chose {parsed[0]} for a change request; qpcr_decide used"
             else:
                 tool, args = parsed
+                tool_from_model = True
         except ModelUnavailable as err:
             model_used, error = False, str(err)
 
@@ -333,19 +336,15 @@ def ask(
     fallback_text = template_answer(ctx, tool, out, view)
 
     text, validated, fallback, rejected = fallback_text, True, True, 0
-    if model_used:
+    # A refused or stale change is always reported in qPilot's own fixed words, so a model can
+    # never describe it as done; the model writes every other answer.
+    if model_used and status not in ("pending_human", "stale"):
         text, validated, fallback, err, rejected = _model_answer(
             client, ctx, question, tool, view, facts
         )
         error = err or error
         if fallback:
             text = fallback_text
-        elif (
-            status == "pending_human"
-            and "human" not in text.lower()
-            and "person" not in text.lower()
-        ):
-            text, fallback, error = fallback_text, True, "answer did not report pending_human"
     check = validate(text, facts, ctx.names)
     result = AskResult(
         question=question,
@@ -359,6 +358,7 @@ def ask(
         error=error,
         rejected_drafts=rejected,
         facts=extra,
+        tool_from_model=tool_from_model,
     )
     if log and client.available:
         entry = payload_log.log_entry(

@@ -89,6 +89,7 @@ class AnthropicBackend:
             kwargs["base_url"] = config.endpoint
         self._client = anthropic.Anthropic(**kwargs)
         self.model = config.model
+        self.url = str(getattr(self._client, "base_url", config.endpoint or "")) or None
 
     def complete(self, system, messages, max_tokens, temperature) -> str:
         """Call the Messages API and join the text blocks."""

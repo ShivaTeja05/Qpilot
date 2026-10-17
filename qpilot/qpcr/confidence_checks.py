@@ -13,7 +13,8 @@ downgrade (see ``qpilot.core.confidence``); the others are reported so the reade
 5. assay: per-target efficiency, undetermined wells, LOD/LOQ not determined (reported).
 6. design sensitivity: the minimum detectable effect at 80 % power from the observed standard
    error, never post-hoc power; groups derived from the data are noted (reported).
-7. reporting: MIQE 2.0 items that the Analysis Record can answer (a list, never a "score").
+7. reporting: not scored yet; listed with passed=True only so it never downgrades. A MIQE 2.0
+   checklist from the record is roadmap.
 """
 
 from __future__ import annotations
@@ -152,7 +153,7 @@ def checks_for(
         Check(
             id="reporting",
             passed=True,
-            note="Reporting completeness against MIQE 2.0 is not scored yet.",
+            note="Not scored yet (a MIQE 2.0 checklist is roadmap); it does not affect the level.",
             fact_ids=[],
         ),
     ]

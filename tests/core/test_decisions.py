@@ -162,3 +162,21 @@ def test_stale_head_refused(store, study):
     assert store.card(study, "card_refset").decision == "recommended"
     statuses = [e.status for e in store.entries(study)]
     assert statuses == ["auto", "applied", "stale"]
+
+
+def test_reject_logs_every_refused_option_and_checks_head(store, study):
+    apply_decision(store, study, "card_cutoff", "cut_10", "agent wants 10%", "agent")
+    apply_decision(store, study, "card_cutoff", "cut_20", "agent wants 20%", "agent")
+    stale = reject_request(store, study, "card_cutoff", "no", expected_head="0" * 64)
+    assert stale.status == "stale" and len(store.pending(study)) == 2
+    out = reject_request(store, study, "card_cutoff", "keep 15 %", store.chain_head(study))
+    assert out.status == "rejected" and store.pending(study) == []
+    refused = [e.option for e in store.entries(study) if e.status == "rejected"]
+    assert refused == ["cut_10", "cut_20"]
+
+
+def test_reject_one_option_keeps_the_other(store, study):
+    apply_decision(store, study, "card_cutoff", "cut_10", "a", "agent")
+    apply_decision(store, study, "card_cutoff", "cut_20", "b", "agent")
+    reject_request(store, study, "card_cutoff", "not 10", option="cut_10")
+    assert [p.option for p in store.pending(study)] == ["cut_20"]

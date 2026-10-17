@@ -38,6 +38,20 @@ def mde_fold(n_per_group: int, sd_log2: float, alpha: float = 0.05, power: float
     return 2.0 ** (_z_sum(alpha, power) * sd_log2 * math.sqrt(2 / n_per_group))
 
 
+def call_probability(
+    fc: float, sd_log2: float, n_per_group: int, alpha: float = 0.05, min_log2fc: float = 1.0
+) -> float:
+    """Chance qPilot calls a true ``fc`` up/down: significant **and** at least ``2**min_log2fc``.
+
+    Normal approximation: the observed log2 change is N(delta, se^2) with se = sigma*sqrt(2/n);
+    it is called when it clears both z*se and ``min_log2fc``.
+    """
+    delta = abs(math.log2(fc))
+    se = sd_log2 * math.sqrt(2 / n_per_group)
+    z = NormalDist().inv_cdf(1 - alpha / 2)
+    return 1 - NormalDist().cdf((max(min_log2fc, z * se) - delta) / se)
+
+
 def _rules(
     n_plates: int | None,
     calibrator_on_every_plate: bool | None,
@@ -120,11 +134,17 @@ def plan(
                 f"A {target:g}-fold change: with {n_per_group} per group the smallest change "
                 f"detected with {power:.0%} power is {mde:.1f}-fold."
             )
+    chance = call_probability(fc, sd_log2, need, alpha)
     message += (
-        " These sizes are for a significant difference (p < alpha); qPilot's up/down call also"
-        " needs the observed change to reach that fold, so a true change of exactly that size is"
-        " called only about half the time. Plan for a somewhat larger effect."
+        f" That size gives {power:.0%} power for a significant difference; qPilot's up/down call"
+        f" also needs an observed change of at least 2-fold, so with {need} per group a true"
+        f" {target:g}-fold change would be called about {chance:.0%} of the time."
     )
+    if n_per_group:
+        planned = call_probability(fc, sd_log2, n_per_group, alpha)
+        message += f" With the planned {n_per_group} per group: about {planned:.0%}."
+    if target < 2:
+        message += " qPilot's rule cannot call a change smaller than 2-fold up or down."
     return PlanResult(
         n_needed=need, mde_fold=mde, cannot_detect=cannot, rules=rules, message=message
     )

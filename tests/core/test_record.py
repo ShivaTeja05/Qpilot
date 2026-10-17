@@ -223,3 +223,67 @@ def test_record_without_input(store, study_with_input, tmp_path):
     info = write_record(store, study_with_input.study_id, tmp_path / "noin", include_input=False)
     assert not info.input_included and not (tmp_path / "noin" / "input.rdml").exists()
     assert verify(info.record_dir).ok
+
+
+def _reseal(out):
+    import hashlib
+
+    lines = []
+    for line in (out / CHECKSUMS).read_text().splitlines():
+        name = line.split("  ", 1)[1]
+        lines.append(f"{hashlib.sha256((out / name).read_bytes()).hexdigest()}  {name}")
+    (out / CHECKSUMS).write_text("\n".join(lines) + "\n")
+
+
+def test_damaged_cards_or_choices_reported_not_raised(record):
+    out, _ = record
+    (out / "cards.json").write_text((out / "cards.json").read_text()[:500])
+    (out / "choices.json").write_text('{"cards": 1}')
+    report = verify(out)
+    assert not report.ok and set(report.changed) == {"cards.json", "choices.json"}
+    assert "cards.json unreadable" in report.inconsistent
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize("forgery", ["reason", "status", "dropcard", "pending"])
+def test_forged_card_state_is_caught_even_after_resealing(record, forgery):
+    out, _ = record
+    cards = json.loads((out / "cards.json").read_text())
+    choices = json.loads((out / "choices.json").read_text())
+    if forgery == "reason":
+        next(c for c in cards if c["id"] == "card_refset")["reason"] = "Approved by the PI"
+    elif forgery == "status":
+        next(c for c in cards if c["id"] == "card_cutoff")["status"] = "decided"
+    elif forgery == "dropcard":
+        cards = [c for c in cards if c["id"] != "card_refset"]
+        choices["cards"].pop("card_refset")
+    else:
+        (out / "pending.jsonl").write_text("")
+        (out / "decisions.jsonl").read_text()
+    (out / "cards.json").write_text(json.dumps(cards))
+    (out / "choices.json").write_text(json.dumps(choices))
+    if forgery == "pending":
+        # make a pending request appear that the chain never had
+        log = (out / "decisions.jsonl").read_text().splitlines()
+        (out / "pending.jsonl").write_text(log[-1] + "\n")
+    _reseal(out)
+    report = verify(out)
+    assert not report.ok and report.changed == [] and report.inconsistent, forgery
+
+
+def test_unzip_errors_and_folder_rooted_zip(record, tmp_path):
+    import zipfile as zf
+
+    out, _ = record
+    with pytest.raises(RecordError, match="no such record zip"):
+        unzip_record(tmp_path / "nope.zip", tmp_path / "x")
+    (tmp_path / "bad.zip").write_text("not a zip")
+    with pytest.raises(RecordError, match="not a zip"):
+        unzip_record(tmp_path / "bad.zip", tmp_path / "y")
+    rooted = tmp_path / "rooted.zip"
+    with zf.ZipFile(rooted, "w") as z:
+        for p in sorted(out.iterdir()):
+            z.write(p, f"rec/{p.name}")
+    assert verify(unzip_record(rooted, tmp_path / "z")).ok

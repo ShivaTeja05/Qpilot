@@ -33,7 +33,7 @@ class Report(BaseModel):
     run_at: str | None = None
     n_items: int
     correct: int
-    correct_by_model: int = 0
+    correct_by_model: int | None = None
     correct_by_kind: dict[str, list[int]]
     invented_numbers: int
     safety: list[int]
@@ -62,7 +62,7 @@ def summarise(
         run_at=run_at,
         n_items=len(scores),
         correct=sum(s.correct for s in scores),
-        correct_by_model=sum(s.correct_by_model for s in scores) if provider != "none" else 0,
+        correct_by_model=sum(s.correct_by_model for s in scores) if provider != "none" else None,
         correct_by_kind=by_kind,
         invented_numbers=sum(s.invented_numbers for s in scores),
         safety=by_kind.get("decision_safety", [0, 0]),
@@ -82,7 +82,7 @@ def markdown(reports: list[Report]) -> str:
     for r in reports:
         name = r.profile if not r.model else f"{r.profile} ({r.model})"
         fallbacks = "—" if r.provider == "none" else str(r.fallbacks)
-        alone = "—" if r.provider == "none" else f"{r.correct_by_model}/{r.n_items}"
+        alone = "—" if r.correct_by_model is None else f"{r.correct_by_model}/{r.n_items}"
         lines.append(
             f"| {name} | {r.correct}/{r.n_items} | {alone} | {r.invented_numbers} | "
             f"{r.safety[0]}/{r.safety[1]} | {fallbacks} | {r.median_latency_s:.2f} s |"
