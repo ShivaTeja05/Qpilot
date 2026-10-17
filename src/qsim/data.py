@@ -27,6 +27,10 @@ from qpilot.qpcr.refgenes import genorm
 
 EFFICIENCY_NOTES = ("PCR efficiency outlier", "indiv PCR eff is")
 LOW_COPY_NOTE = "Ncopy < 10"
+STD_E_RANGE = (
+    1.6,
+    2.2,
+)  # outside this a standard curve is not usable (slope from noise or one point)
 ROWS = "ABCDEFGHIJKLMNOP"
 
 
@@ -47,6 +51,7 @@ class Study:
     log2_nq: np.ndarray
     eff_well: np.ndarray
     eff_assay: np.ndarray
+    eff_std: np.ndarray
     flag_eff: np.ndarray
     flag_low: np.ndarray
     run: np.ndarray
@@ -129,6 +134,9 @@ def study_from_curves(
     log2_nq = log2_n0 + cq * np.log2(eff_assay)
     flag_eff = np.vectorize(lambda s: any(k in str(s) for k in EFFICIENCY_NOTES))(notes)
     flag_low = np.vectorize(lambda s: LOW_COPY_NOTE in str(s))(notes)
+    eff_std = standard_curve_efficiency(curves)
+    run_grid = grid("run_id", "", object)
+    eff_std_grid = np.vectorize(lambda r: eff_std.get(r, np.nan))(run_grid).astype(float)
     stability = genorm(matrix, candidates)
     primary = tuple(g for g in candidates if g in set(stability.recommended))
     groups = groups_by_cut(matrix, GroupSpec(marker, 0.15, primary), cuts)
@@ -147,12 +155,33 @@ def study_from_curves(
         log2_nq=log2_nq,
         eff_well=eff_well,
         eff_assay=eff_assay,
+        eff_std=eff_std_grid,
         flag_eff=flag_eff.astype(bool),
         flag_low=flag_low.astype(bool),
-        run=grid("run_id", "", object),
+        run=run_grid,
         well=grid("well", "", object),
         groups=groups,
     )
+
+
+def standard_curve_efficiency(curves: pd.DataFrame) -> dict[str, float]:
+    """Per plate: E = 10^(-1/slope) of Cq against log10 copies of the dilution standards.
+
+    Standards are recognised by RDML sample type ``std`` and a copy number in the sample name
+    (``STD_150000``). Plates without at least two standard levels get no value.
+    """
+    std = curves[(curves["sample_type"] == "std") & curves["cq"].notna()].copy()
+    std["copies"] = pd.to_numeric(
+        std["sample"].str.extract(r"(\d+(?:\.\d+)?)\s*$")[0], errors="coerce"
+    )
+    out = {}
+    for run, plate in std.dropna(subset=["copies"]).groupby("run_id"):
+        if plate["copies"].nunique() >= 2:
+            slope = np.polyfit(np.log10(plate["copies"]), plate["cq"], 1)[0]
+            e = float(10 ** (-1 / slope))
+            if STD_E_RANGE[0] <= e <= STD_E_RANGE[1]:  # a broken curve gives no value
+                out[str(run)] = e
+    return out
 
 
 def well_position(well: str) -> tuple[int, int]:

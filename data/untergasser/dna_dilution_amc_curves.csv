@@ -1,0 +1,712 @@
+run_id,well,sample,sample_type,target,target_raw,target_type,excluded,note,baseline,eff_indiv,r2,eff_target,eff_target_sd,cq,n0,amplification,plateau
+P3 - DNA Dilution - Roche,A2,genomic DNA 20ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,2.462635,1.837126,0.999681,1.989345,0.186021,24.1271,4773.0049,True,True
+P3 - DNA Dilution - Roche,A3,genomic DNA 20ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,2.590586,2.133326,0.999844,1.989345,0.186021,24.35,4094.633,True,True
+P3 - DNA Dilution - Roche,A4,genomic DNA 20ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,2.550794,1.78124,0.997551,1.989345,0.186021,24.1538,4686.0628,True,True
+P3 - DNA Dilution - Roche,A5,genomic DNA 7ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.8375,2.019139,0.995645,1.989345,0.186021,25.7763,1535.183,True,True
+P3 - DNA Dilution - Roche,A6,genomic DNA 7ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.902049,1.88636,0.999647,1.989345,0.186021,25.7174,1598.6798,True,True
+P3 - DNA Dilution - Roche,A7,genomic DNA 7ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.985001,2.23607,0.979703,1.989345,0.186021,25.5426,1802.9654,True,True
+P3 - DNA Dilution - Roche,A8,genomic DNA 2ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.538274,1.906915,0.999878,1.989345,0.186021,27.4565,483.3545,True,True
+P3 - DNA Dilution - Roche,A9,genomic DNA 2ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.659501,1.990722,0.99844,1.989345,0.186021,27.6875,412.354,True,True
+P3 - DNA Dilution - Roche,A10,genomic DNA 2ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.463331,1.999994,0.991796,1.989345,0.186021,27.6692,417.5682,True,True
+P3 - DNA Dilution - Roche,A11,genomic DNA 0.7ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.435932,2.435979,0.98288,1.989345,0.186021,29.1944,146.2618,True,True
+P3 - DNA Dilution - Roche,A12,genomic DNA 0.7ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.349166,2.104414,0.9991,1.989345,0.186021,28.9935,167.9396,True,True
+P3 - DNA Dilution - Roche,A13,genomic DNA 0.7ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.374718,1.877304,0.982603,1.989345,0.186021,29.1491,150.8929,True,True
+P3 - DNA Dilution - Roche,A14,genomic DNA 0.2ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.179239,1.779527,0.999802,1.989345,0.186021,30.7857,48.9556,True,True
+P3 - DNA Dilution - Roche,A15,genomic DNA 0.2ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.265357,2.12,0.992843,1.989345,0.186021,31.25,35.5726,True,True
+P3 - DNA Dilution - Roche,A16,genomic DNA 0.2ng,std,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.195002,1.732054,0.992537,1.989345,0.186021,30.8958,45.3846,True,True
+P3 - DNA Dilution - Roche,A17,genomic DNA 0ng,ntc,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.1583,1.0,-1.0,1.989345,0.186021,,,False,True
+P3 - DNA Dilution - Roche,A18,genomic DNA 0ng,ntc,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.1682,1.0,-1.0,1.989345,0.186021,,,False,True
+P3 - DNA Dilution - Roche,A19,genomic DNA 0ng,ntc,FSTL_1_A_047,FSTL_1_A_047,toi,,,1.3068,1.0,-1.0,1.989345,0.186021,,,False,True
+P3 - DNA Dilution - Roche,B2,genomic DNA 20ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,PCR efficiency outlier,2.735533,2.342861,0.999924,1.925657,0.071255,24.2143,11060.5386,True,True
+P3 - DNA Dilution - Roche,B3,genomic DNA 20ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,2.821097,2.011878,0.996798,1.925657,0.071255,24.089,12006.5508,True,True
+P3 - DNA Dilution - Roche,B4,genomic DNA 20ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,2.809132,1.938498,0.994444,1.925657,0.071255,24.1842,11280.6738,True,True
+P3 - DNA Dilution - Roche,B5,genomic DNA 7ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,2.095083,2.030823,0.991858,1.925657,0.071255,25.7529,4035.7711,True,True
+P3 - DNA Dilution - Roche,B6,genomic DNA 7ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,2.183874,2.003188,0.997389,1.925657,0.071255,25.5769,4528.9584,True,True
+P3 - DNA Dilution - Roche,B7,genomic DNA 7ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,2.070531,1.921061,0.999004,1.925657,0.071255,25.7535,4034.059,True,True
+P3 - DNA Dilution - Roche,B8,genomic DNA 2ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.716286,1.866925,0.997784,1.925657,0.071255,27.5612,1233.9793,True,True
+P3 - DNA Dilution - Roche,B9,genomic DNA 2ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.706408,1.963071,0.998858,1.925657,0.071255,27.5714,1225.7559,True,True
+P3 - DNA Dilution - Roche,B10,genomic DNA 2ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.756377,1.956848,0.99706,1.925657,0.071255,27.7143,1116.2202,True,True
+P3 - DNA Dilution - Roche,B11,genomic DNA 0.7ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.536833,1.883712,0.994484,1.925657,0.071255,29.2213,415.7976,True,True
+P3 - DNA Dilution - Roche,B12,genomic DNA 0.7ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.516006,1.87084,0.999888,1.925657,0.071255,29.0556,463.5031,True,True
+P3 - DNA Dilution - Roche,B13,genomic DNA 0.7ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.48666,1.861232,0.997996,1.925657,0.071255,29.5407,337.2911,True,True
+P3 - DNA Dilution - Roche,B14,genomic DNA 0.2ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.33123,1.761888,0.999927,1.925657,0.071255,30.9158,136.9791,True,True
+P3 - DNA Dilution - Roche,B15,genomic DNA 0.2ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.465542,1.989978,0.992613,1.925657,0.071255,30.9353,135.2442,True,True
+P3 - DNA Dilution - Roche,B16,genomic DNA 0.2ng,std,FSTL_1_B_042,FSTL_1_B_042,toi,,,1.392609,1.899258,0.999924,1.925657,0.071255,31.0176,128.1394,True,True
+P3 - DNA Dilution - Roche,B17,genomic DNA 0ng,ntc,FSTL_1_B_042,FSTL_1_B_042,toi,amplification in negative control,,1.36566,2.029849,0.994891,1.925657,0.071255,42.7069,0.1208,True,True
+P3 - DNA Dilution - Roche,B18,genomic DNA 0ng,ntc,FSTL_1_B_042,FSTL_1_B_042,toi,amplification in negative control,,1.409691,1.955562,0.988854,1.925657,0.071255,42.2049,0.1679,True,True
+P3 - DNA Dilution - Roche,B19,genomic DNA 0ng,ntc,FSTL_1_B_042,FSTL_1_B_042,toi,amplification in negative control,,1.422518,2.256885,0.998319,1.925657,0.071255,43.4138,0.076,True,True
+P3 - DNA Dilution - Roche,C2,genomic DNA 20ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,2.611879,1.842111,0.999242,1.963388,0.143223,24.1667,7496.5082,True,True
+P3 - DNA Dilution - Roche,C3,genomic DNA 20ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,2.954126,2.169302,0.998673,1.963388,0.143223,24.0854,7919.1882,True,True
+P3 - DNA Dilution - Roche,C4,genomic DNA 20ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,3.021211,2.26384,0.99259,1.963388,0.143223,24.1207,7732.6895,True,True
+P3 - DNA Dilution - Roche,C5,genomic DNA 7ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,2.002152,1.842265,0.997869,1.963388,0.143223,25.5,3049.1872,True,True
+P3 - DNA Dilution - Roche,C6,genomic DNA 7ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,2.19106,1.982686,0.999027,1.963388,0.143223,25.5645,2919.3117,True,True
+P3 - DNA Dilution - Roche,C7,genomic DNA 7ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,2.01172,1.935474,0.999129,1.963388,0.143223,25.25,3609.4052,True,True
+P3 - DNA Dilution - Roche,C8,genomic DNA 2ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,1.739768,1.75932,0.999326,1.963388,0.143223,27.3182,894.2224,True,True
+P3 - DNA Dilution - Roche,C9,genomic DNA 2ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,1.737541,1.956046,0.997729,1.963388,0.143223,27.3108,898.6805,True,True
+P3 - DNA Dilution - Roche,C10,genomic DNA 2ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,no amplification in positive control,only 4 values in log phase,1.6632,1.0,-1.0,1.963388,0.143223,27.0811,1049.3432,False,True
+P3 - DNA Dilution - Roche,C11,genomic DNA 0.7ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,1.516577,1.902808,0.996352,1.963388,0.143223,28.6667,360.0237,True,True
+P3 - DNA Dilution - Roche,C12,genomic DNA 0.7ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,1.473342,1.802792,0.995976,1.963388,0.143223,28.7571,338.7046,True,True
+P3 - DNA Dilution - Roche,C13,genomic DNA 0.7ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,1.516819,1.953423,0.997415,1.963388,0.143223,28.7154,348.3826,True,True
+P3 - DNA Dilution - Roche,C14,genomic DNA 0.2ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,1.442502,1.91486,0.987791,1.963388,0.143223,30.2381,124.7076,True,True
+P3 - DNA Dilution - Roche,C15,genomic DNA 0.2ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,1.436158,1.975007,0.999389,1.963388,0.143223,30.141,133.148,True,True
+P3 - DNA Dilution - Roche,C16,genomic DNA 0.2ng,std,FSTL_1_C_040,FSTL_1_C_040,toi,,,1.49737,2.187504,0.99964,1.963388,0.143223,30.0968,137.1831,True,True
+P3 - DNA Dilution - Roche,C17,genomic DNA 0ng,ntc,FSTL_1_C_040,FSTL_1_C_040,toi,amplification in negative control,,1.456667,2.000001,0.993355,1.963388,0.143223,31.2742,123.9766,True,True
+P3 - DNA Dilution - Roche,C18,genomic DNA 0ng,ntc,FSTL_1_C_040,FSTL_1_C_040,toi,amplification in negative control,,1.408649,2.036999,0.983411,1.963388,0.143223,31.9615,77.9728,True,True
+P3 - DNA Dilution - Roche,C19,genomic DNA 0ng,ntc,FSTL_1_C_040,FSTL_1_C_040,toi,amplification in negative control,,1.388222,1.882589,0.983028,1.963388,0.143223,31.9366,79.2948,True,True
+P3 - DNA Dilution - Roche,D2,genomic DNA 20ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,2.750652,1.942346,0.996451,1.954037,0.096606,23.6798,4441.0994,True,True
+P3 - DNA Dilution - Roche,D3,genomic DNA 20ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,2.961736,1.954624,0.99932,1.954037,0.096606,23.6667,4480.2703,True,True
+P3 - DNA Dilution - Roche,D4,genomic DNA 20ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,2.910422,1.924923,0.989976,1.954037,0.096606,23.5941,4703.3912,True,True
+P3 - DNA Dilution - Roche,D5,genomic DNA 7ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,2.170318,2.06782,0.998738,1.954037,0.096606,25.3197,1480.4399,True,True
+P3 - DNA Dilution - Roche,D6,genomic DNA 7ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,2.153114,2.024295,0.98828,1.954037,0.096606,25.1375,1672.5943,True,True
+P3 - DNA Dilution - Roche,D7,genomic DNA 7ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,2.189695,2.151661,0.985374,1.954037,0.096606,25.1835,1621.7908,True,True
+P3 - DNA Dilution - Roche,D8,genomic DNA 2ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.73184,1.781854,0.995772,1.954037,0.096606,27.1333,439.2758,True,True
+P3 - DNA Dilution - Roche,D9,genomic DNA 2ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.711951,1.810463,0.998525,1.954037,0.096606,27.0816,454.7563,True,True
+P3 - DNA Dilution - Roche,D10,genomic DNA 2ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.736797,1.875137,0.997056,1.954037,0.096606,27.1757,426.9908,True,True
+P3 - DNA Dilution - Roche,D11,genomic DNA 0.7ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.673039,2.019476,0.992821,1.954037,0.096606,28.9286,131.9604,True,True
+P3 - DNA Dilution - Roche,D12,genomic DNA 0.7ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.607556,1.945469,0.992316,1.954037,0.096606,28.8077,143.0907,True,True
+P3 - DNA Dilution - Roche,D13,genomic DNA 0.7ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.661515,1.986578,0.998783,1.954037,0.096606,28.8333,140.6539,True,True
+P3 - DNA Dilution - Roche,D14,genomic DNA 0.2ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.543478,2.022222,0.999751,1.954037,0.096606,30.3657,50.39,True,True
+P3 - DNA Dilution - Roche,D15,genomic DNA 0.2ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.572064,1.9728,0.997407,1.954037,0.096606,30.77,38.4337,True,True
+P3 - DNA Dilution - Roche,D16,genomic DNA 0.2ng,std,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.49367,1.830885,0.996282,1.954037,0.096606,30.5611,44.2076,True,True
+P3 - DNA Dilution - Roche,D17,genomic DNA 0ng,ntc,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.386,1.0,-1.0,1.954037,0.096606,,,False,True
+P3 - DNA Dilution - Roche,D18,genomic DNA 0ng,ntc,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.4058,1.0,-1.0,1.954037,0.096606,,,False,True
+P3 - DNA Dilution - Roche,D19,genomic DNA 0ng,ntc,FSTL_1_D_105,FSTL_1_D_105,toi,,,1.4058,1.0,-1.0,1.954037,0.096606,,,False,True
+P3 - DNA Dilution - Roche,E2,genomic DNA 20ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,2.651865,2.016415,0.993289,1.947114,0.087829,24.0063,4206.3406,True,True
+P3 - DNA Dilution - Roche,E3,genomic DNA 20ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,2.946161,2.047815,0.997832,1.947114,0.087829,24.0224,4161.5692,True,True
+P3 - DNA Dilution - Roche,E4,genomic DNA 20ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,2.702858,2.121322,0.982192,1.947114,0.087829,24.0152,4181.685,True,True
+P3 - DNA Dilution - Roche,E5,genomic DNA 7ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,2.098677,1.999145,0.995286,1.947114,0.087829,25.544,1509.8311,True,True
+P3 - DNA Dilution - Roche,E6,genomic DNA 7ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,2.248465,1.948308,0.991014,1.947114,0.087829,25.688,1371.6187,True,True
+P3 - DNA Dilution - Roche,E7,genomic DNA 7ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,2.318786,1.951538,0.995322,1.947114,0.087829,25.7101,1351.613,True,True
+P3 - DNA Dilution - Roche,E8,genomic DNA 2ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.729327,1.930599,0.995141,1.947114,0.087829,27.4286,430.0677,True,True
+P3 - DNA Dilution - Roche,E9,genomic DNA 2ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.720461,1.889085,0.9995,1.947114,0.087829,27.6638,367.6763,True,True
+P3 - DNA Dilution - Roche,E10,genomic DNA 2ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.763447,1.797431,0.997363,1.947114,0.087829,27.4028,437.5234,True,True
+P3 - DNA Dilution - Roche,E11,genomic DNA 0.7ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.553483,1.935786,0.996276,1.947114,0.087829,29.1857,133.3628,True,True
+P3 - DNA Dilution - Roche,E12,genomic DNA 0.7ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.480781,1.800037,0.992009,1.947114,0.087829,28.9949,151.4399,True,True
+P3 - DNA Dilution - Roche,E13,genomic DNA 0.7ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.582399,1.952644,0.99324,1.947114,0.087829,28.8827,163.1999,True,True
+P3 - DNA Dilution - Roche,E14,genomic DNA 0.2ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.548037,1.934835,0.999273,1.947114,0.087829,30.896,42.6659,True,True
+P3 - DNA Dilution - Roche,E15,genomic DNA 0.2ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.645369,1.841818,0.994742,1.947114,0.087829,30.9854,40.1986,True,True
+P3 - DNA Dilution - Roche,E16,genomic DNA 0.2ng,std,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.611944,2.039935,0.999479,1.947114,0.087829,30.7581,46.7746,True,True
+P3 - DNA Dilution - Roche,E17,genomic DNA 0ng,ntc,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.4355,1.0,-1.0,1.947114,0.087829,,,False,True
+P3 - DNA Dilution - Roche,E18,genomic DNA 0ng,ntc,FSTL_1_E_097,FSTL_1_E_097,toi,amplification in negative control,,1.618066,2.207946,0.997042,1.947114,0.087829,37.7571,0.8822,True,True
+P3 - DNA Dilution - Roche,E19,genomic DNA 0ng,ntc,FSTL_1_E_097,FSTL_1_E_097,toi,,,1.4454,1.0,-1.0,1.947114,0.087829,,,False,True
+P3 - DNA Dilution - Roche,F2,genomic DNA 20ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,2.642081,1.918272,0.983901,1.89536,0.049686,24.5244,5131.6449,True,True
+P3 - DNA Dilution - Roche,F3,genomic DNA 20ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,2.696841,1.927247,0.993641,1.89536,0.049686,24.4423,5408.1687,True,True
+P3 - DNA Dilution - Roche,F4,genomic DNA 20ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,2.926995,1.954122,0.991904,1.89536,0.049686,24.2679,6046.3558,True,True
+P3 - DNA Dilution - Roche,F5,genomic DNA 7ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,2.081779,1.849467,0.989427,1.89536,0.049686,25.9615,2047.2576,True,True
+P3 - DNA Dilution - Roche,F6,genomic DNA 7ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,2.073417,1.850814,0.997541,1.89536,0.049686,25.814,2249.8606,True,True
+P3 - DNA Dilution - Roche,F7,genomic DNA 7ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,2.189755,1.868101,0.990989,1.89536,0.049686,25.7364,2364.295,True,True
+P3 - DNA Dilution - Roche,F8,genomic DNA 2ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,2.084058,1.92012,0.997001,1.89536,0.049686,27.9762,564.5734,True,True
+P3 - DNA Dilution - Roche,F9,genomic DNA 2ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.805293,1.874221,0.999091,1.89536,0.049686,27.6607,690.7573,True,True
+P3 - DNA Dilution - Roche,F10,genomic DNA 2ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.694294,1.88899,0.999815,1.89536,0.049686,27.6444,697.9809,True,True
+P3 - DNA Dilution - Roche,F11,genomic DNA 0.7ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.654478,1.874175,0.997473,1.89536,0.049686,29.5521,206.1143,True,True
+P3 - DNA Dilution - Roche,F12,genomic DNA 0.7ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.667099,1.899942,0.998381,1.89536,0.049686,29.303,241.6952,True,True
+P3 - DNA Dilution - Roche,F13,genomic DNA 0.7ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.5696,1.809068,0.997661,1.89536,0.049686,29.3281,237.848,True,True
+P3 - DNA Dilution - Roche,F14,genomic DNA 0.2ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.609652,2.024205,0.985576,1.89536,0.049686,31.4,63.2349,True,True
+P3 - DNA Dilution - Roche,F15,genomic DNA 0.2ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.601163,1.85934,0.988401,1.89536,0.049686,31.3077,67.0795,True,True
+P3 - DNA Dilution - Roche,F16,genomic DNA 0.2ng,std,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.58512,1.912315,0.9948,1.89536,0.049686,31.5388,57.8634,True,True
+P3 - DNA Dilution - Roche,F17,genomic DNA 0ng,ntc,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.4751,1.0,-1.0,1.89536,0.049686,,,False,True
+P3 - DNA Dilution - Roche,F18,genomic DNA 0ng,ntc,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.4751,1.0,-1.0,1.89536,0.049686,,,False,True
+P3 - DNA Dilution - Roche,F19,genomic DNA 0ng,ntc,FSTL_1_F_109,FSTL_1_F_109,toi,,,1.4355,1.0,-1.0,1.89536,0.049686,,,False,True
+P3 - DNA Dilution - Roche,G2,genomic DNA 20ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,2.701468,1.782843,0.999659,1.887213,0.077146,23.4149,6257.3091,True,True
+P3 - DNA Dilution - Roche,G3,genomic DNA 20ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,2.920852,1.909227,0.999589,1.887213,0.077146,23.4024,6307.0003,True,True
+P3 - DNA Dilution - Roche,G4,genomic DNA 20ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,2.897558,1.887453,0.997922,1.887213,0.077146,23.4714,6036.6234,True,True
+P3 - DNA Dilution - Roche,G5,genomic DNA 7ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,2.149761,2.1016,0.998088,1.887213,0.077146,25.2115,1999.1036,True,True
+P3 - DNA Dilution - Roche,G6,genomic DNA 7ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,2.092512,1.905638,0.983865,1.887213,0.077146,25.1076,2135.5272,True,True
+P3 - DNA Dilution - Roche,G7,genomic DNA 7ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,2.078721,1.854053,0.999073,1.887213,0.077146,25.2015,2011.899,True,True
+P3 - DNA Dilution - Roche,G8,genomic DNA 2ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.749847,1.790486,0.998093,1.887213,0.077146,26.9943,644.3551,True,True
+P3 - DNA Dilution - Roche,G9,genomic DNA 2ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.945196,1.870945,0.990467,1.887213,0.077146,26.9634,657.0995,True,True
+P3 - DNA Dilution - Roche,G10,genomic DNA 2ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.877102,1.846096,0.998332,1.887213,0.077146,27.0816,609.5708,True,True
+P3 - DNA Dilution - Roche,G11,genomic DNA 0.7ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,2.010176,1.891506,0.996154,1.887213,0.077146,28.693,219.0686,True,True
+P3 - DNA Dilution - Roche,G12,genomic DNA 0.7ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.711956,1.870752,0.995634,1.887213,0.077146,28.7644,209.3584,True,True
+P3 - DNA Dilution - Roche,G13,genomic DNA 0.7ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.617503,1.949446,0.998887,1.887213,0.077146,28.8621,196.7626,True,True
+P3 - DNA Dilution - Roche,G14,genomic DNA 0.2ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.597348,1.913955,0.994222,1.887213,0.077146,30.7353,59.8781,True,True
+P3 - DNA Dilution - Roche,G15,genomic DNA 0.2ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.583303,1.784955,0.999944,1.887213,0.077146,30.8117,57.0422,True,True
+P3 - DNA Dilution - Roche,G16,genomic DNA 0.2ng,std,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.766401,1.94924,0.996432,1.887213,0.077146,30.91,53.5896,True,True
+P3 - DNA Dilution - Roche,G17,genomic DNA 0ng,ntc,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.5444,1.0,-1.0,1.887213,0.077146,,,False,True
+P3 - DNA Dilution - Roche,G18,genomic DNA 0ng,ntc,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.5147,1.0,-1.0,1.887213,0.077146,,,False,True
+P3 - DNA Dilution - Roche,G19,genomic DNA 0ng,ntc,FSTL_1_H_201,FSTL_1_H_201,toi,,,1.5246,1.0,-1.0,1.887213,0.077146,,,False,True
+P3 - DNA Dilution - Roche,H2,genomic DNA 20ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,2.79391,1.928812,0.997727,1.903428,0.028585,23.7737,4005.5541,True,True
+P3 - DNA Dilution - Roche,H3,genomic DNA 20ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,2.978856,1.92105,1.0,1.903428,0.028585,23.4828,4830.4421,True,True
+P3 - DNA Dilution - Roche,H4,genomic DNA 20ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,2.96303,1.909049,0.998585,1.903428,0.028585,23.6692,4284.1151,True,True
+P3 - DNA Dilution - Roche,H5,genomic DNA 7ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,2.065714,1.926052,0.992309,1.903428,0.028585,25.2231,1575.8128,True,True
+P3 - DNA Dilution - Roche,H6,genomic DNA 7ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,2.200967,1.954015,0.982835,1.903428,0.028585,25.3718,1431.9655,True,True
+P3 - DNA Dilution - Roche,H7,genomic DNA 7ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,2.040145,1.924515,0.998449,1.903428,0.028585,25.2241,1574.737,True,True
+P3 - DNA Dilution - Roche,H8,genomic DNA 2ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.72158,1.866767,0.999028,1.903428,0.028585,27.303,413.1255,True,True
+P3 - DNA Dilution - Roche,H9,genomic DNA 2ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,indiv PCR eff is 1.696 < 1.7;PCR efficiency outlier,1.758835,1.696485,0.996932,1.903428,0.028585,27.2193,436.0017,True,True
+P3 - DNA Dilution - Roche,H10,genomic DNA 2ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.788387,1.874436,0.996592,1.903428,0.028585,27.1618,452.4503,True,True
+P3 - DNA Dilution - Roche,H11,genomic DNA 0.7ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.682371,1.932721,0.998094,1.903428,0.028585,29.0517,134.0474,True,True
+P3 - DNA Dilution - Roche,H12,genomic DNA 0.7ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.684116,1.884803,0.999257,1.903428,0.028585,28.8529,152.3441,True,True
+P3 - DNA Dilution - Roche,H13,genomic DNA 0.7ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.605198,1.864786,0.99802,1.903428,0.028585,28.8457,153.0578,True,True
+P3 - DNA Dilution - Roche,H14,genomic DNA 0.2ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.674793,1.875428,0.999275,1.903428,0.028585,30.2083,63.6714,True,True
+P3 - DNA Dilution - Roche,H15,genomic DNA 0.2ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.669557,1.882125,0.998314,1.903428,0.028585,30.6067,49.2715,True,True
+P3 - DNA Dilution - Roche,H16,genomic DNA 0.2ng,std,FSTL_1_I_204,FSTL_1_I_204,toi,,PCR efficiency outlier,1.631768,1.767771,0.999453,1.903428,0.028585,30.8846,41.2001,True,True
+P3 - DNA Dilution - Roche,H17,genomic DNA 0ng,ntc,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.6038,1.0,-1.0,1.903428,0.028585,,,False,True
+P3 - DNA Dilution - Roche,H18,genomic DNA 0ng,ntc,FSTL_1_I_204,FSTL_1_I_204,toi,,,1.485,1.0,-1.0,1.903428,0.028585,,,False,True
+P3 - DNA Dilution - Roche,H19,genomic DNA 0ng,ntc,FSTL_1_I_204,FSTL_1_I_204,toi,amplification in negative control,,1.449993,1.767757,0.996548,1.903428,0.028585,44.3448,0.0142,True,True
+P3 - DNA Dilution - Roche,I2,genomic DNA 20ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,2.689194,1.951984,0.998578,1.880221,0.054002,23.75,5069.8758,True,True
+P3 - DNA Dilution - Roche,I3,genomic DNA 20ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,2.99232,1.888346,0.997191,1.880221,0.054002,23.7804,4973.5736,True,True
+P3 - DNA Dilution - Roche,I4,genomic DNA 20ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,3.027274,1.912994,0.999789,1.880221,0.054002,23.6463,5412.7929,True,True
+P3 - DNA Dilution - Roche,I5,genomic DNA 7ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,2.195263,1.982978,0.994215,1.880221,0.054002,25.0714,2201.1512,True,True
+P3 - DNA Dilution - Roche,I6,genomic DNA 7ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,2.238355,1.931171,0.987483,1.880221,0.054002,25.0075,2291.8696,True,True
+P3 - DNA Dilution - Roche,I7,genomic DNA 7ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,2.08991,1.851,0.991533,1.880221,0.054002,24.9557,2368.0165,True,True
+P3 - DNA Dilution - Roche,I8,genomic DNA 2ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.742161,1.842278,0.998853,1.880221,0.054002,27.0273,640.236,True,True
+P3 - DNA Dilution - Roche,I9,genomic DNA 2ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.78149,1.814576,0.999779,1.880221,0.054002,27.0273,640.236,True,True
+P3 - DNA Dilution - Roche,I10,genomic DNA 2ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.781361,1.86123,0.998151,1.880221,0.054002,27.1047,609.7084,True,True
+P3 - DNA Dilution - Roche,I11,genomic DNA 0.7ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.678202,1.89626,0.996751,1.880221,0.054002,28.6398,231.2996,True,True
+P3 - DNA Dilution - Roche,I12,genomic DNA 0.7ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.657074,1.835039,0.999715,1.880221,0.054002,28.7292,218.6078,True,True
+P3 - DNA Dilution - Roche,I13,genomic DNA 0.7ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.658153,1.950046,0.999403,1.880221,0.054002,28.7022,222.3552,True,True
+P3 - DNA Dilution - Roche,I14,genomic DNA 0.2ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.589462,1.820032,0.999732,1.880221,0.054002,30.398,76.2198,True,True
+P3 - DNA Dilution - Roche,I15,genomic DNA 0.2ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.564637,1.800912,0.993518,1.880221,0.054002,30.6196,66.2677,True,True
+P3 - DNA Dilution - Roche,I16,genomic DNA 0.2ng,std,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.570397,1.864468,0.999036,1.880221,0.054002,30.6463,65.1567,True,True
+P3 - DNA Dilution - Roche,I17,genomic DNA 0ng,ntc,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.5642,1.0,-1.0,1.880221,0.054002,,,False,True
+P3 - DNA Dilution - Roche,I18,genomic DNA 0ng,ntc,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.5444,1.0,-1.0,1.880221,0.054002,,,False,True
+P3 - DNA Dilution - Roche,I19,genomic DNA 0ng,ntc,FSTL_1_K_219,FSTL_1_K_219,toi,,,1.5147,1.0,-1.0,1.880221,0.054002,,,False,True
+P3 - DNA Dilution - Roche,J2,genomic DNA 20ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,2.5047,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J3,genomic DNA 20ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,2.6631,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J4,genomic DNA 20ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,2.7522,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J5,genomic DNA 7ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.9305,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J6,genomic DNA 7ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.9602,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J7,genomic DNA 7ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.9701,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J8,genomic DNA 2ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.6137,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J9,genomic DNA 2ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.6632,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J10,genomic DNA 2ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.6731,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J11,genomic DNA 0.7ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.5246,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J12,genomic DNA 0.7ng,std,No Primer,No Primer,toi,no amplification in positive control,only 3 values in log phase,1.5642,1.0,-1.0,-1.0,,30.0385,,False,True
+P3 - DNA Dilution - Roche,J13,genomic DNA 0.7ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.5048,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J14,genomic DNA 0.2ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.5246,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J15,genomic DNA 0.2ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.5246,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J16,genomic DNA 0.2ng,std,No Primer,No Primer,toi,no amplification in positive control,no TD0 found in positive control,1.5642,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J17,genomic DNA 0ng,ntc,No Primer,No Primer,toi,,,1.5444,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J18,genomic DNA 0ng,ntc,No Primer,No Primer,toi,,,1.6929,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,J19,genomic DNA 0ng,ntc,No Primer,No Primer,toi,,,1.4652,1.0,-1.0,-1.0,,,,False,True
+P3 - DNA Dilution - Roche,K2,genomic DNA 20ng,std,fstl_1_259,fstl_1_259,toi,,,2.762912,1.749285,0.998294,1.947747,0.097971,22.7451,3623.7128,True,True
+P3 - DNA Dilution - Roche,K3,genomic DNA 20ng,std,fstl_1_259,fstl_1_259,toi,,,2.825887,1.88879,0.998044,1.947747,0.097971,22.7523,3606.2681,True,True
+P3 - DNA Dilution - Roche,K4,genomic DNA 20ng,std,fstl_1_259,fstl_1_259,toi,,,2.85375,1.812654,0.999673,1.947747,0.097971,22.7021,3729.0233,True,True
+P3 - DNA Dilution - Roche,K5,genomic DNA 7ng,std,fstl_1_259,fstl_1_259,toi,,,2.140005,2.000013,0.999964,1.947747,0.097971,24.1833,1389.1133,True,True
+P3 - DNA Dilution - Roche,K6,genomic DNA 7ng,std,fstl_1_259,fstl_1_259,toi,,,2.105462,1.917952,0.997442,1.947747,0.097971,24.4583,1156.4216,True,True
+P3 - DNA Dilution - Roche,K7,genomic DNA 7ng,std,fstl_1_259,fstl_1_259,toi,,,2.233955,1.955379,0.994536,1.947747,0.097971,24.2059,1368.3872,True,True
+P3 - DNA Dilution - Roche,K8,genomic DNA 2ng,std,fstl_1_259,fstl_1_259,toi,,,1.839007,2.044449,0.993665,1.947747,0.097971,26.2123,359.1511,True,True
+P3 - DNA Dilution - Roche,K9,genomic DNA 2ng,std,fstl_1_259,fstl_1_259,toi,,,1.791803,2.07843,0.962342,1.947747,0.097971,26.3148,335.4318,True,True
+P3 - DNA Dilution - Roche,K10,genomic DNA 2ng,std,fstl_1_259,fstl_1_259,toi,,,1.815431,2.130618,0.995473,1.947747,0.097971,26.225,356.13,True,True
+P3 - DNA Dilution - Roche,K11,genomic DNA 0.7ng,std,fstl_1_259,fstl_1_259,toi,,,1.601444,1.918592,0.990501,1.947747,0.097971,27.9946,109.4573,True,True
+P3 - DNA Dilution - Roche,K12,genomic DNA 0.7ng,std,fstl_1_259,fstl_1_259,toi,,,1.651206,1.960283,0.993411,1.947747,0.097971,28.0625,104.6146,True,True
+P3 - DNA Dilution - Roche,K13,genomic DNA 0.7ng,std,fstl_1_259,fstl_1_259,toi,,,1.605053,1.951416,0.990852,1.947747,0.097971,27.9302,114.2584,True,True
+P3 - DNA Dilution - Roche,K14,genomic DNA 0.2ng,std,fstl_1_259,fstl_1_259,toi,,,1.652968,2.043649,0.999582,1.947747,0.097971,29.6346,36.6787,True,True
+P3 - DNA Dilution - Roche,K15,genomic DNA 0.2ng,std,fstl_1_259,fstl_1_259,toi,,,1.63769,1.898821,0.989877,1.947747,0.097971,29.5777,38.0979,True,True
+P3 - DNA Dilution - Roche,K16,genomic DNA 0.2ng,std,fstl_1_259,fstl_1_259,toi,,,1.619564,1.865881,0.998419,1.947747,0.097971,29.6739,35.7302,True,True
+P3 - DNA Dilution - Roche,K17,genomic DNA 0ng,ntc,fstl_1_259,fstl_1_259,toi,amplification in negative control,,1.569373,1.812639,0.989392,1.947747,0.097971,35.7308,1.2601,True,True
+P3 - DNA Dilution - Roche,K18,genomic DNA 0ng,ntc,fstl_1_259,fstl_1_259,toi,amplification in negative control,,1.638334,2.846158,0.999126,1.947747,0.097971,36.5545,0.7276,True,True
+P3 - DNA Dilution - Roche,K19,genomic DNA 0ng,ntc,fstl_1_259,fstl_1_259,toi,,TD0 found in negative control,1.4652,1.0,-1.0,1.947747,0.097971,36.0938,0.9893,False,True
+P3 - DNA Dilution - Roche,L2,genomic DNA 20ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,2.715872,1.790504,0.999765,1.837733,0.037375,22.9561,7517.9526,True,True
+P3 - DNA Dilution - Roche,L3,genomic DNA 20ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,2.733625,1.837435,0.989686,1.837733,0.037375,22.9533,7530.8054,True,True
+P3 - DNA Dilution - Roche,L4,genomic DNA 20ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,2.770548,1.771879,0.998856,1.837733,0.037375,23.0217,7223.7544,True,True
+P3 - DNA Dilution - Roche,L5,genomic DNA 7ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,2.096838,1.806144,0.996227,1.837733,0.037375,24.8,2447.9346,True,True
+P3 - DNA Dilution - Roche,L6,genomic DNA 7ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,2.151596,1.877513,0.998174,1.837733,0.037375,24.7796,2478.5582,True,True
+P3 - DNA Dilution - Roche,L7,genomic DNA 7ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,2.098343,1.783774,0.999779,1.837733,0.037375,24.7568,2513.2069,True,True
+P3 - DNA Dilution - Roche,L8,genomic DNA 2ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.78982,1.835641,0.999236,1.837733,0.037375,26.8971,683.2568,True,True
+P3 - DNA Dilution - Roche,L9,genomic DNA 2ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.753511,1.820025,0.997266,1.837733,0.037375,26.882,689.5373,True,True
+P3 - DNA Dilution - Roche,L10,genomic DNA 2ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.789466,1.850895,0.993111,1.837733,0.037375,26.7471,748.5595,True,True
+P3 - DNA Dilution - Roche,L11,genomic DNA 0.7ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.623545,1.852263,0.996491,1.837733,0.037375,28.5938,243.3202,True,True
+P3 - DNA Dilution - Roche,L12,genomic DNA 0.7ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.643788,1.853198,0.998224,1.837733,0.037375,28.5,257.6052,True,True
+P3 - DNA Dilution - Roche,L13,genomic DNA 0.7ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,PCR efficiency outlier,1.626235,2.03957,0.985371,1.837733,0.037375,28.2879,293.0992,True,True
+P3 - DNA Dilution - Roche,L14,genomic DNA 0.2ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.538006,1.875238,0.99359,1.837733,0.037375,30.0876,98.033,True,True
+P3 - DNA Dilution - Roche,L15,genomic DNA 0.2ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.616323,1.874247,0.99936,1.837733,0.037375,30.1613,93.7356,True,True
+P3 - DNA Dilution - Roche,L16,genomic DNA 0.2ng,std,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.667397,1.899508,0.992081,1.837733,0.037375,30.6667,68.9196,True,True
+P3 - DNA Dilution - Roche,L17,genomic DNA 0ng,ntc,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.6434,1.0,-1.0,1.837733,0.037375,,,False,True
+P3 - DNA Dilution - Roche,L18,genomic DNA 0ng,ntc,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.6632,1.0,-1.0,1.837733,0.037375,,,False,True
+P3 - DNA Dilution - Roche,L19,genomic DNA 0ng,ntc,FSTL_1_L_412,FSTL_1_L_412,toi,,,1.5642,1.0,-1.0,1.837733,0.037375,,,False,True
+P3 - DNA Dilution - Roche,M2,genomic DNA 20ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,2.304001,1.714287,0.996716,1.78249,0.055116,30.1481,245.4816,True,True
+P3 - DNA Dilution - Roche,M3,genomic DNA 20ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,2.800464,1.82687,0.993156,1.78249,0.055116,29.86,289.9692,True,True
+P3 - DNA Dilution - Roche,M4,genomic DNA 20ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,2.742918,1.808782,0.992029,1.78249,0.055116,29.7879,302.3126,True,True
+P3 - DNA Dilution - Roche,M5,genomic DNA 7ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,indiv PCR eff is 1.694 < 1.7,1.874306,1.694388,0.996473,1.78249,0.055116,31.1102,140.775,True,True
+P3 - DNA Dilution - Roche,M6,genomic DNA 7ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.976769,1.726228,0.993608,1.78249,0.055116,30.7059,177.8331,True,True
+P3 - DNA Dilution - Roche,M7,genomic DNA 7ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.965363,1.801359,0.998144,1.78249,0.055116,30.6233,186.5289,True,True
+P3 - DNA Dilution - Roche,M8,genomic DNA 2ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.689258,1.754115,0.99976,1.78249,0.055116,32.5429,61.501,True,True
+P3 - DNA Dilution - Roche,M9,genomic DNA 2ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.722099,1.806428,0.998775,1.78249,0.055116,32.7031,56.0597,True,True
+P3 - DNA Dilution - Roche,M10,genomic DNA 2ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.723954,1.800417,0.999386,1.78249,0.055116,32.5508,61.2176,True,True
+P3 - DNA Dilution - Roche,M11,genomic DNA 0.7ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.57351,1.845609,0.999102,1.78249,0.055116,34.0821,25.2635,True,True
+P3 - DNA Dilution - Roche,M12,genomic DNA 0.7ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.501955,1.777052,0.999003,1.78249,0.055116,33.8654,28.6347,True,True
+P3 - DNA Dilution - Roche,M13,genomic DNA 0.7ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.513757,1.725316,0.999933,1.78249,0.055116,33.85,28.8904,True,True
+P3 - DNA Dilution - Roche,M14,genomic DNA 0.2ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.478785,1.725758,0.999825,1.78249,0.055116,35.6429,10.2494,True,True
+P3 - DNA Dilution - Roche,M15,genomic DNA 0.2ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.506599,1.888093,0.99775,1.78249,0.055116,35.3462,12.1669,True,True
+P3 - DNA Dilution - Roche,M16,genomic DNA 0.2ng,std,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.523978,1.842644,0.998415,1.78249,0.055116,35.6111,10.4392,True,True
+P3 - DNA Dilution - Roche,M17,genomic DNA 0ng,ntc,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.4751,1.0,-1.0,1.78249,0.055116,,,False,True
+P3 - DNA Dilution - Roche,M18,genomic DNA 0ng,ntc,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.4355,1.0,-1.0,1.78249,0.055116,,,False,True
+P3 - DNA Dilution - Roche,M19,genomic DNA 0ng,ntc,FSTL_1_M_398,FSTL_1_M_398,toi,,,1.4454,1.0,-1.0,1.78249,0.055116,,,False,True
+P3 - DNA Dilution - Roche,N2,genomic DNA 20ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,2.539599,1.809066,0.999788,1.803331,0.041887,38.2037,1.428,True,True
+P3 - DNA Dilution - Roche,N3,genomic DNA 20ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,2.536365,1.749317,0.99981,1.803331,0.041887,37.8953,1.7128,True,True
+P3 - DNA Dilution - Roche,N4,genomic DNA 20ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,2.724928,1.762206,0.994859,1.803331,0.041887,37.7941,1.8181,True,True
+P3 - DNA Dilution - Roche,N5,genomic DNA 7ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.928562,1.780394,0.996131,1.803331,0.041887,39.0818,0.8509,True,True
+P3 - DNA Dilution - Roche,N6,genomic DNA 7ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.884811,1.709711,0.999199,1.803331,0.041887,38.575,1.1472,True,True
+P3 - DNA Dilution - Roche,N7,genomic DNA 7ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,2.002857,1.866743,0.99882,1.803331,0.041887,38.8333,0.9851,True,True
+P3 - DNA Dilution - Roche,N8,genomic DNA 2ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.652692,1.83097,0.997274,1.803331,0.041887,40.1757,0.4464,True,True
+P3 - DNA Dilution - Roche,N9,genomic DNA 2ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.656499,1.824407,0.988626,1.803331,0.041887,40.3261,0.4085,True,True
+P3 - DNA Dilution - Roche,N10,genomic DNA 2ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.585319,1.808734,0.995371,1.803331,0.041887,38.6294,1.111,True,True
+P3 - DNA Dilution - Roche,N11,genomic DNA 0.7ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.542775,1.810272,0.997658,1.803331,0.041887,41.0333,0.2692,True,True
+P3 - DNA Dilution - Roche,N12,genomic DNA 0.7ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.551476,1.773792,0.999984,1.803331,0.041887,36.6,3.6762,True,True
+P3 - DNA Dilution - Roche,N13,genomic DNA 0.7ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.544861,1.792962,0.99252,1.803331,0.041887,41.66,0.1861,True,True
+P3 - DNA Dilution - Roche,N14,genomic DNA 0.2ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.498001,1.87083,0.996534,1.803331,0.041887,43.0682,0.0811,True,True
+P3 - DNA Dilution - Roche,N15,genomic DNA 0.2ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.532655,1.823599,0.998822,1.803331,0.041887,42.5267,0.1116,True,True
+P3 - DNA Dilution - Roche,N16,genomic DNA 0.2ng,std,FSTL_1_O_417,FSTL_1_O_417,toi,,Ncopy < 10,1.556572,1.83697,0.992649,1.803331,0.041887,42.9314,0.0879,True,True
+P3 - DNA Dilution - Roche,N17,genomic DNA 0ng,ntc,FSTL_1_O_417,FSTL_1_O_417,toi,,TD0 found in negative control,1.4652,1.0,-1.0,1.803331,0.041887,26.7778,2408.0316,False,True
+P3 - DNA Dilution - Roche,N18,genomic DNA 0ng,ntc,FSTL_1_O_417,FSTL_1_O_417,toi,,,1.3662,1.0,-1.0,1.803331,0.041887,,,False,True
+P3 - DNA Dilution - Roche,N19,genomic DNA 0ng,ntc,FSTL_1_O_417,FSTL_1_O_417,toi,,,1.3563,1.0,-1.0,1.803331,0.041887,,,False,True
+P3 - DNA Dilution - Roche,O2,genomic DNA 20ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,,2.527687,1.862323,0.99852,1.81264,0.060893,30.5455,56.7342,True,True
+P3 - DNA Dilution - Roche,O3,genomic DNA 20ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,,2.67844,1.977146,0.990079,1.81264,0.060893,30.0854,74.5919,True,True
+P3 - DNA Dilution - Roche,O4,genomic DNA 20ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,,2.702209,1.876841,0.993615,1.81264,0.060893,30.5811,55.5447,True,True
+P3 - DNA Dilution - Roche,O5,genomic DNA 7ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,,1.911642,1.823148,0.986775,1.81264,0.060893,31.8696,25.8114,True,True
+P3 - DNA Dilution - Roche,O6,genomic DNA 7ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,,1.947171,1.743119,0.982334,1.81264,0.060893,31.6053,30.2054,True,True
+P3 - DNA Dilution - Roche,O7,genomic DNA 7ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,,1.977334,1.755608,0.993235,1.81264,0.060893,31.6099,30.1224,True,True
+P3 - DNA Dilution - Roche,O8,genomic DNA 2ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.643299,1.773382,0.99751,1.81264,0.060893,33.4697,9.9651,True,True
+P3 - DNA Dilution - Roche,O9,genomic DNA 2ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.69566,1.785061,0.999663,1.81264,0.060893,33.6782,8.8027,True,True
+P3 - DNA Dilution - Roche,O10,genomic DNA 2ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.660481,1.756339,0.999675,1.81264,0.060893,33.5789,9.3381,True,True
+P3 - DNA Dilution - Roche,O11,genomic DNA 0.7ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.570679,1.829802,0.998601,1.81264,0.060893,34.6667,4.8898,True,True
+P3 - DNA Dilution - Roche,O12,genomic DNA 0.7ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.491132,1.79608,0.994204,1.81264,0.060893,34.5658,5.1921,True,True
+P3 - DNA Dilution - Roche,O13,genomic DNA 0.7ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.575692,1.861338,0.997858,1.81264,0.060893,34.7128,4.7575,True,True
+P3 - DNA Dilution - Roche,O14,genomic DNA 0.2ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.522441,1.765408,0.998902,1.81264,0.060893,36.6121,1.5373,True,True
+P3 - DNA Dilution - Roche,O15,genomic DNA 0.2ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.485828,1.758263,0.999778,1.81264,0.060893,36.5465,1.5985,True,True
+P3 - DNA Dilution - Roche,O16,genomic DNA 0.2ng,std,FSTL_1_P_820,FSTL_1_P_820,toi,,Ncopy < 10,1.567141,1.82574,0.998584,1.81264,0.060893,36.9,1.2954,True,True
+P3 - DNA Dilution - Roche,O17,genomic DNA 0ng,ntc,FSTL_1_P_820,FSTL_1_P_820,toi,,,1.4256,1.0,-1.0,1.81264,0.060893,,,False,True
+P3 - DNA Dilution - Roche,O18,genomic DNA 0ng,ntc,FSTL_1_P_820,FSTL_1_P_820,toi,,,1.386,1.0,-1.0,1.81264,0.060893,,,False,True
+P3 - DNA Dilution - Roche,O19,genomic DNA 0ng,ntc,FSTL_1_P_820,FSTL_1_P_820,toi,,,1.3266,1.0,-1.0,1.81264,0.060893,,,False,True
+P3 - DNA Dilution - Roche,P2,genomic DNA 20ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,2.276141,1.829985,0.991994,1.896113,0.13636,43.624,0.0035,True,True
+P3 - DNA Dilution - Roche,P3,genomic DNA 20ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,2.321704,1.780841,0.999283,1.896113,0.13636,41.0224,0.0187,True,True
+P3 - DNA Dilution - Roche,P4,genomic DNA 20ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,2.408032,2.193737,0.984638,1.896113,0.13636,36.9694,0.2506,True,True
+P3 - DNA Dilution - Roche,P5,genomic DNA 7ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,no amplification in positive control,no TD0 found in positive control,1.7226,1.0,-1.0,1.896113,0.13636,,,False,True
+P3 - DNA Dilution - Roche,P6,genomic DNA 7ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.715,1.73205,0.999855,1.896113,0.13636,45.1515,0.0013,True,True
+P3 - DNA Dilution - Roche,P7,genomic DNA 7ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.796429,1.949359,0.995459,1.896113,0.13636,43.1761,0.0047,True,True
+P3 - DNA Dilution - Roche,P8,genomic DNA 2ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.380879,1.850821,0.996713,1.896113,0.13636,51.6364,,True,True
+P3 - DNA Dilution - Roche,P9,genomic DNA 2ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.522686,1.809175,0.998056,1.896113,0.13636,46.7419,0.0005,True,True
+P3 - DNA Dilution - Roche,P10,genomic DNA 2ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.518183,1.879754,0.998766,1.896113,0.13636,45.06,0.0014,True,True
+P3 - DNA Dilution - Roche,P11,genomic DNA 0.7ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.372844,1.774334,0.995328,1.896113,0.13636,46.4714,0.0006,True,True
+P3 - DNA Dilution - Roche,P12,genomic DNA 0.7ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.372576,1.895947,0.995985,1.896113,0.13636,37.3462,0.1969,True,True
+P3 - DNA Dilution - Roche,P13,genomic DNA 0.7ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.350816,1.859342,0.998966,1.896113,0.13636,42.9474,0.0055,True,True
+P3 - DNA Dilution - Roche,P14,genomic DNA 0.2ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.36834,1.916485,0.99524,1.896113,0.13636,50.7745,,True,True
+P3 - DNA Dilution - Roche,P15,genomic DNA 0.2ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,no amplification in positive control,no TD0 found in positive control,1.3464,1.0,-1.0,1.896113,0.13636,,,False,True
+P3 - DNA Dilution - Roche,P16,genomic DNA 0.2ng,std,FSTL_1_T_770,FSTL_1_T_770,toi,,Ncopy < 10,1.362536,2.177637,0.992614,1.896113,0.13636,38.1986,0.1141,True,True
+P3 - DNA Dilution - Roche,P17,genomic DNA 0ng,ntc,FSTL_1_T_770,FSTL_1_T_770,toi,amplification in negative control,,1.402976,2.027784,0.999736,1.896113,0.13636,55.0909,,True,True
+P3 - DNA Dilution - Roche,P18,genomic DNA 0ng,ntc,FSTL_1_T_770,FSTL_1_T_770,toi,amplification in negative control,,1.289601,1.905674,0.997672,1.896113,0.13636,53.2805,,True,True
+P3 - DNA Dilution - Roche,P19,genomic DNA 0ng,ntc,FSTL_1_T_770,FSTL_1_T_770,toi,,,1.2276,1.0,-1.0,1.896113,0.13636,,,False,True
+P6 - DNA Dilution - SensiFast,A2,genomic DNA 20ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,2.64963,1.848819,0.981179,1.911722,0.068902,23.5825,17746.5552,True,True
+P6 - DNA Dilution - SensiFast,A3,genomic DNA 20ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,2.744126,1.891988,0.987137,1.911722,0.068902,23.6171,17352.6057,True,True
+P6 - DNA Dilution - SensiFast,A4,genomic DNA 20ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,2.909999,1.870827,0.97703,1.911722,0.068902,23.6111,17420.2722,True,True
+P6 - DNA Dilution - SensiFast,A5,genomic DNA 7ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.887615,1.956159,0.994634,1.911722,0.068902,24.9694,7224.4097,True,True
+P6 - DNA Dilution - SensiFast,A6,genomic DNA 7ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.990001,1.84391,0.988437,1.911722,0.068902,24.951,7311.0988,True,True
+P6 - DNA Dilution - SensiFast,A7,genomic DNA 7ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.964691,2.028641,0.998649,1.911722,0.068902,25.0091,7040.9121,True,True
+P6 - DNA Dilution - SensiFast,A8,genomic DNA 2ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.532442,2.01823,0.997491,1.911722,0.068902,26.9632,1984.752,True,True
+P6 - DNA Dilution - SensiFast,A9,genomic DNA 2ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.618902,1.983807,0.998653,1.911722,0.068902,26.953,1997.8705,True,True
+P6 - DNA Dilution - SensiFast,A10,genomic DNA 2ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.379885,1.92606,0.995281,1.911722,0.068902,27.02,1912.9758,True,True
+P6 - DNA Dilution - SensiFast,A11,genomic DNA 0.7ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.379482,1.993578,0.999656,1.911722,0.068902,28.6087,683.2998,True,True
+P6 - DNA Dilution - SensiFast,A12,genomic DNA 0.7ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.280364,1.854146,0.991158,1.911722,0.068902,28.5088,729.008,True,True
+P6 - DNA Dilution - SensiFast,A13,genomic DNA 0.7ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.315096,1.831819,0.996758,1.911722,0.068902,28.5244,721.6671,True,True
+P6 - DNA Dilution - SensiFast,A14,genomic DNA 0.2ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.15241,1.815556,0.997594,1.911722,0.068902,29.9789,281.1963,True,True
+P6 - DNA Dilution - SensiFast,A15,genomic DNA 0.2ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.182001,1.870832,0.997114,1.911722,0.068902,30.1,259.9689,True,True
+P6 - DNA Dilution - SensiFast,A16,genomic DNA 0.2ng,std,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.248614,1.941455,0.999082,1.911722,0.068902,30.5853,189.8253,True,True
+P6 - DNA Dilution - SensiFast,A17,genomic DNA 0ng,ntc,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.1484,1.0,-1.0,1.911722,0.068902,,,False,True
+P6 - DNA Dilution - SensiFast,A18,genomic DNA 0ng,ntc,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.1484,1.0,-1.0,1.911722,0.068902,,,False,True
+P6 - DNA Dilution - SensiFast,A19,genomic DNA 0ng,ntc,FSTL_1_A_047 SF,FSTL_1_A_047 SF,toi,,,1.287,1.0,-1.0,1.911722,0.068902,,,False,True
+P6 - DNA Dilution - SensiFast,B2,genomic DNA 20ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,2.821951,1.886819,0.995421,1.965654,0.097154,24.0125,7705.7647,True,True
+P6 - DNA Dilution - SensiFast,B3,genomic DNA 20ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,2.93539,1.987896,0.996706,1.965654,0.097154,23.9725,7916.7688,True,True
+P6 - DNA Dilution - SensiFast,B4,genomic DNA 20ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,3.007365,2.156897,0.990379,1.965654,0.097154,24.0,7771.1373,True,True
+P6 - DNA Dilution - SensiFast,B5,genomic DNA 7ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,2.063101,1.892089,0.998772,1.965654,0.097154,25.5769,2676.9891,True,True
+P6 - DNA Dilution - SensiFast,B6,genomic DNA 7ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,2.10846,1.877395,0.990091,1.965654,0.097154,25.5714,2686.9481,True,True
+P6 - DNA Dilution - SensiFast,B7,genomic DNA 7ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,2.108792,1.876628,0.999933,1.965654,0.097154,25.5,2819.8374,True,True
+P6 - DNA Dilution - SensiFast,B8,genomic DNA 2ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.570784,1.866686,0.997859,1.965654,0.097154,27.35,807.674,True,True
+P6 - DNA Dilution - SensiFast,B9,genomic DNA 2ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.685954,2.056886,0.994957,1.965654,0.097154,27.4423,758.8276,True,True
+P6 - DNA Dilution - SensiFast,B10,genomic DNA 2ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.661894,1.908631,0.993769,1.965654,0.097154,27.3846,788.9986,True,True
+P6 - DNA Dilution - SensiFast,B11,genomic DNA 0.7ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.522604,2.111205,0.975858,1.965654,0.097154,28.8452,294.0175,True,True
+P6 - DNA Dilution - SensiFast,B12,genomic DNA 0.7ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.460909,1.88108,0.997673,1.965654,0.097154,28.8474,293.5945,True,True
+P6 - DNA Dilution - SensiFast,B13,genomic DNA 0.7ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.50484,2.01978,0.989563,1.965654,0.097154,28.8452,294.0175,True,True
+P6 - DNA Dilution - SensiFast,B14,genomic DNA 0.2ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.463892,1.889826,0.999842,1.965654,0.097154,30.775,79.7948,True,True
+P6 - DNA Dilution - SensiFast,B15,genomic DNA 0.2ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.414462,2.102632,0.99625,1.965654,0.097154,30.3857,103.8084,True,True
+P6 - DNA Dilution - SensiFast,B16,genomic DNA 0.2ng,std,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,,,1.412033,1.970356,0.996136,1.965654,0.097154,30.5946,90.1415,True,True
+P6 - DNA Dilution - SensiFast,B17,genomic DNA 0ng,ntc,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,amplification in negative control,,1.297555,1.939291,0.991372,1.965654,0.097154,33.5536,24.4048,True,True
+P6 - DNA Dilution - SensiFast,B18,genomic DNA 0ng,ntc,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,amplification in negative control,,1.377973,1.918822,0.995952,1.965654,0.097154,33.4318,26.4978,True,True
+P6 - DNA Dilution - SensiFast,B19,genomic DNA 0ng,ntc,FSTL_1_B_042 SF,FSTL_1_B_042 SF,toi,amplification in negative control,,1.323679,1.834677,0.997641,1.965654,0.097154,33.0873,33.4447,True,True
+P6 - DNA Dilution - SensiFast,C2,genomic DNA 20ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,2.815364,1.881145,0.974653,1.987889,0.172277,23.6186,8095.1614,True,True
+P6 - DNA Dilution - SensiFast,C3,genomic DNA 20ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,3.047822,1.973516,0.997301,1.987889,0.172277,23.6193,8091.7027,True,True
+P6 - DNA Dilution - SensiFast,C4,genomic DNA 20ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,3.059105,1.986794,0.999459,1.987889,0.172277,23.5755,8338.8816,True,True
+P6 - DNA Dilution - SensiFast,C5,genomic DNA 7ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,2.098814,1.932685,0.996367,1.987889,0.172277,24.84,3497.7,True,True
+P6 - DNA Dilution - SensiFast,C6,genomic DNA 7ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,2.297872,1.961755,0.992083,1.987889,0.172277,24.8063,3579.6164,True,True
+P6 - DNA Dilution - SensiFast,C7,genomic DNA 7ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,2.07897,1.958266,0.99462,1.987889,0.172277,24.7626,3688.674,True,True
+P6 - DNA Dilution - SensiFast,C8,genomic DNA 2ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,1.721428,2.121318,0.98684,1.987889,0.172277,26.3793,1214.6874,True,True
+P6 - DNA Dilution - SensiFast,C9,genomic DNA 2ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,1.685123,1.976782,0.99299,1.987889,0.172277,26.5336,1092.543,True,True
+P6 - DNA Dilution - SensiFast,C10,genomic DNA 2ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,1.631374,1.811333,0.971811,1.987889,0.172277,26.2632,1315.5989,True,True
+P6 - DNA Dilution - SensiFast,C11,genomic DNA 0.7ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,1.460889,1.909727,0.990859,1.987889,0.172277,26.8789,861.7411,True,True
+P6 - DNA Dilution - SensiFast,C12,genomic DNA 0.7ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,1.861566,2.345522,0.993452,1.987889,0.172277,26.7737,926.3743,True,True
+P6 - DNA Dilution - SensiFast,C13,genomic DNA 0.7ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,1.527392,2.223024,0.995557,1.987889,0.172277,26.9237,835.6306,True,True
+P6 - DNA Dilution - SensiFast,C14,genomic DNA 0.2ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,1.45226,2.190839,0.97823,1.987889,0.172277,27.1066,736.9869,True,True
+P6 - DNA Dilution - SensiFast,C15,genomic DNA 0.2ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,indiv PCR eff is 1.604 < 1.7,1.21553,1.604176,0.999937,1.987889,0.172277,27.2822,653.2146,True,True
+P6 - DNA Dilution - SensiFast,C16,genomic DNA 0.2ng,std,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,,,1.424722,1.94145,0.993113,1.987889,0.172277,27.3246,634.4671,True,True
+P6 - DNA Dilution - SensiFast,C17,genomic DNA 0ng,ntc,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,amplification in negative control,,1.363964,1.939558,0.999491,1.987889,0.172277,27.2253,1358.5181,True,True
+P6 - DNA Dilution - SensiFast,C18,genomic DNA 0ng,ntc,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,amplification in negative control,,1.376323,1.891801,0.993398,1.987889,0.172277,27.3548,1242.8095,True,True
+P6 - DNA Dilution - SensiFast,C19,genomic DNA 0ng,ntc,FSTL_1_C_040 SF,FSTL_1_C_040 SF,toi,amplification in negative control,,1.365836,1.99193,0.997493,1.987889,0.172277,27.3072,1284.1358,True,True
+P6 - DNA Dilution - SensiFast,D2,genomic DNA 20ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,2.885396,1.897382,0.997916,1.929441,0.038378,23.0478,9081.1265,True,True
+P6 - DNA Dilution - SensiFast,D3,genomic DNA 20ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,3.051638,1.946259,0.997887,1.929441,0.038378,23.0877,8846.1225,True,True
+P6 - DNA Dilution - SensiFast,D4,genomic DNA 20ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,2.947765,2.008046,0.995978,1.929441,0.038378,23.0738,8927.5929,True,True
+P6 - DNA Dilution - SensiFast,D5,genomic DNA 7ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,2.245425,1.934637,0.996602,1.929441,0.038378,24.612,3248.444,True,True
+P6 - DNA Dilution - SensiFast,D6,genomic DNA 7ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,2.212522,1.986158,0.99747,1.929441,0.038378,24.6933,3079.3588,True,True
+P6 - DNA Dilution - SensiFast,D7,genomic DNA 7ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,2.22375,1.881758,0.994254,1.929441,0.038378,24.58,3317.4867,True,True
+P6 - DNA Dilution - SensiFast,D8,genomic DNA 2ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.833551,1.929815,0.996708,1.929441,0.038378,26.3554,1032.8758,True,True
+P6 - DNA Dilution - SensiFast,D9,genomic DNA 2ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.744012,1.930453,0.997845,1.929441,0.038378,26.5692,897.4992,True,True
+P6 - DNA Dilution - SensiFast,D10,genomic DNA 2ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.671543,1.856942,0.998132,1.929441,0.038378,26.4737,955.6355,True,True
+P6 - DNA Dilution - SensiFast,D11,genomic DNA 0.7ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.58229,1.903216,0.997743,1.929441,0.038378,27.9744,356.4122,True,True
+P6 - DNA Dilution - SensiFast,D12,genomic DNA 0.7ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.608364,1.952127,0.99995,1.929441,0.038378,28.0,350.4563,True,True
+P6 - DNA Dilution - SensiFast,D13,genomic DNA 0.7ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.620258,1.896244,0.995068,1.929441,0.038378,27.9,374.2631,True,True
+P6 - DNA Dilution - SensiFast,D14,genomic DNA 0.2ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.500176,1.945883,0.993274,1.929441,0.038378,29.9175,99.3862,True,True
+P6 - DNA Dilution - SensiFast,D15,genomic DNA 0.2ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.550986,1.960416,0.994419,1.929441,0.038378,29.7222,112.9946,True,True
+P6 - DNA Dilution - SensiFast,D16,genomic DNA 0.2ng,std,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.478333,1.912271,0.999346,1.929441,0.038378,29.9191,99.279,True,True
+P6 - DNA Dilution - SensiFast,D17,genomic DNA 0ng,ntc,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.3761,1.0,-1.0,1.929441,0.038378,,,False,True
+P6 - DNA Dilution - SensiFast,D18,genomic DNA 0ng,ntc,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,amplification in negative control,,1.416666,1.999999,0.994965,1.929441,0.038378,42.963,0.0376,True,True
+P6 - DNA Dilution - SensiFast,D19,genomic DNA 0ng,ntc,FSTL_1_D_105 SF,FSTL_1_D_105 SF,toi,,,1.3563,1.0,-1.0,1.929441,0.038378,,,False,True
+P6 - DNA Dilution - SensiFast,E2,genomic DNA 20ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,2.81684,1.837113,0.999913,1.905575,0.076279,23.0663,12941.2608,True,True
+P6 - DNA Dilution - SensiFast,E3,genomic DNA 20ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,2.998435,1.75357,0.997917,1.905575,0.076279,23.1833,12000.3643,True,True
+P6 - DNA Dilution - SensiFast,E4,genomic DNA 20ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,2.823842,1.921584,0.999623,1.905575,0.076279,23.1667,12130.0204,True,True
+P6 - DNA Dilution - SensiFast,E5,genomic DNA 7ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,2.122775,1.972283,0.985475,1.905575,0.076279,24.6447,4676.9579,True,True
+P6 - DNA Dilution - SensiFast,E6,genomic DNA 7ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,2.330174,1.914972,0.986514,1.905575,0.076279,24.6495,4662.5177,True,True
+P6 - DNA Dilution - SensiFast,E7,genomic DNA 7ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,2.308285,2.029553,0.99216,1.905575,0.076279,24.7328,4418.9091,True,True
+P6 - DNA Dilution - SensiFast,E8,genomic DNA 2ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.739371,1.978724,0.990597,1.905575,0.076279,26.7542,1200.1858,True,True
+P6 - DNA Dilution - SensiFast,E9,genomic DNA 2ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.72396,1.913571,0.988815,1.905575,0.076279,26.7482,1204.846,True,True
+P6 - DNA Dilution - SensiFast,E10,genomic DNA 2ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.758566,1.925449,0.999244,1.905575,0.076279,26.6733,1264.456,True,True
+P6 - DNA Dilution - SensiFast,E11,genomic DNA 0.7ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.521909,1.911194,0.992168,1.905575,0.076279,28.1389,491.4848,True,True
+P6 - DNA Dilution - SensiFast,E12,genomic DNA 0.7ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.444383,1.768892,0.998373,1.905575,0.076279,28.15,487.9762,True,True
+P6 - DNA Dilution - SensiFast,E13,genomic DNA 0.7ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.584994,1.95586,0.999188,1.905575,0.076279,28.2447,459.077,True,True
+P6 - DNA Dilution - SensiFast,E14,genomic DNA 0.2ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.535417,1.811241,0.995326,1.905575,0.076279,30.0686,141.6228,True,True
+P6 - DNA Dilution - SensiFast,E15,genomic DNA 0.2ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.644727,1.932768,0.998321,1.905575,0.076279,30.1118,137.7379,True,True
+P6 - DNA Dilution - SensiFast,E16,genomic DNA 0.2ng,std,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,,,1.602842,1.956847,0.998482,1.905575,0.076279,29.9205,155.8208,True,True
+P6 - DNA Dilution - SensiFast,E17,genomic DNA 0ng,ntc,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,amplification in negative control,,1.527057,1.90904,0.996213,1.905575,0.076279,36.5708,4.2794,True,True
+P6 - DNA Dilution - SensiFast,E18,genomic DNA 0ng,ntc,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,amplification in negative control,,1.504455,1.931251,0.999566,1.905575,0.076279,38.5225,1.2158,True,True
+P6 - DNA Dilution - SensiFast,E19,genomic DNA 0ng,ntc,FSTL_1_E_097 SF,FSTL_1_E_097 SF,toi,amplification in negative control,,1.459444,1.949438,0.99552,1.905575,0.076279,55.6313,,True,True
+P6 - DNA Dilution - SensiFast,F2,genomic DNA 20ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,2.917766,2.009217,0.998207,1.930998,0.055194,23.2105,7714.8972,True,True
+P6 - DNA Dilution - SensiFast,F3,genomic DNA 20ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,2.885653,1.867215,0.999579,1.930998,0.055194,23.0955,8321.4874,True,True
+P6 - DNA Dilution - SensiFast,F4,genomic DNA 20ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,3.142882,1.99284,0.999036,1.930998,0.055194,23.1042,8274.1957,True,True
+P6 - DNA Dilution - SensiFast,F5,genomic DNA 7ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,2.09894,1.863786,0.995673,1.930998,0.055194,24.711,2874.2165,True,True
+P6 - DNA Dilution - SensiFast,F6,genomic DNA 7ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,2.136721,1.839391,0.995645,1.930998,0.055194,24.6474,2997.1387,True,True
+P6 - DNA Dilution - SensiFast,F7,genomic DNA 7ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,2.230481,1.859468,0.997824,1.930998,0.055194,24.5957,3100.8903,True,True
+P6 - DNA Dilution - SensiFast,F8,genomic DNA 2ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.779311,1.942884,0.999935,1.930998,0.055194,26.7348,758.8604,True,True
+P6 - DNA Dilution - SensiFast,F9,genomic DNA 2ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.793408,1.953221,0.998918,1.930998,0.055194,26.7761,738.4968,True,True
+P6 - DNA Dilution - SensiFast,F10,genomic DNA 2ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.668613,1.920423,0.994382,1.930998,0.055194,26.6681,792.9174,True,True
+P6 - DNA Dilution - SensiFast,F11,genomic DNA 0.7ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.592773,1.992634,0.995196,1.930998,0.055194,28.4167,250.9054,True,True
+P6 - DNA Dilution - SensiFast,F12,genomic DNA 0.7ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.633547,1.929807,0.999553,1.930998,0.055194,28.3986,253.9144,True,True
+P6 - DNA Dilution - SensiFast,F13,genomic DNA 0.7ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.558369,1.874255,0.992687,1.930998,0.055194,28.3475,262.5964,True,True
+P6 - DNA Dilution - SensiFast,F14,genomic DNA 0.2ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.546325,1.954848,0.999208,1.930998,0.055194,30.62,58.8623,True,True
+P6 - DNA Dilution - SensiFast,F15,genomic DNA 0.2ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.562231,1.98566,0.999374,1.930998,0.055194,30.1842,78.4112,True,True
+P6 - DNA Dilution - SensiFast,F16,genomic DNA 0.2ng,std,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.546543,1.979319,0.997313,1.930998,0.055194,29.8778,95.9293,True,True
+P6 - DNA Dilution - SensiFast,F17,genomic DNA 0ng,ntc,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.4454,1.0,-1.0,1.930998,0.055194,,,False,True
+P6 - DNA Dilution - SensiFast,F18,genomic DNA 0ng,ntc,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.4751,1.0,-1.0,1.930998,0.055194,,,False,True
+P6 - DNA Dilution - SensiFast,F19,genomic DNA 0ng,ntc,FSTL_1_F_109 SF,FSTL_1_F_109 SF,toi,,,1.4355,1.0,-1.0,1.930998,0.055194,,,False,True
+P6 - DNA Dilution - SensiFast,G2,genomic DNA 20ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,2.927077,1.805544,0.999504,1.870351,0.095296,22.7609,11627.8098,True,True
+P6 - DNA Dilution - SensiFast,G3,genomic DNA 20ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,3.1411,2.006931,0.996383,1.870351,0.095296,22.8063,11301.6698,True,True
+P6 - DNA Dilution - SensiFast,G4,genomic DNA 20ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,3.092837,1.895217,0.999239,1.870351,0.095296,22.6935,12128.4166,True,True
+P6 - DNA Dilution - SensiFast,G5,genomic DNA 7ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,indiv PCR eff is 1.627 < 1.7,2.045549,1.627446,0.999088,1.870351,0.095296,24.2722,4513.8301,True,True
+P6 - DNA Dilution - SensiFast,G6,genomic DNA 7ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,2.161216,1.777042,0.999764,1.870351,0.095296,24.3415,4322.1298,True,True
+P6 - DNA Dilution - SensiFast,G7,genomic DNA 7ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,2.076606,1.775233,0.998634,1.870351,0.095296,24.3871,4200.3844,True,True
+P6 - DNA Dilution - SensiFast,G8,genomic DNA 2ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.743465,1.854899,0.99976,1.870351,0.095296,26.6805,999.2469,True,True
+P6 - DNA Dilution - SensiFast,G9,genomic DNA 2ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.897466,1.872014,0.994599,1.870351,0.095296,26.5732,1068.673,True,True
+P6 - DNA Dilution - SensiFast,G10,genomic DNA 2ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.815744,1.911295,0.995196,1.870351,0.095296,26.551,1083.5976,True,True
+P6 - DNA Dilution - SensiFast,G11,genomic DNA 0.7ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.945246,1.862255,0.985451,1.870351,0.095296,28.1585,396.0473,True,True
+P6 - DNA Dilution - SensiFast,G12,genomic DNA 0.7ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.698246,2.021944,0.998942,1.870351,0.095296,28.3772,345.3738,True,True
+P6 - DNA Dilution - SensiFast,G13,genomic DNA 0.7ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.56963,1.923749,0.994878,1.870351,0.095296,28.4385,332.3755,True,True
+P6 - DNA Dilution - SensiFast,G14,genomic DNA 0.2ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.548067,1.892974,0.988564,1.870351,0.095296,30.2733,105.3622,True,True
+P6 - DNA Dilution - SensiFast,G15,genomic DNA 0.2ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.512,1.870828,0.999029,1.870351,0.095296,30.0761,119.2122,True,True
+P6 - DNA Dilution - SensiFast,G16,genomic DNA 0.2ng,std,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.669416,1.957897,0.994387,1.870351,0.095296,30.3657,99.4434,True,True
+P6 - DNA Dilution - SensiFast,G17,genomic DNA 0ng,ntc,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,amplification in negative control,,1.611713,1.966611,0.995988,1.870351,0.095296,48.2632,0.0027,True,True
+P6 - DNA Dilution - SensiFast,G18,genomic DNA 0ng,ntc,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,amplification in negative control,,1.472732,1.928672,0.997057,1.870351,0.095296,47.6553,0.004,True,True
+P6 - DNA Dilution - SensiFast,G19,genomic DNA 0ng,ntc,FSTL_1_H_201 SF,FSTL_1_H_201 SF,toi,,,1.5048,1.0,-1.0,1.870351,0.095296,,,False,True
+P6 - DNA Dilution - SensiFast,H2,genomic DNA 20ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,3.042103,2.041234,0.99715,1.919534,0.06488,22.4024,8016.6658,True,True
+P6 - DNA Dilution - SensiFast,H3,genomic DNA 20ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,3.12381,1.903944,0.996234,1.919534,0.06488,22.5714,7180.2016,True,True
+P6 - DNA Dilution - SensiFast,H4,genomic DNA 20ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,3.239103,1.891273,0.99691,1.919534,0.06488,22.4855,7593.9757,True,True
+P6 - DNA Dilution - SensiFast,H5,genomic DNA 7ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,2.156468,1.900622,0.982159,1.919534,0.06488,24.0,2828.5972,True,True
+P6 - DNA Dilution - SensiFast,H6,genomic DNA 7ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,2.206351,1.88893,0.99769,1.919534,0.06488,23.9925,2842.3955,True,True
+P6 - DNA Dilution - SensiFast,H7,genomic DNA 7ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,2.017521,1.833323,0.998798,1.919534,0.06488,24.0568,2725.715,True,True
+P6 - DNA Dilution - SensiFast,H8,genomic DNA 2ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.751782,1.902147,0.997576,1.919534,0.06488,26.0054,764.9919,True,True
+P6 - DNA Dilution - SensiFast,H9,genomic DNA 2ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.813573,1.850602,0.998002,1.919534,0.06488,25.9762,779.6903,True,True
+P6 - DNA Dilution - SensiFast,H10,genomic DNA 2ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.772514,1.866071,0.998115,1.919534,0.06488,25.875,832.8731,True,True
+P6 - DNA Dilution - SensiFast,H11,genomic DNA 0.7ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.633673,1.95201,0.986397,1.919534,0.06488,27.5494,279.5121,True,True
+P6 - DNA Dilution - SensiFast,H12,genomic DNA 0.7ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.643788,2.067753,0.997861,1.919534,0.06488,27.8097,235.8685,True,True
+P6 - DNA Dilution - SensiFast,H13,genomic DNA 0.7ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.634487,1.920847,0.9985,1.919534,0.06488,27.5,288.6593,True,True
+P6 - DNA Dilution - SensiFast,H14,genomic DNA 0.2ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.622316,1.886614,0.999724,1.919534,0.06488,29.5693,74.8801,True,True
+P6 - DNA Dilution - SensiFast,H15,genomic DNA 0.2ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.601742,1.892051,0.986259,1.919534,0.06488,29.4733,79.716,True,True
+P6 - DNA Dilution - SensiFast,H16,genomic DNA 0.2ng,std,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.632044,1.995594,0.999435,1.919534,0.06488,29.6333,71.8182,True,True
+P6 - DNA Dilution - SensiFast,H17,genomic DNA 0ng,ntc,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.5444,1.0,-1.0,1.919534,0.06488,,,False,True
+P6 - DNA Dilution - SensiFast,H18,genomic DNA 0ng,ntc,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,,,1.4454,1.0,-1.0,1.919534,0.06488,,,False,True
+P6 - DNA Dilution - SensiFast,H19,genomic DNA 0ng,ntc,FSTL_1_I_204 SF,FSTL_1_I_204 SF,toi,amplification in negative control,,1.462476,1.832615,0.999373,1.919534,0.06488,40.5,0.1202,True,True
+P6 - DNA Dilution - SensiFast,I2,genomic DNA 20ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,2.783223,1.870313,0.99279,1.927222,0.072661,22.1559,8026.6682,True,True
+P6 - DNA Dilution - SensiFast,I3,genomic DNA 20ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,3.089366,1.863788,0.999272,1.927222,0.072661,22.1944,7826.3048,True,True
+P6 - DNA Dilution - SensiFast,I4,genomic DNA 20ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,3.132117,1.832245,0.998785,1.927222,0.072661,22.1774,7914.2132,True,True
+P6 - DNA Dilution - SensiFast,I5,genomic DNA 7ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,2.267068,1.978253,0.990102,1.927222,0.072661,23.7167,2882.8853,True,True
+P6 - DNA Dilution - SensiFast,I6,genomic DNA 7ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,2.300019,1.980108,0.998018,1.927222,0.072661,23.7333,2851.5336,True,True
+P6 - DNA Dilution - SensiFast,I7,genomic DNA 7ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,2.107819,1.90947,0.994384,1.927222,0.072661,23.6837,2945.969,True,True
+P6 - DNA Dilution - SensiFast,I8,genomic DNA 2ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.750781,1.877904,0.994455,1.927222,0.072661,25.6579,806.696,True,True
+P6 - DNA Dilution - SensiFast,I9,genomic DNA 2ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.765062,1.877596,0.999227,1.927222,0.072661,25.7162,776.412,True,True
+P6 - DNA Dilution - SensiFast,I10,genomic DNA 2ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.765748,1.835155,0.999666,1.927222,0.072661,25.8291,720.9815,True,True
+P6 - DNA Dilution - SensiFast,I11,genomic DNA 0.7ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.681672,2.046105,0.996516,1.927222,0.072661,27.3902,258.8861,True,True
+P6 - DNA Dilution - SensiFast,I12,genomic DNA 0.7ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.6796,1.943651,0.995919,1.927222,0.072661,27.3125,272.4334,True,True
+P6 - DNA Dilution - SensiFast,I13,genomic DNA 0.7ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.618711,1.931247,0.999358,1.927222,0.072661,27.2667,280.75,True,True
+P6 - DNA Dilution - SensiFast,I14,genomic DNA 0.2ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.566584,1.945077,0.999843,1.927222,0.072661,29.5256,63.7773,True,True
+P6 - DNA Dilution - SensiFast,I15,genomic DNA 0.2ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.566466,2.097606,0.999231,1.927222,0.072661,29.3068,73.6234,True,True
+P6 - DNA Dilution - SensiFast,I16,genomic DNA 0.2ng,std,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.549673,1.91981,0.998984,1.927222,0.072661,29.0385,87.7969,True,True
+P6 - DNA Dilution - SensiFast,I17,genomic DNA 0ng,ntc,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.4949,1.0,-1.0,1.927222,0.072661,,,False,True
+P6 - DNA Dilution - SensiFast,I18,genomic DNA 0ng,ntc,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.4652,1.0,-1.0,1.927222,0.072661,,,False,True
+P6 - DNA Dilution - SensiFast,I19,genomic DNA 0ng,ntc,FSTL_1_K_219 SF,FSTL_1_K_219 SF,toi,,,1.4652,1.0,-1.0,1.927222,0.072661,,,False,True
+P6 - DNA Dilution - SensiFast,J2,genomic DNA 20ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,2.8116,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J3,genomic DNA 20ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,2.9205,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J4,genomic DNA 20ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,2.9898,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J5,genomic DNA 7ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,2.0394,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J6,genomic DNA 7ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,2.0493,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J7,genomic DNA 7ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,2.0295,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J8,genomic DNA 2ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.6236,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J9,genomic DNA 2ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.6533,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J10,genomic DNA 2ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.683,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J11,genomic DNA 0.7ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.5048,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J12,genomic DNA 0.7ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.5246,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J13,genomic DNA 0.7ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.5048,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J14,genomic DNA 0.2ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.4949,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J15,genomic DNA 0.2ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.4652,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J16,genomic DNA 0.2ng,std,No Primer SF,No Primer SF,toi,no amplification in positive control,no TD0 found in positive control,1.4949,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J17,genomic DNA 0ng,ntc,No Primer SF,No Primer SF,toi,,,1.4553,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J18,genomic DNA 0ng,ntc,No Primer SF,No Primer SF,toi,,,1.6731,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,J19,genomic DNA 0ng,ntc,No Primer SF,No Primer SF,toi,,,1.4157,1.0,-1.0,-1.0,,,,False,True
+P6 - DNA Dilution - SensiFast,K2,genomic DNA 20ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,2.940259,1.808426,0.992745,1.900597,0.077829,22.0,10209.9155,True,True
+P6 - DNA Dilution - SensiFast,K3,genomic DNA 20ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,2.914768,1.795541,0.995177,1.900597,0.077829,22.1263,9414.7493,True,True
+P6 - DNA Dilution - SensiFast,K4,genomic DNA 20ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,3.043533,1.843579,0.993841,1.900597,0.077829,22.1078,9526.772,True,True
+P6 - DNA Dilution - SensiFast,K5,genomic DNA 7ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,2.09753,1.882691,0.994776,1.900597,0.077829,23.7328,3355.6223,True,True
+P6 - DNA Dilution - SensiFast,K6,genomic DNA 7ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,2.057077,1.867924,0.993992,1.900597,0.077829,23.7056,3414.6426,True,True
+P6 - DNA Dilution - SensiFast,K7,genomic DNA 7ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,2.097493,1.810651,0.99935,1.900597,0.077829,23.7185,3386.5164,True,True
+P6 - DNA Dilution - SensiFast,K8,genomic DNA 2ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.702225,1.989327,0.999325,1.900597,0.077829,25.78,901.1932,True,True
+P6 - DNA Dilution - SensiFast,K9,genomic DNA 2ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.703636,1.8834,0.999588,1.900597,0.077829,25.66,973.3851,True,True
+P6 - DNA Dilution - SensiFast,K10,genomic DNA 2ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.656057,1.875081,0.996302,1.900597,0.077829,25.6845,958.2115,True,True
+P6 - DNA Dilution - SensiFast,K11,genomic DNA 0.7ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.518957,2.053681,0.989212,1.900597,0.077829,27.1806,366.6207,True,True
+P6 - DNA Dilution - SensiFast,K12,genomic DNA 0.7ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.534578,1.953228,0.997391,1.900597,0.077829,27.2959,340.4422,True,True
+P6 - DNA Dilution - SensiFast,K13,genomic DNA 0.7ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.55948,2.021624,0.99921,1.900597,0.077829,27.2531,349.9362,True,True
+P6 - DNA Dilution - SensiFast,K14,genomic DNA 0.2ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.513546,1.957487,0.987729,1.900597,0.077829,29.0603,109.6384,True,True
+P6 - DNA Dilution - SensiFast,K15,genomic DNA 0.2ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.543876,1.933565,0.996225,1.900597,0.077829,29.5149,81.8813,True,True
+P6 - DNA Dilution - SensiFast,K16,genomic DNA 0.2ng,std,fstl_1_259_sf,fstl_1_259_sf,toi,,,1.503695,1.83275,0.998907,1.900597,0.077829,29.1747,101.8756,True,True
+P6 - DNA Dilution - SensiFast,K17,genomic DNA 0ng,ntc,fstl_1_259_sf,fstl_1_259_sf,toi,amplification in negative control,,1.535999,1.870826,0.995893,1.900597,0.077829,36.6029,1.7276,True,True
+P6 - DNA Dilution - SensiFast,K18,genomic DNA 0ng,ntc,fstl_1_259_sf,fstl_1_259_sf,toi,amplification in negative control,,1.574917,2.278578,0.974922,1.900597,0.077829,35.3723,3.8075,True,True
+P6 - DNA Dilution - SensiFast,K19,genomic DNA 0ng,ntc,fstl_1_259_sf,fstl_1_259_sf,toi,amplification in negative control,,1.487569,1.895408,0.993662,1.900597,0.077829,35.5,3.5078,True,True
+P6 - DNA Dilution - SensiFast,L2,genomic DNA 20ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,2.826027,1.854828,0.99966,1.848014,0.050807,22.4024,9293.0515,True,True
+P6 - DNA Dilution - SensiFast,L3,genomic DNA 20ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,2.881688,1.854407,0.999283,1.848014,0.050807,22.381,9416.4877,True,True
+P6 - DNA Dilution - SensiFast,L4,genomic DNA 20ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,3.010363,1.859138,0.993459,1.848014,0.050807,22.2246,10365.2286,True,True
+P6 - DNA Dilution - SensiFast,L5,genomic DNA 7ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,2.059889,1.745429,0.998239,1.848014,0.050807,23.9051,3693.1816,True,True
+P6 - DNA Dilution - SensiFast,L6,genomic DNA 7ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,2.102811,1.746402,0.988274,1.848014,0.050807,23.9034,3697.0437,True,True
+P6 - DNA Dilution - SensiFast,L7,genomic DNA 7ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,2.079592,1.849364,0.995384,1.848014,0.050807,23.8945,3717.2278,True,True
+P6 - DNA Dilution - SensiFast,L8,genomic DNA 2ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.700484,1.904488,0.989244,1.848014,0.050807,26.1087,954.2903,True,True
+P6 - DNA Dilution - SensiFast,L9,genomic DNA 2ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.634377,1.862877,0.998924,1.848014,0.050807,26.0349,998.5424,True,True
+P6 - DNA Dilution - SensiFast,L10,genomic DNA 2ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.593075,1.772129,0.997423,1.848014,0.050807,25.9808,1032.2839,True,True
+P6 - DNA Dilution - SensiFast,L11,genomic DNA 0.7ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.529886,1.853607,0.999272,1.848014,0.050807,27.7727,343.4588,True,True
+P6 - DNA Dilution - SensiFast,L12,genomic DNA 0.7ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.500789,1.874634,0.999571,1.848014,0.050807,28.0,298.7169,True,True
+P6 - DNA Dilution - SensiFast,L13,genomic DNA 0.7ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.512976,1.917426,0.999836,1.848014,0.050807,27.9706,304.1614,True,True
+P6 - DNA Dilution - SensiFast,L14,genomic DNA 0.2ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.443638,1.866516,0.99922,1.848014,0.050807,29.4403,123.3459,True,True
+P6 - DNA Dilution - SensiFast,L15,genomic DNA 0.2ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.501075,1.862021,0.990896,1.848014,0.050807,29.6646,107.4766,True,True
+P6 - DNA Dilution - SensiFast,L16,genomic DNA 0.2ng,std,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.564536,1.896941,0.987685,1.848014,0.050807,29.77,100.7376,True,True
+P6 - DNA Dilution - SensiFast,L17,genomic DNA 0ng,ntc,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.5147,1.0,-1.0,1.848014,0.050807,,,False,True
+P6 - DNA Dilution - SensiFast,L18,genomic DNA 0ng,ntc,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.5444,1.0,-1.0,1.848014,0.050807,,,False,True
+P6 - DNA Dilution - SensiFast,L19,genomic DNA 0ng,ntc,FSTL_1_L_412 SF,FSTL_1_L_412 SF,toi,,,1.4652,1.0,-1.0,1.848014,0.050807,,,False,True
+P6 - DNA Dilution - SensiFast,M2,genomic DNA 20ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,2.527412,1.897562,0.989523,1.887619,0.065621,21.9691,7878.0855,True,True
+P6 - DNA Dilution - SensiFast,M3,genomic DNA 20ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,3.016626,2.059288,0.932533,1.887619,0.065621,21.8402,8550.5532,True,True
+P6 - DNA Dilution - SensiFast,M4,genomic DNA 20ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,2.984762,1.893004,0.999068,1.887619,0.065621,21.959,7928.897,True,True
+P6 - DNA Dilution - SensiFast,M5,genomic DNA 7ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,2.06633,1.846524,0.9998,1.887619,0.065621,23.5164,2947.8827,True,True
+P6 - DNA Dilution - SensiFast,M6,genomic DNA 7ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,2.122176,1.823074,0.99084,1.887619,0.065621,23.5342,2914.744,True,True
+P6 - DNA Dilution - SensiFast,M7,genomic DNA 7ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.988354,1.782156,0.996328,1.887619,0.065621,23.4118,3150.4948,True,True
+P6 - DNA Dilution - SensiFast,M8,genomic DNA 2ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.674005,1.903683,0.996046,1.887619,0.065621,25.5899,789.5934,True,True
+P6 - DNA Dilution - SensiFast,M9,genomic DNA 2ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.697744,1.948404,0.998594,1.887619,0.065621,25.5472,811.3159,True,True
+P6 - DNA Dilution - SensiFast,M10,genomic DNA 2ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.665081,1.906308,0.998143,1.887619,0.065621,25.5333,818.4793,True,True
+P6 - DNA Dilution - SensiFast,M11,genomic DNA 0.7ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.465997,1.870824,0.998682,1.887619,0.065621,27.4796,237.6879,True,True
+P6 - DNA Dilution - SensiFast,M12,genomic DNA 0.7ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.489153,1.89099,0.995729,1.887619,0.065621,27.5597,225.8935,True,True
+P6 - DNA Dilution - SensiFast,M13,genomic DNA 0.7ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.469323,1.844779,0.999733,1.887619,0.065621,27.5833,222.5273,True,True
+P6 - DNA Dilution - SensiFast,M14,genomic DNA 0.2ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.416632,1.821284,0.998519,1.887619,0.065621,29.3913,70.5567,True,True
+P6 - DNA Dilution - SensiFast,M15,genomic DNA 0.2ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.492109,1.967407,0.990925,1.887619,0.065621,29.5163,65.172,True,True
+P6 - DNA Dilution - SensiFast,M16,genomic DNA 0.2ng,std,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.46344,1.858995,0.995936,1.887619,0.065621,28.9839,91.4019,True,True
+P6 - DNA Dilution - SensiFast,M17,genomic DNA 0ng,ntc,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.4256,1.0,-1.0,1.887619,0.065621,,,False,True
+P6 - DNA Dilution - SensiFast,M18,genomic DNA 0ng,ntc,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.386,1.0,-1.0,1.887619,0.065621,,,False,True
+P6 - DNA Dilution - SensiFast,M19,genomic DNA 0ng,ntc,FSTL_1_M_398 SF,FSTL_1_M_398 SF,toi,,,1.3761,1.0,-1.0,1.887619,0.065621,,,False,True
+P6 - DNA Dilution - SensiFast,N2,genomic DNA 20ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,2.712073,1.805277,0.994743,1.857228,0.071037,21.6875,12786.4547,True,True
+P6 - DNA Dilution - SensiFast,N3,genomic DNA 20ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,2.75698,1.86352,0.999777,1.857228,0.071037,21.6798,12847.7493,True,True
+P6 - DNA Dilution - SensiFast,N4,genomic DNA 20ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,2.917052,1.764865,0.998222,1.857228,0.071037,21.5247,14142.4202,True,True
+P6 - DNA Dilution - SensiFast,N5,genomic DNA 7ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.973083,1.881629,0.999949,1.857228,0.071037,23.25,4860.1327,True,True
+P6 - DNA Dilution - SensiFast,N6,genomic DNA 7ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,2.02255,1.921181,0.996988,1.857228,0.071037,23.3,4711.9955,True,True
+P6 - DNA Dilution - SensiFast,N7,genomic DNA 7ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.972214,1.87568,0.994006,1.857228,0.071037,23.1726,5098.7926,True,True
+P6 - DNA Dilution - SensiFast,N8,genomic DNA 2ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.583247,1.78129,0.992034,1.857228,0.071037,25.35,1324.4361,True,True
+P6 - DNA Dilution - SensiFast,N9,genomic DNA 2ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.59471,1.900611,0.987524,1.857228,0.071037,25.2778,1384.9978,True,True
+P6 - DNA Dilution - SensiFast,N10,genomic DNA 2ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.552494,1.810211,0.991821,1.857228,0.071037,25.3235,1346.3192,True,True
+P6 - DNA Dilution - SensiFast,N11,genomic DNA 0.7ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.431575,1.80607,0.976697,1.857228,0.071037,27.1092,445.7019,True,True
+P6 - DNA Dilution - SensiFast,N12,genomic DNA 0.7ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.592579,1.988057,0.998071,1.857228,0.071037,26.8871,511.398,True,True
+P6 - DNA Dilution - SensiFast,N13,genomic DNA 0.7ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.518226,2.007011,0.990586,1.857228,0.071037,27.0041,475.675,True,True
+P6 - DNA Dilution - SensiFast,N14,genomic DNA 0.2ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.394911,1.805335,0.99923,1.857228,0.071037,28.8252,154.0528,True,True
+P6 - DNA Dilution - SensiFast,N15,genomic DNA 0.2ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.4509,1.858833,0.997229,1.857228,0.071037,29.027,135.9584,True,True
+P6 - DNA Dilution - SensiFast,N16,genomic DNA 0.2ng,std,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.425454,1.788854,0.999203,1.857228,0.071037,28.8694,149.8976,True,True
+P6 - DNA Dilution - SensiFast,N17,genomic DNA 0ng,ntc,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,amplification in negative control,,1.539853,2.073558,0.994255,1.857228,0.071037,51.7155,0.0002,True,True
+P6 - DNA Dilution - SensiFast,N18,genomic DNA 0ng,ntc,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.3563,1.0,-1.0,1.857228,0.071037,,,False,True
+P6 - DNA Dilution - SensiFast,N19,genomic DNA 0ng,ntc,FSTL_1_O_417 SF,FSTL_1_O_417 SF,toi,,,1.3563,1.0,-1.0,1.857228,0.071037,,,False,True
+P6 - DNA Dilution - SensiFast,O2,genomic DNA 20ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,2.744493,1.910149,0.990453,1.833526,0.062598,22.1234,6596.1633,True,True
+P6 - DNA Dilution - SensiFast,O3,genomic DNA 20ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,2.795129,1.913272,0.997388,1.833526,0.062598,22.1792,6376.4933,True,True
+P6 - DNA Dilution - SensiFast,O4,genomic DNA 20ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,2.843617,1.887052,0.997574,1.833526,0.062598,22.1447,6511.2974,True,True
+P6 - DNA Dilution - SensiFast,O5,genomic DNA 7ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,indiv PCR eff is 1.681 < 1.7,1.888109,1.681107,0.993873,1.833526,0.062598,23.8485,2317.8903,True,True
+P6 - DNA Dilution - SensiFast,O6,genomic DNA 7ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.995145,1.819711,0.996134,1.833526,0.062598,23.8118,2369.9771,True,True
+P6 - DNA Dilution - SensiFast,O7,genomic DNA 7ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.984896,1.842117,0.99739,1.833526,0.062598,23.8412,2328.1828,True,True
+P6 - DNA Dilution - SensiFast,O8,genomic DNA 2ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.568529,1.752504,0.991421,1.833526,0.062598,26.073,601.7251,True,True
+P6 - DNA Dilution - SensiFast,O9,genomic DNA 2ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.642504,1.821611,0.989148,1.833526,0.062598,26.0455,611.8703,True,True
+P6 - DNA Dilution - SensiFast,O10,genomic DNA 2ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.592836,1.78534,0.999604,1.833526,0.062598,26.1438,576.4437,True,True
+P6 - DNA Dilution - SensiFast,O11,genomic DNA 0.7ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.486273,1.853798,0.993458,1.833526,0.062598,28.2344,162.3099,True,True
+P6 - DNA Dilution - SensiFast,O12,genomic DNA 0.7ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.432543,1.802768,0.986138,1.833526,0.062598,27.8506,204.8213,True,True
+P6 - DNA Dilution - SensiFast,O13,genomic DNA 0.7ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.526844,1.877811,0.999167,1.833526,0.062598,28.0111,185.835,True,True
+P6 - DNA Dilution - SensiFast,O14,genomic DNA 0.2ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.400693,1.806417,0.999895,1.833526,0.062598,29.8171,62.1787,True,True
+P6 - DNA Dilution - SensiFast,O15,genomic DNA 0.2ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.448587,1.917785,0.994343,1.833526,0.062598,30.6953,36.51,True,True
+P6 - DNA Dilution - SensiFast,O16,genomic DNA 0.2ng,std,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.465045,1.831439,0.999001,1.833526,0.062598,29.9828,56.2365,True,True
+P6 - DNA Dilution - SensiFast,O17,genomic DNA 0ng,ntc,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,amplification in negative control,,1.382597,1.899238,0.999924,1.833526,0.062598,36.0,2.9295,True,True
+P6 - DNA Dilution - SensiFast,O18,genomic DNA 0ng,ntc,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.3167,1.0,-1.0,1.833526,0.062598,,,False,True
+P6 - DNA Dilution - SensiFast,O19,genomic DNA 0ng,ntc,FSTL_1_P_820 SF,FSTL_1_P_820 SF,toi,,,1.287,1.0,-1.0,1.833526,0.062598,,,False,True
+P6 - DNA Dilution - SensiFast,P2,genomic DNA 20ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,2.448008,1.870842,0.996674,1.849314,0.050075,22.2297,5443.0044,True,True
+P6 - DNA Dilution - SensiFast,P3,genomic DNA 20ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,2.511136,1.813404,0.993928,1.849314,0.050075,22.5229,4545.262,True,True
+P6 - DNA Dilution - SensiFast,P4,genomic DNA 20ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,2.501698,1.776394,0.995958,1.849314,0.050075,22.5463,4480.3513,True,True
+P6 - DNA Dilution - SensiFast,P5,genomic DNA 7ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.776299,1.856915,0.986373,1.849314,0.050075,24.1575,1663.7747,True,True
+P6 - DNA Dilution - SensiFast,P6,genomic DNA 7ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.737703,1.829876,0.993037,1.849314,0.050075,24.0568,1770.055,True,True
+P6 - DNA Dilution - SensiFast,P7,genomic DNA 7ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.813798,1.970762,0.991207,1.849314,0.050075,24.1364,1685.5719,True,True
+P6 - DNA Dilution - SensiFast,P8,genomic DNA 2ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.299719,1.799542,0.998012,1.849314,0.050075,26.5976,371.1775,True,True
+P6 - DNA Dilution - SensiFast,P9,genomic DNA 2ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.42561,1.816233,0.998969,1.849314,0.050075,26.4636,403.0332,True,True
+P6 - DNA Dilution - SensiFast,P10,genomic DNA 2ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.457931,1.832745,0.999902,1.849314,0.050075,26.2612,456.452,True,True
+P6 - DNA Dilution - SensiFast,P11,genomic DNA 0.7ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.35205,1.894271,0.995357,1.849314,0.050075,28.3276,128.1287,True,True
+P6 - DNA Dilution - SensiFast,P12,genomic DNA 0.7ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.375299,1.921907,0.993342,1.849314,0.050075,28.1842,139.936,True,True
+P6 - DNA Dilution - SensiFast,P13,genomic DNA 0.7ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.334368,1.891099,0.996897,1.849314,0.050075,28.0091,155.8433,True,True
+P6 - DNA Dilution - SensiFast,P14,genomic DNA 0.2ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.308924,1.813012,0.997799,1.849314,0.050075,30.563,32.4168,True,True
+P6 - DNA Dilution - SensiFast,P15,genomic DNA 0.2ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.299074,1.819212,0.999281,1.849314,0.050075,30.3788,36.304,True,True
+P6 - DNA Dilution - SensiFast,P16,genomic DNA 0.2ng,std,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,1.291076,1.833488,0.998993,1.849314,0.050075,29.881,49.3039,True,True
+P6 - DNA Dilution - SensiFast,P17,genomic DNA 0ng,ntc,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,4.5639,1.0,-1.0,1.849314,0.050075,,,False,True
+P6 - DNA Dilution - SensiFast,P18,genomic DNA 0ng,ntc,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,4.4847,1.0,-1.0,1.849314,0.050075,,,False,True
+P6 - DNA Dilution - SensiFast,P19,genomic DNA 0ng,ntc,FSTL_1_T_770 SF,FSTL_1_T_770 SF,toi,,,4.4154,1.0,-1.0,1.849314,0.050075,,,False,True
+P9 - Primer Dilution - LC Green,C3,genomic DNA 20ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,13.16479,1.913731,0.997909,1.899383,0.063298,22.4348,33817.4545,True,True
+P9 - Primer Dilution - LC Green,C4,genomic DNA 20ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,12.866578,1.945412,0.999864,1.899383,0.063298,22.4035,34502.7885,True,True
+P9 - Primer Dilution - LC Green,C5,genomic DNA 20ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,15.412067,2.063809,0.996963,1.899383,0.063298,22.2512,38044.9171,True,True
+P9 - Primer Dilution - LC Green,C6,genomic DNA 7ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,10.520308,1.878359,0.998052,1.899383,0.063298,22.6992,28541.506,True,True
+P9 - Primer Dilution - LC Green,C7,genomic DNA 7ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,10.514896,1.925016,0.992753,1.899383,0.063298,22.6761,28967.2126,True,True
+P9 - Primer Dilution - LC Green,C8,genomic DNA 7ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,10.220143,1.850478,0.999658,1.899383,0.063298,22.6558,29346.5836,True,True
+P9 - Primer Dilution - LC Green,C9,genomic DNA 2ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,9.181485,1.932496,0.984619,1.899383,0.063298,22.7273,28031.7056,True,True
+P9 - Primer Dilution - LC Green,C10,genomic DNA 2ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,8.871583,1.865711,0.993549,1.899383,0.063298,22.6727,29029.5567,True,True
+P9 - Primer Dilution - LC Green,C11,genomic DNA 2ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,8.584092,1.944404,0.99833,1.899383,0.063298,22.6547,29367.9492,True,True
+P9 - Primer Dilution - LC Green,C12,genomic DNA 0.7ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,8.023296,1.755857,0.996041,1.899383,0.063298,22.9875,23721.763,True,True
+P9 - Primer Dilution - LC Green,C13,genomic DNA 0.7ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,8.478352,1.881152,0.992723,1.899383,0.063298,22.9982,23559.5623,True,True
+P9 - Primer Dilution - LC Green,C14,genomic DNA 0.7ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,8.355968,1.907433,0.997074,1.899383,0.063298,22.9098,24933.6066,True,True
+P9 - Primer Dilution - LC Green,C15,genomic DNA 0.2ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,7.960716,1.867865,0.998689,1.899383,0.063298,22.5814,30782.2043,True,True
+P9 - Primer Dilution - LC Green,C16,genomic DNA 0.2ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,7.993322,1.88978,0.993925,1.899383,0.063298,22.7482,27658.6409,True,True
+P9 - Primer Dilution - LC Green,C17,genomic DNA 0.2ng,std,FSTL_1_C_040 LC,FSTL_1_C_040 LC,toi,,,8.087321,1.869236,0.997839,1.899383,0.063298,22.7886,26950.13,True,True
+P9 - Primer Dilution - LC Green,D3,genomic DNA 20ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,12.801999,1.869623,0.999792,1.871141,0.022256,25.513,6878.5814,True,True
+P9 - Primer Dilution - LC Green,D4,genomic DNA 20ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,12.023775,1.888779,0.999172,1.871141,0.022256,25.5239,6831.5546,True,True
+P9 - Primer Dilution - LC Green,D5,genomic DNA 20ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,12.844012,1.885124,0.995946,1.871141,0.022256,25.5052,6912.1286,True,True
+P9 - Primer Dilution - LC Green,D6,genomic DNA 7ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,10.126382,1.873446,0.998345,1.871141,0.022256,26.8804,2920.1924,True,True
+P9 - Primer Dilution - LC Green,D7,genomic DNA 7ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,10.36702,1.905435,0.998149,1.871141,0.022256,26.8219,3029.3323,True,True
+P9 - Primer Dilution - LC Green,D8,genomic DNA 7ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,10.618708,1.885918,0.999776,1.871141,0.022256,26.8299,3014.1094,True,True
+P9 - Primer Dilution - LC Green,D9,genomic DNA 2ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,9.721045,1.882728,0.994904,1.871141,0.022256,28.6884,940.6685,True,True
+P9 - Primer Dilution - LC Green,D10,genomic DNA 2ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,9.510341,1.87989,0.999267,1.871141,0.022256,28.6693,951.9915,True,True
+P9 - Primer Dilution - LC Green,D11,genomic DNA 2ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,9.272414,1.874763,0.998314,1.871141,0.022256,28.6729,949.8601,True,True
+P9 - Primer Dilution - LC Green,D12,genomic DNA 0.7ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,8.597489,1.831016,0.995279,1.871141,0.022256,30.0477,401.3868,True,True
+P9 - Primer Dilution - LC Green,D13,genomic DNA 0.7ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,8.75088,1.882676,0.998279,1.871141,0.022256,30.25,353.6115,True,True
+P9 - Primer Dilution - LC Green,D14,genomic DNA 0.7ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,8.713983,1.818747,0.995714,1.871141,0.022256,29.9411,429.1235,True,True
+P9 - Primer Dilution - LC Green,D15,genomic DNA 0.2ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,8.651506,1.879672,0.999345,1.871141,0.022256,31.7503,138.1294,True,True
+P9 - Primer Dilution - LC Green,D16,genomic DNA 0.2ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,8.821709,1.844844,0.996953,1.871141,0.022256,31.6463,147.428,True,True
+P9 - Primer Dilution - LC Green,D17,genomic DNA 0.2ng,std,FSTL_1_F_109 LC,FSTL_1_F_109 LC,toi,,,8.742755,1.86446,0.990936,1.871141,0.022256,31.4035,171.6521,True,True
+P9 - Primer Dilution - LC Green,E3,genomic DNA 20ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,13.402955,1.877354,0.998024,1.879677,0.00927,25.6478,5624.9088,True,True
+P9 - Primer Dilution - LC Green,E4,genomic DNA 20ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,12.408603,1.885553,0.994048,1.879677,0.00927,25.6299,5688.978,True,True
+P9 - Primer Dilution - LC Green,E5,genomic DNA 20ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,12.792497,1.867835,0.997341,1.879677,0.00927,25.6308,5685.537,True,True
+P9 - Primer Dilution - LC Green,E6,genomic DNA 7ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,11.286888,1.879633,0.999786,1.879677,0.00927,27.1012,2247.7939,True,True
+P9 - Primer Dilution - LC Green,E7,genomic DNA 7ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,10.737739,1.875311,0.992365,1.879677,0.00927,27.0822,2274.9974,True,True
+P9 - Primer Dilution - LC Green,E8,genomic DNA 7ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,10.356679,1.868829,0.998412,1.879677,0.00927,27.011,2379.5288,True,True
+P9 - Primer Dilution - LC Green,E9,genomic DNA 2ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,9.777134,1.867303,0.993416,1.879677,0.00927,28.9666,692.6119,True,True
+P9 - Primer Dilution - LC Green,E10,genomic DNA 2ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,9.691674,1.899376,0.997324,1.879677,0.00927,28.9454,701.9408,True,True
+P9 - Primer Dilution - LC Green,E11,genomic DNA 2ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,9.493128,1.893047,0.9989,1.879677,0.00927,28.8665,737.7688,True,True
+P9 - Primer Dilution - LC Green,E12,genomic DNA 0.7ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,8.833672,1.878215,0.999359,1.879677,0.00927,30.5363,257.2008,True,True
+P9 - Primer Dilution - LC Green,E13,genomic DNA 0.7ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,9.641123,1.870201,0.999272,1.879677,0.00927,30.411,278.3584,True,True
+P9 - Primer Dilution - LC Green,E14,genomic DNA 0.7ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,9.258469,1.885904,0.999839,1.879677,0.00927,30.5622,253.0303,True,True
+P9 - Primer Dilution - LC Green,E15,genomic DNA 0.2ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,PCR efficiency outlier,9.365476,1.918286,0.999024,1.879677,0.00927,32.2236,88.6759,True,True
+P9 - Primer Dilution - LC Green,E16,genomic DNA 0.2ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,9.398107,1.885319,0.999706,1.879677,0.00927,32.5305,73.0602,True,True
+P9 - Primer Dilution - LC Green,E17,genomic DNA 0.2ng,std,FSTL_1_H_201 LC,FSTL_1_H_201 LC,toi,,,9.224754,1.881604,0.999078,1.879677,0.00927,32.5475,72.279,True,True
+P9 - Primer Dilution - LC Green,F3,genomic DNA 20ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,12.258535,1.88587,0.999751,1.874577,0.011816,25.6842,5894.3707,True,True
+P9 - Primer Dilution - LC Green,F4,genomic DNA 20ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,12.914621,1.884823,0.999172,1.874577,0.011816,25.659,5988.7637,True,True
+P9 - Primer Dilution - LC Green,F5,genomic DNA 20ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,12.688789,1.894188,0.999391,1.874577,0.011816,25.6415,6054.6449,True,True
+P9 - Primer Dilution - LC Green,F6,genomic DNA 7ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,10.476966,1.893473,0.998559,1.874577,0.011816,27.2049,2266.9287,True,True
+P9 - Primer Dilution - LC Green,F7,genomic DNA 7ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,10.195564,1.864314,0.999811,1.874577,0.011816,27.1302,2375.8904,True,True
+P9 - Primer Dilution - LC Green,F8,genomic DNA 7ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,9.692957,1.857815,0.998064,1.874577,0.011816,27.108,2409.2792,True,True
+P9 - Primer Dilution - LC Green,F9,genomic DNA 2ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,9.307414,1.881411,0.999538,1.874577,0.011816,29.1244,678.6062,True,True
+P9 - Primer Dilution - LC Green,F10,genomic DNA 2ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,9.065096,1.875994,0.999543,1.874577,0.011816,29.1253,678.1833,True,True
+P9 - Primer Dilution - LC Green,F11,genomic DNA 2ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,8.850786,1.877136,0.997321,1.874577,0.011816,29.0599,706.651,True,True
+P9 - Primer Dilution - LC Green,F12,genomic DNA 0.7ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,8.549877,1.873958,0.999827,1.874577,0.011816,30.6809,255.177,True,True
+P9 - Primer Dilution - LC Green,F13,genomic DNA 0.7ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,9.15629,1.856948,0.999682,1.874577,0.011816,30.7321,247.0875,True,True
+P9 - Primer Dilution - LC Green,F14,genomic DNA 0.7ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,8.966422,1.864062,0.999586,1.874577,0.011816,30.599,268.6513,True,True
+P9 - Primer Dilution - LC Green,F15,genomic DNA 0.2ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,8.76883,1.878477,0.999282,1.874577,0.011816,32.6417,74.4243,True,True
+P9 - Primer Dilution - LC Green,F16,genomic DNA 0.2ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,8.732794,1.870658,0.999446,1.874577,0.011816,32.6199,75.4507,True,True
+P9 - Primer Dilution - LC Green,F17,genomic DNA 0.2ng,std,FSTL_1_I_204 LC,FSTL_1_I_204 LC,toi,,,8.784955,1.859532,0.999187,1.874577,0.011816,32.7089,71.3494,True,True
+P9 - Primer Dilution - LC Green,G3,genomic DNA 20ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,12.910632,1.903513,0.998491,1.888152,0.019317,25.806,4532.5082,True,True
+P9 - Primer Dilution - LC Green,G4,genomic DNA 20ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,13.504126,1.923269,0.998423,1.888152,0.019317,25.7644,4653.8711,True,True
+P9 - Primer Dilution - LC Green,G5,genomic DNA 20ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,12.419491,1.889031,0.998785,1.888152,0.019317,25.7993,4552.0143,True,True
+P9 - Primer Dilution - LC Green,G6,genomic DNA 7ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,9.65855,1.902538,0.998812,1.888152,0.019317,27.2496,1810.7,True,True
+P9 - Primer Dilution - LC Green,G7,genomic DNA 7ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,9.984663,1.910868,0.99888,1.888152,0.019317,27.2778,1778.593,True,True
+P9 - Primer Dilution - LC Green,G8,genomic DNA 7ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,9.805623,1.902533,0.998577,1.888152,0.019317,27.3031,1750.2218,True,True
+P9 - Primer Dilution - LC Green,G9,genomic DNA 2ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,9.292012,1.895674,0.999108,1.888152,0.019317,29.2206,517.3489,True,True
+P9 - Primer Dilution - LC Green,G10,genomic DNA 2ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,8.99648,1.872904,0.999429,1.888152,0.019317,29.1235,550.2705,True,True
+P9 - Primer Dilution - LC Green,G11,genomic DNA 2ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,8.627193,1.894628,0.995758,1.888152,0.019317,29.2655,502.8115,True,True
+P9 - Primer Dilution - LC Green,G12,genomic DNA 0.7ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,8.615074,1.869966,0.997446,1.888152,0.019317,30.759,194.5893,True,True
+P9 - Primer Dilution - LC Green,G13,genomic DNA 0.7ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,8.645961,1.850907,0.999795,1.888152,0.019317,30.7709,193.1307,True,True
+P9 - Primer Dilution - LC Green,G14,genomic DNA 0.7ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,8.620057,1.85989,0.999337,1.888152,0.019317,30.6529,208.1755,True,True
+P9 - Primer Dilution - LC Green,G15,genomic DNA 0.2ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,8.386041,1.892945,0.996822,1.888152,0.019317,32.4599,66.0103,True,True
+P9 - Primer Dilution - LC Green,G16,genomic DNA 0.2ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,9.073718,1.87092,0.999595,1.888152,0.019317,32.5997,60.3998,True,True
+P9 - Primer Dilution - LC Green,G17,genomic DNA 0.2ng,std,FSTL_1_K_219 LC,FSTL_1_K_219 LC,toi,,,8.831809,1.882694,0.999775,1.888152,0.019317,32.6325,59.1538,True,True
+P9 - Primer Dilution - LC Green,H3,genomic DNA 20ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,13.113635,1.889326,0.996948,1.87159,0.010238,25.926,5277.3203,True,True
+P9 - Primer Dilution - LC Green,H4,genomic DNA 20ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,13.357897,1.868986,0.999505,1.87159,0.010238,25.8817,5425.9014,True,True
+P9 - Primer Dilution - LC Green,H5,genomic DNA 20ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,12.405578,1.865689,0.998927,1.87159,0.010238,25.8233,5628.1569,True,True
+P9 - Primer Dilution - LC Green,H6,genomic DNA 7ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,10.494406,1.860568,0.999906,1.87159,0.010238,27.5335,1926.7812,True,True
+P9 - Primer Dilution - LC Green,H7,genomic DNA 7ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,10.017662,1.87325,0.999622,1.87159,0.010238,27.5637,1890.6191,True,True
+P9 - Primer Dilution - LC Green,H8,genomic DNA 7ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,10.126726,1.873483,0.998611,1.87159,0.010238,27.5129,1951.839,True,True
+P9 - Primer Dilution - LC Green,H9,genomic DNA 2ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,9.051119,1.879944,0.99979,1.87159,0.010238,29.4488,580.059,True,True
+P9 - Primer Dilution - LC Green,H10,genomic DNA 2ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,9.381722,1.879577,0.997121,1.87159,0.010238,29.3945,600.1221,True,True
+P9 - Primer Dilution - LC Green,H11,genomic DNA 2ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,12.879485,1.880884,0.999876,1.87159,0.010238,29.452,578.9017,True,True
+P9 - Primer Dilution - LC Green,H12,genomic DNA 0.7ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,8.661657,1.859962,0.999377,1.87159,0.010238,30.8415,242.3045,True,True
+P9 - Primer Dilution - LC Green,H13,genomic DNA 0.7ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,8.934658,1.872099,0.999105,1.87159,0.010238,30.7995,248.7716,True,True
+P9 - Primer Dilution - LC Green,H14,genomic DNA 0.7ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,9.155787,1.888449,0.999021,1.87159,0.010238,30.8783,236.7839,True,True
+P9 - Primer Dilution - LC Green,H15,genomic DNA 0.2ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,8.774322,1.863595,0.999443,1.87159,0.010238,32.7772,72.0168,True,True
+P9 - Primer Dilution - LC Green,H16,genomic DNA 0.2ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,8.945091,1.864877,0.999712,1.87159,0.010238,32.7987,71.0543,True,True
+P9 - Primer Dilution - LC Green,H17,genomic DNA 0.2ng,std,FSTL_1_M_398 LC,FSTL_1_M_398 LC,toi,,,8.734727,1.853166,0.999929,1.87159,0.010238,32.7868,71.5847,True,True
+P9 - Primer Dilution - LC Green,I3,genomic DNA 20ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,12.705777,1.821967,0.999804,1.825815,0.010385,26.0382,9373.0034,True,True
+P9 - Primer Dilution - LC Green,I4,genomic DNA 20ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,12.929011,1.809637,0.999905,1.825815,0.010385,25.9835,9687.2344,True,True
+P9 - Primer Dilution - LC Green,I5,genomic DNA 20ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,11.958273,1.819886,0.99959,1.825815,0.010385,25.8975,10201.99,True,True
+P9 - Primer Dilution - LC Green,I6,genomic DNA 7ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,10.098091,1.83333,0.999716,1.825815,0.010385,27.582,3700.4015,True,True
+P9 - Primer Dilution - LC Green,I7,genomic DNA 7ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,9.140418,1.809407,0.999957,1.825815,0.010385,27.5719,3723.0727,True,True
+P9 - Primer Dilution - LC Green,I8,genomic DNA 7ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,9.395671,1.82144,0.999769,1.825815,0.010385,27.6016,3657.0386,True,True
+P9 - Primer Dilution - LC Green,I9,genomic DNA 2ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.871323,1.818902,0.995526,1.825815,0.010385,29.3069,1309.951,True,True
+P9 - Primer Dilution - LC Green,I10,genomic DNA 2ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.931255,1.830591,0.9993,1.825815,0.010385,29.5285,1146.3899,True,True
+P9 - Primer Dilution - LC Green,I11,genomic DNA 2ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.494363,1.828661,0.999255,1.825815,0.010385,29.4194,1224.1905,True,True
+P9 - Primer Dilution - LC Green,I12,genomic DNA 0.7ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.480264,1.817141,0.998878,1.825815,0.010385,30.948,487.7308,True,True
+P9 - Primer Dilution - LC Green,I13,genomic DNA 0.7ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.601846,1.834194,0.997659,1.825815,0.010385,30.961,483.9267,True,True
+P9 - Primer Dilution - LC Green,I14,genomic DNA 0.7ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.187669,1.828359,0.999735,1.825815,0.010385,30.9415,489.6342,True,True
+P9 - Primer Dilution - LC Green,I15,genomic DNA 0.2ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.469347,1.834617,0.994422,1.825815,0.010385,32.6201,178.2438,True,True
+P9 - Primer Dilution - LC Green,I16,genomic DNA 0.2ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.458108,1.85129,0.999728,1.825815,0.010385,32.5375,187.3241,True,True
+P9 - Primer Dilution - LC Green,I17,genomic DNA 0.2ng,std,FSTL_1_O_417 LC,FSTL_1_O_417 LC,toi,,,8.409237,1.827808,0.998251,1.825815,0.010385,32.7325,166.5812,True,True
+P9 - Primer Dilution - LC Green,J3,genomic DNA 20ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,13.123158,1.783092,0.999557,1.783446,0.008519,27.6915,6637.3358,True,True
+P9 - Primer Dilution - LC Green,J4,genomic DNA 20ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,12.912957,1.787148,0.999935,1.783446,0.008519,27.7115,6560.7152,True,True
+P9 - Primer Dilution - LC Green,J5,genomic DNA 20ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,11.765563,1.776993,0.99826,1.783446,0.008519,27.6814,6676.2205,True,True
+P9 - Primer Dilution - LC Green,J6,genomic DNA 7ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,10.202218,1.776821,0.999389,1.783446,0.008519,29.2793,2648.7296,True,True
+P9 - Primer Dilution - LC Green,J7,genomic DNA 7ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,10.113116,1.795485,0.999569,1.783446,0.008519,29.3979,2473.0711,True,True
+P9 - Primer Dilution - LC Green,J8,genomic DNA 7ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,9.728336,1.795317,0.998722,1.783446,0.008519,29.3283,2574.6138,True,True
+P9 - Primer Dilution - LC Green,J9,genomic DNA 2ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.661636,1.791874,0.999455,1.783446,0.008519,31.3463,801.101,True,True
+P9 - Primer Dilution - LC Green,J10,genomic DNA 2ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.993682,1.781983,0.999502,1.783446,0.008519,31.5251,722.3784,True,True
+P9 - Primer Dilution - LC Green,J11,genomic DNA 2ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.747239,1.780844,0.999355,1.783446,0.008519,31.5394,716.4102,True,True
+P9 - Primer Dilution - LC Green,J12,genomic DNA 0.7ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.158565,1.790236,0.999512,1.783446,0.008519,33.1967,274.635,True,True
+P9 - Primer Dilution - LC Green,J13,genomic DNA 0.7ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.48252,1.795481,0.998999,1.783446,0.008519,33.1276,285.8332,True,True
+P9 - Primer Dilution - LC Green,J14,genomic DNA 0.7ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.495393,1.775003,0.999238,1.783446,0.008519,33.2539,265.6887,True,True
+P9 - Primer Dilution - LC Green,J15,genomic DNA 0.2ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.43786,1.766692,0.999853,1.783446,0.008519,35.5965,68.5141,True,True
+P9 - Primer Dilution - LC Green,J16,genomic DNA 0.2ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.311176,1.77917,0.999105,1.783446,0.008519,35.1376,89.3468,True,True
+P9 - Primer Dilution - LC Green,J17,genomic DNA 0.2ng,std,FSTL_1_P_820 LC,FSTL_1_P_820 LC,toi,,,8.616972,1.775551,0.998443,1.783446,0.008519,35.0995,91.3377,True,True
+P9 - Primer Dilution - LC Green,K3,genomic DNA 20ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,10.5831,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K4,genomic DNA 20ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,10.9197,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K5,genomic DNA 20ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,10.4544,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K6,genomic DNA 7ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,only 2 values in log phase,8.019,1.0,-1.0,-1.0,,22.0,,False,True
+P9 - Primer Dilution - LC Green,K7,genomic DNA 7ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,baseline error in positive control,8.0388,1.0,-1.0,-1.0,,7.9318,,False,True
+P9 - Primer Dilution - LC Green,K8,genomic DNA 7ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,7.7517,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K9,genomic DNA 2ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,6.7122,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K10,genomic DNA 2ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,6.5736,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K11,genomic DNA 2ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,only 4 values in log phase,6.5637,1.0,-1.0,-1.0,,14.9792,,False,True
+P9 - Primer Dilution - LC Green,K12,genomic DNA 0.7ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,6.3063,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K13,genomic DNA 0.7ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,6.0291,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K14,genomic DNA 0.7ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,6.1677,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K15,genomic DNA 0.2ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,6.3954,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K16,genomic DNA 0.2ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,6.4251,1.0,-1.0,-1.0,,,,False,True
+P9 - Primer Dilution - LC Green,K17,genomic DNA 0.2ng,std,No Primer LC,No Primer LC,toi,no amplification in positive control,no TD0 found in positive control,6.1677,1.0,-1.0,-1.0,,,,False,True

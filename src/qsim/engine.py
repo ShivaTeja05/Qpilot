@@ -105,6 +105,10 @@ class Engine:
             with np.errstate(divide="ignore", invalid="ignore"):
                 values = s.log2_nq - s.cq * np.log2(s.eff_well)
             eff = s.eff_assay
+        elif efficiency == "std":
+            # plates without a usable standard curve keep the LinRegPCR assay mean
+            eff = np.where(np.isnan(s.eff_std), s.eff_assay, s.eff_std)
+            values = s.log2_nq - s.cq * np.log2(eff)
         elif efficiency == "fixed2":
             values = s.log2_nq - s.cq
             eff = np.full_like(s.eff_assay, 2.0)

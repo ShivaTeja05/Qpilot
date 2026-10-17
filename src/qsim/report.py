@@ -21,6 +21,7 @@ from qsim.decisions import Space, qpcr_space
 from qsim.engine import Engine, Grid
 from qsim.issues import HEADLINE, build_queue, queue_frame
 from qsim.troubleshoot import run_detectors
+from qsim.verdict import ORDER, RULES, explain, verdicts
 
 
 def _defensible(space: Space) -> dict[str, list[int]]:
@@ -174,6 +175,12 @@ def run_all(
             ),
         }
 
+    issue_dicts = [i.__dict__ for i in queue]
+    genes["verdict"] = verdicts(genes, issue_dicts)
+    genes.to_csv(out / "genes.csv")
+    explained = explain(engine, defn, genes, genes["verdict"])
+    (out / "explain.json").write_text(json.dumps(explained, indent=1, default=_json_default))
+    verdict_counts = {v: int((genes["verdict"] == v).sum()) for v in ORDER}
     qf = queue_frame(queue)
     qf.to_csv(out / "issues.csv", index=False)
     (out / "issues.json").write_text(json.dumps([i.__dict__ for i in queue], indent=1, default=str))
@@ -268,6 +275,11 @@ def run_all(
             "top_issues": qf.head(10).drop(columns=["action", "status"]).to_dict(orient="records"),
         },
         "explorer_check": check,
+        "verdicts": {
+            "counts": verdict_counts,
+            "rules": RULES,
+            "by_gene": genes["verdict"].to_dict(),
+        },
         "benchmark_pooled": bench_pooled,
         "benchmark": None
         if bench_summary is None
@@ -359,6 +371,13 @@ def render_report(s: dict) -> str:
             f"| {g} | {v['call']} | {v['fold']} | {v['holds_all']:.3f} | {v['holds_defensible']:.3f} | {v['fragility_defensible'] or '–'} | {sets} |"
         )
     lines += [
+        "",
+        "## Verdicts in plain words",
+        "",
+        "Rules: solid = same call in >= 95 % of defensible analyses, no 5 or fewer samples overturn it, significant in >= 95 %; "
+        "fragile = < 80 %, or <= 2 samples overturn it, or within 0.1 log2 of the fold line; check data first = a data finding changes it.",
+        "",
+        " · ".join(f"{k}: {v}" for k, v in s["verdicts"]["counts"].items()),
         "",
         "## What the calls lean on (baseline analysis)",
         "",

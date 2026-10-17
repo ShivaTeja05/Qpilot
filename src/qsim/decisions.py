@@ -27,6 +27,15 @@ from itertools import combinations
 from typing import Any, Literal
 
 Tier = Literal["prespecified", "defensible", "common_practice"]
+PLAIN = {
+    "efficiency": "the efficiency model",
+    "flagged": "how flagged wells are handled",
+    "nondetect": "how non-detects are handled",
+    "refs": "the reference genes",
+    "cut": "the group cut-off",
+    "test": "the statistical test",
+    "multiplicity": "the multiple-testing correction",
+}
 Kind = Literal["E", "N", "U"]
 
 
@@ -140,7 +149,14 @@ def qpcr_space(candidates: tuple[str, ...], primary_refs: tuple[str, ...]) -> Sp
                 Option(
                     "assay_mean", "assay", "prespecified", "LinRegPCR mean efficiency per assay"
                 ),
-                Option("per_well", "well", "defensible", "each well's own efficiency"),
+                Option(
+                    "std_curve",
+                    "std",
+                    "defensible",
+                    "standard-curve slope of the plate's dilution series",
+                ),
+                # demoted on evidence: 89 % median error against known dilution ratios (qsim validate)
+                Option("per_well", "well", "common_practice", "each well's own efficiency"),
                 Option(
                     "assume_100", "fixed2", "common_practice", "assume 100 % (the ddCq shortcut)"
                 ),

@@ -23,6 +23,7 @@ import pandas as pd
 
 from qsim.attribution import Factorial
 from qsim.compare import IMPACT_ORDER, compare
+from qsim.decisions import PLAIN
 from qsim.engine import Engine
 from qsim.troubleshoot import Observation
 
@@ -189,7 +190,7 @@ def build_queue(
                 Issue(
                     issue_id=f"D-{d}",
                     kind="decision",
-                    title=f"Choice of {d} changes {len(flipped)} call(s) on its own",
+                    title=f"{PLAIN[d][0].upper()}{PLAIN[d][1:]}: changing only this changes {len(flipped)} call(s)",
                     loci={"decision": d},
                     evidence={
                         "genes_flipped_alone": flipped,

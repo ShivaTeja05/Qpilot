@@ -154,3 +154,49 @@ def test_factorial_requires_full_grid(setup):
     _, space, engine = setup
     with pytest.raises(ValueError):
         Factorial(engine.run(explore.rings(space, 1)))
+
+
+def test_standard_curve_efficiency_is_plausible(setup):
+    study, _, _ = setup
+    e = np.nanmax(study.eff_std, axis=0)
+    assert np.isfinite(e).sum() >= 60
+    assert 1.8 < float(np.nanmedian(e)) < 2.1
+
+
+RESULTS = __import__("pathlib").Path(__file__).resolve().parents[1] / "results"
+
+
+@pytest.mark.skipif(not (RESULTS / "explain.json").exists(), reason="run `qsim run` first")
+def test_ask_without_model_uses_checked_templates():
+    from qpilot.ai.client import ModelClient
+    from qpilot.ai.config import ModelConfig
+
+    from qsim.ask import Asker
+
+    asker = Asker(RESULTS, client=ModelClient(config=ModelConfig()))
+    ans = asker.answer("Does NM23A depend on the reference genes?")
+    assert ans.tool == "gene" and ans.args["focus"] == "refs" and ans.written_by == "template"
+    assert "NM23A" in ans.text and "{{" not in ans.text
+    assert asker.parse_changes("What if we used only HMBS and capped the non-detects?") == {
+        "refs": "HMBS",
+        "nondetect": "cap_min",
+    }
+
+
+@pytest.mark.skipif(not (RESULTS / "explain.json").exists(), reason="run `qsim run` first")
+def test_model_answer_with_naked_numbers_is_rejected():
+    from qpilot.ai.client import MockBackend, ModelClient
+
+    from qsim.ask import Asker
+
+    replies = iter(
+        [
+            '{"tool": "gene", "args": {"gene": "ODC1"}}',
+            "ODC1 is 3.6 times higher.",  # typed number: must be rejected
+            "ODC1 is 3.6 times higher.",
+        ]
+    )
+    asker = Asker(RESULTS, client=ModelClient(backend=MockBackend(lambda s, m: next(replies))))
+    ans = asker.answer("Is ODC1 solid?")
+    assert ans.routed_by == "model" and ans.written_by == "template"
+    assert ans.problems  # the validator's reasons are kept

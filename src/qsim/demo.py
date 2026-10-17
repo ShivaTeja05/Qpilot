@@ -213,11 +213,48 @@ def run_demo(
         print(f"    → {x.action}")
     print(f" layout note: {ident['notes'][0][: WIDTH - 15]}…")
 
-    _h(9, "OUTPUT FILES (qsim run)")
+    _h(9, "ASK IN PLAIN WORDS (local model; every number checked against the engine)")
+    from qsim.ask import Asker
+
+    results = Path("results")
+    if (results / "explain.json").exists():
+        asker = Asker(results, rdml=rdml)
+        who = asker.client.model or "templates only"
+        for q in (
+            "Does NM23A depend on the reference genes?",
+            "What if we used only HMBS and capped the non-detects?",
+        ):
+            ans = asker.answer(q)
+            print(f" Q: {q}")
+            print(f" A: {ans.text}")
+            print(f"    [{ans.tool}; written by {ans.written_by}; model: {who}]")
+    else:
+        print(" run `qsim run` once to enable Ask")
+    vfile = results / "validation_untergasser.json"
+    if vfile.exists():
+        import json
+
+        v = json.loads(vfile.read_text())
+        eff = v["by_choice"]["efficiency"]
+        print(
+            "\n known-answer check on a different lab's dilution series (Untergasser, LightCycler 480):"
+        )
+        print(
+            f"   error vs truth: standard curve {eff['std_curve']['median_abs_error_pct']} %, LinRegPCR mean "
+            f"{eff['assay_mean']['median_abs_error_pct']} %, assume 100 % {eff['assume_100']['median_abs_error_pct']} %, "
+            f"each well's own {eff['per_well']['median_abs_error_pct']} %"
+        )
+        w = v["warning"]
+        print(
+            f"   when analyses disagree most, the standard answer is off by {w['baseline_median_abs_error_pct_when_spread_in_top_quarter']} % "
+            f"(vs {w['baseline_median_abs_error_pct_otherwise']} % otherwise)"
+        )
+
+    _h(10, "OUTPUT FILES (qsim run)")
     print(" results/REPORT.md        plain-language report, every number from the engine")
     print(" results/genes.csv        per gene: call, holds, fragility, margins, drop-k, joint test")
     print(" results/issues.csv/json  the ranked investigation queue with evidence and actions")
-    print(" results/grid.parquet     all 22,599 × 58 results, for any further question")
+    print(" results/grid.parquet     every analysis × gene result, for any further question")
     print(
         " results/summary.json     versions, input hash, grid hash, seeds (byte-identical reruns)"
     )

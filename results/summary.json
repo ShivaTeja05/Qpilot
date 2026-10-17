@@ -6,7 +6,7 @@
  "scipy": "1.17.1",
  "machine": "macOS-26.5.2-arm64-arm-64bit",
  "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
- "grid_hash": "696d92f679fcee53",
+ "grid_hash": "6585fdf65c032a64",
  "seed": 2026,
  "study": {
   "samples": 366,
@@ -24,6 +24,7 @@
   "decisions": {
    "efficiency": [
     "assay_mean",
+    "std_curve",
     "per_well",
     "assume_100"
    ],
@@ -55,7 +56,7 @@
    ]
   },
   "levels": [
-   3,
+   4,
    3,
    3,
    31,
@@ -75,8 +76,8 @@
  },
  "ledger": {
   "strategy": "full",
-  "total_cells": 22599,
-  "evaluated": 22599,
+  "total_cells": 30132,
+  "evaluated": 30132,
   "share_evaluated": 1.0,
   "exploration": "exhaustive",
   "per_ring": {
@@ -85,32 +86,32 @@
     "total": 1
    },
    "1": {
-    "evaluated": 42,
-    "total": 42
+    "evaluated": 43,
+    "total": 43
    },
    "2": {
-    "evaluated": 420,
-    "total": 420
+    "evaluated": 460,
+    "total": 460
    },
    "3": {
-    "evaluated": 1960,
-    "total": 1960
+    "evaluated": 2300,
+    "total": 2300
    },
    "4": {
-    "evaluated": 5040,
-    "total": 5040
+    "evaluated": 6320,
+    "total": 6320
    },
    "5": {
-    "evaluated": 7392,
-    "total": 7392
+    "evaluated": 9872,
+    "total": 9872
    },
    "6": {
-    "evaluated": 5824,
-    "total": 5824
+    "evaluated": 8256,
+    "total": 8256
    },
    "7": {
-    "evaluated": 1920,
-    "total": 1920
+    "evaluated": 2880,
+    "total": 2880
    }
   },
   "t_way_coverage": {
@@ -128,7 +129,7 @@
  },
  "multiverse": {
   "all": {
-   "cells": 22599,
+   "cells": 30132,
    "genes_that_flip_somewhere": 54,
    "fragility_counts": {
     "0": 4,
@@ -140,21 +141,21 @@
    },
    "interaction_only_genes": 22,
    "called_genes_holding_ge_95pct": 18,
-   "called_genes_holding_lt_80pct": 8
+   "called_genes_holding_lt_80pct": 10
   },
   "defensible": {
    "cells": 8424,
-   "genes_that_flip_somewhere": 46,
+   "genes_that_flip_somewhere": 45,
    "fragility_counts": {
-    "0": 12,
+    "0": 13,
     "1": 27,
     "2": 13,
-    "3": 4,
+    "3": 3,
     "4": 2
    },
-   "interaction_only_genes": 19,
-   "called_genes_holding_ge_95pct": 20,
-   "called_genes_holding_lt_80pct": 9
+   "interaction_only_genes": 18,
+   "called_genes_holding_ge_95pct": 21,
+   "called_genes_holding_lt_80pct": 10
   }
  },
  "headline": {
@@ -169,7 +170,7 @@
   "BIRC5": {
    "call": "up",
    "fold": 4.011,
-   "holds_all": 0.9996,
+   "holds_all": 0.9997,
    "holds_defensible": 1.0,
    "fragility_defensible": 0,
    "minimal_flip_sets_defensible": []
@@ -177,8 +178,8 @@
   "NTRK1": {
    "call": "down",
    "fold": 0.066,
-   "holds_all": 0.9979,
-   "holds_defensible": 0.9977,
+   "holds_all": 0.9981,
+   "holds_defensible": 0.9992,
    "fragility_defensible": 4,
    "minimal_flip_sets_defensible": [
     [
@@ -192,8 +193,8 @@
   "NM23A": {
    "call": "up",
    "fold": 2.188,
-   "holds_all": 0.6906,
-   "holds_defensible": 0.6816,
+   "holds_all": 0.698,
+   "holds_defensible": 0.6902,
    "fragility_defensible": 1,
    "minimal_flip_sets_defensible": [
     [
@@ -217,7 +218,6 @@
    "cut"
   ],
   "called_defensible": [
-   "efficiency",
    "flagged",
    "refs",
    "cut"
@@ -225,61 +225,61 @@
  },
  "decisions": {
   "efficiency": {
-   "flip_rate_all": 0.0736,
-   "flip_rate_defensible": 0.0513,
+   "flip_rate_all": 0.0743,
+   "flip_rate_defensible": 0.027,
    "genes_flipped_alone": 6,
-   "variance_share_all": 0.0407,
-   "variance_share_defensible": 0.0282
+   "variance_share_all": 0.0343,
+   "variance_share_defensible": 0.0149
   },
   "flagged": {
-   "flip_rate_all": 0.0998,
-   "flip_rate_defensible": 0.107,
+   "flip_rate_all": 0.0995,
+   "flip_rate_defensible": 0.1056,
    "genes_flipped_alone": 4,
-   "variance_share_all": 0.0892,
-   "variance_share_defensible": 0.1038
+   "variance_share_all": 0.0898,
+   "variance_share_defensible": 0.1057
   },
   "nondetect": {
-   "flip_rate_all": 0.0131,
-   "flip_rate_defensible": 0.0101,
+   "flip_rate_all": 0.0132,
+   "flip_rate_defensible": 0.0098,
    "genes_flipped_alone": 0,
-   "variance_share_all": 0.0192,
-   "variance_share_defensible": 0.0222
+   "variance_share_all": 0.0191,
+   "variance_share_defensible": 0.0211
   },
   "refs": {
-   "flip_rate_all": 0.5922,
-   "flip_rate_defensible": 0.4208,
+   "flip_rate_all": 0.5873,
+   "flip_rate_defensible": 0.4052,
    "genes_flipped_alone": 31,
-   "variance_share_all": 0.3472,
-   "variance_share_defensible": 0.274
+   "variance_share_all": 0.348,
+   "variance_share_defensible": 0.2702
   },
   "cut": {
-   "flip_rate_all": 0.2774,
-   "flip_rate_defensible": 0.2931,
+   "flip_rate_all": 0.2772,
+   "flip_rate_defensible": 0.2951,
    "genes_flipped_alone": 17,
-   "variance_share_all": 0.4558,
-   "variance_share_defensible": 0.52
+   "variance_share_all": 0.4612,
+   "variance_share_defensible": 0.5439
   },
   "test": {
-   "flip_rate_all": 0.0085,
-   "flip_rate_defensible": 0.0071,
+   "flip_rate_all": 0.0083,
+   "flip_rate_defensible": 0.0055,
    "genes_flipped_alone": 0,
    "variance_share_all": 0.0,
    "variance_share_defensible": 0.0
   },
   "multiplicity": {
-   "flip_rate_all": 0.015,
-   "flip_rate_defensible": 0.0125,
+   "flip_rate_all": 0.0144,
+   "flip_rate_defensible": 0.0085,
    "genes_flipped_alone": 0,
    "variance_share_all": 0.0,
    "variance_share_defensible": 0.0
   }
  },
  "top_interactions": {
-  "flaggedxrefs": 0.0152,
-  "refsxcut": 0.0099,
-  "flaggedxcut": 0.0062,
-  "flaggedxnondetect": 0.004,
-  "efficiencyxcut": 0.0033
+  "flaggedxrefs": 0.0155,
+  "refsxcut": 0.0098,
+  "flaggedxcut": 0.0063,
+  "flaggedxnondetect": 0.0041,
+  "efficiencyxcut": 0.0028
  },
  "influence": {
   "genes_flipped_by_one_sample": 4,
@@ -296,9 +296,9 @@
   "permutations": 999,
   "seed": 2026,
   "pooled_samples": 347,
-  "genes_q_lt_0.05": 57,
-  "genes_significant_in_ge_95pct_forks": 24,
-  "called_genes_significant_in_ge_95pct_forks": 23
+  "genes_q_lt_0.05": 58,
+  "genes_significant_in_ge_95pct_forks": 28,
+  "called_genes_significant_in_ge_95pct_forks": 27
  },
  "troubleshooting": {
   "observations": {
@@ -329,7 +329,7 @@
     "rank": 1,
     "id": "D-refs",
     "kind": "decision",
-    "title": "Choice of refs changes 31 call(s) on its own",
+    "title": "The reference genes: changing only this changes 31 call(s)",
     "impact": "changes_conclusion",
     "headline_changed": "NM23A",
     "calls_changed": 31,
@@ -340,7 +340,7 @@
     "rank": 2,
     "id": "D-cut",
     "kind": "decision",
-    "title": "Choice of cut changes 17 call(s) on its own",
+    "title": "The group cut-off: changing only this changes 17 call(s)",
     "impact": "changes_conclusion",
     "headline_changed": "NM23A",
     "calls_changed": 17,
@@ -351,7 +351,7 @@
     "rank": 3,
     "id": "D-efficiency",
     "kind": "decision",
-    "title": "Choice of efficiency changes 6 call(s) on its own",
+    "title": "The efficiency model: changing only this changes 6 call(s)",
     "impact": "changes_conclusion",
     "headline_changed": "",
     "calls_changed": 6,
@@ -362,7 +362,7 @@
     "rank": 4,
     "id": "D-flagged",
     "kind": "decision",
-    "title": "Choice of flagged changes 4 call(s) on its own",
+    "title": "How flagged wells are handled: changing only this changes 4 call(s)",
     "impact": "changes_conclusion",
     "headline_changed": "",
     "calls_changed": 4,
@@ -440,33 +440,33 @@
  "explorer_check": [
   {
    "strategy": "rings <= 1",
-   "runs": 43,
-   "share_of_space": 0.0019027390592504093,
+   "runs": 44,
+   "share_of_space": 0.0014602416036107793,
    "genes_with_a_flip_found": 32,
    "genes_with_a_flip_total": 54,
-   "pairwise_coverage": 0.3939393939393939
+   "pairwise_coverage": 0.37753721244925575
   },
   {
    "strategy": "rings <= 2",
-   "runs": 463,
-   "share_of_space": 0.020487632196114873,
+   "runs": 504,
+   "share_of_space": 0.016726403823178016,
    "genes_with_a_flip_found": 47,
    "genes_with_a_flip_total": 54,
    "pairwise_coverage": 1.0
   },
   {
    "strategy": "covering array t=2",
-   "runs": 98,
-   "share_of_space": 0.004336475065268375,
-   "genes_with_a_flip_found": 47,
+   "runs": 124,
+   "share_of_space": 0.00411522633744856,
+   "genes_with_a_flip_found": 50,
    "genes_with_a_flip_total": 54,
    "pairwise_coverage": 1.0,
    "seed": 1
   },
   {
    "strategy": "covering array t=3",
-   "runs": 452,
-   "share_of_space": 0.02000088499491128,
+   "runs": 479,
+   "share_of_space": 0.015896721093853712,
    "genes_with_a_flip_found": 49,
    "genes_with_a_flip_total": 54,
    "pairwise_coverage": 1.0,
@@ -474,23 +474,100 @@
   },
   {
    "strategy": "Morris, 20 trajectories",
-   "runs": 160,
-   "share_of_space": 0.007079959290234081,
+   "runs": 159,
+   "share_of_space": 0.0052767821585025885,
    "genes_with_a_flip_found": 48,
    "genes_with_a_flip_total": 54,
-   "pairwise_coverage": 0.5829725829725829,
+   "pairwise_coverage": 0.5696887686062246,
    "seed": 1
   },
   {
    "strategy": "random, 500 cells",
-   "runs": 496,
-   "share_of_space": 0.02194787379972565,
-   "genes_with_a_flip_found": 51,
+   "runs": 498,
+   "share_of_space": 0.01652727996814018,
+   "genes_with_a_flip_found": 50,
    "genes_with_a_flip_total": 54,
-   "pairwise_coverage": 0.9971139971139971,
+   "pairwise_coverage": 0.9945872801082544,
    "seed": 1
   }
  ],
+ "verdicts": {
+  "counts": {
+   "check data first": 2,
+   "fragile": 9,
+   "depends on your choices": 12,
+   "solid": 17,
+   "no call": 18
+  },
+  "rules": {
+   "solid_holds": 0.95,
+   "solid_significant": 0.95,
+   "fragile_holds": 0.8,
+   "fragile_drop_k": 2,
+   "fragile_margin_log2": 0.1,
+   "drop_k_searched": 5
+  },
+  "by_gene": {
+   "AHCY": "depends on your choices",
+   "AKR1C1": "solid",
+   "ARHGEF7": "no call",
+   "BIRC5": "solid",
+   "CAMTA1": "solid",
+   "CAMTA2": "no call",
+   "CD44": "solid",
+   "CDCA5": "depends on your choices",
+   "CDH5": "solid",
+   "CDKN3": "depends on your choices",
+   "CLSTN1": "fragile",
+   "CPSG3": "solid",
+   "DDC": "solid",
+   "DPYSL3": "check data first",
+   "ECEL1": "solid",
+   "ELAVL4": "no call",
+   "EPB41L3": "solid",
+   "EPHA5": "depends on your choices",
+   "EPN2": "fragile",
+   "FYN": "no call",
+   "GNB1": "no call",
+   "HIVEP2": "fragile",
+   "IGSF4": "no call",
+   "INPP1": "depends on your choices",
+   "MAP2K4": "no call",
+   "MAP7": "depends on your choices",
+   "MAPT": "solid",
+   "MCM2": "solid",
+   "MRPL3": "no call",
+   "MTSS1": "no call",
+   "NHLH2": "solid",
+   "NM23A": "fragile",
+   "NRCAM": "solid",
+   "NTRK1": "depends on your choices",
+   "ODC1": "solid",
+   "PAICS": "no call",
+   "PDE4DIP": "check data first",
+   "PIK3R1": "fragile",
+   "PLAGL1": "fragile",
+   "PLAT": "fragile",
+   "PMP22": "solid",
+   "PRAME": "depends on your choices",
+   "PRDM2": "no call",
+   "PRKACB_bis": "no call",
+   "PRKCZ": "no call",
+   "PTN": "depends on your choices",
+   "PTPRF": "fragile",
+   "PTPRH": "depends on your choices",
+   "PTPRN2": "fragile",
+   "QPCT": "solid",
+   "SCG2": "solid",
+   "SLC25A5": "no call",
+   "SLC6A8": "no call",
+   "SNAPC1": "no call",
+   "TNFRSF": "depends on your choices",
+   "TYMS": "depends on your choices",
+   "ULK2": "no call",
+   "WSB1": "no call"
+  }
+ },
  "benchmark_pooled": {
   "trials": 220,
   "trials_changing_a_call": 46,
@@ -602,11 +679,11 @@
  ],
  "timings_s": {
   "load_s": 0.12,
-  "full_grid_s": 13.33,
-  "influence_s": 1.97,
-  "joint_test_s": 1.41,
-  "troubleshoot_s": 0.9,
-  "explorer_check_s": 4.58,
-  "benchmark_s": 195.04
+  "full_grid_s": 18.27,
+  "influence_s": 1.94,
+  "joint_test_s": 1.27,
+  "troubleshoot_s": 0.83,
+  "explorer_check_s": 4.53,
+  "benchmark_s": 176.26
  }
 }

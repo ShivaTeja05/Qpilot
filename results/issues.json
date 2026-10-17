@@ -2,7 +2,7 @@
  {
   "issue_id": "D-refs",
   "kind": "decision",
-  "title": "Choice of refs changes 31 call(s) on its own",
+  "title": "The reference genes: changing only this changes 31 call(s)",
   "loci": {
    "decision": "refs"
   },
@@ -141,7 +141,7 @@
  {
   "issue_id": "D-cut",
   "kind": "decision",
-  "title": "Choice of cut changes 17 call(s) on its own",
+  "title": "The group cut-off: changing only this changes 17 call(s)",
   "loci": {
    "decision": "cut"
   },
@@ -229,7 +229,7 @@
  {
   "issue_id": "D-efficiency",
   "kind": "decision",
-  "title": "Choice of efficiency changes 6 call(s) on its own",
+  "title": "The efficiency model: changing only this changes 6 call(s)",
   "loci": {
    "decision": "efficiency"
   },
@@ -276,7 +276,7 @@
  {
   "issue_id": "D-flagged",
   "kind": "decision",
-  "title": "Choice of flagged changes 4 call(s) on its own",
+  "title": "How flagged wells are handled: changing only this changes 4 call(s)",
   "loci": {
    "decision": "flagged"
   },

@@ -48,6 +48,35 @@ def cmd_whatif(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ask(args: argparse.Namespace) -> int:
+    from qpilot.ai.client import ModelClient
+    from qpilot.ai.config import ModelConfig
+
+    from qsim.ask import Asker
+
+    client = ModelClient(config=ModelConfig()) if args.no_model else None
+    asker = Asker(args.results, client=client, rdml=args.rdml)
+    ans = asker.answer(" ".join(args.question))
+    print(ans.text)
+    print(
+        f"\n[{ans.tool} {ans.args} · routed by {ans.routed_by} · written by {ans.written_by}"
+        f"{' (' + ans.model + ')' if ans.model and ans.written_by == 'model' else ''} · every number from the engine]"
+    )
+    if args.verbose and ans.problems:
+        print("validator:", ans.problems)
+    return 0
+
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    import json
+
+    from qsim.validate import validate
+
+    result = validate(args.data, args.out)
+    print(json.dumps(result, indent=1))
+    return 0
+
+
 def cmd_demo(args: argparse.Namespace) -> int:
     from qsim.demo import run_demo
 
@@ -84,6 +113,18 @@ def main(argv: list[str] | None = None) -> int:
     w.add_argument("--genes", nargs="*")
     w.add_argument("--all", action="store_true", help="show every gene")
     w.set_defaults(func=cmd_whatif)
+    a = sub.add_parser("ask", help="ask a question in plain words (local model, checked numbers)")
+    a.add_argument("question", nargs="+")
+    a.add_argument("--results", default="results")
+    a.add_argument("--no-model", action="store_true", help="answer from templates only")
+    a.add_argument("-v", "--verbose", action="store_true")
+    a.set_defaults(func=cmd_ask)
+    v = sub.add_parser(
+        "validate", help="score every analysis against known answers (dilution series)"
+    )
+    v.add_argument("--data", default="data/untergasser/amplicon_primer_mix.rdml")
+    v.add_argument("--out", default="results")
+    v.set_defaults(func=cmd_validate)
     dm = sub.add_parser("demo", help="narrated walk from one raw curve to a verdict on one gene")
     dm.add_argument("--gene", default="NM23A")
     dm.add_argument("--well", default="A1")
