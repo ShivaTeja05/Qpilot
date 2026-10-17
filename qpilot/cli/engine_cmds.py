@@ -72,6 +72,29 @@ def _run_arguments(parser: argparse.ArgumentParser) -> None:
         default="drop",
         help="empty-well handling (with --contrast)",
     )
+    parser.add_argument(
+        "--design",
+        default=None,
+        metavar="STUDY_YAML",
+        help="run a confirmed study design (groups, control genes, replicates) from a study.yaml",
+    )
+    parser.add_argument(
+        "--samples",
+        default=None,
+        metavar="SHEET_CSV",
+        help="sample sheet for --design (CSV: sample, group[, biological_unit, role, quantity])",
+    )
+
+
+def _design_conflicts(args: argparse.Namespace) -> list[str]:
+    """Options that the design file sets, given on the command line as well."""
+    given = {
+        "--contrast": bool(args.contrast),
+        "--refs": bool(args.refs),
+        "--experiment": args.experiment != "biomarker_set",
+        "--cut": args.cut != 0.15,
+    }
+    return [option for option, used in given.items() if used]
 
 
 def _run(args: argparse.Namespace) -> int:
@@ -81,6 +104,13 @@ def _run(args: argparse.Namespace) -> int:
     from qpilot.qpcr.design import GroupSpec, marker_groups
     from qpilot.qpcr.quant import log2_matrix
 
+    if args.samples and not args.design:
+        print("qpilot run: --samples needs --design", file=sys.stderr)
+        return 1
+    if args.design and _design_conflicts(args):
+        options = ", ".join(_design_conflicts(args))
+        print(f"qpilot run: with --design, set {options} in the design file", file=sys.stderr)
+        return 1
     if not args.contrast:
         return _run_study(args)
     path = args.rdml or str(default_cache_dir() / "data_vermeulen_raw.rdml")
@@ -153,6 +183,10 @@ def _run_study(args: argparse.Namespace) -> int:
         settings = StudySettings(experiment_id=args.experiment, cut=args.cut, candidates=candidates)
     path = args.rdml or str(default_cache_dir() / "data_vermeulen_raw.rdml")
     try:
+        if args.design:
+            from qpilot.qpcr.designs import load_design
+
+            settings = StudySettings.from_design(load_design(args.design, args.samples))
         result, cards, grid = run_study(path, settings)
     except (
         RdmlLoadError,
@@ -178,8 +212,12 @@ def _print_study(result, cards, settings) -> None:
         f"{result.n_plates} plates, {result.n_reactions:,} reactions, {result.n_samples} samples "
         f"(study {result.study_id})"
     )
-    print(f"{settings.marker_label}-high {result.design.n_hi} vs rest {result.design.n_lo} "
-          "(by expression)")  # fmt: skip
+    if settings.groups_mode:  # groups from the design: units per group, no cut-off
+        print(f"{result.design.group_var}: {result.design.n_hi} vs {result.design.n_lo} "
+              f"biological units ({result.design.note})")  # fmt: skip
+    else:
+        print(f"{settings.marker_label}-high {result.design.n_hi} vs rest {result.design.n_lo} "
+              "(by expression)")  # fmt: skip
     stable = [g for g, m in result.genorm.M_initial.items() if m < result.genorm.cutoff_M]
     print(
         f"Control genes, most stable first: {', '.join(result.genorm.order)}; "

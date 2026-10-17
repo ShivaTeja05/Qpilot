@@ -1,0 +1,16 @@
+# The demo study as a confirmed design (qpilot/qpcr/designs.py::vermeulen_design).
+# `qpilot run --design demo/vermeulen.study.yaml` gives the same output as `qpilot run`,
+# byte for byte. Groups are expression-defined (top fraction by MYCN expression vs the rest),
+# not a clinical MYCN-amplification call.
+
+design_id: vermeulen_expression_defined
+experiment_id: biomarker_set
+mode: marker_split
+marker_split:
+  marker: MYCN(4)
+  cut: 0.15
+  cuts: [0.10, 0.15, 0.20]
+  group_var: MYCN_high
+reference_candidates: [ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2)]
+headline: [ODC1, BIRC5, NTRK1, NM23A]
+amp_calls: [linregpcr]
