@@ -53,6 +53,8 @@ WORKSPACE_FILES = (
     "pending.jsonl",
     "ai_calls.jsonl",
     "harness_scorecard.json",
+    "attempts.jsonl",
+    "autonomy.json",
 )
 MAX_UNZIPPED_BYTES = 1 << 30
 MAX_MEMBERS = 10_000
@@ -182,10 +184,13 @@ def write_record(
     record_dir.mkdir(parents=True, exist_ok=True)
     if any(record_dir.iterdir()):
         raise RecordError(f"record directory is not empty: {record_dir}")
-    for name in WORKSPACE_FILES:
-        src = workspace / name
-        if src.exists():
-            shutil.copyfile(src, record_dir / name)
+    with store._locked(workspace):  # copy a consistent workspace: no write in between
+        for name in WORKSPACE_FILES:
+            src = workspace / name
+            if src.exists():
+                shutil.copyfile(src, record_dir / name)
+        head = store.chain_head(study_id)
+        choices = _choices(result, store, study_id)
     source = Path(rdml_path) if rdml_path is not None else store.source(study_id)
     included = False
     if source is not None and include_input:
@@ -194,9 +199,8 @@ def write_record(
         shutil.copyfile(source, record_dir / "input.rdml")
         included = True
     atomic_write(record_dir / "design.json", dump_json(result.design.model_dump(mode="json")))
-    atomic_write(record_dir / "choices.json", dump_json(_choices(result, store, study_id)))
+    atomic_write(record_dir / "choices.json", dump_json(choices))
     atomic_write(record_dir / "versions.json", dump_json(versions()))
-    head = store.chain_head(study_id)
     meta = {
         "study_id": study_id,
         "input_sha256": result.input_sha256,

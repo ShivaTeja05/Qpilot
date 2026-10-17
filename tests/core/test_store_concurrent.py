@@ -34,4 +34,5 @@ def test_two_processes_one_applied_one_stale(store, study):
     for prev, entry in zip(entries, entries[1:], strict=False):
         assert entry.prev_hash == prev.hash
         assert entry.hash == entry_hash(entry)
-    assert sorted(e.status for e in entries[1:]) == ["applied", "stale"]
+    assert [e.status for e in entries[1:]] == ["applied"]  # the loser is not in the chain
+    assert [a["status"] for a in store.attempts(study)] == ["stale"]

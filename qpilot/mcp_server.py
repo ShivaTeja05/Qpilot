@@ -22,8 +22,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from qpilot.core.decisions import DecisionError, apply_decision, needs_human
-from qpilot.core.store import StudyNotFound, StudyStore
+from qpilot.core.decisions import DecisionError, apply_decision, check_request, needs_human
+from qpilot.core.store import SUGGEST_REASON, StudyNotFound, StudyStore
 from qpilot.qpcr.plan import plan
 from qpilot.schemas import DecisionCard
 
@@ -88,10 +88,16 @@ def _card_view(card: DecisionCard) -> dict[str, Any]:
 
 
 class QpilotTools:
-    """The four tools as plain methods (easy to test), registered on the MCP server below."""
+    """The four tools as plain methods (easy to test), registered on the MCP server below.
 
-    def __init__(self, store: StudyStore | None = None) -> None:
+    ``agent_policy=True`` (the MCP server) applies the study's autonomy setting: in ``suggest``
+    (the default) every agent decision becomes a request for a person. The in-app model passes
+    ``False`` because the app applies its own Autonomy toggle.
+    """
+
+    def __init__(self, store: StudyStore | None = None, agent_policy: bool = True) -> None:
         self._store = store
+        self.agent_policy = agent_policy
 
     @property
     def store(self) -> StudyStore:
@@ -133,6 +139,7 @@ class QpilotTools:
             "study_id": study_id,
             "record_root_hash": result.input_sha256,
             "chain_head": self.store.chain_head(study_id),
+            "agent_autonomy": self.store.autonomy(study_id),
             "n_plates": result.n_plates,
             "n_reactions": result.n_reactions,
             "n_samples": result.n_samples,
@@ -218,9 +225,18 @@ class QpilotTools:
                 "error": "over MCP the actor is always 'agent'; people decide in the qPilot app"
             }
         try:
-            outcome = apply_decision(
-                self.store, study_id, card_id, option, reason, "agent", expected_head
-            )
+            if self.agent_policy and self.store.autonomy(study_id) != "decide_and_tell":
+                card = self.store.card(study_id, card_id)
+                cleaned = check_request(card, option, reason)
+                outcome = self.store.request_human(
+                    study_id, card_id, option, cleaned, "agent", expected_head
+                )
+                if outcome.status == "pending_human" and not needs_human(card):
+                    outcome = outcome.model_copy(update={"reason": SUGGEST_REASON})
+            else:
+                outcome = apply_decision(
+                    self.store, study_id, card_id, option, reason, "agent", expected_head
+                )
         except StudyNotFound:
             return {"error": "unknown study_id; call qpcr_study first"}
         except (DecisionError, KeyError) as err:

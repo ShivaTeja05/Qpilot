@@ -36,19 +36,26 @@ STUDY_ID = re.compile(r"^[0-9a-f]{6,64}$")
 LOCK_TIMEOUT_S = 30
 STALE_REASON = "card changed since you read it"
 PENDING_REASON = "This choice can change a conclusion, so a human must decide it."
+SUGGEST_REASON = (
+    "The scientist has not allowed agents to apply choices for this study (Suggest mode), "
+    "so a person must confirm it."
+)
+AGENT_LEVELS = ("suggest", "decide_and_tell")
 
 
 def pending_after(entries: list[DecisionEntry], legacy: bool = False) -> list[DecisionEntry]:
     """The agent requests still waiting after a log, replayed the way the store keeps them.
 
-    ``legacy=True`` replays the rule of qPilot builds before 17 Oct 2026 16:40 UTC, where one
-    rejection cleared every request on its card; ``verify`` accepts either.
+    An applied decision (by anyone) settles the card, so its waiting requests are cleared.
+    ``legacy=True`` replays the rule of earlier qPilot builds (only a person's decision
+    cleared requests, and one rejection cleared every request on its card); ``verify`` accepts
+    either.
     """
     pending: list[DecisionEntry] = []
     for entry in entries:
         if entry.status == "pending_human":
             pending.append(entry)
-        elif entry.actor == "human" and entry.status == "applied":
+        elif entry.status == "applied" and (entry.actor == "human" or not legacy):
             pending = [p for p in pending if p.card_id != entry.card_id]
         elif entry.actor == "human" and entry.status == "rejected":
             pending = [
@@ -209,6 +216,38 @@ class StudyStore:
         """Agent requests that wait for a human, oldest first."""
         return read_entries(self.workspace(study_id) / "pending.jsonl")
 
+    def snapshot(self, study_id: str) -> tuple[str, list[DecisionCard], list[DecisionEntry]]:
+        """Chain head, cards and pending requests read together under the workspace lock."""
+        with self._locked(self.workspace(study_id)):
+            return self.chain_head(study_id), self.cards(study_id), self.pending(study_id)
+
+    def autonomy(self, study_id: str) -> str:
+        """What agents may do in this study (``suggest`` by default).
+
+        ``suggest``: agents may only ask. ``decide_and_tell``: agents may apply choices that
+        cannot change a conclusion. The MCP server applies this setting.
+        """
+        path = self.workspace(study_id) / "autonomy.json"
+        if not path.exists():
+            return "suggest"
+        level = json.loads(path.read_text(encoding="utf-8")).get("level")
+        return level if level in AGENT_LEVELS else "suggest"
+
+    def set_autonomy(self, study_id: str, level: str) -> None:
+        """Set what agents may do in this study (the app's Autonomy toggle calls this)."""
+        if level not in AGENT_LEVELS:
+            raise ValueError(f"autonomy must be one of {', '.join(AGENT_LEVELS)}")
+        workspace = self.workspace(study_id)
+        with self._locked(workspace):
+            atomic_write(workspace / "autonomy.json", dump_json({"level": level}))
+
+    def attempts(self, study_id: str) -> list[dict[str, Any]]:
+        """Refused (stale) attempts, kept outside the chain so they never move its head."""
+        path = self.workspace(study_id) / "attempts.jsonl"
+        if not path.exists():
+            return []
+        return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x]
+
     # ---- writing (all under the workspace lock) ------------------------------------------
 
     def put(self, result: StudyResult, cards: list[DecisionCard], grid: Any = None) -> None:
@@ -356,12 +395,23 @@ class StudyStore:
             root = self.get(study_id).input_sha256
             head = entries[-1].hash if entries else root
             if expected_head is not None and expected_head != head:
-                entry = self._append(
-                    log, entries, root, card_id, options[0], reason, actor, "stale"
-                )
+                # Logged outside the chain: a refused attempt must not move the head, or other
+                # readers would be told the card changed when nothing did.
+                attempt = {
+                    "at": _now(),
+                    "status": "stale",
+                    "card_id": card_id,
+                    "option": options[0],
+                    "reason": reason,
+                    "actor": actor,
+                    "expected_head": expected_head,
+                    "head": head,
+                }
+                with open(workspace / "attempts.jsonl", "a", encoding="utf-8") as fh:
+                    fh.write(canonical_json(attempt) + "\n")
                 return DecisionOutcome(
                     status="stale",
-                    chain_head=entry.hash,
+                    chain_head=head,
                     card=self.card(study_id, card_id),
                     reason=STALE_REASON,
                 )

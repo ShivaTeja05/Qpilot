@@ -83,7 +83,7 @@ class _Context:
         self.study_id = study_id
         self.result: StudyResult = store.get(study_id)
         self.cards: list[DecisionCard] = store.cards(study_id)
-        self.tools = QpilotTools(store)
+        self.tools = QpilotTools(store, agent_policy=False)  # the app applies its own toggle
         self.names = names_from_result(self.result)
         for card in self.cards:
             self.names |= card_names(card)

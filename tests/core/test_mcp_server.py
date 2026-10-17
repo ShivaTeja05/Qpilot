@@ -68,9 +68,13 @@ def test_decide_tool(tools, demo):
     assert out["card"]["decision"] is None
     stale = tools.qpcr_decide(study_id, "card_undetermined", "cap", "try cap", "agent", "0" * 64)
     assert stale["status"] == "stale"
-    applied = tools.qpcr_decide(
+    # Suggest (the default): even a choice that changes nothing waits for a person
+    asked = tools.qpcr_decide(
         study_id, "card_undetermined", "cap", "try cap", "agent", stale["chain_head"]
     )
+    assert asked["status"] == "pending_human" and "Suggest mode" in asked["reason"]
+    tools.store.set_autonomy(study_id, "decide_and_tell")
+    applied = tools.qpcr_decide(study_id, "card_undetermined", "cap", "try cap")
     assert applied["status"] == "applied" and applied["card"]["decided_by"] == "agent"
 
 
