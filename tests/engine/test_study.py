@@ -1,4 +1,7 @@
-"""Task 8 gate: run_study wires the engine into the core and reproduces every planned number."""
+"""Task 8 gate: run_study wires the engine into the core and reproduces every planned number.
+
+Task 8b gate: card 1 carries the group-effect check.
+"""
 
 import json
 
@@ -7,8 +10,18 @@ import pandas as pd
 import pytest
 
 from qpilot.cli import main
+from qpilot.core.facts import render_fact
 from qpilot.qpcr.study import StudySettings, run_study, study_from_curves, write_outputs
 from qpilot.schemas import DecisionCard, StudyResult
+
+REFSET_EXTRA_FACTS = [
+    "f_ref_pair_top",
+    "f_ref_ratio_top",
+    "f_ref_ratio_top_p",
+    "f_n_ref_pairs_flagged",
+    "f_n_ref_pairs",
+    "f_ref_flag_fold",
+]
 
 # ---------- a small synthetic study (runs in CI) ----------
 
@@ -116,6 +129,19 @@ def test_toy_is_deterministic_and_writes_valid_files(toy_curves, toy, tmp_path):
     assert json.loads(paths["facts.json"].read_text()).keys() == result.facts.keys()
 
 
+def test_toy_refset_card_extras(toy):
+    result, cards, _ = toy
+    refset = next(c for c in cards if c.id == "card_refset")
+    assert set(refset.impact) == {"flips", "n_genes_flipped", "max_delta_log2fc"}
+    evidence = refset.evidence
+    assert evidence["genorm_validated"] is False and "pairwise ratios" in evidence["genorm_note"]
+    assert evidence["ref_group_effect"]["note"] == "3 pairs, no multiple-testing correction"
+    assert json.loads(json.dumps(evidence)) == evidence
+    assert [f for f in REFSET_EXTRA_FACTS if f not in refset.facts] == []
+    assert result.facts["f_n_ref_pairs"].value == 3
+    assert {"f_ref_ratio_r1_r2", "f_ref_ratio_r1_r3_p", "f_ref_ratio_r2_r3"} <= set(result.facts)
+
+
 def test_marker_label_drops_the_assay_suffix():
     assert StudySettings().marker_label == "MYCN"
     assert StudySettings(marker="GAPDH").marker_label == "GAPDH"
@@ -186,6 +212,51 @@ def test_demo_cards(demo):
         assert not [f for f in card.facts if f not in result.facts], card.id
     assert result.facts["f_n_flipped_refset"].value == 31
     assert result.facts["f_worst_ref"].value == "UBC(2)"
+
+
+@pytest.mark.demo_data
+def test_demo_group_effect_evidence(demo):
+    _, cards, _ = demo
+    evidence = cards[0].evidence
+    assert evidence["genorm_validated"] is False
+    assert evidence["genorm_note"] == (
+        "geNorm M ranks stability across all samples; it cannot show whether a control gene "
+        "differs between the groups. The pairwise ratios below check that."
+    )
+    effect = evidence["ref_group_effect"]
+    assert [p["label"] for p in effect["pairs"][:3]] == effect["flagged"]
+    assert effect["flagged"] == ["HMBS:UBC(2)", "HMBS:HPRT1", "SDHA(1):UBC(2)"]
+    assert effect["pairs"][0]["diff"] == pytest.approx(0.81, abs=0.03)
+    assert effect["raw"]["UBC(2)"]["diff"] == pytest.approx(-0.81, abs=0.03)
+    assert effect["note"] == "10 pairs, no multiple-testing correction"
+    assert json.loads(json.dumps(evidence)) == evidence
+
+
+@pytest.mark.demo_data
+def test_demo_group_effect_facts(demo):
+    result, cards, _ = demo
+    facts, refset = result.facts, cards[0]
+    assert [f for f in REFSET_EXTRA_FACTS if f not in refset.facts] == []
+    assert facts["f_ref_pair_top"].value == "HMBS:UBC(2)"
+    assert facts["f_ref_ratio_top"].value == pytest.approx(1.76, abs=0.05)
+    assert facts["f_ref_ratio_top_p"].value == pytest.approx(0.058, abs=0.01)
+    assert (render_fact(facts["f_ref_ratio_top"]), render_fact(facts["f_ref_ratio_top_p"])) == (
+        "1.8×",
+        "0.058",
+    )
+    assert facts["f_ref_ratio_hmbs_ubc_2"].value == facts["f_ref_ratio_top"].value
+    assert facts["f_ref_ratio_hmbs_ubc_2_p"].value == facts["f_ref_ratio_top_p"].value
+    assert facts["f_ref_ratio_hmbs_hprt1"].value == pytest.approx(2**0.71, abs=0.05)
+    assert facts["f_ref_ratio_hmbs_hprt1_p"].value == pytest.approx(0.045, abs=0.01)
+    assert facts["f_ref_ratio_sdha_1_ubc_2"].value == pytest.approx(2**0.54, abs=0.05)
+    ratio_ids = [f for f in facts if f.startswith("f_ref_ratio_") and "_top" not in f]
+    assert len(ratio_ids) == 2 * 10  # every pair: fold and p
+    assert all(facts[f].unit == "×" for f in ratio_ids if not f.endswith("_p"))
+    assert (facts["f_n_ref_pairs"].value, facts["f_n_ref_pairs_flagged"].value) == (10, 3)
+    assert facts["f_ref_flag_fold"].value == pytest.approx(2**0.5)
+    assert render_fact(facts["f_ref_flag_fold"]) == "1.4×"
+    assert facts["f_genorm_v_min"].value == pytest.approx(0.327, abs=0.01)
+    assert render_fact(facts["f_genorm_v_min"]) == "0.33"
 
 
 @pytest.mark.demo_data

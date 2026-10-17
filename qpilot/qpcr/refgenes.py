@@ -11,18 +11,30 @@ V < 0.15 and treats M < 1.5 as "stable enough".
 On the demo tumour panel no candidate is below M 1.5 and no V is below 0.15, so the
 recommendation is to use all five; that is exactly why the choice of control gene matters there.
 The arithmetic follows the validation oracle (``planning/verification/verify.py``) step by step.
+
+geNorm looks at all samples together, so it cannot tell whether a control gene differs **between
+the groups being compared**; a control gene that does would normalise part of the real signal
+away (or invent one). :func:`group_effect` checks that directly: the ratio of every pair of
+candidates is compared between the high group and the rest (Welch), and a pair whose ratio moves
+by at least ``flag_log2`` is flagged. Ratios cancel the input amount, so they are the fair test;
+each gene's raw level is reported too but includes the amount of cDNA put in.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
+from dataclasses import dataclass
+from itertools import combinations
+from typing import Any
 
 import pandas as pd
 
+from qpilot.qpcr.contrast import welch
 from qpilot.schemas import GenormResult
 
 CUTOFF_M = 1.5
 CUTOFF_V = 0.15
+GROUP_FLAG_LOG2 = 0.5  # a ratio that moves by at least 2**0.5 (1.4-fold) between groups
 
 
 def _pairwise_m(matrix: pd.DataFrame, genes: Sequence[str]) -> dict[str, float]:
@@ -98,3 +110,128 @@ def robust_m(matrix: pd.DataFrame, candidates: Sequence[str]) -> dict[str, float
             mads.append(float((ratio - ratio.median()).abs().median() * 1.4826))
         out[gene] = sum(mads) / len(mads)
     return out
+
+
+@dataclass(frozen=True)
+class RefShift:
+    """One control gene (or the ratio of two) compared between the high group and the rest.
+
+    ``diff`` is mean(high) - mean(rest) on the log2 scale; for a pair ``(a, b)`` it is the shift
+    of ``log2(a / b)``, so +0.81 means the ratio a:b is 2**0.81 = 1.76 times higher in the high
+    group. ``p`` is Welch's two-sided p-value; ``n_hi`` and ``n_lo`` count the samples used.
+    """
+
+    genes: tuple[str, ...]
+    diff: float
+    p: float
+    n_hi: int
+    n_lo: int
+
+    @property
+    def label(self) -> str:
+        """``HMBS:UBC(2)`` for a pair, the gene name for a single gene."""
+        return ":".join(self.genes)
+
+    @property
+    def fold(self) -> float:
+        """The shift as a fold change, ``2**diff``."""
+        return float(2**self.diff)
+
+    def as_dict(self) -> dict[str, Any]:
+        """Plain JSON-serialisable values."""
+        return {
+            "genes": list(self.genes),
+            "label": self.label,
+            "diff": float(self.diff),
+            "fold": self.fold,
+            "p": float(self.p),
+            "n_hi": int(self.n_hi),
+            "n_lo": int(self.n_lo),
+        }
+
+
+@dataclass(frozen=True)
+class RefGroupEffect:
+    """Do the candidate control genes differ between the groups being compared?
+
+    ``raw``: each candidate's own log2 level, high minus rest, in candidate order (includes the
+    amount of cDNA put in, so it is context, not a verdict). ``pairs``: every pair's log2 ratio,
+    high minus rest, largest shift first. ``flagged``: the pairs whose ratio moves by at least
+    ``flag_log2``. No multiple-testing correction is applied.
+    """
+
+    raw: tuple[RefShift, ...]
+    pairs: tuple[RefShift, ...]
+    flagged: tuple[RefShift, ...]
+    flag_log2: float
+    note: str
+
+    @property
+    def top(self) -> RefShift | None:
+        """The pair whose ratio moves most between the groups (``None`` without pairs)."""
+        return self.pairs[0] if self.pairs else None
+
+    def as_dict(self) -> dict[str, Any]:
+        """Plain JSON-serialisable values (for a Decision Card's evidence)."""
+        return {
+            "raw": {shift.label: shift.as_dict() for shift in self.raw},
+            "pairs": [shift.as_dict() for shift in self.pairs],
+            "flagged": [shift.label for shift in self.flagged],
+            "flag_log2": float(self.flag_log2),
+            "flag_fold": float(2**self.flag_log2),
+            "note": self.note,
+        }
+
+
+def _shift(
+    genes: tuple[str, ...], values: pd.Series, high: Collection[str], rest: Collection[str]
+) -> RefShift | None:
+    """Welch comparison of ``values`` between the groups; ``None`` if a side has < 2 values."""
+    values = values.dropna()
+    a = values[values.index.isin(high)]
+    b = values[values.index.isin(rest)]
+    if len(a) < 2 or len(b) < 2:
+        return None
+    w = welch(a.to_numpy(), b.to_numpy())
+    return RefShift(genes=genes, diff=float(w.diff), p=float(w.p), n_hi=len(a), n_lo=len(b))
+
+
+def group_effect(
+    matrix: pd.DataFrame,
+    candidates: Sequence[str],
+    high: Collection[str],
+    rest: Collection[str],
+    flag_log2: float = GROUP_FLAG_LOG2,
+) -> RefGroupEffect:
+    """Check whether the candidate control genes shift between the groups being compared.
+
+    geNorm's M ranks stability over all samples and cannot see a gene that differs between the
+    groups; normalising to such a gene moves every target by the same amount. For each pair
+    ``(a, b)`` in candidate order, ``matrix[a] - matrix[b]`` (the log2 ratio, which cancels the
+    input amount) is compared between ``high`` and ``rest`` with Welch's t-test; samples missing
+    either gene are dropped. Pairs whose ratio moves by at least ``flag_log2`` are flagged.
+
+    Args:
+        matrix: Samples x genes ``log2(n0)`` from :func:`qpilot.qpcr.quant.log2_matrix`.
+        candidates: The candidate control genes.
+        high: Sample names in the high group.
+        rest: Sample names in the comparison group.
+        flag_log2: Flag threshold on ``|diff|`` (log2); 0.5 = 1.4-fold.
+
+    Returns:
+        A :class:`RefGroupEffect`. A comparison with fewer than two samples on a side is left
+        out (and not counted in the note).
+    """
+    candidates = tuple(candidates)
+    raw = [_shift((gene,), matrix[gene], high, rest) for gene in candidates]
+    pairs = [
+        _shift((a, b), matrix[a] - matrix[b], high, rest) for a, b in combinations(candidates, 2)
+    ]
+    tested = sorted((s for s in pairs if s is not None), key=lambda s: -abs(s.diff))
+    return RefGroupEffect(
+        raw=tuple(s for s in raw if s is not None),
+        pairs=tuple(tested),
+        flagged=tuple(s for s in tested if abs(s.diff) >= flag_log2),
+        flag_log2=float(flag_log2),
+        note=f"{len(tested)} pairs, no multiple-testing correction",
+    )

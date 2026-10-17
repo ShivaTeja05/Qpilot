@@ -7,7 +7,8 @@ This is the one place where the qPCR plugin meets the domain-agnostic core:
 2. ``core.robustness`` evaluates every cell of the space (186 analyses on the demo) and
    summarises each gene: primary conclusion, how often it holds, which choices flip it;
 3. ``core.decisions`` turns the three analysis choices into ranked Decision Cards and applies the
-   escalation rule (a choice that can flip a conclusion is a human decision);
+   escalation rule (a choice that can flip a conclusion is a human decision); the reference-set
+   card then gains the control-gene group-effect check (:func:`qpilot.qpcr.refgenes.group_effect`);
 4. ``qpcr.confidence_checks`` and ``core.confidence`` grade every gene;
 5. every number that prose may cite is registered as a fact (``core.facts``) under the id
    convention ``f_<metric>_<slug>_<context>``, e.g. ``f_fc_odc1_hmbs``.
@@ -21,7 +22,7 @@ from __future__ import annotations
 import hashlib
 import re
 import statistics
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -37,7 +38,7 @@ from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule
 from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS, CurveSettings, analyse_study
 from qpilot.qpcr.design import DEMO_GROUP_VAR, DEMO_MARKER, GroupSpec, design_summary
 from qpilot.qpcr.quant import Undetermined, log2_matrix
-from qpilot.qpcr.refgenes import genorm
+from qpilot.qpcr.refgenes import RefGroupEffect, genorm, group_effect
 from qpilot.qpcr.space import DEFAULT_CUTS, DEFAULT_UNDETERMINED, QpcrSpace
 from qpilot.schemas import (
     Autonomy,
@@ -54,6 +55,18 @@ HOLDS_LOW = 0.80  # "holds in fewer than 80 %" is counted in f_n_hold_lt_80
 FC_FMT = "{:.2g}"
 TIMES = "×"
 _NUMBER_WORDS = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}
+GENORM_NOTE = (
+    "geNorm M ranks stability across all samples; it cannot show whether a control gene differs "
+    "between the groups. The pairwise ratios below check that."
+)
+_REFSET_EXTRA_FACTS = (
+    "f_ref_pair_top",
+    "f_ref_ratio_top",
+    "f_ref_ratio_top_p",
+    "f_n_ref_pairs_flagged",
+    "f_n_ref_pairs",
+    "f_ref_flag_fold",
+)
 
 
 @dataclass(frozen=True)
@@ -142,6 +155,8 @@ def study_from_curves(
     counts = {"n_undetermined": int(unknown["n0"].isna().sum()), "n_unknown_wells": len(unknown)}
     specs = _card_specs(space, stability, summary, settings, headline, counts)
     cards = build_cards(space, summary, specs, headline, settings.autonomy)
+    ref_effect = group_effect(matrix, settings.candidates, high, rest)
+    cards = [_refset_extras(card, ref_effect) for card in cards]
     facts = _facts(base, confidence, cards, space, settings, headline, counts)
     result = base.model_copy(update={"confidence": confidence, "facts": facts.as_dict()})
     return result, cards, grid
@@ -224,6 +239,21 @@ def _ref_options(
             option = OptionSpec(id=f"{slug(gene)}_alone", label=f"{gene} alone", value=(gene,))
             options.append((option, slug(gene)))
     return options
+
+
+def _refset_extras(card: DecisionCard, effect: RefGroupEffect) -> DecisionCard:
+    """Add the group-effect check to card 1: geNorm alone does not validate the set."""
+    if card.id != "card_refset":
+        return card
+    extra = [f for f in _REFSET_EXTRA_FACTS if effect.top is not None or "_top" not in f]
+    evidence = {
+        **card.evidence,
+        "ref_group_effect": effect.as_dict(),
+        "genorm_validated": False,
+        "genorm_note": GENORM_NOTE,
+    }
+    facts = list(dict.fromkeys([*card.facts, *extra]))
+    return card.model_copy(update={"evidence": evidence, "facts": facts})
 
 
 def _card_specs(
@@ -364,6 +394,8 @@ def _facts(
     for key, value in stability.V.items():  # "V2/3" -> f_v_2_3
         add(f"f_v_{slug(key[1:])}", float(value), "{:.2f}", "", f"genorm.V.{key}")
     add("f_worst_ref", stability.order[-1], path="genorm.order[-1]")
+    if stability.V:
+        add("f_genorm_v_min", float(min(stability.V.values())), "{:.2f}", "", "genorm.V")
 
     for gene in items:
         s, contrast, graded = slug(gene), result.contrasts[gene], confidence[gene]
@@ -385,6 +417,8 @@ def _facts(
                 add(f"f_fc_{slug(gene)}_{context}", contrast.fc, FC_FMT, TIMES, path)
         for option_id, n_hi in card.evidence.get("n_hi_by_cut", {}).items():
             add(f"f_n_hi_{option_id}", int(n_hi), path=f"cards.{card.id}.evidence.n_hi_by_cut")
+        if card.id == "card_refset" and "ref_group_effect" in card.evidence:
+            _refset_facts(add, card)
     worst = slug(stability.order[-1])
     for gene in headline:
         source = f"f_fc_{slug(gene)}_{worst}"
@@ -392,3 +426,27 @@ def _facts(
             path = f"cards.card_refset.{worst}_alone.{gene}.fc"
             add(f"f_fc_{slug(gene)}_worst", registry.get(source).value, FC_FMT, TIMES, path)
     return registry
+
+
+def _refset_facts(add: Callable[..., None], card: DecisionCard) -> None:
+    """Facts for the reference-set card's group-effect check.
+
+    Values are read from the card itself, so a fact always equals what ``cards.json`` shows.
+    """
+    root = f"cards.{card.id}"
+    effect = card.evidence["ref_group_effect"]
+    base = f"{root}.evidence.ref_group_effect"
+    pairs = effect["pairs"]
+    for pair in pairs:  # f_ref_ratio_hmbs_ubc_2 (+ _p): the shift of HMBS:UBC(2), high vs rest
+        a, b = pair["genes"]
+        fid, path = f"f_ref_ratio_{slug(a)}_{slug(b)}", f"{base}.pairs.{pair['label']}"
+        add(fid, float(pair["fold"]), FC_FMT, TIMES, f"{path}.fold")
+        add(f"{fid}_p", float(pair["p"]), "{:.2g}", "", f"{path}.p")
+    if pairs:
+        top, path = pairs[0], f"{base}.pairs.{pairs[0]['label']}"
+        add("f_ref_pair_top", str(top["label"]), path=f"{path}.label")
+        add("f_ref_ratio_top", float(top["fold"]), FC_FMT, TIMES, f"{path}.fold")
+        add("f_ref_ratio_top_p", float(top["p"]), "{:.2g}", "", f"{path}.p")
+    add("f_n_ref_pairs", len(pairs), path=f"{base}.pairs")
+    add("f_n_ref_pairs_flagged", len(effect["flagged"]), path=f"{base}.flagged")
+    add("f_ref_flag_fold", float(effect["flag_fold"]), FC_FMT, TIMES, f"{base}.flag_fold")
