@@ -202,7 +202,7 @@ code { font-size: 12px; }
 }
 @media (max-width: 920px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
-  .side { position: static; max-height: 300px; }
+  .side { position: static; max-height: 240px; }
   .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .cols2 { grid-template-columns: minmax(0, 1fr); }
   .top { position: static; }
@@ -389,6 +389,7 @@ const EXAMPLES = [
   "Does NM23A depend on the reference genes?", "Is NTRK1 robust?", "What if we normalise to HMBS alone?",
   "Does the late-Cq cut-off matter?", "What should I check first?", "How robust is the study overall?",
 ];
+const TABS = ["gene", "study", "whatif", "ask", "how"];
 const TIER_WORD = {prespecified: "planned", defensible: "reasonable alternative", common_practice: "common shortcut"};
 const state = {ov: null, filter: null, gene: null, card: null, changes: {}, tab: "gene", wiAll: false, study: null, how: null, stage: 0, cache: {}};
 const $ = (id) => document.getElementById(id);
@@ -930,11 +931,11 @@ async function init() {
   const h = readHash();
   const first = ov.genes.find((g) => g.gene === h.gene) || ov.genes.find((g) => g.headline) || ov.genes[0];
   await selectGene(first.gene);
-  setTab(["gene", "study", "whatif", "ask", "how"].includes(h.tab) ? h.tab : "gene");
+  setTab(TABS.includes(h.tab) ? h.tab : "gene");
   addEventListener("hashchange", () => {
     const n = readHash();
+    if (n.tab && n.tab !== state.tab && TABS.includes(n.tab)) setTab(n.tab, false);
     if (n.gene && n.gene !== state.gene && ov.genes.some((x) => x.gene === n.gene)) selectGene(n.gene);
-    if (n.tab && n.tab !== state.tab) setTab(n.tab, false);
   });
 }
 init().catch((err) => { $("study").textContent = "Could not load the results: " + err.message; });
