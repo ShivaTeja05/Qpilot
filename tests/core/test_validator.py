@@ -136,3 +136,15 @@ def test_names_inside_parentheses_and_lists():
     text = "Top two (ALUsq(Eurogentec), HPRT1) and SDHA(1), UBC(2)."
     assert validate(text, FACTS, NAMES | {"HPRT1"}).ok
     assert not validate("SDHA(12) and UBC(2)", FACTS, NAMES).ok
+
+
+def test_method_constants_allowed_but_data_still_rejected(fixture_result):
+    names = names_from_result(fixture_result)
+    ok = (
+        "NM23A is up (95% confidence interval {{f_ci_lo_nm23a_recommended}}); "
+        "the rule is p < 0.05 and 2-fold."
+    )
+    assert validate(ok, fixture_result.facts, names).ok
+    assert validate("the two-fold line and the 95 % CI", fixture_result.facts, names).ok
+    for bad in ["NM23A is 2.2x up", "holds in 65% of analyses", "97% of analyses", "3-fold change"]:
+        assert not validate(bad, fixture_result.facts, names).ok, bad

@@ -3,9 +3,11 @@
 Domain-agnostic, shared by the explanation templates and the model layer. A text passes only if
 every ``{{fact_id}}`` token names a known fact with a value, and **no digit remains** once the
 tokens and the caller's allowed names (gene or sample names such as ``ODC1`` or ``SDHA(1)``) are
-removed. This is deliberately stricter than a "number-like token" regex: ``x2``, ``95%``,
-``2-fold``, ``MIQE 2.0``, dates and superscripts (``³``) are all rejected unless they come from
-a fact (any character for which ``str.isnumeric()`` is true counts as a digit).
+removed. This is deliberately stricter than a "number-like token" regex: ``x2``, ``MIQE 2.0``,
+dates and superscripts (``³``) are all rejected unless they come from a fact (any character
+for which ``str.isnumeric()`` is true counts as a digit). The study's stated method constants
+(the 95 % confidence level, the p < 0.05 and 2-fold call rule) are allowed as written through
+:func:`method_constants`, because they describe the method, not the data.
 """
 
 from __future__ import annotations
@@ -86,8 +88,27 @@ def render_tokens(text: str, facts: Mapping[str, Fact]) -> str:
     return TOKEN.sub(sub, text)
 
 
+CI_LEVEL = 95  # the confidence level every interval in qPilot uses
+
+
+def method_constants(result: StudyResult) -> set[str]:
+    """The stated method, which prose may quote as written: the CI level and the call rule.
+
+    These are not data: "95 % confidence interval", "p < 0.05", "2-fold" describe how every
+    number was computed. Data values must still be fact tokens.
+    """
+    alpha = result.conclusion_rule.get("alpha", 0.05)
+    fold = 2 ** result.conclusion_rule.get("min_log2fc", 1.0)
+    a, f = f"{alpha:g}", f"{fold:g}"
+    out = {f"{CI_LEVEL}%", f"{CI_LEVEL} %", a, f"p < {a}", f"p<{a}"}
+    out |= {f"{f}-fold", f"{f}-fold line", f"{f} fold", f"{f}x", f"{f}×"}
+    if f == "2":
+        out |= {"two-fold", "twofold"}
+    return out
+
+
 def names_from_result(result: StudyResult) -> set[str]:
-    """Names that may appear verbatim in prose about a study: items, references, group label."""
+    """Text prose may use verbatim: items, references, group label and the method constants."""
     names = set(result.contrasts) | set(result.robustness) | set(result.genorm.M_initial)
     names |= set(result.design.refs_primary) | {result.design.group_var}
-    return names
+    return names | method_constants(result)
