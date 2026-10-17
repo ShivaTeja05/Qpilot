@@ -29,6 +29,7 @@ from qpilot.ai.prompts import SYSTEM_ASK_ANSWER, SYSTEM_ASK_TOOL
 from qpilot.core.decisions import needs_human
 from qpilot.core.store import StudyStore
 from qpilot.core.validator import names_from_result, render_tokens, validate
+from qpilot.qpcr.confidence_checks import METHOD_PHRASES
 from qpilot.schemas import DecisionCard, Fact, StudyResult
 
 TOOLS = ("qpcr_study", "qpcr_robustness", "qpcr_decide", "qpcr_plan", "explain_number", "none")
@@ -111,6 +112,7 @@ class _Context:
         for card in self.cards:
             self.names |= card_names(card)
         self.names |= set(self.result.design.group_var.split("_"))
+        self.names |= set(METHOD_PHRASES)  # the grader's thresholds, as its notes word them
 
     def gene(self, text: str) -> str | None:
         lowered = text.lower()
@@ -189,7 +191,7 @@ def answer_facts(ctx: _Context, tool: str, out: dict[str, Any]) -> tuple[dict, d
             "holds_fraction": tok("f_ans_holds", out["holds_fraction"], "{:.0%}"),
             "n_analyses": tok("f_ans_n_cells", out["n_cells"]),
             "confidence": tok("f_ans_level", conf.get("level", "not graded")),
-            "confidence_reasons": conf.get("reasons", []),
+            "confidence_reasons": [_tokenise_reason(r, tok) for r in conf.get("reasons", [])],
             "cards_that_can_flip_it": out.get("cards_that_can_flip_it", []),
         }
         return view, facts
@@ -228,6 +230,17 @@ def answer_facts(ctx: _Context, tool: str, out: dict[str, Any]) -> tuple[dict, d
     if tool == "explain_number":
         return {"fact": "{{" + out["fact_id"] + "}}", "computed_from": out["path"]}, facts
     return {}, facts
+
+
+def _tokenise_reason(reason: str, tok: Any) -> str:
+    """A confidence reason as the model sees it, with its one data number as a token.
+
+    That number is how many choices flip the gene at once; the method thresholds the reasons
+    quote (95 % confidence interval, 80 % of the reasonable analyses, M 1.5) stay as written.
+    """
+    return re.sub(
+        r"\b(\d+)(?=\s+choices?\b)", lambda m: tok("f_ans_min_flip", int(m.group(1))), reason
+    )
 
 
 def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -> str:

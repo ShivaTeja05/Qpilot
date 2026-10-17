@@ -28,6 +28,14 @@ from qpilot.schemas import Check, ContrastResult, Level, StudyResult
 START_LEVEL: Level = "High"
 HOLDS_MIN = 0.80
 TWO_FOLD = 2.0
+# The thresholds the check notes quote, in that phrasing: method, not data, so prose may repeat
+# them (``qpilot.ai.ask`` adds these to the names a model's answer may use).
+METHOD_PHRASES = (
+    "80 % of the reasonable analyses",
+    "geNorm stability cut-off (M 1.5)",
+    "below M 1.5",
+    "M 1.5",
+)
 
 
 def _slug(name: str) -> str:

@@ -254,3 +254,38 @@ def test_a_huge_plan_argument_does_not_crash_ask(store, study):
     )
     out = ask("How many samples for a 2-fold change?", store, study, client=client)
     assert out.answer
+
+
+@pytest.mark.parametrize(
+    "draft",
+    [
+        "ODC1 is higher, about 2x, and the call holds in 95% of the reasonable analyses.",
+        "ODC1 is about seven-fold higher and holds in roughly half of the analyses.",
+    ],
+)
+def test_invented_numbers_in_method_or_word_form_are_rejected(store, study, draft):
+    client = ModelClient(
+        MockBackend(['{"tool": "qpcr_robustness", "args": {"gene": "ODC1"}}', draft, draft])
+    )
+    out = ask("Is ODC1 up?", store, study, client=client)
+    assert out.fallback and out.rejected_drafts >= 1
+
+
+def test_quoting_the_graders_threshold_is_not_an_invented_number(store, study):
+    reason = "{{f_ans_holds}}: the conclusion holds in fewer than 80 % of the reasonable analyses."
+    client = ModelClient(
+        MockBackend(['{"tool": "qpcr_robustness", "args": {"gene": "NM23A"}}', reason])
+    )
+    out = ask("Is NM23A robust?", store, study, client=client)
+    assert not out.fallback and out.rejected_drafts == 0
+
+
+def test_the_model_is_told_when_a_card_flips_conclusions_elsewhere(fixture_cards):
+    from qpilot.ai.explain import card_view
+
+    card = fixture_cards[2].model_copy(
+        update={"impact": {**fixture_cards[2].impact, "flips_anywhere": True}}
+    )
+    view = card_view(card)
+    assert view["can_flip_a_conclusion"] is False
+    assert view["can_flip_a_conclusion_at_other_settings"] is True

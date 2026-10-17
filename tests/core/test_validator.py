@@ -142,9 +142,26 @@ def test_method_constants_allowed_but_data_still_rejected(fixture_result):
     names = names_from_result(fixture_result)
     ok = (
         "NM23A is up (95% confidence interval {{f_ci_lo_nm23a_recommended}}); "
-        "the rule is p < 0.05 and 2-fold."
+        "the rule is p < 0.05 and a change of at least 2-fold."
     )
     assert validate(ok, fixture_result.facts, names).ok
     assert validate("the two-fold line and the 95 % CI", fixture_result.facts, names).ok
     for bad in ["NM23A is 2.2x up", "holds in 65% of analyses", "97% of analyses", "3-fold change"]:
         assert not validate(bad, fixture_result.facts, names).ok, bad
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "ODC1 rises 2x under the recommended set.",
+        "NM23A rises 2× when SDHA(1) is the only control gene.",
+        "ODC1 holds in 95% of the reasonable analyses.",
+        "ODC1 has p = 0.05.",
+        "ODC1 is about seven-fold higher.",
+        "It holds in ninety-five percent of analyses.",
+        "Roughly half of the samples are high.",
+        "ODC1 rises three fold.",
+    ],
+)
+def test_method_numbers_outside_their_method_wording_are_data(fixture_result, bad):
+    assert not validate(bad, fixture_result.facts, names_from_result(fixture_result)).ok

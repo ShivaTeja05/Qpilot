@@ -47,6 +47,9 @@ def card_view(card: DecisionCard) -> dict:
         "kind": card.kind,
         "title": KIND_TITLE.get(card.kind, card.kind),
         "can_flip_a_conclusion": bool(card.impact.get("flips")),
+        # A choice that changes nothing at the recommended settings can still flip conclusions
+        # at other reasonable settings; then a person decides it, and the model must say so.
+        "can_flip_a_conclusion_at_other_settings": bool(card.impact.get("flips_anywhere")),
         "status": card.status,
         "recommended": card.recommended,
         "options": [{"id": o.id, "label": o.label} for o in card.options],
