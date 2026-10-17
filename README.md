@@ -69,7 +69,7 @@ Vermeulen/Ruijter RDML: 64 plates, 366 tumours, 58 genes. Details are in [`resul
 - 14 genes change call.
 - 31 of 40 calls hold in at least 95 % of analyses.
 - The late-Cq cut-off is the most influential defensible choice (48 % of fold-change variance).
-- Verdicts: 23 solid, 10 depend on your choices, 5 fragile, 2 check data first.
+- Verdicts: 23 solid, 7 hold with caveats (they lean on 5 or fewer tumours), 3 depend on your choices, 5 fragile, 2 check data first.
 
 **What to lock in advance:** locking late-Cq, reference genes and cut-off protects all four headline calls.
 

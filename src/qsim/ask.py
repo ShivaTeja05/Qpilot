@@ -562,11 +562,12 @@ class Asker:
             ),
             "f_solid": Fact(id="f_solid", value=counts.get("solid", 0)),
             "f_depends": Fact(id="f_depends", value=counts.get("depends on your choices", 0)),
+            "f_caveats": Fact(id="f_caveats", value=counts.get("holds with caveats", 0)),
             "f_fragile": Fact(id="f_fragile", value=counts.get("fragile", 0)),
             "f_check": Fact(id="f_check", value=counts.get("check data first", 0)),
         }
         meaning = {k: k[2:].replace("_", " ") for k in facts}
-        t = "Across {{f_n_analyses}} analyses of {{f_n_genes}} genes: {{f_solid}} calls are solid, {{f_depends}} depend on your choices, {{f_fragile}} are fragile and {{f_check}} need a data check first."
+        t = "Across {{f_n_analyses}} analyses of {{f_n_genes}} genes: {{f_solid}} calls are solid, {{f_caveats}} hold with caveats, {{f_depends}} depend on your choices, {{f_fragile}} are fragile and {{f_check}} need a data check first."
         return facts, meaning, t
 
     def answer(self, question: str) -> Answer:

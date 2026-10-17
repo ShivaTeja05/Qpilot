@@ -6,7 +6,7 @@ Study: 366 tumours, 58 genes compared (MYCN-high vs rest), 64 plates. Baseline c
 
 ## Decision space
 
-8 decisions with levels [4, 3, 3, 3, 31, 3, 3, 3]: 90,396 analyses, **all evaluated** (exhaustive). Full sweep: 54.51 s on one core.
+8 decisions with levels [4, 3, 3, 3, 31, 3, 3, 3]: 90,396 analyses, **all evaluated** (exhaustive). Full sweep: 52.1 s on one core.
 
 | | all options | defensible options only |
 |---|---|---|
@@ -53,7 +53,7 @@ Largest pairwise interactions (share of variance): {'late_cqxnondetect': 0.0334,
 
 Rules: solid = same call in >= 95 % of defensible analyses, no 5 or fewer samples overturn it, significant in >= 95 %; fragile = < 80 %, or <= 2 samples overturn it, or within 0.1 log2 of the fold line; check data first = a data finding changes it.
 
-check data first: 2 · fragile: 5 · depends on your choices: 10 · solid: 23 · no call: 18
+check data first: 2 · fragile: 5 · depends on your choices: 3 · holds with caveats: 7 · solid: 23 · no call: 18
 
 ## What the calls lean on (baseline analysis)
 
@@ -124,4 +124,4 @@ Of 46 planted faults that changed at least one call, 39 were detected. Of 174 th
 
 The filter removes analysis-induced false calls; it does not fix small-sample noise (robust and non-robust real calls disagree with the full study about equally).
 
-Timings (s): {'load_s': 0.16, 'full_grid_s': 54.51, 'influence_s': 1.99, 'joint_test_s': 0.58, 'troubleshoot_s': 0.81, 'explorer_check_s': 6.42, 'benchmark_s': 176.17, 'designs_s': 81.66}.
+Timings (s): {'load_s': 0.15, 'full_grid_s': 52.1, 'influence_s': 1.93, 'joint_test_s': 0.54, 'troubleshoot_s': 0.8, 'explorer_check_s': 6.4, 'benchmark_s': 174.45, 'designs_s': 79.34}.

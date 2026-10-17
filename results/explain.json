@@ -506,7 +506,7 @@
   "flips": []
  },
  "INPP1": {
-  "verdict": "depends on your choices",
+  "verdict": "holds with caveats",
   "call": "down",
   "log2fc": -1.2436479830167397,
   "fold": 0.42230347301164456,
@@ -542,7 +542,7 @@
   "flips": []
  },
  "MAP7": {
-  "verdict": "depends on your choices",
+  "verdict": "holds with caveats",
   "call": "down",
   "log2fc": -1.5134564109483506,
   "fold": 0.35027103300943885,
@@ -664,7 +664,7 @@
   "flips": []
  },
  "NM23A": {
-  "verdict": "depends on your choices",
+  "verdict": "holds with caveats",
   "call": "up",
   "log2fc": 1.1295178548982427,
   "fold": 2.187856104249681,
@@ -816,7 +816,7 @@
   "flips": []
  },
  "PIK3R1": {
-  "verdict": "depends on your choices",
+  "verdict": "holds with caveats",
   "call": "down",
   "log2fc": -1.1635676325061093,
   "fold": 0.4464072514039836,
@@ -1002,7 +1002,7 @@
   "flips": []
  },
  "PTN": {
-  "verdict": "depends on your choices",
+  "verdict": "holds with caveats",
   "call": "down",
   "log2fc": -1.474285646866921,
   "fold": 0.3599115617685497,
@@ -1084,7 +1084,7 @@
   ]
  },
  "PTPRN2": {
-  "verdict": "depends on your choices",
+  "verdict": "holds with caveats",
   "call": "down",
   "log2fc": -1.3026376263214416,
   "fold": 0.4053843709103048,
@@ -1206,7 +1206,7 @@
   "flips": []
  },
  "TNFRSF": {
-  "verdict": "depends on your choices",
+  "verdict": "holds with caveats",
   "call": "down",
   "log2fc": -1.4033871044292825,
   "fold": 0.3780405497408521,

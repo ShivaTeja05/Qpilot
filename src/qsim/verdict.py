@@ -7,7 +7,9 @@ For a called gene (up or down at the baseline):
   overturn it, and the effect is significant in at least 95 % of analyses (joint test);
 * **fragile**: same call in under 80 % of the defensible analyses, or 2 or fewer samples
   overturn it, or it sits within 0.1 log2 (about 7 %) of the fold-change line;
-* **depends on your choices**: everything in between.
+* **holds with caveats**: same call in at least 95 % of analyses, but 5 or fewer samples
+  overturn it or significance is not robust;
+* **depends on your choices**: everything in between (same call in 80-95 % of analyses).
 
 A gene without a call is reported as "no call" with the share of analyses that would call it.
 The thresholds are defaults in :data:`RULES`, shown with every verdict, never hidden.
@@ -29,7 +31,14 @@ RULES = {
     "fragile_margin_log2": 0.1,
     "drop_k_searched": 5,
 }
-ORDER = ("check data first", "fragile", "depends on your choices", "solid", "no call")
+ORDER = (
+    "check data first",
+    "fragile",
+    "depends on your choices",
+    "holds with caveats",
+    "solid",
+    "no call",
+)
 
 
 def verdicts(genes: pd.DataFrame, issues: list[dict]) -> pd.Series:
@@ -56,6 +65,8 @@ def verdicts(genes: pd.DataFrame, issues: list[dict]) -> pd.Series:
             and r["share_forks_significant_same_direction"] >= RULES["solid_significant"]
         ):
             return "solid"
+        if r["defensible_holds"] >= RULES["solid_holds"]:
+            return "holds with caveats"
         return "depends on your choices"
 
     return pd.Series({g: one(g, r) for g, r in genes.iterrows()}, name="verdict")
