@@ -1,0 +1,37 @@
+// qPilot -> GraphPad Prism (Mode S): open the template, import qPilot's tables, save.
+// Study 70a0000000c1, record toy-001, chain abababababab.
+// Written by qPilot; regenerate with `qpilot export prism` instead of editing.
+// Not yet run on a real Prism seat: behaviour is unverified until plan step 0.1.
+SetPath "/Users/lab/qpilot_toy"
+// T
+Open "two_groups_log2.pzt"
+GoTo D, 1
+Import "T.csv"
+SetSheetTitle "T log2 RQ - qPilot toy-001 - chain abababababab"
+Save "T_qpilot_toy-001.pzfx"
+GoTo I, 1
+SetInfo "Values computed by qPilot from raw curves (record id in the table titles); edits are detected when the tables are sent back.", 1, 2
+SetInfo "qPilot record toy-001, chain abababababab", 1, 2
+Save
+GoTo G, 1
+ExportPDF "T_qpilot_toy-001.pdf"
+ExportPNG "T_qpilot_toy-001.png"
+Close
+// T2
+Open "two_groups_log2.pzt"
+GoTo D, 1
+Import "T2.csv"
+SetSheetTitle "T2 log2 RQ - qPilot toy-001 - chain abababababab"
+Save "T2_qpilot_toy-001.pzfx"
+GoTo I, 1
+SetInfo "Values computed by qPilot from raw curves (record id in the table titles); edits are detected when the tables are sent back.", 1, 2
+SetInfo "qPilot record toy-001, chain abababababab", 1, 2
+Save
+GoTo G, 1
+ExportPDF "T2_qpilot_toy-001.pdf"
+ExportPNG "T2_qpilot_toy-001.png"
+Close
+// Done signal: Prism runs scripts invisibly and gives no completion signal of its own.
+OpenOutput "qpilot_done.txt", Clear
+WText "qPilot run.pzc finished for record toy-001"
+CloseOutput
