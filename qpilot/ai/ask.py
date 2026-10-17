@@ -314,6 +314,10 @@ def ask(
             parsed = _parse_tool(reply)
             if parsed is None:
                 error = "the model's tool call did not parse; keyword routing used"
+            elif tool == "qpcr_decide" and parsed[0] != "qpcr_decide":
+                # Safety first: a plain request to apply a card option always goes through
+                # qpcr_decide (and so the human gate), whichever tool the model picked.
+                error = f"the model chose {parsed[0]} for a change request; qpcr_decide used"
             else:
                 tool, args = parsed
         except ModelUnavailable as err:

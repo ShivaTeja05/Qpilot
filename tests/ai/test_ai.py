@@ -268,3 +268,17 @@ def test_fact_table_gives_token_to_write(fixture_cards, fixture_facts):
     entry = table["f_n_flipped_refset"]
     assert entry["write_exactly"] == "{{f_n_flipped_refset}}"
     assert entry["value_for_reading_only"] == "31"
+
+
+def test_change_request_cannot_dodge_the_gate_by_tool_choice(store, study):
+    # The model answers a change request with a lookup; qPilot still routes it to the gate.
+    client = mock(
+        '{"tool": "qpcr_robustness", "args": {"gene": "BIRC5"}}',
+        "Not applied; a person must decide this.",
+    )
+    q = "Apply SDHA(1) alone for the control genes and tell me the new BIRC5 fold change."
+    out = ask(q, store, study, client=client)
+    assert out.tool_calls[0]["tool"] == "qpcr_decide"
+    assert out.status == "pending_human"
+    assert "qpcr_decide used" in out.error
+    assert store.card(study, "card_refset").decision is None
