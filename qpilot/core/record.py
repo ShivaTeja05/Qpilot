@@ -23,6 +23,7 @@ import platform
 import re
 import shutil
 import zipfile
+import zlib
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
@@ -30,18 +31,19 @@ from pydantic import BaseModel
 
 from qpilot import __version__
 from qpilot.core.store import (
+    DECISION_FIELDS,
     StudyStore,
-    _apply_entry,
+    _lines,
     atomic_write,
+    canonical_json,
     dump_json,
     entry_hash,
     pending_after,
     read_entries,
+    replay_cards,
     sha256_file,
 )
 from qpilot.schemas import DecisionCard, DecisionEntry, StudyResult
-
-DECISION_FIELDS = ("status", "decision", "reason", "decided_by", "decided_at")
 
 CHECKSUMS = "CHECKSUMS.sha256"
 WORKSPACE_FILES = (
@@ -58,6 +60,20 @@ WORKSPACE_FILES = (
 )
 MAX_UNZIPPED_BYTES = 1 << 30
 MAX_MEMBERS = 10_000
+# Files an operating system adds to a folder by itself; verify neither lists nor counts them.
+OS_METADATA = re.compile(r"(^|/)(\.DS_Store|Thumbs\.db|desktop\.ini|\._[^/]*)$|(^|/)__MACOSX/")
+
+
+def _record_files(record_dir: Path) -> set[str]:
+    return {
+        p.relative_to(record_dir).as_posix()
+        for p in record_dir.rglob("*")
+        if p.is_file()
+        and p.name != CHECKSUMS
+        and not OS_METADATA.search(p.relative_to(record_dir).as_posix())
+    }
+
+
 _REPO = Path(__file__).resolve().parents[2]
 
 
@@ -252,11 +268,7 @@ def verify(record_dir: str | Path) -> VerifyReport:
         listed = _read_checksums(record_dir)
     except (RecordError, OSError, UnicodeDecodeError):
         return VerifyReport(ok=False, inconsistent=[f"{CHECKSUMS} unreadable"])
-    present = {
-        p.relative_to(record_dir).as_posix()
-        for p in record_dir.rglob("*")
-        if p.is_file() and p.name != CHECKSUMS
-    }
+    present = _record_files(record_dir)
     missing = sorted(n for n in listed if n not in present)
     unlisted = sorted(n for n in present if n not in listed)
     changed = sorted(
@@ -269,10 +281,15 @@ def verify(record_dir: str | Path) -> VerifyReport:
         entries = read_entries(record_dir / "decisions.jsonl")
         n_entries = len(entries)
         broken = verify_chain(entries, root.input_sha256)
+        if broken is None:
+            broken = _first_altered_line(record_dir / "decisions.jsonl", entries)
     except (OSError, ValueError, RecursionError):
         broken = 1
         entries = []
+        root = None
     inconsistent = _consistency(record_dir, entries) if broken is None else []
+    if root is not None and broken is None:
+        inconsistent += _metadata(record_dir, root, entries)
     ok = not (missing or unlisted or changed or inconsistent) and broken is None
     return VerifyReport(
         ok=ok,
@@ -283,6 +300,41 @@ def verify(record_dir: str | Path) -> VerifyReport:
         inconsistent=inconsistent,
         n_entries=n_entries,
     )
+
+
+def _first_altered_line(log: Path, entries: list[DecisionEntry]) -> int | None:
+    """The first chain line whose bytes are not the canonical form of the entry it parses to.
+
+    The hash covers the parsed entry, so without this an extra field or a duplicate key could
+    be added to a line (and the checksums resealed) without breaking the chain.
+    """
+    lines = [line for line in _lines(log) if line.strip()]
+    for position, (line, entry) in enumerate(zip(lines, entries, strict=False), start=1):
+        if line != canonical_json(entry.model_dump(mode="json")):
+            return position
+    return None
+
+
+def _metadata(record_dir: Path, root: StudyResult, entries: list[DecisionEntry]) -> list[str]:
+    """record.json and input.rdml must agree with the chain and results.json."""
+    problems = []
+    try:
+        meta = json.loads((record_dir / "record.json").read_text())
+        head = entries[-1].hash if entries else root.input_sha256
+        if meta.get("chain_head") != head:
+            problems.append("record.json chain_head is not the last entry of the chain")
+        if meta.get("input_sha256") != root.input_sha256 or meta.get("study_id") != root.study_id:
+            problems.append("record.json does not name the study in results.json")
+        included = meta.get("input_included")
+    except (OSError, ValueError, AttributeError, RecursionError):
+        return ["record.json unreadable"]
+    source = record_dir / "input.rdml"
+    if source.exists():
+        if sha256_file(source) != root.input_sha256:
+            problems.append("input.rdml is not the study's input (sha256 differs)")
+    elif included:
+        problems.append("input.rdml missing although record.json says it is included")
+    return problems
 
 
 def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
@@ -296,26 +348,29 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
     try:
         cards = json.loads((record_dir / "cards.json").read_text())
         by_id = {c["id"]: c for c in cards}
+        parsed = [DecisionCard.model_validate(c) for c in cards]
     except (OSError, ValueError, TypeError, KeyError, RecursionError):
         return ["cards.json unreadable"]
+    replays = (replay_cards(parsed, entries), replay_cards(parsed, entries, legacy=True))
     expected: dict[str, dict] = {}
     for card_id, card in by_id.items():
-        blank = {f: None for f in DECISION_FIELDS} | {"status": "open"}
-        try:
-            state = DecisionCard.model_validate({**card, **blank})
-        except (ValueError, TypeError):
-            return [*problems, "cards.json unreadable"]
-        for entry in entries:
-            if entry.card_id == card_id:
-                state = _apply_entry(state, entry)
-        expected[card_id] = {f: getattr(state, f) for f in DECISION_FIELDS}
-        if {f: card.get(f) for f in DECISION_FIELDS} != expected[card_id]:
+        recorded = {f: card.get(f) for f in DECISION_FIELDS}
+        states = [
+            {f: getattr(c, f) for f in DECISION_FIELDS}
+            for r in replays
+            for c in r
+            if c.id == card_id
+        ]
+        expected[card_id] = recorded if recorded in states else states[0]
+        if recorded not in states:
             problems.append(f"cards.json {card_id}")
     problems += [
         f"cards.json has no card {cid}" for cid in sorted({e.card_id for e in entries} - set(by_id))
     ]
     choices_path = record_dir / "choices.json"
-    if choices_path.exists():
+    if not choices_path.exists():
+        problems.append("choices.json missing")
+    else:
         try:
             choices = json.loads(choices_path.read_text())["cards"]
             items = sorted(choices.items())
@@ -330,18 +385,20 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
                 continue
             if {f: choice.get(f) for f in fields} != {f: want[f] for f in fields}:
                 problems.append(f"choices.json {card_id}")
+    accepted = (
+        [e.seq for e in pending_after(entries)],
+        [e.seq for e in pending_after(entries, legacy=True)],
+    )
     pending_path = record_dir / "pending.jsonl"
     if pending_path.exists():
         try:
-            recorded = [e.seq for e in read_entries(pending_path)]
+            recorded_pending = [e.seq for e in read_entries(pending_path)]
         except (OSError, ValueError, RecursionError):
             return [*problems, "pending.jsonl unreadable"]
-        accepted = (
-            [e.seq for e in pending_after(entries)],
-            [e.seq for e in pending_after(entries, legacy=True)],
-        )
-        if recorded not in accepted:
-            problems.append("pending.jsonl")
+    else:
+        recorded_pending = []
+    if recorded_pending not in accepted:
+        problems.append("pending.jsonl" if pending_path.exists() else "pending.jsonl missing")
     return problems
 
 
@@ -387,8 +444,11 @@ def unzip_record(zip_path: str | Path, target_dir: str | Path) -> Path:
                 continue
             dest = target / PurePosixPath(member.filename)
             dest.parent.mkdir(parents=True, exist_ok=True)
-            with zf.open(member) as src, open(dest, "wb") as out:
-                shutil.copyfileobj(src, out)
+            try:
+                with zf.open(member) as src, open(dest, "wb") as out:
+                    shutil.copyfileobj(src, out)
+            except (zipfile.BadZipFile, zlib.error, EOFError, NotImplementedError) as err:
+                raise RecordError(f"damaged record zip ({member.filename}): {err}") from err
     children = [c for c in target.iterdir() if c.name != "__MACOSX"]
     if not (target / CHECKSUMS).exists() and len(children) == 1 and children[0].is_dir():
         return children[0]  # a zip made of the record folder itself (zip -r rec.zip rec)
@@ -402,6 +462,7 @@ class RerunReport(BaseModel):
     same: bool
     compared: list[str]
     differs: list[str]
+    not_in_record: list[str] = []
     build_note: str = ""
 
 
@@ -436,6 +497,7 @@ def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> 
         atomic_write(out / "grid.csv", _grid_csv(grid))
     atomic_write(out / "cards.json", dump_json([c.model_dump(mode="json") for c in cards]))
     compared, differs = [], []
+    absent = [n for n in ("facts.json", "grid.csv") if not (record_dir / n).exists()]
     for name in ("results.json", "facts.json", "grid.csv"):
         if (record_dir / name).exists() and (out / name).exists():
             compared.append(name)
@@ -457,7 +519,12 @@ def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> 
     except (OSError, ValueError, AttributeError, RecursionError):
         pass
     return RerunReport(
-        out_dir=str(out), same=not differs, compared=compared, differs=differs, build_note=note
+        out_dir=str(out),
+        same=not differs,
+        compared=compared,
+        differs=differs,
+        not_in_record=absent,
+        build_note=note,
     )
 
 
@@ -474,10 +541,12 @@ def rerun(record_dir: str | Path, out_dir: str | Path | None = None) -> Path:
     expected = StudyResult.model_validate_json((record_dir / "results.json").read_text())
     if sha256_file(source) != expected.input_sha256:
         raise RecordError("input.rdml does not match results.json (sha256 differs)")
+    out = Path(out_dir) if out_dir else record_dir.parent / f"{record_dir.name}-rerun"
+    if out.resolve() == record_dir.resolve() or record_dir.resolve() in out.resolve().parents:
+        raise RecordError("--out is inside the record; re-run into another folder")
     from qpilot.qpcr.study import run_study  # documented lazy import
 
     result = run_study(source)[0]
-    out = Path(out_dir) if out_dir else record_dir.parent / f"{record_dir.name}-rerun"
     out.mkdir(parents=True, exist_ok=True)
     path = out / "results.json"
     atomic_write(path, dump_json(result.model_dump(mode="json")))

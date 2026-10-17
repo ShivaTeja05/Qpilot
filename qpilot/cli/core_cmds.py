@@ -10,13 +10,19 @@ from qpilot.cli._types import Command
 
 
 def _record_dir(path: str, scratch: Path) -> Path:
-    """A record folder, unpacking a ``.zip`` record safely first."""
-    from qpilot.core.record import unzip_record
+    """A record folder, unpacking a zip record (any name or case) safely first."""
+    import zipfile
+
+    from qpilot.core.record import RecordError, unzip_record
 
     p = Path(path)
-    if p.suffix == ".zip":
+    if p.is_dir():
+        return p
+    if p.suffix.lower() == ".zip" or (p.is_file() and zipfile.is_zipfile(p)):
         return unzip_record(p, scratch / p.stem)
-    return p
+    if p.exists():
+        raise RecordError(f"not an Analysis Record folder or zip: {p}")
+    raise RecordError(f"no such record: {p}")
 
 
 def _verify_arguments(parser: argparse.ArgumentParser) -> None:
@@ -60,6 +66,8 @@ def _rerun(args: argparse.Namespace) -> int:
     for name in report.compared:
         verdict = "DIFFERS from the record" if name in report.differs else "byte-identical"
         print(f"{name}: {verdict}")
+    for name in report.not_in_record:
+        print(f"{name}: not in this record, so not compared")
     if report.build_note:
         print(f"note: {report.build_note}")
     print(f"regenerated files: {where}")

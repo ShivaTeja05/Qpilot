@@ -14,6 +14,7 @@ A card whose dimension flips no conclusion is decided automatically (recommended
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel
@@ -175,7 +176,8 @@ def check_request(card: DecisionCard, option: str, reason: str) -> str:
     """Validate a decision request; return the cleaned reason or raise :class:`DecisionError`."""
     if option not in {o.id for o in card.options}:
         raise DecisionError(f"unknown option {option!r} for card {card.id}")
-    cleaned = (reason or "").strip()
+    # Unicode line and paragraph separators read as line breaks in some viewers; keep one line.
+    cleaned = re.sub("[\u2028\u2029\u0085]+", " ", reason or "").strip()
     if not cleaned:
         raise DecisionError("a reason is required")
     if len(cleaned) > MAX_REASON:

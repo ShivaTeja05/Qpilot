@@ -50,10 +50,9 @@ STALE_IF = {
     "pending_human": ("applied", "auto"),
     "rejected": ("applied", "auto", "pending_human", "rejected"),
 }
-# Workspaces written before this card format (cards without these impact keys) are re-analysed
-# when opened, so their choices escalate the way this qPilot escalates them.
+# Workspaces written before this card format (cards without flips_anywhere) are re-analysed when
+# opened, so their choices escalate the way this qPilot escalates them.
 CARDS_FORMAT = 2
-REQUIRED_IMPACT = ("flips_anywhere",)
 
 
 def changed_since(
@@ -154,12 +153,58 @@ def read_entries(path: Path) -> list[DecisionEntry]:
     """Parse a ``.jsonl`` file of decision entries (missing file = no entries)."""
     if not path.exists():
         return []
-    lines = path.read_text(encoding="utf-8").splitlines()
-    return [DecisionEntry.model_validate_json(line) for line in lines if line.strip()]
+    return [DecisionEntry.model_validate_json(line) for line in _lines(path) if line.strip()]
+
+
+def _lines(path: Path) -> list[str]:
+    """The lines of a ``.jsonl`` file, split on newlines only.
+
+    ``str.splitlines`` also breaks at U+2028, U+2029 and U+0085, which JSON leaves unescaped
+    inside strings, so one such character in a reason would make the whole log unreadable.
+    """
+    return path.read_text(encoding="utf-8").split("\n")
 
 
 def _now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+DECISION_FIELDS = ("status", "decision", "reason", "decided_by", "decided_at")
+
+
+def _settled_status(card: DecisionCard) -> str:
+    if card.decision is None:
+        return "open"
+    return "auto_decided" if card.decided_by == "system" else "decided"
+
+
+def _overlay_pending(cards: list[DecisionCard], entries: list[DecisionEntry]) -> list[DecisionCard]:
+    """A card is ``pending_human`` exactly while a request on it is still waiting."""
+    waiting = {p.card_id for p in pending_after(entries)}
+    out = []
+    for card in cards:
+        status = "pending_human" if card.id in waiting else _settled_status(card)
+        out.append(card if card.status == status else card.model_copy(update={"status": status}))
+    return out
+
+
+def replay_cards(
+    cards: list[DecisionCard], entries: list[DecisionEntry], legacy: bool = False
+) -> list[DecisionCard]:
+    """The cards' decision state rebuilt from the log alone (the store and ``verify`` agree).
+
+    Decision fields are blanked, every entry is replayed, and then each card with a request
+    still waiting is ``pending_human``. ``legacy=True`` stops after the replay, the rule of
+    earlier builds, where turning down one request could leave another waiting on an ``open``
+    card.
+    """
+    blank = {f: None for f in DECISION_FIELDS} | {"status": "open"}
+    states = {c.id: c.model_copy(update=blank) for c in cards}
+    for entry in entries:
+        if entry.card_id in states:
+            states[entry.card_id] = _apply_entry(states[entry.card_id], entry)
+    replayed = [states[c.id] for c in cards]
+    return replayed if legacy else _overlay_pending(replayed, entries)
 
 
 def _apply_entry(card: DecisionCard, entry: DecisionEntry) -> DecisionCard:
@@ -281,7 +326,7 @@ class StudyStore:
         path = self.workspace(study_id) / "attempts.jsonl"
         if not path.exists():
             return []
-        return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x]
+        return [json.loads(x) for x in _lines(path) if x.strip()]
 
     # ---- writing (all under the workspace lock) ------------------------------------------
 
@@ -317,7 +362,8 @@ class StudyStore:
                 if entry.card_id in states:
                     states[entry.card_id] = _apply_entry(states[entry.card_id], entry)
             atomic_write(workspace / "results.json", dump_json(result.model_dump(mode="json")))
-            self._write_cards(workspace, list(states.values()))
+            self._write_cards(workspace, _overlay_pending(list(states.values()), entries))
+            self._write_pending(workspace, entries)
             facts = {fid: f.model_dump(mode="json") for fid, f in result.facts.items()}
             atomic_write(workspace / "facts.json", dump_json(facts))
             if grid is not None:
@@ -408,7 +454,7 @@ class StudyStore:
         path = self.workspace(study_id) / "ai_calls.jsonl"
         if not path.exists():
             return []
-        return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x]
+        return [json.loads(x) for x in _lines(path) if x.strip()]
 
     # ---- internals -------------------------------------------------------------------
 
@@ -438,8 +484,10 @@ class StudyStore:
                 attempt = {
                     "at": _now(),
                     "status": "stale",
+                    "attempted": status,  # applied, pending_human or rejected
                     "card_id": card_id,
                     "option": options[0],
+                    "options": options,
                     "reason": reason,
                     "actor": actor,
                     "expected_head": expected_head,
@@ -453,12 +501,13 @@ class StudyStore:
                     card=self.card(study_id, card_id),
                     reason=STALE_REASON,
                 )
-            cards = self.cards(study_id)
             for each in options:
                 entry = self._append(log, entries, root, card_id, each, reason, actor, status)
-                cards = [_apply_entry(c, entry) if c.id == card_id else c for c in cards]
-                self._update_pending(workspace, entry)
+            # cards.json and pending.jsonl are derived from the log and rebuilt in full on every
+            # write, so a write interrupted earlier can never leave them out of step for good.
+            cards = replay_cards(self.cards(study_id), entries)
             self._write_cards(workspace, cards)
+            self._write_pending(workspace, entries)
             card = next(c for c in cards if c.id == card_id)
             return DecisionOutcome(status=status, chain_head=entry.hash, card=card)
 
@@ -499,14 +548,12 @@ class StudyStore:
         )
 
     @staticmethod
-    def _update_pending(workspace: Path, entry: DecisionEntry) -> None:
-        path = workspace / "pending.jsonl"
-        before = read_entries(path)
-        pending = pending_after([*before, entry])
-        if [p.seq for p in pending] == [p.seq for p in before]:
-            return
+    def _write_pending(workspace: Path, entries: list[DecisionEntry]) -> None:
+        pending = pending_after(entries)
         text = "".join(canonical_json(p.model_dump(mode="json")) + "\n" for p in pending)
-        atomic_write(path, text)
+        path = workspace / "pending.jsonl"
+        if path.exists() or text:
+            atomic_write(path, text)
 
     # ---- running a study ---------------------------------------------------------------
 
@@ -537,17 +584,15 @@ class StudyStore:
 
     @staticmethod
     def _outdated(workspace: Path) -> bool:
-        """True for a workspace an older qPilot wrote, whose cards lack keys used to escalate."""
+        """True for a workspace an older qPilot wrote, or one whose analysis was interrupted.
+
+        ``put`` writes ``format.json`` last, so a workspace without it is either from a build
+        before this card format or incomplete; both are analysed again.
+        """
         try:
             fmt = json.loads((workspace / "format.json").read_text(encoding="utf-8"))
-            if fmt.get("cards", 0) >= CARDS_FORMAT:
-                return False
+            return not fmt.get("cards", 0) >= CARDS_FORMAT
         except (OSError, ValueError, AttributeError):
-            pass
-        try:
-            cards = json.loads((workspace / "cards.json").read_text(encoding="utf-8"))
-            return any(k not in c.get("impact", {}) for c in cards for k in REQUIRED_IMPACT)
-        except (OSError, ValueError, AttributeError, TypeError):
             return True
 
     def set_source(self, study_id: str, rdml_path: str | Path) -> None:
