@@ -295,10 +295,29 @@ def _n_guard(groups: tuple[frozenset[str], frozenset[str]], labels: tuple[str, s
         )
 
 
-def study_from_curves(
-    curves: pd.DataFrame, input_sha256: str, settings: StudySettings | None = None
-) -> tuple[StudyResult, list[DecisionCard], pd.DataFrame]:
-    """Everything after curve analysis, on the per-well table (see :func:`run_study`).
+@dataclass(frozen=True, eq=False)
+class StudyModel:
+    """The decision space of a study and what it was built from (no grid, no cards yet).
+
+    :func:`study_from_curves` builds its outputs from this, and the Prism bridge rebuilds a
+    stored study's per-unit values from the same object, so both always use one arithmetic.
+    ``labels`` are the two groups' names (``None`` for the demo's expression-defined split);
+    ``high`` and ``rest`` are the primary comparison's units (``group_a``, ``group_b``).
+    """
+
+    settings: StudySettings
+    inputs: _Inputs
+    matrix: pd.DataFrame
+    stability: GenormResult
+    space: QpcrSpace
+    labels: tuple[str, str] | None
+    screen: AmpScreen | None
+    high: frozenset[str]
+    rest: frozenset[str]
+
+
+def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> StudyModel:
+    """The study's decision space from the per-well table and the settings.
 
     Raises:
         NGuardError: A comparison group has fewer than two biological units.
@@ -337,6 +356,22 @@ def study_from_curves(
     high, rest = space.groups(settings.cut)
     if groups is None:
         _n_guard((high, rest), (settings.group_var, "rest"))
+    return StudyModel(settings, inputs, matrix, stability, space, labels, screen, high, rest)
+
+
+def study_from_curves(
+    curves: pd.DataFrame, input_sha256: str, settings: StudySettings | None = None
+) -> tuple[StudyResult, list[DecisionCard], pd.DataFrame]:
+    """Everything after curve analysis, on the per-well table (see :func:`run_study`).
+
+    Raises:
+        NGuardError: A comparison group has fewer than two biological units.
+        DesignError: The design does not fit the data (unknown wells or samples).
+    """
+    settings = settings or StudySettings()
+    model = build_model(curves, settings)
+    inputs, matrix, stability, space = model.inputs, model.matrix, model.stability, model.space
+    labels, screen, high, rest = model.labels, model.screen, model.high, model.rest
     grid = robustness.run_grid(space)
     summary = robustness.summary(grid, space)
     fragility = robustness.fragility(grid, space)

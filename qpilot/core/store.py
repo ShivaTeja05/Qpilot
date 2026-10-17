@@ -27,6 +27,7 @@ entry (the first one stores the input file's sha256), so any later edit is detec
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import os
 import re
@@ -215,7 +216,19 @@ def _bind_check(
     check: Callable[..., ProposalCheck], store: StudyStore, session_id: str
 ) -> Callable[[Proposal], ProposalCheck]:
     def checker(proposal: Proposal) -> ProposalCheck:
-        return check(proposal, store, session_id)
+        # A session has no analysed study yet, so the check is told where its input file is
+        # and what a person has already confirmed (coverage and the n-guard need the design).
+        from qpilot.core.proposals import ProposalStore
+
+        try:
+            path = store.session_source(session_id) or store.source(session_id)
+        except (StudyNotFound, OSError, ValueError, KeyError):
+            path = None
+        home, root = store.proposal_home(session_id)
+        accepted = ProposalStore.at(home, root).accepted() if home.exists() else []
+        extra = {"rdml_path": path, "accepted": accepted}
+        known = inspect.signature(check).parameters
+        return check(proposal, store, session_id, **{k: v for k, v in extra.items() if k in known})
 
     return checker
 
@@ -235,6 +248,28 @@ def plugin_checks() -> tuple[Callable[..., str | None] | None, Callable[..., Pro
             return None, None
         raise
     return hard_ban, check_proposal
+
+
+def _bind_input_resolver(store: StudyStore) -> None:
+    """Let the plugin's hard bans find a session's input file, read only when a ban needs it.
+
+    The bans must know which samples the file declares as controls; without that they refuse
+    every role proposal (they fail closed). The resolver is lazy, so listing an inbox never
+    triggers a curve analysis. A documented lazy import, like :func:`plugin_checks`.
+    """
+    from qpilot.qpcr import design_checks  # documented lazy import
+
+    set_input_resolver = getattr(design_checks, "set_input_resolver", None)
+    if set_input_resolver is None:  # a plugin without the hook resolves inputs itself
+        return
+
+    def resolve(session_id: str) -> Path | None:
+        try:
+            return store.session_source(session_id) or store.source(session_id)
+        except (StudyNotFound, OSError, ValueError, KeyError):
+            return None
+
+    set_input_resolver(resolve)
 
 
 DECISION_FIELDS = ("status", "decision", "reason", "decided_by", "decided_at")
@@ -810,6 +845,8 @@ class StudyStore:
         home, digest = self.proposal_home(study_id)
         guard, check = plugin_checks()
         checker = _no_engine_check if check is None else _bind_check(check, self, digest[:12])
+        if guard is not None:
+            _bind_input_resolver(self)
         return ProposalStore.at(home, digest, guard, checker=checker)
 
     def quarantine(self, study_id: str) -> Quarantine:
