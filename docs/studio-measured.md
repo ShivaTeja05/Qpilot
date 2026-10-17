@@ -33,3 +33,15 @@ Definitions used above, which the engine code must follow exactly:
 - **Cq cut-off rule `cq_le_X`**: a well whose engine Cq is greater than X becomes undetermined
   (n0 = NaN) for every target, reference genes included; then the analysis runs unchanged.
   The flip count varies only this choice from the primary cell (the engine's `impact`).
+
+## Measured while building (17 Oct 2026)
+
+| What | Measured | Where it is checked |
+|---|---|---|
+| Curve Judge, held-out accuracy on Brintz et al.'s curves (n = 33,043) | 0.9968 (sensitivity 0.9932, specificity 0.9979); the paper reports 0.996 | `qpilot/models/curve_judge/metrics.json` |
+| Curve Judge transfer to the demo (LightCycler 480, SYBR, no ROX), pre-registered gate committed before any demo prediction (`94f2b48`) | standards 960 / 960 called amplified; agreement with LinRegPCR at Cq < 30 = 99.32 % (16,043 / 16,153); NTCs: model 17, LinRegPCR 23 of 192 | `qpilot/models/curve_judge/transfer.json` |
+| Where the Curve Judge disagrees with LinRegPCR on the demo's study wells | 166 wells; only ALUsq's (110 early curves, Cq 9.5–13.5, a reference gene) could change a conclusion; LinRegPCR fitted a complete curve in every one, so `D-CURVE` marks all 110 `contradicted` | `tests/studio/test_service_demo.py` |
+| The declared standard series per plate (`STD_*`) | consistent on 63 of 64 plates; contradicted on the ALUsq plate (R² 0.694) | `tests/engine/test_design_checks.py` |
+| `water` NTC wells of the biomarker set that amplify | 23 of 192, all late (closest 11.6 cycles after the plate's unknowns) | `tests/engine/test_design_checks.py` |
+| The demo entered as a confirmed **groups** design (MYCN-high / rest named per tumour) | identical fold changes and p-values to the expression-defined preset (ODC1 3.590×) | `tests/prism/test_designed_export.py` |
+| Studio's grid with the amplification-call axis | 744 cells (186 × 4 rules), the full sweep in about 0.35 s | `tests/engine/test_amp_call.py` |
