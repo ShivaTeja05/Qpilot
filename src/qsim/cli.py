@@ -9,20 +9,22 @@ import pandas as pd
 
 from qsim.compare import whatif
 from qsim.data import load_study
-from qsim.decisions import qpcr_space
 from qsim.engine import Engine
 from qsim.issues import HEADLINE
+from qsim.study_space import space_for
 
 
 def _engine(rdml: str | None) -> Engine:
     study = load_study(rdml)
-    return Engine(study, qpcr_space(study.candidates, study.primary_refs))
+    return Engine(study, space_for(study)[0])
 
 
 def cmd_run(args: argparse.Namespace) -> int:
     from qsim.report import run_all
 
-    summary = run_all(args.rdml, args.out, args.permutations, args.bench_trials, args.seed)
+    summary = run_all(
+        args.rdml, args.out, args.permutations, args.bench_trials, args.seed, args.design_draws
+    )
     print(
         f"wrote {args.out}/REPORT.md and summary.json ({summary['ledger']['total_cells']:,} analyses)"
     )
@@ -107,6 +109,7 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--permutations", type=int, default=999)
     run.add_argument("--bench-trials", type=int, default=20)
     run.add_argument("--seed", type=int, default=2026)
+    run.add_argument("--design-draws", type=int, default=100)
     run.set_defaults(func=cmd_run)
     w = sub.add_parser("whatif", help="compare any combination of choices with the baseline")
     w.add_argument("--set", action="append", default=[], metavar="DECISION=OPTION")

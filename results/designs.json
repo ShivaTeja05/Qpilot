@@ -1,0 +1,33 @@
+{
+ "defensible_cells": 144,
+ "draws": 100,
+ "robust_rule": 0.95,
+ "sizes": {
+  "3": {
+   "no_difference": {
+    "gene_tests": 5800,
+    "false_call_rate_single_analysis": 0.0245,
+    "false_call_rate_after_robust_filter": 0.0
+   },
+   "real_difference": {
+    "calls": 511,
+    "share_robust": 0.0,
+    "disagree_with_full_study_if_robust": null,
+    "disagree_with_full_study_if_not_robust": 0.286
+   }
+  },
+  "6": {
+   "no_difference": {
+    "gene_tests": 5800,
+    "false_call_rate_single_analysis": 0.0281,
+    "false_call_rate_after_robust_filter": 0.0024
+   },
+   "real_difference": {
+    "calls": 1325,
+    "share_robust": 0.162,
+    "disagree_with_full_study_if_robust": 0.247,
+    "disagree_with_full_study_if_not_robust": 0.216
+   }
+  }
+ }
+}

@@ -17,17 +17,23 @@ from qsim import __version__, explore, inference, influence
 from qsim.attribution import Factorial
 from qsim.benchmark import run_benchmark
 from qsim.data import Study, load_study
-from qsim.decisions import Space, qpcr_space
+from qsim.decisions import Space
 from qsim.engine import Engine, Grid
 from qsim.issues import HEADLINE, build_queue, queue_frame
+from qsim.study_space import space_for
 from qsim.troubleshoot import run_detectors
 from qsim.verdict import ORDER, RULES, explain, verdicts
 
 
 def _defensible(space: Space) -> dict[str, list[int]]:
+    base = space.baseline_index()
     return {
-        d.id: [i for i, o in enumerate(d.options) if o.tier != "common_practice"]
-        for d in space.decisions
+        d.id: (
+            [i for i, o in enumerate(d.options) if o.tier != "common_practice"]
+            if d.role == "analysis"
+            else [base[k]]  # a question choice (the cut-off) is reported separately
+        )
+        for k, d in enumerate(space.decisions)
     }
 
 
@@ -76,16 +82,28 @@ def run_all(
     permutations: int = 999,
     bench_trials: int = 20,
     seed: int = 2026,
+    design_draws: int = 100,
 ) -> dict:
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     timings: dict[str, float] = {}
     t0 = time.perf_counter()
     study: Study = load_study(rdml)
-    space = qpcr_space(study.candidates, study.primary_refs)
+    space, space_info = space_for(study)
     engine = Engine(study, space)
     timings["load_s"] = time.perf_counter() - t0
 
+    # lock the prespecified analysis and the tier rules before any alternative is computed
+    lock = {
+        "input_sha256": study.input_sha256,
+        "baseline": space.baseline,
+        "tiers": {d.id: {o.id: o.tier for o in d.options} for d in space.decisions},
+        "roles": {d.id: d.role for d in space.decisions},
+        "rule": {"alpha": engine.rule.alpha, "min_log2fc": engine.rule.min_log2fc},
+        "qsim_version": __version__,
+    }
+    lock_hash = hashlib.sha256(json.dumps(lock, sort_keys=True).encode()).hexdigest()
+    (out / "lock.json").write_text(json.dumps({**lock, "sha256": lock_hash}, indent=1))
     t = time.perf_counter()
     grid = engine.run(explore.full(space))
     timings["full_grid_s"] = time.perf_counter() - t
@@ -181,6 +199,20 @@ def run_all(
     explained = explain(engine, defn, genes, genes["verdict"])
     (out / "explain.json").write_text(json.dumps(explained, indent=1, default=_json_default))
     verdict_counts = {v: int((genes["verdict"] == v).sum()) for v in ORDER}
+    t = time.perf_counter()
+    from qsim import designs
+
+    design_result = (
+        designs.run(study, space, draws=design_draws, seed=seed) if design_draws else None
+    )
+    if design_result:
+        (out / "designs.json").write_text(json.dumps(design_result, indent=1))
+    timings["designs_s"] = time.perf_counter() - t
+    question = {
+        d: int(v)
+        for d, v in allf.single_flips().sum().items()
+        if space.decision(d).role == "question"
+    }
     qf = queue_frame(queue)
     qf.to_csv(out / "issues.csv", index=False)
     (out / "issues.json").write_text(json.dumps([i.__dict__ for i in queue], indent=1, default=str))
@@ -215,7 +247,8 @@ def run_all(
             "levels": space.levels,
             "baseline": space.baseline,
         },
-        "ledger": led.as_dict(),
+        "ledger": {**led.as_dict(), "notes": list(space.notes)},
+        "space_rules": space_info,
         "baseline_calls": base_counts,
         "multiverse": {
             "all": _multiverse_summary(allf, called_mask.values),
@@ -275,6 +308,9 @@ def run_all(
             "top_issues": qf.head(10).drop(columns=["action", "status"]).to_dict(orient="records"),
         },
         "explorer_check": check,
+        "lock_sha256": lock_hash,
+        "question_choices_flip_alone": question,
+        "designs": design_result,
         "verdicts": {
             "counts": verdict_counts,
             "rules": RULES,
@@ -372,6 +408,10 @@ def render_report(s: dict) -> str:
         )
     lines += [
         "",
+        f"**Locked before the sweep:** baseline, tiers and rule, SHA-256 `{s['lock_sha256'][:16]}…` (results/lock.json).",
+        "",
+        f"**Question choices, reported separately** (they change the claim, not the analysis): calls changed by each alone {s['question_choices_flip_alone']}.",
+        "",
         "## Verdicts in plain words",
         "",
         "Rules: solid = same call in >= 95 % of defensible analyses, no 5 or fewer samples overturn it, significant in >= 95 %; "
@@ -435,5 +475,24 @@ def render_report(s: dict) -> str:
             lines.append(
                 f"| {r['fault']} | {r['size_cycles']} | {r['trials']} | {r['detection_rate']:.0%} | {r['mean_new_findings_elsewhere']:.2f} | {r['share_trials_changing_a_call']:.0%} | {dc} |"
             )
+    if s.get("designs"):
+        lines += [
+            "",
+            "## Typical bench experiments drawn from the real data",
+            "",
+            f"{s['designs']['draws']} random draws per size; defensible analyses = {s['designs']['defensible_cells']} (question choices fixed); robust = same call in >= 95 %.",
+            "",
+            "| n per group | false calls, single analysis (no true difference) | false calls after robust filter | real difference: calls passing filter | disagree with full study: robust / not robust |",
+            "|---|---|---|---|---|",
+        ]
+        for n, r in s["designs"]["sizes"].items():
+            nd, rd = r["no_difference"], r["real_difference"]
+            lines.append(
+                f"| {n} | {nd['false_call_rate_single_analysis']:.2%} | {nd['false_call_rate_after_robust_filter']:.2%} | {rd['share_robust']} | {rd['disagree_with_full_study_if_robust']} / {rd['disagree_with_full_study_if_not_robust']} |"
+            )
+        lines += [
+            "",
+            "The filter removes analysis-induced false calls; it does not fix small-sample noise (robust and non-robust real calls disagree with the full study about equally).",
+        ]
     lines += ["", f"Timings (s): {s['timings_s']}.", ""]
     return "\n".join(lines)

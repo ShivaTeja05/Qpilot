@@ -25,8 +25,8 @@ import numpy as np
 import pandas as pd
 
 from qsim.data import ROWS, Study, study_from_curves, well_position
-from qsim.decisions import qpcr_space
 from qsim.engine import Engine
+from qsim.study_space import space_for
 from qsim.troubleshoot import run_detectors
 
 FAULTS = (
@@ -130,7 +130,7 @@ def run_benchmark(
     rng = np.random.default_rng(np.random.SeedSequence(seed))
     clean_obs, _ = run_detectors(study)
     clean_keys = {o.key for o in clean_obs}
-    space = qpcr_space(study.candidates, study.primary_refs)
+    space = space_for(study)[0]
     base_call = Engine(study, space).evaluate(space.baseline_index())["call"]
     rows = []
     sizes = sizes or DEFAULT_SIZES
@@ -151,9 +151,7 @@ def run_benchmark(
                     for k in new
                     if len(k) > 1 and (k[1] == gene or (isinstance(k[1], tuple) and gene in k[1]))
                 } | ({("ntc", truth["plate"])} if "plate" in truth else set())
-                call = Engine(faulty, qpcr_space(faulty.candidates, faulty.primary_refs)).evaluate(
-                    space.baseline_index()
-                )["call"]
+                call = Engine(faulty, space_for(faulty)[0]).evaluate(space.baseline_index())["call"]
                 rows.append(
                     {
                         "fault": fault,

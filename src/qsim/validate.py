@@ -185,7 +185,7 @@ def score(table: pd.DataFrame) -> dict:
         }
     out["by_choice"] = by
     cases = []
-    for _key, case in table.groupby(["run", "assay", "pair"]):
+    for key, case in table.groupby(["run", "assay", "pair"]):
         base = case[
             (case["efficiency"] == BASELINE[0])
             & (case["replicates"] == BASELINE[1])
@@ -197,6 +197,7 @@ def score(table: pd.DataFrame) -> dict:
         d = case[case["defensible"]]
         cases.append(
             {
+                "pair": key[2],
                 "spread_log2": float(d["estimate_log2"].max() - d["estimate_log2"].min()),
                 "baseline_abs_error": abs(float(b["error_log2"])),
                 "truth_in_range": bool(
@@ -211,6 +212,16 @@ def score(table: pd.DataFrame) -> dict:
     c = pd.DataFrame(cases)
     rho, p = stats.spearmanr(c["spread_log2"], c["baseline_abs_error"])
     top = c["spread_log2"] >= c["spread_log2"].quantile(0.75)
+    per_level = {}
+    for pair, sub in c.groupby("pair"):
+        if len(sub) >= 8:
+            r, pv = stats.spearmanr(sub["spread_log2"], sub["baseline_abs_error"])
+            per_level[pair] = {
+                "spearman": round(float(r), 3),
+                "p": float(pv),
+                "cases": int(len(sub)),
+            }
+    out["warning_by_pair"] = per_level
     out["warning"] = {
         "spearman_spread_vs_baseline_error": round(float(rho), 3),
         "p": float(p),

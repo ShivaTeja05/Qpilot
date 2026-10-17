@@ -1,129 +1,130 @@
 rank,id,kind,title,impact,headline_changed,calls_changed,max_abs_d_in_se,outputs_affected,action,status
 1,D-refs,decision,The reference genes: changing only this changes 31 call(s),changes_conclusion,NM23A,31,3.47,31,Decide this choice before looking at results and record the reason (Decision Card).,new
 2,D-cut,decision,The group cut-off: changing only this changes 17 call(s),changes_conclusion,NM23A,17,3.07,17,Decide this choice before looking at results and record the reason (Decision Card).,new
-3,D-efficiency,decision,The efficiency model: changing only this changes 6 call(s),changes_conclusion,,6,2.547,6,Decide this choice before looking at results and record the reason (Decision Card).,new
-4,D-flagged,decision,How flagged wells are handled: changing only this changes 4 call(s),changes_conclusion,,4,3.704,4,Decide this choice before looking at results and record the reason (Decision Card).,new
-5,I0109,reference_group_effect,Reference pair HMBS/UBC(2) differs between groups,changes_conclusion,,3,0.868,58,Assess whether this reference gene is stable between the groups before using it.,new
-6,I0110,reference_group_effect,Reference pair HMBS/HPRT1 differs between groups,changes_conclusion,,3,0.868,58,Assess whether this reference gene is stable between the groups before using it.,new
-7,I0078,well_outlier,Outlying well H20 on PRKACB_bis,changes_conclusion,,1,0.495,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-8,I0051,well_outlier,Outlying well K22 on HMBS,changes_conclusion,,1,0.459,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-9,I0053,well_outlier,Outlying well F23 on HPRT1,changes_conclusion,,1,0.414,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-10,I0111,reference_group_effect,Reference pair SDHA(1)/UBC(2) differs between groups,changes_conclusion,,1,0.326,58,Assess whether this reference gene is stable between the groups before using it.,new
-11,I0106,spatial,column 2 differs on UBC(2),changes_conclusion,,1,0.181,58,"Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",new
-12,I0108,efficiency,Low efficiency or many flagged wells on NTRK1,biases,,0,2.129,1,Review the assay's standard curve and flagged wells; consider the per-well efficiency scenario.,new
-13,I0100,well_outlier,Outlying well P7 on ULK2,no_demonstrated_effect,,0,0.589,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-14,I0042,well_outlier,Outlying well K20 on EPN2,no_demonstrated_effect,,0,0.581,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-15,I0021,well_outlier,Outlying well M11 on CDH5,no_demonstrated_effect,,0,0.503,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-16,I0103,spatial,row E differs on ALUsq(Eurogentec),no_demonstrated_effect,,0,0.482,58,"Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",new
-17,I0065,well_outlier,Outlying well H19 on MRPL3,no_demonstrated_effect,,0,0.474,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-18,I0075,well_outlier,Outlying well J18 on PMP22,no_demonstrated_effect,,0,0.468,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-19,I0038,well_outlier,Outlying well G19 on EPHA5,no_demonstrated_effect,,0,0.444,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-20,I0068,well_outlier,Outlying well A9 on NRCAM,no_demonstrated_effect,,0,0.437,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-21,I0030,well_outlier,Outlying well D16 on ELAVL4,no_demonstrated_effect,,0,0.428,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-22,I0082,well_outlier,Outlying well J1 on PTPRF,no_demonstrated_effect,,0,0.426,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-23,I0040,well_outlier,Outlying well H19 on EPHA5,no_demonstrated_effect,,0,0.414,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-24,I0081,well_outlier,Outlying well D16 on PTN,no_demonstrated_effect,,0,0.399,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-25,I0069,well_outlier,Outlying well A3 on ODC1,no_demonstrated_effect,,0,0.397,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-26,I0112,sample_outlier,Sample 1751 looks unusual,no_demonstrated_effect,,0,0.374,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-27,I0070,well_outlier,Outlying well J11 on ODC1,no_demonstrated_effect,,0,0.359,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-28,I0079,well_outlier,Outlying well G10 on PRKCZ,no_demonstrated_effect,,0,0.359,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-29,I0105,spatial,row H differs on SNAPC1,no_demonstrated_effect,,0,0.331,1,"Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",new
-30,I0072,well_outlier,Outlying well J18 on ODC1,no_demonstrated_effect,,0,0.321,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-31,I0092,well_outlier,Outlying well D16 on QPCT,no_demonstrated_effect,,0,0.307,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-32,I0036,well_outlier,Outlying well H20 on EPB41L3,no_demonstrated_effect,,0,0.285,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-33,I0034,well_outlier,Outlying well C4 on EPB41L3,no_demonstrated_effect,,0,0.229,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-34,I0061,well_outlier,Outlying well D7 on MAPT,no_demonstrated_effect,,0,0.198,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-35,I0028,well_outlier,Outlying well K19 on ELAVL4,no_demonstrated_effect,,0,0.175,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-36,I0090,well_outlier,Outlying well L20 on PTPRN2,no_demonstrated_effect,,0,0.173,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-37,I0071,well_outlier,Outlying well L11 on ODC1,no_demonstrated_effect,,0,0.16,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-38,I0099,well_outlier,Outlying well D5 on SNAPC1,no_demonstrated_effect,,0,0.144,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-39,I0107,efficiency,Low efficiency or many flagged wells on CLSTN1,no_demonstrated_effect,,0,0.138,1,Review the assay's standard curve and flagged wells; consider the per-well efficiency scenario.,new
-40,I0094,well_outlier,Outlying well K19 on SCG2,no_demonstrated_effect,,0,0.131,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-41,I0007,ntc,No-template control amplified on MCM2,no_demonstrated_effect,,0,0.127,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-42,I0093,well_outlier,Outlying well G7 on SCG2,no_demonstrated_effect,,0,0.108,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-43,I0039,well_outlier,Outlying well G7 on EPHA5,no_demonstrated_effect,,0,0.105,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-44,I0014,well_outlier,Outlying well F2 on ARHGEF7,no_demonstrated_effect,,0,0.103,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-45,I0096,well_outlier,Outlying well F14 on SDHA(1),no_demonstrated_effect,,0,0.096,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-46,I0064,well_outlier,Outlying well F5 on MRPL3,no_demonstrated_effect,,0,0.095,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-47,I0016,well_outlier,Outlying well J10 on ARHGEF7,no_demonstrated_effect,,0,0.094,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-48,I0017,well_outlier,Outlying well L5 on BIRC5,no_demonstrated_effect,,0,0.093,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-49,I0020,well_outlier,Outlying well F15 on CDCA5,no_demonstrated_effect,,0,0.093,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-50,I0055,well_outlier,Outlying well F20 on MAP2K4,no_demonstrated_effect,,0,0.087,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-51,I0049,well_outlier,Outlying well H11 on GNB1,no_demonstrated_effect,,0,0.086,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-52,I0119,sample_outlier,Sample 2742 looks unusual,no_demonstrated_effect,,0,0.084,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-53,I0084,well_outlier,Outlying well C20 on PTPRF,no_demonstrated_effect,,0,0.084,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-54,I0086,well_outlier,Outlying well F18 on PTPRF,no_demonstrated_effect,,0,0.084,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-55,I0027,well_outlier,Outlying well G5 on ECEL1,no_demonstrated_effect,,0,0.081,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-56,I0052,well_outlier,Outlying well H16 on HMBS,no_demonstrated_effect,,0,0.079,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-57,I0118,sample_outlier,Sample 2714 looks unusual,no_demonstrated_effect,,0,0.078,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-58,I0098,well_outlier,Outlying well N6 on SLC6A8,no_demonstrated_effect,,0,0.078,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-59,I0101,well_outlier,Outlying well N10 on ULK2,no_demonstrated_effect,,0,0.078,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-60,I0121,sample_outlier,Sample 2748 looks unusual,no_demonstrated_effect,,0,0.073,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-61,I0088,well_outlier,Outlying well M17 on PTPRH,no_demonstrated_effect,,0,0.073,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-62,I0041,well_outlier,Outlying well G14 on EPHA5,no_demonstrated_effect,,0,0.07,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-63,I0059,well_outlier,Outlying well D7 on MAP7,no_demonstrated_effect,,0,0.068,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-64,I0044,well_outlier,Outlying well F20 on FYN,no_demonstrated_effect,,0,0.067,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-65,I0087,well_outlier,Outlying well H22 on PTPRF,no_demonstrated_effect,,0,0.067,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-66,I0048,well_outlier,Outlying well C20 on GNB1,no_demonstrated_effect,,0,0.066,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-67,I0058,well_outlier,Outlying well L4 on MAP2K4,no_demonstrated_effect,,0,0.066,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-68,I0104,spatial,row G differs on ARHGEF7,no_demonstrated_effect,,0,0.066,1,"Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",new
-69,I0085,well_outlier,Outlying well F8 on PTPRF,no_demonstrated_effect,,0,0.063,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-70,I0023,well_outlier,Outlying well H2 on DDC,no_demonstrated_effect,,0,0.062,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-71,I0091,well_outlier,Outlying well B6 on QPCT,no_demonstrated_effect,,0,0.061,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-72,I0009,ntc,No-template control amplified on PAICS,no_demonstrated_effect,,0,0.059,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-73,I0037,well_outlier,Outlying well L18 on EPB41L3,no_demonstrated_effect,,0,0.059,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-74,I0035,well_outlier,Outlying well H7 on EPB41L3,no_demonstrated_effect,,0,0.058,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-75,I0002,ntc,No-template control amplified on CAMTA2,no_demonstrated_effect,,0,0.054,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-76,I0026,well_outlier,Outlying well F15 on ECEL1,no_demonstrated_effect,,0,0.049,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-77,I0033,well_outlier,Outlying well A12 on EPB41L3,no_demonstrated_effect,,0,0.049,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-78,I0060,well_outlier,Outlying well F2 on MAP7,no_demonstrated_effect,,0,0.018,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-79,I0022,well_outlier,Outlying well D7 on CDH5,no_demonstrated_effect,,0,0.014,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-80,I0000,ntc,No-template control amplified on ALUsq(Eurogentec),no_demonstrated_effect,,0,0.0,58,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-81,I0013,well_outlier,Outlying well E1 on ALUsq(Eurogentec),no_demonstrated_effect,,0,0.0,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-82,I0095,well_outlier,Outlying well N1 on SDHA(1),no_demonstrated_effect,,0,0.0,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-83,I0113,sample_outlier,Sample 1803 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-84,I0114,sample_outlier,Sample 1803 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-85,I0115,sample_outlier,Sample 1931 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-86,I0116,sample_outlier,Sample 2709 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-87,I0117,sample_outlier,Sample 2713 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-88,I0120,sample_outlier,Sample 2746 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-89,I0122,sample_outlier,Sample 2772 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-90,I0123,sample_outlier,Sample 2786 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
-91,I0001,ntc,No-template control amplified on CAMTA1,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-92,I0003,ntc,No-template control amplified on DPYSL3,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-93,I0004,ntc,No-template control amplified on FYN,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-94,I0005,ntc,No-template control amplified on GNB1,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-95,I0006,ntc,No-template control amplified on MAP2K4,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-96,I0008,ntc,No-template control amplified on NM23A,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-97,I0010,ntc,No-template control amplified on WSB1,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
-98,I0011,well_outlier,Outlying well C10 on AHCY,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-99,I0012,well_outlier,Outlying well J6 on AHCY,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-100,I0015,well_outlier,Outlying well F12 on ARHGEF7,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-101,I0018,well_outlier,Outlying well N2 on CAMTA1,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-102,I0019,well_outlier,Outlying well F6 on CAMTA2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-103,I0024,well_outlier,Outlying well F24 on DPYSL3,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-104,I0025,well_outlier,Outlying well J6 on DPYSL3,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-105,I0029,well_outlier,Outlying well I20 on ELAVL4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-106,I0031,well_outlier,Outlying well D22 on ELAVL4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-107,I0032,well_outlier,Outlying well N2 on ELAVL4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-108,I0043,well_outlier,Outlying well D18 on FYN,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-109,I0045,well_outlier,Outlying well J22 on FYN,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-110,I0046,well_outlier,Outlying well J6 on FYN,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-111,I0047,well_outlier,Outlying well N2 on FYN,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-112,I0050,well_outlier,Outlying well J6 on GNB1,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-113,I0054,well_outlier,Outlying well C10 on MAP2K4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-114,I0056,well_outlier,Outlying well F24 on MAP2K4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-115,I0057,well_outlier,Outlying well J6 on MAP2K4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-116,I0062,well_outlier,Outlying well D22 on MCM2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-117,I0063,well_outlier,Outlying well F6 on MCM2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-118,I0066,well_outlier,Outlying well F24 on MRPL3,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-119,I0067,well_outlier,Outlying well J4 on MYCN(4),no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-120,I0073,well_outlier,Outlying well E1 on PDE4DIP,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-121,I0074,well_outlier,Outlying well I18 on PDE4DIP,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-122,I0076,well_outlier,Outlying well F24 on PRDM2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-123,I0077,well_outlier,Outlying well N2 on PRDM2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-124,I0080,well_outlier,Outlying well N2 on PRKCZ,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-125,I0083,well_outlier,Outlying well C10 on PTPRF,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-126,I0089,well_outlier,Outlying well J6 on PTPRN2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-127,I0097,well_outlier,Outlying well E1 on SLC6A8,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
-128,I0102,well_outlier,Outlying well F24 on WSB1,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+3,D-late_cq,decision,The late-Cq cut-off: changing only this changes 11 call(s),changes_conclusion,NTRK1,11,6.658,11,Decide this choice before looking at results and record the reason (Decision Card).,new
+4,D-efficiency,decision,The efficiency model: changing only this changes 6 call(s),changes_conclusion,,6,2.547,6,Decide this choice before looking at results and record the reason (Decision Card).,new
+5,D-flagged,decision,How flagged wells are handled: changing only this changes 4 call(s),changes_conclusion,,4,3.704,4,Decide this choice before looking at results and record the reason (Decision Card).,new
+6,I0109,reference_group_effect,Reference pair HMBS/UBC(2) differs between groups,changes_conclusion,,3,0.868,58,Assess whether this reference gene is stable between the groups before using it.,new
+7,I0110,reference_group_effect,Reference pair HMBS/HPRT1 differs between groups,changes_conclusion,,3,0.868,58,Assess whether this reference gene is stable between the groups before using it.,new
+8,I0078,well_outlier,Outlying well H20 on PRKACB_bis,changes_conclusion,,1,0.495,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+9,I0051,well_outlier,Outlying well K22 on HMBS,changes_conclusion,,1,0.459,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+10,I0053,well_outlier,Outlying well F23 on HPRT1,changes_conclusion,,1,0.414,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+11,I0111,reference_group_effect,Reference pair SDHA(1)/UBC(2) differs between groups,changes_conclusion,,1,0.326,58,Assess whether this reference gene is stable between the groups before using it.,new
+12,I0106,spatial,column 2 differs on UBC(2),changes_conclusion,,1,0.181,58,"Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",new
+13,I0108,efficiency,Low efficiency or many flagged wells on NTRK1,biases,,0,2.129,1,Review the assay's standard curve and flagged wells; consider the per-well efficiency scenario.,new
+14,I0100,well_outlier,Outlying well P7 on ULK2,no_demonstrated_effect,,0,0.589,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+15,I0042,well_outlier,Outlying well K20 on EPN2,no_demonstrated_effect,,0,0.581,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+16,I0021,well_outlier,Outlying well M11 on CDH5,no_demonstrated_effect,,0,0.503,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+17,I0103,spatial,row E differs on ALUsq(Eurogentec),no_demonstrated_effect,,0,0.482,58,"Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",new
+18,I0065,well_outlier,Outlying well H19 on MRPL3,no_demonstrated_effect,,0,0.474,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+19,I0075,well_outlier,Outlying well J18 on PMP22,no_demonstrated_effect,,0,0.468,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+20,I0038,well_outlier,Outlying well G19 on EPHA5,no_demonstrated_effect,,0,0.444,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+21,I0068,well_outlier,Outlying well A9 on NRCAM,no_demonstrated_effect,,0,0.437,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+22,I0030,well_outlier,Outlying well D16 on ELAVL4,no_demonstrated_effect,,0,0.428,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+23,I0082,well_outlier,Outlying well J1 on PTPRF,no_demonstrated_effect,,0,0.426,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+24,I0040,well_outlier,Outlying well H19 on EPHA5,no_demonstrated_effect,,0,0.414,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+25,I0081,well_outlier,Outlying well D16 on PTN,no_demonstrated_effect,,0,0.399,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+26,I0069,well_outlier,Outlying well A3 on ODC1,no_demonstrated_effect,,0,0.397,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+27,I0112,sample_outlier,Sample 1751 looks unusual,no_demonstrated_effect,,0,0.374,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+28,I0070,well_outlier,Outlying well J11 on ODC1,no_demonstrated_effect,,0,0.359,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+29,I0079,well_outlier,Outlying well G10 on PRKCZ,no_demonstrated_effect,,0,0.359,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+30,I0105,spatial,row H differs on SNAPC1,no_demonstrated_effect,,0,0.331,1,"Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",new
+31,I0072,well_outlier,Outlying well J18 on ODC1,no_demonstrated_effect,,0,0.321,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+32,I0092,well_outlier,Outlying well D16 on QPCT,no_demonstrated_effect,,0,0.307,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+33,I0036,well_outlier,Outlying well H20 on EPB41L3,no_demonstrated_effect,,0,0.285,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+34,I0034,well_outlier,Outlying well C4 on EPB41L3,no_demonstrated_effect,,0,0.229,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+35,I0061,well_outlier,Outlying well D7 on MAPT,no_demonstrated_effect,,0,0.198,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+36,I0028,well_outlier,Outlying well K19 on ELAVL4,no_demonstrated_effect,,0,0.175,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+37,I0090,well_outlier,Outlying well L20 on PTPRN2,no_demonstrated_effect,,0,0.173,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+38,I0071,well_outlier,Outlying well L11 on ODC1,no_demonstrated_effect,,0,0.16,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+39,I0099,well_outlier,Outlying well D5 on SNAPC1,no_demonstrated_effect,,0,0.144,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+40,I0107,efficiency,Low efficiency or many flagged wells on CLSTN1,no_demonstrated_effect,,0,0.138,1,Review the assay's standard curve and flagged wells; consider the per-well efficiency scenario.,new
+41,I0094,well_outlier,Outlying well K19 on SCG2,no_demonstrated_effect,,0,0.131,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+42,I0007,ntc,No-template control amplified on MCM2,no_demonstrated_effect,,0,0.127,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+43,I0093,well_outlier,Outlying well G7 on SCG2,no_demonstrated_effect,,0,0.108,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+44,I0039,well_outlier,Outlying well G7 on EPHA5,no_demonstrated_effect,,0,0.105,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+45,I0014,well_outlier,Outlying well F2 on ARHGEF7,no_demonstrated_effect,,0,0.103,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+46,I0096,well_outlier,Outlying well F14 on SDHA(1),no_demonstrated_effect,,0,0.096,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+47,I0064,well_outlier,Outlying well F5 on MRPL3,no_demonstrated_effect,,0,0.095,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+48,I0016,well_outlier,Outlying well J10 on ARHGEF7,no_demonstrated_effect,,0,0.094,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+49,I0017,well_outlier,Outlying well L5 on BIRC5,no_demonstrated_effect,,0,0.093,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+50,I0020,well_outlier,Outlying well F15 on CDCA5,no_demonstrated_effect,,0,0.093,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+51,I0055,well_outlier,Outlying well F20 on MAP2K4,no_demonstrated_effect,,0,0.087,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+52,I0049,well_outlier,Outlying well H11 on GNB1,no_demonstrated_effect,,0,0.086,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+53,I0119,sample_outlier,Sample 2742 looks unusual,no_demonstrated_effect,,0,0.084,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+54,I0084,well_outlier,Outlying well C20 on PTPRF,no_demonstrated_effect,,0,0.084,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+55,I0086,well_outlier,Outlying well F18 on PTPRF,no_demonstrated_effect,,0,0.084,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+56,I0027,well_outlier,Outlying well G5 on ECEL1,no_demonstrated_effect,,0,0.081,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+57,I0052,well_outlier,Outlying well H16 on HMBS,no_demonstrated_effect,,0,0.079,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+58,I0118,sample_outlier,Sample 2714 looks unusual,no_demonstrated_effect,,0,0.078,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+59,I0098,well_outlier,Outlying well N6 on SLC6A8,no_demonstrated_effect,,0,0.078,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+60,I0101,well_outlier,Outlying well N10 on ULK2,no_demonstrated_effect,,0,0.078,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+61,I0121,sample_outlier,Sample 2748 looks unusual,no_demonstrated_effect,,0,0.073,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+62,I0088,well_outlier,Outlying well M17 on PTPRH,no_demonstrated_effect,,0,0.073,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+63,I0041,well_outlier,Outlying well G14 on EPHA5,no_demonstrated_effect,,0,0.07,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+64,I0059,well_outlier,Outlying well D7 on MAP7,no_demonstrated_effect,,0,0.068,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+65,I0044,well_outlier,Outlying well F20 on FYN,no_demonstrated_effect,,0,0.067,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+66,I0087,well_outlier,Outlying well H22 on PTPRF,no_demonstrated_effect,,0,0.067,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+67,I0048,well_outlier,Outlying well C20 on GNB1,no_demonstrated_effect,,0,0.066,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+68,I0058,well_outlier,Outlying well L4 on MAP2K4,no_demonstrated_effect,,0,0.066,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+69,I0104,spatial,row G differs on ARHGEF7,no_demonstrated_effect,,0,0.066,1,"Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",new
+70,I0085,well_outlier,Outlying well F8 on PTPRF,no_demonstrated_effect,,0,0.063,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+71,I0023,well_outlier,Outlying well H2 on DDC,no_demonstrated_effect,,0,0.062,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+72,I0091,well_outlier,Outlying well B6 on QPCT,no_demonstrated_effect,,0,0.061,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+73,I0009,ntc,No-template control amplified on PAICS,no_demonstrated_effect,,0,0.059,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+74,I0037,well_outlier,Outlying well L18 on EPB41L3,no_demonstrated_effect,,0,0.059,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+75,I0035,well_outlier,Outlying well H7 on EPB41L3,no_demonstrated_effect,,0,0.058,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+76,I0002,ntc,No-template control amplified on CAMTA2,no_demonstrated_effect,,0,0.054,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+77,I0026,well_outlier,Outlying well F15 on ECEL1,no_demonstrated_effect,,0,0.049,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+78,I0033,well_outlier,Outlying well A12 on EPB41L3,no_demonstrated_effect,,0,0.049,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+79,I0060,well_outlier,Outlying well F2 on MAP7,no_demonstrated_effect,,0,0.018,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+80,I0022,well_outlier,Outlying well D7 on CDH5,no_demonstrated_effect,,0,0.014,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+81,I0000,ntc,No-template control amplified on ALUsq(Eurogentec),no_demonstrated_effect,,0,0.0,58,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+82,I0013,well_outlier,Outlying well E1 on ALUsq(Eurogentec),no_demonstrated_effect,,0,0.0,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+83,I0095,well_outlier,Outlying well N1 on SDHA(1),no_demonstrated_effect,,0,0.0,58,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+84,I0113,sample_outlier,Sample 1803 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+85,I0114,sample_outlier,Sample 1803 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+86,I0115,sample_outlier,Sample 1931 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+87,I0116,sample_outlier,Sample 2709 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+88,I0117,sample_outlier,Sample 2713 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+89,I0120,sample_outlier,Sample 2746 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+90,I0122,sample_outlier,Sample 2772 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+91,I0123,sample_outlier,Sample 2786 looks unusual,no_demonstrated_effect,,0,0.0,58,Check RNA integrity and the sample label; confirm identity before final interpretation.,new
+92,I0001,ntc,No-template control amplified on CAMTA1,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+93,I0003,ntc,No-template control amplified on DPYSL3,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+94,I0004,ntc,No-template control amplified on FYN,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+95,I0005,ntc,No-template control amplified on GNB1,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+96,I0006,ntc,No-template control amplified on MAP2K4,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+97,I0008,ntc,No-template control amplified on NM23A,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+98,I0010,ntc,No-template control amplified on WSB1,no_demonstrated_effect,,0,0.0,1,Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.,new
+99,I0011,well_outlier,Outlying well C10 on AHCY,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+100,I0012,well_outlier,Outlying well J6 on AHCY,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+101,I0015,well_outlier,Outlying well F12 on ARHGEF7,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+102,I0018,well_outlier,Outlying well N2 on CAMTA1,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+103,I0019,well_outlier,Outlying well F6 on CAMTA2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+104,I0024,well_outlier,Outlying well F24 on DPYSL3,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+105,I0025,well_outlier,Outlying well J6 on DPYSL3,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+106,I0029,well_outlier,Outlying well I20 on ELAVL4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+107,I0031,well_outlier,Outlying well D22 on ELAVL4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+108,I0032,well_outlier,Outlying well N2 on ELAVL4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+109,I0043,well_outlier,Outlying well D18 on FYN,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+110,I0045,well_outlier,Outlying well J22 on FYN,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+111,I0046,well_outlier,Outlying well J6 on FYN,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+112,I0047,well_outlier,Outlying well N2 on FYN,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+113,I0050,well_outlier,Outlying well J6 on GNB1,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+114,I0054,well_outlier,Outlying well C10 on MAP2K4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+115,I0056,well_outlier,Outlying well F24 on MAP2K4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+116,I0057,well_outlier,Outlying well J6 on MAP2K4,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+117,I0062,well_outlier,Outlying well D22 on MCM2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+118,I0063,well_outlier,Outlying well F6 on MCM2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+119,I0066,well_outlier,Outlying well F24 on MRPL3,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+120,I0067,well_outlier,Outlying well J4 on MYCN(4),no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+121,I0073,well_outlier,Outlying well E1 on PDE4DIP,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+122,I0074,well_outlier,Outlying well I18 on PDE4DIP,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+123,I0076,well_outlier,Outlying well F24 on PRDM2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+124,I0077,well_outlier,Outlying well N2 on PRDM2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+125,I0080,well_outlier,Outlying well N2 on PRKCZ,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+126,I0083,well_outlier,Outlying well C10 on PTPRF,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+127,I0089,well_outlier,Outlying well J6 on PTPRN2,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+128,I0097,well_outlier,Outlying well E1 on SLC6A8,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new
+129,I0102,well_outlier,Outlying well F24 on WSB1,no_demonstrated_effect,,0,0.0,1,Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.,new

@@ -17,9 +17,9 @@ from qsim import explore, inference, influence
 from qsim.attribution import Factorial
 from qsim.compare import whatif
 from qsim.data import demo_rdml, load_study, sha256
-from qsim.decisions import qpcr_space
 from qsim.engine import CALL_NAMES, Engine
 from qsim.issues import build_queue
+from qsim.study_space import space_for
 from qsim.troubleshoot import run_detectors
 
 BARS = "▁▂▃▄▅▆▇█"
@@ -94,7 +94,7 @@ def run_demo(
     )
     print(f" the same tumour's 5 reference genes (the 'ruler' it is divided by): {refs}")
 
-    space = qpcr_space(study.candidates, study.primary_refs)
+    space = space_for(study)[0]
     engine = Engine(study, space)
     _h(3, f"ONE ANALYSIS: what a scientist normally gets for {gene}")
     hi, lo = study.group_masks(0.15)

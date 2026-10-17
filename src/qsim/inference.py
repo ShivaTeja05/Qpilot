@@ -33,8 +33,11 @@ def forks(engine: Engine) -> list[tuple[int, ...]]:
     space = engine.space
     out = []
     for cell in itertools.product(*[range(n) for n in space.levels]):
+        base = space.baseline_index()
         tier_ok = all(
-            space.decisions[d].options[i].tier != "common_practice" for d, i in enumerate(cell)
+            space.decisions[d].options[i].tier != "common_practice"
+            and (space.decisions[d].role == "analysis" or i == base[d])
+            for d, i in enumerate(cell)
         )
         a = space.to_assignment(cell)
         if tier_ok and a["test"] == "welch" and a["multiplicity"] == "none":
@@ -57,7 +60,7 @@ def joint_test(
             tuple(key) + (space.baseline_index()[cut_pos],) + space.baseline_index()[cut_pos + 1 :]
         )
         v, ids = engine.values_of(cell), engine.ids_of(cell)
-        m = engine.matrix(v["efficiency"], v["flagged"], v["nondetect"])
+        m = engine.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
         rel, valid = engine.relative(m, ids["refs"])
         rels.append(np.where(valid, rel, 0.0))
         valids.append(valid.astype(float))

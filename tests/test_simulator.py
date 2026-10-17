@@ -22,6 +22,17 @@ def setup():
     return study, space, Engine(study, space)
 
 
+def test_study_tiers_follow_rules():
+    from qsim.study_space import space_for
+
+    study = load_study()
+    space, info = space_for(study)
+    tiers = {o.id: o.tier for o in space.decision("refs").options}
+    assert all(tiers[o] == "common_practice" for o in ("HMBS", "SDHA", "UBC", "ALUsq"))
+    assert not info["stable_genes"] and "HMBS" in info["implicated_genes"]
+    assert space.decision("cut").role == "question"
+
+
 def test_baseline_reproduces_qpilot(setup):
     study, space, engine = setup
     base = engine.evaluate(space.baseline_index())
@@ -119,7 +130,7 @@ def test_joint_test_uses_the_engines_statistics(setup):
     base = engine.evaluate(space.baseline_index())
     t_base = np.abs(base["log2fc"] / base["se"])
     assert (table["max_abs_t"].to_numpy() >= t_base - 1e-9).all()
-    assert meta["forks"] == 2 * 3 * 2 * 26 * 3
+    assert meta["forks"] == len(inference.forks(engine))
 
 
 def test_whatif_baseline_has_no_effect(setup):

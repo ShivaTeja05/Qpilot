@@ -1,6 +1,6 @@
 {
  "AHCY": {
-  "verdict": "depends on your choices",
+  "verdict": "solid",
   "call": "up",
   "log2fc": 1.3863489687773194,
   "fold": 2.6141627625831547,
@@ -10,29 +10,12 @@
    3.2252959405777375
   ],
   "p": 3.423670851809437e-13,
-  "holds_defensible": 0.9273504273504274,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.3863489687773194,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS",
-     "cut": "top20"
-    },
-    "fold": 1.849874670149053,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "AKR1C1": {
   "verdict": "solid",
@@ -46,7 +29,7 @@
   ],
   "p": 1.991222532278638e-06,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.764064447695221,
   "share_significant": 1.0,
@@ -64,10 +47,10 @@
   ],
   "p": 0.48067581497735345,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.845406216014491,
-  "share_significant": 0.021367521367521368,
+  "share_significant": 0.0,
   "flips": []
  },
  "BIRC5": {
@@ -82,7 +65,7 @@
   ],
   "p": 5.043719769792582e-14,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 1.0041161489909318,
   "share_significant": 1.0,
@@ -99,29 +82,12 @@
    0.49685639398973286
   ],
   "p": 3.4500608697499306e-08,
-  "holds_defensible": 0.9615384615384616,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.47782398987915453,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+UBC",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+UBC",
-     "cut": "top20"
-    },
-    "fold": 0.512546470286525,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "CAMTA2": {
   "verdict": "no call",
@@ -134,25 +100,12 @@
    0.6844986460781978
   ],
   "p": 2.928125598704861e-05,
-  "holds_defensible": 0.5833333333333333,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.7083333333333333,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.01517221503940469,
-  "share_significant": 0.8760683760683761,
+  "share_significant": 1.0,
   "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top10"
-    },
-    "fold": 0.4666356245021711,
-    "call": "down"
-   },
    {
     "decisions": [
      "efficiency"
@@ -168,15 +121,18 @@
    },
    {
     "decisions": [
-     "refs"
+     "late_cq",
+     "nondetect"
     ],
     "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
+     "Cq above 38 counts as not detected",
+     "set to the lowest amount detected"
     ],
     "option_ids": {
-     "refs": "ALUsq+HMBS"
+     "late_cq": "cq38",
+     "nondetect": "cap_min"
     },
-    "fold": 0.4272282176698343,
+    "fold": 0.4985418951327401,
     "call": "down"
    }
   ]
@@ -193,14 +149,14 @@
   ],
   "p": 1.8895090302137064e-07,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.802196313466955,
   "share_significant": 1.0,
   "flips": []
  },
  "CDCA5": {
-  "verdict": "depends on your choices",
+  "verdict": "solid",
   "call": "up",
   "log2fc": 1.3038478473986714,
   "fold": 2.468864823334662,
@@ -210,45 +166,12 @@
    3.4872670358750684
   ],
   "p": 1.186662675099472e-06,
-  "holds_defensible": 0.9262820512820513,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.30384784739867143,
-  "share_significant": 0.9797008547008547,
-  "flips": [
-   {
-    "decisions": [
-     "flagged",
-     "refs"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 1.9933556072200664,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HMBS+SDHA",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "HMBS+SDHA",
-     "cut": "top20"
-    },
-    "fold": 1.8688374341835285,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "CDH5": {
   "verdict": "solid",
@@ -262,14 +185,14 @@
   ],
   "p": 5.762468404506528e-07,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 2.321804677789153,
   "share_significant": 1.0,
   "flips": []
  },
  "CDKN3": {
-  "verdict": "depends on your choices",
+  "verdict": "solid",
   "call": "up",
   "log2fc": 1.250916838971588,
   "fold": 2.3799262029722037,
@@ -279,26 +202,12 @@
    3.1886486773793457
   ],
   "p": 8.421267801514659e-08,
-  "holds_defensible": 0.9145299145299145,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.2509168389715879,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HMBS+SDHA"
-    ],
-    "option_ids": {
-     "refs": "HMBS+SDHA"
-    },
-    "fold": 1.9343042259688443,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "CLSTN1": {
   "verdict": "fragile",
@@ -311,55 +220,23 @@
    0.7540098927008
   ],
   "p": 0.002866714132671352,
-  "holds_defensible": 0.8668091168091168,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.41666666666666663,
+  "analyses_defensible": 144,
   "drop_k": 2,
   "fold_margin_log2": 0.1435233654590804,
-  "share_significant": 0.45726495726495725,
+  "share_significant": 0.3125,
   "flips": [
    {
     "decisions": [
-     "refs"
+     "late_cq"
     ],
     "choices": [
-     "normalise to 2 reference genes: ALUsq+UBC"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "refs": "ALUsq+UBC"
+     "late_cq": "cq35"
     },
-    "fold": 0.5071334520760299,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "cut"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "cut": "top20"
-    },
-    "fold": 0.5238211255810832,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "multiplicity"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "multiplicity": "holm"
-    },
-    "fold": 0.4488603649405086,
+    "fold": 0.7884883415001854,
     "call": "none"
    }
   ]
@@ -376,7 +253,7 @@
   ],
   "p": 5.1962451836718865e-15,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 3.405482350688189,
   "share_significant": 1.0,
@@ -393,29 +270,12 @@
    0.4586216860250416
   ],
   "p": 6.636317354816543e-06,
-  "holds_defensible": 0.9666429249762583,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.8854969223089881,
-  "share_significant": 0.9529914529914529,
-  "flips": [
-   {
-    "decisions": [
-     "flagged",
-     "refs"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: HPRT1+UBC"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "HPRT1+UBC"
-    },
-    "fold": 0.5346847590189272,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "DPYSL3": {
   "verdict": "check data first",
@@ -428,36 +288,26 @@
    0.6404954938294782
   ],
   "p": 1.1174235683245625e-06,
-  "holds_defensible": 0.5576923076923077,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.9166666666666666,
+  "analyses_defensible": 144,
   "drop_k": 1,
   "fold_margin_log2": 0.021776009321536227,
-  "share_significant": 0.9615384615384616,
+  "share_significant": 1.0,
   "flips": [
    {
     "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top20"
-    },
-    "fold": 0.5855174435359148,
-    "call": "none"
-   },
-   {
-    "decisions": [
+     "late_cq",
      "refs"
     ],
     "choices": [
-     "normalise to 2 reference genes: ALUsq+HPRT1"
+     "Cq above 35 counts as not detected",
+     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
     ],
     "option_ids": {
-     "refs": "ALUsq+HPRT1"
+     "late_cq": "cq35",
+     "refs": "ALUsq+HPRT1+SDHA"
     },
-    "fold": 0.5317118651414382,
+    "fold": 0.5071106764897109,
     "call": "none"
    }
   ]
@@ -473,35 +323,12 @@
    0.21842395924674815
   ],
   "p": 2.9507999637064837e-08,
-  "holds_defensible": 0.9981006647673314,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 2.190299788484364,
-  "share_significant": 0.9839743589743589,
-  "flips": [
-   {
-    "decisions": [
-     "flagged",
-     "refs",
-     "cut",
-     "multiplicity"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+UBC",
-     "top 20 % by MYCN expression",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+UBC",
-     "cut": "top20",
-     "multiplicity": "holm"
-    },
-    "fold": 0.48177455706628136,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "ELAVL4": {
   "verdict": "no call",
@@ -515,10 +342,10 @@
   ],
   "p": 0.18732783934944838,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.7486714886269116,
-  "share_significant": 0.07478632478632478,
+  "share_significant": 0.0,
   "flips": []
  },
  "EPB41L3": {
@@ -533,14 +360,14 @@
   ],
   "p": 2.448678752216515e-07,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 1.1035491918047935,
   "share_significant": 1.0,
   "flips": []
  },
  "EPHA5": {
-  "verdict": "depends on your choices",
+  "verdict": "solid",
   "call": "down",
   "log2fc": -2.8910011942470977,
   "fold": 0.13480994236757174,
@@ -550,48 +377,12 @@
    0.28500952998645396
   ],
   "p": 1.4988470486402635e-06,
-  "holds_defensible": 0.9071699905033238,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 1.8910011942470977,
-  "share_significant": 0.8739316239316239,
-  "flips": [
-   {
-    "decisions": [
-     "flagged",
-     "cut"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "cut": "top20"
-    },
-    "fold": 0.571444185869439,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "refs",
-     "multiplicity"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: HPRT1+UBC",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "HPRT1+UBC",
-     "multiplicity": "holm"
-    },
-    "fold": 0.4784234971362562,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "EPN2": {
   "verdict": "fragile",
@@ -604,36 +395,23 @@
    0.7043172542169783
   ],
   "p": 0.001433151821345803,
-  "holds_defensible": 0.6121794871794872,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.5,
+  "analyses_defensible": 144,
   "drop_k": 2,
   "fold_margin_log2": 0.2621196900291851,
-  "share_significant": 0.32905982905982906,
+  "share_significant": 0.875,
   "flips": [
    {
     "decisions": [
-     "flagged"
+     "late_cq"
     ],
     "choices": [
-     "also drop wells below 10 copies"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "flagged": "drop_eff_low"
+     "late_cq": "cq35"
     },
-    "fold": 0.6445410087605093,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC"
-    },
-    "fold": 0.5201762469922098,
+    "fold": 0.6638981015326871,
     "call": "none"
    }
   ]
@@ -649,29 +427,12 @@
    0.8283895071633907
   ],
   "p": 0.000479718057268231,
-  "holds_defensible": 0.9700854700854701,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.40328277161610293,
-  "share_significant": 0.36538461538461536,
-  "flips": [
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS",
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS",
-     "cut": "top10"
-    },
-    "fold": 0.4902287201651199,
-    "call": "down"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "GNB1": {
   "verdict": "no call",
@@ -684,45 +445,15 @@
    0.7454557102997675
   ],
   "p": 3.8876339822805e-05,
-  "holds_defensible": 0.8205128205128205,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.22759810346032228,
-  "share_significant": 0.7863247863247863,
-  "flips": [
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.49500147566191843,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "efficiency",
-     "cut"
-    ],
-    "choices": [
-     "standard-curve slope of the plate's dilution series",
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "efficiency": "std_curve",
-     "cut": "top10"
-    },
-    "fold": 0.49898592891622656,
-    "call": "down"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "HIVEP2": {
-  "verdict": "fragile",
+  "verdict": "depends on your choices",
   "call": "down",
   "log2fc": -1.257025218146902,
   "fold": 0.41840580759135987,
@@ -732,36 +463,26 @@
    0.5917747273928384
   ],
   "p": 4.381504200226157e-06,
-  "holds_defensible": 0.7061965811965811,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.9166666666666666,
+  "analyses_defensible": 144,
   "drop_k": 4,
   "fold_margin_log2": 0.25702521814690193,
-  "share_significant": 0.875,
+  "share_significant": 1.0,
   "flips": [
    {
     "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top20"
-    },
-    "fold": 0.5018717771719403,
-    "call": "none"
-   },
-   {
-    "decisions": [
+     "late_cq",
      "refs"
     ],
     "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC"
+     "Cq above 35 counts as not detected",
+     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
     ],
     "option_ids": {
-     "refs": "HPRT1+UBC"
+     "late_cq": "cq35",
+     "refs": "ALUsq+HPRT1+SDHA"
     },
-    "fold": 0.5180305984530648,
+    "fold": 0.540893639499169,
     "call": "none"
    }
   ]
@@ -777,39 +498,12 @@
    0.6778845394647356
   ],
   "p": 8.141417850125483e-06,
-  "holds_defensible": 0.5277777777777778,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.04260689306679821,
-  "share_significant": 0.9038461538461539,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top10"
-    },
-    "fold": 0.36159767833712425,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.4354302434929838,
-    "call": "down"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "INPP1": {
   "verdict": "depends on your choices",
@@ -822,26 +516,12 @@
    0.5874158021642956
   ],
   "p": 2.141017498750023e-06,
-  "holds_defensible": 0.920940170940171,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": 4,
   "fold_margin_log2": 0.24364798301673973,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC"
-    },
-    "fold": 0.528546743061991,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "MAP2K4": {
   "verdict": "no call",
@@ -854,39 +534,12 @@
    0.7058502957938926
   ],
   "p": 1.709860711348401e-05,
-  "holds_defensible": 0.7243589743589743,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.12149952565274547,
-  "share_significant": 0.8675213675213675,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top10"
-    },
-    "fold": 0.464888183575758,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.45990447902691745,
-    "call": "down"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "MAP7": {
   "verdict": "depends on your choices",
@@ -899,48 +552,12 @@
    0.5961889616322678
   ],
   "p": 0.00019940655140419236,
-  "holds_defensible": 0.9865859449192782,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": 5,
   "fold_margin_log2": 0.5134564109483506,
-  "share_significant": 0.9465811965811965,
-  "flips": [
-   {
-    "decisions": [
-     "refs",
-     "multiplicity"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC",
-     "multiplicity": "holm"
-    },
-    "fold": 0.438392354118748,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+UBC",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+UBC",
-     "cut": "top20"
-    },
-    "fold": 0.510027598469646,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "MAPT": {
   "verdict": "solid",
@@ -953,29 +570,12 @@
    0.5334805250232739
   ],
   "p": 7.239595450189123e-07,
-  "holds_defensible": 0.9829059829059829,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.4411578673079597,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+UBC",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+UBC",
-     "cut": "top20"
-    },
-    "fold": 0.5130772855415054,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "MCM2": {
   "verdict": "solid",
@@ -988,29 +588,12 @@
    3.4195598592245378
   ],
   "p": 1.093601546033915e-11,
-  "holds_defensible": 0.9807692307692307,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.4154041563703519,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HMBS+SDHA",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "HMBS+SDHA",
-     "cut": "top20"
-    },
-    "fold": 1.9377045386580378,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "MRPL3": {
   "verdict": "no call",
@@ -1023,42 +606,23 @@
    2.111615645146241
   ],
   "p": 6.655210806036481e-09,
-  "holds_defensible": 0.8632478632478633,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.17165232043165113,
-  "share_significant": 0.9401709401709402,
+  "share_significant": 1.0,
   "flips": [
    {
     "decisions": [
-     "refs"
+     "late_cq"
     ],
     "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "refs": "HPRT1+UBC"
+     "late_cq": "cq35"
     },
-    "fold": 2.2223693884831346,
-    "call": "up"
-   },
-   {
-    "decisions": [
-     "efficiency",
-     "flagged",
-     "cut"
-    ],
-    "choices": [
-     "standard-curve slope of the plate's dilution series",
-     "also drop wells below 10 copies",
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "efficiency": "std_curve",
-     "flagged": "drop_eff_low",
-     "cut": "top10"
-    },
-    "fold": 2.0252487590631345,
+    "fold": 2.029435349082591,
     "call": "up"
    }
   ]
@@ -1074,39 +638,12 @@
    0.6964415613559407
   ],
   "p": 1.5384881510787146e-05,
-  "holds_defensible": 0.5833333333333333,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.08830051533135685,
-  "share_significant": 0.9273504273504274,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top10"
-    },
-    "fold": 0.3987394116603902,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.4494420898438289,
-    "call": "down"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "NHLH2": {
   "verdict": "solid",
@@ -1120,14 +657,14 @@
   ],
   "p": 6.192153321840829e-09,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 2.9027118367238467,
   "share_significant": 1.0,
   "flips": []
  },
  "NM23A": {
-  "verdict": "fragile",
+  "verdict": "depends on your choices",
   "call": "up",
   "log2fc": 1.1295178548982427,
   "fold": 2.187856104249681,
@@ -1137,39 +674,12 @@
    2.72844940398475
   ],
   "p": 1.2380920536774217e-09,
-  "holds_defensible": 0.6901709401709402,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": 4,
   "fold_margin_log2": 0.12951785489824275,
-  "share_significant": 0.9871794871794872,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top20"
-    },
-    "fold": 1.8293959433422475,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 1.8498707616413466,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "NRCAM": {
   "verdict": "solid",
@@ -1183,7 +693,7 @@
   ],
   "p": 2.001432741169382e-10,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.8107335905520785,
   "share_significant": 1.0,
@@ -1200,32 +710,23 @@
    0.13947942524965906
   ],
   "p": 1.348097591946545e-09,
-  "holds_defensible": 0.9991690408357075,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 2.9109827526937417,
-  "share_significant": 0.9305555555555556,
+  "share_significant": 0.8333333333333334,
   "flips": [
    {
     "decisions": [
-     "flagged",
-     "refs",
-     "cut",
-     "multiplicity"
+     "late_cq"
     ],
     "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+UBC",
-     "top 20 % by MYCN expression",
-     "Holm family-wise error rate"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+UBC",
-     "cut": "top20",
-     "multiplicity": "holm"
+     "late_cq": "cq35"
     },
-    "fold": 0.42281419261439457,
+    "fold": 0.7777697108141096,
     "call": "none"
    }
   ]
@@ -1242,7 +743,7 @@
   ],
   "p": 2.2865970122257607e-08,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.8439368467258768,
   "share_significant": 1.0,
@@ -1259,49 +760,39 @@
    2.4116642250600178
   ],
   "p": 5.0286315078556286e-08,
-  "holds_defensible": 0.5470085470085471,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.5,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.041623066915694173,
-  "share_significant": 0.9487179487179487,
+  "share_significant": 1.0,
   "flips": [
    {
     "decisions": [
-     "cut"
+     "late_cq"
     ],
     "choices": [
-     "top 10 % by MYCN expression"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "cut": "top10"
+     "late_cq": "cq35"
     },
-    "fold": 2.166647517934216,
+    "fold": 2.308000060319623,
     "call": "up"
    },
    {
     "decisions": [
-     "flagged"
-    ],
-    "choices": [
-     "also drop wells below 10 copies"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low"
-    },
-    "fold": 2.189740249090737,
-    "call": "up"
-   },
-   {
-    "decisions": [
+     "efficiency",
      "refs"
     ],
     "choices": [
-     "normalise to 2 reference genes: ALUsq+HPRT1"
+     "standard-curve slope of the plate's dilution series",
+     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
     ],
     "option_ids": {
-     "refs": "ALUsq+HPRT1"
+     "efficiency": "std_curve",
+     "refs": "ALUsq+HPRT1+SDHA"
     },
-    "fold": 2.0977889012434794,
+    "fold": 2.0061321807447006,
     "call": "up"
    }
   ]
@@ -1317,42 +808,15 @@
    0.6294572976289458
   ],
   "p": 2.9564808002650203e-06,
-  "holds_defensible": 0.657644824311491,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": 2,
   "fold_margin_log2": 0.0946377744629241,
-  "share_significant": 0.9786324786324786,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top20"
-    },
-    "fold": 0.5581223736312033,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HPRT1"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HPRT1"
-    },
-    "fold": 0.5055251594640937,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "PIK3R1": {
-  "verdict": "fragile",
+  "verdict": "depends on your choices",
   "call": "down",
   "log2fc": -1.1635676325061093,
   "fold": 0.4464072514039836,
@@ -1362,39 +826,12 @@
    0.5862687907187065
   ],
   "p": 1.251564377132303e-07,
-  "holds_defensible": 0.7457264957264957,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": 4,
   "fold_margin_log2": 0.16356763250610928,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top20"
-    },
-    "fold": 0.5264914767683233,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+UBC"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+UBC"
-    },
-    "fold": 0.5001362497745089,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "PLAGL1": {
   "verdict": "fragile",
@@ -1407,36 +844,23 @@
    0.7144795743259753
   ],
   "p": 0.0012126577940036781,
-  "holds_defensible": 0.7340930674264008,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
   "drop_k": 2,
   "fold_margin_log2": 0.18313329227611952,
-  "share_significant": 0.6217948717948718,
+  "share_significant": 1.0,
   "flips": [
    {
     "decisions": [
-     "cut"
+     "late_cq"
     ],
     "choices": [
-     "top 20 % by MYCN expression"
+     "Cq above 38 counts as not detected"
     ],
     "option_ids": {
-     "cut": "top20"
+     "late_cq": "cq38"
     },
-    "fold": 0.5957239308928372,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC"
-    },
-    "fold": 0.5412266855357399,
+    "fold": 0.510089823286665,
     "call": "none"
    }
   ]
@@ -1452,71 +876,23 @@
    0.6285105986942612
   ],
   "p": 0.002068187100858956,
-  "holds_defensible": 0.6324786324786325,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.75,
+  "analyses_defensible": 144,
   "drop_k": 4,
   "fold_margin_log2": 0.7646728259068638,
-  "share_significant": 0.17735042735042736,
+  "share_significant": 0.6666666666666666,
   "flips": [
    {
     "decisions": [
-     "flagged"
+     "late_cq"
     ],
     "choices": [
-     "also drop wells below 10 copies"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "flagged": "drop_eff_low"
+     "late_cq": "cq35"
     },
-    "fold": 0.6372849302241814,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "cut",
-     "multiplicity"
-    ],
-    "choices": [
-     "top 20 % by MYCN expression",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "cut": "top20",
-     "multiplicity": "holm"
-    },
-    "fold": 0.45633597013484084,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+UBC",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+UBC",
-     "cut": "top20"
-    },
-    "fold": 0.5391170187246345,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs",
-     "multiplicity"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC",
-     "multiplicity": "holm"
-    },
-    "fold": 0.3701112045012874,
+    "fold": 0.6755143071483692,
     "call": "none"
    }
   ]
@@ -1533,14 +909,14 @@
   ],
   "p": 1.026739755092622e-07,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.8373742120435734,
   "share_significant": 1.0,
   "flips": []
  },
  "PRAME": {
-  "verdict": "depends on your choices",
+  "verdict": "solid",
   "call": "up",
   "log2fc": 2.084981957386364,
   "fold": 4.242697905168659,
@@ -1550,92 +926,12 @@
    7.808845032323018
   ],
   "p": 1.0552236671139228e-05,
-  "holds_defensible": 0.9373219373219374,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 1.084981957386364,
-  "share_significant": 0.8076923076923077,
-  "flips": [
-   {
-    "decisions": [
-     "flagged",
-     "cut",
-     "multiplicity"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "top 10 % by MYCN expression",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "cut": "top10",
-     "multiplicity": "holm"
-    },
-    "fold": 2.730881745756773,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+HMBS",
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+HMBS",
-     "cut": "top10"
-    },
-    "fold": 2.1007011876882813,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "refs",
-     "multiplicity"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+HMBS",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+HMBS",
-     "multiplicity": "holm"
-    },
-    "fold": 2.543145398647816,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs",
-     "cut",
-     "test",
-     "multiplicity"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HMBS+SDHA",
-     "top 10 % by MYCN expression",
-     "Student t-test (equal variances)",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "refs": "HMBS+SDHA",
-     "cut": "top10",
-     "test": "student",
-     "multiplicity": "holm"
-    },
-    "fold": 2.6619804923460615,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "PRDM2": {
   "verdict": "no call",
@@ -1648,39 +944,12 @@
    0.7234406855422318
   ],
   "p": 1.622899713239317e-05,
-  "holds_defensible": 0.7371794871794872,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.1850735253837099,
-  "share_significant": 0.7585470085470085,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top10"
-    },
-    "fold": 0.4618607663750149,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.48062385228868254,
-    "call": "down"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "PRKACB_bis": {
   "verdict": "no call",
@@ -1693,49 +962,23 @@
    0.7513474066511007
   ],
   "p": 0.0007318234961211475,
-  "holds_defensible": 0.4667616334283001,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.75,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.05945434273866135,
-  "share_significant": 0.8824786324786325,
+  "share_significant": 1.0,
   "flips": [
    {
     "decisions": [
-     "cut"
+     "late_cq"
     ],
     "choices": [
-     "top 10 % by MYCN expression"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "cut": "top10"
+     "late_cq": "cq35"
     },
-    "fold": 0.3987109026788212,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "flagged"
-    ],
-    "choices": [
-     "also drop wells below 10 copies"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low"
-    },
-    "fold": 0.49119641319528035,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.4405449000966033,
+    "fold": 0.49972850178215544,
     "call": "down"
    }
   ]
@@ -1751,39 +994,12 @@
    0.729403825735804
   ],
   "p": 0.00014764906068141329,
-  "holds_defensible": 0.561965811965812,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.09940684634126251,
-  "share_significant": 0.8547008547008547,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top10"
-    },
-    "fold": 0.4159674794575553,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.45291539192889235,
-    "call": "down"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "PTN": {
   "verdict": "depends on your choices",
@@ -1796,48 +1012,12 @@
    0.6220829557061379
   ],
   "p": 0.00042552294714856835,
-  "holds_defensible": 0.9680674264007597,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": 5,
   "fold_margin_log2": 0.474285646866921,
-  "share_significant": 0.8717948717948718,
-  "flips": [
-   {
-    "decisions": [
-     "refs",
-     "multiplicity"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC",
-     "multiplicity": "holm"
-    },
-    "fold": 0.45045825080836144,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+UBC",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+UBC",
-     "cut": "top20"
-    },
-    "fold": 0.5198898084359403,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "PTPRF": {
   "verdict": "fragile",
@@ -1850,55 +1030,23 @@
    0.5588022845839639
   ],
   "p": 3.567628327633903e-07,
-  "holds_defensible": 0.7454890788224122,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.6666666666666667,
+  "analyses_defensible": 144,
   "drop_k": 5,
   "fold_margin_log2": 0.29669806145256405,
-  "share_significant": 0.9540598290598291,
+  "share_significant": 1.0,
   "flips": [
    {
     "decisions": [
-     "refs"
+     "late_cq"
     ],
     "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "refs": "HPRT1+UBC"
+     "late_cq": "cq35"
     },
-    "fold": 0.5082587946364479,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "cut"
-    ],
-    "choices": [
-     "drop efficiency-outlier wells",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff",
-     "cut": "top20"
-    },
-    "fold": 0.5268897888764968,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "nondetect",
-     "cut"
-    ],
-    "choices": [
-     "set to the lowest amount detected",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "nondetect": "cap_min",
-     "cut": "top20"
-    },
-    "fold": 0.503398103682251,
+    "fold": 0.6046927101448518,
     "call": "none"
    }
   ]
@@ -1914,48 +1062,29 @@
    0.19749504423047684
   ],
   "p": 1.637017545602762e-07,
-  "holds_defensible": 0.9152421652421653,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 2.516238842965545,
-  "share_significant": 0.8311965811965812,
+  "share_significant": 0.8333333333333334,
   "flips": [
    {
     "decisions": [
-     "flagged",
-     "cut"
+     "late_cq"
     ],
     "choices": [
-     "also drop wells below 10 copies",
-     "top 20 % by MYCN expression"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "flagged": "drop_eff_low",
-     "cut": "top20"
+     "late_cq": "cq35"
     },
-    "fold": 0.5083053723275609,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "refs"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+HPRT1"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+HPRT1"
-    },
-    "fold": 0.5157567289400161,
+    "fold": 0.5594454832469702,
     "call": "none"
    }
   ]
  },
  "PTPRN2": {
-  "verdict": "fragile",
+  "verdict": "depends on your choices",
   "call": "down",
   "log2fc": -1.3026376263214416,
   "fold": 0.4053843709103048,
@@ -1965,39 +1094,12 @@
    0.6038243768745019
   ],
   "p": 2.357416332047841e-05,
-  "holds_defensible": 0.7606837606837606,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": 5,
   "fold_margin_log2": 0.30263762632144164,
-  "share_significant": 0.8782051282051282,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top20"
-    },
-    "fold": 0.5330369283554747,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC"
-    },
-    "fold": 0.5055659834914831,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "QPCT": {
   "verdict": "solid",
@@ -2010,32 +1112,12 @@
    0.43116346398242184
   ],
   "p": 1.6674784613007411e-07,
-  "holds_defensible": 0.9786324786324786,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.8326173054341757,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "flagged",
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+HPRT1",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+HPRT1",
-     "cut": "top20"
-    },
-    "fold": 0.5184850420650217,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "SCG2": {
   "verdict": "solid",
@@ -2049,7 +1131,7 @@
   ],
   "p": 1.0451199143928814e-08,
   "holds_defensible": 1.0,
-  "analyses_defensible": 8424,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.9877597646045959,
   "share_significant": 1.0,
@@ -2066,52 +1148,23 @@
    2.200614943665562
   ],
   "p": 1.4841903400360185e-08,
-  "holds_defensible": 0.6517094017094017,
-  "analyses_defensible": 8424,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.13279664567164495,
-  "share_significant": 0.9786324786324786,
+  "share_significant": 1.0,
   "flips": [
    {
     "decisions": [
-     "cut"
+     "late_cq"
     ],
     "choices": [
-     "top 10 % by MYCN expression"
+     "Cq above 35 counts as not detected"
     ],
     "option_ids": {
-     "cut": "top10"
+     "late_cq": "cq35"
     },
-    "fold": 2.0354797843814123,
-    "call": "up"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+UBC"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+UBC"
-    },
-    "fold": 2.043672563966811,
-    "call": "up"
-   },
-   {
-    "decisions": [
-     "efficiency",
-     "flagged"
-    ],
-    "choices": [
-     "standard-curve slope of the plate's dilution series",
-     "also drop wells below 10 copies"
-    ],
-    "option_ids": {
-     "efficiency": "std_curve",
-     "flagged": "drop_eff_low"
-    },
-    "fold": 2.0441253153135164,
+    "fold": 2.123189916651604,
     "call": "up"
    }
   ]
@@ -2127,48 +1180,12 @@
    2.0534069319848802
   ],
   "p": 0.004408845611003108,
-  "holds_defensible": 0.920940170940171,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.3811581936952022,
-  "share_significant": 0.4198717948717949,
-  "flips": [
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+UBC",
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+UBC",
-     "cut": "top10"
-    },
-    "fold": 2.1518387311912255,
-    "call": "up"
-   },
-   {
-    "decisions": [
-     "efficiency",
-     "nondetect",
-     "refs"
-    ],
-    "choices": [
-     "standard-curve slope of the plate's dilution series",
-     "set to the lowest amount detected",
-     "normalise to 2 reference genes: HPRT1+UBC"
-    ],
-    "option_ids": {
-     "efficiency": "std_curve",
-     "nondetect": "cap_min",
-     "refs": "HPRT1+UBC"
-    },
-    "fold": 2.0015944634553136,
-    "call": "up"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "SNAPC1": {
   "verdict": "no call",
@@ -2181,39 +1198,12 @@
    2.289644308933344
   ],
   "p": 0.00044059787331332024,
-  "holds_defensible": 0.7590218423551757,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.22518761078493021,
-  "share_significant": 0.5,
-  "flips": [
-   {
-    "decisions": [
-     "cut"
-    ],
-    "choices": [
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "cut": "top10"
-    },
-    "fold": 2.0815421993194216,
-    "call": "up"
-   },
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC"
-    },
-    "fold": 2.1414134106270537,
-    "call": "up"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "TNFRSF": {
   "verdict": "depends on your choices",
@@ -2226,83 +1216,15 @@
    0.6266083810061099
   ],
   "p": 0.0002892470325283851,
-  "holds_defensible": 0.9653371320037987,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": 4,
   "fold_margin_log2": 0.4033871044292825,
-  "share_significant": 0.9102564102564102,
-  "flips": [
-   {
-    "decisions": [
-     "flagged",
-     "refs"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: HPRT1+UBC"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "HPRT1+UBC"
-    },
-    "fold": 0.5206092069631264,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC",
-     "top 20 % by MYCN expression"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC",
-     "cut": "top20"
-    },
-    "fold": 0.5060092611424547,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "refs",
-     "multiplicity"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: HPRT1+UBC",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "refs": "HPRT1+UBC",
-     "multiplicity": "holm"
-    },
-    "fold": 0.47314813654251536,
-    "call": "none"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "cut",
-     "multiplicity"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "top 10 % by MYCN expression",
-     "Holm family-wise error rate"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "cut": "top10",
-     "multiplicity": "holm"
-    },
-    "fold": 0.4436158102314684,
-    "call": "none"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "TYMS": {
-  "verdict": "depends on your choices",
+  "verdict": "solid",
   "call": "up",
   "log2fc": 1.207192832821753,
   "fold": 2.3088794227587166,
@@ -2312,26 +1234,12 @@
    3.0620590464020196
   ],
   "p": 7.728976115620606e-08,
-  "holds_defensible": 0.8974358974358975,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": 0.20719283282175294,
   "share_significant": 1.0,
-  "flips": [
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 1.9521981029833184,
-    "call": "none"
-   }
-  ]
+  "flips": []
  },
  "ULK2": {
   "verdict": "no call",
@@ -2344,70 +1252,12 @@
    0.8536997575021276
   ],
   "p": 0.0024071787196070023,
-  "holds_defensible": 0.9871794871794872,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.37973868201358574,
-  "share_significant": 0.3504273504273504,
-  "flips": [
-   {
-    "decisions": [
-     "efficiency",
-     "flagged",
-     "refs"
-    ],
-    "choices": [
-     "standard-curve slope of the plate's dilution series",
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "efficiency": "std_curve",
-     "flagged": "drop_eff_low",
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.47977767430498824,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "efficiency",
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "standard-curve slope of the plate's dilution series",
-     "normalise to 2 reference genes: HMBS+SDHA",
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "efficiency": "std_curve",
-     "refs": "HMBS+SDHA",
-     "cut": "top10"
-    },
-    "fold": 0.4833353232877777,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "flagged",
-     "refs",
-     "cut"
-    ],
-    "choices": [
-     "also drop wells below 10 copies",
-     "normalise to 2 reference genes: HMBS+HPRT1",
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "flagged": "drop_eff_low",
-     "refs": "HMBS+HPRT1",
-     "cut": "top10"
-    },
-    "fold": 0.4970837519511092,
-    "call": "down"
-   }
-  ]
+  "share_significant": 1.0,
+  "flips": []
  },
  "WSB1": {
   "verdict": "no call",
@@ -2420,41 +1270,11 @@
    0.7962380570208709
   ],
   "p": 0.0007444279712865654,
-  "holds_defensible": 0.8797483380816714,
-  "analyses_defensible": 8424,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
   "drop_k": null,
   "fold_margin_log2": -0.24555410837320701,
-  "share_significant": 0.45405982905982906,
-  "flips": [
-   {
-    "decisions": [
-     "refs"
-    ],
-    "choices": [
-     "normalise to 2 reference genes: ALUsq+HMBS"
-    ],
-    "option_ids": {
-     "refs": "ALUsq+HMBS"
-    },
-    "fold": 0.49995503212846504,
-    "call": "down"
-   },
-   {
-    "decisions": [
-     "efficiency",
-     "cut"
-    ],
-    "choices": [
-     "standard-curve slope of the plate's dilution series",
-     "top 10 % by MYCN expression"
-    ],
-    "option_ids": {
-     "efficiency": "std_curve",
-     "cut": "top10"
-    },
-    "fold": 0.499683276003231,
-    "call": "down"
-   }
-  ]
+  "share_significant": 0.9166666666666666,
+  "flips": []
  }
 }

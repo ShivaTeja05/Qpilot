@@ -6,7 +6,7 @@
  "scipy": "1.17.1",
  "machine": "macOS-26.5.2-arm64-arm-64bit",
  "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
- "grid_hash": "6585fdf65c032a64",
+ "grid_hash": "d2a608136a83e59d",
  "seed": 2026,
  "study": {
   "samples": 366,
@@ -32,6 +32,11 @@
     "keep",
     "drop_eff",
     "drop_eff_low"
+   ],
+   "late_cq": [
+    "none",
+    "cq35",
+    "cq38"
    ],
    "nondetect": [
     "drop",
@@ -59,6 +64,7 @@
    4,
    3,
    3,
+   3,
    31,
    3,
    3,
@@ -67,6 +73,7 @@
   "baseline": {
    "efficiency": "assay_mean",
    "flagged": "keep",
+   "late_cq": "none",
    "nondetect": "drop",
    "refs": "ALUsq+HMBS+HPRT1+SDHA+UBC",
    "cut": "top15",
@@ -76,8 +83,8 @@
  },
  "ledger": {
   "strategy": "full",
-  "total_cells": 30132,
-  "evaluated": 30132,
+  "total_cells": 90396,
+  "evaluated": 90396,
   "share_evaluated": 1.0,
   "exploration": "exhaustive",
   "per_ring": {
@@ -86,32 +93,36 @@
     "total": 1
    },
    "1": {
-    "evaluated": 43,
-    "total": 43
+    "evaluated": 45,
+    "total": 45
    },
    "2": {
-    "evaluated": 460,
-    "total": 460
+    "evaluated": 546,
+    "total": 546
    },
    "3": {
-    "evaluated": 2300,
-    "total": 2300
+    "evaluated": 3220,
+    "total": 3220
    },
    "4": {
-    "evaluated": 6320,
-    "total": 6320
+    "evaluated": 10920,
+    "total": 10920
    },
    "5": {
-    "evaluated": 9872,
-    "total": 9872
+    "evaluated": 22512,
+    "total": 22512
    },
    "6": {
-    "evaluated": 8256,
-    "total": 8256
+    "evaluated": 28000,
+    "total": 28000
    },
    "7": {
-    "evaluated": 2880,
-    "total": 2880
+    "evaluated": 19392,
+    "total": 19392
+   },
+   "8": {
+    "evaluated": 5760,
+    "total": 5760
    }
   },
   "t_way_coverage": {
@@ -120,7 +131,65 @@
    "3": 1.0
   },
   "seeds": {},
-  "notes": []
+  "notes": [
+   "no reference candidate is below geNorm M 1.0; reference choice is a known weakness of this study"
+  ]
+ },
+ "space_rules": {
+  "reference_tiers": {
+   "ALUsq": "a single reference gene",
+   "HMBS": "a single reference gene",
+   "HPRT1": "a single reference gene",
+   "SDHA": "a single reference gene",
+   "UBC": "a single reference gene",
+   "ALUsq+HMBS": "contains HMBS, which differs between the groups",
+   "ALUsq+HPRT1": "two genes, none stable",
+   "ALUsq+SDHA": "two genes, none stable",
+   "ALUsq+UBC": "contains UBC(2), which differs between the groups",
+   "HMBS+HPRT1": "contains HMBS, which differs between the groups",
+   "HMBS+SDHA": "contains HMBS, which differs between the groups",
+   "HMBS+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "HPRT1+SDHA": "two genes, none stable",
+   "HPRT1+UBC": "contains UBC(2), which differs between the groups",
+   "SDHA+UBC": "contains UBC(2), which differs between the groups",
+   "ALUsq+HMBS+HPRT1": "contains HMBS, which differs between the groups",
+   "ALUsq+HMBS+SDHA": "contains HMBS, which differs between the groups",
+   "ALUsq+HMBS+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "ALUsq+HPRT1+SDHA": "three or more genes, none stable",
+   "ALUsq+HPRT1+UBC": "contains UBC(2), which differs between the groups",
+   "ALUsq+SDHA+UBC": "contains UBC(2), which differs between the groups",
+   "HMBS+HPRT1+SDHA": "contains HMBS, which differs between the groups",
+   "HMBS+HPRT1+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "HMBS+SDHA+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "HPRT1+SDHA+UBC": "contains UBC(2), which differs between the groups",
+   "ALUsq+HMBS+HPRT1+SDHA": "contains HMBS, which differs between the groups",
+   "ALUsq+HMBS+HPRT1+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "ALUsq+HMBS+SDHA+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "ALUsq+HPRT1+SDHA+UBC": "contains UBC(2), which differs between the groups",
+   "HMBS+HPRT1+SDHA+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "ALUsq+HMBS+HPRT1+SDHA+UBC": "the prespecified set"
+  },
+  "geNorm_M": {
+   "ALUsq(Eurogentec)": 1.682,
+   "HMBS": 1.958,
+   "HPRT1": 1.635,
+   "SDHA(1)": 1.989,
+   "UBC(2)": 2.027
+  },
+  "stable_below_M": 1.0,
+  "stable_genes": [],
+  "implicated_genes": [
+   "HMBS",
+   "UBC(2)"
+  ],
+  "flagged_pairs": [
+   "HMBS/UBC(2)",
+   "HMBS/HPRT1",
+   "SDHA(1)/UBC(2)"
+  ],
+  "notes": [
+   "no reference candidate is below geNorm M 1.0; reference choice is a known weakness of this study"
+  ]
  },
  "baseline_calls": {
   "down": 29,
@@ -129,40 +198,37 @@
  },
  "multiverse": {
   "all": {
-   "cells": 30132,
-   "genes_that_flip_somewhere": 54,
+   "cells": 90396,
+   "genes_that_flip_somewhere": 55,
    "fragility_counts": {
-    "0": 4,
-    "1": 32,
+    "0": 3,
+    "1": 34,
     "2": 15,
     "3": 5,
-    "4": 1,
     "5": 1
    },
-   "interaction_only_genes": 22,
-   "called_genes_holding_ge_95pct": 18,
+   "interaction_only_genes": 21,
+   "called_genes_holding_ge_95pct": 16,
    "called_genes_holding_lt_80pct": 10
   },
   "defensible": {
-   "cells": 8424,
-   "genes_that_flip_somewhere": 45,
+   "cells": 144,
+   "genes_that_flip_somewhere": 14,
    "fragility_counts": {
-    "0": 13,
-    "1": 27,
-    "2": 13,
-    "3": 3,
-    "4": 2
+    "0": 44,
+    "1": 12,
+    "2": 2
    },
-   "interaction_only_genes": 18,
-   "called_genes_holding_ge_95pct": 21,
-   "called_genes_holding_lt_80pct": 10
+   "interaction_only_genes": 2,
+   "called_genes_holding_ge_95pct": 31,
+   "called_genes_holding_lt_80pct": 4
   }
  },
  "headline": {
   "ODC1": {
    "call": "up",
    "fold": 3.59,
-   "holds_all": 0.9964,
+   "holds_all": 0.9976,
    "holds_defensible": 1.0,
    "fragility_defensible": 0,
    "minimal_flip_sets_defensible": []
@@ -170,7 +236,7 @@
   "BIRC5": {
    "call": "up",
    "fold": 4.011,
-   "holds_all": 0.9997,
+   "holds_all": 0.9998,
    "holds_defensible": 1.0,
    "fragility_defensible": 0,
    "minimal_flip_sets_defensible": []
@@ -178,108 +244,105 @@
   "NTRK1": {
    "call": "down",
    "fold": 0.066,
-   "holds_all": 0.9981,
-   "holds_defensible": 0.9992,
-   "fragility_defensible": 4,
+   "holds_all": 0.8615,
+   "holds_defensible": 0.8333,
+   "fragility_defensible": 1,
    "minimal_flip_sets_defensible": [
     [
-     "flagged",
-     "refs",
-     "cut",
-     "multiplicity"
+     "late_cq"
     ]
    ]
   },
   "NM23A": {
    "call": "up",
    "fold": 2.188,
-   "holds_all": 0.698,
-   "holds_defensible": 0.6902,
-   "fragility_defensible": 1,
-   "minimal_flip_sets_defensible": [
-    [
-     "cut"
-    ],
-    [
-     "refs"
-    ]
-   ]
+   "holds_all": 0.7219,
+   "holds_defensible": 1.0,
+   "fragility_defensible": 0,
+   "minimal_flip_sets_defensible": []
   }
  },
  "lock_advisor": {
   "headline_all": [
+   "late_cq",
    "refs",
    "cut"
   ],
   "called_all": [
    "efficiency",
    "flagged",
+   "late_cq",
    "refs",
    "cut"
   ],
   "called_defensible": [
-   "flagged",
-   "refs",
-   "cut"
+   "late_cq"
   ]
  },
  "decisions": {
   "efficiency": {
-   "flip_rate_all": 0.0743,
-   "flip_rate_defensible": 0.027,
+   "flip_rate_all": 0.0776,
+   "flip_rate_defensible": 0.0273,
    "genes_flipped_alone": 6,
-   "variance_share_all": 0.0343,
-   "variance_share_defensible": 0.0149
+   "variance_share_all": 0.029,
+   "variance_share_defensible": 0.0966
   },
   "flagged": {
-   "flip_rate_all": 0.0995,
-   "flip_rate_defensible": 0.1056,
+   "flip_rate_all": 0.0746,
+   "flip_rate_defensible": 0.0,
    "genes_flipped_alone": 4,
-   "variance_share_all": 0.0898,
-   "variance_share_defensible": 0.1057
+   "variance_share_all": 0.0402,
+   "variance_share_defensible": 0.0019
+  },
+  "late_cq": {
+   "flip_rate_all": 0.0995,
+   "flip_rate_defensible": 0.1401,
+   "genes_flipped_alone": 11,
+   "variance_share_all": 0.0267,
+   "variance_share_defensible": 0.4758
   },
   "nondetect": {
-   "flip_rate_all": 0.0132,
-   "flip_rate_defensible": 0.0098,
+   "flip_rate_all": 0.0672,
+   "flip_rate_defensible": 0.0417,
    "genes_flipped_alone": 0,
-   "variance_share_all": 0.0191,
-   "variance_share_defensible": 0.0211
+   "variance_share_all": 0.0498,
+   "variance_share_defensible": 0.0832
   },
   "refs": {
-   "flip_rate_all": 0.5873,
-   "flip_rate_defensible": 0.4052,
+   "flip_rate_all": 0.6004,
+   "flip_rate_defensible": 0.0359,
    "genes_flipped_alone": 31,
-   "variance_share_all": 0.348,
-   "variance_share_defensible": 0.2702
+   "variance_share_all": 0.3336,
+   "variance_share_defensible": 0.1303
   },
   "cut": {
-   "flip_rate_all": 0.2772,
-   "flip_rate_defensible": 0.2951,
+   "flip_rate_all": 0.2839,
+   "flip_rate_defensible": 0.0,
    "genes_flipped_alone": 17,
-   "variance_share_all": 0.4612,
-   "variance_share_defensible": 0.5439
+   "variance_share_all": 0.4162,
+   "variance_share_defensible": 0.0
   },
   "test": {
-   "flip_rate_all": 0.0083,
-   "flip_rate_defensible": 0.0055,
+   "flip_rate_all": 0.01,
+   "flip_rate_defensible": 0.0,
    "genes_flipped_alone": 0,
    "variance_share_all": 0.0,
    "variance_share_defensible": 0.0
   },
   "multiplicity": {
-   "flip_rate_all": 0.0144,
-   "flip_rate_defensible": 0.0085,
+   "flip_rate_all": 0.0185,
+   "flip_rate_defensible": 0.0,
    "genes_flipped_alone": 0,
    "variance_share_all": 0.0,
    "variance_share_defensible": 0.0
   }
  },
  "top_interactions": {
-  "flaggedxrefs": 0.0155,
-  "refsxcut": 0.0098,
-  "flaggedxcut": 0.0063,
-  "flaggedxnondetect": 0.0041,
-  "efficiencyxcut": 0.0028
+  "late_cqxnondetect": 0.0334,
+  "late_cqxrefs": 0.0113,
+  "refsxcut": 0.0095,
+  "flaggedxlate_cq": 0.0069,
+  "flaggedxrefs": 0.0068
  },
  "influence": {
   "genes_flipped_by_one_sample": 4,
@@ -292,13 +355,13 @@
   "called_overturned_by_le_5_samples": 15
  },
  "joint_test": {
-  "forks": 936,
+  "forks": 48,
   "permutations": 999,
   "seed": 2026,
   "pooled_samples": 347,
-  "genes_q_lt_0.05": 58,
-  "genes_significant_in_ge_95pct_forks": 28,
-  "called_genes_significant_in_ge_95pct_forks": 27
+  "genes_q_lt_0.05": 56,
+  "genes_significant_in_ge_95pct_forks": 50,
+  "called_genes_significant_in_ge_95pct_forks": 35
  },
  "troubleshooting": {
   "observations": {
@@ -309,10 +372,10 @@
    "reference_group_effect": 3,
    "efficiency": 2
   },
-  "issues": 128,
+  "issues": 129,
   "issues_by_impact": {
    "no_demonstrated_effect": 116,
-   "changes_conclusion": 11,
+   "changes_conclusion": 12,
    "biases": 1
   },
   "identifiability": {
@@ -349,6 +412,17 @@
    },
    {
     "rank": 3,
+    "id": "D-late_cq",
+    "kind": "decision",
+    "title": "The late-Cq cut-off: changing only this changes 11 call(s)",
+    "impact": "changes_conclusion",
+    "headline_changed": "NTRK1",
+    "calls_changed": 11,
+    "max_abs_d_in_se": 6.658,
+    "outputs_affected": 11
+   },
+   {
+    "rank": 4,
     "id": "D-efficiency",
     "kind": "decision",
     "title": "The efficiency model: changing only this changes 6 call(s)",
@@ -359,7 +433,7 @@
     "outputs_affected": 6
    },
    {
-    "rank": 4,
+    "rank": 5,
     "id": "D-flagged",
     "kind": "decision",
     "title": "How flagged wells are handled: changing only this changes 4 call(s)",
@@ -370,7 +444,7 @@
     "outputs_affected": 4
    },
    {
-    "rank": 5,
+    "rank": 6,
     "id": "I0109",
     "kind": "reference_group_effect",
     "title": "Reference pair HMBS/UBC(2) differs between groups",
@@ -381,7 +455,7 @@
     "outputs_affected": 58
    },
    {
-    "rank": 6,
+    "rank": 7,
     "id": "I0110",
     "kind": "reference_group_effect",
     "title": "Reference pair HMBS/HPRT1 differs between groups",
@@ -392,7 +466,7 @@
     "outputs_affected": 58
    },
    {
-    "rank": 7,
+    "rank": 8,
     "id": "I0078",
     "kind": "well_outlier",
     "title": "Outlying well H20 on PRKACB_bis",
@@ -403,7 +477,7 @@
     "outputs_affected": 1
    },
    {
-    "rank": 8,
+    "rank": 9,
     "id": "I0051",
     "kind": "well_outlier",
     "title": "Outlying well K22 on HMBS",
@@ -414,7 +488,7 @@
     "outputs_affected": 58
    },
    {
-    "rank": 9,
+    "rank": 10,
     "id": "I0053",
     "kind": "well_outlier",
     "title": "Outlying well F23 on HPRT1",
@@ -423,80 +497,107 @@
     "calls_changed": 1,
     "max_abs_d_in_se": 0.414,
     "outputs_affected": 58
-   },
-   {
-    "rank": 10,
-    "id": "I0111",
-    "kind": "reference_group_effect",
-    "title": "Reference pair SDHA(1)/UBC(2) differs between groups",
-    "impact": "changes_conclusion",
-    "headline_changed": "",
-    "calls_changed": 1,
-    "max_abs_d_in_se": 0.326,
-    "outputs_affected": 58
    }
   ]
  },
  "explorer_check": [
   {
    "strategy": "rings <= 1",
-   "runs": 44,
-   "share_of_space": 0.0014602416036107793,
-   "genes_with_a_flip_found": 32,
-   "genes_with_a_flip_total": 54,
-   "pairwise_coverage": 0.37753721244925575
+   "runs": 46,
+   "share_of_space": 0.0005088720739855746,
+   "genes_with_a_flip_found": 34,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 0.3858267716535433
   },
   {
    "strategy": "rings <= 2",
-   "runs": 504,
-   "share_of_space": 0.016726403823178016,
-   "genes_with_a_flip_found": 47,
-   "genes_with_a_flip_total": 54,
+   "runs": 592,
+   "share_of_space": 0.006548962343466525,
+   "genes_with_a_flip_found": 49,
+   "genes_with_a_flip_total": 55,
    "pairwise_coverage": 1.0
   },
   {
    "strategy": "covering array t=2",
    "runs": 124,
-   "share_of_space": 0.00411522633744856,
-   "genes_with_a_flip_found": 50,
-   "genes_with_a_flip_total": 54,
+   "share_of_space": 0.0013717421124828531,
+   "genes_with_a_flip_found": 49,
+   "genes_with_a_flip_total": 55,
    "pairwise_coverage": 1.0,
    "seed": 1
   },
   {
    "strategy": "covering array t=3",
-   "runs": 479,
-   "share_of_space": 0.015896721093853712,
-   "genes_with_a_flip_found": 49,
-   "genes_with_a_flip_total": 54,
+   "runs": 504,
+   "share_of_space": 0.005575467941059339,
+   "genes_with_a_flip_found": 52,
+   "genes_with_a_flip_total": 55,
    "pairwise_coverage": 1.0,
    "seed": 1
   },
   {
    "strategy": "Morris, 20 trajectories",
-   "runs": 159,
-   "share_of_space": 0.0052767821585025885,
-   "genes_with_a_flip_found": 48,
-   "genes_with_a_flip_total": 54,
-   "pairwise_coverage": 0.5696887686062246,
+   "runs": 179,
+   "share_of_space": 0.0019801761139873445,
+   "genes_with_a_flip_found": 49,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 0.6107986501687289,
    "seed": 1
   },
   {
    "strategy": "random, 500 cells",
-   "runs": 498,
-   "share_of_space": 0.01652727996814018,
-   "genes_with_a_flip_found": 50,
-   "genes_with_a_flip_total": 54,
-   "pairwise_coverage": 0.9945872801082544,
+   "runs": 500,
+   "share_of_space": 0.005531218195495376,
+   "genes_with_a_flip_found": 51,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 0.9966254218222722,
    "seed": 1
   }
  ],
+ "lock_sha256": "5f5983a21a42e33ac5409641af1bc8442f4f27606211a8a2d3b9657252e2ea2a",
+ "question_choices_flip_alone": {
+  "cut": 17,
+  "multiplicity": 0
+ },
+ "designs": {
+  "defensible_cells": 144,
+  "draws": 100,
+  "robust_rule": 0.95,
+  "sizes": {
+   "3": {
+    "no_difference": {
+     "gene_tests": 5800,
+     "false_call_rate_single_analysis": 0.0245,
+     "false_call_rate_after_robust_filter": 0.0
+    },
+    "real_difference": {
+     "calls": 511,
+     "share_robust": 0.0,
+     "disagree_with_full_study_if_robust": null,
+     "disagree_with_full_study_if_not_robust": 0.286
+    }
+   },
+   "6": {
+    "no_difference": {
+     "gene_tests": 5800,
+     "false_call_rate_single_analysis": 0.0281,
+     "false_call_rate_after_robust_filter": 0.0024
+    },
+    "real_difference": {
+     "calls": 1325,
+     "share_robust": 0.162,
+     "disagree_with_full_study_if_robust": 0.247,
+     "disagree_with_full_study_if_not_robust": 0.216
+    }
+   }
+  }
+ },
  "verdicts": {
   "counts": {
    "check data first": 2,
-   "fragile": 9,
-   "depends on your choices": 12,
-   "solid": 17,
+   "fragile": 5,
+   "depends on your choices": 10,
+   "solid": 23,
    "no call": 18
   },
   "rules": {
@@ -508,16 +609,16 @@
    "drop_k_searched": 5
   },
   "by_gene": {
-   "AHCY": "depends on your choices",
+   "AHCY": "solid",
    "AKR1C1": "solid",
    "ARHGEF7": "no call",
    "BIRC5": "solid",
    "CAMTA1": "solid",
    "CAMTA2": "no call",
    "CD44": "solid",
-   "CDCA5": "depends on your choices",
+   "CDCA5": "solid",
    "CDH5": "solid",
-   "CDKN3": "depends on your choices",
+   "CDKN3": "solid",
    "CLSTN1": "fragile",
    "CPSG3": "solid",
    "DDC": "solid",
@@ -525,11 +626,11 @@
    "ECEL1": "solid",
    "ELAVL4": "no call",
    "EPB41L3": "solid",
-   "EPHA5": "depends on your choices",
+   "EPHA5": "solid",
    "EPN2": "fragile",
    "FYN": "no call",
    "GNB1": "no call",
-   "HIVEP2": "fragile",
+   "HIVEP2": "depends on your choices",
    "IGSF4": "no call",
    "INPP1": "depends on your choices",
    "MAP2K4": "no call",
@@ -539,31 +640,31 @@
    "MRPL3": "no call",
    "MTSS1": "no call",
    "NHLH2": "solid",
-   "NM23A": "fragile",
+   "NM23A": "depends on your choices",
    "NRCAM": "solid",
    "NTRK1": "depends on your choices",
    "ODC1": "solid",
    "PAICS": "no call",
    "PDE4DIP": "check data first",
-   "PIK3R1": "fragile",
+   "PIK3R1": "depends on your choices",
    "PLAGL1": "fragile",
    "PLAT": "fragile",
    "PMP22": "solid",
-   "PRAME": "depends on your choices",
+   "PRAME": "solid",
    "PRDM2": "no call",
    "PRKACB_bis": "no call",
    "PRKCZ": "no call",
    "PTN": "depends on your choices",
    "PTPRF": "fragile",
    "PTPRH": "depends on your choices",
-   "PTPRN2": "fragile",
+   "PTPRN2": "depends on your choices",
    "QPCT": "solid",
    "SCG2": "solid",
    "SLC25A5": "no call",
    "SLC6A8": "no call",
    "SNAPC1": "no call",
    "TNFRSF": "depends on your choices",
-   "TYMS": "depends on your choices",
+   "TYMS": "solid",
    "ULK2": "no call",
    "WSB1": "no call"
   }
@@ -678,12 +779,13 @@
   }
  ],
  "timings_s": {
-  "load_s": 0.12,
-  "full_grid_s": 18.27,
-  "influence_s": 1.94,
-  "joint_test_s": 1.27,
-  "troubleshoot_s": 0.83,
-  "explorer_check_s": 4.53,
-  "benchmark_s": 176.26
+  "load_s": 0.16,
+  "full_grid_s": 54.51,
+  "influence_s": 1.99,
+  "joint_test_s": 0.58,
+  "troubleshoot_s": 0.81,
+  "explorer_check_s": 6.42,
+  "benchmark_s": 176.17,
+  "designs_s": 81.66
  }
 }

@@ -30,6 +30,7 @@ Tier = Literal["prespecified", "defensible", "common_practice"]
 PLAIN = {
     "efficiency": "the efficiency model",
     "flagged": "how flagged wells are handled",
+    "late_cq": "the late-Cq cut-off",
     "nondetect": "how non-detects are handled",
     "refs": "the reference genes",
     "cut": "the group cut-off",
@@ -55,6 +56,7 @@ class Decision:
     question: str
     options: tuple[Option, ...]
     sources: tuple[str, ...] = ()
+    role: Literal["analysis", "question"] = "analysis"
 
     @property
     def ids(self) -> list[str]:
@@ -75,6 +77,7 @@ class Space:
 
     decisions: tuple[Decision, ...]
     baseline: dict[str, str] = field(default_factory=dict)
+    notes: tuple[str, ...] = ()
 
     @property
     def names(self) -> list[str]:
@@ -171,9 +174,23 @@ def qpcr_space(candidates: tuple[str, ...], primary_refs: tuple[str, ...]) -> Sp
             (
                 Option("keep", "keep", "prespecified", "keep every quantified well"),
                 Option("drop_eff", "eff", "defensible", "drop efficiency-outlier wells"),
-                Option("drop_eff_low", "eff_low", "defensible", "also drop wells below 10 copies"),
+                Option(
+                    "drop_eff_low", "eff_low", "common_practice", "also drop wells below 10 copies"
+                ),
             ),
             ("Ruijter et al. 2009 NAR (LinRegPCR exclusion rules)",),
+        ),
+        Decision(
+            "late_cq",
+            "matrix",
+            "U",
+            "Are very late Cq values treated as not detected?",
+            (
+                Option("none", None, "prespecified", "keep every Cq"),
+                Option("cq35", 35.0, "defensible", "Cq above 35 counts as not detected"),
+                Option("cq38", 38.0, "defensible", "Cq above 38 counts as not detected"),
+            ),
+            ("de Ronde et al. 2017 RNA (critical Cq of 35)",),
         ),
         Decision(
             "nondetect",
@@ -205,6 +222,7 @@ def qpcr_space(candidates: tuple[str, ...], primary_refs: tuple[str, ...]) -> Sp
                 Option("top15", 0.15, "prespecified", "top 15 % by MYCN expression"),
                 Option("top20", 0.20, "defensible", "top 20 % by MYCN expression"),
             ),
+            role="question",
         ),
         Decision(
             "test",
@@ -227,11 +245,13 @@ def qpcr_space(candidates: tuple[str, ...], primary_refs: tuple[str, ...]) -> Sp
                 Option("bh", "bh", "defensible", "Benjamini-Hochberg false discovery rate"),
                 Option("holm", "holm", "defensible", "Holm family-wise error rate"),
             ),
+            role="question",  # a claim rule (which error rate to control), reported separately
         ),
     )
     baseline = {
         "efficiency": "assay_mean",
         "flagged": "keep",
+        "late_cq": "none",
         "nondetect": "drop",
         "refs": ref_label(primary_refs),
         "cut": "top15",

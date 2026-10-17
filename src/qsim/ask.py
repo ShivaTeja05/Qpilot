@@ -36,6 +36,7 @@ from qsim.data import load_study
 from qsim.decisions import PLAIN, qpcr_space
 from qsim.engine import Engine
 from qsim.issues import HEADLINE
+from qsim.study_space import space_for
 
 LOCAL_DEFAULT = ModelConfig(
     provider="openai_compatible", endpoint="http://localhost:11434", model="qwen2.5:7b"
@@ -150,7 +151,7 @@ class Asker:
     def engine(self) -> Engine:
         if self._engine is None:
             study = load_study(self._rdml)
-            self._engine = Engine(study, qpcr_space(study.candidates, study.primary_refs))
+            self._engine = Engine(study, space_for(study)[0])
         return self._engine
 
     def names(self) -> list[str]:

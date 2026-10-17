@@ -94,9 +94,22 @@ class Engine:
         self._plate_nq = nq.groupby(runs).transform("median").to_numpy().reshape(study.run.shape)
         self._undetermined = np.isnan(study.cq)
         self._last: dict[str, tuple[object, object]] = {}
+        names = space.names
+        stages = [d.stage for d in space.decisions]
+        self._m = next(i for i, s in enumerate(stages) if s != "matrix")
+        if stages[self._m :].count("matrix") or names[self._m] != "refs":
+            raise ValueError("matrix-stage decisions must come first, then refs, cut, test")
+        self._cmp = names.index("test") + 1
 
     # ---- stage 1: the samples x genes log2 quantity matrix -------------------------------
-    def matrix(self, efficiency: str, flagged: str, nondetect: str, drop: np.ndarray | None = None):
+    def matrix(
+        self,
+        efficiency: str,
+        flagged: str,
+        nondetect: str,
+        drop: np.ndarray | None = None,
+        late: float | None = None,
+    ):
         s = self.study
         if efficiency == "assay":
             values = s.log2_n0.copy()
@@ -121,7 +134,11 @@ class Engine:
             missing |= s.flag_low
         if drop is not None:
             missing |= drop
-        undetermined = self._undetermined & ~missing
+        undetermined = self._undetermined.copy()
+        if late is not None:
+            undetermined |= ~np.isnan(s.cq) & (s.cq > late)
+        undetermined &= ~missing
+        values[undetermined] = np.nan
         values[missing] = np.nan
         items = self._item_cols
         target = values[:, items]
@@ -202,15 +219,21 @@ class Engine:
         if drop is None:
             matrix = self._stage(
                 "matrix",
-                tuple(cell[:3]),
-                lambda: self.matrix(v["efficiency"], v["flagged"], v["nondetect"]),
+                tuple(cell[: self._m]),
+                lambda: self.matrix(
+                    v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq")
+                ),
             )
-            rel = self._stage("rel", tuple(cell[:4]), lambda: self.relative(matrix, ids["refs"]))
+            rel = self._stage(
+                "rel", tuple(cell[: self._m + 1]), lambda: self.relative(matrix, ids["refs"])
+            )
             out = self._stage(
-                "cmp", tuple(cell[:6]), lambda: self.compare(rel, v["cut"], v["test"])
+                "cmp", tuple(cell[: self._cmp]), lambda: self.compare(rel, v["cut"], v["test"])
             )
         else:
-            matrix = self.matrix(v["efficiency"], v["flagged"], v["nondetect"], drop)
+            matrix = self.matrix(
+                v["efficiency"], v["flagged"], v["nondetect"], drop, v.get("late_cq")
+            )
             rel = self.relative(matrix, ids["refs"])
             out = self.compare(rel, v["cut"], v["test"])
         diff, se, lo, hi, p, _ = out

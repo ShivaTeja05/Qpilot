@@ -1,90 +1,131 @@
 # qPilot Decision Simulator
 
-Which analysis choices, and which samples, change a qPCR conclusion?
+Does your qPCR conclusion survive every defensible analysis, and what does it depend on?
 
-The simulator reruns one qPCR study under every reasonable combination of analysis choices. For each call it reports:
-- which choices flip it, alone or together;
-- which tumours and wells it leans on;
-- whether the effect survives joint testing across all analyses;
-- what a scientist should check first.
+The simulator reruns one study under every combination of analysis choices a careful lab could make. For each gene it reports:
 
-It is built on [qPilot](https://github.com/ShivaTeja05/Qpilot)'s validated engine (LinRegPCR curve analysis, geNorm, the conclusion rule) and reproduces qPilot's results exactly at the baseline. Research use only.
+- whether the call holds across those analyses;
+- which choices or samples change it;
+- what to check first.
 
-**No training, no model, no labelled data.** Everything is deterministic statistics on the instrument data. Datasets are used only to test the simulator. The fault-injection benchmark makes its own labelled cases by planting known problems in real data.
+On top of that it adds:
 
-## Results on the public neuroblastoma benchmark
+- known-answer tests on a second lab's dilution series;
+- planted faults in real data;
+- no-difference tests.
 
-The data is the Vermeulen/Ruijter RDML: 64 plates × 384 wells, 366 tumours, 58 genes compared between MYCN-high tumours and the rest. Full numbers are in [`results/REPORT.md`](results/REPORT.md).
+It is built on [qPilot](https://github.com/ShivaTeja05/Qpilot)'s validated engine (LinRegPCR from raw curves, geNorm, the conclusion rule) and reproduces qPilot exactly at the baseline. Research use only.
 
-| Question | Answer |
-|---|---|
-| How many analyses? | 7 decisions → **22,599 analyses, all run**, in 14 s on one laptop core |
-| Does a single analysis hide sensitivity? | Within the defensible options, **46 of 58 genes** change call somewhere. Only 20 of 40 called genes hold in ≥ 95 % of analyses; 9 hold in < 80 % |
-| Do choices interact ("X and Y")? | **19 genes** flip only when two or more choices change together, never with one |
-| Which choices matter? | Group cut-off and reference genes explain **52 % and 27 %** of fold-change variance. The statistical test and multiple-testing correction explain ~0 % here |
-| What should be locked in advance? | Locking **reference genes + cut-off** protects all four headline calls. Adding efficiency + flagged-well handling protects every call |
-| What do calls lean on? | Removing one tumour flips 4 genes. 148 of 1,745 single reference-well removals flip a gene. 15 of 40 calls can be overturned by removing ≤ 5 tumours |
-| Is the effect itself robust? | Permutation max-T test across 936 analyses per gene: **57 of 58 genes** are associated with the group. The fragility comes from the 2-fold threshold and the group definition, not from significance |
-| Does cheaper search work when exhaustive is impossible? | A 98-run pairwise covering array (0.4 % of the space) finds 47 of the 54 genes that ever flip. A 500-cell random sample finds 51 |
-| Does troubleshooting catch what matters? | Of **46 planted faults that changed a call, 39 were detected (85 %)**. Contaminated controls were caught 100 % of the time and reference genes shifted with the group 85 % |
-| Where is it blind? | Single bad wells under ~5 cycles and sample swaps go undetected. With one well per tumour per gene, they look like biology. None of those planted faults changed a call |
+**What to call it.** An independent review ([docs/review](docs/review/00-judge-ruling.md)) ruled that the exhaustive sweep is a robustness audit. The parts that simulate in the strict sense (a known true answer and a data-generating mechanism) are the planted faults, the known-answer dilutions and the small-experiment draws. A generative plate model (PlateSim) is the next step before using "simulator" with experts.
+
+**No training, no labelled data.** The engine is deterministic statistics. An optional local model (Ollama `qwen2.5:7b`) only words the answers, and qPilot's validator rejects any number the engine did not produce.
 
 ## Quick start
 
 ```bash
 python3.11 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-.venv/bin/qsim demo                                           # narrated walk: raw curve -> verdict (about 20 s)
-.venv/bin/qsim options                                        # decisions and options (* = baseline)
-.venv/bin/qsim whatif --set refs=HMBS --set nondetect=cap_min # any "what if we chose X and Y"
-.venv/bin/qsim run                                            # everything; writes results/
+.venv/bin/qsim demo                                     # raw curve -> verdict, narrated
+.venv/bin/qsim run                                      # every analysis + tests -> results/
+.venv/bin/qsim ask "Does NM23A depend on the reference genes?"
+.venv/bin/qsim whatif --set refs=HMBS --set late_cq=cq35
+.venv/bin/qsim validate                                 # known-answer test (Untergasser)
 .venv/bin/pytest -q
 ```
 
-The demo RDML is downloaded once, SHA-256-pinned, by qPilot. `--rdml path/to/file.rdml` runs your own study.
+## The choices it varies
 
-What-if output, per gene:
-- the baseline and new call and fold change;
-- the move in baseline standard errors;
-- the change in CI width;
-- the margin to the 2-fold line and to the p threshold;
-- an impact class: `changes_conclusion` / `biases` / `widens_uncertainty` / `no_demonstrated_effect`.
-
-## How it works
-
-| Part | Module | Method |
+| Choice | Options | How the tier is set |
 |---|---|---|
-| Decisions | `decisions.py` | Efficiency model, flagged wells, non-detects, reference set (31), cut-off, test, multiplicity. Each option is tiered prespecified / defensible / common practice, and each decision is tagged E/N/U (Del Giudice & Gangestad 2021) |
-| Engine | `engine.py` | Cells run in stage order, so a sweep walks the prefix tree once. Efficiency models are exact rearrangements of LinRegPCR output (`log2 N0 = log2 Nq − Cq·log2 E`) |
-| Exploration | `explore.py` | Exhaustive, rings around the baseline (anchored decomposition), greedy covering arrays (NIST SP 800-142), Morris trajectories, a random stratum, and a coverage ledger |
-| Attribution | `attribution.py` | Exact over the full factorial: holds, flip rate per decision, fragility, minimal flip sets, main-effect and interaction variance shares, and a lock advisor (minimal hitting set) |
-| Influence | `influence.py` | Exact closed-form leave-one-out, single reference-well removal (one well feeds every gene of its sample), greedy drop-k-to-flip, margins |
-| Inference | `inference.py` | Permutation max-T across analyses per gene, the PIMA idea (Girardi et al. 2024), with BH across genes. Groups are re-drawn inside each permutation |
-| Troubleshooting | `troubleshoot.py` | Detectors (below) and a check of what the plate layout can separate |
-| Queue | `issues.py` | Each finding gets a remedy scenario and a computed consequence. Issues are ranked by a lexicographic key: invalidates > changes a headline call > changes a call > move in SE > outputs affected |
-| Benchmark | `benchmark.py` | Faults planted at random sites in real data; scores detection, other new findings, and whether the fault changed a call |
+| Efficiency | LinRegPCR assay mean · plate standard curve · each well's own · assume 100 % | Per-well and 100 % are common practice. Per-well was demoted after an 89 % median error against known dilution ratios. |
+| Flagged wells | keep · drop efficiency outliers · also drop < 10 copies | The last is common practice. |
+| Late Cq | keep · Cq > 35 not detected · Cq > 38 not detected | Both cut-offs defensible ([de Ronde 2017](https://pmc.ncbi.nlm.nih.gov/articles/PMC5393188/)). |
+| Non-detects | drop · lowest detected · Cq 40 | Cq 40 is common practice ([McCall 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC4133581)). |
+| Reference genes | all 31 subsets | Rule-based from the study itself; see below. |
+| Test | Welch · Student · Mann–Whitney | Mann–Whitney is removed when it cannot reach p < 0.05 at the group sizes. |
+| Group cut-off | top 10 / 15 / 20 % | A question choice: it changes the claim, so it is reported separately. |
+| Multiple testing | none · BH · Holm | A question choice, reported separately. |
 
-The troubleshooting detectors:
-- no-template control within 5 cycles (MIQE 2.0);
-- well residuals from a two-way and low-rank co-expression model;
-- group-adjusted row, column and edge tests;
-- assay efficiency;
-- reference genes that differ between groups;
-- sample outliers.
+The reference-gene rule:
 
-## Validation (tests)
+- A single gene is common practice.
+- A set containing a gene the group-difference check implicates (here HMBS and UBC) is common practice.
+- If two or more candidates are geNorm-stable (M < 1.0), only sets of stable genes are defensible.
+- Otherwise, only sets of three or more unimplicated genes are defensible.
 
-- **Baseline:** reproduces qPilot's `study_from_curves` to 1e-12, with every call identical.
-- **qPilot's 186-analysis grid:** reproduced cell for cell inside the simulator's space.
-- **Closed-form leave-one-out and reference-well updates:** equal full recomputation.
-- **Supporting maths:** BH/Holm, Mann–Whitney against SciPy, covering arrays reaching full pairwise coverage, the joint test using the engine's statistics, and determinism.
+Every option, tier and the baseline are hashed into `results/lock.json` before any alternative is computed.
 
-## Limits
+## Results
 
-- **The benchmark data has limits.** It has one gene per plate, every tumour in the same well on every plate, and no technical replicates. Replicate-level faults and sample swaps need a dataset with replicates. A position effect shared by all plates cannot be separated from the tumour itself.
-- **"Holds in X %" weights every option equally.** That is an assumption, reported alongside the defensible-only view.
-- **The groups are defined from MYCN expression, not clinical labels.**
-- **Benchmark faults are planted at the quantity level, not in raw fluorescence.**
+### Neuroblastoma benchmark
+
+Vermeulen/Ruijter RDML: 64 plates, 366 tumours, 58 genes. Details are in [`results/REPORT.md`](results/REPORT.md).
+
+**All options:**
+- 90,396 analyses in 55 s on one core.
+- 55 of 58 genes change call somewhere.
+- 21 genes flip only when two or more choices change together.
+
+**Strict defensible view:** 144 analyses.
+- 14 genes change call.
+- 31 of 40 calls hold in at least 95 % of analyses.
+- The late-Cq cut-off is the most influential defensible choice (48 % of fold-change variance).
+- Verdicts: 23 solid, 10 depend on your choices, 5 fragile, 2 check data first.
+
+**What to lock in advance:** locking late-Cq, reference genes and cut-off protects all four headline calls.
+
+**What calls lean on:**
+- Removing one tumour flips 4 genes.
+- 148 of 1,745 single reference-well removals flip a gene.
+
+**Joint test:** a permutation max-T test across 48 defensible analyses finds 56 of 58 genes associated with the group. So the 2-fold threshold and the analysis choices make calls fragile, not significance.
+
+### Known answers: Untergasser dilution series
+
+LightCycler 480, three mixes, triplicates, 188 comparisons.
+
+| Efficiency choice | Median error vs true ratio |
+|---|---|
+| Standard curve | 7.7 % |
+| LinRegPCR mean | 7.9 % |
+| Assume 100 % | 11.4 % |
+| Each well's own | 89 % |
+
+- **Disagreement among analyses flags wrong answers.** When the defensible analyses disagree most (top quarter of spread), the standard answer is off by 31.5 % against 5.9 % otherwise (Spearman 0.50). Within each input level the correlation is 0.40–0.52 (p < 0.02), except at the lowest step, 0.7 → 0.2 ng (0.26, not significant).
+- **Coverage fails the 90 % bar.** The truth falls inside the range of defensible analyses in 40 % of cases, and inside the baseline 95 % CI in 73 %. The truth is nominal ng; digital-PCR truth is the next step.
+- **Replicate errors are caught and fixed.** A 3-cycle error in one replicate is caught every time by the half-cycle rule, and dropping it reduces the error from 90 % to 1.4 %. The rule also flags 7 % of clean triplicates.
+
+### Small experiments drawn from real data
+
+100 draws per size.
+
+| Group size | False calls, no true difference: one analysis | After requiring the call to hold in ≥ 95 % of analyses |
+|---|---|---|
+| 3 vs 3 | 2.5 % | 0 % |
+| 6 vs 6 | 2.8 % | 0.24 % |
+
+With a real difference, the filter does not make small-study calls agree better with the full 366-tumour answer (robust 25 % vs not robust 22 % disagreement). The audit removes false calls caused by analysis choices; it does not fix small-sample noise.
+
+### Planted faults
+
+220 trials.
+- 39 of 46 faults that changed a call were detected (85 %, 95 % CI 72–92 %).
+- Most of those were reference-gene shifts.
+- Single bad wells without replicates and sample swaps were not detected; none of them changed a call.
+
+## Limits and next steps
+
+These come from the review, in priority order:
+
+1. Use digital-PCR truth and all three instruments for the known-answer test.
+2. Run a no-difference test on Ruijter's 380-replicate plate.
+3. Make the CIs cover the truth, using delta-method efficiency uncertainty with a run effect.
+4. Have an outside qPCR scientist sign off every tier.
+5. Add Cq method and baseline choices, a Cq-only import, paired tests and ANOVA.
+6. Score the detectors on real faults (competimer, inhibitor series) with a Poisson-aware replicate rule.
+7. Build PlateSim, a generative plate model fitted on Untergasser LC480 and tested on held-out instruments, and a design planner from it.
 
 ## Data and licence
 
-The demo data is from Vermeulen et al. 2009 and Ruijter et al. 2013 (CC BY 4.0), via the RDML consortium's pinned copy. The code is Apache-2.0.
+- Vermeulen et al. 2009 / Ruijter et al. 2013 (CC BY 4.0), fetched SHA-256-pinned by qPilot.
+- Untergasser, van der Hoff and Benes, via the RDML consortium (MIT), in `data/untergasser/`.
+- Code: Apache-2.0.

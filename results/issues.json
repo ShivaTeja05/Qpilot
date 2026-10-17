@@ -227,6 +227,76 @@
   "detail": []
  },
  {
+  "issue_id": "D-late_cq",
+  "kind": "decision",
+  "title": "The late-Cq cut-off: changing only this changes 11 call(s)",
+  "loci": {
+   "decision": "late_cq"
+  },
+  "evidence": {
+   "genes_flipped_alone": [
+    "CLSTN1",
+    "EPN2",
+    "MRPL3",
+    "NTRK1",
+    "PAICS",
+    "PLAGL1",
+    "PLAT",
+    "PRKACB_bis",
+    "PTPRF",
+    "PTPRH",
+    "SLC25A5"
+   ],
+   "called_genes_flipped": [
+    "CLSTN1",
+    "EPN2",
+    "NTRK1",
+    "PLAGL1",
+    "PLAT",
+    "PTPRF",
+    "PTPRH"
+   ]
+  },
+  "consistent_with": [
+   "analysis sensitivity, not an error"
+  ],
+  "remedy": "change only late_cq from the baseline (ring 1)",
+  "affected_outputs": [
+   "CLSTN1",
+   "EPN2",
+   "MRPL3",
+   "NTRK1",
+   "PAICS",
+   "PLAGL1",
+   "PLAT",
+   "PRKACB_bis",
+   "PTPRF",
+   "PTPRH",
+   "SLC25A5"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "CLSTN1",
+   "EPN2",
+   "MRPL3",
+   "NTRK1",
+   "PAICS",
+   "PLAGL1",
+   "PLAT",
+   "PRKACB_bis",
+   "PTPRF",
+   "PTPRH",
+   "SLC25A5"
+  ],
+  "headline_changed": [
+   "NTRK1"
+  ],
+  "max_abs_d_in_se": 6.658,
+  "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+  "status": "new",
+  "detail": []
+ },
+ {
   "issue_id": "D-efficiency",
   "kind": "decision",
   "title": "The efficiency model: changing only this changes 6 call(s)",

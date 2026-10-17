@@ -48,7 +48,7 @@ class Baseline:
         cell = space.baseline_index()
         v = engine.values_of(cell)
         ids = engine.ids_of(cell)
-        matrix = engine.matrix(v["efficiency"], v["flagged"], v["nondetect"])
+        matrix = engine.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
         self.values, _ = matrix
         self.rel, self.valid = engine.relative(matrix, ids["refs"])
         self.ref_cols = engine._ref_cols[ids["refs"]]
