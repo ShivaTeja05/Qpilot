@@ -1,4 +1,4 @@
-"""qPilot's door for AI agents: four tools over MCP (stdio), backed by the on-disk study store.
+"""qPilot's door for AI agents: six tools over MCP (stdio), backed by the on-disk study store.
 
 Run with ``python -m qpilot.mcp_server`` (or ``qpilot serve``); add it to Claude Code with
 ``claude mcp add qpilot -- python -m qpilot.mcp_server``. The server is a separate process from
@@ -12,6 +12,10 @@ Rules enforced here, in code:
 - **An MCP caller is an agent.** ``qpcr_decide`` records every request as ``actor="agent"``.
   A choice that can flip a conclusion comes back ``pending_human``; only a person in the app can
   make it.
+- **Agents propose; only a person accepts.** ``qpcr_propose`` adds a proposal to the Studio
+  inbox as ``actor="agent"`` with ``made_by.kind="agent"``; the engine's own check replaces
+  anything the agent could claim, and no tool can accept, edit or reject a proposal
+  (``core/proposals.py`` refuses every actor but ``human``).
 - **JSON only.** Tools return engine numbers, never prose written by a model.
 """
 
@@ -22,19 +26,25 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError
+
 from qpilot.core.decisions import DecisionError, apply_decision, check_request, needs_human
+from qpilot.core.proposals import STATUSES, ProposalError
 from qpilot.core.store import SUGGEST_REASON, StudyNotFound, StudyStore
 from qpilot.qpcr.plan import plan
 from qpilot.schemas import DecisionCard
+from qpilot.schemas_studio import PROPOSAL_KINDS, MadeBy, Proposal
 
 SERVER_NAME = "qpilot"
 INSTRUCTIONS = (
     "qPilot analyses qPCR studies from RDML files with a deterministic engine (LinRegPCR, "
     "geNorm, Welch contrasts, a grid of every reasonable analysis). Call qpcr_study first, "
     "then qpcr_robustness for a gene. qpcr_decide records your request as an agent: a choice "
-    "that can change any conclusion returns pending_human and waits for a person. Report only "
+    "that can change any conclusion returns pending_human and waits for a person. "
+    "You may propose; only a person in qPilot Studio accepts. Report only "
     "numbers these tools return. Research use only; not for clinical or diagnostic use."
 )
+UNKNOWN_STUDY = "unknown study_id; call qpcr_study first"
 RDML_SUFFIXES = {".rdml", ".xml"}
 KIND_TO_DIMENSION = {
     "reference_set": "refs",
@@ -93,7 +103,7 @@ def _card_view(card: DecisionCard) -> dict[str, Any]:
 
 
 class QpilotTools:
-    """The four tools as plain methods (easy to test), registered on the MCP server below.
+    """The tools as plain methods (easy to test), registered on the MCP server below.
 
     ``agent_policy=True`` (the MCP server) applies the study's autonomy setting: in ``suggest``
     (the default) every agent decision becomes a request for a person. The in-app model passes
@@ -301,8 +311,103 @@ class QpilotTools:
             }
         return result
 
+    def qpcr_propose(
+        self,
+        study_id: str,
+        kind: str,
+        subject: str,
+        payload: dict[str, Any],
+        evidence: list[dict[str, Any]] | None = None,
+        alternatives: list[dict[str, Any]] | None = None,
+        level: str = "Low",
+        reasons: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Propose one item for a person to accept or reject in qPilot Studio; nothing applies.
 
-TOOL_NAMES = ("qpcr_study", "qpcr_robustness", "qpcr_decide", "qpcr_plan")
+        ``kind`` is a Studio proposal kind (``design.well_role``, ``design.group``,
+        ``curve.call_rule``, ...); ``subject`` and ``payload`` follow that kind's shape.
+        ``evidence`` items are ``{"kind", "ref", "note"}``. The proposal is recorded as made by
+        an agent, the engine's refute-only check is attached, and the answer is ``proposed``
+        (with the check) or ``refused`` (with the reason). Only a person accepts; no tool can.
+        """
+        if kind not in PROPOSAL_KINDS:
+            return {"error": f"unknown kind; use one of {', '.join(PROPOSAL_KINDS)}"}
+        try:
+            inbox = self.store.proposals(study_id)
+        except StudyNotFound:
+            return {"error": UNKNOWN_STUDY}
+        try:
+            proposal = Proposal.model_validate(
+                {
+                    "study_id": inbox.study_id,
+                    "kind": kind,
+                    "subject": subject,
+                    "payload": payload,
+                    "evidence": evidence or [],
+                    "alternatives": alternatives or [],
+                    "level": level,
+                    "reasons": reasons or [],
+                    "made_by": MadeBy(kind="agent"),
+                }
+            )
+        except ValidationError as err:
+            return {"error": _invalid(err)}
+        try:
+            outcome = inbox.propose(proposal, "agent")
+        except ProposalError as err:
+            return {"error": str(err)}
+        if outcome.status not in ("proposed", "refused"):  # nothing else can happen over MCP
+            return {"error": "unexpected outcome"}
+        return {
+            "status": outcome.status,
+            "head": outcome.head,
+            "reason": outcome.reason,
+            "proposal": _proposal_view(outcome.proposal) if outcome.proposal else None,
+        }
+
+    def qpcr_proposals(self, study_id: str, status: str | None = None) -> dict[str, Any]:
+        """The Studio inbox: every proposal with its status, the engine's check and evidence.
+
+        ``status`` filters by ``proposed``, ``accepted``, ``edited``, ``rejected`` or
+        ``superseded``. Read-only; ``head`` is the inbox's chain head.
+        """
+        if status is not None and status not in STATUSES:
+            return {"error": f"status must be one of {', '.join(STATUSES)}"}
+        try:
+            inbox = self.store.proposals(study_id)
+            head, items = inbox.snapshot()
+        except StudyNotFound:
+            return {"error": UNKNOWN_STUDY}
+        except ProposalError as err:
+            return {"error": str(err)}
+        return {
+            "study_id": inbox.study_id,
+            "head": head,
+            "proposals": [_proposal_view(p) for p in items if status in (None, p.status)],
+        }
+
+
+def _proposal_view(proposal: Proposal) -> dict[str, Any]:
+    return proposal.model_dump(mode="json", exclude_none=True)
+
+
+def _invalid(err: ValidationError) -> str:
+    """A short validation message that names fields, never echoes the submitted values."""
+    parts = []
+    for item in err.errors()[:3]:
+        where = ".".join(str(x) for x in item.get("loc", ())) or "proposal"
+        parts.append(f"{where}: {item.get('msg', 'invalid')}")
+    return "invalid proposal (" + "; ".join(parts) + ")"
+
+
+TOOL_NAMES = (
+    "qpcr_study",
+    "qpcr_robustness",
+    "qpcr_decide",
+    "qpcr_plan",
+    "qpcr_propose",
+    "qpcr_proposals",
+)
 
 
 def _server_class() -> Callable[..., Any]:
@@ -317,7 +422,7 @@ def _server_class() -> Callable[..., Any]:
 
 
 def create_server(store: StudyStore | None = None) -> Any:
-    """Build the MCP server with the four tools registered."""
+    """Build the MCP server with every tool in ``TOOL_NAMES`` registered."""
     tools = QpilotTools(store)
     server = _server_class()(SERVER_NAME, instructions=INSTRUCTIONS)
     for name in TOOL_NAMES:
