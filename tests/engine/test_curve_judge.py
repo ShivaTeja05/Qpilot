@@ -219,6 +219,29 @@ def test_validated_reflects_transfer_json(tmp_path):
     assert not cj.validated(tmp_path / "f.json")
 
 
+def test_shipped_transfer_result_is_for_the_shipped_model():
+    result = json.loads((MODEL_DIR / "transfer.json").read_text())
+    assert result["model_sha256"] == cj.MODEL_SHA256
+    assert len(result["preregistered_in_commit"]) == 40
+    criteria = result["criteria"]
+    assert set(criteria) == {
+        "a_standards_called_amplified",
+        "b_agreement_with_linregpcr_cq_below_30",
+        "c_ntc_calls_tabulated",
+    }
+    passed = all(c["passed"] for c in criteria.values())
+    assert result["verdict"] == ("pass" if passed else "fail")
+    assert cj.validated() is passed
+    assert cj.status() == ("validated" if passed else cj.NOT_VALIDATED)
+    a, b = (
+        criteria["a_standards_called_amplified"],
+        criteria["b_agreement_with_linregpcr_cq_below_30"],
+    )
+    assert a["n"] == 960 and a["passed"] == (100 * a["called_amplified"] >= 99 * a["n"])
+    assert b["passed"] == (100 * b["agree"] >= 99 * b["n"])
+    assert criteria["c_ntc_calls_tabulated"]["n"] == len(criteria["c_ntc_calls_tabulated"]["table"])
+
+
 def test_validated_is_false_when_the_model_is_refused(tmp_path, monkeypatch):
     transfer = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, True, True)
 

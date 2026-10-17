@@ -120,6 +120,16 @@ missing cycles, without XGBoost.
 
 ## Transfer test
 
-See `transfer.py` (the pre-registered gate) and `qpilot/models/curve_judge/transfer.json` (the
-result). Held-out accuracy on TaqMan Array Cards is not evidence for SYBR Green on a
-LightCycler 480. Only the transfer test decides whether the learned option is offered.
+See `transfer.py` for the gate, pre-registered in commit `94f2b48` before any demo prediction,
+and `qpilot/models/curve_judge/transfer.json` for the result. Held-out accuracy on TaqMan Array
+Cards is not evidence for SYBR Green on a LightCycler 480. Only the transfer test decides
+whether the learned option is offered.
+
+Result, 17 Oct 2026, model `39ea518c…`: **pass**.
+
+- (a) 960 / 960 standards called amplified.
+- (b) 16,043 / 16,153 = 99.32 % agreement with LinRegPCR at Cq < 30.
+- (c) 192 NTCs tabulated: 17 called amplified, against LinRegPCR's 23.
+
+Post-hoc, all 110 disagreements in (b) are very early `ALUsq(Eurogentec)` curves (Cq 9.5-13.5)
+that the model calls not amplified. See `methods/curve_judge.md`.

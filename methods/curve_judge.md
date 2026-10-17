@@ -7,7 +7,10 @@ default stays `linregpcr`. It is offered only when `qpilot.qpcr.curve_judge.vali
 True, which requires the pre-registered transfer test on the instrument to have passed.
 Otherwise it ships disabled, labelled *not validated for this instrument*.
 
-**Status on the demo instrument (LightCycler 480, SYBR Green I):** transfer test pending.
+**Status on the demo instrument (LightCycler 480, SYBR Green I): the pre-registered transfer
+test passed on 17 Oct 2026, so the learned option may be offered (never as the default).** It
+passed with little margin, and it has a systematic blind spot for very early curves: see
+*Transfer result*.
 
 ## Paper, data, licence
 
@@ -64,9 +67,34 @@ gives 0.993 / 0.997 for sensitivity / specificity. **Gate (accuracy ≥ 0.99): p
 numpy evaluator reproduces `xgboost.Booster.predict` exactly (max |Δp| = 0.0 on all 165,214
 curves). Details: `qpilot/models/curve_judge/metrics.json`.
 
-## Transfer result
+## Transfer result (demo: Vermeulen 2009, LightCycler 480, SYBR Green I, `biomarker_set`)
 
-Pending. The gate is pre-registered in `training/curve_judge/transfer.py`.
+The gate, the threshold and both substitutions (per-curve `F / min(F)` instead of ROX; LC480
+cycles 1-40 → `Cyc1..Cyc40`, cycles 41-50 dropped) were committed in
+`training/curve_judge/transfer.py` (commit `94f2b48`) before any prediction on demo data. The
+result is in `qpilot/models/curve_judge/transfer.json`, for model `39ea518c…`.
+
+| Criterion (all must hold) | Result | |
+|---|---|---|
+| (a) ≥ 99 % of the 960 standard wells (STD_15 … STD_150000) called amplified | 960 / 960 (100 %); every level 192 / 192 | **pass** |
+| (b) ≥ 99 % agreement with LinRegPCR's amplification call, unknown wells with Cq < 30 | 16,043 / 16,153 (**99.32 %**). The 110 disagreements are all learned *no* where LinRegPCR says *yes*; 1 well both *no* | **pass** |
+| (c) NTC calls tabulated (no threshold) | 192 NTC wells: 17 called amplified by the Curve Judge, 23 by LinRegPCR. All 17 are among LinRegPCR's 23; the other 6 have LinRegPCR Cq 44-47, beyond the model's 40 cycles | **pass** (tabulated) |
+
+**Verdict: pass. The learned option is enabled as one non-default option on `amp_call`.**
+
+Read beyond the verdict:
+
+- **Post-hoc, descriptive (not part of the gate).** All 110 disagreements in (b) are wells of
+  one target, `ALUsq(Eurogentec)`, a reference gene in the demo's primary analysis. Their
+  LinRegPCR Cq is 9.5-13.5, and every one gets the same probability, 0.400. Curves that rise
+  this early are rare in training: 231 of the 39,093 amplified training curves (0.6 %) have
+  an expert Ct below 14. Treat very early curves (Cq ≲ 14) as outside what the model knows.
+- **False positives.** By design the gate cannot see over-calling. Evidence: the 17 NTC calls
+  above, all shared with LinRegPCR, several with LinRegPCR Cq above 40, where the model sees
+  only the start of the rise. On all 23,424 unknown wells: 22,933 both *yes*, 332 both *no*,
+  157 learned *no* / LinRegPCR *yes*, 2 learned *yes* / LinRegPCR *no*.
+- The margin on (b) is 0.32 percentage points. Retraining, or any change to the substitution,
+  needs a new pre-registered run.
 
 ## Known limits
 
@@ -76,6 +104,9 @@ Pending. The gate is pre-registered in `training/curve_judge/transfer.py`.
 - **Instrument and reference dye.** Trained on ROX-standardised QuantStudio TAC data. The
   per-curve `F / min(F)` stand-in keeps the shape but not the scale: SYBR curves rise far more,
   relative to baseline, than any training curve.
+- **Very early curves.** On the demo, every `ALUsq(Eurogentec)` well with Cq 9.5-13.5 that
+  LinRegPCR calls amplified, 110 in all, is called *not* amplified (p = 0.400). These are
+  outside the training range.
 - **Cycle count.** Exactly 40 inputs. Amplification after cycle 40 is invisible. Runs with
   fewer than 40 cycles leave inputs missing, handled by the trees' default directions, which
   were never trained on missing data.

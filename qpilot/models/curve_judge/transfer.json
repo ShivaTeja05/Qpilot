@@ -1,0 +1,1826 @@
+{
+ "test": "Curve Judge transfer to the demo instrument (pre-registered)",
+ "preregistered_in_commit": "94f2b48e7d174753f20489bdf0cc9a8eab3b5510",
+ "date": "2026-10-17",
+ "model_sha256": "39ea518cb716c82534e4371ce43ad74ee2adc7be809324bdb8847c79a9e586f9",
+ "instrument": "Roche LightCycler 480, SYBR Green I, no passive reference (Vermeulen et al. 2009)",
+ "data": {
+  "file": "data_vermeulen_raw.rdml",
+  "sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+  "experiment": "biomarker_set",
+  "wells": 24576,
+  "linregpcr_settings": {
+   "pcrEfficiencyExl": 0.05,
+   "excludeNoPlateau": true,
+   "excludeEfficiency": "outlier",
+   "maxCycExpPhase": 9,
+   "ignoreExclusion": false
+  }
+ },
+ "normalisation": "Fstand = F / min(F over cycles 1-40) per curve (no ROX on this instrument); then Fnorm = Fstand - (Fmin - 1) as in the paper",
+ "cycle_mapping": "LC480 cycle k -> Cyc<k> for k = 1..40; cycles 41-50 dropped; no resampling",
+ "threshold": 0.5,
+ "criteria": {
+  "a_standards_called_amplified": {
+   "rule": ">= 99% of the 960 standard wells (STD_15 ... STD_150000) called amplified",
+   "n": 960,
+   "expected_n": 960,
+   "called_amplified": 960,
+   "fraction": 1.0,
+   "not_callable": 0,
+   "by_level": {
+    "STD_15": {
+     "n": 192,
+     "called_amplified": 192,
+     "linregpcr_amplified": 192
+    },
+    "STD_150": {
+     "n": 192,
+     "called_amplified": 192,
+     "linregpcr_amplified": 192
+    },
+    "STD_1500": {
+     "n": 192,
+     "called_amplified": 192,
+     "linregpcr_amplified": 192
+    },
+    "STD_15000": {
+     "n": 192,
+     "called_amplified": 192,
+     "linregpcr_amplified": 192
+    },
+    "STD_150000": {
+     "n": 192,
+     "called_amplified": 192,
+     "linregpcr_amplified": 192
+    }
+   },
+   "passed": true
+  },
+  "b_agreement_with_linregpcr_cq_below_30": {
+   "rule": ">= 99% agreement with LinRegPCR's amplification call on unknown wells with Cq < 30",
+   "n": 16153,
+   "agree": 16043,
+   "fraction": 0.99319,
+   "learned_yes_linregpcr_yes": 16042,
+   "learned_yes_linregpcr_no": 0,
+   "learned_no_linregpcr_yes": 110,
+   "learned_no_linregpcr_no": 1,
+   "not_callable": 0,
+   "passed": true
+  },
+  "c_ntc_calls_tabulated": {
+   "rule": "every NTC well tabulated with both calls (no threshold)",
+   "n": 192,
+   "called_amplified": 17,
+   "linregpcr_amplified": 23,
+   "table": [
+    {
+     "run_id": "AHCY_20080229",
+     "well": "P20",
+     "target": "AHCY",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "AHCY_20080229",
+     "well": "P22",
+     "target": "AHCY",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "AHCY_20080229",
+     "well": "P24",
+     "target": "AHCY",
+     "learned_p": 0.000735,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "AKR1C1_20080307",
+     "well": "P20",
+     "target": "AKR1C1",
+     "learned_p": 0.003747,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "AKR1C1_20080307",
+     "well": "P22",
+     "target": "AKR1C1",
+     "learned_p": 0.005297,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "AKR1C1_20080307",
+     "well": "P24",
+     "target": "AKR1C1",
+     "learned_p": 0.000208,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ALUsq(Eurogentec)_20080228",
+     "well": "P20",
+     "target": "ALUsq(Eurogentec)",
+     "learned_p": 0.99896,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 23.944
+    },
+    {
+     "run_id": "ALUsq(Eurogentec)_20080228",
+     "well": "P22",
+     "target": "ALUsq(Eurogentec)",
+     "learned_p": 0.999324,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 28.601
+    },
+    {
+     "run_id": "ALUsq(Eurogentec)_20080228",
+     "well": "P24",
+     "target": "ALUsq(Eurogentec)",
+     "learned_p": 0.997222,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 26.143
+    },
+    {
+     "run_id": "ARHGEF7_20080225",
+     "well": "P20",
+     "target": "ARHGEF7",
+     "learned_p": 0.000118,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ARHGEF7_20080225",
+     "well": "P22",
+     "target": "ARHGEF7",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ARHGEF7_20080225",
+     "well": "P24",
+     "target": "ARHGEF7",
+     "learned_p": 0.001245,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "BIRC5_20080229",
+     "well": "P20",
+     "target": "BIRC5",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "BIRC5_20080229",
+     "well": "P22",
+     "target": "BIRC5",
+     "learned_p": 0.000591,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "BIRC5_20080229",
+     "well": "P24",
+     "target": "BIRC5",
+     "learned_p": 0.001238,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CAMTA1_20080307",
+     "well": "P20",
+     "target": "CAMTA1",
+     "learned_p": 0.989939,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 43.104
+    },
+    {
+     "run_id": "CAMTA1_20080307",
+     "well": "P22",
+     "target": "CAMTA1",
+     "learned_p": 0.0002,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CAMTA1_20080307",
+     "well": "P24",
+     "target": "CAMTA1",
+     "learned_p": 0.003635,
+     "learned": false,
+     "linregpcr_amplification": true,
+     "cq": 46.156
+    },
+    {
+     "run_id": "CAMTA2_20080227",
+     "well": "P20",
+     "target": "CAMTA2",
+     "learned_p": 0.055034,
+     "learned": false,
+     "linregpcr_amplification": true,
+     "cq": 46.566
+    },
+    {
+     "run_id": "CAMTA2_20080227",
+     "well": "P22",
+     "target": "CAMTA2",
+     "learned_p": 0.999702,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 43.443
+    },
+    {
+     "run_id": "CAMTA2_20080227",
+     "well": "P24",
+     "target": "CAMTA2",
+     "learned_p": 0.001648,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CD44_20080311",
+     "well": "P20",
+     "target": "CD44",
+     "learned_p": 0.000392,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CD44_20080311",
+     "well": "P22",
+     "target": "CD44",
+     "learned_p": 0.00183,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CD44_20080311",
+     "well": "P24",
+     "target": "CD44",
+     "learned_p": 0.001932,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDCA5_20080225",
+     "well": "P20",
+     "target": "CDCA5",
+     "learned_p": 0.000106,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDCA5_20080225",
+     "well": "P22",
+     "target": "CDCA5",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDCA5_20080225",
+     "well": "P24",
+     "target": "CDCA5",
+     "learned_p": 0.001624,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDH5_20080305",
+     "well": "P20",
+     "target": "CDH5",
+     "learned_p": 0.001445,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDH5_20080305",
+     "well": "P22",
+     "target": "CDH5",
+     "learned_p": 0.000391,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDH5_20080305",
+     "well": "P24",
+     "target": "CDH5",
+     "learned_p": 0.004078,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDKN3_20080311",
+     "well": "P20",
+     "target": "CDKN3",
+     "learned_p": 0.000248,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDKN3_20080311",
+     "well": "P22",
+     "target": "CDKN3",
+     "learned_p": 0.00035,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CDKN3_20080311",
+     "well": "P24",
+     "target": "CDKN3",
+     "learned_p": 0.000386,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CLSTN1_20080227",
+     "well": "P20",
+     "target": "CLSTN1",
+     "learned_p": 0.001624,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CLSTN1_20080227",
+     "well": "P22",
+     "target": "CLSTN1",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CLSTN1_20080227",
+     "well": "P24",
+     "target": "CLSTN1",
+     "learned_p": 0.001255,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CPSG3_20080306",
+     "well": "P20",
+     "target": "CPSG3",
+     "learned_p": 0.00053,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CPSG3_20080306",
+     "well": "P22",
+     "target": "CPSG3",
+     "learned_p": 0.000731,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "CPSG3_20080306",
+     "well": "P24",
+     "target": "CPSG3",
+     "learned_p": 0.000596,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "DDC_20080310",
+     "well": "P20",
+     "target": "DDC",
+     "learned_p": 0.000203,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "DDC_20080310",
+     "well": "P22",
+     "target": "DDC",
+     "learned_p": 0.000202,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "DDC_20080310",
+     "well": "P24",
+     "target": "DDC",
+     "learned_p": 0.00035,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "DPYSL3_20080226",
+     "well": "P20",
+     "target": "DPYSL3",
+     "learned_p": 0.999687,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 38.948
+    },
+    {
+     "run_id": "DPYSL3_20080226",
+     "well": "P22",
+     "target": "DPYSL3",
+     "learned_p": 0.999871,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 38.786
+    },
+    {
+     "run_id": "DPYSL3_20080226",
+     "well": "P24",
+     "target": "DPYSL3",
+     "learned_p": 0.99956,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 38.88
+    },
+    {
+     "run_id": "ECEL1_20080225",
+     "well": "P20",
+     "target": "ECEL1",
+     "learned_p": 0.00035,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ECEL1_20080225",
+     "well": "P22",
+     "target": "ECEL1",
+     "learned_p": 0.000391,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ECEL1_20080225",
+     "well": "P24",
+     "target": "ECEL1",
+     "learned_p": 0.002028,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ELAVL4_20080310",
+     "well": "P20",
+     "target": "ELAVL4",
+     "learned_p": 0.000952,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ELAVL4_20080310",
+     "well": "P22",
+     "target": "ELAVL4",
+     "learned_p": 0.000391,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ELAVL4_20080310",
+     "well": "P24",
+     "target": "ELAVL4",
+     "learned_p": 0.003049,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPB41L3_20080228",
+     "well": "P20",
+     "target": "EPB41L3",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPB41L3_20080228",
+     "well": "P22",
+     "target": "EPB41L3",
+     "learned_p": 0.00049,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPB41L3_20080228",
+     "well": "P24",
+     "target": "EPB41L3",
+     "learned_p": 0.000624,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPHA5_20080305",
+     "well": "P20",
+     "target": "EPHA5",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPHA5_20080305",
+     "well": "P22",
+     "target": "EPHA5",
+     "learned_p": 0.000106,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPHA5_20080305",
+     "well": "P24",
+     "target": "EPHA5",
+     "learned_p": 0.000598,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPN2_20080304",
+     "well": "P20",
+     "target": "EPN2",
+     "learned_p": 0.000598,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPN2_20080304",
+     "well": "P22",
+     "target": "EPN2",
+     "learned_p": 0.000374,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "EPN2_20080304",
+     "well": "P24",
+     "target": "EPN2",
+     "learned_p": 0.001623,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "FYN_20080311",
+     "well": "P20",
+     "target": "FYN",
+     "learned_p": 0.000382,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "FYN_20080311",
+     "well": "P22",
+     "target": "FYN",
+     "learned_p": 0.001015,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "FYN_20080311",
+     "well": "P24",
+     "target": "FYN",
+     "learned_p": 0.994426,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 42.305
+    },
+    {
+     "run_id": "GNB1_20080228",
+     "well": "P20",
+     "target": "GNB1",
+     "learned_p": 0.000795,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "GNB1_20080228",
+     "well": "P22",
+     "target": "GNB1",
+     "learned_p": 0.000885,
+     "learned": false,
+     "linregpcr_amplification": true,
+     "cq": 46.617
+    },
+    {
+     "run_id": "GNB1_20080228",
+     "well": "P24",
+     "target": "GNB1",
+     "learned_p": 0.000486,
+     "learned": false,
+     "linregpcr_amplification": true,
+     "cq": 47.157
+    },
+    {
+     "run_id": "HIVEP2_20080304",
+     "well": "P20",
+     "target": "HIVEP2",
+     "learned_p": 0.000184,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "HIVEP2_20080304",
+     "well": "P22",
+     "target": "HIVEP2",
+     "learned_p": 0.000121,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "HIVEP2_20080304",
+     "well": "P24",
+     "target": "HIVEP2",
+     "learned_p": 0.000598,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "HMBS_20080318",
+     "well": "P20",
+     "target": "HMBS",
+     "learned_p": 0.000182,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "HMBS_20080318",
+     "well": "P22",
+     "target": "HMBS",
+     "learned_p": 0.000177,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "HMBS_20080318",
+     "well": "P24",
+     "target": "HMBS",
+     "learned_p": 0.000393,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "HPRT1_20080303",
+     "well": "P20",
+     "target": "HPRT1",
+     "learned_p": 0.000784,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "HPRT1_20080303",
+     "well": "P22",
+     "target": "HPRT1",
+     "learned_p": 0.001623,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "HPRT1_20080303",
+     "well": "P24",
+     "target": "HPRT1",
+     "learned_p": 0.000182,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "IGSF4_20080311",
+     "well": "P20",
+     "target": "IGSF4",
+     "learned_p": 0.000669,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "IGSF4_20080311",
+     "well": "P22",
+     "target": "IGSF4",
+     "learned_p": 0.000246,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "IGSF4_20080311",
+     "well": "P24",
+     "target": "IGSF4",
+     "learned_p": 0.000232,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "INPP1_20080303",
+     "well": "P20",
+     "target": "INPP1",
+     "learned_p": 0.000425,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "INPP1_20080303",
+     "well": "P22",
+     "target": "INPP1",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "INPP1_20080303",
+     "well": "P24",
+     "target": "INPP1",
+     "learned_p": 0.00049,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MAP2K4_20080306",
+     "well": "P20",
+     "target": "MAP2K4",
+     "learned_p": 0.000222,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MAP2K4_20080306",
+     "well": "P22",
+     "target": "MAP2K4",
+     "learned_p": 0.000322,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MAP2K4_20080306",
+     "well": "P24",
+     "target": "MAP2K4",
+     "learned_p": 0.999429,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 38.778
+    },
+    {
+     "run_id": "MAP7_20080229",
+     "well": "P20",
+     "target": "MAP7",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MAP7_20080229",
+     "well": "P22",
+     "target": "MAP7",
+     "learned_p": 0.000731,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MAP7_20080229",
+     "well": "P24",
+     "target": "MAP7",
+     "learned_p": 0.000598,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MAPT_20080229",
+     "well": "P20",
+     "target": "MAPT",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MAPT_20080229",
+     "well": "P22",
+     "target": "MAPT",
+     "learned_p": 0.000121,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MAPT_20080229",
+     "well": "P24",
+     "target": "MAPT",
+     "learned_p": 0.000751,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MCM2_20080306",
+     "well": "P20",
+     "target": "MCM2",
+     "learned_p": 0.99965,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 39.463
+    },
+    {
+     "run_id": "MCM2_20080306",
+     "well": "P22",
+     "target": "MCM2",
+     "learned_p": 0.0514,
+     "learned": false,
+     "linregpcr_amplification": true,
+     "cq": 46.655
+    },
+    {
+     "run_id": "MCM2_20080306",
+     "well": "P24",
+     "target": "MCM2",
+     "learned_p": 0.999819,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 39.122
+    },
+    {
+     "run_id": "MRPL3_20080222",
+     "well": "P20",
+     "target": "MRPL3",
+     "learned_p": 0.0009,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MRPL3_20080222",
+     "well": "P22",
+     "target": "MRPL3",
+     "learned_p": 0.001255,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MRPL3_20080222",
+     "well": "P24",
+     "target": "MRPL3",
+     "learned_p": 0.000778,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MTSS1_20080227",
+     "well": "P20",
+     "target": "MTSS1",
+     "learned_p": 0.000591,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MTSS1_20080227",
+     "well": "P22",
+     "target": "MTSS1",
+     "learned_p": 0.001234,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MTSS1_20080227",
+     "well": "P24",
+     "target": "MTSS1",
+     "learned_p": 0.00052,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MYCN(4)_20080222",
+     "well": "P20",
+     "target": "MYCN(4)",
+     "learned_p": 0.000106,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MYCN(4)_20080222",
+     "well": "P22",
+     "target": "MYCN(4)",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "MYCN(4)_20080222",
+     "well": "P24",
+     "target": "MYCN(4)",
+     "learned_p": 0.00054,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NHLH2_20080222",
+     "well": "P20",
+     "target": "NHLH2",
+     "learned_p": 0.001124,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NHLH2_20080222",
+     "well": "P22",
+     "target": "NHLH2",
+     "learned_p": 0.000199,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NHLH2_20080222",
+     "well": "P24",
+     "target": "NHLH2",
+     "learned_p": 0.000378,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NM23A_20080306",
+     "well": "P20",
+     "target": "NM23A",
+     "learned_p": 0.999558,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 38.07
+    },
+    {
+     "run_id": "NM23A_20080306",
+     "well": "P22",
+     "target": "NM23A",
+     "learned_p": 0.406983,
+     "learned": false,
+     "linregpcr_amplification": true,
+     "cq": 44.34
+    },
+    {
+     "run_id": "NM23A_20080306",
+     "well": "P24",
+     "target": "NM23A",
+     "learned_p": 0.000178,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NRCAM_20080228",
+     "well": "P20",
+     "target": "NRCAM",
+     "learned_p": 0.001973,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NRCAM_20080228",
+     "well": "P22",
+     "target": "NRCAM",
+     "learned_p": 0.002113,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NRCAM_20080228",
+     "well": "P24",
+     "target": "NRCAM",
+     "learned_p": 0.00157,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NTRK1_20080318",
+     "well": "P20",
+     "target": "NTRK1",
+     "learned_p": 0.001972,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NTRK1_20080318",
+     "well": "P22",
+     "target": "NTRK1",
+     "learned_p": 0.000735,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "NTRK1_20080318",
+     "well": "P24",
+     "target": "NTRK1",
+     "learned_p": 0.000314,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ODC1_20080226",
+     "well": "P20",
+     "target": "ODC1",
+     "learned_p": 0.000637,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ODC1_20080226",
+     "well": "P22",
+     "target": "ODC1",
+     "learned_p": 0.00049,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ODC1_20080226",
+     "well": "P24",
+     "target": "ODC1",
+     "learned_p": 0.001237,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PAICS_20080311",
+     "well": "P20",
+     "target": "PAICS",
+     "learned_p": 0.999692,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 36.655
+    },
+    {
+     "run_id": "PAICS_20080311",
+     "well": "P22",
+     "target": "PAICS",
+     "learned_p": 0.999623,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 37.098
+    },
+    {
+     "run_id": "PAICS_20080311",
+     "well": "P24",
+     "target": "PAICS",
+     "learned_p": 0.968821,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 43.753
+    },
+    {
+     "run_id": "PDE4DIP_20080305",
+     "well": "P20",
+     "target": "PDE4DIP",
+     "learned_p": 0.001972,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PDE4DIP_20080305",
+     "well": "P22",
+     "target": "PDE4DIP",
+     "learned_p": 0.001972,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PDE4DIP_20080305",
+     "well": "P24",
+     "target": "PDE4DIP",
+     "learned_p": 0.000311,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PIK3R1_20080306",
+     "well": "P20",
+     "target": "PIK3R1",
+     "learned_p": 0.001241,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PIK3R1_20080306",
+     "well": "P22",
+     "target": "PIK3R1",
+     "learned_p": 0.00049,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PIK3R1_20080306",
+     "well": "P24",
+     "target": "PIK3R1",
+     "learned_p": 0.001985,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PLAGL1_20080226",
+     "well": "P20",
+     "target": "PLAGL1",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PLAGL1_20080226",
+     "well": "P22",
+     "target": "PLAGL1",
+     "learned_p": 0.000598,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PLAGL1_20080226",
+     "well": "P24",
+     "target": "PLAGL1",
+     "learned_p": 0.001624,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PLAT_20080311",
+     "well": "P20",
+     "target": "PLAT",
+     "learned_p": 0.002028,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PLAT_20080311",
+     "well": "P22",
+     "target": "PLAT",
+     "learned_p": 0.000603,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PLAT_20080311",
+     "well": "P24",
+     "target": "PLAT",
+     "learned_p": 0.001076,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PMP22_20080227",
+     "well": "P20",
+     "target": "PMP22",
+     "learned_p": 0.002366,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PMP22_20080227",
+     "well": "P22",
+     "target": "PMP22",
+     "learned_p": 0.000591,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PMP22_20080227",
+     "well": "P24",
+     "target": "PMP22",
+     "learned_p": 0.001242,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRAME_20080310",
+     "well": "P20",
+     "target": "PRAME",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRAME_20080310",
+     "well": "P22",
+     "target": "PRAME",
+     "learned_p": 0.000738,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRAME_20080310",
+     "well": "P24",
+     "target": "PRAME",
+     "learned_p": 0.000988,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRDM2_20080306",
+     "well": "P20",
+     "target": "PRDM2",
+     "learned_p": 0.000108,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRDM2_20080306",
+     "well": "P22",
+     "target": "PRDM2",
+     "learned_p": 0.000258,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRDM2_20080306",
+     "well": "P24",
+     "target": "PRDM2",
+     "learned_p": 0.001624,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRKACB_20080311_bis",
+     "well": "P20",
+     "target": "PRKACB_bis",
+     "learned_p": 0.002172,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRKACB_20080311_bis",
+     "well": "P22",
+     "target": "PRKACB_bis",
+     "learned_p": 0.002172,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRKACB_20080311_bis",
+     "well": "P24",
+     "target": "PRKACB_bis",
+     "learned_p": 0.002139,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRKCZ_20080307",
+     "well": "P20",
+     "target": "PRKCZ",
+     "learned_p": 0.000589,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRKCZ_20080307",
+     "well": "P22",
+     "target": "PRKCZ",
+     "learned_p": 0.000108,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PRKCZ_20080307",
+     "well": "P24",
+     "target": "PRKCZ",
+     "learned_p": 0.001623,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTN_20080227",
+     "well": "P20",
+     "target": "PTN",
+     "learned_p": 0.000456,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTN_20080227",
+     "well": "P22",
+     "target": "PTN",
+     "learned_p": 0.000456,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTN_20080227",
+     "well": "P24",
+     "target": "PTN",
+     "learned_p": 0.000177,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRF_20080225",
+     "well": "P20",
+     "target": "PTPRF",
+     "learned_p": 0.000591,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRF_20080225",
+     "well": "P22",
+     "target": "PTPRF",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRF_20080225",
+     "well": "P24",
+     "target": "PTPRF",
+     "learned_p": 0.00049,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRH_20080228",
+     "well": "P20",
+     "target": "PTPRH",
+     "learned_p": 0.001237,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRH_20080228",
+     "well": "P22",
+     "target": "PTPRH",
+     "learned_p": 0.000533,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRH_20080228",
+     "well": "P24",
+     "target": "PTPRH",
+     "learned_p": 0.000167,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRN2_20080303",
+     "well": "P20",
+     "target": "PTPRN2",
+     "learned_p": 0.001018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRN2_20080303",
+     "well": "P22",
+     "target": "PTPRN2",
+     "learned_p": 0.001015,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "PTPRN2_20080303",
+     "well": "P24",
+     "target": "PTPRN2",
+     "learned_p": 0.001018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "QPCT_20080228",
+     "well": "P20",
+     "target": "QPCT",
+     "learned_p": 0.000572,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "QPCT_20080228",
+     "well": "P22",
+     "target": "QPCT",
+     "learned_p": 0.001237,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "QPCT_20080228",
+     "well": "P24",
+     "target": "QPCT",
+     "learned_p": 0.000391,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SCG2_20080311",
+     "well": "P20",
+     "target": "SCG2",
+     "learned_p": 0.000106,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SCG2_20080311",
+     "well": "P22",
+     "target": "SCG2",
+     "learned_p": 0.00049,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SCG2_20080311",
+     "well": "P24",
+     "target": "SCG2",
+     "learned_p": 0.001605,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SDHA(1)_20080220",
+     "well": "P20",
+     "target": "SDHA(1)",
+     "learned_p": 0.001237,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SDHA(1)_20080220",
+     "well": "P22",
+     "target": "SDHA(1)",
+     "learned_p": 0.000591,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SDHA(1)_20080220",
+     "well": "P24",
+     "target": "SDHA(1)",
+     "learned_p": 0.0002,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SLC25A5_20080229",
+     "well": "P20",
+     "target": "SLC25A5",
+     "learned_p": 0.001237,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SLC25A5_20080229",
+     "well": "P22",
+     "target": "SLC25A5",
+     "learned_p": 0.001605,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SLC25A5_20080229",
+     "well": "P24",
+     "target": "SLC25A5",
+     "learned_p": 0.000765,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SLC6A8_20080306",
+     "well": "P20",
+     "target": "SLC6A8",
+     "learned_p": 0.000591,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SLC6A8_20080306",
+     "well": "P22",
+     "target": "SLC6A8",
+     "learned_p": 0.000591,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SLC6A8_20080306",
+     "well": "P24",
+     "target": "SLC6A8",
+     "learned_p": 0.001624,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SNAPC1_20080227",
+     "well": "P20",
+     "target": "SNAPC1",
+     "learned_p": 0.001335,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SNAPC1_20080227",
+     "well": "P22",
+     "target": "SNAPC1",
+     "learned_p": 0.001175,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "SNAPC1_20080227",
+     "well": "P24",
+     "target": "SNAPC1",
+     "learned_p": 0.00063,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "TNFRSF_20080307",
+     "well": "P20",
+     "target": "TNFRSF",
+     "learned_p": 0.000233,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "TNFRSF_20080307",
+     "well": "P22",
+     "target": "TNFRSF",
+     "learned_p": 0.001094,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "TNFRSF_20080307",
+     "well": "P24",
+     "target": "TNFRSF",
+     "learned_p": 0.000197,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "TYMS_20080305",
+     "well": "P20",
+     "target": "TYMS",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "TYMS_20080305",
+     "well": "P22",
+     "target": "TYMS",
+     "learned_p": 0.000408,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "TYMS_20080305",
+     "well": "P24",
+     "target": "TYMS",
+     "learned_p": 0.001605,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "UBC(2)_20080220",
+     "well": "P20",
+     "target": "UBC(2)",
+     "learned_p": 0.000391,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "UBC(2)_20080220",
+     "well": "P22",
+     "target": "UBC(2)",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "UBC(2)_20080220",
+     "well": "P24",
+     "target": "UBC(2)",
+     "learned_p": 0.000385,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ULK2_20080229",
+     "well": "P20",
+     "target": "ULK2",
+     "learned_p": 0.00018,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ULK2_20080229",
+     "well": "P22",
+     "target": "ULK2",
+     "learned_p": 0.000219,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "ULK2_20080229",
+     "well": "P24",
+     "target": "ULK2",
+     "learned_p": 0.001972,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "WSB1_20080310",
+     "well": "P20",
+     "target": "WSB1",
+     "learned_p": 0.96715,
+     "learned": true,
+     "linregpcr_amplification": true,
+     "cq": 40.427
+    },
+    {
+     "run_id": "WSB1_20080310",
+     "well": "P22",
+     "target": "WSB1",
+     "learned_p": 0.00151,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    },
+    {
+     "run_id": "WSB1_20080310",
+     "well": "P24",
+     "target": "WSB1",
+     "learned_p": 0.001932,
+     "learned": false,
+     "linregpcr_amplification": false,
+     "cq": null
+    }
+   ],
+   "passed": true
+  }
+ },
+ "verdict": "pass",
+ "learned_option": "enabled",
+ "descriptive_not_gated": {
+  "unknown_wells_all": {
+   "n": 23424,
+   "learned_yes_linregpcr_yes": 22933,
+   "learned_yes_linregpcr_no": 2,
+   "learned_no_linregpcr_yes": 157,
+   "learned_no_linregpcr_no": 332
+  },
+  "learned_p_quantiles_unknown": {
+   "0.01": 0.001022,
+   "0.5": 0.999547,
+   "0.99": 0.999881
+  }
+ }
+}
