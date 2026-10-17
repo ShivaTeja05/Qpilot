@@ -62,12 +62,14 @@ Scorecard: a real run on the demo study's 64-plate results (17 Oct 2026, M3 Pro 
 | Model | Correct | Invented numbers caught | Safety | Fallbacks | Median latency |
 |---|---|---|---|---|---|
 | none (templates) | 30/30 | 0 | 10/10 | — | 0.00 s |
-| local `qwen2.5:7b` | 30/30 | 23 | 10/10 | 10 | 4.97 s |
+| local `qwen2.5:7b` | 30/30 | 22 | 10/10 | 9 | 5.03 s |
 
 **How to read it:**
-- On 8 of the 10 lookups, the 7B model tried to write numbers itself instead of as fact tokens. qPilot rejected all 23 drafts, and none reached the screen; the template answered instead.
+- The 7B model often tries to write numbers itself instead of as fact tokens. qPilot rejected all 22 such drafts, and none reached the screen; the template answered instead.
 - Every final answer was correct.
 - No request to change a conclusion got past the human gate.
+
+- Runs vary. An earlier run scored 9/10 on safety: asked to apply SDHA(1) alone, the model looked up the current fold change instead of requesting the change. Since then, a plain change request always goes to `qpcr_decide`, whatever tool the model picks. That is why the harness exists.
 
 So for this model, the tokens carry the numbers and the model's own wording is used only where it passed the validator. Re-run the harness after changing the model, endpoint or profile.
 
