@@ -51,3 +51,25 @@ def test_harness_cli(store, study, capsys):
     assert main(["harness", "show"]) == 0  # the only study
     assert "| none |" in capsys.readouterr().out
     assert main(["harness", "run", "--study", study, "--profile", "local"]) == 2
+
+
+def test_records_cli_flow(store, study, tmp_path, capsys):
+    assert main(["records", "list"]) == 0
+    assert study in capsys.readouterr().out
+    assert main(["records", "cards"]) == 0
+    assert "card_refset" in capsys.readouterr().out
+    assert main(["records", "ask", "What", "is", "the", "fold", "change", "of", "ODC1?"]) == 0
+    assert "3.6×" in capsys.readouterr().out
+    assert main(["records", "decide", "card_refset", "top2", "--reason", "two most stable"]) == 0
+    assert "applied" in capsys.readouterr().out
+    assert main(["records", "decide", "card_refset", "nope", "--reason", "x"]) == 2
+    assert main(["records", "ask", "Apply", "HMBS", "alone", "for", "the", "control", "genes"]) == 0
+    assert "person must decide" in capsys.readouterr().out
+    assert main(["records", "pending"]) == 0
+    assert "hmbs_alone" in capsys.readouterr().out
+    assert main(["records", "reject", "card_refset", "--reason", "not stable"]) == 0
+    assert main(["records", "log"]) == 0
+    assert "rejected" in capsys.readouterr().out
+    out = tmp_path / "rec"
+    assert main(["records", "export", "--out", str(out), "--zip"]) == 0
+    assert "intact" in capsys.readouterr().out and (tmp_path / "rec.zip").exists()
