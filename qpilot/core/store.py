@@ -275,6 +275,21 @@ class StudyStore:
         option = card.decision or card.recommended
         return self._write(study_id, card_id, option, reason, "human", "rejected", expected_head)
 
+    def append_ai_call(self, study_id: str, entry: dict[str, Any]) -> None:
+        """Append one model-call log line (no key, no raw payload unless opted in)."""
+        workspace = self.workspace(study_id)
+        line = canonical_json({**entry, "at": _now()}) + "\n"
+        with self._locked(workspace):
+            with open(workspace / "ai_calls.jsonl", "a", encoding="utf-8") as fh:
+                fh.write(line)
+
+    def ai_calls(self, study_id: str) -> list[dict[str, Any]]:
+        """Every model-call log line of a study."""
+        path = self.workspace(study_id) / "ai_calls.jsonl"
+        if not path.exists():
+            return []
+        return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x]
+
     # ---- internals -------------------------------------------------------------------
 
     def _write(

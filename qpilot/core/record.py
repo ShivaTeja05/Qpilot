@@ -47,6 +47,8 @@ WORKSPACE_FILES = (
     "grid.csv",
     "decisions.jsonl",
     "pending.jsonl",
+    "ai_calls.jsonl",
+    "harness_scorecard.json",
 )
 MAX_UNZIPPED_BYTES = 1 << 30
 MAX_MEMBERS = 10_000

@@ -1,0 +1,405 @@
+"""Ask your data: a plain question answered from engine tools, with every number traceable.
+
+Two steps, portable to any endpoint (no native tool calling needed):
+
+1. The model replies with JSON ``{"tool": ..., "args": {...}}`` naming one of ``qpcr_study``,
+   ``qpcr_robustness``, ``qpcr_decide``, ``qpcr_plan``, ``explain_number`` (or ``none``).
+   qPilot runs it in-process against the same on-disk store and the same tool code as the MCP
+   server, so an in-app model has exactly an external agent's powers, including the
+   ``pending_human`` answer on choices that can change a conclusion.
+2. The model writes the answer from the tool result, in which every number has been replaced by
+   a ``{{fact_id}}`` token; the answer is validated, retried once, else a template answers.
+
+With no model (provider ``none``) a keyword router picks the tool and a template answers.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from pydantic import BaseModel
+
+from qpilot.ai import payload_log
+from qpilot.ai.client import ModelClient, ModelUnavailable
+from qpilot.ai.explain import KIND_TITLE, card_names
+from qpilot.ai.profile import Profile, build_fewshots
+from qpilot.ai.prompts import SYSTEM_ASK_ANSWER, SYSTEM_ASK_TOOL
+from qpilot.core.facts import render_fact
+from qpilot.core.store import StudyStore
+from qpilot.core.validator import names_from_result, render_tokens, validate
+from qpilot.schemas import DecisionCard, Fact, StudyResult
+
+TOOLS = ("qpcr_study", "qpcr_robustness", "qpcr_decide", "qpcr_plan", "explain_number", "none")
+NOT_IN_STUDY = "not in this study"
+PENDING_TEXT = (
+    "Not applied: this choice can change a conclusion, so a person must decide it in qPilot. "
+    "The request is waiting for their review."
+)
+DECIDE_WORDS = re.compile(r"\b(apply|switch|use|set|change|normali[sz]e to|pick|choose)\b", re.I)
+GENE_LIKE = re.compile(r"\b[A-Z][A-Z0-9]{2,}[A-Z0-9_()\-]*\b")
+CONCLUSION_WORDS = {"up": "higher", "down": "lower", "none": "not clearly different (no call)"}
+
+
+class AskResult(BaseModel):
+    """An answer, the same text with numbers rendered, the tool calls, and how it was made."""
+
+    question: str
+    answer: str
+    plain: str
+    tool_calls: list[dict[str, Any]]
+    validated: bool
+    fallback: bool
+    provider: str
+    status: str | None = None
+    error: str | None = None
+    rejected_drafts: int = 0
+
+
+def _fact(fid: str, value: Any, fmt: str = "{}", unit: str = "", path: str = "answer") -> Fact:
+    return Fact(id=fid, value=value, fmt=fmt, unit=unit, path=path)
+
+
+class _Context:
+    """Everything one question needs: the store, the study, its cards and allowed names."""
+
+    def __init__(self, store: StudyStore, study_id: str) -> None:
+        from qpilot.mcp_server import QpilotTools  # same tool code as the MCP server
+
+        self.store = store
+        self.study_id = study_id
+        self.result: StudyResult = store.get(study_id)
+        self.cards: list[DecisionCard] = store.cards(study_id)
+        self.tools = QpilotTools(store)
+        self.names = names_from_result(self.result)
+        for card in self.cards:
+            self.names |= card_names(card)
+        self.names |= set(self.result.design.group_var.split("_"))
+
+    def gene(self, text: str) -> str | None:
+        lowered = text.lower()
+        hits = [
+            g
+            for g in self.result.contrasts
+            if re.search(rf"(?<![\w(]){re.escape(g.lower())}(?![\w)])", lowered)
+        ]
+        return max(hits, key=len) if hits else None
+
+
+# ---- running a tool and turning its numbers into facts ------------------------------------
+
+
+def run_tool(ctx: _Context, tool: str, args: dict[str, Any]) -> dict[str, Any]:
+    """Execute one tool call in-process; unknown tools come back as an error."""
+    if tool == "qpcr_study":
+        r = ctx.result
+        return {
+            "n_plates": r.n_plates,
+            "n_samples": r.n_samples,
+            "n_reactions": r.n_reactions,
+            "n_genes": len(r.contrasts),
+            "group": r.design.group_var,
+            "open_cards": [c.id for c in ctx.cards if c.status in ("open", "pending_human")],
+        }
+    if tool == "qpcr_robustness":
+        return ctx.tools.qpcr_robustness(ctx.study_id, str(args.get("gene", "")))
+    if tool == "qpcr_decide":
+        return ctx.tools.qpcr_decide(
+            ctx.study_id,
+            str(args.get("card_id", "")),
+            str(args.get("option", "")),
+            str(args.get("reason") or "requested from Ask your data"),
+        )
+    if tool == "qpcr_plan":
+        allowed = {"fc", "sd_log2", "n_per_group", "alpha", "power"}
+        return ctx.tools.qpcr_plan(**{k: v for k, v in args.items() if k in allowed})
+    if tool == "explain_number":
+        fid = str(args.get("fact_id", ""))
+        fact = ctx.result.facts.get(fid)
+        if fact is None:
+            return {"error": "unknown fact id"}
+        return {"fact_id": fid, "path": fact.path}
+    if tool == "none":
+        return {"error": NOT_IN_STUDY}
+    return {"error": f"unknown tool {tool!r}"}
+
+
+def answer_facts(ctx: _Context, tool: str, out: dict[str, Any]) -> tuple[dict, dict[str, Fact]]:
+    """The tool result as the model sees it (numbers replaced by tokens) and those facts."""
+    facts: dict[str, Fact] = {}
+
+    def tok(fid: str, value: Any, fmt: str = "{}", unit: str = "") -> str:
+        facts[fid] = _fact(fid, value, fmt, unit)
+        return "{{" + fid + "}}"
+
+    if "error" in out:
+        view = {"error": out["error"]}
+        if out["error"] in (NOT_IN_STUDY, "gene not in this study"):
+            view["n_genes_in_study"] = tok("f_ans_n_genes", len(ctx.result.contrasts))
+        return view, facts
+    if tool == "qpcr_robustness":
+        conf = out.get("confidence") or {}
+        view = {
+            "gene": out["gene"],
+            "conclusion": out["conclusion"],
+            "fold_change": tok("f_ans_fc", out["fc"], "{:.2g}", "×"),
+            "ci_low": tok("f_ans_ci_lo", out["ci"][0], "{:.2g}", "×"),
+            "ci_high": tok("f_ans_ci_hi", out["ci"][1], "{:.2g}", "×"),
+            "p": tok("f_ans_p", out["p"], "{:.2g}"),
+            "holds_fraction": tok("f_ans_holds", out["holds_fraction"], "{:.0%}"),
+            "n_analyses": tok("f_ans_n_cells", out["n_cells"]),
+            "confidence": tok("f_ans_level", conf.get("level", "not graded")),
+            "confidence_reasons": conf.get("reasons", []),
+            "cards_that_can_flip_it": out.get("cards_that_can_flip_it", []),
+        }
+        return view, facts
+    if tool == "qpcr_study":
+        view = {
+            "plates": tok("f_ans_n_plates", out["n_plates"]),
+            "samples": tok("f_ans_n_samples", out["n_samples"]),
+            "reactions": tok("f_ans_n_reactions", out["n_reactions"], "{:,}"),
+            "genes": tok("f_ans_n_genes", out["n_genes"]),
+            "group": out["group"],
+            "open_cards": out["open_cards"],
+        }
+        return view, facts
+    if tool == "qpcr_decide":
+        card = out.get("card") or {}
+        return {
+            "status": out["status"],
+            "reason": out.get("reason"),
+            "card_id": card.get("card_id"),
+            "decision": card.get("decision"),
+        }, facts
+    if tool == "qpcr_plan":
+        view = {"message_has_numbers": True}
+        if out.get("n_needed") is not None:
+            view["n_per_group_needed"] = tok("f_ans_n_needed", out["n_needed"])
+        if out.get("mde_fold") is not None:
+            view["smallest_detectable_fold"] = tok("f_ans_mde_fold", out["mde_fold"], "{:.1f}", "×")
+        view["rules"] = out.get("rules", [])
+        return view, facts
+    if tool == "explain_number":
+        return {"fact": "{{" + out["fact_id"] + "}}", "computed_from": out["path"]}, facts
+    return {}, facts
+
+
+def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -> str:
+    """A deterministic answer in tokens for any tool result."""
+    if "error" in out:
+        if out["error"] in (NOT_IN_STUDY, "gene not in this study"):
+            return (
+                "That is not in this study; qPilot can answer about the "
+                "{{f_ans_n_genes}} genes on this panel."
+            )
+        return f"qPilot could not answer that: {out['error']}."
+    if tool == "qpcr_robustness":
+        group = ctx.result.design.group_var.replace("_", " ")
+        flip = [KIND_TITLE.get(_kind(ctx, c), c).lower() for c in out["cards_that_can_flip_it"]]
+        text = (
+            f"{out['gene']} is {CONCLUSION_WORDS[out['conclusion']]} in the {group} group under "
+            "the recommended choices: {{f_ans_fc}} (confidence interval {{f_ans_ci_lo}} to "
+            "{{f_ans_ci_hi}}). It holds in {{f_ans_holds}} of the {{f_ans_n_cells}} reasonable "
+            "analyses; confidence {{f_ans_level}}."
+        )
+        if flip:
+            text += " It can change with: " + "; ".join(flip) + "."
+        else:
+            text += " No single choice flips it."
+        return text
+    if tool == "qpcr_study":
+        return (
+            "This study has {{f_ans_n_plates}} plates, {{f_ans_n_samples}} samples and "
+            "{{f_ans_n_genes}} genes."
+        )
+    if tool == "qpcr_decide":
+        if out["status"] == "pending_human":
+            return PENDING_TEXT
+        if out["status"] == "stale":
+            return "Not applied: the card changed since it was read; read it again."
+        return f"Applied on {view.get('card_id')}: {view.get('decision')}."
+    if tool == "qpcr_plan":
+        if "n_per_group_needed" not in view:
+            return "Give the spread between biological replicates to get a sample size."
+        text = "You need {{f_ans_n_needed}} per group."
+        if "smallest_detectable_fold" in view:
+            text += " The planned design detects changes of at least {{f_ans_mde_fold}}."
+        return text
+    if tool == "explain_number":
+        return f"{view['fact']} is computed from {_path_words(view['computed_from'])}."
+    return "qPilot could not answer that."
+
+
+def _kind(ctx: _Context, card_id: str) -> str:
+    return next((c.kind for c in ctx.cards if c.id == card_id), card_id)
+
+
+def _path_words(path: str) -> str:
+    path = path.replace("[0]", " lower bound").replace("[1]", " upper bound")
+    return " › ".join(path.split("."))
+
+
+# ---- routing without a model ------------------------------------------------------------
+
+
+def route(ctx: _Context, question: str) -> tuple[str, dict[str, Any]]:
+    """Keyword routing used when no model is configured (and when a tool call is unusable)."""
+    lowered = question.lower()
+    if DECIDE_WORDS.search(question):
+        for card in ctx.cards:
+            for option in sorted(card.options, key=lambda o: -len(o.label)):
+                label = option.label.lower()
+                bare = label.replace(" alone", "")
+                if label in lowered or (
+                    option.id.endswith("_alone") and f"{bare} alone" in lowered
+                ):
+                    reason = "requested from Ask your data"
+                    return "qpcr_decide", {
+                        "card_id": card.id,
+                        "option": option.id,
+                        "reason": reason,
+                    }
+    gene = ctx.gene(question)
+    if gene:
+        return "qpcr_robustness", {"gene": gene}
+    known = {n.lower() for n in ctx.names}
+    if any(w.lower() not in known for w in GENE_LIKE.findall(question)):
+        return "none", {"reason": NOT_IN_STUDY}
+    return "qpcr_study", {}
+
+
+def _parse_tool(text: str) -> tuple[str, dict[str, Any]] | None:
+    match = re.search(r"\{.*\}", text, re.S)
+    if not match:
+        return None
+    try:
+        data = json.loads(match.group(0))
+    except json.JSONDecodeError:
+        return None
+    tool, args = data.get("tool"), data.get("args") or {}
+    if tool not in TOOLS or not isinstance(args, dict):
+        return None
+    return tool, args
+
+
+# ---- the entry point --------------------------------------------------------------------
+
+
+def ask(
+    question: str,
+    store: StudyStore,
+    study_id: str,
+    client: ModelClient | None = None,
+    profile: Profile | None = None,
+    log: bool = True,
+) -> AskResult:
+    """Answer ``question`` about a study; every number in the answer is a fact token."""
+    client = client or ModelClient.from_env()
+    profile = profile or Profile()
+    ctx = _Context(store, study_id)
+    question = (question or "").strip()[:1000]
+    calls: list[dict[str, Any]] = []
+    error = None
+    model_used = client.available
+
+    tool, args = route(ctx, question)
+    if model_used:
+        try:
+            reply = client.complete(
+                SYSTEM_ASK_TOOL,
+                [{"role": "user", "content": _tool_prompt(ctx, question, profile)}],
+                max_tokens=300,
+            )
+            parsed = _parse_tool(reply)
+            if parsed is None:
+                error = "the model's tool call did not parse; keyword routing used"
+            else:
+                tool, args = parsed
+        except ModelUnavailable as err:
+            model_used, error = False, str(err)
+
+    out = run_tool(ctx, tool, args)
+    calls.append(
+        {"tool": tool, "args": args, "status": out.get("status"), "error": out.get("error")}
+    )
+    view, extra = answer_facts(ctx, tool, out)
+    facts = {**ctx.result.facts, **extra}
+    status = out.get("status")
+    fallback_text = template_answer(ctx, tool, out, view)
+
+    text, validated, fallback, rejected = fallback_text, True, True, 0
+    if model_used:
+        text, validated, fallback, err, rejected = _model_answer(
+            client, ctx, question, tool, view, facts
+        )
+        error = err or error
+        if fallback:
+            text = fallback_text
+        elif (
+            status == "pending_human"
+            and "human" not in text.lower()
+            and "person" not in text.lower()
+        ):
+            text, fallback, error = fallback_text, True, "answer did not report pending_human"
+    check = validate(text, facts, ctx.names)
+    result = AskResult(
+        question=question,
+        answer=text,
+        plain=render_tokens(text, facts),
+        tool_calls=calls,
+        validated=check.ok,
+        fallback=fallback,
+        provider=client.provider,
+        status=status,
+        error=error,
+        rejected_drafts=rejected,
+    )
+    if log and client.available:
+        entry = payload_log.log_entry(
+            "ask", client.provider, client.model, client.last_meta, text, validated, fallback
+        )
+        store.append_ai_call(study_id, entry)
+    return result
+
+
+def _tool_prompt(ctx: _Context, question: str, profile: Profile) -> str:
+    entries = ctx.store.entries(ctx.study_id)
+    return json.dumps(
+        {
+            "question": question,
+            "genes_in_study": sorted(ctx.result.contrasts),
+            "cards": [
+                {"card_id": c.id, "kind": c.kind, "options": [o.id for o in c.options]}
+                for c in ctx.cards
+            ],
+            "examples_from_this_lab": build_fewshots(entries, ctx.cards, profile.max_fewshots),
+        },
+        ensure_ascii=False,
+    )
+
+
+def _model_answer(client, ctx, question, tool, view, facts):
+    table = {fid: render_fact(f) for fid, f in facts.items() if fid.startswith("f_ans_")}
+    content = json.dumps(
+        {"question": question, "tool": tool, "result": view, "facts": table}, ensure_ascii=False
+    )
+    messages = [{"role": "user", "content": content}]
+    error = None
+    rejected = 0
+    for _attempt in range(2):
+        try:
+            text = client.complete(SYSTEM_ASK_ANSWER, messages).strip()
+        except ModelUnavailable as err:
+            return "", False, True, str(err), rejected
+        check = validate(text, facts, ctx.names)
+        if check.ok and text:
+            return text, True, False, None, rejected
+        rejected += 1
+        error = check.error()
+        messages = [
+            *messages,
+            {"role": "assistant", "content": text},
+            {"role": "user", "content": f"Rejected: {error}. Rewrite following the token rule."},
+        ]
+    return "", False, True, error, rejected
