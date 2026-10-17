@@ -9,13 +9,16 @@ the values *are* ``relative()``'s output, bit for bit.
 With technical replicates (several wells of one sample and gene, or several samples in one
 biological unit):
 
-* each gene's ``log2(n0)`` is averaged over the unit's wells (reference genes over their
-  determined wells; the target after the undetermined rule is applied well by well: ``drop``
-  leaves an undetermined well out, ``cap`` sets it to the lowest value detected for that gene,
-  as ``relative()`` does for one well);
-* the column layout holds one value per unit: ``relative()`` on that unit-level matrix;
-* the nested layout holds one value per well: the well's ``log2(n0)`` minus the unit's
-  reference mean, so the replicates of a unit average to its column-layout value.
+* the unit-level matrix is the engine's own, :func:`qpilot.qpcr.quant.log2_matrix` with the
+  design's units: per unit and gene the mean ``log2(n0)`` of the wells that have a quantity
+  (undetermined only when every replicate is), then the undetermined rule at unit level, as in
+  the engine (an excluded value is left out and never capped);
+* the column layout holds one value per unit: ``relative()`` on that matrix, so it equals the
+  engine's value bit for bit;
+* the nested layout holds one value per well that has a quantity: the well's ``log2(n0)``
+  minus the unit's reference mean, so the replicates of a unit average to its column-layout
+  value (a unit whose wells are all undetermined, under ``cap``, has one row: its capped
+  value).
 
 Technical replicates are never rows of the column layout, so Prism never counts them as n.
 
@@ -43,7 +46,7 @@ import numpy as np
 import pandas as pd
 
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule, conclude, welch
-from qpilot.qpcr.quant import QuantError, Undetermined, log2_matrix, relative
+from qpilot.qpcr.quant import EXCLUDED, Undetermined, excluded_cells, log2_matrix, relative
 from qpilot.schemas import ContrastResult, DecisionCard, StudyResult
 
 if TYPE_CHECKING:
@@ -195,7 +198,7 @@ def sample_table(
     if stray:
         raise ExportError(f"groups not in group_order: {stray}")
 
-    wells, matrix = _wells(matrix_or_curves)
+    wells, matrix, excluded = _wells(matrix_or_curves, units)
     known = sorted(set(wells["target"]))
     missing_refs = [r for r in refs if r not in known]
     if missing_refs:
@@ -218,11 +221,12 @@ def sample_table(
         samples_per_unit.setdefault(unit, []).append(sample)
 
     one_to_one = all(len(s) == 1 for s in samples_per_unit.values())
-    if matrix is not None and one_to_one:
+    replicated = wells.duplicated(["sample", "target"]).any() or not one_to_one
+    if not replicated and excluded is None:
         rows = _single_well_rows(matrix, chosen, refs, undetermined, unit_of, groups, layout)
     else:
         rows = _replicate_rows(
-            wells, chosen, refs, undetermined, unit_of, groups, samples_per_unit, layout
+            wells, matrix, excluded, chosen, refs, undetermined, groups, samples_per_unit, layout
         )
     table = pd.DataFrame(rows, columns=list(TABLE_COLUMNS))
     if table.empty:
@@ -246,21 +250,26 @@ def check_label(label: str, kind: str) -> str:
     return label
 
 
-def _wells(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-    """(long well table, samples x genes matrix or None when wells repeat).
+def _wells(
+    data: pd.DataFrame, units: Mapping[str, str] | None
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame | None]:
+    """(long well table, the engine's units x genes matrix, excluded cells or None).
 
-    The long table has ``sample, target, key, log2``; only study samples measured for every
-    gene are kept (the rule of :func:`qpilot.qpcr.quant.log2_matrix`).
+    The long table has ``sample, target, key, log2`` for the wells that carry a value (a
+    quantity, not excluded); the matrix is :func:`qpilot.qpcr.quant.log2_matrix` with these
+    ``units``, so only units measured for every gene are kept, exactly as in the engine.
     """
     if _CURVE_COLUMNS <= set(data.columns):
-        try:
-            matrix = log2_matrix(data)
-        except QuantError:
-            matrix = None
         unknown = data[data["sample_type"] == "unkn"]
-        present = unknown.groupby("sample")["target"].nunique()
-        complete = set(present.index[present == unknown["target"].nunique()])
-        unknown = unknown[unknown["sample"].isin(complete)]
+        replicated = unknown.duplicated(["sample", "target"]).any() or bool(units)
+        excluded_any = EXCLUDED in unknown.columns and bool(unknown[EXCLUDED].any())
+        engine_units = units if replicated or excluded_any else None
+        matrix = log2_matrix(data, engine_units)
+        excluded = excluded_cells(data, engine_units) if replicated or excluded_any else None
+        used = unknown["n0"].notna()
+        if EXCLUDED in unknown.columns:
+            used &= ~unknown[EXCLUDED].astype(bool)
+        unknown = unknown[used]
         keys = (
             unknown["run_id"].astype(str) + "/" + unknown["well"].astype(str)
             if {"run_id", "well"} <= set(unknown.columns)
@@ -274,13 +283,13 @@ def _wells(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame | None]:
                 "log2": np.log2(unknown["n0"].to_numpy(dtype=float)),
             }
         )
-        return wells, matrix
+        return wells, matrix, excluded
     matrix = data.copy()
     matrix.index = matrix.index.astype(str)
     stacked = matrix.stack(future_stack=True).rename("log2").reset_index()
     stacked.columns = ["sample", "target", "log2"]
     stacked["key"] = stacked["sample"]
-    return stacked[["sample", "target", "key", "log2"]], matrix
+    return stacked[["sample", "target", "key", "log2"]].dropna(subset=["log2"]), matrix, None
 
 
 def _single_well_rows(
@@ -305,28 +314,26 @@ def _single_well_rows(
 
 def _replicate_rows(
     wells: pd.DataFrame,
+    matrix: pd.DataFrame,
+    excluded: pd.DataFrame | None,
     genes: Sequence[str],
     refs: tuple[str, ...],
     undetermined: Undetermined,
-    unit_of: Mapping[str, str],
     groups: Mapping[str, str],
     samples_per_unit: Mapping[str, list[str]],
     layout: Layout,
 ) -> list[tuple]:
-    """Technical replicates: average per unit, then ``relative()`` on the unit-level matrix."""
-    lowest = wells.groupby("target")["log2"].min()  # per gene, over every complete sample
-    wells = wells[wells["sample"].isin(list(unit_of))].copy()
-    wells["unit"] = wells["sample"].map(unit_of)
-    unit_means = wells.groupby(["unit", "target"])["log2"].mean().unstack("target")
+    """Technical replicates or exclusions: the engine's unit-level matrix, then ``relative()``."""
+    sample_unit = {s: unit for unit, samples in samples_per_unit.items() for s in samples}
+    wells = wells[wells["sample"].isin(list(sample_unit))].copy()
+    wells["unit"] = wells["sample"].map(sample_unit)
+    in_design = [unit for unit in matrix.index if unit in samples_per_unit]
     rows = []
     for gene in genes:
-        target = wells[wells["target"] == gene].copy()
-        if undetermined == "cap":
-            target["log2"] = target["log2"].fillna(lowest.get(gene, np.nan))
-        target = target.dropna(subset=["log2"])
-        matrix = unit_means.copy()
-        matrix[gene] = target.groupby("unit")["log2"].mean().reindex(matrix.index)
-        values = relative(matrix, gene, refs, "drop")  # the cap was applied well by well
+        values = relative(matrix, gene, refs, undetermined)
+        if excluded is not None:  # a person's exclusion is left out, never capped
+            values = values[~excluded[gene].reindex(values.index).fillna(False).astype(bool)]
+        values = values[values.index.isin(in_design)]
         if layout == "column":
             for unit, value in values.items():
                 group = groups[samples_per_unit[unit][0]]
@@ -334,8 +341,9 @@ def _replicate_rows(
                 rows.append((gene, group, str(unit), sample, UNIT_ROW, float(value)))
             continue
         normaliser = matrix.loc[values.index, list(refs)].mean(axis=1)
-        target = target[target["unit"].isin(values.index)]
+        target = wells[(wells["target"] == gene) & wells["unit"].isin(values.index)]
         target = target.sort_values(["unit", "sample", "key"], kind="mergesort")
+        measured = set(target["unit"])
         for unit, block in target.groupby("unit", sort=True):
             group = groups[samples_per_unit[unit][0]]
             for rep, (sample, value) in enumerate(
@@ -344,6 +352,10 @@ def _replicate_rows(
                 rows.append(
                     (gene, group, str(unit), str(sample), rep, float(value - normaliser[unit]))
                 )
+        for unit in sorted(set(values.index) - measured):  # every replicate undetermined (cap)
+            group = groups[samples_per_unit[unit][0]]
+            sample = "+".join(samples_per_unit[unit])
+            rows.append((gene, group, str(unit), sample, 1, float(values[unit])))
     return rows
 
 

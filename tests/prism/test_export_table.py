@@ -94,10 +94,26 @@ def test_undetermined_replicate_drop_and_cap():
     assert dropped["b3"] == -7.0  # the undetermined well is left out of the mean
     capped = _table(toy_inputs(toy_curves(log2), undetermined="cap"))
     capped = capped.set_index("biological_unit")["log2_rq"]
-    # cap: the empty well counts as the lowest T seen (2), so b3 = (4 + 2 + 4) / 3 - 11
-    assert math.isclose(capped["b3"], 10 / 3 - 11, abs_tol=1e-12)
+    # The engine's rule: a unit is undetermined only when every replicate is, so under cap b3
+    # is still the mean of its two detected wells; the export must equal the engine's value.
+    assert capped["b3"] == -7.0
+    units = log2_matrix(toy_curves(log2), {})
+    assert capped["b3"] == relative(units, "T", ("R1", "R2"), "cap")["b3"]
     nested = _table(inputs, "nested")
     assert nested[nested["biological_unit"] == "b3"]["log2_rq"].tolist() == [-7.0, -7.0]
+
+
+def test_a_unit_with_every_replicate_undetermined_is_capped_like_the_engine():
+    log2 = {k: {g: list(v) for g, v in genes.items()} for k, genes in TOY_LOG2.items()}
+    log2["b3"]["T"] = [None, None, None]
+    curves = toy_curves(log2)
+    capped = _table(toy_inputs(curves, undetermined="cap")).set_index("biological_unit")
+    engine = relative(log2_matrix(curves, {}), "T", ("R1", "R2"), "cap")
+    assert capped.loc["b3", "log2_rq"] == engine["b3"]
+    dropped = _table(toy_inputs(curves)).set_index("biological_unit")
+    assert "b3" not in dropped.index
+    nested = _table(toy_inputs(curves, undetermined="cap"), "nested")
+    assert nested[nested["biological_unit"] == "b3"]["log2_rq"].tolist() == [engine["b3"]]
 
 
 def test_several_samples_in_one_unit_are_averaged_never_counted():
