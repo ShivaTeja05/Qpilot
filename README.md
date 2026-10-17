@@ -92,16 +92,18 @@ For the analysis-and-statistics step: Clarida's Lab plan is listed at €4,800�
 
 | | |
 |---|---|
-| RDML export from the instrument | ◐ RDML 1.3 and 1.4 tested; 1.0–1.2 are migrated by the vendored code but untested. Needs one well per sample and gene, and the demo's design (below) |
+| RDML export from the instrument | ◐ RDML 1.3 and 1.4 tested; 1.0–1.2 are migrated by the vendored code but untested |
 | QuantStudio `.eds` | ◐ export to RDML with Thermo's own tools first (not tested here) |
 | QuantStudio TXT, other native formats | ✘ roadmap |
 | Offline on a laptop, no account | ✔ (macOS: full analysis tested with the network off; Linux: unit tests in CI, without the demo study; Windows untested) |
 | Reproduces my lab's numbers | ◐ reproduces the published benchmark above; your own instrument is untested |
 | Results as CSV | ◐ the robustness grid (`grid.csv`); a per-gene CSV is on the roadmap |
-| Prism export | ✘ roadmap |
+| Prism export | ◐ `qpilot export prism` / Studio's Send to Prism write log2 tables per biological unit, a Prism script (`run.pzc`) and provenance (Mode S: Prism itself reads and writes its files). **Not yet run in a real Prism**: the script commands follow GraphPad's documentation, the templates must be made once by hand, see [docs/prism.md](docs/prism.md). Not affiliated with GraphPad Software or Dotmatics |
 | Results written back into RDML | ✘ roadmap |
 | Hash-chained record of every decision | ✔ (tamper-evident; not Part 11) |
-| My own study design | ✘ for analysis today (the study needs `MYCN(4)` and the demo's control genes); `qpilot plan` sizes a new design before the first plate; general designs on the roadmap |
+| My own study design | ✔ `qpilot run --design study.yaml --samples sheet.csv`, or in qPilot Studio, where the AI proposes the design from your file, sheet and one sentence and you confirm each item; the demo is one preset (tested on synthetic designs and on the demo re-entered as two named groups, which reproduces it exactly) |
+| Technical replicates | ✔ averaged per biological unit (mean of log2 quantities); never counted as n; a group with fewer than two biological units gets no p-value |
+| Which curves count as amplified | ✔ LinRegPCR by default; "Cq ≤ 40 / 38 / 35" are shown as choices with their consequences (on the demo, "Cq > 35 = not detected" changes 10 of 58 conclusions); the learned Curve Judge is a second opinion whose disagreements a person resolves (validated on the demo's LightCycler 480 SYBR only) |
 
 ## Security
 

@@ -741,6 +741,49 @@ class Studio:
         atomic_write(cache, dump_json({"key": key, "calls": out}))
         return out
 
+    def curve_calls(self, session_id: str, gene: str) -> dict[str, Any]:
+        """Each well of one target called under every rule (and the Curve Judge when validated).
+
+        Facts about the curves, never a conclusion, so they are available in the blind curve
+        stage. Uses the assembled design's experiment and well roles when there is one.
+        """
+        from qpilot.qpcr import curve_judge
+        from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS, disagreements, well_calls
+        from qpilot.qpcr.curves import analyse_study
+        from qpilot.qpcr.designs import design_curves
+        from qpilot.qpcr.study import StudySettings
+
+        design = self.assemble(session_id).design
+        path = self.source(session_id)
+        if design is not None:
+            settings = StudySettings.from_design(design)
+            curves = analyse_study(path, settings.experiment_id, settings.candidates)
+            table = design_curves(curves, design)
+            overrides = design.well_calls
+        else:
+            table = self.facts(session_id).wells
+            overrides = {}
+        rows = table[table["target"] == gene]
+        if rows.empty:
+            raise StudioError("no well of this target in the analysed experiment")
+        calls = well_calls(rows, STUDIO_AMP_CALLS, overrides)
+        if curve_judge.validated():
+            experiment = design.experiment_id if design is not None else None
+            learned = self._learned_calls(session_id, path, experiment)
+            calls = [
+                c.model_copy(update={"calls": {**c.calls, "learned": learned[k]}})
+                if (k := f"{c.run_id}/{c.well}") in learned
+                else c
+                for c in calls
+            ]
+        return {
+            "gene": gene,
+            "rules": [*STUDIO_AMP_CALLS, *(["learned"] if curve_judge.validated() else [])],
+            "curve_judge": curve_judge.status(),
+            "wells": [c.model_dump(mode="json") for c in calls],
+            "disagreements": [f"{c.run_id}/{c.well}" for c in disagreements(calls)],
+        }
+
     def curve(self, session_id: str, well_key: str) -> dict[str, list[float]]:
         """One well's raw fluorescence by cycle (for the card's curve plot)."""
         from qpilot.qpcr import curve_judge

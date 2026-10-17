@@ -38,6 +38,9 @@ qPilot is licensed under the Apache License 2.0 (see `LICENSE`). It vendors, dep
 | `tests/fixtures/vermeulen_std_150000.rdml` | CC BY 4.0 (Vermeulen et al. 2009 / Ruijter et al. 2013; from the rdmlpython repository @ `fce7a44`, `experiments/vermeulen/`) | 54 KB standards-only subset of the demo study for curve-analysis unit tests. |
 | RDML consortium benchmark tables (`RDML_Tools_bias.tsv`, `data_vermeulen_methods_cq.tsv`, `data_vermeulen_methods_results.tsv`) | as the rdmlpython repository (MIT) and the study (CC BY 4.0) | Downloaded at runtime by `qpilot fetch-demo` / `qpilot validate` with SHA-256 pins; never committed. Only the generated comparison (`validation/validation_table.md` and its summary statistics in `validation/validation.json`) is in the repository. |
 
+| Brintz et al. 2025, qPCR amplification-curve training data (`bbrintz/qPCR-amp-call` @ v1.0.0 `191675bd`; Zenodo doi:10.5281/zenodo.13798821) | CC0 1.0 on GitHub, CC BY 4.0 on Zenodo; treated as **CC BY 4.0** (the stricter) | Used **only to train** the Curve Judge (`training/curve_judge/`, never shipped). The trained model (`qpilot/models/curve_judge/model.json`) is a derived work: attribution to Brintz B.J., et al., *Gates Open Research* 9:1 (2025), doi:10.12688/gatesopenres.16313.1. |
+| HGNC gene symbols (`qpilot/data/hgnc/hgnc_symbols.tsv`, from `hgnc_complete_set.txt` of 16 Oct 2026) | CC0 ("all data is released under the Creative Commons Public Domain (CC0) License", genenames.org/about/license) | Shipped: approved, previous and alias symbols only, to catch Excel-mangled gene names. |
+
 ## Not used (deliberately)
 `qslib` (EUPL-1.2, copyleft), GPL-licensed R packages (`qpcR`, `chipPCR`), and NormFinder's original code (redistribution not permitted). None of these is imported or bundled.
 
