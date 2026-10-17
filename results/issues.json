@@ -1,0 +1,6293 @@
+[
+ {
+  "issue_id": "D-refs",
+  "kind": "decision",
+  "title": "Choice of refs changes 31 call(s) on its own",
+  "loci": {
+   "decision": "refs"
+  },
+  "evidence": {
+   "genes_flipped_alone": [
+    "AHCY",
+    "CAMTA2",
+    "CDCA5",
+    "CDKN3",
+    "CLSTN1",
+    "DPYSL3",
+    "EPN2",
+    "FYN",
+    "GNB1",
+    "HIVEP2",
+    "IGSF4",
+    "INPP1",
+    "MAP2K4",
+    "MCM2",
+    "MRPL3",
+    "MTSS1",
+    "NM23A",
+    "PAICS",
+    "PDE4DIP",
+    "PIK3R1",
+    "PLAGL1",
+    "PRDM2",
+    "PRKACB_bis",
+    "PRKCZ",
+    "PTPRF",
+    "PTPRN2",
+    "SLC25A5",
+    "SNAPC1",
+    "TYMS",
+    "ULK2",
+    "WSB1"
+   ],
+   "called_genes_flipped": [
+    "AHCY",
+    "CDCA5",
+    "CDKN3",
+    "CLSTN1",
+    "DPYSL3",
+    "EPN2",
+    "HIVEP2",
+    "INPP1",
+    "MCM2",
+    "NM23A",
+    "PDE4DIP",
+    "PIK3R1",
+    "PLAGL1",
+    "PTPRF",
+    "PTPRN2",
+    "TYMS"
+   ]
+  },
+  "consistent_with": [
+   "analysis sensitivity, not an error"
+  ],
+  "remedy": "change only refs from the baseline (ring 1)",
+  "affected_outputs": [
+   "AHCY",
+   "CAMTA2",
+   "CDCA5",
+   "CDKN3",
+   "CLSTN1",
+   "DPYSL3",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NM23A",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTPRF",
+   "PTPRN2",
+   "SLC25A5",
+   "SNAPC1",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "AHCY",
+   "CAMTA2",
+   "CDCA5",
+   "CDKN3",
+   "CLSTN1",
+   "DPYSL3",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NM23A",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTPRF",
+   "PTPRN2",
+   "SLC25A5",
+   "SNAPC1",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "headline_changed": [
+   "NM23A"
+  ],
+  "max_abs_d_in_se": 3.47,
+  "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "D-cut",
+  "kind": "decision",
+  "title": "Choice of cut changes 17 call(s) on its own",
+  "loci": {
+   "decision": "cut"
+  },
+  "evidence": {
+   "genes_flipped_alone": [
+    "CAMTA2",
+    "DPYSL3",
+    "HIVEP2",
+    "IGSF4",
+    "MAP2K4",
+    "MTSS1",
+    "NM23A",
+    "PAICS",
+    "PDE4DIP",
+    "PIK3R1",
+    "PLAGL1",
+    "PRDM2",
+    "PRKACB_bis",
+    "PRKCZ",
+    "PTPRN2",
+    "SLC25A5",
+    "SNAPC1"
+   ],
+   "called_genes_flipped": [
+    "DPYSL3",
+    "HIVEP2",
+    "NM23A",
+    "PDE4DIP",
+    "PIK3R1",
+    "PLAGL1",
+    "PTPRN2"
+   ]
+  },
+  "consistent_with": [
+   "analysis sensitivity, not an error"
+  ],
+  "remedy": "change only cut from the baseline (ring 1)",
+  "affected_outputs": [
+   "CAMTA2",
+   "DPYSL3",
+   "HIVEP2",
+   "IGSF4",
+   "MAP2K4",
+   "MTSS1",
+   "NM23A",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTPRN2",
+   "SLC25A5",
+   "SNAPC1"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "CAMTA2",
+   "DPYSL3",
+   "HIVEP2",
+   "IGSF4",
+   "MAP2K4",
+   "MTSS1",
+   "NM23A",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTPRN2",
+   "SLC25A5",
+   "SNAPC1"
+  ],
+  "headline_changed": [
+   "NM23A"
+  ],
+  "max_abs_d_in_se": 3.07,
+  "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "D-efficiency",
+  "kind": "decision",
+  "title": "Choice of efficiency changes 6 call(s) on its own",
+  "loci": {
+   "decision": "efficiency"
+  },
+  "evidence": {
+   "genes_flipped_alone": [
+    "CAMTA2",
+    "DPYSL3",
+    "IGSF4",
+    "PAICS",
+    "PRKACB_bis",
+    "SLC25A5"
+   ],
+   "called_genes_flipped": [
+    "DPYSL3"
+   ]
+  },
+  "consistent_with": [
+   "analysis sensitivity, not an error"
+  ],
+  "remedy": "change only efficiency from the baseline (ring 1)",
+  "affected_outputs": [
+   "CAMTA2",
+   "DPYSL3",
+   "IGSF4",
+   "PAICS",
+   "PRKACB_bis",
+   "SLC25A5"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "CAMTA2",
+   "DPYSL3",
+   "IGSF4",
+   "PAICS",
+   "PRKACB_bis",
+   "SLC25A5"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 2.547,
+  "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "D-flagged",
+  "kind": "decision",
+  "title": "Choice of flagged changes 4 call(s) on its own",
+  "loci": {
+   "decision": "flagged"
+  },
+  "evidence": {
+   "genes_flipped_alone": [
+    "EPN2",
+    "PAICS",
+    "PLAT",
+    "PRKACB_bis"
+   ],
+   "called_genes_flipped": [
+    "EPN2",
+    "PLAT"
+   ]
+  },
+  "consistent_with": [
+   "analysis sensitivity, not an error"
+  ],
+  "remedy": "change only flagged from the baseline (ring 1)",
+  "affected_outputs": [
+   "EPN2",
+   "PAICS",
+   "PLAT",
+   "PRKACB_bis"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "EPN2",
+   "PAICS",
+   "PLAT",
+   "PRKACB_bis"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 3.704,
+  "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0109",
+  "kind": "reference_group_effect",
+  "title": "Reference pair HMBS/UBC(2) differs between groups",
+  "loci": {
+   "plate": "",
+   "gene": "HMBS/UBC(2)",
+   "wells": [],
+   "samples": []
+  },
+  "evidence": {
+   "log2_ratio_shift": 0.812,
+   "p": 0.05827911320778609
+  },
+  "consistent_with": [
+   "a reference gene regulated by the condition",
+   "assay drift between groups"
+  ],
+  "remedy": "leave one gene of HMBS/UBC(2) out of the reference set (worst of both shown)",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "DPYSL3",
+   "PAICS",
+   "PDE4DIP"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.868,
+  "action": "Assess whether this reference gene is stable between the groups before using it.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0110",
+  "kind": "reference_group_effect",
+  "title": "Reference pair HMBS/HPRT1 differs between groups",
+  "loci": {
+   "plate": "",
+   "gene": "HMBS/HPRT1",
+   "wells": [],
+   "samples": []
+  },
+  "evidence": {
+   "log2_ratio_shift": 0.705,
+   "p": 0.04457062930054571
+  },
+  "consistent_with": [
+   "a reference gene regulated by the condition",
+   "assay drift between groups"
+  ],
+  "remedy": "leave one gene of HMBS/HPRT1 out of the reference set (worst of both shown)",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "DPYSL3",
+   "PAICS",
+   "PDE4DIP"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.868,
+  "action": "Assess whether this reference gene is stable between the groups before using it.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0078",
+  "kind": "well_outlier",
+  "title": "Outlying well H20 on PRKACB_bis",
+  "loci": {
+   "plate": "PRKACB_20080311_bis",
+   "gene": "PRKACB_bis",
+   "wells": [
+    "H20"
+   ],
+   "samples": [
+    "2755"
+   ]
+  },
+  "evidence": {
+   "robust_z": 6.96,
+   "cq": 18.97
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PRKACB_bis"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "PRKACB_bis"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.495,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0051",
+  "kind": "well_outlier",
+  "title": "Outlying well K22 on HMBS",
+  "loci": {
+   "plate": "HMBS_20080318",
+   "gene": "HMBS",
+   "wells": [
+    "K22"
+   ],
+   "samples": [
+    "2016"
+   ]
+  },
+  "evidence": {
+   "robust_z": -9.92,
+   "cq": 46.06
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "CAMTA2"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.459,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0053",
+  "kind": "well_outlier",
+  "title": "Outlying well F23 on HPRT1",
+  "loci": {
+   "plate": "HPRT1_20080303",
+   "gene": "HPRT1",
+   "wells": [
+    "F23"
+   ],
+   "samples": [
+    "1924"
+   ]
+  },
+  "evidence": {
+   "robust_z": -10.6,
+   "cq": 34.54
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "IGSF4"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.414,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0111",
+  "kind": "reference_group_effect",
+  "title": "Reference pair SDHA(1)/UBC(2) differs between groups",
+  "loci": {
+   "plate": "",
+   "gene": "SDHA(1)/UBC(2)",
+   "wells": [],
+   "samples": []
+  },
+  "evidence": {
+   "log2_ratio_shift": 0.541,
+   "p": 0.1277752464286493
+  },
+  "consistent_with": [
+   "a reference gene regulated by the condition",
+   "assay drift between groups"
+  ],
+  "remedy": "leave one gene of SDHA(1)/UBC(2) out of the reference set (worst of both shown)",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "DPYSL3"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.326,
+  "action": "Assess whether this reference gene is stable between the groups before using it.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0106",
+  "kind": "spatial",
+  "title": "column 2 differs on UBC(2)",
+  "loci": {
+   "plate": "UBC(2)_20080220",
+   "gene": "UBC(2)",
+   "wells": [
+    "A2",
+    "C2",
+    "E2",
+    "G2",
+    "I2",
+    "M2",
+    "K2",
+    "O2",
+    "B2",
+    "D2",
+    "F2",
+    "H2",
+    "J2",
+    "L2",
+    "N2"
+   ],
+   "samples": [
+    "1832",
+    "1849",
+    "1939",
+    "1951",
+    "1963",
+    "2021",
+    "2085",
+    "2107",
+    "2160",
+    "2172",
+    "2711",
+    "2748",
+    "2758",
+    "2760",
+    "2786"
+   ]
+  },
+  "evidence": {
+   "axis": "column",
+   "position": "2",
+   "p": 1.7172312868737958e-05,
+   "median_shift_log2": 1.581,
+   "wells": 15
+  },
+  "consistent_with": [
+   "evaporation or thermal gradient",
+   "multichannel pipetting error",
+   "placement of similar samples together"
+  ],
+  "remedy": "drop 15 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "changes_conclusion",
+  "changed_calls": [
+   "CAMTA2"
+  ],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.181,
+  "action": "Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0108",
+  "kind": "efficiency",
+  "title": "Low efficiency or many flagged wells on NTRK1",
+  "loci": {
+   "plate": "NTRK1_20080318",
+   "gene": "NTRK1",
+   "wells": [
+    "D8",
+    "G19",
+    "A3",
+    "C3",
+    "C15",
+    "C21",
+    "E23",
+    "K23",
+    "O11",
+    "J11",
+    "J17",
+    "L9",
+    "L23",
+    "N13",
+    "P3",
+    "P5",
+    "P9",
+    "P23",
+    "H5",
+    "E2",
+    "E8",
+    "E12",
+    "I18",
+    "O22"
+   ],
+   "samples": [
+    "1231",
+    "127",
+    "1496",
+    "1513",
+    "1536",
+    "1540",
+    "1686",
+    "1752",
+    "1771",
+    "1784",
+    "1787",
+    "1795",
+    "1802",
+    "1812",
+    "1821",
+    "1822",
+    "1824",
+    "1831",
+    "1931",
+    "1939",
+    "1942",
+    "1944",
+    "2069",
+    "2122"
+   ]
+  },
+  "evidence": {
+   "assay_efficiency": 1.734,
+   "share_wells_flagged": 0.071
+  },
+  "consistent_with": [
+   "inhibition",
+   "poor primer design",
+   "baseline problems"
+  ],
+  "remedy": "drop 26 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "NTRK1"
+  ],
+  "impact": "biases",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 2.129,
+  "action": "Review the assay's standard curve and flagged wells; consider the per-well efficiency scenario.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0100",
+  "kind": "well_outlier",
+  "title": "Outlying well P7 on ULK2",
+  "loci": {
+   "plate": "ULK2_20080229",
+   "gene": "ULK2",
+   "wells": [
+    "P7"
+   ],
+   "samples": [
+    "1823"
+   ]
+  },
+  "evidence": {
+   "robust_z": 8.08,
+   "cq": 26.73
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ULK2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.589,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0042",
+  "kind": "well_outlier",
+  "title": "Outlying well K20 on EPN2",
+  "loci": {
+   "plate": "EPN2_20080304",
+   "gene": "EPN2",
+   "wells": [
+    "K20"
+   ],
+   "samples": [
+    "2015"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.75,
+   "cq": 45.61
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPN2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.581,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0021",
+  "kind": "well_outlier",
+  "title": "Outlying well M11 on CDH5",
+  "loci": {
+   "plate": "CDH5_20080305",
+   "gene": "CDH5",
+   "wells": [
+    "M11"
+   ],
+   "samples": [
+    "1758"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.51,
+   "cq": 47.15
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "CDH5"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.503,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0103",
+  "kind": "spatial",
+  "title": "row E differs on ALUsq(Eurogentec)",
+  "loci": {
+   "plate": "ALUsq(Eurogentec)_20080228",
+   "gene": "ALUsq(Eurogentec)",
+   "wells": [
+    "E1",
+    "E23",
+    "E3",
+    "E5",
+    "E7",
+    "E9",
+    "E11",
+    "E13",
+    "E15",
+    "E17",
+    "E19",
+    "E21",
+    "E2",
+    "E4",
+    "E6",
+    "E8",
+    "E10",
+    "E12",
+    "E14",
+    "E16",
+    "E18",
+    "E20",
+    "E22",
+    "E24"
+   ],
+   "samples": [
+    "1542",
+    "1686",
+    "1693",
+    "1694",
+    "1695",
+    "1696",
+    "1697",
+    "1698",
+    "1699",
+    "1700",
+    "1701",
+    "1702",
+    "1939",
+    "1940",
+    "1941",
+    "1942",
+    "1943",
+    "1944",
+    "1945",
+    "1946",
+    "1947",
+    "1948",
+    "1949",
+    "1950"
+   ]
+  },
+  "evidence": {
+   "axis": "row",
+   "position": "E",
+   "p": 4.977769806870435e-05,
+   "median_shift_log2": 0.576,
+   "wells": 24
+  },
+  "consistent_with": [
+   "evaporation or thermal gradient",
+   "multichannel pipetting error",
+   "placement of similar samples together"
+  ],
+  "remedy": "drop 24 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.482,
+  "action": "Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0065",
+  "kind": "well_outlier",
+  "title": "Outlying well H19 on MRPL3",
+  "loci": {
+   "plate": "MRPL3_20080222",
+   "gene": "MRPL3",
+   "wells": [
+    "H19"
+   ],
+   "samples": [
+    "1938"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.12,
+   "cq": 23.18
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MRPL3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.474,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0075",
+  "kind": "well_outlier",
+  "title": "Outlying well J18 on PMP22",
+  "loci": {
+   "plate": "PMP22_20080227",
+   "gene": "PMP22",
+   "wells": [
+    "J18"
+   ],
+   "samples": [
+    "2768"
+   ]
+  },
+  "evidence": {
+   "robust_z": -7.75,
+   "cq": 38.26
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PMP22"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.468,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0038",
+  "kind": "well_outlier",
+  "title": "Outlying well G19 on EPHA5",
+  "loci": {
+   "plate": "EPHA5_20080305",
+   "gene": "EPHA5",
+   "wells": [
+    "G19"
+   ],
+   "samples": [
+    "127"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.07,
+   "cq": 44.52
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPHA5"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.444,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0068",
+  "kind": "well_outlier",
+  "title": "Outlying well A9 on NRCAM",
+  "loci": {
+   "plate": "NRCAM_20080228",
+   "gene": "NRCAM",
+   "wells": [
+    "A9"
+   ],
+   "samples": [
+    "1499"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.2,
+   "cq": 31.16
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "NRCAM"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.437,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0030",
+  "kind": "well_outlier",
+  "title": "Outlying well D16 on ELAVL4",
+  "loci": {
+   "plate": "ELAVL4_20080310",
+   "gene": "ELAVL4",
+   "wells": [
+    "D16"
+   ],
+   "samples": [
+    "2660"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.15,
+   "cq": 22.95
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ELAVL4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.428,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0082",
+  "kind": "well_outlier",
+  "title": "Outlying well J1 on PTPRF",
+  "loci": {
+   "plate": "PTPRF_20080225",
+   "gene": "PTPRF",
+   "wells": [
+    "J1"
+   ],
+   "samples": [
+    "1776"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.06,
+   "cq": 41.13
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRF"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.426,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0040",
+  "kind": "well_outlier",
+  "title": "Outlying well H19 on EPHA5",
+  "loci": {
+   "plate": "EPHA5_20080305",
+   "gene": "EPHA5",
+   "wells": [
+    "H19"
+   ],
+   "samples": [
+    "1938"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.21,
+   "cq": 46.97
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPHA5"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.414,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0081",
+  "kind": "well_outlier",
+  "title": "Outlying well D16 on PTN",
+  "loci": {
+   "plate": "PTN_20080227",
+   "gene": "PTN",
+   "wells": [
+    "D16"
+   ],
+   "samples": [
+    "2660"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.89,
+   "cq": 36.81
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTN"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.399,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0069",
+  "kind": "well_outlier",
+  "title": "Outlying well A3 on ODC1",
+  "loci": {
+   "plate": "ODC1_20080226",
+   "gene": "ODC1",
+   "wells": [
+    "A3"
+   ],
+   "samples": [
+    "1496"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.85,
+   "cq": 16.51
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ODC1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.397,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0112",
+  "kind": "sample_outlier",
+  "title": "Sample 1751 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "1751"
+   ]
+  },
+  "evidence": {
+   "profile_noise_robust_z": 4.1
+  },
+  "consistent_with": [
+   "sample mislabel or mix-up",
+   "unusual biology"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.374,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0070",
+  "kind": "well_outlier",
+  "title": "Outlying well J11 on ODC1",
+  "loci": {
+   "plate": "ODC1_20080226",
+   "gene": "ODC1",
+   "wells": [
+    "J11"
+   ],
+   "samples": [
+    "1784"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.62,
+   "cq": 18.32
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ODC1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.359,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0079",
+  "kind": "well_outlier",
+  "title": "Outlying well G10 on PRKCZ",
+  "loci": {
+   "plate": "PRKCZ_20080307",
+   "gene": "PRKCZ",
+   "wells": [
+    "G10"
+   ],
+   "samples": [
+    "1955"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.79,
+   "cq": 34.9
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PRKCZ"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.359,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0105",
+  "kind": "spatial",
+  "title": "row H differs on SNAPC1",
+  "loci": {
+   "plate": "SNAPC1_20080227",
+   "gene": "SNAPC1",
+   "wells": [
+    "H21",
+    "H23",
+    "H1",
+    "H3",
+    "H5",
+    "H7",
+    "H9",
+    "H11",
+    "H13",
+    "H15",
+    "H17",
+    "H19",
+    "H4",
+    "H6",
+    "H8",
+    "H10",
+    "H12",
+    "H2",
+    "H14",
+    "H16",
+    "H18",
+    "H20",
+    "H22",
+    "H24"
+   ],
+   "samples": [
+    "1774",
+    "1775",
+    "1928",
+    "1929",
+    "1931",
+    "1932",
+    "1933",
+    "1934",
+    "1935",
+    "1936",
+    "1937",
+    "1938",
+    "2253",
+    "2257",
+    "2704",
+    "2705",
+    "2706",
+    "2748",
+    "2752",
+    "2753",
+    "2754",
+    "2755",
+    "2756",
+    "2757"
+   ]
+  },
+  "evidence": {
+   "axis": "row",
+   "position": "H",
+   "p": 0.00014947281009015942,
+   "median_shift_log2": -1.226,
+   "wells": 24
+  },
+  "consistent_with": [
+   "evaporation or thermal gradient",
+   "multichannel pipetting error",
+   "placement of similar samples together"
+  ],
+  "remedy": "drop 24 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "SNAPC1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.331,
+  "action": "Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0072",
+  "kind": "well_outlier",
+  "title": "Outlying well J18 on ODC1",
+  "loci": {
+   "plate": "ODC1_20080226",
+   "gene": "ODC1",
+   "wells": [
+    "J18"
+   ],
+   "samples": [
+    "2768"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.53,
+   "cq": 19.48
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ODC1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.321,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0092",
+  "kind": "well_outlier",
+  "title": "Outlying well D16 on QPCT",
+  "loci": {
+   "plate": "QPCT_20080228",
+   "gene": "QPCT",
+   "wells": [
+    "D16"
+   ],
+   "samples": [
+    "2660"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.17,
+   "cq": 38.89
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "QPCT"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.307,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0036",
+  "kind": "well_outlier",
+  "title": "Outlying well H20 on EPB41L3",
+  "loci": {
+   "plate": "EPB41L3_20080228",
+   "gene": "EPB41L3",
+   "wells": [
+    "H20"
+   ],
+   "samples": [
+    "2755"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.78,
+   "cq": 34.01
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPB41L3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.285,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0034",
+  "kind": "well_outlier",
+  "title": "Outlying well C4 on EPB41L3",
+  "loci": {
+   "plate": "EPB41L3_20080228",
+   "gene": "EPB41L3",
+   "wells": [
+    "C4"
+   ],
+   "samples": [
+    "1850"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.68,
+   "cq": 32.76
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPB41L3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.229,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0061",
+  "kind": "well_outlier",
+  "title": "Outlying well D7 on MAPT",
+  "loci": {
+   "plate": "MAPT_20080229",
+   "gene": "MAPT",
+   "wells": [
+    "D7"
+   ],
+   "samples": [
+    "1898"
+   ]
+  },
+  "evidence": {
+   "robust_z": -8.55,
+   "cq": 43.89
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAPT"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.198,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0028",
+  "kind": "well_outlier",
+  "title": "Outlying well K19 on ELAVL4",
+  "loci": {
+   "plate": "ELAVL4_20080310",
+   "gene": "ELAVL4",
+   "wells": [
+    "K19"
+   ],
+   "samples": [
+    "194"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.03,
+   "cq": 34.33
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ELAVL4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.175,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0090",
+  "kind": "well_outlier",
+  "title": "Outlying well L20 on PTPRN2",
+  "loci": {
+   "plate": "PTPRN2_20080303",
+   "gene": "PTPRN2",
+   "wells": [
+    "L20"
+   ],
+   "samples": [
+    "2783"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.77,
+   "cq": 46.98
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRN2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.173,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0071",
+  "kind": "well_outlier",
+  "title": "Outlying well L11 on ODC1",
+  "loci": {
+   "plate": "ODC1_20080226",
+   "gene": "ODC1",
+   "wells": [
+    "L11"
+   ],
+   "samples": [
+    "1796"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.34,
+   "cq": 21.09
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ODC1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.16,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0099",
+  "kind": "well_outlier",
+  "title": "Outlying well D5 on SNAPC1",
+  "loci": {
+   "plate": "SNAPC1_20080227",
+   "gene": "SNAPC1",
+   "wells": [
+    "D5"
+   ],
+   "samples": [
+    "1897"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.75,
+   "cq": 40.0
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "SNAPC1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.144,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0107",
+  "kind": "efficiency",
+  "title": "Low efficiency or many flagged wells on CLSTN1",
+  "loci": {
+   "plate": "CLSTN1_20080227",
+   "gene": "CLSTN1",
+   "wells": [
+    "K9",
+    "K15",
+    "G23",
+    "E1",
+    "G3",
+    "E9",
+    "E11",
+    "E21",
+    "M3",
+    "M7",
+    "M11",
+    "M15",
+    "O11",
+    "O13",
+    "J3",
+    "J15",
+    "L7",
+    "L13",
+    "N3",
+    "N5",
+    "N13",
+    "P3",
+    "P7",
+    "P13"
+   ],
+   "samples": [
+    "1178",
+    "1179",
+    "126",
+    "1542",
+    "1672",
+    "1696",
+    "1697",
+    "1702",
+    "1754",
+    "1756",
+    "1758",
+    "1760",
+    "1771",
+    "1772",
+    "1777",
+    "1786",
+    "1794",
+    "1797",
+    "1804",
+    "1805",
+    "1812",
+    "1821",
+    "1823",
+    "1826"
+   ]
+  },
+  "evidence": {
+   "assay_efficiency": 1.726,
+   "share_wells_flagged": 0.142
+  },
+  "consistent_with": [
+   "inhibition",
+   "poor primer design",
+   "baseline problems"
+  ],
+  "remedy": "drop 52 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "CLSTN1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.138,
+  "action": "Review the assay's standard curve and flagged wells; consider the per-well efficiency scenario.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0094",
+  "kind": "well_outlier",
+  "title": "Outlying well K19 on SCG2",
+  "loci": {
+   "plate": "SCG2_20080311",
+   "gene": "SCG2",
+   "wells": [
+    "K19"
+   ],
+   "samples": [
+    "194"
+   ]
+  },
+  "evidence": {
+   "robust_z": -7.1,
+   "cq": 33.85
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "SCG2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.131,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0007",
+  "kind": "ntc",
+  "title": "No-template control amplified on MCM2",
+  "loci": {
+   "plate": "MCM2_20080306",
+   "gene": "MCM2",
+   "wells": [
+    "D22",
+    "F6",
+    "F24",
+    "H2",
+    "J10"
+   ],
+   "samples": [
+    "2709",
+    "2713",
+    "2746",
+    "2748",
+    "2762"
+   ]
+  },
+  "evidence": {
+   "ntc_wells_amplified": 3,
+   "earliest_ntc_cq": 39.12,
+   "median_sample_cq": 26.63,
+   "samples_within_5_cycles": 5,
+   "share_within_5_cycles": 0.014
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "drop 5 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MCM2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.127,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0093",
+  "kind": "well_outlier",
+  "title": "Outlying well G7 on SCG2",
+  "loci": {
+   "plate": "SCG2_20080311",
+   "gene": "SCG2",
+   "wells": [
+    "G7"
+   ],
+   "samples": [
+    "1716"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.49,
+   "cq": 32.74
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "SCG2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.108,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0039",
+  "kind": "well_outlier",
+  "title": "Outlying well G7 on EPHA5",
+  "loci": {
+   "plate": "EPHA5_20080305",
+   "gene": "EPHA5",
+   "wells": [
+    "G7"
+   ],
+   "samples": [
+    "1716"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.16,
+   "cq": 47.34
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPHA5"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.105,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0014",
+  "kind": "well_outlier",
+  "title": "Outlying well F2 on ARHGEF7",
+  "loci": {
+   "plate": "ARHGEF7_20080225",
+   "gene": "ARHGEF7",
+   "wells": [
+    "F2"
+   ],
+   "samples": [
+    "2711"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.92,
+   "cq": 33.52
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ARHGEF7"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.103,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0096",
+  "kind": "well_outlier",
+  "title": "Outlying well F14 on SDHA(1)",
+  "loci": {
+   "plate": "SDHA(1)_20080220",
+   "gene": "SDHA(1)",
+   "wells": [
+    "F14"
+   ],
+   "samples": [
+    "2719"
+   ]
+  },
+  "evidence": {
+   "robust_z": 6.22,
+   "cq": 25.0
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.096,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0064",
+  "kind": "well_outlier",
+  "title": "Outlying well F5 on MRPL3",
+  "loci": {
+   "plate": "MRPL3_20080222",
+   "gene": "MRPL3",
+   "wells": [
+    "F5"
+   ],
+   "samples": [
+    "1914"
+   ]
+  },
+  "evidence": {
+   "robust_z": 7.55,
+   "cq": 22.72
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MRPL3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.095,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0016",
+  "kind": "well_outlier",
+  "title": "Outlying well J10 on ARHGEF7",
+  "loci": {
+   "plate": "ARHGEF7_20080225",
+   "gene": "ARHGEF7",
+   "wells": [
+    "J10"
+   ],
+   "samples": [
+    "2762"
+   ]
+  },
+  "evidence": {
+   "robust_z": 6.51,
+   "cq": 21.88
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ARHGEF7"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.094,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0017",
+  "kind": "well_outlier",
+  "title": "Outlying well L5 on BIRC5",
+  "loci": {
+   "plate": "BIRC5_20080229",
+   "gene": "BIRC5",
+   "wells": [
+    "L5"
+   ],
+   "samples": [
+    "1793"
+   ]
+  },
+  "evidence": {
+   "robust_z": -7.3,
+   "cq": 33.79
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "BIRC5"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.093,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0020",
+  "kind": "well_outlier",
+  "title": "Outlying well F15 on CDCA5",
+  "loci": {
+   "plate": "CDCA5_20080225",
+   "gene": "CDCA5",
+   "wells": [
+    "F15"
+   ],
+   "samples": [
+    "1919"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.01,
+   "cq": 37.44
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "CDCA5"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.093,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0055",
+  "kind": "well_outlier",
+  "title": "Outlying well F20 on MAP2K4",
+  "loci": {
+   "plate": "MAP2K4_20080306",
+   "gene": "MAP2K4",
+   "wells": [
+    "F20"
+   ],
+   "samples": [
+    "2743"
+   ]
+  },
+  "evidence": {
+   "robust_z": 7.69,
+   "cq": 25.16
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAP2K4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.087,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0049",
+  "kind": "well_outlier",
+  "title": "Outlying well H11 on GNB1",
+  "loci": {
+   "plate": "GNB1_20080228",
+   "gene": "GNB1",
+   "wells": [
+    "H11"
+   ],
+   "samples": [
+    "1934"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.8,
+   "cq": 22.43
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "GNB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.086,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0119",
+  "kind": "sample_outlier",
+  "title": "Sample 2742 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "2742"
+   ]
+  },
+  "evidence": {
+   "profile_noise_robust_z": 3.8
+  },
+  "consistent_with": [
+   "sample mislabel or mix-up",
+   "unusual biology"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.084,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0084",
+  "kind": "well_outlier",
+  "title": "Outlying well C20 on PTPRF",
+  "loci": {
+   "plate": "PTPRF_20080225",
+   "gene": "PTPRF",
+   "wells": [
+    "C20"
+   ],
+   "samples": [
+    "1859"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.01,
+   "cq": 42.7
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRF"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.084,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0086",
+  "kind": "well_outlier",
+  "title": "Outlying well F18 on PTPRF",
+  "loci": {
+   "plate": "PTPRF_20080225",
+   "gene": "PTPRF",
+   "wells": [
+    "F18"
+   ],
+   "samples": [
+    "2742"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.07,
+   "cq": 42.03
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRF"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.084,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0027",
+  "kind": "well_outlier",
+  "title": "Outlying well G5 on ECEL1",
+  "loci": {
+   "plate": "ECEL1_20080225",
+   "gene": "ECEL1",
+   "wells": [
+    "G5"
+   ],
+   "samples": [
+    "520"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.97,
+   "cq": 40.98
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ECEL1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.081,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0052",
+  "kind": "well_outlier",
+  "title": "Outlying well H16 on HMBS",
+  "loci": {
+   "plate": "HMBS_20080318",
+   "gene": "HMBS",
+   "wells": [
+    "H16"
+   ],
+   "samples": [
+    "2753"
+   ]
+  },
+  "evidence": {
+   "robust_z": -8.04,
+   "cq": 45.7
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.079,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0118",
+  "kind": "sample_outlier",
+  "title": "Sample 2714 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "2714"
+   ]
+  },
+  "evidence": {
+   "amount_robust_z": -3.68
+  },
+  "consistent_with": [
+   "low input",
+   "degraded RNA",
+   "pipetting into the cDNA plate"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.078,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0098",
+  "kind": "well_outlier",
+  "title": "Outlying well N6 on SLC6A8",
+  "loci": {
+   "plate": "SLC6A8_20080306",
+   "gene": "SLC6A8",
+   "wells": [
+    "N6"
+   ],
+   "samples": [
+    "2793"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.54,
+   "cq": 39.8
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "SLC6A8"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.078,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0101",
+  "kind": "well_outlier",
+  "title": "Outlying well N10 on ULK2",
+  "loci": {
+   "plate": "ULK2_20080229",
+   "gene": "ULK2",
+   "wells": [
+    "N10"
+   ],
+   "samples": [
+    "2795"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.17,
+   "cq": 27.28
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ULK2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.078,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0121",
+  "kind": "sample_outlier",
+  "title": "Sample 2748 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "2748"
+   ]
+  },
+  "evidence": {
+   "amount_robust_z": -4.71
+  },
+  "consistent_with": [
+   "low input",
+   "degraded RNA",
+   "pipetting into the cDNA plate"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.073,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0088",
+  "kind": "well_outlier",
+  "title": "Outlying well M17 on PTPRH",
+  "loci": {
+   "plate": "PTPRH_20080228",
+   "gene": "PTPRH",
+   "wells": [
+    "M17"
+   ],
+   "samples": [
+    "1761"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.46,
+   "cq": 45.71
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRH"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.073,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0041",
+  "kind": "well_outlier",
+  "title": "Outlying well G14 on EPHA5",
+  "loci": {
+   "plate": "EPHA5_20080305",
+   "gene": "EPHA5",
+   "wells": [
+    "G14"
+   ],
+   "samples": [
+    "1957"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.58,
+   "cq": 41.71
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPHA5"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.07,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0059",
+  "kind": "well_outlier",
+  "title": "Outlying well D7 on MAP7",
+  "loci": {
+   "plate": "MAP7_20080229",
+   "gene": "MAP7",
+   "wells": [
+    "D7"
+   ],
+   "samples": [
+    "1898"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.05,
+   "cq": 37.85
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAP7"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.068,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0044",
+  "kind": "well_outlier",
+  "title": "Outlying well F20 on FYN",
+  "loci": {
+   "plate": "FYN_20080311",
+   "gene": "FYN",
+   "wells": [
+    "F20"
+   ],
+   "samples": [
+    "2743"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.07,
+   "cq": 25.67
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "FYN"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.067,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0087",
+  "kind": "well_outlier",
+  "title": "Outlying well H22 on PTPRF",
+  "loci": {
+   "plate": "PTPRF_20080225",
+   "gene": "PTPRF",
+   "wells": [
+    "H22"
+   ],
+   "samples": [
+    "2756"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.09,
+   "cq": 28.01
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRF"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.067,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0048",
+  "kind": "well_outlier",
+  "title": "Outlying well C20 on GNB1",
+  "loci": {
+   "plate": "GNB1_20080228",
+   "gene": "GNB1",
+   "wells": [
+    "C20"
+   ],
+   "samples": [
+    "1859"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.91,
+   "cq": 25.79
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "GNB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.066,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0058",
+  "kind": "well_outlier",
+  "title": "Outlying well L4 on MAP2K4",
+  "loci": {
+   "plate": "MAP2K4_20080306",
+   "gene": "MAP2K4",
+   "wells": [
+    "L4"
+   ],
+   "samples": [
+    "2774"
+   ]
+  },
+  "evidence": {
+   "robust_z": 7.54,
+   "cq": 24.6
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAP2K4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.066,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0104",
+  "kind": "spatial",
+  "title": "row G differs on ARHGEF7",
+  "loci": {
+   "plate": "ARHGEF7_20080225",
+   "gene": "ARHGEF7",
+   "wells": [
+    "G23",
+    "G19",
+    "G3",
+    "G1",
+    "G7",
+    "G9",
+    "G11",
+    "G13",
+    "G2",
+    "G4",
+    "G6",
+    "G8",
+    "G10",
+    "G12",
+    "G14",
+    "G16",
+    "G18",
+    "G20",
+    "G22",
+    "G24",
+    "G17",
+    "G21",
+    "G5",
+    "G15"
+   ],
+   "samples": [
+    "126",
+    "127",
+    "1672",
+    "1677",
+    "1716",
+    "1717",
+    "1720",
+    "1722",
+    "1951",
+    "1952",
+    "1953",
+    "1954",
+    "1955",
+    "1956",
+    "1957",
+    "1958",
+    "1959",
+    "1960",
+    "1961",
+    "1962",
+    "266",
+    "315",
+    "520",
+    "827"
+   ]
+  },
+  "evidence": {
+   "axis": "row",
+   "position": "G",
+   "p": 6.42068669470154e-05,
+   "median_shift_log2": -0.665,
+   "wells": 24
+  },
+  "consistent_with": [
+   "evaporation or thermal gradient",
+   "multichannel pipetting error",
+   "placement of similar samples together"
+  ],
+  "remedy": "drop 24 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ARHGEF7"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.066,
+  "action": "Compare with the plate's run log (sealing, pipetting order); re-run the plate if the pattern is technical.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0085",
+  "kind": "well_outlier",
+  "title": "Outlying well F8 on PTPRF",
+  "loci": {
+   "plate": "PTPRF_20080225",
+   "gene": "PTPRF",
+   "wells": [
+    "F8"
+   ],
+   "samples": [
+    "2714"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.79,
+   "cq": 32.1
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRF"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.063,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0023",
+  "kind": "well_outlier",
+  "title": "Outlying well H2 on DDC",
+  "loci": {
+   "plate": "DDC_20080310",
+   "gene": "DDC",
+   "wells": [
+    "H2"
+   ],
+   "samples": [
+    "2748"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.4,
+   "cq": 27.47
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "DDC"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.062,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0091",
+  "kind": "well_outlier",
+  "title": "Outlying well B6 on QPCT",
+  "loci": {
+   "plate": "QPCT_20080228",
+   "gene": "QPCT",
+   "wells": [
+    "B6"
+   ],
+   "samples": [
+    "2162"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.06,
+   "cq": 25.43
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "QPCT"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.061,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0009",
+  "kind": "ntc",
+  "title": "No-template control amplified on PAICS",
+  "loci": {
+   "plate": "PAICS_20080311",
+   "gene": "PAICS",
+   "wells": [
+    "F6",
+    "F8",
+    "F24",
+    "J6",
+    "N1"
+   ],
+   "samples": [
+    "2713",
+    "2714",
+    "2746",
+    "2772",
+    "1803"
+   ]
+  },
+  "evidence": {
+   "ntc_wells_amplified": 3,
+   "earliest_ntc_cq": 36.65,
+   "median_sample_cq": 24.95,
+   "samples_within_5_cycles": 5,
+   "share_within_5_cycles": 0.014
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "drop 5 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PAICS"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.059,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0037",
+  "kind": "well_outlier",
+  "title": "Outlying well L18 on EPB41L3",
+  "loci": {
+   "plate": "EPB41L3_20080228",
+   "gene": "EPB41L3",
+   "wells": [
+    "L18"
+   ],
+   "samples": [
+    "2782"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.27,
+   "cq": 34.14
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPB41L3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.059,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0035",
+  "kind": "well_outlier",
+  "title": "Outlying well H7 on EPB41L3",
+  "loci": {
+   "plate": "EPB41L3_20080228",
+   "gene": "EPB41L3",
+   "wells": [
+    "H7"
+   ],
+   "samples": [
+    "1932"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.55,
+   "cq": 32.62
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPB41L3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.058,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0002",
+  "kind": "ntc",
+  "title": "No-template control amplified on CAMTA2",
+  "loci": {
+   "plate": "CAMTA2_20080227",
+   "gene": "CAMTA2",
+   "wells": [
+    "F6",
+    "F24",
+    "H2",
+    "J6"
+   ],
+   "samples": [
+    "2713",
+    "2746",
+    "2748",
+    "2772"
+   ]
+  },
+  "evidence": {
+   "ntc_wells_amplified": 2,
+   "earliest_ntc_cq": 43.44,
+   "median_sample_cq": 31.37,
+   "samples_within_5_cycles": 4,
+   "share_within_5_cycles": 0.011
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "drop 4 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "CAMTA2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.054,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0026",
+  "kind": "well_outlier",
+  "title": "Outlying well F15 on ECEL1",
+  "loci": {
+   "plate": "ECEL1_20080225",
+   "gene": "ECEL1",
+   "wells": [
+    "F15"
+   ],
+   "samples": [
+    "1919"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.47,
+   "cq": 37.59
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ECEL1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.049,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0033",
+  "kind": "well_outlier",
+  "title": "Outlying well A12 on EPB41L3",
+  "loci": {
+   "plate": "EPB41L3_20080228",
+   "gene": "EPB41L3",
+   "wells": [
+    "A12"
+   ],
+   "samples": [
+    "1839"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.36,
+   "cq": 32.09
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "EPB41L3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.049,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0060",
+  "kind": "well_outlier",
+  "title": "Outlying well F2 on MAP7",
+  "loci": {
+   "plate": "MAP7_20080229",
+   "gene": "MAP7",
+   "wells": [
+    "F2"
+   ],
+   "samples": [
+    "2711"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.6,
+   "cq": 27.52
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAP7"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.018,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0022",
+  "kind": "well_outlier",
+  "title": "Outlying well D7 on CDH5",
+  "loci": {
+   "plate": "CDH5_20080305",
+   "gene": "CDH5",
+   "wells": [
+    "D7"
+   ],
+   "samples": [
+    "1898"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.7,
+   "cq": 27.58
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "CDH5"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.014,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0000",
+  "kind": "ntc",
+  "title": "No-template control amplified on ALUsq(Eurogentec)",
+  "loci": {
+   "plate": "ALUsq(Eurogentec)_20080228",
+   "gene": "ALUsq(Eurogentec)",
+   "wells": [
+    "F6",
+    "F24"
+   ],
+   "samples": [
+    "2713",
+    "2746"
+   ]
+  },
+  "evidence": {
+   "ntc_wells_amplified": 3,
+   "earliest_ntc_cq": 23.94,
+   "median_sample_cq": 11.97,
+   "samples_within_5_cycles": 2,
+   "share_within_5_cycles": 0.005
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "drop 2 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0013",
+  "kind": "well_outlier",
+  "title": "Outlying well E1 on ALUsq(Eurogentec)",
+  "loci": {
+   "plate": "ALUsq(Eurogentec)_20080228",
+   "gene": "ALUsq(Eurogentec)",
+   "wells": [
+    "E1"
+   ],
+   "samples": [
+    "1542"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.32,
+   "cq": 10.57
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0095",
+  "kind": "well_outlier",
+  "title": "Outlying well N1 on SDHA(1)",
+  "loci": {
+   "plate": "SDHA(1)_20080220",
+   "gene": "SDHA(1)",
+   "wells": [
+    "N1"
+   ],
+   "samples": [
+    "1803"
+   ]
+  },
+  "evidence": {
+   "robust_z": -7.37,
+   "cq": 46.18
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0113",
+  "kind": "sample_outlier",
+  "title": "Sample 1803 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "1803"
+   ]
+  },
+  "evidence": {
+   "amount_robust_z": -5.17
+  },
+  "consistent_with": [
+   "low input",
+   "degraded RNA",
+   "pipetting into the cDNA plate"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0114",
+  "kind": "sample_outlier",
+  "title": "Sample 1803 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "1803"
+   ]
+  },
+  "evidence": {
+   "profile_noise_robust_z": 4.51
+  },
+  "consistent_with": [
+   "sample mislabel or mix-up",
+   "unusual biology"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0115",
+  "kind": "sample_outlier",
+  "title": "Sample 1931 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "1931"
+   ]
+  },
+  "evidence": {
+   "profile_noise_robust_z": 3.94
+  },
+  "consistent_with": [
+   "sample mislabel or mix-up",
+   "unusual biology"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0116",
+  "kind": "sample_outlier",
+  "title": "Sample 2709 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "2709"
+   ]
+  },
+  "evidence": {
+   "amount_robust_z": -3.64
+  },
+  "consistent_with": [
+   "low input",
+   "degraded RNA",
+   "pipetting into the cDNA plate"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0117",
+  "kind": "sample_outlier",
+  "title": "Sample 2713 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "2713"
+   ]
+  },
+  "evidence": {
+   "amount_robust_z": -5.48
+  },
+  "consistent_with": [
+   "low input",
+   "degraded RNA",
+   "pipetting into the cDNA plate"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0120",
+  "kind": "sample_outlier",
+  "title": "Sample 2746 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "2746"
+   ]
+  },
+  "evidence": {
+   "amount_robust_z": -7.66
+  },
+  "consistent_with": [
+   "low input",
+   "degraded RNA",
+   "pipetting into the cDNA plate"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0122",
+  "kind": "sample_outlier",
+  "title": "Sample 2772 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "2772"
+   ]
+  },
+  "evidence": {
+   "amount_robust_z": -5.53
+  },
+  "consistent_with": [
+   "low input",
+   "degraded RNA",
+   "pipetting into the cDNA plate"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0123",
+  "kind": "sample_outlier",
+  "title": "Sample 2786 looks unusual",
+  "loci": {
+   "plate": "",
+   "gene": "all",
+   "wells": [],
+   "samples": [
+    "2786"
+   ]
+  },
+  "evidence": {
+   "amount_robust_z": -5.09
+  },
+  "consistent_with": [
+   "low input",
+   "degraded RNA",
+   "pipetting into the cDNA plate"
+  ],
+  "remedy": "drop 64 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY",
+   "AKR1C1",
+   "ARHGEF7",
+   "BIRC5",
+   "CAMTA1",
+   "CAMTA2",
+   "CD44",
+   "CDCA5",
+   "CDH5",
+   "CDKN3",
+   "CLSTN1",
+   "CPSG3",
+   "DDC",
+   "DPYSL3",
+   "ECEL1",
+   "ELAVL4",
+   "EPB41L3",
+   "EPHA5",
+   "EPN2",
+   "FYN",
+   "GNB1",
+   "HIVEP2",
+   "IGSF4",
+   "INPP1",
+   "MAP2K4",
+   "MAP7",
+   "MAPT",
+   "MCM2",
+   "MRPL3",
+   "MTSS1",
+   "NHLH2",
+   "NM23A",
+   "NRCAM",
+   "NTRK1",
+   "ODC1",
+   "PAICS",
+   "PDE4DIP",
+   "PIK3R1",
+   "PLAGL1",
+   "PLAT",
+   "PMP22",
+   "PRAME",
+   "PRDM2",
+   "PRKACB_bis",
+   "PRKCZ",
+   "PTN",
+   "PTPRF",
+   "PTPRH",
+   "PTPRN2",
+   "QPCT",
+   "SCG2",
+   "SLC25A5",
+   "SLC6A8",
+   "SNAPC1",
+   "TNFRSF",
+   "TYMS",
+   "ULK2",
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check RNA integrity and the sample label; confirm identity before final interpretation.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0001",
+  "kind": "ntc",
+  "title": "No-template control amplified on CAMTA1",
+  "loci": {
+   "plate": "CAMTA1_20080307",
+   "gene": "CAMTA1",
+   "wells": [],
+   "samples": []
+  },
+  "evidence": {
+   "ntc_wells_amplified": 2,
+   "earliest_ntc_cq": 43.1,
+   "median_sample_cq": 24.1,
+   "samples_within_5_cycles": 0,
+   "share_within_5_cycles": 0.0
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "no wells to drop",
+  "affected_outputs": [
+   "CAMTA1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0003",
+  "kind": "ntc",
+  "title": "No-template control amplified on DPYSL3",
+  "loci": {
+   "plate": "DPYSL3_20080226",
+   "gene": "DPYSL3",
+   "wells": [
+    "F24"
+   ],
+   "samples": [
+    "2746"
+   ]
+  },
+  "evidence": {
+   "ntc_wells_amplified": 3,
+   "earliest_ntc_cq": 38.79,
+   "median_sample_cq": 23.39,
+   "samples_within_5_cycles": 1,
+   "share_within_5_cycles": 0.003
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "DPYSL3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0004",
+  "kind": "ntc",
+  "title": "No-template control amplified on FYN",
+  "loci": {
+   "plate": "FYN_20080311",
+   "gene": "FYN",
+   "wells": [],
+   "samples": []
+  },
+  "evidence": {
+   "ntc_wells_amplified": 1,
+   "earliest_ntc_cq": 42.31,
+   "median_sample_cq": 25.91,
+   "samples_within_5_cycles": 0,
+   "share_within_5_cycles": 0.0
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "no wells to drop",
+  "affected_outputs": [
+   "FYN"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0005",
+  "kind": "ntc",
+  "title": "No-template control amplified on GNB1",
+  "loci": {
+   "plate": "GNB1_20080228",
+   "gene": "GNB1",
+   "wells": [],
+   "samples": []
+  },
+  "evidence": {
+   "ntc_wells_amplified": 2,
+   "earliest_ntc_cq": 46.62,
+   "median_sample_cq": 26.24,
+   "samples_within_5_cycles": 0,
+   "share_within_5_cycles": 0.0
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "no wells to drop",
+  "affected_outputs": [
+   "GNB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0006",
+  "kind": "ntc",
+  "title": "No-template control amplified on MAP2K4",
+  "loci": {
+   "plate": "MAP2K4_20080306",
+   "gene": "MAP2K4",
+   "wells": [
+    "F24",
+    "J6",
+    "N2"
+   ],
+   "samples": [
+    "2746",
+    "2772",
+    "2786"
+   ]
+  },
+  "evidence": {
+   "ntc_wells_amplified": 1,
+   "earliest_ntc_cq": 38.78,
+   "median_sample_cq": 27.21,
+   "samples_within_5_cycles": 3,
+   "share_within_5_cycles": 0.008
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "drop 3 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAP2K4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0008",
+  "kind": "ntc",
+  "title": "No-template control amplified on NM23A",
+  "loci": {
+   "plate": "NM23A_20080306",
+   "gene": "NM23A",
+   "wells": [],
+   "samples": []
+  },
+  "evidence": {
+   "ntc_wells_amplified": 2,
+   "earliest_ntc_cq": 38.07,
+   "median_sample_cq": 22.44,
+   "samples_within_5_cycles": 0,
+   "share_within_5_cycles": 0.0
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "no wells to drop",
+  "affected_outputs": [
+   "NM23A"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0010",
+  "kind": "ntc",
+  "title": "No-template control amplified on WSB1",
+  "loci": {
+   "plate": "WSB1_20080310",
+   "gene": "WSB1",
+   "wells": [
+    "F24"
+   ],
+   "samples": [
+    "2746"
+   ]
+  },
+  "evidence": {
+   "ntc_wells_amplified": 1,
+   "earliest_ntc_cq": 40.43,
+   "median_sample_cq": 25.97,
+   "samples_within_5_cycles": 1,
+   "share_within_5_cycles": 0.003
+  },
+  "consistent_with": [
+   "reagent or template contamination",
+   "primer-dimer (check melt curve)"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Check the melt curve of the control and the wells within 5 cycles; repeat the assay if contamination is confirmed.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0011",
+  "kind": "well_outlier",
+  "title": "Outlying well C10 on AHCY",
+  "loci": {
+   "plate": "AHCY_20080229",
+   "gene": "AHCY",
+   "wells": [
+    "C10"
+   ],
+   "samples": [
+    "1854"
+   ]
+  },
+  "evidence": {
+   "robust_z": 8.39,
+   "cq": 25.76
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0012",
+  "kind": "well_outlier",
+  "title": "Outlying well J6 on AHCY",
+  "loci": {
+   "plate": "AHCY_20080229",
+   "gene": "AHCY",
+   "wells": [
+    "J6"
+   ],
+   "samples": [
+    "2772"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.74,
+   "cq": 30.81
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "AHCY"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0015",
+  "kind": "well_outlier",
+  "title": "Outlying well F12 on ARHGEF7",
+  "loci": {
+   "plate": "ARHGEF7_20080225",
+   "gene": "ARHGEF7",
+   "wells": [
+    "F12"
+   ],
+   "samples": [
+    "2718"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.11,
+   "cq": 23.82
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ARHGEF7"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0018",
+  "kind": "well_outlier",
+  "title": "Outlying well N2 on CAMTA1",
+  "loci": {
+   "plate": "CAMTA1_20080307",
+   "gene": "CAMTA1",
+   "wells": [
+    "N2"
+   ],
+   "samples": [
+    "2786"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.84,
+   "cq": 36.48
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "CAMTA1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0019",
+  "kind": "well_outlier",
+  "title": "Outlying well F6 on CAMTA2",
+  "loci": {
+   "plate": "CAMTA2_20080227",
+   "gene": "CAMTA2",
+   "wells": [
+    "F6"
+   ],
+   "samples": [
+    "2713"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.38,
+   "cq": 46.08
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "CAMTA2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0024",
+  "kind": "well_outlier",
+  "title": "Outlying well F24 on DPYSL3",
+  "loci": {
+   "plate": "DPYSL3_20080226",
+   "gene": "DPYSL3",
+   "wells": [
+    "F24"
+   ],
+   "samples": [
+    "2746"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.08,
+   "cq": 36.89
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "DPYSL3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0025",
+  "kind": "well_outlier",
+  "title": "Outlying well J6 on DPYSL3",
+  "loci": {
+   "plate": "DPYSL3_20080226",
+   "gene": "DPYSL3",
+   "wells": [
+    "J6"
+   ],
+   "samples": [
+    "2772"
+   ]
+  },
+  "evidence": {
+   "robust_z": 9.58,
+   "cq": 23.86
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "DPYSL3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0029",
+  "kind": "well_outlier",
+  "title": "Outlying well I20 on ELAVL4",
+  "loci": {
+   "plate": "ELAVL4_20080310",
+   "gene": "ELAVL4",
+   "wells": [
+    "I20"
+   ],
+   "samples": [
+    "2070"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.15,
+   "cq": 26.0
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ELAVL4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0031",
+  "kind": "well_outlier",
+  "title": "Outlying well D22 on ELAVL4",
+  "loci": {
+   "plate": "ELAVL4_20080310",
+   "gene": "ELAVL4",
+   "wells": [
+    "D22"
+   ],
+   "samples": [
+    "2709"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.09,
+   "cq": 36.54
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ELAVL4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0032",
+  "kind": "well_outlier",
+  "title": "Outlying well N2 on ELAVL4",
+  "loci": {
+   "plate": "ELAVL4_20080310",
+   "gene": "ELAVL4",
+   "wells": [
+    "N2"
+   ],
+   "samples": [
+    "2786"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.3,
+   "cq": 28.09
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "ELAVL4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0043",
+  "kind": "well_outlier",
+  "title": "Outlying well D18 on FYN",
+  "loci": {
+   "plate": "FYN_20080311",
+   "gene": "FYN",
+   "wells": [
+    "D18"
+   ],
+   "samples": [
+    "2661"
+   ]
+  },
+  "evidence": {
+   "robust_z": 6.02,
+   "cq": 24.73
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "FYN"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0045",
+  "kind": "well_outlier",
+  "title": "Outlying well J22 on FYN",
+  "loci": {
+   "plate": "FYN_20080311",
+   "gene": "FYN",
+   "wells": [
+    "J22"
+   ],
+   "samples": [
+    "2770"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.32,
+   "cq": 25.58
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "FYN"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0046",
+  "kind": "well_outlier",
+  "title": "Outlying well J6 on FYN",
+  "loci": {
+   "plate": "FYN_20080311",
+   "gene": "FYN",
+   "wells": [
+    "J6"
+   ],
+   "samples": [
+    "2772"
+   ]
+  },
+  "evidence": {
+   "robust_z": 7.54,
+   "cq": 26.64
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "FYN"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0047",
+  "kind": "well_outlier",
+  "title": "Outlying well N2 on FYN",
+  "loci": {
+   "plate": "FYN_20080311",
+   "gene": "FYN",
+   "wells": [
+    "N2"
+   ],
+   "samples": [
+    "2786"
+   ]
+  },
+  "evidence": {
+   "robust_z": 7.29,
+   "cq": 26.99
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "FYN"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0050",
+  "kind": "well_outlier",
+  "title": "Outlying well J6 on GNB1",
+  "loci": {
+   "plate": "GNB1_20080228",
+   "gene": "GNB1",
+   "wells": [
+    "J6"
+   ],
+   "samples": [
+    "2772"
+   ]
+  },
+  "evidence": {
+   "robust_z": 8.5,
+   "cq": 26.59
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "GNB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0054",
+  "kind": "well_outlier",
+  "title": "Outlying well C10 on MAP2K4",
+  "loci": {
+   "plate": "MAP2K4_20080306",
+   "gene": "MAP2K4",
+   "wells": [
+    "C10"
+   ],
+   "samples": [
+    "1854"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.74,
+   "cq": 33.27
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAP2K4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0056",
+  "kind": "well_outlier",
+  "title": "Outlying well F24 on MAP2K4",
+  "loci": {
+   "plate": "MAP2K4_20080306",
+   "gene": "MAP2K4",
+   "wells": [
+    "F24"
+   ],
+   "samples": [
+    "2746"
+   ]
+  },
+  "evidence": {
+   "robust_z": -12.4,
+   "cq": 44.36
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAP2K4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0057",
+  "kind": "well_outlier",
+  "title": "Outlying well J6 on MAP2K4",
+  "loci": {
+   "plate": "MAP2K4_20080306",
+   "gene": "MAP2K4",
+   "wells": [
+    "J6"
+   ],
+   "samples": [
+    "2772"
+   ]
+  },
+  "evidence": {
+   "robust_z": -10.69,
+   "cq": 40.88
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MAP2K4"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0062",
+  "kind": "well_outlier",
+  "title": "Outlying well D22 on MCM2",
+  "loci": {
+   "plate": "MCM2_20080306",
+   "gene": "MCM2",
+   "wells": [
+    "D22"
+   ],
+   "samples": [
+    "2709"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.77,
+   "cq": 37.12
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MCM2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0063",
+  "kind": "well_outlier",
+  "title": "Outlying well F6 on MCM2",
+  "loci": {
+   "plate": "MCM2_20080306",
+   "gene": "MCM2",
+   "wells": [
+    "F6"
+   ],
+   "samples": [
+    "2713"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.85,
+   "cq": 39.16
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MCM2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0066",
+  "kind": "well_outlier",
+  "title": "Outlying well F24 on MRPL3",
+  "loci": {
+   "plate": "MRPL3_20080222",
+   "gene": "MRPL3",
+   "wells": [
+    "F24"
+   ],
+   "samples": [
+    "2746"
+   ]
+  },
+  "evidence": {
+   "robust_z": 6.64,
+   "cq": 31.09
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "MRPL3"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0067",
+  "kind": "well_outlier",
+  "title": "Outlying well J4 on MYCN(4)",
+  "loci": {
+   "plate": "MYCN(4)_20080222",
+   "gene": "MYCN(4)",
+   "wells": [
+    "J4"
+   ],
+   "samples": [
+    "2759"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.8,
+   "cq": 40.74
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "groups (all comparisons)"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0073",
+  "kind": "well_outlier",
+  "title": "Outlying well E1 on PDE4DIP",
+  "loci": {
+   "plate": "PDE4DIP_20080305",
+   "gene": "PDE4DIP",
+   "wells": [
+    "E1"
+   ],
+   "samples": [
+    "1542"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.44,
+   "cq": 36.59
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PDE4DIP"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0074",
+  "kind": "well_outlier",
+  "title": "Outlying well I18 on PDE4DIP",
+  "loci": {
+   "plate": "PDE4DIP_20080305",
+   "gene": "PDE4DIP",
+   "wells": [
+    "I18"
+   ],
+   "samples": [
+    "2069"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.35,
+   "cq": 25.73
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PDE4DIP"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0076",
+  "kind": "well_outlier",
+  "title": "Outlying well F24 on PRDM2",
+  "loci": {
+   "plate": "PRDM2_20080306",
+   "gene": "PRDM2",
+   "wells": [
+    "F24"
+   ],
+   "samples": [
+    "2746"
+   ]
+  },
+  "evidence": {
+   "robust_z": -5.78,
+   "cq": 39.86
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PRDM2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0077",
+  "kind": "well_outlier",
+  "title": "Outlying well N2 on PRDM2",
+  "loci": {
+   "plate": "PRDM2_20080306",
+   "gene": "PRDM2",
+   "wells": [
+    "N2"
+   ],
+   "samples": [
+    "2786"
+   ]
+  },
+  "evidence": {
+   "robust_z": -7.68,
+   "cq": 38.66
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PRDM2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0080",
+  "kind": "well_outlier",
+  "title": "Outlying well N2 on PRKCZ",
+  "loci": {
+   "plate": "PRKCZ_20080307",
+   "gene": "PRKCZ",
+   "wells": [
+    "N2"
+   ],
+   "samples": [
+    "2786"
+   ]
+  },
+  "evidence": {
+   "robust_z": -6.62,
+   "cq": 41.0
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PRKCZ"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0083",
+  "kind": "well_outlier",
+  "title": "Outlying well C10 on PTPRF",
+  "loci": {
+   "plate": "PTPRF_20080225",
+   "gene": "PTPRF",
+   "wells": [
+    "C10"
+   ],
+   "samples": [
+    "1854"
+   ]
+  },
+  "evidence": {
+   "robust_z": 5.89,
+   "cq": 29.71
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRF"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0089",
+  "kind": "well_outlier",
+  "title": "Outlying well J6 on PTPRN2",
+  "loci": {
+   "plate": "PTPRN2_20080303",
+   "gene": "PTPRN2",
+   "wells": [
+    "J6"
+   ],
+   "samples": [
+    "2772"
+   ]
+  },
+  "evidence": {
+   "robust_z": 6.08,
+   "cq": 25.97
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "PTPRN2"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0097",
+  "kind": "well_outlier",
+  "title": "Outlying well E1 on SLC6A8",
+  "loci": {
+   "plate": "SLC6A8_20080306",
+   "gene": "SLC6A8",
+   "wells": [
+    "E1"
+   ],
+   "samples": [
+    "1542"
+   ]
+  },
+  "evidence": {
+   "robust_z": -7.76,
+   "cq": 43.76
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "SLC6A8"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ },
+ {
+  "issue_id": "I0102",
+  "kind": "well_outlier",
+  "title": "Outlying well F24 on WSB1",
+  "loci": {
+   "plate": "WSB1_20080310",
+   "gene": "WSB1",
+   "wells": [
+    "F24"
+   ],
+   "samples": [
+    "2746"
+   ]
+  },
+  "evidence": {
+   "robust_z": -10.3,
+   "cq": 45.34
+  },
+  "consistent_with": [
+   "pipetting error or bubble",
+   "sample swap on this plate",
+   "real biology of this sample"
+  ],
+  "remedy": "drop 1 well(s) and re-run the baseline analysis",
+  "affected_outputs": [
+   "WSB1"
+  ],
+  "impact": "no_demonstrated_effect",
+  "changed_calls": [],
+  "headline_changed": [],
+  "max_abs_d_in_se": 0.0,
+  "action": "Inspect the amplification curve and the sample's other genes before deciding whether any action is justified.",
+  "status": "new",
+  "detail": []
+ }
+]
