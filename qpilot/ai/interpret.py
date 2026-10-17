@@ -9,11 +9,14 @@ each returned field becomes a proposal that only a person accepts.
 
 **What the model sees.** The :class:`~qpilot.schemas_studio.InspectSummary` without free text:
 samples and targets by an opaque ``ref`` (their ``text_id``), declared types, well counts,
-efficiency summaries, experiments as ``x1``, ``x2``... Every name, sheet row and the scientist's
-sentence (quarantined with origin ``studio:sentence``) is shown only inside the fenced blocks of
-:func:`qpilot.core.firewall.as_quoted`, under generic origins (never a file or sheet name). Text
-the firewall flags ``instruction_like`` (the sentence excepted: the person typed it) is withheld
-from the model. Large files are sent in parts (:data:`SAMPLES_PER_CALL` samples per call).
+efficiency summaries, experiments as ``x1``, ``x2``... Free text is shown only inside the fenced
+blocks of :func:`qpilot.core.firewall.as_quoted`, under generic origins (never a file or sheet
+name): one *sample record* per sample under the sample's ref (its name and the cells of its
+sample-sheet row, by column number), one block per target name, the sheet's header rows and the
+scientist's sentence (quarantined with origin ``studio:sentence``). Text the firewall flags
+``instruction_like`` (the sentence excepted: the person typed it) is withheld from the model.
+Large files are sent in parts (:data:`SAMPLES_PER_CALL` samples or :data:`TARGETS_PER_CALL`
+targets per call), so each call fits a small local model's time budget.
 
 **Remote providers.** When the backend is not on this machine
 (:func:`qpilot.core.pseudonym.endpoint_is_local`; a test double says so with a ``remote``
@@ -28,7 +31,8 @@ sent and the rules answer alone.
 ``rejected`` with why; any failure gets the reply one retry with the validator's message):
 
 * the reply is JSON ``{"fields": [...]}`` and every field validates as a
-  :class:`~qpilot.schemas_studio.DesignField`;
+  :class:`~qpilot.schemas_studio.DesignField` (a reply cut off at the token limit is read up
+  to its last complete field and counts as a problem);
 * ``kind`` is a ``design.*`` kind allowed in that call (never ``curve.*``, ``prism.*`` or
   ``stage.*``);
 * ``subject`` is a sample or target shown in that call (or ``comparison``, ``design``, a series
@@ -36,9 +40,10 @@ sent and the rules answer alone.
 * every cite is a ref shown in that call and maps to a ``text_id`` or sheet cell that exists;
   at most :data:`MAX_CITES`; nothing cited reads like instructions;
 * a field about a sample cites that sample's own name or sheet row (a target: its name);
-* group, biological-unit and comparison labels are found in the text the field cites;
+* group, biological-unit and comparison labels are found in a sheet cell or the sentence the
+  field cites (never only in a sample or target name), and are not role codes;
 * a sample declared ``ntc``, ``nrt`` or ``nac`` is never given a non-control role (the core's
-  hard ban would refuse it too), nor put in a dilution series;
+  hard ban would refuse it too), a group, a biological unit or a place in a dilution series;
 * a dilution series has at least three positive quantities, in one experiment;
 * reasons are qPilot-checkable prose: no digit and no spelled amount
   (:func:`qpilot.core.validator.validate`), no text copied from the file, nothing that reads
@@ -96,8 +101,9 @@ from qpilot.schemas_studio import (
 
 SENTENCE_ORIGIN = "studio:sentence"
 MAX_SENTENCE_CHARS = 2_000
-SAMPLES_PER_CALL = 40
-MAX_TOKENS = 3_000
+SAMPLES_PER_CALL = 20
+TARGETS_PER_CALL = 25
+MAX_TOKENS = 1_000
 MAX_FIELDS = 400
 MAX_CITES = 50
 MAX_ALTERNATIVES = 10
@@ -134,6 +140,7 @@ class InterpretResult(BaseModel):
     reply was used and every reply used passed every check; ``fallback`` is True when the rules
     alone answer for some or all of the input. ``quarantine`` holds new text the caller must
     store before submitting proposals that cite it (the scientist's sentence).
+    ``numbers_caught`` counts model reasons dropped because they wrote a number (none is shown).
     """
 
     fields: list[DesignField] = []
@@ -146,6 +153,7 @@ class InterpretResult(BaseModel):
     meta: list[dict[str, Any]] = []
     prompt_sha256: str | None = None
     quarantine: list[QuarantineEntry] = []
+    numbers_caught: int = 0
 
     @model_validator(mode="after")
     def _parallel(self) -> InterpretResult:
@@ -353,6 +361,7 @@ class _Context:
         self.summary = summary
         self.rules = list(rules)
         self._file_text: set[str] | None = None
+        self.numbers_caught = 0
         self.entries: dict[str, QuarantineEntry] = {}
         for entry in quarantine:
             flags = sorted(set(entry.flags) | set(flags_for(entry.value)))
@@ -364,6 +373,7 @@ class _Context:
         self.targets = {t.target: t for t in summary.targets}
         self.experiments = {e: f"x{i}" for i, e in enumerate(sorted(summary.experiments), 1)}
         self.cells = {c.cell: c for c in summary.sheet}
+        self.name_ids = {s.text_id for s in summary.samples} | {t.text_id for t in summary.targets}
         self.known_refs = {s.text_id for s in summary.samples}
         self.known_refs |= {t.text_id for t in summary.targets}
         self.known_refs |= {c.text_id for c in summary.sheet} | set(self.cells)
@@ -430,6 +440,7 @@ class _Context:
                     hit = next(iter(loose[squash(text)]))
                 if hit is not None:
                     matched[(sheet, row)] = hit
+                    self.name_ids.add(cell.text_id)  # the sheet's copy of the name
                     by_sample.setdefault(hit, []).append(item)
                     first_data.setdefault(sheet, row)
                     break
@@ -463,15 +474,45 @@ class _Context:
             }
         return self._file_text
 
+    def cell_shown(self, cell: SheetCell) -> str:
+        """One cell as the model sees it (withheld, or with names pseudonymised)."""
+        if self.instruction_like(cell.text_id):
+            return WITHHELD
+        return self.shield.scrub(self.value(cell.text_id) or "")
+
     def row_value(self, row: _Row) -> str:
-        """The row as the model sees it: column -> value (withheld or pseudonymised)."""
-        shown = {}
-        for cell in row.cells:
-            if self.instruction_like(cell.text_id):
-                shown[str(cell.column)] = WITHHELD
-            else:
-                shown[str(cell.column)] = self.shield.scrub(self.value(cell.text_id) or "")
-        return json.dumps(shown, ensure_ascii=False)
+        """The row as the model sees it: column number -> value."""
+        return json.dumps(
+            {str(c.column): self.cell_shown(c) for c in row.cells}, ensure_ascii=False
+        )
+
+    def sample_record(self, sample: InspectSample) -> str:
+        """The sample's name and its sheet row(s), as one quoted value."""
+        if self.instruction_like(sample.text_id):
+            name = WITHHELD
+        elif self.shield.active:
+            name = self.shield.token(self.name_of(sample))
+        else:
+            name = self.name_of(sample)
+        record: dict[str, Any] = {"name": name}
+        rows = [
+            {str(c.column): self.cell_shown(c) for c in row.cells}
+            for row in self.rows_by_sample.get(sample.sample, [])
+        ]
+        if rows:
+            record["sheet_row"] = rows[0] if len(rows) == 1 else rows
+        return json.dumps(record, ensure_ascii=False)
+
+    def sample_cells(self, sample: InspectSample) -> list[SheetCell]:
+        return [c for row in self.rows_by_sample.get(sample.sample, []) for c in row.cells]
+
+    def sample_flags(self, sample: InspectSample) -> list[str]:
+        flags = set(self.entries[sample.text_id].flags) if sample.text_id in self.entries else set()
+        for cell in self.sample_cells(sample):
+            entry = self.entries.get(cell.text_id)
+            if entry is not None:
+                flags |= set(entry.flags)
+        return sorted(flags)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -480,11 +521,20 @@ class _Context:
 
 
 def _parts(ctx: _Context) -> list[_Part]:
+    """The calls: one when the file is small; else target chunks, then sample chunks.
+
+    The first call (``study``) also carries the study-level kinds (comparison, preset), the
+    sheet rows no sample claims and the study-level rule proposals.
+    """
     samples = list(ctx.summary.samples)
     targets = list(ctx.summary.targets)
-    if len(samples) <= SAMPLES_PER_CALL:
+    if len(samples) <= SAMPLES_PER_CALL and len(targets) <= TARGETS_PER_CALL:
         return [_Part(samples, targets, INTERPRET_KINDS, study=True)]
-    parts = [_Part([], targets, STUDY_KINDS, study=True)]
+    parts = []
+    for start in range(0, max(len(targets), 1), TARGETS_PER_CALL):
+        first = start == 0
+        kinds = STUDY_KINDS if first else ("design.target_role", "design.gene_symbol")
+        parts.append(_Part([], targets[start : start + TARGETS_PER_CALL], kinds, study=first))
     for start in range(0, len(samples), SAMPLES_PER_CALL):
         chunk = samples[start : start + SAMPLES_PER_CALL]
         parts.append(_Part(chunk, [], SAMPLE_KINDS, study=False))
@@ -502,19 +552,10 @@ def _declared_view(ctx: _Context, label: str) -> str:
     return ",".join(parts)
 
 
-def _shown_entry(ctx: _Context, text_id: str, origin: str, value: str | None) -> QuarantineEntry:
-    entry = ctx.entries.get(text_id)
-    flags = list(entry.flags) if entry is not None else []
-    if entry is not None and ctx.instruction_like(text_id):
-        value = WITHHELD
-    return QuarantineEntry(
-        text_id=ctx.shield.alias(text_id), origin=origin, value=value or "", flags=flags
-    )
-
-
 def _rule_view(ctx: _Context, rules: Sequence[DesignField], part: _Part) -> list[dict]:
     """The rule fields that concern this call, with refs instead of names."""
     in_part = {s.sample for s in part.samples}
+    targets = {t.target for t in part.targets}
     shown = []
     for i, item in enumerate(rules, 1):
         subject: str | None = None
@@ -533,7 +574,7 @@ def _rule_view(ctx: _Context, rules: Sequence[DesignField], part: _Part) -> list
                 "samples": {ctx.sample_ref.get(s, "another sample"): q for s, q in members.items()},
             }
         elif item.kind in ("design.target_role", "design.gene_symbol"):
-            if not part.study or item.subject not in ctx.target_ref:
+            if item.subject not in targets:
                 continue
             subject = ctx.target_ref[item.subject]
         elif part.study:
@@ -554,39 +595,35 @@ def _rule_view(ctx: _Context, rules: Sequence[DesignField], part: _Part) -> list
 def _prompt(ctx: _Context, part: _Part, rules: Sequence[DesignField]) -> tuple[str, set[str]]:
     """The user message for one call, and the refs the model may cite in it."""
     shown: list[QuarantineEntry] = []
-    rows: list[_Row] = list(ctx.header_rows)
     sample_views = []
     for sample in part.samples:
-        own_rows = ctx.rows_by_sample.get(sample.sample, [])
-        rows += [r for r in own_rows if r not in rows]
-        name = ctx.name_of(sample)
+        ref = ctx.sample_ref[sample.sample]
         shown.append(
-            _shown_entry(
-                ctx,
-                sample.text_id,
-                "sample name",
-                ctx.shield.token(name) if ctx.shield.active else name,
+            QuarantineEntry(
+                text_id=ref,
+                origin="sample record",
+                value=ctx.sample_record(sample),
+                flags=ctx.sample_flags(sample),
             )
         )
         sample_views.append(
             {
-                "ref": ctx.sample_ref[sample.sample],
+                "ref": ref,
                 "declared_type": _declared_view(ctx, sample.declared_type),
                 "wells": sample.n_wells,
                 "experiments": [ctx.experiments.get(e, "") for e in sample.experiments],
-                "targets": len(sample.targets),
-                "sheet_rows": [r.handle for r in own_rows],
             }
         )
     target_views = []
     for target in part.targets:
+        entry = ctx.entries.get(target.text_id)
         name = ctx.target_name(target)
         shown.append(
-            _shown_entry(
-                ctx,
-                target.text_id,
-                "target name",
-                ctx.shield.token(name) if ctx.shield.active else name,
+            QuarantineEntry(
+                text_id=ctx.target_ref[target.target],
+                origin="target name",
+                value=WITHHELD if ctx.instruction_like(target.text_id) else ctx.shield.token(name),
+                flags=list(entry.flags) if entry is not None else [],
             )
         )
         target_views.append(
@@ -598,6 +635,7 @@ def _prompt(ctx: _Context, part: _Part, rules: Sequence[DesignField]) -> tuple[s
                 "efficiency_median": target.eff_median,
             }
         )
+    rows: list[_Row] = list(ctx.header_rows)
     if part.study:
         rows += [r for r in ctx.other_rows if r not in rows]
     part.rows = rows
@@ -626,13 +664,14 @@ def _prompt(ctx: _Context, part: _Part, rules: Sequence[DesignField]) -> tuple[s
         },
         "allowed_kinds": list(part.kinds),
     }
-    if part.study:
+    if target_views:
         view["targets"] = target_views
+    if part.study and ctx.other_rows:
         view["other_sheet_rows"] = [r.handle for r in ctx.other_rows]
     if sample_views:
         view["samples"] = sample_views
     view["rule_proposals"] = _rule_view(ctx, rules, part)
-    blocks = [as_quoted(shown)] if shown else []
+    blocks = [as_quoted(shown, max_chars=ROW_CHARS)] if shown else []
     if row_entries:
         blocks.append(as_quoted(row_entries, max_chars=ROW_CHARS))
     if ctx.sentence is not None:
@@ -647,7 +686,7 @@ def _prompt(ctx: _Context, part: _Part, rules: Sequence[DesignField]) -> tuple[s
     content = (
         "Study summary (JSON):\n"
         + json.dumps(view, ensure_ascii=False, separators=(",", ":"))
-        + "\n\nQuoted data (names, sample-sheet rows and the scientist's sentence):\n"
+        + "\n\nQuoted data (sample records, target names, sheet rows, the scientist's sentence):\n"
         + "\n".join(b for b in blocks if b)
     )
     citable = {e.text_id for e in shown} | {r.handle for r in rows}
@@ -683,30 +722,30 @@ def _resolve_cites(ctx: _Context, part: _Part, cites: list[str], citable: set[st
             return None, f"cites {ref[:40]!r}, which is not a ref of the quoted data shown"
         resolved.shown.add(ref)
         if ref in rows:
-            row = rows[ref]
-            resolved.refs += [c.cell for c in row.cells]
-            resolved.text_ids |= set(ctx.row_text_ids(row))
-            continue
-        real = _real_text_id(ctx, ref)
-        if real is None or real not in ctx.known_refs:
+            cells = rows[ref].cells
+        elif ref in ctx.by_sample_ref:
+            sample = ctx.samples[ctx.by_sample_ref[ref]]
+            resolved.refs.append(sample.text_id)
+            resolved.text_ids.add(sample.text_id)
+            cells = ctx.sample_cells(sample)
+        elif ref in ctx.by_target_ref:
+            resolved.refs.append(ctx.targets[ctx.by_target_ref[ref]].text_id)
+            cells = []
+        elif ref == ctx.sentence_ref and ctx.sentence is not None:
+            resolved.refs.append(ctx.sentence.text_id)
+            cells = []
+        else:
             return None, f"cites {ref[:40]!r}, which qPilot cannot find"
-        resolved.refs.append(real)
-        resolved.text_ids.add(real)
-    flagged = sorted(t for t in resolved.text_ids if ctx.instruction_like(t))
-    if flagged:
+        resolved.refs += [c.cell for c in cells]
+        resolved.text_ids |= {c.text_id for c in cells}
+    resolved.text_ids |= {r for r in resolved.refs if TEXT_ID.match(r)}
+    missing = [r for r in resolved.refs if r not in ctx.known_refs]
+    if missing:
+        return None, f"cites {missing[0][:40]!r}, which qPilot cannot find"
+    if any(ctx.instruction_like(t) for t in resolved.text_ids):
         return None, "cites text that reads like instructions; qPilot never acts on it"
     resolved.refs = list(dict.fromkeys(resolved.refs))
     return resolved, None
-
-
-def _real_text_id(ctx: _Context, ref: str) -> str | None:
-    if ref == ctx.sentence_ref and ctx.sentence is not None:
-        return ctx.sentence.text_id
-    if ref in ctx.by_sample_ref:
-        return ctx.samples[ctx.by_sample_ref[ref]].text_id
-    if ref in ctx.by_target_ref:
-        return ctx.targets[ctx.by_target_ref[ref]].text_id
-    return None
 
 
 def _sample(ctx: _Context, part: _Part, subject: str) -> InspectSample | None:
@@ -721,27 +760,31 @@ def _sample(ctx: _Context, part: _Part, subject: str) -> InspectSample | None:
 
 
 def _target(ctx: _Context, part: _Part, subject: str) -> InspectTarget | None:
-    if not part.study:
-        return None
+    in_part = {t.target for t in part.targets}
     found = ctx.by_target_ref.get(subject)
     if found is None and not ctx.shield.active and subject in ctx.targets:
         found = subject
-    return ctx.targets.get(found) if found else None
+    return ctx.targets[found] if found in in_part else None
 
 
 def _own_cited(ctx: _Context, sample: InspectSample, cited: _Cited) -> bool:
+    """Whether a field cites the sample's own record (its name or its sheet row)."""
     if sample.text_id in cited.text_ids:
         return True
-    own = {r.handle for r in ctx.rows_by_sample.get(sample.sample, [])}
-    return bool(own & cited.shown)
+    own = {c.text_id for c in ctx.sample_cells(sample)}
+    return bool(own & cited.text_ids)
 
 
 def _grounded(ctx: _Context, label: str, cited: _Cited) -> bool:
-    """Whether ``label`` appears in the original text of what the field cites."""
+    """Whether ``label`` appears in a sheet cell or the sentence the field cites.
+
+    Sample and target names do not count: a group or unit read off a name pattern is exactly
+    what the rules leave to a person.
+    """
     key = squash(label)
     if not key:
         return False
-    for text_id in cited.text_ids:
+    for text_id in cited.text_ids - ctx.name_ids:
         value = ctx.value(text_id)
         if value is not None and key in squash(value):
             return True
@@ -755,7 +798,7 @@ def _label(ctx: _Context, raw: Any, cited: _Cited, what: str) -> tuple[str | Non
     if label is None:
         return None, f"{what} is not a usable label"
     if not _grounded(ctx, label, cited):
-        return None, f"{what} is not found in the text the field cites"
+        return None, f"{what} is not found in the sheet cells or sentence the field cites"
     return label, None
 
 
@@ -793,9 +836,13 @@ def _check_value(
             if declared_control(sample) and role not in CONTROL_ROLES:
                 return None, None, "ban: a control declared in the file is never given another role"
             return sample.sample, {"role": role}, None
+        if declared_control(sample):
+            return None, None, "a control declared in the file belongs to no group or unit"
         label, problem = _label(ctx, value[key], cited, key)
         if problem:
             return None, None, problem
+        if label.lower() in WELL_ROLES:
+            return None, None, f"{label} is a role code, not a {key}; roles are design.well_role"
         return sample.sample, {key: label}, None
     if kind in ("design.target_role", "design.gene_symbol"):
         target = _target(ctx, part, subject)
@@ -908,7 +955,10 @@ def _reasons(ctx: _Context, reasons: list[str]) -> list[str]:
         text = " ".join(str(reason).split())
         if not text or len(text) > MAX_REASON_CHARS:
             continue
-        if not validate(text, {}).ok or INSTRUCTION_LIKE in flags_for(text):
+        if not validate(text, {}).ok:
+            ctx.numbers_caught += 1  # an invented number, caught before anyone sees it
+            continue
+        if INSTRUCTION_LIKE in flags_for(text):
             continue
         lowered = text.lower()
         if any(value in lowered for value in file_text):
@@ -965,12 +1015,9 @@ def _check_field(
     )
 
 
-def _parse(text: str) -> list[Any] | None:
-    match = re.search(r"\{.*\}", text or "", re.S)
-    if not match:
-        return None
+def _fields_of(text: str) -> list[Any] | None:
     try:
-        data = json.loads(match.group(0))
+        data = json.loads(text)
     except (json.JSONDecodeError, RecursionError):
         return None
     if not isinstance(data, dict) or not isinstance(data.get("fields"), list):
@@ -978,14 +1025,37 @@ def _parse(text: str) -> list[Any] | None:
     return data["fields"]
 
 
+def _parse(text: str) -> tuple[list[Any] | None, bool]:
+    """The reply's fields, and whether it was cut off (only its complete fields are read).
+
+    A reply that hit the token limit is read up to its last complete field; every field read
+    is still checked like any other, and the reply counts as a problem (so it is retried).
+    """
+    start = (text or "").find("{")
+    if start < 0:
+        return None, False
+    match = re.search(r"\{.*\}", text[start:], re.S)
+    if match:
+        fields = _fields_of(match.group(0))
+        if fields is not None:
+            return fields, False
+    body = text[start:]
+    for cut in reversed([m.start() for m in re.finditer(r"\}\s*,\s*\{", body)]):
+        fields = _fields_of(body[: cut + 1] + "]}")
+        if fields is not None:
+            return fields, True
+    return None, False
+
+
 def _check_reply(ctx, part, text, citable, attempt, index, rejected):
     """(accepted fields, problems, parsed?) for one reply."""
-    raws = _parse(text)
+    raws, cut_off = _parse(text)
     if raws is None:
         return [], ['the reply is not JSON of the form {"fields": [...]}'], False
     if len(raws) > MAX_FIELDS:
         return [], [f"more than {MAX_FIELDS} fields"], False
-    accepted, problems = [], []
+    accepted: list[DesignField] = []
+    problems = ["the reply was cut off at the length limit; send fewer fields"] if cut_off else []
     for position, raw in enumerate(raws, 1):
         checked, why = _check_field(ctx, part, raw, citable)
         if checked is not None:
@@ -1179,6 +1249,7 @@ def interpret(
         meta=meta,
         prompt_sha256=PROMPT_SHA256,
         quarantine=new_text,
+        numbers_caught=ctx.numbers_caught,
     )
 
 

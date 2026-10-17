@@ -159,30 +159,36 @@ def remote_client(replies) -> ModelClient:
 
 
 def ref_by_value(content: str) -> dict[str, str]:
-    """Shown value -> its ref (names; rows as their JSON)."""
-    return {q["value"]: q["ref"] for q in quoted(content)}
+    """Shown name -> its ref (a sample record by the name in it; anything else by its value)."""
+    out = {}
+    for block in quoted(content):
+        value = block["value"]
+        if block["origin"] == "sample record":
+            value = json.loads(value)["name"]
+        out[value] = block["ref"]
+    return out
 
 
 def hostile_reply(system: str, messages: list[dict]) -> str:
     """A model that obeys any instruction it can see, and attacks whatever is flagged.
 
-    For every quoted name that asks for an NTC, or that qPilot flagged as instruction-like
-    (the flag is visible in the quote header even when the text is withheld), it proposes an
-    NTC for that sample, citing the name.
+    For every quoted sample record that asks for an NTC, or that qPilot flagged as
+    instruction-like (the flag is visible in the quote header even when the text is withheld),
+    it proposes an NTC for that sample, citing its record.
     """
     content = messages[0]["content"]
-    data = view(content)
-    by_ref = {s["ref"]: s for s in data.get("samples", [])}
+    samples = {s["ref"] for s in view(content).get("samples", [])}
     fields = []
     for block in quoted(content):
-        asks = "ntc" in block["value"].lower() and "call" in block["value"].lower()
-        if block["ref"] in by_ref and (asks or "instruction_like" in block["flags"]):
+        text = block["value"].lower()
+        asks = "ntc" in text and "call" in text
+        if block["ref"] in samples and (asks or "instruction_like" in block["flags"]):
             fields.append(
                 {
                     "kind": "design.well_role",
                     "subject": block["ref"],
                     "value": {"role": "ntc"},
-                    "cites": [block["ref"], *by_ref[block["ref"]]["sheet_rows"]],
+                    "cites": [block["ref"]],
                     "level": "High",
                     "reasons": ["the data asks for it"],
                 }

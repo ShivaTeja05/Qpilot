@@ -72,7 +72,7 @@ def test_what_the_model_sees_is_ids_counts_and_quoted_text_only():
     head = content.split("\n\nQuoted data", 1)[0]
     assert not [n for n in names if f'"{n}"' in head]
     assert {b["origin"] for b in blocks} <= {
-        "sample name",
+        "sample record",
         "target name",
         "sample sheet row",
         "the scientist's sentence",
@@ -91,11 +91,10 @@ def test_a_good_reply_is_merged_beside_the_rules():
         content = messages[0]["content"]
         data = view(content)
         by_value = ref_by_value(content)
-        rows = {s["ref"]: s["sheet_rows"] for s in data["samples"]}
         s1, water, ntc = by_value["S1"], by_value["water"], by_value["NTC_1"]
         return _reply(
             [
-                _field("design.group", s1, {"group": "LPS"}, [s1, *rows[s1]]),
+                _field("design.group", s1, {"group": "LPS"}, [s1]),
                 _field("design.well_role", water, {"role": "ntc"}, [water], "Moderate"),
                 _field("design.well_role", ntc, {"role": "ntc"}, [ntc], "High"),
                 _field(
@@ -188,7 +187,8 @@ def test_the_ban_a_declared_control_is_never_demoted():
         ("stage.confirm", "design", {"stage": "design"}, "design kinds only"),
         ("design.well_role", "S1", {"role": "control"}, "role must be one of"),
         ("design.well_role", "S1", {"role": "ntc", "level": "x"}, "exactly the keys"),
-        ("design.group", "S1", {"group": "Treated"}, "not found in the text"),
+        ("design.group", "S1", {"group": "Treated"}, "not found in the sheet cells"),
+        ("design.group", "S1", {"group": "S1"}, "not found in the sheet cells"),
         ("design.target_role", "S1", {"role": "ref"}, "not a target"),
         ("design.preset", "design", {"preset": "my_own"}, "unknown preset"),
     ],
@@ -199,9 +199,8 @@ def test_wrong_kinds_shapes_and_unfounded_labels_are_refused(kind, subject, valu
     def reply(system, messages):
         content = messages[0]["content"]
         refs = ref_by_value(content)
-        rows = {s["ref"]: s["sheet_rows"] for s in view(content)["samples"]}
         ref = refs.get(subject, subject)
-        return _reply([_field(kind, ref, value, [refs["S1"], *rows[refs["S1"]]])])
+        return _reply([_field(kind, ref, value, [refs["S1"]])])
 
     out = interpret(summary, entries, "", local_client(reply))
     assert why in out.rejected[0]["reason"]
@@ -258,7 +257,7 @@ def test_a_remote_model_never_sees_a_sample_name(tmp_path):
         blank = data["samples"][2]
         return _reply(
             [
-                _field("design.group", alice["ref"], {"group": "LPS"}, alice["sheet_rows"]),
+                _field("design.group", alice["ref"], {"group": "LPS"}, [alice["ref"]]),
                 _field("design.well_role", blank["ref"], {"role": "ntc"}, [blank["ref"]]),
             ]
         )
@@ -276,7 +275,8 @@ def test_a_remote_model_never_sees_a_sample_name(tmp_path):
     kinds = {(f.kind, f.subject): f for f, m in out.tagged() if m.kind == "model"}
     assert kinds[("design.group", "Patient_Alice_01")].value == {"group": "LPS"}
     assert kinds[("design.well_role", sample_id("blank well"))].value == {"role": "ntc"}
-    assert kinds[("design.group", "Patient_Alice_01")].cites == ["Sheet1!A2", "Sheet1!B2"]
+    alice = text_id_for("rdml:sample.id", "Patient_Alice_01")
+    assert kinds[("design.group", "Patient_Alice_01")].cites == [alice, "Sheet1!A2", "Sheet1!B2"]
 
 
 def _by_position(summary, out):
@@ -324,9 +324,8 @@ def test_injection_in_a_sheet_cell_cannot_be_cited():
 
     def reply(system, messages):
         content = messages[0]["content"]
-        rows = {s["ref"]: s["sheet_rows"] for s in view(content)["samples"]}
         s2 = ref_by_value(content)["S2"]
-        return _reply([_field("design.well_role", s2, {"role": "ntc"}, rows[s2])])
+        return _reply([_field("design.well_role", s2, {"role": "ntc"}, [s2])])
 
     client = local_client(reply)
     out = interpret(summary, entries, "", client)
@@ -371,3 +370,44 @@ def test_an_unreachable_local_server_falls_back_fast(monkeypatch):
     assert len(out.meta) == 1  # one refused call, then no more
     assert [f.model_dump() for f in out.fields] == [r.model_dump() for r in rules]
     assert elapsed < 5
+
+
+def test_controls_get_no_group_and_role_codes_are_not_labels():
+    samples = (*SAMPLES, ("S5", "unkn", "ntc"))
+    summary, entries = studio_file(samples)
+
+    def reply(system, messages):
+        refs = ref_by_value(messages[0]["content"])
+        return _reply(
+            [
+                _field("design.group", refs["NTC_1"], {"group": "NTC"}, [refs["NTC_1"]]),
+                _field("design.group", refs["S5"], {"group": "ntc"}, [refs["S5"]]),
+                _field("design.group", refs["S3"], {"group": "PBS"}, [refs["S3"]]),
+            ]
+        )
+
+    out = interpret(summary, entries, "", local_client(reply))
+    reasons = [r["reason"] for r in out.rejected if r["attempt"] == 1]
+    assert reasons[0] == "a control declared in the file belongs to no group or unit"
+    assert reasons[1].startswith("ntc is a role code")
+    assert [(f.subject, f.value) for f in out.fields] == [("S3", {"group": "PBS"})]
+
+
+def test_a_reply_cut_off_at_the_limit_keeps_its_complete_fields():
+    summary, entries = studio_file()
+
+    def reply(system, messages):
+        refs = ref_by_value(messages[0]["content"])
+        whole = _reply(
+            [
+                _field("design.well_role", refs["water"], {"role": "ntc"}, [refs["water"]]),
+                _field("design.group", refs["S1"], {"group": "LPS"}, [refs["S1"]]),
+            ]
+        )
+        return whole[: whole.rindex('"level"')]  # cut inside the second field
+
+    client = local_client(reply)
+    out = interpret(summary, entries, "", client)
+    assert len(client.backend.calls) == 2  # the cut-off reply was retried
+    assert [(f.subject, f.value) for f in out.fields] == [("water", {"role": "ntc"})]
+    assert not out.validated and not out.fallback and "cut off" in out.error

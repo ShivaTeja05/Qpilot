@@ -87,10 +87,18 @@ SYSTEM_INTERPRET = (
     "Role codes: unkn = an ordinary sample, std = a standard of a dilution series, ntc = "
     "no-template control (water), nrt = no reverse transcription control, nac = "
     "no-amplification control, pos = positive control, ntp = no target present. A sample "
-    "declared ntc, nrt or nac in the file stays a control. Labels for groups and biological "
-    "units are copied from the quoted data you cite. Propose only what the rule_proposals do "
-    "not already say, or where you read the data differently; samples you do not mention keep "
-    'their declared type. If you have nothing to add, reply {"fields": []}.\n'
+    "declared ntc, nrt or nac in the file stays a control.\n"
+    "Each sample has one quoted sample record under its ref: its name and its sample-sheet "
+    "row (cells by column number; the header rows say what each column is). A field about a "
+    "sample uses that ref as its subject and cites it. design.group and design.bio_unit "
+    "only copy a label a sheet column or the scientist's sentence gives that sample; never "
+    "make one from a name pattern. Propose only what the rule_proposals do not already say, "
+    "or where you read the data differently; samples you do not mention keep their declared "
+    'type. Send at most twelve fields. If you have nothing to add, reply {"fields": []}.\n'
+    'Example of one field: {"kind": "design.well_role", "subject": "t_0123456789ab", '
+    '"value": {"role": "ntc"}, "cites": ["t_0123456789ab"], "alternatives": [{"role": '
+    '"unkn"}], "level": "Moderate", "reasons": ["the name and the sheet read as a water '
+    'control"]}\n'
     "JSON schema of the reply: "
     + json.dumps(DesignProposal.model_json_schema(), separators=(",", ":"), sort_keys=True)
 )
