@@ -31,3 +31,12 @@ def test_rerun_cli_without_input(store, study, tmp_path, capsys):
 def test_help(cmd, capsys):
     with pytest.raises(SystemExit):
         main([cmd, "--help"])
+
+
+def test_plan_cli(capsys):
+    assert main(["plan", "--fc", "2", "--sd", "1.95", "--n", "3"]) == 0
+    out = capsys.readouterr().out
+    assert "3 per group detects at least 22.0-fold" in out and "61 per group" in out
+    assert main(["plan", "--fc", "1"]) == 2
+    assert main(["plan", "--json"]) == 0
+    assert '"n_needed": null' in capsys.readouterr().out

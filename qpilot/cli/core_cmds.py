@@ -58,7 +58,59 @@ def _rerun(args: argparse.Namespace) -> int:
     return 0 if same else 1
 
 
+def _plan_arguments(parser: argparse.ArgumentParser) -> None:
+    from qpilot.qpcr.plan import SIGMA_HELP
+
+    parser.add_argument("--fc", type=float, default=2.0, help="fold change to detect (default 2)")
+    parser.add_argument("--sd", type=float, default=None, help=SIGMA_HELP)
+    parser.add_argument("--n", type=int, default=None, help="planned samples per group")
+    parser.add_argument("--alpha", type=float, default=0.05)
+    parser.add_argument("--power", type=float, default=0.80)
+    parser.add_argument("--plates", type=int, default=None, help="number of plates")
+    parser.add_argument(
+        "--no-calibrator",
+        action="store_true",
+        help="no inter-run calibrator on every plate",
+    )
+    parser.add_argument("--refs", type=int, default=None, help="candidate reference genes")
+    parser.add_argument("--json", action="store_true", help="print JSON")
+
+
+def _plan(args: argparse.Namespace) -> int:
+    from qpilot.qpcr.plan import plan
+
+    try:
+        out = plan(
+            fc=args.fc,
+            sd_log2=args.sd,
+            n_per_group=args.n,
+            alpha=args.alpha,
+            power=args.power,
+            n_plates=args.plates,
+            calibrator_on_every_plate=None if args.plates is None else not args.no_calibrator,
+            n_candidate_refs=args.refs,
+        )
+    except ValueError as err:
+        print(f"qpilot plan: {err}", file=sys.stderr)
+        return 2
+    if args.json:
+        print(out.model_dump_json(indent=2))
+        return 0
+    print(out.message)
+    for line in out.cannot_detect:
+        print(f"Cannot detect: {line}")
+    for line in out.rules:
+        print(f"Rule: {line}")
+    return 0
+
+
 COMMANDS: list[Command] = [
+    (
+        "plan",
+        "before the first plate: samples needed and what a design cannot detect",
+        _plan_arguments,
+        _plan,
+    ),
     (
         "verify",
         "check an Analysis Record's checksums and decision chain",
