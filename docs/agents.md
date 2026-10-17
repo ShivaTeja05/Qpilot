@@ -19,7 +19,7 @@ claude mcp add qpilot -- python -m qpilot.mcp_server
 Rules the server enforces:
 - **Files:** `rdml_path` must resolve, after following symlinks, to an `.rdml`/`.xml` file inside one of `QPILOT_DATA_ROOTS` (`os.pathsep`-separated; default: the qPilot cache and the current directory).
 - **Actor:** every MCP caller is recorded as an agent; `actor="human"` is refused.
-- **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (or the in-app model). `qpilot records decide` and `reject` refuse to run when no interactive terminal is attached. That only guards against accidental scripted use: any process can fake a terminal (for example `script -q /dev/null …`), and an agent with a shell can also import qPilot's library directly. **An agent that can run commands as you can act as you.** Give agents MCP access, not your shell.
+- **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (or the in-app model). People decide in the app; the command line has no decide command. **An agent that can run commands as you can still act as you,** for example by importing qPilot's library or driving the app on 127.0.0.1. Give agents MCP access, not your shell.
 - **Output:** tools return engine output as JSON, never model-written prose.
 
 ### In a closed loop
