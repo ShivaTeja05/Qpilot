@@ -35,6 +35,7 @@ qPilot is licensed under the Apache License 2.0 (see `LICENSE`). It vendors, dep
 |---|---|---|
 | Vermeulen et al. 2009 / Ruijter et al. 2013 neuroblastoma qPCR benchmark (`data_vermeulen_raw.rdml`, 64 plates) | CC BY 4.0 (as redistributed by the CRAN `vermeulen` / `ruijter` packages; hosted in the MIT rdmlpython repository) | Downloaded at runtime by `qpilot fetch-demo` with a SHA-256 pin. **Never committed to this repository.** |
 | `tests/fixtures/test_mca_1_raw_data.rdml` | MIT (rdmlpython repository @ `fce7a44`, `test/`) | Small smoke-test fixture. |
+| `tests/fixtures/vermeulen_std_150000.rdml` | CC BY 4.0 (Vermeulen et al. 2009 / Ruijter et al. 2013; from the rdmlpython repository @ `fce7a44`, `experiments/vermeulen/`) | 54 KB standards-only subset of the demo study for curve-analysis unit tests. |
 
 ## Not used (deliberately)
 `qslib` (EUPL-1.2, copyleft), GPL-licensed R packages (`qpcR`, `chipPCR`, `PCRedux`), and NormFinder's original code (redistribution not permitted). None of these is imported or bundled.

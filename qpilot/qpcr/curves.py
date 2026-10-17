@@ -1,0 +1,297 @@
+"""Turn every amplification curve of a study into a starting quantity, one method for all plates.
+
+For each plate (an RDML "run") this calls the vendored LinRegPCR exactly as the validation oracle
+did (``run.linRegPCR(updateRDML=False, saveResultsCSV=True)`` with the library's default analysis
+settings) and parses its tab-separated result table **by header name**, never by column position.
+The plates are concatenated into one tidy table, one row per well:
+
+==================  =================================================================
+column              meaning
+==================  =================================================================
+run_id              plate id (validated identifier)
+well, sample        well position and sample name (validated identifiers)
+sample_type         ``unkn`` (study sample), ``std`` (dilution standard) or ``ntc``
+target              gene name with its ``_20YYMMDD`` date token removed
+target_raw          gene name exactly as written in the file
+target_type         ``ref`` for the reference (control) genes, else ``toi``
+excluded, note      LinRegPCR's exclusion flag and note (``""`` when none)
+baseline            fitted baseline fluorescence
+eff_indiv           this well's own amplification efficiency
+r2                  fit quality of the window of linearity
+eff_target          mean efficiency of the gene on this plate (used for quantities)
+eff_target_sd       its standard deviation
+cq                  cycle where the signal crosses the common threshold (``TD0``); NaN if none
+n0                  efficiency-corrected starting quantity (``Ncopy``); NaN = undetermined
+amplification       whether LinRegPCR saw amplification
+plateau             whether the curve reached a plateau
+==================  =================================================================
+
+Results are cached as CSV in the cache directory, keyed by the input file's SHA-256, the
+experiment, the reference genes and the analysis settings, so a second analysis of the same file
+takes about a second. Cache files are written to a temporary name and renamed into place.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import io
+import json
+import logging
+import os
+import re
+import tempfile
+from collections.abc import Iterable, Mapping
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
+import pandas as pd
+
+from qpilot.io.datasets import default_cache_dir
+from qpilot.io.rdml_io import load, runs
+from qpilot.vendor.rdmlpython import rdml
+
+log = logging.getLogger(__name__)
+
+REFERENCE_TARGETS: tuple[str, ...] = ("ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)")
+DEMO_EXPERIMENT = "biomarker_set"
+
+#: LinRegPCR result header -> qPilot column. Parsed by name; extra upstream columns are ignored.
+RESULT_COLUMNS: Mapping[str, str] = {
+    "well": "well",
+    "sample": "sample",
+    "sample type": "sample_type",
+    "target": "target_raw",
+    "excluded": "excluded",
+    "note": "note",
+    "baseline": "baseline",
+    "indiv PCR eff": "eff_indiv",
+    "R2": "r2",
+    "PCR eff": "eff_target",
+    "STD PCR eff": "eff_target_sd",
+    "TD0": "cq",
+    "Ncopy": "n0",
+    "amplification": "amplification",
+    "plateau": "plateau",
+}
+NUMERIC_COLUMNS = ("baseline", "eff_indiv", "r2", "eff_target", "eff_target_sd", "cq", "n0")
+TEXT_COLUMNS = (
+    "run_id",
+    "well",
+    "sample",
+    "sample_type",
+    "target",
+    "target_raw",
+    "target_type",
+    "excluded",
+    "note",
+)
+BOOL_COLUMNS = ("amplification", "plateau")
+COLUMN_ORDER = (
+    "run_id",
+    "well",
+    "sample",
+    "sample_type",
+    "target",
+    "target_raw",
+    "target_type",
+    "excluded",
+    "note",
+    "baseline",
+    "eff_indiv",
+    "r2",
+    "eff_target",
+    "eff_target_sd",
+    "cq",
+    "n0",
+    "amplification",
+    "plateau",
+)
+
+_SAFE_NAME = re.compile(r"^[\w()\-. ]{1,64}$")
+_DATE_TOKEN = re.compile(r"_20\d{6}(?=_|$)")
+
+
+class CurveAnalysisError(Exception):
+    """LinRegPCR could not analyse a plate, or its output was not in the expected shape."""
+
+
+@dataclass(frozen=True)
+class CurveSettings:
+    """LinRegPCR analysis settings: the library defaults, exactly as the validation oracle used."""
+
+    pcrEfficiencyExl: float = 0.05  # noqa: N815 (vendored keyword name)
+    excludeNoPlateau: bool = True  # noqa: N815
+    excludeEfficiency: str = "outlier"  # noqa: N815
+    maxCycExpPhase: int = 9  # noqa: N815
+    ignoreExclusion: bool = False  # noqa: N815
+
+    def key(self) -> str:
+        """Short stable hash of the settings, used in cache file names and records."""
+        payload = json.dumps(asdict(self), sort_keys=True).encode()
+        return hashlib.sha256(payload).hexdigest()[:12]
+
+
+def normalise_target(name: str) -> str:
+    """Remove the ``_20YYMMDD`` date token from a target name.
+
+    ``PRKACB_20080311`` -> ``PRKACB``; ``PRKACB_20080311_bis`` (a repeat assay) -> ``PRKACB_bis``.
+    """
+    return _DATE_TOKEN.sub("", name)
+
+
+def slug(name: str) -> str:
+    """Lowercase identifier for fact ids: ``ALUsq(Eurogentec)`` -> ``alusq_eurogentec``."""
+    words = re.split(r"[^0-9a-z]+", name.lower())
+    return "_".join(word for word in words if word)
+
+
+def safe_name(name: str, kind: str) -> str:
+    """Return ``name`` if it is a plain identifier; otherwise its slug, with a warning.
+
+    Names from the file reach model prompts, MCP results and HTML later, so anything that is not
+    letters, digits, spaces, ``_ - . ( )`` and at most 64 characters is replaced here.
+    """
+    if _SAFE_NAME.match(name):
+        return name
+    replacement = slug(name)[:64] or "unnamed"
+    log.warning("unsafe %s name %r replaced by %r", kind, name, replacement)
+    return replacement
+
+
+def analyse_run(run: rdml.Run, settings: CurveSettings | None = None) -> pd.DataFrame:
+    """Run LinRegPCR on one plate and return its wells as a tidy table (see module docstring)."""
+    settings = settings or CurveSettings()
+    run_id = safe_name(str(run["id"]), "run")
+    try:
+        result = run.linRegPCR(**asdict(settings), updateRDML=False, saveResultsCSV=True)
+    except rdml.RdmlError as err:
+        raise CurveAnalysisError(f"run {run_id}: {err}") from err
+    table = pd.read_csv(
+        io.StringIO(result["resultsCSV"]), sep="\t", dtype=str, keep_default_na=False
+    )
+    missing = [header for header in RESULT_COLUMNS if header not in table.columns]
+    if missing:
+        raise CurveAnalysisError(f"run {run_id}: LinRegPCR output lacks columns {missing}")
+    table = table[list(RESULT_COLUMNS)].rename(columns=RESULT_COLUMNS)
+    table.insert(0, "run_id", run_id)
+    return table
+
+
+def _tidy(table: pd.DataFrame, reference_targets: Iterable[str]) -> pd.DataFrame:
+    """Validate names, add derived columns, type the columns and fix the column order."""
+    references = set(reference_targets)
+    table = table.copy()
+    for column, kind in (("well", "well"), ("sample", "sample"), ("target_raw", "target")):
+        unique = {value: safe_name(value, kind) for value in table[column].unique()}
+        table[column] = table[column].map(unique)
+    table["target"] = table["target_raw"].map(normalise_target)
+    table["target_type"] = table["target"].map(lambda t: "ref" if t in references else "toi")
+    for column in NUMERIC_COLUMNS:
+        table[column] = pd.to_numeric(table[column], errors="coerce")
+    for column in ("cq", "n0"):  # LinRegPCR reports "no value" as 0 or negative
+        table.loc[~(table[column] > 0), column] = float("nan")
+    for column in BOOL_COLUMNS:
+        table[column] = table[column].str.strip().str.lower().eq("yes")
+    for column in TEXT_COLUMNS:
+        table[column] = table[column].fillna("").astype(str)
+    return table[list(COLUMN_ORDER)].reset_index(drop=True)
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 16), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def cache_path(
+    input_sha256: str,
+    experiment_id: str,
+    reference_targets: Iterable[str],
+    settings: CurveSettings,
+    cache_dir: Path,
+) -> Path:
+    """Where the analysed table for this exact input and configuration is cached."""
+    config = json.dumps(
+        {
+            "experiment": experiment_id,
+            "refs": sorted(reference_targets),
+            "settings": asdict(settings),
+        },
+        sort_keys=True,
+    )
+    config_key = hashlib.sha256(config.encode()).hexdigest()[:12]
+    return cache_dir / f"{input_sha256}.{config_key}.curves.csv"
+
+
+def _read_cache(path: Path) -> pd.DataFrame:
+    table = pd.read_csv(path, dtype={c: str for c in TEXT_COLUMNS}, keep_default_na=False)
+    for column in NUMERIC_COLUMNS:
+        table[column] = pd.to_numeric(table[column], errors="coerce")
+    for column in BOOL_COLUMNS:
+        table[column] = table[column].astype(str).eq("True")
+    return table[list(COLUMN_ORDER)]
+
+
+def _write_cache(table: pd.DataFrame, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = tempfile.NamedTemporaryFile(
+        "w", dir=path.parent, suffix=".tmp", delete=False, newline=""
+    )
+    try:
+        with handle:
+            table.to_csv(handle, index=False)
+        os.replace(handle.name, path)
+    except BaseException:
+        Path(handle.name).unlink(missing_ok=True)
+        raise
+
+
+def analyse_study(
+    source: str | Path | rdml.Rdml,
+    experiment_id: str = DEMO_EXPERIMENT,
+    reference_targets: Iterable[str] = REFERENCE_TARGETS,
+    settings: CurveSettings | None = None,
+    *,
+    cache_dir: str | Path | None = None,
+    use_cache: bool = True,
+) -> pd.DataFrame:
+    """Analyse every plate of one experiment and return one row per well.
+
+    Args:
+        source: Path to an RDML file (cached by content hash) or an already loaded document
+            (never cached).
+        experiment_id: Which experiment's plates to analyse.
+        reference_targets: Gene names (after date-suffix removal) to mark as ``ref``.
+        settings: LinRegPCR settings; defaults to the library defaults used by the oracle.
+        cache_dir: Cache directory (default ``$QPILOT_CACHE_DIR`` or ``~/.cache/qpilot``).
+        use_cache: Read and write the cache when ``source`` is a path.
+
+    Returns:
+        The tidy per-well table described in the module docstring.
+
+    Raises:
+        CurveAnalysisError: A plate could not be analysed.
+        qpilot.io.rdml_io.RdmlLoadError: The file could not be loaded safely.
+    """
+    settings = settings or CurveSettings()
+    references = tuple(reference_targets)
+    cached: Path | None = None
+    if isinstance(source, rdml.Rdml):
+        doc = source
+    else:
+        path = Path(source)
+        if use_cache:
+            directory = Path(cache_dir) if cache_dir is not None else default_cache_dir()
+            cached = cache_path(_file_sha256(path), experiment_id, references, settings, directory)
+            if cached.exists():
+                return _read_cache(cached)
+        doc = load(path)
+    plates = [analyse_run(run, settings) for run in runs(doc, experiment_id)]
+    if not plates:
+        raise CurveAnalysisError(f"experiment {experiment_id!r} has no runs")
+    table = _tidy(pd.concat(plates, ignore_index=True), references)
+    if cached is not None:
+        _write_cache(table, cached)
+    return table
