@@ -41,10 +41,22 @@ from qsim.study_space import space_for
 LOCAL_DEFAULT = ModelConfig(
     provider="openai_compatible", endpoint="http://localhost:11434", model="qwen2.5:7b"
 )
+MODEL_WRITES = ("gene", "decision", "overview")  # what-if and issue answers use exact templates
 LOCAL_TIMEOUT_S = 180.0  # a 7B model on a laptop can take a minute when the machine is busy
 TOOLS = ("gene", "whatif", "decision", "issues", "overview")
 METHOD_PHRASES = ("2-fold", "p < 0.05", "95 %", "qPCR", "ddCq", "ΔΔCq")
 KEYWORDS = {
+    "late_cq": (
+        "late cq",
+        "late-cq",
+        "cq cut",
+        "cq cutoff",
+        "cq cut-off",
+        "cq 35",
+        "cq 38",
+        "above 35",
+        "above 38",
+    ),
     "refs": ("reference", "housekeeping", "normalis", "normaliz", "refs", "control gene"),
     "cut": ("cut-off", "cutoff", " cut ", "top 10", "top 20", "group definition"),
     "efficiency": ("efficiency", "100 %", "100%", "per well", "per-well"),
@@ -76,6 +88,10 @@ WHATIF_WORDS = (
     "just ",
 )
 OPTION_WORDS = {
+    "late_cq": [
+        ("cq35", ("cq 35", "cq35", "cq of 35", "above 35", "35 cut")),
+        ("cq38", ("cq 38", "cq38", "cq of 38", "above 38", "38 cut")),
+    ],
     "nondetect": [
         ("cap_min", ("cap", "lowest")),
         ("cq40", ("cq 40", "cq40", "cq of 40", "40 cycles")),
@@ -112,7 +128,7 @@ Rules you must follow:
 - Never type a digit yourself and never spell out a number. Gene names may be written as they are.
 - No statistics jargon (no "fragility", "multiverse", "SE"). Say "reasonable analyses", "samples", "reference genes".
 - Tokens already include their unit (× or %): never add a % or × after a token.
-- Do not add claims that are not in the facts, and do not change what a fact means.
+- Do not add claims that are not in the facts. Use each token only for the meaning given next to it.
 Example of the style: "NM23A is {{f_fold}} {{f_direction}} in MYCN-high tumours, but the call is {{f_verdict}}: it holds in {{f_holds}} of {{f_n_analyses}} reasonable analyses."
 """
 
@@ -166,8 +182,15 @@ class Asker:
     # ---- step 1: route ---------------------------------------------------------------
     def route(self, question: str) -> tuple[str, dict, str]:
         changes = self.parse_changes(question)
-        if changes and any(w in question.lower() for w in WHATIF_WORDS):
+        q = question.lower()
+        if changes and any(w in q for w in WHATIF_WORDS):
             return "whatif", {"changes": changes, "genes": self._genes_in(question)}, "rules"
+        named = self._genes_in(question)
+        if len(named) == 1 and any(
+            w in q
+            for w in ("depend", "robust", "solid", "fragile", "trust", "survive", "change", "lean")
+        ):
+            return "gene", {"gene": named[0]}, "rules"
         if self.client.available:
             space_desc = self._space_desc()
             prompt = (
@@ -229,6 +252,9 @@ class Asker:
                 space.to_index(changes)
             except KeyError:
                 return None, {}
+            space_base = space.baseline
+            if all(space_base.get(d) == v for d, v in changes.items()):
+                return None, {}  # a "what if" that changes nothing is a misroute
             args["changes"] = changes
             args["genes"] = [g for g in args.get("genes") or [] if g in self.genes]
         return tool, args
@@ -552,7 +578,7 @@ class Asker:
             f"{fid}: {meaning[fid]} = {render_tokens('{{' + fid + '}}', facts)}" for fid in facts
         )
         problems: list[str] = []
-        if self.client.available:
+        if self.client.available and tool in MODEL_WRITES:
             messages = [
                 {
                     "role": "user",
