@@ -1,0 +1,9 @@
+hgnc_symbols.tsv is derived from the HGNC complete set published by the HUGO Gene Nomenclature
+Committee (https://www.genenames.org).
+
+HGNC data is released under the Creative Commons CC0 1.0 Universal Public Domain Dedication:
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+HGNC licence page (read 17 October 2026): https://www.genenames.org/about/license/
+
+The table is a mechanical extract of three columns (approved, previous and alias symbols); see
+README.md in this folder. Suggested attribution (optional): HGNC (RRID:SCR_002827).
