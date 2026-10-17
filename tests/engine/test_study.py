@@ -1,9 +1,10 @@
 """Task 8 gate: run_study wires the engine into the core and reproduces every planned number.
 
-Task 8b gate: card 1 carries the group-effect check.
+Task 8b gate: card 1 counts flips by normaliser-set size and carries the group-effect check.
 """
 
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -11,10 +12,20 @@ import pytest
 
 from qpilot.cli import main
 from qpilot.core.facts import render_fact
-from qpilot.qpcr.study import StudySettings, run_study, study_from_curves, write_outputs
+from qpilot.qpcr.space import ref_subsets
+from qpilot.qpcr.study import (
+    NOT_RECOMMENDED_NOTE,
+    StudySettings,
+    refset_flip_counts,
+    run_study,
+    study_from_curves,
+    write_outputs,
+)
 from qpilot.schemas import DecisionCard, StudyResult
 
 REFSET_EXTRA_FACTS = [
+    "f_n_flipped_refset_min3",
+    "f_n_flipped_refset_single_only",
     "f_ref_pair_top",
     "f_ref_ratio_top",
     "f_ref_ratio_top_p",
@@ -132,14 +143,60 @@ def test_toy_is_deterministic_and_writes_valid_files(toy_curves, toy, tmp_path):
 def test_toy_refset_card_extras(toy):
     result, cards, _ = toy
     refset = next(c for c in cards if c.id == "card_refset")
-    assert set(refset.impact) == {"flips", "n_genes_flipped", "max_delta_log2fc"}
+    assert {"flips", "max_delta_log2fc"} <= set(refset.impact)
+    flipped = ("n_genes_flipped", "n_genes_flipped_min3", "n_genes_flipped_single_only")
+    assert [refset.impact[key] for key in flipped] == [0, 0, 0]  # the toy's controls agree
+    # all three candidates are recommended, so "top three" would repeat the recommended set
+    assert [o.id for o in refset.options] == [
+        "recommended", "top2", "r1_alone", "r2_alone", "r3_alone"
+    ]  # fmt: skip
     evidence = refset.evidence
+    assert evidence["not_recommended"] == ["r1_alone", "r2_alone", "r3_alone"]
+    assert evidence["not_recommended_note"] == NOT_RECOMMENDED_NOTE
     assert evidence["genorm_validated"] is False and "pairwise ratios" in evidence["genorm_note"]
     assert evidence["ref_group_effect"]["note"] == "3 pairs, no multiple-testing correction"
     assert json.loads(json.dumps(evidence)) == evidence
     assert [f for f in REFSET_EXTRA_FACTS if f not in refset.facts] == []
     assert result.facts["f_n_ref_pairs"].value == 3
     assert {"f_ref_ratio_r1_r2", "f_ref_ratio_r1_r3_p", "f_ref_ratio_r2_r3"} <= set(result.facts)
+
+
+def test_refset_flip_counts_by_set_size():
+    """Only refs vary (primary cut and rule); a flip counts where the set is big enough."""
+    subsets = ref_subsets(("A", "B", "C"))
+    space = SimpleNamespace(
+        dimensions={"refs": subsets, "cut": [0.15, 0.2], "undetermined": ["drop", "cap"]},
+        primary={"refs": ("A", "B"), "cut": 0.15, "undetermined": "drop"},
+    )
+    flips = {  # gene -> (refs, cut, rule) cells where its conclusion differs from "up"
+        "single": {(("A",), 0.15, "drop")},
+        "pair": {(("A", "C"), 0.15, "drop"), (("B",), 0.15, "drop")},
+        "three": {(("A", "B", "C"), 0.15, "drop")},
+        "other_cut": {(("B",), 0.2, "drop"), (("A", "B", "C"), 0.15, "cap")},
+        "steady": set(),
+    }
+    rows = []
+    for (ri, refs), (ci, cut), (ui, rule) in (
+        (r, c, u)
+        for r in enumerate(subsets)
+        for c in enumerate(space.dimensions["cut"])
+        for u in enumerate(space.dimensions["undetermined"])
+    ):
+        for gene, cells in flips.items():
+            rows.append(
+                {
+                    "refs": refs, "cut": cut, "undetermined": rule, "refs__idx": ri,
+                    "cut__idx": ci, "undetermined__idx": ui, "item": gene,
+                    "conclusion": "none" if (refs, cut, rule) in cells else "up",
+                }
+            )  # fmt: skip
+    summary = {gene: SimpleNamespace(conclusion="up") for gene in flips}
+    counts = refset_flip_counts(pd.DataFrame(rows), space, summary)
+    assert counts == {
+        "n_flipped_refs_all": 3,  # single, pair, three
+        "n_flipped_refs_min3": 1,  # three
+        "n_flipped_refs_single_only": 1,  # single ("pair" also flips with two genes)
+    }
 
 
 def test_marker_label_drops_the_assay_suffix():
@@ -212,6 +269,47 @@ def test_demo_cards(demo):
         assert not [f for f in card.facts if f not in result.facts], card.id
     assert result.facts["f_n_flipped_refset"].value == 31
     assert result.facts["f_worst_ref"].value == "UBC(2)"
+
+
+@pytest.mark.demo_data
+def test_demo_refset_flips_by_normaliser_size(demo):
+    result, cards, _ = demo
+    impact = cards[0].impact
+    flipped = ("n_genes_flipped", "n_genes_flipped_min3", "n_genes_flipped_single_only")
+    assert [impact[key] for key in flipped] == [31, 17, 5]
+    assert impact["flips"] is True and impact["max_delta_log2fc"] > 0  # existing keys kept
+    assert result.facts["f_n_flipped_refset_min3"].value == 17
+    assert result.facts["f_n_flipped_refset_single_only"].value == 5
+    assert result.facts["f_n_flipped_refset"].value == 31
+
+
+@pytest.mark.demo_data
+def test_demo_refset_options_top3_and_miqe_note(demo):
+    result, cards, _ = demo
+    refset = cards[0]
+    singles = ["alusq_eurogentec_alone", "hmbs_alone", "hprt1_alone", "sdha_1_alone", "ubc_2_alone"]
+    assert [o.id for o in refset.options] == ["recommended", "top3", "top2", *singles]
+    labels = {o.id: o.label for o in refset.options}
+    assert labels["top3"] == "Top three by stability (ALUsq(Eurogentec), HPRT1, HMBS)"
+    assert labels["top2"] == "Top two by stability (ALUsq(Eurogentec), HPRT1)"
+    assert labels["hmbs_alone"] == "HMBS alone" and labels["ubc_2_alone"] == "UBC(2) alone"
+    assert _fc(refset, "top3", "ODC1") == pytest.approx(3.42, abs=0.05)
+    assert "f_fc_odc1_top3" in refset.facts
+    assert result.facts["f_fc_odc1_top3"].value == _fc(refset, "top3", "ODC1")
+    assert refset.evidence["not_recommended"] == singles
+    assert refset.evidence["not_recommended_note"] == (
+        "MIQE recommends normalising to more than one validated reference gene; a single gene is "
+        "what a ΔΔCt spreadsheet does"
+    )
+
+
+@pytest.mark.demo_data
+def test_demo_count_facts_use_thousands_separators(demo):
+    facts = demo[0].facts
+    assert (facts["f_n_reactions"].value, render_fact(facts["f_n_reactions"])) == (24576, "24,576")
+    unknown = facts["f_n_unknown_wells"]
+    assert isinstance(unknown.value, int) and unknown.value > 999
+    assert render_fact(unknown) == f"{unknown.value:,}" and "," in render_fact(unknown)
 
 
 @pytest.mark.demo_data

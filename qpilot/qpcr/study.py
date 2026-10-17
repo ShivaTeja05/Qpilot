@@ -8,7 +8,8 @@ This is the one place where the qPCR plugin meets the domain-agnostic core:
    summarises each gene: primary conclusion, how often it holds, which choices flip it;
 3. ``core.decisions`` turns the three analysis choices into ranked Decision Cards and applies the
    escalation rule (a choice that can flip a conclusion is a human decision); the reference-set
-   card then gains the control-gene group-effect check (:func:`qpilot.qpcr.refgenes.group_effect`);
+   card then gains the flip count by normaliser-set size and the control-gene group-effect check
+   (:func:`qpilot.qpcr.refgenes.group_effect`);
 4. ``qpcr.confidence_checks`` and ``core.confidence`` grade every gene;
 5. every number that prose may cite is registered as a fact (``core.facts``) under the id
    convention ``f_<metric>_<slug>_<context>``, e.g. ``f_fc_odc1_hmbs``.
@@ -53,13 +54,20 @@ from qpilot.schemas import (
 HEADLINE_GENES: tuple[str, ...] = ("ODC1", "BIRC5", "NTRK1", "NM23A")
 HOLDS_LOW = 0.80  # "holds in fewer than 80 %" is counted in f_n_hold_lt_80
 FC_FMT = "{:.2g}"
+COUNT_FMT = "{:,}"  # 24576 -> 24,576
 TIMES = "×"
 _NUMBER_WORDS = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}
+NOT_RECOMMENDED_NOTE = (
+    "MIQE recommends normalising to more than one validated reference gene; a single gene is "
+    "what a ΔΔCt spreadsheet does"
+)
 GENORM_NOTE = (
     "geNorm M ranks stability across all samples; it cannot show whether a control gene differs "
     "between the groups. The pairwise ratios below check that."
 )
 _REFSET_EXTRA_FACTS = (
+    "f_n_flipped_refset_min3",
+    "f_n_flipped_refset_single_only",
     "f_ref_pair_top",
     "f_ref_ratio_top",
     "f_ref_ratio_top_p",
@@ -155,8 +163,9 @@ def study_from_curves(
     counts = {"n_undetermined": int(unknown["n0"].isna().sum()), "n_unknown_wells": len(unknown)}
     specs = _card_specs(space, stability, summary, settings, headline, counts)
     cards = build_cards(space, summary, specs, headline, settings.autonomy)
+    ref_flips = refset_flip_counts(grid, space, summary)
     ref_effect = group_effect(matrix, settings.candidates, high, rest)
-    cards = [_refset_extras(card, ref_effect) for card in cards]
+    cards = [_refset_extras(card, ref_flips, ref_effect) for card in cards]
     facts = _facts(base, confidence, cards, space, settings, headline, counts)
     result = base.model_copy(update={"confidence": confidence, "facts": facts.as_dict()})
     return result, cards, grid
@@ -226,11 +235,19 @@ def _refs_label(refs: tuple[str, ...], candidates: tuple[str, ...]) -> str:
 def _ref_options(
     space: QpcrSpace, stability: GenormResult, candidates: tuple[str, ...]
 ) -> list[tuple[OptionSpec, str]]:
-    """(option, fact context) for the reference-set card, recommended first."""
+    """(option, fact context) for the reference-set card, recommended first.
+
+    Single-gene options keep their ids (``<gene>_alone``); the card's evidence lists them under
+    ``not_recommended`` with the MIQE note instead of changing their labels.
+    """
     recommended = tuple(space.primary["refs"])
     label = _refs_label(recommended, candidates)
     options = [(OptionSpec(id="recommended", label=label, value=recommended), "recommended")]
     top2 = tuple(gene for gene in candidates if gene in stability.order[:2])
+    top3 = tuple(gene for gene in candidates if gene in stability.order[:3])
+    if top3 not in (recommended, top2):
+        label = f"Top three by stability ({', '.join(stability.order[:3])})"
+        options.append((OptionSpec(id="top3", label=label, value=top3), "top3"))
     if top2 != recommended:
         label = f"Top two by stability ({', '.join(stability.order[:2])})"
         options.append((OptionSpec(id="top2", label=label, value=top2), "top2"))
@@ -241,19 +258,61 @@ def _ref_options(
     return options
 
 
-def _refset_extras(card: DecisionCard, effect: RefGroupEffect) -> DecisionCard:
-    """Add the group-effect check to card 1: geNorm alone does not validate the set."""
+def refset_flip_counts(
+    grid: pd.DataFrame, space: QpcrSpace, summary: dict[str, GeneRobustness]
+) -> dict[str, int]:
+    """How many genes the control-gene choice flips, by the size of the sets compared.
+
+    Uses the grid rows at the primary cut-off and empty-well rule, so only the control-gene set
+    varies. A gene counts when some subset gives a conclusion different from its primary one:
+
+    * ``n_flipped_refs_all``: over every subset (equals the card's ``n_genes_flipped``);
+    * ``n_flipped_refs_min3``: over subsets of three or more control genes only, i.e. between
+      sets a careful analyst could defend;
+    * ``n_flipped_refs_single_only``: flips over all subsets but not over subsets of two or more,
+      i.e. only a single control gene (what a ΔΔCt spreadsheet does) changes it.
+    """
+    rows = grid
+    for name in ("cut", "undetermined"):
+        idx = space.dimensions[name].index(space.primary[name])
+        rows = rows[rows[f"{name}{robustness.IDX_SUFFIX}"] == idx]
+    primary = rows["item"].map({gene: s.conclusion for gene, s in summary.items()})
+    changed = rows["conclusion"] != primary
+    size = rows["refs"].map(len)
+
+    def flipped(min_size: int) -> set[str]:
+        return set(rows.loc[changed & (size >= min_size), "item"])
+
+    flipped_all = flipped(1)
+    return {
+        "n_flipped_refs_all": len(flipped_all),
+        "n_flipped_refs_min3": len(flipped(3)),
+        "n_flipped_refs_single_only": len(flipped_all - flipped(2)),
+    }
+
+
+def _refset_extras(
+    card: DecisionCard, flips: dict[str, int], effect: RefGroupEffect
+) -> DecisionCard:
+    """Add the flip count by set size, the group-effect check and the MIQE note to card 1."""
     if card.id != "card_refset":
         return card
     extra = [f for f in _REFSET_EXTRA_FACTS if effect.top is not None or "_top" not in f]
+    impact = {
+        **card.impact,
+        "n_genes_flipped_min3": flips["n_flipped_refs_min3"],
+        "n_genes_flipped_single_only": flips["n_flipped_refs_single_only"],
+    }
     evidence = {
         **card.evidence,
         "ref_group_effect": effect.as_dict(),
         "genorm_validated": False,
         "genorm_note": GENORM_NOTE,
+        "not_recommended": [o.id for o in card.options if o.id.endswith("_alone")],
+        "not_recommended_note": NOT_RECOMMENDED_NOTE,
     }
     facts = list(dict.fromkeys([*card.facts, *extra]))
-    return card.model_copy(update={"evidence": evidence, "facts": facts})
+    return card.model_copy(update={"impact": impact, "evidence": evidence, "facts": facts})
 
 
 def _card_specs(
@@ -375,8 +434,9 @@ def _facts(
         "f_n_hold_lt_80": sum(result.robustness[gene].holds < HOLDS_LOW for gene in items),
         **{f"f_{key}": value for key, value in counts.items()},
     }
+    large_counts = {"f_n_reactions", "f_n_unknown_wells"}
     for fid, value in study.items():
-        add(fid, int(value), path="study")
+        add(fid, int(value), COUNT_FMT if fid in large_counts else "{}", path="study")
     share = counts["n_undetermined"] / counts["n_unknown_wells"] if counts["n_unknown_wells"] else 0
     add("f_pct_undetermined", 100 * share, "{:.1f}", "%", "study")
     if result.efficiency:
@@ -429,11 +489,16 @@ def _facts(
 
 
 def _refset_facts(add: Callable[..., None], card: DecisionCard) -> None:
-    """Facts for the reference-set card's group-effect check.
+    """Facts for the reference-set card's flip count by set size and its group-effect check.
 
     Values are read from the card itself, so a fact always equals what ``cards.json`` shows.
     """
     root = f"cards.{card.id}"
+    for key, fid in (
+        ("n_genes_flipped_min3", "f_n_flipped_refset_min3"),
+        ("n_genes_flipped_single_only", "f_n_flipped_refset_single_only"),
+    ):
+        add(fid, int(card.impact[key]), path=f"{root}.impact.{key}")
     effect = card.evidence["ref_group_effect"]
     base = f"{root}.evidence.ref_group_effect"
     pairs = effect["pairs"]
