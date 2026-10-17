@@ -1,5 +1,5 @@
 # Ownership mirrors team/00-TEAM-PLAN-OVERVIEW.md §3. One owner per path; the other developer
-# never edits these files. Dev 2's lines are commented until their GitHub username is added.
+# never edits these files.
 
 # ---- Dev 1: engine, app & delivery ----
 *                                   @jeevithg090
@@ -17,19 +17,19 @@
 /tests/fixtures/                    @jeevithg090
 /docs/                              @jeevithg090
 
-# ---- Dev 2: core, MCP & AI (uncomment and set the username) ----
-# /qpilot/core/                     @DEV2_USERNAME
-# /qpilot/mcp_server.py             @DEV2_USERNAME
-# /qpilot/ai/                       @DEV2_USERNAME
-# /qpilot/harness/                  @DEV2_USERNAME
-# /qpilot/schemas.py                @DEV2_USERNAME
-# /qpilot/qpcr/plan.py              @DEV2_USERNAME
-# /qpilot/qpcr/confidence_checks.py @DEV2_USERNAME
-# /qpilot/cli/core_cmds.py          @DEV2_USERNAME
-# /tests/core/                      @DEV2_USERNAME
-# /tests/contracts/                 @DEV2_USERNAME
-# /tests/ai/                        @DEV2_USERNAME
-# /THREAT_MODEL.md                  @DEV2_USERNAME
-# /SECURITY.md                      @DEV2_USERNAME
-# /docs/agents.md                   @DEV2_USERNAME
-# /docs/classroom/                  @DEV2_USERNAME
+# ---- Dev 2: core, MCP & AI ----
+/qpilot/core/                     @ShivaTeja05
+/qpilot/mcp_server.py             @ShivaTeja05
+/qpilot/ai/                       @ShivaTeja05
+/qpilot/harness/                  @ShivaTeja05
+/qpilot/schemas.py                @ShivaTeja05
+/qpilot/qpcr/plan.py              @ShivaTeja05
+/qpilot/qpcr/confidence_checks.py @ShivaTeja05
+/qpilot/cli/core_cmds.py          @ShivaTeja05
+/tests/core/                      @ShivaTeja05
+/tests/contracts/                 @ShivaTeja05
+/tests/ai/                        @ShivaTeja05
+/THREAT_MODEL.md                  @ShivaTeja05
+/SECURITY.md                      @ShivaTeja05
+/docs/agents.md                   @ShivaTeja05
+/docs/classroom/                  @ShivaTeja05
