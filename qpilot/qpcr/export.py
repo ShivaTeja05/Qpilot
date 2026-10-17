@@ -465,7 +465,7 @@ def exclusion_consequence(
 # ---------------------------------------------------------------------------------------------
 
 
-def demo_inputs(
+def study_inputs(
     store: StudyStore,
     study_id: str,
     *,
@@ -474,27 +474,26 @@ def demo_inputs(
 ) -> ExportInputs:
     """Rebuild, read-only, what the Prism bridge needs for a study in the store.
 
-    The study's workspace is never written. The per-well table comes from the curve cache
-    (computed and cached when absent). With ``read_only=True`` nothing at all is written: the
-    curve cache is not filled and the workspace lock file is not touched (the chain head and the
-    cards are read twice instead, until they agree). Groups are the study's fixed split for the
-    chosen cut-off, exactly as
-    :meth:`QpcrSpace.groups` gives them; each choice is its card's decided option (the
-    recommended option while the card is open), mapped back to its dimension value with the
-    option specs ``qpcr/study.py`` builds the cards from.
+    The study's workspace is never written. The settings come from the study's confirmed
+    design (``study_design.json``; the demo settings when there is none), the per-well table
+    from the curve cache (computed and cached when absent; with ``read_only=True`` nothing at
+    all is written: the curve cache is not filled and the workspace lock file is not touched),
+    and the decision space from :func:`qpilot.qpcr.study.build_model`, the same object the
+    study was analysed with. Each choice is its card's decided option (the recommended option
+    while the card is open), mapped back to its dimension value with the option specs
+    ``qpcr/study.py`` builds the cards from; the per-well table is the design's under the
+    chosen amplification rule, and the groups are the study's fixed comparison.
 
     Raises:
-        ExportError: The input file is unknown or changed, or a re-analysis with the demo
-            settings does not reproduce the stored results (the study used other settings).
+        ExportError: The input file is unknown or changed, or the re-analysis does not
+            reproduce the stored results.
     """
     from qpilot.core.store import sha256_file
     from qpilot.io.datasets import default_cache_dir
+    from qpilot.qpcr.amp_call import apply_rule
     from qpilot.qpcr.curves import analyse_study, cache_path
-    from qpilot.qpcr.design import GROUP_NOTE, GroupSpec
-    from qpilot.qpcr.refgenes import genorm
-    from qpilot.qpcr.space import QpcrSpace
-    from qpilot.qpcr.study import StudySettings, _card_specs
-    from qpilot.schemas_studio import MarkerSplit, StudyDesign
+    from qpilot.qpcr.designs import vermeulen_design
+    from qpilot.qpcr.study import StudySettings, _card_specs, _counts, build_model
 
     result = store.get(study_id)
     head, cards = _head_and_cards(store, study_id, read_only)
@@ -505,7 +504,8 @@ def demo_inputs(
         )
     if sha256_file(path) != result.input_sha256:
         raise ExportError("this file is not the input of this study (sha256 differs)")
-    settings = StudySettings()
+    design = store.design(study_id)
+    settings = StudySettings.from_design(design) if design is not None else StudySettings()
     cached = cache_path(
         result.input_sha256,
         settings.experiment_id,
@@ -520,71 +520,86 @@ def demo_inputs(
         settings.curves,
         use_cache=cached or not read_only,
     )
-    matrix = log2_matrix(curves)
-    stability = genorm(matrix, settings.candidates)
-    space = QpcrSpace(
-        matrix,
-        stability,
-        GroupSpec(settings.marker, settings.cut, settings.candidates, settings.group_var),
-        candidates=settings.candidates,
-        cuts=settings.cuts,
-        undetermined=settings.undetermined,
-        rule=settings.rule,
-    )
+    model = build_model(curves, settings)
+    space = model.space
     primary = space.evaluate(space.primary)
     stored = result.contrasts
     if set(primary) != set(stored) or any(
         (primary[g].fc, primary[g].p) != (stored[g].fc, stored[g].p) for g in primary
     ):
         raise ExportError(
-            "a re-analysis with the demo settings does not reproduce this study's stored "
-            "results, so the study used other settings; the Prism export cannot rebuild it yet"
+            "a re-analysis with the study's own settings does not reproduce its stored "
+            "results; the Prism export refuses rather than export other numbers"
         )
     headline = [gene for gene in settings.headline if gene in space.items]
-    unknown = curves[curves["sample_type"] == "unkn"]
-    counts = {"n_undetermined": int(unknown["n0"].isna().sum()), "n_unknown_wells": len(unknown)}
-    specs = {
+    counts = _counts(model.inputs.primary_table)
+    specs: dict[str, Any] = {
         spec.card_id: spec
-        for spec in _card_specs(space, stability, result.robustness, settings, headline, counts)
+        for spec in _card_specs(
+            space, model.stability, result.robustness, settings, headline, counts
+        )
     }
+    if "amp_call" in space.dimensions:  # the card's options are the rule ids themselves
+        specs["card_amp_call"] = _RuleOptions(space.dimensions["amp_call"])
     choices = tuple(_choice(card, specs) for card in sorted(cards, key=lambda c: c.rank))
     value = {c.dimension: c.value for c in choices}
-    cut = float(value.get("cut", space.primary["cut"]))
-    high, rest = space.groups(cut)
-    high_label = f"{settings.marker_label}-high"
-    groups = {**{s: high_label for s in sorted(high)}, **{s: "rest" for s in sorted(rest)}}
-    design = StudyDesign(
-        design_id=DEMO_DESIGN_ID,
-        experiment_id=settings.experiment_id,
-        mode="marker_split",
-        marker_split=MarkerSplit(
-            marker=settings.marker,
-            cut=settings.cut,
-            cuts=tuple(settings.cuts),
-            group_var=settings.group_var,
-        ),
-        reference_candidates=tuple(settings.candidates),
-        headline=tuple(settings.headline),
-    )
+    rule_id = value.get("amp_call", settings.amp_calls[0])
+    if rule_id == settings.amp_calls[0]:
+        data = model.inputs.primary_table
+    else:
+        calls = dict(design.well_calls) if design is not None else {}
+        data = apply_rule(model.inputs.table, rule_id, calls)
+    units = model.inputs.units
+    unit_of = lambda sample: (units or {}).get(sample, sample)  # noqa: E731
+    samples = sorted(set(data.loc[data["sample_type"] == "unkn", "sample"]))
+    if model.labels is not None:  # groups from the confirmed design
+        order = tuple(model.labels)
+        high, rest = model.high, model.rest
+    else:
+        cut = float(value.get("cut", space.primary["cut"]))
+        high, rest = space.groups(cut)
+        order = (f"{settings.marker_label}-high", "rest")
+    groups = {
+        **{s: order[0] for s in samples if unit_of(s) in high},
+        **{s: order[1] for s in samples if unit_of(s) in rest},
+    }
     return ExportInputs(
         study_id=study_id,
         input_sha256=result.input_sha256,
-        data=curves,
+        data=data,
         refs=tuple(value.get("refs", space.primary["refs"])),
         undetermined=value.get("undetermined", space.primary["undetermined"]),
         groups=groups,
-        group_order=(high_label, "rest"),
-        units=None,
+        group_order=order,
+        units=units,
         genes=tuple(space.items),
         headline=tuple(headline),
         rule=settings.rule,
         choices=choices,
-        design_hash=design.design_hash(),
-        design_note=GROUP_NOTE,
+        design_hash=(design or vermeulen_design()).design_hash(),
+        design_note=result.design.note,
         chain_head=head,
         result=result,
         at_primary=all(c.option == c.recommended for c in choices),
     )
+
+
+#: The name every caller used before designs existed; the demo is one confirmed design.
+demo_inputs = study_inputs
+
+
+@dataclass(frozen=True)
+class _RuleOptions:
+    """Stands in for a card spec whose options are the amplification rules themselves."""
+
+    rules: Sequence[str]
+    dimension: str = "amp_call"
+
+    @property
+    def options(self) -> list[Any]:
+        from qpilot.core.decisions import OptionSpec
+
+        return [OptionSpec(id=rule, label=rule, value=rule) for rule in self.rules]
 
 
 def _head_and_cards(
@@ -630,6 +645,7 @@ __all__ = [
     "ExportInputs",
     "check_label",
     "demo_inputs",
+    "study_inputs",
     "exclusion_consequence",
     "sample_table",
     "unit_contrasts",
