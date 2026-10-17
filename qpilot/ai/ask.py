@@ -26,6 +26,7 @@ from qpilot.ai.client import ModelClient, ModelUnavailable
 from qpilot.ai.explain import KIND_TITLE, card_names, fact_table
 from qpilot.ai.profile import Profile, build_fewshots
 from qpilot.ai.prompts import SYSTEM_ASK_ANSWER, SYSTEM_ASK_TOOL
+from qpilot.core.decisions import needs_human
 from qpilot.core.store import StudyStore
 from qpilot.core.validator import names_from_result, render_tokens, validate
 from qpilot.schemas import DecisionCard, Fact, StudyResult
@@ -36,16 +37,38 @@ PENDING_TEXT = (
     "Not applied: this choice can change a conclusion, so a person must decide it in qPilot. "
     "The request is waiting for their review."
 )
+SUGGEST_TEXT = (
+    "Not applied: in Suggest mode a person confirms every choice in qPilot. "
+    "The request is waiting for their review."
+)
+STALE_TEXT = "Not applied: the card changed since it was read; read it again."
+# A negated or what-if sentence is not a request to change anything.
+NOT_A_REQUEST = re.compile(
+    r"\b(do\s+not|don'?t|never|not\s+to|shouldn'?t|should\s+not|why|what\s+if|"
+    r"what\s+happens|what\s+would|would\s+it|if\s+(i|we|you)|suppose|hypothetically|without)\b",
+    re.I,
+)
+NUMBER_WORDS = {"five": 5, "ten": 10, "fifteen": 15, "twenty": 20, "twenty-five": 25, "thirty": 30}
 DECIDE_WORDS = re.compile(
     r"\b(apply|switch|use|set|change|normali[sz]e|pick|choose|make|replace|swap|select|"
     r"go with|adopt|move to|cut at|instead)\b",
     re.I,
 )
 ONLY_WORDS = re.compile(r"\b(only|alone|just|single|solely|sole)\b", re.I)
+# "the reference gene", "normalise to X", "as the control": one gene in the role, i.e. X alone.
+SOLE_ROLE = re.compile(
+    r"\bthe\s+(reference|control|housekeeping|normali[sz]ing)\s+gene\b|"
+    r"\bnormali[sz]e\s+(it\s+|them\s+|everything\s+)?(to|against|on|by|with)\b|"
+    r"\bas\s+(the\s+)?(reference|control|housekeeping|normali[sz]er)\b",
+    re.I,
+)
 CLAIMS_DONE = re.compile(
     r"\b(i\s+(have\s+|'ve\s+)?(applied|switched|changed|set|updated|made|used)|"
     r"(has|have)\s+been\s+(applied|switched|changed|updated|set)|"
-    r"(applied|switched|changed)\s+(the|it|to)|now\s+(uses|normali[sz]ed))\b|\bdone[.,:!]",
+    r"(applied|switched|changed)\s+(the|it|to)|now\s+(uses|normali[sz]ed)|(is|are)\s+now|"
+    r"from\s+now\s+on|no\s+(human\s+|further\s+)?review\s+(is\s+)?(needed|required)|"
+    r"(choice|decision|change|selection)\s+(is|has\s+been|was)\s+(recorded|logged|saved|made|"
+    r"applied))\b|\bdone[.,:!]",
     re.I,
 )
 GENE_LIKE = re.compile(r"\b[A-Z][A-Z0-9]{2,}[A-Z0-9_()\-]*\b")
@@ -205,6 +228,8 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
                 "That is not in this study; qPilot can answer about the "
                 "{{f_ans_n_genes}} genes on this panel."
             )
+        if tool == "qpcr_decide":
+            return f"Not applied: {out['error']}. Nothing was changed."
         return f"qPilot could not answer that: {out['error']}."
     if tool == "qpcr_robustness":
         group = ctx.result.design.group_var.replace("_", " ")
@@ -226,11 +251,17 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
             "{{f_ans_n_genes}} genes."
         )
     if tool == "qpcr_decide":
+        card = next((c for c in ctx.cards if c.id == view.get("card_id")), None)
         if out["status"] == "pending_human":
-            return PENDING_TEXT
+            return PENDING_TEXT if card is None or needs_human(card) else SUGGEST_TEXT
         if out["status"] == "stale":
-            return "Not applied: the card changed since it was read; read it again."
-        return f"Applied on {view.get('card_id')}: {view.get('decision')}."
+            return STALE_TEXT
+        title = KIND_TITLE.get(card.kind, card.id) if card else view.get("card_id")
+        label = next(
+            (o.label for o in (card.options if card else []) if o.id == view.get("decision")),
+            view.get("decision"),
+        )
+        return f"Applied: {title}, {label}. It is in the decision log."
     if tool == "qpcr_plan":
         if "n_per_group_needed" not in view:
             return "Give the spread between biological replicates to get a sample size."
@@ -258,7 +289,7 @@ def _path_words(path: str) -> str:
 def route(ctx: _Context, question: str) -> tuple[str, dict[str, Any]]:
     """Keyword routing used when no model is configured (and when a tool call is unusable)."""
     lowered = question.lower()
-    if DECIDE_WORDS.search(question):
+    if DECIDE_WORDS.search(question) and not NOT_A_REQUEST.search(question):
         hit = _requested_option(ctx, lowered)
         if hit:
             card_id, option_id = hit
@@ -275,25 +306,35 @@ def route(ctx: _Context, question: str) -> tuple[str, dict[str, Any]]:
 
 def _requested_option(ctx: _Context, lowered: str) -> tuple[str, str] | None:
     """The (card, option) a change request names, matched generously; None if none is named."""
-    only = bool(ONLY_WORDS.search(lowered))
+    named = {
+        option.id
+        for card in ctx.cards
+        for option in card.options
+        if option.id.endswith("_alone") and _names(option.label, lowered)
+    }
+    # "normalise to HMBS and UBC" names two genes, so it is not a request for one of them alone.
+    only = bool(ONLY_WORDS.search(lowered)) or (bool(SOLE_ROLE.search(lowered)) and len(named) == 1)
     for card in ctx.cards:
         for option in sorted(card.options, key=lambda o: -len(o.label)):
             label = option.label.lower()
-            bare = re.sub(r"\s+alone$", "", label)
             if label in lowered:
                 return card.id, option.id
-            if (
-                option.id.endswith("_alone")
-                and only
-                and re.search(rf"(?<![\w(]){re.escape(bare)}(?![\w)])", lowered)
-            ):
+            if option.id.endswith("_alone") and only and _names(label, lowered):
                 return card.id, option.id
             if option.id == "top2" and re.search(r"\btop (two|2)\b|two most stable", lowered):
                 return card.id, option.id
             pct = re.match(r"cut_(\d+)$", option.id)
-            if pct and re.search(rf"\b{pct.group(1)}\s?%", lowered):
+            words = [w for w, n in NUMBER_WORDS.items() if pct and n == int(pct.group(1))]
+            amount = "|".join([pct.group(1), *words]) if pct else ""
+            if pct and re.search(rf"\b({amount})\s?(%|percent\b|per\s+cent\b)", lowered):
                 return card.id, option.id
     return None
+
+
+def _names(label: str, lowered: str) -> bool:
+    """Whether ``lowered`` names the gene of an "X alone" option label as a whole word."""
+    bare = re.sub(r"\s+alone$", "", label.lower())
+    return bool(re.search(rf"(?<![\w(]){re.escape(bare)}(?![\w)])", lowered))
 
 
 def _parse_tool(text: str) -> tuple[str, dict[str, Any]] | None:
@@ -342,10 +383,17 @@ def ask(
             parsed = _parse_tool(reply)
             if parsed is None:
                 error = "the model's tool call did not parse; keyword routing used"
-            elif tool == "qpcr_decide" and parsed[0] != "qpcr_decide":
+            elif tool == "qpcr_decide":
                 # Safety first: a plain request to apply a card option always goes through
-                # qpcr_decide (and so the human gate), whichever tool the model picked.
-                error = f"the model chose {parsed[0]} for a change request; qpcr_decide used"
+                # qpcr_decide with the card and option the person named (and so through the
+                # human gate), whatever tool or arguments the model picked.
+                picked = (parsed[0], parsed[1].get("card_id"), parsed[1].get("option"))
+                tool_from_model = picked == (tool, args["card_id"], args["option"])
+                if not tool_from_model:
+                    error = (
+                        f"the model's call ({parsed[0]}) differs from the change request; "
+                        "qpcr_decide used with the card and option asked for"
+                    )
             else:
                 tool, args = parsed
                 tool_from_model = True
@@ -371,16 +419,17 @@ def ask(
     fallback_text = template_answer(ctx, tool, out, view)
 
     text, validated, fallback, rejected = fallback_text, True, True, 0
-    # A refused or stale change is always reported in qPilot's own fixed words, so a model can
-    # never describe it as done; the model writes every other answer.
-    if model_used and status not in ("pending_human", "stale"):
+    # Whatever happened to a change request (applied, waiting, stale or refused) is always
+    # reported in qPilot's own fixed words, so a model can never misdescribe it; the model
+    # writes every other answer.
+    if model_used and tool != "qpcr_decide":
         text, validated, fallback, err, rejected = _model_answer(
             client, ctx, question, tool, view, facts
         )
         error = err or error
         if fallback:
             text = fallback_text
-        elif tool != "qpcr_decide" and CLAIMS_DONE.search(text):
+        elif CLAIMS_DONE.search(text):
             # Whatever the routing missed: an answer may never claim a change that was not made.
             text, fallback = fallback_text, True
             error = "the model claimed a change that qPilot did not make; template used"

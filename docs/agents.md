@@ -39,7 +39,7 @@ Choose with environment variables (or in the app):
 
 - **What the model sees:** the facts table and the card structure, never raw curves or sample names. Tool results reach it with every number replaced by a `{{fact_id}}` token.
 - **What it may write:** only numbers as tokens. The validator rejects any other digit. A rejected answer gets one retry, then the template answers instead.
-- **What happens when a model asks to change a flipping choice:** it gets `pending_human`, and the user is shown qPilot's own fixed "Not applied …" text, never the model's words. Change requests are also caught when worded indirectly ("make HMBS the only control gene"). An answer that claims a change qPilot did not make is replaced.
+- **What happens when a model asks to change a flipping choice:** it gets `pending_human`, and the user is shown qPilot's own fixed "Not applied …" text, never the model's words. Change requests are also caught in the indirect wordings the tests cover ("make HMBS the only control gene", "make HMBS the reference gene", "from now on normalise to HMBS"), and an answer that claims an unmade change in a recognised wording is replaced. Recognising wording is best effort; what holds whatever the model writes is the gate: no choice that can change a conclusion is applied without a person.
 - **Customising:** few-shot examples come only from decisions a person made in the lab's own log.
 - **What is logged:** each call writes provider, model, payload sha256 and sizes to `ai_calls.jsonl` in the study, which goes into the Analysis Record. The raw payload is logged only with `QPILOT_LOG_PAYLOAD=1`.
 

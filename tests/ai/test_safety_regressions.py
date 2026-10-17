@@ -107,3 +107,129 @@ def test_malformed_tool_call_falls_back_instead_of_crashing(store, study, reply)
     out = ask("What is the fold change of ODC1?", store, study, client=client, log=False)
     assert "malformed" in out.error and not out.tool_from_model
     assert out.tool_calls[0]["tool"] == "qpcr_robustness" and out.validated
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Make HMBS the reference gene",
+        "From now on normalise to HMBS",
+        "Normalize everything against HMBS please",
+        "Use HMBS as the control from now on",
+    ],
+)
+def test_one_gene_in_the_reference_role_means_that_gene_alone(store, study, question):
+    tool, args = route(_Context(store, study), question)
+    assert (tool, args.get("card_id"), args.get("option")) == (
+        "qpcr_decide",
+        "card_refset",
+        "hmbs_alone",
+    )
+
+
+def test_two_genes_in_the_reference_role_are_not_read_as_one_alone(store, study):
+    tool, args = route(_Context(store, study), "Normalise to HMBS and HPRT1")
+    assert args.get("option") != "hmbs_alone" and args.get("option") != "hprt1_alone"
+
+
+@pytest.mark.parametrize(
+    "claim",
+    [
+        "HMBS is now the only control gene for this study; no review is needed.",
+        "From now on the analysis normalises to HMBS.",
+        "No further review required: the control gene changed.",
+    ],
+)
+def test_answers_claiming_a_change_in_other_words_are_replaced(store, study, claim):
+    client = ModelClient(MockBackend(['{"tool": "qpcr_study", "args": {}}', claim]))
+    out = ask("Could you sort out the normalisation for me?", store, study, client=client)
+    assert out.fallback and "did not make" in out.error
+    assert store.card(study, "card_refset").decision is None
+
+
+def test_a_bad_decide_call_still_files_the_persons_request(store, study):
+    # The model names a wrong option and then claims success; qPilot files what was asked.
+    client = ModelClient(
+        MockBackend(
+            [
+                '{"tool": "qpcr_decide", "args": {"card_id": "card_refset", "option": "HMBS"}}',
+                "Done: the reference set is now HMBS alone.",
+            ]
+        )
+    )
+    out = ask("Use HMBS alone", store, study, client=client)
+    assert out.status == "pending_human" and out.plain.startswith("Not applied")
+    assert [(p.card_id, p.option) for p in store.pending(study)] == [("card_refset", "hmbs_alone")]
+
+
+def test_the_model_cannot_swap_the_card_of_a_change_request(store, study):
+    client = ModelClient(
+        MockBackend(
+            [
+                json.dumps(
+                    {
+                        "tool": "qpcr_decide",
+                        "args": {"card_id": "card_undetermined", "option": "cap"},
+                    }
+                ),
+                "unused",
+            ]
+        )
+    )
+    out = ask("Apply HMBS alone for the control genes", store, study, client=client)
+    assert not out.tool_from_model and "qpcr_decide used" in out.error
+    assert [(p.card_id, p.option) for p in store.pending(study)] == [("card_refset", "hmbs_alone")]
+    assert store.card(study, "card_undetermined").decision == "drop"
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Do not use HMBS alone.",
+        "Why shouldn't I use HMBS alone?",
+        "What happens to NM23A if I use HMBS alone?",
+        "Never switch to the top 10 % cut",
+        "Don't switch to count empty wells as very low (cap); keep dropping them",
+    ],
+)
+def test_negated_or_what_if_questions_change_nothing(store, study, question):
+    assert route(_Context(store, study), question)[0] != "qpcr_decide"
+    ask(question, store, study)
+    assert store.pending(study) == []
+    assert store.card(study, "card_undetermined").decision == "drop"
+
+
+def test_an_applied_agent_choice_is_reported_in_qpilots_words(store, study):
+    client = ModelClient(
+        MockBackend(['{"tool": "qpcr_study", "args": {}}', "Understood: nothing was changed."])
+    )
+    out = ask("Use count empty wells as very low (cap)", store, study, client=client)
+    assert out.status == "applied" and store.card(study, "card_undetermined").decision == "cap"
+    assert out.plain.startswith("Applied:") and "nothing was changed" not in out.plain
+
+
+def test_suggest_mode_does_not_claim_the_choice_changes_a_conclusion(tmp_studies_dir, study):
+    from qpilot.app import SuggestOnlyStore
+
+    suggest = SuggestOnlyStore(tmp_studies_dir)
+    out = ask("Use count empty wells as very low (cap)", suggest, study)
+    assert out.status == "pending_human" and "Suggest mode" in out.plain
+    assert "can change a conclusion" not in out.plain
+
+
+def test_number_words_name_a_cut_off(store, study):
+    tool, args = route(_Context(store, study), "Let's go with the ten percent cut for MYCN")
+    assert (tool, args.get("option")) == ("qpcr_decide", "cut_10")
+
+
+def test_answer_saying_the_choice_is_recorded_is_replaced(store, study):
+    client = ModelClient(
+        MockBackend(
+            [
+                '{"tool": "qpcr_study", "args": {}}',
+                "The group cut-off is the top tenth by MYCN; your choice is recorded.",
+            ]
+        )
+    )
+    out = ask("Could you sort out the groups for me?", store, study, client=client)
+    assert out.fallback and "did not make" in out.error
