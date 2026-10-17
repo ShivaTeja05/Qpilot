@@ -367,18 +367,43 @@ class StudyStore:
         other is ``record.rerun``); the import is inside the function so that ``qpilot.core``
         never depends on ``qpilot.qpcr`` at import time.
         """
-        path = Path(rdml_path)
+        path = Path(rdml_path).resolve()
         digest = sha256_file(path)
         workspace = self.root / digest
         if (workspace / "results.json").exists():
-            return json.loads((workspace / "results.json").read_text())["study_id"]
-        from qpilot.qpcr.study import run_study  # documented lazy import
+            study_id = json.loads((workspace / "results.json").read_text())["study_id"]
+        else:
+            from qpilot.qpcr.study import run_study  # documented lazy import
 
-        out = run_study(path)
-        result, cards = out[0], out[1]
-        grid = out[2] if len(out) > 2 else None
-        self.put(result, cards, grid)
-        return result.study_id
+            out = run_study(path)
+            result, cards = out[0], out[1]
+            grid = out[2] if len(out) > 2 else None
+            self.put(result, cards, grid)
+            study_id = result.study_id
+        self.set_source(study_id, path)
+        return study_id
+
+    def set_source(self, study_id: str, rdml_path: str | Path) -> None:
+        """Remember where the input file is, after checking it is the study's input."""
+        workspace = self.workspace(study_id)
+        path = Path(rdml_path).resolve()
+        digest = sha256_file(path)
+        if digest != self.get(study_id).input_sha256:
+            raise ValueError("this file is not the input of this study (sha256 differs)")
+        data = {"path": str(path), "sha256": digest}
+        with self._locked(workspace):
+            atomic_write(workspace / "source.json", dump_json(data))
+
+    def source(self, study_id: str) -> Path | None:
+        """The input file of a study, if it is known and still unchanged on disk."""
+        meta = self.workspace(study_id) / "source.json"
+        if not meta.exists():
+            return None
+        data = json.loads(meta.read_text(encoding="utf-8"))
+        path = Path(data["path"])
+        if not path.exists() or sha256_file(path) != data["sha256"]:
+            return None
+        return path
 
 
 def _grid_csv(grid: Any) -> str:
