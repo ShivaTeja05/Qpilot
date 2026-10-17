@@ -104,7 +104,26 @@ def _plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _serve_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--transport", choices=["stdio"], default="stdio", help="MCP transport (stdio only)"
+    )
+
+
+def _serve(args: argparse.Namespace) -> int:
+    from qpilot.mcp_server import main as serve_main
+
+    serve_main()
+    return 0
+
+
 COMMANDS: list[Command] = [
+    (
+        "serve",
+        "run the MCP server for AI agents over stdio (claude mcp add qpilot -- qpilot serve)",
+        _serve_arguments,
+        _serve,
+    ),
     (
         "plan",
         "before the first plate: samples needed and what a design cannot detect",
