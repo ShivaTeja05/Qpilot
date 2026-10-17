@@ -30,7 +30,11 @@ FLIPPED_FACT = {
     "reference_set": "f_n_flipped_refset",
     "group_cutoff": "f_n_flipped_cutoff",
     "undetermined": "f_n_flipped_undetermined",
+    "amp_call": "f_n_flipped_amp_call",
 }
+#: ``DesignSummary.note`` of a study whose groups come from a confirmed design (sample sheet or
+#: accepted proposals), as written by ``qpilot.qpcr.study``; such a study has no cut-off.
+GROUPS_NOTE = "groups from the confirmed design"
 FOOTER = (
     "For research use only. Not for clinical or diagnostic use.",
     "qPilot never makes a choice that can change a conclusion; those always wait for a person.",
@@ -86,6 +90,11 @@ def study_summary(result: StudyResult) -> SummaryView:
 def design_line(result: StudyResult) -> str:
     """How the groups were made, from the engine's design record."""
     design = result.design
+    if design.note == GROUPS_NOTE:
+        return (
+            f"Groups from the confirmed design ({design.group_var}): {design.n_hi} vs "
+            f"{design.n_lo} biological units; technical replicates averaged within each unit."
+        )
     marker = design.group_var.removesuffix("_high") or design.group_var
     return (
         f"Groups by {marker} expression, top {design.cut:.0%}: {marker}-high {design.n_hi} vs "

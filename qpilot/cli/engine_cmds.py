@@ -307,6 +307,7 @@ def _doctor(args: argparse.Namespace) -> int:
 
     from qpilot import __version__
     from qpilot.ai.config import ModelConfig
+    from qpilot.cli.core_cmds import studio_outbound_line
     from qpilot.core.store import default_studies_dir
     from qpilot.io.datasets import (
         VERMEULEN_FILENAME,
@@ -343,6 +344,7 @@ def _doctor(args: argparse.Namespace) -> int:
     else:
         target = config.endpoint or "https://api.anthropic.com"
         print(f"outbound: {target} (only when you use the model; provider {config.provider})")
+    print(studio_outbound_line(config))
     print("(in the app you can pick a model; the API key is only sent where it was configured)")
     if not cached:
         print("(`qpilot fetch-demo` downloads the pinned demo study once; nothing else does)")

@@ -25,6 +25,10 @@ from statistics import NormalDist
 
 from qpilot.schemas import Check, ContrastResult, Level, StudyResult
 
+#: ``DesignSummary.note`` of a study whose groups come from a confirmed design (equals
+#: ``qpilot.qpcr.study.GROUPS_NOTE``; kept here so this module imports nothing else).
+GROUPS_NOTE = "groups from the confirmed design"
+
 START_LEVEL: Level = "High"
 HOLDS_MIN = 0.80
 TWO_FOLD = 2.0
@@ -140,8 +144,12 @@ def checks_for(
         Check(
             id="design_sensitivity",
             passed=True,
-            note=f"Groups are derived from the data ({result.design.group_var}); "
-            "minimum detectable effect reported.",
+            note=(
+                f"Groups come from the confirmed design ({result.design.group_var}); "
+                if result.design.note == GROUPS_NOTE
+                else f"Groups are derived from the data ({result.design.group_var}); "
+            )
+            + "minimum detectable effect reported.",
             fact_ids=[f"f_mde_fold_{s}", "f_n_hi", "f_n_lo"],
         ),
     ]

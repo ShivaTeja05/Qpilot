@@ -226,10 +226,16 @@ def _ampcall(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
 
 def _summary(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
     _need(facts, "f_n_plates", "f_n_reactions", "f_n_samples", "f_n_hi", "f_n_lo")
-    return (
+    counts = (
         f"{_t('f_n_plates')} plates · {_t('f_n_samples')} samples · {_t('f_n_reactions')} "
-        f"reactions. High group {_t('f_n_hi')} samples, rest {_t('f_n_lo')}."
+        "reactions. "
     )
+    if "f_group_a" in facts and "f_group_b" in facts:  # groups from a confirmed design
+        return counts + (
+            f"{_t('f_group_a')}: {_t('f_n_hi')} biological units; "
+            f"{_t('f_group_b')}: {_t('f_n_lo')}."
+        )
+    return counts + f"High group {_t('f_n_hi')} samples, rest {_t('f_n_lo')}."
 
 
 def _meter(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:

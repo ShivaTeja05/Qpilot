@@ -87,6 +87,13 @@ CONTRADICTED_REASON = "a reason is required to accept a proposal the engine's ch
 ACTORS = ("human", "agent", "system")
 STATUSES: tuple[str, ...] = ProposalStatus.__args__  # type: ignore[attr-defined]
 DECISION_FIELDS = ("decided_by", "decided_at", "reason", "edits", "superseded_by")
+
+
+def _slot(proposal: Proposal) -> tuple[str, str, str]:
+    """What a newer proposal replaces: same kind, same subject, same kind of maker."""
+    return proposal.kind, proposal.subject, proposal.made_by.kind
+
+
 _SEPARATORS = re.compile("[  \u0085]+")
 
 
@@ -188,9 +195,9 @@ def _step(state: Replay, entry: ProposalEntry, study_id: str | None) -> str | No
         if (
             newer is None
             or state.proposed_at[newer.id] <= state.proposed_at[pid]
-            or (newer.kind, newer.subject) != (current.kind, current.subject)
+            or _slot(newer) != _slot(current)
         ):
-            return "a supersede without a newer proposal for the same subject"
+            return "a supersede without a newer proposal for the same subject from the same maker"
         if entry.reason or entry.edits is not None:
             return "a supersede line with fields its action does not use"
         state.proposals[pid] = current.model_copy(
@@ -494,7 +501,9 @@ class ProposalStore:
         reasons, 2,000 characters per string, 256 KB in all, 2,000 pending proposals, and no new
         proposal once the chain holds 64 MB (a person's decisions are never capped, so a flood
         of proposals cannot stop a person deciding). An older pending proposal for the same kind
-        and subject is superseded in the same write.
+        and subject from the same kind of maker (rule, model or agent) is superseded in the same
+        write; one from another maker stays pending beside it, so an agent can never push a
+        rule's or the model's proposal out of the inbox.
         """
         if type(actor) is not str or actor not in ACTORS:
             raise ProposalError(f"actor must be one of {', '.join(ACTORS)}")
@@ -524,7 +533,7 @@ class ProposalStore:
                 return ProposalOutcome(status="refused", head=head, reason="proposal id collision")
             stored = clean.model_copy(update={"id": pid, "created_at": at})
             new = [self._entry(entries, state, "propose", pid, actor, at, proposal=stored)]
-            older = [p for p in pending if (p.kind, p.subject) == (stored.kind, stored.subject)]
+            older = [p for p in pending if _slot(p) == _slot(stored)]
             for old in older:
                 supersede = {"superseded_by": pid}
                 new.append(

@@ -554,3 +554,28 @@ def test_without_the_plugin_nothing_is_banned_and_nothing_is_consistent(store, s
     )
     assert inbox.bulk_accept([pid], "human")[0].status == "refused"
     assert SESSION_ID != inbox.study_id  # the fixture study is its own input
+
+
+def test_an_agent_never_supersedes_a_rule_or_model_proposal(tmp_path):
+    """A newer proposal replaces only one from the same kind of maker; the others stay pending."""
+    from qpilot.core.proposals import ProposalStore
+    from qpilot.schemas_studio import MadeBy, Proposal
+
+    store = ProposalStore.at(tmp_path, "a" * 64)
+
+    def make(kind: str) -> Proposal:
+        return Proposal(
+            study_id="aaaaaaaaaaaa",
+            kind="design.group",
+            subject="S1",
+            payload={"group": kind},
+            made_by=MadeBy(kind=kind),
+        )
+
+    rule = store.propose(make("rule"), "system").proposal
+    model = store.propose(make("model"), "system").proposal
+    agent = store.propose(make("agent"), "agent").proposal
+    again = store.propose(make("agent"), "agent").proposal
+    status = {p.id: p.status for p in store.proposals()}
+    assert status[rule.id] == status[model.id] == status[again.id] == "proposed"
+    assert status[agent.id] == "superseded"

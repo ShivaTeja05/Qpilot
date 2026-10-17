@@ -73,6 +73,8 @@ from qpilot.schemas import DecisionCard, DecisionEntry, StudyResult
 from qpilot.schemas_studio import ProposalEntry, StudyDesign
 
 CHECKSUMS = "CHECKSUMS.sha256"
+#: ``DesignSummary.note`` of a study whose groups come from a confirmed design.
+GROUPS_NOTE = "groups from the confirmed design"
 WORKSPACE_FILES = (
     "results.json",
     "cards.json",
@@ -201,7 +203,8 @@ def _choices(result: StudyResult, store: StudyStore, study_id: str) -> dict:
     return {
         "conclusion_rule": result.conclusion_rule,
         "primary_refs": list(result.design.refs_primary),
-        "group_cut": result.design.cut,
+        # A study whose groups come from a confirmed design has no cut-off (its cut is 0.0).
+        "group_cut": None if result.design.note == GROUPS_NOTE else result.design.cut,
         "cards": {
             c.id: {
                 "recommended": c.recommended,

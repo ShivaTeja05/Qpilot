@@ -26,6 +26,7 @@ KIND_TITLE = {
     "reference_set": "Which control genes to normalise to",
     "group_cutoff": "Where to cut the comparison groups",
     "undetermined": "What to do with wells that never amplified",
+    "amp_call": "Which curves count as amplified",
 }
 
 

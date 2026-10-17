@@ -44,6 +44,7 @@ CARD_TITLE = {
     "reference_set": "the control genes",
     "group_cutoff": "the group cut-off",
     "undetermined": "the empty-well rule",
+    "amp_call": "the amplification call",
 }
 
 
