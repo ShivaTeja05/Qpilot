@@ -1,0 +1,23 @@
+# Training environment for the Curve Judge (Python 3.11.14). NOT a qPilot dependency:
+# the package ships model.json and evaluates it with numpy. Exact versions used for the
+# shipped model (sha256 39ea518c…); install into a separate venv outside the repository.
+#   python3.11 -m venv cj-venv && cj-venv/bin/pip install -r training/curve_judge/requirements.txt
+# macOS: XGBoost needs libomp (brew install libomp).
+xgboost==3.2.0
+numpy==2.4.6
+pandas==3.0.6
+scikit-learn==1.9.1
+# evaluate.py imports qpilot.qpcr.curve_judge (the numpy evaluator) to compare it with XGBoost.
+pydantic==2.14.1
+# transitive, pinned for reproducibility
+annotated-types==0.8.0
+cloudpickle==3.1.2
+joblib==1.6.0
+narwhals==2.27.1
+pydantic_core==2.50.1
+python-dateutil==2.9.0.post0
+scipy==1.17.1
+six==1.17.0
+threadpoolctl==3.7.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
