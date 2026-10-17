@@ -8,7 +8,17 @@ module under a file lock, with an optimistic version check (``expected_head``)::
         results.json  cards.json  facts.json  grid.csv   written atomically (temp -> rename)
         decisions.jsonl   hash-chained log, append-only, one DecisionEntry per line
         pending.jsonl     agent requests waiting for a human
+        study_design.json the confirmed StudyDesign (designed studies only)
         .lock
+    $QPILOT_STUDIES_DIR/sessions/<input_sha256>/
+        proposals.jsonl  quarantine.json  source.json  .keys/  .lock   (Studio, per input file)
+
+A study analysed with a confirmed design (not the legacy default) lives in the workspace named
+by the plugin's key, ``sha256(input_sha256 + design_hash)``, and its study id is the first 12
+hex of that key; without a design the workspace is exactly ``<input_sha256>`` as before. A
+Studio session holds the proposal inbox (``core/proposals.py``) and the quarantined free text
+(``core/firewall.py``) of one input file, and nothing analytic, so it exists before any design
+is confirmed.
 
 The chain is tamper-evident, not tamper-proof: each entry stores the sha256 of the previous
 entry (the first one stores the input file's sha256), so any later edit is detectable.
@@ -21,18 +31,28 @@ import json
 import os
 import re
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from filelock import FileLock
 
 from qpilot.core.decisions import check_request, needs_human
 from qpilot.schemas import Actor, DecisionCard, DecisionEntry, DecisionOutcome, StudyResult
+from qpilot.schemas_studio import Proposal, ProposalCheck, StudyDesign
+
+if TYPE_CHECKING:
+    from qpilot.core.firewall import Quarantine
+    from qpilot.core.proposals import ProposalStore
+    from qpilot.core.pseudonym import Pseudonymiser
 
 STUDY_ID = re.compile(r"^[0-9a-f]{6,64}$")
+INPUT_SHA = re.compile(r"^[0-9a-f]{64}$")
+SESSIONS_DIR = "sessions"
+DESIGN_FILE = "study_design.json"
+NO_ENGINE_CHECK = "engine check not available in this build"
 LOCK_TIMEOUT_S = 30
 STALE_REASON = "card changed since you read it"
 PENDING_REASON = "This choice can change a conclusion, so a human must decide it."
@@ -167,6 +187,54 @@ def _lines(path: Path) -> list[str]:
 
 def _now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def study_key(input_sha256: str, design: StudyDesign | None) -> str:
+    """The workspace name of a study: the input's sha256 without a design, else the plugin's key.
+
+    With a design this asks ``qpilot.qpcr.designs.study_key`` (a documented lazy import, like
+    :meth:`StudyStore.ensure_study`): the input's sha256 for the legacy default design,
+    ``sha256(input_sha256 + design_hash)`` otherwise. The key names a folder, so anything but
+    64 lower-case hex is refused.
+    """
+    if design is None:
+        return input_sha256
+    from qpilot.qpcr.designs import study_key as plugin_key  # documented lazy import
+
+    key = plugin_key(input_sha256, design)
+    if not isinstance(key, str) or not INPUT_SHA.match(key):
+        raise ValueError("the design plugin returned an unusable workspace key")
+    return key
+
+
+def _no_engine_check(proposal: Proposal) -> ProposalCheck:
+    return ProposalCheck(status="cannot_check", note=NO_ENGINE_CHECK)
+
+
+def _bind_check(
+    check: Callable[..., ProposalCheck], store: StudyStore, session_id: str
+) -> Callable[[Proposal], ProposalCheck]:
+    def checker(proposal: Proposal) -> ProposalCheck:
+        return check(proposal, store, session_id)
+
+    return checker
+
+
+def plugin_checks() -> tuple[Callable[..., str | None] | None, Callable[..., ProposalCheck] | None]:
+    """The qPCR plugin's ``(hard_ban, check_proposal)``, or ``(None, None)`` without them.
+
+    A documented lazy import of ``qpilot.qpcr.design_checks`` (like ``ensure_study``,
+    :func:`study_key` and ``record.rerun``), so ``qpilot.core`` never depends on the plugin at
+    import time. Only a build that lacks the module counts as "no checks"; any other import
+    error is raised, so a broken plugin can never switch its hard bans off silently.
+    """
+    try:
+        from qpilot.qpcr.design_checks import check_proposal, hard_ban  # documented lazy import
+    except ModuleNotFoundError as err:
+        if err.name in ("qpilot.qpcr", "qpilot.qpcr.design_checks"):
+            return None, None
+        raise
+    return hard_ban, check_proposal
 
 
 DECISION_FIELDS = ("status", "decision", "reason", "decided_by", "decided_at")
@@ -330,14 +398,30 @@ class StudyStore:
 
     # ---- writing (all under the workspace lock) ------------------------------------------
 
-    def put(self, result: StudyResult, cards: list[DecisionCard], grid: Any = None) -> None:
+    def put(
+        self,
+        result: StudyResult,
+        cards: list[DecisionCard],
+        grid: Any = None,
+        design: StudyDesign | None = None,
+    ) -> None:
         """Write a study's results, cards, facts and (optionally) grid atomically.
 
         A new workspace's log starts with one ``system`` entry per auto-decided card. If the
         workspace already has a log (the same input analysed again), its decisions are replayed
         onto the new cards, so a re-run keeps what people decided.
+
+        Without ``design`` the workspace is ``<input_sha256>``, exactly as before. With a
+        confirmed design it is the plugin's :func:`study_key`, the result's study id must be
+        the key's first 12 hex, and the design is saved as ``study_design.json`` (its canonical
+        JSON), which ``record.rerun`` uses to rebuild the settings.
         """
-        workspace = self.root / result.input_sha256
+        if not INPUT_SHA.match(result.input_sha256):
+            raise ValueError("input_sha256 must be 64 lower-case hex")
+        key = study_key(result.input_sha256, design)
+        if design is not None and result.study_id != key[:12]:
+            raise ValueError("a designed study's id must be the first 12 hex of its study key")
+        workspace = self.root / key
         workspace.mkdir(parents=True, exist_ok=True)
         with self._locked(workspace):
             log = workspace / "decisions.jsonl"
@@ -368,6 +452,8 @@ class StudyStore:
             atomic_write(workspace / "facts.json", dump_json(facts))
             if grid is not None:
                 atomic_write(workspace / "grid.csv", _grid_csv(grid))
+            if design is not None:
+                atomic_write(workspace / DESIGN_FILE, design.canonical())
             atomic_write(workspace / "format.json", dump_json({"cards": CARDS_FORMAT}))
 
     def append_decision(
@@ -557,16 +643,20 @@ class StudyStore:
 
     # ---- running a study ---------------------------------------------------------------
 
-    def ensure_study(self, rdml_path: str | Path) -> str:
+    def ensure_study(self, rdml_path: str | Path, design: StudyDesign | None = None) -> str:
         """Return the study id for an input file, analysing it first if no workspace exists.
 
-        This is one of the two documented places where the core imports the qPCR plugin (the
-        other is ``record.rerun``); the import is inside the function so that ``qpilot.core``
-        never depends on ``qpilot.qpcr`` at import time.
+        With ``design`` (a confirmed :class:`~qpilot.schemas_studio.StudyDesign`) the study is
+        analysed with ``StudySettings.from_design(design)`` in the design's own workspace (see
+        :func:`study_key`); without it, exactly as before.
+
+        This is one of the documented places where the core imports the qPCR plugin (the others
+        are :func:`study_key`, :func:`plugin_checks` and ``record.rerun``); the imports are
+        inside functions so that ``qpilot.core`` never depends on ``qpilot.qpcr`` at import time.
         """
         path = Path(rdml_path).resolve()
         digest = sha256_file(path)
-        workspace = self.root / digest
+        workspace = self.root / study_key(digest, design)
         if (workspace / "results.json").exists() and not self._outdated(workspace):
             study_id = json.loads((workspace / "results.json").read_text())["study_id"]
         else:
@@ -574,10 +664,15 @@ class StudyStore:
             # new cards, so decisions people made are kept.
             from qpilot.qpcr.study import run_study  # documented lazy import
 
-            out = run_study(path)
+            if design is None:
+                out = run_study(path)
+            else:
+                from qpilot.qpcr.study import StudySettings  # documented lazy import
+
+                out = run_study(path, StudySettings.from_design(design))
             result, cards = out[0], out[1]
             grid = out[2] if len(out) > 2 else None
-            self.put(result, cards, grid)
+            self.put(result, cards, grid, design=design)
             study_id = result.study_id
         self.set_source(study_id, path)
         return study_id
@@ -616,6 +711,118 @@ class StudyStore:
         if not path.exists() or sha256_file(path) != data["sha256"]:
             return None
         return path
+
+    def design(self, study_id: str) -> StudyDesign | None:
+        """The confirmed design a study was analysed with, or None for the legacy default."""
+        path = self.workspace(study_id) / DESIGN_FILE
+        if not path.exists():
+            return None
+        return StudyDesign.model_validate_json(path.read_text(encoding="utf-8"))
+
+    # ---- Studio sessions: proposals and quarantined text, per input file ----------------------
+
+    def session(self, input_sha256: str) -> Path:
+        """The Studio session folder of one input file, created if missing."""
+        if not isinstance(input_sha256, str) or not INPUT_SHA.match(input_sha256):
+            raise ValueError("a session is named by its input file's sha256 (64 hex)")
+        folder = self.root / SESSIONS_DIR / input_sha256
+        folder.mkdir(parents=True, exist_ok=True)
+        return folder
+
+    def open_session(self, rdml_path: str | Path) -> str:
+        """Open (or reopen) the session of an input file; return its id, ``input_sha256[:12]``.
+
+        Records where the file is (``source.json``, as for a study). The caller checks the path
+        first (the MCP server's path policy); nothing is analysed here.
+        """
+        path = Path(rdml_path).resolve()
+        digest = sha256_file(path)
+        folder = self.session(digest)
+        with self._locked(folder):
+            atomic_write(folder / "source.json", dump_json({"path": str(path), "sha256": digest}))
+        return digest[:12]
+
+    def find_session(self, session_id: str) -> Path:
+        """The session folder whose name starts with ``session_id``; ``StudyNotFound`` if none."""
+        if not isinstance(session_id, str) or not STUDY_ID.match(session_id):
+            raise StudyNotFound(f"not a session id: {session_id!r}")
+        folder = self.root / SESSIONS_DIR
+        hits = (
+            [
+                d
+                for d in folder.iterdir()
+                if d.is_dir() and INPUT_SHA.match(d.name) and d.name.startswith(session_id)
+            ]
+            if folder.is_dir()
+            else []
+        )
+        if len(hits) != 1:
+            raise StudyNotFound(session_id)
+        return hits[0]
+
+    def session_source(self, session_id: str) -> Path | None:
+        """The input file of a session, if it is known and still unchanged on disk."""
+        folder = self.find_session(session_id)
+        meta = folder / "source.json"
+        if not meta.exists():
+            return None
+        data = json.loads(meta.read_text(encoding="utf-8"))
+        path = Path(data["path"])
+        if data.get("sha256") != folder.name or not path.exists():
+            return None
+        return path if sha256_file(path) == folder.name else None
+
+    def proposal_home(self, study_id: str) -> tuple[Path, str]:
+        """Where the proposals of a study or session live, and the input sha256 they chain from.
+
+        Always the session of the input file: a session id (``input_sha256[:12]``) names it
+        directly, and a study id (legacy or designed) names it through the study's input. An
+        id that matches neither, or matches two different inputs, is ``StudyNotFound``. The
+        folder is created on the first write, not here.
+        """
+        inputs = set()
+        try:
+            inputs.add(self.find_session(study_id).name)
+        except StudyNotFound:
+            pass
+        try:
+            inputs.add(self.get(study_id).input_sha256)
+        except StudyNotFound:
+            pass
+        if len(inputs) != 1:
+            raise StudyNotFound(study_id)
+        digest = inputs.pop()
+        if not INPUT_SHA.match(digest):
+            raise StudyNotFound(study_id)
+        return self.root / SESSIONS_DIR / digest, digest
+
+    def proposals(self, study_id: str) -> ProposalStore:
+        """The proposal inbox of a study or session, with the domain plugin's checks wired in.
+
+        The plugin's ``hard_ban`` guards every proposal and every acceptance, and its
+        ``check_proposal(proposal, store, session_id)`` replaces whatever check a caller
+        supplies, where ``session_id`` is the input's legacy id (``input_sha256[:12]``) and may
+        name a session with no analysed study yet. In a build without the plugin nothing is
+        banned and every check is ``cannot_check``, so nothing can be accepted in bulk.
+        """
+        from qpilot.core.proposals import ProposalStore
+
+        home, digest = self.proposal_home(study_id)
+        guard, check = plugin_checks()
+        checker = _no_engine_check if check is None else _bind_check(check, self, digest[:12])
+        return ProposalStore.at(home, digest, guard, checker=checker)
+
+    def quarantine(self, study_id: str) -> Quarantine:
+        """The quarantined free text of a study's or session's input (``core/firewall.py``)."""
+        from qpilot.core.firewall import Quarantine
+
+        return Quarantine(self.proposal_home(study_id)[0])
+
+    def pseudonymiser(self, study_id: str) -> Pseudonymiser:
+        """Keyed tokens for the names of a study's or session's input (``core/pseudonym.py``)."""
+        from qpilot.core.pseudonym import Pseudonymiser
+
+        return Pseudonymiser(self.proposal_home(study_id)[0])
 
 
 def _grid_csv(grid: Any) -> str:

@@ -1,0 +1,776 @@
+"""The proposal inbox: the AI proposes, the engine checks, and only a person decides.
+
+Domain-agnostic. A :class:`~qpilot.schemas_studio.Proposal` has no effect on any number, record
+entry or Prism file until a person accepts it; the engine reads only :meth:`ProposalStore.accepted`.
+Proposals live in the Studio session of their input file, so an inbox exists before any design
+is confirmed or any analysis has run::
+
+    $QPILOT_STUDIES_DIR/sessions/<input_sha256>/
+        proposals.jsonl   hash-chained, append-only, one ProposalEntry per line
+        quarantine.json   the free text proposals cite (core/firewall.py)
+        source.json       where the input file is
+        .lock
+
+There is one chain per input file. Its root is the input's sha256 (the root of the decision
+chain too), and every proposal in it carries ``study_id = input_sha256[:12]``, the input's
+legacy study id, whatever design is later confirmed. Each line's ``hash`` is the sha256 of the
+canonical JSON of the entry without ``hash`` and without fields that are None, so optional
+fields added later never change old hashes. The full proposal is stored once, on its
+``propose`` line; every state (pending, accepted, edited, rejected, superseded) is rebuilt by
+replaying the chain, so there is no derived file that could drift from it.
+
+Rules enforced here, in code:
+
+- **Only a person decides.** :meth:`~ProposalStore.accept`, :meth:`~ProposalStore.edit_and_accept`,
+  :meth:`~ProposalStore.reject` and :meth:`~ProposalStore.bulk_accept` raise
+  :class:`ProposalError` unless ``actor == "human"``, before the lock is taken or any file is
+  read. Replay ignores, and ``verify`` reports, any decision whose actor is not ``human``.
+- **Hard bans hold at every step.** The domain plugin's guard (``hard_ban``) runs inside the
+  lock on every proposal and again on everything a person accepts (with any edits merged in).
+- **Bulk acceptance is narrow.** It takes only the listed ids, and only those still pending
+  with an engine check of ``consistent``.
+- **Version check.** With ``expected_head``, a decision is ``stale`` when its own proposal
+  changed or a person decided anything since that head (an agent's new proposals elsewhere
+  never make a person's decision stale, so an agent cannot block a person by proposing).
+- **Nothing is written for a refusal.** A refused or stale action writes nothing anywhere; the
+  outcome says why, and the chain records only what happened.
+- **A damaged inbox stops.** A chain that does not verify (or holds an entry replay rejects) is
+  neither read nor extended; qPilot never repairs it silently.
+
+The guard and the checker are called with data, never with the store: the guard runs while the
+lock is held and must not open this inbox again.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from filelock import FileLock
+from pydantic import ValidationError
+
+from qpilot.core.decisions import MAX_REASON
+from qpilot.core.store import INPUT_SHA, LOCK_TIMEOUT_S, _lines, _now, canonical_json
+from qpilot.schemas import Actor
+from qpilot.schemas_studio import (
+    Proposal,
+    ProposalCheck,
+    ProposalEntry,
+    ProposalOutcome,
+    ProposalStatus,
+)
+
+if TYPE_CHECKING:
+    from qpilot.core.store import StudyStore
+
+Guard = Callable[[Proposal, list[Proposal]], "str | None"]
+Checker = Callable[[Proposal], ProposalCheck]
+
+PROPOSALS_FILE = "proposals.jsonl"
+MAX_PAYLOAD_BYTES = 64 * 1024
+MAX_PROPOSAL_BYTES = 256 * 1024
+MAX_EVIDENCE = 200
+MAX_LIST = 50  # alternatives, reasons, check rule ids
+MAX_STRING = 2_000
+MAX_PENDING = 2_000
+MAX_CHAIN_BYTES = 64 * 1024 * 1024  # new proposals stop here; decisions never do
+HUMAN_ONLY = "only a person in qPilot Studio can accept, edit or reject a proposal"
+STALE_REASON = "the inbox changed since you read it"
+CONTRADICTED_REASON = "a reason is required to accept a proposal the engine's check contradicts"
+ACTORS = ("human", "agent", "system")
+STATUSES: tuple[str, ...] = ProposalStatus.__args__  # type: ignore[attr-defined]
+DECISION_FIELDS = ("decided_by", "decided_at", "reason", "edits", "superseded_by")
+_SEPARATORS = re.compile("[  \u0085]+")
+
+
+class ProposalError(ValueError):
+    """An action on the inbox that is not allowed, malformed, or meets a damaged chain."""
+
+
+# ---- hashing and verification -----------------------------------------------------------------
+
+
+def proposal_entry_hash(entry: ProposalEntry) -> str:
+    """sha256 of the entry's canonical JSON without ``hash`` and without None fields."""
+    data = entry.model_dump(mode="json", exclude={"hash"}, exclude_none=True)
+    return hashlib.sha256(canonical_json(data).encode("utf-8")).hexdigest()
+
+
+def canonical_line(entry: ProposalEntry) -> str:
+    """The exact line an entry is stored as (no trailing newline)."""
+    return canonical_json(entry.model_dump(mode="json", exclude_none=True))
+
+
+def verify_proposal_chain(entries: list[ProposalEntry], root: str) -> int | None:
+    """Return the ``seq`` of the first entry whose link or hash is wrong, or None if intact."""
+    prev = root
+    for position, entry in enumerate(entries, start=1):
+        if (
+            entry.seq != position
+            or entry.prev_hash != prev
+            or entry.hash != proposal_entry_hash(entry)
+        ):
+            return position
+        prev = entry.hash
+    return None
+
+
+def first_altered_line(lines: list[str], entries: list[ProposalEntry]) -> int | None:
+    """The first line whose bytes are not the canonical form of the entry it parses to.
+
+    The hash covers the parsed entry, so without this an extra field, a duplicate key or a
+    missing default could be written into a line without breaking the chain.
+    """
+    for position, (line, entry) in enumerate(zip(lines, entries, strict=False), start=1):
+        if line != canonical_line(entry):
+            return position
+    return None
+
+
+def chain_lines(path: Path) -> list[str]:
+    """The non-blank lines of a ``proposals.jsonl`` (split on newlines only)."""
+    if not path.exists():
+        return []
+    return [line for line in _lines(path) if line.strip()]
+
+
+# ---- replay ------------------------------------------------------------------------------------
+
+
+@dataclass
+class Replay:
+    """The inbox rebuilt from a chain: every proposal, in the order it was proposed."""
+
+    proposals: dict[str, Proposal] = field(default_factory=dict)
+    proposed_at: dict[str, int] = field(default_factory=dict)  # proposal id -> seq
+    decided: list[str] = field(default_factory=list)  # accepted or edited, in chain order
+    problems: list[str] = field(default_factory=list)
+
+
+def _step(state: Replay, entry: ProposalEntry, study_id: str | None) -> str | None:
+    """Apply one entry to ``state``; return why it is invalid (state unchanged) or None."""
+    pid = entry.proposal_id
+    if entry.action == "propose":
+        proposal = entry.proposal
+        if proposal is None:
+            return "a propose line without its proposal"
+        if proposal.id != pid or pid in state.proposals:
+            return "a proposal id that is not new"
+        if proposal.status != "proposed" or any(
+            getattr(proposal, f) is not None for f in DECISION_FIELDS
+        ):
+            return "a proposal that arrives already decided"
+        if entry.reason or entry.edits is not None or entry.superseded_by is not None:
+            return "a propose line with fields its action does not use"
+        if study_id is not None and proposal.study_id != study_id:
+            return "a proposal for another study"
+        state.proposals[pid] = proposal
+        state.proposed_at[pid] = entry.seq
+        return None
+    if entry.proposal is not None:
+        return "a full proposal on a line that does not propose it"
+    current = state.proposals.get(pid)
+    if current is None:
+        return f"a {entry.action} of an unknown proposal"
+    if current.status != "proposed":
+        return f"a {entry.action} of a proposal that is already {current.status}"
+    if entry.action == "supersede":
+        newer = state.proposals.get(entry.superseded_by or "")
+        if entry.actor != "system":
+            return f"a supersede by {entry.actor}; only the system supersedes"
+        if (
+            newer is None
+            or state.proposed_at[newer.id] <= state.proposed_at[pid]
+            or (newer.kind, newer.subject) != (current.kind, current.subject)
+        ):
+            return "a supersede without a newer proposal for the same subject"
+        if entry.reason or entry.edits is not None:
+            return "a supersede line with fields its action does not use"
+        state.proposals[pid] = current.model_copy(
+            update={"status": "superseded", "superseded_by": newer.id}
+        )
+        return None
+    if entry.actor != "human":
+        return f"a decision ({entry.action}) by {entry.actor}; only a person decides"
+    if entry.superseded_by is not None:
+        return "a decision line with fields its action does not use"
+    update: dict[str, Any] = {
+        "decided_by": "human",
+        "decided_at": entry.at,
+        "reason": entry.reason or None,
+    }
+    if entry.action == "reject":
+        if not entry.reason:
+            return "a rejection without a reason"
+        if entry.edits is not None:
+            return "a rejection with edits"
+        update["status"] = "rejected"
+    else:
+        if current.check.status == "contradicted" and not entry.reason:
+            return "acceptance of a contradicted proposal without a reason"
+        if entry.action == "accept":
+            if entry.edits is not None:
+                return "an acceptance with edits (that is an edit)"
+            update["status"] = "accepted"
+        else:
+            if not entry.edits or not set(entry.edits) <= set(current.payload):
+                return "edits that are not fields of the proposal"
+            update.update(status="edited", edits=entry.edits)
+        state.decided.append(pid)
+    state.proposals[pid] = current.model_copy(update=update)
+    return None
+
+
+def replay(entries: Iterable[ProposalEntry], study_id: str | None = None) -> Replay:
+    """Rebuild the inbox from its chain; invalid entries change nothing and are listed.
+
+    ``study_id`` (the input's legacy id) is checked on every proposal when given.
+    """
+    state = Replay()
+    for entry in entries:
+        problem = _step(state, entry, study_id)
+        if problem:
+            state.problems.append(f"entry {entry.seq}: {problem}")
+    return state
+
+
+def changed_since(
+    entries: list[ProposalEntry], root: str, expected_head: str, proposal_id: str
+) -> bool:
+    """Whether a decision on ``proposal_id`` made at ``expected_head`` is now out of date.
+
+    It is when any later entry touches the same proposal, or when a person decided anything
+    since; an agent's new proposals (and the supersedes they cause) elsewhere never count. A
+    head that is not in the chain counts as changed.
+    """
+    heads = [root, *(e.hash for e in entries)]
+    if expected_head not in heads:
+        return True
+    later = entries[heads.index(expected_head) :]
+    return any(
+        e.proposal_id == proposal_id
+        or (e.actor == "human" and e.action in ("accept", "edit", "reject"))
+        for e in later
+    )
+
+
+def proposal_id(proposal: Proposal, created_at: str, seq: int) -> str:
+    """``p_`` + 16 hex of sha256 over kind, subject, payload, made_by, created_at and seq."""
+    data = {
+        "kind": proposal.kind,
+        "subject": proposal.subject,
+        "payload": proposal.payload,
+        "made_by": proposal.made_by.model_dump(mode="json", exclude_none=True),
+        "created_at": created_at,
+        "seq": seq,
+    }
+    return "p_" + hashlib.sha256(canonical_json(data).encode("utf-8")).hexdigest()[:16]
+
+
+# ---- request cleaning ----------------------------------------------------------------------------
+
+
+def _strings(value: Any) -> Iterator[str]:
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            yield key
+            yield from _strings(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _strings(item)
+
+
+def _plain_json(value: Any, what: str) -> Any:
+    """``value`` round-tripped through strict JSON; refuses NaN, infinity and non-JSON types."""
+    try:
+        text = json.dumps(value, allow_nan=False, ensure_ascii=False)
+        text.encode("utf-8")
+    except (TypeError, ValueError, RecursionError) as err:
+        raise ProposalError(f"{what} must be plain JSON (no NaN, infinity or other types)") from err
+    return json.loads(text)
+
+
+def _check_strings(value: Any, what: str) -> None:
+    if any(len(s) > MAX_STRING for s in _strings(value)):
+        raise ProposalError(f"{what} holds text longer than {MAX_STRING:,} characters")
+
+
+def clean_reason(reason: str | None, required: bool = False) -> str:
+    """A decision's reason on one line, at most ``MAX_REASON`` characters (refused, not cut)."""
+    if reason is None:
+        reason = ""
+    if not isinstance(reason, str):
+        raise ProposalError("a reason must be text")
+    cleaned = _SEPARATORS.sub(" ", reason).strip()
+    if required and not cleaned:
+        raise ProposalError("a reason is required")
+    if len(cleaned) > MAX_REASON:
+        raise ProposalError(f"reason longer than {MAX_REASON} characters")
+    _plain_json(cleaned, "a reason")
+    return cleaned
+
+
+def clean_edits(edits: dict[str, Any]) -> dict[str, Any]:
+    """A person's edits as plain JSON within the size caps (keys are checked under the lock)."""
+    if not isinstance(edits, dict) or not edits:
+        raise ProposalError("edits must be a non-empty object of payload fields")
+    cleaned = _plain_json(edits, "edits")
+    if len(canonical_json(cleaned).encode("utf-8")) > MAX_PAYLOAD_BYTES:
+        raise ProposalError(f"edits larger than {MAX_PAYLOAD_BYTES // 1024} KB")
+    _check_strings(cleaned, "edits")
+    return cleaned
+
+
+def _require_human(actor: Any) -> None:
+    # type() and not isinstance(): a str subclass could answer == "human" for anyone.
+    if type(actor) is not str or actor != "human":
+        raise ProposalError(HUMAN_ONLY)
+
+
+def _ask(guard: Guard | None, candidate: Proposal, current: list[Proposal]) -> str | None:
+    """The guard's refusal, on copies: a guard can read the inbox but never change it."""
+    if guard is None:
+        return None
+    refusal = guard(candidate.model_copy(deep=True), [p.model_copy(deep=True) for p in current])
+    return str(refusal)[:500] if refusal else None
+
+
+def _short(err: ValidationError) -> str:
+    parts = []
+    for item in err.errors()[:3]:
+        where = ".".join(str(x) for x in item.get("loc", ())) or "proposal"
+        parts.append(f"{where}: {item.get('msg', 'invalid')}")
+    return "invalid proposal (" + "; ".join(parts) + ")"
+
+
+# ---- the store -----------------------------------------------------------------------------------
+
+
+class ProposalStore:
+    """The inbox of one input file: append-only, hash-chained, decided only by a person.
+
+    ``ProposalStore(store, study_id, guard)`` opens the inbox of a study or Studio session
+    through the study store (``StudyStore.proposals`` does the same and also wires the domain
+    plugin's guard and engine check). :meth:`at` opens one by folder and root.
+
+    ``guard(proposal, current)`` is the plugin's hard-ban check: ``current`` is every proposal
+    in the inbox with its present status; it returns a refusal reason or None. ``checker``,
+    when given, replaces whatever ``check`` the caller put on a proposal with the engine's own.
+    """
+
+    def __init__(
+        self,
+        store: StudyStore,
+        study_id: str,
+        guard: Guard | None = None,
+        *,
+        checker: Checker | None = None,
+    ) -> None:
+        workspace, root = store.proposal_home(study_id)
+        self._setup(workspace, root, guard, checker)
+
+    @classmethod
+    def at(
+        cls,
+        workspace: str | Path,
+        root: str,
+        guard: Guard | None = None,
+        *,
+        checker: Checker | None = None,
+    ) -> ProposalStore:
+        """The inbox kept in ``workspace``, chained from ``root`` (the input's sha256)."""
+        inbox = cls.__new__(cls)
+        inbox._setup(Path(workspace), root, guard, checker)
+        return inbox
+
+    def _setup(
+        self, workspace: Path, root: str, guard: Guard | None, checker: Checker | None
+    ) -> None:
+        if not isinstance(root, str) or not INPUT_SHA.match(root):
+            raise ValueError("the root of a proposal chain is an input file's sha256")
+        self.workspace = workspace
+        self.root = root
+        self.study_id = root[:12]
+        self.path = workspace / PROPOSALS_FILE
+        self._guard = guard
+        self._checker = checker
+
+    # ---- reading --------------------------------------------------------------------------
+
+    @contextmanager
+    def _locked(self) -> Iterator[None]:
+        self.workspace.mkdir(parents=True, exist_ok=True)
+        with FileLock(str(self.workspace / ".lock"), timeout=LOCK_TIMEOUT_S):
+            yield
+
+    def _load(self) -> tuple[list[ProposalEntry], Replay]:
+        """The chain and its replay; :class:`ProposalError` when it does not verify."""
+        lines = chain_lines(self.path)
+        try:
+            entries = [ProposalEntry.model_validate_json(line) for line in lines]
+        except (ValueError, RecursionError) as err:
+            raise ProposalError(f"{PROPOSALS_FILE} is damaged; qPilot will not use it") from err
+        broken = verify_proposal_chain(entries, self.root)
+        if broken is None:
+            broken = first_altered_line(lines, entries)
+        if broken is not None:
+            raise ProposalError(f"{PROPOSALS_FILE} does not verify at entry {broken}")
+        state = replay(entries, self.study_id)
+        if state.problems:
+            raise ProposalError(f"{PROPOSALS_FILE}: {state.problems[0]}")
+        return entries, state
+
+    def _read(self) -> tuple[list[ProposalEntry], Replay]:
+        if not self.path.exists():
+            return [], Replay()
+        with self._locked():
+            return self._load()
+
+    def head(self) -> str:
+        """Hash of the latest entry, or the input's sha256 when the inbox is empty."""
+        entries, _ = self._read()
+        return entries[-1].hash if entries else self.root
+
+    def entries(self) -> list[ProposalEntry]:
+        """Every entry of the chain, oldest first."""
+        return self._read()[0]
+
+    def snapshot(self) -> tuple[str, list[Proposal]]:
+        """Head and every proposal, read together (pass the head back as ``expected_head``)."""
+        entries, state = self._read()
+        return (entries[-1].hash if entries else self.root), list(state.proposals.values())
+
+    def proposals(
+        self, status: str | None = None, kind_prefix: str | None = None
+    ) -> list[Proposal]:
+        """Proposals in the order they were made, optionally by status and kind prefix."""
+        if status is not None and status not in STATUSES:
+            raise ValueError(f"status must be one of {', '.join(STATUSES)}")
+        return [
+            p
+            for p in self._read()[1].proposals.values()
+            if (status is None or p.status == status)
+            and (kind_prefix is None or p.kind.startswith(kind_prefix))
+        ]
+
+    def get(self, proposal_id: str) -> Proposal:
+        """One proposal by id; ``KeyError`` if unknown."""
+        found = self._read()[1].proposals.get(proposal_id)
+        if found is None:
+            raise KeyError(f"unknown proposal {proposal_id!r}")
+        return found
+
+    def accepted(self, kind_prefix: str | None = None) -> list[Proposal]:
+        """What a person accepted (as is or edited), in the order they decided it.
+
+        This is the only view the engine may read. A later acceptance for the same kind and
+        subject overrides an earlier one; pending, rejected and superseded proposals are never
+        in it.
+        """
+        state = self._read()[1]
+        return [
+            state.proposals[pid]
+            for pid in state.decided
+            if kind_prefix is None or state.proposals[pid].kind.startswith(kind_prefix)
+        ]
+
+    # ---- proposing (any actor) --------------------------------------------------------------
+
+    def propose(self, proposal: Proposal, actor: Actor) -> ProposalOutcome:
+        """Add a proposal to the inbox as ``proposed``, or refuse it without writing anything.
+
+        The status and every decision field are reset, the id and ``created_at`` are assigned
+        here, and the engine's check replaces the caller's when a checker is set. Sizes are
+        capped (refused, never cut): payload 64 KB, 200 evidence items, 50 alternatives or
+        reasons, 2,000 characters per string, 256 KB in all, 2,000 pending proposals, and no new
+        proposal once the chain holds 64 MB (a person's decisions are never capped, so a flood
+        of proposals cannot stop a person deciding). An older pending proposal for the same kind
+        and subject is superseded in the same write.
+        """
+        if type(actor) is not str or actor not in ACTORS:
+            raise ProposalError(f"actor must be one of {', '.join(ACTORS)}")
+        try:
+            clean = self._clean(proposal)
+            if self._checker is not None:
+                clean = clean.model_copy(update={"check": self._engine_check(clean)})
+        except ProposalError as err:
+            return ProposalOutcome(status="refused", head=self.head(), reason=str(err))
+        with self._locked():
+            entries, state = self._load()
+            head = entries[-1].hash if entries else self.root
+            current = list(state.proposals.values())
+            pending = [p for p in current if p.status == "proposed"]
+            if len(pending) >= MAX_PENDING:
+                reason = f"the inbox already holds {MAX_PENDING:,} pending proposals"
+                return ProposalOutcome(status="refused", head=head, reason=reason)
+            if self.path.exists() and self.path.stat().st_size >= MAX_CHAIN_BYTES:
+                reason = f"the inbox is full ({MAX_CHAIN_BYTES // (1024 * 1024)} MB of history)"
+                return ProposalOutcome(status="refused", head=head, reason=reason)
+            refusal = _ask(self._guard, clean, current)
+            if refusal:
+                return ProposalOutcome(status="refused", head=head, reason=refusal)
+            at = _now()
+            pid = proposal_id(clean, at, len(entries) + 1)
+            if pid in state.proposals:
+                return ProposalOutcome(status="refused", head=head, reason="proposal id collision")
+            stored = clean.model_copy(update={"id": pid, "created_at": at})
+            new = [self._entry(entries, state, "propose", pid, actor, at, proposal=stored)]
+            older = [p for p in pending if (p.kind, p.subject) == (stored.kind, stored.subject)]
+            for old in older:
+                supersede = {"superseded_by": pid}
+                new.append(
+                    self._entry(
+                        entries + new, state, "supersede", old.id, "system", at, **supersede
+                    )
+                )
+            self._write(new)
+            stored = state.proposals[pid]
+        return ProposalOutcome(status="proposed", head=new[-1].hash, proposal=stored)
+
+    def _clean(self, proposal: Proposal) -> Proposal:
+        """The proposal re-validated as plain JSON, undecided, and within the caps."""
+        if not isinstance(proposal, Proposal):
+            raise ProposalError("not a Proposal")
+        raw = proposal.model_dump()
+        raw.update({f: None for f in DECISION_FIELDS}, status="proposed", id="", created_at="")
+        data = _plain_json(raw, "a proposal")
+        if len(canonical_json(data).encode("utf-8")) > MAX_PROPOSAL_BYTES:
+            raise ProposalError(f"a proposal larger than {MAX_PROPOSAL_BYTES // 1024} KB")
+        try:
+            clean = Proposal.model_validate(data)
+        except ValidationError as err:
+            raise ProposalError(_short(err)) from err
+        if clean.study_id != self.study_id:
+            raise ProposalError(f"this inbox takes proposals for study {self.study_id} only")
+        if not clean.subject.strip():
+            raise ProposalError("a proposal needs a subject")
+        if len(canonical_json(clean.payload).encode("utf-8")) > MAX_PAYLOAD_BYTES:
+            raise ProposalError(f"payload larger than {MAX_PAYLOAD_BYTES // 1024} KB")
+        if len(clean.evidence) > MAX_EVIDENCE:
+            raise ProposalError(f"more than {MAX_EVIDENCE} evidence items")
+        if max(len(clean.alternatives), len(clean.reasons), len(clean.check.rule_ids)) > MAX_LIST:
+            raise ProposalError(f"more than {MAX_LIST} alternatives, reasons or rule ids")
+        _check_strings(clean.model_dump(mode="json"), "the proposal")
+        return clean
+
+    def _engine_check(self, proposal: Proposal) -> ProposalCheck:
+        check = self._checker(proposal.model_copy(deep=True))  # type: ignore[misc]
+        if not isinstance(check, ProposalCheck):
+            raise ProposalError("the engine check did not return a ProposalCheck")
+        data = _plain_json(check.model_dump(), "the engine's check")
+        _check_strings(data, "the engine's check")
+        return ProposalCheck.model_validate(data)
+
+    # ---- deciding (a person only) -------------------------------------------------------------
+
+    def accept(
+        self, proposal_id: str, actor: Actor, reason: str = "", expected_head: str | None = None
+    ) -> ProposalOutcome:
+        """A person accepts a proposal as it is (a reason is required if the check contradicts)."""
+        _require_human(actor)
+        return self._decide(proposal_id, "accept", clean_reason(reason), None, expected_head)
+
+    def edit_and_accept(
+        self,
+        proposal_id: str,
+        actor: Actor,
+        edits: dict[str, Any],
+        reason: str,
+        expected_head: str | None = None,
+    ) -> ProposalOutcome:
+        """A person changes some payload fields and accepts; edits may not add new fields."""
+        _require_human(actor)
+        cleaned = clean_edits(edits)
+        return self._decide(proposal_id, "edit", clean_reason(reason), cleaned, expected_head)
+
+    def reject(
+        self, proposal_id: str, actor: Actor, reason: str, expected_head: str | None = None
+    ) -> ProposalOutcome:
+        """A person turns a proposal down, with a reason."""
+        _require_human(actor)
+        cleaned = clean_reason(reason, required=True)
+        return self._decide(proposal_id, "reject", cleaned, None, expected_head)
+
+    def bulk_accept(
+        self,
+        ids: Iterable[str],
+        actor: Actor,
+        reason: str = "",
+        expected_head: str | None = None,
+    ) -> list[ProposalOutcome]:
+        """A person accepts exactly the listed proposals that are pending and ``consistent``.
+
+        Anything else on the list (contradicted, cannot be checked, settled, unknown, listed
+        twice, or refused by the guard) comes back ``refused`` with a reason, and a proposal
+        changed since ``expected_head`` comes back ``stale``. One chain entry per accepted
+        proposal, all in one locked write; outcomes are in the order of ``ids``.
+        """
+        _require_human(actor)
+        cleaned = clean_reason(reason)
+        ids = list(ids)
+        if len(ids) > MAX_PENDING or not all(isinstance(i, str) for i in ids):
+            raise ProposalError(f"bulk acceptance takes up to {MAX_PENDING:,} proposal ids")
+        results: list[tuple[str, Proposal | None, str | None]] = []
+        with self._locked():
+            entries, state = self._load()
+            before = list(entries)
+            new: list[ProposalEntry] = []
+            seen: set[str] = set()
+            for pid in ids:
+                current = state.proposals.get(pid)
+                if current is None or pid in seen:
+                    why = "unknown proposal" if current is None else "listed twice"
+                    results.append(("refused", current, why))
+                    continue
+                seen.add(pid)
+                if expected_head is not None and changed_since(
+                    before, self.root, expected_head, pid
+                ):
+                    results.append(("stale", current, STALE_REASON))
+                    continue
+                if current.status != "proposed":
+                    results.append(("refused", current, f"already {current.status}"))
+                    continue
+                if current.check.status != "consistent":
+                    why = f"the engine's check is {current.check.status}; decide it on its own"
+                    results.append(("refused", current, why))
+                    continue
+                refusal = self._guarded(current, None, state)
+                if refusal:
+                    results.append(("refused", current, refusal))
+                    continue
+                at = _now()
+                new.append(
+                    self._entry(entries + new, state, "accept", pid, "human", at, reason=cleaned)
+                )
+                results.append(("accepted", state.proposals[pid], None))
+            if new:
+                self._write(new)
+            head = (entries + new)[-1].hash if entries or new else self.root
+        return [
+            ProposalOutcome(status=status, head=head, proposal=p, reason=why)  # type: ignore[arg-type]
+            for status, p, why in results
+        ]
+
+    def _decide(
+        self,
+        proposal_id: str,
+        action: str,
+        reason: str,
+        edits: dict[str, Any] | None,
+        expected_head: str | None,
+    ) -> ProposalOutcome:
+        with self._locked():
+            entries, state = self._load()
+            head = entries[-1].hash if entries else self.root
+            current = state.proposals.get(proposal_id)
+            if current is None:
+                raise KeyError(f"unknown proposal {proposal_id!r}")
+            if expected_head is not None and changed_since(
+                entries, self.root, expected_head, proposal_id
+            ):
+                return ProposalOutcome(
+                    status="stale", head=head, proposal=current, reason=STALE_REASON
+                )
+            if current.status != "proposed":
+                return ProposalOutcome(
+                    status="refused",
+                    head=head,
+                    proposal=current,
+                    reason=f"this proposal is already {current.status}",
+                )
+            if action != "reject" and current.check.status == "contradicted" and not reason:
+                raise ProposalError(CONTRADICTED_REASON)
+            if edits is not None and not set(edits) <= set(current.payload):
+                extra = sorted(set(edits) - set(current.payload))
+                raise ProposalError(f"edits may change payload fields only, not add {extra}")
+            if action != "reject":
+                refusal = self._guarded(current, edits, state)
+                if refusal:
+                    return ProposalOutcome(
+                        status="refused", head=head, proposal=current, reason=refusal
+                    )
+            entry = self._entry(
+                entries, state, action, proposal_id, "human", _now(), reason=reason, edits=edits
+            )
+            self._write([entry])
+            updated = state.proposals[proposal_id]
+        return ProposalOutcome(status=updated.status, head=entry.hash, proposal=updated)
+
+    # ---- internals ----------------------------------------------------------------------------
+
+    def _guarded(
+        self, proposal: Proposal, edits: dict[str, Any] | None, state: Replay
+    ) -> str | None:
+        """The guard's refusal of what would take effect (edits merged in), or None."""
+        effective = proposal
+        if edits:
+            effective = proposal.model_copy(update={"payload": {**proposal.payload, **edits}})
+        others = [p for p in state.proposals.values() if p.id != proposal.id]
+        return _ask(self._guard, effective, others)
+
+    def _entry(
+        self,
+        entries: list[ProposalEntry],
+        state: Replay,
+        action: str,
+        pid: str,
+        actor: str,
+        at: str,
+        **fields: Any,
+    ) -> ProposalEntry:
+        """Build the next entry, apply it to ``state`` exactly as replay will, and return it."""
+        entry = ProposalEntry(
+            seq=len(entries) + 1,
+            prev_hash=entries[-1].hash if entries else self.root,
+            action=action,  # type: ignore[arg-type]
+            proposal_id=pid,
+            actor=actor,  # type: ignore[arg-type]
+            at=at,
+            **{k: v for k, v in fields.items() if v is not None},
+        )
+        entry = entry.model_copy(update={"hash": proposal_entry_hash(entry)})
+        # What is written must read back as the same entry, or the chain would not verify.
+        again = ProposalEntry.model_validate_json(canonical_line(entry))
+        if (
+            canonical_line(again) != canonical_line(entry)
+            or proposal_entry_hash(again) != entry.hash
+        ):
+            raise ProposalError("this entry would not read back as written")
+        problem = _step(state, again, self.study_id)
+        if problem:
+            raise ProposalError(f"refusing to write {problem}")
+        return again
+
+    def _write(self, entries: list[ProposalEntry]) -> None:
+        text = "".join(canonical_line(e) + "\n" for e in entries)
+        with open(self.path, "a", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+
+
+__all__ = [
+    "PROPOSALS_FILE",
+    "ProposalError",
+    "ProposalStore",
+    "Replay",
+    "canonical_line",
+    "chain_lines",
+    "changed_since",
+    "clean_reason",
+    "first_altered_line",
+    "proposal_entry_hash",
+    "proposal_id",
+    "replay",
+    "verify_proposal_chain",
+]

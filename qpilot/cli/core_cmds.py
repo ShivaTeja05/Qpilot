@@ -45,6 +45,39 @@ def _verify(args: argparse.Namespace) -> int:
     return 0 if report.ok else 1
 
 
+def studio_outbound_line(config=None) -> str:
+    """The ``outbound (Studio):`` line of ``qpilot doctor``: where Studio's model calls go.
+
+    Names the configured provider and whether it is local (provider ``none``, or an
+    ``openai_compatible`` endpoint on localhost or a loopback address) or remote, using the
+    same rule as the AI layer (``core.pseudonym.endpoint_is_local``). Sample names are
+    pseudonymised before any remote call; a local endpoint can still forward elsewhere.
+    ``config`` defaults to ``ModelConfig.from_env()``.
+    """
+    from qpilot.ai.client import public_endpoint
+    from qpilot.ai.config import ModelConfig
+    from qpilot.core.pseudonym import endpoint_is_local
+
+    config = config if config is not None else ModelConfig.from_env()
+    if config.provider == "none":
+        return "outbound (Studio): none (provider none; no model is called)"
+    try:
+        target = public_endpoint(config.endpoint)
+    except ValueError:
+        target = "an unparsable endpoint"
+    if not target:
+        target = "https://api.anthropic.com" if config.provider == "anthropic" else "no endpoint"
+    if endpoint_is_local(config.provider, config.endpoint):
+        return (
+            f"outbound (Studio): local, {target} (provider {config.provider}); "
+            "sample names stay on this machine unless that endpoint forwards them"
+        )
+    return (
+        f"outbound (Studio): REMOTE, {target} (provider {config.provider}); "
+        "sample names are pseudonymised (keyed tokens) before any remote call"
+    )
+
+
 def _rerun_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("record", help="an Analysis Record folder or .zip")
     parser.add_argument("--out", default=None, help="where to write the regenerated results")
@@ -284,7 +317,7 @@ COMMANDS: list[Command] = [
     ),
     (
         "verify",
-        "check an Analysis Record's checksums and decision chain",
+        "check an Analysis Record's checksums, decision chain and proposal chain",
         _verify_arguments,
         _verify,
     ),
