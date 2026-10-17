@@ -13,9 +13,11 @@ CC BY 4.0.
 | Cq, per standard well | LinRegPCR 2013, block "LinRegPCR" (`data_vermeulen_methods_cq.tsv`) | 945 wells, 63 genes | offset +0.97 cycles on average (SD 0.17; range +0.15 to +1.72) |
 
 **About the Cq offset.** Our per-well Cq is later than the 2013 table in all 945 wells by a similar
-amount (SD 0.17 cycles), which points to a change in how LinRegPCR defines its
-quantification threshold since 2013, not to noise. qPilot's comparisons use N0, which line 1
-checks directly against the consortium's RDML-Tools output.
+amount (SD 0.17 cycles). LinRegPCR 2013 reported Cq where each curve crossed a common
+fluorescence threshold; the vendored current version reports TD0, the cycle where the curve's
+third derivative is zero, which is a different point on the same curve. The steady shift is
+consistent with that change in definition, not with noise. qPilot's comparisons use N0, which
+line 1 checks directly against the consortium's RDML-Tools output.
 
 **Not compared.** Genes are matched by exact name, never guessed.
 In the published tables but with no plate of that name in the RDML file: `PRKACB`.

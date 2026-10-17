@@ -10,8 +10,9 @@ rdmlpython repository (:data:`qpilot.io.datasets.BENCHMARK_TABLES`):
 2. **Dilution-series bias per gene** (Ruijter 2013: the slope of log10 N0 on log10 input copies;
    1 means unbiased) vs the "LinRegPCR (old)" row of ``data_vermeulen_methods_results.tsv``.
 3. **Cq per standard well** vs the 2013 "LinRegPCR" block of ``data_vermeulen_methods_cq.tsv``:
-   reported as a signed offset, because LinRegPCR's quantification threshold has been defined
-   differently since 2013. qPilot's comparisons use N0 (line 1), never Cq.
+   reported as a signed offset, because LinRegPCR 2013 placed Cq where the curve crossed a
+   common fluorescence threshold, while the current code reports TD0 (where the curve's third
+   derivative is zero). qPilot's comparisons use N0 (line 1), never Cq.
 
 Genes are matched by exact name, and a gene that exists on only one side is listed rather than
 guessed (``PRKACB`` in the published tables; the plate in the RDML file is ``PRKACB_20080311_bis``).
@@ -26,8 +27,9 @@ import json
 import math
 import re
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -308,6 +310,26 @@ class ValidationReport:
         """Stable, indented JSON."""
         return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> ValidationReport:
+        """Rebuild a report from :meth:`to_dict` output, e.g. the committed ``validation.json``."""
+
+        def build(kind: type, values: Mapping[str, Any]) -> Any:
+            return kind(
+                **{
+                    f.name: tuple(values[f.name])
+                    if isinstance(values[f.name], list)
+                    else values[f.name]
+                    for f in fields(kind)
+                }
+            )
+
+        return cls(
+            n0=build(N0Line, data["n0"]),
+            bias=build(BiasLine, data["bias"]),
+            cq=build(CqLine, data["cq"]),
+        )
+
     def lines(self) -> list[str]:
         """The three claims in one sentence each, for the CLI, slides and README."""
         n0, bias, cq = self.n0, self.bias, self.cq
@@ -320,7 +342,7 @@ class ValidationReport:
             f"(ours {bias.ours_mean:.3f} vs published {bias.published_mean:.3f} on average)",
             f"Cq on {cq.wells} standard wells ({cq.genes} genes) vs LinRegPCR (2013): "
             f"offset {cq.mean_offset:+.2f} cycles on average (SD {cq.sd_offset:.2f}), "
-            "a threshold-definition change, disclosed",
+            "a change in how LinRegPCR defines Cq, disclosed",
         ]
 
     def to_markdown(self) -> str:
@@ -368,9 +390,11 @@ CC BY 4.0.
 {table}
 
 **About the Cq offset.** Our per-well Cq is later than the 2013 table {every} by a similar
-amount (SD {cq.sd_offset:.2f} cycles), which points to a change in how LinRegPCR defines its
-quantification threshold since 2013, not to noise. qPilot's comparisons use N0, which line 1
-checks directly against the consortium's RDML-Tools output.
+amount (SD {cq.sd_offset:.2f} cycles). LinRegPCR 2013 reported Cq where each curve crossed a common
+fluorescence threshold; the vendored current version reports TD0, the cycle where the curve's
+third derivative is zero, which is a different point on the same curve. The steady shift is
+consistent with that change in definition, not with noise. qPilot's comparisons use N0, which
+line 1 checks directly against the consortium's RDML-Tools output.
 
 **Not compared.** Genes are matched by exact name, never guessed.
 In the published tables but with no plate of that name in the RDML file: {_names(unmatched)}.

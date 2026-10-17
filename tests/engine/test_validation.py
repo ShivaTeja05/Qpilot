@@ -11,6 +11,7 @@ import pytest
 from qpilot.cli import main
 from qpilot.io.datasets import cached_benchmark_tables
 from qpilot.qpcr.validation import (
+    ValidationReport,
     compare_bias,
     compare_cq,
     compare_n0,
@@ -247,3 +248,8 @@ def test_cli_validate_writes_both_files(demo_tables, tmp_path, capsys):
     assert "930 standard wells" in out and "99.6 %" in out and "+0.97" in out
     assert json.loads((tmp_path / "validation.json").read_text())["n0"]["wells"] == 930
     assert "| Starting quantity N0" in (tmp_path / "validation_table.md").read_text()
+
+
+def test_report_round_trips_through_json(curves, tables):
+    report = validate(curves, tables)
+    assert ValidationReport.from_dict(json.loads(report.to_json())) == report

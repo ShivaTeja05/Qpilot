@@ -20,7 +20,7 @@ eff_indiv           this well's own amplification efficiency
 r2                  fit quality of the window of linearity
 eff_target          mean efficiency of the gene on this plate (used for quantities)
 eff_target_sd       its standard deviation
-cq                  cycle where the signal crosses the common threshold (``TD0``); NaN if none
+cq                  LinRegPCR's Cq (``TD0``: third derivative of the curve = 0); NaN if none
 n0                  efficiency-corrected starting quantity (``Ncopy``); NaN = undetermined
 amplification       whether LinRegPCR saw amplification
 plateau             whether the curve reached a plateau
