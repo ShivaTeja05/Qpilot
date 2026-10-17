@@ -215,9 +215,16 @@ def _cited(texts: Iterable[str]) -> list[str]:
     return sorted({fid for text in texts for fid in TOKEN.findall(text)})
 
 
-def _pseudonyms(pseudonymiser: Any, genes: Sequence[str]) -> tuple[dict[str, str], dict[str, str]]:
-    to_token = {g: pseudonymiser.pseudonymise(g) for g in genes}
-    return to_token, {t: g for g, t in to_token.items()}
+def private_names(result: StudyResult) -> list[str]:
+    """Every target name the study's text can carry (genes, references, the group's marker)."""
+    names = set(result.contrasts) | set(result.genorm.M_initial) | set(result.design.refs_primary)
+    names |= {w for w in result.design.group_var.split("_") if any(c.isupper() for c in w)}
+    return sorted(n for n in names if n)
+
+
+def _pseudonyms(pseudonymiser: Any, names: Sequence[str]) -> tuple[dict[str, str], dict[str, str]]:
+    to_token = {n: pseudonymiser.pseudonymise(n) for n in names}
+    return to_token, {t: n for n, t in to_token.items()}
 
 
 def _swap(text: str, mapping: Mapping[str, str]) -> str:
@@ -233,18 +240,20 @@ def _reword(
     names: set[str],
     pseudonymiser: Any | None,
     genes: Sequence[str],
+    private: Sequence[str] = (),
 ) -> tuple[str | None, str | None, int]:
-    """(model caption or None, error, calls made)."""
+    """(model caption or None, error, calls made); ``private`` names become pseudonyms."""
     import json
 
-    to_token, to_gene = _pseudonyms(pseudonymiser, genes) if pseudonymiser else ({}, {})
+    hidden = sorted(set(private) | set(genes))
+    to_token, to_gene = _pseudonyms(pseudonymiser, hidden) if pseudonymiser else ({}, {})
     wanted = set(TOKEN.findall(caption))
     table = fact_table(facts, sorted(wanted))
-    if to_token:  # a fact value may be a gene list; it is never shown to a remote model
+    if to_token:  # a fact value may name a gene; such a value is never shown to a remote model
         table = {
             f: v
             for f, v in table.items()
-            if not any(g in v["value_for_reading_only"] for g in genes)
+            if not any(n in v["value_for_reading_only"] for n in hidden)
         }
     content = json.dumps({"caption": _swap(caption, to_token), "facts": table}, ensure_ascii=False)
     messages = [{"role": "user", "content": content}]
@@ -353,7 +362,13 @@ def draft_prism_project(
             start = len(client.metas)
             remote = client_is_remote(client)
             worded, error, _calls = _reword(
-                client, caption, facts, names, pseudonymiser if remote else None, chosen
+                client,
+                caption,
+                facts,
+                names,
+                pseudonymiser if remote else None,
+                chosen,
+                private_names(result),
             )
             meta = [dict(m) for m in client.metas[start:]]
             prompt_sha = PROMPT_SHA256
@@ -414,5 +429,6 @@ __all__ = [
     "default_genes",
     "draft_prism_project",
     "log_lines",
+    "private_names",
     "template_caption",
 ]

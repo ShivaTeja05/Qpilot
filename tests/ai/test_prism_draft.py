@@ -113,6 +113,6 @@ def test_a_remote_model_sees_no_gene_name(fixture_result, fixture_cards, tmp_pat
         fixture_result, fixture_cards, ["ODC1", "NTRK1"], client=client, pseudonymiser=pseudonymiser
     )
     sent = json.dumps(client.backend.calls)
-    assert "ODC1" not in sent and "NTRK1" not in sent
+    assert "ODC1" not in sent and "NTRK1" not in sent and "MYCN" not in sent
     assert pseudonymiser.pseudonymise("ODC1") in sent
     assert draft.made_by_model and "ODC1" in draft.caption and "NTRK1" in draft.caption
