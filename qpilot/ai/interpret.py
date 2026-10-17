@@ -16,7 +16,11 @@ sample-sheet row, by column number), one block per target name, the sheet's head
 scientist's sentence (quarantined with origin ``studio:sentence``). Text the firewall flags
 ``instruction_like`` (the sentence excepted: the person typed it) is withheld from the model.
 Large files are sent in parts (:data:`SAMPLES_PER_CALL` samples or :data:`TARGETS_PER_CALL`
-targets per call), so each call fits a small local model's time budget.
+targets per call, replies of at most :data:`MAX_TOKENS` tokens), so each call fits a small
+local model inside the client's timeout. An unreachable server (a refused connection) stops the
+model at once and the rules answer alone; a call that times out costs only its part (the rules
+answer for those samples), and :data:`MAX_READ_TIMEOUTS` timeouts stop the model for the rest,
+so a slow server adds at most that many client timeouts, never a hang.
 
 **Remote providers.** When the backend is not on this machine
 (:func:`qpilot.core.pseudonym.endpoint_is_local`; a test double says so with a ``remote``
@@ -41,7 +45,8 @@ sent and the rules answer alone.
   at most :data:`MAX_CITES`; nothing cited reads like instructions;
 * a field about a sample cites that sample's own name or sheet row (a target: its name);
 * group, biological-unit and comparison labels are found in a sheet cell or the sentence the
-  field cites (never only in a sample or target name), and are not role codes;
+  field cites (never only in a sample or target name; a sample's group or unit only in its own
+  sheet row or in a sentence that names the sample), and are not role codes;
 * a sample declared ``ntc``, ``nrt`` or ``nac`` is never given a non-control role (the core's
   hard ban would refuse it too), a group, a biological unit or a place in a dilution series;
 * a dilution series has at least three positive quantities, in one experiment;
@@ -101,9 +106,10 @@ from qpilot.schemas_studio import (
 
 SENTENCE_ORIGIN = "studio:sentence"
 MAX_SENTENCE_CHARS = 2_000
-SAMPLES_PER_CALL = 20
-TARGETS_PER_CALL = 25
-MAX_TOKENS = 1_000
+SAMPLES_PER_CALL = 15
+TARGETS_PER_CALL = 15
+MAX_TOKENS = 700
+MAX_READ_TIMEOUTS = 2
 MAX_FIELDS = 400
 MAX_CITES = 50
 MAX_ALTERNATIVES = 10
@@ -775,30 +781,45 @@ def _own_cited(ctx: _Context, sample: InspectSample, cited: _Cited) -> bool:
     return bool(own & cited.text_ids)
 
 
-def _grounded(ctx: _Context, label: str, cited: _Cited) -> bool:
+def _grounded(
+    ctx: _Context, label: str, cited: _Cited, sample: InspectSample | None = None
+) -> bool:
     """Whether ``label`` appears in a sheet cell or the sentence the field cites.
 
     Sample and target names do not count: a group or unit read off a name pattern is exactly
-    what the rules leave to a person.
+    what the rules leave to a person. For one sample's group or unit the cell must be in that
+    sample's own sheet row, or the sentence must name the sample as well as the label.
     """
     key = squash(label)
     if not key:
         return False
+    own = {c.text_id for c in ctx.sample_cells(sample)} if sample is not None else None
     for text_id in cited.text_ids - ctx.name_ids:
         value = ctx.value(text_id)
-        if value is not None and key in squash(value):
+        if value is None or key not in squash(value):
+            continue
+        if sample is None or text_id in own:
             return True
+        if ctx.sentence is not None and text_id == ctx.sentence.text_id:
+            for name in {ctx.name_of(sample), sample.sample}:
+                pattern = rf"(?<![{_WORD}]){re.escape(name.lower())}(?![{_WORD}])"
+                if name and re.search(pattern, value.lower()):
+                    return True
     return False
 
 
-def _label(ctx: _Context, raw: Any, cited: _Cited, what: str) -> tuple[str | None, str | None]:
+def _label(
+    ctx: _Context, raw: Any, cited: _Cited, what: str, sample: InspectSample | None = None
+) -> tuple[str | None, str | None]:
     if not isinstance(raw, str):
         return None, f"{what} must be text"
     label = _safe_label(ctx.shield.unscrub(raw))
     if label is None:
         return None, f"{what} is not a usable label"
-    if not _grounded(ctx, label, cited):
-        return None, f"{what} is not found in the sheet cells or sentence the field cites"
+    if not _grounded(ctx, label, cited, sample):
+        if sample is None:
+            return None, f"{what} is not found in the sheet cells or sentence the field cites"
+        return None, f"{what} is not found in the sample's sheet row or a sentence naming it"
     return label, None
 
 
@@ -838,7 +859,7 @@ def _check_value(
             return sample.sample, {"role": role}, None
         if declared_control(sample):
             return None, None, "a control declared in the file belongs to no group or unit"
-        label, problem = _label(ctx, value[key], cited, key)
+        label, problem = _label(ctx, value[key], cited, key, sample)
         if problem:
             return None, None, problem
         if label.lower() in WELL_ROLES:
@@ -1177,6 +1198,7 @@ def interpret(
     error: str | None = None
     used, failed, clean = 0, 0, True
     unavailable = False
+    timeouts = 0
     for index, part in enumerate(_parts(ctx), 1):
         content, citable = _prompt(ctx, part, rules)
         messages = [{"role": "user", "content": content}]
@@ -1184,10 +1206,16 @@ def interpret(
             try:
                 text = client.complete(SYSTEM_INTERPRET, messages, max_tokens=MAX_TOKENS)
             except ModelUnavailable as err:
-                error, unavailable = str(err), True
+                error = str(err)
                 calls.append(
                     {"part": index, "attempt": attempt, "response_bytes": 0, "validated": False}
                 )
+                slow = error.endswith("ReadTimeout")  # reachable, but this call was too slow
+                timeouts += slow
+                if slow and timeouts < MAX_READ_TIMEOUTS:
+                    failed += 1  # this part gets the rules alone; the next part is tried
+                else:
+                    unavailable = True
                 break
             accepted, problems, parsed = _check_reply(
                 ctx, part, text, citable, attempt, index, rejected

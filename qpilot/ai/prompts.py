@@ -94,7 +94,7 @@ SYSTEM_INTERPRET = (
     "only copy a label a sheet column or the scientist's sentence gives that sample; never "
     "make one from a name pattern. Propose only what the rule_proposals do not already say, "
     "or where you read the data differently; samples you do not mention keep their declared "
-    'type. Send at most twelve fields. If you have nothing to add, reply {"fields": []}.\n'
+    'type. Send at most eight fields. If you have nothing to add, reply {"fields": []}.\n'
     'Example of one field: {"kind": "design.well_role", "subject": "t_0123456789ab", '
     '"value": {"role": "ntc"}, "cites": ["t_0123456789ab"], "alternatives": [{"role": '
     '"unkn"}], "level": "Moderate", "reasons": ["the name and the sheet read as a water '

@@ -187,8 +187,8 @@ def test_the_ban_a_declared_control_is_never_demoted():
         ("stage.confirm", "design", {"stage": "design"}, "design kinds only"),
         ("design.well_role", "S1", {"role": "control"}, "role must be one of"),
         ("design.well_role", "S1", {"role": "ntc", "level": "x"}, "exactly the keys"),
-        ("design.group", "S1", {"group": "Treated"}, "not found in the sheet cells"),
-        ("design.group", "S1", {"group": "S1"}, "not found in the sheet cells"),
+        ("design.group", "S1", {"group": "Treated"}, "not found in the sample's sheet row"),
+        ("design.group", "S1", {"group": "S1"}, "not found in the sample's sheet row"),
         ("design.target_role", "S1", {"role": "ref"}, "not a target"),
         ("design.preset", "design", {"preset": "my_own"}, "unknown preset"),
     ],
@@ -370,6 +370,52 @@ def test_an_unreachable_local_server_falls_back_fast(monkeypatch):
     assert len(out.meta) == 1  # one refused call, then no more
     assert [f.model_dump() for f in out.fields] == [r.model_dump() for r in rules]
     assert elapsed < 5
+
+
+def test_a_slow_model_costs_its_part_and_two_timeouts_stop_it():
+    from qpilot.ai.client import ModelUnavailable
+
+    samples = tuple((f"S{i}", "unkn", "LPS") for i in range(1, 61))
+    summary, entries = studio_file(samples)
+    replies = iter(["timeout", json.dumps({"fields": []}), "timeout", "unused"])
+
+    def reply(system, messages):
+        answer = next(replies)
+        if answer == "timeout":
+            raise ModelUnavailable("endpoint call failed: ReadTimeout")
+        return answer
+
+    client = local_client(reply)
+    out = interpret(summary, entries, "", client)
+    assert len(client.backend.calls) == 3  # part 1 timed out, part 2 answered, part 3 stopped it
+    assert out.fallback and out.error.endswith("ReadTimeout")
+    assert [m["part"] for m in out.meta] == [1, 2, 3]
+    connect = local_client(lambda s, m: (_ for _ in ()).throw(ModelUnavailable("ConnectError")))
+    interpret(summary, entries, "", connect)
+    assert len(connect.backend.calls) == 1  # unreachable: no second call
+
+
+def test_a_group_comes_from_the_samples_own_row_or_a_sentence_naming_it():
+    summary, entries = studio_file()
+
+    def reply(system, messages):
+        content = messages[0]["content"]
+        refs = ref_by_value(content)
+        sentence = view(content)["study"]["sentence_ref"]
+        return _reply(
+            [
+                _field("design.group", refs["S1"], {"group": "LPS"}, [refs["S1"], sentence]),
+                _field("design.group", refs["S3"], {"group": "LPS"}, [refs["S3"], sentence]),
+                _field("design.group", refs["S4"], {"group": "LPS"}, [refs["S4"], refs["S1"]]),
+                _field("design.group", refs["S2"], {"group": "LPS"}, [refs["S2"]]),
+            ]
+        )
+
+    out = interpret(summary, entries, "S1 got LPS, the others PBS", local_client(reply))
+    kept = {(f.subject, f.value["group"]) for f in out.fields}
+    assert kept == {("S1", "LPS"), ("S2", "LPS")}  # S1: the sentence names it; S2: its own row
+    refused = {r["subject"] for r in out.rejected if r["attempt"] == 1}
+    assert len(refused) == 2  # S3 (not named) and S4 (another sample's row)
 
 
 def test_controls_get_no_group_and_role_codes_are_not_labels():
