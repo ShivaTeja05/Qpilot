@@ -14,7 +14,8 @@ blocks of :func:`qpilot.core.firewall.as_quoted`, under generic origins (never a
 name): one *sample record* per sample under the sample's ref (its name and the cells of its
 sample-sheet row, by column number), one block per target name, the sheet's header rows and the
 scientist's sentence (quarantined with origin ``studio:sentence``). Text the firewall flags
-``instruction_like`` (the sentence excepted: the person typed it) is withheld from the model.
+``instruction_like`` (the sentence excepted: the person typed it) is withheld from the model:
+a flagged name becomes a fixed placeholder, a flagged cell is left out as if it were empty.
 Large files are sent in parts (:data:`SAMPLES_PER_CALL` samples or :data:`TARGETS_PER_CALL`
 targets per call, replies of at most :data:`MAX_TOKENS` tokens), so each call fits a small
 local model inside the client's timeout. An unreachable server (a refused connection) stops the
@@ -264,6 +265,15 @@ def _safe_label(text: str) -> str | None:
     return safe if _LABEL.match(safe) else None
 
 
+def _type_word(label: str) -> bool:
+    """True for a vendor's sample-type word (``Unknown``, ``Standard``, ``NTC``...)."""
+    try:
+        from qpilot.qpcr.design_rules import vendor_task_role  # the rules' vocabulary
+    except ImportError:
+        return False
+    return vendor_task_role(label) is not None
+
+
 def _number(value: Any) -> float | None:
     if isinstance(value, bool) or not isinstance(value, int | float | str):
         return None
@@ -465,7 +475,7 @@ class _Context:
         flags: set[str] = set()
         for cell in row.cells:
             entry = self.entries.get(cell.text_id)
-            if entry is not None:
+            if entry is not None and not self.instruction_like(cell.text_id):
                 flags |= set(entry.flags)
         return sorted(flags)
 
@@ -480,17 +490,21 @@ class _Context:
             }
         return self._file_text
 
-    def cell_shown(self, cell: SheetCell) -> str:
-        """One cell as the model sees it (withheld, or with names pseudonymised)."""
-        if self.instruction_like(cell.text_id):
-            return WITHHELD
-        return self.shield.scrub(self.value(cell.text_id) or "")
+    def shown_cells(self, cells: list[SheetCell]) -> dict[str, str]:
+        """Cells as the model sees them: column number -> value (names pseudonymised).
+
+        A cell that reads like instructions is left out, as if it were empty: a placeholder
+        would itself change what the model reads elsewhere (measured on the demo).
+        """
+        return {
+            str(c.column): self.shield.scrub(self.value(c.text_id) or "")
+            for c in cells
+            if not self.instruction_like(c.text_id)
+        }
 
     def row_value(self, row: _Row) -> str:
         """The row as the model sees it: column number -> value."""
-        return json.dumps(
-            {str(c.column): self.cell_shown(c) for c in row.cells}, ensure_ascii=False
-        )
+        return json.dumps(self.shown_cells(row.cells), ensure_ascii=False)
 
     def sample_record(self, sample: InspectSample) -> str:
         """The sample's name and its sheet row(s), as one quoted value."""
@@ -501,10 +515,7 @@ class _Context:
         else:
             name = self.name_of(sample)
         record: dict[str, Any] = {"name": name}
-        rows = [
-            {str(c.column): self.cell_shown(c) for c in row.cells}
-            for row in self.rows_by_sample.get(sample.sample, [])
-        ]
+        rows = [self.shown_cells(row.cells) for row in self.rows_by_sample.get(sample.sample, [])]
         if rows:
             record["sheet_row"] = rows[0] if len(rows) == 1 else rows
         return json.dumps(record, ensure_ascii=False)
@@ -513,10 +524,11 @@ class _Context:
         return [c for row in self.rows_by_sample.get(sample.sample, []) for c in row.cells]
 
     def sample_flags(self, sample: InspectSample) -> list[str]:
+        """Flags of what the record shows (a left-out cell shows nothing, so flags nothing)."""
         flags = set(self.entries[sample.text_id].flags) if sample.text_id in self.entries else set()
         for cell in self.sample_cells(sample):
             entry = self.entries.get(cell.text_id)
-            if entry is not None:
+            if entry is not None and not self.instruction_like(cell.text_id):
                 flags |= set(entry.flags)
         return sorted(flags)
 
@@ -862,8 +874,8 @@ def _check_value(
         label, problem = _label(ctx, value[key], cited, key, sample)
         if problem:
             return None, None, problem
-        if label.lower() in WELL_ROLES:
-            return None, None, f"{label} is a role code, not a {key}; roles are design.well_role"
+        if label.lower() in WELL_ROLES or _type_word(label):
+            return None, None, f"{label} is a sample type, not a {key}; types are design.well_role"
         return sample.sample, {key: label}, None
     if kind in ("design.target_role", "design.gene_symbol"):
         target = _target(ctx, part, subject)
