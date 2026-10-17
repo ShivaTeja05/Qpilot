@@ -1,0 +1,390 @@
+"""The on-disk study store: one workspace per input file, shared by the app and the MCP server.
+
+Domain-agnostic, and **the only code that writes a workspace**. The Gradio app and the MCP server
+run in different processes, so the study lives on disk and every decision goes through this
+module under a file lock, with an optimistic version check (``expected_head``)::
+
+    $QPILOT_STUDIES_DIR/<input_sha256>/
+        results.json  cards.json  facts.json  grid.csv   written atomically (temp -> rename)
+        decisions.jsonl   hash-chained log, append-only, one DecisionEntry per line
+        pending.jsonl     agent requests waiting for a human
+        .lock
+
+The chain is tamper-evident, not tamper-proof: each entry stores the sha256 of the previous
+entry (the first one stores the input file's sha256), so any later edit is detectable.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+from filelock import FileLock
+
+from qpilot.core.decisions import check_request, needs_human
+from qpilot.schemas import Actor, DecisionCard, DecisionEntry, DecisionOutcome, StudyResult
+
+STUDY_ID = re.compile(r"^[0-9a-f]{6,64}$")
+LOCK_TIMEOUT_S = 30
+STALE_REASON = "card changed since you read it"
+PENDING_REASON = "This choice can change a conclusion, so a human must decide it."
+
+
+class StudyNotFound(KeyError):
+    """No workspace exists for the requested study id."""
+
+
+def default_studies_dir() -> Path:
+    """``$QPILOT_STUDIES_DIR`` or ``~/.cache/qpilot/studies``."""
+    env = os.environ.get("QPILOT_STUDIES_DIR")
+    return Path(env) if env else Path.home() / ".cache" / "qpilot" / "studies"
+
+
+def sha256_file(path: str | Path) -> str:
+    """Hex sha256 of a file's bytes."""
+    digest = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def canonical_json(data: Any) -> str:
+    """The one JSON form that gets hashed: sorted keys, no spaces, UTF-8 kept."""
+    return json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def entry_hash(entry: DecisionEntry) -> str:
+    """sha256 of the entry's canonical JSON without its ``hash`` field."""
+    payload = canonical_json(entry.model_dump(mode="json", exclude={"hash"}))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def dump_json(data: Any) -> str:
+    """Deterministic, human-readable JSON for workspace and record files."""
+    return json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
+
+
+def atomic_write(path: Path, text: str) -> None:
+    """Write ``text`` to ``path`` via a temp file in the same directory and an atomic rename."""
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def read_entries(path: Path) -> list[DecisionEntry]:
+    """Parse a ``.jsonl`` file of decision entries (missing file = no entries)."""
+    if not path.exists():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [DecisionEntry.model_validate_json(line) for line in lines if line.strip()]
+
+
+def _now() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _apply_entry(card: DecisionCard, entry: DecisionEntry) -> DecisionCard:
+    """The card state after one log entry."""
+    if entry.status in ("applied", "auto"):
+        return card.model_copy(
+            update={
+                "status": "auto_decided" if entry.status == "auto" else "decided",
+                "decision": entry.option,
+                "reason": entry.reason,
+                "decided_by": entry.actor,
+                "decided_at": entry.at,
+            }
+        )
+    if entry.status == "pending_human":
+        return card.model_copy(update={"status": "pending_human"})
+    if entry.status == "rejected":
+        if card.decision is None:
+            return card.model_copy(update={"status": "open"})
+        status = "auto_decided" if card.decided_by == "system" else "decided"
+        return card.model_copy(update={"status": status})
+    return card  # stale attempts change nothing
+
+
+class StudyStore:
+    """Reads and writes study workspaces; implements ``qpilot.schemas.StudyStoreAPI``."""
+
+    def __init__(self, studies_dir: str | Path | None = None) -> None:
+        self.root = Path(studies_dir) if studies_dir is not None else default_studies_dir()
+        self.root.mkdir(parents=True, exist_ok=True)
+
+    # ---- locating workspaces ------------------------------------------------------------
+
+    def workspace(self, study_id: str) -> Path:
+        """The workspace directory of a study; ``StudyNotFound`` if there is none."""
+        if not isinstance(study_id, str) or not STUDY_ID.match(study_id):
+            raise StudyNotFound(f"not a study id: {study_id!r}")
+        hits = [
+            d
+            for d in self.root.iterdir()
+            if d.is_dir() and d.name.startswith(study_id) and (d / "results.json").exists()
+        ]
+        if len(hits) != 1:
+            raise StudyNotFound(study_id)
+        return hits[0]
+
+    def list_studies(self) -> list[str]:
+        """Study ids of every complete workspace."""
+        out = []
+        for d in sorted(self.root.iterdir()):
+            if d.is_dir() and (d / "results.json").exists():
+                out.append(json.loads((d / "results.json").read_text())["study_id"])
+        return out
+
+    @contextmanager
+    def _locked(self, workspace: Path) -> Iterator[None]:
+        with FileLock(str(workspace / ".lock"), timeout=LOCK_TIMEOUT_S):
+            yield
+
+    # ---- reading ---------------------------------------------------------------------
+
+    def get(self, study_id: str) -> StudyResult:
+        """Load a study's results."""
+        path = self.workspace(study_id) / "results.json"
+        return StudyResult.model_validate_json(path.read_text(encoding="utf-8"))
+
+    def cards(self, study_id: str) -> list[DecisionCard]:
+        """Load a study's Decision Cards, in rank order."""
+        raw = json.loads((self.workspace(study_id) / "cards.json").read_text(encoding="utf-8"))
+        return sorted((DecisionCard.model_validate(c) for c in raw), key=lambda c: c.rank)
+
+    def card(self, study_id: str, card_id: str) -> DecisionCard:
+        """One card by id; ``KeyError`` if unknown."""
+        for card in self.cards(study_id):
+            if card.id == card_id:
+                return card
+        raise KeyError(f"unknown card {card_id!r}")
+
+    def entries(self, study_id: str) -> list[DecisionEntry]:
+        """Every entry of the decision log, oldest first."""
+        return read_entries(self.workspace(study_id) / "decisions.jsonl")
+
+    def chain_head(self, study_id: str) -> str:
+        """Hash of the latest decision entry, or the input file's sha256 when there is none."""
+        entries = self.entries(study_id)
+        return entries[-1].hash if entries else self.get(study_id).input_sha256
+
+    def pending(self, study_id: str) -> list[DecisionEntry]:
+        """Agent requests that wait for a human, oldest first."""
+        return read_entries(self.workspace(study_id) / "pending.jsonl")
+
+    # ---- writing (all under the workspace lock) ------------------------------------------
+
+    def put(self, result: StudyResult, cards: list[DecisionCard], grid: Any = None) -> None:
+        """Write a study's results, cards, facts and (optionally) grid atomically.
+
+        A new workspace's log starts with one ``system`` entry per auto-decided card. If the
+        workspace already has a log (the same input analysed again), its decisions are replayed
+        onto the new cards, so a re-run keeps what people decided.
+        """
+        workspace = self.root / result.input_sha256
+        workspace.mkdir(parents=True, exist_ok=True)
+        with self._locked(workspace):
+            log = workspace / "decisions.jsonl"
+            entries = read_entries(log)
+            if not entries:
+                for card in sorted(cards, key=lambda c: c.rank):
+                    if card.status == "auto_decided" and card.decision:
+                        entries.append(
+                            self._append(
+                                log,
+                                entries,
+                                result.input_sha256,
+                                card.id,
+                                card.decision,
+                                card.reason or "",
+                                "system",
+                                "auto",
+                            )
+                        )
+            states = {c.id: c for c in cards}
+            for entry in entries:
+                if entry.card_id in states:
+                    states[entry.card_id] = _apply_entry(states[entry.card_id], entry)
+            atomic_write(workspace / "results.json", dump_json(result.model_dump(mode="json")))
+            self._write_cards(workspace, list(states.values()))
+            facts = {fid: f.model_dump(mode="json") for fid, f in result.facts.items()}
+            atomic_write(workspace / "facts.json", dump_json(facts))
+            if grid is not None:
+                atomic_write(workspace / "grid.csv", _grid_csv(grid))
+
+    def append_decision(
+        self,
+        study_id: str,
+        card_id: str,
+        option: str,
+        reason: str,
+        actor: Actor,
+        expected_head: str | None,
+    ) -> DecisionOutcome:
+        """Apply a decision under the lock; ``stale`` if ``expected_head`` is out of date.
+
+        A non-human actor on a card that can flip a conclusion is turned into a request for a
+        human here as well, so no caller can write around the escalation rule.
+        """
+        card = self.card(study_id, card_id)
+        reason = check_request(card, option, reason)
+        if actor != "human" and needs_human(card):
+            return self.request_human(study_id, card_id, option, reason, actor, expected_head)
+        return self._write(study_id, card_id, option, reason, actor, "applied", expected_head)
+
+    def request_human(
+        self,
+        study_id: str,
+        card_id: str,
+        option: str,
+        reason: str,
+        actor: Actor,
+        expected_head: str | None,
+    ) -> DecisionOutcome:
+        """Log an agent's request on a flipping card and queue it for a human."""
+        outcome = self._write(
+            study_id, card_id, option, reason, actor, "pending_human", expected_head
+        )
+        if outcome.status == "pending_human":
+            outcome = outcome.model_copy(update={"reason": PENDING_REASON})
+        return outcome
+
+    def reject_pending(
+        self, study_id: str, card_id: str, reason: str, expected_head: str | None
+    ) -> DecisionOutcome:
+        """A human declines the pending agent request(s) on a card."""
+        if not any(p.card_id == card_id for p in self.pending(study_id)):
+            raise KeyError(f"no pending request on card {card_id!r}")
+        card = self.card(study_id, card_id)
+        option = card.decision or card.recommended
+        return self._write(study_id, card_id, option, reason, "human", "rejected", expected_head)
+
+    # ---- internals -------------------------------------------------------------------
+
+    def _write(
+        self,
+        study_id: str,
+        card_id: str,
+        option: str,
+        reason: str,
+        actor: Actor,
+        status: str,
+        expected_head: str | None,
+    ) -> DecisionOutcome:
+        workspace = self.workspace(study_id)
+        log = workspace / "decisions.jsonl"
+        with self._locked(workspace):
+            entries = read_entries(log)
+            root = self.get(study_id).input_sha256
+            head = entries[-1].hash if entries else root
+            if expected_head is not None and expected_head != head:
+                entry = self._append(log, entries, root, card_id, option, reason, actor, "stale")
+                return DecisionOutcome(
+                    status="stale",
+                    chain_head=entry.hash,
+                    card=self.card(study_id, card_id),
+                    reason=STALE_REASON,
+                )
+            entry = self._append(log, entries, root, card_id, option, reason, actor, status)
+            cards = self.cards(study_id)
+            cards = [_apply_entry(c, entry) if c.id == card_id else c for c in cards]
+            self._write_cards(workspace, cards)
+            self._update_pending(workspace, entry)
+            card = next(c for c in cards if c.id == card_id)
+            return DecisionOutcome(status=status, chain_head=entry.hash, card=card)
+
+    @staticmethod
+    def _append(
+        log: Path,
+        entries: list[DecisionEntry],
+        root: str,
+        card_id: str,
+        option: str,
+        reason: str,
+        actor: Actor,
+        status: str,
+    ) -> DecisionEntry:
+        entry = DecisionEntry(
+            seq=len(entries) + 1,
+            prev_hash=entries[-1].hash if entries else root,
+            card_id=card_id,
+            option=option,
+            reason=reason,
+            actor=actor,
+            status=status,
+            at=_now(),
+        )
+        entry = entry.model_copy(update={"hash": entry_hash(entry)})
+        with open(log, "a", encoding="utf-8") as fh:
+            fh.write(canonical_json(entry.model_dump(mode="json")) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        entries.append(entry)
+        return entry
+
+    @staticmethod
+    def _write_cards(workspace: Path, cards: list[DecisionCard]) -> None:
+        ordered = sorted(cards, key=lambda c: c.rank)
+        atomic_write(
+            workspace / "cards.json", dump_json([c.model_dump(mode="json") for c in ordered])
+        )
+
+    @staticmethod
+    def _update_pending(workspace: Path, entry: DecisionEntry) -> None:
+        path = workspace / "pending.jsonl"
+        pending = read_entries(path)
+        if entry.status == "pending_human":
+            pending.append(entry)
+        elif entry.status in ("applied", "rejected") and entry.actor == "human":
+            pending = [p for p in pending if p.card_id != entry.card_id]
+        else:
+            return
+        text = "".join(canonical_json(p.model_dump(mode="json")) + "\n" for p in pending)
+        atomic_write(path, text)
+
+    # ---- running a study ---------------------------------------------------------------
+
+    def ensure_study(self, rdml_path: str | Path) -> str:
+        """Return the study id for an input file, analysing it first if no workspace exists.
+
+        This is one of the two documented places where the core imports the qPCR plugin (the
+        other is ``record.rerun``); the import is inside the function so that ``qpilot.core``
+        never depends on ``qpilot.qpcr`` at import time.
+        """
+        path = Path(rdml_path)
+        digest = sha256_file(path)
+        workspace = self.root / digest
+        if (workspace / "results.json").exists():
+            return json.loads((workspace / "results.json").read_text())["study_id"]
+        from qpilot.qpcr.study import run_study  # documented lazy import
+
+        out = run_study(path)
+        result, cards = out[0], out[1]
+        grid = out[2] if len(out) > 2 else None
+        self.put(result, cards, grid)
+        return result.study_id
+
+
+def _grid_csv(grid: Any) -> str:
+    """CSV text for a grid DataFrame (tuples joined with ``|``) or an already-written string."""
+    if isinstance(grid, str):
+        return grid
+    from qpilot.core.robustness import to_csv_frame
+
+    return to_csv_frame(grid).to_csv(index=False, float_format="%.10g", lineterminator="\n")
