@@ -217,3 +217,11 @@ def test_stdio_round_trip(demo, tmp_studies_dir, data_root):
     # The agent's request is visible to the app's process through the shared store.
     pending = StudyStore(tmp_studies_dir).pending(study_id)
     assert [(p.card_id, p.actor) for p in pending] == [("card_refset", "agent")]
+
+
+@pytest.mark.parametrize("card_id", [" card_refset", "CARD_REFSET"])
+def test_an_unknown_card_is_named_exactly(tmp_studies_dir, fixture_result, fixture_cards, card_id):
+    store = StudyStore(tmp_studies_dir)
+    store.put(fixture_result, fixture_cards)
+    out = QpilotTools(store).qpcr_decide(fixture_result.study_id, card_id, "x", "y")
+    assert out["error"] == f"unknown card {card_id!r}"

@@ -289,3 +289,14 @@ def test_the_model_is_told_when_a_card_flips_conclusions_elsewhere(fixture_cards
     view = card_view(card)
     assert view["can_flip_a_conclusion"] is False
     assert view["can_flip_a_conclusion_at_other_settings"] is True
+
+
+def test_a_gene_that_flips_only_by_combinations_is_not_called_unflippable(store, study):
+    ctx = _Context(store, study)
+    gene = next(
+        g
+        for g, r in ctx.result.robustness.items()
+        if r.holds < 1 and not ctx.tools.qpcr_robustness(study, g)["cards_that_can_flip_it"]
+    )
+    out = ask(f"Is {gene} robust?", store, study)
+    assert "some combinations of choices do" in out.plain

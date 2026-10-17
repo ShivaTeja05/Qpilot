@@ -265,6 +265,8 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
         )
         if flip:
             text += " It can change with: " + "; ".join(flip) + "."
+        elif out.get("holds_fraction") is not None and out["holds_fraction"] < 1:
+            text += " No single choice flips it on its own, but some combinations of choices do."
         else:
             text += " No single choice flips it."
         return text

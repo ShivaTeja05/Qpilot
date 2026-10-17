@@ -146,6 +146,8 @@ class QpilotTools:
             "design": result.design.model_dump(mode="json"),
             "genorm": result.genorm.model_dump(mode="json"),
             "conclusion_rule": result.conclusion_rule,
+            # under the recommended choices; decisions made on cards do not change these numbers
+            "contrasts_are_for": "the recommended choices",
             "contrasts": {
                 g: {
                     "fc": c.fc,
@@ -240,7 +242,9 @@ class QpilotTools:
         except StudyNotFound:
             return {"error": "unknown study_id; call qpcr_study first"}
         except (DecisionError, KeyError) as err:
-            return {"error": str(err).strip("'\"")}
+            # KeyError's str() adds quotes; take its argument so the id reads back exactly
+            text = err.args[0] if isinstance(err, KeyError) and err.args else str(err)
+            return {"error": str(text)}
         return {
             "status": outcome.status,
             "chain_head": outcome.chain_head,
