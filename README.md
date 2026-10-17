@@ -10,9 +10,9 @@ The simulator reruns one study under every combination of analysis choices a car
 
 On top of that it adds:
 
-- known-answer tests on a second lab's dilution series;
+- known-answer tests against digital PCR, on four qPCR machines;
 - planted faults in real data;
-- no-difference tests.
+- no-difference tests, including a plate of 380 identical wells.
 
 It is built on [qPilot](https://github.com/ShivaTeja05/Qpilot)'s validated engine (LinRegPCR from raw curves, geNorm, the conclusion rule) and reproduces qPilot exactly at the baseline. Research use only.
 
@@ -28,7 +28,7 @@ python3.11 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/qsim run                                      # every analysis + tests -> results/
 .venv/bin/qsim ask "Does NM23A depend on the reference genes?"
 .venv/bin/qsim whatif --set refs=HMBS --set late_cq=cq35
-.venv/bin/qsim validate                                 # known-answer test (Untergasser)
+.venv/bin/qsim validate                                 # dPCR known answers + null plate
 .venv/bin/pytest -q
 ```
 
@@ -79,20 +79,41 @@ Vermeulen/Ruijter RDML: 64 plates, 366 tumours, 58 genes. Details are in [`resul
 
 **Joint test:** a permutation max-T test across 48 defensible analyses finds 56 of 58 genes associated with the group. So the 2-fold threshold and the analysis choices make calls fragile, not significance.
 
-### Known answers: Untergasser dilution series
+### Known answers: digital-PCR truth on four machines
 
-LightCycler 480, three mixes, triplicates, 188 comparisons.
+The data are the Untergasser dilution series. The truth is the QX200 dPCR ratio of the same tubes. The instrument comparison uses the pipetted ratio, because dPCR never measured its tubes.
 
-| Efficiency choice | Median error vs true ratio |
+That gives 197 comparisons on 5 plates and 4 machines: two LightCycler 480s, a QuantStudio 6 Flex and a StepOne. Details and caveats are in [docs/review/30-validation-round-2.md](docs/review/30-validation-round-2.md).
+
+| Test (bar set by the review) | Result |
 |---|---|
-| Standard curve | 7.7 % |
-| LinRegPCR mean | 7.9 % |
-| Assume 100 % | 11.4 % |
-| Each well's own | 89 % |
+| Baseline efficiency: median \|error\| ≤ 0.15 log2 on ≥ 2 machines | **Pass by the letter.** LC480 AMC 0.12 (dPCR truth) and StepOne 0.09 (pipetted truth, 4 cases). Fails on LC480 DKFZ 0.22 (dPCR) and QuantStudio 0.21 (pipetted). |
+| Spread across analyses warns of error: Spearman ≥ 0.3 within each input level | **Pass**, 0.33–0.68. Among assays that pass the dilution QC it is 0.02–0.55, so mostly it flags broken assays. |
+| Baseline 95 % interval contains the truth ≥ 90 % | **Fail: 83 %.** This is with efficiency uncertainty and a run effect propagated into the interval. The replicate-only interval covers 66 %. |
 
-- **Disagreement among analyses flags wrong answers.** When the defensible analyses disagree most (top quarter of spread), the standard answer is off by 31.5 % against 5.9 % otherwise (Spearman 0.50). Within each input level the correlation is 0.40–0.52 (p < 0.02), except at the lowest step, 0.7 → 0.2 ng (0.26, not significant).
-- **Coverage fails the 90 % bar.** The truth falls inside the range of defensible analyses in 40 % of cases, and inside the baseline 95 % CI in 73 %. The truth is nominal ng; digital-PCR truth is the next step.
-- **Replicate errors are caught and fixed.** A 3-cycle error in one replicate is caught every time by the half-cycle rule, and dropping it reduces the error from 90 % to 1.4 %. The rule also flags 7 % of clean triplicates.
+| Efficiency choice | Median \|error\| vs dPCR (log2) |
+|---|---|
+| Standard curve | 0.10 |
+| LinRegPCR mean (baseline) | 0.13 |
+| Assume 100 % | 0.17 |
+| Each well's own | 1.04 |
+
+- **Two steps have no dPCR answer.** At 0.2 ng the two dPCR assays disagree 2.5-fold, and the 10^5 standard saturates the droplets. Both are reported separately.
+- **The interval misses because of a bias, not too little variance.** At the widest steps the assay-mean efficiency runs about 1.6 % per cycle low, so the baseline reads 0.11 log2 low.
+- **The standard curve beat the baseline on one LightCycler and lost on the other.** Tiers are unchanged until the outside review.
+
+Round 1, with nominal ng as truth (AMC LightCycler 480, 188 comparisons), stays in `results/validation_untergasser.json`:
+- The truth falls inside the baseline 95 % CI in 73 % of cases, and inside the propagated interval in 81 %.
+- It falls inside the range of defensible analyses in 40 %.
+- **Replicate errors are caught and fixed.** A 3-cycle error in one replicate is always caught by the half-cycle rule, and dropping it cuts the error from 90 % to 1.4 %. The rule also flags 7 % of clean triplicates.
+
+### No difference: one template on one plate
+
+The data are Ruijter's ds_380: 380 wells of 150,000 copies on one CFX384, converted to RDML for qPilot's LinRegPCR. The test drew 1,000 random 3 vs 3 and 6 vs 6 splits.
+
+- **Defensible analyses never made a call.** No call passed the robust filter, and the median \|log2 fold change\| was 0.07 at 3 vs 3 and 0.06 at 6 vs 6.
+- **Across all analyses, 1.33 % and 1.01 % of cells made a call.** That is just above the 1 % bar. Every one came from per-well efficiency (3–4 % of its cells), which is already common practice.
+- **This is an easy null.** At 150,000 copies the Cq SD is 0.19 cycles. There are no reference genes, so normalisation is not tested.
 
 ### Small experiments drawn from real data
 
@@ -114,18 +135,18 @@ With a real difference, the filter does not make small-study calls agree better 
 
 ## Limits and next steps
 
-These come from the review, in priority order:
+These come from the review and from validation round 2, in priority order:
 
-1. Use digital-PCR truth and all three instruments for the known-answer test.
-2. Run a no-difference test on Ruijter's 380-replicate plate.
-3. Make the CIs cover the truth, using delta-method efficiency uncertainty with a run effect.
-4. Have an outside qPCR scientist sign off every tier.
-5. Add Cq method and baseline choices, a Cq-only import, paired tests and ANOVA.
-6. Score the detectors on real faults (competimer, inhibitor series) with a Poisson-aware replicate rule.
-7. Build PlateSim, a generative plate model fitted on Untergasser LC480 and tested on held-out instruments, and a design planner from it.
+1. Correct the efficiency bias, for example by calibrating the assay-mean efficiency against a dPCR-measured dilution and testing it on held-out plates. Until then, quote the measured coverage of about 83 %, not 95 %.
+2. Have an outside qPCR scientist sign off every tier, including the result that the standard curve beat the baseline against dPCR on one machine.
+3. Run low-copy no-difference and fragility tests on ds_94_4 and MAQC.
+4. Add Cq method and baseline choices, a Cq-only import, paired tests and ANOVA.
+5. Score the detectors on real faults (competimer, inhibitor series) with a Poisson-aware replicate rule.
+6. Build PlateSim, a generative plate model fitted on Untergasser LC480 and tested on held-out instruments, and a design planner from it.
 
 ## Data and licence
 
 - Vermeulen et al. 2009 / Ruijter et al. 2013 (CC BY 4.0), fetched SHA-256-pinned by qPilot.
 - Untergasser, van der Hoff and Benes, via the RDML consortium (MIT), in `data/untergasser/`.
+- Ruijter et al. 2013 ds_380, via the `ruijter` R package (CC BY 4.0), in `data/ruijter/`.
 - Code: Apache-2.0.

@@ -70,12 +70,19 @@ def cmd_ask(args: argparse.Namespace) -> int:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    import json
+    from pathlib import Path
 
+    from qsim import known_answers, nodiff
     from qsim.validate import validate
 
-    result = validate(args.data, args.out)
-    print(json.dumps(result, indent=1))
+    first = validate(args.data, args.out)
+    second = known_answers.validate(Path(args.data).parent, args.out)
+    null = nodiff.validate(args.ds380, args.out, draws=args.draws)
+    for line in known_answers.summary_lines(first, second, null):
+        print(line)
+    print(
+        f"\nwrote {args.out}/validation_untergasser.json, validation_dpcr.json, validation_nodiff.json"
+    )
     return 0
 
 
@@ -128,9 +135,12 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("-v", "--verbose", action="store_true")
     a.set_defaults(func=cmd_ask)
     v = sub.add_parser(
-        "validate", help="score every analysis against known answers (dilution series)"
+        "validate",
+        help="score every analysis against known answers (dPCR, 4 machines) and a no-difference plate",
     )
     v.add_argument("--data", default="data/untergasser/amplicon_primer_mix.rdml")
+    v.add_argument("--ds380", default="data/ruijter/ds_380.rdml")
+    v.add_argument("--draws", type=int, default=1000, help="no-difference splits per size")
     v.add_argument("--out", default="results")
     v.set_defaults(func=cmd_validate)
     dm = sub.add_parser("demo", help="narrated walk from one raw curve to a verdict on one gene")

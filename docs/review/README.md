@@ -13,3 +13,4 @@ Each file is the agent's output, unchanged. Claims carry URLs; items an agent co
 | 00-judge-ruling.md | Verdict, scorecard, who won each point, Clarida comparison, ranked changes, validation plan, 12 hardest questions |
 | 10–13 | Advocate and skeptic openings and rebuttals |
 | 20–23 | Research reports: lab practice, Clarida and competitors, theoretical simulators, validation data |
+| 30-validation-round-2.md | Results after the ruling: dPCR truth on four machines (V1), propagated intervals (V2), the ds_380 no-difference plate (V4). Written by the team, not by a review agent. |
