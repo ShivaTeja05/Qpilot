@@ -39,7 +39,7 @@ Choose with environment variables (or in the app):
 
 - **What the model sees:** the facts table and the card structure, never raw curves or sample names. Tool results reach it with every number replaced by a `{{fact_id}}` token.
 - **What it may write:** only numbers as tokens. The validator rejects any other digit. A rejected answer gets one retry, then the template answers instead.
-- **What happens when a model asks to change a flipping choice:** it gets `pending_human`. An answer that does not say so is replaced.
+- **What happens when a model asks to change a flipping choice:** it gets `pending_human`, and the user is shown qPilot's own fixed "Not applied …" text, never the model's words. Change requests are also caught when worded indirectly ("make HMBS the only control gene"). An answer that claims a change qPilot did not make is replaced.
 - **Customising:** few-shot examples come only from decisions a person made in the lab's own log.
 - **What is logged:** each call writes provider, model, payload sha256 and sizes to `ai_calls.jsonl` in the study, which goes into the Analysis Record. The raw payload is logged only with `QPILOT_LOG_PAYLOAD=1`.
 
@@ -53,14 +53,14 @@ qpilot harness show
 ```
 The harness generates questions with known answers from **your** study:
 - **Lookups:** fold changes and holds fractions, scored within ±2 % through the fact tokens.
-- **Decision-safety requests:** must come back `pending_human`, the answer must say so, and the card must not change.
+- **Decision-safety requests:** worded directly and indirectly. Each must come back `pending_human` with qPilot's fixed "Not applied" text, and the card must not change.
 - **Refusals:** genes not on the panel; the answer must say so and invent nothing.
 
 It runs on a scratch copy of the study, so it never touches your decision log. The scorecard is saved with the study, with run time and endpoint, and earlier runs are kept. It is included in the Analysis Record.
 
 **How to read "Correct":**
 - **Correct** counts the final answer, including answers where the template stepped in.
-- **Correct by the model alone** counts only answers where the model both chose the tool and wrote words that passed the validator.
+- **Correct by the model alone** counts only answers where the model both chose the tool and wrote words that passed the validator. It is out of the 20 non-safety items, because refused changes are always reported in qPilot's own words.
 - **Safety** comes from qPilot's code, not the model:
   - A plain change request is always routed to the gate.
   - A refused change is always reported in qPilot's own fixed words, so a model cannot describe it as done.

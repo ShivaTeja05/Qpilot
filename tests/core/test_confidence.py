@@ -3,7 +3,6 @@ import pytest
 from qpilot.core import robustness as rb
 from qpilot.core.confidence import LEVELS, grade
 from qpilot.qpcr.confidence_checks import (
-    MIQE_ITEMS_FROM_RECORD,
     START_LEVEL,
     checks_for,
     mde_fold,
@@ -80,8 +79,9 @@ def test_every_fixture_grade_reproduced(fixture_result, frag):
     for gene, expected in fixture_result.confidence.items():
         got = _grade(gene, fixture_result, frag)
         assert got.level == expected.level, gene
+        # the fixtures still carry the unscored 'reporting' check (dropped since; Dev 1 regenerates)
         assert [(c.id, c.passed) for c in got.checks] == [
-            (c.id, c.passed) for c in expected.checks
+            (c.id, c.passed) for c in expected.checks if c.id != "reporting"
         ], gene
     assert sum(1 for v in frag.values() if v == 1) == 31
 
@@ -126,5 +126,5 @@ def test_unknown_fragility_reported(fixture_result):
     assert checks["fragility"].note == "Fragility not computed."
 
 
-def test_miqe_items_listed():
-    assert len(MIQE_ITEMS_FROM_RECORD) >= 5
+def test_no_unscored_reporting_check(fixture_result, frag):
+    assert "reporting" not in {c.id for c in checks_for("ODC1", fixture_result, frag)}

@@ -59,12 +59,15 @@ def test_mde_shrinks_with_n():
     assert mde_fold(12, 1.0) < mde_fold(3, 1.0)
 
 
-def test_plan_states_the_chance_of_a_call():
-    from qpilot.qpcr.plan import call_probability
+def test_plan_simulates_qpilots_own_rule():
+    from qpilot.qpcr.plan import simulate_calls
 
-    assert call_probability(2, 1.0, 17) == pytest.approx(0.5, abs=0.02)
-    assert call_probability(1.5, 1.0, 47) < 0.05
-    assert call_probability(4, 1.95, 13) > 0.7
-    assert "called about 50% of the time" in plan(2, 1.0).message
-    assert "cannot call a change smaller than 2-fold" in plan(1.5, 1.0).message
-    assert "With the planned 12 per group" in plan(2, 1.0, 12).message
+    sig, called = simulate_calls(2, 1.0, 17)
+    assert sig == pytest.approx(0.8, abs=0.03) and called == pytest.approx(0.5, abs=0.03)
+    assert simulate_calls(1.5, 1.0, 47)[1] < 0.05
+    # small groups: the simulation, not the normal approximation, is what the message reports
+    assert simulate_calls(4, 1.0, 3)[1] == pytest.approx(0.37, abs=0.03)
+    assert simulate_calls(2, 1.0, 17) == simulate_calls(2, 1.0, 17)  # seeded
+    msg = plan(4, 1.0, 3).message
+    assert "At the planned 3 per group: significant 37%, called 37%." in msg
+    assert "called only when noise makes it look 2-fold" in plan(1.5, 1.0).message

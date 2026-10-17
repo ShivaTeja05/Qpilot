@@ -1,4 +1,4 @@
-"""The seven qPCR checks behind a gene's confidence grade (owned by Dev 2).
+"""The six qPCR checks behind a gene's confidence grade (owned by Dev 2).
 
 Pure functions over ``qpilot.schemas`` (plus the standard library); they import nothing else from
 ``qpilot.qpcr`` or ``qpilot.core``. Only ``precision``, ``robustness`` and ``normalisation`` can
@@ -13,8 +13,7 @@ downgrade (see ``qpilot.core.confidence``); the others are reported so the reade
 5. assay: per-target efficiency, undetermined wells, LOD/LOQ not determined (reported).
 6. design sensitivity: the minimum detectable effect at 80 % power from the observed standard
    error, never post-hoc power; groups derived from the data are noted (reported).
-7. reporting: not scored yet; listed with passed=True only so it never downgrades. A MIQE 2.0
-   checklist from the record is roadmap.
+A MIQE 2.0 reporting checklist is roadmap and is not part of the grade.
 """
 
 from __future__ import annotations
@@ -29,19 +28,6 @@ from qpilot.schemas import Check, ContrastResult, Level, StudyResult
 START_LEVEL: Level = "High"
 HOLDS_MIN = 0.80
 TWO_FOLD = 2.0
-
-MIQE_ITEMS_FROM_RECORD = (
-    "Raw fluorescence data provided (RDML)",
-    "Cq / quantification method and software version",
-    "PCR efficiency per assay (from the amplification curves)",
-    "Reference genes used and how many",
-    "Reference gene stability (geNorm M and V)",
-    "Normalisation method",
-    "Handling of undetermined (no-amplification) wells",
-    "Number of samples per group",
-    "Statistical method and conclusion rule",
-    "Analysis choices and who made them (decision log)",
-)
 
 
 def _slug(name: str) -> str:
@@ -82,7 +68,7 @@ def normalisation_passes(result: StudyResult) -> bool:
 def checks_for(
     gene: str, result: StudyResult, grid: Mapping[str, int] | None = None
 ) -> list[Check]:
-    """The seven checks for one gene.
+    """The six checks for one gene.
 
     Args:
         gene: the item, e.g. ``"ODC1"``.
@@ -149,12 +135,6 @@ def checks_for(
             note=f"Groups are derived from the data ({result.design.group_var}); "
             "minimum detectable effect reported.",
             fact_ids=[f"f_mde_fold_{s}", "f_n_hi", "f_n_lo"],
-        ),
-        Check(
-            id="reporting",
-            passed=True,
-            note="Not scored yet (a MIQE 2.0 checklist is roadmap); it does not affect the level.",
-            fact_ids=[],
         ),
     ]
 

@@ -228,10 +228,13 @@ def verify_chain(entries: list[DecisionEntry], root: str) -> int | None:
 
 
 def _read_checksums(record_dir: Path) -> dict[str, str]:
+    """Parse CHECKSUMS.sha256; ``RecordError`` on a malformed line."""
     listed = {}
     for line in (record_dir / CHECKSUMS).read_text(encoding="utf-8").splitlines():
         if line.strip():
-            digest, name = line.split("  ", 1)
+            digest, sep, name = line.partition("  ")
+            if not sep or len(digest) != 64:
+                raise RecordError(f"malformed line in {CHECKSUMS}")
             listed[name] = digest
     return listed
 
@@ -241,7 +244,10 @@ def verify(record_dir: str | Path) -> VerifyReport:
     record_dir = Path(record_dir)
     if not (record_dir / CHECKSUMS).exists():
         return VerifyReport(ok=False, missing=[CHECKSUMS])
-    listed = _read_checksums(record_dir)
+    try:
+        listed = _read_checksums(record_dir)
+    except (RecordError, OSError, UnicodeDecodeError):
+        return VerifyReport(ok=False, inconsistent=[f"{CHECKSUMS} unreadable"])
     present = {
         p.relative_to(record_dir).as_posix()
         for p in record_dir.rglob("*")
@@ -290,16 +296,11 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
         return ["cards.json unreadable"]
     expected: dict[str, dict] = {}
     for card_id, card in by_id.items():
-        state = DecisionCard.model_validate(
-            {
-                **card,
-                "status": "open",
-                "decision": None,
-                "reason": None,
-                "decided_by": None,
-                "decided_at": None,
-            }
-        )
+        blank = {f: None for f in DECISION_FIELDS} | {"status": "open"}
+        try:
+            state = DecisionCard.model_validate({**card, **blank})
+        except (ValueError, TypeError):
+            return [*problems, "cards.json unreadable"]
         for entry in entries:
             if entry.card_id == card_id:
                 state = _apply_entry(state, entry)
@@ -331,7 +332,11 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
             recorded = [e.seq for e in read_entries(pending_path)]
         except (OSError, ValueError):
             return [*problems, "pending.jsonl unreadable"]
-        if recorded != [e.seq for e in pending_after(entries)]:
+        accepted = (
+            [e.seq for e in pending_after(entries)],
+            [e.seq for e in pending_after(entries, legacy=True)],
+        )
+        if recorded not in accepted:
             problems.append("pending.jsonl")
     return problems
 
@@ -380,17 +385,83 @@ def unzip_record(zip_path: str | Path, target_dir: str | Path) -> Path:
             dest.parent.mkdir(parents=True, exist_ok=True)
             with zf.open(member) as src, open(dest, "wb") as out:
                 shutil.copyfileobj(src, out)
-    children = [c for c in target.iterdir()]
+    children = [c for c in target.iterdir() if c.name != "__MACOSX"]
     if not (target / CHECKSUMS).exists() and len(children) == 1 and children[0].is_dir():
         return children[0]  # a zip made of the record folder itself (zip -r rec.zip rec)
     return target
+
+
+class RerunReport(BaseModel):
+    """What a re-run regenerated and which of the record's files it reproduced."""
+
+    out_dir: str
+    same: bool
+    compared: list[str]
+    differs: list[str]
+    build_note: str = ""
+
+
+STRUCTURE_SKIP = (*DECISION_FIELDS, "autonomy", "effective_autonomy")
+
+
+def _card_structure(cards: list[dict]) -> str:
+    """Cards without who-decided-what: what a re-run must reproduce."""
+    stripped = [{k: v for k, v in c.items() if k not in STRUCTURE_SKIP} for c in cards]
+    return dump_json(sorted(stripped, key=lambda c: c.get("id", "")))
+
+
+def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> RerunReport:
+    """Re-run from ``input.rdml`` and compare results, facts, grid and card structure.
+
+    Lazily imports ``qpilot.qpcr.study.run_study`` (documented exception to the core/plugin
+    rule). ``results.json`` and ``facts.json`` must match byte for byte, ``grid.csv`` too when
+    the record has one, and the cards must match apart from decisions.
+    """
+    record_dir = Path(record_dir)
+    results_path = rerun(record_dir, out_dir)
+    out = results_path.parent
+    from qpilot.core.store import _grid_csv
+    from qpilot.qpcr.study import run_study  # documented lazy import
+
+    regenerated = run_study(record_dir / "input.rdml")
+    result, cards = regenerated[0], regenerated[1]
+    grid = regenerated[2] if len(regenerated) > 2 else None
+    facts = {fid: f.model_dump(mode="json") for fid, f in result.facts.items()}
+    atomic_write(out / "facts.json", dump_json(facts))
+    if grid is not None:
+        atomic_write(out / "grid.csv", _grid_csv(grid))
+    atomic_write(out / "cards.json", dump_json([c.model_dump(mode="json") for c in cards]))
+    compared, differs = [], []
+    for name in ("results.json", "facts.json", "grid.csv"):
+        if (record_dir / name).exists() and (out / name).exists():
+            compared.append(name)
+            if (record_dir / name).read_bytes() != (out / name).read_bytes():
+                differs.append(name)
+    compared.append("cards.json (structure)")
+    try:
+        mine = _card_structure(json.loads((record_dir / "cards.json").read_text()))
+    except (OSError, ValueError, AttributeError):
+        mine = ""
+    if mine != _card_structure([c.model_dump(mode="json") for c in cards]):
+        differs.append("cards.json (structure)")
+    note = ""
+    try:
+        made_with = json.loads((record_dir / "versions.json").read_text()).get("qpilot_git")
+        if made_with and made_with != versions()["qpilot_git"]:
+            now = versions()["qpilot_git"]
+            note = f"record made with qpilot {made_with[:12]}, re-run with {now[:12]}"
+    except (OSError, ValueError):
+        pass
+    return RerunReport(
+        out_dir=str(out), same=not differs, compared=compared, differs=differs, build_note=note
+    )
 
 
 def rerun(record_dir: str | Path, out_dir: str | Path | None = None) -> Path:
     """Re-run the analysis from the record's input; return the regenerated ``results.json``.
 
     Lazily imports ``qpilot.qpcr.study.run_study`` (documented exception to the core/plugin
-    rule). Compare the returned file with the record's ``results.json`` byte for byte.
+    rule). :func:`rerun_compare` also checks facts, grid and cards.
     """
     record_dir = Path(record_dir)
     source = record_dir / "input.rdml"
@@ -410,9 +481,8 @@ def rerun(record_dir: str | Path, out_dir: str | Path | None = None) -> Path:
 
 
 def rerun_matches(record_dir: str | Path, out_dir: str | Path | None = None) -> bool:
-    """True when a re-run reproduces the record's ``results.json`` byte for byte."""
-    regenerated = rerun(record_dir, out_dir)
-    return regenerated.read_bytes() == (Path(record_dir) / "results.json").read_bytes()
+    """True when a re-run reproduces results, facts, grid and card structure."""
+    return rerun_compare(record_dir, out_dir).same
 
 
 def summary_json(info: RecordInfo) -> str:

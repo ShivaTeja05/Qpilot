@@ -6,6 +6,10 @@ log2 normalised scale with a normal approximation plus the usual +1 small-sample
     n per group  = 2 (z_{1-alpha/2} + z_{power})^2 sigma^2 / delta^2 + 1,   delta = log2(fc)
     MDE (log2)   = (z_{1-alpha/2} + z_{power}) * sigma * sqrt(2 / n)
 
+The formulas are normal approximations (optimistic for very small groups). The message also
+reports a seeded simulation of qPilot's actual rule (Welch t-test and the 2-fold call), which is
+the number to trust for small n.
+
 ``sigma`` is the standard deviation **between biological replicates on the log2 normalised
 scale** (from a pilot or an earlier Analysis Record). Using the SD of technical replicate Cq
 values instead would understate the samples needed by about an order of magnitude. This is a
@@ -38,18 +42,36 @@ def mde_fold(n_per_group: int, sd_log2: float, alpha: float = 0.05, power: float
     return 2.0 ** (_z_sum(alpha, power) * sd_log2 * math.sqrt(2 / n_per_group))
 
 
-def call_probability(
-    fc: float, sd_log2: float, n_per_group: int, alpha: float = 0.05, min_log2fc: float = 1.0
-) -> float:
-    """Chance qPilot calls a true ``fc`` up/down: significant **and** at least ``2**min_log2fc``.
+SIM_REPS = 20_000
 
-    Normal approximation: the observed log2 change is N(delta, se^2) with se = sigma*sqrt(2/n);
-    it is called when it clears both z*se and ``min_log2fc``.
+
+def simulate_calls(
+    fc: float,
+    sd_log2: float,
+    n_per_group: int,
+    alpha: float = 0.05,
+    min_log2fc: float = 1.0,
+    reps: int = SIM_REPS,
+) -> tuple[float, float]:
+    """Simulate qPilot's own rule on a true ``fc``; return (P(significant), P(called)).
+
+    Each replicate draws ``n_per_group`` log2 values per group with SD ``sd_log2``, runs a Welch
+    t-test, and counts a call only when it is significant **and** the observed change reaches
+    ``2**min_log2fc`` in the true direction. Seeded, so the same inputs give the same numbers.
     """
-    delta = abs(math.log2(fc))
-    se = sd_log2 * math.sqrt(2 / n_per_group)
-    z = NormalDist().inv_cdf(1 - alpha / 2)
-    return 1 - NormalDist().cdf((max(min_log2fc, z * se) - delta) / se)
+    import numpy as np
+    from scipy import stats
+
+    rng = np.random.default_rng(0)
+    delta = math.log2(fc)
+    hi = rng.normal(delta, sd_log2, size=(reps, n_per_group))
+    lo = rng.normal(0.0, sd_log2, size=(reps, n_per_group))
+    _, p = stats.ttest_ind(hi, lo, axis=1, equal_var=False)
+    diff = hi.mean(axis=1) - lo.mean(axis=1)
+    significant = p < alpha
+    same_direction = np.sign(diff) == np.sign(delta)
+    called = significant & same_direction & (np.abs(diff) >= min_log2fc)
+    return float(significant.mean()), float(called.mean())
 
 
 def _rules(
@@ -134,17 +156,23 @@ def plan(
                 f"A {target:g}-fold change: with {n_per_group} per group the smallest change "
                 f"detected with {power:.0%} power is {mde:.1f}-fold."
             )
-    chance = call_probability(fc, sd_log2, need, alpha)
+    sig, called = simulate_calls(fc, sd_log2, need, alpha)
     message += (
-        f" That size gives {power:.0%} power for a significant difference; qPilot's up/down call"
-        f" also needs an observed change of at least 2-fold, so with {need} per group a true"
-        f" {target:g}-fold change would be called about {chance:.0%} of the time."
+        f" Simulated with qPilot's own rule at {need} per group: significant {sig:.0%} of the"
+        f" time, called up/down {called:.0%}, because a call also needs the observed change to"
+        f" reach 2-fold."
     )
     if n_per_group:
-        planned = call_probability(fc, sd_log2, n_per_group, alpha)
-        message += f" With the planned {n_per_group} per group: about {planned:.0%}."
+        sig_n, called_n = simulate_calls(fc, sd_log2, n_per_group, alpha)
+        message += (
+            f" At the planned {n_per_group} per group: significant {sig_n:.0%},"
+            f" called {called_n:.0%}."
+        )
     if target < 2:
-        message += " qPilot's rule cannot call a change smaller than 2-fold up or down."
+        message += (
+            " A true change below 2-fold is called only when noise makes it look 2-fold or more;"
+            " to detect smaller changes, the conclusion rule itself would have to change."
+        )
     return PlanResult(
         n_needed=need, mde_fold=mde, cannot_detect=cannot, rules=rules, message=message
     )

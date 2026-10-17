@@ -59,7 +59,9 @@ def run(
             scores.append(
                 score_item(item, answer, {**facts, **answer.facts}, before != after, latency)
             )
-    endpoint = getattr(client.backend, "url", None)
+    from qpilot.ai.client import public_endpoint
+
+    endpoint = public_endpoint(getattr(client.backend, "url", None))
     return summarise(
         scores, profile_name or client.provider, client.provider, client.model, endpoint, run_at
     )

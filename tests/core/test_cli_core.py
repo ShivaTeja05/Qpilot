@@ -142,8 +142,11 @@ def test_open_errors_are_plain(store, tmp_path, capsys, fixtures_dir):
     assert "no such RDML file" in err and "demo study design" not in err
     assert main(["records", "open", "--rdml", str(fixtures_dir / "test_mca_1_raw_data.rdml")]) == 2
     assert "demo study design" in capsys.readouterr().err
-    with pytest.raises(SystemExit, match="demo study design"):
+    with pytest.raises(SystemExit) as stop:
         main(["harness", "make", "--rdml", str(fixtures_dir / "test_mca_1_raw_data.rdml")])
+    assert stop.value.code == 2 and "demo study design" in capsys.readouterr().err
+    assert main(["records", "open", "--rdml", str(tmp_path)]) == 2
+    assert "not a file" in capsys.readouterr().err
 
 
 @pytest.mark.demo_data

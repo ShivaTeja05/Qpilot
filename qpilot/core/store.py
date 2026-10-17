@@ -38,8 +38,12 @@ STALE_REASON = "card changed since you read it"
 PENDING_REASON = "This choice can change a conclusion, so a human must decide it."
 
 
-def pending_after(entries: list[DecisionEntry]) -> list[DecisionEntry]:
-    """The agent requests still waiting after a log, replayed the way the store keeps them."""
+def pending_after(entries: list[DecisionEntry], legacy: bool = False) -> list[DecisionEntry]:
+    """The agent requests still waiting after a log, replayed the way the store keeps them.
+
+    ``legacy=True`` replays the rule of qPilot builds before 17 Oct 2026 16:40 UTC, where one
+    rejection cleared every request on its card; ``verify`` accepts either.
+    """
     pending: list[DecisionEntry] = []
     for entry in entries:
         if entry.status == "pending_human":
@@ -48,7 +52,9 @@ def pending_after(entries: list[DecisionEntry]) -> list[DecisionEntry]:
             pending = [p for p in pending if p.card_id != entry.card_id]
         elif entry.actor == "human" and entry.status == "rejected":
             pending = [
-                p for p in pending if not (p.card_id == entry.card_id and p.option == entry.option)
+                p
+                for p in pending
+                if not (p.card_id == entry.card_id and (legacy or p.option == entry.option))
             ]
     return pending
 
@@ -298,16 +304,10 @@ class StudyStore:
             if p.card_id == card_id and (option is None or p.option == option)
         ]
         if not waiting:
-            raise KeyError(f"no pending request on card {card_id!r}")
-        outcome: DecisionOutcome | None = None
-        head = expected_head
-        for refused in dict.fromkeys(p.option for p in waiting):  # distinct, oldest first
-            outcome = self._write(study_id, card_id, refused, reason, "human", "rejected", head)
-            if outcome.status == "stale":
-                return outcome
-            head = outcome.chain_head
-        assert outcome is not None
-        return outcome
+            which = f" for option {option!r}" if option else ""
+            raise KeyError(f"no pending request on card {card_id!r}{which}")
+        options = list(dict.fromkeys(p.option for p in waiting))  # distinct, oldest first
+        return self._write(study_id, card_id, options, reason, "human", "rejected", expected_head)
 
     def append_ai_call(self, study_id: str, entry: dict[str, Any]) -> None:
         """Append one model-call log line (no key, no raw payload unless opted in)."""
@@ -341,31 +341,36 @@ class StudyStore:
         self,
         study_id: str,
         card_id: str,
-        option: str,
+        option: str | list[str],
         reason: str,
         actor: Actor,
         status: str,
         expected_head: str | None,
     ) -> DecisionOutcome:
+        """Append one entry (or one per option, all under one lock) after the version check."""
         workspace = self.workspace(study_id)
         log = workspace / "decisions.jsonl"
+        options = option if isinstance(option, list) else [option]
         with self._locked(workspace):
             entries = read_entries(log)
             root = self.get(study_id).input_sha256
             head = entries[-1].hash if entries else root
             if expected_head is not None and expected_head != head:
-                entry = self._append(log, entries, root, card_id, option, reason, actor, "stale")
+                entry = self._append(
+                    log, entries, root, card_id, options[0], reason, actor, "stale"
+                )
                 return DecisionOutcome(
                     status="stale",
                     chain_head=entry.hash,
                     card=self.card(study_id, card_id),
                     reason=STALE_REASON,
                 )
-            entry = self._append(log, entries, root, card_id, option, reason, actor, status)
             cards = self.cards(study_id)
-            cards = [_apply_entry(c, entry) if c.id == card_id else c for c in cards]
+            for each in options:
+                entry = self._append(log, entries, root, card_id, each, reason, actor, status)
+                cards = [_apply_entry(c, entry) if c.id == card_id else c for c in cards]
+                self._update_pending(workspace, entry)
             self._write_cards(workspace, cards)
-            self._update_pending(workspace, entry)
             card = next(c for c in cards if c.id == card_id)
             return DecisionOutcome(status=status, chain_head=entry.hash, card=card)
 

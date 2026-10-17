@@ -36,7 +36,18 @@ PENDING_TEXT = (
     "Not applied: this choice can change a conclusion, so a person must decide it in qPilot. "
     "The request is waiting for their review."
 )
-DECIDE_WORDS = re.compile(r"\b(apply|switch|use|set|change|normali[sz]e to|pick|choose)\b", re.I)
+DECIDE_WORDS = re.compile(
+    r"\b(apply|switch|use|set|change|normali[sz]e|pick|choose|make|replace|swap|select|"
+    r"go with|adopt|move to|cut at|instead)\b",
+    re.I,
+)
+ONLY_WORDS = re.compile(r"\b(only|alone|just|single|solely|sole)\b", re.I)
+CLAIMS_DONE = re.compile(
+    r"\b(i\s+(have\s+|'ve\s+)?(applied|switched|changed|set|updated|made|used)|"
+    r"(has|have)\s+been\s+(applied|switched|changed|updated|set)|"
+    r"(applied|switched|changed)\s+(the|it|to)|now\s+(uses|normali[sz]ed))\b|\bdone[.,:!]",
+    re.I,
+)
 GENE_LIKE = re.compile(r"\b[A-Z][A-Z0-9]{2,}[A-Z0-9_()\-]*\b")
 CONCLUSION_WORDS = {"up": "higher", "down": "lower", "none": "not clearly different (no call)"}
 
@@ -248,19 +259,11 @@ def route(ctx: _Context, question: str) -> tuple[str, dict[str, Any]]:
     """Keyword routing used when no model is configured (and when a tool call is unusable)."""
     lowered = question.lower()
     if DECIDE_WORDS.search(question):
-        for card in ctx.cards:
-            for option in sorted(card.options, key=lambda o: -len(o.label)):
-                label = option.label.lower()
-                bare = label.replace(" alone", "")
-                if label in lowered or (
-                    option.id.endswith("_alone") and f"{bare} alone" in lowered
-                ):
-                    reason = "requested from Ask your data"
-                    return "qpcr_decide", {
-                        "card_id": card.id,
-                        "option": option.id,
-                        "reason": reason,
-                    }
+        hit = _requested_option(ctx, lowered)
+        if hit:
+            card_id, option_id = hit
+            reason = "requested from Ask your data"
+            return "qpcr_decide", {"card_id": card_id, "option": option_id, "reason": reason}
     gene = ctx.gene(question)
     if gene:
         return "qpcr_robustness", {"gene": gene}
@@ -268,6 +271,29 @@ def route(ctx: _Context, question: str) -> tuple[str, dict[str, Any]]:
     if any(w.lower() not in known for w in GENE_LIKE.findall(question)):
         return "none", {"reason": NOT_IN_STUDY}
     return "qpcr_study", {}
+
+
+def _requested_option(ctx: _Context, lowered: str) -> tuple[str, str] | None:
+    """The (card, option) a change request names, matched generously; None if none is named."""
+    only = bool(ONLY_WORDS.search(lowered))
+    for card in ctx.cards:
+        for option in sorted(card.options, key=lambda o: -len(o.label)):
+            label = option.label.lower()
+            bare = re.sub(r"\s+alone$", "", label)
+            if label in lowered:
+                return card.id, option.id
+            if (
+                option.id.endswith("_alone")
+                and only
+                and re.search(rf"(?<![\w(]){re.escape(bare)}(?![\w)])", lowered)
+            ):
+                return card.id, option.id
+            if option.id == "top2" and re.search(r"\btop (two|2)\b|two most stable", lowered):
+                return card.id, option.id
+            pct = re.match(r"cut_(\d+)$", option.id)
+            if pct and re.search(rf"\b{pct.group(1)}\s?%", lowered):
+                return card.id, option.id
+    return None
 
 
 def _parse_tool(text: str) -> tuple[str, dict[str, Any]] | None:
@@ -345,6 +371,10 @@ def ask(
         error = err or error
         if fallback:
             text = fallback_text
+        elif tool != "qpcr_decide" and CLAIMS_DONE.search(text):
+            # Whatever the routing missed: an answer may never claim a change that was not made.
+            text, fallback = fallback_text, True
+            error = "the model claimed a change that qPilot did not make; template used"
     check = validate(text, facts, ctx.names)
     result = AskResult(
         question=question,

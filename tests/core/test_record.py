@@ -287,3 +287,63 @@ def test_unzip_errors_and_folder_rooted_zip(record, tmp_path):
         for p in sorted(out.iterdir()):
             z.write(p, f"rec/{p.name}")
     assert verify(unzip_record(rooted, tmp_path / "z")).ok
+
+
+def test_schema_invalid_card_and_bad_checksum_line_are_reported(record):
+    out, _ = record
+    (out / "cards.json").write_text('[{"id": "card_refset", "options": 5}]')
+    report = verify(out)
+    assert not report.ok and "cards.json unreadable" in report.inconsistent
+    (out / CHECKSUMS).write_text("not a checksum line\n")
+    report = verify(out)
+    assert not report.ok and report.inconsistent == ["CHECKSUMS.sha256 unreadable"]
+
+
+def test_record_from_previous_build_still_verifies(store, study_with_input, tmp_path):
+    from qpilot.core.store import entry_hash  # noqa: F401  (chain is written by the store)
+
+    sid = study_with_input.study_id
+    store.append_decision(sid, "card_cutoff", "cut_10", "a", "agent", None)
+    store.append_decision(sid, "card_cutoff", "cut_20", "b", "agent", None)
+    store.reject_pending(sid, "card_cutoff", "neither", None, option="cut_10")
+    out = tmp_path / "old"
+    write_record(store, sid, out)
+    # the previous build cleared every request on the card with one rejection
+    (out / "pending.jsonl").write_text("")
+    _reseal(out)
+    assert verify(out).ok
+
+
+def test_multi_option_reject_is_one_locked_write(store, study_with_input):
+    sid = study_with_input.study_id
+    store.append_decision(sid, "card_cutoff", "cut_10", "a", "agent", None)
+    store.append_decision(sid, "card_cutoff", "cut_20", "b", "agent", None)
+    before = len(store.entries(sid))
+    out = store.reject_pending(sid, "card_cutoff", "neither", store.chain_head(sid))
+    entries = store.entries(sid)
+    assert out.status == "rejected" and len(entries) == before + 2
+    assert [e.option for e in entries[-2:]] == ["cut_10", "cut_20"]
+    with pytest.raises(KeyError, match="for option 'cut_15'"):
+        store.reject_pending(sid, "card_cutoff", "x", None, option="cut_15")
+
+
+@pytest.mark.demo_data
+def test_rerun_catches_edits_to_facts_grid_and_cards(store, demo_rdml_path, tmp_path):
+    from qpilot.core.record import rerun_compare
+
+    sid = store.ensure_study(demo_rdml_path)
+    out = tmp_path / "rec"
+    write_record(store, sid, out)
+    assert rerun_compare(out, tmp_path / "r0").same
+    facts = json.loads((out / "facts.json").read_text())
+    facts["f_fc_odc1_recommended"]["value"] = 99.0
+    (out / "facts.json").write_text(json.dumps(facts, sort_keys=True, indent=2) + "\n")
+    grid = (out / "grid.csv").read_text().replace(",up\n", ",down\n", 1)
+    (out / "grid.csv").write_text(grid)
+    cards = json.loads((out / "cards.json").read_text())
+    cards[0]["impact"]["flips"] = False
+    (out / "cards.json").write_text(json.dumps(cards))
+    _reseal(out)
+    report = rerun_compare(out, tmp_path / "r1")
+    assert not report.same
+    assert set(report.differs) == {"facts.json", "grid.csv", "cards.json (structure)"}

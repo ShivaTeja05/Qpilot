@@ -24,6 +24,18 @@ Message = dict[str, str]
 DEFAULT_TIMEOUT_S = 60.0
 
 
+def public_endpoint(url: str | None) -> str | None:
+    """An endpoint as it may be logged: scheme, host, port and path only (no user, key, query)."""
+    if not url:
+        return None
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(url)
+    host = parts.hostname or ""
+    port = f":{parts.port}" if parts.port else ""
+    return f"{parts.scheme}://{host}{port}{parts.path}" if parts.scheme else None
+
+
 class ModelUnavailable(RuntimeError):
     """No model is configured, or the configured one cannot be reached."""
 

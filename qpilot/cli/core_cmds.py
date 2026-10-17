@@ -47,20 +47,23 @@ def _rerun_arguments(parser: argparse.ArgumentParser) -> None:
 def _rerun(args: argparse.Namespace) -> int:
     import tempfile
 
-    from qpilot.core.record import RecordError, rerun
+    from qpilot.core.record import RecordError, rerun_compare
 
     with tempfile.TemporaryDirectory() as tmp:
         try:
             record = _record_dir(args.record, Path(tmp))
-            path = rerun(record, args.out or Path(tmp) / "rerun")
-        except RecordError as err:
+            report = rerun_compare(record, args.out or Path(tmp) / "rerun")
+        except (RecordError, OSError, ValueError) as err:
             print(f"qpilot rerun: {err}", file=sys.stderr)
             return 2
-        same = path.read_bytes() == (record / "results.json").read_bytes()
-        if args.out is None:
-            path = Path("(temporary folder)")
-    print(f"{path}: {'byte-identical to the record' if same else 'DIFFERS from the record'}")
-    return 0 if same else 1
+    where = report.out_dir if args.out else "(temporary folder)"
+    for name in report.compared:
+        verdict = "DIFFERS from the record" if name in report.differs else "byte-identical"
+        print(f"{name}: {verdict}")
+    if report.build_note:
+        print(f"note: {report.build_note}")
+    print(f"regenerated files: {where}")
+    return 0 if report.same else 1
 
 
 def _plan_arguments(parser: argparse.ArgumentParser) -> None:
@@ -115,21 +118,31 @@ DESIGN_NOTE = (
 )
 
 
+def _fail(message: str) -> None:
+    """Print a plain error and exit with code 2 (the CLI's code for a refused request)."""
+    print(message, file=sys.stderr)
+    raise SystemExit(2)
+
+
 def _open_study(store, path: str) -> str:
-    """``ensure_study`` with plain-language errors instead of tracebacks (raises SystemExit)."""
+    """``ensure_study`` with plain-language errors instead of tracebacks (exits with code 2)."""
     from qpilot.io.rdml_io import RdmlLoadError
 
+    p = Path(path)
+    if not p.exists():
+        _fail(f"qpilot: no such RDML file: {path}")
+    if not p.is_file():
+        _fail(f"qpilot: not a file: {path}")
     try:
-        return store.ensure_study(path)
-    except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
-        raise SystemExit(f"qpilot: no such RDML file: {path}") from None
+        return store.ensure_study(p)
     except RdmlLoadError as err:
         design = "no experiment" in str(err)
-        raise SystemExit(f"qpilot: {err}" + (f"\n{DESIGN_NOTE}" if design else "")) from None
+        _fail(f"qpilot: {err}" + (f"\n{DESIGN_NOTE}" if design else ""))
+    except OSError as err:
+        _fail(f"qpilot: cannot read {path}: {err.strerror or err}")
     except (KeyError, ValueError) as err:
-        raise SystemExit(
-            f"qpilot: this file does not fit the demo design ({err}).\n{DESIGN_NOTE}"
-        ) from None
+        _fail(f"qpilot: this file does not fit the demo design ({err}).\n{DESIGN_NOTE}")
+    raise AssertionError("unreachable")
 
 
 def _pick_study(args: argparse.Namespace):
@@ -267,8 +280,8 @@ def _records_arguments(parser: argparse.ArgumentParser) -> None:
 INTERACTIVE_ONLY = (
     "decide and reject are meant for a person at an interactive terminal (or the app), and no "
     "terminal is attached here. AI agents should ask through MCP instead. (This is a guard "
-    "against accidental scripted use, not a security boundary: anything with full control of "
-    "your shell can act as you.)"
+    "against accidental scripted use, not a security boundary: anything that can run commands "
+    "as you can act as you.)"
 )
 
 
@@ -308,9 +321,8 @@ def _records(args: argparse.Namespace) -> int:
         path = args.rdml or str(default_cache_dir() / "data_vermeulen_raw.rdml")
         try:
             study_id = _open_study(store, path)
-        except SystemExit as err:
-            print(err, file=sys.stderr)
-            return 2
+        except SystemExit as err:  # message already printed by _open_study
+            return int(err.code or 2)
         r = store.get(study_id)
         print(
             f"study {study_id}: {r.n_plates} plates, {r.n_samples} samples, "
@@ -382,6 +394,10 @@ def _records(args: argparse.Namespace) -> int:
                 "human",
                 args.expected_head,
             )
+            if out.status == "stale":
+                print(f"Not applied: {out.reason}; read the card again (qpilot records cards)")
+                print(f"chain head: {out.chain_head}")
+                return 2
             print(
                 f"{out.status}: {out.card.id if out.card else ''} -> "
                 f"{out.card.decision if out.card else ''}"
@@ -403,9 +419,9 @@ def _records(args: argparse.Namespace) -> int:
                 store, study_id, args.rest[0], args.reason or "", args.expected_head, option
             )
             if out.status == "stale":
-                print(f"stale: {out.reason}; read the card again")
-            else:
-                print(f"{out.status}: {out.card.id} stays {out.card.decision or 'undecided'}")
+                print(f"Not rejected: {out.reason}; read the card again (qpilot records pending)")
+                return 2
+            print(f"{out.status}: {out.card.id} stays {out.card.decision or 'undecided'}")
         elif args.action == "log":
             for e in store.entries(study_id):
                 print(
