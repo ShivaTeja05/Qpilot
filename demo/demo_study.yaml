@@ -1,0 +1,30 @@
+# The demo the pitch runs and demo/demo.mp4 shows. For people, not parsed by code.
+# Every number on screen comes from the engine; none is written here.
+
+study:
+  name: Vermeulen/Ruijter neuroblastoma qPCR benchmark (64 plates, 366 tumours)
+  licence: CC BY 4.0 (Vermeulen et al. 2009; Ruijter et al. 2013)
+  rdml: ~/.cache/qpilot/data_vermeulen_raw.rdml   # `qpilot fetch-demo` (SHA-256 pinned)
+  experiment: biomarker_set
+  study_id: bc1d233e3866
+
+design:
+  groups: MYCN-high = top 15 % by MYCN(4) expression, vs the rest (expression-defined, not clinical)
+  control_gene_candidates: [ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2)]
+  headline_genes: [ODC1, BIRC5, NTRK1, NM23A]
+
+before_each_run:
+  - qpilot doctor                 # expect "outbound: none" and "OK"
+  - qpilot app --fresh-demo       # moves earlier rehearsal decisions aside (kept), card 1 opens fresh
+
+path:
+  - Analyse (no file: the demo study)
+  - "Card 1, which control genes: choose 'Recommended set (all five)'; reason, e.g. 'Keep all five: none passes geNorm on its own.'"
+  - "Card 2, where to cut the groups: choose 'Top 15 % by MYCN expression'; reason, e.g. 'The pre-registered cut.'"
+  - Meter and confidence (left column)
+  - "Ask your data: 'Is ODC1 up in MYCN-high tumours, and does it depend on the reference genes?'"
+  - Export Analysis Record, then in a terminal `qpilot verify qpilot-record-bc1d233e3866.zip`
+
+model_beat:  # pitch 2:20; only with a configured model (Model -> Local, endpoint and name)
+  question: "Is ODC1 up in MYCN-high tumours, and does it depend on the reference genes?"
+  scorecard: Check model (numbers only from a live run)
