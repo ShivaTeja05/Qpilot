@@ -1,0 +1,18 @@
+// qPilot -> GraphPad Prism (Mode S): export every data table to sent_back/ for qPilot.
+// Study 70a0000000c1, record toy-001, chain abababababab.
+// Written by qPilot; regenerate with `qpilot export prism` instead of editing.
+// Not yet run on a real Prism seat: behaviour is unverified until plan step 0.1.
+// Save your projects in Prism first. This script never closes them.
+SetPath "C:\Users\lab\qpilot_toy"
+// T
+Open "T_qpilot_toy-001.pzfx"
+GoTo D, 1
+ExportTable "C:\Users\lab\qpilot_toy\sent_back\T.csv"
+// T2
+Open "T2_qpilot_toy-001.pzfx"
+GoTo D, 1
+ExportTable "C:\Users\lab\qpilot_toy\sent_back\T2.csv"
+// Done signal for qPilot.
+OpenOutput "qpilot_sent_back_done.txt", Clear
+WText "qPilot send_back.pzc finished for record toy-001"
+CloseOutput
