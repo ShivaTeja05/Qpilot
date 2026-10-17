@@ -275,9 +275,22 @@ class QpilotTools:
                 calibrator_on_every_plate=calibrator_on_every_plate,
                 n_candidate_refs=n_candidate_refs,
             )
-        except ValueError as err:
+        except (ValueError, TypeError, ArithmeticError) as err:
             return {"error": str(err)}
-        return out.model_dump(mode="json")
+        result = out.model_dump(mode="json")
+        if out.n_needed is not None:
+            # qPilot's own rule (p < 0.05 and at least 2-fold), simulated: what a design calls.
+            from qpilot.qpcr.plan import simulate_calls
+
+            sims = {"needed": simulate_calls(fc, sd_log2, out.n_needed, alpha)}
+            if n_per_group:
+                sims["planned"] = simulate_calls(fc, sd_log2, n_per_group, alpha)
+            result["simulated"] = {
+                f"{k}_{what}": round(v, 4)
+                for k, (sig, called) in sims.items()
+                for what, v in (("significant", sig), ("called", called))
+            }
+        return result
 
 
 TOOL_NAMES = ("qpcr_study", "qpcr_robustness", "qpcr_decide", "qpcr_plan")

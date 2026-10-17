@@ -71,3 +71,38 @@ def test_plan_simulates_qpilots_own_rule():
     msg = plan(4, 1.0, 3).message
     assert "At the planned 3 per group: significant 37%, called 37%." in msg
     assert "called only when noise makes it look 2-fold" in plan(1.5, 1.0).message
+
+
+def test_a_fold_change_near_one_needs_no_big_memory():
+    import tracemalloc
+
+    tracemalloc.start()
+    out = plan(1.01, 1.0)
+    peak = tracemalloc.get_traced_memory()[1]
+    tracemalloc.stop()
+    assert out.n_needed > 10_000 and peak < 50_000_000  # was tens of GB
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"fc": 2, "sd_log2": float("inf")},
+        {"fc": 2, "sd_log2": 1e200},
+        {"fc": float("inf"), "sd_log2": 1.0},
+        {"fc": float("nan"), "sd_log2": 1.0},
+        {"fc": 1e6, "sd_log2": 1.0},
+        {"fc": 2, "sd_log2": 1.0, "n_per_group": 1},
+    ],
+)
+def test_impossible_inputs_are_refused_clearly(kwargs):
+    with pytest.raises(ValueError):
+        plan(**kwargs)
+    from qpilot.mcp_server import QpilotTools
+
+    assert "error" in QpilotTools().qpcr_plan(**kwargs)  # never a traceback over MCP
+
+
+def test_a_change_the_rule_rarely_calls_is_listed_as_undetectable():
+    out = plan(1.5, 0.5, 20)
+    assert any("qPilot's rule calls it" in item for item in out.cannot_detect)
+    assert "just under 2-fold" in plan(1.9999999, 1.0).message

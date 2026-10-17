@@ -148,7 +148,11 @@ def run_tool(ctx: _Context, tool: str, args: dict[str, Any]) -> dict[str, Any]:
         )
     if tool == "qpcr_plan":
         allowed = {"fc", "sd_log2", "n_per_group", "alpha", "power"}
-        return ctx.tools.qpcr_plan(**{k: v for k, v in args.items() if k in allowed})
+        kwargs = {k: v for k, v in args.items() if k in allowed}
+        values = [v for v in kwargs.values() if v is not None]
+        if any(isinstance(v, bool) or not isinstance(v, int | float) for v in values):
+            raise TypeError("qpcr_plan arguments must be numbers")
+        return ctx.tools.qpcr_plan(**kwargs)
     if tool == "explain_number":
         fid = str(args.get("fact_id", ""))
         fact = ctx.result.facts.get(fid)
@@ -213,6 +217,12 @@ def answer_facts(ctx: _Context, tool: str, out: dict[str, Any]) -> tuple[dict, d
             view["n_per_group_needed"] = tok("f_ans_n_needed", out["n_needed"])
         if out.get("mde_fold") is not None:
             view["smallest_detectable_fold"] = tok("f_ans_mde_fold", out["mde_fold"], "{:.1f}", "×")
+        sims = out.get("simulated") or {}
+        for key in ("needed_called", "planned_called"):
+            if key in sims:
+                view[f"qpilot_rule_calls_it_at_{key.split('_')[0]}_n"] = tok(
+                    f"f_ans_{key}", sims[key], "{:.0%}"
+                )
         view["rules"] = out.get("rules", [])
         return view, facts
     if tool == "explain_number":
@@ -265,9 +275,22 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
     if tool == "qpcr_plan":
         if "n_per_group_needed" not in view:
             return "Give the spread between biological replicates to get a sample size."
-        text = "You need {{f_ans_n_needed}} per group."
+        text = "You need {{f_ans_n_needed}} per group"
+        if "qpilot_rule_calls_it_at_needed_n" in view:
+            text += (
+                "; at that size qPilot's rule (p < 0.05 and at least 2-fold) calls a real change "
+                "of this size {{f_ans_needed_called}} of the time"
+            )
+        text += "."
         if "smallest_detectable_fold" in view:
-            text += " The planned design detects changes of at least {{f_ans_mde_fold}}."
+            text += (
+                " The planned design reaches significance for changes of at least "
+                "{{f_ans_mde_fold}}"
+            )
+            if "qpilot_rule_calls_it_at_planned_n" in view:
+                text += ", and qPilot's rule would call this change "
+                text += "{{f_ans_planned_called}} of the time"
+            text += "."
         return text
     if tool == "explain_number":
         return f"{view['fact']} is computed from {_path_words(view['computed_from'])}."
@@ -402,7 +425,7 @@ def ask(
 
     try:
         out = run_tool(ctx, tool, args)
-    except (TypeError, ValueError, KeyError) as err:
+    except (TypeError, ValueError, KeyError, ArithmeticError) as err:
         # A model sent arguments of the wrong type or shape: fall back to qPilot's own routing.
         error = (
             f"the model's {tool} call was malformed ({type(err).__name__}); keyword routing used"

@@ -24,6 +24,10 @@ from statistics import NormalDist
 from qpilot.schemas import PlanResult
 
 SIGMA_HELP = "SD of log2 normalised expression between biological replicates (not technical Cq SD)"
+# Plausible bounds: a 1000-fold scatter between replicates or a fold change beyond 1000 is a typo.
+MAX_SD_LOG2 = 10.0
+MAX_FOLD = 1000.0
+MAX_N_PER_GROUP = 1_000_000
 
 
 def _z_sum(alpha: float, power: float) -> float:
@@ -55,23 +59,60 @@ def simulate_calls(
 ) -> tuple[float, float]:
     """Simulate qPilot's own rule on a true ``fc``; return (P(significant), P(called)).
 
-    Each replicate draws ``n_per_group`` log2 values per group with SD ``sd_log2``, runs a Welch
-    t-test, and counts a call only when it is significant **and** the observed change reaches
-    ``2**min_log2fc`` in the true direction. Seeded, so the same inputs give the same numbers.
+    Each replicate is a study with ``n_per_group`` normal log2 values per group and SD
+    ``sd_log2``; it runs a Welch t-test and counts a call only when it is significant **and** the
+    observed change reaches ``2**min_log2fc`` in the true direction. For normal data each group's
+    mean and variance are independent (normal and scaled chi-square), so they are drawn directly:
+    the same distribution as drawing every value, in memory that does not grow with
+    ``n_per_group``. Seeded, so the same inputs give the same numbers.
     """
     import numpy as np
     from scipy import stats
 
     rng = np.random.default_rng(0)
     delta = math.log2(fc)
-    hi = rng.normal(delta, sd_log2, size=(reps, n_per_group))
-    lo = rng.normal(0.0, sd_log2, size=(reps, n_per_group))
-    _, p = stats.ttest_ind(hi, lo, axis=1, equal_var=False)
-    diff = hi.mean(axis=1) - lo.mean(axis=1)
+    n = n_per_group
+    mean_hi = rng.normal(delta, sd_log2 / math.sqrt(n), size=reps)
+    mean_lo = rng.normal(0.0, sd_log2 / math.sqrt(n), size=reps)
+    var_hi = sd_log2**2 * rng.chisquare(n - 1, size=reps) / (n - 1)
+    var_lo = sd_log2**2 * rng.chisquare(n - 1, size=reps) / (n - 1)
+    se2_hi, se2_lo = var_hi / n, var_lo / n
+    diff = mean_hi - mean_lo
+    t = diff / np.sqrt(se2_hi + se2_lo)
+    df = (se2_hi + se2_lo) ** 2 / ((se2_hi**2 + se2_lo**2) / (n - 1))
+    p = 2 * stats.t.sf(np.abs(t), df)
     significant = p < alpha
     same_direction = np.sign(diff) == np.sign(delta)
     called = significant & same_direction & (np.abs(diff) >= min_log2fc)
     return float(significant.mean()), float(called.mean())
+
+
+RARELY_CALLED = 0.05  # below this, the design "cannot detect" the change under qPilot's rule
+
+
+def _fold(x: float) -> str:
+    """A fold change for prose, never rounded onto the 2-fold line it falls short of."""
+    text = f"{x:.3g}"
+    return "just under 2" if x < 2 and float(text) >= 2 else text
+
+
+def _check_inputs(
+    fc: float, sd_log2: float | None, n_per_group: int | None, alpha: float, power: float
+) -> None:
+    """Refuse values no real design has, before any arithmetic can overflow or allocate."""
+    values = [fc, alpha, power] + ([sd_log2] if sd_log2 is not None else [])
+    if not all(isinstance(v, int | float) and math.isfinite(v) for v in values):
+        raise ValueError("fc, sd_log2, alpha and power must be finite numbers")
+    if not (1 / MAX_FOLD <= fc <= MAX_FOLD) or fc == 1:
+        raise ValueError(
+            f"fc must be a fold change other than 1, between 1/{MAX_FOLD:g} and {MAX_FOLD:g}"
+        )
+    if not (0 < alpha < 1 and 0 < power < 1):
+        raise ValueError("alpha and power must be between 0 and 1")
+    if sd_log2 is not None and not (0 < sd_log2 <= MAX_SD_LOG2):
+        raise ValueError(f"sd_log2 must be positive and at most {MAX_SD_LOG2:g} ({SIGMA_HELP})")
+    if n_per_group is not None and not (2 <= n_per_group <= MAX_N_PER_GROUP):
+        raise ValueError(f"n_per_group must be between 2 and {MAX_N_PER_GROUP:,}")
 
 
 def _rules(
@@ -124,12 +165,7 @@ def plan(
         n_candidate_refs: how many candidate reference genes will be tested.
         one_sample_per_subject: solid tissue with one sample per subject.
     """
-    if fc <= 0 or fc == 1:
-        raise ValueError("fc must be a positive fold change other than 1")
-    if not (0 < alpha < 1 and 0 < power < 1):
-        raise ValueError("alpha and power must be between 0 and 1")
-    if n_per_group is not None and n_per_group < 2:
-        raise ValueError("n_per_group must be at least 2")
+    _check_inputs(fc, sd_log2, n_per_group, alpha, power)
     rules = _rules(n_plates, calibrator_on_every_plate, n_candidate_refs, one_sample_per_subject)
     if sd_log2 is None:
         return PlanResult(
@@ -140,23 +176,27 @@ def plan(
             message=f"Sigma unknown: give the {SIGMA_HELP}, from a pilot or an earlier "
             "Analysis Record, to get a sample size.",
         )
-    if sd_log2 <= 0:
-        raise ValueError("sd_log2 must be positive")
     need = n_needed(fc, sd_log2, alpha, power)
     mde = mde_fold(n_per_group, sd_log2, alpha, power) if n_per_group else None
     target = max(fc, 1 / fc)
+    shown = _fold(target)
     cannot = []
-    message = f"For a {target:g}-fold change you need {need} per group."
+    message = f"For a {shown}-fold change you need {need} per group."
     if mde is not None:
         message = (
             f"At this noise, {n_per_group} per group detects at least {mde:.1f}-fold. " + message
         )
         if mde > target:
             cannot.append(
-                f"A {target:g}-fold change: with {n_per_group} per group the smallest change "
+                f"A {shown}-fold change: with {n_per_group} per group the smallest change "
                 f"detected with {power:.0%} power is {mde:.1f}-fold."
             )
     sig, called = simulate_calls(fc, sd_log2, need, alpha)
+    if called < RARELY_CALLED:
+        cannot.append(
+            f"A {shown}-fold change: qPilot's rule calls it up or down {called:.0%} of the time "
+            f"even at {need} per group, because a call needs the observed change to reach 2-fold."
+        )
     message += (
         f" Simulated with qPilot's own rule at {need} per group: significant {sig:.0%} of the"
         f" time, called up/down {called:.0%}, because a call also needs the observed change to"

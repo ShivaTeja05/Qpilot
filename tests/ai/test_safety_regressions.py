@@ -233,3 +233,24 @@ def test_answer_saying_the_choice_is_recorded_is_replaced(store, study):
     )
     out = ask("Could you sort out the groups for me?", store, study, client=client)
     assert out.fallback and "did not make" in out.error
+
+
+def test_plan_answers_carry_qpilots_call_rate(store, study):
+    client = ModelClient(
+        MockBackend(
+            [
+                '{"tool": "qpcr_plan", "args": {"fc": 1.5, "sd_log2": 0.5, "n_per_group": 20}}',
+                "unused draft with 13 in it",
+            ]
+        )
+    )
+    out = ask("How many samples do I need?", store, study, client=client)
+    assert "qPilot's rule" in out.plain and "f_ans_planned_called" in out.answer
+
+
+def test_a_huge_plan_argument_does_not_crash_ask(store, study):
+    client = ModelClient(
+        MockBackend(['{"tool": "qpcr_plan", "args": {"fc": 2, "sd_log2": 1e200}}', "x"])
+    )
+    out = ask("How many samples for a 2-fold change?", store, study, client=client)
+    assert out.answer

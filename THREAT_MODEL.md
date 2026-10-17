@@ -41,6 +41,7 @@ RDML file (untrusted) ─▶ io (hardened loader) ─▶ engine (qpcr + core, no
 | 12 | Supply chain and secrets | Pinned lower bounds (`lxml>=6.1.3`, `mcp>=1.23.0`), Dependabot, `pip-audit` in CI, gitleaks pre-commit | `.github/workflows/ci.yml`, `.pre-commit-config.yaml` |
 | 13 | A web page in the browser uses DNS rebinding to drive the local app | The app accepts only `127.0.0.1` / `localhost` as Host and refuses to serve files from the study store (Dev 1) | `tests/app/test_app.py` (`test_foreign_hosts_and_store_files_are_refused`) |
 | 14 | The API key reaches an endpoint typed into the page | The key is sent only with the provider and endpoint it was configured for in the environment (Dev 1) | `tests/app/test_app.py` (`test_the_api_key_only_goes_where_it_was_configured`) |
+| 15 | An agent or model sends planner arguments that exhaust memory or crash the server (a fold change near 1, an infinite or huge SD) | Inputs must be finite and plausible (fold change within 1/1000 to 1000, SD of log2 at most 10, 2 or more per group); the simulation draws group means and variances, so its memory does not grow with the sample size; errors come back as JSON | `tests/core/test_plan.py`, `tests/ai/test_safety_regressions.py` |
 
 ## Out of scope
 A compromised host or Python environment; a malicious lab profile written by the user themself; proving who authored a record (signatures are roadmap); multi-user hosting, accounts and roles; 21 CFR Part 11; clinical or diagnostic use.

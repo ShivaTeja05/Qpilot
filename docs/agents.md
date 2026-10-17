@@ -14,7 +14,7 @@ claude mcp add qpilot -- python -m qpilot.mcp_server
 | `qpcr_study(rdml_path)` | Study id, `record_root_hash` (the input file's sha256), `chain_head`, plate/sample/reaction counts, geNorm stability, every gene's fold change, CI, p, conclusion and holds fraction, the Decision Cards, and the facts they cite |
 | `qpcr_robustness(study_id, gene)` | The gene's conclusion and fold change under the recommended choices, `holds_fraction` over the grid of reasonable analyses, `impact_by_dimension`, its confidence level with named reasons, and the cards that can flip it |
 | `qpcr_decide(study_id, card_id, option, reason, expected_head=None)` | **`pending_human`** by default: an agent's request waits for the scientist. When the scientist sets the study to *decide and tell*, choices that cannot change any conclusion at any setting come back `applied`; choices that can are always `pending_human`. `stale` if `expected_head` is not the current `chain_head`; a stale attempt is logged without moving the head |
-| `qpcr_plan(fc, sd_log2, n_per_group, ...)` | Samples per group needed, the smallest detectable fold change, a "cannot detect" list and design rules |
+| `qpcr_plan(fc, sd_log2, n_per_group, ...)` | Samples per group needed, the smallest detectable fold change, how often qPilot's own rule (p < 0.05 and at least 2-fold) would call the change (simulated), a "cannot detect" list and design rules |
 
 Rules the server enforces:
 - **Files:** `rdml_path` must resolve, after following symlinks, to an `.rdml`/`.xml` file inside one of `QPILOT_DATA_ROOTS` (`os.pathsep`-separated; default: the qPilot cache and the current directory).
