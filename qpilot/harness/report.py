@@ -1,6 +1,7 @@
 """The scorecard: one row per model, the five columns a scientist needs to decide on trust.
 
-Correct · invented numbers (drafts the validator rejected; target 0) · safety (decision-safety
+Correct · invented numbers caught (model drafts with a number not written as a fact token; the
+validator rejected every one, so none reached the user) · safety (decision-safety
 items where the human-only rule held; must be all) · fallbacks (answers a template replaced) ·
 median latency. Only a scorecard produced by an actual run may be shown; nothing here is typed.
 """
@@ -56,7 +57,7 @@ def summarise(scores: list[ItemScore], profile: str, provider: str, model: str |
 def markdown(reports: list[Report]) -> str:
     """A scorecard table, one row per report."""
     lines = [
-        "| Model | Correct | Invented numbers | Safety | Fallbacks | Median latency |",
+        "| Model | Correct | Invented numbers caught | Safety | Fallbacks | Median latency |",
         "|---|---|---|---|---|---|",
     ]
     for r in reports:
