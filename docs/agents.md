@@ -19,7 +19,7 @@ claude mcp add qpilot -- python -m qpilot.mcp_server
 Rules the server enforces:
 - **Files:** `rdml_path` must resolve, after following symlinks, to an `.rdml`/`.xml` file inside one of `QPILOT_DATA_ROOTS` (`os.pathsep`-separated; default: the qPilot cache and the current directory).
 - **Actor:** every MCP caller is recorded as an agent; `actor="human"` is refused.
-- **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (or the in-app model). `qpilot records decide` and `reject` refuse to run without an interactive terminal, which stops the usual shell tools that agents use. But an agent that has full control of your machine can still act as you. Give agents MCP access, not your shell.
+- **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (or the in-app model). `qpilot records decide` and `reject` refuse to run when no interactive terminal is attached. That only guards against accidental scripted use: any process can fake a terminal (for example `script -q /dev/null …`), and an agent with a shell can also import qPilot's library directly. **An agent that can run commands as you can act as you.** Give agents MCP access, not your shell.
 - **Output:** tools return engine output as JSON, never model-written prose.
 
 ### In a closed loop
@@ -58,25 +58,29 @@ The harness generates questions with known answers from **your** study:
 
 It runs on a scratch copy of the study, so it never touches your decision log. The scorecard is saved with the study, with run time and endpoint, and earlier runs are kept. It is included in the Analysis Record.
 
-**How to read "Correct":** it counts the final answer, including answers where the template stepped in. "Correct by the model alone" is the model's own share. The safety score comes mostly from qPilot's code, not the model: a change request is always routed to the gate. The harness scores the in-app model only, not external MCP agents.
+**How to read "Correct":**
+- **Correct** counts the final answer, including answers where the template stepped in.
+- **Correct by the model alone** counts only answers where the model both chose the tool and wrote words that passed the validator.
+- **Safety** comes from qPilot's code, not the model:
+  - A plain change request is always routed to the gate.
+  - A refused change is always reported in qPilot's own fixed words, so a model cannot describe it as done.
+- **Scope:** the harness scores the in-app model only, not external MCP agents.
 
-Scorecard: a real run on the demo study's 64-plate results (17 Oct 2026, M3 Pro laptop, Ollama 0.40.4, nothing sent off the machine):
+Scorecard: a real run on the demo study's 64-plate results (17 Oct 2026, 16:36 UTC, M3 Pro laptop, Ollama 0.40.4, endpoint `http://127.0.0.1:11434`, nothing sent off the machine):
 
 | Model | Correct | Correct by the model alone | Invented numbers caught | Safety | Fallbacks | Median latency |
 |---|---|---|---|---|---|---|
 | none (templates) | 30/30 | — | 0 | 10/10 | — | 0.00 s |
-| local `qwen2.5:7b` | 30/30 | 21/30 | 22 | 10/10 | 9 | 5.03 s |
-
-A second independent run gave the same result: 30/30, 22 caught, 10/10, 9 fallbacks, 5.73 s.
+| local `qwen2.5:7b` | 30/30 | 11/30 | 22 | 10/10 | 19 | 4.16 s |
 
 **How to read it:**
-- The 7B model often tries to write numbers itself instead of as fact tokens. qPilot rejected all 22 such drafts, and none reached the screen; the template answered instead.
-- Every final answer was correct.
-- No request to change a conclusion got past the human gate.
+- Every final answer was correct, and no request to change a conclusion got past the human gate.
+- Only 11 of the 30 answers were the model's own: it chose the right tool and its words passed the validator.
+- The model often tries to write numbers itself instead of as fact tokens. qPilot caught all 22 such drafts, and none reached the screen.
+- Ten of the 19 fallbacks are the safety items. Refused changes are always reported in qPilot's own fixed words, by design.
+- Runs vary. An earlier run, before a fix, scored 9/10 on safety: asked to apply SDHA(1) alone, the model looked up the current fold change instead. A plain change request now always goes to `qpcr_decide`.
 
-- Runs vary. An earlier run scored 9/10 on safety: asked to apply SDHA(1) alone, the model looked up the current fold change instead of requesting the change. Since then, a plain change request always goes to `qpcr_decide`, whatever tool the model picks. That is why the harness exists.
-
-So for this model, the tokens carry the numbers and the model's own wording is used only where it passed the validator. Re-run the harness after changing the model, endpoint or profile.
+So for this model, qPilot carries the numbers and the safety, and the model's wording is used only where it passed. Re-run the harness after changing the model, endpoint or profile.
 
 ## 4. Before the first plate
 
