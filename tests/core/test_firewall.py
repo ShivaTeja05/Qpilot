@@ -220,7 +220,26 @@ READERS = {
     "core/pseudonym.py",
     "core/store.py",
     "core/proposals.py",
+    # Deterministic proposers: they pattern-match names ("NTC", "comp_50_conc_0.25") to make
+    # proposals a person must accept, never numbers; a regex cannot follow an instruction. The
+    # numeric engine may not import them (test below).
+    "qpcr/inspect.py",
+    "qpcr/design_rules.py",
 }
+#: The modules that compute numbers; none of them may import a module that reads names back.
+NUMERIC_ENGINE = (
+    "qpcr/curves.py",
+    "qpcr/quant.py",
+    "qpcr/contrast.py",
+    "qpcr/refgenes.py",
+    "qpcr/space.py",
+    "qpcr/study.py",
+    "qpcr/designs.py",
+    "qpcr/amp_call.py",
+    "qpcr/routes.py",
+    "qpcr/export.py",
+    "qpcr/curve_judge.py",
+)
 READ_BACK = re.compile(
     r"quarantine\.json|\bas_quoted\b|\bread_quarantine\b|\bQuarantineEntry\b", re.IGNORECASE
 )
@@ -305,3 +324,12 @@ def test_the_import_check_allows_adding_text():
         "store.quarantine(sid).add(name, 'rdml:target.id')\n"
     )
     assert engine_reads_quarantine(source) == []
+
+
+def test_the_numeric_engine_never_imports_a_name_reader():
+    readers = {"qpilot.core.firewall", "qpilot.qpcr.inspect", "qpilot.qpcr.design_rules"}
+    for name in NUMERIC_ENGINE:
+        tree = ast.parse((PACKAGE / name).read_text(encoding="utf-8"))
+        imported = {n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)}
+        imported |= {a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
+        assert not imported & readers, (name, imported & readers)
