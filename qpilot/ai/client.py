@@ -191,6 +191,7 @@ class ModelClient:
                 backend = NoneBackend()
         self.backend = backend
         self.last_meta: dict[str, Any] = {}
+        self.metas: list[dict[str, Any]] = []  # one per call, so every call can be logged
 
     @classmethod
     def from_env(cls) -> ModelClient:
@@ -227,6 +228,7 @@ class ModelClient:
             "messages": messages,
         }
         self.last_meta = payload_log.record_payload(payload)
+        self.metas.append(self.last_meta)
         return self.backend.complete(system, messages, max_tokens, temperature)
 
     def ping(self) -> bool:

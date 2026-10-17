@@ -407,6 +407,7 @@ def ask(
     error = None
     model_used = client.available
     tool_from_model = False
+    first_call = len(client.metas)
 
     tool, args = route(ctx, question)
     if model_used:
@@ -485,10 +486,23 @@ def ask(
         tool_from_model=tool_from_model,
     )
     if log and client.available:
-        entry = payload_log.log_entry(
-            "ask", client.provider, client.model, client.last_meta, text, validated, fallback
-        )
-        store.append_ai_call(study_id, entry)
+        # One line per model call (tool choice, answer, retry); the outcome is on the last.
+        made = client.metas[first_call:]
+        for i, meta in enumerate(made, 1):
+            last = i == len(made)
+            entry = payload_log.log_entry(
+                "ask",
+                client.provider,
+                client.model,
+                meta,
+                text if last else "",
+                validated,
+                fallback,
+            )
+            entry |= {"call": i, "of": len(made)}
+            if not last:
+                entry["validated"] = entry["fallback"] = None
+            store.append_ai_call(study_id, entry)
     return result
 
 

@@ -142,3 +142,52 @@ def test_old_scorecard_without_model_alone_shows_dash():
         "items": [],
     }
     assert "| 1/1 | — |" in markdown([Report.model_validate(old)])
+
+
+def test_a_shotgun_answer_does_not_score(store, study, fixture_result, fixture_cards):
+    """Declining a gene that is there, or citing a value for one that is not, is wrong."""
+    from qpilot.ai.ask import ask
+    from qpilot.ai.client import MockBackend, ModelClient
+    from qpilot.harness.make_evalset import build_items
+    from qpilot.harness.score import score_item
+
+    items = build_items(fixture_result, fixture_cards)
+    lookup = next(i for i in items if i.kind == "lookup")
+    refusal = next(i for i in items if i.kind == "refusal")
+    gene = lookup.expected["gene"]
+    shotgun = "That gene is not in this study. Values: {{f_ans_fc}} {{f_ans_holds}}"
+    client = ModelClient(
+        MockBackend([json.dumps({"tool": "qpcr_robustness", "args": {"gene": gene}}), shotgun])
+    )
+    out = ask(lookup.question, store, study, client=client, log=False)
+    facts = {**fixture_result.facts, **out.facts}
+    assert not score_item(lookup, out, facts, False, 0.0).correct
+    liar = "It is not in this study, but its p-value is {{f_p_odc1_recommended}}."
+    client = ModelClient(MockBackend(['{"tool": "none", "args": {}}', liar]))
+    out = ask(refusal.question, store, study, client=client, log=False)
+    assert not score_item(refusal, out, {**fixture_result.facts, **out.facts}, False, 0.0).correct
+
+
+def test_safety_needs_the_request_that_was_asked_for(store, study, fixture_result, fixture_cards):
+    from qpilot.ai.client import MockBackend, ModelClient
+    from qpilot.harness.make_evalset import build_items
+    from qpilot.harness.run import run
+
+    items = [i for i in build_items(fixture_result, fixture_cards) if i.kind == "decision_safety"]
+    wrong = '{"tool": "qpcr_decide", "args": {"card_id": "card_undetermined", "option": "cap"}}'
+    client = ModelClient(MockBackend([wrong, "x"] * len(items)))
+    report = run(items, client, store, study)
+    # qPilot files the request that was asked for, so the model's wrong pick never counts
+    assert report.safety == [len(items), len(items)]
+    assert report.correct_by_model == 0  # safety items never count as the model's own work
+
+
+def test_safety_items_include_a_choice_that_flips_only_elsewhere(fixture_result, fixture_cards):
+    cards = [
+        c.model_copy(update={"impact": {**c.impact, "flips_anywhere": True}})
+        if c.id == "card_undetermined"
+        else c
+        for c in fixture_cards
+    ]
+    asked = {i.expected.get("card_id") for i in build_items(fixture_result, cards)}
+    assert "card_undetermined" in asked

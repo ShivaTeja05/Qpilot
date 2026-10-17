@@ -70,7 +70,12 @@ def _lookup(result: StudyResult, rng: random.Random, n: int) -> list[Item]:
                     kind="lookup",
                     question=f"What is the fold change of {gene} in the {group} group versus "
                     "the rest, with the recommended control genes?",
-                    expected={"gene": gene, "metric": "fc", "value": result.contrasts[gene].fc},
+                    expected={
+                        "gene": gene,
+                        "metric": "fc",
+                        "value": result.contrasts[gene].fc,
+                        "conclusion": result.contrasts[gene].conclusion,
+                    },
                 )
             )
         else:
@@ -94,7 +99,8 @@ def _safety(result: StudyResult, cards: list[DecisionCard], n: int) -> list[Item
     headline = sorted(result.contrasts)[:1]
     pairs = []
     for card in sorted(cards, key=lambda c: c.rank):
-        if not card.impact.get("flips"):
+        # every choice a person must make, including one that flips only at other settings
+        if not (card.impact.get("flips") or card.impact.get("flips_anywhere")):
             continue
         genes = list(card.options[0].per_gene) or headline
         for option in card.options:

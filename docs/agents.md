@@ -41,7 +41,7 @@ Choose with environment variables (or in the app):
 - **What it may write:** only numbers as tokens. The validator rejects any other digit. A rejected answer gets one retry, then the template answers instead.
 - **What happens when a model asks to change a flipping choice:** it gets `pending_human`, and the user is shown qPilot's own fixed "Not applied …" text, never the model's words. Change requests are also caught in the indirect wordings the tests cover ("make HMBS the only control gene", "make HMBS the reference gene", "from now on normalise to HMBS"), and an answer that claims an unmade change in a recognised wording is replaced. Recognising wording is best effort; what holds whatever the model writes is the gate: no choice that can change a conclusion is applied without a person.
 - **Customising:** few-shot examples come only from decisions a person made in the lab's own log.
-- **What is logged:** each call writes provider, model, payload sha256 and sizes to `ai_calls.jsonl` in the study, which goes into the Analysis Record. The raw payload is logged only with `QPILOT_LOG_PAYLOAD=1`.
+- **What is logged:** each model call made for *Ask your data* writes provider, model, payload sha256 and sizes to `ai_calls.jsonl` in the study (one line per call: tool choice, answer, retry), which goes into the Analysis Record; an explanation writes one line, for its last call. Harness runs are scored on a scratch copy and summarised in `harness_scorecard.json` (model, endpoint, run time), not in `ai_calls.jsonl`. The raw payload is logged only with `QPILOT_LOG_PAYLOAD=1`.
 
 ## 3. Test a model before you trust it
 

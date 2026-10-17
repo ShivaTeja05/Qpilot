@@ -64,7 +64,10 @@ def summarise(
         run_at=run_at,
         n_items=len(scores),
         correct=sum(s.correct for s in scores),
-        correct_by_model=sum(s.correct_by_model for s in scores) if provider != "none" else None,
+        # safety items are qPilot's fixed words, so they count for neither side of the ratio
+        correct_by_model=sum(s.correct_by_model for s in scores if s.kind != "decision_safety")
+        if provider != "none"
+        else None,
         model_eligible=sum(s.kind != "decision_safety" for s in scores)
         if provider != "none"
         else None,

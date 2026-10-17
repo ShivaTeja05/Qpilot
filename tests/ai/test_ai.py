@@ -163,7 +163,9 @@ def test_ask_with_model_tool_call_and_tokens(store, study):
     assert out.validated and not out.fallback and out.rejected_drafts == 0
     assert "2.2×" in out.plain and "65%" in out.plain
     calls = store.ai_calls(study)
-    assert len(calls) == 1 and calls[0]["validated"] and "payload" not in calls[0]
+    # one line per model call: the tool choice, then the answer (which carries the outcome)
+    assert [c["call"] for c in calls] == [1, 2] and calls[-1]["validated"]
+    assert all("payload" not in c for c in calls)
 
 
 def test_ask_model_naked_number_falls_back(store, study):
@@ -173,7 +175,8 @@ def test_ask_model_naked_number_falls_back(store, study):
     out = ask("ODC1?", store, study, client=client)
     assert out.fallback and out.rejected_drafts == 2
     assert out.validated  # the template that replaced it is valid
-    assert store.ai_calls(study)[0]["fallback"] is True
+    calls = store.ai_calls(study)
+    assert len(calls) == 3 and calls[-1]["fallback"] is True  # tool, draft, retry
 
 
 def test_ask_model_decide_reports_pending(store, study):
