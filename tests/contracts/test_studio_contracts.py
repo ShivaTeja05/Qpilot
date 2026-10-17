@@ -159,3 +159,25 @@ def test_other_models_roundtrip():
         )
     )
     _roundtrip(PrismDiffItem(kind="excluded", table="ODC1", gene="ODC1", row="1496"))
+
+
+def test_text_id_formula_is_shared_and_stable():
+    from qpilot.schemas_studio import TEXT_ID, text_id_for
+
+    tid = text_id_for("rdml:sample.id", "comp_50_NTC")
+    assert TEXT_ID.match(tid)
+    assert tid == text_id_for("rdml:sample.id", "comp_50_NTC")
+    assert tid != text_id_for("rdml:target.id", "comp_50_NTC")
+
+
+def test_amp_call_is_a_card_kind():
+    from qpilot.core.decisions import CardSpec
+
+    CardSpec(
+        card_id="card_amp_call",
+        kind="amp_call",
+        dimension="amp_call",
+        options=[],
+        recommended="linregpcr",
+        rationale_template="ampcall_v1",
+    )

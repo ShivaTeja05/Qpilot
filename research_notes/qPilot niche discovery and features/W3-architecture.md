@@ -306,14 +306,16 @@ In the plugin, an axis is a small object:
 
 ```python
 class Axis(Protocol):
-    name: str                       # "efficiency"
-    options: list[Any]              # ["per_assay_mean", "per_well", ...]
+    name: str  # "efficiency"
+    options: list[Any]  # ["per_assay_mean", "per_well", ...]
     primary: Any
     stage: Literal["matrix", "normaliser", "groups", "test"]
-    def applies(self, study) -> bool: ...        # e.g. aggregation needs technical replicates
-    def apply(self, state, option) -> state: ... # pure; cached by (stage, option)
+
+    def applies(self, study) -> bool: ...  # e.g. aggregation needs technical replicates
+    def apply(self, state, option) -> state: ...  # pure; cached by (stage, option)
     def card_spec(self, impact) -> CardSpec | None: ...
-    method_card: MethodCard         # paper, version, acceptance test id
+
+    method_card: MethodCard  # paper, version, acceptance test id
 ```
 
 `QpcrSpace` composes axes in stage order: **matrix** (efficiency rebuilds `log2 N0` from Cq via `N0 = Nq / E^Cq`, which holds exactly because Nq is constant per plate, CV 0.07 % on the demo; `W2-prototype-study-model.md` §0) → **aggregation** (technical replicates → biological units) → **nondetect** (imputation or censoring marks) → **normaliser** (`refs` subset; mean of reference columns, cached per subset as `_ref_mean` is today) → **groups** (`cut`; masks cached) → **test** (vectorised Welch; Tobit only for items with censoring marks). `interplate` is a matrix-stage transform that needs cross-plate overlap and refuses (returns `not_applicable` and holds at `none`) when the design is confounded, as the prototype found for one-gene-per-plate designs.
@@ -456,9 +458,10 @@ Today a connector is `path -> rdml.Rdml` registered in `io/rdml_io.CONNECTORS` (
 
 ```python
 class Connector(Protocol):
-    id: str                           # "rdml", "quantstudio_txt", "cfx_csv", "openreadout", "thermo_cli"
+    id: str  # "rdml", "quantstudio_txt", "cfx_csv", "openreadout", "thermo_cli"
     extensions: tuple[str, ...]
-    recipe_ids: tuple[str, ...]       # which capture recipes produce files this reads
+    recipe_ids: tuple[str, ...]  # which capture recipes produce files this reads
+
     def sniff(self, path) -> bool: ...
     def load(self, path) -> tuple[rdml.Rdml, CaptureMeta]: ...
 ```

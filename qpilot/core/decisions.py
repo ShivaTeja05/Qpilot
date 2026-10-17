@@ -56,7 +56,7 @@ class CardSpec(BaseModel):
     """What a plugin tells the core about one card; the core adds consequences and impact."""
 
     card_id: str
-    kind: Literal["reference_set", "group_cutoff", "undetermined"]
+    kind: Literal["reference_set", "group_cutoff", "undetermined", "amp_call"]
     dimension: str
     options: list[OptionSpec]
     recommended: str

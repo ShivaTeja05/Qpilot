@@ -102,7 +102,7 @@ class DecisionCard(BaseModel):
     """A choice that could change a conclusion, with evidence, options and the decision."""
 
     id: str
-    kind: Literal["reference_set", "group_cutoff", "undetermined"]
+    kind: Literal["reference_set", "group_cutoff", "undetermined", "amp_call"]
     rank: int
     impact: dict[str, Any]  # {"flips": bool, "n_genes_flipped": int, "max_delta_log2fc": float}
     evidence: dict[str, Any]

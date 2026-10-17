@@ -52,6 +52,16 @@ from qpilot.schemas import Actor, Level
 TEXT_ID = re.compile(r"^t_[0-9a-f]{12}$")
 
 
+def text_id_for(origin: str, value: str) -> str:
+    """The one formula for a ``text_id``: ``t_`` + the first 12 hex of sha256(origin NUL value).
+
+    Every module that quarantines text (the firewall, ``qpcr_inspect``, the sheet reader, the
+    Prism round trip) uses this, so the same text from the same place always has the same id.
+    """
+    digest = hashlib.sha256(f"{origin}\x00{value}".encode()).hexdigest()
+    return f"t_{digest[:12]}"
+
+
 class QuarantineEntry(BaseModel):
     """One piece of free text from a file, stored once and cited by ``text_id`` everywhere else.
 
@@ -266,8 +276,12 @@ class StudyDesign(BaseModel):
     dimension in the grid). ``mode="groups"`` takes groups from the samples' ``group`` field
     (a sample sheet or accepted proposals) and has no ``cut`` dimension.
 
-    ``well_roles`` and ``excluded_wells`` use ``"<run_id>/<well>"`` keys. ``amp_calls`` are the
-    options of the amplification-call axis, primary first; one option means no axis.
+    ``well_roles``, ``well_calls`` and ``excluded_wells`` use ``"<run_id>/<well>"`` keys.
+    ``well_calls`` is a person's resolution of a curve-call disagreement (``False``: the well
+    counts as undetermined under every rule; ``True``: it counts as amplified wherever it has a
+    quantity). ``excluded_wells`` are removed from the analysis altogether (a well-exclusion
+    decision). ``amp_calls`` are the options of the amplification-call axis, primary first; one
+    option means no axis.
     """
 
     design_id: str = "custom"
@@ -280,6 +294,7 @@ class StudyDesign(BaseModel):
     reference_candidates: tuple[str, ...] = ()
     headline: tuple[str, ...] = ()
     well_roles: dict[str, WellRole] = {}
+    well_calls: dict[str, bool] = {}
     excluded_wells: tuple[str, ...] = ()
     amp_calls: tuple[str, ...] = ("linregpcr",)
     note: str = ""
@@ -518,6 +533,7 @@ __all__ = [
     "TargetDesign",
     "WellCall",
     "WellRole",
+    "text_id_for",
 ]
 
 # Actor is re-exported for callers that only import this module.

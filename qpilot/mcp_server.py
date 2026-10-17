@@ -36,7 +36,12 @@ INSTRUCTIONS = (
     "numbers these tools return. Research use only; not for clinical or diagnostic use."
 )
 RDML_SUFFIXES = {".rdml", ".xml"}
-KIND_TO_DIMENSION = {"reference_set": "refs", "group_cutoff": "cut", "undetermined": "undetermined"}
+KIND_TO_DIMENSION = {
+    "reference_set": "refs",
+    "group_cutoff": "cut",
+    "undetermined": "undetermined",
+    "amp_call": "amp_call",
+}
 
 
 def data_roots() -> list[Path]:
