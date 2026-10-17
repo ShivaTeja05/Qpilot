@@ -1,0 +1,58 @@
+{
+  "benchmark": {
+    "commit": "fce7a44e8b47b90759c646b557de568f7af77e75",
+    "data": "Vermeulen et al. 2009; Ruijter et al. 2013 (CC BY 4.0)",
+    "source": "RDML-consortium/rdmlpython experiments/vermeulen",
+    "tables": {
+      "cq": {
+        "file": "data_vermeulen_methods_cq.tsv",
+        "sha256": "407f31dcbddc60446c7308b5847cf6959453ec37b4c1d8506901d5245ea8a64b"
+      },
+      "n0": {
+        "file": "RDML_Tools_bias.tsv",
+        "sha256": "a87c1ca9aed256ea43e7635a758ef6bfbab11eb8719ce07f38070081cb75ed2b"
+      },
+      "results": {
+        "file": "data_vermeulen_methods_results.tsv",
+        "sha256": "cdca7a617b79698a459be6badc39f01df994005264113e4568fd4eb9fb6dd5ce"
+      }
+    }
+  },
+  "bias": {
+    "genes": 62,
+    "max_abs_diff": 0.15868405024356047,
+    "median_abs_diff": 0.021013625785593515,
+    "ours_mean": 0.9606240933774003,
+    "published_mean": 0.9473677419354838,
+    "published_only": [
+      "PRKACB"
+    ]
+  },
+  "cq": {
+    "genes": 63,
+    "max_offset": 1.7212999999999994,
+    "mean_offset": 0.9718572486772487,
+    "min_offset": 0.1493000000000002,
+    "published_only": [
+      "PRKACB"
+    ],
+    "sd_offset": 0.17493713105836242,
+    "wells": 945
+  },
+  "n0": {
+    "genes": 62,
+    "identical_4sf": 926,
+    "max_rel_diff": 0.00045949720670394786,
+    "ours_only": [
+      "ALUsq(Eurogentec)",
+      "PRKACB_bis"
+    ],
+    "published_only": [
+      "PRKACB"
+    ],
+    "share_identical": 0.9956989247311828,
+    "share_within": 1.0,
+    "wells": 930,
+    "within_5pct": 930
+  }
+}

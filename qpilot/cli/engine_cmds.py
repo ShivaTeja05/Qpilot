@@ -5,10 +5,13 @@ import sys
 
 from qpilot.cli._types import Command
 from qpilot.io.datasets import (
+    BENCHMARK_TABLES,
     VERMEULEN_BYTES,
+    VERMEULEN_COMMIT,
     DatasetIntegrityError,
     default_cache_dir,
     demo_dataset_info,
+    fetch_benchmark_tables,
     fetch_vermeulen,
 )
 
@@ -28,6 +31,7 @@ def _fetch_demo(args: argparse.Namespace) -> int:
     info = demo_dataset_info()
     try:
         path = fetch_vermeulen(args.cache_dir, force=args.force)
+        tables = fetch_benchmark_tables(args.cache_dir, force=args.force)
     except (DatasetIntegrityError, OSError) as err:
         print(f"qpilot fetch-demo: {err}", file=sys.stderr)
         return 1
@@ -35,6 +39,7 @@ def _fetch_demo(args: argparse.Namespace) -> int:
     print(f"{info['name']}: {info['contents']}")
     print(f"Licence {info['licence']}. Cite: {info['citation']}.")
     print(f"Note: {info['groups']}.")
+    print(f"Published benchmark tables for `qpilot validate`: {len(tables)} files, sha256 OK")
     return 0
 
 
@@ -93,6 +98,41 @@ def _run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _validate_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--out",
+        default="validation",
+        help="directory for validation_table.md and validation.json (default: ./validation)",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        default=None,
+        help=f"cache for the demo study and published tables (default: {default_cache_dir()})",
+    )
+
+
+def _validate(args: argparse.Namespace) -> int:
+    from qpilot.io.rdml_io import RdmlLoadError
+    from qpilot.qpcr.curves import CurveAnalysisError, analyse_study
+    from qpilot.qpcr.validation import validate, write_report
+
+    try:
+        rdml_path = fetch_vermeulen(args.cache_dir)  # verified; downloads only if missing
+        tables = fetch_benchmark_tables(args.cache_dir)
+        report = validate(analyse_study(rdml_path), tables)
+    except (DatasetIntegrityError, RdmlLoadError, CurveAnalysisError, OSError) as err:
+        print(f"qpilot validate: {err}", file=sys.stderr)
+        return 1
+    markdown, data = write_report(report, args.out)
+    print(
+        f"Benchmark: {len(BENCHMARK_TABLES)} published tables, rdmlpython @ {VERMEULEN_COMMIT[:7]}"
+    )
+    for line in report.lines():
+        print(f"- {line}")
+    print(f"Wrote {markdown} and {data}")
+    return 0
+
+
 COMMANDS: list[Command] = [
     (
         "fetch-demo",
@@ -105,5 +145,11 @@ COMMANDS: list[Command] = [
         "analyse a study (for now: --contrast GENE prints one comparison)",
         _run_arguments,
         _run,
+    ),
+    (
+        "validate",
+        "reproduce the RDML consortium's published benchmark on the demo study",
+        _validate_arguments,
+        _validate,
     ),
 ]
