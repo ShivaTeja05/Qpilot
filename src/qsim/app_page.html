@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qPilot Results</title>
+<style>
+:root {
+  --bg: #f5f6f8; --card: #ffffff; --ink: #1c222a; --muted: #5a6573; --line: #dfe3e8;
+  --soft: #f0f2f5; --accent: #0b5cad; --sel: #e8f0fb;
+  --solid: #1f7a3a; --caveats: #2560a8; --depends: #9a6200; --fragile: #c0392b;
+  --check: #7a3ad6; --nocall: #6b7280; --changed: #fff4e0; --changed-ink: #8a4b00;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #13161a; --card: #1b1f25; --ink: #e5e8ec; --muted: #9aa4b0; --line: #2f353d;
+    --soft: #22272e; --accent: #7db4ef; --sel: #1f2c3d;
+    --solid: #4cc27a; --caveats: #6ea8f0; --depends: #e0a83a; --fragile: #f07a6a;
+    --check: #b48af5; --nocall: #9aa1ab; --changed: #3a2c14; --changed-ink: #f2c27a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #13161a; --card: #1b1f25; --ink: #e5e8ec; --muted: #9aa4b0; --line: #2f353d;
+  --soft: #22272e; --accent: #7db4ef; --sel: #1f2c3d;
+  --solid: #4cc27a; --caveats: #6ea8f0; --depends: #e0a83a; --fragile: #f07a6a;
+  --check: #b48af5; --nocall: #9aa1ab; --changed: #3a2c14; --changed-ink: #f2c27a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+h1 { font-size: 24px; margin: 2px 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 17px; margin: 0 0 4px; }
+h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 6px; font-weight: 600; }
+p { margin: 0 0 6px; }
+a { color: var(--accent); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.brand { font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+header { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--card);
+  border-radius: 999px; padding: 4px 10px; font-size: 13px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--nocall); }
+.dot.on { background: var(--solid); }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+
+/* summary strip */
+.strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 8px; }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; text-align: left;
+  cursor: pointer; font: inherit; color: inherit; display: flex; flex-direction: column; gap: 4px; border-top-width: 4px; }
+.tile:hover { background: var(--soft); }
+.tile[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tile .count { font-size: 30px; font-weight: 650; line-height: 1.1; display: flex; align-items: center; gap: 8px; }
+.tile .lab { font-weight: 600; }
+.tile .rule { font-size: 12px; color: var(--muted); }
+details.rules { margin: 4px 0 16px; font-size: 13px; color: var(--muted); }
+details.rules summary { cursor: pointer; }
+
+.v-solid { --v: var(--solid); } .v-caveats { --v: var(--caveats); } .v-depends { --v: var(--depends); }
+.v-fragile { --v: var(--fragile); } .v-check { --v: var(--check); } .v-nocall { --v: var(--nocall); }
+.tile { border-top-color: var(--v); }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--v); }
+svg.shape { flex: none; }
+
+/* layout */
+.grid2 { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+.grid2b { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+
+/* gene list */
+.search { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; margin-bottom: 8px; }
+.filter-note { font-size: 13px; color: var(--muted); margin-bottom: 6px; min-height: 20px; }
+.filter-note button { border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit; padding: 0; }
+.genes { max-height: 640px; overflow: auto; border-top: 1px solid var(--line); }
+.gene-row { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; width: 100%; text-align: left;
+  padding: 7px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; }
+.gene-row:hover { background: var(--soft); }
+.gene-row.sel { background: var(--sel); }
+.gene-row .g { font-weight: 600; }
+.gene-row .f { font-size: 13px; color: var(--muted); text-align: right; white-space: nowrap; }
+.gene-row .vl { font-size: 12px; color: var(--v); font-weight: 600; display: block; }
+.star { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+
+/* gene card */
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.card-verdict { font-size: 15px; padding: 4px 10px; border: 1.5px solid var(--v); border-radius: 999px; }
+.result { font-size: 21px; font-weight: 600; margin: 10px 0 6px; line-height: 1.35; }
+.why { border-left: 4px solid var(--v); padding: 6px 12px; background: var(--soft); border-radius: 0 8px 8px 0; margin: 8px 0 10px; }
+.holds { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.big { font-size: 44px; font-weight: 700; line-height: 1; }
+.big small { font-size: 18px; font-weight: 500; color: var(--muted); }
+.bar { height: 10px; border-radius: 6px; background: var(--soft); border: 1px solid var(--line); overflow: hidden; width: 220px; }
+.bar > span { display: block; height: 100%; background: var(--v); }
+ul.plain { margin: 0; padding-left: 18px; }
+ul.plain li { margin: 3px 0; }
+.flip { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; margin: 6px 0; }
+.flip .to { font-weight: 600; white-space: nowrap; }
+.flip .to.chg { color: var(--changed-ink); }
+table.t { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.t th, table.t td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+table.t tr.chg td { background: var(--changed); }
+.evidence { display: inline-block; margin-top: 14px; font-weight: 600; }
+
+/* what-if */
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; margin: 8px 0 12px; }
+.choices label { display: block; font-size: 13px; font-weight: 600; }
+.choices label .muted { font-weight: 400; }
+.choices select { width: 100%; margin-top: 3px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; }
+.choices select.moved { border-color: var(--changed-ink); background: var(--changed); }
+.btn { border: 1px solid var(--line); background: var(--soft); color: var(--ink); border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled { opacity: .6; cursor: default; }
+.wi-sum { padding: 8px 10px; border-radius: 8px; background: var(--soft); margin-bottom: 8px; }
+.tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--changed-ink); white-space: nowrap; }
+
+/* ask */
+.askrow { display: flex; gap: 8px; }
+.askrow input { flex: 1; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }
+.examples { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.examples button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.answer { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+.answer .q { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.answer .a { font-size: 16px; margin-bottom: 10px; }
+.meta { font-size: 13px; color: var(--muted); display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; }
+.meta b { color: var(--ink); font-weight: 600; }
+.checked { display: inline-flex; gap: 6px; align-items: center; color: var(--solid); font-weight: 600; font-size: 13px; margin-top: 8px; }
+.facts { font-size: 13px; margin-top: 6px; }
+.facts td { padding: 2px 8px 2px 0; border: 0; }
+
+/* issues */
+ol.issues { margin: 0; padding-left: 22px; }
+ol.issues li { margin: 0 0 12px; }
+ol.issues .it { font-weight: 600; }
+footer { margin-top: 18px; font-size: 12px; color: var(--muted); }
+code { font-size: 12px; }
+
+@media (max-width: 1000px) {
+  .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid2, .grid2b { grid-template-columns: minmax(0, 1fr); }
+  .genes { max-height: 340px; }
+}
+@media (max-width: 560px) {
+  .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .choices { grid-template-columns: minmax(0, 1fr); }
+  .result { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <div class="brand">qPilot · Decision Simulator · research use only</div>
+      <h1>Does your qPCR result hold up?</h1>
+      <p class="muted" id="study">Loading the engine's results…</p>
+    </div>
+    <span class="chip" id="model"><span class="dot"></span>Ask: checking for the local model…</span>
+  </header>
+
+  <section class="strip" id="strip" aria-label="Verdict counts"></section>
+  <details class="rules"><summary>How each verdict is decided</summary><ul class="plain" id="rules"></ul></details>
+
+  <div class="grid2">
+    <section class="panel" aria-label="Genes">
+      <div class="panel-head"><h2>Genes</h2><span class="muted small" id="gene-count"></span></div>
+      <input class="search" id="search" type="search" placeholder="Find a gene" aria-label="Find a gene">
+      <div class="filter-note" id="filter-note"></div>
+      <div class="genes" id="genes" role="listbox" aria-label="Gene list"></div>
+    </section>
+    <section class="panel" id="card" aria-live="polite"><p class="muted">Pick a gene.</p></section>
+  </div>
+
+  <div class="grid2b">
+    <section class="panel" aria-label="What if">
+      <div class="panel-head"><h2>What if you had chosen differently?</h2>
+        <button class="btn" id="reset">Back to your planned analysis</button></div>
+      <p class="muted small">Change any choice; the engine re-runs the whole study live and shows the headline genes (and the gene you picked). Options are grouped as your planned analysis, reasonable alternatives and common shortcuts.</p>
+      <div class="choices" id="choices"></div>
+      <div class="wi-sum" id="wi-sum"></div>
+      <table class="t" id="wi-table"></table>
+    </section>
+    <section class="panel" aria-label="Ask">
+      <div class="panel-head"><h2>Ask about this study</h2></div>
+      <p class="muted small">A local model only reads your question and picks an engine tool. The engine's checked templates write the answer, so every number comes from the engine.</p>
+      <form class="askrow" id="ask-form">
+        <input id="ask-input" type="text" placeholder="e.g. Does NM23A depend on the reference genes?" aria-label="Your question" maxlength="500">
+        <button class="btn primary" id="ask-btn" type="submit">Ask</button>
+      </form>
+      <div class="examples" id="examples"></div>
+      <div id="answer"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-label="Check first">
+    <div class="panel-head"><h2>What to check first</h2><span class="muted small" id="issue-count"></span></div>
+    <ol class="issues" id="issues"></ol>
+  </section>
+
+  <footer id="prov"></footer>
+</main>
+
+<script>
+"use strict";
+const KEY = {"solid": "solid", "holds with caveats": "caveats", "depends on your choices": "depends",
+             "fragile": "fragile", "check data first": "check", "no call": "nocall"};
+const EXAMPLES = [
+  "Does NM23A depend on the reference genes?",
+  "Is NTRK1 robust?",
+  "What if we normalise to HMBS alone?",
+  "Does the late-Cq cut-off matter?",
+  "What should I check first?",
+  "How robust is the study overall?",
+];
+const state = { ov: null, filter: null, gene: null, changes: {} };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+function shape(verdict, size = 16) {
+  const k = KEY[verdict], s = size, c = "var(--v)";
+  const open = `<svg class="shape v-${k}" width="${s}" height="${s}" viewBox="0 0 16 16" aria-hidden="true">`;
+  const body = {
+    solid: `<circle cx="8" cy="8" r="6.5" fill="${c}"/>`,
+    caveats: `<circle cx="8" cy="8" r="6" fill="none" stroke="${c}" stroke-width="2"/><path d="M8 2 A6 6 0 0 0 8 14 Z" fill="${c}"/>`,
+    depends: `<path d="M8 1 L15 8 L8 15 L1 8 Z" fill="${c}"/>`,
+    fragile: `<path d="M8 1.5 L15 14.5 L1 14.5 Z" fill="${c}"/>`,
+    check: `<rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="${c}"/><rect x="7" y="4" width="2" height="5.5" fill="var(--card)"/><rect x="7" y="10.8" width="2" height="2" fill="var(--card)"/>`,
+    nocall: `<circle cx="8" cy="8" r="5.5" fill="none" stroke="${c}" stroke-width="2"/>`,
+  }[k];
+  return open + body + "</svg>";
+}
+
+async function api(path, body) {
+  const res = await fetch(path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function renderHeader(ov) {
+  const s = ov.study;
+  $("study").textContent = `${s.samples} samples · ${s.genes} genes · ${s.plates} plates · ${s.group} (${s.group_def}) against the rest · ${s.reasonable} reasonable analyses per gene`;
+  renderModel(ov.model);
+  $("rules").innerHTML = ov.verdicts.map((v) =>
+    `<li><span class="badge v-${KEY[v.key]}">${shape(v.key, 13)} ${esc(v.label)}</span>: ${esc(v.rule)}</li>`).join("");
+  const p = ov.provenance;
+  $("prov").innerHTML = `Every number on this page is read from the engine's files (${p.files.map((f) => `<a href="/files/${f}">${f}</a>`).join(", ")}) or returned by a live engine call. ` +
+    `Run <code>${esc(p.run)}</code> · locked choices <code>${esc(p.lock)}</code> · input data <code>${esc(p.input)}</code> · qsim ${esc(p.qsim)}. Served from this machine only.`;
+}
+
+function renderModel(m) {
+  if (m.state !== "ready") {
+    $("model").innerHTML = `<span class="dot"></span>Ask: waking the local model…`;
+    setTimeout(() => api("/api/model").then(renderModel).catch(() => {}), 3000);
+    return;
+  }
+  $("model").innerHTML = m.available
+    ? `<span class="dot on"></span>Ask: local model ${esc(m.name)} reads questions`
+    : `<span class="dot"></span>Ask: no local model running, keyword matching reads questions`;
+}
+
+function renderStrip(ov) {
+  $("strip").innerHTML = ov.verdicts.map((v) => `
+    <button class="tile v-${KEY[v.key]}" data-v="${esc(v.key)}" aria-pressed="${state.filter === v.key}" title="Show only these genes">
+      <span class="count">${shape(v.key, 22)}${v.count}</span>
+      <span class="lab">${esc(v.label)}</span>
+    </button>`).join("");
+  for (const b of $("strip").querySelectorAll(".tile")) {
+    b.onclick = () => { state.filter = state.filter === b.dataset.v ? null : b.dataset.v; renderStrip(ov); renderGenes(); };
+  }
+}
+
+function renderGenes() {
+  const ov = state.ov, q = $("search").value.trim().toLowerCase();
+  const rows = ov.genes.filter((g) => (!state.filter || g.verdict === state.filter) && (!q || g.gene.toLowerCase().includes(q)));
+  $("gene-count").textContent = `${rows.length} of ${ov.genes.length}`;
+  $("filter-note").innerHTML = state.filter
+    ? `Showing: <span class="badge v-${KEY[state.filter]}">${shape(state.filter, 12)} ${esc(ov.verdicts.find((v) => v.key === state.filter).label)}</span> · <button id="clear">show all</button>`
+    : "Sorted with the results that need attention first.";
+  if ($("clear")) $("clear").onclick = () => { state.filter = null; renderStrip(ov); renderGenes(); };
+  $("genes").innerHTML = rows.map((g) => `
+    <button class="gene-row v-${KEY[g.verdict]} ${g.gene === state.gene ? "sel" : ""}" data-g="${esc(g.gene)}" role="option" aria-selected="${g.gene === state.gene}">
+      ${shape(g.verdict, 15)}
+      <span><span class="g">${esc(g.gene)}</span>${g.headline ? '<span class="star">headline</span>' : ""}<span class="vl">${esc(g.label)}</span></span>
+      <span class="f">${esc(g.fold)}<br>${g.call === "none" ? "no call" : "called " + esc(g.call)}</span>
+    </button>`).join("");
+  for (const b of $("genes").querySelectorAll(".gene-row")) b.onclick = () => selectGene(b.dataset.g);
+}
+
+async function selectGene(gene) {
+  state.gene = gene;
+  history.replaceState(null, "", "#gene=" + encodeURIComponent(gene));
+  renderGenes();
+  const c = await api("/api/gene/" + encodeURIComponent(gene));
+  const k = KEY[c.verdict];
+  const changes = c.changes.length
+    ? c.changes.map((f) => `<div class="flip"><span>If you choose <b>${esc(f.choice)}</b></span>
+        <span class="to ${f.same_call ? "" : "chg"}">${esc(f.fold)} · ${esc(f.call)}</span></div>`).join("")
+    : `<p>${esc(c.no_changes)}</p>`;
+  const singles = c.singles.length
+    ? `<table class="t small"><tr><th>Sample</th><th>Plate</th><th>Well</th><th>Call without it</th></tr>` +
+      c.singles.map((s) => `<tr><td>${esc(s.sample)}</td><td>${esc(s.plate)}</td><td>${esc(s.well)}</td><td>${esc(s.call)}</td></tr>`).join("") + "</table>"
+    : "";
+  $("card").className = `panel v-${k}`;
+  $("card").innerHTML = `
+    <div class="card-top">
+      <h2>${esc(c.gene)}${c.headline_gene ? '<span class="star">headline gene</span>' : ""}</h2>
+      <span class="badge card-verdict">${shape(c.verdict, 16)} ${esc(c.label)}</span>
+    </div>
+    <p class="result">${esc(c.result.headline)}</p>
+    <div class="why"><b>${esc(c.label)}.</b> ${esc(c.result.verdict_sentence)}</div>
+    <ul class="plain small">${c.result.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+
+    <h3>Same answer in</h3>
+    <div class="holds"><div class="big">${c.holds.n} <small>of 100 reasonable analyses</small></div>
+      <div class="bar" role="img" aria-label="${c.holds.n} of 100"><span style="width:${c.holds.n}%"></span></div></div>
+    <ul class="plain small" style="margin-top:6px">${c.holds.lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+
+    <h3>What changes it</h3>
+    ${changes}
+    ${c.shortcut ? `<p class="small muted">${esc(c.shortcut)}</p>` : ""}
+
+    <h3>What it leans on</h3>
+    <ul class="plain">${c.leans.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+    ${singles}
+
+    <h3>What to do</h3>
+    <ul class="plain">${c.todo.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+
+    <a class="evidence" href="${esc(c.evidence)}" target="_blank" rel="noopener">See the evidence for ${esc(c.gene)} →</a>`;
+  runWhatif();
+}
+
+function optionGroups(d) {
+  const picked = state.changes[d.id] || d.baseline, groups = [];
+  for (const o of d.options) {
+    let g = groups.find((x) => x.tier === o.tier);
+    if (!g) groups.push(g = {tier: o.tier, options: []});
+    g.options.push(o);
+  }
+  return groups.map((g) => `<optgroup label="${esc(g.tier[0].toUpperCase() + g.tier.slice(1))}">` +
+    g.options.map((o) => `<option value="${esc(o.id)}" ${o.id === picked ? "selected" : ""}>${esc(o.label)}${o.id === d.baseline ? " (planned)" : ""}</option>`).join("") +
+    "</optgroup>").join("");
+}
+
+function renderChoices(ov) {
+  $("choices").innerHTML = ov.decisions.map((d) => `
+    <label>${esc(d.name)}${d.changes_claim ? ' <span class="muted">(changes the question)</span>' : ""}
+      <select data-d="${esc(d.id)}" title="${esc(d.question)}">${optionGroups(d)}</select></label>`).join("");
+  for (const s of $("choices").querySelectorAll("select")) {
+    s.onchange = () => { state.changes[s.dataset.d] = s.value; runWhatif(); };
+  }
+}
+
+async function runWhatif() {
+  const ov = state.ov;
+  for (const s of $("choices").querySelectorAll("select")) {
+    const d = ov.decisions.find((x) => x.id === s.dataset.d);
+    s.classList.toggle("moved", s.value !== d.baseline);
+  }
+  const changes = Object.fromEntries(Object.entries(state.changes).filter(([d, o]) => ov.decisions.find((x) => x.id === d).baseline !== o));
+  const r = await api("/api/whatif", {changes, genes: state.gene ? [state.gene] : []});
+  $("wi-sum").innerHTML = r.changes.length
+    ? `With <b>${r.changes.map(esc).join("</b> and <b>")}</b>: <b>${r.n_changed} of ${r.n_genes}</b> calls change` +
+      (r.changed_genes.length ? ` (${r.changed_genes.slice(0, 12).map(esc).join(", ")}${r.changed_genes.length > 12 ? ", …" : ""}).` : ".")
+    : `Showing your planned analysis. Change a choice above and the engine recomputes all ${r.n_genes} genes.`;
+  $("wi-table").innerHTML = `<tr><th>Gene</th><th>Planned analysis</th><th>With these choices</th><th></th></tr>` +
+    r.rows.map((x) => `<tr class="${x.changed ? "chg" : ""}"><td><b>${esc(x.gene)}</b>${x.headline ? "" : ' <span class="muted small">(picked)</span>'}</td>
+      <td>${esc(x.base)}<br><span class="muted small">${esc(x.base_call)}</span></td>
+      <td>${esc(x.new)}<br><span class="muted small">${esc(x.new_call)}</span></td>
+      <td>${x.changed ? '<span class="tag">⇄ call changes</span>' : '<span class="muted small">same call</span>'}</td></tr>`).join("");
+}
+
+async function ask(question) {
+  if (!question.trim()) return;
+  $("ask-input").value = question;
+  $("ask-btn").disabled = true;
+  $("answer").innerHTML = `<div class="answer"><div class="q">${esc(question)}</div><p class="muted">Reading the question and running the engine… a local model on a laptop can take up to a minute.</p></div>`;
+  try {
+    const a = await api("/api/ask", {question});
+    const args = Object.entries(a.args).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ");
+    $("answer").innerHTML = `<div class="answer">
+      <div class="q">${esc(a.question)}</div>
+      <div class="a">${esc(a.text)}</div>
+      <div class="meta">
+        <span>Question read by</span><b>${esc(a.routed_by)}</b>
+        <span>Answered by</span><b>${esc(a.tool_words)} <span class="muted">· tool <code>${esc(a.tool)}</code>${args ? ` · ${esc(args)}` : ""}</span></b>
+        <span>Written by</span><b>${esc(a.written_by)}</b>
+      </div>
+      <div class="checked">${shape("solid", 12)} Every number in this answer comes from the engine.</div>
+      <details class="facts"><summary>The ${a.facts.length} values the engine supplied</summary>
+        <table>${a.facts.map((f) => `<tr><td class="muted">${esc(f.meaning)}</td><td><b>${esc(f.value)}</b></td></tr>`).join("")}</table></details>
+    </div>`;
+  } catch (err) {
+    $("answer").innerHTML = `<div class="answer"><p>Could not answer: ${esc(err.message)}</p></div>`;
+  } finally {
+    $("ask-btn").disabled = false;
+  }
+}
+
+function renderIssues(ov) {
+  $("issue-count").textContent = `top ${ov.issues.length} of ${ov.n_issues} in the queue`;
+  $("issues").innerHTML = ov.issues.map((i) => {
+    const genes = i.changes.slice(0, 10).map((g) => `<a href="#gene=${encodeURIComponent(g)}" data-g="${esc(g)}">${esc(g)}</a>`).join(", ");
+    const more = i.changes.length > 10 ? ` and ${i.changes.length - 10} more` : "";
+    return `<li><div class="it">${esc(i.title)}</div>
+      <div class="small muted">About ${esc(i.about)}${i.headline.length ? ` · touches headline gene ${i.headline.map(esc).join(", ")}` : ""}</div>
+      <div>${esc(i.action)}</div>
+      ${i.changes.length ? `<div class="small">Changes the call of: ${genes}${more}</div>` : ""}</li>`;
+  }).join("");
+  for (const a of $("issues").querySelectorAll("a[data-g]")) a.onclick = (e) => { e.preventDefault(); selectGene(a.dataset.g); $("card").scrollIntoView({behavior: "smooth"}); };
+}
+
+async function init() {
+  const ov = await api("/api/overview");
+  state.ov = ov;
+  renderHeader(ov); renderStrip(ov); renderGenes(); renderChoices(ov); renderIssues(ov);
+  $("examples").innerHTML = EXAMPLES.map((q) => `<button type="button">${esc(q)}</button>`).join("");
+  for (const b of $("examples").querySelectorAll("button")) b.onclick = () => ask(b.textContent);
+  $("ask-form").onsubmit = (e) => { e.preventDefault(); ask($("ask-input").value); };
+  $("search").oninput = renderGenes;
+  $("reset").onclick = () => { state.changes = {}; renderChoices(ov); runWhatif(); };
+  const first = ov.genes.find((g) => g.gene === hashGene()) || ov.genes.find((g) => g.headline) || ov.genes[0];
+  selectGene(first.gene);
+  window.addEventListener("hashchange", () => {
+    const g = hashGene();
+    if (g && g !== state.gene && ov.genes.some((x) => x.gene === g)) selectGene(g);
+  });
+}
+const hashGene = () => decodeURIComponent((location.hash.match(/gene=([^&]+)/) || [])[1] || "");
+init().catch((err) => { $("study").textContent = "Could not load the results: " + err.message; });
+</script>
+</body>
+</html>

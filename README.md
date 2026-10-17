@@ -29,8 +29,42 @@ python3.11 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/qsim ask "Does NM23A depend on the reference genes?"
 .venv/bin/qsim whatif --set refs=HMBS --set late_cq=cq35
 .venv/bin/qsim validate                                 # known-answer test (Untergasser)
+.venv/bin/qsim app --open                               # results screen on http://127.0.0.1:8765
 .venv/bin/pytest -q
 ```
+
+## Results screen
+
+`qsim app` serves one page in plain lab language from `127.0.0.1` only. It loads no web assets and runs offline. It needs no extra packages: it uses Python's standard library.
+
+It reads `results/explain.json`, `genes.csv`, `issues.json` and `summary.json`, and calls the engine live:
+
+1. **Verdict counts.** Each verdict has its own shape and colour, so colour is never the only cue: ■ check data first, ▲ fragile, ◆ depends on your choices, ◐ holds with caveats, ● solid, ○ no change called. Click a count to filter the gene list.
+2. **Gene list.** Each gene's fold change, call and verdict, with the results that need attention first.
+3. **Gene card.** It covers:
+   - the result and why it got its verdict;
+   - "same answer in N of 100 reasonable analyses";
+   - which choices change it, with the new fold change and call;
+   - what it leans on: fewest samples to change it, single samples, distance from the 2× line;
+   - what to do;
+   - a link to the evidence page, which shows the gene's records in the engine files.
+4. **What-if.** A dropdown for every decision, grouped as your planned analysis, reasonable alternatives and common shortcuts. `qsim.compare.whatif` recomputes all genes on every change.
+5. **Ask.** `qsim.ask.Asker`: the local model (Ollama `qwen2.5:7b`, if running) only reads the question. The engine's checked templates write the answer. The panel shows:
+   - who read the question;
+   - which engine tool answered;
+   - every value the engine supplied.
+6. **What to check first.** The top of the investigation queue.
+
+The page types no numbers. Every figure comes from those files or a live engine call. `tests/test_app.py` checks this:
+- it traces the card numbers back to `explain.json`;
+- it matches the what-if results against the engine;
+- it checks that the page markup contains no typed digits;
+- it scans every screen for statistics jargon.
+
+Options:
+- `--no-model`: keyword routing only;
+- `--port`;
+- `--results <dir>`.
 
 ## The choices it varies
 

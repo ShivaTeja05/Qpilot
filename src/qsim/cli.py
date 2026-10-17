@@ -86,6 +86,13 @@ def cmd_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_app(args: argparse.Namespace) -> int:
+    from qsim.app import serve
+
+    serve(args.results, args.rdml, args.port, no_model=args.no_model, open_browser=args.open)
+    return 0
+
+
 def cmd_options(args: argparse.Namespace) -> int:
     engine = _engine(args.rdml)
     for d in engine.space.decisions:
@@ -137,6 +144,14 @@ def main(argv: list[str] | None = None) -> int:
     dm.add_argument("--gene", default="NM23A")
     dm.add_argument("--well", default="A1")
     dm.set_defaults(func=cmd_demo)
+    ap = sub.add_parser(
+        "app", help="results screen in plain lab language, served on 127.0.0.1 (offline)"
+    )
+    ap.add_argument("--results", default="results")
+    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--no-model", action="store_true", help="Ask without a model (keyword routing)")
+    ap.add_argument("--open", action="store_true", help="open the page in the default browser")
+    ap.set_defaults(func=cmd_app)
     o = sub.add_parser("options", help="list decisions and options (* = baseline)")
     o.set_defaults(func=cmd_options)
     args = parser.parse_args(argv)
