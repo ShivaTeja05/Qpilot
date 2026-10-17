@@ -117,8 +117,3 @@ def test_cli_run_contrast(capsys, demo_matrix):
     out = capsys.readouterr().out
     assert "MYCN-high 53 vs rest 294" in out
     assert "ODC1: 2.66x" in out and "NM23A: 1.62x" in out and "none" in out
-
-
-def test_cli_run_without_contrast_explains(capsys):
-    assert main(["run"]) == 2
-    assert "--contrast" in capsys.readouterr().err

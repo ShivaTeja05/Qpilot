@@ -49,17 +49,27 @@ def _run_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--experiment", default="biomarker_set", help="experiment id")
     parser.add_argument(
+        "--out",
+        default=None,
+        help="write results.json, cards.json, facts.json and grid.csv to this directory",
+    )
+    parser.add_argument(
         "--contrast",
         action="append",
         metavar="GENE",
-        help="print one gene's MYCN-high vs rest comparison (repeatable)",
+        help="only print this gene's MYCN-high vs rest comparison (repeatable)",
     )
     parser.add_argument(
-        "--refs", default=None, help="comma-separated control genes (default: all five)"
+        "--refs",
+        default=None,
+        help="comma-separated control genes: the normaliser with --contrast, else the candidates",
     )
     parser.add_argument("--cut", type=float, default=0.15, help="top fraction by MYCN expression")
     parser.add_argument(
-        "--undetermined", choices=["drop", "cap"], default="drop", help="empty-well handling"
+        "--undetermined",
+        choices=["drop", "cap"],
+        default="drop",
+        help="empty-well handling (with --contrast)",
     )
 
 
@@ -71,11 +81,7 @@ def _run(args: argparse.Namespace) -> int:
     from qpilot.qpcr.quant import log2_matrix
 
     if not args.contrast:
-        print(
-            "qpilot run: the full study output (--out) arrives with study.py; use --contrast GENE",
-            file=sys.stderr,
-        )
-        return 2
+        return _run_study(args)
     path = args.rdml or str(default_cache_dir() / "data_vermeulen_raw.rdml")
     refs = tuple(r.strip() for r in args.refs.split(",")) if args.refs else REFERENCE_TARGETS
     try:
@@ -133,6 +139,72 @@ def _validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_study(args: argparse.Namespace) -> int:
+    from qpilot.core.decisions import DecisionError
+    from qpilot.io.rdml_io import RdmlLoadError
+    from qpilot.qpcr.curves import CurveAnalysisError
+    from qpilot.qpcr.quant import QuantError
+    from qpilot.qpcr.study import StudySettings, run_study, write_outputs
+
+    settings = StudySettings(experiment_id=args.experiment, cut=args.cut)
+    if args.refs:
+        candidates = tuple(r.strip() for r in args.refs.split(","))
+        settings = StudySettings(experiment_id=args.experiment, cut=args.cut, candidates=candidates)
+    path = args.rdml or str(default_cache_dir() / "data_vermeulen_raw.rdml")
+    try:
+        result, cards, grid = run_study(path, settings)
+    except (
+        RdmlLoadError,
+        CurveAnalysisError,
+        QuantError,
+        DecisionError,
+        ValueError,
+        OSError,
+    ) as err:
+        print(f"qpilot run: {err}", file=sys.stderr)
+        return 1
+    _print_study(result, cards, settings)
+    if args.out:
+        paths = write_outputs(result, cards, grid, args.out)
+        print(f"Wrote {', '.join(paths)} to {args.out}")
+    return 0
+
+
+def _print_study(result, cards, settings) -> None:
+    n_items = len(result.contrasts)
+    n_cells = next(iter(result.robustness.values())).n_cells if result.robustness else 0
+    print(
+        f"{result.n_plates} plates, {result.n_reactions:,} reactions, {result.n_samples} samples "
+        f"(study {result.study_id})"
+    )
+    print(f"{settings.marker_label}-high {result.design.n_hi} vs rest {result.design.n_lo} "
+          "(by expression)")  # fmt: skip
+    stable = [g for g, m in result.genorm.M_initial.items() if m < result.genorm.cutoff_M]
+    print(
+        f"Control genes, most stable first: {', '.join(result.genorm.order)}; "
+        f"recommended: {', '.join(result.genorm.recommended)}; "
+        f"below geNorm M {result.genorm.cutoff_M:g}: {', '.join(stable) or 'none'}"
+    )
+    print(f"Rule: {settings.rule.describe()}")
+    for gene in settings.headline:
+        if gene not in result.contrasts:
+            continue
+        c, r = result.contrasts[gene], result.robustness[gene]
+        level = result.confidence[gene].level if gene in result.confidence else "not graded"
+        print(
+            f"{gene}: {c.fc:.2f}x [{c.ci[0]:.2f}-{c.ci[1]:.2f}] {c.conclusion}; "
+            f"holds in {r.holds * 100:.0f} % of {n_cells} analyses; confidence {level}"
+        )
+    print("Decision cards, most impact first:")
+    for card in cards:
+        flipped = card.impact["n_genes_flipped"]
+        if card.status == "auto_decided":
+            what = f"changes no conclusion; decided automatically ({card.decision})"
+        else:
+            what = f"changes {flipped} of {n_items} conclusions; needs a human"
+        print(f"  {card.rank}. {card.kind}: {what}")
+
+
 COMMANDS: list[Command] = [
     (
         "fetch-demo",
@@ -142,7 +214,7 @@ COMMANDS: list[Command] = [
     ),
     (
         "run",
-        "analyse a study (for now: --contrast GENE prints one comparison)",
+        "analyse a study: results, robustness, confidence and Decision Cards",
         _run_arguments,
         _run,
     ),
