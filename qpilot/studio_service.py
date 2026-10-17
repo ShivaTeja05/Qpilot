@@ -425,6 +425,13 @@ class Studio:
         }
         if stage == "choices":
             study_id = self.study(session_id)
+            undecided = [
+                c.id for c in self.store.cards(study_id) if c.status in ("open", "pending_human")
+            ]
+            if undecided:
+                raise StudioError(
+                    "decide every analysis choice first (still open: " + ", ".join(undecided) + ")"
+                )
             payload["study_id"] = study_id
             payload["chain_head"] = self.store.chain_head(study_id)
         proposal = Proposal(
@@ -498,7 +505,13 @@ class Studio:
         ]
 
     def accept_all_consistent(
-        self, session_id: str, stage: str, actor: Actor, ids: Sequence[str], reason: str = ""
+        self,
+        session_id: str,
+        stage: str,
+        actor: Actor,
+        ids: Sequence[str],
+        reason: str = "",
+        expected_head: str | None = None,
     ) -> list[ProposalOutcome]:
         """Accept exactly the listed ids (one chain entry each); never a contradicted one.
 
@@ -506,7 +519,8 @@ class Studio:
         on it is refused by the proposal store.
         """
         _require_human(actor, "accept proposals")
-        return self.store.proposals(session_id).bulk_accept(list(ids), actor, reason)
+        inbox = self.store.proposals(session_id)
+        return inbox.bulk_accept(list(ids), actor, reason, expected_head)
 
     def reject_many(
         self, session_id: str, ids: Sequence[str], actor: Actor, reason: str
@@ -785,15 +799,21 @@ class Studio:
         }
 
     def curve(self, session_id: str, well_key: str) -> dict[str, list[float]]:
-        """One well's raw fluorescence by cycle (for the card's curve plot)."""
-        from qpilot.qpcr import curve_judge
+        """One well's curve by cycle, as the Curve Judge reads it, for the card's plot.
 
+        The values are the well's fluorescence divided by its own minimum (the Curve Judge's
+        normalisation, since this instrument has no ROX reference), cycles 1 to 40. The file is
+        read once per input and experiment in this process.
+        """
         design = self.assemble(session_id).design
         experiment = design.experiment_id if design is not None else None
-        features = curve_judge.features_from_rdml(self.source(session_id), experiment)
+        features = _curve_features(self.source(session_id), experiment)
         run_id, _, well = well_key.rpartition("/")
+        if (run_id, well) not in features.index:
+            raise StudioError("no curve for this well in the analysed experiment")
         row = features.loc[(run_id, well)]
-        values = [float(v) for v in row.to_numpy()]
+        cycles = [c for c in features.columns if str(c).startswith("Cyc")]
+        values = [float(row[c]) for c in cycles]
         return {"cycle": list(range(1, len(values) + 1)), "fluorescence": values}
 
     # ---- stage 3: the analysis and its Decision Cards -----------------------------------------
@@ -827,6 +847,23 @@ class Studio:
 
         return apply_decision(
             self.store, self.study(session_id), card_id, option, reason, actor, expected_head
+        )
+
+    def reject_request(
+        self,
+        session_id: str,
+        card_id: str,
+        reason: str,
+        actor: Actor,
+        expected_head: str | None = None,
+        option: str | None = None,
+    ) -> Any:
+        """A person turns down an agent's pending request on a Decision Card, with a reason."""
+        from qpilot.core.decisions import reject_request
+
+        _require_human(actor, "turn down an agent's request")
+        return reject_request(
+            self.store, self.study(session_id), card_id, reason, expected_head, option
         )
 
     # ---- stage 4: the Prism project -----------------------------------------------------------
@@ -871,15 +908,18 @@ class Studio:
         )
         return self.store.proposals(session_id).propose(proposal, "system")
 
-    def preview_prism(self, session_id: str) -> dict[str, Any]:
-        """What Send to Prism would write (nothing is written); blind-gated like every result."""
+    def preview_prism(self, session_id: str, rows: int = 5) -> dict[str, Any]:
+        """What Send to Prism would write (nothing is written); blind-gated like every result.
+
+        ``rows`` is how many rows of each table to show (the graph wants them all).
+        """
         from qpilot.prism import preview
 
         study_id = self.study(session_id)
         project = self._accepted_project(session_id, study_id)
         genes = project.get("genes") if project else None
         template = (project or {}).get("template_id") or "two_groups_log2"
-        return preview(self.store, study_id, genes or None, template)
+        return preview(self.store, study_id, genes or None, template, rows=rows)
 
     def _accepted_project(self, session_id: str, study_id: str) -> dict[str, Any] | None:
         accepted = self.store.proposals(session_id).accepted("prism.project")
@@ -888,6 +928,10 @@ class Studio:
             if payload.get("study_id") == study_id:
                 return payload
         return None
+
+    def exports(self, session_id: str) -> list[dict[str, Any]]:
+        """Every bundle sent to Prism from this session: study, folder, bundle sha256, time."""
+        return list(self._meta(session_id).get("exports", []))
 
     def send_to_prism(
         self, session_id: str, out_dir: str | Path, actor: Actor, *, share: bool = False
@@ -1157,6 +1201,22 @@ def _preset_fields(summary: InspectSummary) -> list[DesignField]:
             ],
         )
     ]
+
+
+_FEATURES: dict[tuple[str, str | None], Any] = {}
+
+
+def _curve_features(path: Path, experiment_id: str | None) -> Any:
+    """The Curve Judge's per-well curves for a file, read once per process (keyed by sha256)."""
+    from qpilot.core.store import sha256_file
+    from qpilot.qpcr import curve_judge
+
+    key = (sha256_file(path), experiment_id)
+    if key not in _FEATURES:
+        if len(_FEATURES) >= 4:  # a few files at most; the demo is about 40 MB in memory
+            _FEATURES.pop(next(iter(_FEATURES)))
+        _FEATURES[key] = curve_judge.features_from_rdml(path, experiment_id)
+    return _FEATURES[key]
 
 
 def _mac_prism_installed() -> bool:

@@ -14,6 +14,7 @@ import pytest
 from qpilot.ai.client import ModelClient, NoneBackend
 from qpilot.core.proposals import ProposalError
 from qpilot.core.store import StudyStore
+from qpilot.schemas_studio import MadeBy, Proposal
 from qpilot.studio_service import Studio, StudioError
 
 pytestmark = pytest.mark.demo_data
@@ -144,7 +145,16 @@ def test_an_accepted_exclusion_reanalyses_and_reopens_the_choices(walk):
 def test_only_a_person_decides_anything_in_studio(walk):
     studio, sid = walk["studio"], walk["sid"]
     before = studio.head(sid)
-    pending = studio.propose_confirm(sid, "choices").proposal
+    with pytest.raises(StudioError, match="decide every analysis choice first"):
+        studio.propose_confirm(sid, "choices")  # the new analysis's cards are not decided yet
+    agents_own = Proposal(
+        study_id=sid,
+        kind="design.gene_symbol",
+        subject="ODC1",
+        payload={"symbol": "ODC1"},
+        made_by=MadeBy(kind="agent"),
+    )
+    pending = studio.store.proposals(sid).propose(agents_own, "agent").proposal
     for actor in ("agent", "system"):
         with pytest.raises(ProposalError):
             studio.accept(sid, pending.id, actor)
@@ -155,7 +165,7 @@ def test_only_a_person_decides_anything_in_studio(walk):
         with pytest.raises(StudioError):
             studio.launch_prism(walk["export"], actor)
     assert not (walk["root"] / "never-agent").exists()
-    assert studio.head(sid) != before  # only the system's confirm proposal was added
+    assert studio.head(sid) != before  # only the agent's proposal line was added
     assert studio.inbox(sid, status="proposed")[-1].id == pending.id
 
 
