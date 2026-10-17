@@ -269,7 +269,7 @@ def verify(record_dir: str | Path) -> VerifyReport:
         entries = read_entries(record_dir / "decisions.jsonl")
         n_entries = len(entries)
         broken = verify_chain(entries, root.input_sha256)
-    except (OSError, ValueError):
+    except (OSError, ValueError, RecursionError):
         broken = 1
         entries = []
     inconsistent = _consistency(record_dir, entries) if broken is None else []
@@ -296,7 +296,7 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
     try:
         cards = json.loads((record_dir / "cards.json").read_text())
         by_id = {c["id"]: c for c in cards}
-    except (OSError, ValueError, TypeError, KeyError):
+    except (OSError, ValueError, TypeError, KeyError, RecursionError):
         return ["cards.json unreadable"]
     expected: dict[str, dict] = {}
     for card_id, card in by_id.items():
@@ -319,7 +319,7 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
         try:
             choices = json.loads(choices_path.read_text())["cards"]
             items = sorted(choices.items())
-        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError):
             return [*problems, "choices.json unreadable"]
         if set(choices) != set(by_id):
             problems.append("choices.json lists different cards from cards.json")
@@ -334,7 +334,7 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
     if pending_path.exists():
         try:
             recorded = [e.seq for e in read_entries(pending_path)]
-        except (OSError, ValueError):
+        except (OSError, ValueError, RecursionError):
             return [*problems, "pending.jsonl unreadable"]
         accepted = (
             [e.seq for e in pending_after(entries)],
@@ -444,7 +444,7 @@ def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> 
     compared.append("cards.json (structure)")
     try:
         mine = _card_structure(json.loads((record_dir / "cards.json").read_text()))
-    except (OSError, ValueError, AttributeError):
+    except (OSError, ValueError, AttributeError, TypeError, RecursionError):
         mine = ""
     if mine != _card_structure([c.model_dump(mode="json") for c in cards]):
         differs.append("cards.json (structure)")
@@ -454,7 +454,7 @@ def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> 
         if made_with and made_with != versions()["qpilot_git"]:
             now = versions()["qpilot_git"]
             note = f"record made with qpilot {made_with[:12]}, re-run with {now[:12]}"
-    except (OSError, ValueError):
+    except (OSError, ValueError, AttributeError, RecursionError):
         pass
     return RerunReport(
         out_dir=str(out), same=not differs, compared=compared, differs=differs, build_note=note

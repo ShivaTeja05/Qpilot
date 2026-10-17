@@ -5,6 +5,7 @@ tools, the record tools, the app's view of a card) with a hostile input.
 """
 
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -116,3 +117,22 @@ def test_mcp_returns_an_error_for_unreadable_files(tmp_studies_dir, roots):
     (roots / "junk.rdml").write_text("not xml")
     out = QpilotTools(StudyStore(tmp_studies_dir)).qpcr_study(str(roots / "junk.rdml"))
     assert out["error"].startswith("could not read this RDML file")
+
+
+@pytest.mark.parametrize("name", ["cards.json", "choices.json", "versions.json"])
+def test_deeply_nested_json_in_a_record_is_reported_not_raised(store, study, tmp_path, name):
+    from qpilot.core.record import verify, write_record
+
+    info = write_record(store, study, tmp_path / "rec")
+    (Path(info.record_dir) / name).write_text("[" * 5000 + "]" * 5000)
+    report = verify(info.record_dir)
+    assert not report.ok and name in report.changed
+
+
+def test_deeply_nested_decision_line_is_reported_not_raised(store, study, tmp_path):
+    from qpilot.core.record import verify, write_record
+
+    info = write_record(store, study, tmp_path / "rec")
+    log = Path(info.record_dir) / "decisions.jsonl"
+    log.write_text(log.read_text() + "[" * 5000 + "]" * 5000 + "\n")
+    assert verify(info.record_dir).chain_broken_at is not None
