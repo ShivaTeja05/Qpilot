@@ -1,0 +1,35 @@
+# qPilot Studio: numbers measured on the demo before building
+
+Measured on 17 Oct 2026 from the cached Vermeulen RDML (`data_vermeulen_raw.rdml`,
+sha256 `bc1d233e…`) with qPilot's own engine (LinRegPCR per plate, primary analysis: all five
+reference genes, MYCN-high = top 15 %, undetermined wells dropped, Welch on log2, call rule
+p < 0.05 and at least two-fold). These are the acceptance oracles for the Studio build; every
+gate in `qPilot-STUDIO-PRISM-PLAN.md` is checked against this table, not against the plan's
+prose. Where the plan's number did not reproduce, the measured number wins and the difference
+is stated.
+
+| Plan step | What | Plan says | Measured | Status |
+|---|---|---|---|---|
+| 2.7 | ΔΔCq in Excel (E = 2.0, engine Cq), Welch on log2: conclusions that differ from the engine (of 58) | 4 (CAMTA2, IGSF4, PAICS, PRKACB_bis) | 4, same genes | reproduces |
+| 2.7 | 2^-ΔΔCq per sample (calibrator = mean ΔCq of the "rest" group), Welch on the linear scale, fold = ratio of group means | 14 | 14 | reproduces |
+| 2.7 | the same with Student's (equal-variance) t test | 21 | 21 | reproduces |
+| 4.1 | "Cq > 35 = not detected" (engine Cq; n0 set to undetermined; then the primary analysis) | 10 | 10: CLSTN1, EPN2, MRPL3, NTRK1, PAICS, PLAT, PRKACB_bis, PTPRF, PTPRH, SLC25A5 | reproduces |
+| 4.1 | Cq > 38 | 7 | **3**: CLSTN1, EPN2, PLAGL1 | does not reproduce |
+| 4.1 | Cq > 40 | 2 | **1**: CLSTN1 | does not reproduce |
+| 2 | STD_15 wells (15-copy standard, by label) with Cq > 35 | 90 of 192 | 90 of 192 | reproduces |
+| 6.2 | Exclude ODC1's highest sample (1496, MYCN-high) | 3.59× → 3.32×, ODC1 stays up, 0 of 58 change | 3.590× → 3.319×, p 2.3e-8 → 2.1e-8, stays up | reproduces |
+| 3.3 | `comp_XX_conc_Y` (technical_datasets / competimer_set): R² of Cq vs log10 dilution, levels 0.0625–16 | 0.983–0.999 at six of seven competimer levels | 0.983–0.999 at six (comp 00, 05, 10, 20, 30, 40); comp 50 = 0.707 | reproduces |
+| 3.3 | Top level (conc 64): wells with a Cq | 0 of 21 | 0 of 21 called amplified by LinRegPCR; 7 of 21 carry a late TD0 (39.9–42.0) with `amplification = False` | reproduces when "with a Cq" means "amplified" |
+| 3.3 | Efficiency from the slope of each competimer level | — | 1.86, 1.80, 1.76, 1.64, 1.47, 1.40, 1.38 (comp 00 → 50): all outside 90–110 % | warning, not a contradiction (plan rule) |
+| 3.2 | Samples declared in the file | 425 (409 unknown, 9 NTC, 7 standards) | **427** (409 unkn, 9 ntc, 9 std): STDA15…STDA15000 (4) + STD_15…STD_150000 (5) | does not reproduce; 427 is the file's own count |
+| — | competimer_set NTC wells | — | 21; LinRegPCR notes "TD0 found in negative control" on the 3 comp_50_NTC wells | for the NTC check |
+| — | Unknown wells with `amplification = False` but an n0 (biomarker set) | — | 11 of 23,424 | the `linregpcr` rule keeps today's behaviour (n0 present) |
+
+Definitions used above, which the engine code must follow exactly:
+
+- **"Differs from the engine"** compares each gene's conclusion (up / down / none) under the
+  route with its conclusion in the engine's primary cell; groups are always the engine's fixed
+  MYCN-high / rest split.
+- **Cq cut-off rule `cq_le_X`**: a well whose engine Cq is greater than X becomes undetermined
+  (n0 = NaN) for every target, reference genes included; then the analysis runs unchanged.
+  The flip count varies only this choice from the primary cell (the engine's `impact`).

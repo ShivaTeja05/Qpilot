@@ -47,6 +47,9 @@ dev = [
 ai = ["anthropic", "httpx"]
 parquet = ["pyarrow"]
 xlsx = ["openpyxl"]
+# qPilot Studio: sample sheets. The Curve Judge model ships as JSON and runs on numpy;
+# xgboost is needed only to retrain it (training/curve_judge/requirements.txt).
+studio = ["openpyxl"]
 
 [project.scripts]
 qpilot = "qpilot.cli:main"
