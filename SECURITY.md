@@ -13,4 +13,11 @@ Please report vulnerabilities privately through GitHub's **"Report a vulnerabili
 We follow **coordinated disclosure**: we aim to acknowledge a report within 5 working days and to publish a fix or mitigation within 90 days, after which the reporter may disclose publicly. We will credit reporters who wish to be credited.
 
 ## Scope
-In scope: the `qpilot` Python package, its command-line interface, the local web app, and the MCP server. A one-page threat model is in `THREAT_MODEL.md` (added during the build).
+In scope: the `qpilot` Python package, its command-line interface, the local web app, and the MCP server. The one-page threat model, with the test that backs each control, is in [`THREAT_MODEL.md`](THREAT_MODEL.md).
+
+Out of scope: a compromised host, multi-user hosting, and clinical or diagnostic use.
+
+## What we claim, and what backs it
+- **Offline by default:** with provider `none`, the headless analysis path runs with network sockets disabled (`tests/core/test_offline.py`).
+- **Agents cannot make conclusion-changing decisions:** the MCP tool returns `pending_human`, enforced in code (`tests/core/test_decisions.py`, `tests/core/test_mcp_server.py`).
+- **Records are tamper-evident, not tamper-proof:** `qpilot verify` detects changed files and the first broken link in the decision chain (`tests/core/test_record.py`).
