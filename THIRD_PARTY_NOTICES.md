@@ -5,7 +5,7 @@ qPilot is licensed under the Apache License 2.0 (see `LICENSE`). It vendors, dep
 ## Vendored code
 | Component | Version / commit | Licence | Where | Notes |
 |---|---|---|---|---|
-| rdmlpython (`rdml.py`, LinRegPCR implementation) | RDML-consortium/rdmlpython @ `fce7a44e8b47b90759c646b557de568f7af77e75` (2 May 2026) | MIT, Copyright (c) 2019 the RDML-consortium | `qpilot/vendor/rdmlpython/` | Copied verbatim; not modified. Cite Ruijter et al. 2009 and Untergasser et al. 2021. |
+| rdmlpython (`rdml.py`, LinRegPCR implementation) | RDML-consortium/rdmlpython @ `fce7a44e8b47b90759c646b557de568f7af77e75` (2 May 2026) | MIT, Copyright (c) 2019 the RDML-consortium | `qpilot/vendor/rdmlpython/` (`rdml.py`, `LICENSE`, `schema/*.xsd`, `schema/LICENSE` — schemas Copyright (c) 2008-2022 the RDML-consortium, MIT) | Copied verbatim; not modified; hashes in `README_VENDOR.md`. Cite Ruijter et al. 2009 and Untergasser et al. 2021. |
 
 ## Runtime dependencies (installed, not vendored)
 | Package | Licence |
@@ -20,6 +20,7 @@ qPilot is licensed under the Apache License 2.0 (see `LICENSE`). It vendors, dep
 | plotly | MIT |
 | PyYAML | MIT |
 | filelock | Unlicense |
+| matplotlib | Matplotlib License (PSF-based, BSD-compatible); required by the vendored rdmlpython import |
 
 ## Optional dependencies
 | Package | Extra | Licence |

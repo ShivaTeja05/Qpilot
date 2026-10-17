@@ -1,0 +1,8 @@
+# False positives: XML schema identifier "thermalCyclingConditionsIdKeyRef2" in the vendored RDML
+# schemas (rdmlpython @ fce7a44) matches the generic-api-key rule because the name contains "Key".
+# Only these exact findings are ignored; everything else, including the rest of qpilot/vendor/, is scanned.
+qpilot/vendor/rdmlpython/schema/RDML_v1_0_REC.xsd:generic-api-key:1197
+qpilot/vendor/rdmlpython/schema/RDML_v1_1_REC.xsd:generic-api-key:1267
+qpilot/vendor/rdmlpython/schema/RDML_v1_2_REC.xsd:generic-api-key:1299
+qpilot/vendor/rdmlpython/schema/RDML_v1_3_REC.xsd:generic-api-key:1597
+qpilot/vendor/rdmlpython/schema/RDML_v1_4_CR.xsd:generic-api-key:1651

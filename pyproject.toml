@@ -30,6 +30,8 @@ dependencies = [
   "plotly",
   "pyyaml",
   "filelock",
+  # Imported at module level by the vendored rdmlpython (melt-curve plots qPilot never calls).
+  "matplotlib",
 ]
 
 [project.optional-dependencies]
