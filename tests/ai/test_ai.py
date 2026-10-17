@@ -251,3 +251,20 @@ def test_profile_and_fewshots(tmp_path, store, study):
     (tmp_path / "bad.yaml").write_text("- a list\n")
     with pytest.raises(ValueError):
         load_profile(tmp_path / "bad.yaml")
+
+
+def test_explain_knows_reference_names_from_evidence(fixture_cards, fixture_facts):
+    from qpilot.ai.explain import card_names
+
+    assert {"HPRT1", "SDHA(1)", "UBC(2)"} <= card_names(fixture_cards[0])
+    client = mock("HPRT1 and SDHA(1), UBC(2)) are candidates; {{f_n_flipped_refset}} genes flip.")
+    assert explain_card(fixture_cards[0], fixture_facts, client=client).validated
+
+
+def test_fact_table_gives_token_to_write(fixture_cards, fixture_facts):
+    backend = MockBackend(["{{f_n_flipped_refset}} genes."])
+    explain_card(fixture_cards[0], fixture_facts, client=ModelClient(backend))
+    table = json.loads(backend.calls[0]["messages"][0]["content"])["facts"]
+    entry = table["f_n_flipped_refset"]
+    assert entry["write_exactly"] == "{{f_n_flipped_refset}}"
+    assert entry["value_for_reading_only"] == "31"

@@ -23,10 +23,9 @@ from pydantic import BaseModel
 
 from qpilot.ai import payload_log
 from qpilot.ai.client import ModelClient, ModelUnavailable
-from qpilot.ai.explain import KIND_TITLE, card_names
+from qpilot.ai.explain import KIND_TITLE, card_names, fact_table
 from qpilot.ai.profile import Profile, build_fewshots
 from qpilot.ai.prompts import SYSTEM_ASK_ANSWER, SYSTEM_ASK_TOOL
-from qpilot.core.facts import render_fact
 from qpilot.core.store import StudyStore
 from qpilot.core.validator import names_from_result, render_tokens, validate
 from qpilot.schemas import DecisionCard, Fact, StudyResult
@@ -382,7 +381,7 @@ def _tool_prompt(ctx: _Context, question: str, profile: Profile) -> str:
 
 
 def _model_answer(client, ctx, question, tool, view, facts):
-    table = {fid: render_fact(f) for fid, f in facts.items() if fid.startswith("f_ans_")}
+    table = fact_table(facts, [fid for fid in facts if fid.startswith("f_ans_")])
     content = json.dumps(
         {"question": question, "tool": tool, "result": view, "facts": table}, ensure_ascii=False
     )

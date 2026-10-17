@@ -46,7 +46,7 @@ class ValidationResult(BaseModel):
 
 def _strip_names(text: str, names: Iterable[str]) -> str:
     for name in sorted({n for n in names if n}, key=len, reverse=True):
-        pattern = rf"(?<![\w(]){re.escape(name)}(?![\w)])"
+        pattern = rf"(?<!\w){re.escape(name)}(?!\w)"
         text = re.sub(pattern, " ", text)
     return text
 

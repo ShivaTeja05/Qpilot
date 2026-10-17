@@ -59,7 +59,21 @@ def card_names(card: DecisionCard) -> set[str]:
     names = {card.id}
     for option in card.options:
         names |= {option.id, option.label, *option.per_gene}
+    for value in card.evidence.values():  # e.g. the reference genes in geNorm evidence
+        if isinstance(value, dict):
+            names |= {k for k in value if isinstance(k, str)}
+        elif isinstance(value, list | tuple):
+            names |= {v for v in value if isinstance(v, str)}
     return names
+
+
+def fact_table(facts: Mapping[str, Fact], ids: Iterable[str]) -> dict[str, dict[str, str]]:
+    """What the model may cite: each fact's value for reading, and the token to write."""
+    return {
+        f: {"value_for_reading_only": render_fact(facts[f]), "write_exactly": "{{" + f + "}}"}
+        for f in ids
+        if f in facts
+    }
 
 
 def template_explanation(card: DecisionCard, facts: Mapping[str, Fact]) -> str:
@@ -110,7 +124,7 @@ def explain_card(
             fallback=True,
             provider=client.provider,
         )
-    table = {f: render_fact(facts[f]) for f in card.facts if f in facts}
+    table = fact_table(facts, card.facts)
     user = json.dumps(
         {
             "card": card_view(card),

@@ -130,3 +130,9 @@ def test_fixture_card_facts_render(fixture_cards, fixture_facts):
 def test_names_from_result(fixture_result):
     names = names_from_result(fixture_result)
     assert {"ODC1", "SDHA(1)", "UBC(2)", "MYCN_high"} <= names
+
+
+def test_names_inside_parentheses_and_lists():
+    text = "Top two (ALUsq(Eurogentec), HPRT1) and SDHA(1), UBC(2)."
+    assert validate(text, FACTS, NAMES | {"HPRT1"}).ok
+    assert not validate("SDHA(12) and UBC(2)", FACTS, NAMES).ok

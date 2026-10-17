@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 TOKEN_RULE = (
-    "Write every number only as a {{fact_id}} token copied from the facts table, for example "
-    "{{f_fc_odc1_recommended}}. Never write a digit yourself, not even in words like 2-fold or "
-    "95%. If a number you need is not in the facts table, say it is not available."
+    "Write every number only as a {{fact_id}} token: copy the facts table's write_exactly text, "
+    "for example {{f_fc_odc1_recommended}}. The value_for_reading_only text is for you to "
+    "read, never to copy. Never write a digit yourself, not even in words like 2-fold, a "
+    "percentage or a count. If a number you need is not in the facts table, say it is not "
+    "available."
 )
 
 SYSTEM_EXPLAIN = (
