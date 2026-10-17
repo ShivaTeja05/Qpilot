@@ -175,3 +175,8 @@ def to_csv_frame(grid: pd.DataFrame) -> pd.DataFrame:
     for name in _dimension_names(grid):
         out[name] = out[name].map(lambda v: "|".join(map(str, v)) if isinstance(v, tuple) else v)
     return out
+
+
+def fragility(grid: pd.DataFrame, space: DecisionSpace) -> dict[str, int]:
+    """``min_flip_changes`` for every item (input for the confidence checks)."""
+    return {item: min_flip_changes(grid, space, item) for item in space.items}
