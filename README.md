@@ -35,31 +35,24 @@ python3.11 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 
 ## Results screen
 
-`qsim app` serves one page in plain lab language from `127.0.0.1` only. It loads no web assets and runs offline. It needs no extra packages: it uses Python's standard library.
+`qsim app` serves a lab-facing screen from `127.0.0.1` only. It loads no web assets, runs offline and needs only Python's standard library. Charts are plain SVG with hover details, in light and dark mode, down to phone width.
 
-It reads `results/explain.json`, `genes.csv`, `issues.json` and `summary.json`, and calls the engine live:
+It reads the run's files in `results/` and calls the engine live. A sidebar lists every gene, attention first, with a verdict filter. Each verdict has its own shape as well as a colour: ■ check data first, ▲ fragile, ◆ depends on your choices, ◐ holds with caveats, ● solid, ○ no change called.
 
-1. **Verdict counts.** Each verdict has its own shape and colour, so colour is never the only cue: ■ check data first, ▲ fragile, ◆ depends on your choices, ◐ holds with caveats, ● solid, ○ no change called. Click a count to filter the gene list.
-2. **Gene list.** Each gene's fold change, call and verdict, with the results that need attention first.
-3. **Gene card.** It covers:
-   - the result and why it got its verdict;
-   - "same answer in N of 100 reasonable analyses";
-   - which choices change it, with the new fold change and call;
-   - what it leans on: fewest samples to change it, single samples, distance from the 2× line;
-   - what to do;
-   - a link to the evidence page, which shows the gene's records in the engine files.
-4. **What-if.** A dropdown for every decision, grouped as your planned analysis, reasonable alternatives and common shortcuts. `qsim.compare.whatif` recomputes all genes on every change.
-5. **Ask.** `qsim.ask.Asker`: the local model (Ollama `qwen2.5:7b`, if running) only reads the question. The engine's checked templates write the answer. The panel shows:
-   - who read the question;
-   - which engine tool answered;
-   - every value the engine supplied.
-6. **What to check first.** The top of the investigation queue.
+| Tab | What a scientist sees |
+|---|---|
+| **Gene** | The result and its verdict, plus six key numbers: fold change and likely range, same answer in N of 100, p-value, fewest samples that change it, distance to the 2× line, how often the difference is clear. Then three charts. **Every reasonable analysis**: a dot per analysis, recomputed live; orange dots give a different call. **One choice at a time**: each option of each decision, shortcuts included. **Your samples**: each sample's normalised level by group, with plate, well and Cq on hover; late-Cq wells and the samples that carry the call are marked. It also shows what changes the call, what it leans on, what to do, the assay's lab parameters (Cq spread, late and missing Cq, efficiency, flagged wells) and reference-gene stability. *Copy summary* puts it on the clipboard for a lab notebook, and *Evidence* opens the gene's raw records. |
+| **Study** | The verdict counts and their rules. A map of all genes: fold change against same answer in N of 100. Which choices change calls and how much each moves fold changes. Reference-gene geNorm M. What to fix before seeing results. The top of the issue queue. |
+| **What-if lab** | A dropdown for every decision, grouped as planned, reasonable alternatives and common shortcuts. `qsim.compare.whatif` recomputes all genes and draws each change from the planned fold change to the new one. The same choices drive the sample chart. |
+| **Ask** | `qsim.ask.Asker`. The local model (Ollama `qwen2.5:7b`, if running) or fixed rules read the question. An engine tool runs, and a checked template writes the answer. The page shows which tool answered and every value the engine supplied. |
+| **How it works** | The pipeline from curves to call. Each step shows its choices, options and tiers. Also: how each verdict is decided, the known-answer, planted-fault and no-difference results, and the limits, stated plainly. |
 
 The page types no numbers. Every figure comes from those files or a live engine call. `tests/test_app.py` checks this:
-- it traces the card numbers back to `explain.json`;
-- it matches the what-if results against the engine;
-- it checks that the page markup contains no typed digits;
-- it scans every screen for statistics jargon.
+- the 144 analyses recomputed live reproduce `explain.json` for every gene;
+- the sample chart's fold change equals the engine's, at baseline and under what-if choices;
+- the card numbers trace back to `explain.json`;
+- the page markup contains no typed digits;
+- no screen contains statistics jargon.
 
 Options:
 - `--no-model`: keyword routing only;

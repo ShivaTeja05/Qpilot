@@ -26,8 +26,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+import numpy as np
 import pandas as pd
 
+from qsim.app_lab import LabViews
 from qsim.compare import whatif
 from qsim.data import load_study
 from qsim.decisions import PLAIN
@@ -38,7 +40,15 @@ from qsim.verdict import ORDER
 
 HOST = "127.0.0.1"
 PAGE = Path(__file__).with_name("app_page.html")
-RAW_FILES = ("explain.json", "genes.csv", "issues.json", "summary.json", "one_sample_flips.csv")
+RAW_FILES = (
+    "explain.json",
+    "genes.csv",
+    "issues.json",
+    "summary.json",
+    "one_sample_flips.csv",
+    "decisions.csv",
+    "validation_untergasser.json",
+)
 
 VERDICT_LABEL = {
     "solid": "Solid",
@@ -119,7 +129,7 @@ def _join(words: list[str], last: str = "and") -> str:
     return words[0] if len(words) == 1 else f"{', '.join(words[:-1])} {last} {words[-1]}"
 
 
-class Screen:
+class Screen(LabViews):
     """Everything the page shows, built from the engine's files and live engine calls."""
 
     def __init__(self, results: str | Path = "results", rdml: str | None = None, asker=None):
@@ -432,7 +442,43 @@ class Screen:
         for i in data_issues[:3]:
             todo.append(f"{i['title']}: {i['action']}")
 
+        if margin >= self.engine.rule.min_log2fc:
+            gap = "well past"
+        elif margin >= 0:
+            gap = f"{margin_pct} % beyond"
+        else:
+            gap = f"{margin_pct} % short"
+        tiles = [
+            {
+                "label": "Fold change, planned analysis",
+                "value": _fold(e["fold"]),
+                "sub": f"likely {_range(*e['ci'])}",
+            },
+            {"label": "Same answer in", "value": f"{holds} of 100", "sub": "reasonable analyses"},
+            {
+                "label": "p-value, planned analysis",
+                "value": f"{e['p']:.2g}",
+                "sub": f"a call needs below {self.alpha:g}",
+            },
+            {
+                "label": "Fewest samples that change it",
+                "value": str(dk) if dk else f"more than {rules['drop_k_searched']}",
+                "sub": f"of {self.n_samples} samples",
+            },
+            {
+                "label": f"Distance to the {line} line",
+                "value": gap,
+                "sub": "the size a call needs",
+            },
+            {
+                "label": "Difference is clear in",
+                "value": f"{sig} of 100",
+                "sub": f"reasonable analyses (p below {self.alpha:g})",
+            },
+        ]
+
         return {
+            "tiles": tiles,
             "gene": gene,
             "verdict": verdict,
             "label": VERDICT_LABEL[verdict],
@@ -465,30 +511,38 @@ class Screen:
         changes = {d: o for d, o in changes.items() if self.space.baseline[d] != o}
         with self._engine_lock:
             table = whatif(self.engine, changes).set_index("gene")
-        genes = [g for g in HEADLINE if g in table.index]
-        genes += [g for g in extra or [] if g in table.index and g not in genes]
+        picked = [g for g in extra or [] if g in table.index]
         changed = table[table["call"] != table["base_call"]]
         labels = [
             self.space.decision(d).options[self.space.decision(d).index(o)].label
             for d, o in changes.items()
         ]
-        return {
-            "changes": labels,
-            "rows": [
+        rows = []
+        for g in table.index:
+            r = table.loc[g]
+            rows.append(
                 {
                     "gene": g,
                     "headline": g in HEADLINE,
-                    "base": _fold(table.loc[g, "base_fold"]),
-                    "base_call": SHORT_CALL[table.loc[g, "base_call"]],
-                    "new": _fold(table.loc[g, "fold"]),
-                    "new_call": SHORT_CALL[table.loc[g, "call"]],
-                    "changed": bool(table.loc[g, "call"] != table.loc[g, "base_call"]),
+                    "picked": g in picked,
+                    "verdict": self.explain[g]["verdict"] if g in self.explain else "",
+                    "base": _fold(r["base_fold"]),
+                    "base_call": SHORT_CALL[r["base_call"]],
+                    "new": _fold(r["fold"]),
+                    "new_call": SHORT_CALL[r["call"]],
+                    "base_log2": float(np.log2(r["base_fold"])),
+                    "new_log2": float(np.log2(r["fold"])),
+                    "changed": bool(r["call"] != r["base_call"]),
                 }
-                for g in genes
-            ],
+            )
+        return {
+            "changes": labels,
+            "rows": rows,
             "n_changed": len(changed),
             "n_genes": len(table),
             "changed_genes": list(changed.index),
+            "line_log2": self.engine.rule.min_log2fc,
+            "line": f"{self.line:g}×",
         }
 
     @property
@@ -658,6 +712,13 @@ li{{margin:0 0 10px}} code{{font-size:13px}}
 </main></body></html>"""
 
 
+def _known(screen: Screen, path: str, prefix: str) -> str:
+    gene = path.removeprefix(prefix)
+    if gene not in screen.explain:
+        raise KeyError(gene)
+    return gene
+
+
 def make_handler(screen: Screen) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         server_version = "qsim-app"
@@ -687,12 +748,22 @@ def make_handler(screen: Screen) -> type[BaseHTTPRequestHandler]:
                     self._json(screen.overview())
                 elif path.startswith("/api/gene/"):
                     self._json(screen.gene_card(path.removeprefix("/api/gene/")))
+                elif path.startswith("/api/analyses/"):
+                    self._json(screen.gene_analyses(_known(screen, path, "/api/analyses/")))
+                elif path.startswith("/api/effects/"):
+                    self._json(screen.gene_effects(_known(screen, path, "/api/effects/")))
+                elif path.startswith("/api/lab/"):
+                    self._json(screen.lab_parameters(_known(screen, path, "/api/lab/")))
+                elif path == "/api/study":
+                    self._json(screen.study_view())
+                elif path == "/api/how":
+                    self._json(screen.how_view())
                 elif path.startswith("/evidence/"):
                     html = screen.evidence_html(path.removeprefix("/evidence/"))
                     self._send(200, html.encode(), "text/html; charset=utf-8")
                 elif path.startswith("/files/") and path.removeprefix("/files/") in RAW_FILES:
                     name = path.removeprefix("/files/")
-                    ctype = "application/json" if name.endswith(".json") else "text/csv"
+                    ctype = "application/json" if name.endswith(".json") else "text/plain"
                     self._send(200, (screen.dir / name).read_bytes(), f"{ctype}; charset=utf-8")
                 else:
                     self._json({"error": "not found"}, HTTPStatus.NOT_FOUND)
@@ -710,6 +781,11 @@ def make_handler(screen: Screen) -> type[BaseHTTPRequestHandler]:
             try:
                 if path == "/api/whatif":
                     self._json(screen.run_whatif(body.get("changes") or {}, body.get("genes")))
+                elif path == "/api/samples":
+                    gene = str(body.get("gene", ""))
+                    if gene not in screen.explain:
+                        raise KeyError(gene)
+                    self._json(screen.gene_samples(gene, body.get("changes") or {}))
                 elif path == "/api/ask":
                     question = str(body.get("question", "")).strip()[:500]
                     if not question:
