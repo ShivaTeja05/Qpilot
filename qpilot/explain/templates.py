@@ -112,12 +112,13 @@ def _list(items: list[str], joiner: str = "or") -> str:
 
 
 def _refset(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
-    _need(facts, "f_order_1", "f_m_1", "f_worst_ref", "f_n_flipped_refset", "f_n_genes")
+    _need(facts, "f_order_1", "f_worst_ref", "f_n_flipped_refset", "f_n_genes")
     stable = [fid for fid in facts if re.fullmatch(r"f_m_\d+", fid)]
     any_stable = any(float(facts[fid].value) < CUTOFF_M for fid in stable)
+    pair = f"{_t('f_order_1')} and {_t('f_order_2')}" if "f_order_2" in facts else _t("f_order_1")
     text = (
-        f"geNorm ranks {_t('f_order_1')} as the most stable control gene "
-        f"(M = {_t('f_m_1')}) and {_t('f_worst_ref')} as the least stable. "
+        f"geNorm's stepwise ranking keeps {pair} as the most stable and drops "
+        f"{_t('f_worst_ref')} first. "
     )
     if not any_stable:
         text += (
@@ -133,7 +134,24 @@ def _refset(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
         text += (
             f"With the recommended set versus {_t('f_worst_ref')} alone: {_list(pairs, 'and')}. "
         )
-    return text + _flips_sentence(facts, "f_n_flipped_refset")
+    text += _flips_sentence(facts, "f_n_flipped_refset")
+    if "f_n_flipped_refset_min3" in facts:
+        text += (
+            f" Even between sets of three or more control genes, "
+            f"{_t('f_n_flipped_refset_min3')} of {_t('f_n_genes')} change."
+        )
+    if {"f_ref_pair_top", "f_ref_ratio_top", "f_ref_ratio_top_p"} <= set(facts):
+        text += (
+            f" The control genes are not neutral here: the ratio {_t('f_ref_pair_top')} itself "
+            f"differs {_t('f_ref_ratio_top')} between the groups (p = {_t('f_ref_ratio_top_p')})"
+        )
+        if {"f_n_ref_pairs_flagged", "f_n_ref_pairs", "f_ref_flag_fold"} <= set(facts):
+            text += (
+                f", and {_t('f_n_ref_pairs_flagged')} of {_t('f_n_ref_pairs')} pairs differ by at "
+                f"least {_t('f_ref_flag_fold')}"
+            )
+        text += "."
+    return text
 
 
 def _cutoff(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
@@ -173,9 +191,8 @@ def _undetermined(facts: Facts, card: DecisionCard | None, gene: str | None) -> 
 def _summary(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
     _need(facts, "f_n_plates", "f_n_reactions", "f_n_samples", "f_n_hi", "f_n_lo")
     return (
-        f"{_t('f_n_plates')} plates, {_t('f_n_reactions')} reactions, {_t('f_n_samples')} samples. "
-        f"High group {_t('f_n_hi')} samples, rest {_t('f_n_lo')}; the groups are defined by "
-        "expression, not by a clinical call."
+        f"{_t('f_n_plates')} plates · {_t('f_n_samples')} samples · {_t('f_n_reactions')} "
+        f"reactions. High group {_t('f_n_hi')} samples, rest {_t('f_n_lo')}."
     )
 
 

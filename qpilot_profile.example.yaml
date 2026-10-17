@@ -1,0 +1,18 @@
+# qPilot lab profile (example). Copy to qpilot_profile.yaml or point QPILOT_PROFILE at it.
+# It changes how explanations are worded, never the numbers or who may decide what.
+
+name: example-lab
+tone: plain, precise, for a scientist who is not a statistician
+language: English
+conventions:
+  - Say "control genes", not "housekeeping genes".
+  - Give fold changes as "3.6 times higher", not as log2 values.
+conclusion_rule: up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call
+max_fewshots: 3  # how many of your own recent decisions (card, choice, reason) the model sees
+
+# The autonomy policy is fixed in code (qpilot/ai/profile.py) and shown here for reference only;
+# editing it has no effect.
+autonomy_policy:
+  - "Automatic: a choice that cannot change any conclusion is decided by the system and logged."
+  - "Agent may apply: such non-flipping choices, when the scientist allows decide-and-tell."
+  - "Human only: any choice that can flip a conclusion, at every level, for every actor."

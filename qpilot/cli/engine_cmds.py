@@ -241,6 +241,77 @@ def _explain(args: argparse.Namespace) -> int:
     return 0
 
 
+def _app_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--port", type=int, default=None, help="port (default: first free from 7860)"
+    )
+    parser.add_argument(
+        "--fresh-demo",
+        action="store_true",
+        help="move the demo study's earlier decisions aside (kept, never deleted) and start clean",
+    )
+
+
+def _app(args: argparse.Namespace) -> int:
+    from qpilot.app import main as app_main  # imports Gradio only here, telemetry already off
+
+    app_main(port=args.port, fresh_demo=args.fresh_demo)
+    return 0
+
+
+def _doctor_arguments(parser: argparse.ArgumentParser) -> None:
+    pass
+
+
+def _doctor(args: argparse.Namespace) -> int:
+    """Print what qPilot will use and whether anything can leave this machine; never downloads."""
+    import platform
+
+    from qpilot import __version__
+    from qpilot.ai.config import ModelConfig
+    from qpilot.core.store import default_studies_dir
+    from qpilot.io.datasets import (
+        VERMEULEN_FILENAME,
+        VERMEULEN_SHA256,
+        cached_benchmark_tables,
+        verify_file,
+    )
+
+    print(f"qpilot {__version__} · Python {platform.python_version()} · {platform.system()}")
+    print(f"LinRegPCR: rdmlpython vendored @ {VERMEULEN_COMMIT[:7]}")
+    demo = default_cache_dir() / VERMEULEN_FILENAME
+    try:
+        verify_file(demo, VERMEULEN_SHA256, VERMEULEN_BYTES)
+        cached = True
+        print(f"demo dataset: {demo} (sha256 OK)")
+    except (OSError, DatasetIntegrityError) as err:
+        cached = False
+        print(f"demo dataset: not ready ({err}); run `qpilot fetch-demo`")
+    tables = "cached" if cached_benchmark_tables() else "not cached (run `qpilot fetch-demo`)"
+    print(f"benchmark tables: {tables}")
+    print(f"studies: {default_studies_dir()}")
+    try:
+        config = ModelConfig.from_env()
+    except ValueError as err:
+        print(f"provider: INVALID ({err})")
+        print("outbound: unknown until QPILOT_MODEL_PROVIDER is fixed")
+        return 1
+    described = config.describe()
+    print(f"provider: {described['provider']}")
+    print(f"QPILOT_API_KEY: {described['api_key']}")
+    print("app: 127.0.0.1 only, never shared, Gradio telemetry forced off")
+    if config.provider == "none":
+        print("outbound: none")
+    else:
+        target = config.endpoint or "https://api.anthropic.com"
+        print(f"outbound: {target} (only when you use the model; provider {config.provider})")
+    print("(in the app you can pick a model; the API key is only sent where it was configured)")
+    if not cached:
+        print("(`qpilot fetch-demo` downloads the pinned demo study once; nothing else does)")
+    print("OK")
+    return 0
+
+
 COMMANDS: list[Command] = [
     (
         "fetch-demo",
@@ -253,6 +324,18 @@ COMMANDS: list[Command] = [
         "analyse a study: results, robustness, confidence and Decision Cards",
         _run_arguments,
         _run,
+    ),
+    (
+        "app",
+        "open the one-page app on 127.0.0.1 (telemetry off, never shared)",
+        _app_arguments,
+        _app,
+    ),
+    (
+        "doctor",
+        "show versions, the dataset, the model provider and what can leave this machine",
+        _doctor_arguments,
+        _doctor,
     ),
     (
         "explain",

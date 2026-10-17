@@ -75,8 +75,22 @@ def study_summary(result: StudyResult) -> SummaryView:
     """Counts, groups and the rule every conclusion is drawn with."""
     rendered = render_template("summary_v1", result.facts)
     rule = ConclusionRule(**result.conclusion_rule).describe()
-    body = f'<p class="qp-summary">{rendered.html}</p><p class="qp-rule">Rule: {esc(rule)}</p>'
-    return SummaryView(html=body, plain=rendered.plain, rule=rule)
+    design = design_line(result)
+    body = (
+        f'<p class="qp-summary">{rendered.html}</p><p class="qp-design">{esc(design)}</p>'
+        f'<p class="qp-rule">Rule: {esc(rule)}</p>'
+    )
+    return SummaryView(html=body, plain=f"{rendered.plain} {design}", rule=rule)
+
+
+def design_line(result: StudyResult) -> str:
+    """How the groups were made, from the engine's design record."""
+    design = result.design
+    marker = design.group_var.removesuffix("_high") or design.group_var
+    return (
+        f"Groups by {marker} expression, top {design.cut:.0%}: {marker}-high {design.n_hi} vs "
+        f"rest {design.n_lo}. Expression-defined, not a clinical call."
+    ).replace("%", " %")
 
 
 # ---------- robustness meter ----------
@@ -119,6 +133,7 @@ def meter_rows(result: StudyResult, genes: Iterable[str] | None = None) -> list[
 def meter_html(result: StudyResult, genes: Iterable[str] | None = None) -> str:
     """HTML bars: how often each conclusion holds across the reasonable analyses."""
     caption = render_template("meter_v1", result.facts).html
+    of_cells = f" of {_fact_html(result.facts, 'f_n_cells')}" if "f_n_cells" in result.facts else ""
     bars = []
     for row in meter_rows(result, genes):
         width = max(0.0, min(1.0, row.holds)) * 100
@@ -128,7 +143,7 @@ def meter_html(result: StudyResult, genes: Iterable[str] | None = None) -> str:
             f'<div class="qp-meter-row {tone}"><span class="qp-gene">{esc(row.gene)}</span>'
             f'<span class="qp-call">{esc(row.fold_change)} {esc(row.conclusion)}</span>'
             f'<span class="qp-bar"><span class="qp-fill" style="width:{width:.1f}%"></span></span>'
-            f'<span class="qp-holds">holds in {holds}</span></div>'
+            f'<span class="qp-holds">holds in {holds}{of_cells}</span></div>'
         )
     return f'<div class="qp-meter"><p>{caption}</p>{"".join(bars)}</div>'
 
@@ -164,6 +179,7 @@ class OptionRow:
     recommended: bool
     chosen: bool
     cells: tuple[tuple[str, str, str], ...]  # (gene, fold change, conclusion word)
+    not_recommended: bool = False  # e.g. a single control gene (MIQE)
 
 
 @dataclass(frozen=True)
@@ -185,7 +201,9 @@ class CardView:
     html: str
 
 
-def _status_line(card: DecisionCard, labels: Mapping[str, str]) -> str:
+def _status_line(
+    card: DecisionCard, labels: Mapping[str, str], pending_option: str | None = None
+) -> str:
     chosen = labels.get(card.decision or "", card.decision or "")
     if card.status == "auto_decided":
         reason = card.reason or ""
@@ -198,14 +216,26 @@ def _status_line(card: DecisionCard, labels: Mapping[str, str]) -> str:
         reason = f" Reason: {card.reason}" if card.reason else ""
         return f"Decided by {card.decided_by or 'someone'}: {chosen}.{reason}"
     if card.status == "pending_human":
-        return f"Waiting for a person: an agent asked to choose {chosen}."
+        # The request lives in the store's pending list; card.decision is the earlier choice.
+        asked = labels.get(pending_option or "", pending_option or "another option")
+        return f"Waiting for a person: an agent asked to choose {asked}."
     if card.impact.get("flips"):
         return "Your decision: this choice can change a conclusion."
     return "Open."
 
 
-def card_view(card: DecisionCard, facts: Facts, *, allowed_names: Iterable[str] = ()) -> CardView:
-    """The view of one card: title, status, impact, explanation and the options table."""
+def card_view(
+    card: DecisionCard,
+    facts: Facts,
+    *,
+    allowed_names: Iterable[str] = (),
+    pending_option: str | None = None,
+) -> CardView:
+    """The view of one card: title, status, impact, explanation and the options table.
+
+    ``pending_option`` is the option an agent asked for (from ``StudyStore.pending``); it is
+    named while the card waits for a person, because ``card.decision`` keeps the earlier choice.
+    """
     labels = {o.id: o.label for o in card.options}
     genes = tuple(card.options[0].per_gene) if card.options else ()
     rows = []
@@ -226,6 +256,7 @@ def card_view(card: DecisionCard, facts: Facts, *, allowed_names: Iterable[str] 
                 recommended=option.id == card.recommended,
                 chosen=option.id == card.decision,
                 cells=cells,
+                not_recommended=option.id in set(card.evidence.get("not_recommended", ())),
             )
         )
     try:
@@ -238,9 +269,10 @@ def card_view(card: DecisionCard, facts: Facts, *, allowed_names: Iterable[str] 
         explanation_html = esc(explanation_plain)
     flipped = FLIPPED_FACT.get(card.kind)
     if flipped in facts and "f_n_genes" in facts and card.impact.get("flips"):
-        impact = to_html(
-            "{{" + flipped + "}} of {{f_n_genes}} conclusions change with this choice", facts
-        )
+        tokens = "{{" + flipped + "}} of {{f_n_genes}} conclusions change with this choice"
+        if card.kind == "reference_set" and "f_n_flipped_refset_min3" in facts:
+            tokens += "; {{f_n_flipped_refset_min3}} even between sets of three or more genes"
+        impact = to_html(tokens, facts)
     elif card.impact.get("flips"):
         impact = "Can change a conclusion"
     else:
@@ -252,7 +284,7 @@ def card_view(card: DecisionCard, facts: Facts, *, allowed_names: Iterable[str] 
         rank=card.rank,
         status=card.status,
         needs_human=bool(card.impact.get("flips")),
-        status_line=esc(_status_line(card, labels)),
+        status_line=esc(_status_line(card, labels, pending_option)),
         impact_html=impact,
         explanation_html=explanation_html,
         explanation_plain=explanation_plain,
@@ -271,6 +303,11 @@ def _with_html(view: CardView) -> CardView:
                                    "chosen" if row.chosen else "") if c)  # fmt: skip
         tags = ' <span class="qp-tag">recommended</span>' if row.recommended else ""
         tags += ' <span class="qp-tag chosen">chosen</span>' if row.chosen else ""
+        tags += (
+            ' <span class="qp-tag miqe">not recommended (MIQE)</span>'
+            if row.not_recommended
+            else ""
+        )
         cells = "".join(
             f'<td>{fc} <span class="qp-c qp-c-{slug(word)}">{word}</span></td>'
             for _, fc, word in row.cells
