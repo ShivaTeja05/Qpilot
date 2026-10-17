@@ -944,7 +944,47 @@ def check_with_facts(
         return ProposalCheck(
             status="cannot_check", note="no engine check can test a target's role on its own"
         )
+    if kind == "curve.well_call":
+        return curve_check(proposal.subject, payload, wells)
     return ProposalCheck(status="cannot_check", note="no engine check exists for this kind")
+
+
+def curve_check(subject: str, payload: Mapping[str, Any], wells: pd.DataFrame) -> ProposalCheck:
+    """``D-CURVE``: LinRegPCR's own fit refutes a well call only when it is unambiguous.
+
+    A call "not amplified" is contradicted by a well LinRegPCR fitted completely (an
+    exponential phase, a plateau and a quantity); a call "amplified" is contradicted by a well
+    where LinRegPCR found no exponential phase and no quantity. Anything in between (a late
+    curve without a plateau, a quantity without LinRegPCR's own amplification call) is
+    ``consistent``: the curve itself has to be looked at.
+    """
+    if "/" not in subject:
+        return _check("contradicted", "D-CURVE", {}, "a well call names a well as run/well")
+    rows = _subject_wells(subject, wells)
+    if rows.empty:
+        return _check("contradicted", "D-COVER", {}, "no well in the file has this position")
+    claim = payload.get("amplified")
+    if not isinstance(claim, bool):
+        return _check("contradicted", "D-CURVE", {}, "a well call is amplified true or false")
+    row = rows.iloc[0]
+    has_quantity = bool(pd.notna(row["n0"]))
+    fitted = bool(row["amplification"]) and bool(row["plateau"]) and has_quantity
+    absent = not bool(row["amplification"]) and not has_quantity
+    details = {
+        "linregpcr_amplification": bool(row["amplification"]),
+        "linregpcr_plateau": bool(row["plateau"]),
+        "linregpcr_quantity": has_quantity,
+        "cq": None if pd.isna(row["cq"]) else round(float(row["cq"]), 4),
+        "eff_indiv": None if pd.isna(row["eff_indiv"]) else round(float(row["eff_indiv"]), 4),
+    }
+    if (claim is False and fitted) or (claim is True and absent):
+        note = (
+            "LinRegPCR fitted a complete amplification curve in this well"
+            if claim is False
+            else "LinRegPCR found no exponential phase in this well"
+        )
+        return _check("contradicted", "D-CURVE", details, note)
+    return _check("consistent", "D-CURVE", details, "the curve itself has to be looked at")
 
 
 def _sample_roles(facts: FileFacts, accepted: list[Proposal]) -> dict[str, str]:

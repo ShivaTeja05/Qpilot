@@ -632,3 +632,48 @@ def test_demo_water_ntc_wells(demo_facts):
     assert check.details["n_wells"] == 192 and check.details["n_late"] == 23
     assert check.details["n_like_sample"] == 0
     assert check.details["min_gap_cycles"] > 5
+
+
+# ---- D-CURVE: LinRegPCR refutes a well call only when its fit is unambiguous ----------------
+
+
+def _curve_wells():
+    import pandas as pd
+
+    nan = float("nan")
+    return pd.DataFrame(
+        {
+            "run_id": ["p1", "p1", "p1", "p1"],
+            "well": ["A1", "A2", "A3", "A4"],
+            "sample": ["s1", "s2", "s3", "s4"],
+            "amplification": [True, False, True, False],
+            "plateau": [True, False, False, True],
+            "n0": [120.0, nan, 3.0, 0.5],
+            "cq": [11.2, nan, 37.9, 41.0],
+            "eff_indiv": [1.92, nan, 1.6, 1.1],
+        }
+    )
+
+
+def test_curve_check_refutes_only_unambiguous_disagreements():
+    from qpilot.qpcr.design_checks import curve_check
+
+    wells = _curve_wells()
+    full = curve_check("p1/A1", {"amplified": False}, wells)
+    assert full.status == "contradicted" and full.rule_ids == ["D-CURVE"]
+    assert full.details["cq"] == 11.2
+    assert curve_check("p1/A1", {"amplified": True}, wells).status == "consistent"
+    assert curve_check("p1/A2", {"amplified": True}, wells).status == "contradicted"
+    assert curve_check("p1/A2", {"amplified": False}, wells).status == "consistent"
+    for well in ("p1/A3", "p1/A4"):  # late, no plateau, or a quantity without LinRegPCR's call
+        for claim in (True, False):
+            assert curve_check(well, {"amplified": claim}, wells).status == "consistent"
+
+
+def test_curve_check_refuses_bad_subjects_and_payloads():
+    from qpilot.qpcr.design_checks import curve_check
+
+    wells = _curve_wells()
+    assert curve_check("A1", {"amplified": True}, wells).status == "contradicted"
+    assert curve_check("p1/H12", {"amplified": True}, wells).rule_ids == ["D-COVER"]
+    assert curve_check("p1/A1", {"amplified": "yes"}, wells).status == "contradicted"
