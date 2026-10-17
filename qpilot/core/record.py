@@ -6,13 +6,21 @@ same pattern as ``StudyStore.ensure_study``). A record contains::
     input.rdml          the input file, byte for byte (when it is known)
     results.json  cards.json  facts.json  grid.csv  decisions.jsonl  pending.jsonl
     design.json         how the groups were defined
+    study_design.json   the confirmed StudyDesign (designed studies only; rerun uses it)
+    proposals.jsonl     what the AI proposed and what a person did, hash-chained (Studio)
+    quarantine.json     the free text the proposals cite (pseudonyms in a shared record)
     choices.json        the primary analysis choices, the conclusion rule, each card's decision
     versions.json       python, platform, qpilot version and git commit, vendored method commit
-    record.json         record id, chain head, timestamps (not part of the determinism check)
+    record.json         record id, chain heads, timestamps (not part of the determinism check)
     CHECKSUMS.sha256    sha256 of every other file; record_id = sha256 of this file
 
+``proposals.jsonl`` and ``quarantine.json`` come from the input's Studio session
+(``sessions/<input_sha256>/``), the one place Studio writes them; a copy in the study's own
+workspace is used only when the session has none. The pseudonym key (``.keys/``) is never
+copied.
+
 The record is **tamper-evident, not tamper-proof**: ``verify`` detects any changed file and the
-first broken link in the decision chain, but it cannot prove who made a record.
+first broken link in the decision and proposal chains, but it cannot prove who made a record.
 """
 
 from __future__ import annotations
@@ -30,8 +38,25 @@ from pathlib import Path, PurePosixPath
 from pydantic import BaseModel
 
 from qpilot import __version__
+from qpilot.core.firewall import (
+    QUARANTINE_FILE,
+    Quarantine,
+    QuarantineError,
+    quarantine_json,
+    read_quarantine,
+)
+from qpilot.core.proposals import (
+    PROPOSALS_FILE,
+    chain_lines,
+    first_altered_line,
+    replay,
+    verify_proposal_chain,
+)
+from qpilot.core.pseudonym import TOKEN, Pseudonymiser
 from qpilot.core.store import (
     DECISION_FIELDS,
+    DESIGN_FILE,
+    SESSIONS_DIR,
     StudyStore,
     _lines,
     atomic_write,
@@ -42,8 +67,10 @@ from qpilot.core.store import (
     read_entries,
     replay_cards,
     sha256_file,
+    study_key,
 )
 from qpilot.schemas import DecisionCard, DecisionEntry, StudyResult
+from qpilot.schemas_studio import ProposalEntry, StudyDesign
 
 CHECKSUMS = "CHECKSUMS.sha256"
 WORKSPACE_FILES = (
@@ -57,7 +84,9 @@ WORKSPACE_FILES = (
     "harness_scorecard.json",
     "attempts.jsonl",
     "autonomy.json",
+    DESIGN_FILE,
 )
+SESSION_FILES = (PROPOSALS_FILE, QUARANTINE_FILE)  # from the session; never .keys/
 MAX_UNZIPPED_BYTES = 1 << 30
 MAX_MEMBERS = 10_000
 # Files an operating system adds to a folder by itself; verify neither lists nor counts them.
@@ -101,17 +130,31 @@ class VerifyReport(BaseModel):
     chain_broken_at: int | None = None
     inconsistent: list[str] = []
     n_entries: int = 0
+    has_proposals: bool = False
+    proposal_chain_broken_at: int | None = None
+    n_proposal_entries: int = 0
 
     def summary(self) -> str:
         """One human-readable line per problem, or ``OK``."""
         if self.ok:
-            return f"OK; decision chain: {self.n_entries} entries, intact"
+            text = f"OK; decision chain: {self.n_entries} entries, intact"
+            if self.has_proposals:
+                text += f"; proposal chain: {self.n_proposal_entries} entries, intact"
+            return text
         lines = [f"changed: {name}" for name in self.changed]
         lines += [f"missing: {name}" for name in self.missing]
         lines += [f"not in checksums: {name}" for name in self.unlisted]
         if self.chain_broken_at is not None:
             lines.append(f"decision chain broken at entry {self.chain_broken_at}")
-        lines += [f"does not match the decision chain: {item}" for item in self.inconsistent]
+        if self.proposal_chain_broken_at is not None:
+            lines.append(f"proposal chain broken at entry {self.proposal_chain_broken_at}")
+        for item in self.inconsistent:
+            if item.startswith((PROPOSALS_FILE, "record.json proposals_head")):
+                lines.append(f"does not match the proposal chain: {item}")
+            elif item.startswith((QUARANTINE_FILE, DESIGN_FILE)):
+                lines.append(f"inconsistent: {item}")
+            else:
+                lines.append(f"does not match the decision chain: {item}")
         return "\n".join(lines)
 
 
@@ -182,17 +225,59 @@ def _write_checksums(record_dir: Path) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _copy_session(
+    store: StudyStore,
+    folders: tuple[Path, Path],
+    record_dir: Path,
+    result: StudyResult,
+    share: bool,
+) -> str | None:
+    """Copy the proposal chain and the quarantine into a record; return the chain's head.
+
+    Each file comes from the first folder that has it (the session, then the study's
+    workspace). A shared record gets each quarantined text's pseudonym instead of the text.
+    Returns None when there is no proposal chain to copy.
+    """
+    for name in SESSION_FILES:
+        folder = next((f for f in folders if (f / name).exists()), None)
+        if folder is None:
+            continue
+        try:
+            if name == QUARANTINE_FILE and share:
+                entries = Pseudonymiser(folder).pseudonymise_entries(Quarantine(folder).all())
+                atomic_write(record_dir / name, quarantine_json(entries, pseudonymised=True))
+            else:
+                with store._locked(folder):
+                    shutil.copyfile(folder / name, record_dir / name)
+        except (QuarantineError, ValueError) as err:
+            raise RecordError(f"{name} cannot be exported: {err}") from err
+    if not (record_dir / PROPOSALS_FILE).exists():
+        return None
+    lines = chain_lines(record_dir / PROPOSALS_FILE)
+    try:
+        return ProposalEntry.model_validate_json(lines[-1]).hash if lines else result.input_sha256
+    except ValueError as err:
+        raise RecordError(f"{PROPOSALS_FILE} is damaged; not exporting it") from err
+
+
 def write_record(
     store: StudyStore,
     study_id: str,
     out_dir: str | Path,
     rdml_path: str | Path | None = None,
     include_input: bool = True,
+    share: bool = False,
 ) -> RecordInfo:
     """Copy a study's workspace into ``out_dir`` and add design, choices, versions, checksums.
 
     With ``include_input=False`` the raw input file (which holds sample names and curves) is
     left out: the record can still be verified but not re-run.
+
+    ``share=True`` marks a record for sharing: ``quarantine.json`` carries each text's
+    pseudonym (same ``text_id``) instead of the text, and the raw input is always left out.
+    This is pseudonymisation, not anonymisation: proposal subjects and payloads (sample ids)
+    stay in ``proposals.jsonl`` because they are inside its hash chain, and a ``text_id`` is an
+    unkeyed hash of the original text, so anyone who can guess a name can confirm it.
     """
     workspace = store.workspace(study_id)
     result = store.get(study_id)
@@ -207,6 +292,10 @@ def write_record(
                 shutil.copyfile(src, record_dir / name)
         head = store.chain_head(study_id)
         choices = _choices(result, store, study_id)
+    session = store.root / SESSIONS_DIR / result.input_sha256
+    proposals_head = _copy_session(store, (session, workspace), record_dir, result, share)
+    if share:
+        include_input = False
     source = Path(rdml_path) if rdml_path is not None else store.source(study_id)
     included = False
     if source is not None and include_input:
@@ -225,6 +314,10 @@ def write_record(
         "written_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "note": "Tamper-evident, not tamper-proof. Research use only.",
     }
+    if proposals_head is not None:
+        meta["proposals_head"] = proposals_head
+    if share:
+        meta["shared"] = True
     atomic_write(record_dir / "record.json", dump_json(meta))
     record_id = _write_checksums(record_dir)
     n_files = sum(1 for p in record_dir.rglob("*") if p.is_file())
@@ -260,7 +353,13 @@ def _read_checksums(record_dir: Path) -> dict[str, str]:
 
 
 def verify(record_dir: str | Path) -> VerifyReport:
-    """Check every file against ``CHECKSUMS.sha256`` and walk the decision chain."""
+    """Check every file against ``CHECKSUMS.sha256`` and walk the decision and proposal chains.
+
+    The proposal chain (when the record has one) is checked on its own, so a changed line is
+    caught even after the checksums are rewritten: every link and hash, every line's exact
+    canonical bytes, a replay in which only a person decides, and ``record.json``'s
+    ``proposals_head``. ``quarantine.json`` and ``study_design.json`` must be well formed.
+    """
     record_dir = Path(record_dir)
     if not (record_dir / CHECKSUMS).exists():
         return VerifyReport(ok=False, missing=[CHECKSUMS])
@@ -290,7 +389,13 @@ def verify(record_dir: str | Path) -> VerifyReport:
     inconsistent = _consistency(record_dir, entries) if broken is None else []
     if root is not None and broken is None:
         inconsistent += _metadata(record_dir, root, entries)
-    ok = not (missing or unlisted or changed or inconsistent) and broken is None
+    proposals = _proposal_chain(record_dir, root)
+    inconsistent += proposals.problems + _studio_files(record_dir, root)
+    ok = (
+        not (missing or unlisted or changed or inconsistent)
+        and broken is None
+        and proposals.broken is None
+    )
     return VerifyReport(
         ok=ok,
         changed=changed,
@@ -299,7 +404,93 @@ def verify(record_dir: str | Path) -> VerifyReport:
         chain_broken_at=broken,
         inconsistent=inconsistent,
         n_entries=n_entries,
+        has_proposals=proposals.present,
+        proposal_chain_broken_at=proposals.broken,
+        n_proposal_entries=proposals.n_entries,
     )
+
+
+class _ProposalCheck(BaseModel):
+    present: bool = False
+    n_entries: int = 0
+    broken: int | None = None
+    problems: list[str] = []
+
+
+def _proposal_chain(record_dir: Path, root: StudyResult | None) -> _ProposalCheck:
+    """Walk ``proposals.jsonl`` (root = the input's sha256) and check record.json names its head.
+
+    ``record.json`` naming a proposal chain that is not there is reported too, so deleting the
+    whole file is caught after a reseal.
+    """
+    path = record_dir / PROPOSALS_FILE
+    try:
+        meta = json.loads((record_dir / "record.json").read_text())
+        named = meta.get("proposals_head") if isinstance(meta, dict) else None
+    except (OSError, ValueError, RecursionError):
+        named = None  # _metadata reports an unreadable record.json
+    if not path.exists():
+        missing = [f"{PROPOSALS_FILE} missing although record.json names a proposal chain"]
+        return _ProposalCheck(problems=missing if named is not None else [])
+    try:
+        lines = chain_lines(path)
+    except (OSError, UnicodeDecodeError):
+        return _ProposalCheck(present=True, broken=1)
+    if root is None:
+        return _ProposalCheck(present=True, n_entries=len(lines), broken=1)
+    entries = []
+    for position, line in enumerate(lines, start=1):
+        try:
+            entries.append(ProposalEntry.model_validate_json(line))
+        except (ValueError, RecursionError):
+            return _ProposalCheck(present=True, n_entries=len(lines), broken=position)
+    broken = verify_proposal_chain(entries, root.input_sha256)
+    if broken is None:
+        broken = first_altered_line(lines, entries)
+    if broken is not None:
+        return _ProposalCheck(present=True, n_entries=len(entries), broken=broken)
+    problems = [f"{PROPOSALS_FILE} {p}" for p in replay(entries, root.input_sha256[:12]).problems]
+    head = entries[-1].hash if entries else root.input_sha256
+    if named != head:
+        problems.append("record.json proposals_head is not the last entry of the proposal chain")
+    return _ProposalCheck(present=True, n_entries=len(entries), problems=problems)
+
+
+def _studio_files(record_dir: Path, root: StudyResult | None) -> list[str]:
+    """What is wrong with ``quarantine.json`` and ``study_design.json`` (each optional)."""
+    problems = []
+    quarantine = record_dir / QUARANTINE_FILE
+    if quarantine.exists():
+        try:
+            entries, pseudonymised = read_quarantine(quarantine)
+            meta = json.loads((record_dir / "record.json").read_text())
+            shared = bool(meta.get("shared")) if isinstance(meta, dict) else False
+        except (QuarantineError, OSError, ValueError, RecursionError):
+            problems.append(f"{QUARANTINE_FILE} unreadable, or a text_id does not match its text")
+        else:
+            if pseudonymised and not all(TOKEN.match(e.value) for e in entries):
+                problems.append(f"{QUARANTINE_FILE} says pseudonymised but holds other text")
+            if shared and not pseudonymised:
+                problems.append(f"{QUARANTINE_FILE} holds original text in a shared record")
+    design_path = record_dir / DESIGN_FILE
+    if design_path.exists():
+        try:
+            text = design_path.read_text(encoding="utf-8")
+            design = StudyDesign.model_validate_json(text)
+        except (OSError, ValueError, RecursionError):
+            return [*problems, f"{DESIGN_FILE} unreadable"]
+        if text != design.canonical():
+            problems.append(f"{DESIGN_FILE} is not the canonical form of its design")
+        if root is not None:
+            try:
+                key = study_key(root.input_sha256, design)
+            except ImportError:
+                key = None  # a build without the qPCR plugin cannot recompute the study key
+            except (ValueError, TypeError):
+                key = ""
+            if key is not None and root.study_id != key[:12]:
+                problems.append(f"{DESIGN_FILE} is not the design this study was analysed with")
+    return problems
 
 
 def _first_altered_line(log: Path, entries: list[DecisionEntry]) -> int | None:
@@ -478,17 +669,16 @@ def _card_structure(cards: list[dict]) -> str:
 def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> RerunReport:
     """Re-run from ``input.rdml`` and compare results, facts, grid and card structure.
 
-    Lazily imports ``qpilot.qpcr.study.run_study`` (documented exception to the core/plugin
-    rule). ``results.json`` and ``facts.json`` must match byte for byte, ``grid.csv`` too when
-    the record has one, and the cards must match apart from decisions.
+    Lazily imports ``qpilot.qpcr.study`` (documented exception to the core/plugin rule).
+    ``results.json`` and ``facts.json`` must match byte for byte, ``grid.csv`` too when the
+    record has one, and the cards must match apart from decisions.
     """
     record_dir = Path(record_dir)
     results_path = rerun(record_dir, out_dir)
     out = results_path.parent
     from qpilot.core.store import _grid_csv
-    from qpilot.qpcr.study import run_study  # documented lazy import
 
-    regenerated = run_study(record_dir / "input.rdml")
+    regenerated = _run_engine(record_dir, record_dir / "input.rdml")
     result, cards = regenerated[0], regenerated[1]
     grid = regenerated[2] if len(regenerated) > 2 else None
     facts = {fid: f.model_dump(mode="json") for fid, f in result.facts.items()}
@@ -528,11 +718,33 @@ def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> 
     )
 
 
+def _run_engine(record_dir: Path, source: Path) -> tuple:
+    """``run_study`` on the record's input, with the record's confirmed design when it has one.
+
+    Lazily imports ``qpilot.qpcr.study`` (documented exception to the core/plugin rule). A
+    record with ``study_design.json`` is re-run with ``StudySettings.from_design(design)``;
+    one without it with the default settings, as before.
+    """
+    from qpilot.qpcr.study import run_study  # documented lazy import
+
+    design_path = record_dir / DESIGN_FILE
+    if not design_path.exists():
+        return run_study(source)
+    from qpilot.qpcr.study import StudySettings  # documented lazy import
+
+    try:
+        design = StudyDesign.model_validate_json(design_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, RecursionError) as err:
+        raise RecordError(f"{DESIGN_FILE} is unreadable, so the record cannot be re-run") from err
+    return run_study(source, StudySettings.from_design(design))
+
+
 def rerun(record_dir: str | Path, out_dir: str | Path | None = None) -> Path:
     """Re-run the analysis from the record's input; return the regenerated ``results.json``.
 
-    Lazily imports ``qpilot.qpcr.study.run_study`` (documented exception to the core/plugin
-    rule). :func:`rerun_compare` also checks facts, grid and cards.
+    Lazily imports ``qpilot.qpcr.study`` (documented exception to the core/plugin rule), and
+    rebuilds the settings from ``study_design.json`` when the record has one.
+    :func:`rerun_compare` also checks facts, grid and cards.
     """
     record_dir = Path(record_dir)
     source = record_dir / "input.rdml"
@@ -544,9 +756,7 @@ def rerun(record_dir: str | Path, out_dir: str | Path | None = None) -> Path:
     out = Path(out_dir) if out_dir else record_dir.parent / f"{record_dir.name}-rerun"
     if out.resolve() == record_dir.resolve() or record_dir.resolve() in out.resolve().parents:
         raise RecordError("--out is inside the record; re-run into another folder")
-    from qpilot.qpcr.study import run_study  # documented lazy import
-
-    result = run_study(source)[0]
+    result = _run_engine(record_dir, source)[0]
     out.mkdir(parents=True, exist_ok=True)
     path = out / "results.json"
     atomic_write(path, dump_json(result.model_dump(mode="json")))
