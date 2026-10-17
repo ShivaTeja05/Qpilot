@@ -41,7 +41,11 @@ from qsim.study_space import space_for
 LOCAL_DEFAULT = ModelConfig(
     provider="openai_compatible", endpoint="http://localhost:11434", model="qwen2.5:7b"
 )
-MODEL_WRITES = ("gene", "decision", "overview")  # what-if and issue answers use exact templates
+MODEL_WRITES = (
+    "gene",
+    "decision",
+    "overview",
+)  # tools whose answer the model may word, when allowed
 LOCAL_TIMEOUT_S = 180.0  # a 7B model on a laptop can take a minute when the machine is busy
 TOOLS = ("gene", "whatif", "decision", "issues", "overview")
 METHOD_PHRASES = ("2-fold", "p < 0.05", "95 %", "qPCR", "ddCq", "ΔΔCq")
@@ -152,6 +156,7 @@ class Asker:
         results: str | Path = "results",
         client: ModelClient | None = None,
         rdml: str | None = None,
+        model_writes: bool = False,
     ) -> None:
         self.dir = Path(results)
         self.explain = json.loads((self.dir / "explain.json").read_text())
@@ -160,6 +165,9 @@ class Asker:
         self.issues = json.loads((self.dir / "issues.json").read_text())
         self.client = client if client is not None else default_client()
         self._rdml = rdml
+        # by default the model reads the question and the engine's checked template writes the answer;
+        # model wording is opt-in because a number check cannot catch a sentence that misuses a fact
+        self.model_writes = model_writes
         self._engine: Engine | None = None
         self.genes = list(self.explain)
 
@@ -578,7 +586,7 @@ class Asker:
             f"{fid}: {meaning[fid]} = {render_tokens('{{' + fid + '}}', facts)}" for fid in facts
         )
         problems: list[str] = []
-        if self.client.available and tool in MODEL_WRITES:
+        if self.client.available and self.model_writes and tool in MODEL_WRITES:
             messages = [
                 {
                     "role": "user",

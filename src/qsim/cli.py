@@ -57,7 +57,7 @@ def cmd_ask(args: argparse.Namespace) -> int:
     from qsim.ask import Asker
 
     client = ModelClient(config=ModelConfig()) if args.no_model else None
-    asker = Asker(args.results, client=client, rdml=args.rdml)
+    asker = Asker(args.results, client=client, rdml=args.rdml, model_writes=args.model_writes)
     ans = asker.answer(" ".join(args.question))
     print(ans.text)
     print(
@@ -119,7 +119,12 @@ def main(argv: list[str] | None = None) -> int:
     a = sub.add_parser("ask", help="ask a question in plain words (local model, checked numbers)")
     a.add_argument("question", nargs="+")
     a.add_argument("--results", default="results")
-    a.add_argument("--no-model", action="store_true", help="answer from templates only")
+    a.add_argument("--no-model", action="store_true", help="no model at all (keyword routing)")
+    a.add_argument(
+        "--model-writes",
+        action="store_true",
+        help="let the model word the answer (numbers still checked)",
+    )
     a.add_argument("-v", "--verbose", action="store_true")
     a.set_defaults(func=cmd_ask)
     v = sub.add_parser(

@@ -207,7 +207,11 @@ def test_model_answer_with_naked_numbers_is_rejected():
             "ODC1 is 3.6 times higher.",
         ]
     )
-    asker = Asker(RESULTS, client=ModelClient(backend=MockBackend(lambda s, m: next(replies))))
-    ans = asker.answer("Is ODC1 solid?")
+    asker = Asker(
+        RESULTS,
+        client=ModelClient(backend=MockBackend(lambda s, m: next(replies))),
+        model_writes=True,
+    )
+    ans = asker.answer("Tell me about ODC1 please")
     assert ans.routed_by == "model" and ans.written_by == "template"
     assert ans.problems  # the validator's reasons are kept
