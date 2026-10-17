@@ -92,3 +92,18 @@ def test_scorecard_endpoint_has_no_credentials(store, study, fixture_result, fix
     assert "pw" not in json.dumps(report.model_dump()) and report.endpoint.startswith(
         "http://127.0.0.1:9"
     )
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        '{"tool": "qpcr_plan", "args": {"fc": "ten"}}',
+        '{"tool": "qpcr_plan", "args": {"n_per_group": "ten", "sd_log2": "x"}}',
+        '{"tool": "qpcr_plan", "args": {"fc": [1, 2]}}',
+    ],
+)
+def test_malformed_tool_call_falls_back_instead_of_crashing(store, study, reply):
+    client = ModelClient(MockBackend([reply, "{{f_ans_fc}}"]))
+    out = ask("What is the fold change of ODC1?", store, study, client=client, log=False)
+    assert "malformed" in out.error and not out.tool_from_model
+    assert out.tool_calls[0]["tool"] == "qpcr_robustness" and out.validated

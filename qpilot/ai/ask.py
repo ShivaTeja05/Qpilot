@@ -352,7 +352,16 @@ def ask(
         except ModelUnavailable as err:
             model_used, error = False, str(err)
 
-    out = run_tool(ctx, tool, args)
+    try:
+        out = run_tool(ctx, tool, args)
+    except (TypeError, ValueError, KeyError) as err:
+        # A model sent arguments of the wrong type or shape: fall back to qPilot's own routing.
+        error = (
+            f"the model's {tool} call was malformed ({type(err).__name__}); keyword routing used"
+        )
+        tool, args = route(ctx, question)
+        tool_from_model = False
+        out = run_tool(ctx, tool, args)
     calls.append(
         {"tool": tool, "args": args, "status": out.get("status"), "error": out.get("error")}
     )
