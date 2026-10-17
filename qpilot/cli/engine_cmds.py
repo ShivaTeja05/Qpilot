@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from pathlib import Path
 
 from qpilot.cli._types import Command
 from qpilot.io.datasets import (
@@ -205,6 +206,41 @@ def _print_study(result, cards, settings) -> None:
         print(f"  {card.rank}. {card.kind}: {what}")
 
 
+def _explain_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("template", nargs="?", help="template key, e.g. refset_v1 (omit to list)")
+    parser.add_argument("--gene", default=None, help="gene, for confidence_v1")
+    parser.add_argument(
+        "--results",
+        default=None,
+        help="a results.json to read facts from (default: analyse the cached demo study)",
+    )
+    parser.add_argument(
+        "--tokens", action="store_true", help="print the {{fact_id}} token text instead"
+    )
+
+
+def _explain(args: argparse.Namespace) -> int:
+    from qpilot.explain.templates import TEMPLATES, TemplateError, render_template
+    from qpilot.schemas import StudyResult
+
+    if not args.template:
+        print("\n".join(sorted(TEMPLATES)))
+        return 0
+    try:
+        if args.results:
+            facts = StudyResult.model_validate_json(Path(args.results).read_text()).facts
+        else:
+            from qpilot.qpcr.study import run_study
+
+            facts = run_study(default_cache_dir() / "data_vermeulen_raw.rdml")[0].facts
+        rendered = render_template(args.template, facts, gene=args.gene)
+    except (KeyError, TemplateError, ValueError, OSError) as err:
+        print(f"qpilot explain: {err}", file=sys.stderr)
+        return 1
+    print(rendered.tokens if args.tokens else rendered.plain)
+    return 0
+
+
 COMMANDS: list[Command] = [
     (
         "fetch-demo",
@@ -217,6 +253,12 @@ COMMANDS: list[Command] = [
         "analyse a study: results, robustness, confidence and Decision Cards",
         _run_arguments,
         _run,
+    ),
+    (
+        "explain",
+        "print one explanation template rendered from a study's facts",
+        _explain_arguments,
+        _explain,
     ),
     (
         "validate",
