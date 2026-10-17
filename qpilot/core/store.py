@@ -43,6 +43,41 @@ SUGGEST_REASON = (
 AGENT_LEVELS = ("suggest", "decide_and_tell")
 
 
+# Later entries on the same card that make a write out of date: a new decision for any write,
+# and also a new or settled request when a person turns requests down (they must have seen it).
+STALE_IF = {
+    "applied": ("applied", "auto"),
+    "pending_human": ("applied", "auto"),
+    "rejected": ("applied", "auto", "pending_human", "rejected"),
+}
+# Workspaces written before this card format (cards without these impact keys) are re-analysed
+# when opened, so their choices escalate the way this qPilot escalates them.
+CARDS_FORMAT = 2
+REQUIRED_IMPACT = ("flips_anywhere",)
+
+
+def changed_since(
+    entries: list[DecisionEntry], root: str, expected_head: str, card_id: str, status: str
+) -> bool:
+    """Whether the study changed, in a way that matters to this write, since ``expected_head``.
+
+    On the same card, see ``STALE_IF``. On other cards, only a decision by a person or the system
+    counts: an agent's requests (or its decide-and-tell choices) elsewhere never make a write
+    stale, so an agent cannot keep a person from deciding. A head that is not in the chain counts
+    as changed.
+    """
+    heads = [root, *(e.hash for e in entries)]
+    if expected_head not in heads:
+        return True
+    later = entries[heads.index(expected_head) :]
+    return any(
+        e.status in STALE_IF[status]
+        if e.card_id == card_id
+        else e.actor != "agent" and e.status in ("applied", "auto")
+        for e in later
+    )
+
+
 def pending_after(entries: list[DecisionEntry], legacy: bool = False) -> list[DecisionEntry]:
     """The agent requests still waiting after a log, replayed the way the store keeps them.
 
@@ -287,6 +322,7 @@ class StudyStore:
             atomic_write(workspace / "facts.json", dump_json(facts))
             if grid is not None:
                 atomic_write(workspace / "grid.csv", _grid_csv(grid))
+            atomic_write(workspace / "format.json", dump_json({"cards": CARDS_FORMAT}))
 
     def append_decision(
         self,
@@ -394,7 +430,9 @@ class StudyStore:
             entries = read_entries(log)
             root = self.get(study_id).input_sha256
             head = entries[-1].hash if entries else root
-            if expected_head is not None and expected_head != head:
+            if expected_head is not None and changed_since(
+                entries, root, expected_head, card_id, status
+            ):
                 # Logged outside the chain: a refused attempt must not move the head, or other
                 # readers would be told the card changed when nothing did.
                 attempt = {
@@ -482,9 +520,11 @@ class StudyStore:
         path = Path(rdml_path).resolve()
         digest = sha256_file(path)
         workspace = self.root / digest
-        if (workspace / "results.json").exists():
+        if (workspace / "results.json").exists() and not self._outdated(workspace):
             study_id = json.loads((workspace / "results.json").read_text())["study_id"]
         else:
+            # New, or written by an older qPilot: (re-)analyse. put() replays the log onto the
+            # new cards, so decisions people made are kept.
             from qpilot.qpcr.study import run_study  # documented lazy import
 
             out = run_study(path)
@@ -494,6 +534,21 @@ class StudyStore:
             study_id = result.study_id
         self.set_source(study_id, path)
         return study_id
+
+    @staticmethod
+    def _outdated(workspace: Path) -> bool:
+        """True for a workspace an older qPilot wrote, whose cards lack keys used to escalate."""
+        try:
+            fmt = json.loads((workspace / "format.json").read_text(encoding="utf-8"))
+            if fmt.get("cards", 0) >= CARDS_FORMAT:
+                return False
+        except (OSError, ValueError, AttributeError):
+            pass
+        try:
+            cards = json.loads((workspace / "cards.json").read_text(encoding="utf-8"))
+            return any(k not in c.get("impact", {}) for c in cards for k in REQUIRED_IMPACT)
+        except (OSError, ValueError, AttributeError, TypeError):
+            return True
 
     def set_source(self, study_id: str, rdml_path: str | Path) -> None:
         """Remember where the input file is, after checking it is the study's input."""

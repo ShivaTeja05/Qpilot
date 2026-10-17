@@ -7,6 +7,7 @@ import sys
 import anyio
 import pytest
 
+from qpilot.core.decisions import apply_decision
 from qpilot.core.store import StudyStore, sha256_file
 from qpilot.mcp_server import TOOL_NAMES, QpilotTools, check_path, create_server
 
@@ -195,6 +196,10 @@ def test_stdio_round_trip(demo, tmp_studies_dir, data_root):
                     },
                 )
                 assert decide["status"] == "pending_human"
+                # A person decides elsewhere in the meantime, so the agent's head is out of date.
+                apply_decision(
+                    StudyStore(tmp_studies_dir), study_id, "card_cutoff", "cut_20", "pi", "human"
+                )
                 stale = await call(
                     session,
                     "qpcr_decide",

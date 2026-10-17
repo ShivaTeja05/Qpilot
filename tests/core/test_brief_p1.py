@@ -127,3 +127,63 @@ def test_demo_empty_wells_card_needs_a_person_at_the_twenty_percent_cut(store, d
     store.set_autonomy(sid, "decide_and_tell")
     out = QpilotTools(store).qpcr_decide(sid, "card_undetermined", "cap", "agent idea")
     assert out["status"] == "pending_human"
+
+
+def test_agent_requests_elsewhere_never_block_a_person(store, study):
+    head = store.chain_head(study)
+    tools = QpilotTools(store)
+    for _ in range(3):
+        assert (
+            tools.qpcr_decide(study, "card_cutoff", "cut_20", "again")["status"] == "pending_human"
+        )
+    out = apply_decision(store, study, "card_refset", "recommended", "five", "human", head)
+    assert out.status == "applied"
+
+
+def test_a_persons_decision_elsewhere_still_marks_the_page_out_of_date(store, study):
+    head = store.chain_head(study)
+    apply_decision(store, study, "card_cutoff", "cut_20", "other tab", "human", head)
+    out = apply_decision(store, study, "card_refset", "recommended", "five", "human", head)
+    assert out.status == "stale" and out.chain_head == store.chain_head(study)
+
+
+def test_a_new_request_on_the_card_makes_turning_requests_down_stale(store, study):
+    from qpilot.core.decisions import reject_request
+
+    tools = QpilotTools(store)
+    tools.qpcr_decide(study, "card_refset", "hmbs_alone", "agent A")
+    seen = store.chain_head(study)
+    tools.qpcr_decide(study, "card_refset", "top2", "agent B")  # not seen by the person
+    assert reject_request(store, study, "card_refset", "no", seen).status == "stale"
+
+
+def test_a_workspace_from_an_older_qpilot_is_reanalysed_keeping_decisions(
+    store, study, fixture_result, fixture_cards, monkeypatch, tmp_path
+):
+    import json
+
+    import qpilot.qpcr.study as engine
+    from qpilot.core.store import sha256_file
+
+    rdml = tmp_path / "in.rdml"
+    rdml.write_bytes(b"stand-in")
+    digest = sha256_file(rdml)
+    old = fixture_result.model_copy(update={"input_sha256": digest, "study_id": digest[:12]})
+    store.put(old, fixture_cards)
+    sid = old.study_id
+    apply_decision(store, sid, "card_refset", "recommended", "kept", "human")
+    (store.workspace(sid) / "format.json").unlink()  # as an older qPilot left it
+    new_cards = [
+        c.model_copy(update={"impact": {**c.impact, "flips_anywhere": c.id != "card_cutoff"}})
+        for c in fixture_cards
+    ]
+    calls = []
+    monkeypatch.setattr(
+        engine, "run_study", lambda path: calls.append(path) or (old, new_cards, None)
+    )
+    assert store.ensure_study(rdml) == sid and len(calls) == 1
+    assert store.card(sid, "card_undetermined").impact["flips_anywhere"] is True
+    assert store.card(sid, "card_refset").decision == "recommended"  # replayed
+    assert json.loads((store.workspace(sid) / "format.json").read_text())["cards"] >= 2
+    store.ensure_study(rdml)
+    assert len(calls) == 1  # current now: not re-analysed again
