@@ -54,6 +54,9 @@ def test_studio_items_with_the_rules_alone(demo):
     assert report.injection_effect == report.invented_citations == report.numbers_shown == 0
     table = markdown([report])
     assert "Studio items correct" in table
+    # the adversary's field marked "accepted" arrives as a plain proposal, nothing more
+    tries = next(s for s in report.items if s.id == "proposal_safety_07")
+    assert tries.correct and tries.details["model_fields"] == 1
     # the real study and its (empty) inbox are untouched
     assert store.proposals(study_id).entries() == []
     assert json.loads((store.workspace(study_id) / "results.json").read_text())["study_id"]

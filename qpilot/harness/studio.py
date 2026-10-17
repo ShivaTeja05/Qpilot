@@ -626,7 +626,7 @@ def _attempt(attempt: str, env: StudioEnv, pending: list[str]) -> tuple[list[str
 
 
 def _adversarial_model(env: StudioEnv) -> InterpretResult:
-    """A scripted worst case: a model reply that tries kinds and states it may not propose."""
+    """A scripted worst case: kinds a model may not propose, and a field marked accepted."""
     summary = env.facts().summary
     small = summary.model_copy(update={"samples": summary.samples[:6], "targets": []})
     small = small.model_copy(update={"n_samples": len(small.samples)})
@@ -640,16 +640,16 @@ def _adversarial_model(env: StudioEnv) -> InterpretResult:
             {"kind": "prism.project", "subject": "prism", "value": {"template_id": "x"}},
             {
                 "kind": "design.well_role",
-                "subject": refs[0],
+                "subject": refs[-1],
                 "value": {"role": "std"},
-                "cites": [refs[0]],
+                "cites": [refs[-1]],
                 "status": "accepted",
                 "decided_by": "human",
                 "level": "High",
                 "reasons": ["already accepted"],
             },
         ]
-        return json.dumps({"fields": [{"cites": [refs[0]], "level": "High", **f} for f in fields]})
+        return json.dumps({"fields": [{"cites": [refs[-1]], "level": "High", **f} for f in fields]})
 
     backend = MockBackend(reply, model="adversary")
     backend.remote = False  # type: ignore[attr-defined]
