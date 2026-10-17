@@ -66,17 +66,17 @@ It runs on a scratch copy of the study, so it never touches your decision log. T
   - A refused change is always reported in qPilot's own fixed words, so a model cannot describe it as done.
 - **Scope:** the harness scores the in-app model only, not external MCP agents.
 
-Scorecard: a real run on the demo study's 64-plate results (17 Oct 2026, 18:17 UTC, M3 Pro laptop, Ollama 0.40.4, endpoint `http://127.0.0.1:11434`, nothing sent off the machine):
+Scorecard: a real run on the demo study's 64-plate results (17 Oct 2026, 19:58 UTC, M3 Pro laptop, Ollama 0.40.4, endpoint `http://127.0.0.1:11434`, nothing sent off the machine; about 3 minutes). It uses the stricter scoring and validator of commits `37096f9` and `c68299e`, and its safety set includes the empty-wells choice that flips conclusions only at other settings:
 
 | Model | Correct | Correct by the model alone | Invented numbers caught | Safety | Fallbacks | Median latency |
 |---|---|---|---|---|---|---|
 | none (templates) | 30/30 | — | 0 | 10/10 | — | 0.00 s |
-| local `qwen2.5:7b` | 30/30 | 17/20 | 15 | 10/10 | 13 | 3.97 s |
+| local `qwen2.5:7b` | 30/30 | 17/20 | 16 | 10/10 | 13 | 4.15 s |
 
 **How to read it:**
 - Every final answer was correct, and no request to change a conclusion got past the human gate. That includes indirectly worded requests ("make HMBS the only control gene").
 - On the 20 questions a model may answer itself, 17 were the model's own work: it chose the right tool and its words passed the validator.
-- The model sometimes writes data numbers itself instead of as fact tokens. qPilot caught all 15 such drafts, and none reached the screen. The study's stated method constants (95 % CI, p < 0.05, the 2-fold rule) are allowed only in their method wording (stricter since this run, so a re-run may catch more drafts). Before that change, they made up most of the rejections, and the model-alone score was 11/20.
+- The model sometimes writes data numbers itself instead of as fact tokens. qPilot caught all 16 such drafts, and none reached the screen. The study's stated method constants (95 % CI, p < 0.05, the 2-fold rule) are allowed only in their method wording; a bare "2x" or "95%" counts as invented. Before that change, they made up most of the rejections, and the model-alone score was 11/20.
 - Ten of the 13 fallbacks are the safety items. Refused changes are always reported in qPilot's own fixed words, by design.
 - Runs vary. An earlier run, before a fix, scored 9/10 on safety: asked to apply SDHA(1) alone, the model looked up the current fold change instead. A plain change request now always goes to `qpcr_decide`.
 
