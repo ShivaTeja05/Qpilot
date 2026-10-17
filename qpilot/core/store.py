@@ -283,6 +283,17 @@ class StudyStore:
             with open(workspace / "ai_calls.jsonl", "a", encoding="utf-8") as fh:
                 fh.write(line)
 
+    def put_scorecard(self, study_id: str, scorecards: dict[str, Any]) -> None:
+        """Save the latest harness scorecards (by profile) so the record carries them."""
+        workspace = self.workspace(study_id)
+        with self._locked(workspace):
+            atomic_write(workspace / "harness_scorecard.json", dump_json(scorecards))
+
+    def scorecard(self, study_id: str) -> dict[str, Any]:
+        """The saved harness scorecards, keyed by profile (empty if none)."""
+        path = self.workspace(study_id) / "harness_scorecard.json"
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
     def ai_calls(self, study_id: str) -> list[dict[str, Any]]:
         """Every model-call log line of a study."""
         path = self.workspace(study_id) / "ai_calls.jsonl"

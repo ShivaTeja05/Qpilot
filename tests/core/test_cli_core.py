@@ -40,3 +40,14 @@ def test_plan_cli(capsys):
     assert main(["plan", "--fc", "1"]) == 2
     assert main(["plan", "--json"]) == 0
     assert '"n_needed": null' in capsys.readouterr().out
+
+
+def test_harness_cli(store, study, capsys):
+    assert main(["harness", "make", "--study", study, "--n", "2"]) == 0
+    assert len(__import__("json").loads(capsys.readouterr().out)) == 6
+    assert main(["harness", "show", "--study", study]) == 1
+    assert main(["harness", "run", "--study", study, "--n", "2"]) == 0
+    assert "| none | 6/6 | 0 | 2/2 |" in capsys.readouterr().out
+    assert main(["harness", "show"]) == 0  # the only study
+    assert "| none |" in capsys.readouterr().out
+    assert main(["harness", "run", "--study", study, "--profile", "local"]) == 2

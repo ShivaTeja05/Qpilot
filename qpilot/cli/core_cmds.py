@@ -104,6 +104,90 @@ def _plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _pick_study(args: argparse.Namespace):
+    """The store and study a harness command works on: --study, --rdml, or the only study."""
+    from qpilot.core.store import StudyStore
+
+    store = StudyStore()
+    if getattr(args, "rdml", None):
+        return store, store.ensure_study(args.rdml)
+    if getattr(args, "study", None):
+        return store, args.study
+    studies = store.list_studies()
+    if len(studies) != 1:
+        raise SystemExit("qpilot harness: give --study <id> or --rdml <file>")
+    return store, studies[0]
+
+
+def _harness_client(profile: str):
+    import os
+
+    from qpilot.ai.client import ModelClient, NoneBackend, make_backend
+    from qpilot.ai.config import ModelConfig
+
+    if profile == "none":
+        return ModelClient(NoneBackend())
+    env = ModelConfig.from_env()
+    if profile == "anthropic":
+        config = ModelConfig(provider="anthropic", model=env.model, api_key=env.api_key)
+    else:
+        endpoint = os.environ.get("QPILOT_MODEL_ENDPOINT", "http://127.0.0.1:11434")
+        config = ModelConfig(
+            provider="openai_compatible", endpoint=endpoint, model=env.model, api_key=env.api_key
+        )
+    return ModelClient(make_backend(config))
+
+
+def _harness_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("action", choices=["make", "run", "show"])
+    parser.add_argument("--study", default=None, help="study id (default: the only study)")
+    parser.add_argument("--rdml", default=None, help="analyse this RDML file first")
+    parser.add_argument(
+        "--profile",
+        choices=["none", "anthropic", "local"],
+        default="none",
+        help="none = templates; anthropic or local use QPILOT_MODEL_NAME / _ENDPOINT / API_KEY",
+    )
+    parser.add_argument("--n", type=int, default=10, help="items per kind")
+    parser.add_argument("--out", default=None, help="also write the scorecard files here")
+
+
+def _harness(args: argparse.Namespace) -> int:
+    import json
+
+    from qpilot.ai.client import ModelUnavailable
+    from qpilot.harness.make_evalset import build_items
+    from qpilot.harness.report import Report, markdown, write
+    from qpilot.harness.run import run
+
+    store, study_id = _pick_study(args)
+    if args.action == "show":
+        cards = store.scorecard(study_id)
+        if not cards:
+            print("no scorecard yet; run `qpilot harness run`")
+            return 1
+        print(markdown([Report.model_validate(r) for r in cards.values()]), end="")
+        return 0
+    result = store.get(study_id)
+    items = build_items(result, store.cards(study_id), result.facts, n_per_type=args.n)
+    if args.action == "make":
+        print(json.dumps([i.model_dump() for i in items], indent=2))
+        return 0
+    try:
+        client = _harness_client(args.profile)
+    except ModelUnavailable as err:
+        print(f"qpilot harness: {err}", file=sys.stderr)
+        return 2
+    report = run(items, client, store, study_id, profile_name=args.profile)
+    saved = store.scorecard(study_id)
+    saved[args.profile] = report.model_dump()
+    store.put_scorecard(study_id, saved)
+    if args.out:
+        write(report, args.out)
+    print(markdown([report]), end="")
+    return 0
+
+
 def _serve_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--transport", choices=["stdio"], default="stdio", help="MCP transport (stdio only)"
@@ -123,6 +207,12 @@ COMMANDS: list[Command] = [
         "run the MCP server for AI agents over stdio (claude mcp add qpilot -- qpilot serve)",
         _serve_arguments,
         _serve,
+    ),
+    (
+        "harness",
+        "score a model on this study before trusting it (make | run | show)",
+        _harness_arguments,
+        _harness,
     ),
     (
         "plan",

@@ -55,6 +55,7 @@ class AskResult(BaseModel):
     status: str | None = None
     error: str | None = None
     rejected_drafts: int = 0
+    facts: dict[str, Fact] = {}
 
 
 def _fact(fid: str, value: Any, fmt: str = "{}", unit: str = "", path: str = "answer") -> Fact:
@@ -354,6 +355,7 @@ def ask(
         status=status,
         error=error,
         rejected_drafts=rejected,
+        facts=extra,
     )
     if log and client.available:
         entry = payload_log.log_entry(
