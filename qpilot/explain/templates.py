@@ -12,9 +12,9 @@ and no digit may appear outside a token or an allowed name (a gene such as ``ODC
 * ``html``: every number wrapped in ``<span class="fact" data-fact="f_...">``, so the app can show
   which fact a number came from; all other text is HTML-escaped.
 
-Templates: ``refset_v1``, ``cutoff_v1``, ``undetermined_auto_v1``, ``undetermined_v1`` (card
-explanations, keyed by ``DecisionCard.rationale_template``), ``summary_v1``, ``meter_v1`` and
-``confidence_v1`` (needs ``gene=``).
+Templates: ``refset_v1``, ``cutoff_v1``, ``undetermined_auto_v1``, ``undetermined_v1``,
+``ampcall_v1`` (card explanations, keyed by ``DecisionCard.rationale_template``), ``summary_v1``,
+``meter_v1`` and ``confidence_v1`` (needs ``gene=``).
 """
 
 from __future__ import annotations
@@ -188,6 +188,42 @@ def _undetermined(facts: Facts, card: DecisionCard | None, gene: str | None) -> 
     return text + _flips_sentence(facts, "f_n_flipped_undetermined")
 
 
+def _amp_rules(facts: Facts) -> tuple[str | None, list[str]]:
+    """(primary rule slug, other rule slugs sorted) from the ``f_amp_label_*`` facts."""
+    prefix = "f_amp_label_"
+    labels = {fid[len(prefix) :]: facts[fid].value for fid in facts if fid.startswith(prefix)}
+    primary = facts["f_amp_primary"].value if "f_amp_primary" in facts else None
+    first = next((s for s, v in sorted(labels.items()) if v == primary), None)
+    return first, sorted(s for s in labels if s != first)
+
+
+def _ampcall(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    text = (
+        "Which wells count as amplified is a choice. LinRegPCR's own call counts a well when it "
+        "finds a starting quantity; a Cq cut-off calls every well with a later Cq not detected, "
+        "for every gene including the control genes. "
+    )
+    primary, others = _amp_rules(facts)
+    if "f_n_flipped_amp_call" not in facts or primary is None or not others:
+        return text + "This analysis uses LinRegPCR's own call only."
+    _need(facts, "f_n_genes")
+    text += f"This analysis uses {_t('f_amp_primary')}"
+    if f"f_n_undetermined_amp_{primary}" in facts:
+        text += f", under which {_t(f'f_n_undetermined_amp_{primary}')} study wells have no value"
+    parts = []
+    for s in others:
+        _need(facts, f"f_n_flipped_amp_{s}")
+        part = (
+            f"with {_t(f'f_amp_label_{s}')}, {_t(f'f_n_flipped_amp_{s}')} of {_t('f_n_genes')} "
+            "genes change their conclusion"
+        )
+        if f"f_n_undetermined_amp_{s}" in facts:
+            part += f" ({_t(f'f_n_undetermined_amp_{s}')} study wells without a value)"
+        parts.append(part)
+    text += ". Changing only this choice: " + "; ".join(parts) + ". "
+    return text + _flips_sentence(facts, "f_n_flipped_amp_call")
+
+
 def _summary(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
     _need(facts, "f_n_plates", "f_n_reactions", "f_n_samples", "f_n_hi", "f_n_lo")
     return (
@@ -233,6 +269,7 @@ TEMPLATES: dict[str, Template] = {
     "cutoff_v1": _cutoff,
     "undetermined_auto_v1": _undetermined,
     "undetermined_v1": _undetermined,
+    "ampcall_v1": _ampcall,
     "summary_v1": _summary,
     "meter_v1": _meter,
     "confidence_v1": _confidence,

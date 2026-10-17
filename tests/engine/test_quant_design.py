@@ -56,10 +56,12 @@ def test_samples_missing_a_control_gene_are_skipped():
     assert list(relative(matrix, "G", ["R"]).index) == ["s1"]
 
 
-def test_duplicate_wells_are_refused():
-    curves = _wells([("s1", "G", "unkn", 1.0), ("s1", "G", "unkn", 2.0)])
-    with pytest.raises(QuantError, match="replicates"):
-        log2_matrix(curves)
+def test_duplicate_wells_are_averaged_as_technical_replicates():
+    # Step 3.1: replicates are no longer refused; log2 n0 is averaged (geometric mean of N0)
+    curves = _wells([("s1", "G", "unkn", 1.0), ("s1", "G", "unkn", 4.0)])
+    matrix = log2_matrix(curves)
+    assert list(matrix.index) == ["s1"] and matrix.loc["s1", "G"] == pytest.approx(1.0)
+    assert issubclass(QuantError, Exception)  # still exported for callers that catch it
 
 
 def test_bad_arguments_are_refused(tiny_matrix):

@@ -6,13 +6,21 @@ This is the one place where the qPCR plugin meets the domain-agnostic core:
    (:class:`qpilot.qpcr.space.QpcrSpace`);
 2. ``core.robustness`` evaluates every cell of the space (186 analyses on the demo) and
    summarises each gene: primary conclusion, how often it holds, which choices flip it;
-3. ``core.decisions`` turns the three analysis choices into ranked Decision Cards and applies the
+3. ``core.decisions`` turns the analysis choices into ranked Decision Cards and applies the
    escalation rule (a choice that can flip a conclusion is a human decision); the reference-set
    card then gains the flip count by normaliser-set size and the control-gene group-effect check
    (:func:`qpilot.qpcr.refgenes.group_effect`);
 4. ``qpcr.confidence_checks`` and ``core.confidence`` grade every gene;
 5. every number that prose may cite is registered as a fact (``core.facts``) under the id
    convention ``f_<metric>_<slug>_<context>``, e.g. ``f_fc_odc1_hmbs``.
+
+A study runs from :class:`StudySettings`; :meth:`StudySettings.from_design` turns a confirmed
+:class:`~qpilot.schemas_studio.StudyDesign` into settings. ``StudySettings()`` is the demo
+analysis, and so is the demo preset (:func:`qpilot.qpcr.designs.vermeulen_design`). Any other
+design may take its groups from a sample sheet (no ``cut`` dimension), average technical
+replicates per biological unit, exclude or re-type wells, offer several amplification-call
+rules (the ``amp_call`` dimension, screened before it enters the grid) and adds the Studio facts:
+the usual route to Prism (:mod:`qpilot.qpcr.routes`) and the amp_call screening result.
 
 Deterministic: the same file and settings give byte-identical output, which ``qpilot rerun``
 relies on. No model is called and nothing touches the network.
@@ -23,7 +31,7 @@ from __future__ import annotations
 import hashlib
 import re
 import statistics
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -34,24 +42,45 @@ from qpilot.core.confidence import grade
 from qpilot.core.decisions import CardSpec, OptionSpec, build_cards, card_impact
 from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import atomic_write, dump_json
+from qpilot.qpcr.amp_call import (
+    DEFAULT_AMP_CALLS,
+    METHOD_CARD_PATH,
+    RECOMMENDED,
+    RULES,
+    AmpScreen,
+    apply_rule,
+    screen_amp_call,
+)
 from qpilot.qpcr.confidence_checks import START_LEVEL, checks_for, mde_fold, upgrade_rule
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule
 from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS, CurveSettings, analyse_study
 from qpilot.qpcr.design import DEMO_GROUP_VAR, DEMO_MARKER, GroupSpec, design_summary
-from qpilot.qpcr.quant import Undetermined, log2_matrix
+from qpilot.qpcr.designs import (
+    HEADLINE_GENES,
+    DesignError,
+    check_design,
+    design_curves,
+    design_units,
+    is_legacy_design,
+    study_key,
+    unit_groups,
+)
+from qpilot.qpcr.quant import EXCLUDED, Undetermined, excluded_cells, log2_matrix
 from qpilot.qpcr.refgenes import RefGroupEffect, genorm, group_effect
+from qpilot.qpcr.routes import ROUTES, RouteResult, compare_routes
 from qpilot.qpcr.space import DEFAULT_CUTS, DEFAULT_UNDETERMINED, QpcrSpace
 from qpilot.schemas import (
     Autonomy,
     DecisionCard,
+    DesignSummary,
     Fact,
     GeneRobustness,
     GenormResult,
     Grade,
     StudyResult,
 )
+from qpilot.schemas_studio import StudyDesign
 
-HEADLINE_GENES: tuple[str, ...] = ("ODC1", "BIRC5", "NTRK1", "NM23A")
 HOLDS_LOW = 0.80  # "holds in fewer than 80 %" is counted in f_n_hold_lt_80
 FC_FMT = "{:.2g}"
 COUNT_FMT = "{:,}"  # 24576 -> 24,576
@@ -65,6 +94,8 @@ GENORM_NOTE = (
     "geNorm M ranks stability across all samples; it cannot show whether a control gene differs "
     "between the groups. The pairwise ratios below check that."
 )
+GROUPS_NOTE = "groups from the confirmed design"
+AMP_CALL_TITLE = "Which curves count as amplified"
 _REFSET_EXTRA_FACTS = (
     "f_n_flipped_refset_min3",
     "f_n_flipped_refset_single_only",
@@ -77,11 +108,21 @@ _REFSET_EXTRA_FACTS = (
 )
 
 
+class NGuardError(ValueError):
+    """A comparison group has fewer than two biological units, so no p-value can be given."""
+
+
 @dataclass(frozen=True)
 class StudySettings:
-    """Every choice that shapes a study's output; the defaults reproduce the demo analysis."""
+    """Every choice that shapes a study's output; the defaults reproduce the demo analysis.
 
-    experiment_id: str = DEMO_EXPERIMENT
+    ``design`` is the confirmed design for anything but the legacy demo analysis (``None``
+    then); ``amp_calls`` are the options of the amplification-call dimension, primary first
+    (one option: no dimension); ``studio_facts`` adds the Studio facts (the routes to Prism and
+    the amp_call screening), which the legacy output does not carry.
+    """
+
+    experiment_id: str | None = DEMO_EXPERIMENT
     candidates: tuple[str, ...] = REFERENCE_TARGETS
     marker: str = DEMO_MARKER
     group_var: str = DEMO_GROUP_VAR
@@ -92,11 +133,53 @@ class StudySettings:
     rule: ConclusionRule = DEFAULT_RULE
     curves: CurveSettings = field(default_factory=CurveSettings)
     autonomy: Autonomy = "suggest"
+    amp_calls: tuple[str, ...] = DEFAULT_AMP_CALLS
+    design: StudyDesign | None = None
+    studio_facts: bool = False
 
     @property
     def marker_label(self) -> str:
         """The marker gene's name without its assay suffix: ``MYCN(4)`` -> ``MYCN``."""
         return re.sub(r"\(.*\)$", "", self.marker).strip() or self.marker
+
+    @property
+    def groups_mode(self) -> bool:
+        """True when the groups come from the design (no marker gene, no ``cut`` dimension)."""
+        return self.design is not None and self.design.mode == "groups"
+
+    @classmethod
+    def from_design(cls, design: StudyDesign) -> StudySettings:
+        """Settings that run a confirmed design.
+
+        The demo preset (:func:`qpilot.qpcr.designs.vermeulen_design`) gives exactly
+        ``StudySettings()``, so its output is the legacy output byte for byte. Any other design
+        is carried in ``design`` and switches the Studio facts on. Control-gene candidates are
+        ``reference_candidates``, or (when that is empty) the targets whose role is ``ref``,
+        sorted by name.
+
+        Raises:
+            DesignError: The design breaks a rule :func:`qpilot.qpcr.designs.check_design`
+                checks.
+        """
+        check_design(design)
+        legacy = is_legacy_design(design)
+        candidates = tuple(design.reference_candidates) or tuple(
+            sorted(t for t, target in design.targets.items() if target.role == "ref")
+        )
+        values: dict = {
+            "experiment_id": design.experiment_id,
+            "candidates": candidates,
+            "headline": tuple(design.headline),
+            "amp_calls": tuple(design.amp_calls),
+            "design": None if legacy else design,
+            "studio_facts": not legacy,
+        }
+        if design.mode == "marker_split" and design.marker_split is not None:
+            split = design.marker_split
+            values.update(
+                marker=split.marker, group_var=split.group_var, cut=split.cut, cuts=split.cuts
+            )
+        return cls(**values)
 
 
 def run_study(
@@ -124,34 +207,147 @@ def run_study(
     return study_from_curves(curves, _sha256(path), settings)
 
 
+@dataclass(frozen=True)
+class _Inputs:
+    """The per-well table as the design says, and the matrices the space is built from."""
+
+    table: pd.DataFrame  # design applied, before any amplification rule
+    primary_table: pd.DataFrame  # ... under the primary amplification rule
+    units: dict[str, str] | None
+    matrix: pd.DataFrame
+    alternatives: dict[str, pd.DataFrame]
+    excluded: pd.DataFrame | None
+    not_amplified: dict[str, int]  # study wells without a value, per amplification rule
+
+
+def _inputs(curves: pd.DataFrame, settings: StudySettings) -> _Inputs:
+    design = settings.design
+    if design is None and settings.amp_calls == DEFAULT_AMP_CALLS:  # the legacy path, untouched
+        matrix = log2_matrix(curves)
+        return _Inputs(curves, curves, None, matrix, {}, None, {})
+    table = design_curves(curves, design) if design is not None else curves
+    units = (design_units(design) or None) if design is not None else None
+    calls = dict(design.well_calls) if design is not None else {}
+    tables = {rule_id: apply_rule(table, rule_id, calls) for rule_id in settings.amp_calls}
+    primary, *others = settings.amp_calls
+    has_exclusions = EXCLUDED in table.columns
+    return _Inputs(
+        table=table,
+        primary_table=tables[primary],
+        units=units,
+        matrix=log2_matrix(tables[primary], units),
+        alternatives={rule_id: log2_matrix(tables[rule_id], units) for rule_id in others},
+        excluded=excluded_cells(table, units) if has_exclusions else None,
+        not_amplified={rule_id: _counts(t)["n_undetermined"] for rule_id, t in tables.items()},
+    )
+
+
+def _counts(table: pd.DataFrame) -> dict[str, int]:
+    """Undetermined and total study wells (wells a person excluded are not counted)."""
+    unknown = table[table["sample_type"] == "unkn"]
+    if EXCLUDED in unknown.columns:
+        unknown = unknown[~unknown[EXCLUDED].astype(bool)]
+    return {"n_undetermined": int(unknown["n0"].isna().sum()), "n_unknown_wells": len(unknown)}
+
+
+def _stability(matrix: pd.DataFrame, candidates: tuple[str, ...]) -> GenormResult:
+    """Control-gene stability: geNorm for three or more candidates; no ranking with fewer.
+
+    With two candidates M is the SD of their log2 ratio (the same for both); with one it is
+    undefined. Either way every candidate is used and no V is reported.
+    """
+    if len(candidates) >= 3:
+        return genorm(matrix, candidates)
+    m: dict[str, float] = {}
+    if len(candidates) == 2:
+        a, b = candidates
+        sd = float((matrix[a] - matrix[b]).dropna().std(ddof=1))
+        m = {a: sd, b: sd}
+    return GenormResult(M_initial=m, order=list(candidates), V={}, recommended=candidates)
+
+
+def _design_groups(
+    design: StudyDesign, curves: pd.DataFrame, matrix: pd.DataFrame
+) -> tuple[tuple[frozenset[str], frozenset[str]], tuple[str, str]]:
+    """The compared units of a groups design, measured for every gene."""
+    comparison = design.comparison
+    names = (comparison.group_a, comparison.group_b)
+    by_unit = unit_groups(design)
+    compared = {s for s, d in design.samples.items() if d.group in names}
+    absent = sorted(compared - set(curves["sample"]))
+    if absent:
+        raise DesignError(f"samples of the comparison groups not in the data: {absent[:5]}")
+    present = set(matrix.index)
+    group_a, group_b = (
+        frozenset(u for u, g in by_unit.items() if g == name and u in present) for name in names
+    )
+    return (group_a, group_b), names
+
+
+def _n_guard(groups: tuple[frozenset[str], frozenset[str]], labels: tuple[str, str]) -> None:
+    """Refuse a comparison with fewer than two biological units in a group (never wells)."""
+    pairs = zip(labels, groups, strict=True)
+    short = [f"{label} has {len(units)}" for label, units in pairs if len(units) < 2]
+    if short:
+        raise NGuardError(
+            "the p-value is withheld because a group has fewer than two biological units "
+            f"({'; '.join(short)}); every group needs at least two"
+        )
+
+
 def study_from_curves(
     curves: pd.DataFrame, input_sha256: str, settings: StudySettings | None = None
 ) -> tuple[StudyResult, list[DecisionCard], pd.DataFrame]:
-    """Everything after curve analysis, on the per-well table (see :func:`run_study`)."""
+    """Everything after curve analysis, on the per-well table (see :func:`run_study`).
+
+    Raises:
+        NGuardError: A comparison group has fewer than two biological units.
+        DesignError: The design does not fit the data (unknown wells or samples).
+    """
     settings = settings or StudySettings()
-    matrix = log2_matrix(curves)
-    stability = genorm(matrix, settings.candidates)
-    space = QpcrSpace(
-        matrix,
-        stability,
-        GroupSpec(settings.marker, settings.cut, settings.candidates, settings.group_var),
+    if not settings.candidates:
+        raise DesignError("no control genes: set reference_candidates or mark targets as ref")
+    inputs = _inputs(curves, settings)
+    matrix = inputs.matrix
+    stability = _stability(matrix, settings.candidates)
+    groups = labels = None
+    if settings.groups_mode:
+        groups, labels = _design_groups(settings.design, curves, matrix)
+        _n_guard(groups, labels)
+    spec = None
+    if groups is None:
+        spec = GroupSpec(settings.marker, settings.cut, settings.candidates, settings.group_var)
+    options = dict(
         candidates=settings.candidates,
         cuts=settings.cuts,
         undetermined=settings.undetermined,
         rule=settings.rule,
+        groups=groups,
+        amp_call=settings.amp_calls[0],
+        excluded=inputs.excluded,
+        group_labels=labels,
     )
+    space = QpcrSpace(matrix, stability, spec, amp_alternatives=inputs.alternatives, **options)
+    screen = None
+    if inputs.alternatives:
+        dims = space.dimensions["amp_call"]
+        screen = screen_amp_call(space.evaluate, space.primary, dims, space.items)
+        if not screen.admitted:  # the choice changes nothing that matters: no axis in the grid
+            space = QpcrSpace(matrix, stability, spec, **options)
     high, rest = space.groups(settings.cut)
+    if groups is None:
+        _n_guard((high, rest), (settings.group_var, "rest"))
     grid = robustness.run_grid(space)
     summary = robustness.summary(grid, space)
     fragility = robustness.fragility(grid, space)
-    unknown = curves[curves["sample_type"] == "unkn"]
+    counts = _counts(inputs.primary_table)
     base = StudyResult(
-        study_id=input_sha256[:12],
+        study_id=study_key(input_sha256, settings.design)[:12],
         input_sha256=input_sha256,
         n_plates=int(curves["run_id"].nunique()),
         n_reactions=len(curves),
         n_samples=len(matrix),
-        design=design_summary(high, rest, space.design),
+        design=_summary_of_design(high, rest, space, labels),
         genorm=stability,
         contrasts=space.evaluate(space.primary),
         robustness=summary,
@@ -160,13 +356,35 @@ def study_from_curves(
     )
     confidence = {gene: _grade(gene, base, fragility) for gene in space.items}
     headline = [gene for gene in settings.headline if gene in space.items]
-    counts = {"n_undetermined": int(unknown["n0"].isna().sum()), "n_unknown_wells": len(unknown)}
     specs = _card_specs(space, stability, summary, settings, headline, counts)
-    cards = build_cards(space, summary, specs, headline, settings.autonomy)
+    if "amp_call" in space.dimensions:
+        specs.append(_amp_call_spec(space, grid, summary, headline, inputs.not_amplified))
+    cards = build_cards(space, summary, specs, headline, settings.autonomy, grid=grid)
     ref_flips = refset_flip_counts(grid, space, summary)
     ref_effect = group_effect(matrix, settings.candidates, high, rest)
     cards = [_refset_extras(card, ref_flips, ref_effect) for card in cards]
-    facts = _facts(base, confidence, cards, space, settings, headline, counts)
+    routes = None
+    if settings.studio_facts:
+        primary = {gene: summary[gene].conclusion for gene in space.items}
+        calls = settings.design.well_calls if settings.design is not None else None
+        routes = compare_routes(
+            inputs.table,
+            inputs.units,
+            list(matrix.index),
+            high,
+            rest,
+            space.primary["refs"],
+            primary,
+            settings.rule,
+            calls,
+        )
+    extras = _Extras(
+        withheld=space.withheld,
+        screen=screen if settings.studio_facts else None,
+        routes=routes,
+        groups=labels,
+    )
+    facts = _facts(base, confidence, cards, space, settings, headline, counts, extras)
     result = base.model_copy(update={"confidence": confidence, "facts": facts.as_dict()})
     return result, cards, grid
 
@@ -211,6 +429,28 @@ def _efficiency(curves: pd.DataFrame) -> dict[str, float]:
     return {str(gene): float(value) for gene, value in per_gene.sort_index().items()}
 
 
+def _summary_of_design(
+    high: frozenset[str],
+    rest: frozenset[str],
+    space: QpcrSpace,
+    labels: tuple[str, str] | None,
+) -> DesignSummary:
+    """The design record: expression-defined groups, or the confirmed design's two groups.
+
+    With groups from a design there is no cut-off; ``cut`` is 0 there and is not an option.
+    """
+    if space.design is not None:
+        return design_summary(high, rest, space.design)
+    return DesignSummary(
+        group_var=f"{labels[0]} vs {labels[1]}",
+        cut=0.0,
+        n_hi=len(high),
+        n_lo=len(rest),
+        note=GROUPS_NOTE,
+        refs_primary=tuple(space.primary["refs"]),
+    )
+
+
 def _grade(gene: str, result: StudyResult, fragility: dict[str, int]) -> Grade:
     checks = checks_for(gene, result, fragility)
     holds = result.robustness[gene].holds
@@ -227,6 +467,8 @@ def _pct(cut: float) -> int:
 
 
 def _refs_label(refs: tuple[str, ...], candidates: tuple[str, ...]) -> str:
+    if len(refs) == 1:
+        return f"{refs[0]} (the only control gene)"
     if refs == candidates:
         return f"Recommended set (all {_NUMBER_WORDS.get(len(refs), str(len(refs)))})"
     return f"Recommended set ({', '.join(refs)})"
@@ -258,13 +500,24 @@ def _ref_options(
     return options
 
 
+def _only_varying(grid: pd.DataFrame, space: QpcrSpace, dimension: str) -> pd.DataFrame:
+    """Grid rows where every dimension except ``dimension`` is at its primary option."""
+    rows = grid
+    for name in space.dimensions:
+        if name != dimension:
+            idx = space.dimensions[name].index(space.primary[name])
+            rows = rows[rows[f"{name}{robustness.IDX_SUFFIX}"] == idx]
+    return rows
+
+
 def refset_flip_counts(
     grid: pd.DataFrame, space: QpcrSpace, summary: dict[str, GeneRobustness]
 ) -> dict[str, int]:
     """How many genes the control-gene choice flips, by the size of the sets compared.
 
-    Uses the grid rows at the primary cut-off and empty-well rule, so only the control-gene set
-    varies. A gene counts when some subset gives a conclusion different from its primary one:
+    Uses the grid rows where every other choice is at its primary option, so only the
+    control-gene set varies. A gene counts when some subset gives a conclusion different from
+    its primary one:
 
     * ``n_flipped_refs_all``: over every subset (equals the card's ``n_genes_flipped``);
     * ``n_flipped_refs_min3``: over subsets of three or more control genes only, i.e. between
@@ -272,10 +525,7 @@ def refset_flip_counts(
     * ``n_flipped_refs_single_only``: flips over all subsets but not over subsets of two or more,
       i.e. only a single control gene (what a ΔΔCt spreadsheet does) changes it.
     """
-    rows = grid
-    for name in ("cut", "undetermined"):
-        idx = space.dimensions[name].index(space.primary[name])
-        rows = rows[rows[f"{name}{robustness.IDX_SUFFIX}"] == idx]
+    rows = _only_varying(grid, space, "refs")
     primary = rows["item"].map({gene: s.conclusion for gene, s in summary.items()})
     changed = rows["conclusion"] != primary
     size = rows["refs"].map(len)
@@ -288,6 +538,19 @@ def refset_flip_counts(
         "n_flipped_refs_all": len(flipped_all),
         "n_flipped_refs_min3": len(flipped(3)),
         "n_flipped_refs_single_only": len(flipped_all - flipped(2)),
+    }
+
+
+def amp_flip_counts(
+    grid: pd.DataFrame, space: QpcrSpace, summary: dict[str, GeneRobustness]
+) -> dict[str, int]:
+    """Per amplification rule, how many genes change their conclusion when only it changes."""
+    rows = _only_varying(grid, space, "amp_call")
+    primary = rows["item"].map({gene: s.conclusion for gene, s in summary.items()})
+    changed = rows[rows["conclusion"] != primary]
+    return {
+        rule_id: int(changed.loc[changed["amp_call"] == rule_id, "item"].nunique())
+        for rule_id in space.dimensions["amp_call"]
     }
 
 
@@ -315,6 +578,10 @@ def _refset_extras(
     return card.model_copy(update={"impact": impact, "evidence": evidence, "facts": facts})
 
 
+def _option_facts(headline: Sequence[str], contexts: list[str]) -> list[str]:
+    return [f"f_fc_{slug(gene)}_{ctx}" for ctx in contexts for gene in headline]
+
+
 def _card_specs(
     space: QpcrSpace,
     stability: GenormResult,
@@ -323,21 +590,28 @@ def _card_specs(
     headline: Sequence[str],
     counts: dict[str, int],
 ) -> list[CardSpec]:
-    """The three cards the qPCR plugin asks the core to build (the core adds impact and rank)."""
+    """The cards the qPCR plugin asks the core to build (the core adds impact and rank).
+
+    The cut-off card exists only when the groups are defined from the data.
+    """
 
     def option_facts(contexts: list[str]) -> list[str]:
-        return [f"f_fc_{slug(gene)}_{ctx}" for ctx in contexts for gene in headline]
+        return _option_facts(headline, contexts)
 
     ref_options = _ref_options(space, stability, settings.candidates)
     lead = [slug(headline[0])] if headline else []
     refset_facts = ["f_order_1", "f_m_1", "f_worst_ref"]
-    refset_facts += [f"f_fc_{s}_{ctx}" for s in lead for ctx in ("recommended", "worst")]
+    contexts = ("recommended", "worst")
+    if len(settings.candidates) == 1:  # one candidate: no M and no "worst gene alone" option
+        refset_facts.remove("f_m_1")
+        contexts = ("recommended",)
+    refset_facts += [f"f_fc_{s}_{ctx}" for s in lead for ctx in contexts]
     refset_facts += ["f_n_flipped_refset", "f_n_genes"]
     refset_facts += option_facts([ctx for _, ctx in ref_options])
 
     cut_ids = [f"cut_{_pct(cut)}" for cut in settings.cuts]
     undetermined_flips = card_impact(summary, "undetermined")["flips"]
-    return [
+    specs = [
         CardSpec(
             card_id="card_refset",
             kind="reference_set",
@@ -354,29 +628,34 @@ def _card_specs(
             },
             facts=list(dict.fromkeys(refset_facts)),
         ),
-        CardSpec(
-            card_id="card_cutoff",
-            kind="group_cutoff",
-            dimension="cut",
-            options=[
-                OptionSpec(
-                    id=cid,
-                    label=f"Top {_pct(cut)} % by {settings.marker_label} expression",
-                    value=cut,
-                )
-                for cid, cut in zip(cut_ids, settings.cuts, strict=True)
-            ],
-            recommended=f"cut_{_pct(settings.cut)}",
-            rationale_template="cutoff_v1",
-            evidence={
-                "cuts": list(settings.cuts),
-                "n_hi_by_cut": {
-                    cid: len(space.groups(cut)[0])
+    ]
+    if "cut" in space.dimensions:
+        specs.append(
+            CardSpec(
+                card_id="card_cutoff",
+                kind="group_cutoff",
+                dimension="cut",
+                options=[
+                    OptionSpec(
+                        id=cid,
+                        label=f"Top {_pct(cut)} % by {settings.marker_label} expression",
+                        value=cut,
+                    )
                     for cid, cut in zip(cut_ids, settings.cuts, strict=True)
+                ],
+                recommended=f"cut_{_pct(settings.cut)}",
+                rationale_template="cutoff_v1",
+                evidence={
+                    "cuts": list(settings.cuts),
+                    "n_hi_by_cut": {
+                        cid: len(space.groups(cut)[0])
+                        for cid, cut in zip(cut_ids, settings.cuts, strict=True)
+                    },
                 },
-            },
-            facts=["f_n_flipped_cutoff", "f_n_genes", *option_facts(cut_ids)],
-        ),
+                facts=["f_n_flipped_cutoff", "f_n_genes", *option_facts(cut_ids)],
+            )
+        )
+    specs.append(
         CardSpec(
             card_id="card_undetermined",
             kind="undetermined",
@@ -395,8 +674,60 @@ def _card_specs(
                 "f_pct_undetermined",
                 *option_facts(["drop", "cap"]),
             ],
-        ),
-    ]
+        )
+    )
+    return specs
+
+
+def _amp_call_spec(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    not_amplified: Mapping[str, int],
+) -> CardSpec:
+    """The "Which curves count as amplified" card (only when the dimension is in the grid).
+
+    The recommended option is the primary rule (``linregpcr`` unless a person chose another).
+    """
+    options = list(space.dimensions["amp_call"])
+    flips = amp_flip_counts(grid, space, summary)
+    slugs = [slug(rule_id) for rule_id in options]
+    return CardSpec(
+        card_id="card_amp_call",
+        kind="amp_call",
+        dimension="amp_call",
+        options=[OptionSpec(id=r, label=RULES[r].label, value=r) for r in options],
+        recommended=space.primary["amp_call"],
+        rationale_template="ampcall_v1",
+        evidence={
+            "title": AMP_CALL_TITLE,
+            "rules": {r: RULES[r].model_dump(mode="json", exclude_none=True) for r in options},
+            "recommended_rule": RECOMMENDED,
+            "n_flipped_by_rule": flips,
+            "n_not_amplified_by_rule": {r: int(not_amplified[r]) for r in options},
+            "method_card": METHOD_CARD_PATH,
+        },
+        facts=[
+            "f_n_flipped_amp_call",
+            "f_n_genes",
+            "f_amp_primary",
+            *[f"f_amp_label_{s}" for s in slugs],
+            *[f"f_n_flipped_amp_{s}" for s in slugs],
+            *[f"f_n_undetermined_amp_{s}" for s in slugs],
+            *_option_facts(headline, options),
+        ],
+    )
+
+
+@dataclass(frozen=True)
+class _Extras:
+    """Facts beyond the legacy set: withheld genes, the Studio facts, the design's groups."""
+
+    withheld: Mapping[str, str]
+    screen: AmpScreen | None
+    routes: Mapping[str, RouteResult] | None
+    groups: tuple[str, str] | None
 
 
 def _facts(
@@ -407,6 +738,7 @@ def _facts(
     settings: StudySettings,
     headline: Sequence[str],
     counts: dict[str, int],
+    extras: _Extras,
 ) -> FactRegistry:
     """Every number that prose may cite, under the id convention in the module docstring."""
     registry = FactRegistry()
@@ -429,8 +761,9 @@ def _facts(
         "f_n_cells": robustness.n_cells(space),
         "f_n_genes": len(items),
         "f_n_flipped_refset": len(flipped["refs"]),
-        "f_n_flipped_cutoff": len(flipped["cut"]),
+        **({"f_n_flipped_cutoff": len(flipped["cut"])} if "cut" in flipped else {}),
         "f_n_flipped_undetermined": len(flipped["undetermined"]),
+        **({"f_n_flipped_amp_call": len(flipped["amp_call"])} if "amp_call" in flipped else {}),
         "f_n_hold_lt_80": sum(result.robustness[gene].holds < HOLDS_LOW for gene in items),
         **{f"f_{key}": value for key, value in counts.items()},
     }
@@ -448,7 +781,9 @@ def _facts(
     stability = result.genorm
     for i, ref in enumerate(stability.order, start=1):
         add(f"f_order_{i}", ref, path=f"genorm.order[{i - 1}]")
-        add(f"f_m_{i}", float(stability.M_initial[ref]), "{:.2f}", "", f"genorm.M_initial.{ref}")
+        if ref in stability.M_initial:
+            m = float(stability.M_initial[ref])
+            add(f"f_m_{i}", m, "{:.2f}", "", f"genorm.M_initial.{ref}")
     for ref, value in stability.M_initial.items():
         add(f"f_m_{slug(ref)}", float(value), "{:.2f}", "", f"genorm.M_initial.{ref}")
     for key, value in stability.V.items():  # "V2/3" -> f_v_2_3
@@ -479,12 +814,15 @@ def _facts(
             add(f"f_n_hi_{option_id}", int(n_hi), path=f"cards.{card.id}.evidence.n_hi_by_cut")
         if card.id == "card_refset" and "ref_group_effect" in card.evidence:
             _refset_facts(add, card)
+        if card.id == "card_amp_call":
+            _amp_call_facts(add, card)
     worst = slug(stability.order[-1])
     for gene in headline:
         source = f"f_fc_{slug(gene)}_{worst}"
         if source in registry:
             path = f"cards.card_refset.{worst}_alone.{gene}.fc"
             add(f"f_fc_{slug(gene)}_worst", registry.get(source).value, FC_FMT, TIMES, path)
+    _extra_facts(add, extras, settings)
     return registry
 
 
@@ -515,3 +853,49 @@ def _refset_facts(add: Callable[..., None], card: DecisionCard) -> None:
     add("f_n_ref_pairs", len(pairs), path=f"{base}.pairs")
     add("f_n_ref_pairs_flagged", len(effect["flagged"]), path=f"{base}.flagged")
     add("f_ref_flag_fold", float(effect["flag_fold"]), FC_FMT, TIMES, f"{base}.flag_fold")
+
+
+def _amp_call_facts(add: Callable[..., None], card: DecisionCard) -> None:
+    """Facts for the amplification-call card, read from the card itself."""
+    root = f"cards.{card.id}.evidence"
+    evidence = card.evidence
+    add("f_amp_primary", RULES[card.recommended].label, path=f"{root}.rules.{card.recommended}")
+    for option in card.options:
+        s = slug(option.id)
+        add(f"f_amp_label_{s}", option.label, path=f"{root}.rules.{option.id}.label")
+        flips = int(evidence["n_flipped_by_rule"][option.id])
+        add(f"f_n_flipped_amp_{s}", flips, path=f"{root}.n_flipped_by_rule.{option.id}")
+        wells = int(evidence["n_not_amplified_by_rule"][option.id])
+        path = f"{root}.n_not_amplified_by_rule.{option.id}"
+        add(f"f_n_undetermined_amp_{s}", wells, COUNT_FMT, path=path)
+
+
+def _extra_facts(add: Callable[..., None], extras: _Extras, settings: StudySettings) -> None:
+    """Withheld genes, the design's group names and the Studio facts (routes, screening).
+
+    None of these exist in the legacy demo output: a withheld gene cannot occur there, and the
+    Studio facts are added only when the settings ask for them.
+    """
+    if extras.withheld or settings.studio_facts:
+        add("f_n_withheld", len(extras.withheld), path="withheld")
+        for gene, reason in extras.withheld.items():
+            add(f"f_withheld_{slug(gene)}", reason, path=f"withheld.{gene}")
+    if extras.groups is not None:
+        add("f_group_a", extras.groups[0], path="design.comparison.group_a")
+        add("f_group_b", extras.groups[1], path="design.comparison.group_b")
+    if extras.routes is not None:
+        for route in ROUTES:
+            found = extras.routes[route]
+            add(f"f_n_differ_route_{route}", found.n_differ, path=f"routes.{route}.differ")
+            genes = ", ".join(found.differ) or "none"
+            add(f"f_genes_differ_route_{route}", genes, path=f"routes.{route}.differ")
+    if extras.screen is not None:
+        screen = extras.screen
+        verdict = "admitted" if screen.admitted else "not admitted"
+        add("f_screen_amp_call", verdict, path="screen.amp_call.admitted")
+        add("f_screen_amp_min_log2fc", screen.min_log2fc, "{:g}", path="screen.amp_call.min_log2fc")
+        for rule in screen.rules:
+            s, path = slug(rule.rule_id), f"screen.amp_call.{rule.rule_id}"
+            add(f"f_screen_amp_flips_{s}", rule.n_flipped, path=f"{path}.flipped")
+            delta = rule.max_delta_log2fc
+            add(f"f_screen_amp_dlog2fc_{s}", delta, "{:.2f}", path=f"{path}.max_delta_log2fc")
