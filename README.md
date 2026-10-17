@@ -33,6 +33,7 @@ The data is the Vermeulen/Ruijter RDML: 64 plates × 384 wells, 366 tumours, 58 
 
 ```bash
 python3.11 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+.venv/bin/qsim demo                                           # narrated walk: raw curve -> verdict (about 20 s)
 .venv/bin/qsim options                                        # decisions and options (* = baseline)
 .venv/bin/qsim whatif --set refs=HMBS --set nondetect=cap_min # any "what if we chose X and Y"
 .venv/bin/qsim run                                            # everything; writes results/

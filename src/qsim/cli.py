@@ -48,6 +48,13 @@ def cmd_whatif(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_demo(args: argparse.Namespace) -> int:
+    from qsim.demo import run_demo
+
+    run_demo(args.rdml, gene=args.gene, well=args.well)
+    return 0
+
+
 def cmd_options(args: argparse.Namespace) -> int:
     engine = _engine(args.rdml)
     for d in engine.space.decisions:
@@ -77,6 +84,10 @@ def main(argv: list[str] | None = None) -> int:
     w.add_argument("--genes", nargs="*")
     w.add_argument("--all", action="store_true", help="show every gene")
     w.set_defaults(func=cmd_whatif)
+    dm = sub.add_parser("demo", help="narrated walk from one raw curve to a verdict on one gene")
+    dm.add_argument("--gene", default="NM23A")
+    dm.add_argument("--well", default="A1")
+    dm.set_defaults(func=cmd_demo)
     o = sub.add_parser("options", help="list decisions and options (* = baseline)")
     o.set_defaults(func=cmd_options)
     args = parser.parse_args(argv)
