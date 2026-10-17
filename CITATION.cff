@@ -1,11 +1,20 @@
 cff-version: 1.2.0
-title: "qPilot: open, validated qPCR analysis that shows which choices could change the conclusion"
-message: "If you use qPilot, please cite it and the methods it builds on (see references)."
+title: "qPilot: open qPCR analysis that shows which choices could change the conclusion"
+message: "If you use qPilot, please cite it and the methods and data it builds on (see references)."
 type: software
 authors:
-  - name: "qPilot contributors"
+  - alias: jeevithg090
+  - alias: ShivaTeja05
+repository-code: "https://github.com/ShivaTeja05/Qpilot"
 version: "0.1.0"
 license: Apache-2.0
+keywords:
+  - qPCR
+  - LinRegPCR
+  - geNorm
+  - RDML
+  - reproducibility
+  - robustness
 references:
   - type: article
     title: "Amplification efficiency: linking baseline and bias in the analysis of quantitative PCR data"
@@ -14,6 +23,29 @@ references:
         given-names: J. M.
     year: 2009
     journal: "Nucleic Acids Research"
+    volume: 37
+    issue: 6
+    doi: "10.1093/nar/gkp045"
+  - type: article
+    title: "Evaluation of qPCR curve analysis methods for reliable biomarker discovery: bias, resolution, precision, and implications"
+    authors:
+      - family-names: Ruijter
+        given-names: J. M.
+    year: 2013
+    journal: "Methods"
+    volume: 59
+    issue: 1
+    start: 32
+    end: 46
+    doi: "10.1016/j.ymeth.2012.08.011"
+  - type: article
+    title: "Web-based LinRegPCR: application for the visualization and analysis of (RT)-qPCR amplification and melting data"
+    authors:
+      - family-names: Untergasser
+        given-names: A.
+    year: 2021
+    journal: "BMC Bioinformatics"
+    volume: 22
   - type: article
     title: "Accurate normalization of real-time quantitative RT-PCR data by geometric averaging of multiple internal control genes"
     authors:
@@ -21,3 +53,23 @@ references:
         given-names: J.
     year: 2002
     journal: "Genome Biology"
+    volume: 3
+    issue: 7
+    doi: "10.1186/gb-2002-3-7-research0034"
+  - type: article
+    title: "MIQE 2.0: revision of the Minimum Information for Publication of Quantitative Real-Time PCR Experiments guidelines"
+    authors:
+      - family-names: Bustin
+        given-names: S. A.
+    year: 2025
+    journal: "Clinical Chemistry"
+  - type: article
+    title: "Predicting outcomes for children with neuroblastoma using a multigene-expression signature: a retrospective SIOPEN/COG/GPOH study"
+    authors:
+      - family-names: Vermeulen
+        given-names: J.
+    year: 2009
+    journal: "The Lancet Oncology"
+    volume: 10
+    start: 663
+    end: 671

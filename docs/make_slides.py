@@ -211,10 +211,10 @@ def slide_proof(pdf, result, report, engineering):
         ("Security", "Offline by test: the whole analysis runs with the network switched off. "
                      "The app binds 127.0.0.1, telemetry off. An AI sees the facts and the card "
                      "labels, never the raw data; the app shows exactly what it was sent."),
-        ("Cost", "Today: €2.4–6k/yr per academic lab for the analysis-and-stats step (Clarida "
-                 "Lab €4,800–9,600 as listed; Prism $260–520/seat). qPilot: Apache-2.0, laptop. "
-                 "(Does not replace the instrument software, Part 11 editions, or Prism for "
-                 "non-qPCR work.)"),
+        ("Cost", "For the analysis-and-stats step today: Clarida Lab €4,800–9,600/yr as listed "
+                 "(academic pricing lower, not listed); GraphPad Prism $260–520 per seat/yr. "
+                 "qPilot: Apache-2.0, on a laptop. (Does not replace the instrument software, "
+                 "Part 11 editions, or Prism for non-qPCR work.)"),
     ]  # fmt: skip
     for i, (head, text) in enumerate(strips):
         y = 0.80 - i * 0.135
