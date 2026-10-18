@@ -210,3 +210,32 @@ Median \|error\| by machine, log2. P1 changes only the interval, so its errors a
 - the lowest-tube sensitivity row;
 - the per-pair breakdown of the term;
 - this interpretation.
+
+## P5: an input-dependent plate×pair term (plan fixed before scoring)
+
+**What I looked at first.** These checks use no truth. I compared each pair's excess variance from P1 with the Poisson scale x = 1/c_hi + 1/c_lo, where c is the nominal genome copies per reaction (303 copies per ng; the instrument comparison uses ng/µl × 10 µl reactions). I fitted the slope b by least squares through the origin:
+
+| Series | Pairs | Fitted b | Poisson theory, 1/ln²2 | Reading |
+|---|---|---|---|---|
+| Genomic, Dec 2024 (AMC vs DKFZ) | 6 | 1.77 | 2.08 | Matches one Poisson draw per tube per plate. |
+| Instrument comparison, Feb 2024 | 4 | 28.5 | 2.08 | 14 times too large. The lowest tube there is 606 copies per reaction, so this is instrument behaviour, not sampling. |
+
+**Primary.**
+- **Term.** σ²_pp(pair) = (1/c_hi + 1/c_lo) / ln²2: the variance of log2 of one extra Poisson draw of each tube per plate.
+- **No fitting.** Nothing is fitted, so nothing can be tuned on any plate, and no hold-out is needed.
+- **Copies per reaction.** These come from the design only:
+  - genomic DNA: ng × 303;
+  - instrument comparison: ng/µl × 10 µl × 303;
+  - amplicon standard: the label, read as copies per reaction.
+- **Interval.** The round-2 interval plus this term. It replaces P1's constant term rather than adding to it.
+
+**Variants (reported, not counted):**
+- **P5a.** b fitted on the other series, through the origin: AMC and DKFZ get 28.5 from the instrument comparison, and the instrument comparison gets 1.77 from the genomic series.
+- **P5b.** b fitted on both series together. It is truth-free, so in-sample is allowed.
+
+**Reporting.** As for P1–P3, with the same rule and bar.
+
+**Decision rule, fixed now.**
+- **If P5 reaches ≥ 90 %,** report P5 as the interval. It has no fitted parameter and a physical reason.
+- **If it does not,** report P1's 92.4 % with its caveats, and give P5's figure as what sampling alone explains.
+- **Tiers.** Either way, tiers are left to the outside reviewer.
