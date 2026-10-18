@@ -175,13 +175,18 @@ class DecisionOutcome(BaseModel):
 
 
 class PlanResult(BaseModel):
-    """Design check before an experiment: samples needed and what the design cannot detect."""
+    """Design check before an experiment: samples needed and what the design cannot detect.
+
+    ``budget`` is the replicate budget (RT and technical replicates, costs); it is ``None``
+    unless a replicate or cost input was given (``qpilot.qpcr.plan.plan``).
+    """
 
     n_needed: int | None
     mde_fold: float | None
     cannot_detect: list[str]
     rules: list[str]
     message: str = ""
+    budget: dict[str, Any] | None = None
 
 
 class DecisionSpace(Protocol):

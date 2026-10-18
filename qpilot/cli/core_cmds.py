@@ -109,11 +109,11 @@ def _rerun(args: argparse.Namespace) -> int:
 
 
 def _plan_arguments(parser: argparse.ArgumentParser) -> None:
-    from qpilot.qpcr.plan import SIGMA_HELP
+    from qpilot.qpcr.plan import SD_RT_HELP, SD_WELL_HELP, SIGMA_HELP
 
     parser.add_argument("--fc", type=float, default=2.0, help="fold change to detect (default 2)")
     parser.add_argument("--sd", type=float, default=None, help=SIGMA_HELP)
-    parser.add_argument("--n", type=int, default=None, help="planned samples per group")
+    parser.add_argument("--n", type=int, default=None, help="planned samples (subjects) per group")
     parser.add_argument("--alpha", type=float, default=0.05)
     parser.add_argument("--power", type=float, default=0.80)
     parser.add_argument("--plates", type=int, default=None, help="number of plates")
@@ -123,6 +123,23 @@ def _plan_arguments(parser: argparse.ArgumentParser) -> None:
         help="no inter-run calibrator on every plate",
     )
     parser.add_argument("--refs", type=int, default=None, help="candidate reference genes")
+    budget = parser.add_argument_group(
+        "replicate budget",
+        "with any of these, --sd is the SD between subjects alone and --n counts subjects",
+    )
+    budget.add_argument("--sd-rt", type=float, default=None, help=SD_RT_HELP)
+    budget.add_argument("--sd-well", type=float, default=None, help=SD_WELL_HELP)
+    budget.add_argument("--n-rt", type=int, default=1, help="RT reactions per subject (default 1)")
+    budget.add_argument("--n-tech", type=int, default=1, help="wells per RT reaction (default 1)")
+    budget.add_argument("--cost-subject", type=float, default=None, help="cost of one subject")
+    budget.add_argument("--cost-rt", type=float, default=None, help="cost of one RT reaction")
+    budget.add_argument("--cost-well", type=float, default=None, help="cost of one qPCR well")
+    budget.add_argument(
+        "--cq",
+        type=float,
+        default=None,
+        help="expected Cq of the target (accepted; the claim-floor check is not built yet)",
+    )
     parser.add_argument("--json", action="store_true", help="print JSON")
 
 
@@ -139,6 +156,14 @@ def _plan(args: argparse.Namespace) -> int:
             n_plates=args.plates,
             calibrator_on_every_plate=None if args.plates is None else not args.no_calibrator,
             n_candidate_refs=args.refs,
+            sd_rt=args.sd_rt,
+            sd_well=args.sd_well,
+            n_rt=args.n_rt,
+            n_tech=args.n_tech,
+            cost_subject=args.cost_subject,
+            cost_rt=args.cost_rt,
+            cost_well=args.cost_well,
+            expected_cq=args.cq,
         )
     except ValueError as err:
         print(f"qpilot plan: {err}", file=sys.stderr)
@@ -151,6 +176,10 @@ def _plan(args: argparse.Namespace) -> int:
         print(f"Cannot detect: {line}")
     for line in out.rules:
         print(f"Rule: {line}")
+    for line in (out.budget or {}).get("sentences", []):
+        print(f"Budget: {line}")
+    for line in (out.budget or {}).get("notes", []):
+        print(f"Note: {line}")
     return 0
 
 
