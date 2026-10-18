@@ -86,6 +86,18 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_external(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from qsim import external
+
+    result = external.validate(Path(args.data_dir), args.out)
+    for line in external.summary_lines(result):
+        print(line)
+    print(f"\nwrote {args.out}/validation_external.json")
+    return 0
+
+
 def cmd_demo(args: argparse.Namespace) -> int:
     from qsim.demo import run_demo
 
@@ -143,6 +155,13 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--draws", type=int, default=1000, help="no-difference splits per size")
     v.add_argument("--out", default="results")
     v.set_defaults(func=cmd_validate)
+    x = sub.add_parser(
+        "external", help="tests on new public data (docs/review/32), fixed before scoring"
+    )
+    x.add_argument("--data-dir", default="data")
+    x.add_argument("--out", default="results")
+    x.set_defaults(func=cmd_external)
+
     dm = sub.add_parser("demo", help="narrated walk from one raw curve to a verdict on one gene")
     dm.add_argument("--gene", default="NM23A")
     dm.add_argument("--well", default="A1")

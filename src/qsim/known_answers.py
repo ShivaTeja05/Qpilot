@@ -329,7 +329,10 @@ def propagate(base: pd.DataFrame, components: dict[str, dict]) -> pd.DataFrame:
     tau = out["tubes"].map(lambda k: components[k]["sd_log2e_run"])
     sd_pp = out["tubes"].map(lambda k: components[k].get("sd_plate_pair_log2", 0.0))
     poisson = out["tubes"].map(lambda k: components[k].get("poisson_b", 0.0))
-    poisson = poisson * out["poisson_x"] if "poisson_x" in out else 0.0
+    if "poisson_x" in out:  # only rows given a Poisson slope use their scale (it may be NaN)
+        poisson = (poisson * out["poisson_x"]).where(poisson > 0, 0.0)
+    else:
+        poisson = 0.0
     rep = out["se_rep"] ** 2
     added = (
         out["dcq"] ** 2 * (out["se_log2e"].fillna(0.0) ** 2 + tau**2)

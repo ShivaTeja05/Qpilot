@@ -100,3 +100,122 @@ Data: AluSx with competitor at 0, 5, 10, 20, 30, 40 and 50 %, gDNA at 64, 16, 4,
 - **Detection.** The share of competitor > 0 % wells or triplicates flagged, by level.
 - **False alarm.** The same share at 0 %.
 - **Bar.** From the ruling: false alarm ≤ 2 %. Detection is reported.
+
+## Results (run after the plan was committed as d0cfd27)
+
+Reproduce with `qsim external` (about 45 s). Output: `results/validation_external.json`.
+
+### X1. Held-out dPCR plates: pass
+
+| Interval (components fixed in advance) | Coverage, 120 cases | 90 % CI over truths | Median half-width, log2 |
+|---|---|---|---|
+| Round 2 | 97.5 % | 96.3–100 % | 0.292 |
+| **P1 (primary)** | **100 %** | 100–100 % | 0.411 |
+| P1 with the AMC/DKFZ term | 100 % | 100–100 % | 0.441 |
+| P5, Poisson | 98.3 % | 97.5–100 % | 0.357 |
+
+**Cases by plate:**
+- QuantStudio Eva Green B: 40 cases (10 assays × 4 pairs).
+- QuantStudio Quantification Methods: 40 cases (20 assay×reporter rows × 2 pairs). Round-2 coverage there is 92.5 %, and P5's is 95 %.
+- LightCycler 480 AMC probe mixes: 40 cases (10 assay×mix rows × 4 pairs).
+
+**Median |error| of each efficiency option, log2:**
+
+| Plate | Assay mean | Standard curve | Assume 100 % | Per well |
+|---|---|---|---|---|
+| LC480 probes | 0.129 | 0.111 | 0.138 | 0.929 |
+| QuantStudio Eva Green B | 0.096 | 0.128 | 0.257 | 0.414 |
+| QuantStudio Quantification Methods | 0.195 | n/a (3 levels, leave-pair-out leaves one) | 0.226 | 0.722 |
+
+**The EMBL pair, reported separately.** On the QuantStudio, the "20ng - EMBL" sample reads 0.29 log2 above the dPCR ratio (10 cases). That is the same direction as the round-2 EMBL disagreement. P1 covers all 10 (half-width 0.36).
+
+**What this shows:**
+- **The intervals carry over to new plates.** Coverage holds on plates no component was estimated on, including a new instrument (QuantStudio) and new chemistries (EvaGreen, probes), measured within 3 months of the dPCR.
+- **But only 4 distinct truths stand behind the 120 cases,** so the confidence interval over truths is degenerate.
+- **Even the round-2 interval passes here.** On the AMC plate, measured 8 months before the dPCR, it does not. That is consistent with the AMC gap being partly a time gap between the plate and its truth.
+
+### X2. Baseline-shift invariance: pass
+
+Across 72 well pairs:
+- max |Δ log2 N0| = 0.00008;
+- max |Δ individual efficiency| = 0.00002;
+- no Cq changes;
+- the 24 pair estimates differ by at most 0.00002 log2.
+
+Adding a constant to a curve changes nothing.
+
+### X3. Missing cycles (descriptive)
+
+**The analysis runs, and 19 of 22 damaged wells get a Cq.** The three without one are N9 (cycles 5–9 and 31–35 missing), O3 (only cycle 20 present) and O7 (no data). All three are noted "no amplification; no TD0 found", so none of them fails silently.
+
+### X4. Ruijter ds_94_4
+
+**X4a. Known answer: fail.**
+
+| Interval | Coverage (equal weight over 4 pairs) | 15000→1500 | 1500→150 | 150→15 | 15000→15 |
+|---|---|---|---|---|---|
+| Round 2 | 70.7 % | 60.2 % | 90.8 % | 81.0 % | 50.8 % |
+| **P1 (primary)** | **84.8 %** | 93.2 % | 99.0 % | 89.2 % | 57.8 % |
+| P5, Poisson | 86.9 % | 64.6 % | 97.4 % | 100 % | 85.4 % |
+
+- **Full-plate estimates** (94 wells per level) read short of 10-fold at every step: errors −0.386, −0.258 and −0.272 log2 per decade, and −0.916 over 15000→15. The assay-mean efficiency is 1.853. A 10-fold step at the observed ΔCq would need E ≈ 1.98.
+- **This data cannot say which is wrong.** Either LinRegPCR's efficiency is 6–7 % low on this plate, or the real steps are about 8-fold. Ruijter & van den Hoff 2025 report 8–9.9-fold real steps for the Vermeulen standards from the same lab.
+- **The miss is a bias, as on AMC.** Pairs with small systematic error are covered; the 3-decade pair is not.
+- **Replicate scatter matches Poisson** at 15 copies (SD 0.365 against 0.373 log2) and at 150 copies (0.107 against 0.118). At 1,500 copies it is 0.337 (robust 0.106) because of 8 flagged wells and one outlier.
+- **The stored quantities are 1/8 of the labels** inside the RDML-consortium copy of this set (dataset search). The Poisson match says the labelled copies per reaction are right.
+
+**X4b. No difference at low copy: fail on all cells, pass on defensible cells.**
+
+| Level | Split | All cells calling | Defensible cells calling | Robust calls | Baseline median \|log2\| | Per-well cells calling |
+|---|---|---|---|---|---|---|
+| 15 copies | 3 vs 3 | 1.07 % | 0 % | 0 | 0.205 | 3.1 % |
+| 15 copies | 6 vs 6 | 1.61 % | 0 % | 0 | 0.131 | 4.8 % |
+| 150 copies | 3 vs 3 | 1.48 % | 0 % | 0 | 0.057 | 4.5 % |
+| 150 copies | 6 vs 6 | 1.49 % | 0 % | 0 | 0.042 | 4.5 % |
+
+This is the same picture as ds_380:
+- **Defensible analyses never call,** and nothing passes the robust filter.
+- **Every call comes from per-well efficiency,** which is common practice.
+- **At 15 copies (3 vs 3), the baseline median |log2| of 0.205 exceeds 0.15.** Poisson noise alone predicts about 0.2.
+
+### X5. Competimer: a real efficiency fault
+
+All 147 wells are one target, so LinRegPCR's plate-mean efficiency (1.668) mixes clean and inhibited wells.
+
+**The pre-registered numbers:**
+
+| Comparison | Assay mean | Standard curve | Assume 100 % | Per well |
+|---|---|---|---|---|
+| Fault, same DNA, 10 % vs 0 % | −1.04 | −1.26 | −1.41 | −1.09 |
+| Fault, 30 % vs 0 % | −3.65 | −4.43 | −4.95 | +0.23 |
+| Fault, 50 % vs 0 % | −10.56 | −12.84 | −14.30 | +1.78 |
+| Dilution within 0 % (median bias) | −0.33 | +0.03 | +0.26 | +1.47 |
+
+**Detectors:**
+- **LinRegPCR's efficiency-outlier note.** It flags 17 % of wells at 0 %, rising to 11, 44, 72, 83, 83 and 78 % from 5 to 50 %.
+- **The 1.8 threshold on each triplicate.** It flags 83 % at 0 % and 100 % from 10 % up.
+- **False alarm at 0 %: fail.** It is 17 % and 83 %, against a 2 % bar.
+
+**Why the false alarms happen.** The 64 and 16 ng/µl curves rise before cycle 7. LinRegPCR marks them "no amplification" or "only 3 values in log phase" with efficiency 1.00. The clean wells of this AluSx assay sit near 1.70–1.85, so a 1.8 threshold cannot separate them from inhibited wells.
+
+**Post hoc, not counted: without failed curve analyses.**
+- **Bias.** The fault bias still grows with competitor: assay mean −0.60 (5 %), −1.22 (10 %), −2.64 (20 %), −4.45 (30 %) log2. Per-well efficiency stays at −0.19 to −1.20.
+- **Detection.** LinRegPCR's note flags 9, 62, 93 and 100 % from 5 to 30 %.
+- **False alarm.** It is still 25 %.
+
+**What this shows (for the outside reviewer):**
+- **The defensible options are the most biased under real inhibition.** When inhibition is confined to some samples, the assay mean and the standard curve are badly biased. Per-well efficiency, currently common practice, is much less biased.
+- **The current tiers assume clean, comparable wells.** The simulator's "per-well vs assay mean" spread is exactly the signal that flags this.
+- **The detectors are not frozen-ready.** Their false alarms on this assay exceed the 2 % bar.
+
+## What to claim from X1–X5
+
+**Can claim:**
+- The propagated interval (P1) covered dPCR truth on 120 cases from 3 new plates, including a second instrument, with no refitting. The caveat is that only 4 truths stand behind them.
+- Baseline-shift invariance holds exactly.
+- Defensible analyses made no false call at 15, 150 or 150,000 copies.
+
+**Must say:**
+- **Low copy.** The known-answer test at low copy fails (85 % with P1) because of a systematic −0.3 log2 per decade against the nominal dilution. The data cannot tell whether that is efficiency error or dilution error.
+- **Detectors.** The efficiency detectors flag real inhibition but also flag clean wells of a low-efficiency assay (false alarm 17–83 %).
+- **Inhibited samples.** Under inhibition confined to some samples, per-well efficiency beats the baseline.
