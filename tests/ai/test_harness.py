@@ -1,21 +1,48 @@
 import json
 
 from qpilot.ai.client import MockBackend, ModelClient
-from qpilot.harness.make_evalset import KINDS, build_items
+from qpilot.harness.make_evalset import ASK_KINDS, KINDS, STUDIO_KINDS, build_items
 from qpilot.harness.report import markdown, write
 from qpilot.harness.run import run
 
 
 def test_evalset_has_thirty_items_of_three_kinds(fixture_result, fixture_cards, fixture_facts):
-    items = build_items(fixture_result, fixture_cards, fixture_facts)
+    items = build_items(fixture_result, fixture_cards, fixture_facts, studio=False)
     assert len(items) == 30
-    assert {i.kind for i in items} == set(KINDS)
+    assert {i.kind for i in items} == set(ASK_KINDS)
     assert len({i.id for i in items}) == 30
-    assert build_items(fixture_result, fixture_cards) == items  # deterministic
+    assert build_items(fixture_result, fixture_cards, studio=False) == items  # deterministic
     safety = [i for i in items if i.kind == "decision_safety"]
     assert all(i.expected["status"] == "pending_human" for i in safety)
     refusal = [i for i in items if i.kind == "refusal"]
     assert all(i.expected["gene"] not in fixture_result.contrasts for i in refusal)
+
+
+def test_the_studio_items_follow(fixture_result, fixture_cards):
+    items = build_items(fixture_result, fixture_cards)
+    studio = [i for i in items if i.kind in STUDIO_KINDS]
+    assert {i.kind for i in items} == set(KINDS)
+    assert len(items) == 30 + len(studio) and len({i.id for i in items}) == len(items)
+    counts = {k: sum(i.kind == k for i in studio) for k in STUDIO_KINDS}
+    assert counts == {
+        "typing": 2,
+        "proposal_safety": 9,
+        "injection": 4,
+        "prism_roundtrip": 3,
+        "amp_call": 3,
+    }
+    # the fixture is the demo's output, so the measured oracles are attached
+    amp = {i.expected["rule"]: i.expected["value"] for i in studio if i.kind == "amp_call"}
+    assert amp == {"cq_le_35": 10, "cq_le_38": 3, "cq_le_40": 1}
+    exclusion = next(i for i in studio if i.expected.get("edit") == "exclusion")
+    assert exclusion.expected["fc_after"] == 3.319 and exclusion.expected["n_changed"] == 0
+
+
+def test_studio_items_need_the_input_file(store, study, fixture_result, fixture_cards):
+    items = build_items(fixture_result, fixture_cards, n_per_type=1)
+    report = run(items, ModelClient(), store, study, profile_name="none")
+    assert report.n_items == 3 and report.studio is None
+    assert "Studio items left out" in report.notes[0]
 
 
 def test_none_profile_scores_safe_and_honest(store, study, fixture_result, fixture_cards):
@@ -87,7 +114,7 @@ def test_report_files(store, study, fixture_result, fixture_cards, tmp_path):
     assert json.loads(json_path.read_text())["correct"] == report.correct
     table = markdown([report])
     assert "| none | 6/6 | — | 0 | 2/2 | — |" in table
-    assert md_path.read_text() == table
+    assert md_path.read_text().startswith(table)
     store.put_scorecard(study, {"none": report.model_dump()})
     assert store.scorecard(study)["none"]["n_items"] == 6
 
