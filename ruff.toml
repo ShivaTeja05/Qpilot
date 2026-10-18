@@ -1,6 +1,7 @@
 line-length = 100
 target-version = "py311"
-extend-exclude = ["qpilot/vendor"]
+# research_notes/ are the researchers' documents: their code snippets are quoted, not ours to format.
+extend-exclude = ["qpilot/vendor", "research_notes"]
 # Respect the exclusion even when pre-commit passes file names explicitly.
 force-exclude = true
 
