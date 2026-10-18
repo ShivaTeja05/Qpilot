@@ -3,14 +3,15 @@
 **What it answers.** For each well: did this curve amplify? The answer comes from the shape of
 the raw amplification curve, using a classifier trained on expert calls. It is **one option on
 the `amp_call` axis** ("Which curves count as amplified"). It is **never the default**: the
-default stays `linregpcr`. It is offered only when `qpilot.qpcr.curve_judge.validated()` is
-True, which requires the pre-registered transfer test on the instrument to have passed.
+default stays `linregpcr`. It is offered for an input file only when
+`qpilot.qpcr.curve_judge.validated(rdml_path)` is True for that file: the pre-registered
+transfer test passed, and its result covers the file (see *Which files are validated*).
 Otherwise it ships disabled, labelled *not validated for this instrument*.
 
 **Status on the demo instrument (LightCycler 480, SYBR Green I): the pre-registered transfer
-test passed on 17 Oct 2026, so the learned option may be offered (never as the default).** It
-passed with little margin, and it has a systematic blind spot for very early curves: see
-*Transfer result*.
+test passed on 17 Oct 2026, so the learned option may be offered on the demo file (never as
+the default).** It passed with little margin, and it has a systematic blind spot for very early
+curves: see *Transfer result*. No other file is validated today.
 
 ## Paper, data, licence
 
@@ -53,7 +54,8 @@ passed with little margin, and it has a systematic blind spot for very early cur
   (`Run.getreactjson`, the same `adp` points LinRegPCR uses). Cycles 1-40 are kept by cycle
   number; later cycles are dropped and missing ones are NaN. Then `Fstand = F / min(F)` per
   curve (the per-curve substitution for ROX), then the paper's `Fnorm`. A curve whose minimum
-  is not positive cannot be called (`callable = False`, call = not amplified).
+  is not positive cannot be scored (`callable = False`): it has no call (`None`), never
+  *not amplified*.
 - **Output.** `learned_p` (probability of amplification) and the call `p > 0.5`, per well,
   keyed `run_id/well`.
 
@@ -96,6 +98,36 @@ Read beyond the verdict:
 - The margin on (b) is 0.32 percentage points. Retraining, or any change to the substitution,
   needs a new pre-registered run.
 
+## Which files are validated
+
+`validated(rdml_path)` answers for one input file, and is False without one. It needs the
+shipped model's transfer result: `transfer.json` names this model's SHA-256 and every
+criterion passed. Then the file must be one of these:
+
+1. **The tested file itself.** Its SHA-256 equals the one recorded for the transfer test
+   (`data.sha256`: the pinned demo file, `bc1d233e…`). A byte-identical copy anywhere counts;
+   nothing else is read.
+2. **A file the fingerprint covers.** `fingerprint(rdml_path)` lists what a file declares,
+   over every curve of every run: the run's `<instrument>`, the target's dye with its declared
+   `dyeChemistry`, the target type (`toi` or `ref`) and the number of cycles. A file is
+   covered only when every run names its instrument and every value it shows is in the
+   fingerprint recorded for the tested file (`transfer.json`, `fingerprint`).
+
+A file that names no instrument in some run is validated only by rule 1. "No instrument named"
+is true of exports from many machines: a Bio-Rad CFX384 SYBR plate of 45 cycles declares
+exactly what the demo declares. The demo names no instrument and no dye chemistry, so its
+recorded fingerprint (no instrument, dye `SYBR` with no chemistry, targets of interest only,
+45 or 50 cycles) covers no other file. **Today only the demo file itself is validated**: not
+the standards fixture cut from it, not a copy rescaled to other units, and not a file that
+names the LightCycler 480, because the test never saw a file that names it. The reading is
+conservative on purpose: names are compared as written, so a file that names a tested
+instrument in other words is not validated either.
+
+A record whose tested file names no instrument cannot cover any other file, so with the
+shipped record no input file is parsed for this: the answer costs one SHA-256 of the file.
+Fingerprints that are read are cached in the process by the file's SHA-256 (reading the demo's
+takes about 11 s).
+
 ## Known limits
 
 - **Chemistry.** Trained only on hydrolysis-probe (TaqMan) curves. SYBR Green curves have a
@@ -124,5 +156,6 @@ Read beyond the verdict:
 
 The learned call is one option on the `amp_call` axis, shown beside `linregpcr` and the Cq
 cut-offs, and **never the default**. It reaches the axis only through
-`register_learned(LEARNED_RULE, predict)`, and only when `validated()` is True. Re-labels by a
-person are proposals (`curve.well_call`). The model never decides on its own.
+`register_learned(LEARNED_RULE, predict)`, and only when `validated(rdml_path)` is True for
+the input file. Re-labels by a person are proposals (`curve.well_call`). The model never
+decides on its own.

@@ -31,11 +31,18 @@ whose minimum is not a positive number (a baseline-subtracted or offset export) 
 scored. Whether the substitution is good enough is decided only by the transfer test, never by
 this module.
 
-Validation is per input file. The transfer test ran on one file, and ``transfer.json`` records
-that file's :func:`fingerprint`: the instrument, dyes, target types and cycle counts it declares.
-:func:`validated` says yes only for a file whose fingerprint stays within that record, and never
-without a file. The demo file names no instrument and no dye chemistry, so the record is what it
-does say: dye ``SYBR``, targets of interest only, 45 or 50 cycles, and no instrument named.
+Validation is per input file, and never without one. The transfer test ran on one file, and
+``transfer.json`` records its SHA-256 and its :func:`fingerprint`: the instrument, dyes, target
+types and cycle counts it declares. :func:`validated` says yes for exactly two kinds of file:
+
+* the transfer-tested file itself (same SHA-256), and
+* a file in which every run names its instrument and whose fingerprint stays within the record.
+
+A file that names no instrument is never validated by its fingerprint: "no instrument named" is
+true of exports from any machine (a CFX384 plate with SYBR at 45 cycles looks like the demo), so
+only its hash can tie it to the test. The demo file names no instrument and no dye chemistry,
+so its record (dye ``SYBR``, targets of interest only, 45 or 50 cycles, no instrument named)
+covers no other file: today the demo file is the only one validated.
 
 Wiring (done by the integration, not here)::
 
@@ -50,6 +57,8 @@ import hashlib
 import json
 import logging
 import math
+import threading
+from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
@@ -75,6 +84,11 @@ MAX_MODEL_BYTES = 32 * 1024 * 1024
 NOT_VALIDATED = "not validated for this instrument"
 KEY_NAME = "run_id/well"
 FINGERPRINT_KEYS: tuple[str, ...] = ("instrument", "dye", "target_type", "cycles")
+#: Fingerprints kept per process, keyed by the file's SHA-256 (the demo takes ~11 s to read).
+FINGERPRINT_CACHE_SIZE = 32
+_FINGERPRINTS: OrderedDict[str, str] = OrderedDict()
+_FINGERPRINTS_LOCK = threading.Lock()
+_SHA256_HEX = frozenset("0123456789abcdef")
 
 LEARNED_RULE = AmpCallRule(
     id="learned",
@@ -505,20 +519,34 @@ def fingerprint(rdml_path: str | Path) -> dict[str, list[Any]]:
       them (0 for a well without amplification data).
 
     Each is the sorted list of its distinct values: plain JSON, compared with the record in
-    ``transfer.json``. Cached in the process by the file's path and content.
+    ``transfer.json``. Cached in the process by the file's SHA-256 (its content, wherever it
+    lies), for up to :data:`FINGERPRINT_CACHE_SIZE` files.
 
     Raises:
         qpilot.io.rdml_io.RdmlLoadError: The file could not be loaded safely.
+        CurveJudgeError: The file changed while it was being read.
         OSError: The file cannot be read.
     """
     from qpilot.qpcr.curves import file_sha256
 
-    return json.loads(_fingerprint_json(file_sha256(rdml_path), str(rdml_path)))
+    sha256 = file_sha256(rdml_path)
+    with _FINGERPRINTS_LOCK:
+        cached = _FINGERPRINTS.get(sha256)
+        if cached is not None:
+            _FINGERPRINTS.move_to_end(sha256)
+    if cached is None:
+        cached = _read_fingerprint(rdml_path)
+        if file_sha256(rdml_path) != sha256:  # never file one file's reading under another
+            raise CurveJudgeError("the file changed while it was being read")
+        with _FINGERPRINTS_LOCK:
+            _FINGERPRINTS[sha256] = cached
+            while len(_FINGERPRINTS) > FINGERPRINT_CACHE_SIZE:
+                _FINGERPRINTS.popitem(last=False)
+    return json.loads(cached)
 
 
-@lru_cache(maxsize=8)
-def _fingerprint_json(sha256: str, path: str) -> str:
-    """:func:`fingerprint` of ``path`` as JSON; ``sha256`` (its content) keys the cache."""
+def _read_fingerprint(path: str | Path) -> str:
+    """:func:`fingerprint` of ``path`` as JSON, read from the file (uncached)."""
     from qpilot.io.rdml_io import load, runs
 
     doc = load(path)
@@ -526,7 +554,7 @@ def _fingerprint_json(sha256: str, path: str) -> str:
     targets = {t["id"]: (t["type"] or "", t["dyeId"] or "") for t in doc.targets()}
     seen: dict[str, set[Any]] = {key: set() for key in FINGERPRINT_KEYS}
     for run in runs(doc):
-        instrument = run["instrument"] or ""
+        instrument = (run["instrument"] or "").strip()
         for react in run.getreactjson(curves=True)["reacts"]:
             for data in react.get("datas", []):
                 target_type, dye = targets.get(data.get("tar", ""), ("", ""))
@@ -537,9 +565,34 @@ def _fingerprint_json(sha256: str, path: str) -> str:
     return json.dumps({key: sorted(values) for key, values in seen.items()}, sort_keys=True)
 
 
+def _tested_sha256(result: dict[str, Any]) -> str | None:
+    """The SHA-256 of the file the transfer test ran on, when the record names a valid one."""
+    data = result.get("data")
+    sha256 = data.get("sha256") if isinstance(data, dict) else None
+    if isinstance(sha256, str) and len(sha256) == 64 and set(sha256) <= _SHA256_HEX:
+        return sha256
+    return None
+
+
+def _names_an_instrument(recorded: Any) -> bool:
+    """The record can cover a file other than the tested one: it names at least one instrument.
+
+    A file is covered by its fingerprint only when every run names its instrument, so a record
+    whose only instrument is ``""`` (the tested file named none) covers no other file. Checked
+    before any other file is read, so such a record costs nothing.
+    """
+    if not isinstance(recorded, dict) or not isinstance(recorded.get("instrument"), list):
+        return False
+    return any(isinstance(name, str) and name.strip() for name in recorded["instrument"])
+
+
 def _within(observed: dict[str, list[Any]], recorded: Any) -> bool:
-    """Every value the file shows, field by field, is one the transfer test saw."""
-    if not isinstance(recorded, dict):
+    """Every run names its instrument, and every value the file shows was in the transfer test.
+
+    A run that names no instrument (``""``) never matches, whatever the record holds: "no
+    instrument named" is true of files from any machine, so it ties a file to nothing.
+    """
+    if not isinstance(recorded, dict) or "" in observed.get("instrument", [""]):
         return False
     for key in FINGERPRINT_KEYS:
         allowed = recorded.get(key)
@@ -557,17 +610,24 @@ def validated(
     """True only if the transfer test passed for the shipped model and covers this input file.
 
     No file, no claim: without ``rdml_path`` the answer is False. With one, ``transfer.json``
-    must name the SHA-256 of the model that actually loads (the packaged one, verified), every
-    criterion must say ``passed: true``, and the file's :func:`fingerprint` must stay within the
-    one recorded for the tested file: every instrument, dye, target type and cycle count the
-    file shows was in the transfer test. Anything missing, unreadable or mismatched counts as
-    not validated.
+    must name the SHA-256 of the model that actually loads (the packaged one, verified) and
+    every criterion must say ``passed: true``. Then the file is covered when either
+
+    * it is the transfer-tested file itself: its SHA-256 equals ``data.sha256`` in the record
+      (nothing else is read), or
+    * every run in it names its instrument and its :func:`fingerprint` stays within the one
+      recorded for the tested file: every instrument, dye, target type and cycle count it
+      shows was in the transfer test.
+
+    A file that names no instrument in some run is therefore validated only by its hash.
+    Anything missing, unreadable or mismatched counts as not validated.
 
     Args:
         rdml_path: The input file the learned call would be offered for.
         transfer_path: A ``transfer.json`` other than the packaged one (tests).
     """
     from qpilot.io.rdml_io import RdmlLoadError
+    from qpilot.qpcr.curves import file_sha256
 
     if rdml_path is None:
         return False
@@ -584,14 +644,20 @@ def validated(
         return False
     if not all(isinstance(c, dict) and c.get("passed") is True for c in criteria.values()):
         return False
+    recorded = result.get("fingerprint")
     try:
+        tested = _tested_sha256(result)
+        if tested is not None and file_sha256(rdml_path) == tested:
+            return True
+        if not _names_an_instrument(recorded):
+            return False  # the record covers the tested file only
         observed = fingerprint(rdml_path)
-    except (RdmlLoadError, OSError) as err:
+    except (RdmlLoadError, CurveJudgeError, OSError) as err:
         log.info("no Curve Judge fingerprint for this input: %s", err)
         return False
-    return _within(observed, result.get("fingerprint"))
+    return _within(observed, recorded)
 
 
-def status(rdml_path: str | Path | None = None) -> str:
+def status(rdml_path: str | Path | None = None, *, transfer_path: str | Path | None = None) -> str:
     """``"validated"`` or ``"not validated for this instrument"`` for this input file."""
-    return "validated" if validated(rdml_path) else NOT_VALIDATED
+    return "validated" if validated(rdml_path, transfer_path=transfer_path) else NOT_VALIDATED

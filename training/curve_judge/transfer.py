@@ -60,6 +60,14 @@ Known blind spot of this gate, stated before the result: (a) and (b) only ask fo
 where amplification is expected, so a model that over-calls would pass them. The only evidence
 on false positives is the NTC table (c) and the descriptive 2x2 on all unknown wells; both
 are written to ``transfer.json`` and must be read, not just the verdict.
+
+Which files the result covers (recorded, not gated; added after the result was known, and it
+changes no constant, rule or number above). ``transfer.json`` also records the tested file's
+SHA-256 (``data.sha256``) and its ``fingerprint`` (``qpilot.qpcr.curve_judge.fingerprint``:
+the instruments, dyes with their chemistry, target types and cycle counts the file declares).
+``curve_judge.validated(rdml_path)`` reads them: the result covers the tested file itself, by
+its hash, and a file whose every run names its instrument and whose fingerprint stays within
+the record. The demo file names no instrument, so today it covers the demo file only.
 """
 
 from __future__ import annotations
@@ -250,6 +258,7 @@ def main(argv: list[str] | None = None) -> int:
             "wells": len(table),
             "linregpcr_settings": asdict(CurveSettings()),
         },
+        "fingerprint": curve_judge.fingerprint(args.rdml),  # what the file declares; not gated
         "normalisation": NORMALISATION,
         "cycle_mapping": CYCLE_MAPPING,
         "threshold": THRESHOLD,
