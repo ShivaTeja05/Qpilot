@@ -89,7 +89,7 @@ That gives 197 comparisons on 5 plates and 4 machines: two LightCycler 480s, a Q
 |---|---|
 | Baseline efficiency: median \|error\| ≤ 0.15 log2 on ≥ 2 machines | **Pass by the letter.** LC480 AMC 0.12 (dPCR truth) and StepOne 0.09 (pipetted truth, 4 cases). Fails on LC480 DKFZ 0.22 (dPCR) and QuantStudio 0.21 (pipetted). |
 | Spread across analyses warns of error: Spearman ≥ 0.3 within each input level | **Pass**, 0.33–0.68. Among assays that pass the dilution QC it is 0.02–0.55, so mostly it flags broken assays. |
-| Baseline 95 % interval contains the truth ≥ 90 % | **Fail: 83 %.** This is with efficiency uncertainty and a run effect propagated into the interval. The replicate-only interval covers 66 %. Calibrating the efficiency on held-out dPCR plates gives 88 %, still a fail. Adding a between-plate term estimated without truth gives 92 %, but intervals are 63 % wider and the pass rests mostly on one low-copy tube (`docs/review/31-research-closing-the-coverage-gap.md`). |
+| Baseline 95 % interval contains the truth ≥ 90 % | **Fail: 83 %.** This is with efficiency uncertainty and a run effect propagated into the interval. The replicate-only interval covers 66 %. Calibrating the efficiency on held-out dPCR plates gives 88 %, still a fail. Adding a between-plate term estimated without truth gives 92 %, with intervals 63 % wider (±1.33-fold); Poisson sampling alone explains 87 % (`docs/review/31-research-closing-the-coverage-gap.md`). |
 
 | Efficiency choice | Median \|error\| vs dPCR (log2) |
 |---|---|
@@ -137,7 +137,7 @@ With a real difference, the filter does not make small-study calls agree better 
 
 These come from the review and from validation round 2, in priority order:
 
-1. Make the coverage claim robust. A between-plate term estimated without truth lifts coverage to 92 % (±1.33-fold intervals), but the pass rests mostly on low-copy tubes and fails (86 %) without them. Next is a term that grows at low input, pre-registered first (`docs/review/31-research-closing-the-coverage-gap.md`). Quote 92 % with the term and 83 % without, never a nominal 95 %.
+1. Make the coverage claim robust. A between-plate term estimated without truth lifts coverage to 92 % (±1.33-fold intervals), but it rests mostly on how three instruments disagreed on one tube; Poisson sampling, with nothing fitted, explains 87 % (`docs/review/31-research-closing-the-coverage-gap.md`). More instruments measuring shared tubes would pin the between-plate term down. Quote 92 % with the term and 83 % without, never a nominal 95 %.
 2. Have an outside qPCR scientist sign off every tier, including the result that the standard curve beat the baseline against dPCR on one machine.
 3. Run low-copy no-difference and fragility tests on ds_94_4 and MAQC.
 4. Add Cq method and baseline choices, a Cq-only import, paired tests and ANOVA.

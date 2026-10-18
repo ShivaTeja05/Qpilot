@@ -199,6 +199,47 @@ def test_plate_pair_term_recovers_a_between_plate_sd():
     assert known_answers.plate_pair_term(noisy)["sd_plate_pair_log2"] == 0.0
 
 
+def test_poisson_term_scale_and_slope():
+    c = known_answers.copies_per_reaction()
+    assert c["genomic DNA 20ng"] == pytest.approx(20 * 303)  # ng per reaction x 303 copies/ng
+    assert c[truth.qpcr_name("gDNA 0.2ng/ul")] == pytest.approx(0.2 * 10 * 303)  # 10 µl reactions
+    rows = pd.DataFrame({"hi": ["genomic DNA 2ng"], "lo": ["genomic DNA 0.7ng"]})
+    x = known_answers.poisson_x(rows).iloc[0]
+    assert x == pytest.approx(1 / (2 * 303) + 1 / (0.7 * 303))
+    assert known_answers.POISSON_B == pytest.approx(2.0814, abs=1e-4)
+    # the slope through the origin recovers an excess variance proportional to the Poisson scale
+    pairs = [("genomic DNA 20ng", "genomic DNA 7ng"), ("genomic DNA 2ng", "genomic DNA 0.7ng")]
+    rows = []
+    for hi, lo in pairs:
+        xs = 1 / c[hi] + 1 / c[lo]
+        for plate, sign in (("p", 1), ("q", -1)):  # two plates, difference 2 sqrt(b x / 2)
+            rows.append(
+                {
+                    "tubes": "amc" if plate == "p" else "dkfz",
+                    "plate": plate,
+                    "hi": hi,
+                    "lo": lo,
+                    "pair": f"{hi} vs {lo}",
+                    "estimate_log2": 1.5 + sign * np.sqrt(3.0 * xs / 2),
+                    "se_rep": 0.0,
+                    "se_log2e": 0.0,
+                    "dcq": -1.5,
+                }
+            )
+    assert known_answers.poisson_slope(pd.DataFrame(rows)) == pytest.approx(3.0)
+
+
+def test_propagate_adds_the_poisson_term():
+    c = _curves()
+    base = known_answers._baseline(run(c, [("hi", "lo")])).assign(tubes="g", truth_se=0.0)
+    zero = {"g": {"sd_level_log2": 0.0, "sd_log2e_run": 0.0}}
+    plain = known_answers.propagate(base, zero)
+    more = known_answers.propagate(
+        base.assign(poisson_x=0.01), {"g": zero["g"] | {"poisson_b": 2.0}}
+    )
+    assert np.allclose(more["se_new"] ** 2, plain["se_new"] ** 2 + 0.02)
+
+
 def test_coverage_ci_resamples_whole_truths():
     x = pd.DataFrame(
         {
@@ -251,7 +292,14 @@ def test_known_answer_round_end_to_end(tmp_path):
     terms = gap["p1_plate_pair_term"]["terms"]
     assert all(k.startswith("gDNA Feb 2024") for k in terms["amc"]["excess_variance_by_pair"])
     assert all(k.startswith("gDNA Dec 2024") for k in terms["volume"]["excess_variance_by_pair"])
-    for key in ("p1_plate_pair_term", "p2_std_curve", "p3_std_curve_plus_plate_pair_term"):
+    p5 = gap["p5_poisson_plate_pair_term"]
+    assert p5["poisson_b"] == pytest.approx(1 / np.log(2) ** 2, abs=1e-4)  # nothing fitted
+    for key in (
+        "p1_plate_pair_term",
+        "p2_std_curve",
+        "p3_std_curve_plus_plate_pair_term",
+        "p5_poisson_plate_pair_term",
+    ):
         assert gap[key]["all"]["truths"] == 13
     assert set(result["v2_coverage"]["other_estimators"]) == {
         "robust_in_sample",

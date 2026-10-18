@@ -322,14 +322,20 @@ def std_curve_qc(curves: pd.DataFrame, series: str) -> dict[tuple[str, str], flo
 
 def propagate(base: pd.DataFrame, components: dict[str, dict]) -> pd.DataFrame:
     """Add the propagated interval to baseline rows; ``components`` is keyed by ``tubes``. An
-    optional ``sd_plate_pair_log2`` adds the plate x pair term of :func:`plate_pair_term`."""
+    optional ``sd_plate_pair_log2`` adds the plate x pair term of :func:`plate_pair_term`, and an
+    optional ``poisson_b`` adds b times the rows' ``poisson_x`` (:func:`poisson_x`)."""
     out = base.copy()
     sd_level = out["tubes"].map(lambda k: components[k]["sd_level_log2"])
     tau = out["tubes"].map(lambda k: components[k]["sd_log2e_run"])
     sd_pp = out["tubes"].map(lambda k: components[k].get("sd_plate_pair_log2", 0.0))
+    poisson = out["tubes"].map(lambda k: components[k].get("poisson_b", 0.0))
+    poisson = poisson * out["poisson_x"] if "poisson_x" in out else 0.0
     rep = out["se_rep"] ** 2
     added = (
-        out["dcq"] ** 2 * (out["se_log2e"].fillna(0.0) ** 2 + tau**2) + 2 * sd_level**2 + sd_pp**2
+        out["dcq"] ** 2 * (out["se_log2e"].fillna(0.0) ** 2 + tau**2)
+        + 2 * sd_level**2
+        + sd_pp**2
+        + poisson
     )
     var = rep + added
     df = var**2 / (rep**2 / out["df"])
@@ -438,34 +444,74 @@ def calibrate(base: pd.DataFrame, offsets: dict[str, dict]) -> pd.DataFrame:
 PHYSICAL_SERIES = {"amc": "gDNA Dec 2024", "dkfz": "gDNA Dec 2024", "volume": "gDNA Feb 2024"}
 
 
-def plate_pair_term(base: pd.DataFrame) -> dict:
-    """Plate x pair SD (log2), estimated without truth from tube pairs measured on two or more plates.
+def _pair_excess(base: pd.DataFrame) -> pd.DataFrame:
+    """Per tube pair measured on two or more plates: the excess variance across plates.
 
     For each pair and plate: m is the median baseline estimate over runs, and s^2 the median over
-    runs of (se_rep^2 + dCq^2 se_log2E^2) divided by the number of runs. Per pair, the excess is the
-    sample variance of m across plates minus the mean s^2. The term is sqrt(max(0, mean excess)).
-    Pairs dPCR could not resolve count too: no truth is used.
+    runs of (se_rep^2 + dCq^2 se_log2E^2) divided by the number of runs. The excess is the sample
+    variance of m across plates minus the mean s^2. Pairs dPCR could not resolve count too: no
+    truth is used.
     """
     b = base.dropna(subset=["estimate_log2"])
     b = b.assign(
         own=b["se_rep"] ** 2 + (b["dcq"] * b["se_log2e"].fillna(0.0)) ** 2,
         series=b["tubes"].map(PHYSICAL_SERIES),
     )
-    excess = {}
-    for (series, _, _), pair in b.groupby(["series", "hi", "lo"]):
+    rows = []
+    for (series, hi, lo), pair in b.groupby(["series", "hi", "lo"]):
         plates = pair.groupby("plate").agg(
             m=("estimate_log2", "median"), s2=("own", "median"), n=("own", "size")
         )
         if len(plates) >= 2:
-            excess[f"{series}: {pair['pair'].iloc[0]}"] = float(
-                plates["m"].var(ddof=1) - (plates["s2"] / plates["n"]).mean()
-            )
-    sd = float(np.sqrt(max(0.0, np.mean(list(excess.values()))))) if excess else 0.0
+            excess = float(plates["m"].var(ddof=1) - (plates["s2"] / plates["n"]).mean())
+            rows.append([series, hi, lo, pair["pair"].iloc[0], excess])
+    return pd.DataFrame(rows, columns=["series", "hi", "lo", "pair", "excess"])
+
+
+def plate_pair_term(base: pd.DataFrame) -> dict:
+    """Plate x pair SD (log2), estimated without truth: sqrt(max(0, mean excess variance over the
+    pairs measured on two or more plates)), see :func:`_pair_excess`."""
+    e = _pair_excess(base)
+    sd = float(np.sqrt(max(0.0, e["excess"].mean()))) if len(e) else 0.0
     return {
         "sd_plate_pair_log2": sd,
-        "pairs": len(excess),
-        "excess_variance_by_pair": {k: round(v, 4) for k, v in excess.items()},
+        "pairs": len(e),
+        "excess_variance_by_pair": {
+            f"{r.series}: {r.pair}": round(r.excess, 4) for r in e.itertuples()
+        },
     }
+
+
+COPIES_PER_NG = 303  # haploid human genome copies per ng (3.3 pg each)
+REACTION_UL = 10  # reaction volume of the instrument comparison, whose levels are ng/µl
+POISSON_B = 1 / np.log(2) ** 2  # variance of log2 of a Poisson count of c copies is 1 / (c ln^2 2)
+
+
+def copies_per_reaction() -> dict[str, float]:
+    """Nominal template copies per reaction of every sample, from the design only (never dPCR);
+    amplicon labels are read as copies per reaction."""
+    scale = {"ng": COPIES_PER_NG, "ng/µl": COPIES_PER_NG * REACTION_UL, "copies": 1.0}
+    out = {}
+    for plate in PLATES:
+        for group in plate.groups:
+            for sample, (_, _, amount) in group.levels.items():
+                out[dpcr_truth.qpcr_name(sample)] = amount * scale[group.unit]
+    return out
+
+
+def poisson_x(rows: pd.DataFrame) -> pd.Series:
+    """The Poisson scale of each row's pair: 1/c_hi + 1/c_lo, c in copies per reaction."""
+    c = copies_per_reaction()
+    return 1 / rows["hi"].map(c) + 1 / rows["lo"].map(c)
+
+
+def poisson_slope(base: pd.DataFrame) -> float:
+    """Least-squares slope through the origin of the pairs' excess variance on their Poisson scale."""
+    e = _pair_excess(base)
+    if e.empty:
+        return 0.0
+    x = poisson_x(e).to_numpy()
+    return float(x @ e["excess"].to_numpy() / (x @ x))
 
 
 def coverage_ci(x: pd.DataFrame, draws: int = 2000, seed: int = 2026, level: float = 0.90) -> dict:
@@ -787,6 +833,15 @@ def score(t: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     p1_in = score_rows(base, {g: comp[g] | term(pp_all) for g in groups})
     p2 = score_rows(std, std_comp)
     p3 = score_rows(std, {g: std_comp[g] | term(pp[g]) for g in groups})
+    base_x = base.assign(poisson_x=poisson_x(base))
+    b_held = {
+        g: poisson_slope(base[base["tubes"].map(PHYSICAL_SERIES) != PHYSICAL_SERIES[g]])
+        for g in groups
+    }
+    b_both = poisson_slope(base)
+    p5 = score_rows(base_x, {g: comp[g] | {"poisson_b": POISSON_B} for g in groups})
+    p5a = score_rows(base_x, {g: comp[g] | {"poisson_b": b_held[g]} for g in groups})
+    p5b = score_rows(base_x, {g: comp[g] | {"poisson_b": b_both} for g in groups})
     out["coverage_gap_tests"] = {
         "plan": "docs/review/31-research-closing-the-coverage-gap.md (fixed before scoring)",
         "rule": out["v2_coverage"]["rule"],
@@ -826,6 +881,24 @@ def score(t: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             **gap_report(p2),
         },
         "p3_std_curve_plus_plate_pair_term": gap_report(p3),
+        "p5_poisson_plate_pair_term": {
+            "method": (
+                "round-2 interval plus (1/c_hi + 1/c_lo)/ln^2 2, one Poisson draw of each tube per "
+                "plate; c = nominal copies per reaction from the design; nothing fitted"
+            ),
+            "plan": "pre-registered in docs/review/31 (commit 4b25cc5) before scoring",
+            "poisson_b": round(POISSON_B, 4),
+            "copies_per_reaction": {k: round(v, 1) for k, v in copies_per_reaction().items()},
+            **gap_report(p5),
+            "variant_p5a_b_fitted_on_other_series": {
+                "poisson_b": {g: round(v, 3) for g, v in b_held.items()},
+                **gap_report(p5a),
+            },
+            "variant_p5b_b_fitted_on_both_series": {
+                "poisson_b": round(b_both, 3),
+                **gap_report(p5b),
+            },
+        },
     }
 
     # dPCR could not settle these pairs: show the baseline against each candidate truth
@@ -1013,6 +1086,15 @@ def summary_lines(first: dict, second: dict, null: dict) -> list[str]:
         test_line("P2 run's own standard curve", gap["p2_std_curve"]),
         test_line(
             "P3 standard curve + plate x pair term", gap["p3_std_curve_plus_plate_pair_term"]
+        ),
+        test_line("P5 Poisson term, nothing fitted", gap["p5_poisson_plate_pair_term"]),
+        test_line(
+            "P5a Poisson slope from the other series",
+            gap["p5_poisson_plate_pair_term"]["variant_p5a_b_fitted_on_other_series"],
+        ),
+        test_line(
+            "P5b Poisson slope from both series",
+            gap["p5_poisson_plate_pair_term"]["variant_p5b_b_fitted_on_both_series"],
         ),
     ]
     rs = null["random_splits"]

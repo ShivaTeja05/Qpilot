@@ -239,3 +239,27 @@ Median \|error\| by machine, log2. P1 changes only the interval, so its errors a
 - **If P5 reaches ≥ 90 %,** report P5 as the interval. It has no fitted parameter and a physical reason.
 - **If it does not,** report P1's 92.4 % with its caveats, and give P5's figure as what sampling alone explains.
 - **Tiers.** Either way, tiers are left to the outside reviewer.
+
+### P5 results (run after the plan was committed as 4b25cc5)
+
+| Test | Coverage | 90 % CI over truths | Median half-width, log2 (fold) | AMC / DKFZ / instrument comparison | Bar |
+|---|---|---|---|---|---|
+| Round 2, for reference | 83.2 % | 75.9–89.1 % | 0.251 (±1.19×) | 81.6 / 87.5 / 92.3 % | Fail |
+| **P5** Poisson term, nothing fitted (b = 2.08) | **87.3 %** | 82.1–91.7 % | 0.312 (±1.24×) | 86.8 / 87.5 / 92.3 % | **Fail** |
+| P5a: b from the other series (28.5 for AMC/DKFZ, 1.77 for the comparison) | 92.9 % | 89.3–95.3 % | 0.594 (±1.51×) | 93.4 / 90.6 / 92.3 % | Pass |
+| P5b: b from both series (2.01) | 87.3 % | 82.1–91.7 % | 0.310 | 86.8 / 87.5 / 92.3 % | Fail |
+| P1, for comparison | 92.4 % | 89.1–95.6 % | 0.410 (±1.33×) | 91.4 / 93.8 / 100 % | Pass |
+
+**Reading:**
+- **Sampling explains part of the gap.** One Poisson draw per tube per plate, with no fitted number, explains about half the gap: 83 → 87 %, at a small cost in width (±1.19 → ±1.24-fold). The fitted slope from both series (2.01) agrees with theory (2.08).
+- **The rest is instrument disagreement.** It is larger than sampling, and so far we have seen it only on the instrument-comparison tubes.
+- **P5a passes, but it does not count.** It reaches 90 % only by projecting that disagreement onto low-copy AMC tubes, which gives ±1.51-fold intervals. It is a variant.
+
+**Decision, by the rule fixed in the plan.** P5 is below 90 %, so the reported interval is **P1: 92.4 %, ±1.33-fold, with its caveats**.
+
+**The claim:** *"Replicate, efficiency, run, premix and sampling error together explain 87 % coverage. Reaching 92 % needs a between-plate term the size of the disagreement between three instruments on the same tubes (0.17 log2). Without it, a new instrument's interval is too narrow."*
+
+**Checks run:**
+- `pytest` (28 pass, including P5's scale, slope and propagation);
+- `qsim validate`;
+- an independent recompute of the round-2, P1 and P5 coverage from `validation_dpcr_baseline.csv` and the JSON, with code that does not import qsim. It matched 0.832 / 0.924 / 0.873 exactly.

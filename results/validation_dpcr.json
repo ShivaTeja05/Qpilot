@@ -4221,6 +4221,686 @@
     }
    },
    "pass": true
+  },
+  "p5_poisson_plate_pair_term": {
+   "method": "round-2 interval plus (1/c_hi + 1/c_lo)/ln^2 2, one Poisson draw of each tube per plate; c = nominal copies per reaction from the design; nothing fitted",
+   "plan": "pre-registered in docs/review/31 (commit 4b25cc5) before scoring",
+   "poisson_b": 2.0814,
+   "copies_per_reaction": {
+    "genomic DNA 20ng": 6060.0,
+    "genomic DNA 7ng": 2121.0,
+    "genomic DNA 2ng": 606.0,
+    "genomic DNA 0.7ng": 212.1,
+    "genomic DNA 0.2ng": 60.6,
+    "EMBL DNA 20ng": 6060.0,
+    "dil_1_10_10e5": 100000.0,
+    "dil_1_10_10e4": 10000.0,
+    "dil_1_10_10e3": 1000.0,
+    "dil_1_10_10e2": 100.0,
+    "gdna_0_2ng_ul": 606.0,
+    "gdna_1ng_ul": 3030.0,
+    "gdna_2ng_ul": 6060.0,
+    "gdna_4ng_ul": 12120.0,
+    "gdna_8ng_ul": 24240.0
+   },
+   "all": {
+    "cases": 197,
+    "old_welch_ci": 0.655,
+    "propagated_ci": 0.843,
+    "propagated_ci_with_truth_se": 0.873,
+    "median_half_width_old": 0.186,
+    "median_half_width_new": 0.312,
+    "truths": 13,
+    "draws": 2000,
+    "seed": 2026,
+    "coverage_90%_cluster_bootstrap": [
+     0.821,
+     0.917
+    ]
+   },
+   "by_group": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.638,
+     "propagated_ci": 0.829,
+     "propagated_ci_with_truth_se": 0.868,
+     "median_half_width_old": 0.169,
+     "median_half_width_new": 0.302
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.875,
+     "propagated_ci_with_truth_se": 0.875,
+     "median_half_width_old": 0.329,
+     "median_half_width_new": 0.549
+    },
+    "volume": {
+     "cases": 13,
+     "old_welch_ci": 0.615,
+     "propagated_ci": 0.923,
+     "propagated_ci_with_truth_se": 0.923,
+     "median_half_width_old": 0.128,
+     "median_half_width_new": 0.252
+    }
+   },
+   "by_plate": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.638,
+     "propagated_ci": 0.829,
+     "propagated_ci_with_truth_se": 0.868,
+     "median_half_width_old": 0.169,
+     "median_half_width_new": 0.302
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.875,
+     "propagated_ci_with_truth_se": 0.875,
+     "median_half_width_old": 0.329,
+     "median_half_width_new": 0.549
+    },
+    "volume_lc480": {
+     "cases": 5,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.171,
+     "median_half_width_new": 0.252
+    },
+    "volume_qs6": {
+     "cases": 4,
+     "old_welch_ci": 0.0,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.75,
+     "median_half_width_old": 0.043,
+     "median_half_width_new": 0.287
+    },
+    "volume_stepone": {
+     "cases": 4,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.154,
+     "median_half_width_new": 0.288
+    }
+   },
+   "by_truth": {
+    "20 vs 7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.69,
+     "propagated_ci": 0.833,
+     "propagated_ci_with_truth_se": 0.857,
+     "median_half_width_old": 0.159,
+     "median_half_width_new": 0.226
+    },
+    "7 vs 2 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.714,
+     "propagated_ci": 0.905,
+     "propagated_ci_with_truth_se": 0.952,
+     "median_half_width_old": 0.167,
+     "median_half_width_new": 0.256
+    },
+    "2 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.738,
+     "propagated_ci": 0.905,
+     "propagated_ci_with_truth_se": 0.905,
+     "median_half_width_old": 0.216,
+     "median_half_width_new": 0.325
+    },
+    "20 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.5,
+     "propagated_ci": 0.738,
+     "propagated_ci_with_truth_se": 0.81,
+     "median_half_width_old": 0.184,
+     "median_half_width_new": 0.34
+    },
+    "EMBL 20 vs 20 ng": {
+     "cases": 4,
+     "old_welch_ci": 0.25,
+     "propagated_ci": 0.25,
+     "propagated_ci_with_truth_se": 0.25,
+     "median_half_width_old": 0.28,
+     "median_half_width_new": 0.298
+    },
+    "1e4 vs 1e3 copies": {
+     "cases": 4,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.75,
+     "median_half_width_old": 0.315,
+     "median_half_width_new": 0.427
+    },
+    "1e3 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.45,
+     "median_half_width_new": 0.6
+    },
+    "1e4 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 0.5,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.486,
+     "median_half_width_new": 0.82
+    },
+    "1 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.333,
+     "propagated_ci": 0.667,
+     "propagated_ci_with_truth_se": 0.667,
+     "median_half_width_old": 0.182,
+     "median_half_width_new": 0.337
+    },
+    "2 vs 1 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.128,
+     "median_half_width_new": 0.24
+    },
+    "4 vs 2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.125,
+     "median_half_width_new": 0.236
+    },
+    "8 vs 4 ng/\u00b5l": {
+     "cases": 1,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.171,
+     "median_half_width_new": 0.251
+    },
+    "4 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.179,
+     "median_half_width_new": 0.472
+    }
+   },
+   "bias_by_machine": {
+    "LightCycler 480 II, AMC": {
+     "cases": 157,
+     "median_abs_error_log2": 0.121,
+     "median_bias_log2": -0.043,
+     "share_within_0.15": 0.58
+    },
+    "LightCycler 480 II, DKFZ": {
+     "cases": 32,
+     "median_abs_error_log2": 0.218,
+     "median_bias_log2": -0.08,
+     "share_within_0.15": 0.281
+    },
+    "QuantStudio 6 Flex, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.205,
+     "median_bias_log2": 0.177,
+     "share_within_0.15": 0.5
+    },
+    "StepOne, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.087,
+     "median_bias_log2": 0.074,
+     "share_within_0.15": 0.5
+    }
+   },
+   "pass": false,
+   "variant_p5a_b_fitted_on_other_series": {
+    "poisson_b": {
+     "amc": 28.516,
+     "dkfz": 28.516,
+     "volume": 1.769
+    },
+    "all": {
+     "cases": 197,
+     "old_welch_ci": 0.655,
+     "propagated_ci": 0.924,
+     "propagated_ci_with_truth_se": 0.929,
+     "median_half_width_old": 0.186,
+     "median_half_width_new": 0.594,
+     "truths": 13,
+     "draws": 2000,
+     "seed": 2026,
+     "coverage_90%_cluster_bootstrap": [
+      0.893,
+      0.953
+     ]
+    },
+    "by_group": {
+     "amc": {
+      "cases": 152,
+      "old_welch_ci": 0.638,
+      "propagated_ci": 0.934,
+      "propagated_ci_with_truth_se": 0.934,
+      "median_half_width_old": 0.169,
+      "median_half_width_new": 0.757
+     },
+     "dkfz": {
+      "cases": 32,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.875,
+      "propagated_ci_with_truth_se": 0.906,
+      "median_half_width_old": 0.329,
+      "median_half_width_new": 0.801
+     },
+     "volume": {
+      "cases": 13,
+      "old_welch_ci": 0.615,
+      "propagated_ci": 0.923,
+      "propagated_ci_with_truth_se": 0.923,
+      "median_half_width_old": 0.128,
+      "median_half_width_new": 0.251
+     }
+    },
+    "by_plate": {
+     "amc": {
+      "cases": 152,
+      "old_welch_ci": 0.638,
+      "propagated_ci": 0.934,
+      "propagated_ci_with_truth_se": 0.934,
+      "median_half_width_old": 0.169,
+      "median_half_width_new": 0.757
+     },
+     "dkfz": {
+      "cases": 32,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.875,
+      "propagated_ci_with_truth_se": 0.906,
+      "median_half_width_old": 0.329,
+      "median_half_width_new": 0.801
+     },
+     "volume_lc480": {
+      "cases": 5,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.171,
+      "median_half_width_new": 0.251
+     },
+     "volume_qs6": {
+      "cases": 4,
+      "old_welch_ci": 0.0,
+      "propagated_ci": 0.75,
+      "propagated_ci_with_truth_se": 0.75,
+      "median_half_width_old": 0.043,
+      "median_half_width_new": 0.284
+     },
+     "volume_stepone": {
+      "cases": 4,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.154,
+      "median_half_width_new": 0.286
+     }
+    },
+    "by_truth": {
+     "20 vs 7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.69,
+      "propagated_ci": 0.929,
+      "propagated_ci_with_truth_se": 0.929,
+      "median_half_width_old": 0.159,
+      "median_half_width_new": 0.338
+     },
+     "7 vs 2 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.714,
+      "propagated_ci": 0.976,
+      "propagated_ci_with_truth_se": 0.976,
+      "median_half_width_old": 0.167,
+      "median_half_width_new": 0.528
+     },
+     "2 vs 0.7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.738,
+      "propagated_ci": 0.952,
+      "propagated_ci_with_truth_se": 0.952,
+      "median_half_width_old": 0.216,
+      "median_half_width_new": 0.866
+     },
+     "20 vs 0.7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.5,
+      "propagated_ci": 0.905,
+      "propagated_ci_with_truth_se": 0.905,
+      "median_half_width_old": 0.184,
+      "median_half_width_new": 0.782
+     },
+     "EMBL 20 vs 20 ng": {
+      "cases": 4,
+      "old_welch_ci": 0.25,
+      "propagated_ci": 0.25,
+      "propagated_ci_with_truth_se": 0.5,
+      "median_half_width_old": 0.28,
+      "median_half_width_new": 0.345
+     },
+     "1e4 vs 1e3 copies": {
+      "cases": 4,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.75,
+      "propagated_ci_with_truth_se": 0.75,
+      "median_half_width_old": 0.315,
+      "median_half_width_new": 0.54
+     },
+     "1e3 vs 1e2 copies": {
+      "cases": 4,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.45,
+      "median_half_width_new": 1.21
+     },
+     "1e4 vs 1e2 copies": {
+      "cases": 4,
+      "old_welch_ci": 0.5,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.486,
+      "median_half_width_new": 1.301
+     },
+     "1 vs 0.2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.333,
+      "propagated_ci": 0.667,
+      "propagated_ci_with_truth_se": 0.667,
+      "median_half_width_old": 0.182,
+      "median_half_width_new": 0.333
+     },
+     "2 vs 1 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.128,
+      "median_half_width_new": 0.239
+     },
+     "4 vs 2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.125,
+      "median_half_width_new": 0.236
+     },
+     "8 vs 4 ng/\u00b5l": {
+      "cases": 1,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.171,
+      "median_half_width_new": 0.251
+     },
+     "4 vs 0.2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.179,
+      "median_half_width_new": 0.47
+     }
+    },
+    "bias_by_machine": {
+     "LightCycler 480 II, AMC": {
+      "cases": 157,
+      "median_abs_error_log2": 0.121,
+      "median_bias_log2": -0.043,
+      "share_within_0.15": 0.58
+     },
+     "LightCycler 480 II, DKFZ": {
+      "cases": 32,
+      "median_abs_error_log2": 0.218,
+      "median_bias_log2": -0.08,
+      "share_within_0.15": 0.281
+     },
+     "QuantStudio 6 Flex, EMBL": {
+      "cases": 4,
+      "median_abs_error_log2": 0.205,
+      "median_bias_log2": 0.177,
+      "share_within_0.15": 0.5
+     },
+     "StepOne, EMBL": {
+      "cases": 4,
+      "median_abs_error_log2": 0.087,
+      "median_bias_log2": 0.074,
+      "share_within_0.15": 0.5
+     }
+    },
+    "pass": true
+   },
+   "variant_p5b_b_fitted_on_both_series": {
+    "poisson_b": 2.009,
+    "all": {
+     "cases": 197,
+     "old_welch_ci": 0.655,
+     "propagated_ci": 0.838,
+     "propagated_ci_with_truth_se": 0.873,
+     "median_half_width_old": 0.186,
+     "median_half_width_new": 0.31,
+     "truths": 13,
+     "draws": 2000,
+     "seed": 2026,
+     "coverage_90%_cluster_bootstrap": [
+      0.821,
+      0.917
+     ]
+    },
+    "by_group": {
+     "amc": {
+      "cases": 152,
+      "old_welch_ci": 0.638,
+      "propagated_ci": 0.822,
+      "propagated_ci_with_truth_se": 0.868,
+      "median_half_width_old": 0.169,
+      "median_half_width_new": 0.3
+     },
+     "dkfz": {
+      "cases": 32,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.875,
+      "propagated_ci_with_truth_se": 0.875,
+      "median_half_width_old": 0.329,
+      "median_half_width_new": 0.548
+     },
+     "volume": {
+      "cases": 13,
+      "old_welch_ci": 0.615,
+      "propagated_ci": 0.923,
+      "propagated_ci_with_truth_se": 0.923,
+      "median_half_width_old": 0.128,
+      "median_half_width_new": 0.251
+     }
+    },
+    "by_plate": {
+     "amc": {
+      "cases": 152,
+      "old_welch_ci": 0.638,
+      "propagated_ci": 0.822,
+      "propagated_ci_with_truth_se": 0.868,
+      "median_half_width_old": 0.169,
+      "median_half_width_new": 0.3
+     },
+     "dkfz": {
+      "cases": 32,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.875,
+      "propagated_ci_with_truth_se": 0.875,
+      "median_half_width_old": 0.329,
+      "median_half_width_new": 0.548
+     },
+     "volume_lc480": {
+      "cases": 5,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.171,
+      "median_half_width_new": 0.251
+     },
+     "volume_qs6": {
+      "cases": 4,
+      "old_welch_ci": 0.0,
+      "propagated_ci": 0.75,
+      "propagated_ci_with_truth_se": 0.75,
+      "median_half_width_old": 0.043,
+      "median_half_width_new": 0.286
+     },
+     "volume_stepone": {
+      "cases": 4,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.154,
+      "median_half_width_new": 0.288
+     }
+    },
+    "by_truth": {
+     "20 vs 7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.69,
+      "propagated_ci": 0.833,
+      "propagated_ci_with_truth_se": 0.857,
+      "median_half_width_old": 0.159,
+      "median_half_width_new": 0.225
+     },
+     "7 vs 2 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.714,
+      "propagated_ci": 0.905,
+      "propagated_ci_with_truth_se": 0.952,
+      "median_half_width_old": 0.167,
+      "median_half_width_new": 0.255
+     },
+     "2 vs 0.7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.738,
+      "propagated_ci": 0.905,
+      "propagated_ci_with_truth_se": 0.905,
+      "median_half_width_old": 0.216,
+      "median_half_width_new": 0.322
+     },
+     "20 vs 0.7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.5,
+      "propagated_ci": 0.714,
+      "propagated_ci_with_truth_se": 0.81,
+      "median_half_width_old": 0.184,
+      "median_half_width_new": 0.338
+     },
+     "EMBL 20 vs 20 ng": {
+      "cases": 4,
+      "old_welch_ci": 0.25,
+      "propagated_ci": 0.25,
+      "propagated_ci_with_truth_se": 0.25,
+      "median_half_width_old": 0.28,
+      "median_half_width_new": 0.298
+     },
+     "1e4 vs 1e3 copies": {
+      "cases": 4,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.75,
+      "propagated_ci_with_truth_se": 0.75,
+      "median_half_width_old": 0.315,
+      "median_half_width_new": 0.426
+     },
+     "1e3 vs 1e2 copies": {
+      "cases": 4,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.45,
+      "median_half_width_new": 0.598
+     },
+     "1e4 vs 1e2 copies": {
+      "cases": 4,
+      "old_welch_ci": 0.5,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.486,
+      "median_half_width_new": 0.818
+     },
+     "1 vs 0.2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.333,
+      "propagated_ci": 0.667,
+      "propagated_ci_with_truth_se": 0.667,
+      "median_half_width_old": 0.182,
+      "median_half_width_new": 0.336
+     },
+     "2 vs 1 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.128,
+      "median_half_width_new": 0.24
+     },
+     "4 vs 2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.125,
+      "median_half_width_new": 0.236
+     },
+     "8 vs 4 ng/\u00b5l": {
+      "cases": 1,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.171,
+      "median_half_width_new": 0.251
+     },
+     "4 vs 0.2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.179,
+      "median_half_width_new": 0.472
+     }
+    },
+    "bias_by_machine": {
+     "LightCycler 480 II, AMC": {
+      "cases": 157,
+      "median_abs_error_log2": 0.121,
+      "median_bias_log2": -0.043,
+      "share_within_0.15": 0.58
+     },
+     "LightCycler 480 II, DKFZ": {
+      "cases": 32,
+      "median_abs_error_log2": 0.218,
+      "median_bias_log2": -0.08,
+      "share_within_0.15": 0.281
+     },
+     "QuantStudio 6 Flex, EMBL": {
+      "cases": 4,
+      "median_abs_error_log2": 0.205,
+      "median_bias_log2": 0.177,
+      "share_within_0.15": 0.5
+     },
+     "StepOne, EMBL": {
+      "cases": 4,
+      "median_abs_error_log2": 0.087,
+      "median_bias_log2": 0.074,
+      "share_within_0.15": 0.5
+     }
+    },
+    "pass": false
+   }
   }
  },
  "unresolved": {
