@@ -592,6 +592,116 @@
    }
   }
  },
+ "moves": {
+  "max_moves": 4,
+  "called": {
+   "1": 8,
+   "2": 2,
+   "3": 6,
+   "4": 4,
+   "more than 4": 20
+  },
+  "uncalled": {
+   "1": 6,
+   "2": 2,
+   "3": 2,
+   "4": 1,
+   "more than 4": 7
+  },
+  "exact": 26,
+  "found": 31,
+  "all_paths_verified": true,
+  "headline": {
+   "ODC1": "not changed within 4 moves",
+   "BIRC5": "not changed within 4 moves",
+   "NTRK1": "1 move: Cq above 35 counts as not detected \u2192 none",
+   "NM23A": "4 moves, at most: normalise to 3 reference genes: ALUsq+HPRT1+SDHA; leave out sample 2530; leave out sample 1924; leave out sample 1784 \u2192 none"
+  },
+  "predictive_value": {
+   "draws": 100,
+   "max_moves": 4,
+   "robust_rule": 0.95,
+   "sizes": {
+    "3": {
+     "no_difference": {
+      "gene_tests": 5800,
+      "false_calls": 142,
+      "false_call_rate": 0.0245,
+      "after_robust_filter": 0.0,
+      "after_distance_ge_2": 0.0,
+      "after_distance_ge_3": 0.0,
+      "moves_of_false_calls": {
+       "1": 142
+      }
+     },
+     "real_difference": {
+      "calls": 511,
+      "share_wrong": 0.286,
+      "auroc_alone": {
+       "agreement_share": 0.556,
+       "distance": 0.5,
+       "p_value": 0.554,
+       "fold_margin": 0.806
+      },
+      "auroc_out_of_fold": {
+       "p_and_margin": 0.802,
+       "plus_agreement_share": 0.798,
+       "plus_distance": 0.802
+      },
+      "share_wrong_by_distance": {
+       "1": {
+        "calls": 511,
+        "share_wrong": 0.286
+       }
+      }
+     }
+    },
+    "6": {
+     "no_difference": {
+      "gene_tests": 5800,
+      "false_calls": 163,
+      "false_call_rate": 0.0281,
+      "after_robust_filter": 0.0024,
+      "after_distance_ge_2": 0.0028,
+      "after_distance_ge_3": 0.0,
+      "moves_of_false_calls": {
+       "1": 147,
+       "2": 16
+      }
+     },
+     "real_difference": {
+      "calls": 1325,
+      "share_wrong": 0.221,
+      "auroc_alone": {
+       "agreement_share": 0.532,
+       "distance": 0.507,
+       "p_value": 0.517,
+       "fold_margin": 0.849
+      },
+      "auroc_out_of_fold": {
+       "p_and_margin": 0.849,
+       "plus_agreement_share": 0.849,
+       "plus_distance": 0.849
+      },
+      "share_wrong_by_distance": {
+       "1": {
+        "calls": 1031,
+        "share_wrong": 0.224
+       },
+       "2": {
+        "calls": 247,
+        "share_wrong": 0.215
+       },
+       "3": {
+        "calls": 47,
+        "share_wrong": 0.191
+       }
+      }
+     }
+    }
+   }
+  }
+ },
  "verdicts": {
   "counts": {
    "check data first": 2,
@@ -780,13 +890,15 @@
   }
  ],
  "timings_s": {
-  "load_s": 0.15,
-  "full_grid_s": 52.1,
-  "influence_s": 1.93,
-  "joint_test_s": 0.54,
-  "troubleshoot_s": 0.8,
-  "explorer_check_s": 6.4,
-  "benchmark_s": 174.45,
-  "designs_s": 79.34
+  "load_s": 0.19,
+  "full_grid_s": 52.99,
+  "influence_s": 2.08,
+  "moves_s": 2.86,
+  "joint_test_s": 0.6,
+  "troubleshoot_s": 0.95,
+  "explorer_check_s": 6.51,
+  "benchmark_s": 186.02,
+  "designs_s": 77.46,
+  "moves_value_s": 81.22
  }
 }

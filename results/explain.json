@@ -15,7 +15,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.3863489687773194,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "AKR1C1": {
   "verdict": "solid",
@@ -33,7 +40,19 @@
   "drop_k": null,
   "fold_margin_log2": 0.764064447695221,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 939",
+    "leave out sample 1751"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "ARHGEF7": {
   "verdict": "no call",
@@ -51,7 +70,14 @@
   "drop_k": null,
   "fold_margin_log2": -0.845406216014491,
   "share_significant": 0.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "BIRC5": {
   "verdict": "solid",
@@ -69,7 +95,14 @@
   "drop_k": null,
   "fold_margin_log2": 1.0041161489909318,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "CAMTA1": {
   "verdict": "solid",
@@ -87,7 +120,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.47782398987915453,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "CAMTA2": {
   "verdict": "no call",
@@ -135,7 +175,16 @@
     "fold": 0.4985418951327401,
     "call": "down"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "standard-curve slope of the plate's dilution series"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
  },
  "CD44": {
   "verdict": "solid",
@@ -153,7 +202,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.802196313466955,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "CDCA5": {
   "verdict": "solid",
@@ -171,7 +227,18 @@
   "drop_k": null,
   "fold_margin_log2": 0.30384784739867143,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 1231"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "CDH5": {
   "verdict": "solid",
@@ -189,7 +256,14 @@
   "drop_k": null,
   "fold_margin_log2": 2.321804677789153,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "CDKN3": {
   "verdict": "solid",
@@ -207,7 +281,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.2509168389715879,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "CLSTN1": {
   "verdict": "fragile",
@@ -239,7 +320,16 @@
     "fold": 0.7884883415001854,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "CPSG3": {
   "verdict": "solid",
@@ -257,7 +347,14 @@
   "drop_k": null,
   "fold_margin_log2": 3.405482350688189,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "DDC": {
   "verdict": "solid",
@@ -275,7 +372,18 @@
   "drop_k": null,
   "fold_margin_log2": 0.8854969223089881,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 1136"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "DPYSL3": {
   "verdict": "check data first",
@@ -310,7 +418,16 @@
     "fold": 0.5071106764897109,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "leave out sample 1231"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "ECEL1": {
   "verdict": "solid",
@@ -328,7 +445,19 @@
   "drop_k": null,
   "fold_margin_log2": 2.190299788484364,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 111"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "ELAVL4": {
   "verdict": "no call",
@@ -346,7 +475,14 @@
   "drop_k": null,
   "fold_margin_log2": -0.7486714886269116,
   "share_significant": 0.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "EPB41L3": {
   "verdict": "solid",
@@ -364,7 +500,14 @@
   "drop_k": null,
   "fold_margin_log2": 1.1035491918047935,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "EPHA5": {
   "verdict": "solid",
@@ -382,7 +525,18 @@
   "drop_k": null,
   "fold_margin_log2": 1.8910011942470977,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1540",
+    "leave out sample 111"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "EPN2": {
   "verdict": "fragile",
@@ -414,7 +568,16 @@
     "fold": 0.6638981015326871,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "FYN": {
   "verdict": "no call",
@@ -432,7 +595,14 @@
   "drop_k": null,
   "fold_margin_log2": -0.40328277161610293,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "GNB1": {
   "verdict": "no call",
@@ -450,7 +620,14 @@
   "drop_k": null,
   "fold_margin_log2": -0.22759810346032228,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "HIVEP2": {
   "verdict": "depends on your choices",
@@ -485,7 +662,17 @@
     "fold": 0.540893639499169,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 2,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "IGSF4": {
   "verdict": "no call",
@@ -503,7 +690,16 @@
   "drop_k": null,
   "fold_margin_log2": -0.04260689306679821,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "leave out sample 1834"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
  },
  "INPP1": {
   "verdict": "holds with caveats",
@@ -521,7 +717,19 @@
   "drop_k": 4,
   "fold_margin_log2": 0.24364798301673973,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 1751",
+    "leave out sample 1499"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "MAP2K4": {
   "verdict": "no call",
@@ -539,7 +747,18 @@
   "drop_k": null,
   "fold_margin_log2": -0.12149952565274547,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1850",
+    "leave out sample 1885"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
  },
  "MAP7": {
   "verdict": "holds with caveats",
@@ -557,7 +776,18 @@
   "drop_k": 5,
   "fold_margin_log2": 0.5134564109483506,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 939",
+    "leave out sample 127"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "MAPT": {
   "verdict": "solid",
@@ -575,7 +805,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.4411578673079597,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "MCM2": {
   "verdict": "solid",
@@ -593,7 +830,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.4154041563703519,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "MRPL3": {
   "verdict": "no call",
@@ -625,7 +869,16 @@
     "fold": 2.029435349082591,
     "call": "up"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "up",
+   "searched_up_to": null
+  }
  },
  "MTSS1": {
   "verdict": "no call",
@@ -643,7 +896,17 @@
   "drop_k": null,
   "fold_margin_log2": -0.08830051533135685,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 2,
+   "exact": true,
+   "path": [
+    "Cq above 38 counts as not detected",
+    "leave out sample 1805"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
  },
  "NHLH2": {
   "verdict": "solid",
@@ -661,7 +924,14 @@
   "drop_k": null,
   "fold_margin_log2": 2.9027118367238467,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "NM23A": {
   "verdict": "holds with caveats",
@@ -679,7 +949,19 @@
   "drop_k": 4,
   "fold_margin_log2": 0.12951785489824275,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 2530",
+    "leave out sample 1924",
+    "leave out sample 1784"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "NRCAM": {
   "verdict": "solid",
@@ -697,7 +979,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.8107335905520785,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "NTRK1": {
   "verdict": "depends on your choices",
@@ -729,7 +1018,16 @@
     "fold": 0.7777697108141096,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "ODC1": {
   "verdict": "solid",
@@ -747,7 +1045,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.8439368467258768,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "PAICS": {
   "verdict": "no call",
@@ -795,7 +1100,16 @@
     "fold": 2.0061321807447006,
     "call": "up"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "up",
+   "searched_up_to": null
+  }
  },
  "PDE4DIP": {
   "verdict": "check data first",
@@ -813,7 +1127,17 @@
   "drop_k": 2,
   "fold_margin_log2": 0.0946377744629241,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 2,
+   "exact": true,
+   "path": [
+    "leave out sample 1687",
+    "leave out sample 1751"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "PIK3R1": {
   "verdict": "holds with caveats",
@@ -831,7 +1155,18 @@
   "drop_k": 4,
   "fold_margin_log2": 0.16356763250610928,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 2090",
+    "leave out sample 127"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "PLAGL1": {
   "verdict": "fragile",
@@ -863,7 +1198,16 @@
     "fold": 0.510089823286665,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 38 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "PLAT": {
   "verdict": "fragile",
@@ -895,7 +1239,16 @@
     "fold": 0.6755143071483692,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "PMP22": {
   "verdict": "solid",
@@ -913,7 +1266,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.8373742120435734,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "PRAME": {
   "verdict": "solid",
@@ -931,7 +1291,14 @@
   "drop_k": null,
   "fold_margin_log2": 1.084981957386364,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "PRDM2": {
   "verdict": "no call",
@@ -949,7 +1316,19 @@
   "drop_k": null,
   "fold_margin_log2": -0.1850735253837099,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1936",
+    "leave out sample 1837",
+    "leave out sample 1772"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
  },
  "PRKACB_bis": {
   "verdict": "no call",
@@ -981,7 +1360,16 @@
     "fold": 0.49972850178215544,
     "call": "down"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
  },
  "PRKCZ": {
   "verdict": "no call",
@@ -999,7 +1387,17 @@
   "drop_k": null,
   "fold_margin_log2": -0.09940684634126251,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 2,
+   "exact": true,
+   "path": [
+    "Cq above 38 counts as not detected",
+    "leave out sample 1924"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
  },
  "PTN": {
   "verdict": "holds with caveats",
@@ -1017,7 +1415,14 @@
   "drop_k": 5,
   "fold_margin_log2": 0.474285646866921,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "PTPRF": {
   "verdict": "fragile",
@@ -1049,7 +1454,16 @@
     "fold": 0.6046927101448518,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "PTPRH": {
   "verdict": "depends on your choices",
@@ -1081,7 +1495,16 @@
     "fold": 0.5594454832469702,
     "call": "none"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "PTPRN2": {
   "verdict": "holds with caveats",
@@ -1099,7 +1522,14 @@
   "drop_k": 5,
   "fold_margin_log2": 0.30263762632144164,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "QPCT": {
   "verdict": "solid",
@@ -1117,7 +1547,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.8326173054341757,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "SCG2": {
   "verdict": "solid",
@@ -1135,7 +1572,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.9877597646045959,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "SLC25A5": {
   "verdict": "no call",
@@ -1167,7 +1611,16 @@
     "fold": 2.123189916651604,
     "call": "up"
    }
-  ]
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "up",
+   "searched_up_to": null
+  }
  },
  "SLC6A8": {
   "verdict": "no call",
@@ -1185,7 +1638,14 @@
   "drop_k": null,
   "fold_margin_log2": -0.3811581936952022,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "SNAPC1": {
   "verdict": "no call",
@@ -1203,7 +1663,18 @@
   "drop_k": null,
   "fold_margin_log2": -0.22518761078493021,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1687",
+    "leave out sample 1772"
+   ],
+   "call": "up",
+   "searched_up_to": null
+  }
  },
  "TNFRSF": {
   "verdict": "holds with caveats",
@@ -1221,7 +1692,18 @@
   "drop_k": 4,
   "fold_margin_log2": 0.4033871044292825,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1759",
+    "leave out sample 1498"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
  },
  "TYMS": {
   "verdict": "solid",
@@ -1239,7 +1721,14 @@
   "drop_k": null,
   "fold_margin_log2": 0.20719283282175294,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "ULK2": {
   "verdict": "no call",
@@ -1257,7 +1746,14 @@
   "drop_k": null,
   "fold_margin_log2": -0.37973868201358574,
   "share_significant": 1.0,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  },
  "WSB1": {
   "verdict": "no call",
@@ -1275,6 +1771,13 @@
   "drop_k": null,
   "fold_margin_log2": -0.24555410837320701,
   "share_significant": 0.9166666666666666,
-  "flips": []
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
  }
 }

@@ -6,7 +6,7 @@ Study: 366 tumours, 58 genes compared (MYCN-high vs rest), 64 plates. Baseline c
 
 ## Decision space
 
-8 decisions with levels [4, 3, 3, 3, 31, 3, 3, 3]: 90,396 analyses, **all evaluated** (exhaustive). Full sweep: 52.1 s on one core.
+8 decisions with levels [4, 3, 3, 3, 31, 3, 3, 3]: 90,396 analyses, **all evaluated** (exhaustive). Full sweep: 52.99 s on one core.
 
 | | all options | defensible options only |
 |---|---|---|
@@ -60,6 +60,27 @@ check data first: 2 · fragile: 5 · depends on your choices: 3 · holds with ca
 * 4 genes flip when one tumour is removed; 26 different tumours can do it.
 * 148 of 1745 single reference-well removals flip at least one gene; the worst flips 3.
 * 7 of 40 called genes sit within one SE of the 2-fold line; 15 can be overturned by removing at most 5 tumours (greedy, an upper bound).
+
+## Distance to a different conclusion
+
+The fewest defensible moves (one analysis choice changed, or one sample left out) after which a gene's call differs from the planned analysis. For a called gene it is how hard the finding is to overturn; for an uncalled gene, how many moves manufacture a call. Searched up to 4 moves; 26 of 31 distances found are exact (every shorter combination tried), the rest are upper bounds; every path re-checked with the engine: True.
+
+| genes | 1 move | 2 moves | 3 moves | 4 moves | more than 4 |
+|---|---|---|---|---|---|
+| called | 8 | 2 | 6 | 4 | 20 |
+| no call | 6 | 2 | 2 | 1 | 7 |
+
+* **ODC1**: not changed within 4 moves
+* **BIRC5**: not changed within 4 moves
+* **NTRK1**: 1 move: Cq above 35 counts as not detected → none
+* **NM23A**: 4 moves, at most: normalise to 3 reference genes: ALUsq+HPRT1+SDHA; leave out sample 2530; leave out sample 1924; leave out sample 1784 → none
+
+**Does it predict a wrong small-study call?** 100 draws per size, as in the bench-experiment section below.
+
+| n per group | calls | wrong | AUROC: distance | agreement share | fold margin | p + margin | + distance | + agreement | false calls (no difference): single / distance ≥ 2 / robust filter |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 | 511 | 29% | 0.5 | 0.556 | 0.806 | 0.802 | 0.802 | 0.798 | 2.45% / 0.00% / 0.00% |
+| 6 | 1325 | 22% | 0.507 | 0.532 | 0.849 | 0.849 | 0.849 | 0.849 | 2.81% / 0.28% / 0.24% |
 
 ## Joint inference across analyses
 
@@ -124,4 +145,4 @@ Of 46 planted faults that changed at least one call, 39 were detected. Of 174 th
 
 The filter removes analysis-induced false calls; it does not fix small-sample noise (robust and non-robust real calls disagree with the full study about equally).
 
-Timings (s): {'load_s': 0.15, 'full_grid_s': 52.1, 'influence_s': 1.93, 'joint_test_s': 0.54, 'troubleshoot_s': 0.8, 'explorer_check_s': 6.4, 'benchmark_s': 174.45, 'designs_s': 79.34}.
+Timings (s): {'load_s': 0.19, 'full_grid_s': 52.99, 'influence_s': 2.08, 'moves_s': 2.86, 'joint_test_s': 0.6, 'troubleshoot_s': 0.95, 'explorer_check_s': 6.51, 'benchmark_s': 186.02, 'designs_s': 77.46, 'moves_value_s': 81.22}.

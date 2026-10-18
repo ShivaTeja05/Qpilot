@@ -13,7 +13,7 @@ import pandas as pd
 import qpilot
 import scipy
 
-from qsim import __version__, explore, inference, influence
+from qsim import __version__, explore, inference, influence, moves
 from qsim.attribution import Factorial
 from qsim.benchmark import run_benchmark
 from qsim.data import BENCHMARK_NAME, Study, load_study
@@ -139,6 +139,10 @@ def run_all(
     timings["influence_s"] = time.perf_counter() - t
 
     t = time.perf_counter()
+    mv = moves.fewest_moves(engine, *moves.defensible_grid(engine, defn.allowed, defn.call))
+    timings["moves_s"] = time.perf_counter() - t
+
+    t = time.perf_counter()
     joint, joint_meta = inference.joint_test(engine, permutations=permutations, seed=seed)
     timings["joint_test_s"] = time.perf_counter() - t
 
@@ -151,6 +155,7 @@ def run_all(
     genes = genes.join(marg[["fold_margin_log2", "fold_margin_in_se", "p_margin_decades"]])
     genes["samples_whose_removal_flips"] = loo_flips.groupby("gene")["sample"].nunique()
     genes["drop_k_to_flip"] = dk["k"]
+    genes = genes.join(mv)
     genes = genes.join(
         joint.set_index("gene")[
             ["p_global", "q_global_bh", "share_forks_significant_same_direction"]
@@ -217,6 +222,15 @@ def run_all(
     if design_result:
         (out / "designs.json").write_text(json.dumps(design_result, indent=1))
     timings["designs_s"] = time.perf_counter() - t
+    t = time.perf_counter()
+    moves_value = (
+        moves.predictive_value(study, space, draws=design_draws, seed=seed)
+        if design_draws
+        else None
+    )
+    if moves_value:
+        (out / "moves_value.json").write_text(json.dumps(moves_value, indent=1))
+    timings["moves_value_s"] = time.perf_counter() - t
     question = {
         d: int(v)
         for d, v in allf.single_flips().sum().items()
@@ -324,6 +338,7 @@ def run_all(
         "lock_sha256": lock_hash,
         "question_choices_flip_alone": question,
         "designs": design_result,
+        "moves": _moves_summary(genes, called_mask, moves_value),
         "verdicts": {
             "counts": verdict_counts,
             "rules": RULES,
@@ -338,6 +353,27 @@ def run_all(
     (out / "summary.json").write_text(json.dumps(summary, indent=1, default=_json_default))
     (out / "REPORT.md").write_text(render_report(summary))
     return summary
+
+
+def _moves_summary(genes: pd.DataFrame, called: pd.Series, value: dict | None) -> dict:
+    """Distance to a different conclusion: counts for called and uncalled genes, and examples."""
+
+    def counts(g: pd.DataFrame) -> dict:
+        d = g["moves_to_flip"]
+        out = {str(int(k)): int(v) for k, v in d.value_counts().sort_index().items()}
+        out[f"more than {moves.MAX_MOVES}"] = int(d.isna().sum())
+        return out
+
+    return {
+        "max_moves": moves.MAX_MOVES,
+        "called": counts(genes[called]),
+        "uncalled": counts(genes[~called]),
+        "exact": int(genes["moves_exact"].sum()),
+        "found": int(genes["moves_to_flip"].notna().sum()),
+        "all_paths_verified": bool(genes["moves_verified"].dropna().all()),
+        "headline": {g: moves.describe(genes.loc[g]) for g in HEADLINE if g in genes.index},
+        "predictive_value": value,
+    }
 
 
 def _json_default(o):
@@ -367,6 +403,53 @@ def _multiverse_summary(f: Factorial, called: np.ndarray) -> dict:
 def _source_title(s: dict) -> str:
     name = (s.get("source") or {}).get("name")
     return "the public neuroblastoma benchmark" if name in (None, BENCHMARK_NAME) else name
+
+
+def _moves_lines(s: dict) -> list[str]:
+    m = s.get("moves")
+    if not m:
+        return []
+    keys = list(m["called"])
+    lines = [
+        "## Distance to a different conclusion",
+        "",
+        "The fewest defensible moves (one analysis choice changed, or one sample left out) after which a gene's "
+        "call differs from the planned analysis. For a called gene it is how hard the finding is to overturn; for an "
+        f"uncalled gene, how many moves manufacture a call. Searched up to {m['max_moves']} moves; "
+        f"{m['exact']} of {m['found']} distances found are exact (every shorter combination tried), the rest are upper bounds"
+        f"; every path re-checked with the engine: {m['all_paths_verified']}.",
+        "",
+        "| genes | "
+        + " | ".join(
+            (f"{k} move" + ("s" if k != "1" else "")) if k[0].isdigit() else k for k in keys
+        )
+        + " |",
+        "|---|" + "---|" * len(keys),
+        "| called | " + " | ".join(str(m["called"][k]) for k in keys) + " |",
+        "| no call | " + " | ".join(str(m["uncalled"].get(k, 0)) for k in keys) + " |",
+        "",
+    ]
+    lines += [f"* **{g}**: {d}" for g, d in m["headline"].items()]
+    v = m.get("predictive_value")
+    if v:
+        lines += [
+            "",
+            f"**Does it predict a wrong small-study call?** {v['draws']} draws per size, as in the bench-experiment section below.",
+            "",
+            "| n per group | calls | wrong | AUROC: distance | agreement share | fold margin | p + margin | + distance | + agreement | false calls (no difference): single / distance ≥ 2 / robust filter |",
+            "|---|---|---|---|---|---|---|---|---|---|",
+        ]
+        for n, r in v["sizes"].items():
+            nd, rd = r["no_difference"], r.get("real_difference")
+            if not rd:
+                continue
+            a, o = rd["auroc_alone"], rd["auroc_out_of_fold"]
+            lines.append(
+                f"| {n} | {rd['calls']} | {rd['share_wrong']:.0%} | {a['distance']} | {a['agreement_share']} | {a['fold_margin']} | "
+                f"{o['p_and_margin']} | {o['plus_distance']} | {o['plus_agreement_share']} | "
+                f"{nd['false_call_rate']:.2%} / {nd['after_distance_ge_2']:.2%} / {nd['after_robust_filter']:.2%} |"
+            )
+    return [*lines, ""]
 
 
 def render_report(s: dict) -> str:
@@ -443,6 +526,7 @@ def render_report(s: dict) -> str:
         f"* {inf['reference_well_removals_that_flip']} of {inf['reference_well_removals']} single reference-well removals flip at least one gene; the worst flips {inf['max_genes_flipped_by_one_reference_well']}.",
         f"* {inf['called_within_1_se_of_fold_line']} of {inf['called_genes']} called genes sit within one SE of the 2-fold line; {inf['called_overturned_by_le_5_samples']} can be overturned by removing at most 5 tumours (greedy, an upper bound).",
         "",
+        *_moves_lines(s),
         "## Joint inference across analyses",
         "",
         f"Permutation max-T over {jt['forks']} defensible Welch analyses per gene ({jt['permutations']} permutations, seed {jt['seed']}): "
