@@ -32,6 +32,9 @@ dependencies = [
   "filelock",
   # Imported at module level by the vendored rdmlpython (melt-curve plots qPilot never calls).
   "matplotlib",
+  # The Decision Simulator (sim/, installed as qsim) writes its analysis grid as parquet.
+  # Core, so that "Decision Simulator installed" always means an audit can run.
+  "pyarrow",
 ]
 
 [project.optional-dependencies]
@@ -50,8 +53,8 @@ xlsx = ["openpyxl"]
 # qPilot Studio: sample sheets. The Curve Judge model ships as JSON and runs on numpy;
 # xgboost is needed only to retrain it (training/curve_judge/requirements.txt).
 studio = ["openpyxl"]
-# Decision Simulator (qsim, vendored from ShivaTeja05/qpilot-simulator @ dad5a15 into sim/):
-# `qsim run` writes results/grid.parquet. Everything else qsim imports is already a core dependency.
+# Decision Simulator (qsim, merged into sim/ with its history at dad5a15). Kept so that
+# `pip install -e '.[sim]'` keeps working; pyarrow is now a core dependency.
 sim = ["pyarrow"]
 
 [project.scripts]

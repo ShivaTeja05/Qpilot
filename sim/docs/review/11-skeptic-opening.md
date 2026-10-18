@@ -118,8 +118,8 @@ Run the known-answer tests V2 to V4 on Untergasser, ds_94_4/ds_380 and MAQC, and
 Without these, "this is fragile" can't be told apart from "this sits near your own 2-fold line."
 
 Files checked:
-- /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/src/qsim/decisions.py
-- /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/src/qsim/engine.py
-- /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/src/qsim/benchmark.py
-- /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/src/qsim/troubleshoot.py
-- /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/results/REPORT.md
+- sim/src/qsim/decisions.py
+- sim/src/qsim/engine.py
+- sim/src/qsim/benchmark.py
+- sim/src/qsim/troubleshoot.py
+- sim/results/REPORT.md

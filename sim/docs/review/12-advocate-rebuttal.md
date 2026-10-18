@@ -1,10 +1,10 @@
 # Advocate's rebuttal: point by point, with new numbers run today
 
-**What I ran for this rebuttal.** All runs use the Vermeulen RDML with seed 2026. The scripts are in `/private/tmp/claude-501/-Users-gaddamshivateja-Wheel-hack/c8da661c-7b77-4935-b4b4-48e1317df5ba/scratchpad/` (`strict.py`, `smalln2.py`, `cuts.py`, `refs.py`).
+**What I ran for this rebuttal.** All runs use the Vermeulen RDML with seed 2026. The scripts are in `<local scratch>/` (`strict.py`, `smalln2.py`, `cuts.py`, `refs.py`).
 - **Strict space.** I removed per-well efficiency, the drop below 10 copies, the Cq 40 substitute, single reference genes and Mann-Whitney.
 - **Small-n truth test.** I drew 200 random 3 vs 3 and 200 random 6 vs 6 experiments (MYCN-high vs rest). The reference answer is the prespecified call on all 366 tumours.
 - **Null test.** I drew 200 more, with both groups taken from MYCN-low tumours, so every call is false.
-- **A known-answer run the skeptic missed.** `/Users/gaddamshivateja/Wheel-hack/qpilot-simulator/results/validation_untergasser.json` covers 711 wells, 188 comparisons with known ratios and 7,280 analyses.
+- **A known-answer run the skeptic missed.** `sim/results/validation_untergasser.json` covers 711 wells, 188 comparisons with known ratios and 7,280 analyses.
 
 ## 1. "Not a simulator": conceded on the word
 It simulates analysis choices and data perturbations, not molecules.

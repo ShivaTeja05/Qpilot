@@ -141,4 +141,4 @@ All figures come from results/summary.json and benchmark.csv.
 
 Sources: https://doi.org/10.1002/sim.8086 · https://pmc.ncbi.nlm.nih.gov/articles/PMC7473940 · https://pmc.ncbi.nlm.nih.gov/articles/PMC12666847/ · https://clarida.bio/resources/methods/exploration-and-stored-analyses · https://clarida.bio/resources/methods/settings-sets · https://clarida.bio/blog/why-use-the-real-pcr-efficiency · https://pubmed.ncbi.nlm.nih.gov/22975077/ · https://pmc.ncbi.nlm.nih.gov/articles/PMC8556264/ · https://arts.units.it/retrieve/514d5b20-e3e5-4c08-af56-0a95170bfcb1/del-giudice-gangestad-2021-a-traveler-s-guide-to-the-multiverse-promises-pitfalls-and-a-framework-for-the-evaluation-of.pdf · https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12875576/
 
-Files: /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/results/summary.json, /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/results/benchmark.csv, /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/results/REPORT.md, /Users/gaddamshivateja/Wheel-hack/qpilot-simulator/data/untergasser/
+Files: sim/results/summary.json, sim/results/benchmark.csv, sim/results/REPORT.md, sim/data/untergasser/

@@ -115,7 +115,7 @@ Sources:
 - https://clarida.bio/resources/methods/exploration-and-stored-analyses
 - https://patterninstitute.r-universe.dev/ruijter/doc/manual.html
 
-Files are in /Users/gaddamshivateja/Wheel-hack/qpilot-simulator:
+Files are in sim/:
 - results/validation_untergasser.json
 - results/benchmark.csv
 - results/benchmark_trials.csv

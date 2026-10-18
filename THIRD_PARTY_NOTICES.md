@@ -21,13 +21,13 @@ qPilot is licensed under the Apache License 2.0 (see `LICENSE`). It vendors, dep
 | PyYAML | MIT |
 | filelock | MIT |
 | matplotlib | Matplotlib License (PSF-based, BSD-compatible); required by the vendored rdmlpython import |
+| pyarrow | Apache-2.0; the Decision Simulator's analysis grid is written as parquet |
 
 ## Optional dependencies
 | Package | Extra | Licence |
 |---|---|---|
 | anthropic | `ai` | MIT |
 | httpx | `ai` | BSD-3-Clause |
-| pyarrow | `parquet` | Apache-2.0 |
 | openpyxl | `xlsx` | MIT |
 
 ## Data
@@ -41,6 +41,7 @@ qPilot is licensed under the Apache License 2.0 (see `LICENSE`). It vendors, dep
 | Brintz et al. 2025, qPCR amplification-curve training data (`bbrintz/qPCR-amp-call` @ v1.0.0 `191675bd`; Zenodo doi:10.5281/zenodo.13798821) | CC0 1.0 on GitHub, CC BY 4.0 on Zenodo; treated as **CC BY 4.0** (the stricter) | Used **only to train** the Curve Judge (`training/curve_judge/`, never shipped). The trained model (`qpilot/models/curve_judge/model.json`) is a derived work: attribution to Brintz B.J., et al., *Gates Open Research* 9:1 (2025), doi:10.12688/gatesopenres.16313.1. |
 | HGNC gene symbols (`qpilot/data/hgnc/hgnc_symbols.tsv`, from `hgnc_complete_set.txt` of 16 Oct 2026) | CC0 ("all data is released under the Creative Commons Public Domain (CC0) License", genenames.org/about/license) | Shipped: approved, previous and alias symbols only, to catch Excel-mangled gene names. |
 | Decision Simulator validation plates, `sim/data/untergasser/` (Untergasser, van der Hoff, Benes; RDML files and pipetting tables) | MIT, Copyright (c) 2019 the RDML-consortium (RDML-consortium/rdmlpython @ `fce7a44` and `e9f936b`, `experiments/untergasser/`) | Committed unchanged for `qsim validate` / `qsim external`; per-file SHA-256 and provenance in `sim/data/untergasser/README.md`. The MIT notice is the one in `qpilot/vendor/rdmlpython/LICENSE`. |
+| Decision Simulator results, `sim/results/` (per-gene, per-sample and per-well summaries such as `one_sample_flips.csv` and `reference_wells_top50.csv`) | CC BY 4.0, as adaptations of Vermeulen et al. 2009 / Ruijter et al. 2013 (attribution as in the first row of this table) | Committed outputs of `qsim run` on the demo study. The raw RDML is still never committed. |
 | RDML technical test files, `sim/data/technical/` | MIT (RDML-consortium/rdmlpython @ `e9f936b`, `experiments/technical/`) | Committed unchanged for `qsim external`; provenance in `sim/data/technical/README.md`. |
 | Ruijter et al. 2013 `ds_380`, `ds_94_4`, `ds_competimer`, `sim/data/ruijter/` (R package `ruijter` 0.1.3 by Ramiro Magno, commit `f9d2df4`) | CC BY 4.0 | Committed for the no-difference and external tests; attribution: Ruijter J.M. et al., *Methods* 59:32-46 (2013), doi:10.1016/j.ymeth.2012.08.011. `ds_380.rdml` is converted from the CSV by `qsim.nodiff`. Provenance and SHA-256 in `sim/data/ruijter/README.md`. |
 
