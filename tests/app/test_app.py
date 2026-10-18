@@ -32,6 +32,7 @@ REPO = Path(__file__).resolve().parents[2]
 # picker, download; Analyse adds summary, meter, confidence, results.
 CARD, COUNTER, OPTIONS, REASON_OUT, NOTICE, UNDO, REJECT, PICKER = 1, 2, 3, 4, 5, 7, 8, 9
 SUMMARY, METER = 11, 12
+EVIDENCE, REVIEW = 15, 16  # appended after results
 REASON = "All five: none is stable on its own, and the set is the least arbitrary."
 EVIL = '<img src=x onerror="alert(1)">'
 CAP = "Please switch to: Count empty wells as very low (cap)"
@@ -86,6 +87,9 @@ class Tab:
 
     def ask(self, question):
         return self("on_ask", None, None, question)
+
+    def sign_off(self, outcome="accept", comment="Looked at the controls.", reviewer="Dr Rossi"):
+        return self("on_sign_off", None, outcome, comment, reviewer)
 
 
 # ---------- hardening ----------
@@ -449,3 +453,81 @@ def test_example_profile_loads(monkeypatch):
     profile = load_profile()
     assert profile.name == "example-lab" and profile.max_fewshots == 3
     assert json.dumps(profile.model_dump())  # plain data only
+
+
+# ---------- Evidence Ledger panel and Run Review sign-off ----------
+
+
+def _toy_ledger(study_id):
+    from qpilot.qpcr.evidence import evidence_for
+    from tests.engine.evidence_toys import toy_design, toy_model, toy_table
+
+    table, design = toy_table(), toy_design()
+    ledger = evidence_for(table, toy_model(table, design), design)
+    return ledger.model_copy(update={"study_id": study_id})
+
+
+def test_open_shows_the_evidence_panel_and_the_run_review(page):
+    out = Tab(page).open()
+    assert "Evidence Ledger is not available for this study: the input file" in out[EVIDENCE]
+    assert "<h1>Run Review</h1>" in out[REVIEW] and "No sign-off is recorded yet." in out[REVIEW]
+    assert "<style>" not in out[REVIEW] and "<html" not in out[REVIEW]
+
+
+def test_a_kept_ledger_fills_the_panel_and_the_review(store, page, fixture_result):
+    sid = fixture_result.study_id
+    store.put_artifact(sid, "evidence.json", _toy_ledger(sid).model_dump(mode="json"))
+    out = Tab(page).open()
+    assert "qp-ev-absent" in out[EVIDENCE] and "What this study cannot tell you" in out[EVIDENCE]
+    assert 'data-fact="f_ev_n_present"' in out[REVIEW]
+
+
+def test_a_human_sign_off_writes_one_review_entry_and_the_record_verifies(page, store, tmp_path):
+    tab = Tab(page)
+    tab.open()
+    sid = tab.state["study_id"]
+    before = len(store.entries(sid))
+    session, review, notice, comment, head = tab.sign_off(reviewer=EVIL)
+    assert "Signed off (accept)" in notice and comment["value"] == ""
+    (entry,) = store.reviews(sid)
+    assert (entry.kind, entry.outcome, entry.actor, entry.reviewer) == (
+        "review", "accept", "human", EVIL
+    )  # fmt: skip
+    assert len(store.entries(sid)) == before + 1
+    assert store.chain_head(sid) == entry.hash and entry.hash[:16] in head
+    assert "<img" not in review and "&lt;img" in review and "Looked at the controls." in review
+    assert tab.state["review_head"] == tab.state["head"] == entry.hash
+    assert "Decided" in tab.decide("recommended")[NOTICE]  # a review never makes a card stale
+    _, status = tab("on_export", None)
+    folder = next(page.qpilot_export_root.glob("record-*"))
+    assert verify(unzip_record(next(folder.glob("*.zip")), tmp_path / "check")).ok, status
+
+
+def test_a_sign_off_needs_an_outcome_a_comment_and_a_name(page, store):
+    tab = Tab(page)
+    assert "Analyse a study first" in tab.sign_off()[2]
+    tab.open()
+    sid = tab.state["study_id"]
+    assert "Pick accept, repeat or discuss first" in tab.sign_off(outcome=None)[2]
+    for comment, reviewer in (("   ", "Dr Rossi"), ("Fine.", "  ")):
+        assert "required" in tab.sign_off(comment=comment, reviewer=reviewer)[2].lower()
+    with pytest.raises(Exception, match="not in the list of choices"):
+        tab.sign_off(outcome="approve")
+    assert store.reviews(sid) == []
+
+
+def test_a_decision_since_the_review_was_shown_makes_the_sign_off_stale(page, store):
+    tab = Tab(page)
+    tab.open()
+    sid = tab.state["study_id"]
+    apply_decision(store, sid, "card_cutoff", "cut_20", "other tab", "human", store.chain_head(sid))
+    _, review, notice, _, _ = tab.sign_off()
+    assert "Something was decided since the Run Review was shown" in notice
+    assert store.reviews(sid) == [] and "<h1>Run Review</h1>" in review
+    assert "Signed off" in tab.sign_off()[2]  # after the review is shown again, it goes through
+    assert len(store.reviews(sid)) == 1
+
+
+def test_only_the_sign_off_button_writes_a_review():
+    source = (REPO / "qpilot" / "app.py").read_text()
+    assert source.count(".append_review(") == 1 and 'actor="human"' in source

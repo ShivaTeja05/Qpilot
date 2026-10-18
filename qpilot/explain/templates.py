@@ -14,7 +14,12 @@ and no digit may appear outside a token or an allowed name (a gene such as ``ODC
 
 Templates: ``refset_v1``, ``cutoff_v1``, ``undetermined_auto_v1``, ``undetermined_v1``,
 ``ampcall_v1`` (card explanations, keyed by ``DecisionCard.rationale_template``), ``summary_v1``,
-``meter_v1`` and ``confidence_v1`` (needs ``gene=``).
+``meter_v1`` and ``confidence_v1`` (needs ``gene=``). Feature templates, written in their own
+modules and registered here: ``evidence_v1``, ``grt_v1`` and ``runreview_v1``
+(:mod:`qpilot.explain.evidence_text`), ``instrument_gate_v1``
+(:mod:`qpilot.explain.instrument_text`), ``lookback_v1`` and ``position_v1``
+(:mod:`qpilot.explain.lookback_text`). Each renders a digit-free sentence when its facts are
+absent; the last three need their structured result for anything more.
 """
 
 from __future__ import annotations
@@ -268,6 +273,65 @@ def _confidence(facts: Facts, card: DecisionCard | None, gene: str | None) -> st
     return text
 
 
+# ---------- feature templates (registered here, written in their own modules) ----------
+# Imported inside each wrapper: those modules import this one (RenderedText, to_html), and the
+# structured renderers (a ledger, Gate lines, a lookback) stay where their feature lives.
+
+NO_INSTRUMENT_FILE = "No instrument run file has been read for this study."
+
+
+def _evidence(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.evidence_text import evidence_text
+
+    return evidence_text(facts, card, gene)
+
+
+def _gate_rt(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.evidence_text import gate_rt_text
+
+    return gate_rt_text(facts, card, gene)
+
+
+def _runreview(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.evidence_text import runreview_text
+
+    return runreview_text(facts, card, gene)
+
+
+def _structured_only(key: str, renderer: str) -> TemplateError:
+    return TemplateError(f"{key} renders from the structured result; use {renderer}")
+
+
+def _instrument_gate(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``instrument_gate_v1``: a digit-free sentence without G-INSTR facts.
+
+    The wording of each line depends on its code, which lives on the Gate line, not in the
+    facts: with G-INSTR facts present, render the lines with
+    ``qpilot.explain.instrument_text.render_gate``.
+    """
+    if any(fid.startswith("f_instr_") for fid in facts):
+        raise _structured_only("instrument_gate_v1", "explain.instrument_text.render_gate(lines)")
+    return NO_INSTRUMENT_FILE
+
+
+def _lookback(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``lookback_v1``: a digit-free sentence without lookback facts (else use the result)."""
+    from qpilot.explain.lookback_text import NO_LOOKBACK
+
+    if "f_lookback_instrument" in facts:
+        raise _structured_only("lookback_v1", "explain.lookback_text.lookback_tokens(result)")
+    return NO_LOOKBACK
+
+
+def _position(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``position_v1``: a digit-free sentence without position facts (else use the report)."""
+    from qpilot.explain.lookback_text import NO_POSITIONS
+
+    if "f_position_base_rate" in facts:
+        raise _structured_only("position_v1", "explain.lookback_text.position_tokens(report)")
+    return NO_POSITIONS
+
+
 Template = Callable[[Facts, "DecisionCard | None", "str | None"], str]
 
 TEMPLATES: dict[str, Template] = {
@@ -279,6 +343,12 @@ TEMPLATES: dict[str, Template] = {
     "summary_v1": _summary,
     "meter_v1": _meter,
     "confidence_v1": _confidence,
+    "evidence_v1": _evidence,
+    "grt_v1": _gate_rt,
+    "runreview_v1": _runreview,
+    "instrument_gate_v1": _instrument_gate,
+    "lookback_v1": _lookback,
+    "position_v1": _position,
 }
 
 

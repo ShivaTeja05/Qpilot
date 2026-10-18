@@ -393,3 +393,88 @@ def footer_lines(version: str, vendored_commit: str) -> list[str]:
     return [esc(line) for line in FOOTER] + [
         esc(f"qPilot {version} · LinRegPCR (rdmlpython) @ {vendored_commit[:7]}")
     ]
+
+
+# ---------- Evidence Ledger and Run Review ----------
+
+EVIDENCE_HEADING = "Evidence Ledger"
+CANNOT_TELL = "What this study cannot tell you"
+CAN_SHOW = "What it does show"
+EVIDENCE_MISSING = "The Evidence Ledger is not available for this study"
+#: Statuses whose consequence says what the study cannot show.
+CANNOT_STATUSES = ("absent", "unknown")
+REVIEW_OUTCOME_CHOICES = [("Accept", "accept"), ("Repeat", "repeat"), ("Discuss", "discuss")]
+
+
+def _checked_html(tokens: str, facts: Facts, fallback: str) -> str:
+    """Token text validated (numbers only through facts) and escaped; ``fallback`` if it fails."""
+    from qpilot.explain.evidence_text import render_facts
+
+    try:
+        return render_facts("evidence_v1", tokens, facts).html
+    except (TemplateError, KeyError):
+        return esc(fallback)
+
+
+def evidence_view(ledger, note: str = "") -> str:
+    """The Evidence Ledger panel: a status chip per item and what the study cannot tell you.
+
+    Args:
+        ledger: A :class:`qpilot.qpcr.evidence.EvidenceLedger`, or ``None`` when it could not
+            be built (then ``note`` says why).
+        note: Why there is no ledger (shown escaped).
+
+    Every line is validated token text: numbers come only from the ledger's facts, and every
+    title, status and value is escaped. A status outside the four known ones shows as unknown.
+    """
+    from qpilot.explain.evidence_text import STATUS_WORDS, ledger_summary
+
+    head = f"<h4>{esc(EVIDENCE_HEADING)}</h4>"
+    if ledger is None:
+        why = f"{EVIDENCE_MISSING}: {note.rstrip('.')}." if note else f"{EVIDENCE_MISSING}."
+        return f'<div class="qp-evidence">{head}<p class="qp-rule">{esc(why)}</p></div>'
+    facts = ledger.facts
+    summary = ledger_summary(facts)
+    parts = [head]
+    if summary:
+        parts.append(f'<p class="qp-summary">{_checked_html(summary, facts, "")}</p>')
+    chips, cannot, can = [], [], []
+    for item in ledger.items:
+        status = item.status if item.status in STATUS_WORDS else "unknown"
+        title = _checked_html(item.title, facts, item.id)
+        chip = f'<span class="qp-ev qp-ev-{status}">{esc(STATUS_WORDS[status])}</span>'
+        chips.append(f"<li>{chip} {title}</li>")
+        line = _checked_html(item.consequence.text, facts, "This line could not be shown.")
+        (cannot if status in CANNOT_STATUSES else can).append(f"<li><b>{title}</b>: {line}</li>")
+    parts.append(f'<ul class="qp-ev-items">{"".join(chips)}</ul>')
+    parts.append(f"<h5>{esc(CANNOT_TELL)}</h5>")
+    parts.append(
+        f'<ul class="qp-ev-lines">{"".join(cannot)}</ul>'
+        if cannot
+        else "<p>Every item this ledger checks is present or does not apply.</p>"
+    )
+    if can:
+        parts.append(
+            f"<details><summary>{esc(CAN_SHOW)}</summary>"
+            f'<ul class="qp-ev-lines">{"".join(can)}</ul></details>'
+        )
+    return f'<div class="qp-evidence">{"".join(parts)}</div>'
+
+
+def review_body(page: str) -> str:
+    """The inside of a Run Review page's ``<main>`` (from ``report.run_review.render_html``).
+
+    The page is a whole document with its own style; the app shows only its body, styled by the
+    app's own classes.
+    """
+    start, end = page.find("<main>"), page.rfind("</main>")
+    if start < 0 or end < start:
+        return ""
+    return page[start + len("<main>") : end].strip()
+
+
+def review_head_line(head: str | None) -> str:
+    """The decision chain's head after a sign-off (escaped, shortened like a record id)."""
+    if not head:
+        return ""
+    return f'<p class="qp-rule">Decision log head: <code>{esc(head[:16])}</code></p>'

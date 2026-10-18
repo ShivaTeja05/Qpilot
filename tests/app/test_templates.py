@@ -87,3 +87,41 @@ def test_cli_explain_lists_and_renders(fixtures_dir, capsys):
     assert main(["explain", "meter_v1", "--results", results, "--tokens"]) == 0
     assert "{{f_n_cells}}" in capsys.readouterr().out
     assert main(["explain", "confidence_v1", "--results", results]) == 1
+
+
+FEATURE_TEMPLATES = ("evidence_v1", "grt_v1", "runreview_v1", "instrument_gate_v1",
+                     "lookback_v1", "position_v1")  # fmt: skip
+
+
+def test_feature_templates_are_registered_and_digit_free_without_their_facts(fixture_result):
+    import re
+
+    for key in FEATURE_TEMPLATES:
+        assert key in TEMPLATES
+        rendered = render_template(key, fixture_result.facts)
+        assert rendered.plain and not re.search(r"\d", rendered.plain), key
+        assert rendered.fact_ids == ()
+
+
+def test_the_evidence_template_renders_a_ledger_through_the_registry():
+    from qpilot.explain.evidence_text import render_evidence
+    from qpilot.qpcr.evidence import evidence_for
+    from tests.engine.evidence_toys import toy_design, toy_model, toy_table
+
+    table, design = toy_table(), toy_design()
+    ledger = evidence_for(table, toy_model(table, design), design)
+    rendered = render_template("evidence_v1", ledger.facts)
+    assert rendered.tokens == render_evidence(ledger).tokens
+    assert "f_ev_n_present" in rendered.fact_ids and "No-RT control: absent." in rendered.plain
+
+
+def test_structured_templates_point_to_their_renderer(fixture_facts):
+    cases = {
+        "instrument_gate_v1": ("f_instr_run_run_state", "render_gate"),
+        "lookback_v1": ("f_lookback_instrument", "lookback_tokens"),
+        "position_v1": ("f_position_base_rate", "position_tokens"),
+    }
+    for key, (fid, renderer) in cases.items():
+        facts = {**fixture_facts, fid: Fact(id=fid, value="x")}
+        with pytest.raises(TemplateError, match=renderer):
+            render_template(key, facts)
