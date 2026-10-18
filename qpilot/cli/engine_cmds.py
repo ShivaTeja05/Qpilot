@@ -344,7 +344,10 @@ def _doctor(args: argparse.Namespace) -> int:
     else:
         target = config.endpoint or "https://api.anthropic.com"
         print(f"outbound: {target} (only when you use the model; provider {config.provider})")
-    print(studio_outbound_line(config))
+    try:
+        print(studio_outbound_line())  # Studio's own default: a local model unless one is named
+    except ValueError as err:
+        print(f"outbound (Studio): INVALID ({err})")
     print("(in the app you can pick a model; the API key is only sent where it was configured)")
     if not cached:
         print("(`qpilot fetch-demo` downloads the pinned demo study once; nothing else does)")

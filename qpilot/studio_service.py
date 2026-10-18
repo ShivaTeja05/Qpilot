@@ -156,7 +156,9 @@ class Studio:
         from qpilot.core.pseudonym import endpoint_is_local
 
         backend = self.client.backend
-        endpoint = getattr(getattr(backend, "config", None), "endpoint", None)
+        endpoint = getattr(backend, "url", None) or getattr(
+            getattr(backend, "config", None), "endpoint", None
+        )
         provider = self.client.provider
         local = provider in ("none", "mock") or endpoint_is_local(provider, endpoint)
         return {
@@ -298,6 +300,9 @@ class Studio:
                 rule_fields=rule_fields,
                 pseudonymiser=pseudonymiser,
             )
+            extra = [(e.value, e.origin) for e in getattr(result, "quarantine", [])]
+            if extra:
+                quarantine.add_many(extra)
             fields, makers = _fields_and_makers(result, rule_fields)
             notes += list(getattr(result, "notes", []))
             rejected = list(getattr(result, "rejected", []))

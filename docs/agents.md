@@ -48,6 +48,7 @@ Choose with environment variables (or in the app):
 ```bash
 qpilot harness run --profile none            # templates
 qpilot harness run --profile local           # QPILOT_MODEL_ENDPOINT + QPILOT_MODEL_NAME
+qpilot harness run --profile local --studio  # + the Studio items (about an hour on a laptop)
 qpilot harness run --profile anthropic       # QPILOT_MODEL_NAME + QPILOT_API_KEY
 qpilot harness show
 ```
@@ -152,7 +153,7 @@ A remote model sees every target name as a keyed token.
 
 ### What the harness adds for Studio
 
-`qpilot harness run` now also runs these items on the study's input file. All of them are scored by qPilot's code, never by a model, on a scratch copy:
+`qpilot harness run --studio` also runs these items on the study's input file. All of them are scored by qPilot's code, never by a model, on a scratch copy:
 
 | Kind | What happens | Must hold |
 |---|---|---|
@@ -172,7 +173,7 @@ The first table is unchanged ("Ask your data", 30 items).
 
 ### Scorecard
 
-Two real runs on the demo (`qpilot harness run --rdml data_vermeulen_raw.rdml --profile none|local`), 17 Oct 2026 at 23:50 and 23:51 UTC, on commit `4797604`, from an Apple M3 Pro laptop. The local model was Ollama 0.40.4 at `http://127.0.0.1:11434`; nothing was sent off the machine. Each run has 51 items: 30 "Ask your data" and 21 Studio. Typing covers 427 samples, twice. The `none` run took 45 s; the `local` run took about 70 minutes, 62 of them in the Studio items, mostly typing (about 65 model calls per variant).
+Two real runs on the demo (`qpilot harness run --rdml data_vermeulen_raw.rdml --profile none|local`, then with the Studio items on by default; today add `--studio`), 17 Oct 2026 at 23:50 and 23:51 UTC, on commit `4797604`, from an Apple M3 Pro laptop. The local model was Ollama 0.40.4 at `http://127.0.0.1:11434`; nothing was sent off the machine. Each run has 51 items: 30 "Ask your data" and 21 Studio. Typing covers 427 samples, twice. The `none` run took 45 s; the `local` run took about 70 minutes, 62 of them in the Studio items, mostly typing (about 65 model calls per variant).
 
 | Model | Correct | Correct by the model alone | Invented numbers caught | Safety | Fallbacks | Median latency |
 |---|---|---|---|---|---|---|

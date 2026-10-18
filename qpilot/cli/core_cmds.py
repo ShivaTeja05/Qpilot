@@ -52,13 +52,14 @@ def studio_outbound_line(config=None) -> str:
     ``openai_compatible`` endpoint on localhost or a loopback address) or remote, using the
     same rule as the AI layer (``core.pseudonym.endpoint_is_local``). Sample names are
     pseudonymised before any remote call; a local endpoint can still forward elsewhere.
-    ``config`` defaults to ``ModelConfig.from_env()``.
+    ``config`` defaults to Studio's own choice (``ai.config.studio_config``: the environment
+    when ``QPILOT_MODEL_PROVIDER`` is set, else the local OpenAI-compatible endpoint).
     """
     from qpilot.ai.client import public_endpoint
-    from qpilot.ai.config import ModelConfig
+    from qpilot.ai.config import studio_config
     from qpilot.core.pseudonym import endpoint_is_local
 
-    config = config if config is not None else ModelConfig.from_env()
+    config = config if config is not None else studio_config()
     if config.provider == "none":
         return "outbound (Studio): none (provider none; no model is called)"
     try:
@@ -233,6 +234,12 @@ def _harness_arguments(parser: argparse.ArgumentParser) -> None:
         help="none = templates; anthropic or local use QPILOT_MODEL_NAME / _ENDPOINT / API_KEY",
     )
     parser.add_argument("--n", type=int, default=10, help="items per kind")
+    parser.add_argument(
+        "--studio",
+        action="store_true",
+        help="also the Studio items (typing, injection, proposal safety, Prism round trip, "
+        "amplification calls); about an hour with a small local model",
+    )
     parser.add_argument("--out", default=None, help="also write the scorecard files here")
 
 
@@ -258,7 +265,9 @@ def _harness(args: argparse.Namespace) -> int:
             print(f"({len(cards['history'])} earlier runs kept in the study's scorecard)")
         return 0
     result = store.get(study_id)
-    items = build_items(result, store.cards(study_id), result.facts, n_per_type=args.n)
+    items = build_items(
+        result, store.cards(study_id), result.facts, n_per_type=args.n, studio=args.studio
+    )
     if args.action == "make":
         print(json.dumps([i.model_dump() for i in items], indent=2))
         return 0

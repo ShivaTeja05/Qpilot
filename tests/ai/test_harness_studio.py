@@ -27,7 +27,8 @@ def demo(tmp_path_factory):
 
 def _items(store, study_id, ids=None):
     result = store.get(study_id)
-    items = [i for i in build_items(result, store.cards(study_id)) if i.kind in STUDIO_KINDS]
+    items = build_items(result, store.cards(study_id), studio=True)
+    items = [i for i in items if i.kind in STUDIO_KINDS]
     return [i for i in items if ids is None or i.id in ids]
 
 

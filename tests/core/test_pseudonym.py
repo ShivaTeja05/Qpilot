@@ -112,7 +112,8 @@ def test_what_counts_as_this_machine(provider, endpoint, local):
 @pytest.mark.parametrize(
     ("env", "expected"),
     [
-        ({}, "outbound (Studio): none"),
+        ({}, "outbound (Studio): local, http://127.0.0.1:11434/v1"),  # Studio's own default
+        ({"QPILOT_MODEL_PROVIDER": "none"}, "outbound (Studio): none"),
         (
             {
                 "QPILOT_MODEL_PROVIDER": "openai_compatible",

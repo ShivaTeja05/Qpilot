@@ -297,12 +297,13 @@ def build_items(
     facts: Mapping[str, Fact] | None = None,
     n_per_type: int = 10,
     seed: int = 0,
-    studio: bool = True,
+    studio: bool = False,
 ) -> list[Item]:
     """The evaluation set.
 
-    ``n_per_type`` items of each "Ask your data" kind (fewer if the study is small), then the
-    Studio items in fixed numbers unless ``studio`` is False.
+    ``n_per_type`` items of each "Ask your data" kind (fewer if the study is small), then, with
+    ``studio=True``, the Studio items in fixed numbers (about an hour with a small local model,
+    so the app's quick "Check model" leaves them out; ``qpilot harness run --studio`` runs them).
     """
     rng = random.Random(seed)
     items = [

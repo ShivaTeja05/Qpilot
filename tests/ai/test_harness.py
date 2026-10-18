@@ -18,8 +18,12 @@ def test_evalset_has_thirty_items_of_three_kinds(fixture_result, fixture_cards, 
     assert all(i.expected["gene"] not in fixture_result.contrasts for i in refusal)
 
 
+def test_the_studio_items_are_opt_in(fixture_result, fixture_cards):
+    assert not {i.kind for i in build_items(fixture_result, fixture_cards)} & set(STUDIO_KINDS)
+
+
 def test_the_studio_items_follow(fixture_result, fixture_cards):
-    items = build_items(fixture_result, fixture_cards)
+    items = build_items(fixture_result, fixture_cards, studio=True)
     studio = [i for i in items if i.kind in STUDIO_KINDS]
     assert {i.kind for i in items} == set(KINDS)
     assert len(items) == 30 + len(studio) and len({i.id for i in items}) == len(items)
@@ -39,7 +43,7 @@ def test_the_studio_items_follow(fixture_result, fixture_cards):
 
 
 def test_studio_items_need_the_input_file(store, study, fixture_result, fixture_cards):
-    items = build_items(fixture_result, fixture_cards, n_per_type=1)
+    items = build_items(fixture_result, fixture_cards, n_per_type=1, studio=True)
     report = run(items, ModelClient(), store, study, profile_name="none")
     assert report.n_items == 3 and report.studio is None
     assert "Studio items left out" in report.notes[0]
