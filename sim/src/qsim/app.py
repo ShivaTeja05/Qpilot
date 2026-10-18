@@ -261,6 +261,8 @@ class Screen(LabViews):
         order = {v: k for k, v in enumerate(ORDER)}
         genes = sorted(self.explain, key=lambda g: (order[self.explain[g]["verdict"]], g))
         study = self.summary["study"]
+        refs = self.space.decision("refs")
+        planned_refs = refs.options[refs.index(self.space.baseline["refs"])]
         return {
             "study": {
                 "samples": study["samples"],
@@ -270,6 +272,7 @@ class Screen(LabViews):
                 "group_def": self.group_def,
                 "analyses": self.summary["ledger"]["total_cells"],
                 "reasonable": self.explain[genes[0]]["analyses_defensible"],
+                "references": [g.split("(")[0] for g in planned_refs.value],
             },
             "verdicts": [
                 {
