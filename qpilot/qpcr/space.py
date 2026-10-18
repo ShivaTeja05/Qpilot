@@ -23,12 +23,20 @@ conclusion "none" with p = NaN instead of stopping the sweep.
 
 Evaluation is vectorised over genes (numpy), so a full 186-cell sweep over 58 genes takes a few
 seconds; results equal :func:`qpilot.qpcr.contrast.welch_contrast` cell by cell.
+
+What-if evaluation with the groups held fixed (used by :mod:`qpilot.qpcr.trace`): the arrays a
+cell is computed from are public through :meth:`QpcrSpace.cell_arrays` and
+:meth:`QpcrSpace.group_masks` (copies), and :meth:`QpcrSpace.evaluate_arrays` /
+:meth:`QpcrSpace.evaluate_with` run the same arithmetic as :meth:`QpcrSpace.evaluate` on changed
+arrays: a reference value read differently, a value left out, a unit set aside. With no change
+they return exactly what :meth:`QpcrSpace.evaluate` returns.
 """
 
 from __future__ import annotations
 
 import warnings
 from collections.abc import Collection, Mapping, Sequence
+from dataclasses import dataclass
 from itertools import combinations
 from typing import Any
 
@@ -232,6 +240,173 @@ class QpcrSpace:
         """Up / down / none for a result under this space's conclusion rule."""
         return conclude(result.log2fc, result.p, self.rule)
 
+    # ---- what-if evaluation with fixed groups (public, read-only) ----------------------------
+
+    @property
+    def units(self) -> pd.Index:
+        """The matrix rows (biological units), in the order every array below uses."""
+        return self._samples
+
+    def group_masks(self, cell: Mapping[str, Any] | None = None) -> tuple[np.ndarray, np.ndarray]:
+        """Copies of the fixed ``(high, rest)`` boolean masks over :attr:`units` for a cell.
+
+        The groups depend only on the cell's cut-off (none in groups mode); the primary cell's
+        groups when ``cell`` is ``None``.
+        """
+        cell = self.primary if cell is None else cell
+        in_high, in_rest = self._masks[cell["cut"] if self.design is not None else None]
+        return in_high.copy(), in_rest.copy()
+
+    def cell_arrays(self, cell: Mapping[str, Any] | None = None) -> tuple[np.ndarray, np.ndarray]:
+        """Copies of the arrays one cell is computed from: ``(values, ref_values)``.
+
+        ``values`` is units x :attr:`items` ``log2(n0)`` under the cell's amplification rule,
+        with the cell's undetermined rule applied (``cap`` fills undetermined values with each
+        gene's lowest value); ``ref_values`` is units x the cell's control genes, in the cell's
+        order. The primary cell when ``cell`` is ``None``.
+
+        Raises:
+            ValueError: Unknown amplification or undetermined option.
+        """
+        cell = self.primary if cell is None else cell
+        amp_call = cell.get("amp_call", self._amp_primary)
+        if amp_call not in self._by_rule:
+            raise ValueError(f"unknown amp_call option {amp_call!r}")
+        values, lowest, refs = self._by_rule[amp_call]
+        if cell["undetermined"] == "cap":
+            if self._excluded is None:
+                values = np.where(np.isnan(values), lowest, values)
+            else:
+                values = np.where(np.isnan(values) & ~self._excluded, lowest, values)
+        elif cell["undetermined"] != "drop":
+            raise ValueError(f"unknown undetermined option {cell['undetermined']!r}")
+        ref_values = refs[list(cell["refs"])].to_numpy(dtype=float)
+        return np.array(values, dtype=float), ref_values
+
+    def evaluate_arrays(
+        self,
+        values: np.ndarray,
+        ref_values: np.ndarray,
+        in_high: np.ndarray,
+        in_rest: np.ndarray,
+    ) -> ContrastArrays:
+        """Every item's comparison from explicit arrays, with :meth:`evaluate`'s arithmetic.
+
+        The normaliser is the row mean of ``ref_values``; a unit with any control value missing
+        has no relative value. Nothing is re-derived: the masks are used as given.
+
+        Args:
+            values: Units x :attr:`items` ``log2(n0)`` (NaN = no value).
+            ref_values: Units x control genes ``log2(n0)``.
+            in_high: Boolean mask over :attr:`units`, the high group (group A).
+            in_rest: Boolean mask over :attr:`units`, the comparison group (group B).
+
+        Returns:
+            The arrays; :meth:`ContrastArrays.results` gives the :class:`ContrastResult` dict.
+        """
+        ref_mean = ref_values.mean(axis=1)
+        refs_ok = ~np.isnan(ref_values).any(axis=1)
+        relative = values - ref_mean[:, None]
+        valid = refs_ok[:, None] & ~np.isnan(relative)
+        stats_hi = _group_stats(relative, valid & in_high[:, None])
+        stats_lo = _group_stats(relative, valid & in_rest[:, None])
+        return welch_arrays(self.items, stats_hi, stats_lo, self.rule)
+
+    def evaluate_with(
+        self,
+        cell: Mapping[str, Any] | None = None,
+        *,
+        values: np.ndarray | None = None,
+        ref_values: np.ndarray | None = None,
+        in_high: np.ndarray | None = None,
+        in_rest: np.ndarray | None = None,
+    ) -> dict[str, ContrastResult]:
+        """:meth:`evaluate` for a cell with some of its arrays replaced (fixed groups).
+
+        Each argument left ``None`` is the cell's own (:meth:`cell_arrays`,
+        :meth:`group_masks`), so ``evaluate_with(cell)`` equals ``evaluate(cell)``.
+        """
+        cell = self.primary if cell is None else cell
+        own_values, own_refs = self.cell_arrays(cell)
+        own_high, own_rest = self.group_masks(cell)
+        out = self.evaluate_arrays(
+            own_values if values is None else values,
+            own_refs if ref_values is None else ref_values,
+            own_high if in_high is None else in_high,
+            own_rest if in_rest is None else in_rest,
+        )
+        return out.results()
+
+
+@dataclass(frozen=True, eq=False)
+class ContrastArrays:
+    """Every item's group comparison under one analysis, as arrays over the items.
+
+    Same arithmetic as :meth:`QpcrSpace.evaluate`; ``conclusion`` holds ``"up"``, ``"down"`` or
+    ``"none"``, and an item with fewer than two values in a group has p = NaN and ``"none"``.
+    """
+
+    items: tuple[str, ...]
+    log2fc: np.ndarray
+    se: np.ndarray
+    t: np.ndarray
+    p: np.ndarray
+    t_crit: np.ndarray
+    n_hi: np.ndarray
+    n_lo: np.ndarray
+    conclusion: np.ndarray
+    rule: ConclusionRule
+
+    @property
+    def half_ci(self) -> np.ndarray:
+        """Half-width of the 95 % confidence interval on the log2 scale (NaN without a test)."""
+        ok = (self.n_hi >= 2) & (self.n_lo >= 2)
+        with np.errstate(invalid="ignore"):
+            return np.where(ok, self.t_crit * self.se, np.nan)
+
+    def results(self) -> dict[str, ContrastResult]:
+        """One :class:`ContrastResult` per item, exactly as :meth:`QpcrSpace.evaluate` builds it."""
+        return _results(
+            self.items,
+            (self.log2fc, self.se, self.t, self.p, self.t_crit),
+            self.n_hi,
+            self.n_lo,
+            self.rule,
+        )
+
+
+def welch_arrays(
+    items: Sequence[str],
+    high: tuple[np.ndarray, ...],
+    rest: tuple[np.ndarray, ...],
+    rule: ConclusionRule,
+    *,
+    with_ci: bool = True,
+) -> ContrastArrays:
+    """Welch's test per item from per-group ``(n, mean, var)`` arrays (any common shape).
+
+    The arrays may be per item (one analysis) or, broadcast, several analyses at once (rows =
+    analyses, columns = items); ``items`` names the last axis. ``with_ci=False`` skips the
+    t quantile (``t_crit`` is NaN): faster when only the fold change and the call are needed.
+    """
+    n_a, n_b = high[0], rest[0]
+    diff, se, t, p, t_crit = _welch_core(high, rest, with_ci=with_ci)
+    tested = (n_a >= 2) & (n_b >= 2)
+    p = np.where(tested, p, np.nan)
+    with np.errstate(invalid="ignore"):
+        significant = p < rule.alpha
+    call = np.where(
+        significant & (diff >= rule.min_log2fc),
+        "up",
+        np.where(significant & (diff <= -rule.min_log2fc), "down", "none"),
+    )
+    return ContrastArrays(tuple(items), diff, se, t, p, t_crit, n_a, n_b, call, rule)
+
+
+def group_stats(values: np.ndarray, mask: np.ndarray) -> tuple[np.ndarray, ...]:
+    """Per-column count, mean and sample variance of ``values`` where ``mask`` is true."""
+    return _group_stats(values, mask)
+
 
 def _group_stats(values: np.ndarray, mask: np.ndarray) -> tuple[np.ndarray, ...]:
     """Per-column count, mean and sample variance of ``values`` where ``mask`` is true."""
@@ -244,22 +419,40 @@ def _group_stats(values: np.ndarray, mask: np.ndarray) -> tuple[np.ndarray, ...]
     return n, mean, var
 
 
-def _welch_results(
-    genes: Sequence[str],
-    high: tuple[np.ndarray, ...],
-    rest: tuple[np.ndarray, ...],
-    rule: ConclusionRule,
-) -> dict[str, ContrastResult]:
+def _welch_core(
+    high: tuple[np.ndarray, ...], rest: tuple[np.ndarray, ...], *, with_ci: bool = True
+) -> tuple[np.ndarray, ...]:
+    """``(diff, se, t, p, t_crit)`` of Welch's test from per-group ``(n, mean, var)``."""
     n_a, mean_a, var_a = high
     n_b, mean_b, var_b = rest
-    with np.errstate(divide="ignore", invalid="ignore"):  # genes with n < 2 are reported below
+    with np.errstate(divide="ignore", invalid="ignore"):  # genes with n < 2 are reported later
         sa, sb = var_a / n_a, var_b / n_b
         se = np.sqrt(sa + sb)
         diff = mean_a - mean_b
         t = diff / se
         df = (sa + sb) ** 2 / (sa**2 / (n_a - 1) + sb**2 / (n_b - 1))
         p = 2 * stats.t.sf(np.abs(t), df)
-        t_crit = stats.t.ppf(0.975, df)
+        t_crit = stats.t.ppf(0.975, df) if with_ci else np.full(np.shape(df), np.nan)
+    return diff, se, t, p, t_crit
+
+
+def _welch_results(
+    genes: Sequence[str],
+    high: tuple[np.ndarray, ...],
+    rest: tuple[np.ndarray, ...],
+    rule: ConclusionRule,
+) -> dict[str, ContrastResult]:
+    return _results(genes, _welch_core(high, rest), high[0], rest[0], rule)
+
+
+def _results(
+    genes: Sequence[str],
+    welch: tuple[np.ndarray, ...],
+    n_a: np.ndarray,
+    n_b: np.ndarray,
+    rule: ConclusionRule,
+) -> dict[str, ContrastResult]:
+    diff, se, t, p, t_crit = welch
     out = {}
     nan = float("nan")
     for i, gene in enumerate(genes):
