@@ -122,6 +122,15 @@ def proposals() -> list[Proposal]:
         "n_conclusions_changed": 1,
         "n_genes": 58,
         "changed_genes": [EVIL],
+        "with_all_pending": {
+            "n_exclusions": EVIL,
+            "fc_before": 3.59,
+            "fc_after": 2.5,
+            "conclusion_before": "up",
+            "conclusion_after": EVIL,
+            "n_conclusions_changed": 2,
+            "changed_genes": [EVIL, "ODC1"],
+        },
     }
     return [
         _proposal(
@@ -339,6 +348,10 @@ class FakeStudio:
         self._log("matters")
         return True
 
+    def stale_consequence(self, session_id: str, proposal: Proposal) -> str | None:
+        self._log("stale_consequence")
+        return None
+
     def curve(self, session_id: str, well_key: str) -> dict[str, list[float]]:
         self._log("curve")
         return {"cycle": [1, 2, 3, 4], "fluorescence": [1.0, 1.1, 2.5, float("nan")]}
@@ -426,6 +439,11 @@ class FakeStudio:
             "items": [{"kind": "missing", "gene": "ODC1", "row": EVIL}],
             "notes": [EVIL],
             "inbox": {"proposed": ["p_r1"], "refused": [], "notes": []},
+            "combined_consequence": {
+                "exclusions": [{"gene": "ODC1", "biological_unit": EVIL}] * 2,
+                "n_genes": EVIL,
+                "changed_genes": [EVIL],
+            },
         }
 
     # ---- deciding (a person) ----

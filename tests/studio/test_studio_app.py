@@ -485,6 +485,27 @@ def test_results_shown_once_both_blind_stages_are_confirmed_and_never_kept(fake,
     assert out[ui.session]["card_study"] is None and out[ui.session]["send"] is None
 
 
+def test_the_round_trip_says_what_all_exclusions_do_together_and_marks_stale_cards(
+    fake, fake_page, tmp_path, monkeypatch
+):
+    ui = fake_page.qpilot_ui
+    fake.phase = "roundtrip"
+    session = armed_session(fake_page, fake, tmp_path)
+    sent_back = str(Path(session["bundle"]) / "sent_back")
+    out = run(by_name(fake_page, "on_roundtrip"), [session, session["bundle"], sent_back])
+    notice = out[ui.notice]
+    assert "All 2 exclusions together change 1 of" in notice and "<script" not in notice
+    cards = "".join(text_of(out[slot.html]) for slot in ui.slots)
+    assert "with the other exclusions found in this round trip" in cards
+    reason = "computed before the exclusions accepted since then"
+    monkeypatch.setattr(
+        fake, "stale_consequence", lambda sid, p: reason if p.id == "p_r1" else None
+    )
+    out = run(by_name(fake_page, "on_load"), [out[ui.session]])
+    cards = "".join(text_of(out[slot.html]) for slot in ui.slots)
+    assert "Out of date" in cards and reason in cards and "3.590×" not in cards
+
+
 def test_a_blind_card_says_at_most_that_it_matters(fake, fake_page):
     ui = fake_page.qpilot_ui
     fake.phase = "curves"

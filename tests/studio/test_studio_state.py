@@ -202,6 +202,58 @@ def test_the_round_trip_shows_the_whole_consequence_only_while_results_are_visib
     assert "3.590" not in hidden and "Hidden" in hidden
 
 
+def test_an_exclusion_also_shows_what_all_the_exclusions_do_together():
+    c = {
+        "gene": "NM23A",
+        "fc_before": 2.1879,
+        "fc_after": 2.1328,
+        "conclusion_before": "up",
+        "conclusion_after": "up",
+        "n_conclusions_changed": 0,
+        "n_genes": 58,
+        "changed_genes": [],
+        "with_all_pending": {
+            "n_exclusions": 4,
+            "fc_before": 2.1879,
+            "fc_after": 1.952,
+            "conclusion_before": "up",
+            "conclusion_after": "none",
+            "n_conclusions_changed": 1,
+            "changed_genes": ["NM23A"],
+        },
+    }
+    p = proposal(
+        "prism.exclusion_reason", "NM23A/1824", {"gene": "NM23A", "sample": "1824"}, consequence=c
+    )
+    html = ss.consequence_html(p, results_visible=True)
+    assert "On its own it changes no conclusion, but together with the other exclusions" in html
+    assert "(4 in all) 1 of 58 conclusions change" in html
+    assert "2.188× → 1.952×" in html and "genes whose conclusion changes, all 4 together" in html
+
+
+def test_an_out_of_date_exclusion_shows_none_of_its_numbers():
+    c = {
+        "gene": "NM23A",
+        "fc_before": 2.1879,
+        "fc_after": 2.1311,
+        "conclusion_before": "up",
+        "conclusion_after": "up",
+        "n_conclusions_changed": 0,
+        "n_genes": 58,
+    }
+    p = proposal(
+        "prism.exclusion_reason",
+        "NM23A/2784",
+        {"gene": "NM23A", "sample": "2784"},
+        consequence=c,
+        check=ProposalCheck(status="cannot_check", details={"n_conclusions_changed": 0}),
+    )
+    html = ss.card_html(p, results_visible=True, stale=EVIL)
+    assert "Out of date" in html and "&lt;script&gt;" in html and "<script" not in html
+    assert "×" not in html and "2.13" not in html and "n conclusions changed" not in html
+    assert "2.131×" in ss.card_html(p, results_visible=True)
+
+
 # ---------- escaping ----------
 
 
@@ -351,6 +403,34 @@ def test_the_stage_strip_is_the_fixed_order_with_states_and_blockers():
     assert 'class="qs-stage open current"' in html
     assert "nothing has been sent to Prism yet" in html
     assert ss.current_stage(stages) == "curves"
+
+
+def test_a_configured_model_that_does_not_answer_is_never_shown_as_no_model():
+    down = {
+        "provider": "openai_compatible",
+        "model": "qwen2.5:7b",
+        "available": False,
+        "configured": True,
+        "answers": False,
+        "reason": "endpoint call failed: ConnectError",
+        "local": True,
+    }
+    line = ss.model_line_html(down)
+    assert "openai_compatible · qwen2.5:7b" in line
+    assert "configured but not answering: endpoint call failed: ConnectError" in line
+    assert "no model is called" not in line and "Model: none" not in line
+    checking = ss.model_line_html({**down, "answers": None, "reason": None})
+    assert "checking whether it answers" in checking and "no model is called" not in checking
+    wrong = {
+        "provider": "none",
+        "available": False,
+        "configured": False,
+        "misconfigured": True,
+        "reason": f"QPILOT_MODEL_ENDPOINT is not on this machine {EVIL}",
+    }
+    line = ss.model_line_html(wrong)
+    assert "cannot be used: QPILOT_MODEL_ENDPOINT is not on this machine" in line
+    assert "<script" not in line
 
 
 def test_the_model_line_says_local_or_remote_plainly():
