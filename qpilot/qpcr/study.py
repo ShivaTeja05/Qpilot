@@ -428,6 +428,7 @@ def study_from_curves(
             primary,
             settings.rule,
             calls,
+            amp_call=settings.amp_calls[0],
         )
     extras = _Extras(
         withheld=space.withheld,

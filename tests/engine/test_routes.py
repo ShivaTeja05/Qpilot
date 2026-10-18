@@ -48,6 +48,23 @@ def test_cq_matrix_averages_replicates_and_skips_excluded_or_called_off_wells():
     assert "s3" not in cq.index
 
 
+def test_routes_use_the_wells_of_the_engines_primary_rule():
+    """Review s0: with a Cq cut-off as the primary rule, a late well is out of the routes too.
+
+    In the toy E is exactly 2, so on the same wells ΔΔCq is the engine's analysis itself; the
+    one well over cycle 35 is the only thing that could make the route differ.
+    """
+    from tests.engine.test_groups_study import run, toy_design, toy_wells
+
+    curves = toy_wells(overrides={("sA1", "T1", 0): {"cq": 36.0}})
+    result = run(curves, toy_design(amp_calls=("cq_le_35", "linregpcr")))[0]
+    assert result.contrasts["T1"].conclusion == "up"
+    assert result.facts["f_n_differ_route_ddcq"].value == 0
+    late = cq_matrix(curves, None, amp_call="cq_le_35")
+    assert late.loc["sA1", "T1"] == pytest.approx(26.5)  # Cq 27 and 26; 36 is left out
+    assert cq_matrix(curves, None).loc["sA1", "T1"] == pytest.approx((36 + 27 + 26) / 3)
+
+
 def test_compare_routes_counts_differences():
     rows = []
     for unit, dcq in {"a1": 1.0, "a2": 1.2, "a3": 0.7, "b1": 3.0, "b2": 3.3, "b3": 2.8}.items():
@@ -90,6 +107,24 @@ def test_demo_routes_oracle(studio_demo):
     student = set(facts["f_genes_differ_route_linear_student"].value.split(", "))
     assert len(welch) == 14 and len(student) == 21
     assert "f_n_flipped_amp_call" not in facts and facts["f_n_cells"].value == 186
+
+
+@pytest.mark.demo_data
+def test_demo_routes_with_a_cq_cutoff_as_the_primary_rule(demo_curves):
+    """Review s0: under cq_le_35 the routes drop the same wells (8 ΔΔCq differences were 2)."""
+    from qpilot.io.datasets import VERMEULEN_SHA256
+    from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS
+    from qpilot.qpcr.designs import vermeulen_design
+    from qpilot.qpcr.study import StudySettings, study_from_curves
+
+    rules = ("cq_le_35", *(r for r in STUDIO_AMP_CALLS if r != "cq_le_35"))
+    design = vermeulen_design().model_copy(update={"amp_calls": rules})
+    settings = StudySettings.from_design(design)
+    facts = study_from_curves(demo_curves, VERMEULEN_SHA256, settings)[0].facts
+    assert facts["f_n_differ_route_ddcq"].value == 2
+    assert facts["f_genes_differ_route_ddcq"].value == "PRDM2, SNAPC1"
+    assert facts["f_n_differ_route_linear_welch"].value == 14
+    assert facts["f_n_differ_route_linear_student"].value == 14
 
 
 @pytest.mark.demo_data
