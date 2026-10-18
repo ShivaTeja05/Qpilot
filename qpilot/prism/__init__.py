@@ -54,6 +54,7 @@ from qpilot.prism.script import (
     join,
     launch_command,
     prism_dir_for,
+    prism_runs_here,
     readme_text,
     write_scripts,
 )
@@ -152,6 +153,12 @@ def export_study(
     )
     present = spec.path.is_file()
     notes = []
+    if prism_dir is None and not prism_runs_here():
+        notes.append(
+            "Prism does not run on this computer, so the scripts name the bundle folder as this "
+            "computer sees it: export again with the folder as the Prism computer sees it "
+            "(prism_dir / --prism-dir), or copy the bundle there and edit SetPath in the scripts"
+        )
     if not present:
         notes.append(
             f"template {spec.file} has not been made in Prism yet: build it as described in "

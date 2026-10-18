@@ -103,8 +103,18 @@ MAC_PATH_KB = (
 
 
 def host_platform() -> Platform:
-    """The platform of this computer, as Prism knows it (Prism runs on Windows and macOS)."""
-    return "macos" if sys.platform == "darwin" else "windows"
+    """The platform of this computer, as Prism knows it (Prism runs on Windows and macOS).
+
+    Linux and other POSIX systems get the macOS form, the one whose paths they share; Prism
+    does not run there, so a bundle written on such a machine names folders as this machine
+    sees them (:func:`prism_runs_here` is False and the export says so).
+    """
+    return "windows" if sys.platform.startswith("win") else "macos"
+
+
+def prism_runs_here() -> bool:
+    """Whether Prism can run on this computer at all (Windows or macOS)."""
+    return sys.platform.startswith("win") or sys.platform == "darwin"
 
 
 def check_text(text: str, what: str) -> str:
