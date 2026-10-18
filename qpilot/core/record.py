@@ -9,6 +9,8 @@ same pattern as ``StudyStore.ensure_study``). A record contains::
     study_design.json   the confirmed StudyDesign (designed studies only; rerun uses it)
     proposals.jsonl     what the AI proposed and what a person did, hash-chained (Studio)
     quarantine.json     the free text the proposals cite (pseudonyms in a shared record)
+    trace_cards.json    the cards opened on demand (Trace's set-aside cards), when there are any
+    evidence.json  run_context.json  instrument_refs.json   other features' artifact files
     choices.json        the primary analysis choices, the conclusion rule, each card's decision
     versions.json       python, platform, qpilot version and git commit, vendored method commit
     record.json         record id, chain heads, timestamps (not part of the determinism check)
@@ -18,6 +20,10 @@ same pattern as ``StudyStore.ensure_study``). A record contains::
 (``sessions/<input_sha256>/``), the one place Studio writes them; a copy in the study's own
 workspace is used only when the session has none. The pseudonym key (``.keys/``) is never
 copied.
+
+The artifact files (``store.ARTIFACT_FILES``) are copied when present. In a shared record their
+names (the string values under :data:`SHARE_NAME_KEYS`, and the keys of the mappings under
+:data:`SHARE_NAME_MAPS`) are replaced by the same keyed pseudonyms the quarantine uses.
 
 The record is **tamper-evident, not tamper-proof**: ``verify`` detects any changed file and the
 first broken link in the decision and proposal chains, but it cannot prove who made a record.
@@ -32,8 +38,10 @@ import re
 import shutil
 import zipfile
 import zlib
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -54,15 +62,21 @@ from qpilot.core.proposals import (
 )
 from qpilot.core.pseudonym import TOKEN, Pseudonymiser
 from qpilot.core.store import (
+    ARTIFACT_FILES,
     DECISION_FIELDS,
     DESIGN_FILE,
+    ON_DEMAND_FILE,
+    ON_DEMAND_KINDS,
+    REVIEW_CARD,
+    REVIEW_KIND,
     SESSIONS_DIR,
     StudyStore,
     _lines,
     atomic_write,
-    canonical_json,
+    card_entries,
     dump_json,
     entry_hash,
+    entry_line,
     pending_after,
     read_entries,
     replay_cards,
@@ -87,12 +101,41 @@ WORKSPACE_FILES = (
     "attempts.jsonl",
     "autonomy.json",
     DESIGN_FILE,
+    *ARTIFACT_FILES,
 )
 SESSION_FILES = (PROPOSALS_FILE, QUARANTINE_FILE)  # from the session; never .keys/
 MAX_UNZIPPED_BYTES = 1 << 30
 MAX_MEMBERS = 10_000
 # Files an operating system adds to a folder by itself; verify neither lists nor counts them.
 OS_METADATA = re.compile(r"(^|/)(\.DS_Store|Thumbs\.db|desktop\.ini|\._[^/]*)$|(^|/)__MACOSX/")
+#: In a shared record, the string values under these keys (at any depth of an artifact file,
+#: also inside lists) name a sample, a well, a plate (run) or an instrument, and become
+#: pseudonyms. Features that write artifact files keep their names under these keys.
+SHARE_NAME_KEYS = frozenset(
+    {
+        "sample",
+        "samples",
+        "well",
+        "wells",
+        "well_key",
+        "well_keys",
+        "plate",
+        "plates",
+        "run_id",
+        "run_ids",
+        "serial",
+        "block_serial",
+        "cover_serial",
+        "optical_head_serial",
+        "aliases",
+        "source_file",
+        "operator",
+    }
+)
+#: ... and the keys of a mapping under one of these keys are such names (a well -> flags map).
+SHARE_NAME_MAPS = frozenset({"well_flags"})
+NAMES_IN_SHARED = "holds names in a shared record"
+_DATA_FILES = tuple(n for n in ARTIFACT_FILES if n != ON_DEMAND_FILE)  # not about decisions
 
 
 def _record_files(record_dir: Path) -> set[str]:
@@ -153,11 +196,83 @@ class VerifyReport(BaseModel):
         for item in self.inconsistent:
             if item.startswith((PROPOSALS_FILE, "record.json proposals_head")):
                 lines.append(f"does not match the proposal chain: {item}")
-            elif item.startswith((QUARANTINE_FILE, DESIGN_FILE)):
+            elif item.startswith((QUARANTINE_FILE, DESIGN_FILE, *_DATA_FILES)) or item.endswith(
+                NAMES_IN_SHARED
+            ):
                 lines.append(f"inconsistent: {item}")
             else:
                 lines.append(f"does not match the decision chain: {item}")
         return "\n".join(lines)
+
+
+def _map_names(data: Any, rename: Callable[[str], str]) -> Any:
+    """Parsed JSON with every name (see :data:`SHARE_NAME_KEYS`) passed through ``rename``.
+
+    Everything that is not a name is kept, so the file still reads the same way.
+    """
+
+    def names(value: Any) -> Any:
+        if isinstance(value, str):
+            return rename(value)
+        if isinstance(value, list):
+            return [names(v) for v in value]
+        return walk(value)
+
+    def walk(value: Any) -> Any:
+        if isinstance(value, list):
+            return [walk(v) for v in value]
+        if not isinstance(value, dict):
+            return value
+        out: dict[str, Any] = {}
+        for key, item in value.items():
+            if key in SHARE_NAME_KEYS:
+                out[key] = names(item)
+            elif key in SHARE_NAME_MAPS and isinstance(item, dict):
+                mapped: dict[str, Any] = {}
+                for name, sub in item.items():
+                    new = rename(name)
+                    if new in mapped:
+                        raise RecordError("two names share one pseudonym; rename one of them")
+                    mapped[new] = walk(sub)
+                out[key] = mapped
+            else:
+                out[key] = walk(item)
+        return out
+
+    return walk(data)
+
+
+def pseudonymise_names(data: Any, pseudonym: Callable[[str], str]) -> Any:
+    """An artifact file's parsed JSON with its names replaced by their pseudonyms.
+
+    A name is a string under one of :data:`SHARE_NAME_KEYS`, or a key of a mapping under one
+    of :data:`SHARE_NAME_MAPS`; a name that already is a pseudonym is kept.
+
+    Args:
+        data: The parsed file.
+        pseudonym: The workspace's keyed pseudonym function
+            (``StudyStore.pseudonymiser(study_id).pseudonymise``).
+
+    Returns:
+        A new object; ``data`` is not changed.
+
+    Raises:
+        RecordError: Two names would share one pseudonym inside one mapping.
+    """
+    return _map_names(data, lambda name: name if TOKEN.match(name) else pseudonym(name))
+
+
+def unpseudonymised_names(data: Any) -> list[str]:
+    """The names in an artifact file's parsed JSON that are not pseudonyms (none when shared)."""
+    found: list[str] = []
+
+    def note(name: str) -> str:
+        if not TOKEN.match(name):
+            found.append(name)
+        return name
+
+    _map_names(data, note)
+    return found
 
 
 def _vendored_commit() -> str:
@@ -277,10 +392,12 @@ def write_record(
     left out: the record can still be verified but not re-run.
 
     ``share=True`` marks a record for sharing: ``quarantine.json`` carries each text's
-    pseudonym (same ``text_id``) instead of the text, and the raw input is always left out.
-    This is pseudonymisation, not anonymisation: proposal subjects and payloads (sample ids)
-    stay in ``proposals.jsonl`` because they are inside its hash chain, and a ``text_id`` is an
-    unkeyed hash of the original text, so anyone who can guess a name can confirm it.
+    pseudonym (same ``text_id``) instead of the text, the artifact files carry pseudonyms for
+    their names (:func:`pseudonymise_names`, the same keyed tokens), and the raw input is
+    always left out. This is pseudonymisation, not anonymisation: proposal subjects and
+    payloads (sample ids), card ids, run reviewers' names and every reason stay as they are
+    because they are inside a hash chain, and a ``text_id`` is an unkeyed hash of the original
+    text, so anyone who can guess a name can confirm it.
     """
     workspace = store.workspace(study_id)
     result = store.get(study_id)
@@ -288,13 +405,26 @@ def write_record(
     record_dir.mkdir(parents=True, exist_ok=True)
     if any(record_dir.iterdir()):
         raise RecordError(f"record directory is not empty: {record_dir}")
+    artifacts: dict[str, str] = {}
     with store._locked(workspace):  # copy a consistent workspace: no write in between
         for name in WORKSPACE_FILES:
             src = workspace / name
-            if src.exists():
+            if not src.exists():
+                continue
+            if share and name in ARTIFACT_FILES:
+                artifacts[name] = src.read_text(encoding="utf-8")  # pseudonymised below
+            else:
                 shutil.copyfile(src, record_dir / name)
         head = store.chain_head(study_id)
         choices = _choices(result, store, study_id)
+    if artifacts:  # outside the workspace lock: the key lives in the session folder
+        pseudonym = store.pseudonymiser(study_id).pseudonymise
+        for name, text in sorted(artifacts.items()):
+            try:
+                data = pseudonymise_names(json.loads(text), pseudonym)
+            except (ValueError, RecursionError) as err:
+                raise RecordError(f"{name} cannot be exported: {err}") from err
+            atomic_write(record_dir / name, dump_json(data))
     session = store.root / SESSIONS_DIR / result.input_sha256
     proposals_head = _copy_session(store, (session, workspace), record_dir, result, share)
     if share:
@@ -361,7 +491,8 @@ def verify(record_dir: str | Path) -> VerifyReport:
     The proposal chain (when the record has one) is checked on its own, so a changed line is
     caught even after the checksums are rewritten: every link and hash, every line's exact
     canonical bytes, a replay in which only a person decides, and ``record.json``'s
-    ``proposals_head``. ``quarantine.json`` and ``study_design.json`` must be well formed.
+    ``proposals_head``. ``quarantine.json`` and ``study_design.json`` must be well formed, and
+    so must the artifact files (with only pseudonyms for names in a shared record).
     """
     record_dir = Path(record_dir)
     if not (record_dir / CHECKSUMS).exists():
@@ -394,6 +525,7 @@ def verify(record_dir: str | Path) -> VerifyReport:
         inconsistent += _metadata(record_dir, root, entries)
     proposals = _proposal_chain(record_dir, root)
     inconsistent += proposals.problems + _studio_files(record_dir, root)
+    inconsistent += _artifact_files(record_dir)
     ok = (
         not (missing or unlisted or changed or inconsistent)
         and broken is None
@@ -496,6 +628,33 @@ def _studio_files(record_dir: Path, root: StudyResult | None) -> list[str]:
     return problems
 
 
+def _artifact_files(record_dir: Path) -> list[str]:
+    """What is wrong with the artifact files (each optional): not JSON, or names when shared.
+
+    ``trace_cards.json`` is read as cards by :func:`_consistency`, which reports it unreadable.
+    """
+    try:
+        meta = json.loads((record_dir / "record.json").read_text())
+        shared = bool(meta.get("shared")) if isinstance(meta, dict) else False
+    except (OSError, ValueError, RecursionError):
+        shared = False  # _metadata reports an unreadable record.json
+    problems = []
+    for name in ARTIFACT_FILES:
+        path = record_dir / name
+        if not path.exists():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            left = unpseudonymised_names(data) if shared else []
+        except (OSError, ValueError, RecursionError):
+            if name != ON_DEMAND_FILE:
+                problems.append(f"{name} unreadable")
+            continue
+        if left:
+            problems.append(f"{name} {NAMES_IN_SHARED}")
+    return problems
+
+
 def _first_altered_line(log: Path, entries: list[DecisionEntry]) -> int | None:
     """The first chain line whose bytes are not the canonical form of the entry it parses to.
 
@@ -504,7 +663,7 @@ def _first_altered_line(log: Path, entries: list[DecisionEntry]) -> int | None:
     """
     lines = [line for line in _lines(log) if line.strip()]
     for position, (line, entry) in enumerate(zip(lines, entries, strict=False), start=1):
-        if line != canonical_json(entry.model_dump(mode="json")):
+        if line != entry_line(entry):
             return position
     return None
 
@@ -534,9 +693,10 @@ def _metadata(record_dir: Path, root: StudyResult, entries: list[DecisionEntry])
 def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
     """What in cards.json, choices.json and pending.jsonl the decision chain does not support.
 
-    Each card's state is rebuilt by replaying the chain with the store's own logic and compared
-    field by field; the card sets must match and every card the chain mentions must exist.
-    Unreadable files are reported, never raised.
+    Each card's state (the analysis's in cards.json and the on-demand ones in trace_cards.json)
+    is rebuilt by replaying the chain with the store's own logic and compared field by field;
+    the card sets must match and every card the chain decides must exist. Run reviews decide
+    no card; each must be a person's sign-off. Unreadable files are reported, never raised.
     """
     problems: list[str] = []
     try:
@@ -545,6 +705,27 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
         parsed = [DecisionCard.model_validate(c) for c in cards]
     except (OSError, ValueError, TypeError, KeyError, RecursionError):
         return ["cards.json unreadable"]
+    origin = dict.fromkeys(by_id, "cards.json")
+    on_demand = record_dir / ON_DEMAND_FILE
+    if on_demand.exists():
+        try:
+            extra = json.loads(on_demand.read_text())
+            extra_parsed = [DecisionCard.model_validate(c) for c in extra]
+        except (OSError, ValueError, TypeError, KeyError, RecursionError):
+            return [f"{ON_DEMAND_FILE} unreadable"]
+        ids = [c.id for c in extra_parsed]
+        if len(set(ids)) != len(ids):
+            problems.append(f"{ON_DEMAND_FILE} lists a card twice")
+        for card, raw in zip(extra_parsed, extra, strict=True):
+            if card.kind not in ON_DEMAND_KINDS:
+                problems.append(f"{ON_DEMAND_FILE} {card.id} is not an on-demand card")
+            if card.id in origin:
+                if origin[card.id] == "cards.json":
+                    problems.append(f"{ON_DEMAND_FILE} {card.id} is also in cards.json")
+                continue
+            origin[card.id] = ON_DEMAND_FILE
+            by_id[card.id] = raw
+            parsed.append(card)
     replays = (replay_cards(parsed, entries), replay_cards(parsed, entries, legacy=True))
     expected: dict[str, dict] = {}
     for card_id, card in by_id.items():
@@ -557,9 +738,22 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
         ]
         expected[card_id] = recorded if recorded in states else states[0]
         if recorded not in states:
-            problems.append(f"cards.json {card_id}")
+            problems.append(f"{origin[card_id]} {card_id}")
+    where = f"cards.json or {ON_DEMAND_FILE}" if on_demand.exists() else "cards.json"
+    decided = {e.card_id for e in card_entries(entries)}
+    problems += [f"{where} has no card {cid}" for cid in sorted(decided - set(by_id))]
     problems += [
-        f"cards.json has no card {cid}" for cid in sorted({e.card_id for e in entries} - set(by_id))
+        f"decisions.jsonl entry {e.seq} is a review no person signed"
+        for e in entries
+        if e.kind == REVIEW_KIND
+        and not (
+            e.actor == "human"
+            and e.status == "applied"
+            and e.card_id == REVIEW_CARD
+            and e.outcome is not None
+            and e.option == e.outcome
+            and e.reviewer
+        )
     ]
     choices_path = record_dir / "choices.json"
     if not choices_path.exists():

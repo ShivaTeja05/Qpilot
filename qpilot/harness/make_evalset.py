@@ -110,6 +110,7 @@ CARD_TITLE = {
     "group_cutoff": "the group cut-off",
     "undetermined": "the empty-well rule",
     "amp_call": "the amplification call",
+    "trace_set_aside": "the unusual well",
 }
 
 

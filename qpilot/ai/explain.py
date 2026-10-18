@@ -29,6 +29,7 @@ KIND_TITLE = {
     "group_cutoff": "Where to cut the comparison groups",
     "undetermined": "What to do with wells that never amplified",
     "amp_call": "Which curves count as amplified",
+    "trace_set_aside": "What to do with one unusual well",
 }
 #: The fact that counts the genes a card's choice flips, by card kind.
 FLIP_FACT = {

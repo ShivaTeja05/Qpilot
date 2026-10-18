@@ -13,6 +13,10 @@ Conclusion = Literal["up", "down", "none"]
 Actor = Literal["human", "agent", "system"]
 Autonomy = Literal["suggest", "decide_and_tell", "automatic", "teach"]  # last two reserved
 Level = Literal["High", "Moderate", "Low", "Very low"]
+#: What a Decision Card is about. The first four are built by the analysis (one per grid
+#: dimension); ``trace_set_aside`` is opened on demand by Trace, for one place to look.
+CardKind = Literal["reference_set", "group_cutoff", "undetermined", "amp_call", "trace_set_aside"]
+ReviewOutcome = Literal["accept", "repeat", "discuss"]
 
 
 class ContrastResult(BaseModel):
@@ -102,7 +106,7 @@ class DecisionCard(BaseModel):
     """A choice that could change a conclusion, with evidence, options and the decision."""
 
     id: str
-    kind: Literal["reference_set", "group_cutoff", "undetermined", "amp_call"]
+    kind: CardKind
     rank: int
     impact: dict[str, Any]  # {"flips": bool, "n_genes_flipped": int, "max_delta_log2fc": float}
     evidence: dict[str, Any]
@@ -138,7 +142,14 @@ class StudyResult(BaseModel):
 
 
 class DecisionEntry(BaseModel):
-    """One line of decisions.jsonl; ``hash`` is sha256 of the canonical JSON minus ``hash``."""
+    """One line of decisions.jsonl; ``hash`` is sha256 of the canonical JSON minus ``hash``.
+
+    ``kind`` is None for a decision on a card (every entry written before review entries
+    existed). A ``review`` entry is a person's sign-off on the whole run: ``option`` repeats
+    its ``outcome``, ``reason`` holds the comment, and no card replays it. Fields that are None
+    are left out of the stored line and of the hash, so an entry written before these fields
+    existed hashes exactly as it did.
+    """
 
     seq: int
     prev_hash: str
@@ -149,6 +160,9 @@ class DecisionEntry(BaseModel):
     status: Literal["applied", "stale", "pending_human", "rejected", "auto"]
     at: str
     hash: str = ""
+    kind: Literal["review"] | None = None
+    outcome: ReviewOutcome | None = None
+    reviewer: str | None = None
 
 
 class DecisionOutcome(BaseModel):
