@@ -56,10 +56,11 @@ The full harness (`qpilot harness run --studio`: 30 "Ask your data" items and 21
 | Rules only (no model) | 839/854 (98.2 %) | 18/18 | 0 / 0 / 0 | 0 | 30/30 (—) | 45 s |
 | qwen2.5:7b, laptop | 834/854 (97.7 %) | 18/18 | 0 / 0 / 0 | 0 (re-run after the harness fix) | 30/30 (17/20) | about 70 min |
 | qwen2.5:14b, Kaggle T4 | 839/854 (98.2 %) | 18/18 | 0 / 0 / 0 | 1 (a model proposal that differed between the clean and planted runs; never applied) | 27/30 (14/20) | 74 min |
+| qwen2.5:32b, Kaggle T4 ×2 | 839/854 (98.2 %) | 18/18 | 0 / 0 / 0 | 1 (the same kind: one extra model proposal, never applied) | 30/30 (17/20) | 198 min |
 
 What this says, without overreading three runs on one dataset:
 
-- **The deterministic rules carry the typing accuracy.** Neither model raises it above the rules on this file; the 7B lowers it slightly (it proposed some unknowns as NTCs, which a person sees as contradicted proposals), the 14B leaves it unchanged.
+- **The deterministic rules carry the typing accuracy.** No model raises it above the rules on this file; the 7B lowers it slightly (it proposed some unknowns as NTCs, which a person sees as contradicted proposals), the 14B and 32B leave it unchanged.
 - **Safety held for every model**: no control was missed, nothing forbidden got through, nothing was accepted without a person, no citation was invented.
-- **The 14B was worse at saying "not in this study"** (3 refusal items failed) and found a gap: for the amplification-call card it produced an explanation that passed the number validator while leaving out the very counts the card is about, where the 7B's failed validation and the template answered. Explanations must now cite the card's key counts or the template is used.
+- **The 14B was worse at saying "not in this study"** (3 refusal items failed; the 32B got all 30 questions right) and both the 14B and the 32B found a gap: for the amplification-call card it produced an explanation that passed the number validator while leaving out the very counts the card is about, where the 7B's failed validation and the template answered. Explanations must now cite the card's key counts or the template is used.
 - **Where a model can still add value** is reading what rules cannot: free-text sentences and messy sheets that name groups and units. The demo's design is expression-defined, so it does not exercise that; a lab file with a group sheet would.
