@@ -136,3 +136,77 @@ These were suggested in the literature searches. Each would fit something on the
 - **P1** is the only test aimed at the component we can see is missing, so it is the most likely to reach 90 %. The price is width: the volume instruments alone suggest σ ≈ 0.13 log2.
 - **P2** targets the bias. A pass would argue for the standard curve as the baseline, which is a tier question for the reviewer.
 - **P4** is exploratory.
+
+## Results of P1–P3 (run 18 Oct, after this plan was committed as 4ee0c45)
+
+The numbers are under `coverage_gap_tests` in `results/validation_dpcr.json`, and `qsim validate` prints them. The estimators are exactly as fixed above, and every round-2 and addendum number is unchanged.
+
+| Test | Coverage (197 cases) | 90 % CI over the 13 truths | Median half-width, log2 (fold) | Bar |
+|---|---|---|---|---|
+| Round 2, for reference | 83.2 % | 75.9–89.1 % | 0.251 (±1.19×) | Fail |
+| **P1** plate×pair term, held out (primary) | **92.4 %** | 89.1–95.6 % | 0.410 (±1.33×) | **Pass** |
+| P1 variant: one term from both series | 91.4 % | 86.8–95.2 % | 0.383 (±1.30×) | Pass |
+| P1 without the lowest tubes (post hoc, not counted) | 85.8 % | 79.7–91.0 % | 0.298 (±1.23×) | Fail |
+| **P2** run's own standard curve | **92.4 %** | 85.9–94.9 % | 0.344 (±1.27×) | **Pass** |
+| **P3** standard curve + plate×pair term | **96.4 %** | 93.2–98.3 % | 0.474 (±1.39×) | **Pass** |
+
+Coverage by plate:
+
+| Test | AMC (152) | DKFZ (32) | LC480 Feb 2024 (5) | QuantStudio (4) | StepOne (4) |
+|---|---|---|---|---|---|
+| Round 2 | 81.6 % | 87.5 % | 100 % | 75 % | 100 % |
+| P1 | 91.4 % | 93.8 % | 100 % | 100 % | 100 % |
+| P1 without lowest tubes | 84.9 % | 87.5 % | 100 % | 75 % | 100 % |
+| P2 | 96.7 % | 81.2 % | 100 % | 0 % | 100 % |
+| P3 | 97.4 % | 93.8 % | 100 % | 75 % | 100 % |
+
+Median \|error\| by machine, log2. P1 changes only the interval, so its errors are round 2's.
+
+| Machine | Cases | Assay mean (round 2, P1) | Standard curve (P2, P3) |
+|---|---|---|---|
+| LightCycler 480 AMC | 157 | 0.121 | 0.089 |
+| LightCycler 480 DKFZ | 32 | 0.218 | 0.245 |
+| QuantStudio 6 Flex | 4 | 0.205 | 0.231 |
+| StepOne | 4 | 0.087 | 0.149 |
+
+### What each result means
+
+**P1 passes, but the pass is fragile.**
+- **The terms.** The term is 0.169 log2 for AMC and DKFZ, taken from the three instruments on 4 pairs. For the instrument comparison it is 0.132, taken from AMC against DKFZ on 6 pairs.
+- **One tube drives the AMC/DKFZ term.** The three instruments' disagreement on the 1 vs 0.2 ng/µl pair contributes an excess variance of 0.081 against 0.000–0.023 for the other pairs. The 0.2 ng tubes dominate the other term in the same way.
+- **Without the lowest tubes, it fails.** Leaving out pairs that use the lowest tube of each series cuts the terms to 0.071 and 0.099, and coverage falls to 85.8 %. This check was added after scoring and is not counted.
+- **The confidence interval reaches below the bar.** Its lower end, 89.1 %, is under 90 %.
+- **Reading.** Between-plate disagreement is real and visible without truth, but it is much larger for low-copy tubes. A single constant term borrowed from a low-copy tube widens every interval.
+
+**P2 passes overall on the strength of one plate.**
+- **AMC, 152 of 197 cases.** AMC is at 96.7 %, and its median \|error\| falls from 0.121 to 0.089.
+- **The other plates get worse.**
+  - DKFZ coverage is 81.2 %. QuantStudio is 0 of 4: its standard-curve interval is narrow (0.152) and misses all four.
+  - Median \|error\| rises on DKFZ, QuantStudio and StepOne.
+- **The leave-pair-out curve is optimistic.** It uses the same genomic tubes' other levels, which a real experiment would not have.
+- **A separate standard does not help.** On DKFZ, quantifying the genomic pairs with the same run's amplicon-standard efficiency (E 1.90–1.93) gave:
+  - median bias +0.187 and median \|error\| 0.189, against 0.199 with the assay mean;
+  - 80 % coverage in both cases, over 20 cases.
+
+**P3 over-covers.** It reaches 96.4 % with ±1.39-fold intervals. It combines the two tests above and adds nothing new.
+
+### What to claim
+
+**Recommended wording:** *"The 95 % interval covers dPCR truth in 92 % of 197 cases (90 % CI over truths 89–96 %) once a between-plate term estimated without truth is added. That makes it 63 % wider, ±1.33-fold. Without that term it covers 83 %. The between-plate term comes mostly from low-copy tubes."*
+- **Why P1.** It is the pre-registered primary, and it is the only test aimed at the component we could see was missing.
+
+**Not recommended:**
+- calling V2 "passed" without the fragility and width caveats;
+- choosing P3 because it scores best;
+- changing the baseline to the standard curve on the strength of P2.
+
+**Left to the outside reviewer:**
+- which interval to adopt;
+- any tier change, including whether the standard curve should be the baseline.
+
+**Possible next step.** A plate×pair term that grows at low input, for example scaled by Poisson copies per reaction. It would need its own pre-registration, because it was suggested by these results.
+
+**Added after scoring:**
+- the lowest-tube sensitivity row;
+- the per-pair breakdown of the term;
+- this interpretation.

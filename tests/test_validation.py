@@ -170,6 +170,51 @@ def test_calibration_training_holds_out_the_scored_group_and_its_truth():
     assert ("amc", "g20") in picked(held_out=False)
 
 
+def test_plate_pair_term_recovers_a_between_plate_sd():
+    rng = np.random.default_rng(3)
+    rows = []
+    for pair in range(40):
+        for plate in ("p", "q"):  # two plates measure the same pair of tubes, one run each
+            rows.append(
+                {
+                    "tubes": "amc" if plate == "p" else "dkfz",  # one physical series
+                    "plate": plate,
+                    "hi": f"h{pair}",
+                    "lo": f"l{pair}",
+                    "pair": str(pair),
+                    "estimate_log2": 2.0 + rng.normal(0, 0.1),
+                    "se_rep": 0.0,
+                    "se_log2e": 0.0,
+                    "dcq": -2.0,
+                }
+            )
+    base = pd.DataFrame(rows)
+    term = known_answers.plate_pair_term(base)
+    assert term["pairs"] == 40
+    assert term["sd_plate_pair_log2"] == pytest.approx(0.1, abs=0.03)
+    # a pair measured on one plate only says nothing about plates
+    assert known_answers.plate_pair_term(base[base["plate"] == "p"])["pairs"] == 0
+    # within-plate noise is subtracted, so noise alone gives no term
+    noisy = base.assign(estimate_log2=2.0, se_rep=0.1)
+    assert known_answers.plate_pair_term(noisy)["sd_plate_pair_log2"] == 0.0
+
+
+def test_coverage_ci_resamples_whole_truths():
+    x = pd.DataFrame(
+        {
+            "truth_kind": "dPCR",
+            "hi": ["a"] * 40 + ["b"] * 10,
+            "lo": "z",
+            "in_new_ci_with_truth": [True] * 40 + [False] * 10,
+        }
+    )
+    ci = known_answers.coverage_ci(x)
+    assert ci["truths"] == 2
+    lo, hi = ci["coverage_90%_cluster_bootstrap"]
+    assert lo == 0.0 and hi == 1.0  # with two truths a draw can hold only the failing one
+    assert ci == known_answers.coverage_ci(x)  # seeded
+
+
 def test_ds380_conversion_and_null_cells():
     wells = nodiff.load()
     assert len(wells) == 380 and wells["cq"].between(15, 21).all()
@@ -197,6 +242,17 @@ def test_known_answer_round_end_to_end(tmp_path):
     assert cal["offsets"]["amc"]["series"] == 8  # the DKFZ plate's dPCR-measured series only
     inside = cal["variants"]["in_sample"]["offsets"]
     assert len({v["delta_log2e"] for v in inside.values()}) == 1
+    # tests P1-P3 report the same things, and P1's term uses no plate of the scored series
+    gap = result["coverage_gap_tests"]
+    assert (
+        gap["reference_round_2"]["all"]["propagated_ci_with_truth_se"]
+        == cov["propagated_ci_with_truth_se"]
+    )
+    terms = gap["p1_plate_pair_term"]["terms"]
+    assert all(k.startswith("gDNA Feb 2024") for k in terms["amc"]["excess_variance_by_pair"])
+    assert all(k.startswith("gDNA Dec 2024") for k in terms["volume"]["excess_variance_by_pair"])
+    for key in ("p1_plate_pair_term", "p2_std_curve", "p3_std_curve_plus_plate_pair_term"):
+        assert gap[key]["all"]["truths"] == 13
     assert set(result["v2_coverage"]["other_estimators"]) == {
         "robust_in_sample",
         "plain_leave_one_group_out",

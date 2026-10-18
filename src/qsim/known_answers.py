@@ -321,12 +321,16 @@ def std_curve_qc(curves: pd.DataFrame, series: str) -> dict[tuple[str, str], flo
 
 
 def propagate(base: pd.DataFrame, components: dict[str, dict]) -> pd.DataFrame:
-    """Add the propagated interval to baseline rows; ``components`` is keyed by ``tubes``."""
+    """Add the propagated interval to baseline rows; ``components`` is keyed by ``tubes``. An
+    optional ``sd_plate_pair_log2`` adds the plate x pair term of :func:`plate_pair_term`."""
     out = base.copy()
     sd_level = out["tubes"].map(lambda k: components[k]["sd_level_log2"])
     tau = out["tubes"].map(lambda k: components[k]["sd_log2e_run"])
+    sd_pp = out["tubes"].map(lambda k: components[k].get("sd_plate_pair_log2", 0.0))
     rep = out["se_rep"] ** 2
-    added = out["dcq"] ** 2 * (out["se_log2e"].fillna(0.0) ** 2 + tau**2) + 2 * sd_level**2
+    added = (
+        out["dcq"] ** 2 * (out["se_log2e"].fillna(0.0) ** 2 + tau**2) + 2 * sd_level**2 + sd_pp**2
+    )
     var = rep + added
     df = var**2 / (rep**2 / out["df"])
     out["se_new"] = np.sqrt(var)
@@ -428,6 +432,80 @@ def calibrate(base: pd.DataFrame, offsets: dict[str, dict]) -> pd.DataFrame:
     out["se_log2e"] = np.sqrt(out["se_log2e"].fillna(0.0) ** 2 + se**2)
     out["calibration_log2e"] = delta
     return out
+
+
+#: the physical dilution series each tube group measured: AMC and DKFZ used the same tubes
+PHYSICAL_SERIES = {"amc": "gDNA Dec 2024", "dkfz": "gDNA Dec 2024", "volume": "gDNA Feb 2024"}
+
+
+def plate_pair_term(base: pd.DataFrame) -> dict:
+    """Plate x pair SD (log2), estimated without truth from tube pairs measured on two or more plates.
+
+    For each pair and plate: m is the median baseline estimate over runs, and s^2 the median over
+    runs of (se_rep^2 + dCq^2 se_log2E^2) divided by the number of runs. Per pair, the excess is the
+    sample variance of m across plates minus the mean s^2. The term is sqrt(max(0, mean excess)).
+    Pairs dPCR could not resolve count too: no truth is used.
+    """
+    b = base.dropna(subset=["estimate_log2"])
+    b = b.assign(
+        own=b["se_rep"] ** 2 + (b["dcq"] * b["se_log2e"].fillna(0.0)) ** 2,
+        series=b["tubes"].map(PHYSICAL_SERIES),
+    )
+    excess = {}
+    for (series, _, _), pair in b.groupby(["series", "hi", "lo"]):
+        plates = pair.groupby("plate").agg(
+            m=("estimate_log2", "median"), s2=("own", "median"), n=("own", "size")
+        )
+        if len(plates) >= 2:
+            excess[f"{series}: {pair['pair'].iloc[0]}"] = float(
+                plates["m"].var(ddof=1) - (plates["s2"] / plates["n"]).mean()
+            )
+    sd = float(np.sqrt(max(0.0, np.mean(list(excess.values()))))) if excess else 0.0
+    return {
+        "sd_plate_pair_log2": sd,
+        "pairs": len(excess),
+        "excess_variance_by_pair": {k: round(v, 4) for k, v in excess.items()},
+    }
+
+
+def coverage_ci(x: pd.DataFrame, draws: int = 2000, seed: int = 2026, level: float = 0.90) -> dict:
+    """Coverage with truth SE and its cluster-bootstrap interval: the distinct truths (a pair of
+    tubes under one kind of truth) are resampled with replacement, with all their cases."""
+    key = x["truth_kind"] + "|" + x["hi"] + "|" + x["lo"]
+    hit = x.groupby(key)["in_new_ci_with_truth"].agg(["sum", "size"])
+    rng = np.random.default_rng(seed)
+    pick = rng.integers(0, len(hit), size=(draws, len(hit)))
+    share = hit["sum"].to_numpy()[pick].sum(1) / hit["size"].to_numpy()[pick].sum(1)
+    lo, hi = np.quantile(share, [(1 - level) / 2, (1 + level) / 2])
+    return {
+        "truths": int(len(hit)),
+        "draws": draws,
+        "seed": seed,
+        f"coverage_{level:.0%}_cluster_bootstrap": [round(float(lo), 3), round(float(hi), 3)],
+    }
+
+
+def cover(x: pd.DataFrame) -> dict:
+    return {
+        "cases": int(len(x)),
+        "old_welch_ci": _share(x["in_old_ci"]),
+        "propagated_ci": _share(x["in_new_ci"]),
+        "propagated_ci_with_truth_se": _share(x["in_new_ci_with_truth"]),
+        "median_half_width_old": round(float(((x["ci_hi"] - x["ci_lo"]) / 2).median()), 3),
+        "median_half_width_new": round(float(((x["new_hi"] - x["new_lo"]) / 2).median()), 3),
+    }
+
+
+def gap_report(x: pd.DataFrame) -> dict:
+    """What every test of ``31-research-closing-the-coverage-gap.md`` reports."""
+    return {
+        "all": cover(x) | coverage_ci(x),
+        "by_group": {k: cover(g) for k, g in x.groupby("tubes", sort=False)},
+        "by_plate": {k: cover(g) for k, g in x.groupby("plate", sort=False)},
+        "by_truth": {k: cover(g) for k, g in x.groupby("pair", sort=False)},
+        "bias_by_machine": {k: _bias(g["error_log2"]) for k, g in x.groupby("machine", sort=False)},
+        "pass": (_share(x["in_new_ci_with_truth"]) or 0) >= COVERAGE_TARGET,
+    }
 
 
 def _share(s: pd.Series) -> float | None:
@@ -557,16 +635,6 @@ def score(t: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         x = pd.concat(parts, ignore_index=True)
         return x[np.isfinite(x["truth_log2"])], comp
 
-    def cover(x: pd.DataFrame) -> dict:
-        return {
-            "cases": int(len(x)),
-            "old_welch_ci": _share(x["in_old_ci"]),
-            "propagated_ci": _share(x["in_new_ci"]),
-            "propagated_ci_with_truth_se": _share(x["in_new_ci_with_truth"]),
-            "median_half_width_old": round(float(((x["ci_hi"] - x["ci_lo"]) / 2).median()), 3),
-            "median_half_width_new": round(float(((x["new_hi"] - x["new_lo"]) / 2).median()), 3),
-        }
-
     def rounded(comp: dict) -> dict:
         return {
             g: {k: round(v, 4) if isinstance(v, float) else v for k, v in r.items()}
@@ -686,6 +754,80 @@ def score(t: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         in_calibrated_ci_with_truth=cal_ok["in_new_ci_with_truth"],
     )
 
+    # Tests P1-P3 of 31-research-closing-the-coverage-gap.md, estimators fixed before scoring
+    def held_out_term(g: str) -> dict:
+        return plate_pair_term(base[base["tubes"].map(PHYSICAL_SERIES) != PHYSICAL_SERIES[g]])
+
+    def score_rows(rows: pd.DataFrame, comp: dict) -> pd.DataFrame:
+        x = pd.concat(
+            [propagate(rows[rows["tubes"] == g], {g: comp[g]}) for g in groups], ignore_index=True
+        )
+        return x[np.isfinite(x["truth_log2"])]
+
+    pp = {g: held_out_term(g) for g in groups}
+    pp_all = plate_pair_term(base)
+    std = t[
+        (t["efficiency"] == "std_curve")
+        & (t["replicates"] == BASELINE[1])
+        & (t["flagged"] == BASELINE[2])
+    ]
+    std_comp = {g: run_effect(std[std["tubes"] != g], robust=True) for g in groups}
+
+    def term(c: dict) -> dict:
+        return {"sd_plate_pair_log2": c["sd_plate_pair_log2"]}
+
+    lowest = {dpcr_truth.qpcr_name(n) for n in ("genomic DNA 0.2ng", "gDNA 0.2ng/ul")}
+    no_low = base[~base["hi"].isin(lowest) & ~base["lo"].isin(lowest)]
+    pp_no_low = {
+        g: plate_pair_term(no_low[no_low["tubes"].map(PHYSICAL_SERIES) != PHYSICAL_SERIES[g]])
+        for g in groups
+    }
+    p1 = score_rows(base, {g: comp[g] | term(pp[g]) for g in groups})
+    p1_no_low = score_rows(base, {g: comp[g] | term(pp_no_low[g]) for g in groups})
+    p1_in = score_rows(base, {g: comp[g] | term(pp_all) for g in groups})
+    p2 = score_rows(std, std_comp)
+    p3 = score_rows(std, {g: std_comp[g] | term(pp[g]) for g in groups})
+    out["coverage_gap_tests"] = {
+        "plan": "docs/review/31-research-closing-the-coverage-gap.md (fixed before scoring)",
+        "rule": out["v2_coverage"]["rule"],
+        "reference_round_2": gap_report(ok),
+        "p1_plate_pair_term": {
+            "method": (
+                "round-2 interval plus a plate x pair variance, estimated without truth from tube "
+                "pairs measured on two or more plates; AMC and DKFZ use the volume series' term, "
+                "the volume plates use the AMC/DKFZ series' term"
+            ),
+            "terms": {
+                g: c | {"sd_plate_pair_log2": round(c["sd_plate_pair_log2"], 4)}
+                for g, c in pp.items()
+            },
+            **gap_report(p1),
+            "variant_one_term_from_both_series": {
+                "term": pp_all | {"sd_plate_pair_log2": round(pp_all["sd_plate_pair_log2"], 4)},
+                **gap_report(p1_in),
+            },
+            "post_hoc_sensitivity_term_without_lowest_tubes": {
+                "why": (
+                    "added after scoring: each term is dominated by pairs with the lowest tube "
+                    "(0.2 ng, 0.2 ng/µl); not counted for the pass"
+                ),
+                "terms": {g: round(c["sd_plate_pair_log2"], 4) for g, c in pp_no_low.items()},
+                **gap_report(p1_no_low),
+            },
+        },
+        "p2_std_curve": {
+            "method": (
+                "standard-curve efficiency from the run's other nominal dilution levels "
+                "(leave-pair-out, no dPCR); slope SE as the efficiency SE; robust run effect "
+                "re-estimated on standard-curve rows, leave-one-group-out"
+            ),
+            "components": rounded(std_comp),
+            "cases_without_slope_se": int(p2["se_log2e"].isna().sum()),
+            **gap_report(p2),
+        },
+        "p3_std_curve_plus_plate_pair_term": gap_report(p3),
+    }
+
     # dPCR could not settle these pairs: show the baseline against each candidate truth
     unresolved = {}
     ub = base[base["truth_source"] == "unresolved"]
@@ -727,6 +869,37 @@ def first_round_coverage(data: Path, components: dict, offset: dict | None = Non
     }
 
 
+def amplicon_standard_check(data: Path, base: pd.DataFrame, components: dict) -> dict:
+    """Descriptive check for test P2: DKFZ genomic pairs quantified with the efficiency of the same
+    run's amplicon standard curve (all four levels), as a lab with a separate standard would."""
+    plate = next(p for p in PLATES if p.key == "dkfz")
+    group = next(g for g in plate.groups if g.unit == "copies")
+    name = dpcr_truth.qpcr_name
+    levels = {name(s): v[2] for s, v in group.levels.items()}
+    series = {name(s): v[0] for s, v in group.levels.items()}
+    curves = load(data / plate.file, plate.experiment, levels, series)
+    std = {k: _std_curve(a, ("", ""), "amplicon") for k, a in curves.groupby(["run_id", "target"])}
+    g = base[
+        (base["plate"] == "dkfz")
+        & (_template(base["pair"]) == "genomic")
+        & np.isfinite(base["truth_log2"])
+    ].copy()
+    e_amp = np.array([std[k][0] for k in zip(g["run"], g["assay"], strict=True)])
+    shift = -g["dcq"] * (np.log2(e_amp) - np.log2(g["e_used"]))
+    for col in ("estimate_log2", "error_log2", "ci_lo", "ci_hi"):
+        g[col] = g[col] + shift
+    g["se_log2e"] = [std[k][1] for k in zip(g["run"], g["assay"], strict=True)]
+    x = propagate(g, {"dkfz": components})
+    return {
+        "amplicon_efficiency_by_assay": {
+            k[1]: round(v[0], 4) for k, v in std.items() if (base["assay"] == k[1]).any()
+        },
+        "with_amplicon_standard": cover(x) | _bias(x["error_log2"]),
+        "with_genomic_assay_mean": cover(base.loc[g.index].pipe(propagate, {"dkfz": components}))
+        | _bias(base.loc[g.index, "error_log2"]),
+    }
+
+
 def validate(data: str | Path = DATA, out: str | Path = "results") -> dict:
     t, model = table(Path(data))
     result, scored = score(t)
@@ -752,6 +925,10 @@ def validate(data: str | Path = DATA, out: str | Path = "results") -> dict:
     )
     summary["efficiency_calibration"]["first_round_cases_nominal_truth"] = first_round_coverage(
         Path(data), amc, summary["efficiency_calibration"]["offsets"]["amc"]
+    )
+    p2 = summary["coverage_gap_tests"]["p2_std_curve"]
+    p2["dkfz_genomic_with_amplicon_standard"] = amplicon_standard_check(
+        Path(data), scored, p2["components"]["dkfz"]
     )
     out = Path(out)
     t.round(6).to_csv(out / "validation_dpcr.csv", index=False)
@@ -812,6 +989,32 @@ def summary_lines(first: dict, second: dict, null: dict) -> list[str]:
             f"           {machine:27s} median |error| {v['uncalibrated']['median_abs_error_log2']:.3f} "
             f"-> {v['calibrated']['median_abs_error_log2']:.3f} log2 over {v['calibrated']['cases']} cases"
         )
+    gap = second["coverage_gap_tests"]
+
+    def test_line(label: str, r: dict) -> str:
+        a = r["all"]
+        lo, hi = a["coverage_90%_cluster_bootstrap"]
+        return (
+            f"           {label:44s} {_pct(a['propagated_ci_with_truth_se'])} "
+            f"(90 % CI over truths {_pct(lo)}-{_pct(hi)}), half-width "
+            f"{a['median_half_width_new']:.3f}  {word[r['pass']]}"
+        )
+
+    p1 = gap["p1_plate_pair_term"]
+    lines += [
+        "  V2 gap   tests fixed in docs/review/31 before scoring (same rule):",
+        test_line("round 2, for reference", gap["reference_round_2"]),
+        test_line("P1 plate x pair term (primary)", p1),
+        test_line("P1 one term from both series", p1["variant_one_term_from_both_series"]),
+        test_line(
+            "P1 without lowest tubes (post hoc)",
+            p1["post_hoc_sensitivity_term_without_lowest_tubes"],
+        ),
+        test_line("P2 run's own standard curve", gap["p2_std_curve"]),
+        test_line(
+            "P3 standard curve + plate x pair term", gap["p3_std_curve_plus_plate_pair_term"]
+        ),
+    ]
     rs = null["random_splits"]
     lines.append(
         f"  V4 null  {word[null['pass']['overall']]}  {null['pass']['rule']}: cells calling "

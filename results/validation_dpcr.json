@@ -2805,6 +2805,1424 @@
    "propagated_ci": 0.851
   }
  },
+ "coverage_gap_tests": {
+  "plan": "docs/review/31-research-closing-the-coverage-gap.md (fixed before scoring)",
+  "rule": "baseline 95 % interval with truth uncertainty contains the truth in >= 90% of cases",
+  "reference_round_2": {
+   "all": {
+    "cases": 197,
+    "old_welch_ci": 0.655,
+    "propagated_ci": 0.797,
+    "propagated_ci_with_truth_se": 0.832,
+    "median_half_width_old": 0.186,
+    "median_half_width_new": 0.251,
+    "truths": 13,
+    "draws": 2000,
+    "seed": 2026,
+    "coverage_90%_cluster_bootstrap": [
+     0.759,
+     0.891
+    ]
+   },
+   "by_group": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.638,
+     "propagated_ci": 0.77,
+     "propagated_ci_with_truth_se": 0.816,
+     "median_half_width_old": 0.169,
+     "median_half_width_new": 0.227
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.875,
+     "propagated_ci_with_truth_se": 0.875,
+     "median_half_width_old": 0.329,
+     "median_half_width_new": 0.473
+    },
+    "volume": {
+     "cases": 13,
+     "old_welch_ci": 0.615,
+     "propagated_ci": 0.923,
+     "propagated_ci_with_truth_se": 0.923,
+     "median_half_width_old": 0.128,
+     "median_half_width_new": 0.249
+    }
+   },
+   "by_plate": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.638,
+     "propagated_ci": 0.77,
+     "propagated_ci_with_truth_se": 0.816,
+     "median_half_width_old": 0.169,
+     "median_half_width_new": 0.227
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.875,
+     "propagated_ci_with_truth_se": 0.875,
+     "median_half_width_old": 0.329,
+     "median_half_width_new": 0.473
+    },
+    "volume_lc480": {
+     "cases": 5,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.171,
+     "median_half_width_new": 0.249
+    },
+    "volume_qs6": {
+     "cases": 4,
+     "old_welch_ci": 0.0,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.75,
+     "median_half_width_old": 0.043,
+     "median_half_width_new": 0.271
+    },
+    "volume_stepone": {
+     "cases": 4,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.154,
+     "median_half_width_new": 0.272
+    }
+   },
+   "by_truth": {
+    "20 vs 7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.69,
+     "propagated_ci": 0.833,
+     "propagated_ci_with_truth_se": 0.857,
+     "median_half_width_old": 0.159,
+     "median_half_width_new": 0.215
+    },
+    "7 vs 2 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.714,
+     "propagated_ci": 0.833,
+     "propagated_ci_with_truth_se": 0.905,
+     "median_half_width_old": 0.167,
+     "median_half_width_new": 0.223
+    },
+    "2 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.738,
+     "propagated_ci": 0.833,
+     "propagated_ci_with_truth_se": 0.881,
+     "median_half_width_old": 0.216,
+     "median_half_width_new": 0.24
+    },
+    "20 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.5,
+     "propagated_ci": 0.667,
+     "propagated_ci_with_truth_se": 0.69,
+     "median_half_width_old": 0.184,
+     "median_half_width_new": 0.279
+    },
+    "EMBL 20 vs 20 ng": {
+     "cases": 4,
+     "old_welch_ci": 0.25,
+     "propagated_ci": 0.25,
+     "propagated_ci_with_truth_se": 0.25,
+     "median_half_width_old": 0.28,
+     "median_half_width_new": 0.294
+    },
+    "1e4 vs 1e3 copies": {
+     "cases": 4,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.75,
+     "median_half_width_old": 0.315,
+     "median_half_width_new": 0.417
+    },
+    "1e3 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.45,
+     "median_half_width_new": 0.528
+    },
+    "1e4 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 0.5,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.486,
+     "median_half_width_new": 0.77
+    },
+    "1 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.333,
+     "propagated_ci": 0.667,
+     "propagated_ci_with_truth_se": 0.667,
+     "median_half_width_old": 0.182,
+     "median_half_width_new": 0.313
+    },
+    "2 vs 1 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.128,
+     "median_half_width_new": 0.232
+    },
+    "4 vs 2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.125,
+     "median_half_width_new": 0.232
+    },
+    "8 vs 4 ng/\u00b5l": {
+     "cases": 1,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.171,
+     "median_half_width_new": 0.249
+    },
+    "4 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.179,
+     "median_half_width_new": 0.457
+    }
+   },
+   "bias_by_machine": {
+    "LightCycler 480 II, AMC": {
+     "cases": 157,
+     "median_abs_error_log2": 0.121,
+     "median_bias_log2": -0.043,
+     "share_within_0.15": 0.58
+    },
+    "LightCycler 480 II, DKFZ": {
+     "cases": 32,
+     "median_abs_error_log2": 0.218,
+     "median_bias_log2": -0.08,
+     "share_within_0.15": 0.281
+    },
+    "QuantStudio 6 Flex, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.205,
+     "median_bias_log2": 0.177,
+     "share_within_0.15": 0.5
+    },
+    "StepOne, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.087,
+     "median_bias_log2": 0.074,
+     "share_within_0.15": 0.5
+    }
+   },
+   "pass": false
+  },
+  "p1_plate_pair_term": {
+   "method": "round-2 interval plus a plate x pair variance, estimated without truth from tube pairs measured on two or more plates; AMC and DKFZ use the volume series' term, the volume plates use the AMC/DKFZ series' term",
+   "terms": {
+    "amc": {
+     "sd_plate_pair_log2": 0.1693,
+     "pairs": 4,
+     "excess_variance_by_pair": {
+      "gDNA Feb 2024: 1 vs 0.2 ng/\u00b5l": 0.0813,
+      "gDNA Feb 2024: 2 vs 1 ng/\u00b5l": 0.0097,
+      "gDNA Feb 2024: 4 vs 0.2 ng/\u00b5l": 0.0232,
+      "gDNA Feb 2024: 4 vs 2 ng/\u00b5l": 0.0004
+     }
+    },
+    "dkfz": {
+     "sd_plate_pair_log2": 0.1693,
+     "pairs": 4,
+     "excess_variance_by_pair": {
+      "gDNA Feb 2024: 1 vs 0.2 ng/\u00b5l": 0.0813,
+      "gDNA Feb 2024: 2 vs 1 ng/\u00b5l": 0.0097,
+      "gDNA Feb 2024: 4 vs 0.2 ng/\u00b5l": 0.0232,
+      "gDNA Feb 2024: 4 vs 2 ng/\u00b5l": 0.0004
+     }
+    },
+    "volume": {
+     "sd_plate_pair_log2": 0.1318,
+     "pairs": 6,
+     "excess_variance_by_pair": {
+      "gDNA Dec 2024: 0.7 vs 0.2 ng": 0.0235,
+      "gDNA Dec 2024: 20 vs 0.2 ng": 0.0412,
+      "gDNA Dec 2024: 20 vs 0.7 ng": 0.012,
+      "gDNA Dec 2024: 20 vs 7 ng": -0.0018,
+      "gDNA Dec 2024: 2 vs 0.7 ng": 0.0249,
+      "gDNA Dec 2024: 7 vs 2 ng": 0.0045
+     }
+    }
+   },
+   "all": {
+    "cases": 197,
+    "old_welch_ci": 0.655,
+    "propagated_ci": 0.919,
+    "propagated_ci_with_truth_se": 0.924,
+    "median_half_width_old": 0.186,
+    "median_half_width_new": 0.41,
+    "truths": 13,
+    "draws": 2000,
+    "seed": 2026,
+    "coverage_90%_cluster_bootstrap": [
+     0.891,
+     0.956
+    ]
+   },
+   "by_group": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.638,
+     "propagated_ci": 0.908,
+     "propagated_ci_with_truth_se": 0.914,
+     "median_half_width_old": 0.169,
+     "median_half_width_new": 0.4
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.938,
+     "propagated_ci_with_truth_se": 0.938,
+     "median_half_width_old": 0.329,
+     "median_half_width_new": 0.576
+    },
+    "volume": {
+     "cases": 13,
+     "old_welch_ci": 0.615,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.128,
+     "median_half_width_new": 0.358
+    }
+   },
+   "by_plate": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.638,
+     "propagated_ci": 0.908,
+     "propagated_ci_with_truth_se": 0.914,
+     "median_half_width_old": 0.169,
+     "median_half_width_new": 0.4
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.938,
+     "propagated_ci_with_truth_se": 0.938,
+     "median_half_width_old": 0.329,
+     "median_half_width_new": 0.576
+    },
+    "volume_lc480": {
+     "cases": 5,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.171,
+     "median_half_width_new": 0.358
+    },
+    "volume_qs6": {
+     "cases": 4,
+     "old_welch_ci": 0.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.043,
+     "median_half_width_new": 0.376
+    },
+    "volume_stepone": {
+     "cases": 4,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.154,
+     "median_half_width_new": 0.376
+    }
+   },
+   "by_truth": {
+    "20 vs 7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.69,
+     "propagated_ci": 0.929,
+     "propagated_ci_with_truth_se": 0.929,
+     "median_half_width_old": 0.159,
+     "median_half_width_new": 0.393
+    },
+    "7 vs 2 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.714,
+     "propagated_ci": 0.976,
+     "propagated_ci_with_truth_se": 0.976,
+     "median_half_width_old": 0.167,
+     "median_half_width_new": 0.396
+    },
+    "2 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.738,
+     "propagated_ci": 0.929,
+     "propagated_ci_with_truth_se": 0.929,
+     "median_half_width_old": 0.216,
+     "median_half_width_new": 0.405
+    },
+    "20 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.5,
+     "propagated_ci": 0.833,
+     "propagated_ci_with_truth_se": 0.857,
+     "median_half_width_old": 0.184,
+     "median_half_width_new": 0.432
+    },
+    "EMBL 20 vs 20 ng": {
+     "cases": 4,
+     "old_welch_ci": 0.25,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.75,
+     "median_half_width_old": 0.28,
+     "median_half_width_new": 0.436
+    },
+    "1e4 vs 1e3 copies": {
+     "cases": 4,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.75,
+     "median_half_width_old": 0.315,
+     "median_half_width_new": 0.531
+    },
+    "1e3 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.45,
+     "median_half_width_new": 0.618
+    },
+    "1e4 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 0.5,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.486,
+     "median_half_width_new": 0.837
+    },
+    "1 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.333,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.182,
+     "median_half_width_new": 0.405
+    },
+    "2 vs 1 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.128,
+     "median_half_width_new": 0.347
+    },
+    "4 vs 2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.125,
+     "median_half_width_new": 0.347
+    },
+    "8 vs 4 ng/\u00b5l": {
+     "cases": 1,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.171,
+     "median_half_width_new": 0.358
+    },
+    "4 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.179,
+     "median_half_width_new": 0.525
+    }
+   },
+   "bias_by_machine": {
+    "LightCycler 480 II, AMC": {
+     "cases": 157,
+     "median_abs_error_log2": 0.121,
+     "median_bias_log2": -0.043,
+     "share_within_0.15": 0.58
+    },
+    "LightCycler 480 II, DKFZ": {
+     "cases": 32,
+     "median_abs_error_log2": 0.218,
+     "median_bias_log2": -0.08,
+     "share_within_0.15": 0.281
+    },
+    "QuantStudio 6 Flex, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.205,
+     "median_bias_log2": 0.177,
+     "share_within_0.15": 0.5
+    },
+    "StepOne, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.087,
+     "median_bias_log2": 0.074,
+     "share_within_0.15": 0.5
+    }
+   },
+   "pass": true,
+   "variant_one_term_from_both_series": {
+    "term": {
+     "sd_plate_pair_log2": 0.1479,
+     "pairs": 10,
+     "excess_variance_by_pair": {
+      "gDNA Dec 2024: 0.7 vs 0.2 ng": 0.0235,
+      "gDNA Dec 2024: 20 vs 0.2 ng": 0.0412,
+      "gDNA Dec 2024: 20 vs 0.7 ng": 0.012,
+      "gDNA Dec 2024: 20 vs 7 ng": -0.0018,
+      "gDNA Dec 2024: 2 vs 0.7 ng": 0.0249,
+      "gDNA Dec 2024: 7 vs 2 ng": 0.0045,
+      "gDNA Feb 2024: 1 vs 0.2 ng/\u00b5l": 0.0813,
+      "gDNA Feb 2024: 2 vs 1 ng/\u00b5l": 0.0097,
+      "gDNA Feb 2024: 4 vs 0.2 ng/\u00b5l": 0.0232,
+      "gDNA Feb 2024: 4 vs 2 ng/\u00b5l": 0.0004
+     }
+    },
+    "all": {
+     "cases": 197,
+     "old_welch_ci": 0.655,
+     "propagated_ci": 0.909,
+     "propagated_ci_with_truth_se": 0.914,
+     "median_half_width_old": 0.186,
+     "median_half_width_new": 0.383,
+     "truths": 13,
+     "draws": 2000,
+     "seed": 2026,
+     "coverage_90%_cluster_bootstrap": [
+      0.868,
+      0.952
+     ]
+    },
+    "by_group": {
+     "amc": {
+      "cases": 152,
+      "old_welch_ci": 0.638,
+      "propagated_ci": 0.901,
+      "propagated_ci_with_truth_se": 0.908,
+      "median_half_width_old": 0.169,
+      "median_half_width_new": 0.366
+     },
+     "dkfz": {
+      "cases": 32,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.906,
+      "propagated_ci_with_truth_se": 0.906,
+      "median_half_width_old": 0.329,
+      "median_half_width_new": 0.553
+     },
+     "volume": {
+      "cases": 13,
+      "old_welch_ci": 0.615,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.128,
+      "median_half_width_new": 0.381
+     }
+    },
+    "by_plate": {
+     "amc": {
+      "cases": 152,
+      "old_welch_ci": 0.638,
+      "propagated_ci": 0.901,
+      "propagated_ci_with_truth_se": 0.908,
+      "median_half_width_old": 0.169,
+      "median_half_width_new": 0.366
+     },
+     "dkfz": {
+      "cases": 32,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.906,
+      "propagated_ci_with_truth_se": 0.906,
+      "median_half_width_old": 0.329,
+      "median_half_width_new": 0.553
+     },
+     "volume_lc480": {
+      "cases": 5,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.171,
+      "median_half_width_new": 0.381
+     },
+     "volume_qs6": {
+      "cases": 4,
+      "old_welch_ci": 0.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.043,
+      "median_half_width_new": 0.398
+     },
+     "volume_stepone": {
+      "cases": 4,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.154,
+      "median_half_width_new": 0.398
+     }
+    },
+    "by_truth": {
+     "20 vs 7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.69,
+      "propagated_ci": 0.929,
+      "propagated_ci_with_truth_se": 0.929,
+      "median_half_width_old": 0.159,
+      "median_half_width_new": 0.359
+     },
+     "7 vs 2 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.714,
+      "propagated_ci": 0.976,
+      "propagated_ci_with_truth_se": 0.976,
+      "median_half_width_old": 0.167,
+      "median_half_width_new": 0.362
+     },
+     "2 vs 0.7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.738,
+      "propagated_ci": 0.905,
+      "propagated_ci_with_truth_se": 0.929,
+      "median_half_width_old": 0.216,
+      "median_half_width_new": 0.372
+     },
+     "20 vs 0.7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.5,
+      "propagated_ci": 0.833,
+      "propagated_ci_with_truth_se": 0.833,
+      "median_half_width_old": 0.184,
+      "median_half_width_new": 0.401
+     },
+     "EMBL 20 vs 20 ng": {
+      "cases": 4,
+      "old_welch_ci": 0.25,
+      "propagated_ci": 0.5,
+      "propagated_ci_with_truth_se": 0.5,
+      "median_half_width_old": 0.28,
+      "median_half_width_new": 0.406
+     },
+     "1e4 vs 1e3 copies": {
+      "cases": 4,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.75,
+      "propagated_ci_with_truth_se": 0.75,
+      "median_half_width_old": 0.315,
+      "median_half_width_new": 0.506
+     },
+     "1e3 vs 1e2 copies": {
+      "cases": 4,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.45,
+      "median_half_width_new": 0.597
+     },
+     "1e4 vs 1e2 copies": {
+      "cases": 4,
+      "old_welch_ci": 0.5,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.486,
+      "median_half_width_new": 0.822
+     },
+     "1 vs 0.2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.333,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.182,
+      "median_half_width_new": 0.426
+     },
+     "2 vs 1 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.128,
+      "median_half_width_new": 0.371
+     },
+     "4 vs 2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.125,
+      "median_half_width_new": 0.371
+     },
+     "8 vs 4 ng/\u00b5l": {
+      "cases": 1,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.171,
+      "median_half_width_new": 0.381
+     },
+     "4 vs 0.2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.179,
+      "median_half_width_new": 0.541
+     }
+    },
+    "bias_by_machine": {
+     "LightCycler 480 II, AMC": {
+      "cases": 157,
+      "median_abs_error_log2": 0.121,
+      "median_bias_log2": -0.043,
+      "share_within_0.15": 0.58
+     },
+     "LightCycler 480 II, DKFZ": {
+      "cases": 32,
+      "median_abs_error_log2": 0.218,
+      "median_bias_log2": -0.08,
+      "share_within_0.15": 0.281
+     },
+     "QuantStudio 6 Flex, EMBL": {
+      "cases": 4,
+      "median_abs_error_log2": 0.205,
+      "median_bias_log2": 0.177,
+      "share_within_0.15": 0.5
+     },
+     "StepOne, EMBL": {
+      "cases": 4,
+      "median_abs_error_log2": 0.087,
+      "median_bias_log2": 0.074,
+      "share_within_0.15": 0.5
+     }
+    },
+    "pass": true
+   },
+   "post_hoc_sensitivity_term_without_lowest_tubes": {
+    "why": "added after scoring: each term is dominated by pairs with the lowest tube (0.2 ng, 0.2 ng/\u00b5l); not counted for the pass",
+    "terms": {
+     "amc": 0.071,
+     "dkfz": 0.071,
+     "volume": 0.0994
+    },
+    "all": {
+     "cases": 197,
+     "old_welch_ci": 0.655,
+     "propagated_ci": 0.832,
+     "propagated_ci_with_truth_se": 0.858,
+     "median_half_width_old": 0.186,
+     "median_half_width_new": 0.298,
+     "truths": 13,
+     "draws": 2000,
+     "seed": 2026,
+     "coverage_90%_cluster_bootstrap": [
+      0.797,
+      0.91
+     ]
+    },
+    "by_group": {
+     "amc": {
+      "cases": 152,
+      "old_welch_ci": 0.638,
+      "propagated_ci": 0.816,
+      "propagated_ci_with_truth_se": 0.849,
+      "median_half_width_old": 0.169,
+      "median_half_width_new": 0.265
+     },
+     "dkfz": {
+      "cases": 32,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.875,
+      "propagated_ci_with_truth_se": 0.875,
+      "median_half_width_old": 0.329,
+      "median_half_width_new": 0.492
+     },
+     "volume": {
+      "cases": 13,
+      "old_welch_ci": 0.615,
+      "propagated_ci": 0.923,
+      "propagated_ci_with_truth_se": 0.923,
+      "median_half_width_old": 0.128,
+      "median_half_width_new": 0.315
+     }
+    },
+    "by_plate": {
+     "amc": {
+      "cases": 152,
+      "old_welch_ci": 0.638,
+      "propagated_ci": 0.816,
+      "propagated_ci_with_truth_se": 0.849,
+      "median_half_width_old": 0.169,
+      "median_half_width_new": 0.265
+     },
+     "dkfz": {
+      "cases": 32,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.875,
+      "propagated_ci_with_truth_se": 0.875,
+      "median_half_width_old": 0.329,
+      "median_half_width_new": 0.492
+     },
+     "volume_lc480": {
+      "cases": 5,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.171,
+      "median_half_width_new": 0.315
+     },
+     "volume_qs6": {
+      "cases": 4,
+      "old_welch_ci": 0.0,
+      "propagated_ci": 0.75,
+      "propagated_ci_with_truth_se": 0.75,
+      "median_half_width_old": 0.043,
+      "median_half_width_new": 0.335
+     },
+     "volume_stepone": {
+      "cases": 4,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.154,
+      "median_half_width_new": 0.335
+     }
+    },
+    "by_truth": {
+     "20 vs 7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.69,
+      "propagated_ci": 0.857,
+      "propagated_ci_with_truth_se": 0.857,
+      "median_half_width_old": 0.159,
+      "median_half_width_new": 0.254
+     },
+     "7 vs 2 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.714,
+      "propagated_ci": 0.905,
+      "propagated_ci_with_truth_se": 0.952,
+      "median_half_width_old": 0.167,
+      "median_half_width_new": 0.26
+     },
+     "2 vs 0.7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.738,
+      "propagated_ci": 0.881,
+      "propagated_ci_with_truth_se": 0.881,
+      "median_half_width_old": 0.216,
+      "median_half_width_new": 0.274
+     },
+     "20 vs 0.7 ng": {
+      "cases": 42,
+      "old_welch_ci": 0.5,
+      "propagated_ci": 0.69,
+      "propagated_ci_with_truth_se": 0.762,
+      "median_half_width_old": 0.184,
+      "median_half_width_new": 0.31
+     },
+     "EMBL 20 vs 20 ng": {
+      "cases": 4,
+      "old_welch_ci": 0.25,
+      "propagated_ci": 0.25,
+      "propagated_ci_with_truth_se": 0.25,
+      "median_half_width_old": 0.28,
+      "median_half_width_new": 0.322
+     },
+     "1e4 vs 1e3 copies": {
+      "cases": 4,
+      "old_welch_ci": 0.75,
+      "propagated_ci": 0.75,
+      "propagated_ci_with_truth_se": 0.75,
+      "median_half_width_old": 0.315,
+      "median_half_width_new": 0.439
+     },
+     "1e3 vs 1e2 copies": {
+      "cases": 4,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.45,
+      "median_half_width_new": 0.544
+     },
+     "1e4 vs 1e2 copies": {
+      "cases": 4,
+      "old_welch_ci": 0.5,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.486,
+      "median_half_width_new": 0.782
+     },
+     "1 vs 0.2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.333,
+      "propagated_ci": 0.667,
+      "propagated_ci_with_truth_se": 0.667,
+      "median_half_width_old": 0.182,
+      "median_half_width_new": 0.368
+     },
+     "2 vs 1 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.128,
+      "median_half_width_new": 0.303
+     },
+     "4 vs 2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.125,
+      "median_half_width_new": 0.303
+     },
+     "8 vs 4 ng/\u00b5l": {
+      "cases": 1,
+      "old_welch_ci": 1.0,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.171,
+      "median_half_width_new": 0.315
+     },
+     "4 vs 0.2 ng/\u00b5l": {
+      "cases": 3,
+      "old_welch_ci": 0.667,
+      "propagated_ci": 1.0,
+      "propagated_ci_with_truth_se": 1.0,
+      "median_half_width_old": 0.179,
+      "median_half_width_new": 0.497
+     }
+    },
+    "bias_by_machine": {
+     "LightCycler 480 II, AMC": {
+      "cases": 157,
+      "median_abs_error_log2": 0.121,
+      "median_bias_log2": -0.043,
+      "share_within_0.15": 0.58
+     },
+     "LightCycler 480 II, DKFZ": {
+      "cases": 32,
+      "median_abs_error_log2": 0.218,
+      "median_bias_log2": -0.08,
+      "share_within_0.15": 0.281
+     },
+     "QuantStudio 6 Flex, EMBL": {
+      "cases": 4,
+      "median_abs_error_log2": 0.205,
+      "median_bias_log2": 0.177,
+      "share_within_0.15": 0.5
+     },
+     "StepOne, EMBL": {
+      "cases": 4,
+      "median_abs_error_log2": 0.087,
+      "median_bias_log2": 0.074,
+      "share_within_0.15": 0.5
+     }
+    },
+    "pass": false
+   }
+  },
+  "p2_std_curve": {
+   "method": "standard-curve efficiency from the run's other nominal dilution levels (leave-pair-out, no dPCR); slope SE as the efficiency SE; robust run effect re-estimated on standard-curve rows, leave-one-group-out",
+   "components": {
+    "amc": {
+     "sd_level_log2": 0.1028,
+     "sd_log2e_run": 0.0179,
+     "sets": 15
+    },
+    "dkfz": {
+     "sd_level_log2": 0.0363,
+     "sd_log2e_run": 0.0381,
+     "sets": 10
+    },
+    "volume": {
+     "sd_level_log2": 0.0262,
+     "sd_log2e_run": 0.0318,
+     "sets": 17
+    }
+   },
+   "cases_without_slope_se": 0,
+   "all": {
+    "cases": 197,
+    "old_welch_ci": 0.721,
+    "propagated_ci": 0.914,
+    "propagated_ci_with_truth_se": 0.924,
+    "median_half_width_old": 0.207,
+    "median_half_width_new": 0.344,
+    "truths": 13,
+    "draws": 2000,
+    "seed": 2026,
+    "coverage_90%_cluster_bootstrap": [
+     0.859,
+     0.949
+    ]
+   },
+   "by_group": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.737,
+     "propagated_ci": 0.961,
+     "propagated_ci_with_truth_se": 0.967,
+     "median_half_width_old": 0.186,
+     "median_half_width_new": 0.346
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.719,
+     "propagated_ci": 0.781,
+     "propagated_ci_with_truth_se": 0.812,
+     "median_half_width_old": 0.323,
+     "median_half_width_new": 0.386
+    },
+    "volume": {
+     "cases": 13,
+     "old_welch_ci": 0.538,
+     "propagated_ci": 0.692,
+     "propagated_ci_with_truth_se": 0.692,
+     "median_half_width_old": 0.126,
+     "median_half_width_new": 0.167
+    }
+   },
+   "by_plate": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.737,
+     "propagated_ci": 0.961,
+     "propagated_ci_with_truth_se": 0.967,
+     "median_half_width_old": 0.186,
+     "median_half_width_new": 0.346
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.719,
+     "propagated_ci": 0.781,
+     "propagated_ci_with_truth_se": 0.812,
+     "median_half_width_old": 0.323,
+     "median_half_width_new": 0.386
+    },
+    "volume_lc480": {
+     "cases": 5,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.177,
+     "median_half_width_new": 0.167
+    },
+    "volume_qs6": {
+     "cases": 4,
+     "old_welch_ci": 0.0,
+     "propagated_ci": 0.0,
+     "propagated_ci_with_truth_se": 0.0,
+     "median_half_width_old": 0.039,
+     "median_half_width_new": 0.152
+    },
+    "volume_stepone": {
+     "cases": 4,
+     "old_welch_ci": 0.5,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.153,
+     "median_half_width_new": 0.188
+    }
+   },
+   "by_truth": {
+    "20 vs 7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.69,
+     "propagated_ci": 0.952,
+     "propagated_ci_with_truth_se": 0.952,
+     "median_half_width_old": 0.173,
+     "median_half_width_new": 0.326
+    },
+    "7 vs 2 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.833,
+     "propagated_ci": 0.952,
+     "propagated_ci_with_truth_se": 0.952,
+     "median_half_width_old": 0.178,
+     "median_half_width_new": 0.318
+    },
+    "2 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.738,
+     "propagated_ci": 0.929,
+     "propagated_ci_with_truth_se": 0.952,
+     "median_half_width_old": 0.227,
+     "median_half_width_new": 0.323
+    },
+    "20 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 0.952,
+     "propagated_ci_with_truth_se": 0.976,
+     "median_half_width_old": 0.222,
+     "median_half_width_new": 0.419
+    },
+    "EMBL 20 vs 20 ng": {
+     "cases": 4,
+     "old_welch_ci": 0.25,
+     "propagated_ci": 0.25,
+     "propagated_ci_with_truth_se": 0.25,
+     "median_half_width_old": 0.274,
+     "median_half_width_new": 0.249
+    },
+    "1e4 vs 1e3 copies": {
+     "cases": 4,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.75,
+     "median_half_width_old": 0.331,
+     "median_half_width_new": 0.338
+    },
+    "1e3 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.437,
+     "median_half_width_new": 0.462
+    },
+    "1e4 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.526,
+     "median_half_width_new": 0.64
+    },
+    "1 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.333,
+     "propagated_ci": 0.667,
+     "propagated_ci_with_truth_se": 0.667,
+     "median_half_width_old": 0.184,
+     "median_half_width_new": 0.237
+    },
+    "2 vs 1 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 0.667,
+     "propagated_ci_with_truth_se": 0.667,
+     "median_half_width_old": 0.124,
+     "median_half_width_new": 0.119
+    },
+    "4 vs 2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 0.667,
+     "propagated_ci_with_truth_se": 0.667,
+     "median_half_width_old": 0.116,
+     "median_half_width_new": 0.12
+    },
+    "8 vs 4 ng/\u00b5l": {
+     "cases": 1,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.177,
+     "median_half_width_new": 0.167
+    },
+    "4 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.333,
+     "propagated_ci": 0.667,
+     "propagated_ci_with_truth_se": 0.667,
+     "median_half_width_old": 0.182,
+     "median_half_width_new": 0.374
+    }
+   },
+   "bias_by_machine": {
+    "LightCycler 480 II, AMC": {
+     "cases": 157,
+     "median_abs_error_log2": 0.089,
+     "median_bias_log2": 0.027,
+     "share_within_0.15": 0.688
+    },
+    "LightCycler 480 II, DKFZ": {
+     "cases": 32,
+     "median_abs_error_log2": 0.245,
+     "median_bias_log2": -0.127,
+     "share_within_0.15": 0.25
+    },
+    "QuantStudio 6 Flex, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.231,
+     "median_bias_log2": 0.098,
+     "share_within_0.15": 0.5
+    },
+    "StepOne, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.149,
+     "median_bias_log2": 0.081,
+     "share_within_0.15": 0.5
+    }
+   },
+   "pass": true,
+   "dkfz_genomic_with_amplicon_standard": {
+    "amplicon_efficiency_by_assay": {
+     "FSTL_1_F_109": 1.9044,
+     "FSTL_1_H_201": 1.9052,
+     "FSTL_1_K_219": 1.9345,
+     "FSTL_1_L_412": 1.9264
+    },
+    "with_amplicon_standard": {
+     "cases": 20,
+     "old_welch_ci": 0.7,
+     "propagated_ci": 0.8,
+     "propagated_ci_with_truth_se": 0.8,
+     "median_half_width_old": 0.316,
+     "median_half_width_new": 0.327,
+     "median_abs_error_log2": 0.189,
+     "median_bias_log2": 0.187,
+     "share_within_0.15": 0.4
+    },
+    "with_genomic_assay_mean": {
+     "cases": 20,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.8,
+     "median_half_width_old": 0.316,
+     "median_half_width_new": 0.326,
+     "median_abs_error_log2": 0.199,
+     "median_bias_log2": 0.089,
+     "share_within_0.15": 0.25
+    }
+   }
+  },
+  "p3_std_curve_plus_plate_pair_term": {
+   "all": {
+    "cases": 197,
+    "old_welch_ci": 0.721,
+    "propagated_ci": 0.964,
+    "propagated_ci_with_truth_se": 0.964,
+    "median_half_width_old": 0.207,
+    "median_half_width_new": 0.474,
+    "truths": 13,
+    "draws": 2000,
+    "seed": 2026,
+    "coverage_90%_cluster_bootstrap": [
+     0.932,
+     0.983
+    ]
+   },
+   "by_group": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.737,
+     "propagated_ci": 0.974,
+     "propagated_ci_with_truth_se": 0.974,
+     "median_half_width_old": 0.186,
+     "median_half_width_new": 0.48
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.719,
+     "propagated_ci": 0.938,
+     "propagated_ci_with_truth_se": 0.938,
+     "median_half_width_old": 0.323,
+     "median_half_width_new": 0.498
+    },
+    "volume": {
+     "cases": 13,
+     "old_welch_ci": 0.538,
+     "propagated_ci": 0.923,
+     "propagated_ci_with_truth_se": 0.923,
+     "median_half_width_old": 0.126,
+     "median_half_width_new": 0.301
+    }
+   },
+   "by_plate": {
+    "amc": {
+     "cases": 152,
+     "old_welch_ci": 0.737,
+     "propagated_ci": 0.974,
+     "propagated_ci_with_truth_se": 0.974,
+     "median_half_width_old": 0.186,
+     "median_half_width_new": 0.48
+    },
+    "dkfz": {
+     "cases": 32,
+     "old_welch_ci": 0.719,
+     "propagated_ci": 0.938,
+     "propagated_ci_with_truth_se": 0.938,
+     "median_half_width_old": 0.323,
+     "median_half_width_new": 0.498
+    },
+    "volume_lc480": {
+     "cases": 5,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.177,
+     "median_half_width_new": 0.301
+    },
+    "volume_qs6": {
+     "cases": 4,
+     "old_welch_ci": 0.0,
+     "propagated_ci": 0.75,
+     "propagated_ci_with_truth_se": 0.75,
+     "median_half_width_old": 0.039,
+     "median_half_width_new": 0.303
+    },
+    "volume_stepone": {
+     "cases": 4,
+     "old_welch_ci": 0.5,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.153,
+     "median_half_width_new": 0.323
+    }
+   },
+   "by_truth": {
+    "20 vs 7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.69,
+     "propagated_ci": 0.976,
+     "propagated_ci_with_truth_se": 0.976,
+     "median_half_width_old": 0.173,
+     "median_half_width_new": 0.465
+    },
+    "7 vs 2 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.833,
+     "propagated_ci": 0.952,
+     "propagated_ci_with_truth_se": 0.952,
+     "median_half_width_old": 0.178,
+     "median_half_width_new": 0.459
+    },
+    "2 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.738,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.227,
+     "median_half_width_new": 0.462
+    },
+    "20 vs 0.7 ng": {
+     "cases": 42,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 0.976,
+     "propagated_ci_with_truth_se": 0.976,
+     "median_half_width_old": 0.222,
+     "median_half_width_new": 0.534
+    },
+    "EMBL 20 vs 20 ng": {
+     "cases": 4,
+     "old_welch_ci": 0.25,
+     "propagated_ci": 0.5,
+     "propagated_ci_with_truth_se": 0.5,
+     "median_half_width_old": 0.274,
+     "median_half_width_new": 0.391
+    },
+    "1e4 vs 1e3 copies": {
+     "cases": 4,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.331,
+     "median_half_width_new": 0.468
+    },
+    "1e3 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.437,
+     "median_half_width_new": 0.559
+    },
+    "1e4 vs 1e2 copies": {
+     "cases": 4,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.526,
+     "median_half_width_new": 0.718
+    },
+    "1 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.333,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.184,
+     "median_half_width_new": 0.347
+    },
+    "2 vs 1 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.124,
+     "median_half_width_new": 0.283
+    },
+    "4 vs 2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.667,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.116,
+     "median_half_width_new": 0.284
+    },
+    "8 vs 4 ng/\u00b5l": {
+     "cases": 1,
+     "old_welch_ci": 1.0,
+     "propagated_ci": 1.0,
+     "propagated_ci_with_truth_se": 1.0,
+     "median_half_width_old": 0.177,
+     "median_half_width_new": 0.301
+    },
+    "4 vs 0.2 ng/\u00b5l": {
+     "cases": 3,
+     "old_welch_ci": 0.333,
+     "propagated_ci": 0.667,
+     "propagated_ci_with_truth_se": 0.667,
+     "median_half_width_old": 0.182,
+     "median_half_width_new": 0.455
+    }
+   },
+   "bias_by_machine": {
+    "LightCycler 480 II, AMC": {
+     "cases": 157,
+     "median_abs_error_log2": 0.089,
+     "median_bias_log2": 0.027,
+     "share_within_0.15": 0.688
+    },
+    "LightCycler 480 II, DKFZ": {
+     "cases": 32,
+     "median_abs_error_log2": 0.245,
+     "median_bias_log2": -0.127,
+     "share_within_0.15": 0.25
+    },
+    "QuantStudio 6 Flex, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.231,
+     "median_bias_log2": 0.098,
+     "share_within_0.15": 0.5
+    },
+    "StepOne, EMBL": {
+     "cases": 4,
+     "median_abs_error_log2": 0.149,
+     "median_bias_log2": 0.081,
+     "share_within_0.15": 0.5
+    }
+   },
+   "pass": true
+  }
+ },
  "unresolved": {
   "0.7 vs 0.2 ng": {
    "cases": 41,
