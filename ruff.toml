@@ -4,8 +4,6 @@ target-version = "py311"
 extend-exclude = ["qpilot/vendor", "research_notes"]
 # Respect the exclusion even when pre-commit passes file names explicitly.
 force-exclude = true
-# The vendored Decision Simulator keeps its own src layout: sim/src/qsim is first-party.
-src = [".", "sim/src"]
 
 [lint]
 select = ["E", "F", "I", "B", "UP", "D"]
