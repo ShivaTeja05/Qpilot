@@ -9,6 +9,8 @@ module under a file lock, with an optimistic version check (``expected_head``)::
         decisions.jsonl   hash-chained log, append-only, one DecisionEntry per line
         pending.jsonl     agent requests waiting for a human
         study_design.json the confirmed StudyDesign (designed studies only)
+        trace_cards.json  cards opened on demand (Trace's set-aside cards), see open_card
+        evidence.json  run_context.json  instrument_refs.json   artifact files (put_artifact)
         .lock
     $QPILOT_STUDIES_DIR/sessions/<input_sha256>/
         proposals.jsonl  quarantine.json  source.json  .keys/  .lock   (Studio, per input file)
@@ -21,7 +23,16 @@ Studio session holds the proposal inbox (``core/proposals.py``) and the quaranti
 is confirmed.
 
 The chain is tamper-evident, not tamper-proof: each entry stores the sha256 of the previous
-entry (the first one stores the input file's sha256), so any later edit is detectable.
+entry (the first one stores the input file's sha256), so any later edit is detectable. An
+entry is stored and hashed without its fields that are None, so entries written before the
+review fields existed keep their bytes and their hashes.
+
+Two kinds of card live here. The analysis builds the cards in ``cards.json`` (rewritten by
+:meth:`StudyStore.put` whenever the study is analysed again). A card opened on demand, for one
+place Trace points to, is kept in ``trace_cards.json`` (:meth:`StudyStore.open_card`), which a
+re-analysis never deletes. Both are read, decided and replayed the same way, so the escalation
+rule governs them alike. A run review (:meth:`StudyStore.append_review`) is a person's
+sign-off in the same chain; no card replays it, so it never makes another write stale.
 """
 
 from __future__ import annotations
@@ -32,7 +43,7 @@ import json
 import os
 import re
 import tempfile
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -40,7 +51,7 @@ from typing import TYPE_CHECKING, Any
 
 from filelock import FileLock
 
-from qpilot.core.decisions import check_request, needs_human
+from qpilot.core.decisions import DecisionError, check_request, clean_reason, needs_human
 from qpilot.schemas import Actor, DecisionCard, DecisionEntry, DecisionOutcome, StudyResult
 from qpilot.schemas_studio import Proposal, ProposalCheck, StudyDesign
 
@@ -56,12 +67,25 @@ DESIGN_FILE = "study_design.json"
 NO_ENGINE_CHECK = "engine check not available in this build"
 LOCK_TIMEOUT_S = 30
 STALE_REASON = "card changed since you read it"
+STALE_REVIEW = "the study changed since you read it: a decision was made in between"
 PENDING_REASON = "This choice can change a conclusion, so a human must decide it."
 SUGGEST_REASON = (
     "The scientist has not allowed agents to apply choices for this study (Suggest mode), "
     "so a person must confirm it."
 )
 AGENT_LEVELS = ("suggest", "decide_and_tell")
+#: Files other features save in a workspace (written whole, read back as JSON). The Analysis
+#: Record copies each one that is present.
+ARTIFACT_FILES = ("evidence.json", "run_context.json", "instrument_refs.json", "trace_cards.json")
+ON_DEMAND_FILE = "trace_cards.json"  # written only by open_card and the decision writes
+#: Card kinds opened on demand rather than built by the analysis (no grid dimension).
+ON_DEMAND_KINDS = ("trace_set_aside",)
+REVIEW_KIND = "review"
+REVIEW_CARD = "run_review"  # the card_id of every review entry; no card may take this id
+REVIEW_OUTCOMES = ("accept", "repeat", "discuss")
+MAX_REVIEWER = 100  # a person's name or initials, one line
+MAX_CARD_ID = 128  # an on-demand card's id is a short printable label
+HUMAN_ONLY_REVIEW = "only a person signs off a run review (actor must be 'human')"
 
 
 # Later entries on the same card that make a write out of date: a new decision for any write,
@@ -76,6 +100,11 @@ STALE_IF = {
 CARDS_FORMAT = 2
 
 
+def card_entries(entries: list[DecisionEntry]) -> list[DecisionEntry]:
+    """The entries that decide (or ask about) a card: every entry but the run reviews."""
+    return [e for e in entries if e.kind is None]
+
+
 def changed_since(
     entries: list[DecisionEntry], root: str, expected_head: str, card_id: str, status: str
 ) -> bool:
@@ -83,13 +112,13 @@ def changed_since(
 
     On the same card, see ``STALE_IF``. On other cards, only a decision by a person or the system
     counts: an agent's requests (or its decide-and-tell choices) elsewhere never make a write
-    stale, so an agent cannot keep a person from deciding. A head that is not in the chain counts
-    as changed.
+    stale, so an agent cannot keep a person from deciding. A run review decides no card, so it
+    never counts. A head that is not in the chain counts as changed.
     """
     heads = [root, *(e.hash for e in entries)]
     if expected_head not in heads:
         return True
-    later = entries[heads.index(expected_head) :]
+    later = card_entries(entries[heads.index(expected_head) :])
     return any(
         e.status in STALE_IF[status]
         if e.card_id == card_id
@@ -104,10 +133,10 @@ def pending_after(entries: list[DecisionEntry], legacy: bool = False) -> list[De
     An applied decision (by anyone) settles the card, so its waiting requests are cleared.
     ``legacy=True`` replays the rule of earlier qPilot builds (only a person's decision
     cleared requests, and one rejection cleared every request on its card); ``verify`` accepts
-    either.
+    either. Run reviews are skipped.
     """
     pending: list[DecisionEntry] = []
-    for entry in entries:
+    for entry in card_entries(entries):
         if entry.status == "pending_human":
             pending.append(entry)
         elif entry.status == "applied" and (entry.actor == "human" or not legacy):
@@ -127,6 +156,14 @@ class StudyNotFound(KeyError):
 
 class SheetChanged(ValueError):
     """A session's sample sheet is missing, or is no longer the file the session was opened with."""
+
+
+class CardError(ValueError):
+    """An on-demand card that cannot be opened: its kind, its state, or a clash with a card."""
+
+
+class StaleReview(ValueError):
+    """A run review whose ``expected_head`` is out of date: a decision changed the study since."""
 
 
 def default_studies_dir() -> Path:
@@ -150,9 +187,18 @@ def canonical_json(data: Any) -> str:
 
 
 def entry_hash(entry: DecisionEntry) -> str:
-    """sha256 of the entry's canonical JSON without its ``hash`` field."""
-    payload = canonical_json(entry.model_dump(mode="json", exclude={"hash"}))
+    """sha256 of the entry's canonical JSON without its ``hash`` field and its None fields.
+
+    Leaving out the fields that are None keeps the hash of every entry written before the
+    review fields existed (none of the original fields can be None).
+    """
+    payload = canonical_json(entry.model_dump(mode="json", exclude={"hash"}, exclude_none=True))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def entry_line(entry: DecisionEntry) -> str:
+    """The stored form of one entry: its canonical JSON without the fields that are None."""
+    return canonical_json(entry.model_dump(mode="json", exclude_none=True))
 
 
 def dump_json(data: Any) -> str:
@@ -334,11 +380,43 @@ def replay_cards(
     """
     blank = {f: None for f in DECISION_FIELDS} | {"status": "open"}
     states = {c.id: c.model_copy(update=blank) for c in cards}
-    for entry in entries:
+    for entry in card_entries(entries):
         if entry.card_id in states:
             states[entry.card_id] = _apply_entry(states[entry.card_id], entry)
     replayed = [states[c.id] for c in cards]
     return replayed if legacy else _overlay_pending(replayed, entries)
+
+
+def _card_text(card: DecisionCard) -> str:
+    """A card without its decision state and autonomy, as text (equal for one card reopened).
+
+    Text, not a dict comparison, so a NaN in the card compares equal to itself.
+    """
+    skip = {*DECISION_FIELDS, "autonomy", "effective_autonomy"}
+    return canonical_json(card.model_dump(mode="json", exclude=skip))
+
+
+def _check_on_demand(card: Any) -> DecisionCard:
+    """An on-demand card as :meth:`StudyStore.open_card` accepts it, or :class:`CardError`."""
+    if not isinstance(card, DecisionCard):
+        raise CardError("open_card takes a DecisionCard")
+    if card.kind not in ON_DEMAND_KINDS:
+        raise CardError(f"a {card.kind} card is built by the analysis, never opened on demand")
+    name = card.id
+    if name == REVIEW_CARD or not name or name != name.strip() or not name.isprintable():
+        raise CardError(f"{name!r} cannot be a card id")
+    if len(name) > MAX_CARD_ID:
+        raise CardError(f"a card id has at most {MAX_CARD_ID} characters")
+    decided = any(getattr(card, f) is not None for f in DECISION_FIELDS if f != "status")
+    if card.status != "open" or decided:
+        raise CardError("a card is opened undecided (status open, no decision)")
+    ids = [o.id for o in card.options]
+    if not ids or len(set(ids)) != len(ids) or card.recommended not in ids:
+        raise CardError("a card needs distinct options, one of them the recommended option")
+    if not isinstance(card.impact.get("flips"), bool):
+        # needs_human reads this; a card that does not say whether it flips must not open
+        raise CardError("an on-demand card must say whether it can flip a conclusion (flips)")
+    return card
 
 
 def _apply_entry(card: DecisionCard, entry: DecisionEntry) -> DecisionCard:
@@ -406,9 +484,22 @@ class StudyStore:
         return StudyResult.model_validate_json(path.read_text(encoding="utf-8"))
 
     def cards(self, study_id: str) -> list[DecisionCard]:
-        """Load a study's Decision Cards, in rank order."""
-        raw = json.loads((self.workspace(study_id) / "cards.json").read_text(encoding="utf-8"))
+        """A study's Decision Cards: the analysis's in rank order, then on-demand cards by id."""
+        workspace = self.workspace(study_id)
+        return self._engine_cards(workspace) + self._on_demand_cards(workspace)
+
+    @staticmethod
+    def _engine_cards(workspace: Path) -> list[DecisionCard]:
+        raw = json.loads((workspace / "cards.json").read_text(encoding="utf-8"))
         return sorted((DecisionCard.model_validate(c) for c in raw), key=lambda c: c.rank)
+
+    @staticmethod
+    def _on_demand_cards(workspace: Path) -> list[DecisionCard]:
+        path = workspace / ON_DEMAND_FILE
+        if not path.exists():
+            return []
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return sorted((DecisionCard.model_validate(c) for c in raw), key=lambda c: c.id)
 
     def card(self, study_id: str, card_id: str) -> DecisionCard:
         """One card by id; ``KeyError`` if unknown."""
@@ -429,6 +520,24 @@ class StudyStore:
     def pending(self, study_id: str) -> list[DecisionEntry]:
         """Agent requests that wait for a human, oldest first."""
         return read_entries(self.workspace(study_id) / "pending.jsonl")
+
+    def reviews(self, study_id: str) -> list[DecisionEntry]:
+        """The run reviews of a study (a person's sign-offs), oldest first."""
+        return [e for e in self.entries(study_id) if e.kind == REVIEW_KIND]
+
+    def get_artifact(self, study_id: str, name: str) -> Any | None:
+        """One artifact file of a study, parsed, or None when it has not been saved.
+
+        Raises:
+            ValueError: ``name`` is not one of :data:`ARTIFACT_FILES`.
+            StudyNotFound: No workspace has this study id.
+        """
+        if name not in ARTIFACT_FILES:
+            raise ValueError(f"not an artifact file: {name!r}")
+        path = self.workspace(study_id) / name
+        if not path.exists():
+            return None
+        return json.loads(path.read_text(encoding="utf-8"))
 
     def snapshot(self, study_id: str) -> tuple[str, list[DecisionCard], list[DecisionEntry]]:
         """Chain head, cards and pending requests read together under the workspace lock."""
@@ -475,7 +584,9 @@ class StudyStore:
 
         A new workspace's log starts with one ``system`` entry per auto-decided card. If the
         workspace already has a log (the same input analysed again), its decisions are replayed
-        onto the new cards, so a re-run keeps what people decided.
+        onto the new cards, so a re-run keeps what people decided. Run reviews count for
+        neither, and the cards opened on demand (``trace_cards.json``) are kept as they are:
+        they are not the analysis's output, so a re-analysis never deletes them.
 
         Without ``design`` the workspace is ``<input_sha256>``, exactly as before. With a
         confirmed design it is the plugin's :func:`study_key`, the result's study id must be
@@ -492,7 +603,7 @@ class StudyStore:
         with self._locked(workspace):
             log = workspace / "decisions.jsonl"
             entries = read_entries(log)
-            if not entries:
+            if not card_entries(entries):
                 for card in sorted(cards, key=lambda c: c.rank):
                     if card.status == "auto_decided" and card.decision:
                         entries.append(
@@ -508,11 +619,14 @@ class StudyStore:
                             )
                         )
             states = {c.id: c for c in cards}
-            for entry in entries:
+            for entry in card_entries(entries):
                 if entry.card_id in states:
                     states[entry.card_id] = _apply_entry(states[entry.card_id], entry)
             atomic_write(workspace / "results.json", dump_json(result.model_dump(mode="json")))
             self._write_cards(workspace, _overlay_pending(list(states.values()), entries))
+            on_demand = self._on_demand_cards(workspace)
+            if on_demand:  # kept, and rebuilt from the log like cards.json
+                self._write_on_demand(workspace, replay_cards(on_demand, entries))
             self._write_pending(workspace, entries)
             facts = {fid: f.model_dump(mode="json") for fid, f in result.facts.items()}
             atomic_write(workspace / "facts.json", dump_json(facts))
@@ -581,6 +695,172 @@ class StudyStore:
             raise KeyError(f"no pending request on card {card_id!r}{which}")
         options = list(dict.fromkeys(p.option for p in waiting))  # distinct, oldest first
         return self._write(study_id, card_id, options, reason, "human", "rejected", expected_head)
+
+    def open_card(self, study_id: str, card: DecisionCard) -> DecisionCard:
+        """Add a card that no analysis builds (today Trace's ``trace_set_aside``) to a study.
+
+        The card is kept in ``trace_cards.json`` (a list sorted by id; ``cards.json`` is never
+        touched, and nothing is written to the log, so the chain head does not move). From
+        then on it is read, decided, requested and replayed like the analysis's cards, so
+        :func:`~qpilot.core.decisions.needs_human` governs it: an agent's request on a card
+        that can flip a conclusion waits for a person at every autonomy level.
+
+        Opening the same card again (equal apart from its decision state and autonomy) returns
+        the stored card, with whatever has been decided on it. Its state is the log's: an id
+        the log already decided keeps that decision.
+
+        Args:
+            study_id: The study.
+            card: The card, ``status="open"`` with no decision, of a kind in
+                :data:`ON_DEMAND_KINDS`, saying in ``impact["flips"]`` whether it can flip a
+                conclusion.
+
+        Returns:
+            The card as stored.
+
+        Raises:
+            CardError: The card is of a kind the analysis builds, is not open, has no usable
+                options, does not say whether it flips, takes an analysis card's id or the
+                reserved review id, or differs from a card already open under its id.
+            StudyNotFound: No workspace has this study id.
+        """
+        card = _check_on_demand(card)
+        workspace = self.workspace(study_id)
+        with self._locked(workspace):
+            if card.id in {c.id for c in self._engine_cards(workspace)}:
+                raise CardError(f"{card.id!r} is a card of the analysis; choose another id")
+            opened = self._on_demand_cards(workspace)
+            same = next((c for c in opened if c.id == card.id), None)
+            if same is not None:
+                if _card_text(same) != _card_text(card):
+                    raise CardError(f"a different card is already open as {card.id!r}")
+                return same
+            entries = read_entries(workspace / "decisions.jsonl")
+            card = replay_cards([card], entries)[0]
+            self._write_on_demand(workspace, [*opened, card])
+            return card
+
+    def append_review(
+        self,
+        study_id: str,
+        outcome: str,
+        comment: str,
+        reviewer: str,
+        *,
+        actor: str = "human",
+        expected_head: str | None = None,
+    ) -> DecisionEntry:
+        """A person signs off the run: one ``review`` entry in the decision chain.
+
+        The entry has ``card_id`` :data:`REVIEW_CARD`, ``option`` and ``outcome`` the outcome,
+        ``reason`` the comment and ``status`` ``applied``. No card replays it and it clears no
+        request, so it never makes another write stale (an agent's request or a person's
+        decision read at the previous head still goes through). The reviewer's name is kept in
+        the chain, so it stays in a shared record, as a proposal's subject does.
+
+        Args:
+            study_id: The study.
+            outcome: ``accept``, ``repeat`` or ``discuss`` (:data:`REVIEW_OUTCOMES`).
+            comment: Why; cleaned like a decision's reason (one line, at most 500 characters).
+            reviewer: Who signs off (one line, at most :data:`MAX_REVIEWER` characters).
+            actor: Must be ``human``: only a person reviews a run.
+            expected_head: The chain head the reviewer read; a person's or the system's
+                decision since then makes the review stale.
+
+        Returns:
+            The entry as written.
+
+        Raises:
+            DecisionError: ``actor`` is not ``human``, or the outcome, comment or reviewer is
+                not usable.
+            StaleReview: A decision changed the study since ``expected_head`` (the attempt is
+                logged in ``attempts.jsonl``, outside the chain).
+            StudyNotFound: No workspace has this study id.
+        """
+        # type() and not isinstance(): a str subclass could answer == "human" for anyone.
+        if type(actor) is not str or actor != "human":
+            raise DecisionError(HUMAN_ONLY_REVIEW)
+        if type(outcome) is not str or outcome not in REVIEW_OUTCOMES:
+            raise DecisionError(f"a review outcome is one of {', '.join(REVIEW_OUTCOMES)}")
+        comment = clean_reason(comment, "comment")
+        reviewer = clean_reason(reviewer, "reviewer", MAX_REVIEWER)
+        workspace = self.workspace(study_id)
+        log = workspace / "decisions.jsonl"
+        with self._locked(workspace):
+            entries = read_entries(log)
+            root = self.get(study_id).input_sha256
+            if expected_head is not None and changed_since(
+                entries, root, expected_head, REVIEW_CARD, "applied"
+            ):
+                attempt = {
+                    "at": _now(),
+                    "status": "stale",
+                    "attempted": REVIEW_KIND,
+                    "card_id": REVIEW_CARD,
+                    "option": outcome,
+                    "options": [outcome],
+                    "reason": comment,
+                    "actor": actor,
+                    "expected_head": expected_head,
+                    "head": entries[-1].hash if entries else root,
+                }
+                with open(workspace / "attempts.jsonl", "a", encoding="utf-8") as fh:
+                    fh.write(canonical_json(attempt) + "\n")
+                raise StaleReview(STALE_REVIEW)
+            return self._append(
+                log,
+                entries,
+                root,
+                REVIEW_CARD,
+                outcome,
+                comment,
+                "human",
+                "applied",
+                kind=REVIEW_KIND,
+                outcome=outcome,
+                reviewer=reviewer,
+            )
+
+    def put_artifact(self, study_id: str, name: str, data: Mapping[str, Any] | list[Any]) -> Path:
+        """Save one artifact file (a feature's derived result) in a study's workspace.
+
+        Written whole, under the workspace lock, atomically, as deterministic JSON
+        (:func:`dump_json`). The Analysis Record copies it. ``trace_cards.json`` is the one
+        artifact this cannot write: cards are opened with :meth:`open_card`, so the escalation
+        rule and the log decide their state.
+
+        Args:
+            study_id: The study.
+            name: One of :data:`ARTIFACT_FILES` other than ``trace_cards.json``.
+            data: A JSON object or list (NaN and infinity are refused: they are not JSON).
+
+        Returns:
+            The path written.
+
+        Raises:
+            ValueError: ``name`` is not an artifact file, is ``trace_cards.json``, or ``data``
+                is not plain JSON.
+            StudyNotFound: No workspace has this study id.
+        """
+        if name not in ARTIFACT_FILES:
+            raise ValueError(f"not an artifact file: {name!r}")
+        if name == ON_DEMAND_FILE:
+            raise ValueError(f"{ON_DEMAND_FILE} is written by open_card only")
+        if isinstance(data, Mapping):
+            payload: dict[str, Any] | list[Any] = dict(data)
+        elif isinstance(data, list):
+            payload = data
+        else:
+            raise ValueError(f"{name} must hold a JSON object or list")
+        try:
+            json.dumps(payload, sort_keys=True, allow_nan=False)
+        except (TypeError, ValueError) as err:
+            raise ValueError(f"{name} must be plain JSON: {err}") from err
+        workspace = self.workspace(study_id)
+        path = workspace / name
+        with self._locked(workspace):
+            atomic_write(path, dump_json(payload))
+        return path
 
     def append_ai_call(self, study_id: str, entry: dict[str, Any]) -> None:
         """Append one model-call log line (no key, no raw payload unless opted in)."""
@@ -655,12 +935,17 @@ class StudyStore:
                 )
             for each in options:
                 entry = self._append(log, entries, root, card_id, each, reason, actor, status)
-            # cards.json and pending.jsonl are derived from the log and rebuilt in full on every
-            # write, so a write interrupted earlier can never leave them out of step for good.
-            cards = replay_cards(self.cards(study_id), entries)
+            # cards.json, trace_cards.json and pending.jsonl are derived from the log and rebuilt
+            # in full on every write, so a write interrupted earlier can never leave them out of
+            # step for good.
+            cards = replay_cards(self._engine_cards(workspace), entries)
             self._write_cards(workspace, cards)
+            on_demand = self._on_demand_cards(workspace)
+            if on_demand:
+                on_demand = replay_cards(on_demand, entries)
+                self._write_on_demand(workspace, on_demand)
             self._write_pending(workspace, entries)
-            card = next(c for c in cards if c.id == card_id)
+            card = next(c for c in [*cards, *on_demand] if c.id == card_id)
             return DecisionOutcome(status=status, chain_head=entry.hash, card=card)
 
     @staticmethod
@@ -673,6 +958,7 @@ class StudyStore:
         reason: str,
         actor: Actor,
         status: str,
+        **review: Any,
     ) -> DecisionEntry:
         entry = DecisionEntry(
             seq=len(entries) + 1,
@@ -683,10 +969,11 @@ class StudyStore:
             actor=actor,
             status=status,
             at=_now(),
+            **review,
         )
         entry = entry.model_copy(update={"hash": entry_hash(entry)})
         with open(log, "a", encoding="utf-8") as fh:
-            fh.write(canonical_json(entry.model_dump(mode="json")) + "\n")
+            fh.write(entry_line(entry) + "\n")
             fh.flush()
             os.fsync(fh.fileno())
         entries.append(entry)
@@ -700,9 +987,16 @@ class StudyStore:
         )
 
     @staticmethod
+    def _write_on_demand(workspace: Path, cards: list[DecisionCard]) -> None:
+        ordered = sorted(cards, key=lambda c: c.id)
+        atomic_write(
+            workspace / ON_DEMAND_FILE, dump_json([c.model_dump(mode="json") for c in ordered])
+        )
+
+    @staticmethod
     def _write_pending(workspace: Path, entries: list[DecisionEntry]) -> None:
         pending = pending_after(entries)
-        text = "".join(canonical_json(p.model_dump(mode="json")) + "\n" for p in pending)
+        text = "".join(entry_line(p) + "\n" for p in pending)
         path = workspace / "pending.jsonl"
         if path.exists() or text:
             atomic_write(path, text)

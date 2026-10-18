@@ -18,6 +18,7 @@ import pandas as pd
 
 from qpilot.ai.explain import KIND_TITLE
 from qpilot.ai.profile import autonomy_policy
+from qpilot.core.decisions import needs_human
 from qpilot.core.facts import render_fact, slug
 from qpilot.explain.templates import TemplateError, render_template, to_html
 from qpilot.qpcr.contrast import ConclusionRule
@@ -292,7 +293,7 @@ def card_view(
         title=esc(KIND_TITLE.get(card.kind, card.kind)),
         rank=card.rank,
         status=card.status,
-        needs_human=bool(card.impact.get("flips")),
+        needs_human=needs_human(card),
         status_line=esc(_status_line(card, labels, pending_option)),
         impact_html=impact,
         explanation_html=explanation_html,

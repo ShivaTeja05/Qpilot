@@ -56,11 +56,12 @@ BLIND = (
 RDML_SUFFIXES = {".rdml", ".xml"}
 SHEET_SUFFIXES = {".xlsx", ".csv"}
 MAX_QUOTED = 400  # names returned to an agent as quoted data
-KIND_TO_DIMENSION = {
+KIND_TO_DIMENSION: dict[str, str | None] = {
     "reference_set": "refs",
     "group_cutoff": "cut",
     "undetermined": "undetermined",
     "amp_call": "amp_call",
+    "trace_set_aside": None,  # opened on demand: no grid dimension, so qpcr_robustness skips it
 }
 
 

@@ -15,13 +15,14 @@ A card whose dimension flips no conclusion is decided automatically (recommended
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
 from qpilot.schemas import (
     Actor,
     Autonomy,
+    CardKind,
     CardOption,
     DecisionCard,
     DecisionOutcome,
@@ -56,7 +57,7 @@ class CardSpec(BaseModel):
     """What a plugin tells the core about one card; the core adds consequences and impact."""
 
     card_id: str
-    kind: Literal["reference_set", "group_cutoff", "undetermined", "amp_call"]
+    kind: CardKind
     dimension: str
     options: list[OptionSpec]
     recommended: str
@@ -172,17 +173,36 @@ def needs_human(card: DecisionCard) -> bool:
     )
 
 
+def clean_reason(reason: str | None, what: str = "reason", limit: int = MAX_REASON) -> str:
+    """A reason (or comment) as the log keeps it: one line, stripped, not empty, within ``limit``.
+
+    Args:
+        reason: The text a person or an agent gave.
+        what: What the text is called in the error message.
+        limit: The most characters kept text may have.
+
+    Returns:
+        The cleaned text.
+
+    Raises:
+        DecisionError: The text is not a string, is empty once cleaned, or is too long.
+    """
+    if reason is not None and not isinstance(reason, str):
+        raise DecisionError(f"a {what} must be text")
+    # Unicode line and paragraph separators read as line breaks in some viewers; keep one line.
+    cleaned = re.sub("[\u2028\u2029\u0085]+", " ", reason or "").strip()
+    if not cleaned:
+        raise DecisionError(f"a {what} is required")
+    if len(cleaned) > limit:
+        raise DecisionError(f"{what} longer than {limit} characters")
+    return cleaned
+
+
 def check_request(card: DecisionCard, option: str, reason: str) -> str:
     """Validate a decision request; return the cleaned reason or raise :class:`DecisionError`."""
     if option not in {o.id for o in card.options}:
         raise DecisionError(f"unknown option {option!r} for card {card.id}")
-    # Unicode line and paragraph separators read as line breaks in some viewers; keep one line.
-    cleaned = re.sub("[\u2028\u2029\u0085]+", " ", reason or "").strip()
-    if not cleaned:
-        raise DecisionError("a reason is required")
-    if len(cleaned) > MAX_REASON:
-        raise DecisionError(f"reason longer than {MAX_REASON} characters")
-    return cleaned
+    return clean_reason(reason)
 
 
 def apply_decision(
