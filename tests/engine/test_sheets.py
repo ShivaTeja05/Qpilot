@@ -229,3 +229,70 @@ def test_no_table_without_a_sample_column(tmp_path):
     path = tmp_path / "t.csv"
     path.write_text("Gene,Cq\nMYCN,22\n", encoding="utf-8")
     assert sheet_table(path) is None
+
+
+def _with_merged_ranges(path, refs):
+    """A one-cell workbook whose sheet lists ``refs`` as merged ranges (as a crafted file can)."""
+    book = openpyxl.Workbook()
+    book.active["B2"] = "x"
+    book.active.merge_cells("B2:B3")
+    book.save(path)
+    with zipfile.ZipFile(path) as archive:
+        members = {name: archive.read(name) for name in archive.namelist()}
+    name = "xl/worksheets/sheet1.xml"
+    xml = members[name].decode("utf-8")
+    start, end = xml.index("<mergeCells"), xml.index("</mergeCells>") + len("</mergeCells>")
+    merged = "".join(f'<mergeCell ref="{ref}"/>' for ref in refs)
+    block = f'<mergeCells count="{len(refs)}">{merged}</mergeCells>'
+    members[name] = (xml[:start] + block + xml[end:]).encode("utf-8")
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for member, data in members.items():
+            archive.writestr(member, data)
+    return path
+
+
+def test_overlapping_merged_ranges_cannot_multiply_the_work(tmp_path, monkeypatch):
+    monkeypatch.setattr(sheets, "MAX_CELLS", 1_000)
+    overlapping = [f"B2:B{501 + i}" for i in range(3)]  # about 500 cells each, the same cells
+    with pytest.raises(SheetError, match="merged"):
+        read_sheet(_with_merged_ranges(tmp_path / "overlap.xlsx", overlapping))
+    one = read_sheet(_with_merged_ranges(tmp_path / "one.xlsx", overlapping[:1]))
+    assert len(one.cells) == 500
+
+
+def test_repeated_merged_ranges_are_expanded_once(tmp_path, monkeypatch):
+    calls = []
+    real = sheets._expand_merged
+
+    def counting(grid, merged, out, title, budget):
+        calls.append(len(merged))
+        return real(grid, merged, out, title, budget)
+
+    monkeypatch.setattr(sheets, "_expand_merged", counting)
+    read = read_sheet(_with_merged_ranges(tmp_path / "copies.xlsx", ["B2:AY20"] * 1_000))
+    assert calls == [1] and len(read.cells) == 19 * 50
+
+
+def test_the_number_of_merged_ranges_is_capped(tmp_path, monkeypatch):
+    monkeypatch.setattr(sheets, "MAX_MERGED_RANGES", 5)
+    path = _with_merged_ranges(tmp_path / "many.xlsx", [f"C{r}:D{r}" for r in range(1, 8)])
+    with pytest.raises(SheetError, match="merged ranges"):
+        read_sheet(path)
+
+
+@pytest.mark.parametrize(
+    ("header", "field"),
+    [
+        ("RNA concentration", "concentration"),
+        ("Concentration (ng/µl)", "concentration"),
+        ("Conc", "concentration"),
+        ("Input amount (ng)", "concentration"),
+        ("Dilution", "dilution"),
+        ("Dilution factor", "dilution"),
+        ("Given Conc", "quantity"),
+        ("Copies", "quantity"),
+        ("Sample concentration", None),
+    ],
+)
+def test_a_concentration_or_dilution_column_is_not_a_standard_quantity(header, field):
+    assert header_field(header) == field

@@ -10,11 +10,14 @@ qPilot Studio has its own default (:func:`studio_config`): a model on this machi
 remote provider is used only when the scientist sets ``QPILOT_MODEL_PROVIDER`` to it, and then
 sample names are pseudonymised before anything leaves (:func:`is_remote`). An unreachable local
 server costs one refused connection: the call raises ``ModelUnavailable`` and the interpreter
-falls back to qPilot's rules.
+falls back to qPilot's rules. A slow one is bounded by the interpreter's time budget
+(:func:`interpret_budget_s`, ``QPILOT_INTERPRET_BUDGET_S``): when it runs out, the rules answer
+for the parts of the file the model has not read.
 """
 
 from __future__ import annotations
 
+import math
 import os
 from collections.abc import Mapping
 from typing import Literal
@@ -24,6 +27,7 @@ from pydantic import BaseModel, Field, SecretStr
 Provider = Literal["none", "anthropic", "openai_compatible"]
 STUDIO_LOCAL_ENDPOINT = "http://127.0.0.1:11434/v1"
 STUDIO_DEFAULT_MODEL = "qwen2.5:7b"
+DEFAULT_INTERPRET_BUDGET_S = 180.0
 
 
 class ModelConfig(BaseModel):
@@ -101,3 +105,17 @@ def is_remote(config: ModelConfig) -> bool:
     from qpilot.core.pseudonym import endpoint_is_local
 
     return not endpoint_is_local(config.provider, config.endpoint)
+
+
+def interpret_budget_s(env: Mapping[str, str] | None = None) -> float:
+    """How long the Design Interpreter may keep asking the model about one file, in seconds.
+
+    ``QPILOT_INTERPRET_BUDGET_S`` when it is a positive number, else three minutes. When the
+    budget runs out, no further call is started and the rules answer for the rest of the file.
+    """
+    env = os.environ if env is None else env
+    try:
+        budget = float((env.get("QPILOT_INTERPRET_BUDGET_S") or "").strip())
+    except ValueError:
+        return DEFAULT_INTERPRET_BUDGET_S
+    return budget if math.isfinite(budget) and budget > 0 else DEFAULT_INTERPRET_BUDGET_S

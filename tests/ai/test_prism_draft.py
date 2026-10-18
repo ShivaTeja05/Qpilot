@@ -116,3 +116,28 @@ def test_a_remote_model_sees_no_gene_name(fixture_result, fixture_cards, tmp_pat
     assert "ODC1" not in sent and "NTRK1" not in sent and "MYCN" not in sent
     assert pseudonymiser.pseudonymise("ODC1") in sent
     assert draft.made_by_model and "ODC1" in draft.caption and "NTRK1" in draft.caption
+
+
+def test_a_remote_model_sees_no_gene_name_in_any_form(fixture_result, fixture_cards, tmp_path):
+    from qpilot.ai.prism_draft import private_names
+    from qpilot.core.facts import slug
+
+    pseudonymiser = Pseudonymiser(tmp_path)
+    genes = ["ODC1", "NTRK1"]
+
+    def reply(system, messages):
+        caption = json.loads(messages[0]["content"])["caption"]
+        if len(messages) == 1:  # leave a fact and a gene out, so the retry message is sent too
+            return " ".join(TOKEN.findall(caption)[1:])
+        return caption
+
+    client = remote_client(reply)
+    draft = draft_prism_project(
+        fixture_result, fixture_cards, genes, client=client, pseudonymiser=pseudonymiser
+    )
+    assert len(client.backend.calls) == 2 and draft.made_by_model
+    sent = json.dumps([c["messages"] for c in client.backend.calls], ensure_ascii=False).lower()
+    for name in private_names(fixture_result):
+        assert name.lower() not in sent and slug(name) not in sent, name
+    assert "{{f_fc_odc1_recommended}}" in draft.caption and "ODC1" in draft.caption
+    assert set(TOKEN.findall(draft.caption)) == set(TOKEN.findall(draft.template_caption))

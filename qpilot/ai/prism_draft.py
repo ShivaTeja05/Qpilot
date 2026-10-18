@@ -12,7 +12,8 @@ Every number is a ``{{fact_id}}`` token of the study's own facts and passes
 reword it, and its wording is used only if it passes the validator and cites exactly the facts
 the template cites (nothing dropped, nothing added); otherwise one retry with the validator's
 message, then the template. A remote model needs a pseudonymiser (gene names become keyed tokens
-in what is sent, mapped back on return); without one the template is used and nothing is sent.
+in what is sent, and fact ids, which carry gene names, become ``f_1``, ``f_2``...; both are mapped
+back on return); without one the template is used and nothing is sent.
 
 Nothing here writes a file or accepts anything: the payload becomes a proposal that a person
 accepts before **Send to Prism** writes the bundle.
@@ -233,6 +234,14 @@ def _swap(text: str, mapping: Mapping[str, str]) -> str:
     return text
 
 
+def _swap_ids(text: str, mapping: Mapping[str, str]) -> str:
+    """``text`` with each fact id in ``mapping`` renamed, inside ``{{...}}`` tokens or not."""
+    if not mapping:
+        return text
+    ids = "|".join(re.escape(fid) for fid in sorted(mapping, key=len, reverse=True))
+    return re.sub(rf"(?<![a-z0-9_])({ids})(?![a-z0-9_])", lambda m: mapping[m.group(1)], text)
+
+
 def _reword(
     client: ModelClient,
     caption: str,
@@ -242,20 +251,34 @@ def _reword(
     genes: Sequence[str],
     private: Sequence[str] = (),
 ) -> tuple[str | None, str | None, int]:
-    """(model caption or None, error, calls made); ``private`` names become pseudonyms."""
+    """(model caption or None, error, calls made); ``private`` names become pseudonyms.
+
+    With a pseudonymiser, fact ids (``f_fc_odc1_recommended`` names its gene) are sent as
+    ``f_1``, ``f_2``... in order of first use, in the caption, the facts table and every
+    message, and mapped back before the reply is checked.
+    """
     import json
 
     hidden = sorted(set(private) | set(genes))
     to_token, to_gene = _pseudonyms(pseudonymiser, hidden) if pseudonymiser else ({}, {})
     wanted = set(TOKEN.findall(caption))
+    to_alias: dict[str, str] = {}
+    if to_token:
+        for fid in TOKEN.findall(caption):
+            to_alias.setdefault(fid, f"f_{len(to_alias) + 1}")
+    to_id = {alias: fid for fid, alias in to_alias.items()}
+
+    def outward(text: str) -> str:  # what a remote model may read
+        return _swap(_swap_ids(text, to_alias), to_token)
+
     table = fact_table(facts, sorted(wanted))
     if to_token:  # a fact value may name a gene; such a value is never shown to a remote model
         table = {
-            f: v
+            to_alias[f]: {**v, "write_exactly": _tok(to_alias[f])}
             for f, v in table.items()
             if not any(n in v["value_for_reading_only"] for n in hidden)
         }
-    content = json.dumps({"caption": _swap(caption, to_token), "facts": table}, ensure_ascii=False)
+    content = json.dumps({"caption": outward(caption), "facts": table}, ensure_ascii=False)
     messages = [{"role": "user", "content": content}]
     error = None
     calls = 0
@@ -265,7 +288,7 @@ def _reword(
             text = client.complete(SYSTEM_PRISM_CAPTION, messages, max_tokens=700).strip()
         except ModelUnavailable as err:
             return None, str(err), calls
-        text = _swap(text, to_gene)
+        text = _swap(_swap_ids(text, to_id), to_gene)
         problems = []
         check = validate(text, facts, names)
         if not check.ok:
@@ -287,8 +310,11 @@ def _reword(
         error = "; ".join(problems)
         messages = [
             *messages,
-            {"role": "assistant", "content": _swap(text, to_token)},
-            {"role": "user", "content": f"Rejected: {error}. Rewrite following the token rule."},
+            {"role": "assistant", "content": outward(text)},
+            {
+                "role": "user",
+                "content": f"Rejected: {outward(error)}. Rewrite following the token rule.",
+            },
         ]
     return None, error, calls
 

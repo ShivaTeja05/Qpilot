@@ -404,3 +404,54 @@ def test_demo_competimer_series_are_found(demo_rdml_path):
     std = next(s for s in series if s.subject == "STD")
     assert std.source == "file" and std.samples["STD_15"] == 1.875
     assert std.name_quantities["STD_15"] == 15.0
+
+
+@pytest.mark.parametrize(
+    "header", ["RNA concentration", "Input amount", "Dilution", "Concentration (ng/µl)", "Conc"]
+)
+def test_a_concentration_column_never_makes_study_samples_standards(header):
+    rows = [["Sample", "Group", header], ["S1", "LPS", "120.5"], ["S2", "LPS", "98.2"]]
+    rows += [["S3", "PBS", "143.0"], ["S4", "PBS", "110.7"]]
+    summary, q = make({f"S{i}": "unkn" for i in range(1, 5)}, sheet=rows)
+    fields = propose_from_names(summary, q)
+    assert find_dilution_series(summary, q) == []
+    assert not by(fields, "design.well_role") and not by(fields, "design.dilution_series")
+    groups = {f.subject: f.value["group"] for f in by(fields, "design.group")}
+    assert groups == {"S1": "LPS", "S2": "LPS", "S3": "PBS", "S4": "PBS"}
+
+
+def test_a_concentration_or_dilution_column_counts_for_marked_standards():
+    rows = [["Sample", "Task", "Concentration"]]
+    rows += [[f"A{i}", "Standard", str(10**i)] for i in range(1, 5)]
+    rows += [["U1", "Unknown", "57.3"], ["U2", "Unknown", "12.0"]]
+    names = {**{f"A{i}": "unkn" for i in range(1, 5)}, "U1": "unkn", "U2": "unkn"}
+    found = find_dilution_series(*make(names, sheet=rows))
+    assert len(found) == 1 and found[0].source == "sheet"
+    assert found[0].samples == {f"A{i}": float(10**i) for i in range(1, 5)}
+    # a dilution factor of ten is a tenth; 1:1000 is a thousandth
+    rows = [["Sample", "Task", "Dilution"]]
+    rows += [[f"A{i}", "STD", d] for i, d in enumerate(("1", "10", "100", "1:1000"), 1)]
+    found = find_dilution_series(*make({f"A{i}": "unkn" for i in range(1, 5)}, sheet=rows))
+    assert found[0].samples == pytest.approx({"A1": 1.0, "A2": 0.1, "A3": 0.01, "A4": 0.001})
+    # standards the file declares need no type column
+    rows = [["Sample", "RNA concentration"], ["A1", "4"], ["A2", "2"], ["A3", "1"]]
+    found = find_dilution_series(*make({f"A{i}": "std" for i in range(1, 4)}, sheet=rows))
+    assert found[0].samples == {"A3": 1.0, "A2": 2.0, "A1": 4.0}
+
+
+def test_a_quantity_too_large_for_a_number_is_no_quantity():
+    assert parse_number("10^400") is None and parse_number("1x10^400") is None
+    summary, q = make({"Std 10^400": "unkn", "Std 10^3": "unkn", "Std 10^2": "unkn"})
+    assert find_dilution_series(summary, q) == []
+    rows = [["Sample", "Quantity"], ["S1", "10^400"], ["S2", "10"], ["S3", "100"]]
+    summary, q = make({"S1": "unkn", "S2": "unkn", "S3": "unkn"}, sheet=rows)
+    assert by(propose_from_names(summary, q), "design.dilution_series") == []
+
+
+def test_a_quantity_the_instrument_computed_for_unknowns_is_not_a_standard():
+    rows = [["Sample", "Task", "Quantity"]]
+    rows += [[f"U{i}", "Unknown", str(3 * 10**i)] for i in range(1, 5)]
+    rows += [[f"S{i}", "Standard", str(10**i)] for i in range(1, 4)]
+    names = {**{f"U{i}": "unkn" for i in range(1, 5)}, **{f"S{i}": "unkn" for i in range(1, 4)}}
+    found = find_dilution_series(*make(names, sheet=rows))
+    assert [sorted(s.samples) for s in found] == [["S1", "S2", "S3"]]
