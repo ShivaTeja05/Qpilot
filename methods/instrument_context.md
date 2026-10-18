@@ -1,0 +1,63 @@
+# Method card: what the run file says about the instrument (instrument context and G-INSTR)
+
+**What it answers.** Did the instrument do anything odd during this run, and how old were its calibrations? The run file usually says: which instrument and block ran the plate, when each optical calibration was done and when the vendor says it expires, whether the run finished, and (QuantStudio family) a log of pauses, lid and drawer events. Exports to RDML or spreadsheets lose most of this. qPilot reads it back into one record per run (`RunContext`), with a source pointer for every item, and the Gate rule G-INSTR turns the notable items into Gate lines. Nothing here judges the run: an expired calibration is a fact to weigh, never a reason to set a run aside automatically.
+
+**References.** No published method. The layouts come from public files, read but not copied into qPilot: the QuantStudio CSV results-export header of the seven example files in neuroeddu/Auto-qPCR (GPL-3.0), one ABI 7500 `.eds` (`sce.eds`, shipped in the RDML R package, MIT; an Applied Biosystems demo file) and one Bio-Rad CFX RDML export (`BioRad_qPCR_melt.rdml`, same package). Vendor flag names follow Thermo Fisher's QuantStudio QC-flag help (PRFDROP, PRFLOW, LOWROX, NOISE, SPIKE, OFFSCALE). The tests build synthetic files with the same layouts and invented values.
+
+**Implementation.** `qpilot/qpcr/instrument_context.py` (`read_run_context`, `run_contexts_from_rdml`, `parse_instrument_string`, `RunContext.summary`, `RunContext.model_view`, `METHOD_CARD`); `qpilot/qpcr/gate_instr.py` (`g_instr`, `needs_consequence`, `add_consequence`); wording in `qpilot/explain/instrument_text.py` (`render_gate`, template key `instrument_gate_v1`, not registered).
+
+| Item | Where it is read | Rule |
+|---|---|---|
+| File kind | the content, not the suffix | an `.eds` is a zip with members under `apldbio/sds/` (compared in lower case, `\` read as `/`); an export is recognised by its header keys; RDML by its XML |
+| Run state | `experiment.xml` `RunState`; `run/run_summary.json`; the log | `COMPLETE` → `complete`, `ABORTED` → `aborted`, others lower-cased. If the file says neither complete nor aborted and the log says "run completed", the log wins and a note says so |
+| Run times | `RunStartTime` / `RunEndTime` (epoch ms, UTC); JSON times; export "Experiment Run End Time"; CFX "Run Started/Ended"; RDML `runDate` | ISO 8601 with `Z` when the zone is known (UTC, GMT, PDT, PST, BST); any other zone is kept as local time with the note "time zone not converted". An export hour above twelve ignores its AM/PM suffix (`14:32:33 PM`) |
+| Calibration date | `calibrations/*.ini` `[head] timestamp=` (epoch ms); per-dye `calibration-time=`; export "Calibration X performed on" | `0` is unset. A timestamp inside the run window, or on the run day of a StepOne/StepOnePlus, gives "calibration date not in file" and no age |
+| Expiry | `expirytime=` or `expiration-time=` (in `[head]` or per dye); export "Calibration X is expired" | an epoch-ms value after the calibration is the expiry date; `0` is unset; anything else is "calibration expiry value not understood". The export's own Yes/No flag is used as the file says it |
+| Age | run day minus calibration day | calendar days in the file's own frame (UTC for epoch times, the export's local date for export times). A calibration dated after the run gets no age |
+| Day-month order | export dates such as `11-12-2018` | settled per file: any first part above twelve means day first, any second part above twelve means month first; otherwise "date format ambiguous", no date and no age (`performed_on_raw` keeps the text). The caller may pass `date_order="DMY"` or `"MDY"` (for example from the same serial's earlier files) |
+| Events | `messages.log` | a fixed vocabulary: run started (with block and heated-cover serials), run completed, paused, resumed, lid/cover opened, drawer/tray opened, aborted, power failure. Lines containing `?` (the thousands of `ERRor` configuration queries) are skipped. Only events after "run started" and before "run completed" count (or, without a start line, after the first cycle). An interruption names the cycles from the one it happened in to the one the run resumed in, and at least the next cycle (its reading is the first after the interruption) |
+| Temperature | `logs/temperature.log` | a header row names setpoint, sample, zone and lid columns. A hold is a setpoint constant for at least 10 rows, measured once the sample is within 0.1 °C of the setpoint or crosses it (else on its last row): maximum deviation; 95th percentile of the zone spread over hold rows; lowest lid temperature while cycling |
+| Well flags | export flag columns | upper-case columns whose every value is `Y` or `N`; a well lists the flags set on it |
+| Serials, instrument names | `experiment.xml` (any element named like a serial, under the root or a RunInfo/Instrument element), `[instrument] id` / `[block] id` in the ini files, the log's run-start line, JSON keys, export header, RDML `run.instrument` | local only: fact paths start `local:`; `model_view()` drops them; `summary()` (for the local logbook) keeps them |
+| Personal data | `Experiment File Name`, `User Name`, `Operator`, `FileName`, CFX "Created By User", file paths | never copied; a fixed note ("operator path present, not read") |
+| RDML | `run.instrument`, `runDate`, `dataCollectionSoftware` | Bio-Rad CFX strings are split on `,` then `": "` (Cycler SN, Shuttle SN, Optical Head SN, firmware items); `LC96SN…` gives a LightCycler 96 serial. A `runDate` on 1 January or before 1996 is "run date may be unset or anonymised" and not used. Failing a run date, `_YYYYMMDD` in the run name gives a day with `date_source = "run name"`, never an instrument fact |
+| Caps | before any member is read | an archive may hold at most 50,000 members and 2 GB uncompressed, at a compression ratio of at most 100:1; members are capped at 32 MB (8 MB for logs; the largest measured log was 5.7 MB) and members of 1 MB or more are ratio-checked too; every read is bounded. Exports are capped at 32 MB. XML is parsed with no entities and no network |
+
+| G-INSTR line | Status |
+|---|---|
+| Run state `complete` / anything else | pass / warn |
+| Pause, lid or drawer opened during the run (cycles named) | warn |
+| Abort or power failure in the log | warn |
+| No interruption in an event log that was read | pass ("No pauses or lid openings."); without a log nothing is said |
+| A calibration past the vendor's expiry at run time | info, never more |
+| No calibration with a known expiry status past it | pass |
+| Calibration dates not in the file | info |
+| Hold deviation above the lab's limit (default 0.5 °C) / within it | warn / pass |
+| Nothing to check | not applicable |
+
+The consequence clause ("Excluding this run changes k of N conclusions") needs the study: `needs_consequence` says whether any line is a warning or info, and `add_consequence` adds the count the caller computed with the exclusion functions of Trace or the lookback.
+
+**Which formats are checked on real files.**
+
+| Format | Checked on | Status |
+|---|---|---|
+| QuantStudio CSV results-export header (`key,value` padded with commas, the three date formats, 24-hour hour with AM/PM, flag columns) | 7 public files (QS5 and QS3) | verified layout |
+| ABI 7500 `.eds` layout (upper-case backslash calibration members, `[head] timestamp`, per-dye `expiration-time=0`, top-level `RunState`/`RunStartTime`/`RunEndTime`/`InstrumentTypeId`, no serial, no log) | 1 file | verified layout |
+| Bio-Rad CFX RDML `run.instrument` string | 1 file | verified layout |
+| U1: the serial's element in QuantStudio/ViiA `experiment.xml` | none | searched tolerantly |
+| U2: the name and unit of the QuantStudio/ViiA expiry key (`expirytime=` assumed epoch ms) | none | assumed |
+| U3: `run/run_summary.json` and `summary.json` keys | none | mapped tolerantly; unknown keys are listed locally, never shown to a model |
+| U4: `messages.log` and `logs/temperature.log` line syntax and the event vocabulary | none | assumed |
+| U5: the QuantStudio TXT `* key = value` dialect and its date locale | none | assumed |
+| U6: a real CFX "Run Information" export | none | assumed (key/value rows) |
+| U7: whether `2010-01-01` QuantStudio Dx run dates are an unset clock or anonymised | none | flagged, not used |
+
+**What we changed from the published method.** There is none to change. Choices made here: ages are calendar days (the ABI 7500 file's background calibration is 31 calendar days before its run, 30.27 days elapsed); the file's own "is expired" flag is used as written; a StepOne calibration stamped on its run day has no date rather than an age of zero.
+
+**On the demo study.** The Vermeulen RDML carries no instrument field: 0 of 67 runs fill `instrument` or `runDate`. 64 run names carry a date (15 distinct days, 20 Feb to 18 Mar 2008), recorded as `date_source = "run name"`; the 3 `technical_datasets` runs have none. G-INSTR is "not applicable" for every run. On the public files named above, read locally: the QS3 files give background calibrations 560 days and ROI/uniformity 609 days before their runs (month-first order settled by `08-24-2017`); the QS5 file whose every date is `11-12-2018` is ambiguous on its own (day-first gives 274 days); the QS5 file with ISO dates gives 335 days; the Bio-Rad export gives the cycler, shuttle and optical-head serials and five firmware items. qPilot's RDML loader (`qpilot/io/rdml_io.py`) refuses that Bio-Rad file because its only member is not named `rdml_data.xml`; this reader takes an archive's only XML member.
+
+**What is not claimed.** Whether an expired optical calibration moves Cq at all is not known (it needs the same plate run before and after a recalibration). qPilot therefore never calls a run unusable because a calibration expired, never infers instrument health, and never passes log text to a model. Formats U1 to U7 are inferred, not checked; a real file in those formats may be read partly or not at all, and the reader then says less rather than guessing. Research use only; no ISO 17025, CLIA or Part 11 claim.
+
+**Validation.** `tests/engine/test_instrument_context.py` (synthetic QuantStudio-class, StepOne, 7500-layout, JSON-summary and aborted archives; block-swap pair; size caps and zip bombs; entity canary; personal data never copied; serials local only; QS5/QS3 CSV and TXT headers with the date-order rules; CFX Run Information; Bio-Rad and LightCycler strings; run dates and the run-name rule on the CI fixture and the demo; a 6 MB log under 2 s) and `tests/engine/test_gate_instr.py` (a pause at cycle 23 gives a warning naming cycles 23 to 24; the wording passes the "no naked numbers" validator; an expired calibration is info only; the consequence hook).
+
+**Licence.** Apache-2.0 (qPilot's own code). No vendor or GPL file is copied into the repository.
