@@ -30,7 +30,11 @@ kind                        subject            payload
 ``curve.well_call``         ``run_id/well``    ``{"amplified": bool}``
 ``prism.project``           ``prism``          ``{"template_id": str, "genes": [...], ...}``
 ``prism.exclusion_reason``  ``gene/sample``    ``{"gene", "sample", "action": "exclude"|"restore"}``
+                            (``/rep n``)       + ``"well_rep"`` (0: the unit's value, n: its
+                                               replicate n) and, for a replicate, ``"well"``
+                                               (``run_id/well``, the exact well excluded)
 ``prism.value_edit``        ``gene/sample``    ``{"gene", "sample", "action": "restore"|"keep"}``
+                            (``/rep n``)       + ``"well_rep"`` and ``"well"`` as above
 ``stage.confirm``           stage name         ``{"stage", "design_hash", "covers": [ids]}``
 ==========================  =================  ==================================================
 """

@@ -18,7 +18,9 @@ biological unit):
 * the nested layout holds one value per well that has a quantity: the well's ``log2(n0)``
   minus the unit's reference mean, so the replicates of a unit average to its column-layout
   value (a unit whose wells are all undetermined, under ``cap``, has one row: its capped
-  value).
+  value). A unit's replicates are numbered 1, 2, ... by sample, then well key
+  (``"<run_id>/<well>"``); ``sample_table(..., wells=True)`` adds the well behind each row
+  (:data:`WELL_COLUMN`), and :func:`replicate_wells` maps a replicate number back to its well.
 
 Technical replicates are never rows of the column layout, so Prism never counts them as n.
 
@@ -29,7 +31,10 @@ back to its dimension value with the same option specs ``qpcr/study.py`` builds 
 
 :class:`Reanalysis` answers the round trip's question "what does leaving this value out do?"
 by running the engine again on the study's design with the exclusion applied, the way accepting
-it applies it, so the numbers a person approves are the numbers the engine then reports.
+it applies it, so the numbers a person approves are the numbers the engine then reports. A
+replicate of the nested layout is excluded by its exact well, the one behind that row of the
+exported table, so the engine leaves out the well the person cleared whatever the
+amplification rule of the export and whatever was excluded since.
 
 Integration point for any confirmed design (``qpcr/designs.py``, ``StudyDesign``): the bridge
 takes only plain mappings (``groups``: sample -> group, ``units``: sample -> biological unit,
@@ -67,6 +72,7 @@ TABLE_COLUMNS: tuple[str, ...] = (
     "well_rep",
     "log2_rq",
 )
+WELL_COLUMN = "well"  # with ``wells=True``: the well key behind a row ("" for a unit's value)
 Layout = Literal["column", "nested"]
 UNIT_ROW = 0  # ``well_rep`` of a column-layout row: the unit's value, not one well
 SAFE_LABEL = re.compile(r"^[\w()\-. ]{1,64}$")  # the rule of ``curves.safe_name``
@@ -75,8 +81,12 @@ EXCLUSION_KIND = "prism.exclusion_reason"
 WITHHELD = "withheld"  # an excluded gene's conclusion when the engine then withholds the gene
 _CURVE_COLUMNS = {"sample", "sample_type", "target", "n0"}
 
-Exclusion = tuple[str, str, int]  # (gene, biological unit, well_rep); well_rep 0: the whole unit
+#: ``(gene, biological unit, well_rep)`` or ``(gene, unit, well_rep, well)``: well_rep 0 is the
+#: whole unit; a replicate (well_rep > 0) is its exact ``well`` (found by :class:`Reanalysis`
+#: from the exported numbering when it is not given).
+Exclusion = tuple[str, str, int] | tuple[str, str, int, str | None]
 Results = tuple[dict[str, ContrastResult], dict[str, str]]  # compared genes, withheld genes
+Replicates = dict[tuple[str, str, int], tuple[str, float]]  # (gene, unit, rep) -> (well, value)
 
 
 class ExportError(ValueError):
@@ -143,7 +153,9 @@ class ExportInputs:
     curves: pd.DataFrame | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
-    def table(self, layout: Layout = "column", genes: Sequence[str] | None = None) -> pd.DataFrame:
+    def table(
+        self, layout: Layout = "column", genes: Sequence[str] | None = None, *, wells: bool = False
+    ) -> pd.DataFrame:
         """:func:`sample_table` for these inputs."""
         return sample_table(
             self.data,
@@ -154,6 +166,7 @@ class ExportInputs:
             group_order=self.group_order,
             layout=layout,
             genes=list(genes) if genes is not None else (list(self.genes) or None),
+            wells=wells,
         )
 
     def all_units(self) -> list[str]:
@@ -177,6 +190,7 @@ def sample_table(
     group_order: Sequence[str],
     layout: Layout = "column",
     genes: Sequence[str] | None = None,
+    wells: bool = False,
 ) -> pd.DataFrame:
     """Log2 relative quantities per biological unit (column layout) or per replicate (nested).
 
@@ -190,11 +204,15 @@ def sample_table(
         group_order: The groups in the design's order; every label in ``groups`` must be here.
         layout: ``"column"``: one row per unit and gene; ``"nested"``: one row per well.
         genes: Genes to include (default: every gene that is not a reference gene).
+        wells: Also return :data:`WELL_COLUMN`, the well key (``"<run_id>/<well>"``) behind
+            each nested-layout row; ``""`` for a row that is a unit's value (every column-layout
+            row, a unit whose replicates are all undetermined) and for a table without wells.
 
     Returns:
-        A DataFrame with :data:`TABLE_COLUMNS`, sorted by gene (in the order given), group (in
-        ``group_order``), unit, sample and replicate. ``well_rep`` is 0 for a unit's value
-        (column layout) and 1, 2, ... for its wells (nested layout).
+        A DataFrame with :data:`TABLE_COLUMNS` (and :data:`WELL_COLUMN` when asked), sorted by
+        gene (in the order given), group (in ``group_order``), unit, sample and replicate.
+        ``well_rep`` is 0 for a unit's value (column layout) and 1, 2, ... for its wells
+        (nested layout), numbered by sample, then well key.
 
     Raises:
         ExportError: Unknown genes or groups, unsafe labels, a unit in two groups.
@@ -215,8 +233,8 @@ def sample_table(
     if stray:
         raise ExportError(f"groups not in group_order: {stray}")
 
-    wells, matrix, excluded = _wells(matrix_or_curves, units)
-    known = sorted(set(wells["target"]))
+    well_rows, matrix, excluded = _wells(matrix_or_curves, units)
+    known = sorted(set(well_rows["target"]))
     missing_refs = [r for r in refs if r not in known]
     if missing_refs:
         raise ExportError(f"reference genes not in the data: {missing_refs}")
@@ -225,7 +243,7 @@ def sample_table(
     if unknown_genes:
         raise ExportError(f"genes not in the data: {unknown_genes}")
 
-    in_data = set(wells["sample"])
+    in_data = set(well_rows["sample"])
     unit_of = {s: (units or {}).get(s, s) for s in groups if s in in_data}
     group_of_unit: dict[str, str] = {}
     for sample, unit in unit_of.items():
@@ -238,14 +256,27 @@ def sample_table(
         samples_per_unit.setdefault(unit, []).append(sample)
 
     one_to_one = all(len(s) == 1 for s in samples_per_unit.values())
-    replicated = wells.duplicated(["sample", "target"]).any() or not one_to_one
+    replicated = well_rows.duplicated(["sample", "target"]).any() or not one_to_one
     if not replicated and excluded is None:
-        rows = _single_well_rows(matrix, chosen, refs, undetermined, unit_of, groups, layout)
+        rows = _single_well_rows(
+            matrix, well_rows, chosen, refs, undetermined, unit_of, groups, layout
+        )
     else:
         rows = _replicate_rows(
-            wells, matrix, excluded, chosen, refs, undetermined, groups, samples_per_unit, layout
+            well_rows,
+            matrix,
+            excluded,
+            chosen,
+            refs,
+            undetermined,
+            groups,
+            samples_per_unit,
+            layout,
         )
-    table = pd.DataFrame(rows, columns=list(TABLE_COLUMNS))
+    columns = [*TABLE_COLUMNS, WELL_COLUMN]
+    table = pd.DataFrame(rows, columns=columns)
+    if not wells:
+        table = table.drop(columns=[WELL_COLUMN])
     if table.empty:
         return table
     gene_rank = {gene: i for i, gene in enumerate(chosen)}
@@ -272,9 +303,11 @@ def _wells(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame | None]:
     """(long well table, the engine's units x genes matrix, excluded cells or None).
 
-    The long table has ``sample, target, key, log2`` for the wells that carry a value (a
-    quantity, not excluded); the matrix is :func:`qpilot.qpcr.quant.log2_matrix` with these
-    ``units``, so only units measured for every gene are kept, exactly as in the engine.
+    The long table has ``sample, target, key, well, log2`` for the wells that carry a value (a
+    quantity, not excluded); ``key`` orders a unit's replicates and ``well`` is the well key
+    (``"<run_id>/<well>"``, ``""`` when the table has no wells). The matrix is
+    :func:`qpilot.qpcr.quant.log2_matrix` with these ``units``, so only units measured for
+    every gene are kept, exactly as in the engine.
     """
     if _CURVE_COLUMNS <= set(data.columns):
         unknown = data[data["sample_type"] == "unkn"]
@@ -287,16 +320,18 @@ def _wells(
         if EXCLUDED in unknown.columns:
             used &= ~unknown[EXCLUDED].astype(bool)
         unknown = unknown[used]
-        keys = (
-            unknown["run_id"].astype(str) + "/" + unknown["well"].astype(str)
-            if {"run_id", "well"} <= set(unknown.columns)
-            else pd.Series(range(len(unknown)), index=unknown.index).astype(str)
-        )
+        if {"run_id", "well"} <= set(unknown.columns):
+            keys = unknown["run_id"].astype(str) + "/" + unknown["well"].astype(str)
+            names = keys
+        else:
+            keys = pd.Series(range(len(unknown)), index=unknown.index).astype(str)
+            names = pd.Series("", index=unknown.index)
         wells = pd.DataFrame(
             {
                 "sample": unknown["sample"].astype(str).to_numpy(),
                 "target": unknown["target"].astype(str).to_numpy(),
                 "key": keys.to_numpy(),
+                "well": names.to_numpy(),
                 "log2": np.log2(unknown["n0"].to_numpy(dtype=float)),
             }
         )
@@ -306,11 +341,14 @@ def _wells(
     stacked = matrix.stack(future_stack=True).rename("log2").reset_index()
     stacked.columns = ["sample", "target", "log2"]
     stacked["key"] = stacked["sample"]
-    return stacked[["sample", "target", "key", "log2"]].dropna(subset=["log2"]), matrix, None
+    stacked["well"] = ""
+    columns = ["sample", "target", "key", "well", "log2"]
+    return stacked[columns].dropna(subset=["log2"]), matrix, None
 
 
 def _single_well_rows(
     matrix: pd.DataFrame,
+    wells: pd.DataFrame,
     genes: Sequence[str],
     refs: tuple[str, ...],
     undetermined: Undetermined,
@@ -321,11 +359,17 @@ def _single_well_rows(
     """One well per sample and gene: the values are ``relative()``'s output itself."""
     rows = []
     rep = UNIT_ROW if layout == "column" else 1
+    well_of: dict[tuple[str, str], str] = {}
+    if layout == "nested":
+        cells = zip(wells["sample"], wells["target"], wells["well"], strict=True)
+        well_of = {(sample, target): well for sample, target, well in cells}
     for gene in genes:
         values = relative(matrix, gene, refs, undetermined)
         for sample, value in values.items():
             if sample in unit_of:
-                rows.append((gene, groups[sample], unit_of[sample], str(sample), rep, float(value)))
+                well = well_of.get((str(sample), gene), "")  # "" for a capped value
+                row = (gene, groups[sample], unit_of[sample], str(sample), rep, float(value), well)
+                rows.append(row)
     return rows
 
 
@@ -355,7 +399,7 @@ def _replicate_rows(
             for unit, value in values.items():
                 group = groups[samples_per_unit[unit][0]]
                 sample = "+".join(samples_per_unit[unit])
-                rows.append((gene, group, str(unit), sample, UNIT_ROW, float(value)))
+                rows.append((gene, group, str(unit), sample, UNIT_ROW, float(value), ""))
             continue
         normaliser = matrix.loc[values.index, list(refs)].mean(axis=1)
         target = wells[(wells["target"] == gene) & wells["unit"].isin(values.index)]
@@ -363,17 +407,35 @@ def _replicate_rows(
         measured = set(target["unit"])
         for unit, block in target.groupby("unit", sort=True):
             group = groups[samples_per_unit[unit][0]]
-            for rep, (sample, value) in enumerate(
-                zip(block["sample"], block["log2"], strict=True), start=1
-            ):
-                rows.append(
-                    (gene, group, str(unit), str(sample), rep, float(value - normaliser[unit]))
-                )
+            replicates = zip(block["sample"], block["log2"], block["well"], strict=True)
+            for rep, (sample, value, well) in enumerate(replicates, start=1):
+                relative_value = float(value - normaliser[unit])
+                rows.append((gene, group, str(unit), str(sample), rep, relative_value, str(well)))
         for unit in sorted(set(values.index) - measured):  # every replicate undetermined (cap)
             group = groups[samples_per_unit[unit][0]]
             sample = "+".join(samples_per_unit[unit])
-            rows.append((gene, group, str(unit), sample, 1, float(values[unit])))
+            rows.append((gene, group, str(unit), sample, 1, float(values[unit]), ""))
     return rows
+
+
+def replicate_wells(inputs: ExportInputs, genes: Sequence[str] | None = None) -> Replicates:
+    """The well behind every replicate of the nested layout, as the export numbers them.
+
+    Returns:
+        ``(gene, biological unit, well_rep) -> (well key, exported log2 value)`` for every
+        nested-layout row of ``genes`` (default: the inputs' genes). The well is ``""`` for a
+        row that is the unit's value (every replicate undetermined, capped).
+    """
+    table = inputs.table("nested", genes, wells=True)
+    rows = zip(
+        table["gene"],
+        table["biological_unit"],
+        table["well_rep"],
+        table[WELL_COLUMN],
+        table["log2_rq"],
+        strict=True,
+    )
+    return {(str(g), str(u), int(r)): (str(w), float(v)) for g, u, r, w, v in rows}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -429,6 +491,31 @@ def unit_contrasts(
     return out
 
 
+def resolve_replicate(
+    replicates: Mapping[tuple[str, str, int], tuple[str, float]],
+    gene: str,
+    unit: str,
+    well_rep: int,
+) -> tuple[int, str | None]:
+    """``(well_rep, well)`` an exclusion of one exported row is applied with.
+
+    ``replicates`` is :func:`replicate_wells` of the inputs the table was exported from. A
+    replicate (``well_rep`` > 0) becomes its exact well; a row that is the unit's value (its
+    replicates all undetermined, capped) becomes the whole unit, ``(0, None)``, as does
+    ``well_rep`` 0.
+
+    Raises:
+        ExportError: The exported table has no such replicate.
+    """
+    if not well_rep:
+        return UNIT_ROW, None
+    found = replicates.get((gene, unit, int(well_rep)))
+    if found is None:
+        raise ExportError(f"{gene}: unit {unit!r} has no replicate {well_rep} in the export")
+    well = found[0]
+    return (int(well_rep), well) if well else (UNIT_ROW, None)
+
+
 class Reanalysis:
     """The study analysed again by the engine with exclusions accepted, at the exported choices.
 
@@ -442,6 +529,10 @@ class Reanalysis:
     person already accepted (whether or not the study's design holds them yet); they are part
     of every comparison, "before" included. Results are kept per set of exclusions, so asking
     twice costs one analysis.
+
+    A replicate of the nested layout (``well_rep`` > 0) is excluded by its exact well: the one
+    given, else the one behind that row of the nested table these inputs export
+    (:func:`resolve_replicate`), never a well counted again on the design as it stands.
 
     Raises:
         ExportError: The inputs carry no design or per-well table (:func:`study_inputs` gives
@@ -459,7 +550,8 @@ class Reanalysis:
         self.inputs = inputs
         self.accepted = [p for p in accepted if p.kind == EXCLUSION_KIND and p.status in APPLIED]
         self._base = self._applied(inputs.design, self.accepted)
-        self._results: dict[frozenset[Exclusion], Results] = {}
+        self._results: dict[frozenset[tuple[str, str, int, str]], Results] = {}
+        self._replicates: Replicates | None = None
 
     def _applied(self, design: StudyDesign, proposals: Sequence[Proposal]) -> StudyDesign:
         from qpilot.qpcr.designs import DesignError, design_from_proposals
@@ -471,11 +563,28 @@ class Reanalysis:
         except DesignError as err:
             raise ExportError(f"the exclusion cannot be applied: {err}") from err
 
+    def resolve(
+        self, gene: str, unit: str, well_rep: int, well: str | None = None
+    ) -> tuple[int, str | None]:
+        """``(well_rep, well)`` the exclusion is applied with (see :func:`resolve_replicate`)."""
+        if well:
+            return int(well_rep), str(well)
+        if not well_rep:
+            return UNIT_ROW, None
+        if self._replicates is None:
+            self._replicates = replicate_wells(self.inputs)
+        return resolve_replicate(self._replicates, gene, unit, well_rep)
+
+    def _key(self, exclusion: Exclusion) -> tuple[str, str, int, str]:
+        gene, unit, well_rep, *rest = exclusion
+        rep, well = self.resolve(str(gene), str(unit), int(well_rep), rest[0] if rest else None)
+        return str(gene), str(unit), rep, well or ""
+
     def results(self, exclusions: Collection[Exclusion] = ()) -> Results:
         """Every compared gene's result at the exported choices, and the withheld genes."""
         from qpilot.qpcr.study import NGuardError, StudySettings, build_model
 
-        key = frozenset((str(g), str(u), int(r)) for g, u, r in exclusions)
+        key = frozenset(self._key(e) for e in exclusions)
         if key not in self._results:
             what_if = [_as_accepted(self.inputs.study_id, *e) for e in sorted(key)]
             design = self._applied(self._base, what_if)
@@ -487,16 +596,20 @@ class Reanalysis:
             self._results[key] = (space.evaluate(_cell(self.inputs, model)), dict(space.withheld))
         return self._results[key]
 
-    def consequence(self, gene: str, unit: str, well_rep: int = UNIT_ROW) -> dict[str, Any]:
+    def consequence(
+        self, gene: str, unit: str, well_rep: int = UNIT_ROW, well: str | None = None
+    ) -> dict[str, Any]:
         """What leaving one value out does: see :func:`exclusion_consequence`."""
         before, _ = self.results()
         if gene not in before:
             raise ExportError(f"gene {gene!r} is not in the exported comparison")
-        after = self.results([(gene, unit, int(well_rep))])
+        _, _, rep, named = self._key((gene, unit, well_rep, well))
+        after = self.results([(gene, unit, rep, named)])
         return {
             "gene": gene,
             "biological_unit": unit,
-            "well_rep": int(well_rep),
+            "well_rep": rep,
+            **({"well": named} if named else {}),
             **_change(gene, before, after),
             **self._summary(before, after),
         }
@@ -509,18 +622,17 @@ class Reanalysis:
             :func:`exclusion_consequence`), and how many of all genes' conclusions change.
         """
         before, _ = self.results()
-        excluded = [(str(g), str(u), int(r)) for g, u, r in exclusions]
-        unknown = sorted({g for g, _, _ in excluded} - set(before))
+        excluded = [self._key(e) for e in exclusions]
+        unknown = sorted({g for g, *_ in excluded} - set(before))
         if unknown:
             raise ExportError(f"genes not in the exported comparison: {unknown}")
         after = self.results(excluded)
         return {
             "exclusions": [
-                {"gene": g, "biological_unit": u, "well_rep": r} for g, u, r in excluded
+                {"gene": g, "biological_unit": u, "well_rep": r, **({"well": w} if w else {})}
+                for g, u, r, w in excluded
             ],
-            "genes": {
-                g: _change(g, before, after) for g in dict.fromkeys(g for g, _, _ in excluded)
-            },
+            "genes": {g: _change(g, before, after) for g in dict.fromkeys(g for g, *_ in excluded)},
             **self._summary(before, after),
         }
 
@@ -547,38 +659,59 @@ def exclusion_consequence(
     unit: str,
     well_rep: int = UNIT_ROW,
     *,
+    well: str | None = None,
     accepted: Sequence[Proposal] = (),
 ) -> dict[str, Any]:
     """What leaving one value out of one gene's comparison does, computed by the engine.
 
     The study is analysed again with ``unit`` excluded for ``gene`` exactly as accepting the
     exclusion would do it (:class:`Reanalysis`), and every gene's conclusion at the exported
-    choices is compared with the analysis without it. Exclusions a person already accepted
-    (``accepted``) are in both. A gene the engine then withholds (fewer than two units with a
-    value in a group) has no numbers after: its conclusion is ``"withheld"`` and
-    ``withheld_after`` gives the engine's reason.
+    choices is compared with the analysis without it. ``well_rep`` > 0 leaves out one
+    replicate of the nested layout: ``well`` when given, else the well behind that row of the
+    nested table these inputs export. Exclusions a person already accepted (``accepted``) are
+    in both. A gene the engine then withholds (fewer than two units with a value in a group)
+    has no numbers after: its conclusion is ``"withheld"`` and ``withheld_after`` gives the
+    engine's reason.
 
     Returns:
         Numbers only (no prose): fold change, p, units per group and conclusion before and after
         for ``gene`` (``None`` where the engine gives no number), how many of all genes'
-        conclusions change, and the basis (study, chain head, accepted exclusions) it was
-        computed at.
+        conclusions change, the well left out (``well``, for a replicate), and the basis
+        (study, chain head, accepted exclusions) it was computed at.
 
     Raises:
-        ExportError: See :class:`Reanalysis`; also a gene that is not compared.
+        ExportError: See :class:`Reanalysis`; also a gene that is not compared, or a replicate
+            the exported table does not have.
     """
-    return Reanalysis(inputs, accepted).consequence(gene, unit, well_rep)
+    return Reanalysis(inputs, accepted).consequence(gene, unit, well_rep, well)
 
 
-def _as_accepted(study_id: str, gene: str, unit: str, well_rep: int) -> Proposal:
+def exclusion_subject(gene: str, unit: str, well_rep: int = UNIT_ROW) -> str:
+    """A ``prism.exclusion_reason`` (or ``prism.value_edit``) subject: one per value.
+
+    ``gene/unit`` for a unit's value, ``gene/unit/rep n`` for one replicate, so two replicates
+    of one unit are two subjects and never supersede each other in the inbox.
+    """
+    return f"{gene}/{unit}/rep {well_rep}" if well_rep else f"{gene}/{unit}"
+
+
+def _as_accepted(study_id: str, gene: str, unit: str, well_rep: int, well: str) -> Proposal:
     """An exclusion as the proposal a person would accept (in memory only, never stored)."""
     from qpilot.schemas_studio import MadeBy, Proposal
 
+    payload: dict[str, Any] = {
+        "gene": gene,
+        "sample": unit,
+        "action": "exclude",
+        "well_rep": well_rep,
+    }
+    if well:
+        payload["well"] = well
     return Proposal(
         study_id=study_id,
         kind=EXCLUSION_KIND,
-        subject=f"{gene}/{unit}",
-        payload={"gene": gene, "sample": unit, "action": "exclude", "well_rep": well_rep},
+        subject=exclusion_subject(gene, unit, well_rep),
+        payload=payload,
         made_by=MadeBy(kind="rule"),
         status="accepted",
     )
@@ -823,10 +956,14 @@ __all__ = [
     "ExportError",
     "ExportInputs",
     "Reanalysis",
+    "WELL_COLUMN",
     "check_label",
     "demo_inputs",
-    "study_inputs",
     "exclusion_consequence",
+    "exclusion_subject",
+    "replicate_wells",
+    "resolve_replicate",
     "sample_table",
+    "study_inputs",
     "unit_contrasts",
 ]

@@ -10,8 +10,11 @@ import pytest
 from qpilot.qpcr.contrast import welch_contrast
 from qpilot.qpcr.export import (
     TABLE_COLUMNS,
+    WELL_COLUMN,
     ExportError,
     exclusion_consequence,
+    replicate_wells,
+    resolve_replicate,
     sample_table,
     unit_contrasts,
 )
@@ -199,6 +202,40 @@ def test_exclusion_consequence_on_the_toy(toy):
 def test_a_consequence_needs_the_design_and_the_curves():
     with pytest.raises(ExportError, match="design and per-well table"):
         exclusion_consequence(toy_inputs(design=None), "T", "a3")
+
+
+def test_the_nested_table_names_the_well_behind_each_replicate():
+    """Review c1: a replicate is found by its exact well, numbered by sample then well key."""
+    inputs = engine_inputs(toy_wells(), groups_design())
+    table = inputs.table("nested", ["T1"], wells=True)
+    assert list(table.columns) == [*TABLE_COLUMNS, WELL_COLUMN]
+    mb1 = table[table["biological_unit"] == "mB1"]
+    assert list(mb1[WELL_COLUMN]) == ["p1/A10", "p1/A11", "p1/A9"]  # keys sort as text
+    mb3 = table[table["biological_unit"] == "mB3"]  # two samples of one unit: sB3a, then sB3b
+    assert list(mb3[WELL_COLUMN]) == [f"p1/A{i}" for i in range(15, 21)]
+    assert list(mb3["well_rep"]) == [1, 2, 3, 4, 5, 6]
+    replicates = replicate_wells(inputs, ["T1"])
+    assert replicates[("T1", "mB1", 2)] == ("p1/A11", float(mb1["log2_rq"].iloc[1]))
+    assert resolve_replicate(replicates, "T1", "mB1", 2) == (2, "p1/A11")
+    assert resolve_replicate(replicates, "T1", "mB1", 0) == (0, None)
+    assert set(inputs.table("column", ["T1"], wells=True)[WELL_COLUMN]) == {""}
+    assert list(inputs.table("nested", ["T1"]).columns) == list(TABLE_COLUMNS)
+    out = exclusion_consequence(inputs, "T1", "mB1", 2)  # the well is found when not given
+    assert (out["well_rep"], out["well"]) == (2, "p1/A11")
+
+
+def test_a_capped_units_one_row_is_the_whole_unit():
+    """mA2's T1 never amplified: under cap its nested table has one row, the unit's value."""
+    curves = toy_wells(overrides={("sA2", "T1", r): NAN for r in range(3)})
+    inputs = engine_inputs(curves, groups_design(), "cap")
+    replicates = replicate_wells(inputs, ["T1"])
+    assert replicates[("T1", "mA2", 1)][0] == ""
+    assert resolve_replicate(replicates, "T1", "mA2", 1) == (0, None)
+    with pytest.raises(ExportError, match="no replicate 2"):
+        resolve_replicate(replicates, "T1", "mA2", 2)
+    out = exclusion_consequence(inputs, "T1", "mA2", 1)
+    assert out["well_rep"] == 0 and "well" not in out
+    assert out == exclusion_consequence(inputs, "T1", "mA2")
 
 
 # ---------- the consequence is what the engine reports after acceptance ----------

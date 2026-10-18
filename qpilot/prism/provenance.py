@@ -8,16 +8,19 @@ behind it, so the bundle carries that itself:
   names, see :mod:`qpilot.prism.script`); the Info sheet note reads :data:`INFO_NOTE`;
 * ``qpilot_provenance.json``: qPilot's version and the vendored LinRegPCR commit, the study id,
   input sha256, chain head and design hash, every choice with the actor who made it, each
-  exported gene's holds fraction and confidence level with its reasons, the conclusion rule,
-  every file's sha256 and the bundle sha256;
+  exported gene's holds fraction and confidence level with its reasons, the conclusion rule and
+  every other file's sha256;
 * ``qpilot_bundle.json``: the :class:`~qpilot.schemas_studio.PrismBundle` itself, which a later
   round trip is compared against. ``bundle_sha256`` is the sha256 of the canonical JSON of the
   bundle without ``bundle_sha256`` (:func:`qpilot.prism.tables.bundle_digest`). The bundle's
-  ``info["provenance_sha256"]`` is the digest of the provenance file's own content
-  (:func:`provenance_digest`), so ``bundle_sha256`` covers the provenance file too.
+  ``info["provenance_sha256"]`` is the sha256 of the provenance file exactly as written
+  (:func:`provenance_digest`), so ``bundle_sha256`` covers every byte of that file too. (The
+  provenance therefore does not repeat ``bundle_sha256``: each would have to hold the other's.)
 
-:func:`verify_provenance` re-checks all of it and lists every problem (empty = OK). It does not
-complain about files Prism adds later (projects, graphs, ``sent_back/``). The checksums are
+:func:`verify_provenance` re-checks all of it and lists every problem (empty = OK). The
+provenance file is checked by its exact bytes, and neither JSON file is read when it holds a
+key twice anywhere (a reader of the file would see the first value, a parser the last). It does
+not complain about files Prism adds later (projects, graphs, ``sent_back/``). The checksums are
 plain sha256: they show any edit made without recomputing them, not a forgery that recomputes
 them all.
 
@@ -38,7 +41,7 @@ from pydantic import ValidationError
 
 from qpilot.core.facts import slug
 from qpilot.core.record import versions
-from qpilot.core.store import canonical_json, dump_json
+from qpilot.core.store import dump_json
 from qpilot.core.validator import names_from_result, render_tokens, validate
 from qpilot.prism.tables import (
     INFO_NOTE,
@@ -53,8 +56,7 @@ from qpilot.schemas_studio import PrismBundle
 PROVENANCE_FILE = "qpilot_provenance.json"
 BUNDLE_FILE = "qpilot_bundle.json"
 PROVENANCE_SHA256 = "provenance_sha256"  # the key in the bundle's info
-SELF_FIELDS = ("files", "bundle_sha256")  # what the provenance repeats from the bundle itself
-FORMAT = "qpilot-prism-provenance/1"
+FORMAT = "qpilot-prism-provenance/2"  # /2: verified by its exact bytes; no bundle_sha256
 MAX_JSON_BYTES = 5 * 1024 * 1024
 METHOD_NAMES = frozenset({"log2"})  # the scale's name, not a number from the data
 
@@ -145,8 +147,8 @@ def finalize(
     """The bundle with ``files`` = every file written (by relative path) and its sha256.
 
     ``names`` are paths relative to ``out_dir`` (the CSVs are always included). The bundle's
-    ``info`` also gains the digest of the provenance file :func:`write_provenance` will write
-    for ``inputs``, so ``bundle_sha256`` covers that file as well.
+    ``info`` also gains the sha256 of the provenance file :func:`write_provenance` will write
+    for ``inputs`` (its exact bytes), so ``bundle_sha256`` covers that file as well.
     """
     directory = Path(out_dir)
     files = dict(bundle.files)
@@ -161,14 +163,18 @@ def finalize(
     return updated.model_copy(update={"bundle_sha256": bundle_digest(updated)})
 
 
-def provenance_digest(provenance: dict[str, Any]) -> str:
-    """sha256 of the canonical JSON of the provenance without what it repeats from the bundle.
+def provenance_bytes(provenance: dict[str, Any]) -> bytes:
+    """The provenance file exactly as :func:`write_provenance` writes it."""
+    return dump_json(provenance).encode("utf-8")
 
-    ``files`` and ``bundle_sha256`` are left out: the bundle holds them itself, and
-    :func:`verify_provenance` compares them with it.
+
+def provenance_digest(provenance: dict[str, Any]) -> str:
+    """sha256 of the provenance file as written (:func:`provenance_bytes`), not of its meaning.
+
+    The same content written another way (other spacing, key order, line ends, a byte-order
+    mark, a key twice) is another file, so :func:`verify_provenance` reports it.
     """
-    content = {key: value for key, value in provenance.items() if key not in SELF_FIELDS}
-    return sha256_bytes(canonical_json(content).encode("utf-8"))
+    return sha256_bytes(provenance_bytes(provenance))
 
 
 def provenance_dict(bundle: PrismBundle, inputs: ExportInputs) -> dict[str, Any]:
@@ -219,7 +225,6 @@ def provenance_dict(bundle: PrismBundle, inputs: ExportInputs) -> dict[str, Any]
         "caption_tokens": bundle.info.get("caption_tokens", ""),
         "caption": bundle.info.get("caption", ""),
         "files": dict(bundle.files),
-        "bundle_sha256": bundle.bundle_sha256,
         "unverified_until_step_0_1": list(UNVERIFIED),
     }
 
@@ -229,17 +234,17 @@ def write_provenance(bundle: PrismBundle, inputs: ExportInputs, out_dir: str | P
 
     Raises:
         PrismExportError: ``bundle_sha256`` is not the digest of the bundle, or the bundle does
-            not hold the digest of this provenance (finalize first, with the same inputs).
+            not hold the sha256 of this provenance file (finalize first, with the same inputs).
     """
     if bundle.bundle_sha256 != bundle_digest(bundle):
         raise PrismExportError("bundle_sha256 is out of date; call finalize() first")
-    provenance = provenance_dict(bundle, inputs)
-    if bundle.info.get(PROVENANCE_SHA256) != provenance_digest(provenance):
+    data = provenance_bytes(provenance_dict(bundle, inputs))
+    if bundle.info.get(PROVENANCE_SHA256) != sha256_bytes(data):
         raise PrismExportError("the provenance digest is out of date; call finalize() first")
     directory = Path(out_dir)
     write_bytes(directory / BUNDLE_FILE, dump_json(bundle.model_dump(mode="json")).encode("utf-8"))
     path = directory / PROVENANCE_FILE
-    write_bytes(path, dump_json(provenance).encode("utf-8"))
+    write_bytes(path, data)
     return path
 
 
@@ -248,19 +253,43 @@ def write_provenance(bundle: PrismBundle, inputs: ExportInputs, out_dir: str | P
 # ---------------------------------------------------------------------------------------------
 
 
-def _read_json(path: Path) -> Any:
+def _read_bytes(path: Path) -> bytes:
+    """A regular file's bytes, size-capped (``ValueError`` when missing, linked or too large)."""
     if not path.is_file() or path.is_symlink():
         raise ValueError("missing")
     if path.stat().st_size > MAX_JSON_BYTES:
         raise ValueError("too large")
-    return json.loads(path.read_bytes().decode("utf-8"))
+    with open(path, "rb") as fh:
+        data = fh.read(MAX_JSON_BYTES + 1)
+    if len(data) > MAX_JSON_BYTES:
+        raise ValueError("too large")
+    return data
+
+
+def _unique_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """A JSON object, refused when it holds a key twice (``json.loads`` would keep the last)."""
+    out: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in out:
+            raise ValueError(f"duplicate key {key!r}")
+        out[key] = value
+    return out
+
+
+def parse_json(data: bytes) -> Any:
+    """Strict JSON for verification: UTF-8, and no object anywhere with a key twice."""
+    return json.loads(data.decode("utf-8"), object_pairs_hook=_unique_keys)
+
+
+def _read_json(path: Path) -> Any:
+    return parse_json(_read_bytes(path))
 
 
 def load_bundle(directory: str | Path) -> PrismBundle:
     """Read ``qpilot_bundle.json`` from a bundle folder (size-capped, schema-validated).
 
     Raises:
-        PrismExportError: Missing, too large or not a bundle.
+        PrismExportError: Missing, too large, a key twice anywhere, or not a bundle.
     """
     try:
         return PrismBundle.model_validate(_read_json(Path(directory) / BUNDLE_FILE))
@@ -276,14 +305,16 @@ def _safe_relative(name: str) -> bool:
 def verify_provenance(directory: str | Path) -> list[str]:
     """Every problem with a bundle folder's provenance (an empty list means it verifies).
 
-    The provenance file's content must be the one whose digest the bundle holds (so a changed
-    actor, choice, number or caption is reported), and what it repeats from the bundle (files,
-    bundle sha256, study) must equal the bundle's.
+    The provenance file must be, byte for byte, the file whose sha256 the bundle holds (so a
+    changed actor, choice, number or caption is reported, and so is the same content written
+    another way), and what it repeats from the bundle (files, study) must equal the bundle's.
+    A JSON file with a key twice anywhere is unreadable, never parsed into one of its readings.
     """
     directory = Path(directory)
     problems: list[str] = []
     try:
-        provenance = _read_json(directory / PROVENANCE_FILE)
+        written = _read_bytes(directory / PROVENANCE_FILE)  # hashed and parsed from one read
+        provenance = parse_json(written)
         if not isinstance(provenance, dict):
             raise ValueError("not an object")
     except (OSError, ValueError, UnicodeDecodeError, RecursionError) as err:
@@ -297,10 +328,8 @@ def verify_provenance(directory: str | Path) -> list[str]:
     claimed = bundle.info.get(PROVENANCE_SHA256)
     if not claimed:
         problems.append(f"{BUNDLE_FILE}: no digest of {PROVENANCE_FILE}")
-    elif provenance_digest(provenance) != claimed:
-        problems.append(f"{PROVENANCE_FILE}: changed since export (its digest differs)")
-    if provenance.get("bundle_sha256") != bundle.bundle_sha256:
-        problems.append(f"{PROVENANCE_FILE}: bundle_sha256 differs from {BUNDLE_FILE}")
+    elif sha256_bytes(written) != claimed:
+        problems.append(f"{PROVENANCE_FILE}: changed since export (its sha256 differs)")
     if provenance.get("files") != bundle.files:
         problems.append(f"{PROVENANCE_FILE}: file list differs from {BUNDLE_FILE}")
     study = provenance.get("study") if isinstance(provenance.get("study"), dict) else {}
@@ -337,6 +366,8 @@ __all__ = [
     "caption",
     "finalize",
     "load_bundle",
+    "parse_json",
+    "provenance_bytes",
     "provenance_dict",
     "provenance_digest",
     "verify_provenance",

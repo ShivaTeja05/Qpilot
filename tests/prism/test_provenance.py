@@ -132,15 +132,16 @@ def _forge_choice(data):
 def test_any_edit_to_the_provenance_file_is_detected(tmp_path, change):
     _toy_bundle(tmp_path)
     _edit_provenance(tmp_path, change)
-    assert f"{PROVENANCE_FILE}: changed since export (its digest differs)" in verify_provenance(
+    assert f"{PROVENANCE_FILE}: changed since export (its sha256 differs)" in verify_provenance(
         tmp_path
     )
 
 
-def test_the_provenance_digest_is_covered_by_the_bundle_sha256(tmp_path):
+def test_the_provenance_files_own_sha256_is_covered_by_the_bundle_sha256(tmp_path):
     bundle = _toy_bundle(tmp_path)
-    data = json.loads((tmp_path / PROVENANCE_FILE).read_text())
-    assert bundle.info[PROVENANCE_SHA256] == provenance_digest(data)
+    written = (tmp_path / PROVENANCE_FILE).read_bytes()
+    assert bundle.info[PROVENANCE_SHA256] == hashlib.sha256(written).hexdigest()
+    assert bundle.info[PROVENANCE_SHA256] == provenance_digest(json.loads(written))
     shown = json.loads((tmp_path / BUNDLE_FILE).read_text())
     shown["info"][PROVENANCE_SHA256] = "0" * 64  # a forged digest breaks the bundle's own
     (tmp_path / BUNDLE_FILE).write_text(json.dumps(shown))
@@ -155,8 +156,78 @@ def test_a_bundle_without_the_provenance_digest_does_not_verify(tmp_path):
     old = bundle.model_copy(update={"info": info})
     old = old.model_copy(update={"bundle_sha256": bundle_digest(old)})
     (tmp_path / BUNDLE_FILE).write_text(json.dumps(old.model_dump(mode="json")))
-    _edit_provenance(tmp_path, lambda d: d.update(bundle_sha256=old.bundle_sha256))
     assert verify_provenance(tmp_path) == [f"{BUNDLE_FILE}: no digest of {PROVENANCE_FILE}"]
+
+
+def test_the_provenance_file_is_verified_by_its_exact_bytes(tmp_path):
+    """R3: the same content written another way is not the file qPilot wrote."""
+    _toy_bundle(tmp_path)
+    path = tmp_path / PROVENANCE_FILE
+    original = path.read_bytes()
+    for other in (
+        canonical_json(json.loads(original)).encode("utf-8"),  # sorted keys, no spaces
+        original.replace(b"\n", b"\r\n"),
+        original + b"\n",
+    ):
+        path.write_bytes(other)
+        assert verify_provenance(tmp_path) == [
+            f"{PROVENANCE_FILE}: changed since export (its sha256 differs)"
+        ], other[:20]
+    path.write_bytes(b"\xef\xbb\xbf" + original)  # a byte-order mark is not read at all
+    assert verify_provenance(tmp_path)[0].startswith(f"{PROVENANCE_FILE} unreadable")
+    path.write_bytes(original)
+    assert verify_provenance(tmp_path) == []
+
+
+def _with_duplicate_caption(text: str) -> str:
+    """The provenance with a forged caption first and the original one later (review c16).
+
+    ``json.loads`` keeps the last value, so a reader of the file sees the forgery first while a
+    parser sees the original.
+    """
+    return text.replace("{", '{\n  "caption": "T: 9.9x up (p = 1e-30)",', 1)
+
+
+def test_a_duplicate_key_in_the_provenance_file_is_refused(tmp_path):
+    """R3: verification never parses a document with a duplicate key, whatever the digests say."""
+    bundle = _toy_bundle(tmp_path)
+    path = tmp_path / PROVENANCE_FILE
+    original = path.read_text(encoding="utf-8")
+    forged = _with_duplicate_caption(original)
+    assert json.loads(forged) == json.loads(original)  # the trick itself: a parser sees no edit
+    path.write_text(forged, encoding="utf-8")
+    problems = verify_provenance(tmp_path)
+    assert problems == [f"{PROVENANCE_FILE} unreadable (duplicate key 'caption')"]
+    # Recomputing every checksum over the forged bytes still does not make it verify.
+    shown = bundle.model_copy(
+        update={
+            "info": {**bundle.info, PROVENANCE_SHA256: hashlib.sha256(forged.encode()).hexdigest()}
+        }
+    )
+    shown = shown.model_copy(update={"bundle_sha256": bundle_digest(shown)})
+    (tmp_path / BUNDLE_FILE).write_text(json.dumps(shown.model_dump(mode="json")))
+    assert verify_provenance(tmp_path) == problems
+
+
+def test_a_duplicate_key_in_the_bundle_file_is_refused(tmp_path):
+    _toy_bundle(tmp_path)
+    path = tmp_path / BUNDLE_FILE
+    text = path.read_text(encoding="utf-8")
+    path.write_text(text.replace("{", '{\n  "test": "a t test on the linear scale",', 1))
+    (problem,) = verify_provenance(tmp_path)
+    assert problem.startswith(f"{BUNDLE_FILE} unreadable") and "duplicate key 'test'" in problem
+    with pytest.raises(PrismExportError, match="duplicate key"):
+        load_bundle(tmp_path)
+
+
+def test_a_nested_duplicate_key_is_refused_too(tmp_path):
+    _toy_bundle(tmp_path)
+    path = tmp_path / PROVENANCE_FILE
+    text = path.read_text(encoding="utf-8")
+    path.write_text(text.replace('"study": {', '"study": {\n    "chain_head": "0",', 1))
+    assert verify_provenance(tmp_path) == [
+        f"{PROVENANCE_FILE} unreadable (duplicate key 'chain_head')"
+    ]
 
 
 def test_caption_without_study_facts_has_no_numbers():
@@ -194,7 +265,9 @@ def test_demo_provenance_has_every_field(demo_export, demo_inputs):
         "two-fold" in data["conclusion_rule"]["text"] or "2-fold" in data["conclusion_rule"]["text"]
     )
     assert data["note"] == INFO_NOTE
-    assert data["bundle_sha256"] == demo_export.bundle.bundle_sha256
+    assert "bundle_sha256" not in data  # the bundle holds this file's sha256 instead
+    written = (out / PROVENANCE_FILE).read_bytes()
+    assert demo_export.bundle.info[PROVENANCE_SHA256] == hashlib.sha256(written).hexdigest()
     for name, digest in data["files"].items():
         assert hashlib.sha256((out / name).read_bytes()).hexdigest() == digest
     assert {"run.pzc", "send_back.pzc", "README.txt", "ODC1.csv"} <= set(data["files"])
@@ -255,8 +328,24 @@ def test_the_reviewers_forged_provenance_no_longer_verifies(demo_export, tmp_pat
 
     _edit_provenance(copy, forge)
     assert verify_provenance(copy) == [
-        f"{PROVENANCE_FILE}: changed since export (its digest differs)"
+        f"{PROVENANCE_FILE}: changed since export (its sha256 differs)"
     ]
+    assert main(["prism", "verify", "--bundle", str(copy)]) == 1
+
+
+@pytest.mark.demo_data
+def test_the_verifiers_duplicate_key_caption_no_longer_verifies(demo_export, tmp_path):
+    """Review c16: a forged caption as the first key, the original one kept later in the file."""
+    from qpilot.cli import main
+
+    copy = tmp_path / "copy"
+    shutil.copytree(demo_export.out_dir, copy)
+    path = copy / PROVENANCE_FILE
+    original = path.read_text(encoding="utf-8")
+    forged = original.replace("{", '{\n  "caption": "ODC1: 9.9× (p = 1e-30)",', 1)
+    assert json.loads(forged) == json.loads(original)
+    path.write_text(forged, encoding="utf-8")
+    assert verify_provenance(copy) == [f"{PROVENANCE_FILE} unreadable (duplicate key 'caption')"]
     assert main(["prism", "verify", "--bundle", str(copy)]) == 1
 
 
