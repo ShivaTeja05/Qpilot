@@ -150,6 +150,40 @@ def test_same_as_shown_rounds_to_the_shown_decimals(exported, shown, same):
     assert same_as_shown(exported, shown) is same
 
 
+@pytest.mark.parametrize(
+    "exported, shown",
+    [
+        (4.106285758671669, "4.1062857586716692"),  # 17 digits: the exact binary value, rounded
+        (4.106285758671669, "4.10628575867166922819"),  # more digits than the float holds
+        (4.106285758671669, "4.106285758671669228e+00"),  # numpy's %.18e
+        (4.106285758671669, "4.1062857586716693"),  # not rounded, but reads back bit for bit
+    ],
+)
+def test_text_that_reads_back_to_the_exported_float_is_unchanged(exported, shown):
+    assert float(shown) == exported
+    assert same_as_shown(exported, shown)
+
+
+def test_one_ulp_away_at_seventeen_digits_is_a_change():
+    exported = 4.106285758671669
+    neighbour = math.nextafter(exported, math.inf)
+    assert not same_as_shown(exported, format(neighbour, ".17g"))
+    assert not same_as_shown(exported, format(neighbour, ".18e"))
+
+
+@pytest.mark.parametrize("fmt", [".17g", ".16g", ".18e"])
+def test_a_table_printed_at_full_precision_comes_back_unchanged(tmp_path, fmt):
+    bundle, bundle_dir, sent = _many_digit_bundle(tmp_path)
+    lines = (bundle_dir / "T.csv").read_text().splitlines()
+    out = [lines[0]]
+    for line in lines[1:]:
+        title, *cells = line.split(",")
+        out.append(",".join([title, *(format(float(c), fmt) if c else "" for c in cells)]))
+    assert out != lines
+    (sent / "T.csv").write_text("\n".join(out) + "\n")
+    assert _diff(bundle, bundle_dir, sent) == []
+
+
 # ---------- rows, columns, files ----------
 
 

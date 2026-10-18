@@ -272,7 +272,10 @@ def _read_file(
 def same_as_shown(exported: float, shown: str) -> bool:
     """True when ``shown`` is ``exported`` rounded to the shown text's own decimals.
 
-    The bound is half a unit in the last shown place, inclusive, so either rounding rule
+    Text that reads back to the exported float bit for bit is the same value, whatever its
+    number of digits (a 17-digit round-trip format prints more digits than ``repr``). Otherwise
+    the bound is half a unit in the last shown place, inclusive, around the float's exact binary
+    value or its shortest ``repr`` (a writer may round either), so either rounding rule
     (half-even or half-away-from-zero) counts as unchanged.
     """
     try:
@@ -282,8 +285,14 @@ def same_as_shown(exported: float, shown: str) -> bool:
     exponent = shown_value.as_tuple().exponent
     if not isinstance(exponent, int):
         return False
+    exported = float(exported)
+    if float(shown_value) == exported:
+        return True
     tolerance = Decimal(5).scaleb(exponent - 1)
-    return abs(Decimal(repr(float(exported))) - shown_value) <= tolerance
+    return any(
+        abs(value - shown_value) <= tolerance
+        for value in (Decimal(exported), Decimal(repr(exported)))
+    )
 
 
 def exported_tables(bundle: PrismBundle, bundle_dir: str | Path) -> dict[str, SentBackTable]:
