@@ -194,7 +194,9 @@ def test_exclusion_consequence_on_the_toy(toy):
     assert out["basis"] == {"study_id": TOY_STUDY, "chain_head": TOY_CHAIN, "accepted": []}
     # One replicate cleared in a nested table: the consequence is what accepting it does.
     one_well = exclusion_consequence(toy, "T", "a3", 3)
-    engine = after_acceptance(toy.design, toy.curves, [("T", "a3", 3)], CELL)["T"]
+    assert one_well["well"]  # the exact well behind replicate 3, as accepting applies it
+    engine = after_acceptance(toy.design, toy.curves, [("T", "a3", 3, one_well["well"])], CELL)
+    engine = engine["T"]
     assert one_well["n_units_after"] == [engine.n_hi, engine.n_lo]
     assert one_well["log2fc_after"] == engine.log2fc
 

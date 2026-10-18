@@ -33,7 +33,7 @@ Training is deterministic: two runs give the same `model.json` byte for byte (SH
 `39ea518cb716c82534e4371ce43ad74ee2adc7be809324bdb8847c79a9e586f9`, 169,376 bytes, 17 trees).
 If you retrain and the hash changes, update `MODEL_SHA256` in `qpilot/qpcr/curve_judge.py` and
 re-run `evaluate.py` and `transfer.py`. A new hash means the old `transfer.json` no longer
-validates anything, so `validated()` turns False until the transfer test passes again.
+validates anything, so `validated(rdml_path)` turns False until the transfer test passes again.
 
 ## Data source
 

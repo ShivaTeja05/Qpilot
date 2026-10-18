@@ -168,3 +168,51 @@ def test_the_numbers_a_person_read_are_what_accepting_gives(trip):
     all_four = trip["report"]["combined_consequence"]["genes"]["NM23A"]
     assert math.isclose(final.fc, all_four["fc_after"], rel_tol=1e-9)
     assert final.conclusion == all_four["conclusion_after"] != all_four["conclusion_before"]
+
+
+def test_a_rejected_question_is_neither_asked_again_nor_counted_together(tmp_path):
+    """Reject one cleared value, accept another: the rest count only what is still open."""
+    from tests.conftest import DEMO_RDML
+
+    studio = Studio(StudyStore(tmp_path / "studies"), client=ModelClient(backend=NoneBackend()))
+    sid = studio.open(DEMO_RDML)
+    studio.propose_design(sid)
+    preset = next(p for p in studio.inbox(sid, "design", "proposed") if p.kind == "design.preset")
+    studio.accept(sid, preset.id, "human")
+    studio.accept_all_consistent(sid, "design", "human", studio.consistent_ids(sid, "design"))
+    left = studio.inbox(sid, "design", "proposed")
+    studio.reject_many(sid, [p.id for p in left], "human", "contradicted by the engine check")
+    studio.accept(sid, studio.propose_confirm(sid, "design").proposal.id, "human")
+    studio.accept(sid, studio.propose_confirm(sid, "curves").proposal.id, "human")
+    study = studio.study(sid)
+    for card in studio.store.cards(study):
+        if card.status in ("open", "pending_human"):
+            head = studio.store.chain_head(study)
+            studio.decide(sid, card.id, card.recommended, "checked", "human", head)
+    studio.accept(sid, studio.propose_confirm(sid, "choices").proposal.id, "human")
+    studio.accept(sid, studio.propose_prism(sid, genes=["NM23A"]).proposal.id, "human")
+    bundle, sent_back = tmp_path / "bundle", tmp_path / "sent_back"
+    export = studio.send_to_prism(sid, bundle, "human")
+    sent_back.mkdir()
+    for table in export.bundle.tables:
+        shutil.copy(bundle / table.csv, sent_back / Path(table.csv).name)
+    table = sent_back / "NM23A.csv"
+    with table.open(newline="") as fh:
+        rows = list(csv.reader(fh))
+    rows = [[r[0], *([""] * (len(r) - 1))] if r and r[0] in CLEARED else r for r in rows]
+    with table.open("w", newline="") as fh:
+        csv.writer(fh, lineterminator="\n").writerows(rows)
+    studio.round_trip(sid, bundle, sent_back)
+
+    def by_unit() -> dict:
+        return {p.payload["sample"]: p for p in _pending(studio, sid)}
+
+    first = by_unit()
+    assert set(first) == set(CLEARED)
+    assert first["2530"].consequence["with_all_pending"]["n_exclusions"] == 4
+    studio.reject(sid, first["1824"].id, "human", "deleted by mistake; the value stays")
+    assert _accept(studio, sid, by_unit()["1936"]) == "accepted"
+    studio.round_trip(sid, bundle, sent_back)  # sending the same tables back again
+    now = by_unit()
+    assert set(now) == {"2530", "2784"}  # 1824 (kept) and 1936 (accepted) are not asked again
+    assert now["2530"].consequence["with_all_pending"]["n_exclusions"] == 2

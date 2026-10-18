@@ -639,7 +639,8 @@ def _attempt(attempt: str, env: StudioEnv, pending: list[str]) -> tuple[list[str
         from qpilot.qpcr.designs import design_from_proposals, vermeulen_design
 
         base = vermeulen_design()
-        built = design_from_proposals(base, inbox.proposals())
+        # with the per-well table, as Studio assembles it (some accepted decisions need it)
+        built = design_from_proposals(base, inbox.proposals(), env.facts().wells)
         if built.design_hash() != base.design_hash():
             through.append("pending proposals changed the design")
     return through, bans, model_fields

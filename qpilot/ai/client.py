@@ -20,6 +20,7 @@ not text comes back empty, and characters UTF-8 cannot carry (unpaired surrogate
 from __future__ import annotations
 
 import json
+import threading
 import time
 from collections.abc import Callable, Sequence
 from typing import Any, Protocol
@@ -186,11 +187,13 @@ class OpenAICompatibleBackend:
         """POST the chat request and return the first choice's content.
 
         The whole call is bounded, not only each read: ``httpx``'s timeout applies to every
-        read of the body on its own, so a server that sends its reply a few bytes at a time
-        could keep one call open as long as it liked. The body is read in chunks instead, and
-        a call still reading ``timeout`` seconds after it started is given up as a
-        ``ReadTimeout``; one call therefore ends within about twice the timeout. A body larger
-        than :data:`MAX_REPLY_BYTES` is refused.
+        read on its own, so a server that sends its status line, headers or body a few bytes at
+        a time could keep one call open as long as it liked. The call therefore runs in a worker
+        thread, and the caller stops waiting ``2 * timeout`` seconds after it started (the body
+        is also given up once it is still being read after ``timeout`` seconds). An abandoned
+        call is reported as a failure; its worker ends when the server stops or a read times
+        out, and holds nothing the caller uses. A body larger than :data:`MAX_REPLY_BYTES` is
+        refused.
         """
         try:
             import httpx
@@ -203,8 +206,25 @@ class OpenAICompatibleBackend:
             "temperature": temperature,
             "stream": False,
         }
+        outcome: dict[str, Any] = {}
+
+        def call() -> None:
+            try:
+                outcome["reply"] = self._post(httpx, body)
+            except Exception as err:  # reported to the caller below
+                outcome["error"] = err
+
+        worker = threading.Thread(target=call, name="qpilot-model-call", daemon=True)
+        worker.start()
+        worker.join(2 * self.timeout)
+        if worker.is_alive():
+            raise ModelUnavailable(
+                "endpoint call failed: no complete reply within twice the timeout (abandoned)"
+            )
         try:
-            content = self._post(httpx, body)["choices"][0]["message"]["content"]
+            if "error" in outcome:
+                raise outcome["error"]
+            content = outcome["reply"]["choices"][0]["message"]["content"]
         except Exception as err:
             raise ModelUnavailable(f"endpoint call failed: {type(err).__name__}") from err
         return _content_text(content)

@@ -341,6 +341,15 @@ def _fold(text: str) -> str:
     return _LEADING_ZEROS.sub("", folded)
 
 
+def _length(text: str) -> int:
+    """How many letters and digits ``text`` has as written (leading zeros count).
+
+    The size rules (:data:`MIN_HIDDEN_CHARS`) read this, not the folded form: ``P0007`` is five
+    characters long even though it compares like ``P7``.
+    """
+    return sum(1 for c in _nfkc(text) if c.isalnum())
+
+
 def _spelling(name: str) -> str:
     """A pattern for ``name`` in any spelling: its letters and digits in order, in any case.
 
@@ -379,7 +388,7 @@ def _id_parts(name: str) -> list[str]:
     for part in dict.fromkeys(runs):
         key = _fold(part)
         has_both = any(c.isalpha() for c in key) and any(c.isdigit() for c in key)
-        if has_both and len(key) >= MIN_HIDDEN_CHARS and key != whole:
+        if has_both and _length(part) >= MIN_HIDDEN_CHARS and key != whole:
             out.append(part)
     return out
 
@@ -481,6 +490,7 @@ class _Shield:
         self._pattern: re.Pattern[str] | None = None
         self._tokens: dict[str, str | None] = {}  # folded spelling -> token (None: two share it)
         self._long: list[str] = []
+        self._lengths: dict[str, int] = {}  # folded spelling -> its longest length as written
         self._shown: dict[str, str | None] = {}
         if not self.active:
             return
@@ -493,6 +503,7 @@ class _Shield:
                     continue  # no letter or digit: nothing that could name a sample
                 if self._tokens.setdefault(key, token) != token:
                     self._tokens[key] = None
+                self._lengths[key] = max(self._lengths.get(key, 0), _length(spelling))
                 if len(key) <= MAX_SPELLING_CHARS:
                     patterns.setdefault(key, _spelling(spelling))
         for name, others in spellings.items():  # after every name: a whole name wins over a part
@@ -501,9 +512,11 @@ class _Shield:
                 if key in self._tokens:
                     continue
                 self._tokens[key] = self.token(part)
+                self._lengths[key] = max(self._lengths.get(key, 0), _length(part))
                 if len(key) <= MAX_SPELLING_CHARS:
                     patterns.setdefault(key, _spelling(part))
-        self._long = [key for key in self._tokens if len(key) >= MIN_HIDDEN_CHARS]
+        # Long names are measured as written, so P0007 (compared as p7) still counts as long.
+        self._long = [k for k in self._tokens if self._lengths.get(k, 0) >= MIN_HIDDEN_CHARS]
         by_start: dict[bool, list[str]] = {True: [], False: []}
         for key in sorted(patterns, key=lambda key: (-len(key), key)):  # longest first
             by_start[key[0].isalpha()].append(patterns[key])

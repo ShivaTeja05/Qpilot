@@ -743,6 +743,20 @@ class Studio:
         """A refusal for a pending exclusion whose consequence no longer holds, else None."""
         if proposal.kind != EXCLUSION_KIND or proposal.status != "proposed":
             return None  # anything else is the proposal store's to answer
+        payload = proposal.effective_payload()
+        if (
+            payload.get("action") == "exclude"
+            and payload.get("well_rep")
+            and not payload.get("well")
+        ):
+            return ProposalOutcome(
+                status="refused",
+                head=inbox.head(),
+                proposal=proposal,
+                reason="not accepted: this replicate's exact well could not be matched to the "
+                "exported table, so excluding it could hit another well; reject it, or export "
+                "again and send the tables back from the new project",
+            )
         why = self.stale_consequence(session_id, proposal)
         if why is None:
             return None
@@ -1374,7 +1388,13 @@ class Studio:
         """``diff_report`` for one export, on top of the exclusions accepted since it."""
         from qpilot.prism import diff_report
 
-        accepted = self.store.proposals(session_id).accepted(EXCLUSION_KIND)
+        inbox = self.store.proposals(session_id)
+        accepted = inbox.accepted(EXCLUSION_KIND)
+        declined = [  # questions about this export's values a person turned down
+            p
+            for p in inbox.proposals(status="rejected", kind_prefix=EXCLUSION_KIND)
+            if _basis_study(p) in ("", export["study_id"])
+        ]
         return diff_report(
             self.store,
             export["study_id"],
@@ -1382,6 +1402,7 @@ class Studio:
             sent_back_dir,
             pseudonym=self.store.pseudonymiser(session_id).pseudonymise,
             accepted=_since_export(accepted, export),
+            declined=declined,
         )
 
     def stale_consequence(self, session_id: str, proposal: Proposal) -> str | None:

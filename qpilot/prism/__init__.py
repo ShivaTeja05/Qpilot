@@ -277,6 +277,7 @@ def diff_report(
     rdml_path: str | Path | None = None,
     exclusion_suffix: str | None = None,
     accepted: Sequence[Proposal] = (),
+    declined: Sequence[Proposal] = (),
 ) -> dict[str, Any]:
     """What changed in Prism since export, as diff items and proposals. Writes nothing.
 
@@ -285,7 +286,9 @@ def diff_report(
     (otherwise the consequence would be computed at other choices). Each exclusion's
     consequence is computed together with the exclusions already accepted (the study's own and
     ``accepted``, the ``prism.exclusion_reason`` proposals a person accepted since the export),
-    and ``combined_consequence`` is what all the proposed exclusions do together.
+    and ``combined_consequence`` is what all the proposed exclusions do together. Values a
+    person already decided to keep (``declined``: rejected questions and accepted restores)
+    are not asked about again and do not count in it.
 
     Raises:
         PrismExportError: The bundle does not verify or belongs to another study.
@@ -319,7 +322,13 @@ def diff_report(
             )
         else:
             made, combined = round_trip_proposals(
-                items, study_id, inputs, bundle=bundle, pseudonym=pseudonym, accepted=accepted
+                items,
+                study_id,
+                inputs,
+                bundle=bundle,
+                pseudonym=pseudonym,
+                accepted=accepted,
+                declined=declined,
             )
             report["proposals"] = [p.model_dump(mode="json") for p in made]
             report["combined_consequence"] = combined

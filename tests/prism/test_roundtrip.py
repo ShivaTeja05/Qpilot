@@ -426,7 +426,8 @@ def test_a_nested_replicate_removed_in_prism(tmp_path):
     (proposal,) = diff_to_proposals(items, TOY_STUDY, inputs, bundle=bundle)
     assert proposal.payload["well_rep"] == 3
     # The consequence is what accepting this proposal makes the engine report.
-    engine = after_acceptance(inputs.design, inputs.curves, [("T", "a1", 3)], CELL)["T"]
+    well = proposal.payload["well"]  # the exact well behind the cleared row
+    engine = after_acceptance(inputs.design, inputs.curves, [("T", "a1", 3, well)], CELL)["T"]
     assert proposal.consequence["n_units_after"] == [engine.n_hi, engine.n_lo]
     assert proposal.consequence["log2fc_after"] == engine.log2fc
 

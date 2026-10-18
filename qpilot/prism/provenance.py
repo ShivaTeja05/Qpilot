@@ -289,12 +289,30 @@ def load_bundle(directory: str | Path) -> PrismBundle:
     """Read ``qpilot_bundle.json`` from a bundle folder (size-capped, schema-validated).
 
     Raises:
-        PrismExportError: Missing, too large, a key twice anywhere, or not a bundle.
+        PrismExportError: Missing, too large, a key twice anywhere, a key the bundle format does
+            not have (a reader would see it while the digest ignores it), or not a bundle.
     """
     try:
-        return PrismBundle.model_validate(_read_json(Path(directory) / BUNDLE_FILE))
+        data = _read_json(Path(directory) / BUNDLE_FILE)
+        bundle = PrismBundle.model_validate(data)
     except (OSError, ValueError, ValidationError, UnicodeDecodeError, RecursionError) as err:
         raise PrismExportError(f"{BUNDLE_FILE} unreadable: {err}") from err
+    unknown = _unknown_keys(data, bundle)
+    if unknown:
+        raise PrismExportError(f"{BUNDLE_FILE} has keys a bundle does not have: {unknown}")
+    return bundle
+
+
+def _unknown_keys(data: Any, bundle: PrismBundle) -> list[str]:
+    """Keys in the file (top level and each table) that the bundle model would drop."""
+    out = sorted(set(data) - set(type(bundle).model_fields)) if isinstance(data, dict) else []
+    tables = data.get("tables") if isinstance(data, dict) else None
+    if isinstance(tables, list) and bundle.tables:
+        allowed = set(type(bundle.tables[0]).model_fields)
+        for i, table in enumerate(tables):
+            if isinstance(table, dict):
+                out += [f"tables[{i}].{key}" for key in sorted(set(table) - allowed)]
+    return out
 
 
 def _safe_relative(name: str) -> bool:

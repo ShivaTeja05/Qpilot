@@ -477,8 +477,9 @@ def test_a_replicate_exclusion_names_one_well():
     curves, base = _unit_curves(), _unit_base()
     whole = design_from_proposals(base, [_toy_exclusion()], curves)
     assert whole.excluded_wells == ("p1/A10", "p1/A2", "p1/A3", "p1/A9")
-    for rep, key in ((1, "p1/A2"), (2, "p1/A9"), (3, "p1/A10")):
-        assert design_from_proposals(base, [_toy_exclusion(rep)], curves).excluded_wells == (key,)
+    for rep in (1, 2, 3):  # a replicate number alone could name another well: refused
+        with pytest.raises(DesignError, match="names no well"):
+            design_from_proposals(base, [_toy_exclusion(rep)], curves)
     exact = design_from_proposals(base, [_toy_exclusion(rep=3, well="p1/A9")], curves)
     assert exact.excluded_wells == ("p1/A9",)  # the exact well wins over a replicate number
     restore = _toy_exclusion(well="p1/A9", action="restore")
@@ -487,11 +488,6 @@ def test_a_replicate_exclusion_names_one_well():
         "p1/A2",
         "p1/A3",
     )
-    # numbered among the wells still in the analysis, as the next export numbers them
-    twice = design_from_proposals(base, [_toy_exclusion(1), _toy_exclusion(1)], curves)
-    assert twice.excluded_wells == ("p1/A2", "p1/A9")
-    with pytest.raises(DesignError, match="no replicate 4"):
-        design_from_proposals(base, [_toy_exclusion(4)], curves)
     with pytest.raises(DesignError, match="not a well of 'G'"):
         design_from_proposals(base, [_toy_exclusion(well="p1/B1")], curves)
 

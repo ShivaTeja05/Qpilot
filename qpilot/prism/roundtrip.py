@@ -489,6 +489,7 @@ def diff_to_proposals(
     bundle: PrismBundle | None = None,
     pseudonym: Callable[[str], str] | None = None,
     accepted: Sequence[Proposal] = (),
+    declined: Sequence[Proposal] = (),
 ) -> list[Proposal]:
     """Turn diff items into proposals for the inbox (never accepted here).
 
@@ -511,9 +512,17 @@ def diff_to_proposals(
         bundle: The exported bundle (layout per table, whether row titles were pseudonymised).
         pseudonym: The pseudonym function used at export, when it was shared.
         accepted: ``prism.exclusion_reason`` proposals a person accepted since the export.
+        declined: ``prism.exclusion_reason`` questions a person rejected (or accepted as a
+            restore): their values are neither asked about again nor counted as pending.
     """
     return round_trip_proposals(
-        items, study_id, inputs, bundle=bundle, pseudonym=pseudonym, accepted=accepted
+        items,
+        study_id,
+        inputs,
+        bundle=bundle,
+        pseudonym=pseudonym,
+        accepted=accepted,
+        declined=declined,
     )[0]
 
 
@@ -525,6 +534,7 @@ def round_trip_proposals(
     bundle: PrismBundle | None = None,
     pseudonym: Callable[[str], str] | None = None,
     accepted: Sequence[Proposal] = (),
+    declined: Sequence[Proposal] = (),
 ) -> tuple[list[Proposal], dict[str, Any] | None]:
     """:func:`diff_to_proposals`, and the combined consequence of every exclusion it proposes.
 
@@ -537,6 +547,7 @@ def round_trip_proposals(
     shared = bundle is not None and bundle.info.get("row_titles") == "pseudonymised"
     units_by_title = {title: unit for unit, title in row_titles(inputs, shared, pseudonym).items()}
     settled = _settled(accepted)
+    kept = _declined(declined, accepted)  # values a person chose to keep: never pending
     replicates, unmatched = _replicates(items, layouts, inputs)
     located: list[_Located] = []
     for item in items:
@@ -548,8 +559,9 @@ def round_trip_proposals(
         asks = item.kind in EXCLUSION_KINDS and not (
             item.kind == "removed_row" and layout != "column"
         )
-        if item.kind == "changed" or (asks and not _is_settled(settled, here)):
-            located.append(here)  # an accepted exclusion is not asked about again
+        decided = _is_settled(settled, here) or _is_settled(kept, here)
+        if item.kind == "changed" or (asks and not decided):
+            located.append(here)  # a value a person decided on is not asked about again
     pending = [
         (here.item.gene, here.unit, here.rep, here.well)
         for here in located
@@ -650,6 +662,32 @@ def _settled(accepted: Sequence[Proposal]) -> set[tuple[str, str, str]]:
             out.add(key)
         else:
             out.discard(key)
+    return out
+
+
+def _declined(
+    declined: Sequence[Proposal], accepted: Sequence[Proposal]
+) -> set[tuple[str, str, str]]:
+    """The values a person chose to keep: a rejected exclusion question, or an accepted restore.
+
+    Keys as in :func:`_settled`. A later accepted exclusion of the same value wins (it is in
+    ``settled``, which is checked first).
+    """
+    from qpilot.qpcr.designs import APPLIED
+
+    out: set[tuple[str, str, str]] = set()
+    restores = [
+        p
+        for p in accepted
+        if p.status in APPLIED and p.effective_payload().get("action") == "restore"
+    ]
+    for proposal in [*declined, *restores]:
+        if proposal.kind != "prism.exclusion_reason":
+            continue
+        payload = proposal.effective_payload()
+        rep = int(payload.get("well_rep") or 0)
+        value = str(payload.get("well") or (f"rep {rep}" if rep else ""))
+        out.add((str(payload.get("gene")), str(payload.get("sample")), value))
     return out
 
 

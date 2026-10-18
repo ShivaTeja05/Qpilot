@@ -130,9 +130,10 @@ def register_learned(rule: AmpCallRule, predict: Callable[[pd.DataFrame], pd.Ser
 
     Args:
         rule: The option, with ``kind="learned"`` and an id that is not a built-in rule.
-        predict: Maps the per-well table to a boolean Series on the same index (``True`` =
-            amplified). It must be deterministic and run offline; a well without a quantity
-            still never counts.
+        predict: Maps the per-well table to a Series on the same index: ``True`` (amplified),
+            ``False`` (not amplified), or missing / ``None`` for a curve the model cannot score,
+            which then keeps LinRegPCR's call. It must be deterministic and run offline; a well
+            without a quantity still never counts.
 
     Raises:
         AmpCallError: The rule is not ``learned`` or its id is a built-in rule.
@@ -173,7 +174,9 @@ def amplified(
         called = has_quantity & ~(curves["cq"] > rule.cq_max)
     else:
         predicted = _LEARNED[rule_id](curves).reindex(curves.index)
-        called = has_quantity & predicted.fillna(False).astype(bool)
+        scored = predicted.notna()  # a curve the model cannot score keeps LinRegPCR's call
+        learned = predicted.where(scored, False).astype(bool)
+        called = has_quantity & learned.where(scored, True)
     if well_calls:
         override = well_keys(curves).map(well_calls)
         called = called.where(override.isna(), has_quantity & override.eq(True))

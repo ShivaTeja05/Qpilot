@@ -112,14 +112,19 @@ def engine_inputs(curves: pd.DataFrame, design: StudyDesign, undetermined="drop"
     )
 
 
-def accepted_exclusion(gene: str, unit: str, well_rep: int = 0) -> Proposal:
-    """A ``prism.exclusion_reason`` as a person accepted it."""
+def accepted_exclusion(
+    gene: str, unit: str, well_rep: int = 0, well: str | None = None
+) -> Proposal:
+    """A ``prism.exclusion_reason`` as a person accepted it (a replicate names its exact well)."""
+    payload = {"gene": gene, "sample": unit, "action": "exclude", "well_rep": well_rep}
+    if well is not None:
+        payload["well"] = well
     return Proposal(
         id=f"accepted-{gene}-{unit}-{well_rep}",
         study_id="session",
         kind="prism.exclusion_reason",
         subject=f"{gene}/{unit}",
-        payload={"gene": gene, "sample": unit, "action": "exclude", "well_rep": well_rep},
+        payload=payload,
         made_by=MadeBy(kind="rule"),
         status="accepted",
         decided_by="human",

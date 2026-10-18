@@ -542,6 +542,14 @@ def _exclusion(data: dict[str, Any], payload: Mapping[str, Any], curves: pd.Data
     keys = set(well_keys(rows))
     current = set(data["excluded_wells"])
     wells = keys  # the unit's value: every well of the gene
+    if rep and well is None and action == "exclude":
+        # Renumbering replicates could name another well than the one cleared in Prism (another
+        # amplification rule, or other exclusions since the export), so a replicate is excluded
+        # only by its exact well.
+        raise DesignError(
+            f"replicate {rep} of {gene!r} for sample {sample!r} names no well; exclude it from "
+            "the exported table again (its exact well could not be matched)"
+        )
     if well is not None or rep:
         if well is not None and well not in keys:
             raise DesignError(f"{well!r} is not a well of {gene!r} for sample {sample!r}")

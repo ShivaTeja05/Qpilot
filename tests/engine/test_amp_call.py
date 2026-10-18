@@ -231,3 +231,20 @@ def test_demo_ampcall_template_validates(studio_demo, fixture_result):
     assert "common, not recommended" in rendered.plain
     legacy = render_template("ampcall_v1", fixture_result.facts)  # no axis: words, no numbers
     assert legacy.fact_ids == () and "LinRegPCR's own call only" in legacy.plain
+
+
+def test_a_curve_the_learned_rule_cannot_score_keeps_linregpcrs_call(monkeypatch):
+    import pandas as pd
+
+    from qpilot.qpcr import amp_call
+    from qpilot.schemas_studio import AmpCallRule
+
+    rule = AmpCallRule(id="learned_test", label="learned (test)", kind="learned")
+    monkeypatch.setitem(amp_call.RULES, rule.id, rule)
+    monkeypatch.setitem(
+        amp_call._LEARNED, rule.id, lambda curves: pd.Series([True, False, None], dtype=object)
+    )
+    curves = pd.DataFrame(
+        {"run_id": ["r"] * 3, "well": ["A1", "A2", "A3"], "n0": [5.0, 5.0, 5.0], "cq": [20.0] * 3}
+    )
+    assert amp_call.amplified(curves, rule.id).tolist() == [True, False, True]

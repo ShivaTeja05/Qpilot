@@ -356,3 +356,23 @@ def test_files_prism_adds_later_do_not_break_verification(demo_export, tmp_path)
     (copy / "ODC1_qpilot_x.pzfx").write_bytes(b"saved by Prism")
     (copy / "qpilot_done.txt").write_text("done")
     assert verify_provenance(copy) == []
+
+
+def test_a_key_the_bundle_format_does_not_have_is_refused(demo_export):
+    """Review c16: an extra key a reader would see, but the digest ignores, does not verify."""
+    import json
+
+    from qpilot.prism.provenance import BUNDLE_FILE, verify_provenance
+
+    folder = demo_export.out_dir if hasattr(demo_export, "out_dir") else demo_export
+    path = folder / BUNDLE_FILE
+    original = path.read_text(encoding="utf-8")
+    data = json.loads(original)
+    data["recommended_analysis"] = {"fc": 9.9, "p": 1e-9}
+    path.write_text(json.dumps(data), encoding="utf-8")
+    try:
+        problems = verify_provenance(folder)
+        assert problems and any("does not have" in p for p in problems), problems
+    finally:
+        path.write_text(original, encoding="utf-8")
+    assert verify_provenance(folder) == []
