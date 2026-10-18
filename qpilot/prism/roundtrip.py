@@ -29,6 +29,12 @@ conclusion before and after, and how many of all genes' conclusions change; with
 exclusions, also what all of them do together), and a changed value into a ``prism.value_edit``
 proposal ("this value no longer matches the record", action ``restore`` by default). They are
 made by a rule, never accepted here: only a person accepts a proposal.
+
+A value of the nested layout is one technical replicate. Its proposal names the replicate in
+its subject (``gene/unit/rep n``, so two replicates of one unit never supersede each other) and
+question, and carries the exact well behind that row of the exported table (``"well":
+"<run_id>/<well>"``, also cited as evidence), found when the proposal is made. Accepting it
+excludes that well, never a well counted again later on another design.
 """
 
 from __future__ import annotations
@@ -40,13 +46,20 @@ import math
 import os
 import re
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
 from qpilot.prism.tables import REPLICATE_COLUMN, row_titles
-from qpilot.qpcr.export import ExportError, ExportInputs, Reanalysis
+from qpilot.qpcr.export import (
+    ExportError,
+    ExportInputs,
+    Reanalysis,
+    exclusion_subject,
+    replicate_wells,
+    resolve_replicate,
+)
 from qpilot.schemas_studio import (
     Evidence,
     MadeBy,
@@ -70,6 +83,10 @@ MISSING_NOTE = (
 )
 EXCLUDED_NOTE = "Excluded in Prism (marked in the table Prism sent back)."
 CHANGED_NOTE = "This value no longer matches the record."
+NOT_THE_EXPORT = (
+    "the study's wells no longer give the exported table, so the well behind this replicate is "
+    "not known; export again"
+)
 
 
 class RoundTripError(ValueError):
@@ -483,7 +500,9 @@ def diff_to_proposals(
     (those in the study's design and ``accepted``); a value they already exclude is not asked
     about again. With several exclusions, each one's consequence also carries what all of them
     together do (``with_all_pending``): one at a time, each may change nothing while together
-    they change a conclusion.
+    they change a conclusion. A replicate of the nested layout is named by its exact well, the
+    one behind its row in the exported table (rebuilt from ``inputs``, which must be the
+    inputs the bundle was exported from: the values are compared with the exported ones).
 
     Args:
         items: From :func:`diff`.
@@ -518,16 +537,24 @@ def round_trip_proposals(
     shared = bundle is not None and bundle.info.get("row_titles") == "pseudonymised"
     units_by_title = {title: unit for unit, title in row_titles(inputs, shared, pseudonym).items()}
     settled = _settled(accepted)
-    located = []
+    replicates, unmatched = _replicates(items, layouts, inputs)
+    located: list[_Located] = []
     for item in items:
         layout = layouts.get(item.table, "column")
         unit, rep = _locate(item, layout, units_by_title)
+        here = _Located(item, unit, rep)
+        if unit is not None and rep and item.exported is not None:
+            here = _replicate(here, replicates, unmatched)
         asks = item.kind in EXCLUSION_KINDS and not (
             item.kind == "removed_row" and layout != "column"
         )
-        if item.kind == "changed" or (asks and (item.gene, unit) not in settled):
-            located.append((item, unit, rep))  # an accepted exclusion is not asked about again
-    pending = [(i.gene, u, r) for i, u, r in located if i.kind != "changed" and u is not None]
+        if item.kind == "changed" or (asks and not _is_settled(settled, here)):
+            located.append(here)  # an accepted exclusion is not asked about again
+    pending = [
+        (here.item.gene, here.unit, here.rep, here.well)
+        for here in located
+        if here.item.kind != "changed" and here.unit is not None and not here.problem
+    ]
     reanalysis: Reanalysis | None = None
     combined: dict[str, Any] | None = None
     problem = ""
@@ -538,16 +565,17 @@ def round_trip_proposals(
         except (ExportError, ValueError) as err:
             problem = str(err)
     proposals = []
-    for item, unit, rep in located:
+    for here in located:
+        item, unit = here.item, here.unit
         if item.kind == "changed":
-            proposals.append(_value_edit(item, study_id, unit, rep))
+            proposals.append(_value_edit(here, study_id))
             continue
-        consequence, note = None, ""
-        if unit is not None and reanalysis is None:
+        consequence, note = None, here.problem
+        if unit is not None and not note and reanalysis is None:
             note = problem
-        elif unit is not None and reanalysis is not None:
+        elif unit is not None and not note and reanalysis is not None:
             try:
-                consequence = reanalysis.consequence(item.gene, unit, rep)
+                consequence = reanalysis.consequence(item.gene, unit, here.rep, here.well)
             except (ExportError, ValueError) as err:
                 note = str(err)
         if consequence is not None and combined is not None and len(pending) > 1:
@@ -557,20 +585,67 @@ def round_trip_proposals(
                 "n_conclusions_changed": combined["n_conclusions_changed"],
                 "changed_genes": combined["changed_genes"],
             }
-        proposals.append(_exclusion(item, study_id, unit, rep, consequence, note))
+        proposals.append(_exclusion(here, study_id, consequence, note))
     return proposals, combined
 
 
-def _settled(accepted: Sequence[Proposal]) -> set[tuple[str, str]]:
-    """(gene, unit) pairs an accepted exclusion leaves out (a later accepted restore undoes it)."""
+@dataclass(frozen=True)
+class _Located:
+    """One diff item, the value it is about, and why that value cannot be named (if so)."""
+
+    item: PrismDiffItem
+    unit: str | None  # the biological unit, or None when the item names none
+    rep: int  # 0: the unit's value; n: replicate n of the nested layout
+    well: str | None = None  # the exact well behind replicate ``rep``, from the exported table
+    problem: str = ""
+
+
+def _replicates(
+    items: Sequence[PrismDiffItem], layouts: Mapping[str, str], inputs: ExportInputs
+) -> tuple[dict[tuple[str, str, int], tuple[str, float]], str]:
+    """The exported numbering of every nested table's replicates, or why it cannot be rebuilt."""
+    genes = sorted({item.gene for item in items if layouts.get(item.table) == "nested"})
+    if not genes:
+        return {}, ""
+    try:
+        return replicate_wells(inputs, genes), ""
+    except ExportError as err:
+        return {}, f"{NOT_THE_EXPORT} ({err})"
+
+
+def _replicate(
+    here: _Located, replicates: Mapping[tuple[str, str, int], tuple[str, float]], unmatched: str
+) -> _Located:
+    """``here`` with the exact well behind its replicate, checked against the exported value.
+
+    A row that is the unit's value (every replicate undetermined, capped) is the whole unit.
+    """
+    item, unit = here.item, str(here.unit)
+    if unmatched:
+        return replace(here, problem=unmatched)
+    found = replicates.get((item.gene, unit, here.rep))
+    if found is None or found[1] != item.exported:
+        return replace(here, problem=NOT_THE_EXPORT)
+    rep, well = resolve_replicate(replicates, item.gene, unit, here.rep)
+    return replace(here, rep=rep, well=well)
+
+
+def _settled(accepted: Sequence[Proposal]) -> set[tuple[str, str, str]]:
+    """The values an accepted exclusion leaves out (a later accepted restore undoes it).
+
+    Each is ``(gene, unit, value)``: value ``""`` is the unit's (every replicate), else the
+    exact well of one replicate (``"rep n"`` for an exclusion that names no well).
+    """
     from qpilot.qpcr.designs import APPLIED
 
-    out: set[tuple[str, str]] = set()
+    out: set[tuple[str, str, str]] = set()
     for proposal in accepted:
         if proposal.kind != "prism.exclusion_reason" or proposal.status not in APPLIED:
             continue
         payload = proposal.effective_payload()
-        key = (str(payload.get("gene")), str(payload.get("sample")))
+        rep = int(payload.get("well_rep") or 0)
+        value = str(payload.get("well") or (f"rep {rep}" if rep else ""))
+        key = (str(payload.get("gene")), str(payload.get("sample")), value)
         if payload.get("action") == "exclude":
             out.add(key)
         else:
@@ -578,30 +653,65 @@ def _settled(accepted: Sequence[Proposal]) -> set[tuple[str, str]]:
     return out
 
 
-def _evidence(item: PrismDiffItem, unit: str | None) -> list[Evidence]:
+def _is_settled(settled: set[tuple[str, str, str]], here: _Located) -> bool:
+    """True when an accepted exclusion already leaves out the value ``here`` is about."""
+    gene, unit = here.item.gene, str(here.unit)
+    values = {""}  # the unit's value covers every replicate
+    if here.rep:
+        values |= {f"rep {here.rep}", here.well or ""}
+    return any((gene, unit, value) in settled for value in values)
+
+
+def _what(here: _Located, capital: bool = True) -> str:
+    """``Sample X for G``, or ``Replicate n of sample X for G`` for a replicate."""
+    sample = f"sample {here.unit}" if here.unit is not None else "an unknown sample"
+    what = f"replicate {here.rep} of {sample}" if here.rep else sample
+    return f"{what[0].upper() if capital else what[0]}{what[1:]} for {here.item.gene}"
+
+
+def _subject(here: _Located) -> str:
+    item = here.item
+    if here.unit is None:
+        return f"{item.gene}/{item.row or ''}"
+    return exclusion_subject(item.gene, here.unit, here.rep)
+
+
+def _payload(here: _Located, action: str, question: str) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "gene": here.item.gene,
+        "sample": here.unit,
+        "action": action,
+        "question": question,
+        "well_rep": here.rep,
+    }
+    if here.well:
+        payload["well"] = here.well
+    return payload
+
+
+def _evidence(here: _Located) -> list[Evidence]:
+    item, unit = here.item, here.unit
     cell = f"sent_back/{item.table}.csv!{item.row or ''}|{item.column or ''}"
     out = [Evidence(kind="cell", ref=cell, note="the cell in the table Prism sent back")]
     if unit is not None:
         out.append(Evidence(kind="sample", ref=unit, note="the biological unit"))
+    if here.well:
+        note = "the well behind this replicate in the exported table"
+        out.append(Evidence(kind="well", ref=here.well, note=note))
     out.append(Evidence(kind="rule", ref=f"prism.diff.{item.kind}", note=item.note[:200]))
     return out
 
 
 def _exclusion(
-    item: PrismDiffItem,
-    study_id: str,
-    unit: str | None,
-    rep: int,
-    consequence: dict[str, Any] | None,
-    problem: str,
+    here: _Located, study_id: str, consequence: dict[str, Any] | None, problem: str
 ) -> Proposal:
-    sample = unit or "an unknown sample"
+    item = here.item
     if item.kind == "excluded":
-        question = f"You excluded sample {sample} for {item.gene} in Prism. Reason?"
+        question = f"You excluded {_what(here, capital=False)} in Prism. Reason?"
     else:
         question = (
-            f"Sample {sample} for {item.gene} is empty in the table Prism sent back. If you "
-            "excluded it in Prism: reason? If you deleted it, say so."
+            f"{_what(here)} is empty in the table Prism sent back. If you excluded it in Prism: "
+            "reason? If you deleted it, say so."
         )
     details: dict[str, Any] = {}
     note = "Whether an exclusion is justified is the scientist's call; the engine shows its effect."
@@ -614,13 +724,6 @@ def _exclusion(
         }
     elif problem:
         note = f"The consequence could not be computed: {problem}"
-    payload: dict[str, Any] = {
-        "gene": item.gene,
-        "sample": unit,
-        "action": "exclude",
-        "question": question,
-        "well_rep": rep,
-    }
     reasons = ["Found by comparing the table Prism sent back with the exported table."]
     if item.kind != "excluded":
         reasons.append("An empty cell may be an exclusion or a deletion; Mode S cannot tell yet.")
@@ -628,9 +731,9 @@ def _exclusion(
         id=_proposal_id(study_id, item),
         study_id=study_id,
         kind="prism.exclusion_reason",
-        subject=f"{item.gene}/{unit or item.row or ''}",
-        payload=payload,
-        evidence=_evidence(item, unit),
+        subject=_subject(here),
+        payload=_payload(here, "exclude", question),
+        evidence=_evidence(here),
         check=ProposalCheck(
             status="cannot_check",
             rule_ids=["prism.exclusion_consequence"],
@@ -644,23 +747,17 @@ def _exclusion(
     )
 
 
-def _value_edit(item: PrismDiffItem, study_id: str, unit: str | None, rep: int) -> Proposal:
+def _value_edit(here: _Located, study_id: str) -> Proposal:
+    item = here.item
+    value = f"of {_what(here, capital=False)}" if here.rep else f"for {item.gene}"
+    question = f"{CHANGED_NOTE} Restore qPilot's value {value}, or record it as a manual edit?"
     return Proposal(
         id=_proposal_id(study_id, item),
         study_id=study_id,
         kind="prism.value_edit",
-        subject=f"{item.gene}/{unit or item.row or ''}",
-        payload={
-            "gene": item.gene,
-            "sample": unit,
-            "action": "restore",
-            "question": (
-                f"{CHANGED_NOTE} Restore qPilot's value for {item.gene}, or record it as a "
-                "manual edit?"
-            ),
-            "well_rep": rep,
-        },
-        evidence=_evidence(item, unit),
+        subject=_subject(here),
+        payload=_payload(here, "restore", question),
+        evidence=_evidence(here),
         check=ProposalCheck(
             status="contradicted",
             rule_ids=["prism.value_matches_record"],

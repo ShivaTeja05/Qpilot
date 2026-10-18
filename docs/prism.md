@@ -130,11 +130,25 @@ compares the exported tables with what came back (after checking the bundle's ow
 - **added or removed rows and columns**, and **unreadable** files or cells.
 
 A missing or excluded value becomes a `prism.exclusion_reason` proposal ("You excluded sample
-X for GENE in Prism. Reason?") with the engine's consequence: that gene's comparison again
-without the value, fold change, p and conclusion before and after, and how many of all genes'
-conclusions change. On the demo, leaving out ODC1's highest tumour (1496, MYCN-high) gives
-3.590× → 3.319×, still up, and 0 of 58 conclusions change. Proposals are made by a rule; only
-a person accepts them.
+X for GENE in Prism. Reason?") with the engine's consequence: the study analysed again with the
+value excluded exactly as accepting the proposal excludes it (the same function applies it to
+the design, then the engine runs at the exported choices, together with the exclusions a
+person already accepted), so the numbers a person approves are the numbers the engine then
+reports. It shows that gene's fold change, p and conclusion before and after, and how many of
+all genes' conclusions change; a gene the engine then withholds (fewer than two biological
+units with a value in a group) reads "withheld", with the engine's reason, and no numbers. On
+the demo, leaving out ODC1's highest tumour (1496, MYCN-high) gives 3.590× → 3.319×, still up,
+and 0 of 58 conclusions change. Proposals are made by a rule; only a person accepts them.
+
+A value of the nested table is one technical replicate. Its proposal names the replicate (the
+subject is `GENE/unit/rep n`, the question "Replicate n of sample X for GENE ..."), so two
+replicates of one unit are two proposals that never replace each other in the inbox. It also
+carries the exact well behind that row of the exported table (`well`: `<run_id>/<well>`, also
+cited as evidence), found when the proposal is made, and accepting it excludes that well: the
+one the person cleared, whatever amplification rule the export used and whatever was excluded
+since. Excluding a unit's last replicate with a value (under the design's primary
+amplification rule) leaves the unit out for that gene, never capped as undetermined. A changed
+replicate (`prism.value_edit`) names its replicate and well the same way.
 
 Tables sent back are untrusted input: at most 200 files, 5 MB each and 100,000 cells in all;
 links and folders are not followed; a cell is a number only in plain decimal or exponent
