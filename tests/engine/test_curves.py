@@ -1,6 +1,7 @@
 """Task 3 gate: LinRegPCR on every plate, parsed by header, names validated, cached by content."""
 
 import time
+import zipfile
 
 import numpy as np
 import pandas as pd
@@ -14,14 +15,45 @@ from qpilot.qpcr.curves import (
     analyse_run,
     analyse_study,
     normalise_target,
+    react_well_label,
     safe_name,
     slug,
+    well_label,
 )
 
 
 @pytest.fixture
 def std_rdml(fixtures_dir):
     return fixtures_dir / "vermeulen_std_150000.rdml"
+
+
+def rewrite_run(source, target, run_id, edit):
+    """A copy of an RDML file with one run's XML passed through ``edit`` (str -> str)."""
+    with zipfile.ZipFile(source) as archive:
+        xml = archive.read("rdml_data.xml").decode("utf-8")
+    start = xml.index(f'<run id="{run_id}">')
+    end = xml.index("</run>", start)
+    xml = xml[:start] + edit(xml[start:end]) + xml[end:]
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("rdml_data.xml", xml)
+    return target
+
+
+def tall_plate(source, target):
+    """The fixture's AHCY run on a 32 x 12 plate, its three wells in rows 27, 28 and 29.
+
+    LinRegPCR names these wells ``[1``, ``\\1`` and ``]1``, which all become ``1`` as safe names.
+    """
+
+    def edit(run):
+        run = run.replace(
+            "<rows>16</rows><columns>24</columns>", "<rows>32</rows><columns>12</columns>"
+        )
+        for old, new in (("326", "313"), ("328", "325"), ("330", "337")):
+            run = run.replace(f'<react id="{old}">', f'<react id="{new}">')
+        return run
+
+    return rewrite_run(source, target, "AHCY_20080229", edit)
 
 
 # ---------- pure helpers ----------
@@ -65,6 +97,36 @@ def test_unsafe_names_are_replaced_with_a_warning(caplog):
     assert "unsafe sample name" in caplog.text
     assert safe_name("x" * 80, "sample") == "x" * 64
     assert safe_name("{{f_fc_odc1}}", "target") == "f_fc_odc1"
+
+
+@pytest.mark.parametrize(
+    ("row", "column", "expected"),
+    [
+        (1, 1, "A1"),
+        (16, 24, "P24"),  # the demo's last well: LinRegPCR's own name up to row 26
+        (26, 3, "Z3"),
+        (27, 1, "AA1"),  # LinRegPCR would write "[1"
+        (32, 48, "AF48"),  # a 1536-well plate's last well
+        (52, 2, "AZ2"),
+        (53, 2, "BA2"),
+        (702, 1, "ZZ1"),
+        (703, 1, "AAA1"),
+    ],
+)
+def test_every_well_position_has_its_own_name(row, column, expected):
+    assert well_label(row, column) == expected
+
+
+def test_reaction_numbers_map_to_well_names_row_by_row():
+    assert react_well_label("1", 24) == "A1" and react_well_label("25", 24) == "B1"
+    assert react_well_label(384, 24) == "P24"
+    assert [react_well_label(i, 12) for i in (313, 325, 337)] == ["AA1", "AB1", "AC1"]
+    assert react_well_label(72, 1) == "BT1"  # a 72-position rotor
+    names = {react_well_label(i, 48) for i in range(1, 1537)}
+    assert len(names) == 1536 and all(name == safe_name(name, "well") for name in names)
+    for bad in ((0, 24), (1, 0), (-3, 12)):
+        with pytest.raises(CurveAnalysisError):
+            react_well_label(*bad)
 
 
 # ---------- on the 54 KB standards fixture (runs in CI) ----------
@@ -124,6 +186,48 @@ def test_plate_without_raw_curves_raises(smoke_rdml):
 
     with pytest.raises(CurveAnalysisError, match="raw data"):
         analyse_run(runs(load(smoke_rdml))[0])
+
+
+def test_a_plate_with_more_than_26_rows_keeps_one_key_per_well(std_rdml, tmp_path):
+    """Rows 27-29 were all named ``1``: one exclusion or well call hit three wells."""
+    tall = tall_plate(std_rdml, tmp_path / "tall.rdml")
+    table = analyse_study(tall, cache_dir=tmp_path)
+    run = table[table["run_id"] == "AHCY_20080229"]
+    assert list(run["well"]) == ["AA1", "AB1", "AC1"]
+    assert not table.duplicated(["run_id", "well"]).any()
+    other = table[table["run_id"] != "AHCY_20080229"]
+    assert set(other["well"]) == {"N14", "N16", "N18"}  # 16 x 24 plates: LinRegPCR's names
+
+
+def test_a_cached_table_from_before_unique_well_names_is_analysed_again(std_rdml, tmp_path):
+    tall = tall_plate(std_rdml, tmp_path / "tall.rdml")
+    fresh = analyse_study(tall, cache_dir=tmp_path)
+    (cache_file,) = tmp_path.glob("*.curves.csv")
+    stale = fresh.copy()
+    stale.loc[stale["run_id"] == "AHCY_20080229", "well"] = "1"  # what the old code wrote
+    stale.to_csv(cache_file, index=False)
+    again = analyse_study(tall, cache_dir=tmp_path)
+    pd.testing.assert_frame_equal(fresh, again, check_exact=True)
+    pd.testing.assert_frame_equal(curves._read_cache(cache_file), fresh, check_exact=True)
+
+
+def test_curves_that_would_share_a_run_and_well_key_are_refused(std_rdml, tmp_path):
+    """Two runs whose ids both become ``ahcy_1``, with wells N14, N16 and N18: refused."""
+    first = rewrite_run(
+        std_rdml,
+        tmp_path / "a.rdml",
+        "AHCY_20080229",
+        lambda r: r.replace("AHCY_20080229", "AHCY/1", 1),
+    )
+    both = rewrite_run(
+        first,
+        tmp_path / "b.rdml",
+        "AKR1C1_20080307",
+        lambda r: r.replace("AKR1C1_20080307", "AHCY+1", 1),
+    )
+    with pytest.raises(CurveAnalysisError, match="share run_id/well"):
+        analyse_study(both, cache_dir=tmp_path)
+    assert not list(tmp_path.glob("*.curves.csv"))  # nothing refused is cached
 
 
 # ---------- the gate: all 64 plates of the demo study ----------
