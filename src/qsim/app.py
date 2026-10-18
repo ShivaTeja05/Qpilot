@@ -35,6 +35,7 @@ from qsim.data import load_study
 from qsim.decisions import PLAIN
 from qsim.engine import Engine
 from qsim.issues import HEADLINE
+from qsim.moves import MAX_MOVES
 from qsim.study_space import space_for
 from qsim.verdict import ORDER
 
@@ -98,6 +99,8 @@ EVIDENCE_LABELS = {
     "p_margin_decades": "How far the p-value is below the line (powers of ten)",
     "samples_whose_removal_flips": "Single samples whose removal changes the call",
     "drop_k_to_flip": "Fewest samples whose removal changes the call",
+    "moves_to_flip": "Fewest reasonable moves (a choice changed or a sample left out) that change the call",
+    "moves_path": "The quickest such path",
     "share_forks_significant_same_direction": "Share of analyses where the difference is clear",
     "p_global": "p-value across reasonable analyses, all genes tested together",
     "q_global_bh": "The same, corrected for testing many genes",
@@ -400,6 +403,19 @@ class Screen(LabViews):
                 f"Removing any one of {len(singles)} single samples on its own changes it "
                 "(listed below)."
             )
+        mv = e.get("moves")
+        if mv and mv["distance"]:
+            n_moves = f"{mv['distance']} move{'s' if mv['distance'] > 1 else ''}"
+            if not mv["exact"]:
+                n_moves = f"at most {n_moves}"
+            side = f"{'higher' if mv['call'] == 'up' else 'lower'} in {self.group}"
+            if e["call"] == "none":
+                effect = f"produce a call ({side})"
+            elif mv["call"] == "none":
+                effect = "lose the call"
+            else:
+                effect = f"turn it around ({side})"
+            leans.append(f"The quickest way to {effect} takes {n_moves}: {'; '.join(mv['path'])}.")
         at = f"At {_fold(e['fold'])} it is"
         if margin >= self.engine.rule.min_log2fc:
             leans.append(f"{at} well past the {line} line a call needs.")
@@ -465,6 +481,21 @@ class Screen(LabViews):
                 "value": str(dk) if dk else f"more than {rules['drop_k_searched']}",
                 "sub": f"of {self.n_samples} samples",
             },
+            *(
+                [
+                    {
+                        "label": "Fewest moves that change it",
+                        "value": (
+                            (str(mv["distance"]) if mv["exact"] else f"at most {mv['distance']}")
+                            if mv["distance"]
+                            else f"none in {MAX_MOVES}"
+                        ),
+                        "sub": "reasonable choices or left-out samples, together",
+                    }
+                ]
+                if mv
+                else []
+            ),
             {
                 "label": f"Distance to the {line} line",
                 "value": gap,

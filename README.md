@@ -41,7 +41,7 @@ It reads the run's files in `results/` and calls the engine live. A sidebar list
 
 | Tab | What a scientist sees |
 |---|---|
-| **Gene** | The result and its verdict, plus six key numbers: fold change and likely range, same answer in N of 100, p-value, fewest samples that change it, distance to the 2× line, how often the difference is clear. Then three charts. **Every reasonable analysis**: a dot per analysis, recomputed live; orange dots give a different call. **One choice at a time**: each option of each decision, shortcuts included. **Your samples**: each sample's normalised level by group, with plate, well and Cq on hover; late-Cq wells and the samples that carry the call are marked. It also shows what changes the call, what it leans on, what to do, the assay's lab parameters (Cq spread, late and missing Cq, efficiency, flagged wells) and reference-gene stability. *Copy summary* puts it on the clipboard for a lab notebook, and *Evidence* opens the gene's raw records. |
+| **Gene** | The result and its verdict, plus seven key numbers: fold change and likely range, same answer in N of 100, p-value, fewest samples that change it, fewest moves (choices or left-out samples together) that change it, distance to the 2× line, how often the difference is clear. *What it leans on* names the quickest path. Then three charts. **Every reasonable analysis**: a dot per analysis, recomputed live; orange dots give a different call. **One choice at a time**: each option of each decision, shortcuts included. **Your samples**: each sample's normalised level by group, with plate, well and Cq on hover; late-Cq wells and the samples that carry the call are marked. It also shows what changes the call, what it leans on, what to do, the assay's lab parameters (Cq spread, late and missing Cq, efficiency, flagged wells) and reference-gene stability. *Copy summary* puts it on the clipboard for a lab notebook, and *Evidence* opens the gene's raw records. |
 | **Study** | The verdict counts and their rules. A map of all genes: fold change against same answer in N of 100. Which choices change calls and how much each moves fold changes. Reference-gene geNorm M. What to fix before seeing results. The top of the issue queue. |
 | **What-if lab** | A dropdown for every decision, grouped as planned, reasonable alternatives and common shortcuts. `qsim.compare.whatif` recomputes all genes and draws each change from the planned fold change to the new one. The same choices drive the sample chart. |
 | **Ask** | `qsim.ask.Asker`. The local model (Ollama `qwen2.5:7b`, if running) or fixed rules read the question. An engine tool runs, and a checked template writes the answer. The page shows which tool answered and every value the engine supplied. |
@@ -104,6 +104,12 @@ Vermeulen/Ruijter RDML: 64 plates, 366 tumours, 58 genes. Details are in [`resul
 - Removing one tumour flips 4 genes.
 - 148 of 1,745 single reference-well removals flip a gene.
 
+**Distance to a different conclusion.** This counts the fewest defensible moves after which a call differs from the planned analysis. A move is changing one analysis choice or leaving out one tumour, and the search goes up to 4 moves.
+- **Called genes.** 8 of 40 change with a single move, 12 within 2–4 moves, and 20 hold beyond 4.
+- **Uncalled genes.** 6 of 18 become a call with one move, and 11 within 4: a p-hacking budget.
+- **Examples.** NTRK1 loses its call when Cq above 35 counts as not detected. NM23A needs at most 4 moves: a 3-gene reference set plus leaving out three tumours.
+- **How exact.** Distances up to 3 are exact, because every shorter combination was tried. Every path was re-run through the engine.
+
 **Joint test:** a permutation max-T test across 48 defensible analyses finds 56 of 58 genes associated with the group. So the 2-fold threshold and the analysis choices make calls fragile, not significance.
 
 ### Known answers: Untergasser dilution series
@@ -131,6 +137,15 @@ LightCycler 480, three mixes, triplicates, 188 comparisons.
 | 6 vs 6 | 2.8 % | 0.24 % |
 
 With a real difference, the filter does not make small-study calls agree better with the full 366-tumour answer (robust 25 % vs not robust 22 % disagreement). The audit removes false calls caused by analysis choices; it does not fix small-sample noise.
+
+**Does the distance to a different conclusion predict a wrong call? No.** On the same draws, a call is counted wrong when it differs from the full-study call.
+
+| Group size | Calls | Wrong | AUROC: distance | AUROC: agreement share | AUROC: fold margin | AUROC: p + margin, then + distance |
+|---|---|---|---|---|---|---|
+| 3 vs 3 | 511 | 29 % | 0.50 | 0.56 | 0.81 | 0.80 → 0.80 |
+| 6 vs 6 | 1,325 | 22 % | 0.51 | 0.53 | 0.85 | 0.85 → 0.85 |
+
+At 3 vs 3, every call is one move from reversal. As a filter on no-difference draws, requiring 2 or more moves removes false calls about as well as the 95 % agreement rule: 0 % and 0.28 %, against 0 % and 0.24 %. So use the distance to explain how easily a result could be steered, not to predict whether it is right. The fold margin does that.
 
 ### Planted faults
 

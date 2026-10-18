@@ -114,8 +114,25 @@ def explain(engine: Engine, defensible: Factorial, genes: pd.DataFrame, verdict:
             "fold_margin_log2": float(r["fold_margin_log2"]),
             "share_significant": float(r["share_forks_significant_same_direction"]),
             "flips": flips,
+            "moves": _moves(r),
         }
     return out
+
+
+def _moves(r: pd.Series) -> dict | None:
+    """The distance to a different conclusion, when the run computed it."""
+    if "moves_to_flip" not in r.index:
+        return None
+    found = not pd.isna(r["moves_to_flip"])
+    return {
+        "distance": int(r["moves_to_flip"]) if found else None,
+        "exact": bool(r["moves_exact"]) if found else False,
+        "path": str(r["moves_path"]).split("; ")
+        if found and isinstance(r["moves_path"], str)
+        else [],
+        "call": r["moves_flips_to"] if found else None,
+        "searched_up_to": int(r["moves_searched_exhaustively_below"]) if not found else None,
+    }
 
 
 def _flip_cell(f: Factorial, gene: str, decisions: tuple[str, ...]) -> tuple[int, ...] | None:
