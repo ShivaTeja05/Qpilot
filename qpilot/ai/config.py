@@ -11,8 +11,8 @@ remote provider is used only when the scientist sets ``QPILOT_MODEL_PROVIDER`` t
 sample names are pseudonymised before anything leaves (:func:`is_remote`). An unreachable local
 server costs one refused connection: the call raises ``ModelUnavailable`` and the interpreter
 falls back to qPilot's rules. A slow one is bounded by the interpreter's time budget
-(:func:`interpret_budget_s`, ``QPILOT_INTERPRET_BUDGET_S``): when it runs out, the rules answer
-for the parts of the file the model has not read.
+(:func:`interpret_budget_s`, ``QPILOT_INTERPRET_BUDGET_S``, ``inf`` for none): when it runs
+out, the rules answer for the parts of the file the model has not read.
 """
 
 from __future__ import annotations
@@ -110,12 +110,15 @@ def is_remote(config: ModelConfig) -> bool:
 def interpret_budget_s(env: Mapping[str, str] | None = None) -> float:
     """How long the Design Interpreter may keep asking the model about one file, in seconds.
 
-    ``QPILOT_INTERPRET_BUDGET_S`` when it is a positive number, else three minutes. When the
-    budget runs out, no further call is started and the rules answer for the rest of the file.
+    ``QPILOT_INTERPRET_BUDGET_S`` when it is a positive number (``inf`` for no budget: the model
+    reads the whole file however long it takes), else three minutes. When the budget runs out,
+    no further call is started and the rules answer for the rest of the file.
     """
     env = os.environ if env is None else env
     try:
         budget = float((env.get("QPILOT_INTERPRET_BUDGET_S") or "").strip())
     except ValueError:
         return DEFAULT_INTERPRET_BUDGET_S
+    if budget == math.inf:
+        return math.inf
     return budget if math.isfinite(budget) and budget > 0 else DEFAULT_INTERPRET_BUDGET_S

@@ -11,7 +11,7 @@ from qpilot.harness.report import details, markdown
 from qpilot.harness.run import run
 from qpilot.harness.studio import TYPE_WORDS, write_sheet
 from qpilot.io.sheets import read_sheet, sheet_table
-from tests.ai.interpret_helpers import hostile_reply, local_client
+from tests.ai.interpret_helpers import hostile_reply, local_client, studio_file
 
 
 @pytest.fixture(scope="module")
@@ -30,6 +30,28 @@ def _items(store, study_id, ids=None):
     items = build_items(result, store.cards(study_id), studio=True)
     items = [i for i in items if i.kind in STUDIO_KINDS]
     return [i for i in items if ids is None or i.id in ids]
+
+
+def test_the_scorecard_measures_the_model_over_the_whole_file(monkeypatch):
+    """Studio's time budget does not cut the harness short: every part is read."""
+    from types import SimpleNamespace
+
+    from qpilot.ai import interpret as interp
+    from qpilot.harness.studio import _interpret
+
+    summary, entries = studio_file(tuple((f"S{i}", "unkn", "LPS") for i in range(1, 101)))
+    now = [1000.0]
+    monkeypatch.setattr(interp, "_clock", lambda: now[0])
+    monkeypatch.delenv("QPILOT_INTERPRET_BUDGET_S", raising=False)  # Studio's 180 s default
+
+    def slow(system, messages):
+        now[0] += 59.0  # a small local model, just inside the client's timeout
+        return json.dumps({"fields": []})
+
+    client = local_client(slow)
+    out = _interpret(SimpleNamespace(client=client), summary, entries, "")
+    assert len(client.backend.calls) == 8  # all eight parts, at 472 s in all
+    assert not any("ran out of time" in note for note in out.notes)
 
 
 def test_the_generated_sheet_reads_back(tmp_path):

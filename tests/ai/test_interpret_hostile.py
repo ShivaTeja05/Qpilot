@@ -1,6 +1,7 @@
 """A hostile, malformed or slow model never breaks the interpreter; the rules always answer."""
 
 import json
+import math
 
 import pytest
 
@@ -209,6 +210,17 @@ def test_a_rule_label_made_from_flagged_text_is_left_out_even_when_its_slug_is_n
         ("Mouse12", "design.bio_unit", "Mouse 12", True),
         ("LPS-high", "design.group", "LPS", True),
         ("LPS vs PBS", "design.group", "LPS", True),
+        # a number or word is never split or joined across a separator
+        ("Mouse 1/2", "design.bio_unit", "Mouse 12", False),
+        ("Mouse 1, 2", "design.bio_unit", "Mouse 12", False),
+        ("Mouse 1-2", "design.bio_unit", "Mouse 12", False),
+        ("Dose 1.5", "design.group", "Dose 15", False),
+        ("1.25 ug", "design.group", "125", False),
+        ("PB-S", "design.group", "PBS", False),
+        ("L P S", "design.group", "LPS", False),
+        ("LPS1", "design.group", "LPS", False),
+        ("Dose 1.5 mg", "design.group", "Dose 1.5", True),
+        ("ＬＰＳ-high", "design.group", "LPS", True),  # fullwidth letters read as plain ones
     ],
 )
 def test_a_label_is_found_only_as_whole_words_of_the_cell(cell, kind, label, kept):
@@ -224,6 +236,24 @@ def test_a_label_is_found_only_as_whole_words_of_the_cell(cell, kind, label, kep
     assert model == ([label] if kept else [])
     if not kept:
         assert "not found in the sample's sheet row" in out.rejected[0]["reason"]
+
+
+@pytest.mark.parametrize(
+    ("group_a", "kept"), [("Dose 15", False), ("Dose 1", False), ("Dose 1.5", True)]
+)
+def test_a_comparison_is_found_only_as_whole_words_of_the_sentence(group_a, kept):
+    summary, entries = studio_file()
+    sentence = "Dose 1.5 vs PBS"
+
+    def reply(system, messages):
+        content = messages[0]["content"]
+        ref = view(content)["study"]["sentence_ref"]
+        value = {"group_a": group_a, "group_b": "PBS"}
+        return json.dumps({"fields": [_field("design.comparison", "comparison", value, [ref])]})
+
+    out = interpret(summary, entries, sentence, local_client(reply))
+    model = [f.value for f, m in out.tagged() if m.kind == "model"]
+    assert model == ([{"group_a": group_a, "group_b": "PBS"}] if kept else [])
 
 
 # ---------------------------------------------------------------------------------------------
@@ -280,8 +310,27 @@ def test_a_retry_is_not_started_after_the_budget(monkeypatch):
 def test_the_default_budget_and_its_setting():
     assert interpret_budget_s({}) == DEFAULT_INTERPRET_BUDGET_S == 180.0
     assert interpret_budget_s({"QPILOT_INTERPRET_BUDGET_S": "30"}) == 30.0
-    for bad in ("0", "-5", "soon", "nan", "inf"):
+    for bad in ("0", "-5", "soon", "nan", "-inf", ""):
         assert interpret_budget_s({"QPILOT_INTERPRET_BUDGET_S": bad}) == 180.0
+    for none in ("inf", " Infinity ", "1e309"):  # no budget: the model reads the whole file
+        assert interpret_budget_s({"QPILOT_INTERPRET_BUDGET_S": none}) == math.inf
+
+
+def test_no_budget_lets_the_model_read_every_part(monkeypatch):
+    samples = tuple((f"S{i}", "unkn", "LPS" if i % 2 else "PBS") for i in range(1, 101))
+    summary, entries = studio_file(samples)
+    clock = _Clock(step=59.0)
+    monkeypatch.setattr(interp, "_clock", clock)
+    monkeypatch.setenv("QPILOT_INTERPRET_BUDGET_S", "inf")
+
+    def slow(system, messages):
+        clock.now += clock.step
+        return json.dumps({"fields": []})
+
+    client = local_client(slow)
+    out = interpret(summary, entries, "", client)
+    assert len(client.backend.calls) == 8  # every part, at 59 s each
+    assert not any("ran out of time" in n for n in out.notes)
 
 
 def test_the_default_budget_is_read_from_the_environment(monkeypatch):
