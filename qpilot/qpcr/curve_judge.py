@@ -1,7 +1,7 @@
 """The Curve Judge: a learned amplification call, read from the shape of each curve.
 
-One option on the ``amp_call`` axis, **never the default**, and offered only while
-:func:`validated` is True. It is a pinned gradient-boosted tree classifier (XGBoost, 17 trees)
+One option on the ``amp_call`` axis, **never the default**, and offered only for an input file
+:func:`validated` accepts. It is a pinned gradient-boosted tree classifier (XGBoost, 17 trees)
 trained on 165,214 expert-labelled TaqMan Array Card curves (Brintz et al., Gates Open
 Research 9:1, 2025; data CC0 on GitHub / CC BY 4.0 on Zenodo, attributed in the method card).
 It is not a language model and nothing here calls one: the engine stays deterministic.
@@ -19,19 +19,28 @@ How it runs, offline and without XGBoost:
   checks it against ``xgboost.Booster.predict`` on all 33,043 held-out curves and records the
   maximum difference in ``metrics.json``; ``tests/engine/test_curve_judge.py`` re-checks a
   stored sample of those curves.
-* A curve is called amplified when ``p > 0.5`` (the paper's rule).
+* A curve is called amplified when ``p > 0.5`` (the paper's rule). A curve the model cannot
+  score (see below) has no call: None, never "not amplified".
 
 Inputs: 40 cycles, ``Fnorm = Fstand - (Fmin - 1)`` per curve (the paper's normalisation),
 where ``Fstand`` was the reporter divided by the ROX passive reference on the training
 instrument. qPCR instruments without ROX (the demo's LightCycler 480, SYBR Green) get the
 substitution pre-registered in ``training/curve_judge/transfer.py``: cycles 1-40 of the curve,
-divided by the curve's own minimum over those cycles (see :func:`features_from_rdml`).
-Whether that is good enough is decided only by the transfer test, never by this module.
+divided by the curve's own minimum over those cycles (see :func:`features_from_rdml`). A curve
+whose minimum is not a positive number (a baseline-subtracted or offset export) cannot be
+scored. Whether the substitution is good enough is decided only by the transfer test, never by
+this module.
+
+Validation is per input file. The transfer test ran on one file, and ``transfer.json`` records
+that file's :func:`fingerprint`: the instrument, dyes, target types and cycle counts it declares.
+:func:`validated` says yes only for a file whose fingerprint stays within that record, and never
+without a file. The demo file names no instrument and no dye chemistry, so the record is what it
+does say: dye ``SYBR``, targets of interest only, 45 or 50 cycles, and no instrument named.
 
 Wiring (done by the integration, not here)::
 
     from qpilot.qpcr import curve_judge
-    if curve_judge.validated():
+    if curve_judge.validated(rdml_path):
         register_learned(curve_judge.LEARNED_RULE, curve_judge.predict)
 """
 
@@ -65,6 +74,7 @@ THRESHOLD = 0.5
 MAX_MODEL_BYTES = 32 * 1024 * 1024
 NOT_VALIDATED = "not validated for this instrument"
 KEY_NAME = "run_id/well"
+FINGERPRINT_KEYS: tuple[str, ...] = ("instrument", "dye", "target_type", "cycles")
 
 LEARNED_RULE = AmpCallRule(
     id="learned",
@@ -338,12 +348,6 @@ def standardise_without_reference(fluorescence: np.ndarray) -> tuple[np.ndarray,
     return out, ok
 
 
-def _well_name(react_id: str, n_columns: int) -> str:
-    """The well position as LinRegPCR names it (``rdml.Run.linRegPCR``), e.g. ``A1`` or ``P24``."""
-    position = int(react_id)
-    return f"{chr(ord('A') + (position - 1) // n_columns)}{(position - 1) % n_columns + 1}"
-
-
 def _curve(adps: Sequence[Sequence[str]]) -> tuple[np.ndarray, int]:
     """Cycles 1-40 of one curve (NaN where absent) and the number of cycles in the file."""
     curve = np.full(N_CYCLES, np.nan)
@@ -365,16 +369,18 @@ def features_from_rdml(rdml_path: str | Path, experiment_id: str) -> pd.DataFram
     :func:`standardise_without_reference`, then :func:`normalise`.
 
     Returns:
-        One row per well, indexed by ``run_id`` and ``well`` (LinRegPCR's names, so rows join
+        One row per well, indexed by ``run_id`` and ``well`` (named by
+        :func:`qpilot.qpcr.curves.react_well_label`, so rows join
         ``qpilot.qpcr.curves.analyse_study``), with ``sample``, ``target``, ``n_cycles``,
         ``callable`` and ``Cyc1``…``Cyc40``.
 
     Raises:
-        CurveJudgeError: A well holds more than one curve (multiplex), or there are no runs.
+        CurveJudgeError: A well holds more than one curve (multiplex), two wells share a
+            ``run_id/well`` key, or there are no runs.
         qpilot.io.rdml_io.RdmlLoadError: The file could not be loaded safely.
     """
     from qpilot.io.rdml_io import load, runs
-    from qpilot.qpcr.curves import normalise_target, safe_name
+    from qpilot.qpcr.curves import normalise_target, react_well_label, safe_name
 
     doc = load(rdml_path)
     meta: list[tuple[str, str, str, str, int]] = []
@@ -394,7 +400,7 @@ def features_from_rdml(rdml_path: str | Path, experiment_id: str) -> pd.DataFram
                 meta.append(
                     (
                         run_id,
-                        _well_name(react["id"], n_columns),
+                        react_well_label(react["id"], n_columns),
                         safe_name(react.get("sample", ""), "sample"),
                         normalise_target(safe_name(data.get("tar", ""), "target")),
                         n_cycles,
@@ -434,12 +440,16 @@ def predict_proba(features: pd.DataFrame, model: TreeEnsemble | None = None) -> 
 
 
 def predict(features: pd.DataFrame) -> pd.Series:
-    """Amplified (``p > 0.5``) per row of :func:`features_from_rdml`; not callable -> False.
+    """Amplified (``p > 0.5``) per row of :func:`features_from_rdml`; None = cannot score.
 
-    This is the ``Callable[[pd.DataFrame], pd.Series]`` that ``register_learned`` takes.
+    A row that is not ``callable`` was never read by the model, so it has no call: None
+    ("cannot score"), never False ("not amplified"). The values are True, False or None
+    (object dtype). This is the ``Callable[[pd.DataFrame], pd.Series]`` that
+    ``register_learned`` takes.
     """
     p = predict_proba(features)
-    return (p > THRESHOLD).rename("learned")
+    calls = [None if math.isnan(value) else bool(value > THRESHOLD) for value in p]
+    return pd.Series(calls, index=p.index, dtype=object, name="learned")
 
 
 def well_keys(run_id: pd.Series | pd.Index, well: pd.Series | pd.Index) -> pd.Index:
@@ -450,10 +460,11 @@ def well_keys(run_id: pd.Series | pd.Index, well: pd.Series | pd.Index) -> pd.In
 
 
 def predict_calls(rdml_path: str | Path, experiment_id: str) -> pd.Series:
-    """The learned call for every well of one experiment, indexed ``run_id/well`` (bool).
+    """The learned call for every well of one experiment, indexed ``run_id/well``.
 
-    Runs whether or not :func:`validated` is True; deciding whether to *offer* it is the
-    caller's job.
+    True or False, or None for a curve the model cannot score (see :func:`predict`): a caller
+    must not count None as "not amplified" or as a disagreement with LinRegPCR. Runs whether
+    or not :func:`validated` is True; deciding whether to *offer* it is the caller's job.
     """
     features = features_from_rdml(rdml_path, experiment_id)
     calls = predict(features)
@@ -480,13 +491,86 @@ def transfer_result(transfer_path: str | Path | None = None) -> dict[str, Any] |
     return result if isinstance(result, dict) else None
 
 
-def validated(transfer_path: str | Path | None = None) -> bool:
-    """True only if every pre-registered transfer criterion passed for the shipped model.
+def fingerprint(rdml_path: str | Path) -> dict[str, list[Any]]:
+    """What an RDML file declares about its instrument and chemistry, for :func:`validated`.
 
-    Reads ``transfer.json``; the result must name the SHA-256 of the model that actually loads
-    (the packaged one, verified), and every criterion must say ``passed: true``. Anything
-    missing, unreadable or mismatched counts as not validated.
+    Read from every curve of every run in the file (opened only through
+    :func:`qpilot.io.rdml_io.load`):
+
+    * ``instrument``: the run's ``<instrument>``, ``""`` when the run names none;
+    * ``dye``: ``[dye id, dyeChemistry]`` of the dye of the curve's target, ``""`` for what the
+      file does not declare;
+    * ``target_type``: the declared type of the curve's target (``toi`` or ``ref``);
+    * ``cycles``: the curve's number of cycles, counted as :func:`features_from_rdml` counts
+      them (0 for a well without amplification data).
+
+    Each is the sorted list of its distinct values: plain JSON, compared with the record in
+    ``transfer.json``. Cached in the process by the file's path and content.
+
+    Raises:
+        qpilot.io.rdml_io.RdmlLoadError: The file could not be loaded safely.
+        OSError: The file cannot be read.
     """
+    from qpilot.qpcr.curves import file_sha256
+
+    return json.loads(_fingerprint_json(file_sha256(rdml_path), str(rdml_path)))
+
+
+@lru_cache(maxsize=8)
+def _fingerprint_json(sha256: str, path: str) -> str:
+    """:func:`fingerprint` of ``path`` as JSON; ``sha256`` (its content) keys the cache."""
+    from qpilot.io.rdml_io import load, runs
+
+    doc = load(path)
+    chemistry = {dye["id"]: dye["dyeChemistry"] or "" for dye in doc.dyes()}
+    targets = {t["id"]: (t["type"] or "", t["dyeId"] or "") for t in doc.targets()}
+    seen: dict[str, set[Any]] = {key: set() for key in FINGERPRINT_KEYS}
+    for run in runs(doc):
+        instrument = run["instrument"] or ""
+        for react in run.getreactjson(curves=True)["reacts"]:
+            for data in react.get("datas", []):
+                target_type, dye = targets.get(data.get("tar", ""), ("", ""))
+                seen["instrument"].add(instrument)
+                seen["dye"].add((dye, chemistry.get(dye, "")))
+                seen["target_type"].add(target_type)
+                seen["cycles"].add(_curve(data.get("adps", []))[1])
+    return json.dumps({key: sorted(values) for key, values in seen.items()}, sort_keys=True)
+
+
+def _within(observed: dict[str, list[Any]], recorded: Any) -> bool:
+    """Every value the file shows, field by field, is one the transfer test saw."""
+    if not isinstance(recorded, dict):
+        return False
+    for key in FINGERPRINT_KEYS:
+        allowed = recorded.get(key)
+        if not isinstance(allowed, list) or not observed.get(key):
+            return False
+        known = {json.dumps(value) for value in allowed}
+        if any(json.dumps(value) not in known for value in observed[key]):
+            return False
+    return True
+
+
+def validated(
+    rdml_path: str | Path | None = None, *, transfer_path: str | Path | None = None
+) -> bool:
+    """True only if the transfer test passed for the shipped model and covers this input file.
+
+    No file, no claim: without ``rdml_path`` the answer is False. With one, ``transfer.json``
+    must name the SHA-256 of the model that actually loads (the packaged one, verified), every
+    criterion must say ``passed: true``, and the file's :func:`fingerprint` must stay within the
+    one recorded for the tested file: every instrument, dye, target type and cycle count the
+    file shows was in the transfer test. Anything missing, unreadable or mismatched counts as
+    not validated.
+
+    Args:
+        rdml_path: The input file the learned call would be offered for.
+        transfer_path: A ``transfer.json`` other than the packaged one (tests).
+    """
+    from qpilot.io.rdml_io import RdmlLoadError
+
+    if rdml_path is None:
+        return False
     result = transfer_result(transfer_path)
     if result is None:
         return False
@@ -498,9 +582,16 @@ def validated(transfer_path: str | Path | None = None) -> bool:
     criteria = result.get("criteria")
     if result.get("model_sha256") != model.sha256 or not isinstance(criteria, dict) or not criteria:
         return False
-    return all(isinstance(c, dict) and c.get("passed") is True for c in criteria.values())
+    if not all(isinstance(c, dict) and c.get("passed") is True for c in criteria.values()):
+        return False
+    try:
+        observed = fingerprint(rdml_path)
+    except (RdmlLoadError, OSError) as err:
+        log.info("no Curve Judge fingerprint for this input: %s", err)
+        return False
+    return _within(observed, result.get("fingerprint"))
 
 
-def status() -> str:
-    """``"validated"`` or ``"not validated for this instrument"``, for labels and cards."""
-    return "validated" if validated() else NOT_VALIDATED
+def status(rdml_path: str | Path | None = None) -> str:
+    """``"validated"`` or ``"not validated for this instrument"`` for this input file."""
+    return "validated" if validated(rdml_path) else NOT_VALIDATED

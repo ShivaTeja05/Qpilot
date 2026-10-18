@@ -24,7 +24,10 @@ from pytest_socket import disable_socket, enable_socket
 from starlette.testclient import TestClient
 
 import qpilot.studio as st
+from qpilot import studio_state as ss
+from qpilot.ai import payload_log
 from qpilot.ai.client import ModelClient, NoneBackend
+from qpilot.ai.prompts import SYSTEM_INTERPRET
 from qpilot.cli import main as cli_main
 from qpilot.core.store import StudyStore
 from qpilot.schemas_studio import Evidence, MadeBy, Proposal
@@ -489,6 +492,86 @@ def test_a_blind_card_says_at_most_that_it_matters(fake, fake_page):
     cards = "".join(text_of(out[slot.html]) for slot in ui.slots)
     assert "This matters for at least one conclusion; decide on the evidence." in cards
     assert "fc_before" not in cards and "3.59" not in cards
+
+
+@pytest.fixture
+def prism_payload():
+    """The last model call was a Prism draft: its payload holds the fact table's values."""
+    payload_log.clear()
+    payload_log.record_payload(
+        {
+            "system": "You reword a figure caption.",
+            "messages": [{"role": "user", "content": "f_fc_1_mar_recommended: 0.56×, p 0.094"}],
+        }
+    )
+    yield
+    payload_log.clear()
+
+
+def test_what_the_model_saw_shows_no_result_once_a_stage_is_blind_again(
+    fake, fake_page, prism_payload
+):
+    ui = fake_page.qpilot_ui
+    fake.phase = "choices"  # both blind stages confirmed: the results are visible
+    out = run(by_name(fake_page, "on_seen"), [loaded_session(fake_page)])
+    assert out[ui.seen]["visible"] is True and "0.56×" in text_of(out[ui.seen])
+    session = out[ui.session]
+    fake.phase = "design"  # an accepted design change re-opens the design stage
+    out = run(by_name(fake_page, "on_load"), [session])
+    assert out[ui.seen]["visible"] is True  # the open panel is re-drawn, not left as it was
+    shown = [text_of(out[ui.seen]), *(text_of(out[slot.html]) for slot in ui.slots)]
+    assert "qs-saw" in "".join(shown)  # a model-made card's footer is on the page
+    for html in shown:  # neither the panel nor any card footer shows the earlier results
+        assert "0.56" not in html and "f_fc_" not in html
+    assert ss.SEEN_HIDDEN_TEXT in text_of(out[ui.seen])
+    out = run(by_name(fake_page, "on_seen"), [out[ui.session]])
+    assert "0.56" not in text_of(out[ui.seen]) and ss.SEEN_HIDDEN_TEXT in text_of(out[ui.seen])
+    payload_log.record_payload({"system": SYSTEM_INTERPRET, "messages": [{"content": "S1, S2"}]})
+    out = run(by_name(fake_page, "on_seen"), [out[ui.session]])
+    assert "S1, S2" in text_of(out[ui.seen])  # the Design Interpreter's own call is shown
+
+
+def test_the_seen_panel_stays_closed_until_asked_for(fake, fake_page, prism_payload):
+    ui = fake_page.qpilot_ui
+    fake.phase = "choices"
+    out = run(by_name(fake_page, "on_load"), [{**st.new_session(), "sid": SID}])
+    assert out[ui.seen]["visible"] is False and out[ui.seen]["value"] == ""
+    out = run(by_name(fake_page, "on_load"), [st.new_session()])  # no file open: blind
+    assert out[ui.seen]["visible"] is False
+
+
+def test_a_does_this_matter_answer_is_dropped_once_the_chain_moves_on(mini, monkeypatch):
+    """The engine's answer holds for the design it was computed on; asking again is possible."""
+    studio, page = mini
+    tab = Tab(page)
+    open_and_propose(tab)
+    sid = tab.state["sid"]
+    inbox = studio.store.proposals(sid)
+    asked = next(
+        p for p in studio.inbox(sid, "design", "proposed") if p.subject == "water"
+    )  # design.well_role water: ntc, or unkn
+    assert asked.alternatives
+
+    def card_of(out):
+        slot = tab.state["slots"].index(asked.id)
+        return text_of(out[tab.ui.slots[slot].html]), out[tab.ui.slots[slot].matters]
+
+    answers = iter([False, True])
+    monkeypatch.setattr(studio, "matters", lambda session_id, proposal: next(answers))
+    slot = tab.state["slots"].index(asked.id)
+    card, button = card_of(tab(f"on_matters_{slot}", None))
+    assert ss.NOT_MATTERS_TEXT in card and button["visible"] is False
+    card, button = card_of(tab("on_load", None))  # nothing changed: the answer is kept
+    assert ss.NOT_MATTERS_TEXT in card and button["visible"] is False
+    other = next(p for p in studio.inbox(sid, "design", "proposed") if p.subject == "NTC")
+    head = inbox.head()
+    out = tab(f"on_accept_{tab.state['slots'].index(other.id)}", None, "")
+    assert inbox.head() != head and "Accepted" in out[tab.ui.notice]
+    card, button = card_of(out)
+    assert ss.NOT_MATTERS_TEXT not in card and ss.BLIND_TEXT in card
+    assert button["visible"] is True  # the person can ask again
+    card, button = card_of(tab(f"on_matters_{tab.state['slots'].index(asked.id)}", None))
+    assert ss.MATTERS_TEXT in card and button["visible"] is False
 
 
 # ---------- the real service: bulk acceptance, staleness, curves ----------

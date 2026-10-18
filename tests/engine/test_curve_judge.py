@@ -7,9 +7,11 @@ training environment and stored in ``metrics.json`` (``training/curve_judge/eval
 
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +21,7 @@ from pytest_socket import disable_socket, enable_socket
 
 from qpilot.qpcr import curve_judge as cj
 from qpilot.schemas_studio import AmpCallRule
+from tests.engine.test_curves import rewrite_run, tall_plate
 
 ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = ROOT / "qpilot" / "models" / "curve_judge"
@@ -187,39 +190,190 @@ def test_feature_keys_join_linregpcr_wells(std_rdml):
     assert (joined["target"] == joined["target_cj"]).all()
 
 
+def test_feature_keys_join_linregpcr_wells_past_row_26(std_rdml, tmp_path):
+    """Rows 27-29 are AA, AB and AC on both sides; LinRegPCR's ``[1`` never reaches a key."""
+    from qpilot.qpcr.curves import analyse_study
+
+    tall = tall_plate(std_rdml, tmp_path / "tall.rdml")
+    feats = cj.features_from_rdml(tall, "biomarker_set")
+    table = analyse_study(tall, "biomarker_set", use_cache=False)
+    assert set(feats.index) == set(zip(table["run_id"], table["well"], strict=True))
+    run = feats.loc["AHCY_20080229"]
+    assert sorted(run.index) == ["AA1", "AB1", "AC1"]
+    assert list(cj.predict_calls(tall, "biomarker_set").index[:3]) == [
+        "AHCY_20080229/AA1",
+        "AHCY_20080229/AB1",
+        "AHCY_20080229/AC1",
+    ]
+
+
 def test_wells_without_amplification_data_are_not_called(smoke_rdml):
     feats = cj.features_from_rdml(smoke_rdml, "Experiment 1")  # melt curves only
     assert len(feats) and not feats["callable"].any()
     assert cj.predict_proba(feats).isna().all()
     calls = cj.predict_calls(smoke_rdml, "Experiment 1")
-    assert calls.dtype == bool and not calls.any()
+    assert all(call is None for call in calls)  # cannot score: no call, not "not amplified"
     assert calls.index.name == "run_id/well" and calls.index.is_unique
     assert all(key.startswith("Run 1/") for key in calls.index) and "Run 1/G12" in calls.index
+
+
+def _shifted_below_zero(source, target, run_id="AHCY_20080229", by=5.0):
+    """One run's fluorescence moved below zero, as in an offset or baseline-subtracted export."""
+
+    def shift(match):
+        return f"<fluor>{float(match.group(1)) - by:.4f}</fluor>"
+
+    return rewrite_run(
+        source, target, run_id, lambda run: re.sub(r"<fluor>([^<]*)</fluor>", shift, run)
+    )
+
+
+def test_a_curve_the_model_cannot_score_has_no_call_never_not_amplified(std_rdml, tmp_path):
+    shifted = _shifted_below_zero(std_rdml, tmp_path / "shifted.rdml")
+    feats = cj.features_from_rdml(shifted, "biomarker_set")
+    unscored = ~feats["callable"]
+    assert set(feats.index[unscored].get_level_values("run_id")) == {"AHCY_20080229"}
+    learned = cj.predict(feats)
+    assert learned.dtype == object
+    assert all(call is None for call in learned[unscored])
+    assert all(call is True or call is False for call in learned[~unscored])
+    calls = cj.predict_calls(shifted, "biomarker_set")
+    on_run = [call for key, call in calls.items() if key.startswith("AHCY_20080229/")]
+    assert on_run == [None, None, None]
+    assert calls.drop([k for k in calls.index if k.startswith("AHCY_20080229/")]).all()  # STDs
 
 
 # ---------- the validation flag ----------
 
 
-def _transfer(path, sha, *passed):
+#: The demo's fingerprint: no instrument named, SYBR with no chemistry declared, targets of
+#: interest only, 45- and 50-cycle runs. The standards fixture is cut from the same file.
+DEMO_FINGERPRINT = {
+    "cycles": [45, 50],
+    "dye": [["SYBR", ""]],
+    "instrument": [""],
+    "target_type": ["toi"],
+}
+
+
+def _transfer(path, sha, *passed, fingerprint=DEMO_FINGERPRINT):
     criteria = {f"c{i}": {"passed": p} for i, p in enumerate(passed)}
-    path.write_text(json.dumps({"model_sha256": sha, "criteria": criteria}))
+    result = {"model_sha256": sha, "criteria": criteria}
+    if fingerprint is not None:
+        result["fingerprint"] = fingerprint
+    path.write_text(json.dumps(result))
     return path
 
 
-def test_validated_reflects_transfer_json(tmp_path):
+def test_validated_reflects_transfer_json(tmp_path, std_rdml):
     good = cj.MODEL_SHA256
-    assert cj.validated(_transfer(tmp_path / "a.json", good, True, True, True))
-    assert not cj.validated(_transfer(tmp_path / "b.json", good, True, False, True))
-    assert not cj.validated(_transfer(tmp_path / "c.json", "0" * 64, True, True, True))
-    assert not cj.validated(_transfer(tmp_path / "d.json", good))
-    assert not cj.validated(tmp_path / "missing.json")
+
+    def accepts(transfer):
+        return cj.validated(std_rdml, transfer_path=transfer)
+
+    assert accepts(_transfer(tmp_path / "a.json", good, True, True, True))
+    assert not accepts(_transfer(tmp_path / "b.json", good, True, False, True))
+    assert not accepts(_transfer(tmp_path / "c.json", "0" * 64, True, True, True))
+    assert not accepts(_transfer(tmp_path / "d.json", good))
+    assert not accepts(tmp_path / "missing.json")
     (tmp_path / "e.json").write_text("{not json")
-    assert not cj.validated(tmp_path / "e.json")
+    assert not accepts(tmp_path / "e.json")
     (tmp_path / "f.json").write_text(json.dumps({"model_sha256": good, "criteria": {"a": 1}}))
-    assert not cj.validated(tmp_path / "f.json")
+    assert not accepts(tmp_path / "f.json")
+    # no recorded fingerprint, or one that lacks a field: no claim for any file
+    assert not accepts(_transfer(tmp_path / "g.json", good, True, fingerprint=None))
+    partial = {k: v for k, v in DEMO_FINGERPRINT.items() if k != "cycles"}
+    assert not accepts(_transfer(tmp_path / "h.json", good, True, fingerprint=partial))
+    wider = {**DEMO_FINGERPRINT, "cycles": [40, 45, 50]}  # a superset still covers the file
+    assert accepts(_transfer(tmp_path / "i.json", good, True, fingerprint=wider))
 
 
-def test_shipped_transfer_result_is_for_the_shipped_model():
+def test_no_file_no_claim(tmp_path):
+    passing = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, True, True)
+    assert cj.validated() is False
+    assert cj.validated(None, transfer_path=passing) is False
+    assert cj.status() == cj.NOT_VALIDATED
+    assert cj.validated(tmp_path / "missing.rdml", transfer_path=passing) is False
+    (tmp_path / "junk.rdml").write_bytes(b"not an RDML file")
+    assert cj.validated(tmp_path / "junk.rdml", transfer_path=passing) is False
+
+
+def _variant(source, target, edit):
+    """A copy of an RDML file with its XML passed through ``edit`` (str -> str)."""
+    with zipfile.ZipFile(source) as archive:
+        xml = archive.read("rdml_data.xml").decode("utf-8")
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("rdml_data.xml", edit(xml))
+    return target
+
+
+def _first_react_cut_to_40_cycles(xml):
+    start = xml.index("<react ")
+    end = xml.index("</react>", start)
+    late = re.compile(r"<adp><cyc>(4[1-9]|50)</cyc><fluor>[^<]*</fluor></adp>")
+    return xml[:start] + late.sub("", xml[start:end]) + xml[end:]
+
+
+@pytest.mark.parametrize(
+    ("label", "edit"),
+    [
+        (
+            "another instrument",
+            lambda x: x.replace(
+                "<backgroundDeterminationMethod>",
+                "<instrument>Applied Biosystems QuantStudio 7 Flex</instrument>"
+                "<backgroundDeterminationMethod>",
+                1,
+            ),
+        ),
+        (
+            "the same instrument, now named",  # the test never saw a file that names it
+            lambda x: x.replace(
+                "<backgroundDeterminationMethod>",
+                "<instrument>Roche LightCycler 480</instrument><backgroundDeterminationMethod>",
+                1,
+            ),
+        ),
+        (
+            "a probe chemistry",
+            lambda x: x.replace(
+                '<dye id="SYBR"/>',
+                '<dye id="SYBR"><dyeChemistry>hydrolysis probe</dyeChemistry></dye>',
+            ),
+        ),
+        ("another dye", lambda x: x.replace('"SYBR"', '"FAM"')),
+        (
+            "a reference target",
+            lambda x: x.replace(
+                '<target id="AHCY_20080229"><type>toi</type>',
+                '<target id="AHCY_20080229"><type>ref</type>',
+            ),
+        ),
+        ("a 40-cycle curve", _first_react_cut_to_40_cycles),
+    ],
+)
+def test_validation_holds_only_for_the_instrument_and_chemistry_tested(
+    std_rdml, tmp_path, label, edit
+):
+    assert cj.validated(std_rdml) is True  # cut from the transfer-tested file
+    assert cj.status(std_rdml) == "validated"
+    changed = _variant(std_rdml, tmp_path / "changed.rdml", edit)
+    assert cj.fingerprint(changed) != cj.fingerprint(std_rdml), label
+    assert cj.validated(changed) is False, label
+    assert cj.status(changed) == cj.NOT_VALIDATED
+
+
+def test_a_file_without_amplification_curves_is_not_validated(smoke_rdml):
+    assert cj.fingerprint(smoke_rdml) == {
+        "cycles": [0],
+        "dye": [["dye 1", ""]],
+        "instrument": [""],
+        "target_type": ["toi"],
+    }
+    assert cj.validated(smoke_rdml) is False
+
+
+def test_shipped_transfer_result_is_for_the_shipped_model(std_rdml):
     result = json.loads((MODEL_DIR / "transfer.json").read_text())
     assert result["model_sha256"] == cj.MODEL_SHA256
     assert len(result["preregistered_in_commit"]) == 40
@@ -231,8 +385,10 @@ def test_shipped_transfer_result_is_for_the_shipped_model():
     }
     passed = all(c["passed"] for c in criteria.values())
     assert result["verdict"] == ("pass" if passed else "fail")
-    assert cj.validated() is passed
-    assert cj.status() == ("validated" if passed else cj.NOT_VALIDATED)
+    assert result["fingerprint"] == DEMO_FINGERPRINT
+    assert cj.validated() is False  # no file, no claim
+    assert cj.validated(std_rdml) is passed
+    assert cj.status(std_rdml) == ("validated" if passed else cj.NOT_VALIDATED)
     a, b = (
         criteria["a_standards_called_amplified"],
         criteria["b_agreement_with_linregpcr_cq_below_30"],
@@ -242,14 +398,26 @@ def test_shipped_transfer_result_is_for_the_shipped_model():
     assert criteria["c_ntc_calls_tabulated"]["n"] == len(criteria["c_ntc_calls_tabulated"]["table"])
 
 
-def test_validated_is_false_when_the_model_is_refused(tmp_path, monkeypatch):
+@pytest.mark.demo_data
+def test_the_recorded_fingerprint_is_the_transfer_tested_files(demo_rdml_path):
+    from qpilot.qpcr.curves import file_sha256
+
+    result = json.loads((MODEL_DIR / "transfer.json").read_text())
+    assert file_sha256(demo_rdml_path) == result["data"]["sha256"]
+    assert cj.fingerprint(demo_rdml_path) == result["fingerprint"]
+    assert cj.validated(demo_rdml_path) is (result["verdict"] == "pass")
+    assert cj.status(demo_rdml_path) == "validated"
+
+
+def test_validated_is_false_when_the_model_is_refused(tmp_path, monkeypatch, std_rdml):
     transfer = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, True, True)
+    assert cj.validated(std_rdml, transfer_path=transfer)
 
     def refuse():
         raise cj.ModelIntegrityError("tampered")
 
     monkeypatch.setattr(cj, "shipped_model", refuse)
-    assert not cj.validated(transfer)
+    assert not cj.validated(std_rdml, transfer_path=transfer)
 
 
 def test_learned_rule_is_one_option_never_the_default():

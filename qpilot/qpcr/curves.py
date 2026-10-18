@@ -9,7 +9,8 @@ The plates are concatenated into one tidy table, one row per well:
 column              meaning
 ==================  =================================================================
 run_id              plate id (validated identifier)
-well, sample        well position and sample name (validated identifiers)
+well                well position, named by :func:`well_label` (``A1``; ``AA1`` from row 27)
+sample              sample name (validated identifier)
 sample_type         ``unkn`` (study sample), ``std`` (dilution standard) or ``ntc``
 target              gene name with its ``_20YYMMDD`` date token removed
 target_raw          gene name exactly as written in the file
@@ -25,6 +26,10 @@ n0                  efficiency-corrected starting quantity (``Ncopy``); NaN = un
 amplification       whether LinRegPCR saw amplification
 plateau             whether the curve reached a plateau
 ==================  =================================================================
+
+Every well-level decision (an exclusion, a well role, a person's amplification call) is keyed
+``run_id/well``, so the table never holds two rows with the same key: a table where they would
+collide is refused.
 
 Results are cached as CSV in the cache directory, keyed by the input file's SHA-256, the
 experiment, the reference genes and the analysis settings, so a second analysis of the same file
@@ -109,6 +114,9 @@ COLUMN_ORDER = (
 
 _SAFE_NAME = re.compile(r"^[\w()\-. ]{1,64}$")
 _DATE_TOKEN = re.compile(r"_20\d{6}(?=_|$)")
+_WELL_LABEL = re.compile(r"^[A-Z]+[1-9][0-9]*$")
+_LINREGPCR_WELL = re.compile(r"^(.)([1-9][0-9]*)$", re.DOTALL)
+WELL_KEY = ("run_id", "well")
 
 
 class CurveAnalysisError(Exception):
@@ -158,6 +166,63 @@ def safe_name(name: str, kind: str) -> str:
     return replacement
 
 
+def well_label(row: int, column: int) -> str:
+    """The one name qPilot gives the well at ``row`` and ``column`` (both counted from 1).
+
+    Rows 1-26 are ``A`` to ``Z``, as LinRegPCR names them, so a plate of up to 26 rows keeps
+    LinRegPCR's names (the demo's ``A1`` ... ``P24``). From row 27 the rows go on as on a
+    1536-well plate: ``AA``, ``AB`` ... ``AZ``, ``BA`` ... There LinRegPCR writes the characters
+    after ``Z`` (``[``, a backslash, ``]`` ...), which :func:`safe_name` would turn into one
+    name for five different wells.
+
+    Raises:
+        CurveAnalysisError: ``row`` or ``column`` is below 1.
+    """
+    if row < 1 or column < 1:
+        raise CurveAnalysisError(f"no well at row {row}, column {column}")
+    letters = ""
+    while row:
+        row, rest = divmod(row - 1, 26)
+        letters = chr(ord("A") + rest) + letters
+    return f"{letters}{column}"
+
+
+def react_well_label(react_id: str | int, n_columns: int) -> str:
+    """:func:`well_label` of RDML reaction ``react_id`` on a plate ``n_columns`` wide.
+
+    RDML numbers the reactions of a plate row by row from 1, as LinRegPCR reads them: on a
+    24-column plate, reaction 25 is ``B1``.
+    """
+    position, columns = int(react_id), int(n_columns)
+    if position < 1 or columns < 1:
+        raise CurveAnalysisError(f"no well for reaction {react_id} on a {n_columns}-column plate")
+    return well_label((position - 1) // columns + 1, (position - 1) % columns + 1)
+
+
+def _from_linregpcr(name: str) -> str:
+    """LinRegPCR's well name (``chr(ord("A") + row)``, then the column) as :func:`well_label`."""
+    match = _LINREGPCR_WELL.match(name)
+    if match is None or ord(match.group(1)) < ord("A"):
+        raise CurveAnalysisError(f"LinRegPCR returned an unexpected well name {name!r}")
+    return well_label(ord(match.group(1)) - ord("A") + 1, int(match.group(2)))
+
+
+def _check_well_keys(table: pd.DataFrame) -> None:
+    """Refuse a table in which two rows share a ``run_id/well`` key.
+
+    Two curves in one well (a multiplex well) or two runs whose ids become the same safe name
+    would share it, and one person's exclusion or call would then apply to both.
+    """
+    shared = table.duplicated(list(WELL_KEY), keep=False)
+    if shared.any():
+        run_id, well = table.loc[shared, list(WELL_KEY)].iloc[0]
+        raise CurveAnalysisError(
+            f"run {run_id} well {well}: {int(shared.sum())} curves share run_id/well keys (a well "
+            "with more than one target, or runs whose ids become the same safe name); qPilot "
+            "keys every well-level decision by run_id/well, so this table is refused"
+        )
+
+
 def analyse_run(run: rdml.Run, settings: CurveSettings | None = None) -> pd.DataFrame:
     """Run LinRegPCR on one plate and return its wells as a tidy table (see module docstring)."""
     settings = settings or CurveSettings()
@@ -178,10 +243,11 @@ def analyse_run(run: rdml.Run, settings: CurveSettings | None = None) -> pd.Data
 
 
 def _tidy(table: pd.DataFrame, reference_targets: Iterable[str]) -> pd.DataFrame:
-    """Validate names, add derived columns, type the columns and fix the column order."""
+    """Name the wells, validate names, add derived columns, type and order the columns."""
     references = set(reference_targets)
     table = table.copy()
-    for column, kind in (("well", "well"), ("sample", "sample"), ("target_raw", "target")):
+    table["well"] = table["well"].map({w: _from_linregpcr(w) for w in table["well"].unique()})
+    for column, kind in (("sample", "sample"), ("target_raw", "target")):
         unique = {value: safe_name(value, kind) for value in table[column].unique()}
         table[column] = table[column].map(unique)
     table["target"] = table["target_raw"].map(normalise_target)
@@ -197,9 +263,10 @@ def _tidy(table: pd.DataFrame, reference_targets: Iterable[str]) -> pd.DataFrame
     return table[list(COLUMN_ORDER)].reset_index(drop=True)
 
 
-def _file_sha256(path: Path) -> str:
+def file_sha256(path: str | Path) -> str:
+    """SHA-256 of a file's bytes, read in chunks."""
     digest = hashlib.sha256()
-    with path.open("rb") as handle:
+    with Path(path).open("rb") as handle:
         for chunk in iter(lambda: handle.read(1 << 16), b""):
             digest.update(chunk)
     return digest.hexdigest()
@@ -272,7 +339,8 @@ def analyse_study(
         The tidy per-well table described in the module docstring.
 
     Raises:
-        CurveAnalysisError: A plate could not be analysed.
+        CurveAnalysisError: A plate could not be analysed, or two curves share a
+            ``run_id/well`` key.
         qpilot.io.rdml_io.RdmlLoadError: The file could not be loaded safely.
     """
     settings = settings or CurveSettings()
@@ -284,14 +352,20 @@ def analyse_study(
         path = Path(source)
         if use_cache:
             directory = Path(cache_dir) if cache_dir is not None else default_cache_dir()
-            cached = cache_path(_file_sha256(path), experiment_id, references, settings, directory)
+            cached = cache_path(file_sha256(path), experiment_id, references, settings, directory)
             if cached.exists():
-                return _read_cache(cached)
+                table = _read_cache(cached)
+                named = table["well"].str.fullmatch(_WELL_LABEL).all()
+                if named and not table.duplicated(list(WELL_KEY)).any():
+                    return table
+                # written before every well had its own name (plates over 26 rows)
+                log.warning("cached curve table %s predates unique well names", cached.name)
         doc = load(path)
     plates = [analyse_run(run, settings) for run in runs(doc, experiment_id)]
     if not plates:
         raise CurveAnalysisError(f"experiment {experiment_id!r} has no runs")
     table = _tidy(pd.concat(plates, ignore_index=True), references)
+    _check_well_keys(table)
     if cached is not None:
         _write_cache(table, cached)
     return table

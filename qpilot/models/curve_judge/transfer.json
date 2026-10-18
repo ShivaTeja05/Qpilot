@@ -17,6 +17,24 @@
    "ignoreExclusion": false
   }
  },
+ "fingerprint": {
+  "cycles": [
+   45,
+   50
+  ],
+  "dye": [
+   [
+    "SYBR",
+    ""
+   ]
+  ],
+  "instrument": [
+   ""
+  ],
+  "target_type": [
+   "toi"
+  ]
+ },
  "normalisation": "Fstand = F / min(F over cycles 1-40) per curve (no ROX on this instrument); then Fnorm = Fstand - (Fmin - 1) as in the paper",
  "cycle_mapping": "LC480 cycle k -> Cyc<k> for k = 1..40; cycles 41-50 dropped; no resampling",
  "threshold": 0.5,

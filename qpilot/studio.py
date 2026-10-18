@@ -20,9 +20,11 @@ Safety, all of it checked by ``tests/studio``:
   launch is a click handler that passes ``actor="human"``; page load, picking a stage, a card or a
   gene only reads; the service and the proposal store refuse any other actor in code;
 * blind stages: before both blind stages are confirmed nothing of the analysis is read, so no
-  conclusion, fold change, p-value, card or Prism preview can reach the page; every view is
-  recomputed from the service on each event and the page keeps no result between events (after
-  an accepted exclusion re-runs the analysis, only the new analysis is shown);
+  conclusion, fold change, p-value, card or Prism preview can reach the page; "What the model
+  saw" then shows only the Design Interpreter's payload; every view is recomputed from the
+  service on each event and the page keeps no result between events (after an accepted
+  exclusion re-runs the analysis, only the new analysis is shown), nor an engine answer to
+  "Does this matter?" once the proposal chain has moved on;
 * the same hardened launch as :mod:`qpilot.app` (its ``LAUNCH_OPTIONS`` and ``launch_options``):
   telemetry off before ``import gradio``, bound to 127.0.0.1, foreign ``Host`` headers refused,
   no monitoring, run history, MCP server, API footer or server-side rendering; files are served
@@ -70,6 +72,7 @@ from qpilot.core.validator import names_from_result  # noqa: E402
 from qpilot.io.datasets import VERMEULEN_COMMIT, default_cache_dir  # noqa: E402
 from qpilot.io.rdml_io import RdmlLoadError  # noqa: E402
 from qpilot.qpcr.curve_judge import CurveJudgeError  # noqa: E402
+from qpilot.qpcr.curves import CurveAnalysisError  # noqa: E402
 from qpilot.studio_service import BLIND_STAGES, Studio  # noqa: E402
 from qpilot.studio_state import (  # noqa: E402
     STAGE_LABELS,
@@ -94,6 +97,7 @@ from qpilot.studio_state import (  # noqa: E402
     prism_preview_html,
     proposal_list_html,
     routes_html,
+    seen_html,
     stage_strip_html,
     table_html,
 )
@@ -116,6 +120,7 @@ ERRORS: tuple[type[BaseException], ...] = (
     RuntimeError,
     RdmlLoadError,
     CurveJudgeError,
+    CurveAnalysisError,
 )
 OPEN_FIRST = "Open a file first (or press Open with no file for the cached demo)."
 STALE_PROPOSAL = (
@@ -202,6 +207,8 @@ def new_session() -> dict[str, Any]:
         "reject": None,  # {"stage", "ids"} shown by "Reject all contradicted AI calls…"
         "confirm": None,  # {"stage", "id"} of the pending stage.confirm shown
         "matters": {},  # proposal id -> the engine's yes/no, when a person asked
+        "matters_head": None,  # the proposal chain head those answers hold for
+        "seen": False,  # the "What the model saw" panel was opened
         "card_id": None,
         "card_head": None,  # decision chain head when the card was shown
         "card_study": None,  # the analysis the card belonged to
@@ -311,11 +318,13 @@ def build_app(
         if not sid:
             out.update(empty_inbox())
             out.update(hidden_results())
+            out[ui.seen] = seen_panel(session, False)
             out[ui.session] = {**session, "slots": [], "send": None}
             return out
         stages = studio.stages(sid)
         by = {s.stage: s for s in stages}
         visible = bool(studio.results_visible(sid))
+        out[ui.seen] = seen_panel(session, visible)  # re-gated: a stage may be blind again
         stage = session["stage"]
         if stage not in by or not by[stage].open:
             stage = current_stage(stages)
@@ -406,8 +415,10 @@ def build_app(
             cells = {c.cell: c.text_id for c in studio.summary(sid).sheet}
         except ERRORS:
             cells = {}
-        last = payload_log.last_payload()
-        asked = session["matters"]
+        last = payload_log.last_payload()  # while blind, footers show only the interpreter's
+        # an engine answer holds for the chain it was computed on: any accept, edit, reject or
+        # new proposal since then drops it, and "Does this matter?" can be asked again
+        asked = session["matters"] if session["matters_head"] == head else {}
         old = list(session["slots"])
         for i, slot in enumerate(ui.slots):
             if i < len(shown):
@@ -461,6 +472,8 @@ def build_app(
             "page": page,
             "slots": [p.id for p in shown],
             "head": head,
+            "matters": asked,
+            "matters_head": head if asked else None,
             "bulk": bulk,
             "reject": rejecting,
             "confirm": {"stage": stage, "id": confirm.id} if confirm else None,
@@ -485,6 +498,13 @@ def build_app(
             return model_line_html(studio.model_status())
         except ERRORS as err:
             return notice_html(f"Model status unknown: {_error(err)}")
+
+    def seen_panel(session: dict[str, Any], visible: bool) -> dict[str, Any]:
+        """The "What the model saw" panel, recomputed on every event once opened (blind-gated)."""
+        if not session["seen"]:
+            return gr.update(value="", visible=False)
+        html = seen_html(payload_log.last_payload(), results_visible=visible)
+        return gr.update(value=html, visible=True)
 
     def file_info(session: dict[str, Any], sid: str) -> str:
         try:
@@ -783,14 +803,11 @@ def build_app(
             ui.notice: "",
         }
 
-    def on_seen():
-        payload = payload_log.last_payload()
-        if payload is None:
-            body = "<p>No model call yet in this qPilot process.</p>"
-        else:
-            text = json.dumps(payload, indent=2, ensure_ascii=False, default=str)
-            body = f'<pre class="qs-pre">{esc(text)}</pre>'
-        return gr.update(value=f"<h4>What the model saw (the last call)</h4>{body}", visible=True)
+    def on_seen(session):
+        session = {**_fresh(session), "seen": True}
+        sid = session["sid"]
+        visible = bool(sid) and bool(studio.results_visible(sid))
+        return {ui.session: session, ui.seen: seen_panel(session, visible)}
 
     # ---------- handlers: proposing (the system proposes; nothing is decided) ----------
 
@@ -1060,6 +1077,7 @@ def build_app(
             session, proposal = slot_target(session, i)
             if proposal is None:
                 return render(session)
+            head = studio.head(session["sid"])  # read first: the answer is for this chain
             try:
                 answer = studio.matters(session["sid"], proposal)
             except ERRORS as err:
@@ -1068,8 +1086,9 @@ def build_app(
                 return render(
                     session, "The engine cannot tell yet: the rest of the design does not run."
                 )
-            asked = {**session["matters"], proposal.id: bool(answer)}
-            return render({**session, "matters": asked})
+            kept = session["matters"] if session["matters_head"] == head else {}
+            asked = {**kept, proposal.id: bool(answer)}
+            return render({**session, "matters": asked, "matters_head": head})
 
         on_matters.__name__ = f"on_matters_{i}"
         return on_matters
@@ -1522,6 +1541,7 @@ def build_app(
             ui.download,
             ui.bundle_pick,
             ui.sent_back,
+            ui.seen,
         ]
         for slot in ui.slots:
             view += [
@@ -1546,7 +1566,7 @@ def build_app(
             on_gene, [s, ui.gene_pick], [s, ui.prism_plot, ui.prism_table], **private
         )
         ui.curve_btn.click(on_curve, [s, ui.well_pick], [ui.curve_plot, ui.notice], **private)
-        ui.seen_btn.click(on_seen, None, [ui.seen], **private)
+        ui.seen_btn.click(on_seen, [s], [s, ui.seen], **private)
         ui.open_btn.click(on_open, [s, ui.upload, ui.sheet], view, concurrency_limit=1, **private)
         ui.design_btn.click(
             on_propose_design, [s, ui.sentence], view, concurrency_limit=1, **private
