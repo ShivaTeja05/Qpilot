@@ -23,11 +23,12 @@ interpreted; titles are only compared for equality with the names qPilot wrote.
 * added and removed rows and columns, and ``unreadable`` files or cells.
 
 :func:`diff_to_proposals` turns a missing or excluded value into a ``prism.exclusion_reason``
-proposal whose consequence the engine computes (that gene's comparison again without the value:
-fold change, p and conclusion before and after, and how many of all genes' conclusions change),
-and a changed value into a ``prism.value_edit`` proposal ("this value no longer matches the
-record", action ``restore`` by default). They are made by a rule, never accepted here: only a
-person accepts a proposal.
+proposal whose consequence the engine computes (the study analysed again with the value excluded
+as accepting would exclude it, on top of the exclusions already accepted: fold change, p and
+conclusion before and after, and how many of all genes' conclusions change; with several
+exclusions, also what all of them do together), and a changed value into a ``prism.value_edit``
+proposal ("this value no longer matches the record", action ``restore`` by default). They are
+made by a rule, never accepted here: only a person accepts a proposal.
 """
 
 from __future__ import annotations
@@ -45,7 +46,7 @@ from pathlib import Path
 from typing import Any
 
 from qpilot.prism.tables import REPLICATE_COLUMN, row_titles
-from qpilot.qpcr.export import ExportError, ExportInputs, exclusion_consequence
+from qpilot.qpcr.export import ExportError, ExportInputs, Reanalysis
 from qpilot.schemas_studio import (
     Evidence,
     MadeBy,
@@ -272,7 +273,10 @@ def _read_file(
 def same_as_shown(exported: float, shown: str) -> bool:
     """True when ``shown`` is ``exported`` rounded to the shown text's own decimals.
 
-    The bound is half a unit in the last shown place, inclusive, so either rounding rule
+    Text that reads back to the exported float bit for bit is the same value, whatever its
+    number of digits (a 17-digit round-trip format prints more digits than ``repr``). Otherwise
+    the bound is half a unit in the last shown place, inclusive, around the float's exact binary
+    value or its shortest ``repr`` (a writer may round either), so either rounding rule
     (half-even or half-away-from-zero) counts as unchanged.
     """
     try:
@@ -282,8 +286,14 @@ def same_as_shown(exported: float, shown: str) -> bool:
     exponent = shown_value.as_tuple().exponent
     if not isinstance(exponent, int):
         return False
+    exported = float(exported)
+    if float(shown_value) == exported:
+        return True
     tolerance = Decimal(5).scaleb(exponent - 1)
-    return abs(Decimal(repr(float(exported))) - shown_value) <= tolerance
+    return any(
+        abs(value - shown_value) <= tolerance
+        for value in (Decimal(exported), Decimal(repr(exported)))
+    )
 
 
 def exported_tables(bundle: PrismBundle, bundle_dir: str | Path) -> dict[str, SentBackTable]:
@@ -461,6 +471,7 @@ def diff_to_proposals(
     *,
     bundle: PrismBundle | None = None,
     pseudonym: Callable[[str], str] | None = None,
+    accepted: Sequence[Proposal] = (),
 ) -> list[Proposal]:
     """Turn diff items into proposals for the inbox (never accepted here).
 
@@ -468,24 +479,103 @@ def diff_to_proposals(
     consequence; a changed value becomes ``prism.value_edit`` (restore by default). Other
     items (added or removed columns, added rows, unreadable files) stay diff items only.
 
+    Every consequence is computed together with the exclusions a person already accepted
+    (those in the study's design and ``accepted``); a value they already exclude is not asked
+    about again. With several exclusions, each one's consequence also carries what all of them
+    together do (``with_all_pending``): one at a time, each may change nothing while together
+    they change a conclusion.
+
     Args:
         items: From :func:`diff`.
         study_id: The study the bundle was exported from.
         inputs: The study's inputs at the exported choices (:func:`qpcr.export.demo_inputs`).
         bundle: The exported bundle (layout per table, whether row titles were pseudonymised).
         pseudonym: The pseudonym function used at export, when it was shared.
+        accepted: ``prism.exclusion_reason`` proposals a person accepted since the export.
+    """
+    return round_trip_proposals(
+        items, study_id, inputs, bundle=bundle, pseudonym=pseudonym, accepted=accepted
+    )[0]
+
+
+def round_trip_proposals(
+    items: Sequence[PrismDiffItem],
+    study_id: str,
+    inputs: ExportInputs,
+    *,
+    bundle: PrismBundle | None = None,
+    pseudonym: Callable[[str], str] | None = None,
+    accepted: Sequence[Proposal] = (),
+) -> tuple[list[Proposal], dict[str, Any] | None]:
+    """:func:`diff_to_proposals`, and the combined consequence of every exclusion it proposes.
+
+    Returns:
+        ``(proposals, combined)``: ``combined`` is
+        :meth:`qpilot.qpcr.export.Reanalysis.combined` for all the proposed exclusions together
+        (``None`` when there is none, or when it cannot be computed).
     """
     layouts = {t.name: t.layout for t in bundle.tables} if bundle is not None else {}
     shared = bundle is not None and bundle.info.get("row_titles") == "pseudonymised"
     units_by_title = {title: unit for unit, title in row_titles(inputs, shared, pseudonym).items()}
-    proposals = []
+    settled = _settled(accepted)
+    located = []
     for item in items:
         layout = layouts.get(item.table, "column")
-        if item.kind in EXCLUSION_KINDS and not (item.kind == "removed_row" and layout != "column"):
-            proposals.append(_exclusion(item, study_id, inputs, layout, units_by_title))
-        elif item.kind == "changed":
-            proposals.append(_value_edit(item, study_id, layout, units_by_title))
-    return proposals
+        unit, rep = _locate(item, layout, units_by_title)
+        asks = item.kind in EXCLUSION_KINDS and not (
+            item.kind == "removed_row" and layout != "column"
+        )
+        if item.kind == "changed" or (asks and (item.gene, unit) not in settled):
+            located.append((item, unit, rep))  # an accepted exclusion is not asked about again
+    pending = [(i.gene, u, r) for i, u, r in located if i.kind != "changed" and u is not None]
+    reanalysis: Reanalysis | None = None
+    combined: dict[str, Any] | None = None
+    problem = ""
+    if pending:
+        try:
+            reanalysis = Reanalysis(inputs, accepted)
+            combined = reanalysis.combined(pending)
+        except (ExportError, ValueError) as err:
+            problem = str(err)
+    proposals = []
+    for item, unit, rep in located:
+        if item.kind == "changed":
+            proposals.append(_value_edit(item, study_id, unit, rep))
+            continue
+        consequence, note = None, ""
+        if unit is not None and reanalysis is None:
+            note = problem
+        elif unit is not None and reanalysis is not None:
+            try:
+                consequence = reanalysis.consequence(item.gene, unit, rep)
+            except (ExportError, ValueError) as err:
+                note = str(err)
+        if consequence is not None and combined is not None and len(pending) > 1:
+            consequence["with_all_pending"] = {
+                "n_exclusions": len(pending),
+                **combined["genes"][item.gene],
+                "n_conclusions_changed": combined["n_conclusions_changed"],
+                "changed_genes": combined["changed_genes"],
+            }
+        proposals.append(_exclusion(item, study_id, unit, rep, consequence, note))
+    return proposals, combined
+
+
+def _settled(accepted: Sequence[Proposal]) -> set[tuple[str, str]]:
+    """(gene, unit) pairs an accepted exclusion leaves out (a later accepted restore undoes it)."""
+    from qpilot.qpcr.designs import APPLIED
+
+    out: set[tuple[str, str]] = set()
+    for proposal in accepted:
+        if proposal.kind != "prism.exclusion_reason" or proposal.status not in APPLIED:
+            continue
+        payload = proposal.effective_payload()
+        key = (str(payload.get("gene")), str(payload.get("sample")))
+        if payload.get("action") == "exclude":
+            out.add(key)
+        else:
+            out.discard(key)
+    return out
 
 
 def _evidence(item: PrismDiffItem, unit: str | None) -> list[Evidence]:
@@ -500,11 +590,11 @@ def _evidence(item: PrismDiffItem, unit: str | None) -> list[Evidence]:
 def _exclusion(
     item: PrismDiffItem,
     study_id: str,
-    inputs: ExportInputs,
-    layout: str,
-    units_by_title: Mapping[str, str],
+    unit: str | None,
+    rep: int,
+    consequence: dict[str, Any] | None,
+    problem: str,
 ) -> Proposal:
-    unit, rep = _locate(item, layout, units_by_title)
     sample = unit or "an unknown sample"
     if item.kind == "excluded":
         question = f"You excluded sample {sample} for {item.gene} in Prism. Reason?"
@@ -513,20 +603,17 @@ def _exclusion(
             f"Sample {sample} for {item.gene} is empty in the table Prism sent back. If you "
             "excluded it in Prism: reason? If you deleted it, say so."
         )
-    consequence: dict[str, Any] | None = None
     details: dict[str, Any] = {}
     note = "Whether an exclusion is justified is the scientist's call; the engine shows its effect."
-    if unit is not None:
-        try:
-            consequence = exclusion_consequence(inputs, item.gene, unit, rep, layout=layout)
-            details = {
-                "conclusion_before": consequence["conclusion_before"],
-                "conclusion_after": consequence["conclusion_after"],
-                "n_conclusions_changed": consequence["n_conclusions_changed"],
-                "n_genes": consequence["n_genes"],
-            }
-        except (ExportError, ValueError) as err:
-            note = f"The consequence could not be computed: {err}"
+    if consequence is not None:
+        details = {
+            "conclusion_before": consequence["conclusion_before"],
+            "conclusion_after": consequence["conclusion_after"],
+            "n_conclusions_changed": consequence["n_conclusions_changed"],
+            "n_genes": consequence["n_genes"],
+        }
+    elif problem:
+        note = f"The consequence could not be computed: {problem}"
     payload: dict[str, Any] = {
         "gene": item.gene,
         "sample": unit,
@@ -557,10 +644,7 @@ def _exclusion(
     )
 
 
-def _value_edit(
-    item: PrismDiffItem, study_id: str, layout: str, units_by_title: Mapping[str, str]
-) -> Proposal:
-    unit, rep = _locate(item, layout, units_by_title)
+def _value_edit(item: PrismDiffItem, study_id: str, unit: str | None, rep: int) -> Proposal:
     return Proposal(
         id=_proposal_id(study_id, item),
         study_id=study_id,
@@ -604,5 +688,6 @@ __all__ = [
     "parse_number",
     "parse_table",
     "read_sent_back",
+    "round_trip_proposals",
     "same_as_shown",
 ]

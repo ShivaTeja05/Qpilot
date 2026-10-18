@@ -12,10 +12,14 @@ behind it, so the bundle carries that itself:
   every file's sha256 and the bundle sha256;
 * ``qpilot_bundle.json``: the :class:`~qpilot.schemas_studio.PrismBundle` itself, which a later
   round trip is compared against. ``bundle_sha256`` is the sha256 of the canonical JSON of the
-  bundle without ``bundle_sha256`` (:func:`qpilot.prism.tables.bundle_digest`).
+  bundle without ``bundle_sha256`` (:func:`qpilot.prism.tables.bundle_digest`). The bundle's
+  ``info["provenance_sha256"]`` is the digest of the provenance file's own content
+  (:func:`provenance_digest`), so ``bundle_sha256`` covers the provenance file too.
 
 :func:`verify_provenance` re-checks all of it and lists every problem (empty = OK). It does not
-complain about files Prism adds later (projects, graphs, ``sent_back/``).
+complain about files Prism adds later (projects, graphs, ``sent_back/``). The checksums are
+plain sha256: they show any edit made without recomputing them, not a forgery that recomputes
+them all.
 
 Every caption sentence with a number is built from ``{{fact_id}}`` tokens and passes
 :func:`qpilot.core.validator.validate` before it is written; the numbers are the study's facts at
@@ -34,7 +38,7 @@ from pydantic import ValidationError
 
 from qpilot.core.facts import slug
 from qpilot.core.record import versions
-from qpilot.core.store import dump_json
+from qpilot.core.store import canonical_json, dump_json
 from qpilot.core.validator import names_from_result, render_tokens, validate
 from qpilot.prism.tables import (
     INFO_NOTE,
@@ -48,6 +52,8 @@ from qpilot.schemas_studio import PrismBundle
 
 PROVENANCE_FILE = "qpilot_provenance.json"
 BUNDLE_FILE = "qpilot_bundle.json"
+PROVENANCE_SHA256 = "provenance_sha256"  # the key in the bundle's info
+SELF_FIELDS = ("files", "bundle_sha256")  # what the provenance repeats from the bundle itself
 FORMAT = "qpilot-prism-provenance/1"
 MAX_JSON_BYTES = 5 * 1024 * 1024
 METHOD_NAMES = frozenset({"log2"})  # the scale's name, not a number from the data
@@ -133,10 +139,14 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def finalize(bundle: PrismBundle, out_dir: str | Path, names: Iterable[str]) -> PrismBundle:
+def finalize(
+    bundle: PrismBundle, out_dir: str | Path, names: Iterable[str], inputs: ExportInputs
+) -> PrismBundle:
     """The bundle with ``files`` = every file written (by relative path) and its sha256.
 
-    ``names`` are paths relative to ``out_dir`` (the CSVs are always included).
+    ``names`` are paths relative to ``out_dir`` (the CSVs are always included). The bundle's
+    ``info`` also gains the digest of the provenance file :func:`write_provenance` will write
+    for ``inputs``, so ``bundle_sha256`` covers that file as well.
     """
     directory = Path(out_dir)
     files = dict(bundle.files)
@@ -146,7 +156,19 @@ def finalize(bundle: PrismBundle, out_dir: str | Path, names: Iterable[str]) -> 
         if files[table.csv] != table.csv_sha256:
             raise PrismExportError(f"{table.csv} changed after it was written")
     updated = bundle.model_copy(update={"files": dict(sorted(files.items()))})
+    digest = provenance_digest(provenance_dict(updated, inputs))
+    updated = updated.model_copy(update={"info": {**updated.info, PROVENANCE_SHA256: digest}})
     return updated.model_copy(update={"bundle_sha256": bundle_digest(updated)})
+
+
+def provenance_digest(provenance: dict[str, Any]) -> str:
+    """sha256 of the canonical JSON of the provenance without what it repeats from the bundle.
+
+    ``files`` and ``bundle_sha256`` are left out: the bundle holds them itself, and
+    :func:`verify_provenance` compares them with it.
+    """
+    content = {key: value for key, value in provenance.items() if key not in SELF_FIELDS}
+    return sha256_bytes(canonical_json(content).encode("utf-8"))
 
 
 def provenance_dict(bundle: PrismBundle, inputs: ExportInputs) -> dict[str, Any]:
@@ -206,14 +228,18 @@ def write_provenance(bundle: PrismBundle, inputs: ExportInputs, out_dir: str | P
     """Write ``qpilot_bundle.json`` and ``qpilot_provenance.json``; return the latter's path.
 
     Raises:
-        PrismExportError: ``bundle_sha256`` is not the digest of the bundle (finalize first).
+        PrismExportError: ``bundle_sha256`` is not the digest of the bundle, or the bundle does
+            not hold the digest of this provenance (finalize first, with the same inputs).
     """
     if bundle.bundle_sha256 != bundle_digest(bundle):
         raise PrismExportError("bundle_sha256 is out of date; call finalize() first")
+    provenance = provenance_dict(bundle, inputs)
+    if bundle.info.get(PROVENANCE_SHA256) != provenance_digest(provenance):
+        raise PrismExportError("the provenance digest is out of date; call finalize() first")
     directory = Path(out_dir)
     write_bytes(directory / BUNDLE_FILE, dump_json(bundle.model_dump(mode="json")).encode("utf-8"))
     path = directory / PROVENANCE_FILE
-    write_bytes(path, dump_json(provenance_dict(bundle, inputs)).encode("utf-8"))
+    write_bytes(path, dump_json(provenance).encode("utf-8"))
     return path
 
 
@@ -248,7 +274,12 @@ def _safe_relative(name: str) -> bool:
 
 
 def verify_provenance(directory: str | Path) -> list[str]:
-    """Every problem with a bundle folder's provenance (an empty list means it verifies)."""
+    """Every problem with a bundle folder's provenance (an empty list means it verifies).
+
+    The provenance file's content must be the one whose digest the bundle holds (so a changed
+    actor, choice, number or caption is reported), and what it repeats from the bundle (files,
+    bundle sha256, study) must equal the bundle's.
+    """
     directory = Path(directory)
     problems: list[str] = []
     try:
@@ -263,6 +294,11 @@ def verify_provenance(directory: str | Path) -> list[str]:
         return [str(err)]
     if bundle_digest(bundle) != bundle.bundle_sha256:
         problems.append(f"{BUNDLE_FILE}: bundle_sha256 is not the digest of its contents")
+    claimed = bundle.info.get(PROVENANCE_SHA256)
+    if not claimed:
+        problems.append(f"{BUNDLE_FILE}: no digest of {PROVENANCE_FILE}")
+    elif provenance_digest(provenance) != claimed:
+        problems.append(f"{PROVENANCE_FILE}: changed since export (its digest differs)")
     if provenance.get("bundle_sha256") != bundle.bundle_sha256:
         problems.append(f"{PROVENANCE_FILE}: bundle_sha256 differs from {BUNDLE_FILE}")
     if provenance.get("files") != bundle.files:
@@ -296,11 +332,13 @@ __all__ = [
     "BUNDLE_FILE",
     "INFO_NOTE",
     "PROVENANCE_FILE",
+    "PROVENANCE_SHA256",
     "UNVERIFIED",
     "caption",
     "finalize",
     "load_bundle",
     "provenance_dict",
+    "provenance_digest",
     "verify_provenance",
     "write_provenance",
 ]

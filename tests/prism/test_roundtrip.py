@@ -13,11 +13,22 @@ from qpilot.prism.roundtrip import (
     parse_number,
     parse_table,
     read_sent_back,
+    round_trip_proposals,
     same_as_shown,
 )
 from qpilot.prism.tables import build_bundle
 from qpilot.schemas_studio import text_id_for
-from tests.prism.conftest import TOY_CHAIN, TOY_LOG2, TOY_STUDY, toy_curves, toy_inputs
+from tests.prism.conftest import (
+    TOY_CHAIN,
+    TOY_LOG2,
+    TOY_STUDY,
+    accepted_exclusion,
+    after_acceptance,
+    toy_curves,
+    toy_inputs,
+)
+
+CELL = {"refs": ("R1", "R2"), "undetermined": "drop"}
 
 
 @pytest.fixture
@@ -148,6 +159,40 @@ def test_a_change_in_the_last_shown_decimal_is_a_change(tmp_path):
 )
 def test_same_as_shown_rounds_to_the_shown_decimals(exported, shown, same):
     assert same_as_shown(exported, shown) is same
+
+
+@pytest.mark.parametrize(
+    "exported, shown",
+    [
+        (4.106285758671669, "4.1062857586716692"),  # 17 digits: the exact binary value, rounded
+        (4.106285758671669, "4.10628575867166922819"),  # more digits than the float holds
+        (4.106285758671669, "4.106285758671669228e+00"),  # numpy's %.18e
+        (4.106285758671669, "4.1062857586716693"),  # not rounded, but reads back bit for bit
+    ],
+)
+def test_text_that_reads_back_to_the_exported_float_is_unchanged(exported, shown):
+    assert float(shown) == exported
+    assert same_as_shown(exported, shown)
+
+
+def test_one_ulp_away_at_seventeen_digits_is_a_change():
+    exported = 4.106285758671669
+    neighbour = math.nextafter(exported, math.inf)
+    assert not same_as_shown(exported, format(neighbour, ".17g"))
+    assert not same_as_shown(exported, format(neighbour, ".18e"))
+
+
+@pytest.mark.parametrize("fmt", [".17g", ".16g", ".18e"])
+def test_a_table_printed_at_full_precision_comes_back_unchanged(tmp_path, fmt):
+    bundle, bundle_dir, sent = _many_digit_bundle(tmp_path)
+    lines = (bundle_dir / "T.csv").read_text().splitlines()
+    out = [lines[0]]
+    for line in lines[1:]:
+        title, *cells = line.split(",")
+        out.append(",".join([title, *(format(float(c), fmt) if c else "" for c in cells)]))
+    assert out != lines
+    (sent / "T.csv").write_text("\n".join(out) + "\n")
+    assert _diff(bundle, bundle_dir, sent) == []
 
 
 # ---------- rows, columns, files ----------
@@ -380,7 +425,94 @@ def test_a_nested_replicate_removed_in_prism(tmp_path):
     assert [(i.kind, i.row, i.column) for i in items] == [("missing", "rep 3", "A/a1")]
     (proposal,) = diff_to_proposals(items, TOY_STUDY, inputs, bundle=bundle)
     assert proposal.payload["well_rep"] == 3
-    assert proposal.consequence["n_units_after"] == [3, 3]
+    # The consequence is what accepting this proposal makes the engine report.
+    engine = after_acceptance(inputs.design, inputs.curves, [("T", "a1", 3)], CELL)["T"]
+    assert proposal.consequence["n_units_after"] == [engine.n_hi, engine.n_lo]
+    assert proposal.consequence["log2fc_after"] == engine.log2fc
+
+
+# ---------- several exclusions, and exclusions already accepted ----------
+
+
+def _clear(lines, *titles):
+    for title in titles:
+        lines = _replace(lines, title, ",")
+    return lines
+
+
+def test_each_question_also_says_what_all_the_exclusions_do_together(exported):
+    inputs, bundle, bundle_dir, sent = exported
+    _send_back(bundle_dir, sent, lambda lines: _clear(lines, "a3", "b3"))
+    items = _diff(bundle, bundle_dir, sent)
+    proposals, combined = round_trip_proposals(items, TOY_STUDY, inputs, bundle=bundle)
+    assert [p.subject for p in proposals] == ["T/a3", "T/b3"]
+    for proposal in proposals:  # alone, each exclusion changes no conclusion ...
+        c = proposal.consequence
+        assert c["conclusion_before"] == c["conclusion_after"] == "up"
+        assert c["n_conclusions_changed"] == 0
+        together = c["with_all_pending"]  # ... together, they change T's
+        assert together["n_exclusions"] == 2
+        assert together["conclusion_after"] == "none"
+        assert together["n_conclusions_changed"] == 1 and together["changed_genes"] == ["T"]
+    engine = after_acceptance(inputs.design, inputs.curves, [("T", "a3", 0), ("T", "b3", 0)], CELL)
+    assert combined["genes"]["T"]["log2fc_after"] == engine["T"].log2fc
+    assert combined["genes"]["T"]["p_after"] == engine["T"].p
+    assert combined["exclusions"] == [
+        {"gene": "T", "biological_unit": "a3", "well_rep": 0},
+        {"gene": "T", "biological_unit": "b3", "well_rep": 0},
+    ]
+    assert diff_to_proposals(items, TOY_STUDY, inputs, bundle=bundle) == proposals
+
+
+def test_a_question_is_answered_on_top_of_the_exclusions_already_accepted(exported):
+    inputs, bundle, bundle_dir, sent = exported
+    _send_back(bundle_dir, sent, lambda lines: _clear(lines, "a3", "b3"))
+    items = _diff(bundle, bundle_dir, sent)
+    a3 = accepted_exclusion("T", "a3")
+    (b3,) = diff_to_proposals(items, TOY_STUDY, inputs, bundle=bundle, accepted=[a3])
+    assert b3.subject == "T/b3"  # a3 is settled: not asked again
+    c = b3.consequence
+    first = after_acceptance(inputs.design, inputs.curves, [("T", "a3", 0)], CELL)["T"]
+    both = after_acceptance(inputs.design, inputs.curves, [("T", "a3", 0), ("T", "b3", 0)], CELL)
+    assert (c["log2fc_before"], c["p_before"]) == (first.log2fc, first.p)
+    assert (c["log2fc_after"], c["p_after"]) == (both["T"].log2fc, both["T"].p)
+    assert (c["conclusion_before"], c["conclusion_after"]) == ("up", "none")
+    assert c["n_conclusions_changed"] == 1
+    assert c["basis"]["accepted"] == [a3.id]
+    assert "with_all_pending" not in c  # one question left: its own consequence says it all
+
+
+@pytest.mark.demo_data
+def test_diff_report_gives_the_combined_consequence(demo_study, demo_export, demo_inputs, tmp_path):
+    """The review's walk: four NM23A units cleared in Prism, each harmless alone."""
+    from qpilot.prism import diff_report
+
+    store, study_id = demo_study
+    bundle_dir = tmp_path / "bundle"
+    shutil.copytree(demo_export.out_dir, bundle_dir)
+    sent = bundle_dir / "sent_back"
+    for table in demo_export.bundle.tables:
+        shutil.copy(bundle_dir / table.csv, sent / table.csv)
+    lines = (bundle_dir / "NM23A.csv").read_text().splitlines()
+    cleared = ("1824", "1936", "2530", "2784")
+    (sent / "NM23A.csv").write_text("\n".join(_clear(lines, *cleared)) + "\n")
+    report = diff_report(store, study_id, bundle_dir, sent)
+    exclusions = [p for p in report["proposals"] if p["kind"] == "prism.exclusion_reason"]
+    assert [p["subject"] for p in exclusions] == [f"NM23A/{unit}" for unit in cleared]
+    combined = report["combined_consequence"]
+    assert [e["biological_unit"] for e in combined["exclusions"]] == list(cleared)
+    nm23a = combined["genes"]["NM23A"]
+    for proposal in exclusions:
+        alone = proposal["consequence"]
+        assert alone["conclusion_after"] == "up" and alone["n_conclusions_changed"] == 0
+        assert alone["with_all_pending"]["fc_after"] == nm23a["fc_after"]
+        assert alone["with_all_pending"]["conclusion_after"] == nm23a["conclusion_after"]
+    assert (nm23a["conclusion_before"], nm23a["conclusion_after"]) == ("up", "none")
+    assert combined["changed_genes"] == ["NM23A"]
+    cell = {"refs": demo_inputs.refs, "cut": 0.15, "undetermined": "drop"}
+    excluded = [("NM23A", unit, 0) for unit in cleared]
+    engine = after_acceptance(demo_inputs.design, demo_inputs.curves, excluded, cell)
+    assert nm23a["fc_after"] == engine["NM23A"].fc
 
 
 # ---------- the demo oracle ----------

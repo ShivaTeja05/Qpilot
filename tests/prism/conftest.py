@@ -6,7 +6,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from qpilot.qpcr.designs import design_from_proposals
 from qpilot.qpcr.export import ExportInputs
+from qpilot.qpcr.study import StudySettings, build_model
+from qpilot.schemas import ContrastResult
+from qpilot.schemas_studio import (
+    Comparison,
+    MadeBy,
+    Proposal,
+    SampleDesign,
+    StudyDesign,
+)
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "prism"
 TOY_CHAIN = "ab" * 32
@@ -38,6 +48,21 @@ def toy_curves(log2: dict | None = None, replicates: bool = True) -> pd.DataFram
     return pd.DataFrame(rows, columns=["run_id", "well", "sample", "sample_type", "target", "n0"])
 
 
+def toy_design(groups=TOY_GROUPS, units=None, order=("A", "B")) -> StudyDesign:
+    """The toy as a confirmed design: groups from the samples, R1 and R2 as control genes."""
+    return StudyDesign(
+        design_id="toy",
+        mode="groups",
+        comparison=Comparison(group_a=order[0], group_b=order[1]),
+        samples={
+            s: SampleDesign(sample=s, group=g, biological_unit=(units or {}).get(s))
+            for s, g in groups.items()
+        },
+        reference_candidates=("R1", "R2"),
+        headline=("T", "T2"),
+    )
+
+
 def toy_inputs(data: pd.DataFrame | None = None, **changes) -> ExportInputs:
     values = {
         "study_id": TOY_STUDY,
@@ -54,7 +79,59 @@ def toy_inputs(data: pd.DataFrame | None = None, **changes) -> ExportInputs:
         "design_note": "toy design",
     }
     values.update(changes)
+    order = values["group_order"]
+    if "design" not in changes and set(order) <= set(values["groups"].values()):
+        values["design"] = toy_design(values["groups"], values.get("units"), order)
+    values.setdefault("curves", values["data"])  # the toy's wells are the curve analysis
     return ExportInputs(**values)
+
+
+def engine_inputs(curves: pd.DataFrame, design: StudyDesign, undetermined="drop") -> ExportInputs:
+    """Inputs built the way ``study_inputs`` builds them, from a per-well table and a design."""
+    model = build_model(curves, StudySettings.from_design(design))
+    data, units = model.inputs.primary_table, model.inputs.units or {}
+    samples = sorted(set(data.loc[data["sample_type"] == "unkn", "sample"]))
+    order = tuple(model.labels)
+    groups = {
+        **{s: order[0] for s in samples if units.get(s, s) in model.high},
+        **{s: order[1] for s in samples if units.get(s, s) in model.rest},
+    }
+    return ExportInputs(
+        study_id=TOY_STUDY,
+        input_sha256="cd" * 32,
+        data=data,
+        refs=tuple(model.space.primary["refs"]),
+        undetermined=undetermined,
+        groups=groups,
+        group_order=order,
+        units=model.inputs.units,
+        genes=tuple(model.space.items),
+        chain_head=TOY_CHAIN,
+        design=design,
+        curves=curves,
+    )
+
+
+def accepted_exclusion(gene: str, unit: str, well_rep: int = 0) -> Proposal:
+    """A ``prism.exclusion_reason`` as a person accepted it."""
+    return Proposal(
+        id=f"accepted-{gene}-{unit}-{well_rep}",
+        study_id="session",
+        kind="prism.exclusion_reason",
+        subject=f"{gene}/{unit}",
+        payload={"gene": gene, "sample": unit, "action": "exclude", "well_rep": well_rep},
+        made_by=MadeBy(kind="rule"),
+        status="accepted",
+        decided_by="human",
+        reason="failed extraction",
+    )
+
+
+def after_acceptance(design, curves, exclusions, cell) -> dict[str, ContrastResult]:
+    """The engine's results once a person accepted these exclusions (as Studio applies them)."""
+    accepted = [accepted_exclusion(*exclusion) for exclusion in exclusions]
+    design = design_from_proposals(design, accepted, curves)
+    return build_model(curves, StudySettings.from_design(design)).space.evaluate(cell)
 
 
 @pytest.fixture

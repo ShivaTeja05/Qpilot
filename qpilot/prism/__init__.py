@@ -42,7 +42,7 @@ from qpilot.prism.provenance import (
     verify_provenance,
     write_provenance,
 )
-from qpilot.prism.roundtrip import diff, diff_to_proposals, read_sent_back
+from qpilot.prism.roundtrip import diff, read_sent_back, round_trip_proposals
 from qpilot.prism.script import (
     GRAPH_FORMATS,
     RUN_SCRIPT,
@@ -66,7 +66,7 @@ from qpilot.prism.tables import (
     template_spec,
     write_bytes,
 )
-from qpilot.schemas_studio import PrismBundle
+from qpilot.schemas_studio import PrismBundle, Proposal
 
 if TYPE_CHECKING:
     from qpilot.core.store import StudyStore
@@ -176,7 +176,7 @@ def export_study(
     send_back = launch_command(join(folder, SEND_BACK_SCRIPT, platform), platform)
     readme = readme_text(bundle, template_present=present, launch=launch, send_back=send_back)
     write_bytes(directory / README_FILE, readme.encode("utf-8"))
-    bundle = finalize(bundle, directory, [*written, README_FILE])
+    bundle = finalize(bundle, directory, [*written, README_FILE], inputs)
     provenance = write_provenance(bundle, inputs, directory)
     files = {table.csv: directory / table.csv for table in bundle.tables}
     files |= written | {README_FILE: directory / README_FILE, PROVENANCE_FILE: provenance}
@@ -275,12 +275,16 @@ def diff_report(
     pseudonym: Callable[[str], str] | None = None,
     rdml_path: str | Path | None = None,
     exclusion_suffix: str | None = None,
+    accepted: Sequence[Proposal] = (),
 ) -> dict[str, Any]:
     """What changed in Prism since export, as diff items and proposals. Writes nothing.
 
     The bundle folder must verify (:func:`verify_provenance`) and belong to ``study_id``.
     Proposals are made only when the study's decision chain has not moved since the export
-    (otherwise the consequence would be computed at other choices).
+    (otherwise the consequence would be computed at other choices). Each exclusion's
+    consequence is computed together with the exclusions already accepted (the study's own and
+    ``accepted``, the ``prism.exclusion_reason`` proposals a person accepted since the export),
+    and ``combined_consequence`` is what all the proposed exclusions do together.
 
     Raises:
         PrismExportError: The bundle does not verify or belongs to another study.
@@ -307,13 +311,17 @@ def diff_report(
         inputs = demo_inputs(store, study_id, rdml_path=rdml_path, read_only=True)
         if inputs.chain_head != bundle.chain_head:
             report["proposals"] = []
+            report["combined_consequence"] = None
             report["notes"].append(
                 "the study's decisions changed since this export, so no consequences were "
                 "computed; export again and send the tables back from the new projects"
             )
         else:
-            made = diff_to_proposals(items, study_id, inputs, bundle=bundle, pseudonym=pseudonym)
+            made, combined = round_trip_proposals(
+                items, study_id, inputs, bundle=bundle, pseudonym=pseudonym, accepted=accepted
+            )
             report["proposals"] = [p.model_dump(mode="json") for p in made]
+            report["combined_consequence"] = combined
     return report
 
 

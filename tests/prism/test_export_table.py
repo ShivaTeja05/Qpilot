@@ -1,5 +1,6 @@
 """qpcr/export.py: the per-unit table the bridge hands to Prism, from the engine's arithmetic."""
 
+import json
 import math
 
 import numpy as np
@@ -15,7 +16,22 @@ from qpilot.qpcr.export import (
     unit_contrasts,
 )
 from qpilot.qpcr.quant import log2_matrix, relative
-from tests.prism.conftest import TOY_GROUPS, TOY_LOG2, toy_curves, toy_inputs
+from tests.engine.test_groups_study import toy_design as groups_design
+from tests.engine.test_groups_study import toy_wells
+from tests.prism.conftest import (
+    TOY_CHAIN,
+    TOY_GROUPS,
+    TOY_LOG2,
+    TOY_STUDY,
+    after_acceptance,
+    engine_inputs,
+    toy_curves,
+    toy_inputs,
+)
+
+NAN = {"n0": float("nan"), "cq": float("nan")}
+CELL = {"refs": ("R1", "R2"), "undetermined": "drop"}
+CAP = {"refs": ("REF",), "undetermined": "cap"}
 
 COLUMN_T = {"a1": -5.0, "a2": -4.0, "a3": -3.0, "b1": -8.0, "b2": -8.0, "b3": -7.0}
 NESTED_T = {
@@ -171,8 +187,53 @@ def test_exclusion_consequence_on_the_toy(toy):
     assert math.isclose(out["log2fc_before"], -4 - (-23 / 3), abs_tol=1e-12)
     assert math.isclose(out["log2fc_after"], -4.5 - (-23 / 3), abs_tol=1e-12)
     assert out["n_genes"] == 2
-    one_well = exclusion_consequence(toy, "T", "a3", 3, layout="nested")
-    assert one_well["n_units_after"] == [3, 3]  # one replicate gone, the unit stays
+    assert out["withheld_after"] is None
+    assert out["basis"] == {"study_id": TOY_STUDY, "chain_head": TOY_CHAIN, "accepted": []}
+    # One replicate cleared in a nested table: the consequence is what accepting it does.
+    one_well = exclusion_consequence(toy, "T", "a3", 3)
+    engine = after_acceptance(toy.design, toy.curves, [("T", "a3", 3)], CELL)["T"]
+    assert one_well["n_units_after"] == [engine.n_hi, engine.n_lo]
+    assert one_well["log2fc_after"] == engine.log2fc
+
+
+def test_a_consequence_needs_the_design_and_the_curves():
+    with pytest.raises(ExportError, match="design and per-well table"):
+        exclusion_consequence(toy_inputs(design=None), "T", "a3")
+
+
+# ---------- the consequence is what the engine reports after acceptance ----------
+
+
+def test_under_cap_the_floor_moves_as_it_does_after_acceptance():
+    """mA2's T1 never amplified; mB3 holds T1's lowest value, so excluding it moves the cap."""
+    curves = toy_wells(overrides={("sA2", "T1", r): NAN for r in range(3)})
+    inputs = engine_inputs(curves, groups_design(), "cap")
+    table = inputs.table("column", ["T1"]).set_index("biological_unit")["log2_rq"]
+    assert table["mA2"] == -0.5  # capped at the lowest T1 value, mB3's
+    out = exclusion_consequence(inputs, "T1", "mB3")
+    engine = after_acceptance(groups_design(), curves, [("T1", "mB3", 0)], CAP)["T1"]
+    assert out["log2fc_after"] == engine.log2fc
+    assert math.isclose(out["log2fc_after"], 0.5833333333333333, abs_tol=1e-12)
+    assert out["p_after"] == engine.p and out["conclusion_after"] == engine.conclusion
+    # The same row deleted from the exported table keeps mA2 at the old floor (0.4167).
+    simulated = unit_contrasts(inputs.table("column"), inputs.group_order)
+    left = unit_contrasts(inputs.table("column"), inputs.group_order, exclude=[("T1", "mB3", 0)])
+    assert out["log2fc_before"] == pytest.approx(simulated["T1"].log2fc, abs=1e-12)
+    assert left["T1"].log2fc != pytest.approx(out["log2fc_after"], abs=1e-6)
+
+
+def test_a_gene_the_exclusion_withholds_is_reported_withheld_not_held():
+    """mB2's T1 never amplified: excluding mB3 leaves control one unit, so T1 is withheld."""
+    curves = toy_wells(overrides={("sB2", "T1", r): NAN for r in range(3)})
+    inputs = engine_inputs(curves, groups_design(), "cap")
+    out = exclusion_consequence(inputs, "T1", "mB3")
+    assert out["conclusion_before"] == "up"
+    assert out["conclusion_after"] == "withheld"
+    assert out["fc_after"] is None and out["p_after"] is None and out["n_units_after"] is None
+    assert "fewer than two biological units" in out["withheld_after"]
+    assert out["changed_genes"] == ["T1"] and out["n_conclusions_changed"] == 1
+    assert "T1" not in after_acceptance(groups_design(), curves, [("T1", "mB3", 0)], CAP)
+    json.dumps(out, allow_nan=False)  # plain JSON: the proposal store refuses NaN
 
 
 # ---------- the demo study ----------
