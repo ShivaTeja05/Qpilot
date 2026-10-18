@@ -1,0 +1,12 @@
+fault,size_cycles,trials,detection_rate,mean_new_findings_elsewhere,share_trials_changing_a_call,detection_rate_when_a_call_changed
+well_outlier,3.0,20,0.05,0.1,0.0,
+well_outlier,5.0,20,0.45,0.45,0.0,
+well_outlier,8.0,20,0.9,0.85,0.05,1.0
+row_offset,1.0,20,0.4,1.4,0.05,0.0
+row_offset,2.0,20,0.85,1.9,0.05,1.0
+edge_ring,0.7,20,0.5,1.8,0.0,
+edge_ring,1.5,20,0.9,2.55,0.15,1.0
+sample_swap,0.0,20,0.0,0.5,0.0,
+ntc_contamination,2.0,20,1.0,0.0,0.0,
+reference_shift,0.3,20,0.85,0.3,1.0,0.85
+reference_shift,0.6,20,0.85,1.25,1.0,0.85

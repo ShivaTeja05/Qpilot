@@ -1,0 +1,4 @@
+results/*.parquet
+results/cache/
+results/plates/
+.venv

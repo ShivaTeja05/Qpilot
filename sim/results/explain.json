@@ -1,0 +1,1783 @@
+{
+ "AHCY": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 1.3863489687773194,
+  "fold": 2.6141627625831547,
+  "fold_words": "2.61\u00d7 higher",
+  "ci": [
+   2.1188278766295987,
+   3.2252959405777375
+  ],
+  "p": 3.423670851809437e-13,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.3863489687773194,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "AKR1C1": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.764064447695221,
+  "fold": 0.2944175449614758,
+  "fold_words": "3.40\u00d7 lower",
+  "ci": [
+   0.18522385606844724,
+   0.4679834046274821
+  ],
+  "p": 1.991222532278638e-06,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.764064447695221,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 939",
+    "leave out sample 1751"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "ARHGEF7": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.15459378398550905,
+  "fold": 0.8983852933629131,
+  "fold_words": "1.11\u00d7 lower",
+  "ci": [
+   0.664601110040416,
+   1.2144068421457885
+  ],
+  "p": 0.48067581497735345,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.845406216014491,
+  "share_significant": 0.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "BIRC5": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 2.004116148990932,
+  "fold": 4.01142868409124,
+  "fold_words": "4.01\u00d7 higher",
+  "ci": [
+   2.933476511654864,
+   5.485491369580537
+  ],
+  "p": 5.043719769792582e-14,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 1.0041161489909318,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "CAMTA1": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.4778239898791545,
+  "fold": 0.35902992696506986,
+  "fold_words": "2.79\u00d7 lower",
+  "ci": [
+   0.2594361067218288,
+   0.49685639398973286
+  ],
+  "p": 3.4500608697499306e-08,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.47782398987915453,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "CAMTA2": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.9848277849605953,
+  "fold": 0.5052860358240964,
+  "fold_words": "1.98\u00d7 lower",
+  "ci": [
+   0.37299413148826405,
+   0.6844986460781978
+  ],
+  "p": 2.928125598704861e-05,
+  "holds_defensible": 0.7083333333333333,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.01517221503940469,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "efficiency"
+    ],
+    "choices": [
+     "standard-curve slope of the plate's dilution series"
+    ],
+    "option_ids": {
+     "efficiency": "std_curve"
+    },
+    "fold": 0.4830966265494218,
+    "call": "down"
+   },
+   {
+    "decisions": [
+     "late_cq",
+     "nondetect"
+    ],
+    "choices": [
+     "Cq above 38 counts as not detected",
+     "set to the lowest amount detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq38",
+     "nondetect": "cap_min"
+    },
+    "fold": 0.4985418951327401,
+    "call": "down"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "standard-curve slope of the plate's dilution series"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
+ },
+ "CD44": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.802196313466955,
+  "fold": 0.2867377358149506,
+  "fold_words": "3.49\u00d7 lower",
+  "ci": [
+   0.18799269988205047,
+   0.437349584275717
+  ],
+  "p": 1.8895090302137064e-07,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.802196313466955,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "CDCA5": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 1.3038478473986714,
+  "fold": 2.468864823334662,
+  "fold_words": "2.47\u00d7 higher",
+  "ci": [
+   1.74787117051671,
+   3.4872670358750684
+  ],
+  "p": 1.186662675099472e-06,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.30384784739867143,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 1231"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "CDH5": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -3.321804677789153,
+  "fold": 0.10000855498728384,
+  "fold_words": "10.00\u00d7 lower",
+  "ci": [
+   0.0442851362546505,
+   0.225848036531541
+  ],
+  "p": 5.762468404506528e-07,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 2.321804677789153,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "CDKN3": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 1.250916838971588,
+  "fold": 2.3799262029722037,
+  "fold_words": "2.38\u00d7 higher",
+  "ci": [
+   1.7763163348082618,
+   3.1886486773793457
+  ],
+  "p": 8.421267801514659e-08,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.2509168389715879,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "CLSTN1": {
+  "verdict": "fragile",
+  "call": "down",
+  "log2fc": -1.1435233654590804,
+  "fold": 0.4526527532014398,
+  "fold_words": "2.21\u00d7 lower",
+  "ci": [
+   0.271739823262701,
+   0.7540098927008
+  ],
+  "p": 0.002866714132671352,
+  "holds_defensible": 0.41666666666666663,
+  "analyses_defensible": 144,
+  "drop_k": 2,
+  "fold_margin_log2": 0.1435233654590804,
+  "share_significant": 0.3125,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 0.7884883415001854,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "CPSG3": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 4.405482350688189,
+  "fold": 21.192506885141203,
+  "fold_words": "21.19\u00d7 higher",
+  "ci": [
+   11.036389134849987,
+   40.69468216362073
+  ],
+  "p": 5.1962451836718865e-15,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 3.405482350688189,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "DDC": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.8854969223089881,
+  "fold": 0.27065052237833975,
+  "fold_words": "3.69\u00d7 lower",
+  "ci": [
+   0.15972141635637463,
+   0.4586216860250416
+  ],
+  "p": 6.636317354816543e-06,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.8854969223089881,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 1136"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "DPYSL3": {
+  "verdict": "check data first",
+  "call": "down",
+  "log2fc": -1.0217760093215362,
+  "fold": 0.4925096818300658,
+  "fold_words": "2.03\u00d7 lower",
+  "ci": [
+   0.3787158364629057,
+   0.6404954938294782
+  ],
+  "p": 1.1174235683245625e-06,
+  "holds_defensible": 0.9166666666666666,
+  "analyses_defensible": 144,
+  "drop_k": 1,
+  "fold_margin_log2": 0.021776009321536227,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq",
+     "refs"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected",
+     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+    ],
+    "option_ids": {
+     "late_cq": "cq35",
+     "refs": "ALUsq+HPRT1+SDHA"
+    },
+    "fold": 0.5071106764897109,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "leave out sample 1231"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "ECEL1": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -3.190299788484364,
+  "fold": 0.10955294796571938,
+  "fold_words": "9.13\u00d7 lower",
+  "ci": [
+   0.05494749041894907,
+   0.21842395924674815
+  ],
+  "p": 2.9507999637064837e-08,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 2.190299788484364,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 111"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "ELAVL4": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.2513285113730884,
+  "fold": 0.8401224289185042,
+  "fold_words": "1.19\u00d7 lower",
+  "ci": [
+   0.6473208195082374,
+   1.0903491349283654
+  ],
+  "p": 0.18732783934944838,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.7486714886269116,
+  "share_significant": 0.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "EPB41L3": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -2.1035491918047935,
+  "fold": 0.23268511167996417,
+  "fold_words": "4.30\u00d7 lower",
+  "ci": [
+   0.14078993805520879,
+   0.3845612971026824
+  ],
+  "p": 2.448678752216515e-07,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 1.1035491918047935,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "EPHA5": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -2.8910011942470977,
+  "fold": 0.13480994236757174,
+  "fold_words": "7.42\u00d7 lower",
+  "ci": [
+   0.06376530834604645,
+   0.28500952998645396
+  ],
+  "p": 1.4988470486402635e-06,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 1.8910011942470977,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1540",
+    "leave out sample 111"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "EPN2": {
+  "verdict": "fragile",
+  "call": "down",
+  "log2fc": -1.2621196900291851,
+  "fold": 0.41693093071757714,
+  "fold_words": "2.40\u00d7 lower",
+  "ci": [
+   0.24680838066686495,
+   0.7043172542169783
+  ],
+  "p": 0.001433151821345803,
+  "holds_defensible": 0.5,
+  "analyses_defensible": 144,
+  "drop_k": 2,
+  "fold_margin_log2": 0.2621196900291851,
+  "share_significant": 0.875,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 0.6638981015326871,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "FYN": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.5967172283838971,
+  "fold": 0.6612568977752792,
+  "fold_words": "1.51\u00d7 lower",
+  "ci": [
+   0.5278443064213526,
+   0.8283895071633907
+  ],
+  "p": 0.000479718057268231,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.40328277161610293,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "GNB1": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.7724018965396777,
+  "fold": 0.5854419792973076,
+  "fold_words": "1.71\u00d7 lower",
+  "ci": [
+   0.45977555257538133,
+   0.7454557102997675
+  ],
+  "p": 3.8876339822805e-05,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.22759810346032228,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "HIVEP2": {
+  "verdict": "depends on your choices",
+  "call": "down",
+  "log2fc": -1.257025218146902,
+  "fold": 0.41840580759135987,
+  "fold_words": "2.39\u00d7 lower",
+  "ci": [
+   0.2958278069721716,
+   0.5917747273928384
+  ],
+  "p": 4.381504200226157e-06,
+  "holds_defensible": 0.9166666666666666,
+  "analyses_defensible": 144,
+  "drop_k": 4,
+  "fold_margin_log2": 0.25702521814690193,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq",
+     "refs"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected",
+     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+    ],
+    "option_ids": {
+     "late_cq": "cq35",
+     "refs": "ALUsq+HPRT1+SDHA"
+    },
+    "fold": 0.540893639499169,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 2,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "IGSF4": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.9573931069332018,
+  "fold": 0.5149866336369238,
+  "fold_words": "1.94\u00d7 lower",
+  "ci": [
+   0.39123363550097284,
+   0.6778845394647356
+  ],
+  "p": 8.141417850125483e-06,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.04260689306679821,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "leave out sample 1834"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
+ },
+ "INPP1": {
+  "verdict": "holds with caveats",
+  "call": "down",
+  "log2fc": -1.2436479830167397,
+  "fold": 0.42230347301164456,
+  "fold_words": "2.37\u00d7 lower",
+  "ci": [
+   0.30360133769063374,
+   0.5874158021642956
+  ],
+  "p": 2.141017498750023e-06,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": 4,
+  "fold_margin_log2": 0.24364798301673973,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 1751",
+    "leave out sample 1499"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "MAP2K4": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.8785004743472545,
+  "fold": 0.5439324966237256,
+  "fold_words": "1.84\u00d7 lower",
+  "ci": [
+   0.4191576636665612,
+   0.7058502957938926
+  ],
+  "p": 1.709860711348401e-05,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.12149952565274547,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1850",
+    "leave out sample 1885"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
+ },
+ "MAP7": {
+  "verdict": "holds with caveats",
+  "call": "down",
+  "log2fc": -1.5134564109483506,
+  "fold": 0.35027103300943885,
+  "fold_words": "2.85\u00d7 lower",
+  "ci": [
+   0.20579011766604136,
+   0.5961889616322678
+  ],
+  "p": 0.00019940655140419236,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": 5,
+  "fold_margin_log2": 0.5134564109483506,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 939",
+    "leave out sample 127"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "MAPT": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.4411578673079597,
+  "fold": 0.3682716210241862,
+  "fold_words": "2.72\u00d7 lower",
+  "ci": [
+   0.2542248132597999,
+   0.5334805250232739
+  ],
+  "p": 7.239595450189123e-07,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.4411578673079597,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "MCM2": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 1.4154041563703519,
+  "fold": 2.667344479006346,
+  "fold_words": "2.67\u00d7 higher",
+  "ci": [
+   2.0805971711514535,
+   3.4195598592245378
+  ],
+  "p": 1.093601546033915e-11,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.4154041563703519,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "MRPL3": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": 0.8283476795683489,
+  "fold": 1.775650542531332,
+  "fold_words": "1.78\u00d7 higher",
+  "ci": [
+   1.4931386099734336,
+   2.111615645146241
+  ],
+  "p": 6.655210806036481e-09,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.17165232043165113,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 2.029435349082591,
+    "call": "up"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "up",
+   "searched_up_to": null
+  }
+ },
+ "MTSS1": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.9116994846686431,
+  "fold": 0.5315585500141007,
+  "fold_words": "1.88\u00d7 lower",
+  "ci": [
+   0.4057117032805626,
+   0.6964415613559407
+  ],
+  "p": 1.5384881510787146e-05,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.08830051533135685,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 2,
+   "exact": true,
+   "path": [
+    "Cq above 38 counts as not detected",
+    "leave out sample 1805"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
+ },
+ "NHLH2": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 3.9027118367238467,
+  "fold": 14.956615437827024,
+  "fold_words": "14.96\u00d7 higher",
+  "ci": [
+   6.497616431222762,
+   34.42806261694772
+  ],
+  "p": 6.192153321840829e-09,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 2.9027118367238467,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "NM23A": {
+  "verdict": "holds with caveats",
+  "call": "up",
+  "log2fc": 1.1295178548982427,
+  "fold": 2.187856104249681,
+  "fold_words": "2.19\u00d7 higher",
+  "ci": [
+   1.754371668359273,
+   2.72844940398475
+  ],
+  "p": 1.2380920536774217e-09,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": 4,
+  "fold_margin_log2": 0.12951785489824275,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "leave out sample 2530",
+    "leave out sample 1924",
+    "leave out sample 1784"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "NRCAM": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.8107335905520785,
+  "fold": 0.28504595017182566,
+  "fold_words": "3.51\u00d7 lower",
+  "ci": [
+   0.2050906351651227,
+   0.39617212967301957
+  ],
+  "p": 2.001432741169382e-10,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.8107335905520785,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "NTRK1": {
+  "verdict": "depends on your choices",
+  "call": "down",
+  "log2fc": -3.9109827526937417,
+  "fold": 0.06647783678840748,
+  "fold_words": "15.04\u00d7 lower",
+  "ci": [
+   0.031684262938106306,
+   0.13947942524965906
+  ],
+  "p": 1.348097591946545e-09,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 2.9109827526937417,
+  "share_significant": 0.8333333333333334,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 0.7777697108141096,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "ODC1": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 1.8439368467258768,
+  "fold": 3.5898830538438684,
+  "fold_words": "3.59\u00d7 higher",
+  "ci": [
+   2.4167007576881665,
+   5.332584226358015
+  ],
+  "p": 2.2865970122257607e-08,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.8439368467258768,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "PAICS": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": 0.9583769330843058,
+  "fold": 1.9431226046145071,
+  "fold_words": "1.94\u00d7 higher",
+  "ci": [
+   1.5656099291641241,
+   2.4116642250600178
+  ],
+  "p": 5.0286315078556286e-08,
+  "holds_defensible": 0.5,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.041623066915694173,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 2.308000060319623,
+    "call": "up"
+   },
+   {
+    "decisions": [
+     "efficiency",
+     "refs"
+    ],
+    "choices": [
+     "standard-curve slope of the plate's dilution series",
+     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+    ],
+    "option_ids": {
+     "efficiency": "std_curve",
+     "refs": "ALUsq+HPRT1+SDHA"
+    },
+    "fold": 2.0061321807447006,
+    "call": "up"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "up",
+   "searched_up_to": null
+  }
+ },
+ "PDE4DIP": {
+  "verdict": "check data first",
+  "call": "down",
+  "log2fc": -1.094637774462924,
+  "fold": 0.4682536760365975,
+  "fold_words": "2.14\u00d7 lower",
+  "ci": [
+   0.3483342014584724,
+   0.6294572976289458
+  ],
+  "p": 2.9564808002650203e-06,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": 2,
+  "fold_margin_log2": 0.0946377744629241,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 2,
+   "exact": true,
+   "path": [
+    "leave out sample 1687",
+    "leave out sample 1751"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "PIK3R1": {
+  "verdict": "holds with caveats",
+  "call": "down",
+  "log2fc": -1.1635676325061093,
+  "fold": 0.4464072514039836,
+  "fold_words": "2.24\u00d7 lower",
+  "ci": [
+   0.3399113806855774,
+   0.5862687907187065
+  ],
+  "p": 1.251564377132303e-07,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": 4,
+  "fold_margin_log2": 0.16356763250610928,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 2090",
+    "leave out sample 127"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "PLAGL1": {
+  "verdict": "fragile",
+  "call": "down",
+  "log2fc": -1.1831332922761195,
+  "fold": 0.44039399666922224,
+  "fold_words": "2.27\u00d7 lower",
+  "ci": [
+   0.2714519480633946,
+   0.7144795743259753
+  ],
+  "p": 0.0012126577940036781,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
+  "drop_k": 2,
+  "fold_margin_log2": 0.18313329227611952,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 38 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq38"
+    },
+    "fold": 0.510089823286665,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 38 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "PLAT": {
+  "verdict": "fragile",
+  "call": "down",
+  "log2fc": -1.7646728259068638,
+  "fold": 0.29429341653985025,
+  "fold_words": "3.40\u00d7 lower",
+  "ci": [
+   0.13779976852996323,
+   0.6285105986942612
+  ],
+  "p": 0.002068187100858956,
+  "holds_defensible": 0.75,
+  "analyses_defensible": 144,
+  "drop_k": 4,
+  "fold_margin_log2": 0.7646728259068638,
+  "share_significant": 0.6666666666666666,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 0.6755143071483692,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "PMP22": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.8373742120435734,
+  "fold": 0.2798306291549031,
+  "fold_words": "3.57\u00d7 lower",
+  "ci": [
+   0.18398305879455282,
+   0.4256108226826984
+  ],
+  "p": 1.026739755092622e-07,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.8373742120435734,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "PRAME": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 2.084981957386364,
+  "fold": 4.242697905168659,
+  "fold_words": "4.24\u00d7 higher",
+  "ci": [
+   2.3051405732875256,
+   7.808845032323018
+  ],
+  "p": 1.0552236671139228e-05,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 1.084981957386364,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "PRDM2": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.8149264746162901,
+  "fold": 0.5684374556765187,
+  "fold_words": "1.76\u00d7 lower",
+  "ci": [
+   0.44664496685558824,
+   0.7234406855422318
+  ],
+  "p": 1.622899713239317e-05,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.1850735253837099,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 4,
+   "exact": false,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1936",
+    "leave out sample 1837",
+    "leave out sample 1772"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
+ },
+ "PRKACB_bis": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.9405456572613387,
+  "fold": 0.521035776584316,
+  "fold_words": "1.92\u00d7 lower",
+  "ci": [
+   0.36132191058042246,
+   0.7513474066511007
+  ],
+  "p": 0.0007318234961211475,
+  "holds_defensible": 0.75,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.05945434273866135,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 0.49972850178215544,
+    "call": "down"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
+ },
+ "PRKCZ": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.9005931536587375,
+  "fold": 0.535666450590878,
+  "fold_words": "1.87\u00d7 lower",
+  "ci": [
+   0.39338777254036644,
+   0.729403825735804
+  ],
+  "p": 0.00014764906068141329,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.09940684634126251,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 2,
+   "exact": true,
+   "path": [
+    "Cq above 38 counts as not detected",
+    "leave out sample 1924"
+   ],
+   "call": "down",
+   "searched_up_to": null
+  }
+ },
+ "PTN": {
+  "verdict": "holds with caveats",
+  "call": "down",
+  "log2fc": -1.474285646866921,
+  "fold": 0.3599115617685497,
+  "fold_words": "2.78\u00d7 lower",
+  "ci": [
+   0.20822999747298565,
+   0.6220829557061379
+  ],
+  "p": 0.00042552294714856835,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": 5,
+  "fold_margin_log2": 0.474285646866921,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "PTPRF": {
+  "verdict": "fragile",
+  "call": "down",
+  "log2fc": -1.296698061452564,
+  "fold": 0.4070567756595787,
+  "fold_words": "2.46\u00d7 lower",
+  "ci": [
+   0.29651850606468977,
+   0.5588022845839639
+  ],
+  "p": 3.567628327633903e-07,
+  "holds_defensible": 0.6666666666666667,
+  "analyses_defensible": 144,
+  "drop_k": 5,
+  "fold_margin_log2": 0.29669806145256405,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 0.6046927101448518,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "PTPRH": {
+  "verdict": "depends on your choices",
+  "call": "down",
+  "log2fc": -3.516238842965545,
+  "fold": 0.08739903477229066,
+  "fold_words": "11.44\u00d7 lower",
+  "ci": [
+   0.03867738205224952,
+   0.19749504423047684
+  ],
+  "p": 1.637017545602762e-07,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 2.516238842965545,
+  "share_significant": 0.8333333333333334,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 0.5594454832469702,
+    "call": "none"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "PTPRN2": {
+  "verdict": "holds with caveats",
+  "call": "down",
+  "log2fc": -1.3026376263214416,
+  "fold": 0.4053843709103048,
+  "fold_words": "2.47\u00d7 lower",
+  "ci": [
+   0.272159413352898,
+   0.6038243768745019
+  ],
+  "p": 2.357416332047841e-05,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": 5,
+  "fold_margin_log2": 0.30263762632144164,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "QPCT": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.8326173054341757,
+  "fold": 0.2807548196924883,
+  "fold_words": "3.56\u00d7 lower",
+  "ci": [
+   0.18281527857790644,
+   0.43116346398242184
+  ],
+  "p": 1.6674784613007411e-07,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.8326173054341757,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "SCG2": {
+  "verdict": "solid",
+  "call": "down",
+  "log2fc": -1.987759764604596,
+  "fold": 0.2521300945501303,
+  "fold_words": "3.97\u00d7 lower",
+  "ci": [
+   0.16571446648509258,
+   0.3836091436445367
+  ],
+  "p": 1.0451199143928814e-08,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.9877597646045959,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "SLC25A5": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": 0.867203354328355,
+  "fold": 1.824123431287931,
+  "fold_words": "1.82\u00d7 higher",
+  "ci": [
+   1.5120438503571938,
+   2.200614943665562
+  ],
+  "p": 1.4841903400360185e-08,
+  "holds_defensible": 0.8333333333333334,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.13279664567164495,
+  "share_significant": 1.0,
+  "flips": [
+   {
+    "decisions": [
+     "late_cq"
+    ],
+    "choices": [
+     "Cq above 35 counts as not detected"
+    ],
+    "option_ids": {
+     "late_cq": "cq35"
+    },
+    "fold": 2.123189916651604,
+    "call": "up"
+   }
+  ],
+  "moves": {
+   "distance": 1,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected"
+   ],
+   "call": "up",
+   "searched_up_to": null
+  }
+ },
+ "SLC6A8": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": 0.6188418063047978,
+  "fold": 1.535641875013633,
+  "fold_words": "1.54\u00d7 higher",
+  "ci": [
+   1.1484308986996008,
+   2.0534069319848802
+  ],
+  "p": 0.004408845611003108,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.3811581936952022,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "SNAPC1": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": 0.7748123892150698,
+  "fold": 1.7109675394508128,
+  "fold_words": "1.71\u00d7 higher",
+  "ci": [
+   1.278543531688612,
+   2.289644308933344
+  ],
+  "p": 0.00044059787331332024,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.22518761078493021,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1687",
+    "leave out sample 1772"
+   ],
+   "call": "up",
+   "searched_up_to": null
+  }
+ },
+ "TNFRSF": {
+  "verdict": "holds with caveats",
+  "call": "down",
+  "log2fc": -1.4033871044292825,
+  "fold": 0.3780405497408521,
+  "fold_words": "2.65\u00d7 lower",
+  "ci": [
+   0.22807651729601125,
+   0.6266083810061099
+  ],
+  "p": 0.0002892470325283851,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": 4,
+  "fold_margin_log2": 0.4033871044292825,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": 3,
+   "exact": true,
+   "path": [
+    "Cq above 35 counts as not detected",
+    "leave out sample 1759",
+    "leave out sample 1498"
+   ],
+   "call": "none",
+   "searched_up_to": null
+  }
+ },
+ "TYMS": {
+  "verdict": "solid",
+  "call": "up",
+  "log2fc": 1.207192832821753,
+  "fold": 2.3088794227587166,
+  "fold_words": "2.31\u00d7 higher",
+  "ci": [
+   1.7409606111621414,
+   3.0620590464020196
+  ],
+  "p": 7.728976115620606e-08,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": 0.20719283282175294,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "ULK2": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.6202613179864143,
+  "fold": 0.6505530811812223,
+  "fold_words": "1.54\u00d7 lower",
+  "ci": [
+   0.4957472550685682,
+   0.8536997575021276
+  ],
+  "p": 0.0024071787196070023,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.37973868201358574,
+  "share_significant": 1.0,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ },
+ "WSB1": {
+  "verdict": "no call",
+  "call": "none",
+  "log2fc": -0.754445891626793,
+  "fold": 0.5927740136012587,
+  "fold_words": "1.69\u00d7 lower",
+  "ci": [
+   0.441301477746039,
+   0.7962380570208709
+  ],
+  "p": 0.0007444279712865654,
+  "holds_defensible": 1.0,
+  "analyses_defensible": 144,
+  "drop_k": null,
+  "fold_margin_log2": -0.24555410837320701,
+  "share_significant": 0.9166666666666666,
+  "flips": [],
+  "moves": {
+   "distance": null,
+   "exact": false,
+   "path": [],
+   "call": null,
+   "searched_up_to": 3
+  }
+ }
+}

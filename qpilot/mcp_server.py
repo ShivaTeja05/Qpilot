@@ -1,5 +1,9 @@
 """qPilot's door for AI agents: tools over MCP (stdio), backed by the on-disk study store.
 
+Twenty ``qpcr_*`` tools (:data:`TOOL_NAMES`), plus the Decision Simulator's five read-only
+``sim_*`` tools when ``qsim`` is installed (:func:`served_tool_names`; ``qpilot serve
+--list-tools`` prints what this install serves, and the server says on stderr when they are off).
+
 Run with ``python -m qpilot.mcp_server`` (or ``qpilot serve``); add it to Claude Code with
 ``claude mcp add qpilot -- python -m qpilot.mcp_server``. The server is a separate process from
 the app, so both read and write the same workspace through ``qpilot.core.store``.
@@ -32,7 +36,8 @@ Rules enforced here, in code:
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
+import sys
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -1235,6 +1240,37 @@ TOOL_META: dict[str, tuple[str, str]] = {
 }
 
 
+SIM_OFF_NOTICE = (
+    "qpilot serve: the Decision Simulator (qsim) is not installed, so the sim_* tools are not "
+    "served; add them with pip install -e '.[sim]' from a clone (qpilot serve --list-tools "
+    "shows the tools)"
+)
+
+
+def simulator_available() -> bool:
+    """True when the Decision Simulator (``qsim``) and qPilot's adapter for it import."""
+    try:
+        from qpilot.integration import simulator as sim
+    except ImportError:
+        return False
+    return sim.available()
+
+
+def served_tool_names(simulator: bool | None = None) -> tuple[str, ...]:
+    """Every tool ``qpilot serve`` registers: ``TOOL_NAMES``, then the read-only ``sim_*`` tools.
+
+    ``simulator=None`` serves the ``sim_*`` tools when ``qsim`` imports; ``True`` or ``False``
+    forces them on or off.
+    """
+    if simulator is None:
+        simulator = simulator_available()
+    if not simulator:
+        return TOOL_NAMES
+    from qpilot.integration.mcp_tools import SIM_TOOL_NAMES
+
+    return TOOL_NAMES + SIM_TOOL_NAMES
+
+
 def _server_class() -> Callable[..., Any]:
     try:  # mcp >= 2
         from mcp.server.mcpserver import MCPServer
@@ -1246,22 +1282,45 @@ def _server_class() -> Callable[..., Any]:
         return FastMCP
 
 
-def create_server(store: StudyStore | None = None) -> Any:
-    """Build the MCP server with every tool in ``TOOL_NAMES`` registered."""
+def create_server(
+    store: StudyStore | None = None,
+    *,
+    audits: Mapping[str, str] | None = None,
+    simulator: bool | None = None,
+) -> Any:
+    """Build the MCP server with every tool in :func:`served_tool_names` registered.
+
+    The ``sim_*`` tools read only an audit a person wrote (``<study store>/simulator_audits/<id>``
+    or the ``audits`` mapping given here, never a path from the caller) and only when it verifies.
+    """
     from mcp.types import ToolAnnotations  # lazy: mcp pulls in httpx
 
+    names = served_tool_names(simulator)
     tools = QpilotTools(store)
-    server = _server_class()(SERVER_NAME, instructions=INSTRUCTIONS)
-    for name in TOOL_NAMES:
-        title, kind = TOOL_META[name]
-        annotations = ToolAnnotations(title=title, **HINTS[kind])
-        server.tool(name=name, title=title, annotations=annotations)(getattr(tools, name))
+    instructions = INSTRUCTIONS
+    sim_tools = None
+    if names != TOOL_NAMES:
+        from qpilot.integration.mcp_tools import SIM_INSTRUCTIONS, SimulatorTools
+
+        sim_tools = SimulatorTools(store, audits)
+        instructions += SIM_INSTRUCTIONS
+    server = _server_class()(SERVER_NAME, instructions=instructions)
+    for name in names:
+        if name in TOOL_NAMES:
+            title, kind = TOOL_META[name]
+            annotations = ToolAnnotations(title=title, **HINTS[kind])
+            server.tool(name=name, title=title, annotations=annotations)(getattr(tools, name))
+        else:
+            server.tool(name=name)(getattr(sim_tools, name))
     return server
 
 
 def main() -> None:
-    """Serve over stdio."""
-    create_server().run("stdio")
+    """Serve over stdio (a note on stderr when the simulator's tools are off)."""
+    simulator = simulator_available()
+    if not simulator:
+        print(SIM_OFF_NOTICE, file=sys.stderr)
+    create_server(simulator=simulator).run("stdio")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qPilot Decision Simulator</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f6f8; --card: #ffffff; --ink: #121820; --ink2: #3d4854; --muted: #6a7482; --line: #e1e5ea; --line2: #cfd5dc;
+  --grid: #edf0f3; --soft: #f3f5f8; --accent: #1b5fc7; --accent-ink: #ffffff; --sel: #e8f0fc; --focus: #2f7be8;
+  --check: #6a4fd8; --fragile: #d13a3a; --depends: #c27a00; --caveats: #2a7fd8; --solid: #178a39; --nocall: #8a919c;
+  --same: #7c8794; --diff: #e8652e; --diff-bg: #fff1e8; --diff-ink: #a4400e; --planned: #121820;
+  --ok-bg: #e9f7ee; --warn-bg: #fff7e6; --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 2px 6px rgba(16, 24, 40, .04);
+  --r: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1216; --card: #171a1f; --ink: #eceef1; --ink2: #b8bfc8; --muted: #8d95a0; --line: #2a2f37; --line2: #3a404a;
+    --grid: #23282f; --soft: #1f2329; --accent: #7fb3f0; --accent-ink: #0f1216; --sel: #1d2a3b; --focus: #3987e5;
+    --check: #9b8ff0; --fragile: #e05252; --depends: #d79a2b; --caveats: #4f98e8; --solid: #35b25a; --nocall: #8b929c;
+    --same: #8d96a2; --diff: #e3652e; --diff-bg: #36241a; --diff-ink: #f2a477; --planned: #eceef1;
+    --ok-bg: #16301f; --warn-bg: #332a14; --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1216; --card: #171a1f; --ink: #eceef1; --ink2: #b8bfc8; --muted: #8d95a0; --line: #2a2f37; --line2: #3a404a;
+  --grid: #23282f; --soft: #1f2329; --accent: #7fb3f0; --accent-ink: #0f1216; --sel: #1d2a3b; --focus: #3987e5;
+  --check: #9b8ff0; --fragile: #e05252; --depends: #d79a2b; --caveats: #4f98e8; --solid: #35b25a; --nocall: #8b929c;
+  --same: #8d96a2; --diff: #e3652e; --diff-bg: #36241a; --diff-ink: #f2a477; --planned: #eceef1;
+  --ok-bg: #16301f; --warn-bg: #332a14; --shadow: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 14.5px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); }
+h1, h2, h3, h4, p { margin: 0; }
+h2 { font-size: 16px; font-weight: 650; letter-spacing: -.005em; }
+h3 { font-size: 14px; font-weight: 650; }
+.muted { color: var(--muted); } .ink2 { color: var(--ink2); } .small { font-size: 13px; } .tiny { font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+[hidden] { display: none !important; }
+code { font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* ---------- top bar ---------- */
+.top { background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+.top-in { max-width: 1480px; margin: 0 auto; padding: 10px 22px 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px 22px; }
+.top-in nav.nav { grid-column: 1 / -1; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.brand svg { display: block; }
+.brand .w { font-size: 16px; font-weight: 750; letter-spacing: -.02em; line-height: 1.1; }
+.brand .s { font-size: 11.5px; color: var(--muted); letter-spacing: .01em; }
+nav.nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; margin-left: -12px; }
+.nav button { border: 0; background: none; padding: 8px 12px 9px; font-weight: 600; font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+.nav button:hover { color: var(--ink); }
+.nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.top-right { justify-self: end; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.studychip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 13px; color: var(--ink2); background: var(--card); max-width: 420px; }
+.studychip b { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+.studychip button { border: 0; background: var(--soft); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.studychip button:hover { background: var(--sel); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--card); }
+.seg button { border: 0; background: transparent; padding: 5px 11px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+.iconbtn { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ink2); display: inline-flex; gap: 6px; align-items: center; }
+.iconbtn:hover { background: var(--soft); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--nocall); flex: none; }
+.dot.on { background: var(--solid); }
+
+/* ---------- layout ---------- */
+.shell { max-width: 1480px; margin: 0 auto; padding: 20px 22px 48px; }
+.two { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; align-items: start; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 16px; }
+.panel.tight { padding: 14px 16px; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; margin-bottom: 4px; }
+.cap { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.cols2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.cols3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.cols4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.cols2 > .panel, .cols3 > .panel, .cols4 > .panel { margin-bottom: 0; }
+.stack { margin-bottom: 16px; }
+.eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.btn { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 600; font-size: 13px; text-decoration: none; color: var(--ink); display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { background: var(--soft); }
+.btn.primary { background: var(--ink); color: var(--card); border-color: var(--ink); }
+.btn.primary:hover { background: var(--ink2); }
+.btn.accent { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.sm { padding: 4px 9px; font-size: 12.5px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0 14px; }
+
+/* ---------- verdicts ---------- */
+.v-solid { --v: var(--solid); } .v-caveats { --v: var(--caveats); } .v-depends { --v: var(--depends); }
+.v-fragile { --v: var(--fragile); } .v-check { --v: var(--check); } .v-nocall { --v: var(--nocall); }
+svg.shape { flex: none; display: block; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--v); border-radius: 999px; padding: 3px 10px 3px 8px; font-weight: 650; font-size: 13px; white-space: nowrap; }
+.tag { font-size: 10.5px; font-weight: 700; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; text-transform: uppercase; letter-spacing: .05em; }
+
+/* ---------- overview ---------- */
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.hero h1 { font-size: 30px; font-weight: 750; letter-spacing: -.02em; line-height: 1.15; }
+.hero .lead { font-size: 15.5px; color: var(--ink2); margin-top: 10px; max-width: 62ch; }
+.hero .lead b { color: var(--ink); }
+.design { border: 1px solid var(--line); border-radius: 10px; background: var(--soft); padding: 12px 14px; }
+.design dl { display: grid; grid-template-columns: max-content 1fr; gap: 5px 14px; margin: 8px 0 0; font-size: 13.5px; }
+.design dt { color: var(--muted); } .design dd { margin: 0; font-weight: 600; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.kpi { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--card); }
+.kpi .n { font-size: 30px; font-weight: 750; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.kpi .n small { font-size: 15px; font-weight: 500; color: var(--muted); }
+.kpi .l { font-weight: 650; margin-top: 4px; }
+.kpi .s { font-size: 12.5px; color: var(--muted); }
+.vbar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 12px 0 10px; background: var(--grid); }
+.vbar span { height: 100%; background: var(--v); cursor: pointer; transition: opacity .1s; }
+.vbar span:hover { opacity: .8; }
+.vlegend { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.vl { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; text-align: left; background: var(--card); cursor: pointer; }
+.vl:hover { background: var(--soft); }
+.vl[aria-pressed="true"] { border-color: var(--v); box-shadow: inset 0 0 0 1px var(--v); }
+.vl .n { font-size: 22px; font-weight: 750; display: flex; align-items: center; gap: 8px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.vl .lab { font-weight: 650; font-size: 13px; margin-top: 2px; }
+.vl .r { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.tasks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.task { border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: left; background: var(--card); cursor: pointer; display: grid; gap: 4px; align-content: start; }
+.task:hover { background: var(--soft); border-color: var(--line2); }
+.task .i { width: 30px; height: 30px; border-radius: 8px; background: var(--sel); color: var(--accent); display: grid; place-items: center; margin-bottom: 4px; }
+.task .t { font-weight: 650; }
+.task .d { font-size: 12.5px; color: var(--muted); }
+.task .go { font-size: 12.5px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+.headlines { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.hl { border: 1px solid var(--line); border-left: 4px solid var(--v); border-radius: 10px; padding: 10px 12px; text-align: left; background: var(--card); cursor: pointer; }
+.hl:hover { background: var(--soft); }
+.hl .g { font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.hl .f { font-size: 13px; color: var(--ink2); margin-top: 2px; }
+.hl .v { font-size: 12px; color: var(--muted); }
+.callout { border-left: 4px solid var(--accent); background: var(--sel); border-radius: 0 10px 10px 0; padding: 10px 14px; }
+.callout.warn { border-left-color: var(--depends); background: var(--warn-bg); }
+.callout.ok { border-left-color: var(--solid); background: var(--ok-bg); }
+.flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.flow .st { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; position: relative; }
+.flow .st .k { font-weight: 650; }
+.flow .st .d { font-size: 12.5px; color: var(--muted); }
+.flow .st:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 12px; }
+
+/* ---------- gene list ---------- */
+.side { position: sticky; top: 108px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); display: flex; flex-direction: column; max-height: calc(100vh - 128px); }
+.side-head { padding: 12px 12px 8px; border-bottom: 1px solid var(--line); }
+.search { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }
+.vfilters { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.vf { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 2px 8px 2px 6px; font-size: 12px; cursor: pointer; color: var(--ink2); }
+.vf[aria-pressed="true"] { background: var(--sel); border-color: var(--focus); color: var(--ink); }
+.sortrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.sortrow select { font: inherit; font-size: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); padding: 2px 4px; }
+.genes { overflow: auto; padding: 4px; }
+.gene-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; align-items: center; width: 100%; text-align: left; padding: 6px 8px; border: 0; border-radius: 8px; background: none; cursor: pointer; }
+.gene-row:hover { background: var(--soft); }
+.gene-row.sel { background: var(--sel); }
+.gene-row .g { font-weight: 600; font-size: 14px; }
+.gene-row .v { display: block; font-size: 11.5px; color: var(--muted); }
+.gene-row .f { font-size: 12px; color: var(--ink2); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---------- gene detail ---------- */
+.g-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.g-name { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.g-name h2 { font-size: 26px; letter-spacing: -.02em; font-weight: 750; }
+.result { font-size: 21px; font-weight: 600; line-height: 1.35; margin: 12px 0 8px; letter-spacing: -.005em; }
+.why { border-left: 4px solid var(--v); background: var(--soft); border-radius: 0 8px 8px 0; padding: 8px 12px; }
+.tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.tile { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.tile .l { font-size: 12px; color: var(--muted); }
+.tile .val { font-size: 19px; font-weight: 700; margin: 2px 0 0; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.tile .s { font-size: 12px; color: var(--muted); }
+.analyst { margin-top: 14px; border: 1px dashed var(--line2); border-radius: 10px; padding: 10px 12px; }
+.analyst .eyebrow { margin-bottom: 6px; }
+.nums { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 18px; font-size: 13px; }
+.nums div { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.nums div span:first-child { color: var(--ink2); }
+.nums div span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- charts ---------- */
+.chart { width: 100%; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.axis text, .lbl { fill: var(--muted); font-size: 11.5px; }
+.axis .gl { stroke: var(--grid); stroke-width: 1; }
+.axis .base { stroke: var(--line); stroke-width: 1; }
+.callline { stroke: var(--ink2); stroke-width: 1; opacity: .55; }
+.rowlbl { fill: var(--ink2); font-size: 12.5px; }
+.rowlbl.b { fill: var(--ink); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink2); margin: 2px 0 8px; align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.hit { cursor: pointer; }
+#tip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--card); font-size: 12.5px; line-height: 1.45; padding: 7px 10px; border-radius: 8px; max-width: 320px; opacity: 0; transition: opacity .08s; white-space: pre-line; }
+#tip b { font-weight: 650; }
+.note { font-size: 12.5px; color: var(--ink2); background: var(--soft); border-radius: 8px; padding: 6px 10px; display: inline-block; margin-bottom: 6px; }
+
+/* ---------- lists & tables ---------- */
+ul.plain { margin: 0; padding-left: 18px; } ul.plain li { margin: 4px 0; }
+.flip { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; margin: 6px 0; font-size: 13.5px; }
+.flip .to { font-weight: 650; white-space: nowrap; }
+.flip .to.chg { color: var(--diff-ink); }
+table.t { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+table.t th, table.t td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-size: 11.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+table.kv td:first-child { color: var(--ink2); }
+table.kv td:last-child { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+ol.issues { margin: 0; padding-left: 22px; } ol.issues li { margin: 0 0 12px; } ol.issues .it { font-weight: 650; }
+
+/* ---------- what-if ---------- */
+.choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; margin: 10px 0 12px; }
+.choices label { display: block; font-size: 12.5px; font-weight: 650; }
+.choices label .muted { font-weight: 400; }
+.choices select { width: 100%; margin-top: 4px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); font: inherit; font-size: 13px; }
+.choices select.moved { border-color: var(--diff); background: var(--diff-bg); }
+.wi-sum { padding: 10px 12px; border-radius: 10px; background: var(--soft); margin: 6px 0 10px; display: flex; gap: 10px 18px; align-items: center; flex-wrap: wrap; }
+.wi-sum .big { font-size: 26px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.record textarea { width: 100%; min-height: 64px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; background: var(--card); color: var(--ink); resize: vertical; }
+.rec { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 8px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; font-size: 13px; }
+.rec .w { font-weight: 650; }
+.rec .q { color: var(--ink2); }
+.rec .m { font-size: 12px; color: var(--muted); }
+
+/* ---------- ask ---------- */
+.askrow { display: flex; gap: 8px; }
+.askrow input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); font: inherit; font-size: 15px; }
+.examples { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.examples button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 11px; font-size: 13px; cursor: pointer; }
+.examples button:hover { background: var(--soft); }
+.answer { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
+.answer .q { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.answer .a { font-size: 16px; line-height: 1.55; margin-bottom: 12px; }
+.meta { font-size: 13px; color: var(--muted); display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; }
+.meta b { color: var(--ink); font-weight: 600; }
+.checked { display: inline-flex; gap: 6px; align-items: center; color: var(--solid); font-weight: 650; font-size: 13px; margin-top: 10px; }
+.steps { counter-reset: step; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.step { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.stepn::before { counter-increment: step; content: counter(step); }
+.stepn { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--card); font-size: 11px; font-weight: 700; margin-right: 6px; }
+
+/* ---------- report ---------- */
+.report { max-width: 980px; }
+.report h2.rt { font-size: 22px; letter-spacing: -.015em; font-weight: 750; }
+.report .sec { margin-top: 22px; }
+.report .sec h3 { font-size: 15px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.report p { margin: 4px 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chipx { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 6px 2px 10px; font-size: 13px; font-weight: 600; }
+.chipx button { border: 0; background: var(--soft); border-radius: 50%; width: 18px; height: 18px; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+.report pre { white-space: pre-wrap; font-size: 12.5px; background: var(--soft); padding: 10px 12px; border-radius: 8px; }
+
+/* ---------- how it works ---------- */
+.pipe { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin: 12px 0 4px; }
+.stage { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--card); cursor: pointer; text-align: left; position: relative; }
+.stage:hover { background: var(--soft); }
+.stage[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.stage .t { font-weight: 650; font-size: 13px; }
+.stage .d { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.stage .k { font-size: 11.5px; color: var(--ink2); margin-top: 6px; }
+.stage.final { background: var(--soft); cursor: default; }
+.stage:not(:last-child)::after { content: "→"; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 12px; }
+.optchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.oc { font-size: 12.5px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; background: var(--card); }
+.oc.prespecified { border-color: var(--ink); font-weight: 650; }
+.oc.common_practice { border-style: dashed; color: var(--muted); }
+.kpi-big { font-size: 28px; font-weight: 750; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+footer { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--card); padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .15s; z-index: 60; pointer-events: none; }
+
+/* ---------- open your own plate ---------- */
+dialog#plate-dlg { border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; width: min(640px, calc(100vw - 32px)); background: var(--card); color: var(--ink); box-shadow: 0 12px 40px rgba(10, 12, 16, .28); }
+dialog#plate-dlg::backdrop { background: rgba(10, 12, 16, .45); }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.plate-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 14px 0 4px; }
+.plate-pick input[type=file] { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--ink2); }
+.plate-run { display: flex; gap: 10px; align-items: center; margin-top: 12px; padding: 8px 12px; border-radius: 8px; background: var(--soft); }
+.plate-err { border-left: 4px solid var(--diff); background: var(--soft); border-radius: 0 8px 8px 0; padding: 8px 12px; margin-top: 12px; }
+.plate-err p { margin-top: 4px; }
+.plate-err code { white-space: pre-wrap; word-break: break-word; }
+.spin { flex: none; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--ink); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+ul.plates { list-style: none; margin: 6px 0 0; padding: 0; }
+ul.plates li { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+ul.plates .now { white-space: nowrap; }
+.pick { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; }
+.pick h3 { font-size: 14.5px; margin: 0 0 2px; }
+.pick label.row { display: grid; gap: 3px; margin-top: 10px; font-size: 13px; font-weight: 600; }
+.pick select { font: inherit; font-size: 13.5px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); max-width: 100%; }
+.pick fieldset { border: 0; margin: 10px 0 0; padding: 0; min-width: 0; }
+.pick legend { font-size: 13px; font-weight: 600; padding: 0; }
+.refgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 2px 12px; max-height: 210px; overflow: auto; margin-top: 4px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; }
+.refgrid label { display: flex; gap: 6px; align-items: baseline; font-size: 13px; min-width: 0; }
+.refgrid label span { overflow-wrap: anywhere; }
+.refgrid input:disabled + span { color: var(--muted); text-decoration: line-through; }
+.pick .go { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1180px) {
+  .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pipe { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .stage::after { display: none; }
+  .cols3, .cols4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpis, .tasks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vlegend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 920px) {
+  .two { grid-template-columns: minmax(0, 1fr); }
+  .side { position: static; max-height: 260px; }
+  .cols2, .cols3, .cols4 { grid-template-columns: minmax(0, 1fr); }
+  .top { position: static; }
+  .top-in { grid-template-columns: minmax(0, 1fr); }
+  .top-right { justify-self: start; justify-content: flex-start; }
+  .flow { grid-template-columns: minmax(0, 1fr); }
+  .flow .st::after { display: none; }
+}
+@media (max-width: 560px) {
+  .top-in, .shell { padding-left: 16px; padding-right: 16px; }
+  .tiles, .kpis, .tasks, .vlegend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .choices, .steps { grid-template-columns: minmax(0, 1fr); }
+  .pipe { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .result { font-size: 18px; }
+  .hero h1 { font-size: 24px; }
+  .panel { padding: 14px; }
+  .studychip b { max-width: 120px; }
+}
+@media print {
+  .top, .side, .toolbar, #tip, .toast, footer { display: none !important; }
+  body { background: #fff; color: #000; }
+  .panel { border: 0; box-shadow: none; padding: 0; }
+  .shell { padding: 0; }
+  [role=tabpanel][hidden] { display: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#tab=overview" id="brand" aria-label="qPilot Decision Simulator, overview">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--ink)"/><circle cx="16" cy="15" r="7.5" fill="none" stroke="var(--card)" stroke-width="2.4"/><path d="M20.5 19.5 L25 24" stroke="var(--card)" stroke-width="2.6" stroke-linecap="round"/><path d="M12.5 15.2 L15 17.6 L19.6 12.6" fill="none" stroke="var(--card)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span><span class="w" style="display:block">qPilot</span><span class="s">Decision Simulator · research use only</span></span>
+    </a>
+    <div class="top-right">
+      <span class="studychip" id="studychip"><b id="study">Loading the engine's results…</b><button type="button" id="open-plate">Open plate</button></span>
+      <div class="seg" role="group" aria-label="View" title="Bench: plain words and actions. Analyst: the statistics behind them."><button id="view-bench" aria-pressed="true">Bench</button><button id="view-analyst" aria-pressed="false">Analyst</button></div>
+      <button class="iconbtn" id="theme" type="button" title="Switch between light, dark and your system's theme">Theme: Auto</button>
+      <span class="iconbtn" id="model" style="cursor:default"><span class="dot"></span>Ask: checking…</span>
+    </div>
+    <nav class="nav" role="tablist" aria-label="Views">
+      <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" data-tab="gene" aria-selected="false">Genes</button>
+      <button role="tab" data-tab="whatif" aria-selected="false">What-if</button>
+      <button role="tab" data-tab="ask" aria-selected="false">Ask</button>
+      <button role="tab" data-tab="report" aria-selected="false">Report</button>
+      <button role="tab" data-tab="how" aria-selected="false">How it works</button>
+    </nav>
+  </div>
+</header>
+
+<div class="shell">
+  <!-- ===================== OVERVIEW ===================== -->
+  <section id="tab-overview" role="tabpanel">
+    <div class="panel">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">The question this screen answers</div>
+          <h1 style="margin-top:6px">Does your qPCR result hold up?</h1>
+          <p class="lead" id="ov-lead"></p>
+          <div class="flow">
+            <div class="st"><div class="k">Your raw curves</div><div class="d">Every well, every plate, read with LinRegPCR. No Cq values are typed in.</div></div>
+            <div class="st"><div class="k">Every reasonable analysis</div><div class="d">Each combination of choices a careful lab could defend is run to the end.</div></div>
+            <div class="st"><div class="k">A verdict per gene</div><div class="d">Does the call hold, what does it depend on, and what to check first.</div></div>
+          </div>
+        </div>
+        <div class="design" id="ov-design"></div>
+      </div>
+      <div class="kpis" id="ov-kpis"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Where do you want to start?</h2><span class="muted small">pick the job you came to do</span></div>
+      <div class="tasks" style="margin-top:8px">
+        <button class="task" data-go="gene"><span class="i" aria-hidden="true">◆</span><span class="t">Check one result</span><span class="d">Open a gene: its verdict, the analyses that disagree, and the samples it leans on.</span><span class="go">Go to Genes →</span></button>
+        <button class="task" data-go="whatif"><span class="i" aria-hidden="true">⇄</span><span class="t">Fix your choices before results</span><span class="d">See which analysis choices change calls, lock them in, and record why.</span><span class="go">Go to What-if →</span></button>
+        <button class="task" data-go="issues"><span class="i" aria-hidden="true">!</span><span class="t">Troubleshoot the plates</span><span class="d">Wells, samples and reference genes that change a call, ranked by what to check first.</span><span class="go">See the queue →</span></button>
+        <button class="task" data-go="report"><span class="i" aria-hidden="true">≡</span><span class="t">Write it up</span><span class="d">A methods paragraph, a results table and your decision record, ready for the lab notebook.</span><span class="go">Go to Report →</span></button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Verdicts across the study</h2><span class="muted small">click a verdict to filter the gene list</span></div>
+      <p class="cap" id="ov-vcap"></p>
+      <div class="vbar" id="ov-vbar" role="img"></div>
+      <div class="vlegend" id="ov-vlegend"></div>
+    </div>
+
+    <div class="panel" id="ov-headline-panel">
+      <div class="panel-head"><h2>Headline genes</h2><span class="muted small">the results this study is about</span></div>
+      <div class="headlines" id="ov-headlines" style="margin-top:8px"></div>
+    </div>
+
+    <div class="cols2 stack">
+      <div class="panel"><h2>Fix these before you look at results</h2><p class="cap">Locking a choice before results are seen is what keeps a call honest.</p><div id="lock"></div></div>
+      <div class="panel"><div class="panel-head"><h2>What to check first</h2><span class="muted small" id="issue-count"></span></div><ol class="issues" id="issues" style="margin-top:8px"></ol></div>
+    </div>
+
+    <div class="cols2 stack">
+      <div class="panel"><h2>Calls changed by one choice alone</h2><p class="cap">Every option tried, every other choice as planned.</p><div class="chart" id="ch-alone"></div></div>
+      <div class="panel"><h2>Share of the spread in fold change</h2><p class="cap">Across reasonable analyses, how much each choice moves the fold changes.</p><div class="chart" id="ch-spread"></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>All genes at a glance</h2><span class="muted small">click a gene to open it</span></div>
+      <p class="cap" id="map-cap"></p>
+      <div class="legend" id="map-legend"></div>
+      <div class="chart" id="map-chart"></div>
+    </div>
+
+    <div class="panel"><h2>Reference gene stability</h2><p class="cap" id="st-refs-cap"></p><div class="chart" id="st-refs"></div></div>
+  </section>
+
+  <!-- ===================== GENES ===================== -->
+  <section id="tab-gene" role="tabpanel" hidden>
+    <div class="two">
+      <aside class="side" aria-label="Genes">
+        <div class="side-head">
+          <input class="search" id="search" type="search" placeholder="Find a gene  ( / )" aria-label="Find a gene">
+          <div class="vfilters" id="vfilters"></div>
+          <div class="sortrow"><span id="gene-count"></span><label>Sort <select id="sort"><option value="verdict">by verdict</option><option value="fold">by fold change</option><option value="name">A to Z</option></select></label></div>
+        </div>
+        <div class="genes" id="genes" role="listbox" aria-label="Gene list"></div>
+      </aside>
+      <main>
+        <div class="panel" id="g-top"><p class="muted">Pick a gene.</p></div>
+        <div class="panel">
+          <div class="panel-head"><h2>Every reasonable analysis</h2><span class="muted small" id="an-count"></span></div>
+          <p class="cap" id="an-cap"></p>
+          <div class="legend" id="an-legend"></div>
+          <div class="chart" id="an-chart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>One choice at a time</h2><span class="muted small">every other choice as planned · computed live</span></div>
+          <p class="cap">Each row is one analysis choice. Each mark is one of its options; the band spans the fold changes they give.</p>
+          <div class="legend" id="ef-legend"></div>
+          <div class="chart" id="ef-chart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Your samples</h2><span class="muted small" id="sm-count"></span></div>
+          <p class="cap" id="sm-cap"></p>
+          <div id="sm-note"></div>
+          <div class="legend" id="sm-legend"></div>
+          <div class="chart" id="sm-chart"></div>
+        </div>
+        <div class="cols3 stack">
+          <div class="panel"><h2>What changes it</h2><div id="g-changes" style="margin-top:6px"></div></div>
+          <div class="panel"><h2>What it leans on</h2><div id="g-leans" style="margin-top:6px"></div></div>
+          <div class="panel"><h2>What to do</h2><div id="g-todo" style="margin-top:6px"></div></div>
+        </div>
+        <div class="cols2 stack">
+          <div class="panel"><h2>Assay and wells</h2><p class="cap">This gene's lab parameters, read from the study.</p><table class="t kv" id="lab"></table></div>
+          <div class="panel"><h2>Reference genes in the planned analysis</h2><p class="cap" id="refs-cap"></p><div class="chart" id="refs-chart"></div></div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ===================== WHAT-IF ===================== -->
+  <section id="tab-whatif" role="tabpanel" hidden>
+    <div class="panel">
+      <div class="panel-head"><h2>What if you had chosen differently?</h2>
+        <button class="btn" id="reset">Back to your planned analysis</button></div>
+      <p class="cap">Change any choice and the engine re-runs the whole study live. Options are grouped as your planned analysis, reasonable alternatives and common shortcuts. Your choices also drive the sample chart on the Genes view.</p>
+      <div class="choices" id="choices"></div>
+      <div class="wi-sum" id="wi-sum"></div>
+      <div class="panel-head"><div class="legend" id="wi-legend" style="margin:0"></div>
+        <div class="seg" role="group" aria-label="Genes shown"><button id="wi-some" aria-pressed="true">Changed and headline genes</button><button id="wi-all" aria-pressed="false">All genes</button></div></div>
+      <div class="chart" id="wi-chart" style="margin-top:8px"></div>
+    </div>
+    <div class="cols2 stack">
+      <div class="panel record">
+        <h2>Decision record</h2>
+        <p class="cap">Lock a choice in before you see results and write down why. The record stays on this computer and goes into the Report.</p>
+        <div id="rec-form"></div>
+      </div>
+      <div class="panel">
+        <h2>Recorded so far</h2>
+        <p class="cap">Decisions recorded for this run.</p>
+        <div id="rec-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ASK ===================== -->
+  <section id="tab-ask" role="tabpanel" hidden>
+    <div class="panel">
+      <h2>Ask about this study</h2>
+      <p class="cap" style="margin-top:4px">Ask in your own words. Every number in the answer comes from the engine; the model only picks the tool and words the answer.</p>
+      <div class="steps">
+        <div class="step"><span class="stepn"></span><b>Read the question.</b> <span class="muted">The local model, or fixed rules, picks one engine tool and its arguments.</span></div>
+        <div class="step"><span class="stepn"></span><b>Run the engine.</b> <span class="muted">The tool reads the results or re-runs the analysis live.</span></div>
+        <div class="step"><span class="stepn"></span><b>Write the answer.</b> <span class="muted">A checked template puts the engine's values into words.</span></div>
+      </div>
+      <form class="askrow" id="ask-form" style="margin-top:14px">
+        <input id="ask-input" type="text" placeholder="Ask a question about this study" aria-label="Your question" maxlength="500">
+        <button class="btn primary" id="ask-btn" type="submit">Ask</button>
+      </form>
+      <div class="examples" id="examples"></div>
+      <div id="answer"></div>
+    </div>
+  </section>
+
+  <!-- ===================== REPORT ===================== -->
+  <section id="tab-report" role="tabpanel" hidden>
+    <div class="panel report">
+      <div class="panel-head"><h2 class="rt">Report</h2><span class="muted small">every figure below is read from the run's files</span></div>
+      <p class="cap">A write-up for the lab notebook or a methods section: the study, the planned analysis, the verdicts, the genes you choose, your decision record and the run's provenance.</p>
+      <div class="toolbar">
+        <button class="btn primary" id="rep-copy">Copy as text</button>
+        <button class="btn" id="rep-download">Download Markdown</button>
+        <button class="btn" id="rep-print">Print</button>
+        <span class="muted small" style="margin-left:auto">Genes in the report:</span>
+        <button class="btn sm" id="rep-headline">Headline genes</button>
+        <button class="btn sm" id="rep-called">All called genes</button>
+        <button class="btn sm" id="rep-clear">Clear</button>
+      </div>
+      <div class="chips" id="rep-chips"></div>
+      <div id="rep-body"></div>
+    </div>
+  </section>
+
+  <!-- ===================== HOW IT WORKS ===================== -->
+  <section id="tab-how" role="tabpanel" hidden>
+    <div class="panel">
+      <h2>What the simulator does</h2>
+      <p class="ink2" id="how-intro" style="margin-top:6px"></p>
+      <div class="pipe" id="pipe"></div>
+      <div id="stage-detail" style="margin-top:10px"></div>
+    </div>
+    <div class="cols2 stack">
+      <div class="panel"><h2>How each verdict is decided</h2><div id="how-rules" style="margin-top:8px"></div></div>
+      <div class="panel"><h2>How to read the screen</h2>
+        <ul class="plain" style="margin-top:8px">
+          <li><b>Reasonable analyses</b>: every combination of choices a careful lab could defend, with your question fixed. Common shortcuts are shown but kept out of verdicts.</li>
+          <li><b>Same answer in N of a hundred</b>: how often reasonable analyses give the same call as your planned analysis, per hundred.</li>
+          <li><b>Fewest samples that change it</b>: the smallest set of samples whose removal changes the call.</li>
+          <li><b>The fold-change line</b>: the size a change must reach before it is called.</li>
+          <li><b>Planned analysis</b>: the analysis fixed before results were seen. The engine reproduces qPilot exactly here.</li>
+          <li><b>Bench and Analyst</b>: the Bench view keeps to plain words and actions; the Analyst view adds the statistics behind every verdict.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Has it been tested?</h2>
+      <p class="cap" style="margin-top:4px">Checks against known answers, planted faults and data with no real difference, read from the run's files.</p>
+      <div class="cols3" id="tested"></div>
+    </div>
+    <div class="cols2 stack">
+      <div class="panel"><h2>Known answers: error by efficiency choice</h2><p class="cap" id="known-cap"></p><div class="chart" id="known-chart"></div></div>
+      <div class="panel"><h2>Limits, stated plainly</h2><ul class="plain" id="limits" style="margin-top:8px"></ul></div>
+    </div>
+    <div class="panel">
+      <h2>What comes next</h2>
+      <ul class="plain" style="margin-top:8px">
+        <li><b>Groups you define.</b> Compare two sets of samples you name, such as treated and untreated, not only a split by one marker gene.</li>
+        <li><b>Digital-PCR truth.</b> Score every analysis against digital PCR, on more than one instrument.</li>
+        <li><b>A plate model.</b> Fit a generative model of plates, then plan group sizes and replicates before running them.</li>
+        <li><b>Signed decision cards.</b> Lock your choices before you see results and export a signed record for the methods section.</li>
+        <li><b>More choices.</b> Cq method, baseline correction, paired designs and more than two groups.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer id="prov"></footer>
+</div>
+
+<dialog id="plate-dlg" aria-labelledby="plate-title">
+  <form method="dialog" class="dlg-head"><h2 id="plate-title">Open your own plate</h2><button class="btn" value="close">Close</button></form>
+  <p class="ink2">Choose an RDML file exported from your instrument. It is analysed on this computer and nothing leaves it. The first time, the engine runs every analysis of your data, which takes about a minute.</p>
+  <p class="small muted" id="plate-design" style="margin-top:8px"></p>
+  <div class="plate-pick">
+    <input type="file" id="plate-file" accept=".rdml,.xml" aria-label="RDML file">
+    <button class="btn primary" id="plate-go" type="button" disabled>Analyse and open</button>
+  </div>
+  <p class="tiny muted" id="plate-limit"></p>
+  <div id="plate-status" role="status" aria-live="polite"></div>
+  <div id="plate-list" style="margin-top:14px"></div>
+</dialog>
+<div id="tip" role="tooltip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const KEY = {"solid": "solid", "holds with caveats": "caveats", "depends on your choices": "depends",
+             "fragile": "fragile", "check data first": "check", "no call": "nocall"};
+const TABS = ["overview", "gene", "whatif", "ask", "report", "how"];
+const TIER_WORD = {prespecified: "planned", defensible: "reasonable alternative", common_practice: "common shortcut"};
+const state = {ov: null, filter: null, gene: null, card: null, changes: {}, tab: "overview", wiAll: false, study: null, how: null, stage: 0,
+               cache: {}, view: "bench", sort: "verdict", raw: null, record: [], report: new Set(), cards: {}};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const cap1 = (s) => s ? s[0].toUpperCase() + s.slice(1) : s;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private window or blocked storage */ } },
+};
+
+// example questions name genes from the study on screen (the benchmark's own examples when present)
+function examples(ov) {
+  const has = (g) => ov.genes.some((x) => x.gene === g);
+  const first = (v) => (ov.genes.find((x) => x.verdict === v) || ov.genes[0]).gene;
+  const a = has("NM23A") ? "NM23A" : first("depends on your choices"), b = has("NTRK1") ? "NTRK1" : first("solid");
+  return [`Does ${a} depend on the reference genes?`, `Is ${b} robust?`, `What if we normalise to ${ov.study.references.includes("HMBS") ? "HMBS" : ov.study.references[0]} alone?`,
+    "Does the late-Cq cut-off matter?", "What should I check first?", "How robust is the study overall?"];
+}
+
+function shapeBody(k) {
+  const c = "var(--v)";
+  return {
+    solid: `<circle cx="8" cy="8" r="6.5" fill="${c}"/>`,
+    caveats: `<circle cx="8" cy="8" r="6" fill="none" stroke="${c}" stroke-width="2"/><path d="M8 2 A6 6 0 0 0 8 14 Z" fill="${c}"/>`,
+    depends: `<path d="M8 1 L15 8 L8 15 L1 8 Z" fill="${c}"/>`,
+    fragile: `<path d="M8 1.5 L15 14.5 L1 14.5 Z" fill="${c}"/>`,
+    check: `<rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="${c}"/><rect x="7" y="4" width="2" height="5.5" fill="var(--card)"/><rect x="7" y="10.8" width="2" height="2" fill="var(--card)"/>`,
+    nocall: `<circle cx="8" cy="8" r="5.5" fill="none" stroke="${c}" stroke-width="2"/>`,
+  }[k];
+}
+function shape(verdict, size = 16) {
+  const k = KEY[verdict];
+  return `<svg class="shape v-${k}" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true">${shapeBody(k)}</svg>`;
+}
+// the same shapes as marks inside a chart, centred on (x, y)
+function mark(verdict, x, y, r = 6) {
+  const k = KEY[verdict], s = r / 6.5;
+  return `<g class="v-${k}" transform="translate(${x - 8 * s},${y - 8 * s}) scale(${s})">${shapeBody(k)}</g>`;
+}
+
+async function api(path, body) {
+  if (!body && state.cache[path]) return state.cache[path];
+  const res = await fetch(path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  if (!body && path !== "/api/model") state.cache[path] = data;
+  return data;
+}
+async function geneCard(gene) {
+  if (!state.cards[gene]) state.cards[gene] = await api("/api/gene/" + encodeURIComponent(gene));
+  return state.cards[gene];
+}
+
+/* ---------- tooltip & toast ---------- */
+const tip = $("tip");
+document.addEventListener("mousemove", (e) => {
+  const t = e.target.closest && e.target.closest("[data-tip]");
+  if (!t) { tip.style.opacity = 0; return; }
+  tip.innerHTML = t.getAttribute("data-tip");
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px"; tip.style.opacity = 1;
+});
+const tipText = (title, lines) => `<b>${esc(title)}</b>` + lines.filter(Boolean).map((l) => "\n" + esc(l)).join("");
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.style.opacity = 1; setTimeout(() => (t.style.opacity = 0), 1600); }
+
+/* ---------- theme and view ---------- */
+const THEMES = ["auto", "light", "dark"];
+function applyTheme(t) {
+  if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t);
+  $("theme").textContent = "Theme: " + cap1(t);
+  store.set("qsim.theme", t);
+}
+function setView(v) {
+  state.view = v; store.set("qsim.view", v);
+  $("view-bench").setAttribute("aria-pressed", v === "bench"); $("view-analyst").setAttribute("aria-pressed", v === "analyst");
+  if (state.card) renderAnalyst();
+  if (state.tab === "report") renderReport();
+}
+async function rawFiles() {
+  if (state.raw) return state.raw;
+  const [explain, csv] = await Promise.all([api("/files/explain.json"), fetch("/files/genes.csv").then((r) => r.text())]);
+  state.raw = {explain, genes: parseCsv(csv)};
+  return state.raw;
+}
+function parseCsv(text) {
+  const rows = [], lines = text.replace(/\r/g, "").split("\n").filter((l) => l.length);
+  const split = (line) => {
+    const out = []; let cur = "", q = false;
+    for (const ch of line) {
+      if (ch === '"') q = !q;
+      else if (ch === "," && !q) { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+    out.push(cur); return out;
+  };
+  const head = split(lines[0]);
+  for (const l of lines.slice(1)) { const v = split(l), o = {}; head.forEach((h, i) => (o[h] = v[i])); rows.push(o); }
+  return Object.fromEntries(rows.map((r) => [r.gene, r]));
+}
+
+/* ---------- fold-change axis (log2 scale) ---------- */
+function foldScale(lo, hi, x0, x1) {
+  const pad = 0.12 * Math.max(0.5, hi - lo);
+  lo -= pad; hi += pad;
+  return {lo, hi, x: (v) => x0 + (v - lo) / (hi - lo) * (x1 - x0)};
+}
+const foldTick = (k) => k === 0 ? "1×" : k > 0 ? `${2 ** k}×` : `1/${2 ** -k}×`;
+function foldAxis(sc, yTop, yBot, opts = {}) {
+  const a = Math.ceil(sc.lo), b = Math.floor(sc.hi), unit = sc.x(1) - sc.x(0);
+  let step = 1; while (step * unit < 40) step++;
+  let s = `<g class="axis">`;
+  for (let k = a; k <= b; k++) {
+    if (k % step) continue;
+    const x = sc.x(k);
+    s += `<line class="gl" x1="${x}" x2="${x}" y1="${yTop}" y2="${yBot}"/><text x="${x}" y="${yBot + 15}" text-anchor="middle">${foldTick(k)}</text>`;
+  }
+  s += `<line class="base" x1="${sc.x(sc.lo)}" x2="${sc.x(sc.hi)}" y1="${yBot}" y2="${yBot}"/></g>`;
+  if (opts.line != null) {
+    for (const v of [-opts.line, opts.line]) {
+      if (v < sc.lo || v > sc.hi) continue;
+      const x = sc.x(v);
+      s += `<line class="callline" x1="${x}" x2="${x}" y1="${yTop - 4}" y2="${yBot}"/><text class="lbl" x="${x}" y="${yTop - 8}" text-anchor="middle">${esc(opts.lineLabel || "")}</text>`;
+    }
+  }
+  const wide = sc.x(sc.hi) - sc.x(sc.lo) > 420, grp = wide ? ` in ${esc(state.ov.study.group)}` : "";
+  s += `<text class="lbl" x="${sc.x(sc.lo)}" y="${yBot + 31}">← lower${grp}</text>`;
+  s += `<text class="lbl" x="${sc.x(sc.hi)}" y="${yBot + 31}" text-anchor="end">higher${grp} →</text>`;
+  return s;
+}
+const width = (el) => Math.max(300, el.clientWidth || 600);
+const legendDot = (fill, stroke) => `<svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="${fill}" ${stroke ? `stroke="${stroke}" stroke-width="2"` : ""}/></svg>`;
+
+/* ---------- header ---------- */
+function renderHeader(ov) {
+  const s = ov.study;
+  $("study").textContent = ov.source.name;
+  $("studychip").title = `${ov.source.name} · ${s.samples} samples · ${s.genes} genes · ${s.plates} plates · ${s.group} (${s.group_def}) vs the rest`;
+  renderModel(ov.model);
+  const p = ov.provenance;
+  $("prov").innerHTML = `Every number on this page is read from the engine's files (${p.files.map((f) => `<a href="/files/${f}">${f}</a>`).join(", ")}) or computed live by the engine. ` +
+    `Run <code>${esc(p.run)}</code> · locked choices <code>${esc(p.lock)}</code> · input data <code>${esc(p.input)}</code> · qsim ${esc(p.qsim)}. Served from this machine only.`;
+}
+function renderModel(m) {
+  if (m.state !== "ready") {
+    $("model").innerHTML = `<span class="dot"></span>Ask: waking the local model…`;
+    setTimeout(() => api("/api/model").then(renderModel).catch(() => {}), 3000);
+    return;
+  }
+  $("model").innerHTML = m.available ? `<span class="dot on"></span>Ask: local model ${esc(m.name)}` : `<span class="dot"></span>Ask: keyword matching`;
+  $("model").title = m.available ? "A local model reads questions; every number still comes from the engine." : "No local model is running; questions are read by keyword matching.";
+}
+
+/* ---------- overview ---------- */
+const called = () => state.ov.genes.filter((g) => g.call !== "none");
+function renderOverview() {
+  const ov = state.ov, s = ov.study, c = called();
+  const holdN = c.filter((g) => g.verdict === "solid" || g.verdict === "holds with caveats").length;
+  const count = (v) => ov.verdicts.find((x) => x.key === v).count;
+  const depends = count("depends on your choices"), care = count("fragile") + count("check data first");
+  $("ov-lead").innerHTML = `<b>${esc(ov.source.name)}</b>: ${s.samples} samples, ${s.genes} genes compared, ${s.plates} plates. ` +
+    `The engine re-ran the whole analysis from the raw curves <b>${s.analyses.toLocaleString()} times</b>, once for every combination of choices a careful lab could make. ` +
+    `${s.reasonable} of them fit your question, and those decide each gene's verdict.`;
+  $("ov-design").innerHTML = `<div class="eyebrow">Your study design</div>
+    <dl><dt>Compares</dt><dd>${esc(s.group)} samples with the rest</dd>
+    <dt>Group</dt><dd>${esc(s.group_def)}</dd>
+    <dt>Normalised to</dt><dd>${s.references.map(esc).join(", ")}</dd>
+    <dt>Samples · genes · plates</dt><dd class="num">${s.samples} · ${s.genes} · ${s.plates}</dd></dl>
+    <div class="actions" style="margin-top:10px"><button class="btn sm" id="ov-open">Open another plate or change the design</button></div>`;
+  $("ov-open").onclick = () => $("open-plate").click();
+  $("ov-kpis").innerHTML = [
+    {n: `${holdN} <small>of ${c.length}</small>`, l: "called changes hold up", s: "same call under every reasonable analysis", v: "solid"},
+    {n: `${depends}`, l: depends === 1 ? "depends on an analysis choice" : "depend on an analysis choice", s: "fix the choice before you see results", v: "depends"},
+    {n: `${care}`, l: care === 1 ? "needs care before reporting" : "need care before reporting", s: "fragile, or a data problem changes the call", v: "fragile"},
+    {n: `${s.analyses.toLocaleString()}`, l: "analyses run from raw curves", s: `${s.reasonable} reasonable ones per gene decide the verdicts`, v: "nocall"},
+  ].map((k) => `<div class="kpi v-${k.v}"><div class="n" style="color:var(--v)">${k.n}</div><div class="l">${esc(k.l)}</div><div class="s">${esc(k.s)}</div></div>`).join("");
+  const total = ov.genes.length;
+  $("ov-vcap").textContent = `${total} genes compared. Each verdict has a colour and a shape, so it reads the same in the list, the charts and a printout.`;
+  $("ov-vbar").innerHTML = ov.verdicts.filter((v) => v.count).map((v) => `<span class="v-${KEY[v.key]}" style="width:${100 * v.count / total}%" data-v="${esc(v.key)}" data-tip="${esc(tipText(v.label, [`${v.count} of ${total} genes`]))}"></span>`).join("");
+  $("ov-vbar").setAttribute("aria-label", ov.verdicts.map((v) => `${v.label}: ${v.count}`).join(", "));
+  $("ov-vlegend").innerHTML = ov.verdicts.map((v) => `
+    <button class="vl v-${KEY[v.key]}" data-v="${esc(v.key)}" aria-pressed="${state.filter === v.key}" title="Show these genes in the list">
+      <span class="n">${shape(v.key, 18)}${v.count}</span><span class="lab">${esc(v.label)}</span><div class="r">${esc(v.rule)}</div>
+    </button>`).join("");
+  for (const b of document.querySelectorAll("#ov-vlegend .vl, #ov-vbar span")) b.onclick = () => { setFilter(state.filter === b.dataset.v ? null : b.dataset.v); setTab("gene"); };
+  const hl = ov.genes.filter((g) => g.headline);
+  $("ov-headline-panel").hidden = !hl.length;
+  $("ov-headlines").innerHTML = hl.map((g) => `<button class="hl v-${KEY[g.verdict]}" data-g="${esc(g.gene)}">
+    <span class="g">${esc(g.gene)}${shape(g.verdict, 14)}</span><span class="f">${esc(g.fold)} · ${g.call === "none" ? "no call" : "called " + esc(g.call)}</span><div class="v">${esc(g.label)}</div></button>`).join("");
+  for (const b of $("ov-headlines").querySelectorAll(".hl")) b.onclick = () => { selectGene(b.dataset.g); setTab("gene"); };
+  for (const b of document.querySelectorAll(".task")) b.onclick = () => {
+    if (b.dataset.go === "issues") { $("issues").scrollIntoView({behavior: "smooth", block: "center"}); return; }
+    setTab(b.dataset.go);
+  };
+  renderIssues();
+}
+async function loadStudy() {
+  if (!state.study) state.study = await api("/api/study");
+  const st = state.study;
+  drawMap(); drawChoices();
+  $("st-refs-cap").textContent = `geNorm M for each candidate: lower is steadier, steady below ${st.stable_below}. ${st.reference_note ? cap1(st.reference_note) + "." : ""}`;
+  drawRefBars($("st-refs"), st.references, st.stable_below);
+  const locks = st.lock_headline.length || st.lock_called.length;
+  $("lock").innerHTML = (st.lock_headline.length ? `<div class="callout warn"><b>To protect the headline calls</b>, fix <b>${st.lock_headline.map(esc).join("</b>, <b>")}</b> before you see results, and record why.</div>` : "") +
+    (st.lock_called.length ? `<p class="small ink2" style="margin-top:8px">Among reasonable analyses, fixing <b>${st.lock_called.map(esc).join(", ")}</b> protects every called gene.</p>` : "") +
+    (!locks ? `<div class="callout ok">No single choice changes a headline call. Record your planned analysis anyway.</div>` : "") +
+    `<p class="muted small" style="margin-top:8px">${st.influence.one_sample_genes} genes change call when one sample is removed; ${st.influence.ref_removals_flip} of ${st.influence.ref_removals} single reference-well removals change a call.</p>` +
+    `<div class="actions" style="margin-top:10px"><button class="btn sm" id="lock-go">Lock choices in the What-if view</button></div>`;
+  $("lock-go").onclick = () => setTab("whatif");
+}
+function renderIssues() {
+  const ov = state.ov;
+  $("issue-count").textContent = ov.n_issues ? `top ${ov.issues.length} of ${ov.n_issues} in the queue` : "";
+  $("issues").innerHTML = ov.issues.length ? ov.issues.map((i) => {
+    const genes = i.changes.slice(0, 10).map((g) => `<a href="#" data-g="${esc(g)}">${esc(g)}</a>`).join(", ");
+    const more = i.changes.length > 10 ? ` and ${i.changes.length - 10} more` : "";
+    return `<li><div class="it">${esc(i.title)}</div>
+      <div class="small muted">About ${esc(i.about)}${i.headline.length ? ` · touches headline gene ${i.headline.map(esc).join(", ")}` : ""}</div>
+      <div>${esc(i.action)}</div>${i.changes.length ? `<div class="small">Changes the call of: ${genes}${more}</div>` : ""}</li>`;
+  }).join("") : `<li class="muted">Nothing in the queue: no well, sample or reference gene changes a call.</li>`;
+  for (const a of $("issues").querySelectorAll("a[data-g]")) a.onclick = (e) => { e.preventDefault(); selectGene(a.dataset.g); setTab("gene"); };
+}
+function drawMap() {
+  const st = state.study, el = $("map-chart"), W = width(el), H = Math.round(Math.min(480, Math.max(320, W * 0.45)));
+  $("map-cap").textContent = `Across: the fold change with your planned analysis. Up: how many of 100 reasonable analyses give the same call. Genes low on the chart need the most care.`;
+  $("map-legend").innerHTML = state.ov.verdicts.map((v) => `<span>${shape(v.key, 12)}${esc(v.label)}</span>`).join("");
+  const xs = st.map.map((d) => d.log2), ys = st.map.map((d) => d.holds);
+  const left = 44, sc = foldScale(Math.min(...xs), Math.max(...xs), left + 6, W - 16);
+  const yMin = Math.max(0, Math.floor((Math.min(...ys) - 5) / 10) * 10), top = 30, bot = H - 40;
+  const y = (v) => bot - (v - yMin) / (100 - yMin) * (bot - top);
+  let s = "";
+  for (let v = yMin; v <= 100; v += 10) s += `<g class="axis"><line class="gl" x1="${left}" x2="${W - 16}" y1="${y(v)}" y2="${y(v)}"/><text x="${left - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text></g>`;
+  s += foldAxis(sc, top, bot, {line: st.line_log2, lineLabel: st.line + " line"});
+  s += `<text class="lbl" x="0" y="${top - 16}">same answer in … of 100</text>`;
+  const order = Object.keys(KEY);
+  const pts = [...st.map].sort((a, b) => order.indexOf(b.verdict) - order.indexOf(a.verdict));
+  const boxes = pts.map((d) => ({x0: sc.x(d.log2) - 7, x1: sc.x(d.log2) + 7, y0: y(d.holds) - 7, y1: y(d.holds) + 7}));
+  const hits = (b) => boxes.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
+  let labels = "";
+  for (const d of pts) {
+    const cx = sc.x(d.log2), cy = y(d.holds), lab = state.ov.verdicts.find((v) => v.key === d.verdict).label;
+    s += `<g class="hit" data-g="${esc(d.gene)}" data-tip="${esc(tipText(d.gene, [d.fold, `same answer in ${d.holds} of 100`, lab]))}"><circle cx="${cx}" cy="${cy}" r="11" fill="transparent"/>${mark(d.verdict, cx, cy, 6.5)}</g>`;
+  }
+  for (const d of [...pts].filter((d) => d.headline || d.holds < 90).sort((a, b) => b.headline - a.headline || a.holds - b.holds)) {
+    const cx = sc.x(d.log2), cy = y(d.holds), w = d.gene.length * 6.6 + 4;
+    const spots = [[cx + 9, cy - 5, "start"], [cx + 9, cy + 13, "start"], [cx - 9, cy - 5, "end"], [cx - 9, cy + 13, "end"], [cx, cy - 12, "middle"]];
+    for (const [lx, ly, anchor] of spots) {
+      const x0 = anchor === "start" ? lx : anchor === "end" ? lx - w : lx - w / 2;
+      const box = {x0, x1: x0 + w, y0: ly - 11, y1: ly + 2};
+      if (x0 < 0 || box.x1 > W || hits(box)) continue;
+      boxes.push(box);
+      labels += `<text class="lbl" x="${lx}" y="${ly}" text-anchor="${anchor}" style="fill:var(--ink2)">${esc(d.gene)}</text>`;
+      break;
+    }
+  }
+  s += labels;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Map of all genes: fold change against how often the call holds">${s}</svg>`;
+  for (const g of el.querySelectorAll("[data-g]")) g.onclick = () => { selectGene(g.dataset.g); setTab("gene"); };
+}
+function drawChoices() {
+  const st = state.study;
+  hbars($("ch-alone"), [...st.choices].sort((a, b) => b.alone - a.alone).map((r) => ({label: r.name, value: r.alone, bold: r.alone > 0, note: r.question ? "changes the question" : "", tip: `${r.alone} calls change with this choice alone`})));
+  hbars($("ch-spread"), [...st.choices].sort((a, b) => b.spread - a.spread).map((r) => ({label: r.name, value: r.spread, bold: r.spread > 0, note: r.question ? "fixed in reasonable analyses" : "", tip: `${r.spread} % of the spread across reasonable analyses`})), {fmt: (v) => `${v} %`});
+}
+
+/* ---------- gene list ---------- */
+function renderFilters() {
+  $("vfilters").innerHTML = state.ov.verdicts.map((v) =>
+    `<button class="vf v-${KEY[v.key]}" data-v="${esc(v.key)}" aria-pressed="${state.filter === v.key}" title="${esc(v.label)}">${shape(v.key, 12)}${v.count}</button>`).join("");
+  for (const b of $("vfilters").querySelectorAll(".vf")) b.onclick = () => setFilter(state.filter === b.dataset.v ? null : b.dataset.v);
+}
+function setFilter(v) { state.filter = v; renderFilters(); renderGenes(); for (const b of document.querySelectorAll("#ov-vlegend .vl")) b.setAttribute("aria-pressed", b.dataset.v === v); }
+function visibleGenes() {
+  const q = $("search").value.trim().toLowerCase();
+  const rows = state.ov.genes.filter((g) => (!state.filter || g.verdict === state.filter) && (!q || g.gene.toLowerCase().includes(q)));
+  const order = state.ov.verdicts.map((v) => v.key);
+  const foldOf = (g) => { const m = /([\d.]+)× (higher|lower)/.exec(g.fold); return m ? (m[2] === "higher" ? +m[1] : 1 / +m[1]) : 1; };
+  if (state.sort === "name") rows.sort((a, b) => a.gene.localeCompare(b.gene));
+  else if (state.sort === "fold") rows.sort((a, b) => Math.abs(Math.log(foldOf(b))) - Math.abs(Math.log(foldOf(a))));
+  else rows.sort((a, b) => (order.indexOf(a.verdict) - order.indexOf(b.verdict)) || (b.headline - a.headline) || a.gene.localeCompare(b.gene));
+  return rows;
+}
+function renderGenes() {
+  const rows = visibleGenes();
+  $("gene-count").textContent = `${rows.length} of ${state.ov.genes.length} genes`;
+  $("genes").innerHTML = rows.map((g) => `
+    <button class="gene-row v-${KEY[g.verdict]} ${g.gene === state.gene ? "sel" : ""}" data-g="${esc(g.gene)}" role="option" aria-selected="${g.gene === state.gene}">
+      ${shape(g.verdict, 14)}
+      <span><span class="g">${esc(g.gene)}</span>${g.headline ? '<span class="tag">headline</span>' : ""}<span class="v">${esc(g.label)}</span></span>
+      <span class="f">${esc(g.fold)}<br>${g.call === "none" ? "no call" : "called " + esc(g.call)}</span>
+    </button>`).join("") || `<p class="muted small" style="padding:8px">No gene matches.</p>`;
+  for (const b of $("genes").querySelectorAll(".gene-row")) b.onclick = () => { selectGene(b.dataset.g); setTab("gene"); };
+}
+function stepGene(delta) {
+  const rows = visibleGenes(), i = rows.findIndex((g) => g.gene === state.gene);
+  const next = rows[Math.max(0, Math.min(rows.length - 1, i + delta))];
+  if (next && next.gene !== state.gene) selectGene(next.gene);
+}
+
+/* ---------- tabs and routing ---------- */
+function setTab(tab, push = true) {
+  if (tab === "study") tab = "overview";
+  state.tab = tab;
+  for (const t of document.querySelectorAll(".nav button")) t.setAttribute("aria-selected", t.dataset.tab === tab);
+  for (const p of document.querySelectorAll("[role=tabpanel]")) p.hidden = p.id !== "tab-" + tab;
+  if (push) writeHash();
+  if (tab === "overview") loadStudy();
+  if (tab === "how") loadHow();
+  if (tab === "whatif") { runWhatif(); renderRecord(); }
+  if (tab === "report") renderReport();
+  if (tab === "gene" && state.gene) drawGeneCharts();
+  if (push) window.scrollTo({top: 0});
+}
+function writeHash() { history.replaceState(null, "", `#tab=${state.tab}` + (state.gene ? `&gene=${encodeURIComponent(state.gene)}` : "")); }
+function readHash() { const h = new URLSearchParams(location.hash.slice(1)); return {tab: h.get("tab"), gene: h.get("gene")}; }
+
+/* ---------- gene detail ---------- */
+async function selectGene(gene) {
+  state.gene = gene;
+  writeHash(); renderGenes();
+  const c = await geneCard(gene);
+  if (gene !== state.gene) return;
+  state.card = c;
+  const inReport = state.report.has(gene);
+  $("g-top").className = `panel v-${KEY[c.verdict]}`;
+  $("g-top").innerHTML = `
+    <div class="g-head">
+      <div class="g-name"><h2>${esc(c.gene)}</h2>${c.headline_gene ? '<span class="tag">headline gene</span>' : ""}<span class="pill">${shape(c.verdict, 15)} ${esc(c.label)}</span></div>
+      <div class="actions">
+        <span class="seg" role="group" aria-label="Previous or next gene"><button id="g-prev" title="Previous gene in the list">↑ Prev</button><button id="g-next" title="Next gene in the list">Next ↓</button></span>
+        <button class="btn" id="g-report" aria-pressed="${inReport}">${inReport ? "✓ In the report" : "Add to report"}</button>
+        <button class="btn" id="copy">Copy summary</button>
+        <a class="btn" href="${esc(c.evidence)}" target="_blank" rel="noopener">Evidence ↗</a>
+      </div>
+    </div>
+    <p class="result">${esc(c.result.headline)}</p>
+    <div class="why"><b>${esc(c.label)}.</b> ${esc(c.result.verdict_sentence)}</div>
+    <div class="tiles">${c.tiles.map((t) => `<div class="tile"><div class="l">${esc(t.label)}</div><div class="val">${esc(t.value)}</div><div class="s">${esc(t.sub)}</div></div>`).join("")}</div>
+    <div class="analyst" id="g-analyst" hidden></div>`;
+  $("copy").onclick = copySummary;
+  $("g-prev").onclick = () => stepGene(-1); $("g-next").onclick = () => stepGene(1);
+  $("g-report").onclick = () => { toggleReport(gene); selectGene(gene); };
+  $("g-changes").innerHTML = (c.changes.length
+    ? c.changes.map((f) => `<div class="flip"><span>If you choose <b>${esc(f.choice)}</b></span><span class="to ${f.same_call ? "" : "chg"}">${esc(f.fold)} · ${esc(f.call)}</span></div>`).join("")
+    : `<p>${esc(c.no_changes)}</p>`) + (c.shortcut ? `<p class="small muted" style="margin-top:8px">${esc(c.shortcut)}</p>` : "");
+  $("g-leans").innerHTML = `<ul class="plain">${c.leans.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>` +
+    (c.singles.length ? `<table class="t small" style="margin-top:8px"><tr><th>Sample</th><th>Plate · well</th><th>Without it</th></tr>` +
+      c.singles.map((s) => `<tr><td>${esc(s.sample)}</td><td>${esc(s.plate)} · ${esc(s.well)}</td><td>${esc(s.call)}</td></tr>`).join("") + "</table>" : "");
+  $("g-todo").innerHTML = `<ul class="plain">${c.todo.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>`;
+  renderAnalyst();
+  const lab = await api("/api/lab/" + encodeURIComponent(gene));
+  if (gene !== state.gene) return;
+  $("lab").innerHTML = lab.rows.map((r) => `<tr><td>${esc(r.label)}</td><td>${esc(r.value)}</td></tr>`).join("");
+  $("refs-cap").textContent = `${cap1(lab.refs_label)}. geNorm M: lower is steadier, steady below ${lab.stable_below}.`;
+  drawRefBars($("refs-chart"), lab.references, lab.stable_below);
+  drawGeneCharts();
+}
+// the statistics behind the verdict, read from explain.json and genes.csv (Analyst view only)
+async function renderAnalyst() {
+  const el = $("g-analyst"); if (!el) return;
+  el.hidden = state.view !== "analyst";
+  if (el.hidden) return;
+  const gene = state.gene, raw = await rawFiles();
+  if (gene !== state.gene) return;
+  const e = raw.explain[gene], r = raw.genes[gene] || {};
+  const num = (v, d = 3) => v == null || v === "" || Number.isNaN(+v) ? "–" : (+v).toFixed(d);
+  const pct = (v) => v == null || v === "" ? "–" : `${(100 * +v).toFixed(1)} %`;
+  const sci = (v) => v == null || v === "" ? "–" : (+v).toExponential(2);
+  const rows = [
+    ["log2 fold change, planned analysis", num(e.log2fc)],
+    ["fold change (likely range)", `${num(e.fold, 2)} (${num(e.ci[0], 2)} to ${num(e.ci[1], 2)})`],
+    ["p-value, planned analysis", sci(e.p)],
+    ["p-value across reasonable analyses, joint test", sci(r.p_global)],
+    ["the same, corrected across genes (BH)", sci(r.q_global_bh)],
+    ["share of reasonable analyses with the same call", `${pct(e.holds_defensible)} of ${e.analyses_defensible}`],
+    ["share of all analyses, shortcuts included", pct(r.all_holds)],
+    ["share of reasonable analyses with p below the line", pct(e.share_significant)],
+    ["margin to the fold-change line (log2)", num(e.fold_margin_log2)],
+    ["margin of the p-value below the line (decades)", num(r.p_margin_decades, 2)],
+    ["fewest samples whose removal changes the call", e.drop_k == null ? "none found" : String(e.drop_k)],
+    ["single samples whose removal changes the call", r.samples_whose_removal_flips || "0"],
+    ["fewest choices that change the call", e.flips.length ? String(Math.min(...e.flips.map((f) => f.decisions.length))) : "none"],
+    ["choices that change it only together", e.flips.length && Math.min(...e.flips.map((f) => f.decisions.length)) > 1 ? "yes" : "no"],
+  ];
+  el.innerHTML = `<div class="eyebrow">Analyst view · the statistics behind this verdict</div><div class="nums">${rows.map(([k, v]) => `<div><span>${esc(k)}</span><span>${esc(v)}</span></div>`).join("")}</div>
+    <p class="tiny muted" style="margin-top:8px">Read from explain.json and genes.csv in the run folder. The Evidence page lists every column.</p>`;
+}
+function copySummary() {
+  const c = state.card;
+  const text = [c.result.headline, `${c.label}: ${c.result.verdict_sentence}`, ...c.tiles.map((t) => `${t.label}: ${t.value} (${t.sub})`),
+    "What to do: " + c.todo.join(" "), `Evidence: ${location.origin}${c.evidence}`].join("\n");
+  copyText(text, "Summary copied");
+}
+function copyText(text, msg) {
+  const fallback = () => {
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); toast(msg); } catch (e) { toast("Copy failed"); } ta.remove();
+  };
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast(msg), fallback); else fallback();
+}
+
+async function drawGeneCharts() {
+  const gene = state.gene;
+  if (!gene || state.tab !== "gene") return;
+  const [an, ef, sm] = await Promise.all([
+    api("/api/analyses/" + encodeURIComponent(gene)),
+    api("/api/effects/" + encodeURIComponent(gene)),
+    api("/api/samples", {gene, changes: activeChanges()}),
+  ]);
+  if (gene !== state.gene) return;
+  drawAnalyses(an); drawEffects(ef); drawSamples(sm);
+}
+
+// a dot histogram: one dot per reasonable analysis, stacked in fold-change bins
+function drawAnalyses(an) {
+  $("an-count").textContent = `${an.n} analyses · computed live`;
+  $("an-cap").textContent = `Each dot is one reasonable analysis of ${an.gene}. ${an.n_same} of ${an.n} give the same call as your planned analysis (${an.base_call}); ${an.n_other} give a different call. Hover a dot for its choices.`;
+  $("an-legend").innerHTML = `<span>${legendDot("var(--same)")}same call as planned</span><span>${legendDot("var(--diff)")}different call</span>` +
+    `<span><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="var(--planned)" stroke-width="2"/></svg>your planned analysis</span>` +
+    `<span><svg width="10" height="14" aria-hidden="true"><line x1="5" x2="5" y1="0" y2="14" stroke="var(--ink2)" opacity=".6"/></svg>${esc(an.line)} line a call needs</span>`;
+  const el = $("an-chart"), W = width(el), r = 4.5, step = 2 * r + 2;
+  const vals = an.rows.map((d) => d.log2);
+  const sc = foldScale(Math.min(...vals, -an.line_log2), Math.max(...vals, an.line_log2), 16, W - 16);
+  const bins = new Map();
+  const placed = an.rows.map((d) => ({...d, px: sc.x(d.log2)})).sort((a, b) => a.px - b.px);
+  for (const d of placed) {
+    const b = Math.round(d.px / step), n = bins.get(b) || 0;
+    bins.set(b, n + 1); d.cx = b * step; d.level = n;
+  }
+  const maxLevel = Math.max(...placed.map((d) => d.level), 3);
+  const top = 26, base = top + (maxLevel + 1) * step + 10, H = base + 40;
+  let s = foldAxis(sc, top, base, {line: an.line_log2, lineLabel: an.line + " line"});
+  for (const d of placed) {
+    const cy = base - r - 3 - d.level * step;
+    const t = tipText(d.planned ? "Your planned analysis" : d.choices.join(" + "), [`${d.fold} · ${d.call}`, d.same ? "same call as planned" : "different call from planned"]);
+    s += `<g class="hit" data-tip="${esc(t)}"><circle cx="${d.cx}" cy="${cy}" r="${r + 2}" fill="transparent"/>` +
+      `<circle cx="${d.cx}" cy="${cy}" r="${r}" fill="${d.same ? "var(--same)" : "var(--diff)"}" stroke="var(--card)" stroke-width="1.5"/>` +
+      (d.planned ? `<circle cx="${d.cx}" cy="${cy}" r="${r + 3.5}" fill="none" stroke="var(--planned)" stroke-width="2"/>` : "") + `</g>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc($("an-cap").textContent)}">${s}</svg>`;
+}
+
+// one row per decision: a band across its options, one mark per option
+function drawEffects(ef) {
+  $("ef-legend").innerHTML = `<span>${legendDot("var(--same)")}reasonable option</span><span>${legendDot("var(--card)", "var(--same)")}common shortcut</span>` +
+    `<span>${legendDot("var(--diff)")}changes the call</span><span><svg width="14" height="14" aria-hidden="true"><path d="M7 1 L13 7 L7 13 L1 7 Z" fill="var(--planned)"/></svg>planned</span>`;
+  const el = $("ef-chart"), W = width(el), narrow = W < 560, lw = narrow ? 6 : Math.min(250, W * 0.36), rowH = narrow ? 46 : 36, top = 24;
+  const all = ef.decisions.flatMap((d) => d.options.map((o) => o.log2));
+  const sc = foldScale(Math.min(...all, -ef.line_log2), Math.max(...all, ef.line_log2), lw + 14, W - 14);
+  const base = top + rowH * ef.decisions.length, H = base + 40;
+  let s = foldAxis(sc, top, base, {line: ef.line_log2, lineLabel: ef.line + " line"});
+  ef.decisions.forEach((d, i) => {
+    const y = top + i * rowH + (narrow ? rowH - 13 : rowH / 2), xs = d.options.map((o) => sc.x(o.log2));
+    const sub = d.n_change ? `${d.n_change} of ${d.options.length} options change the call` : "";
+    if (narrow) {
+      s += `<text class="rowlbl ${d.n_change ? "b" : ""}" x="0" y="${y - 14}">${esc(d.name)}${sub ? `<tspan class="lbl" style="fill:var(--diff-ink);font-weight:400"> · ${esc(sub)}</tspan>` : ""}</text>`;
+    } else {
+      s += `<text class="rowlbl ${d.n_change ? "b" : ""}" x="0" y="${y + (sub ? -1 : 4)}">${esc(d.name)}</text>`;
+      if (sub) s += `<text class="lbl" x="0" y="${y + 13}" style="fill:var(--diff-ink)">${esc(sub)}</text>`;
+    }
+    s += `<line x1="${Math.min(...xs)}" x2="${Math.max(...xs)}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="8" stroke-linecap="round"/>`;
+    for (const o of d.options.filter((o) => !o.planned)) {
+      const x = sc.x(o.log2), col = o.changes_call ? "var(--diff)" : "var(--same)", shortcut = o.tier === "common_practice";
+      const t = tipText(o.label, [d.name, `${o.fold} · ${o.call}`, TIER_WORD[o.tier], o.changes_call ? "changes the call" : "same call as planned"]);
+      s += `<g class="hit" data-tip="${esc(t)}"><circle cx="${x}" cy="${y}" r="9" fill="transparent"/>` +
+        (shortcut ? `<circle cx="${x}" cy="${y}" r="4" fill="var(--card)" stroke="${col}" stroke-width="2"/>` : `<circle cx="${x}" cy="${y}" r="5" fill="${col}" stroke="var(--card)" stroke-width="1.5"/>`) + `</g>`;
+    }
+    const p = d.options.find((o) => o.planned), px = sc.x(p.log2);
+    s += `<g class="hit" data-tip="${esc(tipText("Planned: " + p.label, [p.fold + " · " + p.call]))}"><path d="M${px} ${y - 7} L${px + 7} ${y} L${px} ${y + 7} L${px - 7} ${y} Z" fill="var(--planned)" stroke="var(--card)" stroke-width="1.5"/></g>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Fold change under each option of each choice">${s}</svg>`;
+}
+
+// each sample relative to the average sample in the rest, one strip per group
+function drawSamples(sm) {
+  const g = sm.groups;
+  $("sm-count").textContent = `${g.high.n} + ${g.rest.n} samples with a value`;
+  $("sm-cap").textContent = `Each dot is one sample's ${sm.gene} level after normalising to the reference genes, relative to the average sample in the rest. Each bar is a group's average; the gap between them is the fold change, ${sm.fold}.`;
+  $("sm-note").innerHTML = sm.changes.length
+    ? `<span class="note">Showing your what-if choices: <b>${sm.changes.map(esc).join("</b> and <b>")}</b>. Reset them in the What-if view.</span>`
+    : `<span class="note">Showing your planned analysis. Change choices in the What-if view and these points move.</span>`;
+  const missing = g.high.missing + g.rest.missing;
+  $("sm-legend").innerHTML = `<span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" fill="var(--same)" fill-opacity=".6"/></svg>a sample</span>` +
+    `<span>${legendDot("var(--card)", "var(--diff)")}Cq above ${esc(sm.late_cut)}</span>` +
+    `<span><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="3.6" fill="var(--same)"/><circle cx="8" cy="8" r="6.4" fill="none" stroke="var(--planned)" stroke-width="1.5"/></svg>removing it alone changes the call</span>` +
+    `<span><svg width="10" height="14" aria-hidden="true"><line x1="5" x2="5" y1="1" y2="13" stroke="var(--planned)" stroke-width="3" stroke-linecap="round"/></svg>group average</span>` +
+    (missing ? `<span class="muted">${missing} samples have no value under these choices</span>` : "");
+  const el = $("sm-chart"), W = width(el), narrow = W < 560, lw = narrow ? 6 : Math.min(200, W * 0.3), rowH = narrow ? 122 : 96, top = 22;
+  const xs = sm.points.map((p) => p.x);
+  const sc = foldScale(Math.min(...xs, g.high.mean, 0), Math.max(...xs, g.high.mean, 0), lw + 12, W - 14);
+  const base = top + rowH * 2, H = base + 40;
+  let s = foldAxis(sc, top, base);
+  const jit = (id) => { let h = 7; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) % 9973; return h / 9973 - 0.5; };
+  [["high", g.high], ["rest", g.rest]].forEach(([key, grp], i) => {
+    const rowTop = top + i * rowH, y = rowTop + (narrow ? rowH / 2 + 16 : rowH / 2);
+    if (narrow) {
+      s += `<text class="rowlbl b" x="0" y="${rowTop + 12}">${esc(grp.label)}</text>`;
+      s += `<text class="lbl" x="0" y="${rowTop + 26}">${grp.n} samples${grp.missing ? ` · ${grp.missing} without a value` : ""}</text>`;
+    } else {
+      s += `<text class="rowlbl b" x="0" y="${y - 3}">${esc(grp.label)}</text>`;
+      s += `<text class="lbl" x="0" y="${y + 13}">${grp.n} samples${grp.missing ? ` · ${grp.missing} without a value` : ""}</text>`;
+    }
+    const pts = sm.points.filter((p) => p.group === key).sort((a, b) => (a.carries - b.carries) || (a.late - b.late));
+    for (const p of pts) {
+      const cx = sc.x(p.x), cy = y + jit(p.sample) * (rowH - (narrow ? 44 : 28));
+      const t = tipText(`Sample ${p.sample}`, [`${p.value} vs the average rest sample`, `plate ${p.plate} · well ${p.well}`, p.cq ? `Cq ${p.cq}` : "no Cq", p.late ? `Cq above ${sm.late_cut}` : "", p.flagged ? "flagged by LinRegPCR" : "", p.carries ? "removing it alone changes the call" : ""]);
+      const dot = p.late ? `<circle cx="${cx}" cy="${cy}" r="3.6" fill="var(--card)" stroke="var(--diff)" stroke-width="1.8"/>` : `<circle cx="${cx}" cy="${cy}" r="3.6" fill="var(--same)" fill-opacity=".6"/>`;
+      s += `<g class="hit" data-tip="${esc(t)}"><circle cx="${cx}" cy="${cy}" r="6" fill="transparent"/>${dot}` +
+        (p.carries ? `<circle cx="${cx}" cy="${cy}" r="6.4" fill="none" stroke="var(--planned)" stroke-width="1.5"/>` : "") + `</g>`;
+    }
+    const mx = sc.x(grp.mean);
+    const half = (rowH - (narrow ? 44 : 28)) / 2 + 4;
+    s += `<line x1="${mx}" x2="${mx}" y1="${y - half}" y2="${y + half}" stroke="var(--planned)" stroke-width="3" stroke-linecap="round"/>`;
+  });
+  const x0 = sc.x(0), x1 = sc.x(g.high.mean), yb = top + rowH + (narrow ? 8 : 0);
+  s += `<line x1="${x0}" x2="${x1}" y1="${yb}" y2="${yb}" stroke="var(--planned)" stroke-width="1.5" marker-end="url(#arr)"/>`;
+  s += `<rect x="${(x0 + x1) / 2 - 46}" y="${yb - 18}" width="92" height="16" rx="4" fill="var(--card)"/><text x="${(x0 + x1) / 2}" y="${yb - 6}" text-anchor="middle" style="fill:var(--ink);font-weight:650;font-size:12px">${esc(sm.fold)}</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc($("sm-cap").textContent)}"><defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="var(--planned)"/></marker></defs>${s}</svg>`;
+}
+
+// horizontal bars with rounded data-ends, value at the tip
+function hbars(el, rows, {fmt = (v) => v, line, lineLabel} = {}) {
+  const W = width(el), narrow = W < 560, lw = narrow ? 0 : Math.min(230, W * 0.42), rowH = narrow ? 40 : 30, top = line != null ? 20 : 4, H = top + rows.length * rowH + 6;
+  const right = narrow ? 44 : rows.some((r) => r.note) ? Math.min(190, 60 + 6.2 * Math.max(...rows.map((r) => (r.note || "").length))) : 90;
+  const M = Math.max(...rows.map((r) => r.value), line || 0, 1e-9), x = (v) => lw + (v / M) * (W - lw - right);
+  let s = "";
+  if (line != null) s += `<line class="callline" x1="${x(line)}" x2="${x(line)}" y1="${top - 4}" y2="${H - 4}"/><text class="lbl" x="${x(line)}" y="${top - 8}" text-anchor="middle">${esc(lineLabel)}</text>`;
+  rows.forEach((r, i) => {
+    const y = top + i * rowH, bh = 14, by = narrow ? y + 18 : y + (rowH - bh) / 2, x1 = Math.max(x(r.value), lw + 4);
+    s += `<g data-tip="${esc(tipText(r.label, [r.tip || fmt(r.value), r.note]))}"><rect x="0" y="${y}" width="${W}" height="${rowH}" fill="transparent"/>`;
+    s += narrow ? `<text class="rowlbl ${r.bold ? "b" : ""}" x="0" y="${y + 13}">${esc(r.label)}</text>`
+      : `<text class="rowlbl ${r.bold ? "b" : ""}" x="${lw - 10}" y="${by + 11}" text-anchor="end">${esc(r.label)}</text>`;
+    if (r.value > 0) s += `<path d="M${lw} ${by} H${x1 - 4} Q${x1} ${by} ${x1} ${by + 4} V${by + bh - 4} Q${x1} ${by + bh} ${x1 - 4} ${by + bh} H${lw} Z" fill="${r.color || "var(--accent)"}"/>`;
+    s += `<text class="lbl" x="${r.value > 0 ? x1 + 6 : lw}" y="${by + 11}" style="fill:var(--ink)">${esc(fmt(r.value))}${r.note && !narrow ? `<tspan style="fill:var(--muted)"> · ${esc(r.note)}</tspan>` : ""}</text></g>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}">${s}</svg>`;
+}
+function drawRefBars(el, refs, stableBelow) {
+  hbars(el, refs.map((r) => ({label: r.gene, value: parseFloat(r.m), color: r.differs ? "var(--diff)" : "var(--same)", note: r.differs ? "differs between groups" : "", tip: `geNorm M ${r.m}${r.differs ? " · differs between groups" : ""}`})),
+    {fmt: (v) => v.toFixed(2), line: parseFloat(stableBelow), lineLabel: `steady below ${stableBelow}`});
+}
+
+/* ---------- what-if ---------- */
+function optionGroups(d) {
+  const picked = state.changes[d.id] || d.baseline, groups = [];
+  for (const o of d.options) {
+    let g = groups.find((x) => x.tier === o.tier);
+    if (!g) groups.push(g = {tier: o.tier, options: []});
+    g.options.push(o);
+  }
+  return groups.map((g) => `<optgroup label="${esc(cap1(g.tier))}">` +
+    g.options.map((o) => `<option value="${esc(o.id)}" ${o.id === picked ? "selected" : ""}>${esc(o.label)}${o.id === d.baseline ? " (planned)" : ""}</option>`).join("") + "</optgroup>").join("");
+}
+function renderChoices() {
+  $("choices").innerHTML = state.ov.decisions.map((d) => `
+    <label>${esc(d.name)}${d.changes_claim ? ' <span class="muted">· changes the question</span>' : ""}
+      <select data-d="${esc(d.id)}" title="${esc(d.question)}">${optionGroups(d)}</select></label>`).join("");
+  for (const s of $("choices").querySelectorAll("select")) s.onchange = () => { state.changes[s.dataset.d] = s.value; runWhatif(); renderRecord(); };
+}
+function activeChanges() {
+  return Object.fromEntries(Object.entries(state.changes).filter(([d, o]) => state.ov.decisions.find((x) => x.id === d).baseline !== o));
+}
+const optionLabel = (d, id) => { const o = d.options.find((x) => x.id === id); return o ? o.label : id; };
+async function runWhatif() {
+  for (const s of $("choices").querySelectorAll("select")) {
+    const d = state.ov.decisions.find((x) => x.id === s.dataset.d);
+    s.classList.toggle("moved", s.value !== d.baseline);
+  }
+  const r = await api("/api/whatif", {changes: activeChanges(), genes: state.gene ? [state.gene] : []});
+  state.lastWhatif = r;
+  $("wi-sum").innerHTML = r.changes.length
+    ? `<span class="big">${r.n_changed} <span class="muted" style="font-size:15px;font-weight:500">of ${r.n_genes} calls change</span></span><span>with <b>${r.changes.map(esc).join("</b> and <b>")}</b></span>`
+    : `<span>Showing your planned analysis. Change a choice above and the engine recomputes all ${r.n_genes} genes.</span>`;
+  $("wi-legend").innerHTML = `<span>${legendDot("var(--card)", "var(--same)")}planned analysis</span><span>${legendDot("var(--same)")}with these choices, same call</span><span>${legendDot("var(--diff)")}call changes</span>`;
+  drawWhatif(r);
+}
+function drawWhatif(r) {
+  let rows = r.rows;
+  if (!state.wiAll) rows = rows.filter((x) => x.changed || x.headline || x.picked);
+  rows = [...rows].sort((a, b) => (b.changed - a.changed) || (b.headline - a.headline) || a.gene.localeCompare(b.gene));
+  const el = $("wi-chart"), W = width(el), narrow = W < 560, lw = narrow ? 6 : Math.min(250, W * 0.4), rowH = narrow ? 40 : 26, top = 24;
+  const all = rows.flatMap((x) => [x.base_log2, x.new_log2]);
+  const sc = foldScale(Math.min(...all, -r.line_log2), Math.max(...all, r.line_log2), lw + 10, W - 14);
+  const base = top + rows.length * rowH, H = base + 40;
+  let s = foldAxis(sc, top, base, {line: r.line_log2, lineLabel: r.line + " line"});
+  rows.forEach((x, i) => {
+    const yr = top + i * rowH, y = yr + (narrow ? rowH - 11 : rowH / 2), a = sc.x(x.base_log2), b = sc.x(x.new_log2);
+    if (x.changed) s += `<rect x="0" y="${yr + 1}" width="${W}" height="${rowH - 2}" rx="6" fill="var(--diff-bg)"/>`;
+    if (narrow) {
+      s += `<text class="rowlbl ${x.changed || x.picked ? "b" : ""}" x="6" y="${yr + 15}">${esc(x.gene)}<tspan class="lbl" style="font-weight:400"> · ${esc(x.base_call)} → ${esc(x.new_call)}</tspan></text>`;
+    } else {
+      s += `<text class="rowlbl ${x.changed || x.picked ? "b" : ""}" x="6" y="${y + 4}">${esc(x.gene)}</text>`;
+      s += `<text class="lbl" x="${lw - 8}" y="${y + 4}" text-anchor="end">${esc(x.base_call)} → ${esc(x.new_call)}</text>`;
+    }
+    const t = tipText(x.gene, [`planned: ${x.base} (${x.base_call})`, `with these choices: ${x.new} (${x.new_call})`, x.changed ? "the call changes" : "same call", "click to open the gene"]);
+    s += `<g class="hit" data-tip="${esc(t)}" data-g="${esc(x.gene)}"><rect x="${lw}" y="${yr}" width="${W - lw}" height="${rowH}" fill="transparent"/>` +
+      `<line x1="${a}" x2="${b}" y1="${y}" y2="${y}" stroke="${x.changed ? "var(--diff)" : "var(--same)"}" stroke-width="2"/>` +
+      `<circle cx="${a}" cy="${y}" r="4" fill="var(--card)" stroke="var(--same)" stroke-width="2"/>` +
+      `<circle cx="${b}" cy="${y}" r="5" fill="${x.changed ? "var(--diff)" : "var(--same)"}" stroke="var(--card)" stroke-width="1.5"/></g>`;
+  });
+  el.innerHTML = rows.length ? `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Fold change per gene, planned and with these choices">${s}</svg>` : "";
+  for (const g of el.querySelectorAll("[data-g]")) g.onclick = () => { selectGene(g.dataset.g); setTab("gene"); };
+}
+
+/* ---------- decision record (kept on this computer, per run) ---------- */
+const recordKey = () => `qsim.record.${state.ov.provenance.run}.${state.ov.provenance.input}`;
+function loadRecord() { state.record = store.get(recordKey(), []); }
+function saveRecord() { store.set(recordKey(), state.record); }
+function renderRecord() {
+  const changes = activeChanges(), ids = Object.keys(changes);
+  const decisions = state.ov.decisions;
+  if (!ids.length) {
+    $("rec-form").innerHTML = `<p class="ink2">Pick a choice above that differs from your planned analysis, or record the planned analysis itself as the one you lock in.</p>
+      <div class="actions" style="margin-top:10px"><button class="btn" id="rec-planned">Record the planned analysis as locked</button></div>`;
+    $("rec-planned").onclick = () => addRecord(decisions.map((d) => ({decision: d.name, from: optionLabel(d, d.baseline), to: optionLabel(d, d.baseline)})), "Planned analysis locked before results.");
+  } else {
+    const lines = ids.map((id) => { const d = decisions.find((x) => x.id === id); return {decision: d.name, from: optionLabel(d, d.baseline), to: optionLabel(d, changes[id])}; });
+    const n = state.lastWhatif ? state.lastWhatif.n_changed : null;
+    $("rec-form").innerHTML = `<div class="callout">${lines.map((l) => `<div><b>${esc(l.decision)}</b>: ${esc(l.from)} → <b>${esc(l.to)}</b></div>`).join("")}${n != null ? `<div class="small muted" style="margin-top:4px">${n} calls change with this.</div>` : ""}</div>
+      <label for="rec-why" class="small" style="display:block;margin-top:10px;font-weight:600">Why this choice?</label>
+      <textarea id="rec-why" placeholder="e.g. the lab's SOP sets this cut-off; decided before results were seen"></textarea>
+      <div class="actions" style="margin-top:8px"><button class="btn primary" id="rec-add">Add to the decision record</button></div>`;
+    $("rec-add").onclick = () => addRecord(lines, $("rec-why").value.trim());
+  }
+  $("rec-list").innerHTML = state.record.length ? state.record.map((r, i) => `<div class="rec">
+      <span class="w">${r.lines.map((l) => `${esc(l.decision)}: ${esc(l.to)}${l.from !== l.to ? ` <span class="muted">(was ${esc(l.from)})</span>` : ""}`).join("<br>")}</span>
+      <button class="btn sm" data-i="${i}">Remove</button>
+      <span class="q">${r.why ? esc(r.why) : "<span class=muted>no reason given</span>"}</span><span class="m">${esc(r.when)}</span></div>`).join("")
+    : `<p class="muted">Nothing recorded yet.</p>`;
+  for (const b of $("rec-list").querySelectorAll("button[data-i]")) b.onclick = () => { state.record.splice(+b.dataset.i, 1); saveRecord(); renderRecord(); };
+}
+function addRecord(lines, why) {
+  state.record.push({lines, why, when: new Date().toLocaleString()});
+  saveRecord(); renderRecord(); toast("Added to the decision record");
+}
+
+/* ---------- ask ---------- */
+async function ask(question) {
+  if (!question.trim()) return;
+  $("ask-input").value = question; $("ask-btn").disabled = true;
+  $("answer").innerHTML = `<div class="answer"><div class="q">${esc(question)}</div><p class="muted">Reading the question and running the engine… a local model on a laptop can take up to a minute.</p></div>`;
+  try {
+    const a = await api("/api/ask", {question});
+    const args = Object.entries(a.args).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ");
+    $("answer").innerHTML = `<div class="answer">
+      <div class="q">${esc(a.question)}</div>
+      <div class="a">${esc(a.text)}</div>
+      <div class="meta">
+        <span>Question read by</span><b>${esc(a.routed_by)}</b>
+        <span>Answered by</span><b>${esc(a.tool_words)} <span class="muted">· tool <code>${esc(a.tool)}</code>${args ? ` · ${esc(args)}` : ""}</span></b>
+        <span>Written by</span><b>${esc(a.written_by)}</b>
+      </div>
+      <div class="checked">${shape("solid", 12)} Every number in this answer comes from the engine.</div>
+      <details style="margin-top:6px" class="small"><summary>The ${a.facts.length} values the engine supplied</summary>
+        <table class="t kv" style="margin-top:6px">${a.facts.map((f) => `<tr><td>${esc(f.meaning)}</td><td>${esc(f.value)}</td></tr>`).join("")}</table></details>
+      ${a.tool === "gene" && a.args.gene ? `<p style="margin-top:10px"><a href="#" id="ask-open">Open ${esc(a.args.gene)} →</a></p>` : ""}
+    </div>`;
+    if ($("ask-open")) $("ask-open").onclick = (e) => { e.preventDefault(); selectGene(a.args.gene); setTab("gene"); };
+  } catch (err) {
+    $("answer").innerHTML = `<div class="answer"><p>Could not answer: ${esc(err.message)}</p></div>`;
+  } finally { $("ask-btn").disabled = false; }
+}
+
+/* ---------- report ---------- */
+function toggleReport(gene) { if (state.report.has(gene)) state.report.delete(gene); else state.report.add(gene); store.set("qsim.report." + state.ov.provenance.run, [...state.report]); }
+function setReport(genes) { state.report = new Set(genes); store.set("qsim.report." + state.ov.provenance.run, [...state.report]); renderReport(); }
+async function buildReport() {
+  const ov = state.ov, s = ov.study, p = ov.provenance, analyst = state.view === "analyst";
+  if (!state.study) state.study = await api("/api/study");
+  if (!state.how) state.how = await api("/api/how");
+  const genes = ov.genes.filter((g) => state.report.has(g.gene));
+  const cards = await Promise.all(genes.map((g) => geneCard(g.gene)));
+  const raw = analyst ? await rawFiles() : null;
+  const c = called(), holdN = c.filter((g) => g.verdict === "solid" || g.verdict === "holds with caveats").length;
+  const sec = [];
+  sec.push({title: "Study", lines: [
+    `${ov.source.name}: ${s.samples} samples, ${s.genes} genes compared, ${s.plates} plates.`,
+    `Design: ${s.group} samples (${s.group_def}) compared with the rest; each sample normalised to ${s.references.join(", ")}.`,
+    `Every analysis starts from the raw amplification curves (LinRegPCR). ${s.analyses.toLocaleString()} analyses were run; ${s.reasonable} fit the planned question and decide the verdicts.`]});
+  sec.push({title: "Planned analysis (locked before results)", lines: ov.decisions.map((d) => `${d.name}: ${optionLabel(d, d.baseline)}${d.changes_claim ? " (a question choice; alternatives are reported separately)" : ""}`).concat([state.how.call_rule])});
+  sec.push({title: "Robustness of the calls", lines: [
+    `${holdN} of ${c.length} called changes keep the same call under every reasonable analysis (solid or holds with caveats).`,
+    ov.verdicts.map((v) => `${v.label}: ${v.count}`).join(" · "),
+    ...(state.study.lock_headline.length ? [`Choices to fix before seeing results, to protect the headline calls: ${state.study.lock_headline.join(", ")}.`] : []),
+    `${state.study.influence.one_sample_genes} genes change call when one sample is removed.`]});
+  const head = ["Gene", "Fold change", "Call", "Verdict", "Same answer in", "Fewest samples that change it"].concat(analyst ? ["log2 fold", "Likely range", "p (planned)", "q (joint, BH)"] : []);
+  const rows = cards.map((k) => {
+    const t = (label) => (k.tiles.find((x) => x.label.startsWith(label)) || {}).value || "";
+    const e = raw ? raw.explain[k.gene] : null, r = raw ? raw.genes[k.gene] || {} : {};
+    const g = ov.genes.find((x) => x.gene === k.gene);
+    return [k.gene, g.fold, g.call === "none" ? "no call" : "called " + g.call, k.label, t("Same answer in"), t("Fewest samples")]
+      .concat(analyst ? [(+e.log2fc).toFixed(3), `${(+e.ci[0]).toFixed(2)} to ${(+e.ci[1]).toFixed(2)}`, (+e.p).toExponential(2), r.q_global_bh ? (+r.q_global_bh).toExponential(2) : "–"] : []);
+  });
+  sec.push({title: `Results for ${genes.length} selected gene${genes.length === 1 ? "" : "s"}`, lines: genes.length ? [] : ["No genes selected. Add genes from the Genes view, or use the buttons above."], table: genes.length ? {head, rows} : null,
+    after: cards.map((k) => `${k.gene}: ${k.result.verdict_sentence} What to do: ${k.todo.join(" ")}`)});
+  sec.push({title: "Decision record", lines: state.record.length ? state.record.map((r) => `${r.when}: ${r.lines.map((l) => `${l.decision} = ${l.to}${l.from !== l.to ? ` (was ${l.from})` : ""}`).join("; ")}${r.why ? ` — ${r.why}` : ""}`) : ["No decisions recorded. Record them in the What-if view."]});
+  sec.push({title: "What to check first", lines: ov.issues.length ? ov.issues.map((i) => `${i.title}. ${i.action}${i.changes.length ? ` Changes the call of ${i.changes.slice(0, 8).join(", ")}${i.changes.length > 8 ? ` and ${i.changes.length - 8} more` : ""}.` : ""}`) : ["Nothing in the queue."]});
+  sec.push({title: "Provenance", lines: [`Run ${p.run} · locked choices ${p.lock} · input data ${p.input} · qsim ${p.qsim}.`, "Every figure in this report is read from the run's files or computed live by the engine. Research use only."]});
+  return sec;
+}
+function reportMarkdown(sec) {
+  const out = [`# ${state.ov.source.name}: does the result hold up?`, ""];
+  for (const s of sec) {
+    out.push(`## ${s.title}`, "");
+    for (const l of s.lines) out.push(`- ${l}`);
+    if (s.table) {
+      out.push("", `| ${s.table.head.join(" | ")} |`, `| ${s.table.head.map(() => "---").join(" | ")} |`);
+      for (const r of s.table.rows) out.push(`| ${r.join(" | ")} |`);
+    }
+    if (s.after && s.after.length) { out.push(""); for (const l of s.after) out.push(`- ${l}`); }
+    out.push("");
+  }
+  return out.join("\n");
+}
+async function renderReport() {
+  $("rep-chips").innerHTML = [...state.report].map((g) => `<span class="chipx">${esc(g)}<button type="button" data-g="${esc(g)}" title="Remove from the report">×</button></span>`).join("") || `<span class="muted small">No genes selected yet.</span>`;
+  for (const b of $("rep-chips").querySelectorAll("button")) b.onclick = () => { toggleReport(b.dataset.g); renderReport(); if (state.gene === b.dataset.g) selectGene(state.gene); };
+  $("rep-body").innerHTML = `<p class="muted" style="margin-top:14px">Building the report from the run's files…</p>`;
+  const sec = await buildReport();
+  state.reportText = reportMarkdown(sec);
+  $("rep-body").innerHTML = `<h2 class="rt" style="margin-top:18px">${esc(state.ov.source.name)}: does the result hold up?</h2>` + sec.map((s) => `<div class="sec"><h3>${esc(s.title)}</h3>` +
+    s.lines.map((l) => `<p>${esc(l)}</p>`).join("") +
+    (s.table ? `<table class="t" style="margin-top:8px"><tr>${s.table.head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr>${s.table.rows.map((r) => `<tr>${r.map((v) => `<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</table>` : "") +
+    (s.after && s.after.length ? `<ul class="plain" style="margin-top:8px">${s.after.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>` : "") + `</div>`).join("");
+}
+function downloadReport() {
+  const name = `qpilot-report-${state.ov.source.name.replace(/[^\w-]+/g, "-").toLowerCase()}.md`;
+  const blob = new Blob([state.reportText || ""], {type: "text/markdown"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  toast("Report downloaded");
+}
+
+/* ---------- how it works ---------- */
+async function loadHow() {
+  if (!state.how) state.how = await api("/api/how");
+  const h = state.how;
+  $("how-intro").textContent = `It re-runs your whole analysis, from raw curves to the call, under every combination of choices a careful lab could make: ${h.total} analyses in about ${h.seconds} s on one core. ${h.reasonable} of them are reasonable for this study's question, and those decide the verdicts. Click a step to see its choices.`;
+  $("pipe").innerHTML = h.stages.map((st, i) => `<button class="stage" data-i="${i}" aria-pressed="${state.stage === i}"><div class="t">${esc(st.title)}</div><div class="d">${esc(st.text)}</div>` +
+    `<div class="k">${st.decisions.map((d) => `${esc(d.name)}${d.alone ? ` · changes ${d.alone} calls` : ""}`).join("<br>")}</div></button>`).join("") +
+    `<div class="stage final"><div class="t">The call</div><div class="d">${esc(h.call_rule)}</div></div>`;
+  for (const b of $("pipe").querySelectorAll(".stage[data-i]")) b.onclick = () => { state.stage = +b.dataset.i; loadHow(); };
+  const st = h.stages[state.stage];
+  $("stage-detail").innerHTML = `<div class="panel" style="margin:0;background:var(--soft);box-shadow:none">` + st.decisions.map((d) => `
+    <div style="margin-bottom:12px"><b>${esc(d.name)}</b>${d.changes_question ? ' <span class="muted small">· changes the question, so it is reported separately</span>' : ""}
+      <div class="small ink2">${esc(d.question)} Planned: <b>${esc(d.planned)}</b>. ${d.n_reasonable} reasonable alternative${d.n_reasonable === 1 ? "" : "s"}, ${d.n_shortcut} common shortcut${d.n_shortcut === 1 ? "" : "s"}.${d.alone != null ? ` On its own it changes ${d.alone} calls.` : ""}</div>
+      <div class="optchips">${d.options.map((o) => `<span class="oc ${o.tier}" title="${esc(TIER_WORD[o.tier])}">${esc(o.label)}</span>`).join("")}${d.more ? `<span class="oc common_practice">and ${d.more} more</span>` : ""}</div>
+    </div>`).join("") + `<div class="tiny muted">Bold outline: planned · plain: reasonable alternative · dashed: common shortcut</div></div>`;
+  $("how-rules").innerHTML = state.ov.verdicts.map((v) =>
+    `<div style="display:flex;gap:10px;align-items:flex-start;margin:8px 0"><span style="margin-top:3px">${shape(v.key, 15)}</span><span><b>${esc(v.label)}</b>: ${esc(h.rules[v.key])}</span></div>`).join("");
+  const cards = [];
+  if (h.known) cards.push(`<div class="panel"><div class="muted small">Known answers</div><div class="kpi-big">${esc(h.known.efficiency[0].error_text)}</div>
+    <p class="small">median error against true dilution ratios with the best efficiency choice (${esc(h.known.efficiency[0].label)}), over ${h.known.cases} comparisons.</p>
+    <p class="small muted" style="margin-top:6px">When reasonable analyses disagree most, the planned answer is off by ${esc(h.known.spread_warns.top)} %, against ${esc(h.known.spread_warns.other)} % otherwise. Disagreement flags wrong answers.</p></div>`);
+  if (h.faults) cards.push(`<div class="panel"><div class="muted small">Planted faults</div><div class="kpi-big">${h.faults.caught} of ${h.faults.changed}</div>
+    <p class="small">faults that changed a call were caught, out of ${h.faults.trials} faults planted in real data.</p></div>`);
+  if (h.small.length) cards.push(`<div class="panel"><div class="muted small">No real difference</div><div class="kpi-big">${esc(h.small[0].single)} % → ${esc(h.small[0].filtered)} %</div>
+    <p class="small">false calls in ${esc(h.small[0].size)} vs ${esc(h.small[0].size)} experiments drawn from real data: one analysis, against requiring the call to hold across reasonable analyses.</p>` +
+    h.small.slice(1).map((x) => `<p class="small muted" style="margin-top:6px">${esc(x.size)} vs ${esc(x.size)}: ${esc(x.single)} % → ${esc(x.filtered)} %.</p>`).join("") + `</div>`);
+  if (h.not_run.length) cards.push(`<div class="panel"><div class="muted small">Not run for ${esc(state.ov.source.name)}</div>
+    <p class="small" style="margin-top:4px">These checks take several minutes, so the quick analysis of a file you open leaves them out: ${esc(h.not_run.join(", "))}. ${state.ov.source.benchmark ? "" : "The Neuroblastoma benchmark has them all: open it from Open plate."}</p></div>`);
+  $("tested").innerHTML = cards.join("");
+  $("limits").innerHTML = [
+    h.known ? `The true dilution ratio fell inside the range of reasonable analyses in ${h.known.inside_range} of 100 cases, and inside the planned analysis's likely range in ${h.known.inside_ci} of 100. The ranges are too narrow; better uncertainty is next.` : "",
+    h.known ? "The truth used is the nominal amount of DNA pipetted, not a digital-PCR count." : "",
+    "A verdict is only as broad as the choices varied: Cq method, baseline correction and paired designs are not varied yet.",
+    "Analysis choices are audited exhaustively; the plate itself is not re-simulated. Agreement across analyses does not fix small-sample noise.",
+    "Research use only. An outside qPCR scientist should sign off the tiers.",
+  ].filter(Boolean).map((l) => `<li>${esc(l)}</li>`).join("");
+  $("known-chart").closest(".panel").hidden = !h.known;
+  if (h.known) {
+    $("known-cap").textContent = `${h.known.dataset}. Median error of the computed ratio against the known one; lower is better.`;
+    hbars($("known-chart"), h.known.efficiency.map((e) => ({label: e.label, value: e.error, bold: e.planned, note: e.planned ? "planned" : "", tip: `median error ${e.error_text}`})), {fmt: (v) => `${v} %`});
+  }
+}
+
+/* ---------- open your own plate ---------- */
+async function plateGet(path) { const r = await fetch(path, {cache: "no-store"}); return r.json(); }
+async function openPlateDialog() {
+  const info = state.plates = await plateGet("/api/plates");
+  $("plate-design").textContent = info.design;
+  $("plate-limit").textContent = `RDML (.rdml) files up to ${info.max_words}. A file opened before opens at once.`;
+  renderPlateList(info);
+  if (info.job.state === "running") pollPlate();
+  else if (info.job.state === "failed" && info.job.choose && !$("pick")) plateFailed(info.job);  // still waiting for a design
+  if (!$("plate-dlg").open) $("plate-dlg").showModal();
+}
+function renderPlateList(info) {
+  $("plate-list").innerHTML = `<h3 class="small muted">Opened on this computer</h3><ul class="plates">` + info.plates.map((p) => `
+    <li><span><b>${esc(p.name)}</b> <span class="muted small">· ${p.samples} samples · ${p.genes} genes${p.group ? ` · ${esc(p.group)} vs the rest` : ""}</span></span>
+      ${p.id === info.current ? '<span class="muted small now">on screen now</span>' : `<button class="btn" type="button" data-id="${esc(p.id)}">Open</button>`}</li>`).join("") + "</ul>";
+  for (const b of $("plate-list").querySelectorAll("button[data-id]")) b.onclick = () => openKnownPlate(b.dataset.id);
+}
+function plateBusy(busy) {
+  state.plateBusy = busy;
+  $("plate-go").disabled = busy || !$("plate-file").files.length;
+  $("plate-file").disabled = busy;
+  for (const b of $("plate-list").querySelectorAll("button")) b.disabled = busy;
+  for (const el of $("plate-status").querySelectorAll(".pick select, .pick input")) el.disabled = busy;
+  if (!busy) pickCheck();
+}
+function plateRunning(job) {
+  $("plate-status").innerHTML = `<div class="plate-run"><span class="spin" aria-hidden="true"></span><span><b>${esc(job.name)}</b>: ${esc(job.step)}…${job.elapsed ? ` <span class="muted">${esc(job.elapsed)}</span>` : ""}</span></div>`;
+}
+function plateFailed(job) {
+  const tried = job.choose ? "cannot be opened with this design" : "cannot be opened";
+  $("plate-status").innerHTML = `<div class="plate-err"><b>${esc(job.name || "This file")} ${tried}.</b><p>${esc(job.message)}</p>` +
+    (job.detail ? `<details class="small muted" style="margin-top:6px"><summary>Technical details</summary><code>${esc(job.detail)}</code></details>` : "") + `</div>` +
+    (job.choose ? pickHtml(job.choose) : "");
+  if (job.choose) pickWire(job.choose);
+  plateBusy(false);
+}
+function pickHtml(c) {
+  return `<div class="pick" id="pick"><h3>Pick a design for this file</h3>
+    <p class="small muted">These lists are read from the file itself. Samples high in the marker gene are compared with the rest, and every sample is divided by the reference genes. Every other gene is compared.</p>
+    <label class="row" for="pick-exp">Experiment<select id="pick-exp">${c.experiments.map((e) => `<option value="${esc(e.id)}">${esc(e.id)} · ${e.plates} plates · ${e.samples} samples</option>`).join("")}</select></label>
+    <label class="row" for="pick-marker">Marker gene: it splits the samples into high and the rest<select id="pick-marker"></select></label>
+    <fieldset><legend>Reference genes: at least ${c.min_refs}, measured in every sample</legend><div class="refgrid" id="pick-refs"></div></fieldset>
+    <p class="small" id="pick-sum" style="margin-top:10px"></p>
+    <div class="go"><button class="btn primary" id="pick-go" type="button" disabled>Analyse with this design</button><span class="small muted" id="pick-why"></span></div></div>`;
+}
+function pickGenes(c) {
+  const exp = c.experiments.find((e) => e.id === $("pick-exp").value) || c.experiments[0];
+  return exp.genes;
+}
+function pickFill(c, keep) {
+  const genes = pickGenes(c), names = new Set(genes.map((g) => g.name));
+  const marker = names.has(keep.marker) ? keep.marker : "";
+  $("pick-marker").innerHTML = `<option value="">Choose a gene</option>` + genes.map((g) =>
+    `<option value="${esc(g.name)}"${g.name === marker ? " selected" : ""}>${esc(g.name)} · ${g.samples} samples</option>`).join("");
+  const refs = new Set(keep.refs.filter((r) => names.has(r)));
+  $("pick-refs").innerHTML = genes.map((g) =>
+    `<label><input type="checkbox" value="${esc(g.name)}"${refs.has(g.name) ? " checked" : ""}><span>${esc(g.name)} <span class="muted tiny">${g.samples}${g.ref ? " · reference in the file" : ""}</span></span></label>`).join("");
+  for (const box of $("pick-refs").querySelectorAll("input")) box.onchange = pickCheck;
+  pickCheck();
+}
+function pickState() {
+  const refs = [...$("pick-refs").querySelectorAll("input:checked")].map((b) => b.value).filter((r) => r !== $("pick-marker").value);
+  return {experiment: $("pick-exp").value, marker: $("pick-marker").value, refs};
+}
+function pickCheck() {
+  const c = state.pick;
+  if (!c || !$("pick")) return;
+  const p = pickState(), genes = pickGenes(c);
+  for (const box of $("pick-refs").querySelectorAll("input")) {
+    const isMarker = box.value === p.marker;
+    if (isMarker) box.checked = false;
+    box.disabled = state.plateBusy || isMarker;
+  }
+  const left = genes.some((g) => g.name !== p.marker && !p.refs.includes(g.name));
+  const why = !p.marker ? "Choose the marker gene." : p.refs.length < c.min_refs ? `Tick at least ${c.min_refs} reference genes.` : !left ? "Leave at least one gene to compare." : "";
+  $("pick-why").textContent = why;
+  $("pick-go").disabled = state.plateBusy || Boolean(why);
+  const short = p.marker.split("(")[0];
+  $("pick-sum").textContent = why ? "" : `Compares ${short}-high samples with the rest, each divided by ${p.refs.join(", ")}.`;
+}
+function pickWire(c) {
+  state.pick = c;
+  $("pick-exp").value = c.picked.experiment;
+  $("pick-exp").onchange = () => pickFill(c, pickState());
+  $("pick-marker").onchange = pickCheck;
+  pickFill(c, c.picked);
+  $("pick-go").onclick = () => submitDesign().catch((err) => { $("pick-why").textContent = err.message; plateBusy(false); });
+}
+async function submitDesign() {
+  const body = pickState();
+  plateBusy(true);
+  const res = await fetch("/api/plate/design", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const data = await res.json();
+  if (!res.ok) { $("pick-why").textContent = data.error; plateBusy(false); return; }
+  pollPlate();
+}
+async function pollPlate() {
+  plateBusy(true);
+  const job = await plateGet("/api/plate/status");
+  if (job.state === "running") { plateRunning(job); setTimeout(pollPlate, 1000); }
+  else if (job.state === "done") { plateRunning({name: job.name, step: "Opening the results screen"}); location.replace("/"); }
+  else if (job.state === "failed") plateFailed(job);
+  else plateBusy(false);
+}
+async function uploadPlate() {
+  const f = $("plate-file").files[0];
+  if (!f) return;
+  if (f.size > state.plates.max_bytes) { plateFailed({name: f.name, message: `This file is larger than ${state.plates.max_words}.`}); return; }
+  plateBusy(true);
+  plateRunning({name: f.name, step: "Handing the file to the engine on this computer"});
+  const res = await fetch("/api/plate", {method: "POST", headers: {"Content-Type": "application/octet-stream", "X-Plate-Name": encodeURIComponent(f.name)}, body: f});
+  const data = await res.json();
+  if (!res.ok) { plateFailed({name: f.name, message: data.error}); return; }
+  pollPlate();
+}
+async function openKnownPlate(id) {
+  plateBusy(true);
+  const res = await fetch("/api/plate/open", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id})});
+  const data = await res.json();
+  if (!res.ok) { plateFailed({message: data.error}); return; }
+  pollPlate();
+}
+$("open-plate").onclick = () => openPlateDialog().catch((err) => toast("Could not reach the engine: " + err.message));
+$("plate-file").onchange = () => { $("plate-status").innerHTML = ""; plateBusy(false); };
+$("plate-go").onclick = () => uploadPlate().catch((err) => plateFailed({message: err.message}));
+
+/* ---------- start ---------- */
+applyTheme(THEMES.includes(store.get("qsim.theme", "auto")) ? store.get("qsim.theme", "auto") : "auto");
+$("theme").onclick = () => applyTheme(THEMES[(THEMES.indexOf(store.get("qsim.theme", "auto")) + 1) % THEMES.length]);
+async function init() {
+  const ov = await api("/api/overview");
+  state.ov = ov;
+  state.view = store.get("qsim.view", "bench") === "analyst" ? "analyst" : "bench";
+  $("view-bench").setAttribute("aria-pressed", state.view === "bench"); $("view-analyst").setAttribute("aria-pressed", state.view === "analyst");
+  $("view-bench").onclick = () => setView("bench"); $("view-analyst").onclick = () => setView("analyst");
+  state.report = new Set(store.get("qsim.report." + ov.provenance.run, ov.headline));
+  loadRecord();
+  renderHeader(ov); renderFilters(); renderGenes(); renderChoices(); renderOverview();
+  const ex = examples(ov);
+  $("ask-input").placeholder = "e.g. " + ex[0];
+  $("examples").innerHTML = ex.map((q) => `<button type="button">${esc(q)}</button>`).join("");
+  for (const b of $("examples").querySelectorAll("button")) b.onclick = () => ask(b.textContent);
+  $("ask-form").onsubmit = (e) => { e.preventDefault(); ask($("ask-input").value); };
+  $("search").oninput = renderGenes;
+  $("sort").onchange = () => { state.sort = $("sort").value; renderGenes(); };
+  $("reset").onclick = () => { state.changes = {}; renderChoices(); runWhatif(); renderRecord(); };
+  const seg = (all) => { state.wiAll = all; $("wi-all").setAttribute("aria-pressed", all); $("wi-some").setAttribute("aria-pressed", !all); runWhatif(); };
+  $("wi-some").onclick = () => seg(false); $("wi-all").onclick = () => seg(true);
+  $("rep-copy").onclick = () => copyText(state.reportText || "", "Report copied");
+  $("rep-download").onclick = downloadReport;
+  $("rep-print").onclick = () => window.print();
+  $("rep-headline").onclick = () => setReport(ov.headline);
+  $("rep-called").onclick = () => setReport(called().map((g) => g.gene));
+  $("rep-clear").onclick = () => setReport([]);
+  for (const t of document.querySelectorAll(".nav button")) t.onclick = () => setTab(t.dataset.tab);
+  $("brand").onclick = (e) => { e.preventDefault(); setTab("overview"); };
+  document.addEventListener("keydown", (e) => {
+    const typing = ["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName);
+    if (e.key === "/" && !typing) { e.preventDefault(); setTab("gene"); $("search").focus(); }
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && document.activeElement.closest && document.activeElement.closest("#genes")) {
+      e.preventDefault();
+      const rows = [...$("genes").querySelectorAll(".gene-row")], i = rows.indexOf(document.activeElement);
+      const next = rows[Math.max(0, Math.min(rows.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))];
+      if (next) { selectGene(next.dataset.g).then(() => { const n = $("genes").querySelector(`[data-g="${CSS.escape(next.dataset.g)}"]`); if (n) n.focus(); }); }
+    }
+  });
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => setTab(state.tab, false), 150); });
+  const h = readHash();
+  const first = ov.genes.find((g) => g.gene === h.gene) || ov.genes.find((g) => g.headline) || ov.genes[0];
+  await selectGene(first.gene);
+  const tab = h.tab === "study" ? "overview" : h.tab;
+  setTab(TABS.includes(tab) ? tab : "overview", false);
+  addEventListener("hashchange", () => {
+    const n = readHash(), t = n.tab === "study" ? "overview" : n.tab;
+    if (t && t !== state.tab && TABS.includes(t)) setTab(t, false);
+    if (n.gene && n.gene !== state.gene && ov.genes.some((x) => x.gene === n.gene)) selectGene(n.gene);
+  });
+}
+init().catch((err) => { $("study").textContent = "Could not load the results: " + err.message; });
+</script>
+</body>
+</html>

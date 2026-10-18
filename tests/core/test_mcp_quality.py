@@ -94,7 +94,10 @@ def _state(store, study_id):
 def test_new_tools_are_registered_with_titles_and_annotations(tmp_studies_dir):
     assert set(NEW_TOOLS) <= set(TOOL_NAMES)
     assert set(TOOL_META) == set(TOOL_NAMES)
-    listed = {t.name: t for t in anyio.run(create_server(StudyStore(tmp_studies_dir)).list_tools)}
+    listed = {
+        t.name: t
+        for t in anyio.run(create_server(StudyStore(tmp_studies_dir), simulator=False).list_tools)
+    }
     assert sorted(listed) == sorted(TOOL_NAMES)
     for name in TOOL_NAMES:
         tool = listed[name]

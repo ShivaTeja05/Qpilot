@@ -1,0 +1,904 @@
+{
+ "qsim_version": "0.1.0",
+ "qpilot_version": "0.1.0",
+ "python": "3.11.14",
+ "numpy": "2.4.6",
+ "scipy": "1.17.1",
+ "machine": "macOS-26.5.2-arm64-arm-64bit",
+ "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+ "grid_hash": "d2a608136a83e59d",
+ "seed": 2026,
+ "study": {
+  "samples": 366,
+  "genes_compared": 58,
+  "references": [
+   "ALUsq(Eurogentec)",
+   "HMBS",
+   "HPRT1",
+   "SDHA(1)",
+   "UBC(2)"
+  ],
+  "plates": 64
+ },
+ "space": {
+  "decisions": {
+   "efficiency": [
+    "assay_mean",
+    "std_curve",
+    "per_well",
+    "assume_100"
+   ],
+   "flagged": [
+    "keep",
+    "drop_eff",
+    "drop_eff_low"
+   ],
+   "late_cq": [
+    "none",
+    "cq35",
+    "cq38"
+   ],
+   "nondetect": [
+    "drop",
+    "cap_min",
+    "cq40"
+   ],
+   "refs": "31 subsets",
+   "cut": [
+    "top10",
+    "top15",
+    "top20"
+   ],
+   "test": [
+    "welch",
+    "student",
+    "mann_whitney"
+   ],
+   "multiplicity": [
+    "none",
+    "bh",
+    "holm"
+   ]
+  },
+  "levels": [
+   4,
+   3,
+   3,
+   3,
+   31,
+   3,
+   3,
+   3
+  ],
+  "baseline": {
+   "efficiency": "assay_mean",
+   "flagged": "keep",
+   "late_cq": "none",
+   "nondetect": "drop",
+   "refs": "ALUsq+HMBS+HPRT1+SDHA+UBC",
+   "cut": "top15",
+   "test": "welch",
+   "multiplicity": "none"
+  }
+ },
+ "ledger": {
+  "strategy": "full",
+  "total_cells": 90396,
+  "evaluated": 90396,
+  "share_evaluated": 1.0,
+  "exploration": "exhaustive",
+  "per_ring": {
+   "0": {
+    "evaluated": 1,
+    "total": 1
+   },
+   "1": {
+    "evaluated": 45,
+    "total": 45
+   },
+   "2": {
+    "evaluated": 546,
+    "total": 546
+   },
+   "3": {
+    "evaluated": 3220,
+    "total": 3220
+   },
+   "4": {
+    "evaluated": 10920,
+    "total": 10920
+   },
+   "5": {
+    "evaluated": 22512,
+    "total": 22512
+   },
+   "6": {
+    "evaluated": 28000,
+    "total": 28000
+   },
+   "7": {
+    "evaluated": 19392,
+    "total": 19392
+   },
+   "8": {
+    "evaluated": 5760,
+    "total": 5760
+   }
+  },
+  "t_way_coverage": {
+   "1": 1.0,
+   "2": 1.0,
+   "3": 1.0
+  },
+  "seeds": {},
+  "notes": [
+   "no reference candidate is below geNorm M 1.0; reference choice is a known weakness of this study"
+  ]
+ },
+ "space_rules": {
+  "reference_tiers": {
+   "ALUsq": "a single reference gene",
+   "HMBS": "a single reference gene",
+   "HPRT1": "a single reference gene",
+   "SDHA": "a single reference gene",
+   "UBC": "a single reference gene",
+   "ALUsq+HMBS": "contains HMBS, which differs between the groups",
+   "ALUsq+HPRT1": "two genes, none stable",
+   "ALUsq+SDHA": "two genes, none stable",
+   "ALUsq+UBC": "contains UBC(2), which differs between the groups",
+   "HMBS+HPRT1": "contains HMBS, which differs between the groups",
+   "HMBS+SDHA": "contains HMBS, which differs between the groups",
+   "HMBS+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "HPRT1+SDHA": "two genes, none stable",
+   "HPRT1+UBC": "contains UBC(2), which differs between the groups",
+   "SDHA+UBC": "contains UBC(2), which differs between the groups",
+   "ALUsq+HMBS+HPRT1": "contains HMBS, which differs between the groups",
+   "ALUsq+HMBS+SDHA": "contains HMBS, which differs between the groups",
+   "ALUsq+HMBS+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "ALUsq+HPRT1+SDHA": "three or more genes, none stable",
+   "ALUsq+HPRT1+UBC": "contains UBC(2), which differs between the groups",
+   "ALUsq+SDHA+UBC": "contains UBC(2), which differs between the groups",
+   "HMBS+HPRT1+SDHA": "contains HMBS, which differs between the groups",
+   "HMBS+HPRT1+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "HMBS+SDHA+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "HPRT1+SDHA+UBC": "contains UBC(2), which differs between the groups",
+   "ALUsq+HMBS+HPRT1+SDHA": "contains HMBS, which differs between the groups",
+   "ALUsq+HMBS+HPRT1+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "ALUsq+HMBS+SDHA+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "ALUsq+HPRT1+SDHA+UBC": "contains UBC(2), which differs between the groups",
+   "HMBS+HPRT1+SDHA+UBC": "contains HMBS, UBC(2), which differs between the groups",
+   "ALUsq+HMBS+HPRT1+SDHA+UBC": "the prespecified set"
+  },
+  "geNorm_M": {
+   "ALUsq(Eurogentec)": 1.682,
+   "HMBS": 1.958,
+   "HPRT1": 1.635,
+   "SDHA(1)": 1.989,
+   "UBC(2)": 2.027
+  },
+  "stable_below_M": 1.0,
+  "stable_genes": [],
+  "implicated_genes": [
+   "HMBS",
+   "UBC(2)"
+  ],
+  "flagged_pairs": [
+   "HMBS/UBC(2)",
+   "HMBS/HPRT1",
+   "SDHA(1)/UBC(2)"
+  ],
+  "notes": [
+   "no reference candidate is below geNorm M 1.0; reference choice is a known weakness of this study"
+  ]
+ },
+ "baseline_calls": {
+  "down": 29,
+  "none": 18,
+  "up": 11
+ },
+ "multiverse": {
+  "all": {
+   "cells": 90396,
+   "genes_that_flip_somewhere": 55,
+   "fragility_counts": {
+    "0": 3,
+    "1": 34,
+    "2": 15,
+    "3": 5,
+    "5": 1
+   },
+   "interaction_only_genes": 21,
+   "called_genes_holding_ge_95pct": 16,
+   "called_genes_holding_lt_80pct": 10
+  },
+  "defensible": {
+   "cells": 144,
+   "genes_that_flip_somewhere": 14,
+   "fragility_counts": {
+    "0": 44,
+    "1": 12,
+    "2": 2
+   },
+   "interaction_only_genes": 2,
+   "called_genes_holding_ge_95pct": 31,
+   "called_genes_holding_lt_80pct": 4
+  }
+ },
+ "headline": {
+  "ODC1": {
+   "call": "up",
+   "fold": 3.59,
+   "holds_all": 0.9976,
+   "holds_defensible": 1.0,
+   "fragility_defensible": 0,
+   "minimal_flip_sets_defensible": []
+  },
+  "BIRC5": {
+   "call": "up",
+   "fold": 4.011,
+   "holds_all": 0.9998,
+   "holds_defensible": 1.0,
+   "fragility_defensible": 0,
+   "minimal_flip_sets_defensible": []
+  },
+  "NTRK1": {
+   "call": "down",
+   "fold": 0.066,
+   "holds_all": 0.8615,
+   "holds_defensible": 0.8333,
+   "fragility_defensible": 1,
+   "minimal_flip_sets_defensible": [
+    [
+     "late_cq"
+    ]
+   ]
+  },
+  "NM23A": {
+   "call": "up",
+   "fold": 2.188,
+   "holds_all": 0.7219,
+   "holds_defensible": 1.0,
+   "fragility_defensible": 0,
+   "minimal_flip_sets_defensible": []
+  }
+ },
+ "lock_advisor": {
+  "headline_all": [
+   "late_cq",
+   "refs",
+   "cut"
+  ],
+  "called_all": [
+   "efficiency",
+   "flagged",
+   "late_cq",
+   "refs",
+   "cut"
+  ],
+  "called_defensible": [
+   "late_cq"
+  ]
+ },
+ "decisions": {
+  "efficiency": {
+   "flip_rate_all": 0.0776,
+   "flip_rate_defensible": 0.0273,
+   "genes_flipped_alone": 6,
+   "variance_share_all": 0.029,
+   "variance_share_defensible": 0.0966
+  },
+  "flagged": {
+   "flip_rate_all": 0.0746,
+   "flip_rate_defensible": 0.0,
+   "genes_flipped_alone": 4,
+   "variance_share_all": 0.0402,
+   "variance_share_defensible": 0.0019
+  },
+  "late_cq": {
+   "flip_rate_all": 0.0995,
+   "flip_rate_defensible": 0.1401,
+   "genes_flipped_alone": 11,
+   "variance_share_all": 0.0267,
+   "variance_share_defensible": 0.4758
+  },
+  "nondetect": {
+   "flip_rate_all": 0.0672,
+   "flip_rate_defensible": 0.0417,
+   "genes_flipped_alone": 0,
+   "variance_share_all": 0.0498,
+   "variance_share_defensible": 0.0832
+  },
+  "refs": {
+   "flip_rate_all": 0.6004,
+   "flip_rate_defensible": 0.0359,
+   "genes_flipped_alone": 31,
+   "variance_share_all": 0.3336,
+   "variance_share_defensible": 0.1303
+  },
+  "cut": {
+   "flip_rate_all": 0.2839,
+   "flip_rate_defensible": 0.0,
+   "genes_flipped_alone": 17,
+   "variance_share_all": 0.4162,
+   "variance_share_defensible": 0.0
+  },
+  "test": {
+   "flip_rate_all": 0.01,
+   "flip_rate_defensible": 0.0,
+   "genes_flipped_alone": 0,
+   "variance_share_all": 0.0,
+   "variance_share_defensible": 0.0
+  },
+  "multiplicity": {
+   "flip_rate_all": 0.0185,
+   "flip_rate_defensible": 0.0,
+   "genes_flipped_alone": 0,
+   "variance_share_all": 0.0,
+   "variance_share_defensible": 0.0
+  }
+ },
+ "top_interactions": {
+  "late_cqxnondetect": 0.0334,
+  "late_cqxrefs": 0.0113,
+  "refsxcut": 0.0095,
+  "flaggedxlate_cq": 0.0069,
+  "flaggedxrefs": 0.0068
+ },
+ "influence": {
+  "genes_flipped_by_one_sample": 4,
+  "samples_that_flip_a_gene": 26,
+  "reference_well_removals": 1745,
+  "reference_well_removals_that_flip": 148,
+  "max_genes_flipped_by_one_reference_well": 3,
+  "called_genes": 40,
+  "called_within_1_se_of_fold_line": 7,
+  "called_overturned_by_le_5_samples": 15
+ },
+ "joint_test": {
+  "forks": 48,
+  "permutations": 999,
+  "seed": 2026,
+  "pooled_samples": 347,
+  "genes_q_lt_0.05": 56,
+  "genes_significant_in_ge_95pct_forks": 50,
+  "called_genes_significant_in_ge_95pct_forks": 35
+ },
+ "troubleshooting": {
+  "observations": {
+   "well_outlier": 92,
+   "sample_outlier": 12,
+   "ntc": 11,
+   "spatial": 4,
+   "reference_group_effect": 3,
+   "efficiency": 2
+  },
+  "issues": 129,
+  "issues_by_impact": {
+   "no_demonstrated_effect": 116,
+   "changes_conclusion": 12,
+   "biases": 1
+  },
+  "identifiability": {
+   "position_fixed_per_sample": true,
+   "group_clustered_by_row_p": 9.318709542624799e-05,
+   "group_clustered_by_column_p": 0.9938838721587783,
+   "notes": [
+    "every sample sits in the same well on every plate: a position effect shared by all plates cannot be told apart from the sample, and largely cancels in reference normalisation; only plate-specific patterns are detectable",
+    "group membership is clustered on the plate; spatial artefacts could mimic group differences"
+   ]
+  },
+  "top_issues": [
+   {
+    "rank": 1,
+    "id": "D-refs",
+    "kind": "decision",
+    "title": "The reference genes: changing only this changes 31 call(s)",
+    "impact": "changes_conclusion",
+    "headline_changed": "NM23A",
+    "calls_changed": 31,
+    "max_abs_d_in_se": 3.47,
+    "outputs_affected": 31
+   },
+   {
+    "rank": 2,
+    "id": "D-cut",
+    "kind": "decision",
+    "title": "The group cut-off: changing only this changes 17 call(s)",
+    "impact": "changes_conclusion",
+    "headline_changed": "NM23A",
+    "calls_changed": 17,
+    "max_abs_d_in_se": 3.07,
+    "outputs_affected": 17
+   },
+   {
+    "rank": 3,
+    "id": "D-late_cq",
+    "kind": "decision",
+    "title": "The late-Cq cut-off: changing only this changes 11 call(s)",
+    "impact": "changes_conclusion",
+    "headline_changed": "NTRK1",
+    "calls_changed": 11,
+    "max_abs_d_in_se": 6.658,
+    "outputs_affected": 11
+   },
+   {
+    "rank": 4,
+    "id": "D-efficiency",
+    "kind": "decision",
+    "title": "The efficiency model: changing only this changes 6 call(s)",
+    "impact": "changes_conclusion",
+    "headline_changed": "",
+    "calls_changed": 6,
+    "max_abs_d_in_se": 2.547,
+    "outputs_affected": 6
+   },
+   {
+    "rank": 5,
+    "id": "D-flagged",
+    "kind": "decision",
+    "title": "How flagged wells are handled: changing only this changes 4 call(s)",
+    "impact": "changes_conclusion",
+    "headline_changed": "",
+    "calls_changed": 4,
+    "max_abs_d_in_se": 3.704,
+    "outputs_affected": 4
+   },
+   {
+    "rank": 6,
+    "id": "I0109",
+    "kind": "reference_group_effect",
+    "title": "Reference pair HMBS/UBC(2) differs between groups",
+    "impact": "changes_conclusion",
+    "headline_changed": "",
+    "calls_changed": 3,
+    "max_abs_d_in_se": 0.868,
+    "outputs_affected": 58
+   },
+   {
+    "rank": 7,
+    "id": "I0110",
+    "kind": "reference_group_effect",
+    "title": "Reference pair HMBS/HPRT1 differs between groups",
+    "impact": "changes_conclusion",
+    "headline_changed": "",
+    "calls_changed": 3,
+    "max_abs_d_in_se": 0.868,
+    "outputs_affected": 58
+   },
+   {
+    "rank": 8,
+    "id": "I0078",
+    "kind": "well_outlier",
+    "title": "Outlying well H20 on PRKACB_bis",
+    "impact": "changes_conclusion",
+    "headline_changed": "",
+    "calls_changed": 1,
+    "max_abs_d_in_se": 0.495,
+    "outputs_affected": 1
+   },
+   {
+    "rank": 9,
+    "id": "I0051",
+    "kind": "well_outlier",
+    "title": "Outlying well K22 on HMBS",
+    "impact": "changes_conclusion",
+    "headline_changed": "",
+    "calls_changed": 1,
+    "max_abs_d_in_se": 0.459,
+    "outputs_affected": 58
+   },
+   {
+    "rank": 10,
+    "id": "I0053",
+    "kind": "well_outlier",
+    "title": "Outlying well F23 on HPRT1",
+    "impact": "changes_conclusion",
+    "headline_changed": "",
+    "calls_changed": 1,
+    "max_abs_d_in_se": 0.414,
+    "outputs_affected": 58
+   }
+  ]
+ },
+ "explorer_check": [
+  {
+   "strategy": "rings <= 1",
+   "runs": 46,
+   "share_of_space": 0.0005088720739855746,
+   "genes_with_a_flip_found": 34,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 0.3858267716535433
+  },
+  {
+   "strategy": "rings <= 2",
+   "runs": 592,
+   "share_of_space": 0.006548962343466525,
+   "genes_with_a_flip_found": 49,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 1.0
+  },
+  {
+   "strategy": "covering array t=2",
+   "runs": 124,
+   "share_of_space": 0.0013717421124828531,
+   "genes_with_a_flip_found": 49,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 1.0,
+   "seed": 1
+  },
+  {
+   "strategy": "covering array t=3",
+   "runs": 504,
+   "share_of_space": 0.005575467941059339,
+   "genes_with_a_flip_found": 52,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 1.0,
+   "seed": 1
+  },
+  {
+   "strategy": "Morris, 20 trajectories",
+   "runs": 179,
+   "share_of_space": 0.0019801761139873445,
+   "genes_with_a_flip_found": 49,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 0.6107986501687289,
+   "seed": 1
+  },
+  {
+   "strategy": "random, 500 cells",
+   "runs": 500,
+   "share_of_space": 0.005531218195495376,
+   "genes_with_a_flip_found": 51,
+   "genes_with_a_flip_total": 55,
+   "pairwise_coverage": 0.9966254218222722,
+   "seed": 1
+  }
+ ],
+ "lock_sha256": "5f5983a21a42e33ac5409641af1bc8442f4f27606211a8a2d3b9657252e2ea2a",
+ "question_choices_flip_alone": {
+  "cut": 17,
+  "multiplicity": 0
+ },
+ "designs": {
+  "defensible_cells": 144,
+  "draws": 100,
+  "robust_rule": 0.95,
+  "sizes": {
+   "3": {
+    "no_difference": {
+     "gene_tests": 5800,
+     "false_call_rate_single_analysis": 0.0245,
+     "false_call_rate_after_robust_filter": 0.0
+    },
+    "real_difference": {
+     "calls": 511,
+     "share_robust": 0.0,
+     "disagree_with_full_study_if_robust": null,
+     "disagree_with_full_study_if_not_robust": 0.286
+    }
+   },
+   "6": {
+    "no_difference": {
+     "gene_tests": 5800,
+     "false_call_rate_single_analysis": 0.0281,
+     "false_call_rate_after_robust_filter": 0.0024
+    },
+    "real_difference": {
+     "calls": 1325,
+     "share_robust": 0.162,
+     "disagree_with_full_study_if_robust": 0.247,
+     "disagree_with_full_study_if_not_robust": 0.216
+    }
+   }
+  }
+ },
+ "moves": {
+  "max_moves": 4,
+  "called": {
+   "1": 8,
+   "2": 2,
+   "3": 6,
+   "4": 4,
+   "more than 4": 20
+  },
+  "uncalled": {
+   "1": 6,
+   "2": 2,
+   "3": 2,
+   "4": 1,
+   "more than 4": 7
+  },
+  "exact": 26,
+  "found": 31,
+  "all_paths_verified": true,
+  "headline": {
+   "ODC1": "not changed within 4 moves",
+   "BIRC5": "not changed within 4 moves",
+   "NTRK1": "1 move: Cq above 35 counts as not detected \u2192 none",
+   "NM23A": "4 moves, at most: normalise to 3 reference genes: ALUsq+HPRT1+SDHA; leave out sample 2530; leave out sample 1924; leave out sample 1784 \u2192 none"
+  },
+  "predictive_value": {
+   "draws": 100,
+   "max_moves": 4,
+   "robust_rule": 0.95,
+   "sizes": {
+    "3": {
+     "no_difference": {
+      "gene_tests": 5800,
+      "false_calls": 142,
+      "false_call_rate": 0.0245,
+      "after_robust_filter": 0.0,
+      "after_distance_ge_2": 0.0,
+      "after_distance_ge_3": 0.0,
+      "moves_of_false_calls": {
+       "1": 142
+      }
+     },
+     "real_difference": {
+      "calls": 511,
+      "share_wrong": 0.286,
+      "auroc_alone": {
+       "agreement_share": 0.556,
+       "distance": 0.5,
+       "p_value": 0.554,
+       "fold_margin": 0.806
+      },
+      "auroc_out_of_fold": {
+       "p_and_margin": 0.802,
+       "plus_agreement_share": 0.798,
+       "plus_distance": 0.802
+      },
+      "share_wrong_by_distance": {
+       "1": {
+        "calls": 511,
+        "share_wrong": 0.286
+       }
+      }
+     }
+    },
+    "6": {
+     "no_difference": {
+      "gene_tests": 5800,
+      "false_calls": 163,
+      "false_call_rate": 0.0281,
+      "after_robust_filter": 0.0024,
+      "after_distance_ge_2": 0.0028,
+      "after_distance_ge_3": 0.0,
+      "moves_of_false_calls": {
+       "1": 147,
+       "2": 16
+      }
+     },
+     "real_difference": {
+      "calls": 1325,
+      "share_wrong": 0.221,
+      "auroc_alone": {
+       "agreement_share": 0.532,
+       "distance": 0.507,
+       "p_value": 0.517,
+       "fold_margin": 0.849
+      },
+      "auroc_out_of_fold": {
+       "p_and_margin": 0.849,
+       "plus_agreement_share": 0.849,
+       "plus_distance": 0.849
+      },
+      "share_wrong_by_distance": {
+       "1": {
+        "calls": 1031,
+        "share_wrong": 0.224
+       },
+       "2": {
+        "calls": 247,
+        "share_wrong": 0.215
+       },
+       "3": {
+        "calls": 47,
+        "share_wrong": 0.191
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "verdicts": {
+  "counts": {
+   "check data first": 2,
+   "fragile": 5,
+   "depends on your choices": 3,
+   "holds with caveats": 7,
+   "solid": 23,
+   "no call": 18
+  },
+  "rules": {
+   "solid_holds": 0.95,
+   "solid_significant": 0.95,
+   "fragile_holds": 0.8,
+   "fragile_drop_k": 2,
+   "fragile_margin_log2": 0.1,
+   "drop_k_searched": 5
+  },
+  "by_gene": {
+   "AHCY": "solid",
+   "AKR1C1": "solid",
+   "ARHGEF7": "no call",
+   "BIRC5": "solid",
+   "CAMTA1": "solid",
+   "CAMTA2": "no call",
+   "CD44": "solid",
+   "CDCA5": "solid",
+   "CDH5": "solid",
+   "CDKN3": "solid",
+   "CLSTN1": "fragile",
+   "CPSG3": "solid",
+   "DDC": "solid",
+   "DPYSL3": "check data first",
+   "ECEL1": "solid",
+   "ELAVL4": "no call",
+   "EPB41L3": "solid",
+   "EPHA5": "solid",
+   "EPN2": "fragile",
+   "FYN": "no call",
+   "GNB1": "no call",
+   "HIVEP2": "depends on your choices",
+   "IGSF4": "no call",
+   "INPP1": "holds with caveats",
+   "MAP2K4": "no call",
+   "MAP7": "holds with caveats",
+   "MAPT": "solid",
+   "MCM2": "solid",
+   "MRPL3": "no call",
+   "MTSS1": "no call",
+   "NHLH2": "solid",
+   "NM23A": "holds with caveats",
+   "NRCAM": "solid",
+   "NTRK1": "depends on your choices",
+   "ODC1": "solid",
+   "PAICS": "no call",
+   "PDE4DIP": "check data first",
+   "PIK3R1": "holds with caveats",
+   "PLAGL1": "fragile",
+   "PLAT": "fragile",
+   "PMP22": "solid",
+   "PRAME": "solid",
+   "PRDM2": "no call",
+   "PRKACB_bis": "no call",
+   "PRKCZ": "no call",
+   "PTN": "holds with caveats",
+   "PTPRF": "fragile",
+   "PTPRH": "depends on your choices",
+   "PTPRN2": "holds with caveats",
+   "QPCT": "solid",
+   "SCG2": "solid",
+   "SLC25A5": "no call",
+   "SLC6A8": "no call",
+   "SNAPC1": "no call",
+   "TNFRSF": "holds with caveats",
+   "TYMS": "solid",
+   "ULK2": "no call",
+   "WSB1": "no call"
+  }
+ },
+ "benchmark_pooled": {
+  "trials": 220,
+  "trials_changing_a_call": 46,
+  "detected_when_a_call_changed": 39,
+  "trials_changing_nothing": 174,
+  "detected_when_nothing_changed": 96,
+  "mean_other_new_findings": 1.01
+ },
+ "benchmark": [
+  {
+   "fault": "well_outlier",
+   "size_cycles": 3.0,
+   "trials": 20,
+   "detection_rate": 0.05,
+   "mean_new_findings_elsewhere": 0.1,
+   "share_trials_changing_a_call": 0.0,
+   "detection_rate_when_a_call_changed": NaN
+  },
+  {
+   "fault": "well_outlier",
+   "size_cycles": 5.0,
+   "trials": 20,
+   "detection_rate": 0.45,
+   "mean_new_findings_elsewhere": 0.45,
+   "share_trials_changing_a_call": 0.0,
+   "detection_rate_when_a_call_changed": NaN
+  },
+  {
+   "fault": "well_outlier",
+   "size_cycles": 8.0,
+   "trials": 20,
+   "detection_rate": 0.9,
+   "mean_new_findings_elsewhere": 0.85,
+   "share_trials_changing_a_call": 0.05,
+   "detection_rate_when_a_call_changed": 1.0
+  },
+  {
+   "fault": "row_offset",
+   "size_cycles": 1.0,
+   "trials": 20,
+   "detection_rate": 0.4,
+   "mean_new_findings_elsewhere": 1.4,
+   "share_trials_changing_a_call": 0.05,
+   "detection_rate_when_a_call_changed": 0.0
+  },
+  {
+   "fault": "row_offset",
+   "size_cycles": 2.0,
+   "trials": 20,
+   "detection_rate": 0.85,
+   "mean_new_findings_elsewhere": 1.9,
+   "share_trials_changing_a_call": 0.05,
+   "detection_rate_when_a_call_changed": 1.0
+  },
+  {
+   "fault": "edge_ring",
+   "size_cycles": 0.7,
+   "trials": 20,
+   "detection_rate": 0.5,
+   "mean_new_findings_elsewhere": 1.8,
+   "share_trials_changing_a_call": 0.0,
+   "detection_rate_when_a_call_changed": NaN
+  },
+  {
+   "fault": "edge_ring",
+   "size_cycles": 1.5,
+   "trials": 20,
+   "detection_rate": 0.9,
+   "mean_new_findings_elsewhere": 2.55,
+   "share_trials_changing_a_call": 0.15,
+   "detection_rate_when_a_call_changed": 1.0
+  },
+  {
+   "fault": "sample_swap",
+   "size_cycles": 0.0,
+   "trials": 20,
+   "detection_rate": 0.0,
+   "mean_new_findings_elsewhere": 0.5,
+   "share_trials_changing_a_call": 0.0,
+   "detection_rate_when_a_call_changed": NaN
+  },
+  {
+   "fault": "ntc_contamination",
+   "size_cycles": 2.0,
+   "trials": 20,
+   "detection_rate": 1.0,
+   "mean_new_findings_elsewhere": 0.0,
+   "share_trials_changing_a_call": 0.0,
+   "detection_rate_when_a_call_changed": NaN
+  },
+  {
+   "fault": "reference_shift",
+   "size_cycles": 0.3,
+   "trials": 20,
+   "detection_rate": 0.85,
+   "mean_new_findings_elsewhere": 0.3,
+   "share_trials_changing_a_call": 1.0,
+   "detection_rate_when_a_call_changed": 0.85
+  },
+  {
+   "fault": "reference_shift",
+   "size_cycles": 0.6,
+   "trials": 20,
+   "detection_rate": 0.85,
+   "mean_new_findings_elsewhere": 1.25,
+   "share_trials_changing_a_call": 1.0,
+   "detection_rate_when_a_call_changed": 0.85
+  }
+ ],
+ "timings_s": {
+  "load_s": 0.19,
+  "full_grid_s": 52.99,
+  "influence_s": 2.08,
+  "moves_s": 2.86,
+  "joint_test_s": 0.6,
+  "troubleshoot_s": 0.95,
+  "explorer_check_s": 6.51,
+  "benchmark_s": 186.02,
+  "designs_s": 77.46,
+  "moves_value_s": 81.22
+ }
+}

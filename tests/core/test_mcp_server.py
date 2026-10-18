@@ -9,7 +9,14 @@ import pytest
 
 from qpilot.core.decisions import apply_decision
 from qpilot.core.store import StudyStore, sha256_file
-from qpilot.mcp_server import TOOL_NAMES, QpilotTools, check_path, create_server
+from qpilot.mcp_server import (
+    SIM_OFF_NOTICE,
+    TOOL_NAMES,
+    QpilotTools,
+    check_path,
+    create_server,
+    served_tool_names,
+)
 
 
 @pytest.fixture
@@ -145,10 +152,39 @@ def test_study_tool_reports_policy_error(tools, tmp_path, data_root):
     assert tools.qpcr_study(str(tmp_path / "x.rdml")) == {"error": "path outside QPILOT_DATA_ROOTS"}
 
 
-def test_server_registers_four_tools(tmp_studies_dir):
+def test_server_registers_every_served_tool(tmp_studies_dir):
     server = create_server(StudyStore(tmp_studies_dir))
     tools = anyio.run(server.list_tools)
-    assert sorted(t.name for t in tools) == sorted(TOOL_NAMES)
+    assert sorted(t.name for t in tools) == sorted(served_tool_names())
+    assert set(TOOL_NAMES) <= {t.name for t in tools}
+
+
+def test_the_simulator_tools_follow_the_simulator(tmp_studies_dir, monkeypatch):
+    """Without qsim the server lists the eleven qpcr_* tools and nothing breaks; with it, sim_*."""
+    from qpilot.integration import simulator as sim
+    from qpilot.integration.mcp_tools import SIM_TOOL_NAMES
+
+    monkeypatch.setattr(sim, "available", lambda: False)
+    assert served_tool_names() == TOOL_NAMES
+    off = anyio.run(create_server(StudyStore(tmp_studies_dir)).list_tools)
+    assert sorted(t.name for t in off) == sorted(TOOL_NAMES)
+    monkeypatch.setattr(sim, "available", lambda: True)
+    assert served_tool_names() == TOOL_NAMES + SIM_TOOL_NAMES
+    on = anyio.run(create_server(StudyStore(tmp_studies_dir)).list_tools)
+    assert sorted(t.name for t in on) == sorted(TOOL_NAMES + SIM_TOOL_NAMES)
+    assert served_tool_names(simulator=False) == TOOL_NAMES
+    assert "sim_*" in SIM_OFF_NOTICE and "--list-tools" in SIM_OFF_NOTICE
+
+
+def test_serve_list_tools_prints_what_is_served(capsys, monkeypatch):
+    from qpilot.cli import main
+    from qpilot.integration import simulator as sim
+
+    monkeypatch.setattr(sim, "available", lambda: False)
+    assert main(["serve", "--list-tools"]) == 0
+    out = capsys.readouterr()
+    assert out.out.split() == list(TOOL_NAMES)
+    assert "20 tools" in out.err and "not installed" in out.err
 
 
 # ---- real stdio round trip ---------------------------------------------------------------
@@ -178,7 +214,7 @@ def test_stdio_round_trip(demo, tmp_studies_dir, data_root):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 listed = await session.list_tools()
-                assert sorted(t.name for t in listed.tools) == sorted(TOOL_NAMES)
+                assert sorted(t.name for t in listed.tools) == sorted(served_tool_names())
                 study = await call(session, "qpcr_study", {"rdml_path": str(rdml)})
                 assert study["study_id"] == study_id
                 robust = await call(
@@ -225,3 +261,25 @@ def test_an_unknown_card_is_named_exactly(tmp_studies_dir, fixture_result, fixtu
     store.put(fixture_result, fixture_cards)
     out = QpilotTools(store).qpcr_decide(fixture_result.study_id, card_id, "x", "y")
     assert out["error"] == f"unknown card {card_id!r}"
+
+
+def test_stdio_without_the_simulator_lists_the_qpcr_tools_and_says_why(tmp_studies_dir, tmp_path):
+    """`import qsim` fails in the served process: eleven tools, no crash, a note on stderr."""
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    env = {**os.environ, "QPILOT_STUDIES_DIR": str(tmp_studies_dir)}
+    blocked = "import sys; sys.modules['qsim'] = None; from qpilot.mcp_server import main; main()"
+    params = StdioServerParameters(command=sys.executable, args=["-c", blocked], env=env)
+    errlog = tmp_path / "stderr.txt"
+
+    async def scenario():
+        with errlog.open("w") as err:
+            async with stdio_client(params, errlog=err) as (read, write):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    listed = await session.list_tools()
+                    return sorted(t.name for t in listed.tools)
+
+    assert anyio.run(scenario) == sorted(TOOL_NAMES)
+    assert SIM_OFF_NOTICE in errlog.read_text()
