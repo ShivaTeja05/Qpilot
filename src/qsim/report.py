@@ -85,19 +85,26 @@ def run_all(
     design_draws: int = 100,
     explorer: bool = True,
     source: str | None = None,
+    *,
+    prepared: tuple[Study, Space, dict, Engine] | None = None,
 ) -> dict:
     """Run every analysis of one RDML file and write the results folder.
 
     ``explorer`` runs the cheaper-search check; ``source`` names the file on the results screen
-    (default: the file name, or the benchmark's name when no file is given).
+    (default: the file name, or the benchmark's name when no file is given). ``prepared`` is a
+    study, its space, the space rules and the engine built elsewhere (qPilot's integration
+    builds them from a design a person confirmed in Studio); the file is then not read again.
     """
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     timings: dict[str, float] = {}
     t0 = time.perf_counter()
-    study: Study = load_study(rdml)
-    space, space_info = space_for(study)
-    engine = Engine(study, space)
+    if prepared is None:
+        study: Study = load_study(rdml)
+        space, space_info = space_for(study)
+        engine = Engine(study, space)
+    else:
+        study, space, space_info, engine = prepared
     timings["load_s"] = time.perf_counter() - t0
 
     # lock the prespecified analysis and the tier rules before any alternative is computed
@@ -294,7 +301,7 @@ def run_all(
             if g in genes.index
         },
         "lock_advisor": {
-            "headline_all": allf.lock_advisor(list(HEADLINE)),
+            "headline_all": allf.lock_advisor([g for g in HEADLINE if g in engine.items]),
             "called_all": allf.lock_advisor(list(genes.index[called_mask])),
             "called_defensible": defn.lock_advisor(list(genes.index[called_mask])),
         },
