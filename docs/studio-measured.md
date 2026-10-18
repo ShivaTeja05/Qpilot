@@ -46,3 +46,20 @@ Definitions used above, which the engine code must follow exactly:
 | The demo entered as a confirmed **groups** design (MYCN-high / rest named per tumour) | identical fold changes and p-values to the expression-defined preset (ODC1 3.590×) | `tests/prism/test_designed_export.py` |
 | Studio's grid with the amplification-call axis | 744 cells (186 × 4 rules), the full sweep in about 0.35 s | `tests/engine/test_amp_call.py` |
 | The Curve Judge's calls applied to every study well **without a person** (what Studio never does) | 3 of 58 conclusions change (CLSTN1, EPN2, IGSF4), all through the ALUsq blind spot: without the ALUsq wells, 0 change. Each of those wells reaches the scientist as a proposal the engine check marks `contradicted` | measured with `Studio._primary_conclusions` on the confirmed demo design |
+
+## Does a bigger model help? Measured on a Kaggle GPU (18 Oct 2026)
+
+The full harness (`qpilot harness run --studio`: 30 "Ask your data" items and 21 Studio items, typing over the demo's 427 samples twice) was run with the model on the same machine as qPilot: the laptop (Apple M3 Pro, Ollama) for qwen2.5:7b, and a private Kaggle notebook (NVIDIA Tesla T4 ×2, Ollama 0.40.6, per-call timeout raised to 600 s so the model is never cut off) for the larger models. Same code snapshot for the larger models (`f652bca`); only the public demo dataset was used.
+
+| Profile | Typing accuracy | Control recall | Ban violations / false accepts / invented citations | Injection effect | Ask items correct (by the model alone) | Harness time |
+|---|---|---|---|---|---|---|
+| Rules only (no model) | 839/854 (98.2 %) | 18/18 | 0 / 0 / 0 | 0 | 30/30 (—) | 45 s |
+| qwen2.5:7b, laptop | 834/854 (97.7 %) | 18/18 | 0 / 0 / 0 | 0 (re-run after the harness fix) | 30/30 (17/20) | about 70 min |
+| qwen2.5:14b, Kaggle T4 | 839/854 (98.2 %) | 18/18 | 0 / 0 / 0 | 1 (a model proposal that differed between the clean and planted runs; never applied) | 27/30 (14/20) | 74 min |
+
+What this says, without overreading three runs on one dataset:
+
+- **The deterministic rules carry the typing accuracy.** Neither model raises it above the rules on this file; the 7B lowers it slightly (it proposed some unknowns as NTCs, which a person sees as contradicted proposals), the 14B leaves it unchanged.
+- **Safety held for every model**: no control was missed, nothing forbidden got through, nothing was accepted without a person, no citation was invented.
+- **The 14B was worse at saying "not in this study"** (3 refusal items failed) and found a gap: for the amplification-call card it produced an explanation that passed the number validator while leaving out the very counts the card is about, where the 7B's failed validation and the template answered. Explanations must now cite the card's key counts or the template is used.
+- **Where a model can still add value** is reading what rules cannot: free-text sentences and messy sheets that name groups and units. The demo's design is expression-defined, so it does not exercise that; a lab file with a group sheet would.
