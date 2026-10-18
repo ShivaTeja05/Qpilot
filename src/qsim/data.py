@@ -32,6 +32,7 @@ STD_E_RANGE = (
     2.2,
 )  # outside this a standard curve is not usable (slope from noise or one point)
 ROWS = "ABCDEFGHIJKLMNOP"
+BENCHMARK_NAME = "Neuroblastoma benchmark"  # how the screen names the default study
 
 
 @dataclass(frozen=True)

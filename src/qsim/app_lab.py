@@ -373,7 +373,7 @@ class LabViews:
                 "changed": bench["trials_changing_a_call"],
                 "caught": bench["detected_when_a_call_changed"],
             }
-        designs = self.summary.get("designs", {}).get("sizes", {})
+        designs = (self.summary.get("designs") or {}).get("sizes", {})
         out["small"] = [
             {
                 "size": size,
@@ -381,6 +381,16 @@ class LabViews:
                 "filtered": f"{100 * v['no_difference']['false_call_rate_after_robust_filter']:.1f}",
             }
             for size, v in designs.items()
+        ]
+        # checks this run did not make (a quick run of a lab's own plate skips them)
+        out["not_run"] = [
+            what
+            for what, done in (
+                ("planted faults", bool(bench)),
+                ("small experiments drawn from the data", bool(designs)),
+                ("known answers", (self.dir / "validation_untergasser.json").exists()),
+            )
+            if not done
         ]
         val = self.dir / "validation_untergasser.json"
         if val.exists():

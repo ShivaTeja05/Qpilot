@@ -87,9 +87,30 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
 
 def cmd_app(args: argparse.Namespace) -> int:
-    from qsim.app import serve
+    from pathlib import Path
 
-    serve(args.results, args.rdml, args.port, no_model=args.no_model, open_browser=args.open)
+    from qsim.app import serve
+    from qsim.plates import PlateProblem, prepare
+
+    results = args.results
+    if args.rdml:  # reuse the run for this file, or make a quick one under results/plates/
+        try:
+            results = prepare(
+                args.rdml, args.results, progress=lambda s: print(s, "...", flush=True)
+            )
+        except PlateProblem as err:
+            print(f"\nqsim cannot open {Path(args.rdml).name}.\n\n{err.full()}", file=sys.stderr)
+            if err.detail:
+                print(f"\n(details: {err.detail})", file=sys.stderr)
+            return 2
+    serve(
+        results,
+        args.rdml,
+        args.port,
+        no_model=args.no_model,
+        open_browser=args.open,
+        root=args.results,
+    )
     return 0
 
 
@@ -148,6 +169,11 @@ def main(argv: list[str] | None = None) -> int:
         "app", help="results screen in plain lab language, served on 127.0.0.1 (offline)"
     )
     ap.add_argument("--results", default="results")
+    ap.add_argument(
+        "--rdml",
+        default=argparse.SUPPRESS,
+        help="your own RDML file: a quick run goes to <results>/plates/ the first time",
+    )
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--no-model", action="store_true", help="Ask without a model (keyword routing)")
     ap.add_argument("--open", action="store_true", help="open the page in the default browser")

@@ -30,6 +30,7 @@ python3.11 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/qsim whatif --set refs=HMBS --set late_cq=cq35
 .venv/bin/qsim validate                                 # known-answer test (Untergasser)
 .venv/bin/qsim app --open                               # results screen on http://127.0.0.1:8765
+.venv/bin/qsim app --rdml my_plates.rdml --open         # the same screen for your own RDML file
 .venv/bin/pytest -q
 ```
 
@@ -55,9 +56,27 @@ The page types no numbers. Every figure comes from those files or a live engine 
 - no screen contains statistics jargon.
 
 Options:
+- `--rdml <file>`: open your own RDML file (see below);
 - `--no-model`: keyword routing only;
 - `--port`;
 - `--results <dir>`.
+
+### Open your own plate
+
+`qsim app --rdml <file>`, or **Open your own plate** on the page, puts a lab's own RDML export on the same screen.
+
+1. **Same file, same run.** If `results/` or `results/plates/<first 12 hex digits of its SHA-256>/` already holds a run of the same bytes, the screen opens at once.
+2. **Design check.** Otherwise LinRegPCR reads every curve and `qsim.plates.check` tests the file against the current two-group design: an experiment named `biomarker_set`, `MYCN(4)` to split the samples, the five reference genes, one well per sample and gene, and at least 3 samples in each group at every cut-off. A file that does not fit gets a plain-language reason instead of a screen. The Untergasser dilution series, for example, gets: "it has no experiment named “biomarker_set”. Its experiments are “Primer Test - EMBL”, …".
+3. **Quick run.** `qsim.report.run_all` runs with the planted-fault benchmark, the small-experiment draws and the cheaper-search check left out, and 199 permutations instead of 999. Every analysis, influence, the joint test and troubleshooting still run. A 64-plate, 244-sample file takes about 70 s from the command to the screen; a 16-plate file takes about 15 s.
+
+The screen leaves out what a quick run did not make. **How it works** says which checks were not run for the file and points to the benchmark, which has them all.
+
+The page's file picker posts the raw file to `/api/plate` on `127.0.0.1`:
+- **Local only.** The endpoint answers only its own page: the Host must be this server, any Origin must match, and a custom header is required.
+- **Size and type.** Files are limited to 32 MB and must be a zip or XML. qPilot's hardened loader refuses XML entities and zip bombs.
+- **Storage.** The file is saved as `results/plates/<sha>/input.rdml`, never under the name the user gave. A file that fails the check is deleted.
+- **Switching.** One file is analysed at a time. The dialog shows each step, then reloads onto the new screen, and lists every file opened before so you can switch back.
+- **Git.** `results/plates/` is git-ignored.
 
 ## The choices it varies
 

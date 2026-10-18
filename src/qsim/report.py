@@ -16,7 +16,7 @@ import scipy
 from qsim import __version__, explore, inference, influence
 from qsim.attribution import Factorial
 from qsim.benchmark import run_benchmark
-from qsim.data import Study, load_study
+from qsim.data import BENCHMARK_NAME, Study, load_study
 from qsim.decisions import Space
 from qsim.engine import Engine, Grid
 from qsim.issues import HEADLINE, build_queue, queue_frame
@@ -83,7 +83,14 @@ def run_all(
     bench_trials: int = 20,
     seed: int = 2026,
     design_draws: int = 100,
+    explorer: bool = True,
+    source: str | None = None,
 ) -> dict:
+    """Run every analysis of one RDML file and write the results folder.
+
+    ``explorer`` runs the cheaper-search check; ``source`` names the file on the results screen
+    (default: the file name, or the benchmark's name when no file is given).
+    """
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     timings: dict[str, float] = {}
@@ -168,9 +175,11 @@ def run_all(
     decisions.to_csv(out / "decisions.csv")
     interactions = allf.interaction_share().mean().sort_values(ascending=False)
 
-    t = time.perf_counter()
-    check = explorer_check(engine, allf)
-    timings["explorer_check_s"] = time.perf_counter() - t
+    check = []
+    if explorer:
+        t = time.perf_counter()
+        check = explorer_check(engine, allf)
+        timings["explorer_check_s"] = time.perf_counter() - t
 
     bench_summary = None
     bench_pooled = None
@@ -231,6 +240,10 @@ def run_all(
         "scipy": scipy.__version__,
         "machine": platform.platform(),
         "input_sha256": study.input_sha256,
+        "source": {
+            "name": source or (Path(rdml).name if rdml else BENCHMARK_NAME),
+            "rdml": str(Path(rdml).resolve()) if rdml else None,
+        },
         "grid_hash": _grid_hash(grid),
         "seed": seed,
         "study": {
@@ -351,11 +364,16 @@ def _multiverse_summary(f: Factorial, called: np.ndarray) -> dict:
     }
 
 
+def _source_title(s: dict) -> str:
+    name = (s.get("source") or {}).get("name")
+    return "the public neuroblastoma benchmark" if name in (None, BENCHMARK_NAME) else name
+
+
 def render_report(s: dict) -> str:
     m_all, m_def = s["multiverse"]["all"], s["multiverse"]["defensible"]
     inf, jt = s["influence"], s["joint_test"]
     lines = [
-        "# qPilot Decision Simulator: results on the public neuroblastoma benchmark",
+        f"# qPilot Decision Simulator: results on {_source_title(s)}",
         "",
         f"Input SHA-256 `{s['input_sha256'][:16]}…`, grid hash `{s['grid_hash']}`, seed {s['seed']}. "
         f"qsim {s['qsim_version']}, qPilot {s['qpilot_version']}, Python {s['python']}, NumPy {s['numpy']}, SciPy {s['scipy']}.",
@@ -445,13 +463,14 @@ def render_report(s: dict) -> str:
         lines.append(
             f"| {r['rank']} | {r['title']} | {r['impact']} | {r['headline_changed'] or '–'} | {r['calls_changed']} | {r['max_abs_d_in_se']} |"
         )
-    lines += [
-        "",
-        "## Can cheaper search find the same flips?",
-        "",
-        "| strategy | runs | share of space | genes with a flip found | pairwise coverage |",
-        "|---|---|---|---|---|",
-    ]
+    if s["explorer_check"]:
+        lines += [
+            "",
+            "## Can cheaper search find the same flips?",
+            "",
+            "| strategy | runs | share of space | genes with a flip found | pairwise coverage |",
+            "|---|---|---|---|---|",
+        ]
     for r in s["explorer_check"]:
         lines.append(
             f"| {r['strategy']} | {r['runs']} | {r['share_of_space']:.3%} | {r['genes_with_a_flip_found']} / {r['genes_with_a_flip_total']} | {r['pairwise_coverage']:.3f} |"

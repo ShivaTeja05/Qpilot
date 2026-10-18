@@ -193,6 +193,24 @@ code { font-size: 12px; }
 .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--card); padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .15s; z-index: 60; pointer-events: none; }
 [hidden] { display: none !important; }
 
+/* open your own plate */
+dialog#plate-dlg { border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; width: min(640px, calc(100vw - 32px)); background: var(--card); color: var(--ink); box-shadow: 0 12px 40px rgba(10, 12, 16, .28); }
+dialog#plate-dlg::backdrop { background: rgba(10, 12, 16, .45); }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.plate-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 14px 0 4px; }
+.plate-pick input[type=file] { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--ink2); }
+.plate-run { display: flex; gap: 10px; align-items: center; margin-top: 12px; padding: 8px 12px; border-radius: 8px; background: var(--soft); }
+.plate-err { border-left: 4px solid var(--diff); background: var(--soft); border-radius: 0 8px 8px 0; padding: 8px 12px; margin-top: 12px; }
+.plate-err p { margin-top: 4px; }
+.plate-err code { white-space: pre-wrap; word-break: break-word; }
+.spin { flex: none; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--ink); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+ul.plates { list-style: none; margin: 6px 0 0; padding: 0; }
+ul.plates li { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+ul.plates .now { white-space: nowrap; }
+.src { font-weight: 650; color: var(--ink); }
+
 @media (max-width: 1180px) {
   .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -228,6 +246,7 @@ code { font-size: 12px; }
       <div class="chips">
         <span class="study" id="study">Loading the engine's results…</span>
         <span class="chip" id="model"><span class="dot"></span>Ask: checking for the local model…</span>
+        <button class="btn" id="open-plate" type="button">Open your own plate</button>
       </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="Views">
@@ -366,7 +385,7 @@ code { font-size: 12px; }
       <div class="panel">
         <h2>What comes next</h2>
         <ul class="plain" style="margin-top:8px">
-          <li><b>Your own plate.</b> Load any RDML file and get this screen for your study.</li>
+          <li><b>Other designs.</b> Choose your own marker gene, groups and reference genes, so any lab's RDML file can be opened, not only two-group studies like this one.</li>
           <li><b>Digital-PCR truth.</b> Score every analysis against digital PCR, on more than one instrument.</li>
           <li><b>A plate model.</b> Fit a generative model of plates, then plan group sizes and replicates before running them.</li>
           <li><b>Decision card.</b> Lock your choices before you see results and export a record for the methods section.</li>
@@ -378,6 +397,18 @@ code { font-size: 12px; }
     <footer id="prov"></footer>
   </main>
 </div>
+<dialog id="plate-dlg" aria-labelledby="plate-title">
+  <form method="dialog" class="dlg-head"><h2 id="plate-title">Open your own plate</h2><button class="btn" value="close">Close</button></form>
+  <p class="ink2">Choose an RDML file exported from your instrument. It is analysed on this computer and nothing leaves it. The first time, the engine runs every analysis of your data, which takes about a minute.</p>
+  <p class="small muted" id="plate-design" style="margin-top:8px"></p>
+  <div class="plate-pick">
+    <input type="file" id="plate-file" accept=".rdml,.xml" aria-label="RDML file">
+    <button class="btn primary" id="plate-go" type="button" disabled>Analyse and open</button>
+  </div>
+  <p class="tiny muted" id="plate-limit"></p>
+  <div id="plate-status" role="status" aria-live="polite"></div>
+  <div id="plate-list" style="margin-top:14px"></div>
+</dialog>
 <div id="tip" role="tooltip"></div>
 <div class="toast" id="toast"></div>
 
@@ -385,10 +416,14 @@ code { font-size: 12px; }
 "use strict";
 const KEY = {"solid": "solid", "holds with caveats": "caveats", "depends on your choices": "depends",
              "fragile": "fragile", "check data first": "check", "no call": "nocall"};
-const EXAMPLES = [
-  "Does NM23A depend on the reference genes?", "Is NTRK1 robust?", "What if we normalise to HMBS alone?",
-  "Does the late-Cq cut-off matter?", "What should I check first?", "How robust is the study overall?",
-];
+// example questions name genes from the study on screen (the benchmark's own examples when present)
+function examples(ov) {
+  const has = (g) => ov.genes.some((x) => x.gene === g);
+  const first = (v) => (ov.genes.find((x) => x.verdict === v) || ov.genes[0]).gene;
+  const a = has("NM23A") ? "NM23A" : first("depends on your choices"), b = has("NTRK1") ? "NTRK1" : first("solid");
+  return [`Does ${a} depend on the reference genes?`, `Is ${b} robust?`, "What if we normalise to HMBS alone?",
+    "Does the late-Cq cut-off matter?", "What should I check first?", "How robust is the study overall?"];
+}
 const TABS = ["gene", "study", "whatif", "ask", "how"];
 const TIER_WORD = {prespecified: "planned", defensible: "reasonable alternative", common_practice: "common shortcut"};
 const state = {ov: null, filter: null, gene: null, card: null, changes: {}, tab: "gene", wiAll: false, study: null, how: null, stage: 0, cache: {}};
@@ -474,7 +509,7 @@ const width = (el) => Math.max(300, el.clientWidth || 600);
 /* ---------- header and sidebar ---------- */
 function renderHeader(ov) {
   const s = ov.study;
-  $("study").textContent = `${s.samples} samples · ${s.genes} genes · ${s.plates} plates · ${s.group} (${s.group_def}) vs the rest`;
+  $("study").innerHTML = `<span class="src">${esc(ov.source.name)}</span> · ${s.samples} samples · ${s.genes} genes · ${s.plates} plates · ${esc(s.group)} (${esc(s.group_def)}) vs the rest`;
   renderModel(ov.model);
   const p = ov.provenance;
   $("prov").innerHTML = `Every number on this page is read from the engine's files (${p.files.map((f) => `<a href="/files/${f}">${f}</a>`).join(", ")}) or computed live by the engine. ` +
@@ -711,7 +746,7 @@ async function loadStudy() {
   renderStrip(); drawMap(); drawChoices(); renderIssues();
   $("st-refs-cap").textContent = `geNorm M for each candidate: lower is steadier, steady below ${st.stable_below}. ${st.reference_note ? st.reference_note[0].toUpperCase() + st.reference_note.slice(1) + "." : ""}`;
   drawRefBars($("st-refs"), st.references, st.stable_below);
-  $("lock").innerHTML = `<p>To protect the headline calls, fix <b>${st.lock_headline.map(esc).join("</b>, <b>")}</b> before you see results, and record why.</p>` +
+  $("lock").innerHTML = (st.lock_headline.length ? `<p>To protect the headline calls, fix <b>${st.lock_headline.map(esc).join("</b>, <b>")}</b> before you see results, and record why.</p>` : "") +
     (st.lock_called.length ? `<p class="muted small" style="margin-top:6px">Among reasonable analyses, fixing <b>${st.lock_called.map(esc).join(", ")}</b> protects every called gene.</p>` : "") +
     `<p class="muted small" style="margin-top:6px">${st.influence.one_sample_genes} genes change call when one sample is removed; ${st.influence.ref_removals_flip} of ${st.influence.ref_removals} single reference-well removals change a call.</p>`;
 }
@@ -891,26 +926,90 @@ async function loadHow() {
   if (h.small.length) cards.push(`<div class="panel"><div class="muted small">No real difference</div><div class="kpi">${esc(h.small[0].single)} % → ${esc(h.small[0].filtered)} %</div>
     <p class="small">false calls in ${esc(h.small[0].size)} vs ${esc(h.small[0].size)} experiments drawn from real data: one analysis, against requiring the call to hold across reasonable analyses.</p>` +
     h.small.slice(1).map((x) => `<p class="small muted" style="margin-top:6px">${esc(x.size)} vs ${esc(x.size)}: ${esc(x.single)} % → ${esc(x.filtered)} %.</p>`).join("") + `</div>`);
+  if (h.not_run.length) cards.push(`<div class="panel"><div class="muted small">Not run for ${esc(state.ov.source.name)}</div>
+    <p class="small" style="margin-top:4px">These checks take several minutes, so the quick analysis of a file you open leaves them out: ${esc(h.not_run.join(", "))}. ${state.ov.source.benchmark ? "" : "The Neuroblastoma benchmark has them all: open it from Open your own plate."}</p></div>`);
   $("tested").innerHTML = cards.join("");
+  $("limits").innerHTML = [
+    h.known ? `The true dilution ratio fell inside the range of reasonable analyses in ${h.known.inside_range} of 100 cases, and inside the planned analysis's likely range in ${h.known.inside_ci} of 100. The ranges are too narrow; better uncertainty is next.` : "",
+    h.known ? "The truth used is the nominal amount of DNA pipetted, not a digital-PCR count." : "",
+    "A verdict is only as broad as the choices varied: Cq method, baseline correction and paired designs are not varied yet.",
+    "Analysis choices are audited exhaustively; the plate itself is not re-simulated. Agreement across analyses does not fix small-sample noise.",
+    "Research use only. An outside qPCR scientist should sign off the tiers.",
+  ].filter(Boolean).map((l) => `<li>${esc(l)}</li>`).join("");
+  $("known-chart").closest(".panel").hidden = !h.known;
   if (h.known) {
     $("known-cap").textContent = `${h.known.dataset}. Median error of the computed ratio against the known one; lower is better.`;
     hbars($("known-chart"), h.known.efficiency.map((e) => ({label: e.label, value: e.error, bold: e.planned, note: e.planned ? "planned" : "", tip: `median error ${e.error_text}`})), {fmt: (v) => `${v} %`});
-    $("limits").innerHTML = [
-      `The true dilution ratio fell inside the range of reasonable analyses in ${h.known.inside_range} of 100 cases, and inside the planned analysis's likely range in ${h.known.inside_ci} of 100. The ranges are too narrow; better uncertainty is next.`,
-      "The truth used is the nominal amount of DNA pipetted, not a digital-PCR count.",
-      "A verdict is only as broad as the choices varied: Cq method, baseline correction and paired designs are not varied yet.",
-      "Analysis choices are audited exhaustively; the plate itself is not re-simulated. Agreement across analyses does not fix small-sample noise.",
-      "Research use only. An outside qPCR scientist should sign off the tiers.",
-    ].map((l) => `<li>${esc(l)}</li>`).join("");
   }
 }
+
+/* ---------- open your own plate ---------- */
+async function plateGet(path) { const r = await fetch(path, {cache: "no-store"}); return r.json(); }
+async function openPlateDialog() {
+  const info = state.plates = await plateGet("/api/plates");
+  $("plate-design").textContent = info.design;
+  $("plate-limit").textContent = `RDML (.rdml) files up to ${info.max_words}. A file opened before opens at once.`;
+  renderPlateList(info);
+  if (info.job.state === "running") pollPlate();
+  if (!$("plate-dlg").open) $("plate-dlg").showModal();
+}
+function renderPlateList(info) {
+  $("plate-list").innerHTML = `<h3 class="small muted">Opened on this computer</h3><ul class="plates">` + info.plates.map((p) => `
+    <li><span><b>${esc(p.name)}</b> <span class="muted small">· ${p.samples} samples · ${p.genes} genes</span></span>
+      ${p.id === info.current ? '<span class="muted small now">on screen now</span>' : `<button class="btn" type="button" data-id="${esc(p.id)}">Open</button>`}</li>`).join("") + "</ul>";
+  for (const b of $("plate-list").querySelectorAll("button[data-id]")) b.onclick = () => openKnownPlate(b.dataset.id);
+}
+function plateBusy(busy) {
+  $("plate-go").disabled = busy || !$("plate-file").files.length;
+  $("plate-file").disabled = busy;
+  for (const b of $("plate-list").querySelectorAll("button")) b.disabled = busy;
+}
+function plateRunning(job) {
+  $("plate-status").innerHTML = `<div class="plate-run"><span class="spin" aria-hidden="true"></span><span><b>${esc(job.name)}</b>: ${esc(job.step)}…${job.elapsed ? ` <span class="muted">${esc(job.elapsed)}</span>` : ""}</span></div>`;
+}
+function plateFailed(job) {
+  $("plate-status").innerHTML = `<div class="plate-err"><b>${esc(job.name || "This file")} cannot be opened.</b><p>${esc(job.message)}</p>` +
+    (job.detail ? `<details class="small muted" style="margin-top:6px"><summary>Technical details</summary><code>${esc(job.detail)}</code></details>` : "") + `</div>`;
+  plateBusy(false);
+}
+async function pollPlate() {
+  plateBusy(true);
+  const job = await plateGet("/api/plate/status");
+  if (job.state === "running") { plateRunning(job); setTimeout(pollPlate, 1000); }
+  else if (job.state === "done") { plateRunning({name: job.name, step: "Opening the results screen"}); location.replace("/"); }
+  else if (job.state === "failed") plateFailed(job);
+  else plateBusy(false);
+}
+async function uploadPlate() {
+  const f = $("plate-file").files[0];
+  if (!f) return;
+  if (f.size > state.plates.max_bytes) { plateFailed({name: f.name, message: `This file is larger than ${state.plates.max_words}.`}); return; }
+  plateBusy(true);
+  plateRunning({name: f.name, step: "Handing the file to the engine on this computer"});
+  const res = await fetch("/api/plate", {method: "POST", headers: {"Content-Type": "application/octet-stream", "X-Plate-Name": encodeURIComponent(f.name)}, body: f});
+  const data = await res.json();
+  if (!res.ok) { plateFailed({name: f.name, message: data.error}); return; }
+  pollPlate();
+}
+async function openKnownPlate(id) {
+  plateBusy(true);
+  const res = await fetch("/api/plate/open", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id})});
+  const data = await res.json();
+  if (!res.ok) { plateFailed({message: data.error}); return; }
+  pollPlate();
+}
+$("open-plate").onclick = () => openPlateDialog().catch((err) => toast("Could not reach the engine: " + err.message));
+$("plate-file").onchange = () => { $("plate-status").innerHTML = ""; plateBusy(false); };
+$("plate-go").onclick = () => uploadPlate().catch((err) => plateFailed({message: err.message}));
 
 /* ---------- start ---------- */
 async function init() {
   const ov = await api("/api/overview");
   state.ov = ov;
   renderHeader(ov); renderFilters(); renderGenes(); renderChoices();
-  $("examples").innerHTML = EXAMPLES.map((q) => `<button type="button">${esc(q)}</button>`).join("");
+  const ex = examples(ov);
+  $("ask-input").placeholder = "e.g. " + ex[0];
+  $("examples").innerHTML = ex.map((q) => `<button type="button">${esc(q)}</button>`).join("");
   for (const b of $("examples").querySelectorAll("button")) b.onclick = () => ask(b.textContent);
   $("ask-form").onsubmit = (e) => { e.preventDefault(); ask($("ask-input").value); };
   $("search").oninput = renderGenes;
