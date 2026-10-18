@@ -1877,7 +1877,9 @@ def trace_well(ctx: TraceContext, well_key: str, *, top: int = 3) -> TraceResult
     sample; a target well feeds one value; an NTC well is traced to the compared wells of its
     plate within the window of its own Cq; a well of a sample in no comparison gets
     ``absent``; standards, the marker and excluded wells feed no compared value. The well
-    itself is the place (rank 1) when it feeds a value; consequences are study-wide.
+    itself is the place (rank 1) when it feeds a value; consequences are study-wide. For a
+    target well ``summary["limit"]`` says why its value cannot be told apart from biology
+    (``single_target_well``, or ``S9`` when its replicate wells exist but are not compared).
 
     Raises:
         TraceError: Unknown well; a bad ``top``.
@@ -1928,6 +1930,7 @@ def trace_well(ctx: TraceContext, well_key: str, *, top: int = 3) -> TraceResult
             ctx, root, "nothing_to_look_at", [], [], [], _limits(ctx), [], summary, graph
         )
     graph = _Graph()
+    limit: str | None = None
     if target in ctx.refs:
         r = ctx.refs.index(target)
         checks = _well_checks(ctx, key, i, r)
@@ -1973,6 +1976,7 @@ def trace_well(ctx: TraceContext, well_key: str, *, top: int = 3) -> TraceResult
         node = graph.add(_well_node(ctx, key, "target_well", None, checks=list(checks)))
         place = _Place(i, "target_well", key, target, checks, item_col=j)
         ran = ["S5", "S6"]
+        limit = _target_limit(ctx, unit, target)
     graph.add(_plate_node(ctx, key, node.id))
     ranked = _rank(ctx, [place], None)
     best = ranked[0]
@@ -1987,6 +1991,8 @@ def trace_well(ctx: TraceContext, well_key: str, *, top: int = 3) -> TraceResult
         "n_nodes_pruned": graph.pruned,
         "ntc_by_plate": ntc,
     }
+    if limit is not None:
+        summary["limit"] = limit
     answer: Answer = (
         "nothing_to_look_at" if best.consequence == "changes_nothing" else "place_to_look"
     )
@@ -2002,6 +2008,17 @@ def trace_well(ctx: TraceContext, well_key: str, *, top: int = 3) -> TraceResult
         summary,
         graph,
     )
+
+
+def _target_limit(ctx: TraceContext, unit: str, target: str) -> str:
+    """Why a target well's value cannot be told apart from biology (the well trace says so).
+
+    ``single_target_well``: the sample has this one well for the gene, so nothing in the data
+    can show whether it is off (Trace cannot tell from biology without replicates).
+    ``S9``: the sample has replicate wells, but the replicate check is not built.
+    """
+    n_wells = ctx.cells.get((unit, target), (None, 0))[1]
+    return "single_target_well" if n_wells <= 1 else "S9"
 
 
 def _trace_ntc(ctx: TraceContext, key: str, about: dict[str, Any], top: int) -> TraceResult:
@@ -2242,7 +2259,7 @@ def _facts(result: TraceResult) -> dict[str, Fact]:
     for name in ("call", "direction", "max_single_effect_sample", "max_loo_gene", "group"):
         if isinstance(s.get(name), str):
             book.add(name, s[name], path=f"summary.{name}")
-    for name in ("sample", "plate", "well", "target", "role", "sample_type", "well_key"):
+    for name in ("sample", "plate", "well", "target", "role", "sample_type", "well_key", "limit"):
         if isinstance(s.get(name), str):
             book.add(name, s[name], path=f"summary.{name}")
     book.add("choice_flips", " ".join(s.get("choice_flips") or []), path="summary.choice_flips")

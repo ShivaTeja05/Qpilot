@@ -471,6 +471,24 @@ def test_trace_well_variants(faulty):
     assert marker.summary["role"] == "marker" and marker.summary["feeds"] == 0
 
 
+def test_target_well_trace_says_it_cannot_tell_from_biology(faulty):
+    table, ctx = faulty
+    key = well_of(table, "s20", "UP")
+    out = T.trace_well(ctx, key)
+    assert out.summary["limit"] == "single_target_well"
+    assert out.facts[f"f_trace_{T._root_slug(out.root)}_limit"].value == "single_target_well"
+    assert "cannot tell from biology without replicates" in render_trace(out).plain
+    assert "limit" not in T.trace_well(ctx, well_of(table, "s20", "R1")).summary
+    # with a replicate well the limit is the replicate check that is not built (S9)
+    extra = table[(table["sample"] == "s20") & (table["target"] == "UP")].assign(well="H9")
+    replicated = pd.concat([table, extra], ignore_index=True)
+    rep = T.trace_well(context(replicated), key)
+    assert rep.summary["limit"] == "S9"
+    text = render_trace(rep).plain
+    assert "replicate wells are not compared yet" in text
+    assert not BANNED.search(text)
+
+
 def test_errors(clean):
     _, ctx = clean
     with pytest.raises(T.TraceError, match="unknown gene"):

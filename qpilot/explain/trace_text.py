@@ -61,6 +61,14 @@ NOTHING_WORDS = {
     "S5": "curve notes",
     "S7": "samples left out",
 }
+TARGET_LIMIT_WORDS = {  # a target well's trace: why its value cannot be told apart from biology
+    "single_target_well": "It feeds one value; Trace cannot tell from biology without "
+    "replicates whether this well is off.",
+    "S9": "It feeds one value; its replicate wells are not compared yet, so Trace cannot tell "
+    "from biology whether this well is off.",
+    None: "It feeds one value; Trace cannot tell from biology without replicates whether this "
+    "well is off.",
+}
 CANNOT_WORDS = (
     "RNA integrity",
     "RT replicates",
@@ -362,7 +370,7 @@ def _well_panel(facts: Facts, root_slug: str) -> str:
     if role == "reference_well":
         lines.append(f"It feeds all {panel.tok('feeds')} values of sample {panel.tok('sample')}.")
     elif role == "target_well":
-        lines.append("It feeds one value; without replicates it cannot be told apart from biology.")
+        lines.append(TARGET_LIMIT_WORDS.get(panel.value("limit"), TARGET_LIMIT_WORDS[None]))
     elif role == "ntc":
         if panel.has("n_study_wells_in_window"):
             lines.append(
