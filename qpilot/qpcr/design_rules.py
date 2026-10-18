@@ -21,7 +21,9 @@ Rules, in the order they run:
   ``1e5 copies``) or a sheet quantity column (``S1``...``S6``): one ``design.dilution_series``
   per series and experiment, with at least three levels. A concentration, input amount or
   dilution column describes every sample (an RNA concentration is not a standard's quantity),
-  so it counts only for samples the file or the sheet's type column marks as standards.
+  so it counts only for samples the file or the sheet's type column marks as standards. A
+  quantity column counts for an unmarked sample only when the levels step like a dilution and
+  the sheet gives the sample no group or biological unit (then it is a study sample).
 * **Sheet columns**: ``design.group`` from a group column; ``design.bio_unit`` only from an
   explicit unit column (animal, mouse, patient, donor, subject, biological replicate). A name
   pattern alone (``WT1a``/``WT1b``, ``M3_cDNA1``/``M3_cDNA2``) gives a ``Low`` proposal that
@@ -326,6 +328,13 @@ def find_dilution_series(
     come from, in order of preference: the file's declared quantities for declared standards
     (when ``facts`` is given), the sheet's quantity column, the sample names. Names that only
     number the samples (``Std 1``...``Std 6``, ``S1``...``S6``) need a sheet quantity column.
+
+    A sheet quantity counts as a standard's only with evidence that the sample is one: the
+    file declares it a standard, the sheet types it so, or its name reads as a dilution
+    (:meth:`_SheetLookup.quantity`). Without such a mark a sample the sheet puts in a group or
+    a biological unit is a study sample and joins no series, and the others form a series only
+    when their levels step like a dilution (:func:`_geometric`), as names alone must: an
+    ordinary per-sample amount (``RNA quantity`` 98.2, 110.7, 120.5) is no dilution series.
     """
     values = {entry.text_id: entry.value for entry in quarantine}
     sheet = _sheet_lookup(summary, values)
@@ -336,11 +345,12 @@ def find_dilution_series(
             continue
         name = values.get(sample.text_id, sample.sample)
         match = _series_name_match(name)
-        sheet_qty, sheet_ref = sheet.quantity(sample, "std" in _declared_roles(sample))
+        sheet_qty, sheet_ref, marked = sheet.quantity(sample, "std" in _declared_roles(sample))
+        marked = marked or match is not None  # a name such as "Std 1:10" marks it too
         index = _INDEX_NAME.match(name.strip()) if match is None else None
         if match is not None:
             key, family, name_qty = match
-        elif sheet_qty is not None:
+        elif sheet_qty is not None and (marked or not sheet.study_sample(sample)):
             key = index.group("series") if index else "sheet_series"
             family, name_qty = f"sheet:{key.lower()}", None
         elif sample.sample in declared_qty and "std" in _declared_roles(sample):
@@ -350,7 +360,14 @@ def find_dilution_series(
         for experiment in sample.experiments or [""]:
             slot = found.setdefault(
                 (experiment, key),
-                {"family": family, "members": {}, "cites": [], "sources": set(), "names": {}},
+                {
+                    "family": family,
+                    "members": {},
+                    "cites": [],
+                    "sources": set(),
+                    "names": {},
+                    "unmarked": False,
+                },
             )
             quantity, source = name_qty, "name"
             if sample.sample in declared_qty:
@@ -363,6 +380,7 @@ def find_dilution_series(
             slot["members"][sample.sample] = quantity
             slot["cites"].append(sample.text_id)
             slot["sources"].add(source)
+            slot["unmarked"] |= source == "sheet" and not marked
             if name_qty is not None and name_qty != quantity:
                 slot["names"][sample.sample] = name_qty
     out: list[Series] = []
@@ -372,8 +390,9 @@ def find_dilution_series(
         if len(set(members.values())) < MIN_SERIES_LEVELS:
             continue
         sources = slot["sources"]
-        if sources == {"name"} and not _geometric(members.values()):
-            continue  # "Std 1".."Std 6" number the tubes; their quantities need a sheet
+        loose = sources == {"name"} or slot["unmarked"]
+        if loose and not _geometric(members.values()):
+            continue  # "Std 1".."Std 6" number the tubes; ordinary amounts are no dilution
         subject = safe_name(key, "series")
         if subjects[key] > 1 and experiment:
             subject = safe_name(f"{key}@{experiment}", "series")
@@ -429,14 +448,17 @@ class _SheetLookup:
 
     def quantity(
         self, sample: InspectSample, declared_std: bool = False
-    ) -> tuple[float | None, str | None]:
-        """The sample's quantity as a standard, and the cell it was read from (or Nones).
+    ) -> tuple[float | None, str | None, bool]:
+        """The sample's quantity as a standard, the cell it was read from, and whether it is marked.
 
-        A quantity column (``Quantity``, ``Copies``, ``SQ``...) counts unless the sheet's type
-        column gives the sample another type: an instrument's export also lists the quantity it
-        computed for each unknown. A concentration, input amount or dilution column describes
-        every sample, so it counts only for a standard (``declared_std``, or typed so in the
-        sheet). A column that gives the sample more than one value gives none.
+        A sample is *marked* a standard when the file declares it one (``declared_std``) or the
+        sheet's type column types it so; then a quantity (``Quantity``, ``Copies``, ``SQ``...),
+        concentration, input amount or dilution column gives its quantity. An unmarked sample
+        (no type in the sheet) gives only a quantity column, and :func:`find_dilution_series`
+        takes it only when the levels step like a dilution and the sheet does not put the
+        sample in a group or a biological unit (:meth:`study_sample`). A sample the sheet types
+        as anything else gives none: an instrument's export also lists the quantity it computed
+        for each unknown. A column that gives the sample more than one value gives none.
         """
         roles = {vendor_task_role(text) for text, _ in self.values(sample, "type")} - {None}
         standard = declared_std or roles == {"std"}
@@ -448,8 +470,20 @@ class _SheetLookup:
             found = {read(v): ref for v, ref in self.values(sample, column)}
             found.pop(None, None)
             if found:
-                return next(iter(found.items())) if len(found) == 1 else (None, None)
-        return None, None
+                value, ref = next(iter(found.items())) if len(found) == 1 else (None, None)
+                return value, ref, standard
+        return None, None, standard
+
+    def study_sample(self, sample: InspectSample) -> bool:
+        """Whether the sheet puts the sample in a group or a biological unit (a study sample).
+
+        A cell that only names a sample type (``Standard``, ``NTC``) does not count.
+        """
+        return any(
+            vendor_task_role(text) is None
+            for column in ("group", "bio_unit", "bio_rep")
+            for text, _ in self.values(sample, column)
+        )
 
 
 def _sheet_lookup(summary: InspectSummary, values: Mapping[str, str]) -> _SheetLookup:

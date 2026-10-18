@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 
 from qpilot.io import rdml_io
-from qpilot.io.sheets import SheetRead, read_sheet
+from qpilot.io.sheets import SheetRead, read_sheet, sheet_sha256
 from qpilot.qpcr import curves
 from qpilot.schemas_studio import (
     InspectRun,
@@ -134,16 +134,22 @@ def file_facts(
 ) -> FileFacts:
     """:func:`inspect`'s full result, cached in the process by the files' sha256.
 
-    The returned object is shared; treat it as read-only.
+    The cache is looked up by both files' hashes before anything is parsed, so a session that
+    asks again (every Studio render does) never reads its sheet a second time. The returned
+    object is shared; treat it as read-only.
     """
     path = Path(rdml_path)
     if not path.is_file():
         raise rdml_io.RdmlLoadError(f"not a file: {path}")
     sha = _sha256(path)
-    sheet = read_sheet(sheet_path) if sheet_path is not None else None
-    key = (sha, sheet.sha256 if sheet else None, str(cache_dir) if cache_dir else None)
+    where = str(cache_dir) if cache_dir else None
+    sheet_sha = sheet_sha256(sheet_path) if sheet_path is not None else None
+    key = (sha, sheet_sha, where)
     if key not in _CACHE:
-        _CACHE[key] = _build(path, sha, sheet, cache_dir)
+        sheet = read_sheet(sheet_path) if sheet_path is not None else None
+        key = (sha, sheet.sha256 if sheet else None, where)  # the bytes actually read
+        if key not in _CACHE:
+            _CACHE[key] = _build(path, sha, sheet, cache_dir)
     return _CACHE[key]
 
 
