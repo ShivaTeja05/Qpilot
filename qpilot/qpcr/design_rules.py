@@ -19,7 +19,9 @@ Rules, in the order they run:
   case and separator tolerant, at most four words) on a sample declared ``unkn``.
 * **Dilution series** from name patterns (``comp_XX_conc_Y``, ``STD_15``, ``Std 1:10``,
   ``1e5 copies``) or a sheet quantity column (``S1``...``S6``): one ``design.dilution_series``
-  per series and experiment, with at least three levels.
+  per series and experiment, with at least three levels. A concentration, input amount or
+  dilution column describes every sample (an RNA concentration is not a standard's quantity),
+  so it counts only for samples the file or the sheet's type column marks as standards.
 * **Sheet columns**: ``design.group`` from a group column; ``design.bio_unit`` only from an
   explicit unit column (animal, mouse, patient, donor, subject, biological replicate). A name
   pattern alone (``WT1a``/``WT1b``, ``M3_cDNA1``/``M3_cDNA2``) gives a ``Low`` proposal that
@@ -196,8 +198,20 @@ def parse_number(text: str) -> float | None:
                 exponent = value.split("^", 1)[1]
             return float(mantissa.replace(",", ".")) * 10 ** float(exponent)
         return float(value.replace(",", "."))
-    except ValueError:
+    except (ValueError, OverflowError):  # OverflowError: a power of ten too large for a float
         return None
+
+
+def _dilution(text: str) -> float | None:
+    """A dilution as the fraction of the stock it holds: ``10`` and ``1:10`` are a tenth.
+
+    A plain number above one is a dilution factor; one of at most one is already a fraction.
+    """
+    ratio = re.fullmatch(r"\s*1\s*[:/]\s*(.+)", text)
+    value = parse_number(ratio.group(1) if ratio else text)
+    if value is None or not math.isfinite(value) or value <= 0:
+        return None
+    return 1.0 / value if ratio or value > 1 else value
 
 
 def vendor_task_role(text: str) -> str | None:
@@ -322,7 +336,7 @@ def find_dilution_series(
             continue
         name = values.get(sample.text_id, sample.sample)
         match = _series_name_match(name)
-        sheet_qty, sheet_ref = sheet.quantity(sample)
+        sheet_qty, sheet_ref = sheet.quantity(sample, "std" in _declared_roles(sample))
         index = _INDEX_NAME.match(name.strip()) if match is None else None
         if match is not None:
             key, family, name_qty = match
@@ -413,13 +427,29 @@ class _SheetLookup:
             (row[column], refs[column]) for row, refs in self.rows(sample) if row.get(column, "")
         ]
 
-    def quantity(self, sample: InspectSample) -> tuple[float | None, str | None]:
-        found = {parse_number(v): ref for v, ref in self.values(sample, "quantity")}
-        found.pop(None, None)
-        if len(found) != 1:
-            return None, None
-        value, ref = next(iter(found.items()))
-        return value, ref
+    def quantity(
+        self, sample: InspectSample, declared_std: bool = False
+    ) -> tuple[float | None, str | None]:
+        """The sample's quantity as a standard, and the cell it was read from (or Nones).
+
+        A quantity column (``Quantity``, ``Copies``, ``SQ``...) counts unless the sheet's type
+        column gives the sample another type: an instrument's export also lists the quantity it
+        computed for each unknown. A concentration, input amount or dilution column describes
+        every sample, so it counts only for a standard (``declared_std``, or typed so in the
+        sheet). A column that gives the sample more than one value gives none.
+        """
+        roles = {vendor_task_role(text) for text, _ in self.values(sample, "type")} - {None}
+        standard = declared_std or roles == {"std"}
+        columns = ["quantity"] if standard or not roles else []
+        if standard:
+            columns += ["concentration", "dilution"]
+        for column in columns:
+            read = _dilution if column == "dilution" else parse_number
+            found = {read(v): ref for v, ref in self.values(sample, column)}
+            found.pop(None, None)
+            if found:
+                return next(iter(found.items())) if len(found) == 1 else (None, None)
+        return None, None
 
 
 def _sheet_lookup(summary: InspectSummary, values: Mapping[str, str]) -> _SheetLookup:

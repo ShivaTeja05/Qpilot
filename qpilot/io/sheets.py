@@ -10,7 +10,10 @@ any other input file:
   cells with values;
 * workbooks are opened by openpyxl in read-only, data-only mode: formulas are never evaluated
   (a formula cell gives the value Excel cached when it last saved the file, or nothing);
-* merged cells are expanded, so every cell a merged range covers carries the range's value;
+* merged cells are expanded, so every cell a merged range covers carries the range's value; a
+  sheet lists at most :data:`MAX_MERGED_RANGES` merged ranges, a range listed twice counts once,
+  and all the ranges of a workbook together cover at most :data:`MAX_CELLS` cells (Excel never
+  writes overlapping ranges, so a file whose ranges overlap cannot multiply the work);
 * every non-empty cell becomes a :class:`~qpilot.schemas_studio.QuarantineEntry` with origin
   ``sheet:<file name>!<Sheet>!<A1>`` and a :class:`~qpilot.schemas_studio.SheetCell` that cites
   it by ``text_id``. Nothing here interprets the text beyond finding a header row;
@@ -45,6 +48,7 @@ MAX_SHEETS = 50
 MAX_ROWS = 20_000
 MAX_COLUMNS = 200
 MAX_CELLS = 1_000_000  # non-empty cells after merged ranges are expanded
+MAX_MERGED_RANGES = 10_000  # merged ranges on one sheet
 HEADER_SCAN_ROWS = 30
 SUFFIXES = (".xlsx", ".xlsm", ".csv", ".tsv", ".txt")
 
@@ -95,8 +99,10 @@ class SheetTable:
         sheet: Sheet title.
         header_row: 1-based row of the header.
         columns: Canonical field (``sample``, ``group``, ``bio_unit``, ``bio_rep``, ``type``,
-            ``target``, ``quantity``, ``replicate``, ``well``) -> 1-based column number.
-            Only the first column recognised for a field is used.
+            ``target``, ``quantity``, ``concentration``, ``dilution``, ``replicate``, ``well``)
+            -> 1-based column number. Only the first column recognised for a field is used.
+            ``quantity`` is a standard's known quantity; ``concentration`` (also an input
+            amount) and ``dilution`` describe any sample.
         headers: Column number -> header text (unrecognised headers included).
         rows: One dictionary per data row: canonical field -> value text, plus
             ``"col<N>"`` -> value text for every other non-empty column.
@@ -217,19 +223,26 @@ HEADER_SYNONYMS: dict[str, tuple[str, ...]] = {
         "detector",
         "detectorname",
     ),
+    # A standard's known quantity. "Given Conc" is LightCycler's column for standards alone.
     "quantity": (
         "quantity",
         "qty",
         "copies",
         "copynumber",
-        "concentration",
-        "conc",
-        "dilution",
-        "dilutionfactor",
         "startingquantity",
         "sq",
         "givenconc",
+    ),
+    # Columns that describe every sample (an RNA concentration, the input of a reaction, the
+    # dilution of every cDNA); they give a standard's quantity only for a marked standard.
+    "concentration": (
+        "concentration",
+        "conc",
         "inputamount",
+    ),
+    "dilution": (
+        "dilution",
+        "dilutionfactor",
     ),
     "replicate": (
         "replicate",
@@ -434,9 +447,10 @@ def _xlsx_grids(file: Path, out: SheetRead) -> list[tuple[str, dict[tuple[int, i
         if len(book.sheetnames) > MAX_SHEETS:
             raise SheetError(f"{file.name}: more than {MAX_SHEETS} sheets")
         grids = []
+        budget = MAX_CELLS  # cells all merged ranges of the workbook may cover together
         for sheet in book.worksheets:
             grid, merged = _stream_sheet(book, sheet, file.name)
-            _expand_merged(grid, merged, out, sheet.title)
+            budget -= _expand_merged(grid, merged, out, sheet.title, budget)
             grids.append((sheet.title, grid))
         return grids
     except SheetError:
@@ -481,9 +495,11 @@ def _stream_sheet(
                 grid[(row_index, column)] = value
         merged = []
         if parser.merged_cells is not None:
+            if len(parser.merged_cells.mergeCell) > MAX_MERGED_RANGES:
+                raise SheetError(f"{file_name}: more than {MAX_MERGED_RANGES} merged ranges")
             for item in parser.merged_cells.mergeCell:
                 merged.append(_range_bounds(item.ref))
-    return grid, merged
+    return grid, list(dict.fromkeys(merged))  # a range listed twice is expanded once
 
 
 def _range_bounds(ref: str) -> tuple[int, int, int, int]:
@@ -499,9 +515,18 @@ def _expand_merged(
     merged: list[tuple[int, int, int, int]],
     out: SheetRead,
     title: str,
-) -> None:
-    """Copy each merged range's top-left value into every cell the range covers (within caps)."""
+    budget: int,
+) -> int:
+    """Copy each merged range's top-left value into every cell the range covers (within caps).
+
+    The ranges expanded may cover at most ``budget`` cells together, overlaps counted each
+    time; returns how many they covered.
+
+    Raises:
+        SheetError: The ranges cover more than ``budget`` cells.
+    """
     clipped = False
+    covered = 0
     for min_row, min_col, max_row, max_col in merged:
         value = grid.get((min_row, min_col))
         if value is None:
@@ -509,13 +534,15 @@ def _expand_merged(
         if max_row > MAX_ROWS or max_col > MAX_COLUMNS:
             clipped = True
             max_row, max_col = min(max_row, MAX_ROWS), min(max_col, MAX_COLUMNS)
-        if (max_row - min_row + 1) * (max_col - min_col + 1) > MAX_CELLS:
-            raise SheetError(f"{out.file_name}: a merged range covers too many cells")
+        covered += (max_row - min_row + 1) * (max_col - min_col + 1)
+        if covered > budget:
+            raise SheetError(f"{out.file_name}: the merged ranges cover too many cells")
         for row in range(min_row, max_row + 1):
             for column in range(min_col, max_col + 1):
                 grid.setdefault((row, column), value)
     if clipped:
         out.notes.append(f"A merged range on sheet {title!r} was cut at the size caps.")
+    return covered
 
 
 def _decode(raw: bytes) -> str:
