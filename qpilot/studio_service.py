@@ -29,6 +29,8 @@ proposal store, whoever calls this module). Writing a Prism bundle or launching 
 
 from __future__ import annotations
 
+import copy
+import inspect
 import json
 import os
 import re
@@ -41,8 +43,16 @@ from typing import Any
 
 from filelock import FileLock
 
-from qpilot.core.store import StudyNotFound, StudyStore, atomic_write, canonical_json, dump_json
-from qpilot.schemas import Actor
+from qpilot.core.proposals import InboxView
+from qpilot.core.store import (
+    SheetChanged,
+    StudyNotFound,
+    StudyStore,
+    atomic_write,
+    canonical_json,
+    dump_json,
+)
+from qpilot.schemas import Actor, DecisionCard
 from qpilot.schemas_studio import (
     TEXT_ID,
     DesignField,
@@ -71,7 +81,10 @@ AI_CALLS_FILE = "ai_calls.jsonl"
 CURVE_JUDGE_FILE = "curve_judge_calls.json"
 MAX_WELL_PROPOSALS = 400
 PRISM_WAIT_S = 120.0
+PING_TTL_S = 60.0  # how long a model's answer (or silence) to a one-token request is trusted
+PING_TIMEOUT_S = 10.0
 BLANK_DESIGN_ID = "studio_blank"
+CURVE_JUDGE_UNREADABLE = "unable to read this file"
 
 
 class StudioError(ValueError):
@@ -134,6 +147,8 @@ class Studio:
     def __init__(self, store: StudyStore | None = None, client: Any = None) -> None:
         self.store = store or StudyStore()
         self._client = client
+        self._not_configured: str | None = None  # why the configured model could not be built
+        self._answer: tuple[float, bool, str | None] | None = None  # (when, answers, why not)
 
     # ---- the model ------------------------------------------------------------------------
 
@@ -141,18 +156,46 @@ class Studio:
     def client(self) -> Any:
         """The model client (Studio's local default, created on first use)."""
         if self._client is None:
-            from qpilot.ai.client import ModelClient
+            from qpilot.ai.client import ModelClient, ModelUnavailable, NoneBackend, make_backend
 
             try:
                 from qpilot.ai.config import studio_config
             except ImportError:  # an AI layer without the Studio default: environment only
                 self._client = ModelClient.from_env()
             else:
-                self._client = ModelClient(config=studio_config())
+                try:
+                    backend = make_backend(studio_config())
+                except ModelUnavailable as err:  # misconfigured: say why, use the rules alone
+                    self._not_configured = str(err)
+                    backend = NoneBackend()
+                self._client = ModelClient(backend=backend)
         return self._client
 
     def model_status(self) -> dict[str, Any]:
-        """Which model Studio uses and whether anything leaves this machine."""
+        """Which model Studio uses, whether it answers, and whether anything leaves this machine.
+
+        ``available`` is True only when a model is configured and answered a one-token request
+        (asked at most once a minute; a real call's outcome counts too). When it is not,
+        ``reason`` says why (not configured, the endpoint refused or timed out, an HTTP error
+        such as a model that is not pulled), so a down local model is never shown as working.
+        """
+        local = self._local()
+        answers, reason = self._answers()
+        return {
+            "provider": self.client.provider,
+            "model": self.client.model,
+            "available": self.client.available and answers,
+            "configured": self.client.available,
+            "answers": answers,
+            "reason": reason,
+            "local": local,
+            "sample_names": "sent as quoted data"
+            if local
+            else "replaced by pseudonyms before anything leaves this machine",
+        }
+
+    def _local(self) -> bool:
+        """True when nothing the model is sent can leave this machine."""
         from qpilot.core.pseudonym import endpoint_is_local
 
         backend = self.client.backend
@@ -160,36 +203,57 @@ class Studio:
             getattr(backend, "config", None), "endpoint", None
         )
         provider = self.client.provider
-        local = provider in ("none", "mock") or endpoint_is_local(provider, endpoint)
-        return {
-            "provider": provider,
-            "model": self.client.model,
-            "available": self.client.available,
-            "local": local,
-            "sample_names": "sent as quoted data"
-            if local
-            else "replaced by pseudonyms before anything leaves this machine",
-        }
+        return provider in ("none", "mock") or endpoint_is_local(provider, endpoint)
+
+    def _answers(self) -> tuple[bool, str | None]:
+        """Whether the model answers a one-token request, and why not (remembered a minute)."""
+        client = self.client
+        if not client.available:
+            return False, self._not_configured or "no model is configured"
+        if client.provider == "mock":  # canned replies: nothing to reach, and none to spend
+            return True, None
+        now = time.monotonic()
+        if self._answer is None or now - self._answer[0] > PING_TTL_S:
+            probe = copy.copy(client.backend)
+            if hasattr(probe, "timeout"):
+                probe.timeout = min(float(probe.timeout), PING_TIMEOUT_S)
+            try:
+                probe.complete("Reply with OK.", [{"role": "user", "content": "OK?"}], 1, 0.0)
+            except Exception as err:  # any failure means "not answering"; keep why
+                self._answer = (now, False, _why_not(err))
+            else:
+                self._answer = (now, True, None)
+        return self._answer[1], self._answer[2]
 
     # ---- the session ------------------------------------------------------------------------
 
-    def open(self, rdml_path: str | Path, sheet_path: str | Path | None = None) -> str:
+    def open(
+        self,
+        rdml_path: str | Path,
+        sheet_path: str | Path | None = None,
+        *,
+        actor: Actor = "human",
+    ) -> str:
         """Open the Studio session of an input file (and optional sample sheet); return its id.
 
         The file is inspected once (every name quarantined); nothing is analysed and nothing is
-        proposed yet.
+        proposed yet. A person's open binds the file and the sheet they opened (none means
+        none). Anyone else (an agent's ``qpcr_inspect``) reopens an existing session exactly as
+        a person bound it: its input file and sheet never change, and a different sheet is
+        refused, so an agent can never put its own cells behind the rules' proposals.
         """
-        from qpilot.core.store import sha256_file
+        from qpilot.qpcr.design_checks import register_declared
         from qpilot.qpcr.inspect import file_facts
 
-        session_id = self.store.open_session(rdml_path)
-        facts = file_facts(rdml_path, sheet_path)
+        file_facts(rdml_path, sheet_path)  # an unreadable file or sheet is refused before binding
+        try:
+            session_id = self.store.open_session(rdml_path, sheet_path, rebind=actor == "human")
+        except ValueError as err:
+            raise StudioError(str(err)) from err
+        facts = self.facts(session_id)  # the bound input and sheet, which may predate this call
         entries = [(e.value, e.origin) for e in facts.quarantine]
         self.store.quarantine(session_id).add_many(entries)
-        sheet = None
-        if sheet_path is not None:
-            sheet = {"path": str(Path(sheet_path).resolve()), "sha256": sha256_file(sheet_path)}
-        self._update_meta(session_id, {"sheet": sheet})
+        register_declared(session_id, facts)  # the hard bans see the sheet's units from now on
         return session_id
 
     def _folder(self, session_id: str) -> Path:
@@ -215,15 +279,10 @@ class Studio:
 
     def sheet(self, session_id: str) -> Path | None:
         """The session's sample sheet, when it has one and it is unchanged."""
-        from qpilot.core.store import sha256_file
-
-        sheet = self._meta(session_id).get("sheet")
-        if not sheet:
-            return None
-        path = Path(sheet["path"])
-        if not path.exists() or sha256_file(path) != sheet["sha256"]:
-            raise StudioError("the sample sheet is missing or has changed since it was opened")
-        return path
+        try:
+            return self.store.session_sheet(session_id)
+        except SheetChanged as err:
+            raise StudioError(str(err)) from err
 
     def facts(self, session_id: str) -> Any:
         """The file's facts (summary, quarantine, wells), cached in the process."""
@@ -268,7 +327,10 @@ class Studio:
         """The Design Interpreter: rules always, the model when one answers; all as proposals.
 
         ``sentence`` (the scientist's one line about the experiment) is quarantined like any
-        file text and reaches the model only as quoted data.
+        file text and reaches the model only as quoted data. The report's ``fallback`` is True
+        only when no model field was used at all; ``model_fields`` counts the fields the model
+        made, and ``model_error`` says why the model was not used, or not for every part
+        (also written with the calls in ``ai_calls.jsonl``).
         """
         from qpilot.qpcr.design_rules import propose_from_names
 
@@ -283,14 +345,15 @@ class Studio:
         makers: list[MadeBy] = [MadeBy(kind="rule")] * len(rule_fields)
         fields: list[DesignField] = list(rule_fields)
         rejected: list[dict[str, Any]] = []
-        fallback = True
+        why: str | None = None  # why the model was not used, or not for every part
+        used = 0  # fields the model made
         try:
             from qpilot.ai.interpret import interpret
         except ImportError:
             notes.append("the Design Interpreter is not installed; rules only")
         else:
             pseudonymiser = None
-            if not self.model_status()["local"]:
+            if not self._local():
                 pseudonymiser = self.store.pseudonymiser(session_id)
             result = interpret(
                 facts.summary,
@@ -304,14 +367,29 @@ class Studio:
             if extra:
                 quarantine.add_many(extra)
             fields, makers = _fields_and_makers(result, rule_fields)
-            notes += list(getattr(result, "notes", []))
             rejected = list(getattr(result, "rejected", []))
-            fallback = bool(getattr(result, "fallback", True))
-            self._log_calls(session_id, "studio.interpret", getattr(result, "meta", []))
+            if getattr(result, "fallback", True):  # the rules alone for some or all of the file
+                why = _model_reason(getattr(result, "error", None))
+            used = sum(1 for m in makers if m.kind == "model")
+            metas = [dict(m) for m in getattr(result, "meta", [])]
+            if metas and why:
+                metas[-1]["error"] = why  # the cause stays on disk with the calls
+            self._log_calls(session_id, "studio.interpret", metas)
+            if metas:  # a real call says more about the model than a ping
+                down = not used and why is not None and why.startswith(_CALL_FAILURES)
+                self._answer = (time.monotonic(), not down, why if down else None)
+            if why and not used:
+                notes.append(f"reason: {why}")
+            elif why:
+                notes.append(f"the model answered for part of the file only: {why}")
+            notes += list(getattr(result, "notes", []))
         outcomes = [
             self._propose(session_id, f, maker) for f, maker in zip(fields, makers, strict=True)
         ]
-        return _report(outcomes, notes=notes, rejected=rejected, fallback=fallback)
+        report = _report(outcomes, notes=notes, rejected=rejected, fallback=used == 0)
+        report["model_fields"] = used
+        report["model_error"] = why
+        return report
 
     def _propose(self, session_id: str, f: DesignField, maker: MadeBy) -> ProposalOutcome:
         proposal = Proposal(
@@ -327,17 +405,19 @@ class Studio:
         )
         return self.store.proposals(session_id).propose(proposal, "system")
 
-    def assemble(self, session_id: str) -> Assembly:
+    def assemble(self, session_id: str, accepted: Sequence[Proposal] | None = None) -> Assembly:
         """The design the session's accepted proposals describe, or what still blocks it.
 
         Starts from the demo preset when a person accepted it, else from a blank design that
         must gain a comparison; Studio's default amplification rules are the options of the
-        ``amp_call`` axis. Only accepted proposals are read.
+        ``amp_call`` axis. Only accepted proposals are read: ``accepted`` (in the order a
+        person decided them, from one :meth:`ProposalStore.view`), else the inbox's now.
         """
         from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS
         from qpilot.qpcr.designs import DesignError, design_from_proposals
 
-        accepted = self.store.proposals(session_id).accepted()
+        if accepted is None:
+            accepted = self.store.proposals(session_id).accepted()
         blockers: list[str] = []
         design_part = [p for p in accepted if p.kind.startswith("design.")]
         if not any(p.kind in ("design.preset", "design.comparison") for p in design_part):
@@ -376,13 +456,16 @@ class Studio:
 
     def stages(self, session_id: str) -> list[StageStatus]:
         """Every stage's status, in the fixed order; a stage opens when the one before closes."""
-        accepted = self.store.proposals(session_id).accepted()
-        pending = self.inbox(session_id, status="proposed")
-        assembly = self.assemble(session_id)
+        view = self.store.proposals(session_id).view()
+        return self._stages(session_id, view, self.assemble(session_id, view.accepted))
+
+    def _stages(self, session_id: str, view: InboxView, assembly: Assembly) -> list[StageStatus]:
+        """:meth:`stages` from one read of the inbox and the design assembled from it."""
+        pending = [p for p in view.proposals if p.status == "proposed"]
         out: list[StageStatus] = []
         previous = True
         for stage in STAGES:
-            confirmed = previous and _confirmed(accepted, stage, assembly, self, session_id)
+            confirmed = previous and _confirmed(view.accepted, stage, assembly, self, session_id)
             waiting = sum(1 for p in pending if _in_stage(p, stage))
             blockers = list(assembly.blockers) if stage == "design" else []
             if stage == "roundtrip" and not self._meta(session_id).get("exports"):
@@ -400,29 +483,46 @@ class Studio:
             return None
         return study_key(self._folder(session_id).name, assembly.design)[:12]
 
+    def confirmed_assembly(self, session_id: str, through: str = "curves") -> Assembly | None:
+        """The design a person confirmed, or None while a blind stage up to ``through`` is open.
+
+        The confirmations and the design come from one read of the inbox, and callers analyse
+        exactly the assembly returned: a person's decision that lands in between can never put
+        an unconfirmed design behind a check that passed.
+        """
+        if through not in BLIND_STAGES:
+            raise ValueError(f"through must be one of {', '.join(BLIND_STAGES)}")
+        view = self.store.proposals(session_id).view()
+        assembly = self.assemble(session_id, view.accepted)
+        for stage in BLIND_STAGES[: BLIND_STAGES.index(through) + 1]:
+            if not _confirmed(view.accepted, stage, assembly, self, session_id):
+                return None
+        return assembly
+
     def results_visible(self, session_id: str) -> bool:
         """True once the blind stages (design, curves) are both confirmed by a person."""
-        status = {s.stage: s for s in self.stages(session_id)}
-        return all(status[stage].confirmed for stage in BLIND_STAGES)
+        return self.confirmed_assembly(session_id) is not None
 
     def propose_confirm(self, session_id: str, stage: str) -> ProposalOutcome:
         """The system proposes closing a stage; a person accepts it (the confirm click).
 
         Refused while the stage has pending proposals or (design) the design cannot run. The
-        payload names the design hash it confirms and every accepted proposal it covers.
+        payload names the design hash it confirms and every accepted proposal it covers; for
+        the choices stage also the study, its decision chain's head and the option applied on
+        each Decision Card, which is what the confirm describes.
         """
         if stage not in ("design", "curves", "choices"):
             raise StudioError(f"no confirm step for stage {stage!r}")
-        status = {s.stage: s for s in self.stages(session_id)}[stage]
+        view = self.store.proposals(session_id).view()
+        assembly = self.assemble(session_id, view.accepted)
+        status = {s.stage: s for s in self._stages(session_id, view, assembly)}[stage]
         if not status.open:
             raise StudioError(f"the {stage} stage is not open yet")
         if status.pending:
             raise StudioError(f"the {stage} stage still has proposals waiting for a decision")
-        assembly = self.assemble(session_id)
         if assembly.design is None:
             raise StudioError("the design cannot be confirmed yet: " + "; ".join(assembly.blockers))
-        accepted = self.store.proposals(session_id).accepted()
-        covers = [p.id for p in accepted if _in_stage(p, stage)]
+        covers = [p.id for p in view.accepted if _in_stage(p, stage)]
         payload: dict[str, Any] = {
             "stage": stage,
             "design_hash": assembly.design_hash if stage == "design" else assembly.curves_hash,
@@ -430,15 +530,15 @@ class Studio:
         }
         if stage == "choices":
             study_id = self.study(session_id)
-            undecided = [
-                c.id for c in self.store.cards(study_id) if c.status in ("open", "pending_human")
-            ]
+            head, cards, _ = self.store.snapshot(study_id)
+            undecided = [c.id for c in cards if c.status in ("open", "pending_human")]
             if undecided:
                 raise StudioError(
                     "decide every analysis choice first (still open: " + ", ".join(undecided) + ")"
                 )
             payload["study_id"] = study_id
-            payload["chain_head"] = self.store.chain_head(study_id)
+            payload["chain_head"] = head
+            payload["decisions"] = _decisions(cards)
         proposal = Proposal(
             study_id=session_id,
             kind="stage.confirm",
@@ -645,16 +745,15 @@ class Studio:
         well, each with the curve's evidence. Only "matters" (a boolean) is said; no gene, no
         direction, no number. Needs the design stage confirmed.
         """
-        from qpilot.qpcr import curve_judge
         from qpilot.qpcr.amp_call import amplified
         from qpilot.qpcr.curves import analyse_study
         from qpilot.qpcr.designs import design_curves
         from qpilot.qpcr.study import StudySettings
 
-        status = {s.stage: s for s in self.stages(session_id)}
-        if not status["design"].confirmed:
+        assembly = self.confirmed_assembly(session_id, through="design")
+        if assembly is None:
             raise StudioError("confirm the design first: the curves stage follows it")
-        design = self.assemble(session_id).design
+        design = assembly.design
         assert design is not None  # a confirmed design always assembles
         settings = StudySettings.from_design(design)
         path = self.source(session_id)
@@ -666,16 +765,16 @@ class Studio:
         notes: list[str] = []
         outcomes = [self._propose_rule(session_id)]
         disagree: list[str] = []
-        learned: dict[str, bool] = {}
-        if curve_judge.validated():
-            learned = self._learned_calls(session_id, path, settings.experiment_id)
+        learned, judge = self._judge_calls(session_id, path, settings.experiment_id)
+        if learned is not None:
             disagree = [
                 k
                 for k, ours in zip(keys, linreg, strict=True)
                 if k in learned and learned[k] != bool(ours) and k not in design.well_calls
             ]
         else:
-            notes.append("the Curve Judge is " + curve_judge.status() + "; LinRegPCR alone")
+            notes.append("the Curve Judge is " + judge + "; LinRegPCR alone")
+            learned = {}
         by_target: dict[str, list[str]] = {}
         target_of = dict(zip(keys, study["target"], strict=True))
         for key in disagree:
@@ -745,6 +844,25 @@ class Studio:
         )
         return self.store.proposals(session_id).propose(proposal, "system")
 
+    def _judge_calls(
+        self, session_id: str, path: Path, experiment_id: str | None
+    ) -> tuple[dict[str, bool] | None, str]:
+        """The Curve Judge's calls and its status, or ``(None, why not)`` when it does not call.
+
+        It calls only a file it is validated for (the instrument and chemistry its transfer
+        test passed on). A file it cannot read (a well with two curves, say) leaves LinRegPCR
+        and the Cq cut-offs alone instead of failing every target's calls.
+        """
+        from qpilot.qpcr import curve_judge
+
+        status = _judge_status(self._folder(session_id).name, path)
+        if status != "validated":
+            return None, status
+        try:
+            return self._learned_calls(session_id, path, experiment_id), status
+        except curve_judge.CurveJudgeError:
+            return None, CURVE_JUDGE_UNREADABLE
+
     def _learned_calls(self, session_id: str, path: Path, experiment_id: str | None) -> dict:
         """The Curve Judge's call per ``run_id/well``, cached in the session by model."""
         from qpilot.qpcr import curve_judge
@@ -766,7 +884,6 @@ class Studio:
         Facts about the curves, never a conclusion, so they are available in the blind curve
         stage. Uses the assembled design's experiment and well roles when there is one.
         """
-        from qpilot.qpcr import curve_judge
         from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS, disagreements, well_calls
         from qpilot.qpcr.curves import analyse_study
         from qpilot.qpcr.designs import design_curves
@@ -786,9 +903,9 @@ class Studio:
         if rows.empty:
             raise StudioError("no well of this target in the analysed experiment")
         calls = well_calls(rows, STUDIO_AMP_CALLS, overrides)
-        if curve_judge.validated():
-            experiment = design.experiment_id if design is not None else None
-            learned = self._learned_calls(session_id, path, experiment)
+        experiment = design.experiment_id if design is not None else None
+        learned, judge = self._judge_calls(session_id, path, experiment)
+        if learned is not None:
             calls = [
                 c.model_copy(update={"calls": {**c.calls, "learned": learned[k]}})
                 if (k := f"{c.run_id}/{c.well}") in learned
@@ -797,8 +914,8 @@ class Studio:
             ]
         return {
             "gene": gene,
-            "rules": [*STUDIO_AMP_CALLS, *(["learned"] if curve_judge.validated() else [])],
-            "curve_judge": curve_judge.status(),
+            "rules": [*STUDIO_AMP_CALLS, *(["learned"] if learned is not None else [])],
+            "curve_judge": judge,
             "wells": [c.model_dump(mode="json") for c in calls],
             "disagreements": [f"{c.run_id}/{c.well}" for c in disagreements(calls)],
         }
@@ -824,11 +941,15 @@ class Studio:
     # ---- stage 3: the analysis and its Decision Cards -----------------------------------------
 
     def study(self, session_id: str) -> str:
-        """The analysed study of the confirmed design (analysed on first use); blind-gated."""
-        if not self.results_visible(session_id):
+        """The analysed study of the confirmed design (analysed on first use); blind-gated.
+
+        The design analysed is exactly the one the gate checked (:meth:`confirmed_assembly`).
+        """
+        assembly = self.confirmed_assembly(session_id)
+        if assembly is None:
             raise StudioError("confirm the design and the curves first: results stay hidden")
-        design = self.assemble(session_id).design
-        assert design is not None
+        design = assembly.design
+        assert design is not None  # a confirmed design always assembles
         study_id = self.store.ensure_study(self.source(session_id), design=design)
         studies = dict(self._meta(session_id).get("studies", {}))
         if study_id not in studies:
@@ -1054,8 +1175,8 @@ def _now() -> str:
 
 
 def _in_stage(proposal: Proposal, stage: str) -> bool:
-    if proposal.kind == "stage.confirm":
-        return proposal.subject == stage
+    if proposal.kind == "stage.confirm":  # only the system's confirm step belongs to a stage
+        return proposal.subject == stage and _system_confirm(proposal)
     if stage == "design":
         return proposal.kind.startswith("design.")
     if stage == "curves":
@@ -1070,14 +1191,24 @@ def _in_stage(proposal: Proposal, stage: str) -> bool:
 def _confirmed(
     accepted: list[Proposal], stage: str, assembly: Assembly, studio: Studio, session_id: str
 ) -> bool:
-    """A stage is confirmed by an accepted ``stage.confirm`` that still describes it."""
+    """A stage is confirmed by an accepted ``stage.confirm`` that still describes it.
+
+    Only the system's confirm step counts (made by the rule; the proposal store lets no one
+    else propose one). The choices stage is described by the option applied on each Decision
+    Card, so an agent's pending request, which applies nothing, never re-opens it; any change
+    to an applied option does. A confirm from before that payload compares the chain head.
+    """
     if assembly.design is None:
         return False
     current = studio.expected_study(session_id, assembly)
     if stage == "prism":  # done when the current analysis has been sent to Prism
         exports = studio._meta(session_id).get("exports", [])
         return any(e.get("study_id") == current for e in exports)
-    confirms = [p for p in accepted if p.kind == "stage.confirm" and p.subject == stage]
+    confirms = [
+        p
+        for p in accepted
+        if p.kind == "stage.confirm" and p.subject == stage and _system_confirm(p)
+    ]
     if not confirms:
         return False
     payload = confirms[-1].effective_payload()
@@ -1089,10 +1220,84 @@ def _confirmed(
         if payload.get("study_id") != current:
             return False
         try:
+            if "decisions" in payload:
+                return payload["decisions"] == _decisions(studio.store.cards(current))
             return payload.get("chain_head") == studio.store.chain_head(current)
         except StudyNotFound:
             return False
     return False
+
+
+def _system_confirm(proposal: Proposal) -> bool:
+    """True for the system's own confirm step (an agent's or a model's never counts)."""
+    return proposal.made_by.kind == "rule"
+
+
+def _decisions(cards: Sequence[DecisionCard]) -> dict[str, str]:
+    """The option applied on each decided Decision Card (by a person, the system or an agent).
+
+    A pending request leaves a card's applied option as it was, so it is not in here.
+    """
+    return {c.id: c.decision for c in cards if c.decision is not None}
+
+
+def _takes(func: Any, name: str) -> bool:
+    try:
+        return name in inspect.signature(func).parameters
+    except (TypeError, ValueError):
+        return False
+
+
+def _judge_status(input_sha256: str, path: Path) -> str:
+    """The Curve Judge's status for one input file: ``"validated"`` only where it passed.
+
+    ``curve_judge.validated(rdml_path)`` and ``status(rdml_path)`` answer for the file's
+    instrument and chemistry. A Curve Judge whose ``validated`` cannot take the file is
+    validated for no file except the very one its recorded transfer test ran on.
+    """
+    from qpilot.qpcr import curve_judge
+
+    not_validated = str(getattr(curve_judge, "NOT_VALIDATED", "not validated for this instrument"))
+    validated = getattr(curve_judge, "validated", None)
+    status = getattr(curve_judge, "status", None)
+    try:
+        if validated is not None and _takes(validated, "rdml_path"):
+            if status is not None and _takes(status, "rdml_path"):
+                return str(status(rdml_path=path))
+            return "validated" if validated(rdml_path=path) else not_validated
+        transfer = getattr(curve_judge, "transfer_result", lambda: None)() or {}
+        tested = transfer.get("data", {}).get("sha256") if isinstance(transfer, dict) else None
+        if validated is not None and tested == input_sha256 and validated():
+            return "validated"
+    except Exception:  # a gate that cannot answer is a gate that did not pass
+        return not_validated
+    return not_validated
+
+
+_CALL_FAILURES = (  # the client's own wording when no reply came back at all
+    "endpoint call failed",
+    "Anthropic call failed",
+    "no model configured",
+    "a remote model needs a pseudonymiser",
+)
+
+
+def _model_reason(error: str | None) -> str | None:
+    """Why the model was not used, in qPilot's own words (never text from the model's reply)."""
+    if not error:
+        return None
+    if error.startswith(_CALL_FAILURES):
+        return error[:200]
+    return "its replies did not pass qPilot's checks"
+
+
+def _why_not(err: BaseException) -> str:
+    """Why a model did not answer a one-token request (the HTTP status when there is one)."""
+    reason = str(err)[:200] if str(err).startswith(_CALL_FAILURES) else type(err).__name__
+    code = getattr(getattr(err.__cause__, "response", None), "status_code", None)
+    if isinstance(code, int):
+        reason += f" (HTTP {code}" + (": is the model pulled?" if code == 404 else "") + ")"
+    return reason
 
 
 def _with_lab_defaults(design: StudyDesign, summary: InspectSummary) -> StudyDesign:

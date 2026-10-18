@@ -125,6 +125,10 @@ class StudyNotFound(KeyError):
     """No workspace exists for the requested study id."""
 
 
+class SheetChanged(ValueError):
+    """A session's sample sheet is missing, or is no longer the file the session was opened with."""
+
+
 def default_studies_dir() -> Path:
     """``$QPILOT_STUDIES_DIR`` or ``~/.cache/qpilot/studies``."""
     env = os.environ.get("QPILOT_STUDIES_DIR")
@@ -212,21 +216,45 @@ def _no_engine_check(proposal: Proposal) -> ProposalCheck:
     return ProposalCheck(status="cannot_check", note=NO_ENGINE_CHECK)
 
 
+def _session_input(store: StudyStore, session_id: str) -> tuple[Path | None, Path | None]:
+    """A session's input file and sample sheet, as bound when it was opened.
+
+    ``(None, None)`` when the input is unknown; :class:`SheetChanged` when the bound sheet is
+    missing or changed, so the caller fails closed rather than reading the file without it.
+    """
+    path = None
+    for find in (store.session_source, store.source):  # a session, else a legacy study
+        try:
+            path = find(session_id)
+        except (StudyNotFound, OSError, ValueError, KeyError):
+            path = None
+        if path is not None:
+            break
+    if path is None:
+        return None, None
+    try:
+        sheet = store.session_sheet(session_id)
+    except StudyNotFound:  # a study whose input no Studio session opened has no sheet
+        sheet = None
+    return path, sheet
+
+
 def _bind_check(
     check: Callable[..., ProposalCheck], store: StudyStore, session_id: str
 ) -> Callable[[Proposal], ProposalCheck]:
     def checker(proposal: Proposal) -> ProposalCheck:
-        # A session has no analysed study yet, so the check is told where its input file is
-        # and what a person has already confirmed (coverage and the n-guard need the design).
+        # A session has no analysed study yet, so the check is told where its input file and
+        # its sample sheet are, and what a person has already confirmed (coverage and the
+        # n-guard need the design; the hard bans need the sheet's explicit unit column).
         from qpilot.core.proposals import ProposalStore
 
         try:
-            path = store.session_source(session_id) or store.source(session_id)
-        except (StudyNotFound, OSError, ValueError, KeyError):
-            path = None
+            path, sheet = _session_input(store, session_id)
+        except SheetChanged as err:
+            return ProposalCheck(status="cannot_check", note=str(err))
         home, root = store.proposal_home(session_id)
         accepted = ProposalStore.at(home, root).accepted() if home.exists() else []
-        extra = {"rdml_path": path, "accepted": accepted}
+        extra = {"rdml_path": path, "accepted": accepted, "sheet_path": sheet}
         known = inspect.signature(check).parameters
         return check(proposal, store, session_id, **{k: v for k, v in extra.items() if k in known})
 
@@ -251,11 +279,13 @@ def plugin_checks() -> tuple[Callable[..., str | None] | None, Callable[..., Pro
 
 
 def _bind_input_resolver(store: StudyStore) -> None:
-    """Let the plugin's hard bans find a session's input file, read only when a ban needs it.
+    """Let the plugin's hard bans find a session's input file and sample sheet, when needed.
 
-    The bans must know which samples the file declares as controls; without that they refuse
-    every role proposal (they fail closed). The resolver is lazy, so listing an inbox never
-    triggers a curve analysis. A documented lazy import, like :func:`plugin_checks`.
+    The bans must know which samples the file declares as controls and which units the sheet
+    fixes; without that they refuse the proposals that could demote a control or merge a unit
+    (they fail closed), as they do when the bound sheet is missing or has changed. The
+    resolver is lazy, so listing an inbox never triggers a curve analysis. A documented lazy
+    import, like :func:`plugin_checks`.
     """
     from qpilot.qpcr import design_checks  # documented lazy import
 
@@ -263,11 +293,12 @@ def _bind_input_resolver(store: StudyStore) -> None:
     if set_input_resolver is None:  # a plugin without the hook resolves inputs itself
         return
 
-    def resolve(session_id: str) -> Path | None:
+    def resolve(session_id: str) -> tuple[Path, Path | None] | None:
         try:
-            return store.session_source(session_id) or store.source(session_id)
-        except (StudyNotFound, OSError, ValueError, KeyError):
+            path, sheet = _session_input(store, session_id)
+        except SheetChanged:
             return None
+        return None if path is None else (path, sheet)
 
     set_input_resolver(resolve)
 
@@ -764,17 +795,40 @@ class StudyStore:
         folder.mkdir(parents=True, exist_ok=True)
         return folder
 
-    def open_session(self, rdml_path: str | Path) -> str:
+    def open_session(
+        self, rdml_path: str | Path, sheet_path: str | Path | None = None, *, rebind: bool = True
+    ) -> str:
         """Open (or reopen) the session of an input file; return its id, ``input_sha256[:12]``.
 
-        Records where the file is (``source.json``, as for a study). The caller checks the path
-        first (the MCP server's path policy); nothing is analysed here.
+        Records where the file and its sample sheet are (``source.json``: each path with its
+        sha256; no ``sheet`` without one). The caller checks the paths first (the MCP server's
+        path policy); nothing is analysed here.
+
+        A person's open binds what they opened. ``rebind=False`` (an agent's open) never changes
+        a session that was already opened: its input file and its sample sheet stay as they
+        were bound, and a different sheet is refused with ``ValueError``.
         """
         path = Path(rdml_path).resolve()
         digest = sha256_file(path)
+        sheet = None
+        if sheet_path is not None:
+            sheet_file = Path(sheet_path).resolve()
+            sheet = {"path": str(sheet_file), "sha256": sha256_file(sheet_file)}
         folder = self.session(digest)
+        record = folder / "source.json"
         with self._locked(folder):
-            atomic_write(folder / "source.json", dump_json({"path": str(path), "sha256": digest}))
+            if record.exists() and not rebind:
+                bound = json.loads(record.read_text(encoding="utf-8")).get("sheet") or {}
+                if sheet is not None and bound.get("sha256") != sheet["sha256"]:
+                    raise ValueError(
+                        "this session was already opened with its own sample sheet (or none); "
+                        "only a person can change it, in qPilot Studio"
+                    )
+                return digest[:12]
+            data: dict[str, Any] = {"path": str(path), "sha256": digest}
+            if sheet is not None:
+                data["sheet"] = sheet
+            atomic_write(record, dump_json(data))
         return digest[:12]
 
     def find_session(self, session_id: str) -> Path:
@@ -806,6 +860,25 @@ class StudyStore:
         if data.get("sha256") != folder.name or not path.exists():
             return None
         return path if sha256_file(path) == folder.name else None
+
+    def session_sheet(self, session_id: str) -> Path | None:
+        """The sample sheet a session was opened with, or None when it was opened without one.
+
+        Raises:
+            SheetChanged: The bound sheet is missing or is no longer the file it was opened
+                with (the session then fails closed until a person opens it again).
+            StudyNotFound: No session has this id.
+        """
+        meta = self.find_session(session_id) / "source.json"
+        if not meta.exists():
+            return None
+        sheet = json.loads(meta.read_text(encoding="utf-8")).get("sheet")
+        if not sheet:
+            return None
+        path = Path(sheet["path"])
+        if not path.exists() or sha256_file(path) != sheet["sha256"]:
+            raise SheetChanged("the sample sheet is missing or has changed since it was opened")
+        return path
 
     def proposal_home(self, study_id: str) -> tuple[Path, str]:
         """Where the proposals of a study or session live, and the input sha256 they chain from.
