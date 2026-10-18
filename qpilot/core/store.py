@@ -40,6 +40,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import logging
 import os
 import re
 import tempfile
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
     from qpilot.core.proposals import ProposalStore
     from qpilot.core.pseudonym import Pseudonymiser
 
+_log = logging.getLogger(__name__)
 STUDY_ID = re.compile(r"^[0-9a-f]{6,64}$")
 INPUT_SHA = re.compile(r"^[0-9a-f]{64}$")
 SESSIONS_DIR = "sessions"
@@ -1017,6 +1019,7 @@ class StudyStore:
         path = Path(rdml_path).resolve()
         digest = sha256_file(path)
         workspace = self.root / study_key(digest, design)
+        fresh = False
         if (workspace / "results.json").exists() and not self._outdated(workspace):
             study_id = json.loads((workspace / "results.json").read_text())["study_id"]
         else:
@@ -1034,8 +1037,35 @@ class StudyStore:
             grid = out[2] if len(out) > 2 else None
             self.put(result, cards, grid, design=design)
             study_id = result.study_id
+            fresh = True
         self.set_source(study_id, path)
+        if fresh:
+            self._derive_artifacts(study_id, path)
         return study_id
+
+    def _derive_artifacts(self, study_id: str, path: Path) -> None:
+        """After a new analysis: keep ``evidence.json`` and ``run_context.json`` (best effort).
+
+        The Evidence Ledger (``qpcr.evidence.evidence_store``) and one run context per RDML run
+        (``qpcr.instrument_context.run_contexts_from_rdml``, in its ``model_view()`` shape: no
+        serial, alias or local fact ever enters the file). Neither touches the analysis outputs,
+        and a failure only skips that file, with a logged note: the analysis stands.
+        """
+        try:
+            from qpilot.qpcr.evidence import evidence_store  # documented lazy import
+
+            ledger = evidence_store(self, study_id)
+            self.put_artifact(study_id, "evidence.json", ledger.model_dump(mode="json"))
+        except Exception as err:  # derived file only: the analysis must never fail here
+            _log.warning("evidence.json not written for %s (%s)", study_id, type(err).__name__)
+        try:
+            from qpilot.qpcr.instrument_context import run_contexts_from_rdml  # lazy import
+
+            contexts = run_contexts_from_rdml(path, source_file=path.name)
+            runs = [ctx.model_view() for ctx in contexts]
+            self.put_artifact(study_id, "run_context.json", {"runs": runs})
+        except Exception as err:  # derived file only
+            _log.warning("run_context.json not written for %s (%s)", study_id, type(err).__name__)
 
     @staticmethod
     def _outdated(workspace: Path) -> bool:

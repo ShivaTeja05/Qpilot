@@ -1,9 +1,10 @@
 """Command-line entry point. FROZEN at T0.
 
 Each developer registers commands only in their own module: ``engine_cmds.py`` (Dev 1) and
-``core_cmds.py`` (Dev 2). A command is a tuple ``(name, help, add_arguments, run)`` where
-``add_arguments(parser)`` adds options to an ``argparse`` sub-parser and ``run(args)`` returns an
-exit code.
+``core_cmds.py`` (Dev 2); ``prism_cmds``, ``studio_cmds`` and ``quality_cmds`` (evidence, run
+review, instruments) were added the same way. A command is a tuple
+``(name, help, add_arguments, run)`` where ``add_arguments(parser)`` adds options to an
+``argparse`` sub-parser and ``run(args)`` returns an exit code.
 """
 
 import argparse
@@ -11,7 +12,7 @@ import sys
 from collections.abc import Sequence
 
 from qpilot import __version__
-from qpilot.cli import core_cmds, engine_cmds, prism_cmds, studio_cmds
+from qpilot.cli import core_cmds, engine_cmds, prism_cmds, quality_cmds, studio_cmds
 from qpilot.cli._types import Command
 
 __all__ = ["Command", "build_parser", "main"]
@@ -31,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
         *core_cmds.COMMANDS,
         *prism_cmds.COMMANDS,
         *studio_cmds.COMMANDS,
+        *quality_cmds.COMMANDS,
     ]
     for name, help_text, add_arguments, run in commands:
         if name in seen:
