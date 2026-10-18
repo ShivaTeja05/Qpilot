@@ -59,6 +59,24 @@ The re-run reproduces the results at the recommended choices (a decision is reco
 
 Decisions are a hash chain: each entry carries the hash of the one before, so an entry edited or removed without recomputing the hashes is detected (a removed last entry through `CHECKSUMS.sha256`). Nothing is signed: someone who recomputes every hash is not detected unless the record id is compared with a copy kept elsewhere. That makes the record tamper-evident against accidental or naive edits, not tamper-proof; it is not a 21 CFR Part 11 system.
 
+## Where to look, and what the data cannot show
+
+```bash
+qpilot trace --gene CAMTA2            # from a result back to the wells to look at (reads only)
+qpilot trace --well HMBS_20080318:K22 # does this one well matter?
+qpilot evidence                       # what this study cannot tell you (Evidence Ledger)
+qpilot report run-review --out review.html
+qpilot check sheet analysis.xlsx      # recompute your own ΔΔCq sheet; the file is never edited
+qpilot plan --sd 0.5 --sd-rt 0.4 --sd-well 0.3 --n 6   # biological, RT and technical replicates together
+qpilot instrument inspect run.eds     # what the run file says about the instrument
+qpilot export excel --out results.xlsx  # results plus a "Where to look" sheet
+```
+
+- **Trace** walks from a gene's conclusion, a sample or a well back through the normaliser, the reference wells and the plate controls. It stops at a plate and well, and says what each one does to the conclusion. On the demo, CAMTA2's first place to look is tumour 2016 on plate HMBS_20080318, well K22: one HMBS well reads Cq 46.1 while the tumour's other four reference wells read normally. Reading that well from the other four changes CAMTA2 from no call to down. A trace that would change a call opens a decision only a person can take. Method: [methods/trace.md](methods/trace.md).
+- **Evidence Ledger** lists the controls and annotations a study has and lacks: NTCs, no-RT, reference-gene stability, efficiency source, RNA integrity, RT replicates, biological units, inter-run calibrators, lots, instrument dates. Absent items never change a conclusion. Method: [methods/evidence.md](methods/evidence.md).
+- **Spreadsheet Check** recomputes a lab's own analysis sheet from its Cq values. It names the first column that differs and the known slip that reproduces it, such as an inverted sign, the exponent applied twice, or statistics run on fold changes. Tested on generated sheets only so far. Method: [methods/sheetcheck.md](methods/sheetcheck.md).
+- **Instrument Logbook** reads calibration dates, run state and log events from QuantStudio `.eds` and export headers. It keeps a hash-chained logbook per instrument, with events inferred from successive files and incidents a person confirms. Lookback answers "which of my conclusions used this period?". The formats are tested on synthetic files built to the layouts seen in public files; several are unverified (see [methods/instrument_context.md](methods/instrument_context.md) and [methods/lookback.md](methods/lookback.md)).
+
 ## Demo dataset
 
 Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671 and Ruijter JM *et al.* (2013) *Methods* 59:32–46; CC BY 4.0 (the licence of the CRAN `vermeulen` and `ruijter` packages that redistribute the data). qPilot downloads the copy in the RDML consortium's rdmlpython repository at a pinned commit. 64 plates (one gene per plate), 366 neuroblastoma tumours, 24,576 reactions, 5 candidate control genes. The demo groups are **MYCN-high (the top 15 % by MYCN expression) versus the rest**: expression-defined, not the clinical MYCN amplification call.
@@ -93,11 +111,11 @@ For the analysis-and-statistics step: Clarida's Lab plan is listed at €4,800�
 | | |
 |---|---|
 | RDML export from the instrument | ◐ RDML 1.3 and 1.4 tested; 1.0–1.2 are migrated by the vendored code but untested |
-| QuantStudio `.eds` | ◐ export to RDML with Thermo's own tools first (not tested here) |
+| QuantStudio `.eds` | ◐ export to RDML with Thermo's own tools first for the analysis (not tested here); `qpilot instrument inspect` reads the file's calibration dates, run state and log events (synthetic test files only) |
 | QuantStudio TXT, other native formats | ✘ roadmap |
 | Offline on a laptop, no account | ✔ (macOS: full analysis tested with the network off; Linux: unit tests in CI, without the demo study; Windows untested) |
 | Reproduces my lab's numbers | ◐ reproduces the published benchmark above; your own instrument is untested |
-| Results as CSV | ◐ the robustness grid (`grid.csv`); a per-gene CSV is on the roadmap |
+| Results as CSV | ◐ the robustness grid (`grid.csv`); `qpilot export excel` writes results with a "Where to look" sheet; a per-gene CSV is on the roadmap |
 | Prism export | ◐ `qpilot export prism` / Studio's Send to Prism write log2 tables per biological unit, a Prism script (`run.pzc`) and provenance (Mode S: Prism itself reads and writes its files). **Not yet run in a real Prism**: the script commands follow GraphPad's documentation, the templates must be made once by hand, see [docs/prism.md](docs/prism.md). Not affiliated with GraphPad Software or Dotmatics |
 | Results written back into RDML | ✘ roadmap |
 | Hash-chained record of every decision | ✔ (tamper-evident; not Part 11) |
