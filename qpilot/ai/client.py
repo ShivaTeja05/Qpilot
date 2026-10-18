@@ -5,11 +5,14 @@
 - ``NoneBackend``: raises :class:`ModelUnavailable`, so callers fall back to templates.
 - ``AnthropicBackend``: the Messages API through the ``anthropic`` SDK (``pip install .[ai]``).
 - ``OpenAICompatibleBackend``: ``POST <endpoint>/v1/chat/completions`` with ``httpx``; works for
-  Ollama, vLLM, LM Studio and hosted OpenAI-compatible endpoints.
+  Ollama, vLLM, LM Studio and hosted OpenAI-compatible endpoints. An endpoint on this machine
+  is called directly, never through an HTTP proxy named by the environment or the system
+  settings: names are sent to it without pseudonyms because they stay on this machine.
 - ``MockBackend``: canned replies for tests; no network.
 
 Every call goes through :mod:`qpilot.ai.payload_log` so the app can show what the model saw.
-Temperature defaults to 0.
+Temperature defaults to 0. :meth:`ModelClient.complete` always returns text: a reply that is
+not text comes back empty, and characters UTF-8 cannot carry (unpaired surrogates) as ``?``.
 """
 
 from __future__ import annotations
@@ -34,6 +37,26 @@ def public_endpoint(url: str | None) -> str | None:
     host = parts.hostname or ""
     port = f":{parts.port}" if parts.port else ""
     return f"{parts.scheme}://{host}{port}{parts.path}" if parts.scheme else None
+
+
+def _as_text(reply: Any) -> str:
+    """A reply as text that can be logged and parsed (anything but a string is empty)."""
+    if not isinstance(reply, str):
+        return ""
+    return reply.encode("utf-8", "replace").decode("utf-8")  # an unpaired surrogate -> "?"
+
+
+def _content_text(content: Any) -> str:
+    """The text of a chat message's ``content``: a string, or the joined text of its parts."""
+    if isinstance(content, list):
+        return "".join(
+            part["text"]
+            for part in content
+            if isinstance(part, dict)
+            and part.get("type") == "text"
+            and isinstance(part.get("text"), str)
+        )
+    return content if isinstance(content, str) else ""
 
 
 def _accepts(func: Any, name: str) -> bool:
@@ -141,10 +164,15 @@ class OpenAICompatibleBackend:
             raise ModelUnavailable("set QPILOT_MODEL_ENDPOINT, e.g. http://127.0.0.1:11434")
         if not config.model:
             raise ModelUnavailable("set QPILOT_MODEL_NAME to a model the endpoint serves")
+        from qpilot.core.pseudonym import endpoint_is_local
+
         base = config.endpoint.rstrip("/")
         self.url = base + ("/chat/completions" if base.endswith("/v1") else "/v1/chat/completions")
         self.model = config.model
         self.timeout = timeout
+        # a call to this machine carries real names; a proxy from HTTP_PROXY or the system
+        # settings would take them elsewhere, so only a remote endpoint may go through one
+        self._trust_env = not endpoint_is_local(self.name, self.url)
         self._headers = {"Content-Type": "application/json"}
         if config.api_key:
             self._headers["Authorization"] = f"Bearer {config.api_key.get_secret_value()}"
@@ -163,11 +191,18 @@ class OpenAICompatibleBackend:
             "stream": False,
         }
         try:
-            response = httpx.post(self.url, json=body, headers=self._headers, timeout=self.timeout)
+            response = httpx.post(
+                self.url,
+                json=body,
+                headers=self._headers,
+                timeout=self.timeout,
+                trust_env=self._trust_env,
+            )
             response.raise_for_status()
-            return response.json()["choices"][0]["message"]["content"] or ""
+            content = response.json()["choices"][0]["message"]["content"]
         except Exception as err:
             raise ModelUnavailable(f"endpoint call failed: {type(err).__name__}") from err
+        return _content_text(content)
 
 
 def make_backend(config: ModelConfig) -> Backend:
@@ -220,7 +255,10 @@ class ModelClient:
         max_tokens: int = 600,
         temperature: float = 0.0,
     ) -> str:
-        """Send one request; the payload is recorded for the "What the model sees" panel."""
+        """Send one request; the payload is recorded for the "What the model sees" panel.
+
+        The reply is always text (see the module docstring).
+        """
         payload = {
             "provider": self.provider,
             "model": self.model,
@@ -229,7 +267,7 @@ class ModelClient:
         }
         self.last_meta = payload_log.record_payload(payload)
         self.metas.append(self.last_meta)
-        return self.backend.complete(system, messages, max_tokens, temperature)
+        return _as_text(self.backend.complete(system, messages, max_tokens, temperature))
 
     def ping(self) -> bool:
         """True when the backend answers a one-token request (the app's "connected" dot)."""

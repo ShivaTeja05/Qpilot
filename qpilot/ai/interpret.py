@@ -15,22 +15,29 @@ name): one *sample record* per sample under the sample's ref (its name and the c
 sample-sheet row, by column number), one block per target name, the sheet's header rows and the
 scientist's sentence (quarantined with origin ``studio:sentence``). Text the firewall flags
 ``instruction_like`` (the sentence excepted: the person typed it) is withheld from the model:
-a flagged name becomes a fixed placeholder, a flagged cell is left out as if it were empty.
+a flagged name becomes a fixed placeholder, a flagged cell is left out as if it were empty, and
+a rule proposal whose label was read from flagged text is not shown either.
 Large files are sent in parts (:data:`SAMPLES_PER_CALL` samples or :data:`TARGETS_PER_CALL`
 targets per call, replies of at most :data:`MAX_TOKENS` tokens), so each call fits a small
 local model inside the client's timeout. An unreachable server (a refused connection) stops the
 model at once and the rules answer alone; a call that times out costs only its part (the rules
-answer for those samples), and :data:`MAX_READ_TIMEOUTS` timeouts stop the model for the rest,
-so a slow server adds at most that many client timeouts, never a hang.
+answer for those samples), and :data:`MAX_READ_TIMEOUTS` timeouts stop the model for the rest.
+The whole interpretation has a time budget (:func:`qpilot.ai.config.interpret_budget_s`, three
+minutes unless ``QPILOT_INTERPRET_BUDGET_S`` says otherwise): once it is spent no further call
+is started and the rules answer for the parts the model has not read, so a slow server costs at
+most the budget plus one client timeout, never a hang. A reply qPilot cannot read (not text,
+not JSON, values of the wrong type) is refused field by field and never raises.
 
 **Remote providers.** When the backend is not on this machine
 (:func:`qpilot.core.pseudonym.endpoint_is_local`; a test double says so with a ``remote``
 attribute and counts as remote without one), a :class:`~qpilot.core.pseudonym.Pseudonymiser`
-is required: sample and target names become keyed tokens, every name inside a sheet row or the
-sentence is replaced by its token, ``text_id`` refs are replaced by keyed aliases (a plain
-``text_id`` can be recomputed from a guessed name), and labels in the rule proposals shown are
-tokens too. The reply is mapped back before it is checked. Without a pseudonymiser nothing is
-sent and the rules answer alone.
+is required: sample and target names become keyed tokens, ``text_id`` refs are replaced by keyed
+aliases (a plain ``text_id`` can be recomputed from a guessed name), and labels in the rule
+proposals shown are tokens too. Sheet cells and the sentence are pseudonymised by what they
+are (:class:`_Shield`): a cell that is a name in any spelling becomes its token, a name written
+into longer text is replaced by its token, and text that would still carry a name is withheld.
+The reply is mapped back before it is checked. Without a pseudonymiser nothing is sent and the
+rules answer alone.
 
 **Rules every model field must pass** (a field that fails is dropped and listed in
 ``rejected`` with why; any failure gets the reply one retry with the validator's message):
@@ -45,9 +52,10 @@ sent and the rules answer alone.
 * every cite is a ref shown in that call and maps to a ``text_id`` or sheet cell that exists;
   at most :data:`MAX_CITES`; nothing cited reads like instructions;
 * a field about a sample cites that sample's own name or sheet row (a target: its name);
-* group, biological-unit and comparison labels are found in a sheet cell or the sentence the
-  field cites (never only in a sample or target name; a sample's group or unit only in its own
-  sheet row or in a sentence that names the sample), and are not role codes;
+* group, biological-unit and comparison labels are found as whole words in a sheet cell or the
+  sentence the field cites (``Mouse 1`` is not found in ``Mouse 12``; never only in a sample or
+  target name; a sample's group or unit only in its own sheet row or in a sentence that names
+  the sample), and are not role codes;
 * a sample declared ``ntc``, ``nrt`` or ``nac`` is never given a non-control role (the core's
   hard ban would refuse it too), a group, a biological unit or a place in a dilution series;
 * a dilution series has at least three positive quantities, in one experiment;
@@ -76,6 +84,7 @@ import hashlib
 import json
 import math
 import re
+import time
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -84,6 +93,7 @@ from pydantic import BaseModel, ValidationError, model_validator
 
 from qpilot.ai import payload_log
 from qpilot.ai.client import ModelClient, ModelUnavailable
+from qpilot.ai.config import interpret_budget_s
 from qpilot.ai.prompts import INTERPRET_KINDS, SYSTEM_INTERPRET
 from qpilot.core.firewall import as_quoted, flags_for
 from qpilot.core.pseudonym import TOKEN as PSEUDONYM_TOKEN
@@ -118,6 +128,10 @@ MAX_REASONS = 5
 MAX_REASON_CHARS = 200
 MAX_LABEL_CHARS = 64
 MIN_SERIES_LEVELS = 3
+MAX_REPLY_CHARS = 50_000  # far above MAX_TOKENS; a longer reply is refused unread
+MAX_CUTS = 50  # complete fields tried, from the end, in a reply cut off at the limit
+MIN_HIDDEN_CHARS = 4  # a name this long is never sent inside other text, even run into it
+MAX_SPELLING_CHARS = 256  # a longer name is not searched for: text that holds it is withheld
 ROW_CHARS = 400
 HEADER_ROWS = 5
 OTHER_ROWS = 20
@@ -125,6 +139,7 @@ INSTRUCTION_LIKE = "instruction_like"
 WELL_ROLES: tuple[str, ...] = WellRole.__args__  # type: ignore[attr-defined]
 SAMPLE_KINDS = ("design.well_role", "design.group", "design.bio_unit", "design.dilution_series")
 STUDY_KINDS = ("design.target_role", "design.gene_symbol", "design.comparison", "design.preset")
+LABEL_KINDS = ("design.group", "design.bio_unit", "design.comparison")
 SAME_READING = "the model reached the same reading"
 WITHHELD = "(withheld by qPilot: this text reads like instructions to a model)"
 NO_REASON = "the model gave no reason qPilot can show"
@@ -132,11 +147,23 @@ TYPE_YOUR_CONTROLS = (
     "Only qPilot's rules are proposed{where}. Please type your controls: check every "
     "no-template, no-RT and no-amplification control before you confirm the design."
 )
+OUT_OF_TIME = (
+    "The model ran out of time before it had read the whole file; qPilot's rules answer for "
+    "the parts it did not read."
+)
+UNREADABLE = "qPilot could not read part of the model's reply; the rules answer for that part."
+NOT_PSEUDONYMISED = (
+    "Some sheet cells or your sentence could not be pseudonymised (a sample or target name is "
+    "written into other text), so they were not sent to the remote model."
+)
 PROMPT_SHA256 = hashlib.sha256(SYSTEM_INTERPRET.encode("utf-8")).hexdigest()
 _LABEL = re.compile(r"^[A-Za-z0-9 _\-.()]{1,64}$")
 _SYMBOL = re.compile(r"^[A-Z0-9][A-Za-z0-9\-]{0,19}$")
 _SQUASH = re.compile(r"[^a-z0-9]+")
 _WORD = "A-Za-z0-9_"
+# Before a name found in text: no letter if it starts with a letter (True), else no digit.
+_STARTS = {True: r"(?<![^\W\d_])", False: r"(?<!\d)"}
+_clock = time.monotonic  # the interpreter's time budget is measured on this clock
 
 
 class InterpretResult(BaseModel):
@@ -279,9 +306,42 @@ def _number(value: Any) -> float | None:
         return None
     try:
         number = float(value)
-    except ValueError:
+    except (ValueError, OverflowError):  # OverflowError: an integer too large for a float
         return None
     return number if math.isfinite(number) and number > 0 else None
+
+
+def _fold(text: str) -> str:
+    """Lower case with only letters and digits kept, in any script (how spellings compare)."""
+    return "".join(c for c in str(text).casefold() if c.isalnum())
+
+
+def _spelling(name: str) -> str:
+    """A pattern for ``name`` in any spelling: its letters and digits in order, in any case.
+
+    Up to three separators may stand between any two of them (``Patient 07-LPS`` for
+    ``Patient07_LPS``), and the match may not run on into more letters (when it ends with a
+    letter) or more digits (when it ends with a digit). The same holds at its start, which
+    :data:`_STARTS` checks once for every name (much faster than once per name), so ``S1`` is
+    found in ``S1_x`` and ``2S1`` but not in ``S10`` or ``LPS1``. ``name`` has a letter or digit.
+    """
+    chars = [c for c in name if c.isalnum()]
+    after = r"(?![^\W\d_])" if chars[-1].isalpha() else r"(?!\d)"
+    return r"[\W_]{0,3}".join(re.escape(c) for c in chars) + after
+
+
+def _found(label: str, text: str) -> bool:
+    """Whether ``label`` stands in ``text`` as whole words.
+
+    Case and separators do not matter (``Mouse 12`` is found in ``mouse_12`` and ``Mouse12``),
+    but the label may not be part of a longer word or number (``Mouse 1`` is not found in
+    ``Mouse 12``, nor ``M`` in ``Mouse``).
+    """
+    key = squash(label)
+    if not key:
+        return False
+    words = "[^a-z0-9]*".join(re.escape(c) for c in key)
+    return re.search(rf"(?<![a-z0-9]){words}(?![a-z0-9])", text.lower()) is not None
 
 
 # ---------------------------------------------------------------------------------------------
@@ -315,25 +375,48 @@ class _Part:
 
 
 class _Shield:
-    """Pseudonyms for a remote call (identity for a local one)."""
+    """Pseudonyms for a remote call (identity for a local one).
 
-    def __init__(self, pseudonymiser: Any | None, names: Iterable[str]) -> None:
+    Text is pseudonymised by what it is, never by trusting a search to find every copy of a
+    name. A text that is a known name in any spelling (letter case and separators aside, so
+    ``Patient07 LPS`` for ``Patient07_LPS``) becomes the token of that sample or target. In a
+    longer text a name is replaced by its token where :func:`_spelling` finds it
+    (``Patient07_LPS_rnalater`` becomes ``<token>_rnalater``). A text that would still carry a
+    name of at least :data:`MIN_HIDDEN_CHARS` letters and digits after that (``xPatient07_LPS``),
+    or that carries a spelling two names share, is withheld: :meth:`hide` returns None and the
+    caller leaves it out. A shorter name run into a longer word or number (``S1`` in ``LPS1``)
+    is read as part of that word.
+    """
+
+    def __init__(self, pseudonymiser: Any | None, spellings: Mapping[str, Iterable[str]]) -> None:
+        """``spellings``: each name whose token is shown -> its other spellings (its safe id)."""
         self.pseudonymiser = pseudonymiser
         self.active = pseudonymiser is not None
         self.to_name: dict[str, str] = {}
         self._pattern: re.Pattern[str] | None = None
-        self._tokens: dict[str, str] = {}
+        self._tokens: dict[str, str | None] = {}  # folded spelling -> token (None: two share it)
+        self._long: list[str] = []
+        self._shown: dict[str, str | None] = {}
         if not self.active:
             return
-        unique = sorted({n for n in names if n and n.strip()}, key=lambda n: (-len(n), n))
-        for name in unique:
+        patterns: dict[str, str] = {}
+        for name, others in spellings.items():
             token = self.token(name)
-            self._tokens.setdefault(name.lower(), token)
-        if unique:
-            alternatives = "|".join(re.escape(n) for n in unique)
-            self._pattern = re.compile(
-                rf"(?<![{_WORD}])({alternatives})(?![{_WORD}])", re.IGNORECASE
-            )
+            for spelling in {name, *others}:
+                key = _fold(spelling)
+                if not key:
+                    continue  # no letter or digit: nothing that could name a sample
+                if self._tokens.setdefault(key, token) != token:
+                    self._tokens[key] = None
+                if len(key) <= MAX_SPELLING_CHARS:
+                    patterns.setdefault(key, _spelling(spelling))
+        self._long = [key for key in self._tokens if len(key) >= MIN_HIDDEN_CHARS]
+        by_start: dict[bool, list[str]] = {True: [], False: []}
+        for key in sorted(patterns, key=lambda key: (-len(key), key)):  # longest first
+            by_start[key[0].isalpha()].append(patterns[key])
+        groups = [_STARTS[s] + "(?:" + "|".join(p) + ")" for s, p in by_start.items() if p]
+        if groups:
+            self._pattern = re.compile("|".join(groups), re.IGNORECASE)
 
     def token(self, name: str) -> str:
         """The keyed token for a name (remembered for mapping back)."""
@@ -350,11 +433,34 @@ class _Shield:
         keyed = self.pseudonymiser.pseudonymise("\x00text_id\x00" + text_id)
         return "t_" + hashlib.sha256(keyed.encode("utf-8")).hexdigest()[:12]
 
-    def scrub(self, text: str) -> str:
-        """``text`` with every known name replaced by its token."""
-        if not self.active or self._pattern is None:
+    def hide(self, text: str) -> str | None:
+        """``text`` as a remote model may see it, or None when it must be withheld.
+
+        A local call sees every text as it is.
+        """
+        if not self.active:
             return text
-        return self._pattern.sub(lambda m: self._tokens[m.group(1).lower()], text)
+        if text not in self._shown:
+            self._shown[text] = self._hide(text)
+        return self._shown[text]
+
+    def _hide(self, text: str) -> str | None:
+        key = _fold(text)
+        if key in self._tokens:
+            return self._tokens[key]  # the text is a name: its token (None if two share it)
+        shown, rest, last = [], [], 0
+        for match in self._pattern.finditer(text) if self._pattern is not None else ():
+            token = self._tokens.get(_fold(match.group(0)))
+            if token is None:
+                return None
+            shown += [text[last : match.start()], token]
+            rest.append(_fold(text[last : match.start()]))
+            last = match.end()
+        shown.append(text[last:])
+        rest.append(_fold(text[last:]))
+        if any(name in part for part in rest if part for name in self._long):
+            return None
+        return "".join(shown)
 
     def unscrub(self, text: str) -> str:
         """``text`` with tokens mapped back to the names they stand for."""
@@ -394,9 +500,12 @@ class _Context:
         self.known_refs |= {t.text_id for t in summary.targets}
         self.known_refs |= {c.text_id for c in summary.sheet} | set(self.cells)
         self.known_refs |= set(self.entries)
-        names = [self.name_of(s) for s in summary.samples] + [s.sample for s in summary.samples]
-        names += [self.target_name(t) for t in summary.targets] + list(self.targets)
-        self.shield = _Shield(pseudonymiser, names)
+        spellings: dict[str, set[str]] = {}
+        for sample in summary.samples:
+            spellings.setdefault(self.name_of(sample), set()).add(sample.sample)
+        for target in summary.targets:
+            spellings.setdefault(self.target_name(target), set()).add(target.target)
+        self.shield = _Shield(pseudonymiser, spellings)
         self.rows, self.rows_by_sample, self.header_rows, self.other_rows = self._rows()
         # model-facing ref -> (real cites, text_ids behind them)
         self.sample_ref = {s.sample: self.shield.alias(s.text_id) for s in summary.samples}
@@ -404,7 +513,12 @@ class _Context:
         self.by_sample_ref = {ref: s for s, ref in self.sample_ref.items()}
         self.by_target_ref = {ref: t for t, ref in self.target_ref.items()}
         self.by_experiment_ref = {ref: e for e, ref in self.experiments.items()}
-        self.sentence_ref = self.shield.alias(sentence.text_id) if sentence else None
+        # the sentence as the model sees it; a remote model is not shown one it may not read
+        self.sentence_shown = self.shield.hide(sentence.value) if sentence else None
+        self.withheld = sentence is not None and self.sentence_shown is None  # see shown_cells
+        self.sentence_ref = None
+        if sentence is not None and self.sentence_shown is not None:
+            self.sentence_ref = self.shield.alias(sentence.text_id)
 
     # ---- names and flags --------------------------------------------------------------------
 
@@ -494,13 +608,19 @@ class _Context:
         """Cells as the model sees them: column number -> value (names pseudonymised).
 
         A cell that reads like instructions is left out, as if it were empty: a placeholder
-        would itself change what the model reads elsewhere (measured on the demo).
+        would itself change what the model reads elsewhere (measured on the demo). So is a cell
+        a remote model may not see because a name would stay in it (:meth:`_Shield.hide`).
         """
-        return {
-            str(c.column): self.shield.scrub(self.value(c.text_id) or "")
-            for c in cells
-            if not self.instruction_like(c.text_id)
-        }
+        shown = {}
+        for cell in cells:
+            if self.instruction_like(cell.text_id):
+                continue
+            value = self.shield.hide(self.value(cell.text_id) or "")
+            if value is None:
+                self.withheld = True  # the scientist is told (NOT_PSEUDONYMISED)
+                continue
+            shown[str(cell.column)] = value
+        return shown
 
     def row_value(self, row: _Row) -> str:
         """The row as the model sees it: column number -> value."""
@@ -570,12 +690,31 @@ def _declared_view(ctx: _Context, label: str) -> str:
     return ",".join(parts)
 
 
+def _from_flagged_text(ctx: _Context, item: DesignField) -> bool:
+    """Whether a rule's label was read from text flagged as instructions, or reads like it.
+
+    Both are checked: a label is the cell's text made safe (``safe_name``), which can lose the
+    words the firewall flags while keeping the rest of the text.
+    """
+    for ref in item.cites:
+        cell = ctx.cells.get(ref)
+        if ctx.instruction_like(cell.text_id if cell is not None else ref):
+            return True
+    return any(INSTRUCTION_LIKE in flags_for(str(v)) for v in item.value.values())
+
+
 def _rule_view(ctx: _Context, rules: Sequence[DesignField], part: _Part) -> list[dict]:
-    """The rule fields that concern this call, with refs instead of names."""
+    """The rule fields that concern this call, with refs instead of names.
+
+    A rule label read from text flagged as instructions is not shown: such text reaches the
+    model in no form, so the call reads as if the rules had not proposed that label.
+    """
     in_part = {s.sample for s in part.samples}
     targets = {t.target for t in part.targets}
     shown = []
     for i, item in enumerate(rules, 1):
+        if item.kind in LABEL_KINDS and _from_flagged_text(ctx, item):
+            continue
         subject: str | None = None
         value: Any = item.value
         if item.kind in ("design.well_role", "design.group", "design.bio_unit"):
@@ -692,12 +831,12 @@ def _prompt(ctx: _Context, part: _Part, rules: Sequence[DesignField]) -> tuple[s
     blocks = [as_quoted(shown, max_chars=ROW_CHARS)] if shown else []
     if row_entries:
         blocks.append(as_quoted(row_entries, max_chars=ROW_CHARS))
-    if ctx.sentence is not None:
+    if ctx.sentence is not None and ctx.sentence_shown is not None:
         sentence = ctx.sentence.model_copy(
             update={
                 "text_id": ctx.sentence_ref,
                 "origin": "the scientist's sentence",
-                "value": ctx.shield.scrub(ctx.sentence.value),
+                "value": ctx.sentence_shown,
             }
         )
         blocks.append(as_quoted([sentence], max_chars=MAX_SENTENCE_CHARS))
@@ -796,19 +935,18 @@ def _own_cited(ctx: _Context, sample: InspectSample, cited: _Cited) -> bool:
 def _grounded(
     ctx: _Context, label: str, cited: _Cited, sample: InspectSample | None = None
 ) -> bool:
-    """Whether ``label`` appears in a sheet cell or the sentence the field cites.
+    """Whether ``label`` appears, as whole words, in a sheet cell or the sentence the field cites.
 
     Sample and target names do not count: a group or unit read off a name pattern is exactly
     what the rules leave to a person. For one sample's group or unit the cell must be in that
     sample's own sheet row, or the sentence must name the sample as well as the label.
     """
-    key = squash(label)
-    if not key:
+    if not squash(label):
         return False
     own = {c.text_id for c in ctx.sample_cells(sample)} if sample is not None else None
     for text_id in cited.text_ids - ctx.name_ids:
         value = ctx.value(text_id)
-        if value is None or key not in squash(value):
+        if value is None or not _found(label, value):
             continue
         if sample is None or text_id in own:
             return True
@@ -917,9 +1055,10 @@ def _check_value(
         from qpilot.qpcr.designs import PRESETS  # the engine's own list of presets
 
         problem = _shape(value, {"preset"})
-        if problem or subject != "design" or value["preset"] not in PRESETS:
+        preset = None if problem else value["preset"]
+        if problem or subject != "design" or not isinstance(preset, str) or preset not in PRESETS:
             return None, None, problem or 'unknown preset, or the subject is not "design"'
-        return "design", {"preset": value["preset"]}, None
+        return "design", {"preset": preset}, None
     if kind == "design.dilution_series":
         return _check_series(ctx, part, subject, value, cited)
     return None, None, f"kind {kind} is not allowed"
@@ -942,16 +1081,17 @@ def _check_series(ctx: _Context, part: _Part, subject: str, value: Any, cited: _
     problem = _shape(value, {"experiment_id", "samples"})
     if problem:
         return None, None, problem
-    shown = re.fullmatch(r"series_(\d+)", str(subject))
+    shown = re.fullmatch(r"series_(\d{1,6})", str(subject))
     if shown and 0 < int(shown.group(1)) <= len(ctx.rules):
         name = ctx.rules[int(shown.group(1)) - 1].subject  # a rule's series, by its shown handle
     else:
         name = _safe_label(ctx.shield.unscrub(str(subject)))
     if name is None:
         return None, None, "the series needs a short name"
-    experiment = ctx.by_experiment_ref.get(str(value["experiment_id"]))
-    if experiment is None and not ctx.shield.active and value["experiment_id"] in ctx.experiments:
-        experiment = value["experiment_id"]
+    ref = value["experiment_id"]
+    experiment = ctx.by_experiment_ref.get(ref) if isinstance(ref, str) else None
+    if experiment is None and not ctx.shield.active and isinstance(ref, str):
+        experiment = ref if ref in ctx.experiments else None  # a local model may use the id
     if experiment is None:
         return None, None, "experiment_id is not an experiment ref of the summary"
     members = value["samples"]
@@ -1051,7 +1191,7 @@ def _check_field(
 def _fields_of(text: str) -> list[Any] | None:
     try:
         data = json.loads(text)
-    except (json.JSONDecodeError, RecursionError):
+    except (ValueError, RecursionError):  # ValueError: not JSON, or an absurdly long integer
         return None
     if not isinstance(data, dict) or not isinstance(data.get("fields"), list):
         return None
@@ -1063,8 +1203,11 @@ def _parse(text: str) -> tuple[list[Any] | None, bool]:
 
     A reply that hit the token limit is read up to its last complete field; every field read
     is still checked like any other, and the reply counts as a problem (so it is retried).
+    Anything but text is no reply at all.
     """
-    start = (text or "").find("{")
+    if not isinstance(text, str):
+        return None, False
+    start = text.find("{")
     if start < 0:
         return None, False
     match = re.search(r"\{.*\}", text[start:], re.S)
@@ -1073,7 +1216,8 @@ def _parse(text: str) -> tuple[list[Any] | None, bool]:
         if fields is not None:
             return fields, False
     body = text[start:]
-    for cut in reversed([m.start() for m in re.finditer(r"\}\s*,\s*\{", body)]):
+    cuts = [m.start() for m in re.finditer(r"\}\s*,\s*\{", body)]
+    for cut in reversed(cuts[-MAX_CUTS:]):
         fields = _fields_of(body[: cut + 1] + "]}")
         if fields is not None:
             return fields, True
@@ -1081,7 +1225,12 @@ def _parse(text: str) -> tuple[list[Any] | None, bool]:
 
 
 def _check_reply(ctx, part, text, citable, attempt, index, rejected):
-    """(accepted fields, problems, parsed?) for one reply."""
+    """(accepted fields, problems, parsed?) for one reply.
+
+    A field qPilot cannot read raises nothing: it is refused like any field that fails a check.
+    """
+    if isinstance(text, str) and len(text) > MAX_REPLY_CHARS:
+        return [], [f"the reply is longer than {MAX_REPLY_CHARS} characters"], False
     raws, cut_off = _parse(text)
     if raws is None:
         return [], ['the reply is not JSON of the form {"fields": [...]}'], False
@@ -1090,7 +1239,10 @@ def _check_reply(ctx, part, text, citable, attempt, index, rejected):
     accepted: list[DesignField] = []
     problems = ["the reply was cut off at the length limit; send fewer fields"] if cut_off else []
     for position, raw in enumerate(raws, 1):
-        checked, why = _check_field(ctx, part, raw, citable)
+        try:
+            checked, why = _check_field(ctx, part, raw, citable)
+        except Exception as err:  # a value of a shape no check foresaw: refused, never raised
+            checked, why = None, f"qPilot could not read this field ({type(err).__name__})"
         if checked is not None:
             accepted.append(checked)
             continue
@@ -1149,6 +1301,97 @@ def _merge(
 # ---------------------------------------------------------------------------------------------
 
 
+@dataclass
+class _Calls:
+    """How the model calls of one interpretation went, recorded as they happen."""
+
+    calls: list[dict[str, Any]] = field(default_factory=list)
+    fields: list[DesignField] = field(default_factory=list)
+    rejected: list[dict[str, Any]] = field(default_factory=list)
+    error: str | None = None
+    used: int = 0  # parts answered by a reply that was used
+    failed: int = 0  # parts the rules answer alone
+    clean: bool = True
+    unavailable: bool = False
+    out_of_time: bool = False
+    unreadable: bool = False
+
+
+def _ask(
+    ctx: _Context, client: ModelClient, rules: Sequence[DesignField], deadline: float, run: _Calls
+) -> None:
+    """Ask the model about each part in turn, with one retry, until it or the time runs out.
+
+    No call is started once :func:`_clock` reaches ``deadline``; the parts not asked about are
+    left to the rules (``run.out_of_time``).
+    """
+    timeouts = 0
+    for index, part in enumerate(_parts(ctx), 1):
+        if _clock() >= deadline:
+            run.out_of_time = True
+            break
+        content, citable = _prompt(ctx, part, rules)
+        messages = [{"role": "user", "content": content}]
+        for attempt in (1, 2):
+            try:
+                text = client.complete(SYSTEM_INTERPRET, messages, max_tokens=MAX_TOKENS)
+            except ModelUnavailable as err:
+                run.error = str(err)
+                run.calls.append(
+                    {"part": index, "attempt": attempt, "response_bytes": 0, "validated": False}
+                )
+                slow = run.error.endswith("ReadTimeout")  # reachable, but this call was too slow
+                timeouts += slow
+                if slow and timeouts < MAX_READ_TIMEOUTS:
+                    run.failed += 1  # this part gets the rules alone; the next part is tried
+                else:
+                    run.unavailable = True
+                break
+            try:
+                accepted, problems, parsed = _check_reply(
+                    ctx, part, text, citable, attempt, index, run.rejected
+                )
+            except Exception as err:  # a reply no check foresaw: refused, never raised
+                accepted, parsed = [], False
+                problems = [f"qPilot could not read the reply ({type(err).__name__})"]
+                run.unreadable = True
+            run.calls.append(
+                {
+                    "part": index,
+                    "attempt": attempt,
+                    "response_bytes": len(str(text).encode("utf-8", "replace")),
+                    "validated": parsed and not problems,
+                }
+            )
+            if parsed and not problems:
+                run.fields += accepted
+                run.used += 1
+                break
+            run.error = "; ".join(problems[:10])
+            if attempt == 1 and _clock() >= deadline:
+                run.out_of_time = True  # no retry is started once the time is up
+            if attempt == 2 or run.out_of_time:
+                if parsed and accepted:
+                    run.fields += accepted
+                    run.used += 1
+                    run.clean = False
+                else:
+                    run.failed += 1
+                break
+            why = ctx.shield.hide(run.error) or "the reply did not pass qPilot's checks"
+            messages = [
+                *messages,
+                {"role": "assistant", "content": text},
+                {
+                    "role": "user",
+                    "content": f"Rejected: {why}. Reply again with JSON only, following the "
+                    "rules; leave out any field you cannot support from the quoted data.",
+                },
+            ]
+        if run.unavailable or run.out_of_time:
+            break
+
+
 def interpret(
     summary: InspectSummary,
     quarantine: Sequence[QuarantineEntry],
@@ -1157,8 +1400,12 @@ def interpret(
     *,
     rule_fields: Sequence[DesignField] = (),
     pseudonymiser: Any | None = None,
+    budget_s: float | None = None,
 ) -> InterpretResult:
     """Propose a study design from a file summary, its quoted text and the scientist's sentence.
+
+    Nothing the model replies can make this raise: a reply qPilot cannot read is refused (and
+    listed in ``rejected`` or ``error``), and the rule fields always come through.
 
     Args:
         summary: From ``qpilot.qpcr.inspect.inspect`` (ids, declared types, counts; no text).
@@ -1168,6 +1415,10 @@ def interpret(
         client: The model client; a ``none`` client gives the rule fields alone.
         rule_fields: What the deterministic rules already propose (always kept unchanged).
         pseudonymiser: Required for a remote backend (``core.pseudonym.Pseudonymiser``).
+        budget_s: Seconds the model may take over the whole file (default
+            :func:`qpilot.ai.config.interpret_budget_s`). No call is started after that; the
+            rules answer for the parts not read, with a note. A call already under way ends
+            within the client's own timeout.
 
     Returns:
         An :class:`InterpretResult`; nothing is stored or accepted.
@@ -1204,88 +1455,37 @@ def interpret(
         kind="model", provider=client.provider, model=client.model, prompt_sha256=PROMPT_SHA256
     )
     first_call = len(client.metas)
-    calls: list[dict[str, Any]] = []
-    model_fields: list[DesignField] = []
-    rejected: list[dict[str, Any]] = []
-    error: str | None = None
-    used, failed, clean = 0, 0, True
-    unavailable = False
-    timeouts = 0
-    for index, part in enumerate(_parts(ctx), 1):
-        content, citable = _prompt(ctx, part, rules)
-        messages = [{"role": "user", "content": content}]
-        for attempt in (1, 2):
-            try:
-                text = client.complete(SYSTEM_INTERPRET, messages, max_tokens=MAX_TOKENS)
-            except ModelUnavailable as err:
-                error = str(err)
-                calls.append(
-                    {"part": index, "attempt": attempt, "response_bytes": 0, "validated": False}
-                )
-                slow = error.endswith("ReadTimeout")  # reachable, but this call was too slow
-                timeouts += slow
-                if slow and timeouts < MAX_READ_TIMEOUTS:
-                    failed += 1  # this part gets the rules alone; the next part is tried
-                else:
-                    unavailable = True
-                break
-            accepted, problems, parsed = _check_reply(
-                ctx, part, text, citable, attempt, index, rejected
-            )
-            calls.append(
-                {
-                    "part": index,
-                    "attempt": attempt,
-                    "response_bytes": len(text.encode("utf-8")),
-                    "validated": parsed and not problems,
-                }
-            )
-            if parsed and not problems:
-                model_fields += accepted
-                used += 1
-                break
-            error = "; ".join(problems[:10])
-            if attempt == 2:
-                if parsed and accepted:
-                    model_fields += accepted
-                    used += 1
-                    clean = False
-                else:
-                    failed += 1
-                break
-            messages = [
-                *messages,
-                {"role": "assistant", "content": text},
-                {
-                    "role": "user",
-                    "content": f"Rejected: {error}. Reply again with JSON only, following the "
-                    "rules; leave out any field you cannot support from the quoted data.",
-                },
-            ]
-        if unavailable:
-            break
+    run = _Calls()
+    budget = interpret_budget_s() if budget_s is None else budget_s
+    _ask(ctx, client, rules, _clock() + budget, run)
+    if run.unreadable:
+        notes.append(UNREADABLE)
+    if ctx.withheld:
+        notes.append(NOT_PSEUDONYMISED)
+    if run.out_of_time:
+        notes.append(OUT_OF_TIME)
     metas = client.metas[first_call:]
-    meta = [{**m, **c} for m, c in zip(metas, calls, strict=False)]
-    if unavailable and used == 0:
-        result = rules_only(error)
+    meta = [{**m, **c} for m, c in zip(metas, run.calls, strict=False)]
+    if run.unavailable and run.used == 0:
+        result = rules_only(run.error)
         return result.model_copy(update={"meta": meta, "prompt_sha256": PROMPT_SHA256})
-    fields, makers, repeats = _merge(ctx, rules, model_fields, maker)
+    fields, makers, repeats = _merge(ctx, rules, run.fields, maker)
     if repeats:
         notes.append(
             "Some model readings only repeated the type the file declares and were left out."
         )
-    fallback = unavailable or failed > 0 or used == 0
+    fallback = run.unavailable or run.out_of_time or run.failed > 0 or run.used == 0
     if fallback:
-        where = "" if used == 0 else " for part of the file"
+        where = "" if run.used == 0 else " for part of the file"
         notes.append(TYPE_YOUR_CONTROLS.format(where=where))
     return InterpretResult(
         fields=fields,
         makers=makers,
         fallback=fallback,
-        validated=used > 0 and clean and not fallback,
-        error=error if (fallback or not clean or rejected) else None,
+        validated=run.used > 0 and run.clean and not fallback,
+        error=run.error if (fallback or not run.clean or run.rejected) else None,
         notes=notes,
-        rejected=rejected,
+        rejected=run.rejected,
         meta=meta,
         prompt_sha256=PROMPT_SHA256,
         quarantine=new_text,
