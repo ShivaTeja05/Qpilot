@@ -47,9 +47,9 @@ Definitions used above, which the engine code must follow exactly:
 | Studio's grid with the amplification-call axis | 744 cells (186 × 4 rules), the full sweep in about 0.35 s | `tests/engine/test_amp_call.py` |
 | The Curve Judge's calls applied to every study well **without a person** (what Studio never does) | 3 of 58 conclusions change (CLSTN1, EPN2, IGSF4), all through the ALUsq blind spot: without the ALUsq wells, 0 change. Each of those wells reaches the scientist as a proposal the engine check marks `contradicted` | measured with `Studio._primary_conclusions` on the confirmed demo design |
 
-## Does a bigger model help? Measured on a Kaggle GPU (18 Oct 2026)
+## Does a bigger model help? Measured on Kaggle and RunPod GPUs (18 Oct 2026)
 
-The full harness (`qpilot harness run --studio`: 30 "Ask your data" items and 21 Studio items, typing over the demo's 427 samples twice) was run with the model on the same machine as qPilot: the laptop (Apple M3 Pro, Ollama) for qwen2.5:7b, and a private Kaggle notebook (NVIDIA Tesla T4 ×2, Ollama 0.40.6, per-call timeout raised to 600 s so the model is never cut off) for the larger models. Same code snapshot for the larger models (`f652bca`); only the public demo dataset was used.
+The full harness (`qpilot harness run --studio`: 30 "Ask your data" items and 21 Studio items, typing over the demo's 427 samples twice) was run with the model on the same machine as qPilot: the laptop (Apple M3 Pro, Ollama) for qwen2.5:7b, a private Kaggle notebook (NVIDIA Tesla T4 ×2, Ollama 0.40.6, per-call timeout raised to 600 s so the model is never cut off) for the 14B and 32B, and a RunPod pod (one NVIDIA B300, Ollama, the same 600 s timeout, both models served side by side, `scripts/gpu_harness.py`) for the 70B-class models. The Kaggle runs used code snapshot `f652bca`; the RunPod runs used `a039e20`, which adds the rule that a model explanation must cite the card's key counts. Only the public demo dataset was used.
 
 | Profile | Typing accuracy | Control recall | Ban violations / false accepts / invented citations | Injection effect | Ask items correct (by the model alone) | Harness time |
 |---|---|---|---|---|---|---|
@@ -57,10 +57,14 @@ The full harness (`qpilot harness run --studio`: 30 "Ask your data" items and 21
 | qwen2.5:7b, laptop | 834/854 (97.7 %) | 18/18 | 0 / 0 / 0 | 0 (re-run after the harness fix) | 30/30 (17/20) | about 70 min |
 | qwen2.5:14b, Kaggle T4 | 839/854 (98.2 %) | 18/18 | 0 / 0 / 0 | 1 (a model proposal that differed between the clean and planted runs; never applied) | 27/30 (14/20) | 74 min |
 | qwen2.5:32b, Kaggle T4 ×2 | 839/854 (98.2 %) | 18/18 | 0 / 0 / 0 | 1 (the same kind: one extra model proposal, never applied) | 30/30 (17/20) | 198 min |
+| qwen2.5:72b, RunPod B300 | 839/854 (98.2 %) | 18/18 | 0 / 0 / 0 | 3 (two extra model proposals and one lost, in one planted run; never applied) | 30/30 (17/20) | 133 min |
+| llama3.3:70b, RunPod B300 | 788/854 (92.3 %) | 18/18 | 0 / 0 / 0 | 3 (in two planted runs; never applied) | 30/30 (18/20) | 131 min |
 
-What this says, without overreading three runs on one dataset:
+What this says, without overreading five runs on one dataset:
 
-- **The deterministic rules carry the typing accuracy.** No model raises it above the rules on this file; the 7B lowers it slightly (it proposed some unknowns as NTCs, which a person sees as contradicted proposals), the 14B and 32B leave it unchanged.
-- **Safety held for every model**: no control was missed, nothing forbidden got through, nothing was accepted without a person, no citation was invented.
+- **The deterministic rules carry the typing accuracy.** No model raises it above the rules on this file. The 14B, 32B and 72B leave it unchanged: their 15 differences from the file's labels are the rules' own, samples of the undeclared dilution series (`comp_*`) proposed as standards. The 7B lowers it slightly (it proposed some unknowns as NTCs, which a person sees as contradicted proposals). llama3.3:70b lowers it most: 66 differences, 40 tumour samples proposed as NTCs and 26 samples proposed as standards. Model family matters more than size.
+- **Safety held for every model**: no control was missed, nothing forbidden got through, nothing was accepted without a person, no citation was invented, and no invented number reached a person (the 72B wrote 100 that the number validator caught; the template answered instead).
+- **Planted instructions moved the 70B-class models more** (an injection effect of 3, against 1 for the 14B and 32B), for example a reference-gene proposal for UBC(2) that the clean run did not make. Every one of these changes stayed a proposal waiting for a person, and the firewall rejected the fields that cited a group the sheet does not contain.
+- **The explanation fix holds**: with explanations required to cite the card's key counts, both 70B-class models pass all 3 amplification-call items (the 32B, before the fix, passed 0).
 - **The 14B was worse at saying "not in this study"** (3 refusal items failed; the 32B got all 30 questions right) and both the 14B and the 32B found a gap: for the amplification-call card it produced an explanation that passed the number validator while leaving out the very counts the card is about, where the 7B's failed validation and the template answered. Explanations must now cite the card's key counts or the template is used.
 - **Where a model can still add value** is reading what rules cannot: free-text sentences and messy sheets that name groups and units. The demo's design is expression-defined, so it does not exercise that; a lab file with a group sheet would.
