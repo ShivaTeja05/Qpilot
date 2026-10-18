@@ -68,8 +68,8 @@ Prism files, through Prism's documented script language. qPilot never writes or 
 | `<gene>.csv` | One table per gene (UTF-8, comma-separated, `\n` line ends, fixed column order) |
 | `run.pzc` | Prism script: for each gene, open the template, `GoTo D, 1`, `Import` the CSV, `SetSheetTitle` with the record ref and chain head, `Save` `<gene>_qpilot_<record>.pzfx`, append the provenance note to the Info sheet, export the graph (PDF by default), `Close`; finally write `qpilot_done.txt` |
 | `send_back.pzc` | Prism script: open each saved project and `ExportTable` its data table to `sent_back/<gene>.csv`; write `qpilot_sent_back_done.txt`; never `Close` (that would discard unsaved edits) |
-| `qpilot_provenance.json` | qPilot version and vendored LinRegPCR commit, study id, input sha256, chain head, design hash, every choice with its actor, each gene's holds fraction and confidence level with reasons, the conclusion rule, the caption in fact tokens, every file's sha256 and the bundle sha256 |
-| `qpilot_bundle.json` | The `PrismBundle` the round trip is compared against |
+| `qpilot_provenance.json` | qPilot version and vendored LinRegPCR commit, study id, input sha256, chain head, design hash, every choice with its actor, each gene's holds fraction and confidence level with reasons, the conclusion rule, the caption in fact tokens and every other file's sha256. The sha256 of this file exactly as written is kept in `qpilot_bundle.json` (`info.provenance_sha256`), so the bundle sha256 covers every byte of it |
+| `qpilot_bundle.json` | The `PrismBundle` the round trip is compared against, with its own sha256 (`bundle_sha256`) |
 | `README.txt` | Short instructions for the scientist |
 | `<template>.pzt` | The hand-made template, copied in when it exists (`qpilot/prism/templates/README.md`) |
 
@@ -103,6 +103,15 @@ qpilot prism diff --study <id> --bundle <folder> --sent-back <folder>/sent_back
 `--share` pseudonymises the row titles (sample names). The output folder must be new or
 empty; nothing is written into the study's workspace. The MCP preview
 (`qpilot.prism.preview`) returns what an export would write and writes nothing.
+
+`qpilot prism verify` (and every round trip, before anything else) checks the bundle folder:
+the bundle's own sha256, every file's sha256, and the provenance file byte for byte against the
+sha256 the bundle holds, so a changed choice, actor, number or caption is reported, and so is
+the same content written another way. A JSON file that holds a key twice anywhere is refused
+as unreadable: a person reading it would see the first value, a JSON parser the last. The
+checksums are plain sha256: they show an edit made without recomputing them, not a forgery
+that recomputes them all. A bundle exported before the provenance file was checked by its
+bytes does not verify; export it again.
 
 ## What sending the tables back checks
 

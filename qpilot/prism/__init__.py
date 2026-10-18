@@ -106,7 +106,8 @@ def export_study(
     """Write the bundle for a study: CSVs, ``run.pzc``, ``send_back.pzc``, README, provenance.
 
     Writes only into ``out_dir``, which must be new or empty; the bundle sha256 is stored there
-    (in ``qpilot_bundle.json`` and ``qpilot_provenance.json``), not in the study's workspace.
+    (in ``qpilot_bundle.json``, which also holds the sha256 of ``qpilot_provenance.json``), not
+    in the study's workspace.
     When the template file has not been made in Prism yet, everything else is still written and
     the notes (and ``README.txt``) say what to build.
 
