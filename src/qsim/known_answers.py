@@ -48,6 +48,13 @@ interval's width. Both estimators, in and out of sample, are reported. Degrees o
 freedom are Satterthwaite's, with the added components treated as known. The coverage test
 compares the error with the interval widened by the truth's own SE (dPCR Poisson and well
 error, or the nominal error bar). Pass: at least 90 % of baseline intervals contain the truth.
+
+**V2 addendum, efficiency calibration.** :func:`calibrate` corrects the assay-mean efficiency by
+one per-cycle offset, log2 E + delta. The offset is fitted on the dPCR-measured dilution series
+(:func:`series_offsets`, :func:`efficiency_offset`) of the *other* plate groups
+(:func:`calibration_training`) and scored under the same pass rule. The method and its variants
+were fixed before any calibrated number was computed. It is a validation variant, not an
+analysis option, so no tier changes.
 """
 
 from __future__ import annotations
@@ -336,6 +343,93 @@ def propagate(base: pd.DataFrame, components: dict[str, dict]) -> pd.DataFrame:
     return out
 
 
+def _template(pair: pd.Series) -> np.ndarray:
+    """Which template a pair label measures: the amplicon standard or genomic DNA (the EMBL
+    pair belongs to the genomic group; its Cq difference is near zero, so it carries no weight)."""
+    return np.where(pair.str.endswith(" copies"), "amplicon", "genomic")
+
+
+def series_offsets(base: pd.DataFrame) -> pd.DataFrame:
+    """Per-cycle efficiency offset of each dilution series, fitted on its truth.
+
+    A series is one (plate, run, assay, template). Its offset ``delta`` (log2 per cycle) is the
+    correction of the assay-mean efficiency, log2 E + delta, that best moves the baseline onto the
+    truth. The calibrated estimate is ``estimate - dcq * delta``, so delta is the least-squares
+    slope through the origin of error on dcq over the series' resolved pairs.
+    """
+    keys = ["plate", "tubes", "truth_kind", "run", "assay", "template"]
+    b = base[np.isfinite(base["truth_log2"]) & np.isfinite(base["dcq"])]
+    b = b.assign(template=_template(b["pair"]))
+    rows = []
+    for key, g in b.groupby(keys):
+        sxx = float((g["dcq"] ** 2).sum())
+        if sxx > 0:
+            delta = float((g["dcq"] * g["error_log2"]).sum() / sxx)
+            rows.append([*key, len(g), delta])
+    return pd.DataFrame(rows, columns=[*keys, "pairs", "delta_log2e"])
+
+
+def efficiency_offset(offsets: pd.DataFrame) -> dict:
+    """The pooled offset: the median over series, with the median's SE (1.2533 x 1.4826 MAD over
+    sqrt n). No series gives no correction."""
+    d = offsets["delta_log2e"]
+    if d.empty:
+        return {"delta_log2e": 0.0, "se_delta_log2e": 0.0, "series": 0}
+    mad = 1.4826 * float((d - d.median()).abs().median())
+    return {
+        "delta_log2e": float(d.median()),
+        "se_delta_log2e": 1.2533 * mad / float(np.sqrt(len(d))),
+        "series": int(len(d)),
+    }
+
+
+def calibration_training(
+    base: pd.DataFrame,
+    scored: str,
+    kinds: tuple[str, ...] = ("dPCR",),
+    templates: tuple[str, ...] | None = None,
+    disjoint: bool = False,
+    held_out: bool = True,
+) -> pd.DataFrame:
+    """Baseline rows a calibration for the ``scored`` tube group may be fitted on.
+
+    ``held_out`` leaves the scored group out, so no plate is calibrated on its own truth.
+    ``disjoint`` also drops every dPCR pair that uses a tube whose dPCR truth the scored group is
+    scored against: the AMC and DKFZ plates share the genomic tubes and hence the same truth, and
+    a calibration fitted on one would carry that truth's own error into the other.
+    """
+    train = base[base["tubes"] != scored] if held_out else base
+    train = train[train["truth_kind"].isin(kinds)]
+    if templates is not None:
+        train = train[np.isin(_template(train["pair"]), templates)]
+    if disjoint:
+        own = base[
+            (base["tubes"] == scored)
+            & (base["truth_kind"] == "dPCR")
+            & np.isfinite(base["truth_log2"])
+        ]
+        tubes = set(own["hi"]) | set(own["lo"])
+        shared = (train["truth_kind"] == "dPCR") & (
+            train["hi"].isin(tubes) | train["lo"].isin(tubes)
+        )
+        train = train[~shared]
+    return train
+
+
+def calibrate(base: pd.DataFrame, offsets: dict[str, dict]) -> pd.DataFrame:
+    """Baseline rows with the assay-mean efficiency corrected by a per-cycle log2 offset; the
+    offset's SE joins the within-run SE of log2 E. ``offsets`` is keyed by ``tubes``."""
+    out = base.copy()
+    delta = out["tubes"].map(lambda k: offsets[k]["delta_log2e"])
+    se = out["tubes"].map(lambda k: offsets[k]["se_delta_log2e"])
+    shift = -out["dcq"] * delta
+    for col in ("estimate_log2", "error_log2", "ci_lo", "ci_hi"):
+        out[col] = out[col] + shift
+    out["se_log2e"] = np.sqrt(out["se_log2e"].fillna(0.0) ** 2 + se**2)
+    out["calibration_log2e"] = delta
+    return out
+
+
 def _share(s: pd.Series) -> float | None:
     s = s.dropna()
     return round(float(s.mean()), 3) if len(s) else None
@@ -502,6 +596,96 @@ def score(t: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     }
     scored = ok
 
+    # V2 addendum: calibrate the assay-mean efficiency on held-out dPCR-measured dilutions
+    def calibrated_with(se: bool = True, **how) -> tuple[pd.DataFrame, dict]:
+        cal = {
+            g: efficiency_offset(series_offsets(calibration_training(base, g, **how)))
+            for g in groups
+        }
+        if not se:
+            cal = {g: c | {"se_delta_log2e": 0.0} for g, c in cal.items()}
+        parts = [
+            propagate(calibrate(base[base["tubes"] == g], {g: cal[g]}), {g: comp[g]})
+            for g in groups
+        ]
+        x = pd.concat(parts, ignore_index=True)
+        return x[np.isfinite(x["truth_log2"])], cal
+
+    def bias_by(col: str, x: pd.DataFrame) -> dict:
+        return {
+            k: {
+                "uncalibrated": _bias(ok.loc[g.index, "error_log2"]),
+                "calibrated": _bias(g["error_log2"]),
+            }
+            for k, g in x.groupby(col, sort=False)
+        }
+
+    cal_ok, cal = calibrated_with()
+    cal_ok.index = ok.index  # same groups in the same order, so rows line up with ``ok``
+    cal_variants = {}
+    for name, how in (
+        ("truth_disjoint", {"disjoint": True}),
+        ("with_nominal_truth_plates", {"kinds": ("dPCR", "nominal")}),
+        ("genomic_only", {"templates": ("genomic",)}),
+        ("in_sample", {"held_out": False}),
+        ("diagnostic_offset_without_its_se", {"se": False}),
+    ):
+        x, c = calibrated_with(**how)
+        x.index = ok.index
+        cal_variants[name] = {
+            "offsets": rounded(c),
+            "all": cover(x),
+            "by_plate": {k: cover(g) for k, g in x.groupby("plate", sort=False)},
+            "bias_by_machine": bias_by("machine", x),
+        }
+    every = series_offsets(base)
+    machine_bias = bias_by("machine", cal_ok)
+    out["efficiency_calibration"] = {
+        "rule": out["v2_coverage"]["rule"],
+        "method": (
+            "log2 E_cal = log2 E_LinRegPCR + delta, one per-cycle offset for every run of a plate "
+            "group: the median over the other groups' dPCR-measured dilution series of each "
+            "series' least-squares offset; its SE joins the efficiency term; run effect as above"
+        ),
+        "preregistered": "method and variants fixed before any calibrated number was computed",
+        "offsets": rounded(cal),
+        "series_offsets_descriptive": {
+            f"{plate} {template}": {
+                "series": int(len(g)),
+                "median_delta_log2e": round(float(g["delta_log2e"].median()), 4),
+                "mad_delta_log2e": round(
+                    float(1.4826 * (g["delta_log2e"] - g["delta_log2e"].median()).abs().median()), 4
+                ),
+            }
+            for (plate, template), g in every.groupby(["plate", "template"], sort=False)
+        },
+        "uncalibrated": cover(ok),
+        "all": cover(cal_ok),
+        "passing_dilution_qc": cover(cal_ok[cal_ok["dilution_qc"]]),
+        "failing_dilution_qc": cover(cal_ok[~cal_ok["dilution_qc"]]),
+        "by_plate": {k: cover(g) for k, g in cal_ok.groupby("plate", sort=False)},
+        "by_level": {k: cover(g) for k, g in cal_ok.groupby("pair", sort=False)},
+        "bias_by_machine": machine_bias,
+        "bias_by_plate": bias_by("plate", cal_ok),
+        "machines_within_bias_limit": {
+            k: sorted(
+                m
+                for m, v in machine_bias.items()
+                if v[k].get("median_abs_error_log2", 9) <= BIAS_LIMIT
+            )
+            for k in ("uncalibrated", "calibrated")
+        },
+        "variants": cal_variants,
+        "pass": (_share(cal_ok["in_new_ci_with_truth"]) or 0) >= COVERAGE_TARGET,
+    }
+    scored = ok.assign(
+        calibration_log2e=cal_ok["calibration_log2e"],
+        estimate_log2_calibrated=cal_ok["estimate_log2"],
+        error_log2_calibrated=cal_ok["error_log2"],
+        half_with_truth_calibrated=cal_ok["half_with_truth"],
+        in_calibrated_ci_with_truth=cal_ok["in_new_ci_with_truth"],
+    )
+
     # dPCR could not settle these pairs: show the baseline against each candidate truth
     unresolved = {}
     ub = base[base["truth_source"] == "unresolved"]
@@ -527,11 +711,14 @@ def _nominal_log2(pair: str) -> float | None:
         return None
 
 
-def first_round_coverage(data: Path, components: dict) -> dict:
+def first_round_coverage(data: Path, components: dict, offset: dict | None = None) -> dict:
     """The propagated interval on round one's 188 AMC comparisons with nominal truth (73.4 %
-    Welch coverage), using the run effect estimated without the AMC plates."""
+    Welch coverage), using the run effect estimated without the AMC plates; ``offset`` also
+    calibrates the efficiency with the offset fitted without them."""
     curves = load(data / "amplicon_primer_mix.rdml")
     base = _baseline(run(curves)).assign(tubes="amc", truth_se=0.0)
+    if offset is not None:
+        base = calibrate(base, {"amc": offset})
     x = propagate(base, {"amc": components})
     return {
         "cases": int(len(x)),
@@ -559,8 +746,12 @@ def validate(data: str | Path = DATA, out: str | Path = "results") -> dict:
         "truth_model": model,
         **result,
     }
+    amc = summary["v2_coverage"]["components"]["amc"]
     summary["v2_coverage"]["first_round_cases_nominal_truth"] = first_round_coverage(
-        Path(data), summary["v2_coverage"]["components"]["amc"]
+        Path(data), amc
+    )
+    summary["efficiency_calibration"]["first_round_cases_nominal_truth"] = first_round_coverage(
+        Path(data), amc, summary["efficiency_calibration"]["offsets"]["amc"]
     )
     out = Path(out)
     t.round(6).to_csv(out / "validation_dpcr.csv", index=False)
@@ -606,6 +797,21 @@ def summary_lines(first: dict, second: dict, null: dict) -> list[str]:
         f"{_pct(c['passing_dilution_qc']['propagated_ci_with_truth_se'])}; round-1 cases "
         f"{_pct(c['first_round_cases_nominal_truth']['propagated_ci'])})",
     ]
+    cal = second["efficiency_calibration"]
+    before, after = cal["uncalibrated"], cal["all"]
+    lines += [
+        f"  V2 calib {word[cal['pass']]}  same rule, assay-mean efficiency calibrated on held-out "
+        f"dPCR plates: {_pct(after['propagated_ci_with_truth_se'])} (uncalibrated "
+        f"{_pct(before['propagated_ci_with_truth_se'])}); median half-width "
+        f"{before['median_half_width_new']:.3f} -> {after['median_half_width_new']:.3f} log2",
+        "           offsets, log2 per cycle: "
+        + ", ".join(f"{g} {v['delta_log2e']:+.4f}" for g, v in cal["offsets"].items()),
+    ]
+    for machine, v in cal["bias_by_machine"].items():
+        lines.append(
+            f"           {machine:27s} median |error| {v['uncalibrated']['median_abs_error_log2']:.3f} "
+            f"-> {v['calibrated']['median_abs_error_log2']:.3f} log2 over {v['calibrated']['cases']} cases"
+        )
     rs = null["random_splits"]
     lines.append(
         f"  V4 null  {word[null['pass']['overall']]}  {null['pass']['rule']}: cells calling "

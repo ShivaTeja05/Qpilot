@@ -89,7 +89,7 @@ That gives 197 comparisons on 5 plates and 4 machines: two LightCycler 480s, a Q
 |---|---|
 | Baseline efficiency: median \|error\| ≤ 0.15 log2 on ≥ 2 machines | **Pass by the letter.** LC480 AMC 0.12 (dPCR truth) and StepOne 0.09 (pipetted truth, 4 cases). Fails on LC480 DKFZ 0.22 (dPCR) and QuantStudio 0.21 (pipetted). |
 | Spread across analyses warns of error: Spearman ≥ 0.3 within each input level | **Pass**, 0.33–0.68. Among assays that pass the dilution QC it is 0.02–0.55, so mostly it flags broken assays. |
-| Baseline 95 % interval contains the truth ≥ 90 % | **Fail: 83 %.** This is with efficiency uncertainty and a run effect propagated into the interval. The replicate-only interval covers 66 %. |
+| Baseline 95 % interval contains the truth ≥ 90 % | **Fail: 83 %.** This is with efficiency uncertainty and a run effect propagated into the interval. The replicate-only interval covers 66 %. Calibrating the efficiency on held-out dPCR plates gives 88 %, still a fail. |
 
 | Efficiency choice | Median \|error\| vs dPCR (log2) |
 |---|---|
@@ -137,7 +137,7 @@ With a real difference, the filter does not make small-study calls agree better 
 
 These come from the review and from validation round 2, in priority order:
 
-1. Correct the efficiency bias, for example by calibrating the assay-mean efficiency against a dPCR-measured dilution and testing it on held-out plates. Until then, quote the measured coverage of about 83 %, not 95 %.
+1. Close the coverage gap. An efficiency offset fitted on held-out dPCR plates raises coverage to 88 %, but only by widening the interval: the offset does not transfer between plates, and most of the miss is qPCR–dPCR disagreement on single tubes (addendum in `docs/review/30-validation-round-2.md`). Quote the measured coverage of about 83 %, not 95 %.
 2. Have an outside qPCR scientist sign off every tier, including the result that the standard curve beat the baseline against dPCR on one machine.
 3. Run low-copy no-difference and fragility tests on ds_94_4 and MAQC.
 4. Add Cq method and baseline choices, a Cq-only import, paired tests and ANOVA.

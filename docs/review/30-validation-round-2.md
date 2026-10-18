@@ -115,3 +115,107 @@ The data are 380 wells of 150,000 copies on a CFX384, converted to RDML so that 
 - **Wording.** Say "within 0.15 log2 of dPCR on the AMC LightCycler 480", not "validated on four instruments". The DKFZ LightCycler and the QuantStudio miss the bar, and the QuantStudio and StepOne have only one assay each.
 - **Intervals.** Report propagated intervals and their measured coverage (about 83 %), never a nominal 95 %. The next step is to correct the efficiency bias: for example, calibrate the assay-mean efficiency against a dPCR-measured dilution, and test it on held-out plates.
 - **Spread warning.** Keep "spread is a warning" only as a broken-assay flag.
+
+## Addendum: calibrating the assay-mean efficiency
+
+18 Oct 2026. This tries the next step named above: correct the efficiency bias with a calibration fitted on dPCR-measured dilutions, scored only on held-out plate groups.
+
+**Result: coverage rises from 83.2 % to 87.8 % and still fails the 90 % bar.** The gain comes from a wider interval, not from removing the bias, and the fitted offset does not transfer between plates.
+
+Reproduce it with `qsim validate`. The numbers are under `efficiency_calibration` in `results/validation_dpcr.json`, and per-case `*_calibrated` columns are appended to `validation_dpcr_baseline.csv`. Every round-2 number above is unchanged, and so are the option tiers.
+
+### Method, fixed before any calibrated number was computed
+
+- **Model.** One per-cycle offset δ on the LinRegPCR assay mean: log2 E_cal = log2 E + δ. This moves each baseline estimate by −ΔCq·δ.
+- **One δ per series.** Each dPCR-measured dilution series (one run, assay and template, either genomic DNA or the amplicon standard) gives its own δ: the least-squares slope through the origin of error on ΔCq.
+- **Held out.** The offset for a plate group is the median δ over the *other* groups' dPCR series (leave-one-group-out over amc / dkfz / volume). Its SE (the median's, from the MAD) joins the efficiency term. The run effect is the round-2 one.
+- **Pass rule.** The round-2 rule, unchanged.
+
+The fitted offsets, in log2 per cycle:
+
+| Group | Offset | SE | Fitted on | Efficiency change |
+|---|---|---|---|---|
+| AMC | +0.0285 | 0.027 | 8 DKFZ series | +2.0 % per cycle |
+| DKFZ | +0.0135 | 0.013 | 38 AMC series | +0.9 % per cycle |
+| Instrument comparison | +0.0138 | 0.012 | 46 AMC and DKFZ series | +1.0 % per cycle |
+
+### Results against round 2
+
+| Measure | Uncalibrated (round 2) | Calibrated |
+|---|---|---|
+| Coverage, all 197 cases | 83.2 % | **87.8 %** |
+| AMC (152) / DKFZ (32) / instrument comparison (13) | 81.6 / 87.5 / 92.3 % | 87.5 / 87.5 / 92.3 % |
+| Assays passing the dilution QC (177) | 88.1 % | 92.1 % |
+| AMC 20→0.7 ng (38) | 65.8 % | 81.6 % |
+| Round 1's 188 nominal cases | 80.9 % | 85.1 % |
+| Median half-width, log2 | 0.251 | 0.293 |
+
+Median \|error\| of the baseline, by machine (log2):
+
+| Machine | Cases | Uncalibrated | Calibrated |
+|---|---|---|---|
+| LightCycler 480 AMC (AMC plate + Feb 2024 plate) | 157 | 0.121 | 0.130 |
+| LightCycler 480 DKFZ | 32 | 0.218 | 0.191 |
+| QuantStudio 6 Flex | 4 | 0.205 | 0.233 |
+| StepOne | 4 | 0.087 | 0.113 |
+
+The same two machines are within 0.15 before and after.
+
+### Why it fails
+
+1. **The gain is variance, not bias.** With the same offsets but their SE left out, coverage is 83.2 %, exactly the uncalibrated figure. The AMC offset comes from 8 DKFZ series that fall into two clusters (genomic −0.011, amplicon +0.074 per cycle). So its SE is large and widens AMC intervals at wide steps. Median \|error\| gets worse on 3 of 4 machines.
+2. **The offset is not a LinRegPCR property that transfers.** Fitted on each plate's own truth (descriptive only, not used for scoring), the median offset per series is:
+
+   | Series | Offset (log2 per cycle) | Series count | MAD |
+   |---|---|---|---|
+   | AMC genomic | +0.014 | 38 | 0.065 |
+   | DKFZ genomic | −0.011 | 4 | |
+   | DKFZ amplicon | +0.074 | 4 | |
+   | Feb 2024 LC480 | +0.008 | 1 | |
+   | QuantStudio | −0.076 | 1 | |
+   | StepOne | −0.038 | 1 | |
+
+   The sign flips between the two LightCyclers on the same tubes, and between templates within the same run.
+3. **The AMC wide-step bias is mostly not an efficiency error.** An efficiency error biases each step in proportion to its ΔCq.
+   - The 7→2 and 2→0.7 ng steps have similar ΔCq (1.9 and 1.6 cycles), so their errors should differ by about 0.007 log2.
+   - In the median AMC run, the 2→0.7 step reads 0.099 log2 higher than the 7→2 step (31 of 38 runs, sign test p = 0.0001). All 4 DKFZ assays point the same way (median +0.46).
+   - So qPCR and dPCR disagree on the 2 ng tube on both LightCyclers. That is a per-tube discrepancy, like the EMBL one.
+   - A per-cycle correction that fixes AMC 20→0.7 (bias −0.113 → +0.028) spoils 2→0.7 (+0.013 → +0.059).
+
+### Variants (all in the JSON; none counts for the pass)
+
+| Variant | AMC offset | Coverage |
+|---|---|---|
+| Primary, pre-registered | +0.0285 (8 series) | 87.8 % |
+| Truth-disjoint: no training pair uses a tube the scored group is scored on | +0.0741 (4 amplicon series). DKFZ has no series left and stays uncalibrated. | 80.2 % |
+| Nominal-truth plates also used in training | +0.0080 (11) | 87.3 % |
+| Genomic DNA only | −0.0112 (4) | 82.2 % |
+| In sample: one offset from every group, own truth included | +0.0138 (46) | 86.3 % |
+| Diagnostic: primary offsets with their SE left out | +0.0285 | 83.2 % |
+
+- **The primary leaks truth.** AMC and DKFZ are scored against the same dPCR ratios (same tubes), so the DKFZ genomic series that calibrate AMC carry the error of AMC's own truth, and the reverse. The truth-disjoint variant removes that leak. It is the cleanest test, and it does worst: the only dPCR series left for AMC are the amplicon standard's, and they overcorrect (AMC bias +0.09, median \|error\| 0.155).
+- **Even the in-sample fit stays at 86.3 %.** It sees every plate's own truth, so no single per-cycle offset closes the gap.
+
+**Decided after seeing results:**
+- The diagnostic variant (SE left out) and the step-pattern sign test in point 3 were added after the primary result, to explain it.
+- The per-series table in point 2 uses each plate's own truth and is descriptive only.
+- Nothing in the primary method was changed.
+
+### Should the calibrated efficiency become an option?
+
+This decision goes to the outside reviewer (item 8.5), and tiers are unchanged.
+
+- **For.** It removes most of the AMC wide-step bias. A lab that runs its own dPCR-measured standard on the same instrument and template could fit δ for itself, and these data cannot test that design.
+- **Against.**
+  - The offset changes sign across plates and templates.
+  - Median \|error\| worsens on 3 of 4 machines.
+  - The whole coverage gain is the offset's own SE.
+  - The cleanest held-out version lowers coverage.
+
+My recommendation is to keep it as a validation variant and not add it as an analysis option.
+
+### What this changes
+
+- **Coverage to quote.** Keep quoting the uncalibrated coverage, about 83 %.
+- **How to describe the gap.** It is qPCR–dPCR disagreement on single tubes (2 ng, EMBL) plus run-to-run efficiency scatter, not a LinRegPCR efficiency bias.
+- **Possible next step.** A per-tube discrepancy term on the truth side, estimated only from the other plate that shares the tubes. Being estimated from the other plate means its qPCR, not its truth. It would need its own pre-registration.

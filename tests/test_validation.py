@@ -50,15 +50,17 @@ def test_dpcr_pair_rules(dpcr):
     assert len(amp.assays) == 4 and 3.0 < amp.log2 < 3.4
 
 
-def _curves(efficiency: float = 1.9) -> pd.DataFrame:
-    """An ideal plate: N0 = amount, E fixed, triplicates with tiny Cq noise."""
+def _curves(efficiency: float = 1.9, estimated: float | None = None) -> pd.DataFrame:
+    """An ideal plate: N0 = amount, E fixed, triplicates with tiny Cq noise. ``estimated`` is the
+    efficiency LinRegPCR reports, and computes N0 with, when it is not the true one."""
+    est = efficiency if estimated is None else estimated
     rng = np.random.default_rng(1)
     rows = []
     for target in ("a", "b"):
         for sample, amount in (("hi", 8.0), ("mid", 4.0), ("lo", 1.0)):
             for i in range(3):
                 cq = 30 - np.log(amount) / np.log(efficiency) + rng.normal(0, 0.02)
-                n0 = efficiency ** (30 - cq)  # threshold of 1 unit at Cq 30 for one copy
+                n0 = efficiency**30 / est**cq  # one copy reaches the threshold at Cq 30
                 rows.append(
                     {
                         "run_id": "r",
@@ -69,9 +71,9 @@ def _curves(efficiency: float = 1.9) -> pd.DataFrame:
                         "series": "dilution",
                         "cq": cq,
                         "n0": n0,
-                        "eff_target": efficiency,
+                        "eff_target": est,
                         "eff_target_sd": 0.02,
-                        "eff_indiv": efficiency,
+                        "eff_indiv": est,
                         "flagged": False,
                     }
                 )
@@ -122,6 +124,52 @@ def test_run_effect_recovers_a_level_sd():
     assert est["sd_log2e_run"] < 0.03
 
 
+def test_efficiency_offset_corrects_a_low_efficiency():
+    c = _curves(1.9, estimated=1.85)  # LinRegPCR reads the efficiency 2.6 % low
+    pairs = [("hi", "mid"), ("mid", "lo"), ("hi", "lo")]
+    base = known_answers._baseline(run(c, pairs)).assign(
+        plate="p", tubes="g", truth_kind="dPCR", truth_se=0.0
+    )
+    assert (base["error_log2"] < -0.03).all()  # every estimate reads low, more at wide steps
+    offsets = known_answers.series_offsets(base)
+    assert len(offsets) == 2  # one series per assay
+    assert offsets["delta_log2e"].to_numpy() == pytest.approx(np.log2(1.9 / 1.85), abs=0.005)
+    pooled = known_answers.efficiency_offset(offsets)
+    fixed = known_answers.calibrate(base, {"g": pooled})
+    assert fixed["error_log2"].abs().max() < 0.02
+    assert (fixed["se_log2e"] >= base["se_log2e"]).all()  # the offset's SE is propagated
+    # no training series: no correction
+    none = known_answers.efficiency_offset(known_answers.series_offsets(base.iloc[:0]))
+    assert none == {"delta_log2e": 0.0, "se_delta_log2e": 0.0, "series": 0}
+
+
+def test_calibration_training_holds_out_the_scored_group_and_its_truth():
+    rows = [
+        ("amc", "dPCR", "g20", "g7", "20 vs 7 ng"),
+        ("dkfz", "dPCR", "g20", "g7", "20 vs 7 ng"),
+        ("dkfz", "dPCR", "embl", "g20", "EMBL 20 vs 20 ng"),
+        ("dkfz", "dPCR", "a4", "a3", "1e4 vs 1e3 copies"),
+        ("volume", "nominal", "v4", "v2", "4 vs 2 ng/µl"),
+    ]
+    base = pd.DataFrame(rows, columns=["tubes", "truth_kind", "hi", "lo", "pair"]).assign(
+        truth_log2=1.0
+    )
+
+    def picked(**how) -> list[tuple[str, str]]:
+        t = known_answers.calibration_training(base, "amc", **how)
+        return list(zip(t["tubes"], t["hi"], strict=True))
+
+    assert picked() == [("dkfz", "g20"), ("dkfz", "embl"), ("dkfz", "a4")]
+    # the DKFZ genomic pairs use the tubes AMC is scored against, so they share its truth
+    assert picked(disjoint=True) == [("dkfz", "a4")]
+    assert picked(kinds=("dPCR", "nominal"), templates=("genomic",)) == [
+        ("dkfz", "g20"),
+        ("dkfz", "embl"),
+        ("volume", "v4"),
+    ]
+    assert ("amc", "g20") in picked(held_out=False)
+
+
 def test_ds380_conversion_and_null_cells():
     wells = nodiff.load()
     assert len(wells) == 380 and wells["cq"].between(15, 21).all()
@@ -142,4 +190,16 @@ def test_known_answer_round_end_to_end(tmp_path):
     # coverage of the propagated interval never falls below the replicate-only interval
     cov = result["v2_coverage"]["all"]
     assert cov["propagated_ci"] >= cov["old_welch_ci"]
+    # the calibration is scored only on groups it was not fitted on; round 2 is kept as it was
+    cal = result["efficiency_calibration"]
+    assert cal["uncalibrated"] == cov
+    assert set(cal["offsets"]) == set(comp)
+    assert cal["offsets"]["amc"]["series"] == 8  # the DKFZ plate's dPCR-measured series only
+    inside = cal["variants"]["in_sample"]["offsets"]
+    assert len({v["delta_log2e"] for v in inside.values()}) == 1
+    assert set(result["v2_coverage"]["other_estimators"]) == {
+        "robust_in_sample",
+        "plain_leave_one_group_out",
+        "plain_in_sample",
+    }
     assert (tmp_path / "validation_dpcr.json").exists()
