@@ -13,6 +13,8 @@ dist/
 # Data: the demo dataset is fetched at runtime and never committed
 *.rdml
 !tests/fixtures/*.rdml
+# The Decision Simulator's validation plates are small public files, committed with provenance.
+!sim/data/**/*.rdml
 .cache/
 *.tmp
 
