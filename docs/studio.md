@@ -15,6 +15,16 @@ qpilot studio demo --check   # the whole walk-through below, scripted, no browse
 The line under the title says which model Studio uses: **none** (the rules propose alone),
 **local** (sample names go only to that local endpoint, as quoted data), or **REMOTE — names
 pseudonymised** (sample names are replaced by pseudonyms before anything leaves the computer).
+It also says whether that model answers. Studio asks it a one-token question at most once a
+minute, in the background, so the page never waits on a model that does not answer (at most
+2 seconds, the first time). Until the first answer the line says **checking whether it
+answers**. A model that is configured but does not answer is shown as **configured but not
+answering**, with the reason (for example, the endpoint refused the connection, or HTTP 404:
+is the model pulled?). Each Propose still tries it, then the rules propose alone, and the
+report says why. A model whose configuration is wrong (an unknown provider, a missing
+endpoint, a remote endpoint without `QPILOT_MODEL_PROVIDER`) shows **none**, with what is
+wrong. If the Design Interpreter itself fails, the rules' proposals are still stored, with a
+note.
 
 ## The page
 
@@ -32,8 +42,10 @@ pseudonymised** (sample names are replaced by pseudonyms before anything leaves 
   3. **Engine check**: *consistent* (nothing refutes it; a check can refute, never prove),
      *contradicted* (accepting needs a reason) or *cannot check*, with the rules and their numbers;
   4. **Consequence**: hidden in the blind stages except "this matters for at least one
-     conclusion; decide on the evidence" (or ask "Does this matter?", answered yes or no); shown
-     in full in the round trip;
+     conclusion; decide on the evidence" (or ask "Does this matter?", answered yes or no: the
+     engine builds each reading the way accepting it would, from your accepted decisions with
+     this one in place of any earlier decision on the same item); shown in full in the round
+     trip;
   5. **Level**: an ordinal level with its reasons, never a percentage;
   6. **Actions**: Accept, Edit (change the fields, then accept; the edit is checked again), or
      Reject with a reason. A footer says who made the proposal (a rule, a model with its name and
@@ -75,6 +87,24 @@ differs); see also [studio-measured.md](studio-measured.md).
    it (with the reason) re-runs the analysis: the page then shows only the new analysis (ODC1
    3.3×) and the Choices stage opens again for it.
 
+### Several exclusions at once
+
+Each exclusion's consequence is computed by the engine on top of the exclusions you have already
+accepted since the export, and records that basis (the analysis, its decision chain, and the
+accepted exclusions). When Prism sends back more than one exclusion, every question also shows
+what **all the exclusions found in this round trip do together**. One at a time, each may change
+nothing, while together they change a call. On the demo, clearing NM23A's units 1824, 1936,
+2530 and 2784 gives four questions that each change no conclusion. Every card then says that
+together they change NM23A's conclusion, and the round-trip note gives the count for all of
+them.
+
+When you accept one, Studio reads the same sent-back folder again and replaces the other
+pending questions with fresh ones, computed on top of the one you accepted. A question whose
+basis no longer matches and could not be recomputed (the sent-back folder has moved, say), or
+whose exported analysis has had its decisions changed since, says **Out of date** on its card,
+shows none of its numbers, and cannot be accepted until you read what Prism sent back again
+(**Round trip**). So the numbers you read are the ones accepting gives.
+
 ## What keeps it honest
 
 * **Only your click decides.** Every accept, edit, reject, decision, Prism bundle and Prism launch
@@ -102,3 +132,7 @@ differs); see also [studio-measured.md](studio-measured.md).
   pending request on a card.
 * The curve plot is the curve as the Curve Judge reads it (each curve divided by its minimum,
   cycles 1–40), not the instrument's raw fluorescence.
+* The Curve Judge cannot score a curve whose minimum over cycles 1–40 is not a positive number
+  (a baseline-subtracted or offset export). Such a well has no Curve Judge call at all: it is
+  never shown or proposed as "not amplified", and the curves report counts these wells
+  ("LinRegPCR alone there").

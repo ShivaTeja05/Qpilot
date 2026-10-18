@@ -179,6 +179,7 @@ STUDIO_CSS = """
 .qs-pre { max-height: 16rem; overflow: auto; font-size: .72rem; white-space: pre-wrap;
   word-break: break-word; }
 .qs-matters { font-weight: 600; }
+.qs-stale { border-left: 3px solid #c0392b; padding-left: .5rem; }
 .qs-footer { font-size: .78rem; opacity: .85; margin-top: .4rem; padding-top: .3rem;
   border-top: 1px dashed rgba(127,127,127,.35); }
 .qs-list { font-size: .85rem; max-height: 22rem; overflow: auto; }
@@ -425,6 +426,7 @@ def build_app(
                 p = shown[i]
                 changed = i >= len(old) or old[i] != p.id
                 matters = matters_of(p, asked.get(p.id))
+                stale = studio.stale_consequence(sid, p) if visible else None
                 out[slot.box] = gr.update(visible=True)
                 out[slot.html] = card_html(
                     p,
@@ -433,6 +435,7 @@ def build_app(
                     results_visible=visible,
                     matters=matters,
                     last_payload=last,
+                    stale=stale,
                 )
                 out[slot.accept] = gr.update(
                     value="Accept: exclude this value"
@@ -947,6 +950,14 @@ def build_app(
             "Round trip inbox."
         )
         notes = [str(n) for n in report.get("notes", [])]
+        combined = report.get("combined_consequence") or {}
+        if len(combined.get("exclusions") or []) > 1:
+            changed = combined.get("changed_genes") or []
+            notes.append(
+                f"All {len(combined['exclusions'])} exclusions together change "
+                f"{len(changed)} of {combined.get('n_genes', '?')} conclusions"
+                + (f" ({', '.join(map(str, changed))})." if changed else ".")
+            )
         return render({**session, "stage": None, "page": 0}, " ".join([note, *notes]))
 
     def allowed_folder(text: str) -> Path:

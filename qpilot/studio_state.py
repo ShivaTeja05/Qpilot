@@ -428,8 +428,12 @@ def why_html(
     return f'<ul class="qs-evidence">{"".join(items)}</ul>'
 
 
-def check_html(proposal: Proposal) -> str:
-    """Part 3: consistent / contradicted / cannot check, its rule ids and its details."""
+def check_html(proposal: Proposal, *, details: bool = True) -> str:
+    """Part 3: consistent / contradicted / cannot check, its rule ids and its details.
+
+    ``details=False`` leaves the check's numbers out (a round-trip consequence that is out of
+    date carries them too).
+    """
     check = proposal.check
     status = check.status
     badge = f'<span class="qs-check {esc(status)}">{esc(CHECK_WORDS.get(status, status))}</span>'
@@ -439,7 +443,7 @@ def check_html(proposal: Proposal) -> str:
     if check.rule_ids:
         rules = ", ".join(f"<code>{esc(r)}</code>" for r in check.rule_ids)
         parts.append(f"<p>Rules: {rules}</p>")
-    if check.details:
+    if check.details and details:
         parts.append(kv_table(details_rows(check.details)))
     return "".join(parts)
 
@@ -452,9 +456,17 @@ def matters_of(proposal: Proposal, asked: bool | None = None) -> bool | None:
 
 
 def consequence_html(
-    proposal: Proposal, *, results_visible: bool, matters: bool | None = None
+    proposal: Proposal,
+    *,
+    results_visible: bool,
+    matters: bool | None = None,
+    stale: str | None = None,
 ) -> str:
-    """Part 4: during the blind stages only the boolean; the full consequence in the round trip."""
+    """Part 4: during the blind stages only the boolean; the full consequence in the round trip.
+
+    ``stale`` (from :meth:`qpilot.studio_service.Studio.stale_consequence`) says why a
+    round-trip consequence no longer holds: then no number of it is shown, only that.
+    """
     if is_blind_kind(proposal):
         matters = matters_of(proposal, matters)
         if matters is True:
@@ -474,6 +486,11 @@ def consequence_html(
         )
     c = proposal.consequence
     if proposal.kind == "prism.exclusion_reason" and "fc_before" in c:
+        if stale:
+            return (
+                f'<p class="qs-stale"><b>Out of date</b>: {esc(stale)}. Its numbers are not '
+                "shown, and accepting it is refused until they are computed again.</p>"
+            )
         return _exclusion_consequence(c)
     if proposal.kind == "prism.value_edit":
         rows = [
@@ -484,21 +501,31 @@ def consequence_html(
     return kv_table(details_rows(c))
 
 
+def _fold(value: Any) -> str:
+    return f"{value:.3f}×" if isinstance(value, int | float) else esc(value)
+
+
+def _p(value: Any) -> str:
+    return f"{value:.2g}" if isinstance(value, int | float) else esc(value)
+
+
+def _changed(c: Mapping[str, Any]) -> int:
+    try:
+        return int(c.get("n_conclusions_changed", 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def _exclusion_consequence(c: Mapping[str, Any]) -> str:
-    def fold(value: Any) -> str:
-        return f"{value:.3f}×" if isinstance(value, int | float) else esc(value)
-
-    def p(value: Any) -> str:
-        return f"{value:.2g}" if isinstance(value, int | float) else esc(value)
-
+    """One exclusion's consequence and, with several, what all of them do together."""
     gene = esc(c.get("gene", ""))
-    changed = int(c.get("n_conclusions_changed", 0))
+    changed = _changed(c)
     n_genes = c.get("n_genes", "?")
     before = esc(conclusion_word(str(c.get("conclusion_before"))))
     after = esc(conclusion_word(str(c.get("conclusion_after"))))
     rows = [
-        (f"fold change of {gene}", f"{fold(c.get('fc_before'))} → {fold(c.get('fc_after'))}"),
-        ("p-value", f"{p(c.get('p_before'))} → {p(c.get('p_after'))}"),
+        (f"fold change of {gene}", f"{_fold(c.get('fc_before'))} → {_fold(c.get('fc_after'))}"),
+        ("p-value", f"{_p(c.get('p_before'))} → {_p(c.get('p_after'))}"),
         (f"conclusion for {gene}", f"{before} → {after}"),
         (
             "biological units (per group)",
@@ -514,7 +541,49 @@ def _exclusion_consequence(c: Mapping[str, Any]) -> str:
         if changed
         else f"<p>Excluding it changes no conclusion ({changed} of {esc(n_genes)}).</p>"
     )
+    together = c.get("with_all_pending")
+    if isinstance(together, Mapping):
+        head += _together(gene, n_genes, changed, together)
     return head + kv_table(rows)
+
+
+def _together(gene: str, n_genes: Any, alone: int, w: Mapping[str, Any]) -> str:
+    """What every exclusion found in the round trip does together (``with_all_pending``)."""
+    raw_n, of = str(w.get("n_exclusions", "?")), str(n_genes)
+    changed = _changed(w)
+    if changed and not alone:
+        words = (
+            "On its own it changes no conclusion, but together with the other exclusions found "
+            f"in this round trip ({raw_n} in all) {changed} of {of} conclusions change."
+        )
+    elif changed:
+        words = (
+            f"Together with the other exclusions found in this round trip ({raw_n} in all), "
+            f"{changed} of {of} conclusions change."
+        )
+    else:
+        words = (
+            f"Together with the other exclusions found in this round trip ({raw_n} in all), no "
+            f"conclusion changes (0 of {of})."
+        )
+    n = esc(raw_n)
+    before = esc(conclusion_word(str(w.get("conclusion_before"))))
+    after = esc(conclusion_word(str(w.get("conclusion_after"))))
+    rows = [
+        (
+            f"fold change of {gene}, all {n} together",
+            f"{_fold(w.get('fc_before'))} → {_fold(w.get('fc_after'))}",
+        ),
+        (f"conclusion for {gene}, all {n} together", f"{before} → {after}"),
+        (f"conclusions that change, all {n} together", f"{changed} of {esc(n_genes)}"),
+    ]
+    genes = w.get("changed_genes") or []
+    if genes:
+        rows.append(
+            (f"genes whose conclusion changes, all {n} together", esc(", ".join(map(str, genes))))
+        )
+    css = " class='qs-matters'" if changed else ""
+    return f"<p{css}>{esc(words)}</p>" + kv_table(rows, "qs-kv qs-together")
 
 
 def level_html(proposal: Proposal) -> str:
@@ -631,8 +700,13 @@ def card_html(
     results_visible: bool = False,
     matters: bool | None = None,
     last_payload: Mapping[str, Any] | None = None,
+    stale: str | None = None,
 ) -> str:
-    """One proposal card with the six fixed parts and its footer (escaped HTML)."""
+    """One proposal card with the six fixed parts and its footer (escaped HTML).
+
+    ``stale`` says why a round-trip consequence no longer holds; the card then shows none of
+    its numbers (neither in the consequence nor in the check's details).
+    """
     p = proposal
     what = [f'<p class="qs-what">{esc(describe(p))}</p>']
     question = p.payload.get("question")
@@ -653,11 +727,11 @@ def card_html(
         f'<div class="qs-card check-{esc(p.check.status)}" data-proposal="{esc(p.id)}">'
         + _part(1, "Proposal", "".join(what))
         + _part(2, "Why", why_html(p, quarantine or {}, sheet_cells or {}))
-        + _part(3, "Engine check", check_html(p))
+        + _part(3, "Engine check", check_html(p, details=not stale))
         + _part(
             4,
             "Consequence",
-            consequence_html(p, results_visible=results_visible, matters=matters),
+            consequence_html(p, results_visible=results_visible, matters=matters, stale=stale),
         )
         + _part(5, "Level", level_html(p))
         + _part(6, "Actions", actions_html(p))
@@ -777,26 +851,48 @@ def confirm_html(confirm: Proposal, covered: Sequence[Proposal]) -> str:
 
 
 def model_line_html(status: Mapping[str, Any]) -> str:
-    """The model status line: which model, and whether anything leaves this computer."""
+    """The model status line: which model, whether it answers, and whether anything leaves.
+
+    A configured model that does not answer is shown as exactly that, with the reason: each
+    Propose still tries it (and waits for it) before the rules answer alone, so "no model" would
+    be wrong. A misconfigured one says what is wrong; while the first answer is not known yet,
+    the line says it is checking.
+    """
     provider = str(status.get("provider", "none"))
     model = status.get("model")
-    if provider in ("none", "mock") or not status.get("available", False):
+    reason = str(status.get("reason") or "")
+    configured = bool(status.get("configured", status.get("available", False)))
+    if provider == "mock" or not configured:
+        if status.get("misconfigured") and reason:
+            return (
+                '<p class="qs-model"><span class="qp-dot off"></span>Model: none — the configured '
+                f"model cannot be used: {esc(reason)}. The rules propose alone; no model is "
+                "called.</p>"
+            )
         return (
             '<p class="qs-model"><span class="qp-dot"></span>Model: none — the rules propose '
             "alone; no model is called.</p>"
         )
     who = esc(provider + (f" · {model}" if model else ""))
     if status.get("local", True):
-        where = (
-            '<span class="qp-dot on"></span>local — sample names go only to this local '
-            "endpoint, as quoted data"
-        )
+        where = "local — sample names go only to this local endpoint, as quoted data"
     else:
         where = (
-            '<span class="qp-dot off"></span><b>REMOTE — names pseudonymised</b>: sample names '
-            "are replaced by pseudonyms before anything leaves this computer"
+            "<b>REMOTE — names pseudonymised</b>: sample names are replaced by pseudonyms before "
+            "anything leaves this computer"
         )
-    return f'<p class="qs-model">Model: {who} · {where}</p>'
+    if status.get("available", False):
+        dot = "on" if status.get("local", True) else "off"
+        return f'<p class="qs-model">Model: {who} · <span class="qp-dot {dot}"></span>{where}</p>'
+    if status.get("answers") is None:
+        state = '<span class="qp-dot"></span>checking whether it answers'
+    else:
+        state = (
+            '<span class="qp-dot off"></span><b>configured but not answering: '
+            f"{esc(reason or 'no reason given')}</b> (each Propose still tries it, then the rules "
+            "propose alone)"
+        )
+    return f'<p class="qs-model">Model: {who} · {state} · {where}</p>'
 
 
 def file_html(name: str, summary: InspectSummary, sheet: bool) -> str:

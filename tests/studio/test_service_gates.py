@@ -11,17 +11,25 @@ person in the dashboard and an agent over MCP share one study store, and pins on
 - the study analysed is exactly the design the blind gate checked;
 - an agent's pending request on a Decision Card never re-opens a confirmed Choices stage;
 - a down local model is reported as such, with the reason, and a partial answer as partial;
-- a file the Curve Judge cannot read leaves LinRegPCR alone instead of failing every target.
+- a model that hangs never stalls the page; a misconfigured one says what is wrong;
+- a failing Design Interpreter still leaves the rules' proposals in the inbox;
+- "Does this matter?" assembles each reading as accepting it would;
+- a file the Curve Judge cannot read leaves LinRegPCR alone instead of failing every target;
+- a curve the Curve Judge cannot score is never shown or proposed as "not amplified".
 """
 
 from __future__ import annotations
 
+import re
+import threading
+import time
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from qpilot import studio_service
 from qpilot.ai.client import ModelClient, ModelUnavailable, NoneBackend
 from qpilot.core import proposals as proposals_module
 from qpilot.core.proposals import ProposalStore
@@ -29,8 +37,10 @@ from qpilot.core.store import StudyStore
 from qpilot.mcp_server import QpilotTools
 from qpilot.qpcr import curve_judge, design_checks
 from qpilot.qpcr import inspect as qinspect
+from qpilot.qpcr.designs import design_curves
 from qpilot.schemas_studio import DesignField, MadeBy, Proposal
-from qpilot.studio_service import Studio, StudioError
+from qpilot.studio_service import CURVE_JUDGE_FILE, Studio, StudioError
+from qpilot.studio_state import model_line_html
 from tests.fixtures.studio.studio_mini import INJECTION, write_studio_mini
 
 GROUPS = {"WT_1": "WT", "WT_2": "WT", "KO_1": "KO", "KO_2": "KO"}
@@ -512,3 +522,213 @@ def test_the_curve_judge_is_validated_only_for_the_file_it_passed_on(env):
     out = env.studio.curve_calls(sid, "GAPDH")
     assert "learned" not in out["rules"]
     assert out["curve_judge"] == curve_judge.NOT_VALIDATED
+
+
+# ---- c27: a curve the Curve Judge cannot score is no call, never "not amplified" -----------
+
+
+def _below_zero(path: Path, run: str) -> Path:
+    """The mini file with every curve of one run shifted below zero (an offset export)."""
+    with zipfile.ZipFile(path) as archive:
+        xml = archive.read("rdml_data.xml").decode("utf-8")
+    start = xml.index(f'<run id="{run}">')
+    end = xml.index("</run>", start)
+    shifted = re.sub(
+        r"<fluor>([-0-9.]+)</fluor>",
+        lambda m: f"<fluor>{float(m.group(1)) - 2.0:.4f}</fluor>",
+        xml[start:end],
+    )
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("rdml_data.xml", xml[:start] + shifted + xml[end:])
+    return path
+
+
+def test_a_curve_the_curve_judge_cannot_score_is_never_not_amplified(env, monkeypatch):
+    rdml = _below_zero(write_studio_mini(env.root / "offset.rdml"), "GAPDH_plate")
+    calls = curve_judge.predict_calls(rdml, None)  # the real model on the real curves
+    unscored = {k for k, v in calls.items() if v is None}
+    assert unscored and all(k.startswith("GAPDH_plate/") for k in unscored)
+    monkeypatch.setattr(curve_judge, "validated", lambda rdml_path=None: True)
+    monkeypatch.setattr(curve_judge, "status", lambda rdml_path=None: "validated")
+    sid = env.studio.open(rdml)
+    # a cache written before unscored curves had no call held False for each of them
+    old = {"key": f"{curve_judge.MODEL_SHA256}:None", "calls": dict.fromkeys(calls.index, False)}
+    (env.store.find_session(sid) / CURVE_JUDGE_FILE).write_text(studio_service.dump_json(old))
+    gapdh = env.studio.curve_calls(sid, "GAPDH")
+    assert gapdh["curve_judge"] == "validated" and gapdh["wells"]
+    assert not [w for w in gapdh["wells"] if "learned" in w["calls"]]
+    assert all("learned" in w["calls"] for w in env.studio.curve_calls(sid, "1-Mar")["wells"])
+    _design_ready(env, sid)
+    _confirm(env, sid, "design")
+    report = env.studio.propose_curves(sid)
+    proposed = env.studio.inbox(sid, "curves", "proposed")
+    assert not [p for p in proposed if p.subject.startswith("GAPDH_plate/")]
+    assert any("cannot score" in n and "LinRegPCR alone there" in n for n in report["notes"])
+
+
+# ---- R12: "Does this matter?" assembles each reading as accepting it would -----------------
+
+
+def _declared(path: Path, sample: str, role: str) -> Path:
+    """The mini file with one sample declared as ``role`` instead of a study sample."""
+    with zipfile.ZipFile(path) as archive:
+        xml = archive.read("rdml_data.xml").decode("utf-8")
+    old = f'<sample id="{sample}"><type>unkn</type>'
+    assert old in xml
+    xml = xml.replace(old, f'<sample id="{sample}"><type>{role}</type>')
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("rdml_data.xml", xml)
+    return path
+
+
+def _sample_types(studio: Studio, sid: str, design, sample: str) -> dict[str, str]:
+    table = design_curves(studio._curves_table(sid), design)
+    return {sample: ",".join(sorted(set(table[table["sample"] == sample]["sample_type"])))}
+
+
+def test_does_this_matter_assembles_each_reading_from_the_base(env, monkeypatch):
+    rdml = _declared(write_studio_mini(env.root / "std.rdml"), "STD_100", "std")
+    sid = env.studio.open(rdml)
+    env.studio.propose_design(sid)
+    for sample, group in GROUPS.items():
+        env.tools.qpcr_propose(sid, "design.group", sample, {"group": group})
+    for p in env.studio.inbox(sid, "design", "proposed"):
+        if p.kind in ("design.group", "design.target_role"):
+            env.studio.accept(sid, p.id, "human", "checked")
+    env.studio.accept(sid, env.studio.propose_comparison(sid).proposal.id, "human", "checked")
+    # a person made the declared standard a study sample (written well by well) ...
+    unkn = env.tools.qpcr_propose(sid, "design.well_role", "STD_100", {"role": "unkn"})
+    assert env.studio.accept(sid, unkn["proposal"]["id"], "human", "checked").status == "accepted"
+    # ... and a new proposal says it is a standard after all
+    again = env.tools.qpcr_propose(
+        sid, "design.well_role", "STD_100", {"role": "std"}, alternatives=[{"role": "unkn"}]
+    )
+    pending = env.store.proposals(sid).get(again["proposal"]["id"])
+
+    def roles(self, session_id, design):  # stands in for the conclusions: what each reading is
+        return _sample_types(self, session_id, design, "STD_100")
+
+    monkeypatch.setattr(Studio, "_primary_conclusions", roles)
+    assert env.studio.matters(sid, pending) is True  # a standard and a study sample differ
+    env.studio.accept(sid, pending.id, "human", "checked")
+    accepted = env.studio.assemble(sid).design
+    assert _sample_types(env.studio, sid, accepted, "STD_100") == {"STD_100": "std"}
+
+
+# ---- R13, c24: the model status never stalls the page and always says why -----------------
+
+
+class _Hanging:
+    """A local endpoint that takes the request and does not answer until released."""
+
+    name = "openai_compatible"
+    model = "qwen2.5:7b"
+    url = "http://127.0.0.1:11434/v1/chat/completions"
+    timeout = 60.0
+
+    def __init__(self, hold_s: float = 3.0):
+        self.release = threading.Event()
+        self.hold_s = hold_s
+        self.calls: list[int] = []  # shared with any copy of this backend
+
+    def complete(self, system, messages, max_tokens, temperature):
+        self.calls.append(max_tokens)
+        if not self.release.wait(self.hold_s):
+            raise ModelUnavailable("endpoint call failed: ReadTimeout")
+        return "OK"
+
+
+def _eventually(check, timeout_s: float = 5.0) -> bool:
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        if check():
+            return True
+        time.sleep(0.02)
+    return False
+
+
+def test_a_model_that_does_not_answer_never_stalls_the_page(env, monkeypatch):
+    assert studio_service.PING_WAIT_S <= 2.0 and studio_service.PING_TTL_S >= 60.0
+    monkeypatch.setattr(studio_service, "PING_WAIT_S", 0.2)
+    hanging = _Hanging()
+    studio = Studio(env.store, client=ModelClient(backend=hanging))
+    try:
+        started = time.monotonic()
+        status = studio.model_status()
+        assert time.monotonic() - started < 1.0
+        assert status["checking"] and status["answers"] is None and not status["available"]
+        assert "checking whether it answers" in model_line_html(status)
+        started = time.monotonic()
+        assert studio.model_status()["checking"] and time.monotonic() - started < 0.1
+        assert hanging.calls == [1]  # one request out, not one per page render
+        hanging.release.set()
+        assert _eventually(lambda: studio.model_status()["available"])
+        # asked again once the answer is old, in the background: the last answer stands meanwhile
+        hanging.release.clear()
+        monkeypatch.setattr(studio_service, "PING_TTL_S", 0.0)
+        started = time.monotonic()
+        assert studio.model_status()["available"] and time.monotonic() - started < 0.1
+        assert _eventually(lambda: len(hanging.calls) == 2)
+    finally:
+        hanging.release.set()
+
+
+def test_a_down_model_is_shown_as_configured_but_not_answering(env):
+    studio = Studio(env.store, client=ModelClient(backend=_Down()))
+    line = model_line_html(studio.model_status())
+    assert "configured but not answering: endpoint call failed: ConnectError" in line
+    assert "no model is called" not in line
+
+
+def test_the_http_status_of_a_down_model_reaches_the_propose_report(env):
+    studio = Studio(env.store, client=ModelClient(backend=_Down(_NotFound())))
+    assert "HTTP 404" in studio.model_status()["reason"]
+    sid = studio.open(env.rdml)
+    report = studio.propose_design(sid)
+    assert "HTTP 404" in report["model_error"] and "pulled" in report["model_error"]
+    assert any("HTTP 404" in n for n in report["notes"])
+    assert "HTTP 404" in studio.model_status()["reason"]  # a real call keeps the precise reason
+
+
+@pytest.mark.parametrize(
+    ("env_vars", "why"),
+    [
+        ({"QPILOT_MODEL_PROVIDER": "openai_compatible"}, "QPILOT_MODEL_ENDPOINT"),
+        ({"QPILOT_MODEL_ENDPOINT": "https://models.example.org/v1"}, "not on this machine"),
+    ],
+)
+def test_a_misconfigured_model_says_why_on_the_page_and_with_each_propose(
+    env, monkeypatch, env_vars, why
+):
+    for name in ("QPILOT_MODEL_PROVIDER", "QPILOT_MODEL_ENDPOINT"):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in env_vars.items():
+        monkeypatch.setenv(name, value)
+    studio = Studio(env.store)  # Studio's own default client; nothing is called
+    status = studio.model_status()
+    assert status["misconfigured"] and why in status["reason"] and not status["available"]
+    assert why in model_line_html(status) and "cannot be used" in model_line_html(status)
+    sid = studio.open(env.rdml)
+    report = studio.propose_design(sid)
+    assert report["proposed"] and report["fallback"] is True
+    assert why in report["model_error"]
+    assert any(why in n for n in report["notes"])
+
+
+# ---- R15: a failing Design Interpreter never loses the rules' proposals --------------------
+
+
+def test_a_failing_design_interpreter_still_stores_the_rules_proposals(env, monkeypatch):
+    from qpilot.ai import interpret as interpret_module
+
+    def broken(*args, **kwargs):
+        raise TypeError("a bug in the interpreter")
+
+    monkeypatch.setattr(interpret_module, "interpret", broken)
+    sid = env.studio.open(env.rdml)
+    report = env.studio.propose_design(sid)
+    stored = env.studio.inbox(sid, "design", "proposed")
+    assert report["proposed"] and len(stored) == len(report["proposed"])
+    assert all(p.made_by.kind == "rule" for p in stored)
+    assert report["fallback"] is True and "failed (TypeError)" in report["model_error"]
+    assert any("Design Interpreter failed" in n for n in report["notes"])

@@ -25,6 +25,11 @@ ambiguity "matters for at least one conclusion"), but only that boolean leaves t
 through the MCP server; only ``human`` accepts, edits or rejects (refused in code by the
 proposal store, whoever calls this module). Writing a Prism bundle or launching Prism also needs
 ``actor == "human"``.
+
+**Round-trip consequences hold or are refused.** Each exclusion's consequence is computed on top
+of the exclusions a person accepted since the export (its ``basis``) and says what all the
+exclusions found together do. Accepting one recomputes the others at once; a question whose
+basis no longer matches is shown as out of date and cannot be accepted.
 """
 
 from __future__ import annotations
@@ -32,11 +37,13 @@ from __future__ import annotations
 import copy
 import inspect
 import json
+import logging
 import os
 import re
 import subprocess
+import threading
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -67,6 +74,8 @@ from qpilot.schemas_studio import (
     StudyDesign,
 )
 
+log = logging.getLogger(__name__)
+
 STAGES: tuple[str, ...] = ("design", "curves", "choices", "prism", "roundtrip")
 BLIND_STAGES: tuple[str, ...] = ("design", "curves")
 STAGE_KINDS = {
@@ -82,9 +91,20 @@ CURVE_JUDGE_FILE = "curve_judge_calls.json"
 MAX_WELL_PROPOSALS = 400
 PRISM_WAIT_S = 120.0
 PING_TTL_S = 60.0  # how long a model's answer (or silence) to a one-token request is trusted
-PING_TIMEOUT_S = 10.0
+PING_TIMEOUT_S = 10.0  # the one-token request gives up after this (it runs in the background)
+PING_WAIT_S = 2.0  # the longest a caller (a page render) waits for an answer not known yet
 BLANK_DESIGN_ID = "studio_blank"
 CURVE_JUDGE_UNREADABLE = "unable to read this file"
+EXCLUSION_KIND = "prism.exclusion_reason"
+STALE_EXCLUSIONS = (
+    "its consequence was computed before the exclusions accepted since then; read what Prism "
+    "sent back again (Round trip) for numbers that hold"
+)
+STALE_CHOICES = (
+    "its consequence was computed at analysis choices that have changed since; export again "
+    "and send the tables back from the new project"
+)
+STALE_EXPORT = "its consequence belongs to a bundle that was not sent to Prism from this session"
 
 
 class StudioError(ValueError):
@@ -122,6 +142,16 @@ class Assembly:
     curves_hash: str = ""
 
 
+@dataclass
+class _Ping:
+    """What one model configuration last said to a one-token request, and the request out."""
+
+    at: float | None = None  # time.monotonic() of the last answer (or failure); None: none yet
+    answers: bool | None = None
+    reason: str | None = None
+    thread: threading.Thread | None = None
+
+
 def _require_human(actor: str, what: str) -> None:
     if type(actor) is not str or actor != "human":
         raise StudioError(f"only a person can {what}")
@@ -148,7 +178,8 @@ class Studio:
         self.store = store or StudyStore()
         self._client = client
         self._not_configured: str | None = None  # why the configured model could not be built
-        self._answer: tuple[float, bool, str | None] | None = None  # (when, answers, why not)
+        self._pings: dict[tuple[str, str | None, str | None], _Ping] = {}  # per model config
+        self._ping_lock = threading.Lock()
 
     # ---- the model ------------------------------------------------------------------------
 
@@ -163,30 +194,39 @@ class Studio:
             except ImportError:  # an AI layer without the Studio default: environment only
                 self._client = ModelClient.from_env()
             else:
+                backend: Any
                 try:
                     backend = make_backend(studio_config())
-                except ModelUnavailable as err:  # misconfigured: say why, use the rules alone
-                    self._not_configured = str(err)
-                    backend = NoneBackend()
+                except (ModelUnavailable, ValueError) as err:  # misconfigured: say why
+                    self._not_configured = str(err)[:300]
+                    backend = NoneBackend()  # and use the rules alone
                 self._client = ModelClient(backend=backend)
         return self._client
 
     def model_status(self) -> dict[str, Any]:
         """Which model Studio uses, whether it answers, and whether anything leaves this machine.
 
-        ``available`` is True only when a model is configured and answered a one-token request
-        (asked at most once a minute; a real call's outcome counts too). When it is not,
-        ``reason`` says why (not configured, the endpoint refused or timed out, an HTTP error
-        such as a model that is not pulled), so a down local model is never shown as working.
+        ``available`` is True only when a model is configured and answered a one-token request.
+        That request is asked at most once a minute per model configuration, in the background:
+        only the call that asks it first waits, for at most :data:`PING_WAIT_S` seconds; every
+        other call returns the last known answer at once (``answers`` None and ``checking`` True
+        while there is none), so a page render never stalls on an endpoint that does not answer.
+        A real call's outcome counts too. When the model is not available, ``reason`` says why
+        (not configured or misconfigured, the endpoint refused or timed out, an HTTP error such
+        as a model that is not pulled), so a down local model is never shown as working, nor as
+        "no model".
         """
         local = self._local()
         answers, reason = self._answers()
+        configured = bool(self.client.available)
         return {
             "provider": self.client.provider,
             "model": self.client.model,
-            "available": self.client.available and answers,
-            "configured": self.client.available,
+            "available": configured and answers is True,
+            "configured": configured,
             "answers": answers,
+            "checking": configured and answers is None,
+            "misconfigured": self._not_configured is not None,
             "reason": reason,
             "local": local,
             "sample_names": "sent as quoted data"
@@ -194,36 +234,84 @@ class Studio:
             else "replaced by pseudonyms before anything leaves this machine",
         }
 
-    def _local(self) -> bool:
-        """True when nothing the model is sent can leave this machine."""
-        from qpilot.core.pseudonym import endpoint_is_local
-
+    def _endpoint(self) -> str | None:
         backend = self.client.backend
         endpoint = getattr(backend, "url", None) or getattr(
             getattr(backend, "config", None), "endpoint", None
         )
-        provider = self.client.provider
-        return provider in ("none", "mock") or endpoint_is_local(provider, endpoint)
+        return str(endpoint) if endpoint else None
 
-    def _answers(self) -> tuple[bool, str | None]:
-        """Whether the model answers a one-token request, and why not (remembered a minute)."""
+    def _local(self) -> bool:
+        """True when nothing the model is sent can leave this machine."""
+        from qpilot.core.pseudonym import endpoint_is_local
+
+        provider = self.client.provider
+        return provider in ("none", "mock") or endpoint_is_local(provider, self._endpoint())
+
+    def _model_key(self) -> tuple[str, str | None, str | None]:
+        """The model configuration a ping answer belongs to: provider, model, endpoint."""
+        return str(self.client.provider), self.client.model, self._endpoint()
+
+    def _answers(self) -> tuple[bool | None, str | None]:
+        """Whether the model answers a one-token request, and why not (None: not known yet).
+
+        The request runs on a background thread, at most once per :data:`PING_TTL_S` for each
+        model configuration. The last known answer is returned at once; only the call that
+        starts the very first request waits for it, at most :data:`PING_WAIT_S` seconds.
+        """
         client = self.client
         if not client.available:
             return False, self._not_configured or "no model is configured"
         if client.provider == "mock":  # canned replies: nothing to reach, and none to spend
             return True, None
-        now = time.monotonic()
-        if self._answer is None or now - self._answer[0] > PING_TTL_S:
-            probe = copy.copy(client.backend)
-            if hasattr(probe, "timeout"):
-                probe.timeout = min(float(probe.timeout), PING_TIMEOUT_S)
-            try:
-                probe.complete("Reply with OK.", [{"role": "user", "content": "OK?"}], 1, 0.0)
-            except Exception as err:  # any failure means "not answering"; keep why
-                self._answer = (now, False, _why_not(err))
-            else:
-                self._answer = (now, True, None)
-        return self._answer[1], self._answer[2]
+        key = self._model_key()
+        waiting: threading.Thread | None = None
+        with self._ping_lock:
+            ping = self._pings.setdefault(key, _Ping())
+            due = ping.at is None or time.monotonic() - ping.at > PING_TTL_S
+            if due and (ping.thread is None or not ping.thread.is_alive()):
+                ping.thread = threading.Thread(
+                    target=self._ping,
+                    args=(key, client.backend),
+                    name="qpilot-model-ping",
+                    daemon=True,
+                )
+                ping.thread.start()
+                if ping.at is None:  # nothing known yet: the call that asks waits a little
+                    waiting = ping.thread
+        if waiting is not None:
+            waiting.join(PING_WAIT_S)
+        with self._ping_lock:
+            return ping.answers, ping.reason
+
+    def _ping(self, key: tuple[str, str | None, str | None], backend: Any) -> None:
+        """Send the one-token request (on its own thread) and remember the answer."""
+        probe = copy.copy(backend)
+        if hasattr(probe, "timeout"):
+            probe.timeout = min(float(probe.timeout), PING_TIMEOUT_S)
+        try:
+            probe.complete("Reply with OK.", [{"role": "user", "content": "OK?"}], 1, 0.0)
+        except Exception as err:  # any failure means "not answering"; keep why
+            answer: tuple[bool, str | None] = (False, _why_not(err))
+        else:
+            answer = (True, None)
+        with self._ping_lock:
+            ping = self._pings.setdefault(key, _Ping())
+            ping.at, (ping.answers, ping.reason) = time.monotonic(), answer
+
+    def _heard(self, down: bool, why: str | None) -> str | None:
+        """Remember what a real call showed about the model; return the most precise reason.
+
+        A failure the last ping already explained more precisely (with its HTTP status, say)
+        keeps the ping's words, on the status line and in the propose report alike.
+        """
+        with self._ping_lock:
+            ping = self._pings.setdefault(self._model_key(), _Ping())
+            known = ping.reason if ping.answers is False else None
+            if down and why and known and known != why and known.startswith(why):
+                why = known
+            ping.at, ping.answers, ping.reason = time.monotonic(), not down, why if down else None
+        return why
 
     # ---- the session ------------------------------------------------------------------------
 
@@ -264,10 +352,14 @@ class Studio:
         return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
     def _update_meta(self, session_id: str, update: dict[str, Any]) -> None:
+        self._edit_meta(session_id, lambda meta: meta.update(update))
+
+    def _edit_meta(self, session_id: str, change: Callable[[dict[str, Any]], Any]) -> None:
+        """Read, change and write the session's ``studio.json`` under its lock."""
         folder = self._folder(session_id)
         with FileLock(str(folder / ".lock"), timeout=30):
             meta = self._meta(session_id)
-            meta.update(update)
+            change(meta)
             atomic_write(folder / STUDIO_FILE, dump_json(meta))
 
     def source(self, session_id: str) -> Path:
@@ -330,7 +422,9 @@ class Studio:
         file text and reaches the model only as quoted data. The report's ``fallback`` is True
         only when no model field was used at all; ``model_fields`` counts the fields the model
         made, and ``model_error`` says why the model was not used, or not for every part
-        (also written with the calls in ``ai_calls.jsonl``).
+        (also written with the calls in ``ai_calls.jsonl``): a misconfigured model says what is
+        wrong with its configuration. Whatever happens in the Design Interpreter, the rules'
+        proposals are stored.
         """
         from qpilot.qpcr.design_rules import propose_from_names
 
@@ -347,42 +441,28 @@ class Studio:
         rejected: list[dict[str, Any]] = []
         why: str | None = None  # why the model was not used, or not for every part
         used = 0  # fields the model made
+        if self._not_configured is not None:  # the client is the rules alone: say why
+            why = f"the configured model cannot be used: {self._not_configured}"
         try:
             from qpilot.ai.interpret import interpret
         except ImportError:
             notes.append("the Design Interpreter is not installed; rules only")
         else:
-            pseudonymiser = None
-            if not self._local():
-                pseudonymiser = self.store.pseudonymiser(session_id)
-            result = interpret(
-                facts.summary,
-                entries,
-                sentence,
-                self.client,
-                rule_fields=rule_fields,
-                pseudonymiser=pseudonymiser,
-            )
-            extra = [(e.value, e.origin) for e in getattr(result, "quarantine", [])]
-            if extra:
-                quarantine.add_many(extra)
-            fields, makers = _fields_and_makers(result, rule_fields)
-            rejected = list(getattr(result, "rejected", []))
-            if getattr(result, "fallback", True):  # the rules alone for some or all of the file
-                why = _model_reason(getattr(result, "error", None))
+            more: list[str] = []
+            try:
+                fields, makers, rejected, why, more = self._interpret(
+                    session_id, interpret, entries, sentence, rule_fields, why
+                )
+            except Exception as err:  # a bug in the interpreter never loses the rules' proposals
+                fields, rejected = list(rule_fields), []
+                makers = [MadeBy(kind="rule")] * len(rule_fields)
+                why = f"the Design Interpreter failed ({type(err).__name__}); rules only"
             used = sum(1 for m in makers if m.kind == "model")
-            metas = [dict(m) for m in getattr(result, "meta", [])]
-            if metas and why:
-                metas[-1]["error"] = why  # the cause stays on disk with the calls
-            self._log_calls(session_id, "studio.interpret", metas)
-            if metas:  # a real call says more about the model than a ping
-                down = not used and why is not None and why.startswith(_CALL_FAILURES)
-                self._answer = (time.monotonic(), not down, why if down else None)
             if why and not used:
                 notes.append(f"reason: {why}")
             elif why:
                 notes.append(f"the model answered for part of the file only: {why}")
-            notes += list(getattr(result, "notes", []))
+            notes += more
         outcomes = [
             self._propose(session_id, f, maker) for f, maker in zip(fields, makers, strict=True)
         ]
@@ -390,6 +470,48 @@ class Studio:
         report["model_fields"] = used
         report["model_error"] = why
         return report
+
+    def _interpret(
+        self,
+        session_id: str,
+        interpret: Any,
+        entries: list[QuarantineEntry],
+        sentence: str,
+        rule_fields: list[DesignField],
+        why: str | None,
+    ) -> tuple[list[DesignField], list[MadeBy], list[dict[str, Any]], str | None, list[str]]:
+        """Run the Design Interpreter: (fields, makers, rejected, why not the model, notes)."""
+        facts = self.facts(session_id)
+        quarantine = self.store.quarantine(session_id)
+        pseudonymiser = None
+        if not self._local():
+            pseudonymiser = self.store.pseudonymiser(session_id)
+        result = interpret(
+            facts.summary,
+            entries,
+            sentence,
+            self.client,
+            rule_fields=rule_fields,
+            pseudonymiser=pseudonymiser,
+        )
+        extra = [(e.value, e.origin) for e in getattr(result, "quarantine", [])]
+        if extra:
+            quarantine.add_many(extra)
+        fields, makers = _fields_and_makers(result, rule_fields)
+        if len(fields) != len(makers) or not all(isinstance(m, MadeBy) for m in makers):
+            raise TypeError("the interpreter's fields and makers do not pair up")
+        rejected = [dict(r) for r in getattr(result, "rejected", [])]
+        if getattr(result, "fallback", True):  # the rules alone for some or all of the file
+            why = why or _model_reason(getattr(result, "error", None))
+        used = sum(1 for m in makers if m.kind == "model")
+        metas = [dict(m) for m in getattr(result, "meta", [])]
+        if metas and self.client.available:  # a real call says more about the model than a ping
+            down = not used and why is not None and why.startswith(_CALL_FAILURES)
+            why = self._heard(down, why)
+        if metas and why:
+            metas[-1]["error"] = why  # the cause stays on disk with the calls
+        self._log_calls(session_id, "studio.interpret", metas)
+        return fields, makers, rejected, why, [str(n) for n in getattr(result, "notes", [])]
 
     def _propose(self, session_id: str, f: DesignField, maker: MadeBy) -> ProposalOutcome:
         proposal = Proposal(
@@ -490,14 +612,20 @@ class Studio:
         exactly the assembly returned: a person's decision that lands in between can never put
         an unconfirmed design behind a check that passed.
         """
+        return self._confirmed_view(session_id, through)[0]
+
+    def _confirmed_view(
+        self, session_id: str, through: str = "curves"
+    ) -> tuple[Assembly | None, InboxView]:
+        """:meth:`confirmed_assembly` and the one read of the inbox it was assembled from."""
         if through not in BLIND_STAGES:
             raise ValueError(f"through must be one of {', '.join(BLIND_STAGES)}")
         view = self.store.proposals(session_id).view()
         assembly = self.assemble(session_id, view.accepted)
         for stage in BLIND_STAGES[: BLIND_STAGES.index(through) + 1]:
             if not _confirmed(view.accepted, stage, assembly, self, session_id):
-                return None
-        return assembly
+                return None, view
+        return assembly, view
 
     def results_visible(self, session_id: str) -> bool:
         """True once the blind stages (design, curves) are both confirmed by a person."""
@@ -560,8 +688,21 @@ class Studio:
         reason: str = "",
         expected_head: str | None = None,
     ) -> ProposalOutcome:
-        """A person accepts one proposal (a reason is needed when the check contradicts it)."""
-        return self.store.proposals(session_id).accept(proposal_id, actor, reason, expected_head)
+        """A person accepts one proposal (a reason is needed when the check contradicts it).
+
+        A round-trip exclusion whose consequence no longer holds (:meth:`stale_consequence`) is
+        refused: its numbers were computed before other exclusions were accepted. Accepting an
+        exclusion makes the others' consequences out of date, so the round trip they came from
+        is read again at once (:meth:`refresh_round_trips`).
+        """
+        inbox = self.store.proposals(session_id)
+        if actor == "human":
+            refused = self._refuse_stale(session_id, inbox.get(proposal_id), inbox)
+            if refused is not None:
+                return refused
+        outcome = inbox.accept(proposal_id, actor, reason, expected_head)
+        self._after_decision(session_id, outcome)
+        return outcome
 
     def edit(
         self,
@@ -575,11 +716,15 @@ class Studio:
         """A person edits and accepts; the edited payload is checked again first.
 
         The stored check describes the proposal as made; the edit gets its own engine check,
-        and a contradicted edit needs a reason like a contradicted proposal.
+        and a contradicted edit needs a reason like a contradicted proposal. A round-trip
+        exclusion is refused and refreshed as in :meth:`accept`.
         """
         _require_human(actor, "edit a proposal")
         inbox = self.store.proposals(session_id)
         original = inbox.get(proposal_id)
+        refused = self._refuse_stale(session_id, original, inbox)
+        if refused is not None:
+            return refused
         recheck = self.check(session_id, original.model_copy(update={"edits": edits}))
         if recheck.status == "contradicted" and not reason.strip():
             return ProposalOutcome(
@@ -588,7 +733,34 @@ class Studio:
                 proposal=original,
                 reason="the engine check contradicts this edit; give a reason to accept it anyway",
             )
-        return inbox.edit_and_accept(proposal_id, actor, edits, reason, expected_head)
+        outcome = inbox.edit_and_accept(proposal_id, actor, edits, reason, expected_head)
+        self._after_decision(session_id, outcome)
+        return outcome
+
+    def _refuse_stale(
+        self, session_id: str, proposal: Proposal, inbox: Any
+    ) -> ProposalOutcome | None:
+        """A refusal for a pending exclusion whose consequence no longer holds, else None."""
+        if proposal.kind != EXCLUSION_KIND or proposal.status != "proposed":
+            return None  # anything else is the proposal store's to answer
+        why = self.stale_consequence(session_id, proposal)
+        if why is None:
+            return None
+        return ProposalOutcome(
+            status="refused", head=inbox.head(), proposal=proposal, reason=f"not accepted: {why}"
+        )
+
+    def _after_decision(self, session_id: str, outcome: ProposalOutcome) -> None:
+        """After a person accepted an exclusion, recompute the round-trip questions it outdates."""
+        decided = outcome.proposal
+        if decided is None or decided.kind != EXCLUSION_KIND:
+            return
+        if outcome.status not in ("accepted", "edited"):
+            return
+        try:
+            self.refresh_round_trips(session_id)
+        except Exception:  # the decision is recorded; out-of-date questions stay refused
+            log.warning("round-trip questions not recomputed after an exclusion", exc_info=True)
 
     def reject(
         self,
@@ -693,22 +865,31 @@ class Studio:
 
         Only the boolean leaves this module (no gene, direction or number); ``None`` when it
         cannot be computed yet (the rest of the design is not runnable).
+
+        Each reading is assembled exactly as accepting it would assemble the design: from the
+        base, with what a person accepted plus this one reading in place of any accepted
+        proposal of the same kind and subject (one assembly path, never a reading stacked on an
+        already assembled design, which could not undo what that design already wrote).
         """
         if not proposal.alternatives or not proposal.kind.startswith("design."):
             return None
-        assembly = self.assemble(session_id)
-        if assembly.design is None:
+        accepted = self.store.proposals(session_id).accepted()
+        if self.assemble(session_id, accepted).design is None:
             return None
-        from qpilot.qpcr.designs import DesignError, design_from_proposals
-
-        curves = self._curves_table(session_id)
+        others = [
+            p
+            for p in accepted
+            if p.id != proposal.id and (p.kind, p.subject) != (proposal.kind, proposal.subject)
+        ]
         readings = []
         for payload in (proposal.payload, proposal.alternatives[0]):
-            reading = proposal.model_copy(update={"payload": payload, "status": "accepted"})
-            try:
-                readings.append(design_from_proposals(assembly.design, [reading], curves))
-            except DesignError:
+            reading = proposal.model_copy(
+                update={"payload": payload, "edits": None, "status": "accepted"}
+            )
+            design = self.assemble(session_id, [*others, reading]).design
+            if design is None:
                 return None
+            readings.append(design)
         conclusions = [self._primary_conclusions(session_id, d) for d in readings]
         if None in conclusions:
             return None
@@ -766,12 +947,18 @@ class Studio:
         outcomes = [self._propose_rule(session_id)]
         disagree: list[str] = []
         learned, judge = self._judge_calls(session_id, path, settings.experiment_id)
-        if learned is not None:
+        if learned is not None:  # an unscored well has no call, so it never disagrees
             disagree = [
                 k
                 for k, ours in zip(keys, linreg, strict=True)
                 if k in learned and learned[k] != bool(ours) and k not in design.well_calls
             ]
+            unscored = sum(1 for k in keys if k not in learned)
+            if unscored:
+                notes.append(
+                    f"the Curve Judge cannot score {unscored} study well(s) (a curve whose "
+                    "minimum over cycles 1-40 is not a positive number); LinRegPCR alone there"
+                )
         else:
             notes.append("the Curve Judge is " + judge + "; LinRegPCR alone")
             learned = {}
@@ -863,18 +1050,26 @@ class Studio:
         except curve_judge.CurveJudgeError:
             return None, CURVE_JUDGE_UNREADABLE
 
-    def _learned_calls(self, session_id: str, path: Path, experiment_id: str | None) -> dict:
-        """The Curve Judge's call per ``run_id/well``, cached in the session by model."""
+    def _learned_calls(
+        self, session_id: str, path: Path, experiment_id: str | None
+    ) -> dict[str, bool]:
+        """The Curve Judge's call per ``run_id/well``, cached in the session by model.
+
+        Only the wells it scored are in it: a curve it cannot score has no call (None from
+        ``predict_calls``), never "not amplified", so it is never shown or proposed as one. The
+        cache key names that rule, so a cache written before it (which held False for those
+        wells) is never read.
+        """
         from qpilot.qpcr import curve_judge
 
         cache = self._folder(session_id) / CURVE_JUDGE_FILE
-        key = f"{curve_judge.MODEL_SHA256}:{experiment_id}"
+        key = f"{curve_judge.MODEL_SHA256}:{experiment_id}:scored-only"
         if cache.exists():
             data = json.loads(cache.read_text(encoding="utf-8"))
-            if data.get("key") == key:
-                return {k: bool(v) for k, v in data["calls"].items()}
+            if data.get("key") == key and isinstance(data.get("calls"), dict):
+                return {str(k): v for k, v in data["calls"].items() if isinstance(v, bool)}
         calls = curve_judge.predict_calls(path, experiment_id)
-        out = {str(k): bool(v) for k, v in calls.items()}
+        out = {str(k): bool(v) for k, v in calls.items() if v is not None and v == v}
         atomic_write(cache, dump_json({"key": key, "calls": out}))
         return out
 
@@ -945,7 +1140,11 @@ class Studio:
 
         The design analysed is exactly the one the gate checked (:meth:`confirmed_assembly`).
         """
-        assembly = self.confirmed_assembly(session_id)
+        return self._study(session_id)[0]
+
+    def _study(self, session_id: str) -> tuple[str, list[Proposal]]:
+        """:meth:`study` and what a person had accepted in the read its design came from."""
+        assembly, view = self._confirmed_view(session_id)
         if assembly is None:
             raise StudioError("confirm the design and the curves first: results stay hidden")
         design = assembly.design
@@ -957,7 +1156,7 @@ class Studio:
             self._update_meta(session_id, {"studies": studies, "current_study": study_id})
         elif self._meta(session_id).get("current_study") != study_id:
             self._update_meta(session_id, {"current_study": study_id})
-        return study_id
+        return study_id, list(view.accepted)
 
     def decide(
         self,
@@ -1065,7 +1264,9 @@ class Studio:
         """Write the bundle (CSVs, scripts, provenance) for the accepted Prism project.
 
         Only a person's click writes: ``actor`` must be ``human``, the choices stage must be
-        confirmed and a ``prism.project`` for this study accepted.
+        confirmed and a ``prism.project`` for this study accepted. The export is remembered with
+        the round-trip exclusions its analysis already holds, so a later round trip computes
+        each consequence on top of exactly the ones accepted since.
         """
         from qpilot.prism import export_study
 
@@ -1073,7 +1274,7 @@ class Studio:
         status = {s.stage: s for s in self.stages(session_id)}
         if not status["choices"].confirmed:
             raise StudioError("confirm the analysis choices first")
-        study_id = self.study(session_id)
+        study_id, accepted = self._study(session_id)
         project = self._accepted_project(session_id, study_id)
         if project is None:
             raise StudioError("accept the Prism project for this analysis first")
@@ -1087,16 +1288,14 @@ class Studio:
             share=share,
             pseudonym=pseudonym,
         )
-        exports = list(self._meta(session_id).get("exports", []))
-        exports.append(
-            {
-                "study_id": study_id,
-                "bundle_dir": str(Path(out_dir).resolve()),
-                "bundle_sha256": result.bundle.bundle_sha256,
-                "at": _now(),
-            }
-        )
-        self._update_meta(session_id, {"exports": exports})
+        entry = {
+            "study_id": study_id,
+            "bundle_dir": str(Path(out_dir).resolve()),
+            "bundle_sha256": result.bundle.bundle_sha256,
+            "at": _now(),
+            "exclusions": [p.id for p in accepted if p.kind == EXCLUSION_KIND],
+        }
+        self._edit_meta(session_id, lambda meta: meta.setdefault("exports", []).append(entry))
         return result
 
     def launch_prism(self, result: Any, actor: Actor, wait_s: float = PRISM_WAIT_S) -> dict:
@@ -1140,27 +1339,122 @@ class Studio:
 
         An exclusion asks "Reason?" and says whether it changes any conclusion; a changed value
         is a warning ("no longer matches the record") offering restore. Nothing is accepted.
-        """
-        from qpilot.prism import diff_report
 
-        exports = self._meta(session_id).get("exports", [])
-        match = [e for e in exports if Path(e["bundle_dir"]) == Path(bundle_dir).resolve()]
-        if not match:
-            raise StudioError("this bundle was not sent to Prism from this session")
-        study_id = match[-1]["study_id"]
-        report = diff_report(
-            self.store,
-            study_id,
-            bundle_dir,
-            sent_back_dir,
-            pseudonym=self.store.pseudonymiser(session_id).pseudonymise,
-        )
-        outcomes = []
-        for raw in report.get("proposals", []):
-            proposal = Proposal.model_validate(raw).model_copy(update={"study_id": session_id})
-            outcomes.append(self.store.proposals(session_id).propose(proposal, "system"))
+        Each exclusion's consequence is computed on top of the exclusions a person accepted
+        since this export (the ones accepted before it are in the exported analysis already),
+        and records that ``basis``; with several exclusions, each also says what all of them do
+        together (``with_all_pending``), and the report's ``combined_consequence`` is the same
+        for the whole round trip. The sent-back folder is remembered with the export, so that
+        accepting one exclusion can recompute the others (:meth:`refresh_round_trips`).
+        """
+        export = self._export(session_id, bundle_dir)
+        sent_back = str(Path(sent_back_dir).resolve())
+        report = self._diff(session_id, export, sent_back)
+        inbox = self.store.proposals(session_id)
+        outcomes = [inbox.propose(p, "system") for p in _round_trip_proposals(report, session_id)]
+
+        def remember(meta: dict[str, Any]) -> None:
+            for entry in meta.get("exports", []):
+                if entry.get("bundle_dir") == export["bundle_dir"]:
+                    entry["sent_back_dir"] = sent_back
+
+        self._edit_meta(session_id, remember)
         report["inbox"] = _report(outcomes)
         return report
+
+    def _export(self, session_id: str, bundle_dir: str | Path) -> dict[str, Any]:
+        """The latest export of this session into ``bundle_dir``; ``StudioError`` if none."""
+        folder = Path(bundle_dir).resolve()
+        match = [e for e in self.exports(session_id) if Path(e["bundle_dir"]) == folder]
+        if not match:
+            raise StudioError("this bundle was not sent to Prism from this session")
+        return match[-1]
+
+    def _diff(self, session_id: str, export: dict[str, Any], sent_back_dir: str) -> dict[str, Any]:
+        """``diff_report`` for one export, on top of the exclusions accepted since it."""
+        from qpilot.prism import diff_report
+
+        accepted = self.store.proposals(session_id).accepted(EXCLUSION_KIND)
+        return diff_report(
+            self.store,
+            export["study_id"],
+            export["bundle_dir"],
+            sent_back_dir,
+            pseudonym=self.store.pseudonymiser(session_id).pseudonymise,
+            accepted=_since_export(accepted, export),
+        )
+
+    def stale_consequence(self, session_id: str, proposal: Proposal) -> str | None:
+        """Why a round-trip exclusion's consequence no longer holds, or None while it holds.
+
+        A consequence holds while the exclusions a person accepted since its export are exactly
+        the ones it was computed on top of (its ``basis``), and the exported analysis's decision
+        chain is where it was. Its numbers are then what accepting it gives; otherwise the card
+        says it is out of date and :meth:`accept` refuses it.
+        """
+        consequence = proposal.consequence
+        if proposal.kind != EXCLUSION_KIND or not isinstance(consequence, dict):
+            return None
+        if "fc_before" not in consequence:  # no numbers, nothing to go out of date
+            return None
+        accepted = self.store.proposals(session_id).accepted(EXCLUSION_KIND)
+        basis = consequence.get("basis")
+        if not isinstance(basis, dict):  # made before consequences named their basis
+            made = proposal.created_at or ""
+            later = [p for p in accepted if (p.decided_at or "") >= made]
+            return STALE_EXCLUSIONS if later else None
+        export = self._latest_export(session_id, str(basis.get("study_id")))
+        if export is None:
+            return STALE_EXPORT
+        then = basis.get("accepted")
+        since = {p.id for p in _since_export(accepted, export)}
+        if not isinstance(then, list) or {str(i) for i in then} != since:
+            return STALE_EXCLUSIONS
+        try:
+            head = self.store.chain_head(export["study_id"])
+        except StudyNotFound:
+            return STALE_EXPORT
+        return None if basis.get("chain_head") == head else STALE_CHOICES
+
+    def refresh_round_trips(self, session_id: str) -> list[ProposalOutcome]:
+        """Recompute every pending round-trip exclusion whose consequence is out of date.
+
+        Its export is compared again with the sent-back folder its round trip read, and a fresh
+        proposal (its consequence on top of the exclusions accepted since) replaces the pending
+        one. Only pending questions are replaced: an exclusion a person already accepted or
+        rejected is never asked again here. Where the folder cannot be read again, the
+        out-of-date questions stay, marked as such, and are refused on accept.
+        """
+        inbox = self.store.proposals(session_id)
+        stale = [
+            p
+            for p in inbox.proposals(status="proposed", kind_prefix=EXCLUSION_KIND)
+            if p.made_by.kind == "rule" and self.stale_consequence(session_id, p) is not None
+        ]
+        outcomes: list[ProposalOutcome] = []
+        for study_id in sorted({_basis_study(p) for p in stale} - {""}):
+            export = self._latest_export(session_id, study_id, sent_back=True)
+            if export is None:
+                continue
+            try:
+                report = self._diff(session_id, export, export["sent_back_dir"])
+            except (ValueError, OSError, KeyError) as err:  # moved, changed or unreadable
+                log.info("round trip of %s not recomputed: %s", study_id, err)
+                continue
+            subjects = {p.subject for p in stale if _basis_study(p) == study_id}
+            for fresh in _round_trip_proposals(report, session_id):
+                if fresh.kind == EXCLUSION_KIND and fresh.subject in subjects:
+                    outcomes.append(inbox.propose(fresh, "system"))
+        return outcomes
+
+    def _latest_export(
+        self, session_id: str, study_id: str, *, sent_back: bool = False
+    ) -> dict[str, Any] | None:
+        """The latest export of ``study_id`` (with a remembered sent-back folder, if asked)."""
+        for entry in reversed(self.exports(session_id)):
+            if entry.get("study_id") == study_id and (not sent_back or entry.get("sent_back_dir")):
+                return entry
+        return None
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1172,6 +1466,35 @@ def _now() -> str:
     from datetime import UTC, datetime
 
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _since_export(accepted: Sequence[Proposal], export: dict[str, Any]) -> list[Proposal]:
+    """The accepted round-trip exclusions an export's analysis does not hold yet.
+
+    An export remembers the exclusions accepted when it was made (they are in its analysis);
+    one remembered without them (made before exports recorded it) counts what a person decided
+    from the moment of the export on.
+    """
+    held = export.get("exclusions")
+    if isinstance(held, list):
+        before = {str(i) for i in held}
+        return [p for p in accepted if p.kind == EXCLUSION_KIND and p.id not in before]
+    at = str(export.get("at") or "")
+    return [p for p in accepted if p.kind == EXCLUSION_KIND and str(p.decided_at or "") >= at]
+
+
+def _round_trip_proposals(report: dict[str, Any], session_id: str) -> list[Proposal]:
+    """The proposals of a ``diff_report``, as proposals of this Studio session."""
+    return [
+        Proposal.model_validate(raw).model_copy(update={"study_id": session_id})
+        for raw in report.get("proposals", [])
+    ]
+
+
+def _basis_study(proposal: Proposal) -> str:
+    """The study a round-trip consequence was computed for ("" when it does not say)."""
+    basis = (proposal.consequence or {}).get("basis")
+    return str(basis.get("study_id") or "") if isinstance(basis, dict) else ""
 
 
 def _in_stage(proposal: Proposal, stage: str) -> bool:
@@ -1217,7 +1540,7 @@ def _confirmed(
     if stage == "curves":
         return payload.get("design_hash") == assembly.curves_hash
     if stage == "choices":
-        if payload.get("study_id") != current:
+        if current is None or payload.get("study_id") != current:
             return False
         try:
             if "decisions" in payload:
