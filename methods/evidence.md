@@ -1,0 +1,50 @@
+# Method card: the Evidence Ledger, the G-RT rule and the Run Review (thin)
+
+**What it answers.** What can this study's data show, and what did nobody record? Bench errors that leave no trace in the curves (no no-RT control, RNA integrity unknown, RT never replicated, no reference set that meets geNorm's cut-offs) can only be stated. The Evidence Ledger states them, item by item, so they no longer pass silently. The G-RT rule measures RT variability when a sample sheet annotates RT replicates. The Run Review puts the ledger, the headline and a person's recorded sign-off on one page for whoever reviews someone else's run.
+
+**References.** Items mapped to MIQE 2.0: Bustin SA, Ruijter JM, van den Hoff MJB, et al., *MIQE 2.0: Revision of the Minimum Information for Publication of Quantitative Real-Time PCR Experiments Guidelines*, Clinical Chemistry 71(6): 634–651 (2025), doi:10.1093/clinchem/hvaf043; item numbers follow the article's Table 1 as abbreviated in `research_notes/qPilot niche discovery and features/14-publication-reviewers-teaching.md` and are **to be checked against the article**. geNorm M and V cut-offs (1.5 and 0.15): Vandesompele et al., *Genome Biology* 3(7): research0034 (2002) (see [`genorm.md`](genorm.md)). The G-RT line: Bustin, Dhillon, Kirvell et al., "Variability of the reverse transcription step: practical implications", *Clinical Chemistry* 61(1) (2015; online 2014), doi:10.1373/clinchem.2014.230615, as quoted in `research_notes/qPilot niche discovery and features/04-preanalytics-qc-gates.md`; **to verify against the paper** (SOLVABLE-ERRORS-PLAN §7, fact 3).
+
+**Implementation.** `qpilot/qpcr/evidence.py` (`evidence_for`, `evidence_store`, `rdml_evidence`, `EvidenceLedger`, `ITEMS`, `CONSEQUENCES`, `MIQE_ITEMS`); `qpilot/qpcr/gate_rt.py` (`rt_replicate_range`, `g_rt`, `GateLine`); `qpilot/report/run_review.py` (`run_review`, `build_review`, `render_text`, `render_html`); text from facts in `qpilot/explain/evidence_text.py` (`evidence_v1`, `grt_v1`, `runreview_v1`); the field `SampleDesign.rt_replicate` and the sample-sheet column `rt_replicate`.
+
+| Item | Present when | Facts (`f_ev_<item>_*`) | MIQE 2.0 |
+|---|---|---|---|
+| `ntc` NTC on every plate and target | every plate × target pair with study wells has an NTC well (some pairs only: absent) | pairs, pairs with an NTC, NTC wells, NTC wells with a quantity, plates with one | 5.5, 5.6 |
+| `no_rt` No-RT control | some well is typed `nrt` (RDML "minusRT") | wells, pairs with one | 3.5 |
+| `reference_genes` Reference candidates with geNorm M and V | three or more candidates (geNorm gives V); the code says whether a set meets the cut-offs (two candidates with M < 1.5 and some V < 0.15, as `confidence_checks.normalisation_passes`) | candidates, M per candidate, V per step, cut-offs, candidates below the M cut-off, lowest V | 5.15 |
+| `efficiency` Efficiency source (`per_well_raw` / `standard_curve` / `assumed`) | some study well has a per-well efficiency from the raw curves (LinRegPCR); `assumed` is absent; `standard_curve` is reserved (the engine has no such route) | study wells with an efficiency, gene medians (median, range), plates with a standard series of three or more levels | 5.8 |
+| `rawness` Raw-ness of the curves | always `unknown` until the raw-ness detector (add_plan 2.3) exists | wells analysed from curves, wells with a LinRegPCR baseline at or below zero, runs that state a background method | 5.3, 5.1 |
+| `rna_integrity` RNA integrity | an RDML sample annotation names RIN, RINe, RQN, RQI, DV200 or RNA integrity/quality (classified and counted, never copied); `unknown` without the file | study samples, samples with one | 2.9 |
+| `rt_replicates` RT replicates or RT batch | a sample sheet names two or more RT replicates of one biological unit (then G-RT runs), or the file annotates an RT batch | samples annotated, units with RT replicates, the G-RT facts | 5.10 |
+| `biological_units` Biological units | a design lists every study sample (each sample's unit is then known) | study samples, listed samples, units | 5.10 |
+| `inter_run_calibrator` Inter-run calibrator | some target spans plates and each such target has a calibrator on all its plates: a sample flagged `interRunCalibrator`, or a study or standard sample measured on every one of them; no target spans plates: not applicable | targets, targets spanning plates, bridged and unbridged, samples flagged | 5.12 |
+| `lots` Reagent and primer lots | an RDML sample annotation names a lot (classified and counted only); `unknown` without the file | samples with one | 3.6, 4.4 |
+| `instrument` Instrument and calibration dates | every run in the file names an instrument and a run date; RDML has no field for calibration dates | runs, runs with an instrument, runs with a date | 4.6 |
+
+| G-RT step | Definition | Cut-off |
+|---|---|---|
+| RT replicates | samples of one `biological_unit` with different `rt_replicate` labels; a unit with a single label is not RT-replicated | at least two labels |
+| Cq of an RT replicate | mean engine Cq (LinRegPCR TD0) of its usable study wells; technical replicates averaged first; undetermined, excluded and control wells left out | — |
+| Range | largest minus smallest RT-replicate Cq per biological unit × target, over RT replicates with a Cq (rounded to ten decimals before the comparison) | — |
+| Verdict | `pass` if every range is below the limit, `warn` if any reaches it; `not_applicable` when no RT replicates are annotated (`rt_not_annotated`) or none has two with a Cq (`rt_not_measurable`) | ΔCq < 1 cycle |
+
+**What we changed from the published method.** Bustin et al. give the one-cycle line as a criterion for choosing a reverse transcriptase (an RTase whose RT-replicate ΔCq range stays below one cycle across four targets); G-RT applies the same line to each biological unit × target of a study. The ledger is qPilot's own list, not a MIQE checklist: it covers the evidence a reviewer cannot see in a bar chart, and each item names the MIQE 2.0 item it answers.
+
+**Rules.** An absent item is a reported check. It never downgrades a confidence grade, never changes `conclude()` and is never part of `StudyResult` (the ledger is its own output, `evidence.json` once the store writes artifacts), so the pinned demo outputs are unchanged. A G-RT warning is also a reported check; pricing it by consequence is for the Run Gate (add_plan 3.2). Free text from the file is never copied: annotation property names are only classified and counted, and the instrument string is only tested for being there. The Run Review never judges a run; it lists what is not built yet (what to repeat and why, the Run Gate line per plate, what to change next run) instead of filling it in, and only shows sign-offs a person recorded in the decision log (`StudyStore.append_review`, actor `human`).
+
+**On the demo study (Vermeulen, `biomarker_set`, 64 plates).** Three of eleven items present, six absent, one unknown, one not applicable, measured against the RDML on 18 Oct 2026 and pinned in `tests/fixtures/evidence_demo.json`:
+- NTC present on 64 of 64 plate × target pairs, three wells each; 23 of 192 NTC wells amplified, on 11 plates.
+- No-RT absent: 0 wells typed `nrt` (file types: unkn 409, std 9, ntc 9 samples).
+- Reference candidates present, but no set meets geNorm's cut-offs: five candidates, M 1.63 to 2.03 (none below 1.5), V 0.33 to 0.56 (none below 0.15).
+- Efficiency `per_well_raw` on 23,424 of 23,424 study wells (24,576 of 24,576 wells in all); gene medians 1.73 to 1.94, median 1.90; a five-level standard series on all 64 plates, unused for efficiency.
+- Raw-ness unknown; 24,576 wells analysed from curves, none with a baseline at or below zero; all 64 runs state a background method.
+- RNA integrity absent (0 of 366 study samples), RT replicates absent (G-RT not applicable: "RT variability not measured"), biological units absent (no sample sheet: 366 samples, 366 units).
+- Inter-run calibrator not applicable: each of the 64 targets is on a single plate; 0 of 427 samples flagged.
+- Lots absent; instrument and run date absent on 0 of 67 runs in the file.
+
+Differences from the plan's N2 "Accept" bullet: the plan's "no validated normaliser" is worded "no reference set meets geNorm's cut-offs" (status words); "raw curves present" is reported inside the raw-ness item, whose verdict stays `unknown` until the detector exists; the no-RT type checked is RDML's `nrt`. The ledger takes 0.1 s on the demo; reading the RDML document for it takes about 0.6 s more.
+
+**What is not claimed.** An item marked present is not proof of good practice: NTC wells being typed says nothing about whether they are clean (no Run Gate rule checks that yet), and a no-RT well being typed is not a gDNA test. The RNA-integrity, lot and RT-batch items only see what an RDML annotation or a sample sheet records; a lab notebook is invisible. The calibrator check counts any study or standard sample measured on every plate of a target, which allows calibration but does not show it was used. The MIQE item numbers and the G-RT line are quoted from the research notes and still to be checked against their sources.
+
+**Validation.** `tests/engine/test_evidence.py` (every item's present, absent and other statuses on synthetic studies; the RDML fields on a real fixture file; the demo ledger equals the hand-written fixture; byte-determinism; the text passes the "no naked numbers" validator and degrades without facts). `tests/engine/test_gate_rt.py` (pass, warn and not_applicable on synthetic tables; technical replicates, exclusions and controls; existing design hashes unchanged; the sample sheet and `study.yaml` read `rt_replicate`; the demo is not applicable). `tests/engine/test_run_review.py` (the fixture study and the demo; every number on the page is a fact; names and comments are HTML-escaped; no banned words).
+
+**Licence.** Apache-2.0 (qPilot's own code).
