@@ -91,6 +91,9 @@ def main() -> int:
     # Run this script with a virtual environment's Python on images whose system packages pip
     # cannot upgrade (RunPod's PyTorch image ships a Debian PyJWT); its scripts go on PATH.
     os.environ["PATH"] = str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"]
+    # A Jupyter terminal exports its inline plotting backend, which the venv does not have;
+    # the vendored RDML library imports matplotlib, so the children get a plain backend.
+    os.environ["MPLBACKEND"] = "Agg"
     sh(f"{sys.executable} -m pip install -q -e '{ROOT}[ai,studio]'")
     os.environ.setdefault("QPILOT_CACHE_DIR", str(out / "cache"))
     sh("qpilot fetch-demo")
