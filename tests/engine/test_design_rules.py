@@ -406,18 +406,81 @@ def test_demo_competimer_series_are_found(demo_rdml_path):
     assert std.name_quantities["STD_15"] == 15.0
 
 
+AMOUNT_HEADERS = [
+    "RNA concentration",
+    "Input amount",
+    "Dilution",
+    "Concentration (ng/µl)",
+    "Conc",
+    # an amount header that reads as a quantity: no type and no mark makes it a standard's
+    "RNA quantity",
+    "Input quantity",
+    "cDNA quantity",
+    "Quantity (ng)",
+    "RNA copies",
+    "Quantity",
+]
+
+
+@pytest.mark.parametrize("header", AMOUNT_HEADERS)
 @pytest.mark.parametrize(
-    "header", ["RNA concentration", "Input amount", "Dilution", "Concentration (ng/µl)", "Conc"]
+    "amounts",
+    [("120.5", "98.2", "143.0", "110.7"), ("10", "100", "1000", "10000")],  # the second steps
 )
-def test_a_concentration_column_never_makes_study_samples_standards(header):
-    rows = [["Sample", "Group", header], ["S1", "LPS", "120.5"], ["S2", "LPS", "98.2"]]
-    rows += [["S3", "PBS", "143.0"], ["S4", "PBS", "110.7"]]
+def test_a_per_sample_amount_never_makes_study_samples_standards(header, amounts):
+    groups = ("LPS", "LPS", "PBS", "PBS")
+    rows = [["Sample", "Group", header]]
+    rows += [[f"S{i}", g, a] for i, (g, a) in enumerate(zip(groups, amounts, strict=True), 1)]
     summary, q = make({f"S{i}": "unkn" for i in range(1, 5)}, sheet=rows)
     fields = propose_from_names(summary, q)
     assert find_dilution_series(summary, q) == []
     assert not by(fields, "design.well_role") and not by(fields, "design.dilution_series")
-    groups = {f.subject: f.value["group"] for f in by(fields, "design.group")}
-    assert groups == {"S1": "LPS", "S2": "LPS", "S3": "PBS", "S4": "PBS"}
+    proposed = {f.subject: f.value["group"] for f in by(fields, "design.group")}
+    assert proposed == {"S1": "LPS", "S2": "LPS", "S3": "PBS", "S4": "PBS"}
+
+
+@pytest.mark.parametrize("header", ["Quantity", "Copies", "RNA copies", "Quantity (ng)"])
+def test_unmarked_sheet_quantities_must_step_like_a_dilution(header):
+    """With no type, no mark and no group, a quantity column is a series only if it steps."""
+    names = {f"S{i}": "unkn" for i in range(1, 5)}
+    amounts = ("120.5", "98.2", "143.0", "110.7")
+    rows = [["Sample", header]] + [[f"S{i}", a] for i, a in enumerate(amounts, 1)]
+    assert find_dilution_series(*make(names, sheet=rows)) == []
+    rows = [["Sample", header]] + [[f"S{i}", str(10**i)] for i in range(1, 5)]
+    assert [s.source for s in find_dilution_series(*make(names, sheet=rows))] == ["sheet"]
+
+
+def test_marked_standards_take_their_sheet_quantities_as_given():
+    """The sheet's type column (or the file) says these are standards: no spacing is asked."""
+    rows = [["Sample", "Task", "Quantity"]]
+    rows += [[f"A{i}", "Standard", q] for i, q in enumerate(("98.2", "110.7", "143.0"), 1)]
+    found = find_dilution_series(*make({f"A{i}": "unkn" for i in range(1, 4)}, sheet=rows))
+    assert found[0].samples == {"A1": 98.2, "A2": 110.7, "A3": 143.0}
+    rows = [["Sample", "Group", "Quantity"]]  # declared std in the file; a group cell too
+    rows += [[f"A{i}", "curve", q] for i, q in enumerate(("98.2", "110.7", "143.0"), 1)]
+    found = find_dilution_series(*make({f"A{i}": "std" for i in range(1, 4)}, sheet=rows))
+    assert found[0].samples == {"A1": 98.2, "A2": 110.7, "A3": 143.0}
+
+
+@pytest.mark.demo_data
+@pytest.mark.parametrize("header", ["RNA quantity", "Quantity (ng)", "RNA copies"])
+def test_an_amount_column_on_the_demo_keeps_the_groups(demo_rdml_path, tmp_path, header):
+    """The verifier's case through file_facts: file-declared unknowns, a Group column."""
+    from qpilot.qpcr.inspect import file_facts
+
+    rows = [("1831", "LPS", "120.5"), ("1830", "LPS", "98.2")]
+    rows += [("1829", "PBS", "143.0"), ("1828", "PBS", "110.7")]
+    sheet = tmp_path / "s.csv"
+    lines = [f"Sample,Group,{header}"] + [",".join(row) for row in rows]
+    sheet.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    facts = file_facts(demo_rdml_path, sheet)
+    fields = propose_from_names(facts.summary, facts.quarantine, facts=facts)
+    mine = {name for name, _, _ in rows}
+    groups = {f.subject: f.value["group"] for f in by(fields, "design.group") if f.subject in mine}
+    assert groups == {"1831": "LPS", "1830": "LPS", "1829": "PBS", "1828": "PBS"}
+    assert not [f for f in by(fields, "design.well_role") if f.subject in mine]
+    series = by(fields, "design.dilution_series")
+    assert not [s for s in series if mine & set(s.value["samples"])]
 
 
 def test_a_concentration_or_dilution_column_counts_for_marked_standards():

@@ -2,6 +2,8 @@
 
 import pytest
 
+from qpilot.io import sheets
+from qpilot.io.sheets import SheetError
 from qpilot.qpcr import inspect as qinspect
 from qpilot.qpcr.inspect import file_facts, inspect
 from qpilot.schemas_studio import text_id_for
@@ -83,6 +85,30 @@ def test_sheet_cells_join_the_summary(mini, cache, tmp_path):
     ids = {e.text_id for e in quarantine}
     assert all(c.text_id in ids for c in summary.sheet)
     assert any(e.origin == "sheet:samples.csv!samples!B3" for e in quarantine)
+
+
+def test_a_cached_sheet_is_never_read_again(mini, cache, tmp_path, monkeypatch):
+    """Every Studio render asks for the facts; the sheet is parsed once per content."""
+    reads = []
+    real = qinspect.read_sheet
+    monkeypatch.setattr(qinspect, "read_sheet", lambda path: reads.append(path) or real(path))
+    sheet = tmp_path / "samples.csv"
+    sheet.write_text("Sample,Group\nWT_1,WT\nKO_1,KO\n", encoding="utf-8")
+    first = file_facts(mini, sheet, cache_dir=cache)
+    for _ in range(3):
+        assert file_facts(mini, sheet, cache_dir=cache) is first
+    assert len(reads) == 1
+    sheet.write_text("Sample,Group\nWT_1,KO\nKO_1,WT\n", encoding="utf-8")  # new content
+    assert file_facts(mini, sheet, cache_dir=cache) is not first
+    assert len(reads) == 2
+    with pytest.raises(SheetError, match="not a file"):
+        file_facts(mini, tmp_path / "missing.csv", cache_dir=cache)
+    big = tmp_path / "big.csv"
+    big.write_bytes(b"x" * 10)
+    monkeypatch.setattr(sheets, "MAX_FILE_BYTES", 5)
+    with pytest.raises(SheetError, match="too large"):
+        file_facts(mini, big, cache_dir=cache)  # refused before it is hashed or read
+    assert len(reads) == 2
 
 
 def test_a_file_without_raw_curves_is_still_summarised(smoke_rdml, cache):

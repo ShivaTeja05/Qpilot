@@ -292,6 +292,14 @@ def test_the_number_of_merged_ranges_is_capped(tmp_path, monkeypatch):
         ("Given Conc", "quantity"),
         ("Copies", "quantity"),
         ("Sample concentration", None),
+        # an amount of a named material is an input, like a concentration
+        ("RNA quantity", "concentration"),
+        ("Input quantity", "concentration"),
+        ("cDNA quantity", "concentration"),
+        ("Input quantity (ng)", "concentration"),
+        ("RNA amount", "concentration"),
+        ("Template amount", "concentration"),
+        ("Total RNA quantity", None),  # ends in two fields' words: left unrecognised
     ],
 )
 def test_a_concentration_or_dilution_column_is_not_a_standard_quantity(header, field):

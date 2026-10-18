@@ -7,7 +7,9 @@
 - ``OpenAICompatibleBackend``: ``POST <endpoint>/v1/chat/completions`` with ``httpx``; works for
   Ollama, vLLM, LM Studio and hosted OpenAI-compatible endpoints. An endpoint on this machine
   is called directly, never through an HTTP proxy named by the environment or the system
-  settings: names are sent to it without pseudonyms because they stay on this machine.
+  settings: names are sent to it without pseudonyms because they stay on this machine. One
+  call ends within about twice its timeout, even when the server sends its reply a few bytes
+  at a time.
 - ``MockBackend``: canned replies for tests; no network.
 
 Every call goes through :mod:`qpilot.ai.payload_log` so the app can show what the model saw.
@@ -17,6 +19,8 @@ not text comes back empty, and characters UTF-8 cannot carry (unpaired surrogate
 
 from __future__ import annotations
 
+import json
+import time
 from collections.abc import Callable, Sequence
 from typing import Any, Protocol
 
@@ -25,6 +29,7 @@ from qpilot.ai.config import ModelConfig
 
 Message = dict[str, str]
 DEFAULT_TIMEOUT_S = 60.0
+MAX_REPLY_BYTES = 4 * 1024 * 1024  # a chat reply is a few kilobytes; a larger body is refused
 
 
 def public_endpoint(url: str | None) -> str | None:
@@ -178,7 +183,15 @@ class OpenAICompatibleBackend:
             self._headers["Authorization"] = f"Bearer {config.api_key.get_secret_value()}"
 
     def complete(self, system, messages, max_tokens, temperature) -> str:
-        """POST the chat request and return the first choice's content."""
+        """POST the chat request and return the first choice's content.
+
+        The whole call is bounded, not only each read: ``httpx``'s timeout applies to every
+        read of the body on its own, so a server that sends its reply a few bytes at a time
+        could keep one call open as long as it liked. The body is read in chunks instead, and
+        a call still reading ``timeout`` seconds after it started is given up as a
+        ``ReadTimeout``; one call therefore ends within about twice the timeout. A body larger
+        than :data:`MAX_REPLY_BYTES` is refused.
+        """
         try:
             import httpx
         except ImportError as err:  # pragma: no cover - depends on the install
@@ -191,18 +204,33 @@ class OpenAICompatibleBackend:
             "stream": False,
         }
         try:
-            response = httpx.post(
-                self.url,
-                json=body,
-                headers=self._headers,
-                timeout=self.timeout,
-                trust_env=self._trust_env,
-            )
-            response.raise_for_status()
-            content = response.json()["choices"][0]["message"]["content"]
+            content = self._post(httpx, body)["choices"][0]["message"]["content"]
         except Exception as err:
             raise ModelUnavailable(f"endpoint call failed: {type(err).__name__}") from err
         return _content_text(content)
+
+    def _post(self, httpx: Any, body: dict[str, Any]) -> Any:
+        """Send ``body`` and read the JSON reply within :attr:`timeout` seconds in all."""
+        deadline = time.monotonic() + self.timeout
+        chunks: list[bytes] = []
+        size = 0
+        with httpx.stream(
+            "POST",
+            self.url,
+            json=body,
+            headers=self._headers,
+            timeout=self.timeout,
+            trust_env=self._trust_env,
+        ) as response:
+            response.raise_for_status()
+            for chunk in response.iter_bytes():
+                size += len(chunk)
+                if size > MAX_REPLY_BYTES:
+                    raise ValueError(f"the reply is larger than {MAX_REPLY_BYTES} bytes")
+                chunks.append(chunk)
+                if time.monotonic() > deadline:
+                    raise httpx.ReadTimeout("the reply took longer than the client's timeout")
+        return json.loads(b"".join(chunks))
 
 
 def make_backend(config: ModelConfig) -> Backend:

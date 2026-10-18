@@ -250,10 +250,17 @@ def _with_sheet(env: StudioEnv, sheet: Path, keep: set[str] | None = None):
 
 
 def _interpret(env: StudioEnv, summary, quarantine, sentence: str) -> InterpretResult:
+    """The Design Interpreter over the whole input, with no time budget.
+
+    Studio stops asking a slow model after :func:`qpilot.ai.config.interpret_budget_s`; the
+    scorecard measures the model on every part of the file instead, however long it takes.
+    """
     from qpilot.qpcr.design_rules import propose_from_names
 
     rules = propose_from_names(summary, quarantine)
-    return interpret(summary, quarantine, sentence, env.client, rule_fields=rules)
+    return interpret(
+        summary, quarantine, sentence, env.client, rule_fields=rules, budget_s=math.inf
+    )
 
 
 # ---------------------------------------------------------------------------------------------

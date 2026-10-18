@@ -23,10 +23,12 @@ local model inside the client's timeout. An unreachable server (a refused connec
 model at once and the rules answer alone; a call that times out costs only its part (the rules
 answer for those samples), and :data:`MAX_READ_TIMEOUTS` timeouts stop the model for the rest.
 The whole interpretation has a time budget (:func:`qpilot.ai.config.interpret_budget_s`, three
-minutes unless ``QPILOT_INTERPRET_BUDGET_S`` says otherwise): once it is spent no further call
-is started and the rules answer for the parts the model has not read, so a slow server costs at
-most the budget plus one client timeout, never a hang. A reply qPilot cannot read (not text,
-not JSON, values of the wrong type) is refused field by field and never raises.
+minutes unless ``QPILOT_INTERPRET_BUDGET_S`` says otherwise; ``inf`` for none): once it is spent
+no further call is started and the rules answer for the parts the model has not read. A call
+already under way ends within twice the client's timeout however slowly the server sends its
+reply (:class:`qpilot.ai.client.OpenAICompatibleBackend`), so a slow server costs at most the
+budget plus that, never a hang. A reply qPilot cannot read (not text, not JSON, values of the
+wrong type) is refused field by field and never raises.
 
 **Remote providers.** When the backend is not on this machine
 (:func:`qpilot.core.pseudonym.endpoint_is_local`; a test double says so with a ``remote``
@@ -34,10 +36,12 @@ attribute and counts as remote without one), a :class:`~qpilot.core.pseudonym.Ps
 is required: sample and target names become keyed tokens, ``text_id`` refs are replaced by keyed
 aliases (a plain ``text_id`` can be recomputed from a guessed name), and labels in the rule
 proposals shown are tokens too. Sheet cells and the sentence are pseudonymised by what they
-are (:class:`_Shield`): a cell that is a name in any spelling becomes its token, a name written
-into longer text is replaced by its token, and text that would still carry a name is withheld.
-The reply is mapped back before it is checked. Without a pseudonymiser nothing is sent and the
-rules answer alone.
+are (:class:`_Shield`): a cell that is a name in any spelling (case, separators, a number's
+leading zeros and Unicode compatibility forms such as fullwidth letters aside) becomes its
+token, a name or an id written into a name (``Patient07`` of ``Patient07_LPS``) found in longer
+text is replaced by its token, and text that would still carry one is withheld. The reply is
+mapped back before it is checked. Without a pseudonymiser nothing is sent and the rules answer
+alone.
 
 **Rules every model field must pass** (a field that fails is dropped and listed in
 ``rejected`` with why; any failure gets the reply one retry with the validator's message):
@@ -52,10 +56,11 @@ rules answer alone.
 * every cite is a ref shown in that call and maps to a ``text_id`` or sheet cell that exists;
   at most :data:`MAX_CITES`; nothing cited reads like instructions;
 * a field about a sample cites that sample's own name or sheet row (a target: its name);
-* group, biological-unit and comparison labels are found as whole words in a sheet cell or the
-  sentence the field cites (``Mouse 1`` is not found in ``Mouse 12``; never only in a sample or
-  target name; a sample's group or unit only in its own sheet row or in a sentence that names
-  the sample), and are not role codes;
+* group, biological-unit and comparison labels are found as whole words and whole numbers in
+  a sheet cell or the sentence the field cites (separators aside, but ``Mouse 1`` is not found
+  in ``Mouse 12`` nor ``Mouse 12`` in ``Mouse 1, 2``; never only in a sample or target name; a
+  sample's group or unit only in its own sheet row or in a sentence that names the sample),
+  and are not role codes;
 * a sample declared ``ntc``, ``nrt`` or ``nac`` is never given a non-control role (the core's
   hard ban would refuse it too), a group, a biological unit or a place in a dilution series;
 * a dilution series has at least three positive quantities, in one experiment;
@@ -85,6 +90,7 @@ import json
 import math
 import re
 import time
+import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -160,6 +166,10 @@ PROMPT_SHA256 = hashlib.sha256(SYSTEM_INTERPRET.encode("utf-8")).hexdigest()
 _LABEL = re.compile(r"^[A-Za-z0-9 _\-.()]{1,64}$")
 _SYMBOL = re.compile(r"^[A-Z0-9][A-Za-z0-9\-]{0,19}$")
 _SQUASH = re.compile(r"[^a-z0-9]+")
+_LEADING_ZEROS = re.compile(r"(?<!\d)0+(?=\d)")
+_ZEROS = r"(?:0[\W_]{0,3})*"  # a number's leading zeros in a spelling, separators allowed
+# Runs of letters, and numbers (a decimal point or comma between digits keeps one number)
+_RUNS = re.compile(r"[^\W\d_]+|\d+(?:[.,]\d+)*")
 _WORD = "A-Za-z0-9_"
 # Before a name found in text: no letter if it starts with a letter (True), else no digit.
 _STARTS = {True: r"(?<![^\W\d_])", False: r"(?<!\d)"}
@@ -233,8 +243,11 @@ class InterpretResult(BaseModel):
 
 
 def squash(text: str) -> str:
-    """Lower case with everything but letters and digits removed (for tolerant matching)."""
-    return _SQUASH.sub("", str(text).lower())
+    """Lower case with everything but letters and digits removed (for tolerant matching).
+
+    Text is read in NFKC form first, so a fullwidth ``Ｓ１`` squashes like ``S1``.
+    """
+    return _SQUASH.sub("", _nfkc(text).lower())
 
 
 def sentence_entry(sentence: str) -> QuarantineEntry | None:
@@ -311,37 +324,105 @@ def _number(value: Any) -> float | None:
     return number if math.isfinite(number) and number > 0 else None
 
 
+def _nfkc(text: str) -> str:
+    """``text`` in Unicode NFKC form: fullwidth and other compatibility characters made plain.
+
+    ``Ｐａｔｉｅｎｔ０７`` becomes ``Patient07``, so every comparison below sees one spelling.
+    """
+    return unicodedata.normalize("NFKC", str(text))
+
+
 def _fold(text: str) -> str:
-    """Lower case with only letters and digits kept, in any script (how spellings compare)."""
-    return "".join(c for c in str(text).casefold() if c.isalnum())
+    """How spellings compare: NFKC, case folded, only letters and digits kept (any script).
+
+    A number's leading zeros are dropped too, so ``Patient7_LPS`` folds like ``Patient07_LPS``.
+    """
+    folded = "".join(c for c in _nfkc(_nfkc(text).casefold()) if c.isalnum())
+    return _LEADING_ZEROS.sub("", folded)
 
 
 def _spelling(name: str) -> str:
     """A pattern for ``name`` in any spelling: its letters and digits in order, in any case.
 
-    Up to three separators may stand between any two of them (``Patient 07-LPS`` for
-    ``Patient07_LPS``), and the match may not run on into more letters (when it ends with a
-    letter) or more digits (when it ends with a digit). The same holds at its start, which
-    :data:`_STARTS` checks once for every name (much faster than once per name), so ``S1`` is
-    found in ``S1_x`` and ``2S1`` but not in ``S10`` or ``LPS1``. ``name`` has a letter or digit.
+    ``name`` is matched in NFKC form (as :meth:`_Shield.hide` reads text). Up to three
+    separators may stand between any two of its letters and digits (``Patient 07-LPS`` for
+    ``Patient07_LPS``), a number may gain or lose leading zeros (``Patient7``), and the match
+    may not run on into more letters (when it ends with a letter) or more digits (when it ends
+    with a digit). The same holds at its start, which :data:`_STARTS` checks once for every name
+    (much faster than once per name), so ``S1`` is found in ``S1_x`` and ``2S1`` but not in
+    ``S10`` or ``LPS1``. ``name`` has a letter or digit.
     """
-    chars = [c for c in name if c.isalnum()]
+    chars = "".join(c for c in _nfkc(name) if c.isalnum())
+    pieces = []
+    for run in re.findall(r"\d+|\D+", chars):
+        if run[0].isdigit():
+            run = run.lstrip("0") or "0"
+            pieces.append(_ZEROS + re.escape(run[0]))  # any leading zeros, or none
+            run = run[1:]
+        pieces += [re.escape(c) for c in run]
     after = r"(?![^\W\d_])" if chars[-1].isalpha() else r"(?!\d)"
-    return r"[\W_]{0,3}".join(re.escape(c) for c in chars) + after
+    return r"[\W_]{0,3}".join(pieces) + after
+
+
+def _id_parts(name: str) -> list[str]:
+    """The parts of a name that identify on their own: ``Patient07`` in ``Patient07_LPS``.
+
+    A part is a run of letters and digits between separators, or letters followed by digits
+    (``Patient07`` in ``Patient07LPS``), that holds both, has at least
+    :data:`MIN_HIDDEN_CHARS` of them and is not the whole name: an animal or patient id
+    written into a sample name (``LPS`` or ``rnalater`` say nothing about who it was).
+    """
+    text = _nfkc(name)
+    whole = _fold(text)
+    out = []
+    runs = re.findall(r"[^\W_]+", text) + re.findall(r"[^\W\d_]+\d+", text)
+    for part in dict.fromkeys(runs):
+        key = _fold(part)
+        has_both = any(c.isalpha() for c in key) and any(c.isdigit() for c in key)
+        if has_both and len(key) >= MIN_HIDDEN_CHARS and key != whole:
+            out.append(part)
+    return out
+
+
+def _words(text: str) -> list[tuple[str, bool]]:
+    """``text`` as runs of letters and numbers, each with whether it is glued to the one before.
+
+    Case and compatibility forms do not matter (NFKC, case folded): ``Mouse12`` gives
+    ``mouse`` and then ``12`` glued to it; ``Mouse 1, 2`` gives ``mouse``, ``1`` and ``2``;
+    ``Dose 1,5`` gives ``dose`` and ``1.5`` (a decimal comma reads as a point).
+    """
+    out, end = [], -1
+    for match in _RUNS.finditer(_nfkc(_nfkc(text).casefold())):
+        out.append((match.group(0).replace(",", "."), match.start() == end))
+        end = match.end()
+    return out
 
 
 def _found(label: str, text: str) -> bool:
-    """Whether ``label`` stands in ``text`` as whole words.
+    """Whether ``label`` stands in ``text`` as whole words and whole numbers.
 
-    Case and separators do not matter (``Mouse 12`` is found in ``mouse_12`` and ``Mouse12``),
-    but the label may not be part of a longer word or number (``Mouse 1`` is not found in
-    ``Mouse 12``, nor ``M`` in ``Mouse``).
+    The label's runs of letters and its numbers must be the same runs, in order, in ``text``;
+    the separators between them do not matter, nor whether a number is written onto a word
+    (``Mouse 12`` is found in ``mouse_12`` and ``Mouse12``). A run is never split or joined
+    (``Mouse 12`` is not found in ``Mouse 1, 2``, ``Dose 15`` and ``Dose 1`` not in
+    ``Dose 1.5``, ``PBS`` not in ``PB-S``), and the label may not be part of a longer word or
+    number (``Mouse 1`` is not found in ``Mouse 12``, ``M`` not in ``Mouse``, ``LPS`` not in
+    ``LPS1``).
     """
-    key = squash(label)
-    if not key:
+    want = [run for run, _ in _words(label)]
+    if not want:
         return False
-    words = "[^a-z0-9]*".join(re.escape(c) for c in key)
-    return re.search(rf"(?<![a-z0-9]){words}(?![a-z0-9])", text.lower()) is not None
+    have = _words(text)
+    size = len(want)
+    for start in range(len(have) - size + 1):
+        if [run for run, _ in have[start : start + size]] != want:
+            continue
+        if have[start][1]:
+            continue  # glued to the run before it: part of a longer word or number
+        if start + size < len(have) and have[start + size][1]:
+            continue  # glued to the run after it
+        return True
+    return False
 
 
 # ---------------------------------------------------------------------------------------------
@@ -378,14 +459,18 @@ class _Shield:
     """Pseudonyms for a remote call (identity for a local one).
 
     Text is pseudonymised by what it is, never by trusting a search to find every copy of a
-    name. A text that is a known name in any spelling (letter case and separators aside, so
-    ``Patient07 LPS`` for ``Patient07_LPS``) becomes the token of that sample or target. In a
-    longer text a name is replaced by its token where :func:`_spelling` finds it
-    (``Patient07_LPS_rnalater`` becomes ``<token>_rnalater``). A text that would still carry a
-    name of at least :data:`MIN_HIDDEN_CHARS` letters and digits after that (``xPatient07_LPS``),
-    or that carries a spelling two names share, is withheld: :meth:`hide` returns None and the
-    caller leaves it out. A shorter name run into a longer word or number (``S1`` in ``LPS1``)
-    is read as part of that word.
+    name. Spellings compare after NFKC normalisation, with letter case, separators and a
+    number's leading zeros aside (:func:`_fold`), so ``Patient07 LPS``, ``Patient7_LPS`` and the
+    fullwidth ``Ｐａｔｉｅｎｔ07_LPS`` are all ``Patient07_LPS``. A text that is a known name in
+    any such spelling becomes the token of that sample or target. In a longer text a name is
+    replaced by its token where :func:`_spelling` finds it (``Patient07_LPS_rnalater`` becomes
+    ``<token>_rnalater``). An id written into a name (:func:`_id_parts`: ``Patient07`` in
+    ``Patient07_LPS``) gets a token of its own, so a column that holds only the patient or
+    animal id does not give it away either. A text that would still carry a name or id of at
+    least :data:`MIN_HIDDEN_CHARS` letters and digits after that (``xPatient07_LPS``), or that
+    carries a spelling two names share, is withheld: :meth:`hide` returns None and the caller
+    leaves it out. A shorter name run into a longer word or number (``S1`` in ``LPS1``) is read
+    as part of that word.
     """
 
     def __init__(self, pseudonymiser: Any | None, spellings: Mapping[str, Iterable[str]]) -> None:
@@ -410,6 +495,14 @@ class _Shield:
                     self._tokens[key] = None
                 if len(key) <= MAX_SPELLING_CHARS:
                     patterns.setdefault(key, _spelling(spelling))
+        for name, others in spellings.items():  # after every name: a whole name wins over a part
+            for part in {p for spelling in {name, *others} for p in _id_parts(spelling)}:
+                key = _fold(part)
+                if key in self._tokens:
+                    continue
+                self._tokens[key] = self.token(part)
+                if len(key) <= MAX_SPELLING_CHARS:
+                    patterns.setdefault(key, _spelling(part))
         self._long = [key for key in self._tokens if len(key) >= MIN_HIDDEN_CHARS]
         by_start: dict[bool, list[str]] = {True: [], False: []}
         for key in sorted(patterns, key=lambda key: (-len(key), key)):  # longest first
@@ -448,6 +541,7 @@ class _Shield:
         key = _fold(text)
         if key in self._tokens:
             return self._tokens[key]  # the text is a name: its token (None if two share it)
+        text = _nfkc(text)  # what the patterns read; the model is shown this form
         shown, rest, last = [], [], 0
         for match in self._pattern.finditer(text) if self._pattern is not None else ():
             token = self._tokens.get(_fold(match.group(0)))
@@ -1416,9 +1510,9 @@ def interpret(
         rule_fields: What the deterministic rules already propose (always kept unchanged).
         pseudonymiser: Required for a remote backend (``core.pseudonym.Pseudonymiser``).
         budget_s: Seconds the model may take over the whole file (default
-            :func:`qpilot.ai.config.interpret_budget_s`). No call is started after that; the
-            rules answer for the parts not read, with a note. A call already under way ends
-            within the client's own timeout.
+            :func:`qpilot.ai.config.interpret_budget_s`; ``math.inf`` for no budget). No call
+            is started after that; the rules answer for the parts not read, with a note. A
+            call already under way ends within twice the client's own timeout.
 
     Returns:
         An :class:`InterpretResult`; nothing is stored or accepted.

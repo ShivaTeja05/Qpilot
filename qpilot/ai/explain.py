@@ -2,9 +2,11 @@
 
 The model sees the card without any numbers (ids, kinds, option labels, whether it can flip a
 conclusion) and a facts table of the numbers it may cite as ``{{fact_id}}`` tokens. Its text is
-validated; on failure it gets one retry with the validator's message, then the template is used
-and ``fallback`` is True. The result always carries the token text, so the app can render each
-number with its fact id.
+validated, and it must cite the counts the card is about (:func:`required_facts`: how many
+genes change their conclusion with the choice; on the amplification-call card, under each rule
+other than the one in use). On failure it gets one retry with the reason, then the template is
+used and ``fallback`` is True. The result always carries the token text, so the app can render
+each number with its fact id.
 """
 
 from __future__ import annotations
@@ -18,8 +20,8 @@ from qpilot.ai import payload_log
 from qpilot.ai.client import ModelClient, ModelUnavailable
 from qpilot.ai.profile import Profile
 from qpilot.ai.prompts import SYSTEM_EXPLAIN
-from qpilot.core.facts import render_fact
-from qpilot.core.validator import render_tokens, validate
+from qpilot.core.facts import render_fact, slug
+from qpilot.core.validator import TOKEN, render_tokens, validate
 from qpilot.schemas import DecisionCard, Fact
 
 KIND_TITLE = {
@@ -27,6 +29,12 @@ KIND_TITLE = {
     "group_cutoff": "Where to cut the comparison groups",
     "undetermined": "What to do with wells that never amplified",
     "amp_call": "Which curves count as amplified",
+}
+#: The fact that counts the genes a card's choice flips, by card kind.
+FLIP_FACT = {
+    "reference_set": "f_n_flipped_refset",
+    "group_cutoff": "f_n_flipped_cutoff",
+    "undetermined": "f_n_flipped_undetermined",
 }
 
 
@@ -80,6 +88,27 @@ def fact_table(facts: Mapping[str, Fact], ids: Iterable[str]) -> dict[str, dict[
     }
 
 
+def required_facts(card: DecisionCard, facts: Mapping[str, Fact]) -> list[str]:
+    """The count facts a model's explanation of ``card`` must cite, or the template is used.
+
+    These are the numbers the card is about: how many genes change their conclusion with the
+    choice (``f_n_flipped_refset`` and the like). On the amplification-call card it is that
+    count under each rule other than the one in use (every ``f_n_flipped_amp_<rule>``; the rule
+    in use is the analysis itself, so its own count is zero by construction). Only facts on the
+    card and in ``facts`` are required.
+    """
+    if card.kind == "amp_call":
+        wanted = [f"f_n_flipped_amp_{slug(o.id)}" for o in card.options if o.id != card.recommended]
+    else:
+        wanted = [FLIP_FACT[card.kind]] if card.kind in FLIP_FACT else []
+    return [fid for fid in wanted if fid in card.facts and fid in facts]
+
+
+def _uncited(text: str, required: Iterable[str]) -> list[str]:
+    cited = set(TOKEN.findall(text))
+    return [fid for fid in required if fid not in cited]
+
+
 def template_explanation(card: DecisionCard, facts: Mapping[str, Fact]) -> str:
     """The deterministic explanation, in ``{{fact_id}}`` tokens.
 
@@ -129,10 +158,12 @@ def explain_card(
             provider=client.provider,
         )
     table = fact_table(facts, card.facts)
+    required = required_facts(card, facts)
     user = json.dumps(
         {
             "card": card_view(card),
             "facts": table,
+            "must_cite": [table[fid]["write_exactly"] for fid in required],
             "lab_profile": profile.model_dump(),
             "examples_from_this_lab": fewshots or [],
         },
@@ -147,7 +178,8 @@ def explain_card(
             error = str(err)
             break
         check = validate(text, facts, names)
-        if check.ok:
+        missing = _uncited(text, required)
+        if check.ok and not missing:
             return ExplainResult(
                 tokens=text,
                 plain=render_tokens(text, facts),
@@ -155,11 +187,17 @@ def explain_card(
                 fallback=False,
                 provider=client.provider,
             )
-        error = check.error()
+        if check.ok:
+            tokens = ", ".join("{{" + fid + "}}" for fid in missing)
+            error = f"the explanation does not cite {tokens}, the counts this card is about"
+            retry = f"Rejected: {error}. Rewrite it citing them, following the token rule."
+        else:
+            error = check.error()
+            retry = f"Rejected: {error}. Rewrite following the token rule."
         messages = [
             *messages,
             {"role": "assistant", "content": text},
-            {"role": "user", "content": f"Rejected: {error}. Rewrite following the token rule."},
+            {"role": "user", "content": retry},
         ]
     return ExplainResult(
         tokens=template,

@@ -234,11 +234,21 @@ HEADER_SYNONYMS: dict[str, tuple[str, ...]] = {
         "givenconc",
     ),
     # Columns that describe every sample (an RNA concentration, the input of a reaction, the
-    # dilution of every cDNA); they give a standard's quantity only for a marked standard.
+    # dilution of every cDNA); they give a standard's quantity only for a marked standard. An
+    # amount of a named material ("RNA quantity", "Input quantity") is such an input too.
     "concentration": (
         "concentration",
         "conc",
         "inputamount",
+        "inputquantity",
+        "rnaquantity",
+        "cdnaquantity",
+        "dnaquantity",
+        "templatequantity",
+        "rnaamount",
+        "cdnaamount",
+        "dnaamount",
+        "templateamount",
     ),
     "dilution": (
         "dilution",
@@ -370,6 +380,28 @@ def _check_zip(path: Path) -> None:
         raise SheetError(f"{path.name}: workbook too large (compression ratio above 100:1)")
 
 
+def _checked(path: str | Path) -> Path:
+    """The sheet file, once it passes the checks that run before any byte is read."""
+    file = Path(path)
+    if not file.is_file():
+        raise SheetError(f"not a file: {file.name}")
+    if file.suffix.lower() not in SUFFIXES:
+        raise SheetError(f"{file.name}: unsupported sheet type (use .xlsx or .csv)")
+    size = file.stat().st_size
+    if size > MAX_FILE_BYTES:
+        raise SheetError(f"{file.name}: sheet too large ({size} bytes; the cap is 5 MB)")
+    return file
+
+
+def sheet_sha256(path: str | Path) -> str:
+    """The sha256 :func:`read_sheet` would report for ``path``, without parsing anything.
+
+    The same checks run first (a missing file, an unsupported type or a file over the size cap
+    raises :class:`SheetError`), so a cache keyed by this hash never reads a sheet twice.
+    """
+    return _sha256(_checked(path))
+
+
 def read_sheet(path: str | Path) -> SheetRead:
     """Read every sheet of an ``.xlsx`` workbook or a ``.csv``/``.tsv`` file, safely.
 
@@ -382,15 +414,8 @@ def read_sheet(path: str | Path) -> SheetRead:
     Raises:
         SheetError: Missing file, unsupported type, a size cap exceeded, or unreadable content.
     """
-    file = Path(path)
-    if not file.is_file():
-        raise SheetError(f"not a file: {file.name}")
+    file = _checked(path)
     suffix = file.suffix.lower()
-    if suffix not in SUFFIXES:
-        raise SheetError(f"{file.name}: unsupported sheet type (use .xlsx or .csv)")
-    size = file.stat().st_size
-    if size > MAX_FILE_BYTES:
-        raise SheetError(f"{file.name}: sheet too large ({size} bytes; the cap is 5 MB)")
     out = SheetRead(file_name=file.name, sha256=_sha256(file))
     if suffix in (".xlsx", ".xlsm"):
         grids = _xlsx_grids(file, out)
@@ -689,6 +714,7 @@ __all__ = [
     "header_field",
     "looks_like_excel_date",
     "read_sheet",
+    "sheet_sha256",
     "sheet_table",
     "squash",
 ]

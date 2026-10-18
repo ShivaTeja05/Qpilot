@@ -1,10 +1,18 @@
-"""A call to a model on this machine goes straight to it: never through an HTTP proxy."""
+"""A call to a model on this machine goes straight to it: never through an HTTP proxy.
 
+Every call is bounded in total, however slowly the server sends its reply.
+"""
+
+import contextlib
+import json
 import socket
 import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
+from qpilot.ai import client as client_module
 from qpilot.ai.client import MockBackend, ModelClient, ModelUnavailable, OpenAICompatibleBackend
 from qpilot.ai.config import ModelConfig
 
@@ -60,9 +68,37 @@ def proxy(monkeypatch):
     listener.close()
 
 
-def _backend(endpoint):
+def _backend(endpoint, timeout=2):
     config = ModelConfig(provider="openai_compatible", endpoint=endpoint, model="m")
-    return OpenAICompatibleBackend(config, timeout=2)
+    return OpenAICompatibleBackend(config, timeout=timeout)
+
+
+class _Response:
+    """What ``httpx.stream`` yields: a status check and the body in chunks."""
+
+    def __init__(self, body: bytes, size: int):
+        self.body = body
+        self.size = size
+
+    def raise_for_status(self):
+        return None
+
+    def iter_bytes(self):
+        for start in range(0, len(self.body), self.size):
+            yield self.body[start : start + self.size]
+
+
+def _stream(seen, reply=None, error=None, size=1 << 16):
+    """A stand-in for ``httpx.stream`` that records its arguments; no network."""
+
+    @contextlib.contextmanager
+    def stream(method, url, **kwargs):
+        seen.update(kwargs, method=method, url=url)
+        if error is not None:
+            raise error
+        yield _Response(json.dumps(reply).encode("utf-8"), size)
+
+    return stream
 
 
 @pytest.mark.parametrize("host", ["127.0.0.1", "localhost"])
@@ -74,19 +110,14 @@ def test_a_local_endpoint_never_goes_through_an_environment_proxy(proxy, host):
 
 
 def test_a_remote_endpoint_still_honours_the_proxy_settings(monkeypatch):
-    seen = {}
-
-    def post(url, **kwargs):
-        seen.update(kwargs)
-        raise OSError("offline")
-
     import httpx
 
-    monkeypatch.setattr(httpx, "post", post)
+    seen = {}
+    monkeypatch.setattr(httpx, "stream", _stream(seen, error=OSError("offline")))
     for endpoint, trust in (("https://llm.example.com/v1", True), ("http://127.0.0.1:1/v1", False)):
         with pytest.raises(ModelUnavailable):
             _backend(endpoint).complete("s", [{"role": "user", "content": "x"}], 5, 0)
-        assert seen["trust_env"] is trust
+        assert seen["trust_env"] is trust and seen["method"] == "POST"
 
 
 @pytest.mark.parametrize(
@@ -101,16 +132,58 @@ def test_a_remote_endpoint_still_honours_the_proxy_settings(monkeypatch):
 def test_a_reply_that_is_not_text_comes_back_as_text(monkeypatch, content, text):
     import httpx
 
-    class Response:
-        def raise_for_status(self):
-            return None
-
-        def json(self):
-            return {"choices": [{"message": {"content": content}}]}
-
-    monkeypatch.setattr(httpx, "post", lambda url, **kwargs: Response())
+    reply = {"choices": [{"message": {"content": content}}]}
+    monkeypatch.setattr(httpx, "stream", _stream({}, reply, size=7))  # a body in many chunks
     backend = _backend("http://127.0.0.1:1/v1")
     assert backend.complete("s", [{"role": "user", "content": "x"}], 5, 0) == text
+
+
+class _Trickle(BaseHTTPRequestHandler):
+    """A server (not a model) that sends a valid reply four bytes at a time."""
+
+    body = json.dumps({"choices": [{"message": {"content": '{"fields": []}'}}]}).encode()
+
+    def log_message(self, *args):
+        return None
+
+    def do_POST(self):
+        self.rfile.read(int(self.headers["Content-Length"]))
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(self.body)))
+        self.end_headers()
+        try:
+            for start in range(0, len(self.body), 4):
+                self.wfile.write(self.body[start : start + 4])
+                self.wfile.flush()
+                time.sleep(0.2)
+        except OSError:
+            return  # the client gave up
+
+
+def test_a_server_that_trickles_its_reply_cannot_hold_a_call_open():
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _Trickle)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        backend = _backend(f"http://127.0.0.1:{server.server_address[1]}/v1", timeout=0.5)
+        start = time.monotonic()
+        with pytest.raises(ModelUnavailable, match="ReadTimeout$"):
+            backend.complete("s", [{"role": "user", "content": "x"}], 5, 0)
+        # every read comes well within the timeout, but the whole reply would take about 3 s
+        assert time.monotonic() - start < 2 * 0.5 + 0.5
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_a_reply_larger_than_the_cap_is_refused(monkeypatch):
+    import httpx
+
+    reply = {"choices": [{"message": {"content": "x" * 200}}]}
+    monkeypatch.setattr(httpx, "stream", _stream({}, reply, size=16))
+    monkeypatch.setattr(client_module, "MAX_REPLY_BYTES", 100)
+    with pytest.raises(ModelUnavailable, match="ValueError$"):
+        _backend("http://127.0.0.1:1/v1").complete("s", [{"role": "user", "content": "x"}], 5, 0)
 
 
 def test_the_client_always_returns_readable_text():
