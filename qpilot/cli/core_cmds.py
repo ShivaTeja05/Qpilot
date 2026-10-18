@@ -296,9 +296,26 @@ def _serve_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--transport", choices=["stdio"], default="stdio", help="MCP transport (stdio only)"
     )
+    parser.add_argument(
+        "--list-tools",
+        action="store_true",
+        help="print the tools this install serves (sim_* need the Decision Simulator), then exit",
+    )
 
 
 def _serve(args: argparse.Namespace) -> int:
+    if getattr(args, "list_tools", False):
+        from qpilot.mcp_server import TOOL_NAMES, served_tool_names, simulator_available
+
+        names = served_tool_names()
+        for name in names:
+            print(name)
+        state = "installed" if simulator_available() else "not installed: no sim_* tools"
+        print(
+            f"# {len(names)} tools ({len(TOOL_NAMES)} qpcr_*); Decision Simulator {state}",
+            file=sys.stderr,
+        )
+        return 0
     from qpilot.mcp_server import main as serve_main
 
     serve_main()

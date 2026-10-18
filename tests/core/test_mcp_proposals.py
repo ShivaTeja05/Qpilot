@@ -9,7 +9,13 @@ import anyio
 import pytest
 
 from qpilot.core.store import StudyStore, sha256_file
-from qpilot.mcp_server import INSTRUCTIONS, TOOL_NAMES, QpilotTools, create_server
+from qpilot.mcp_server import (
+    INSTRUCTIONS,
+    TOOL_NAMES,
+    QpilotTools,
+    create_server,
+    served_tool_names,
+)
 from tests.core.studio_helpers import fake_design_checks, no_design_checks
 
 
@@ -112,7 +118,7 @@ def test_instructions_and_registered_tools(tmp_studies_dir):
     assert "You may propose; only a person in qPilot Studio accepts." in INSTRUCTIONS
     server = create_server(StudyStore(tmp_studies_dir))
     listed = anyio.run(server.list_tools)
-    assert sorted(t.name for t in listed) == sorted(TOOL_NAMES)
+    assert sorted(t.name for t in listed) == sorted(served_tool_names())
     assert {"qpcr_propose", "qpcr_proposals"} <= set(TOOL_NAMES)
 
 
@@ -136,7 +142,10 @@ def test_every_tool_tried_with_every_hostile_argument_never_decides(tools, demo,
     before = _state(tools.store, study_id)
     server = create_server(StudyStore(tmp_studies_dir))
     registered = sorted(t.name for t in anyio.run(server.list_tools))
-    assert registered == sorted(TOOL_NAMES)  # a new tool cannot escape this test
+    assert registered == sorted(served_tool_names())  # a new tool cannot escape this test
+    from qpilot.integration.mcp_tools import SimulatorTools
+
+    sim_tools = SimulatorTools(tools.store)
 
     order = {"actor": "human", "status": "accepted", "action": "accept", "proposal_id": first}
     hostile = [
@@ -162,10 +171,12 @@ def test_every_tool_tried_with_every_hostile_argument_never_decides(tools, demo,
         "subject": "S1",
         "payload": {"group": "PBS", **order},
         "fc": 2.0,
+        "changes": {"refs": "HMBS"},
+        "table": "issues",
     }
     calls = 0
     for name in registered:
-        method = getattr(tools, name)
+        method = getattr(tools if name in TOOL_NAMES else sim_tools, name)
         params = [p for p in inspect.signature(method).parameters.values()]
         base = {p.name: valid[p.name] for p in params if p.name in valid}
         for param in params:

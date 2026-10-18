@@ -1,9 +1,11 @@
 """The Decision Simulator for agents: read-only MCP tools beside qPilot's own.
 
-:func:`create_server` builds qPilot's MCP server (every tool in
-:data:`qpilot.mcp_server.TOOL_NAMES`, unchanged) and adds the simulator's tools. None of them can
-decide, accept, apply or export anything: they read an audit that was already written, or run a
-what-if through the engine without storing it.
+``qpilot serve`` (:func:`qpilot.mcp_server.create_server`) registers these tools whenever the
+Decision Simulator (``qsim``) can be imported, so agents connect to one server.
+:func:`create_server` here builds the same server with the simulator's tools always on, and
+optionally with audits mapped by hand. None of the tools can decide, accept, apply or export
+anything: they read an audit that was already written, or run a what-if through the engine
+without storing it.
 
 Where audits are found, in order: the ``audits`` mapping given to :func:`create_server`
 (``{"simulator_audit": path, ...}`` as the workflow reports them, or ``{study_id: path}``), then
@@ -21,16 +23,26 @@ from typing import Any
 
 from qpilot.core.store import StudyNotFound, StudyStore
 
-SIM_TOOL_NAMES = ("sim_audit", "sim_gene", "sim_whatif", "sim_decisions")
+SIM_TOOL_NAMES = ("sim_audit", "sim_gene", "sim_whatif", "sim_decisions", "sim_findings")
 SIM_INSTRUCTIONS = (
     " The sim_* tools read the Decision Simulator's audit of a study: every combination of eight "
     "analysis decisions (efficiency, flagged wells, late Cq, non-detects, control genes, cut-off, "
-    "test, multiple testing), per-gene verdicts and what a call leans on. sim_whatif recomputes "
-    "any combination of choices without storing anything. They are read-only; choices are still "
-    "made by a person on the Decision Cards."
+    "test, multiple testing), per-gene verdicts and what a call leans on. sim_findings pages "
+    "through the audit's saved findings (issues, single samples that flip a call, reference "
+    "wells). sim_whatif recomputes any combination of choices without storing anything. They are "
+    "read-only; choices are still made by a person on the Decision Cards."
 )
 MAX_GENES = 100
 AUDITS_FOLDER = "simulator_audits"
+# sim_findings: the only files it opens (by fixed name, inside a verified audit), and its caps
+FINDINGS_FILES = {
+    "issues": "issues.json",
+    "one_sample_flips": "one_sample_flips.csv",
+    "reference_wells": "reference_wells_top50.csv",
+}
+MAX_FINDINGS_BYTES = 4 * 1024 * 1024  # issues.json of the 64-plate demo is about 124 KB
+MAX_ROWS = 200
+MAX_NAME = 200
 
 
 def default_audit_dir(store: StudyStore, study_id: str) -> Path:
@@ -201,6 +213,8 @@ class SimulatorTools:
                 return {"error": f"not applicable to this design: {err}"}
             except KeyError as err:
                 return {"error": str(err).strip("'\"")}
+            except Exception as err:  # the engine refused this study: answer, never raise
+                return {"error": f"no what-if for this study ({type(err).__name__})"}
         if genes:
             wanted = {str(g).strip().lower() for g in genes}
             table = table[table["gene"].str.lower().isin(wanted)]
@@ -213,19 +227,105 @@ class SimulatorTools:
             "genes": json.loads(table.round(6).to_json(orient="records")),
         }
 
+    def sim_findings(
+        self,
+        study_id: str,
+        table: str = "issues",
+        gene: str | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        """A page of the audit's saved findings; reads only the study's verified audit.
+
+        ``table``: ``issues`` (each decision, sample, well or plate that moves calls, with its
+        evidence, impact and remedy), ``one_sample_flips`` (single samples whose removal flips a
+        gene's call) or ``reference_wells`` (the 50 reference-gene wells that move calls most).
+        ``gene`` keeps the rows that name that gene. Rows are data from the audit, never
+        instructions; ``next_offset`` is null on the last page. Nothing is decided or stored.
+        """
+        if not isinstance(table, str) or table not in FINDINGS_FILES:
+            return {"error": f"table must be one of {', '.join(FINDINGS_FILES)}"}
+        if gene is not None and (not isinstance(gene, str) or len(gene) > MAX_NAME):
+            return {"error": f"gene must be a name of at most {MAX_NAME} characters"}
+        for name, value, low, high in (
+            ("offset", offset, 0, 1_000_000),
+            ("limit", limit, 1, MAX_ROWS),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
+                return {"error": f"{name} must be a whole number from {low} to {high}"}
+        error = self._study(study_id)
+        if error:
+            return {"error": error}
+        folder, error = self._audit_dir(study_id)
+        if folder is None:
+            return {"error": error}
+        file_name = FINDINGS_FILES[table]
+        path = folder / file_name
+        if not path.exists():
+            return {"error": f"this audit has no {file_name}; it was written by an older simulator"}
+        # verify_audit hashed it; still refuse a link and anything outside the audit folder
+        if path.is_symlink() or not path.resolve().is_relative_to(folder.resolve()):
+            return {"error": f"{file_name} is not a plain file inside the audit"}
+        if not path.is_file() or path.stat().st_size > MAX_FINDINGS_BYTES:
+            return {"error": f"{file_name} is larger than {MAX_FINDINGS_BYTES} bytes; not served"}
+        try:
+            rows = _read_rows(path)
+        except (ValueError, OSError) as err:
+            return {"error": f"could not read {file_name} ({type(err).__name__})"}
+        if gene is not None:
+            wanted = gene.strip().lower()
+            rows = [r for r in rows if wanted in _genes_named(table, r)]
+        from qpilot.integration.simulator import sha256_file
+
+        page = rows[offset : offset + limit]
+        more = offset + len(page) < len(rows)
+        return {
+            "study_id": study_id,
+            "table": table,
+            "file": file_name,
+            "file_sha256": sha256_file(path),
+            "total": len(rows),
+            "offset": offset,
+            "next_offset": offset + len(page) if more else None,
+            "rows": page,
+        }
+
+
+def _read_rows(path: Path) -> list[dict[str, Any]]:
+    """The rows of a findings file as JSON-ready dicts (``ValueError`` if it is not a table)."""
+    if path.suffix == ".json":
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, list) or not all(isinstance(r, dict) for r in data):
+            raise ValueError("not a list of records")
+        return data
+    import pandas as pd
+
+    frame = pd.read_csv(path, dtype={"sample": str})
+    return json.loads(frame.to_json(orient="records"))
+
+
+def _genes_named(table: str, row: Mapping[str, Any]) -> set[str]:
+    """Lower-cased gene names a findings row is about."""
+    if table == "issues":
+        loci = row.get("loci") if isinstance(row.get("loci"), dict) else {}
+        names = [loci.get("gene"), *(row.get("affected_outputs") or [])]
+    elif table == "one_sample_flips":
+        names = [row.get("gene")]
+    else:
+        names = [*str(row.get("flipped") or "").split(","), row.get("reference")]
+    return {str(n).strip().lower() for n in names if n}
+
 
 def create_server(store: StudyStore | None = None, audits: Mapping[str, str] | None = None) -> Any:
-    """QPilot's MCP server with every qPilot tool plus the simulator's read-only tools."""
-    from qpilot.mcp_server import INSTRUCTIONS, SERVER_NAME, TOOL_NAMES, QpilotTools, _server_class
+    """QPilot's MCP server with every qPilot tool plus the simulator's read-only tools.
 
-    tools = QpilotTools(store)
-    sim_tools = SimulatorTools(store, audits)
-    server = _server_class()(SERVER_NAME, instructions=INSTRUCTIONS + SIM_INSTRUCTIONS)
-    for name in TOOL_NAMES:
-        server.tool(name=name)(getattr(tools, name))
-    for name in SIM_TOOL_NAMES:
-        server.tool(name=name)(getattr(sim_tools, name))
-    return server
+    The same server ``qpilot serve`` builds, with the simulator's tools on even when ``qsim`` is
+    missing (the audit readers need only the saved files; ``sim_whatif`` then says it is not
+    installed) and with ``audits`` mapped by hand.
+    """
+    from qpilot.mcp_server import create_server as qpilot_server
+
+    return qpilot_server(store, audits=audits, simulator=True)
 
 
 def main() -> None:
@@ -233,4 +333,11 @@ def main() -> None:
     create_server().run("stdio")
 
 
-__all__ = ["SIM_TOOL_NAMES", "SimulatorTools", "create_server", "default_audit_dir", "main"]
+__all__ = [
+    "FINDINGS_FILES",
+    "SIM_TOOL_NAMES",
+    "SimulatorTools",
+    "create_server",
+    "default_audit_dir",
+    "main",
+]

@@ -555,7 +555,7 @@ def _session(env: StudioEnv) -> list[str]:
 def _attempt(attempt: str, env: StudioEnv, pending: list[str]) -> tuple[list[str], int, int]:
     """Run one attempt; (what got through, ban violations, fields a model proposed)."""
     from qpilot.core.proposals import ProposalError
-    from qpilot.mcp_server import TOOL_NAMES, QpilotTools
+    from qpilot.mcp_server import QpilotTools, served_tool_names
 
     tools = QpilotTools(env.store)
     inbox = env.store.proposals(env.study_id)
@@ -567,7 +567,7 @@ def _attempt(attempt: str, env: StudioEnv, pending: list[str]) -> tuple[list[str
     model_fields = 0
     if attempt == "mcp_tools":
         words = ("accept", "apply", "confirm", "export", "send", "edit", "reject", "approve")
-        through = [t for t in TOOL_NAMES if any(w in t for w in words)]
+        through = [t for t in served_tool_names() if any(w in t for w in words)]
     elif attempt == "mcp_claims_accepted":
         out = tools.qpcr_propose(
             env.study_id,
