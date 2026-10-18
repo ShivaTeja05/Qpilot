@@ -1,20 +1,27 @@
 """Task 9 gate: pure view-models for the app; every name and value is escaped."""
 
+import pytest
+
 from qpilot.app_state import (
+    CANNOT_TELL,
     FOOTER,
     card_view,
     cards_in_order,
     confidence_badge,
     decision_counter,
+    evidence_view,
     footer_lines,
     meter_html,
     meter_rows,
     next_card,
     policy_lines,
     results_table,
+    review_body,
+    review_head_line,
     study_summary,
 )
-from qpilot.schemas import CardOption, ContrastResult, DecisionCard, Grade
+from qpilot.core.vocabulary import banned_words
+from qpilot.schemas import CardOption, ContrastResult, DecisionCard, Fact, Grade
 
 HEADLINE = ["ODC1", "BIRC5", "NTRK1", "NM23A"]
 
@@ -108,3 +115,65 @@ def test_policy_and_footer():
     footer = footer_lines("0.1.0", "fce7a44e8b47b90759c646b557de568f7af77e75")
     assert footer[: len(FOOTER)] == list(FOOTER)
     assert footer[-1] == "qPilot 0.1.0 · LinRegPCR (rdmlpython) @ fce7a44"
+
+
+# ---------- Evidence Ledger panel and Run Review ----------
+
+
+@pytest.fixture(scope="module")
+def toy_ledger():
+    from qpilot.qpcr.evidence import evidence_for
+    from tests.engine.evidence_toys import toy_design, toy_model, toy_table
+
+    table, design = toy_table(), toy_design()
+    return evidence_for(table, toy_model(table, design), design)
+
+
+def test_evidence_view_shows_a_chip_per_item_and_what_the_study_cannot_tell(toy_ledger):
+    markup = evidence_view(toy_ledger)
+    for status in ("present", "absent", "unknown", "not_applicable"):
+        assert f"qp-ev-{status}" in markup
+    assert markup.count('<span class="qp-ev ') == len(toy_ledger.items)
+    cannot = markup.split(CANNOT_TELL, 1)[1].split("<details>", 1)[0]
+    assert "No-RT control" in cannot and "genomic DNA carry-over cannot be checked" in cannot
+    assert "Inter-run calibrator" not in cannot  # not applicable: listed under what it shows
+    assert 'data-fact="f_ev_n_present"' in markup
+    assert banned_words(markup) == []
+
+
+def test_evidence_view_numbers_come_only_from_facts(toy_ledger):
+    import html
+    import re
+
+    text = re.sub(r'<span class="fact"[^>]*>[^<]*</span>', "", evidence_view(toy_ledger))
+    assert not re.search(r"\d", html.unescape(re.sub(r"<[^>]+>", "", text)))
+
+
+def test_evidence_view_escapes_and_refuses_naked_numbers(toy_ledger):
+    evil = '<img src=x onerror="alert(1)">'
+    items = [i.model_copy(update={"title": evil}) for i in toy_ledger.items]
+    items[0] = items[0].model_copy(update={"status": "<b>bad</b>"})
+    items[1] = items[1].model_copy(
+        update={"consequence": items[1].consequence.model_copy(update={"text": "42 wells"})}
+    )
+    facts = {**toy_ledger.facts, "f_ev_n_present": Fact(id="f_ev_n_present", value=evil)}
+    ledger = toy_ledger.model_copy(update={"items": items, "facts": facts})
+    markup = evidence_view(ledger)
+    assert "<img" not in markup and "<b>bad" not in markup and "&lt;img" in markup
+    assert "qp-ev-unknown" in markup  # an unknown status shows as unknown
+    assert "42 wells" not in markup and "This line could not be shown." in markup
+
+
+def test_evidence_view_without_a_ledger_says_why():
+    markup = evidence_view(None, "the input file of this study is not <available>")
+    assert "not available for this study: the input file of this study is not &lt;" in markup
+    assert "<available>" not in markup
+    assert evidence_view(None).endswith("not available for this study.</p></div>")
+
+
+def test_review_body_keeps_only_the_main_part():
+    page = "<!doctype html><html><head><style>body{}</style></head><body><main>\n<h1>R</h1>\n"
+    assert review_body(page + "</main></body></html>") == "<h1>R</h1>"
+    assert review_body("<p>no main</p>") == ""
+    assert review_head_line(None) == ""
+    assert "<code>abcdef0123456789</code>" in review_head_line("abcdef0123456789" * 4)

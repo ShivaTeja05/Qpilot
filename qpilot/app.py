@@ -57,16 +57,20 @@ from qpilot.ai.config import ModelConfig  # noqa: E402
 from qpilot.ai.explain import explain_card, log_line  # noqa: E402
 from qpilot.ai.profile import Profile, build_fewshots, load_profile  # noqa: E402
 from qpilot.app_state import (  # noqa: E402
+    REVIEW_OUTCOME_CHOICES,
     card_view,
     cards_in_order,
     confidence_badge,
     decision_counter,
     esc,
+    evidence_view,
     footer_lines,
     meter_html,
     next_card,
     policy_lines,
     results_table,
+    review_body,
+    review_head_line,
     study_summary,
 )
 from qpilot.core.decisions import (  # noqa: E402
@@ -78,7 +82,7 @@ from qpilot.core.decisions import (  # noqa: E402
     reject_request,
 )
 from qpilot.core.record import RecordError, write_record, zip_record  # noqa: E402
-from qpilot.core.store import StudyStore  # noqa: E402
+from qpilot.core.store import MAX_REVIEWER, StaleReview, StudyNotFound, StudyStore  # noqa: E402
 from qpilot.core.validator import names_from_result  # noqa: E402
 from qpilot.explain.templates import to_html  # noqa: E402
 from qpilot.harness.make_evalset import build_items  # noqa: E402
@@ -91,6 +95,7 @@ from qpilot.io.datasets import (  # noqa: E402
     default_cache_dir,
 )
 from qpilot.qpcr.study import HEADLINE_GENES  # noqa: E402
+from qpilot.report.run_review import build_review, render_html, run_review  # noqa: E402
 from qpilot.schemas import DecisionCard, DecisionEntry, DecisionOutcome  # noqa: E402
 
 PROVIDERS = {"None": "none", "Anthropic": "anthropic", "Local": "openai_compatible"}
@@ -107,6 +112,11 @@ MOVED_NOTICE = (
     "Something was decided since this page last showed the study (another tab or an agent); "
     "the card below is current."
 )
+REVIEW_STALE_NOTICE = (
+    "Something was decided since the Run Review was shown, so it is shown again below. Look at "
+    "it, then sign off again."
+)
+EVIDENCE_FILE = "evidence.json"
 SUGGEST_ONLY_REASON = (
     "Suggest mode: the assistant may only ask. This choice changes no conclusion, but a person "
     "confirms it."
@@ -159,6 +169,16 @@ CSS = """
 .qp-dot.on { background: #16a34a; } .qp-dot.off { background: #dc2626; }
 .qp-policy { font-size: .85rem; margin: 0; padding-left: 1.1rem; }
 .qp-footer { font-size: .8rem; opacity: .8; }
+.qp-ev, .qp-review .status { display: inline-block; padding: 0 .45rem; border-radius: .5rem;
+  font-size: .8rem; font-weight: 600; background: rgba(127,127,127,.2); white-space: nowrap; }
+.qp-ev-present, .qp-review .status-present { background: #bbf7d0; color: #14532d; }
+.qp-ev-absent, .qp-review .status-absent { background: #fed7aa; color: #7c2d12; }
+.qp-ev-items, .qp-ev-lines { margin: .2rem 0; padding-left: 1.1rem; font-size: .9rem; }
+.qp-evidence h5 { margin: .4rem 0 .2rem 0; }
+.qp-review .muted { font-size: .85rem; opacity: .8; }
+.qp-review table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.qp-review th, .qp-review td { padding: .25rem .4rem; text-align: left; vertical-align: top;
+  border-bottom: 1px solid rgba(127,127,127,.25); }
 """
 
 
@@ -167,7 +187,7 @@ CSS = """
 
 def new_session() -> dict[str, Any]:
     """What the tab is looking at: plain values only (Gradio deep-copies state)."""
-    return {"study_id": None, "card_id": None, "head": None}
+    return {"study_id": None, "card_id": None, "head": None, "review_head": None}
 
 
 def default_settings() -> dict[str, Any]:
@@ -412,8 +432,57 @@ def build_app(
             hide_download,
         )
 
+    def study_ledger(sid: str):
+        """The study's Evidence Ledger, or ``None`` and why.
+
+        The kept ``evidence.json`` when it is this study's, else one rebuilt read-only from the
+        input file and kept (a cache; a ledger never changes a conclusion).
+        """
+        from qpilot.qpcr.evidence import (
+            LEDGER_VERSION,
+            EvidenceError,
+            EvidenceLedger,
+            evidence_store,
+        )
+
+        try:
+            data = store.get_artifact(sid, EVIDENCE_FILE)
+            kept = EvidenceLedger.model_validate(data) if data else None
+        except Exception:  # an unreadable kept ledger is rebuilt
+            kept = None
+        if kept is not None and kept.version == LEDGER_VERSION and kept.study_id == sid:
+            return kept, ""
+        try:
+            ledger = evidence_store(store, sid)
+        except EvidenceError as err:
+            return None, str(err)
+        except Exception as err:  # the panel says so; the page stays up
+            return None, f"it could not be built ({type(err).__name__})"
+        try:
+            store.put_artifact(sid, EVIDENCE_FILE, ledger.model_dump(mode="json"))
+        except Exception:  # keeping it only saves time next open
+            pass
+        return ledger, ""
+
+    def review_html(sid: str, ledger=None, note: str = "") -> str:
+        """The Run Review of the study, with every sign-off the decision log holds."""
+        try:
+            reviews = store.reviews(sid)
+            if ledger is not None:
+                review = run_review(store, sid, reviews=reviews, ledger=ledger)
+            else:
+                design = store.design(sid)
+                headline = tuple(design.headline) if design is not None else HEADLINE_GENES
+                review = build_review(store.get(sid), headline=headline, ledger_note=note,
+                                      reviews=reviews)  # fmt: skip
+            return f'<div class="qp-review">{review_body(render_html(review))}</div>'
+        except Exception as err:  # shown, not raised
+            return _notice(f"The Run Review could not be shown: {_error(err)}")
+
     def study_outputs(session: dict[str, Any]) -> tuple:
-        result = store.get(session["study_id"])
+        sid = session["study_id"]
+        result = store.get(sid)
+        ledger, note = study_ledger(sid)
         genes = [g for g in HEADLINE_GENES if g in result.contrasts] or list(result.contrasts)[:4]
         confidence = "".join(
             f"<h4>{esc(g)}</h4>{confidence_badge(result.confidence[g], g, result.facts)}"
@@ -425,10 +494,12 @@ def build_app(
             meter_html(result, genes),
             confidence,
             results_table(result),
+            evidence_view(ledger, note),
+            review_html(sid, ledger, note),
         )
 
     def keep_study_outputs() -> tuple:
-        return (gr.update(), gr.update(), gr.update(), gr.update())
+        return tuple(gr.update() for _ in study_outs)
 
     def _open(session: dict[str, Any], study_id: str, note: str = "") -> tuple:
         cards = store.cards(study_id)
@@ -443,6 +514,9 @@ def build_app(
             session = {**session, "study_id": study_id, "card_id": first.id}
         else:
             session = {**session, "study_id": study_id, "card_id": waiting.id}
+        # Read before the Run Review is drawn: a write in between makes a sign-off stale, never
+        # the other way round.
+        session = {**session, "review_head": store.chain_head(study_id)}
         return (*card_outputs(session, note, clear_reason=True), *study_outputs(session))
 
     # ---------- handlers ----------
@@ -534,6 +608,43 @@ def build_app(
         if outcome.status == "stale":
             return card_outputs(session, STALE_NOTICE)
         return card_outputs(session, "The agent's request was turned down.", clear_reason=True)
+
+    def on_sign_off(session, outcome, comment, reviewer):
+        """A person signs off the Run Review: one review entry in the decision log.
+
+        Only this click writes a review, always as ``human``; the chain head read when the
+        review was drawn is sent, so a decision made since makes the sign-off stale.
+        """
+        keep = gr.update()
+        sid = session.get("study_id")
+        if not sid:
+            return session, keep, _notice("Analyse a study first."), keep, keep
+        if not outcome:
+            return session, keep, _notice("Pick accept, repeat or discuss first."), keep, keep
+        try:
+            entry = store.append_review(
+                sid,
+                outcome,
+                comment or "",
+                reviewer or "",
+                actor="human",
+                expected_head=session.get("review_head"),
+            )
+        except StaleReview:
+            session = {**session, "review_head": store.chain_head(sid)}
+            ledger, note = study_ledger(sid)
+            return (session, review_html(sid, ledger, note), _notice(REVIEW_STALE_NOTICE),
+                    keep, keep)  # fmt: skip
+        except (DecisionError, StudyNotFound, KeyError) as err:
+            return session, keep, _notice(_error(err)), keep, keep
+        update = {"review_head": entry.hash}
+        if session.get("head") == entry.prev_hash:  # nothing else moved: the card view is current
+            update["head"] = entry.hash
+        session = {**session, **update}
+        ledger, note = study_ledger(sid)
+        done = f"Signed off ({outcome}); the decision log keeps it with your name and comment."
+        return (session, review_html(sid, ledger, note), _notice(done), gr.update(value=""),
+                review_head_line(entry.hash))  # fmt: skip
 
     def on_autonomy(settings, level):
         return {**settings, "autonomy": level or "suggest"}
@@ -701,6 +812,7 @@ def build_app(
             analyse = gr.Button("Analyse", variant="primary", scale=1)
         with gr.Row():
             with gr.Column(scale=2):
+                evidence = gr.HTML()
                 summary = gr.HTML()
                 meter = gr.HTML()
                 confidence = gr.HTML()
@@ -734,6 +846,16 @@ def build_app(
             download = gr.DownloadButton("Download the record (.zip)", visible=False)
         scorecard = gr.Markdown()
         export_status = gr.HTML()
+        with gr.Accordion("Run Review", open=False):
+            review = gr.HTML()
+            review_outcome = gr.Radio(REVIEW_OUTCOME_CHOICES, label="Your sign-off")
+            review_comment = gr.Textbox(label="Comment (required, kept in the decision log)",
+                                        max_length=MAX_REASON, lines=2)  # fmt: skip
+            reviewer = gr.Textbox(label="Your name (kept in the decision log)",
+                                  max_length=MAX_REVIEWER)  # fmt: skip
+            sign_off = gr.Button("Sign off", variant="primary")
+            review_notice = gr.HTML()
+            review_head = gr.HTML()
         gr.HTML(
             '<div class="qp-footer">'
             + "<br>".join(footer_lines(__version__, VERMEULEN_COMMIT))
@@ -742,7 +864,7 @@ def build_app(
 
         card_outs = [session, card, counter, options, reason, notice, figure, undo, reject,
                      picker, download]  # fmt: skip
-        study_outs = [summary, meter, confidence, results]
+        study_outs = [summary, meter, confidence, results, evidence, review]
         page.load(on_load, [session], card_outs)
         analyse.click(on_analyse, [session, upload], card_outs + study_outs, concurrency_limit=2)
         picker.select(on_pick, [session, picker], card_outs)
@@ -759,6 +881,8 @@ def build_app(
         ask_button.click(on_ask, [session, settings, question], [answer, *card_outs])
         check.click(on_check, [session, settings], [scorecard], concurrency_limit=1)
         export.click(on_export, [session], [download, export_status])
+        sign_off.click(on_sign_off, [session, review_outcome, review_comment, reviewer],
+                       [session, review, review_notice, review_comment, review_head])  # fmt: skip
     page.qpilot_export_root = exports  # for launch_options and tests
     return page
 
