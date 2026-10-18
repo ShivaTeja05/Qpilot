@@ -531,3 +531,160 @@ def test_a_decision_since_the_review_was_shown_makes_the_sign_off_stale(page, st
 def test_only_the_sign_off_button_writes_a_review():
     source = (REPO / "qpilot" / "app.py").read_text()
     assert source.count(".append_review(") == 1 and 'actor="human"' in source
+
+
+# ---------- Trace: where to look ----------
+
+TRACE_GENE, TRACE_HTML, TRACE_DECIDE = 17, 18, 19  # appended after the review (19, 20, 21)
+TRACE_BUTTONS = 3
+
+
+def _select(tab, row, gene):
+    """A click on a row of the results table (the event Gradio sends for a Dataframe)."""
+    from gradio.events import EventData
+
+    fn = tab.fns["on_trace_row"]
+    data = {"index": [row, 0], "value": gene, "row_value": [gene, "1×"]}
+    out = asyncio.run(
+        tab.page.process_api(
+            block_fn=fn, inputs=[None], state=tab.session, event_data=EventData(None, data)
+        )
+    )
+    return out["data"]
+
+
+@pytest.fixture
+def toy(tmp_studies_dir, monkeypatch):
+    from tests.app.trace_toys import toy_store
+
+    store, sid, ctx, _ = toy_store(tmp_studies_dir)
+    built = []
+
+    def fake_context(_store, study_id):
+        built.append(study_id)
+        return ctx
+
+    monkeypatch.setattr(app, "trace_context", fake_context)
+    return store, sid, built
+
+
+def test_trace_outputs_are_appended_after_the_pinned_ones(page):
+    out = Tab(page).open()
+    assert len(out) == 11 + 6 + 2 + TRACE_BUTTONS
+    assert "Run Review" in out[REVIEW] and out[TRACE_HTML] == ""
+    assert "ODC1" in [c[0] for c in out[TRACE_GENE]["choices"]]
+    assert all(out[TRACE_DECIDE + k]["visible"] is False for k in range(TRACE_BUTTONS))
+
+
+def test_trace_without_the_input_file_says_why(page):
+    tab = Tab(page)
+    assert "Analyse a study first" in tab("on_trace", None, None, "", "")[1]
+    tab.open()
+    out = tab("on_trace", None, None, "", "")
+    assert "Pick a gene, or type a sample or a well" in out[1]
+    out = tab("on_trace", None, "ODC1", "", "")
+    assert "No trace. The study&#x27;s input file is not known or has changed." in out[1]
+    assert all(b["visible"] is False for b in out[2:]) and tab.state["trace"] is None
+    assert "Trace a result first" in tab("on_trace_decide_1", None)[NOTICE]
+
+
+def test_trace_a_gene_then_decide_opens_a_card_a_person_decides(toy, tmp_path):
+    store, sid, built = toy
+    tab = Tab(app.build_app(store, None, tmp_path / "exports"))
+    tab.open()
+    head = store.chain_head(sid)
+    out = tab("on_trace", None, "DOWN", "", "")
+    assert "Trace from gene DOWN" in out[1] and "Where to look first" in out[1]
+    assert out[2]["visible"] is True and out[2]["value"].startswith("Decide… 1. R1_20260101/")
+    assert out[3]["visible"] is False and out[4]["visible"] is False
+    assert tab.state["trace"] == {"study_id": sid, "kind": "gene", "id": "DOWN", "ranks": [1]}
+    assert "Trace a result first" in tab("on_trace_decide_2", None)[NOTICE]  # no second place
+    out = tab("on_trace_decide_1", None)
+    card_id = tab.state["card_id"]
+    assert card_id.startswith("card_trace_s12_r1_20260101_")
+    assert "Opened from Trace" in out[NOTICE] and "What to do with one unusual well" in out[CARD]
+    assert card_id in [value for _, value in out[PICKER]["choices"]]
+    assert store.chain_head(sid) == head  # opening a card writes nothing to the decision log
+    assert built == [sid]  # the context is built once per study and kept
+    tab("on_trace_decide_1", None)  # opening it again is the same card
+    assert [c.id for c in store.cards(sid)].count(card_id) == 1
+    assert "A reason is required" in tab.decide("set_aside", "")[NOTICE]
+    out = tab.decide("set_aside", "The tube was mislabelled at extraction.")
+    assert "Decided: Set the sample aside (every comparison)." in out[NOTICE]
+    entry = store.entries(sid)[-1]
+    assert (entry.card_id, entry.option, entry.actor, entry.status) == (
+        card_id, "set_aside", "human", "applied"
+    )  # fmt: skip
+    assert store.card(sid, card_id).status == "decided"
+
+
+def test_an_agent_cannot_decide_a_trace_card_that_changes_a_call(toy, tmp_path):
+    store, sid, _ = toy
+    tab = Tab(app.build_app(store, None, tmp_path / "exports"))
+    tab.open()
+    tab("on_trace", None, "DOWN", "", "")
+    tab("on_trace_decide_1", None)
+    card_id = tab.state["card_id"]
+    outcome = apply_decision(store, sid, card_id, "set_aside", "agent says so", "agent",
+                             store.chain_head(sid))  # fmt: skip
+    assert outcome.status == "pending_human"
+    assert store.card(sid, card_id).status == "pending_human"
+    tab.pick("card_refset")
+    out = tab.pick(card_id)
+    assert "Waiting for a person: an agent asked to choose Set the sample aside" in out[CARD]
+    assert out[REJECT]["visible"] is True  # the person can turn the request down
+
+
+def test_selecting_a_results_row_traces_that_gene(toy, tmp_path):
+    store, sid, _ = toy
+    tab = Tab(app.build_app(store, None, tmp_path / "exports"))
+    tab.open()
+    out = _select(tab, 0, "DOWN")
+    assert "Trace from gene DOWN" in out[1] and out[2]["visible"] is True
+    assert out[5]["value"] == "DOWN" and out[6]["value"] == "" and out[7]["value"] == ""
+    assert tab.state["trace"]["id"] == "DOWN"
+    out = _select(tab, 0, "NOT_A_GENE")
+    assert "Pick a gene" in out[1]
+
+
+def test_a_well_or_a_sample_wins_over_the_gene(toy, tmp_path):
+    store, sid, _ = toy
+    tab = Tab(app.build_app(store, None, tmp_path / "exports"))
+    tab.open()
+    out = tab("on_trace", None, "DOWN", "s12", "")
+    assert "Trace from a sample" in out[1] and tab.state["trace"]["kind"] == "sample"
+    out = tab("on_trace", None, "DOWN", "s12", "R1_20260101:XX99")
+    assert "No trace" in out[1] and tab.state["trace"] is None
+
+
+def test_a_new_study_clears_the_trace(toy, tmp_path):
+    store, sid, _ = toy
+    tab = Tab(app.build_app(store, None, tmp_path / "exports"))
+    tab.open()
+    tab("on_trace", None, "DOWN", "", "")
+    out = tab("on_analyse", None, None)
+    assert out[TRACE_HTML] == "" and tab.state["trace"] is None
+    assert "Trace a result first" in tab("on_trace_decide_1", None)[NOTICE]
+
+
+@pytest.mark.demo_data
+def test_demo_trace_camta2_and_decide_k22(demo_rdml_path, tmp_studies_dir, tmp_path):
+    store = StudyStore(tmp_studies_dir)
+    sid = store.ensure_study(demo_rdml_path)
+    tab = Tab(app.build_app(store, demo_rdml_path, tmp_path / "exports"))
+    tab.open()
+    out = _select(tab, list(store.get(sid).contrasts).index("CAMTA2"), "CAMTA2")
+    assert "Trace from gene CAMTA2" in out[1]
+    assert ">15</span> different samples" in out[1]
+    labels = [b["value"] for b in out[2:5]]
+    assert labels[0] == "Decide… 1. HMBS_20080318/K22 (2016)"
+    out = tab("on_trace_decide_1", None)
+    card_id = tab.state["card_id"]
+    assert card_id == "card_trace_2016_hmbs_20080318_k22"
+    assert "CAMTA2" in out[CARD] and "IGSF4" in out[CARD]
+    out = tab.decide("read_from_other_refs", "K22 reads far later than the plate's standards.")
+    assert "Decided" in out[NOTICE]
+    assert store.card(sid, card_id).decided_by == "human"
+    _, status = tab("on_export", None)
+    folder = next((tmp_path / "exports").glob("record-*"))
+    assert verify(unzip_record(next(folder.glob("*.zip")), tmp_path / "check")).ok, status

@@ -23,6 +23,10 @@ choice that can change a conclusion. Each Decide sends the chain head the page l
 anything was written since (another tab, an agent), the card is re-read and the person is asked
 to look again. In *Suggest* mode the model may only ask; in *Decide and tell me* it may apply
 choices that change no conclusion, and the core still turns anything else into a request.
+
+Trace ("where to look") re-reads the study's input file read-only, once per study, and never
+writes the workspace. Its Decide… buttons are a person's click that opens a place as a
+``trace_set_aside`` card (``StudyStore.open_card``); the card is then decided like any other.
 """
 
 from __future__ import annotations
@@ -58,6 +62,7 @@ from qpilot.ai.explain import explain_card, log_line  # noqa: E402
 from qpilot.ai.profile import Profile, build_fewshots, load_profile  # noqa: E402
 from qpilot.app_state import (  # noqa: E402
     REVIEW_OUTCOME_CHOICES,
+    card_label,
     card_view,
     cards_in_order,
     confidence_badge,
@@ -72,6 +77,7 @@ from qpilot.app_state import (  # noqa: E402
     review_body,
     review_head_line,
     study_summary,
+    trace_view,
 )
 from qpilot.core.decisions import (  # noqa: E402
     MAX_REASON,
@@ -82,7 +88,13 @@ from qpilot.core.decisions import (  # noqa: E402
     reject_request,
 )
 from qpilot.core.record import RecordError, write_record, zip_record  # noqa: E402
-from qpilot.core.store import MAX_REVIEWER, StaleReview, StudyNotFound, StudyStore  # noqa: E402
+from qpilot.core.store import (  # noqa: E402
+    MAX_REVIEWER,
+    CardError,
+    StaleReview,
+    StudyNotFound,
+    StudyStore,
+)
 from qpilot.core.validator import names_from_result  # noqa: E402
 from qpilot.explain.templates import to_html  # noqa: E402
 from qpilot.harness.make_evalset import build_items  # noqa: E402
@@ -95,6 +107,7 @@ from qpilot.io.datasets import (  # noqa: E402
     default_cache_dir,
 )
 from qpilot.qpcr.study import HEADLINE_GENES  # noqa: E402
+from qpilot.qpcr.trace import TraceError  # noqa: E402
 from qpilot.report.run_review import build_review, render_html, run_review  # noqa: E402
 from qpilot.schemas import DecisionCard, DecisionEntry, DecisionOutcome  # noqa: E402
 
@@ -117,6 +130,15 @@ REVIEW_STALE_NOTICE = (
     "it, then sign off again."
 )
 EVIDENCE_FILE = "evidence.json"
+#: Places a trace shows, and Decide… buttons under the panel (one per place that changes a call).
+TRACE_TOP = 3
+#: Studies whose Trace context the page keeps (one is built per study, about a second on the demo).
+TRACE_CONTEXTS_KEPT = 2
+TRACE_ASK = "Pick a gene, or type a sample or a well (PLATE:WELL), then press Trace."
+TRACE_OPENED = (
+    "Opened from Trace: decide it here with a reason. A choice that can change a conclusion is "
+    "a person's; the study's numbers stay as analysed."
+)
 SUGGEST_ONLY_REASON = (
     "Suggest mode: the assistant may only ask. This choice changes no conclusion, but a person "
     "confirms it."
@@ -179,6 +201,7 @@ CSS = """
 .qp-review table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .qp-review th, .qp-review td { padding: .25rem .4rem; text-align: left; vertical-align: top;
   border-bottom: 1px solid rgba(127,127,127,.25); }
+.qp-trace p { margin: .2rem 0; }
 """
 
 
@@ -187,7 +210,7 @@ CSS = """
 
 def new_session() -> dict[str, Any]:
     """What the tab is looking at: plain values only (Gradio deep-copies state)."""
-    return {"study_id": None, "card_id": None, "head": None, "review_head": None}
+    return {"study_id": None, "card_id": None, "head": None, "review_head": None, "trace": None}
 
 
 def default_settings() -> dict[str, Any]:
@@ -252,6 +275,28 @@ def build_client(provider_label: str, endpoint: str, model: str) -> tuple[ModelC
         return ModelClient(backend(config, timeout=MODEL_TIMEOUT_S)), None
     except ModelUnavailable as err:
         return ModelClient(NoneBackend()), str(err)
+
+
+def trace_context(store: StudyStore, study_id: str):
+    """The study's Trace context, built read-only from its input file (as ``trace_store`` does).
+
+    Raises:
+        TraceError: The input file is unknown or changed, or a re-analysis does not reproduce
+            the stored results.
+        StudyNotFound: Unknown study.
+    """
+    from qpilot.qpcr.trace import _store_context  # trace_store's loader, kept for many traces
+
+    return _store_context(store, study_id)
+
+
+def _trace_root(gene: str | None, sample: str | None, well: str | None) -> dict[str, str] | None:
+    """What to trace: a well wins over a sample, which wins over the gene picked."""
+    for kind, value in (("well", well), ("sample", sample), ("gene", gene)):
+        text = (value or "").strip() if isinstance(value, str) else ""
+        if text:
+            return {"kind": kind, "id": text}
+    return None
 
 
 def _load_profile() -> Profile:
@@ -416,8 +461,7 @@ def build_app(
             if target
             else gr.update(value="Undo", interactive=False)
         )
-        picker = [(f"{c.rank}. {c.kind.replace('_', ' ')} ({c.status.replace('_', ' ')})", c.id)
-                  for c in cards]  # fmt: skip
+        picker = [(card_label(c), c.id) for c in cards]
         return (
             session,
             view.html,
@@ -496,6 +540,9 @@ def build_app(
             results_table(result),
             evidence_view(ledger, note),
             review_html(sid, ledger, note),
+            gr.update(choices=list(result.contrasts), value=None),
+            "",
+            *(gr.update(visible=False) for _ in range(TRACE_TOP)),
         )
 
     def keep_study_outputs() -> tuple:
@@ -516,8 +563,77 @@ def build_app(
             session = {**session, "study_id": study_id, "card_id": waiting.id}
         # Read before the Run Review is drawn: a write in between makes a sign-off stale, never
         # the other way round.
-        session = {**session, "review_head": store.chain_head(study_id)}
+        session = {**session, "review_head": store.chain_head(study_id), "trace": None}
         return (*card_outputs(session, note, clear_reason=True), *study_outputs(session))
+
+    # ---------- Trace: where to look ----------
+
+    contexts: dict[tuple[str, str], Any] = {}
+
+    def context_for(sid: str):
+        """The study's Trace context, built once per study and input file (the page keeps two)."""
+        key = (sid, store.get(sid).input_sha256)
+        if key not in contexts:
+            built = trace_context(store, sid)
+            while len(contexts) >= TRACE_CONTEXTS_KEPT:
+                contexts.pop(next(iter(contexts)))
+            contexts[key] = built
+        return contexts[key]
+
+    def traced(sid: str, root: dict[str, str]):
+        from qpilot.qpcr.trace import trace_gene, trace_sample, trace_well
+
+        trace = {"gene": trace_gene, "sample": trace_sample, "well": trace_well}[root["kind"]]
+        return trace(context_for(sid), root["id"], top=TRACE_TOP)
+
+    def trace_outputs(session: dict[str, Any], root: dict[str, str] | None) -> tuple:
+        """The Trace panel and its Decide… buttons (see ``trace_outs`` below)."""
+        hidden = tuple(gr.update(visible=False) for _ in range(TRACE_TOP))
+        sid = session.get("study_id")
+        if not sid:
+            return (session, _notice("Analyse a study first."), *hidden)
+        if root is None:
+            return (session, _notice(TRACE_ASK), *hidden)
+        try:
+            result = traced(sid, root)
+        except (TraceError, StudyNotFound, KeyError) as err:
+            return (
+                {**session, "trace": None},
+                _notice(f"No trace. {_error(err).rstrip('.')}."),
+                *hidden,
+            )
+        except Exception as err:  # shown on the page, never raised
+            note = f"No trace: it could not be computed ({type(err).__name__})."
+            return ({**session, "trace": None}, _notice(note), *hidden)
+        view = trace_view(result, allowed_names=names_from_result(store.get(sid)))
+        places = view.places[:TRACE_TOP]
+        session = {**session, "trace": {"study_id": sid, **root,
+                                        "ranks": [p.rank for p in places]}}  # fmt: skip
+        buttons = [gr.update(value=p.label, visible=True) for p in places]
+        buttons += [gr.update(visible=False)] * (TRACE_TOP - len(places))
+        return (session, view.html, *buttons)
+
+    def open_trace_card(session: dict[str, Any], slot: int) -> tuple:
+        """A person's click on Decide…: the place becomes a decision card (``store.open_card``).
+
+        The card then shows in the picker and is decided with the card's own buttons, under the
+        same rules as every card: a choice that can change a conclusion waits for a person.
+        """
+        sid, trace = session.get("study_id"), session.get("trace") or {}
+        ranks = trace.get("ranks") or []
+        if not sid or trace.get("study_id") != sid or slot >= len(ranks):
+            return card_outputs(session, "Trace a result first, then pick a place to decide.")
+        try:
+            result = traced(sid, {"kind": trace["kind"], "id": trace["id"]})
+            card = store.open_card(sid, result.card(ranks[slot]))
+        except (TraceError, CardError, StudyNotFound, KeyError) as err:
+            return card_outputs(session, f"The card was not opened. {_error(err).rstrip('.')}.",
+                                warn_if_moved=True)  # fmt: skip
+        except Exception as err:  # shown on the page, never raised
+            note = f"The card was not opened ({type(err).__name__})."
+            return card_outputs(session, note, warn_if_moved=True)
+        session = {**session, "card_id": card.id}
+        return card_outputs(session, TRACE_OPENED, clear_reason=True, warn_if_moved=True)
 
     # ---------- handlers ----------
 
@@ -608,6 +724,33 @@ def build_app(
         if outcome.status == "stale":
             return card_outputs(session, STALE_NOTICE)
         return card_outputs(session, "The agent's request was turned down.", clear_reason=True)
+
+    def on_trace(session, gene, sample, well):
+        return trace_outputs(session, _trace_root(gene, sample, well))
+
+    def on_trace_row(session, evt: gr.SelectData):
+        """Selecting a row of the results table traces that row's gene."""
+        sid, gene = session.get("study_id"), None
+        if evt is not None and evt.row_value:
+            gene = str(evt.row_value[0])
+        elif sid and evt is not None and isinstance(evt.index, list | tuple) and evt.index:
+            genes = list(store.get(sid).contrasts)
+            row = evt.index[0]
+            gene = genes[row] if isinstance(row, int) and 0 <= row < len(genes) else None
+        if not sid or not gene or gene not in store.get(sid).contrasts:
+            return (*trace_outputs(session, None), gr.update(), gr.update(), gr.update())
+        root = {"kind": "gene", "id": gene}
+        return (*trace_outputs(session, root), gr.update(value=gene), gr.update(value=""),
+                gr.update(value=""))  # fmt: skip
+
+    def on_trace_decide_1(session):
+        return open_trace_card(session, 0)
+
+    def on_trace_decide_2(session):
+        return open_trace_card(session, 1)
+
+    def on_trace_decide_3(session):
+        return open_trace_card(session, 2)
 
     def on_sign_off(session, outcome, comment, reviewer):
         """A person signs off the Run Review: one review entry in the decision log.
@@ -832,6 +975,16 @@ def build_app(
                 notice = gr.HTML()
                 explanation = gr.HTML()
         results = gr.Dataframe(label="All genes", interactive=False, wrap=True)
+        with gr.Accordion("Trace: where to look", open=False):
+            with gr.Row():
+                trace_gene = gr.Dropdown(choices=[], label="Gene", interactive=True, scale=2)
+                trace_sample = gr.Textbox(label="Sample", scale=2)
+                trace_well = gr.Textbox(label="Well (PLATE:WELL)", scale=2,
+                                        placeholder="HMBS_20080318:K22")  # fmt: skip
+                trace_button = gr.Button("Trace", scale=1)
+            trace_html = gr.HTML()
+            with gr.Row():
+                trace_decide = [gr.Button("Decide…", visible=False) for _ in range(TRACE_TOP)]
         with gr.Row():
             question = gr.Textbox(
                 label="Ask your data",
@@ -864,7 +1017,9 @@ def build_app(
 
         card_outs = [session, card, counter, options, reason, notice, figure, undo, reject,
                      picker, download]  # fmt: skip
-        study_outs = [summary, meter, confidence, results, evidence, review]
+        study_outs = [summary, meter, confidence, results, evidence, review, trace_gene,
+                      trace_html, *trace_decide]  # fmt: skip
+        trace_outs = [session, trace_html, *trace_decide]
         page.load(on_load, [session], card_outs)
         analyse.click(on_analyse, [session, upload], card_outs + study_outs, concurrency_limit=2)
         picker.select(on_pick, [session, picker], card_outs)
@@ -881,6 +1036,12 @@ def build_app(
         ask_button.click(on_ask, [session, settings, question], [answer, *card_outs])
         check.click(on_check, [session, settings], [scorecard], concurrency_limit=1)
         export.click(on_export, [session], [download, export_status])
+        trace_button.click(on_trace, [session, trace_gene, trace_sample, trace_well], trace_outs)
+        results.select(on_trace_row, [session],
+                       [*trace_outs, trace_gene, trace_sample, trace_well])  # fmt: skip
+        for handler, button in zip((on_trace_decide_1, on_trace_decide_2, on_trace_decide_3),
+                                   trace_decide, strict=True):  # fmt: skip
+            button.click(handler, [session], card_outs)
         sign_off.click(on_sign_off, [session, review_outcome, review_comment, reviewer],
                        [session, review, review_notice, review_comment, review_head])  # fmt: skip
     page.qpilot_export_root = exports  # for launch_options and tests
