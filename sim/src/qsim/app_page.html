@@ -1390,7 +1390,7 @@ async function openPlateDialog() {
 }
 function renderPlateList(info) {
   $("plate-list").innerHTML = `<h3 class="small muted">Opened on this computer</h3><ul class="plates">` + info.plates.map((p) => `
-    <li><span><b>${esc(p.name)}</b> <span class="muted small">· ${p.samples} samples · ${p.genes} genes · ${esc(p.group)} vs the rest</span></span>
+    <li><span><b>${esc(p.name)}</b> <span class="muted small">· ${p.samples} samples · ${p.genes} genes${p.group ? ` · ${esc(p.group)} vs the rest` : ""}</span></span>
       ${p.id === info.current ? '<span class="muted small now">on screen now</span>' : `<button class="btn" type="button" data-id="${esc(p.id)}">Open</button>`}</li>`).join("") + "</ul>";
   for (const b of $("plate-list").querySelectorAll("button[data-id]")) b.onclick = () => openKnownPlate(b.dataset.id);
 }
