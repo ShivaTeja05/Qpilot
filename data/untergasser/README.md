@@ -56,3 +56,20 @@ Notes on the mapping:
 - **EvaGreen plate.** The EvaGreen wells ran on their own plate. Its wells A01–A08 are layout row D. Well D1 (H_201 at 10^5) is absent upstream.
 - **Which amplicon series.** The qPCR plate holds the amplicon standard twice: the fresh 1:10 series ("Dil 1:10") and aliquots frozen and thawed ten times ("Freeze"). dPCR measured the fresh series, so only that one is scored.
 - **Other experiments.** The README upstream says that one genomic dilution series, made in AMC in December 2024, was used for every later experiment. That makes the dPCR truth apply to "DNA Dilution - AMC" too, measured eight months before the dPCR. It does not apply to `volume_machine.rdml`, whose dilutions were made in February 2024.
+
+## Added 18 Oct 2026: held-out plates for `docs/review/32-external-data-tests.md` (X1)
+
+These come from the same upstream folder, at commit `e9f936b1d986df3938eb43c85f9cd9c0348a68ed`. The sizes match the GitHub API, and each RDML zip holds only `rdml_data.xml`. Upstream says every later experiment used the one genomic dilution series made in AMC in December 2024, so the dPCR truth applies.
+
+| File | Plate | SHA-256 |
+|---|---|---|
+| `eva_green_b.rdml` | Eva Green B (QuantStudio, 17.09.2025), 13 assays × 20/7/2/0.7 ng | `99695d5897bbef30bcb0621bc289ad787b890b4b2fd42728699a6244d8f708f0` |
+| `eva_green_b_pipett.tsv` | its pipetting scheme | `3e3472e085911e622467fd90686a544c9e53ac7c4d700ad187a5d2f1b935c3a8` |
+| `quantification_methods.rdml` | Quantification Methods (QuantStudio, 22.10.2025), 20 assay×reporter × 7/2/0.7 ng | `fe529c0705f9a8b43ef124dc0212368d60ba631f56270310c2a3191b556eacc0` |
+| `quantification_methods_pipett.tsv` | its pipetting scheme | `2f6e85b1f2427d7efc641f2e2c88207ab4a869ba5d0c2fc21b824eef70f6ecf4` |
+| `probes.rdml` | Probes - AMC (LightCycler 480 AMC, 10.12.2024), run P4 holds 5 assays × Roche/IDT probe mix × the dilution series | `49fba8329cdf4b8419a8a0e08e042c9ac1b002164da657fc216ee981034b3721` |
+| `probes_pipett_p4_dna_conc.tsv` | pipetting scheme of P4 | `6923fca6ef84defa6a87fa73545f2ae73932426e9696fc32319f7ec9a22e5d26` |
+| `unused_qpcr_dpcr_comparison.rdml` | Primer and DNA Dilutions (QuantStudio, 30.05.2025): genomic 20 ng and "genomic DNA 20ng - EMBL" | `a88707720a6c392e293ec4d0b60ab5ace13fb3f4e1569cff35845a25301530ca` |
+| `unused_qpcr_dpcr_comparison_pipett.tsv` | its pipetting scheme | `ab75b1d59161f79e4f1278c5371c23771133740ce755c02127e0299ee5e8b4a6` |
+
+`sybr_conc.rdml` was not added. Its dilution wells are wells of the AMC plates already in `amplicon_primer_mix.rdml`: 576 of its 672 wells share a run and well, and 481 have identical Cq. Every other file in the upstream folder is in `~/Wheel-hack/qpcr-datasets/untergasser/`, outside the repo.

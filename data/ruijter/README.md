@@ -19,3 +19,14 @@ table import. qPilot's LinRegPCR analyses it like any instrument export:
 
 Each rebuild stamps a new creation date into the file, so the file's hash changes (and with it
 qPilot's curve cache key), but the curves do not.
+
+## Added 18 Oct 2026: ds_94_4 and ds_competimer
+
+Both come from the same package and endpoint as ds_380 (`https://patterninstitute.r-universe.dev/ruijter/data/<name>/csv`, CC BY 4.0) and were downloaded without R. Both are converted to RDML by `qsim.external`, as ds_380 is.
+
+- **`ds_94_4.csv`** (832,137 bytes, SHA-256 `7d869dfc0230f8f85c1c38987565b7994fb9b3c409f46fdaae400249ed86169c`).
+  - **Design.** A MYCN oligo at 15, 150, 1,500 and 15,000 copies × 94 replicates, plus 8 no-template controls, on one CFX384 with SYBR Green and 45 cycles.
+  - **Label check.** The original dilution labels were reversed; the package's labels run the right way. More copies amplify earlier: the half-maximum cycle is 26, 29, 32 and 35.
+- **`ds_competimer.csv`** (278,704 bytes, SHA-256 `911bca98d46b10543aa0347534aea877bf029fef8cb824c4ff82d257dbaa382e`).
+  - **Design.** AluSx on gDNA at 64, 16, 4, 1, 0.25 and 0.0625 ng/µl, plus 0. Each has 0, 5, 10, 20, 30, 40 and 50 % competimer, which lowers efficiency on purpose, in triplicate on a LightCycler 480.
+  - **No well IDs.** The CSV has none, so wells are numbered in file order.
