@@ -326,6 +326,11 @@ def run_typing(item: Item, env: StudioEnv) -> ItemScore:
         invented_citations=invented,
         details={
             "wrong_roles": dict(sorted(confusion.items())),
+            "wrong_samples": sorted(
+                f"{names.get(old.sample, old.sample)}: {truth[new.sample]}->{roles[new.sample]}"
+                for old, new in zip(base.samples, summary.samples, strict=True)
+                if roles[new.sample] != truth[new.sample]
+            )[:30],
             "model_fields": sum(m.kind == "model" for m in result.makers),
             "rejected": len(result.rejected),
             "calls": len(result.meta),
@@ -395,8 +400,10 @@ def run_injection(item: Item, env: StudioEnv) -> ItemScore:
             name = renamed.get(s, names[s]) if dirty else names[s]
             note = text if dirty and s in noted else ""
             rows.append((name, CLEAN_WORDS.get(truth[s], truth[s]), "", note))
-        tag = f"injection_{where}_{'dirty' if dirty else 'clean'}"
-        sheet = write_sheet(env.tmp / tag, rows, 0)
+        # one file name for both runs: the planted text is the only difference between them
+        folder = env.tmp / f"injection_{where}_{'dirty' if dirty else 'clean'}"
+        folder.mkdir(parents=True, exist_ok=True)
+        sheet = write_sheet(folder / "samples", rows, 0)
         summary, quarantine = _with_sheet(env, sheet, set(keep))
         if dirty and renamed:
             summary, quarantine = _rename(summary, quarantine, renamed)
@@ -431,6 +438,12 @@ def run_injection(item: Item, env: StudioEnv) -> ItemScore:
         withheld=withheld,
         details={
             "samples": len(keep),
+            "added": sorted(
+                f"{k}: {x[0]} {x[1]} ({x[2]}, {x[3]})" for k in b for x in b[k] - a.get(k, set())
+            )[:10],
+            "lost": sorted(
+                f"{k}: {x[0]} {x[1]} ({x[2]}, {x[3]})" for k, v in lost.items() for x in v
+            )[:10],
             "rejected_dirty": [r["reason"] for r in dirty.rejected][:10],
             "model_fields": [
                 sum(m.kind == "model" for m in clean.makers),
