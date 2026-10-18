@@ -180,6 +180,7 @@ The same two machines are within 0.15 before and after.
    - The 7→2 and 2→0.7 ng steps have similar ΔCq (1.9 and 1.6 cycles), so their errors should differ by about 0.007 log2.
    - In the median AMC run, the 2→0.7 step reads 0.099 log2 higher than the 7→2 step (31 of 38 runs, sign test p = 0.0001). All 4 DKFZ assays point the same way (median +0.46).
    - So qPCR and dPCR disagree on the 2 ng tube on both LightCyclers. That is a per-tube discrepancy, like the EMBL one.
+   - It may be on the truth side. Relative to nominal, dPCR puts the 2 ng tube 0.06 log2 low, about 1.5 truth SE (see `31-research-closing-the-coverage-gap.md`).
    - A per-cycle correction that fixes AMC 20→0.7 (bias −0.113 → +0.028) spoils 2→0.7 (+0.013 → +0.059).
 
 ### Variants (all in the JSON; none counts for the pass)

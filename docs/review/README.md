@@ -13,4 +13,5 @@ Each file is the agent's output, unchanged. Claims carry URLs; items an agent co
 | 00-judge-ruling.md | Verdict, scorecard, who won each point, Clarida comparison, ranked changes, validation plan, 12 hardest questions |
 | 10–13 | Advocate and skeptic openings and rebuttals |
 | 20–23 | Research reports: lab practice, Clarida and competitors, theoretical simulators, validation data |
-| 30-validation-round-2.md | Results after the ruling: dPCR truth on four machines (V1), propagated intervals (V2), the ds_380 no-difference plate (V4). Written by the team, not by a review agent. |
+| 30-validation-round-2.md | Results after the ruling: dPCR truth on four machines (V1), propagated intervals (V2), the ds_380 no-difference plate (V4). Its addendum tests an efficiency calibration on held-out dPCR plates. Written by the team, not by a review agent. |
+| 31-research-closing-the-coverage-gap.md | What published methods and tools do about efficiency bias and interval coverage, checks on the data that use no truth, and a test plan fixed before scoring. Written by the team from two research-agent reports. |
