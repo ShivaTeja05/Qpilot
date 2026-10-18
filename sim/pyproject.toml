@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qpilot-simulator"
+version = "0.1.0"
+description = "Decision Simulator for qPCR: which analysis choices and which samples change a conclusion. Research use only."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+authors = [{ name = "qPilot contributors" }]
+dependencies = [
+  # The validated qPCR engine (LinRegPCR curves, geNorm, conclusion rule), pinned to a commit.
+  "qpilot @ git+https://github.com/ShivaTeja05/Qpilot@dd95f31",
+  "numpy",
+  "scipy",
+  "pandas",
+  "pyarrow",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+qsim = "qsim.cli:main"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qsim"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]  # long f-strings in the report text
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

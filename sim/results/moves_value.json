@@ -1,0 +1,84 @@
+{
+ "draws": 100,
+ "max_moves": 4,
+ "robust_rule": 0.95,
+ "sizes": {
+  "3": {
+   "no_difference": {
+    "gene_tests": 5800,
+    "false_calls": 142,
+    "false_call_rate": 0.0245,
+    "after_robust_filter": 0.0,
+    "after_distance_ge_2": 0.0,
+    "after_distance_ge_3": 0.0,
+    "moves_of_false_calls": {
+     "1": 142
+    }
+   },
+   "real_difference": {
+    "calls": 511,
+    "share_wrong": 0.286,
+    "auroc_alone": {
+     "agreement_share": 0.556,
+     "distance": 0.5,
+     "p_value": 0.554,
+     "fold_margin": 0.806
+    },
+    "auroc_out_of_fold": {
+     "p_and_margin": 0.802,
+     "plus_agreement_share": 0.798,
+     "plus_distance": 0.802
+    },
+    "share_wrong_by_distance": {
+     "1": {
+      "calls": 511,
+      "share_wrong": 0.286
+     }
+    }
+   }
+  },
+  "6": {
+   "no_difference": {
+    "gene_tests": 5800,
+    "false_calls": 163,
+    "false_call_rate": 0.0281,
+    "after_robust_filter": 0.0024,
+    "after_distance_ge_2": 0.0028,
+    "after_distance_ge_3": 0.0,
+    "moves_of_false_calls": {
+     "1": 147,
+     "2": 16
+    }
+   },
+   "real_difference": {
+    "calls": 1325,
+    "share_wrong": 0.221,
+    "auroc_alone": {
+     "agreement_share": 0.532,
+     "distance": 0.507,
+     "p_value": 0.517,
+     "fold_margin": 0.849
+    },
+    "auroc_out_of_fold": {
+     "p_and_margin": 0.849,
+     "plus_agreement_share": 0.849,
+     "plus_distance": 0.849
+    },
+    "share_wrong_by_distance": {
+     "1": {
+      "calls": 1031,
+      "share_wrong": 0.224
+     },
+     "2": {
+      "calls": 247,
+      "share_wrong": 0.215
+     },
+     "3": {
+      "calls": 47,
+      "share_wrong": 0.191
+     }
+    }
+   }
+  }
+ }
+}

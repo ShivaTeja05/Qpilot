@@ -1,0 +1,100 @@
+{
+ "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+ "baseline": {
+  "efficiency": "assay_mean",
+  "flagged": "keep",
+  "late_cq": "none",
+  "nondetect": "drop",
+  "refs": "ALUsq+HMBS+HPRT1+SDHA+UBC",
+  "cut": "top15",
+  "test": "welch",
+  "multiplicity": "none"
+ },
+ "tiers": {
+  "efficiency": {
+   "assay_mean": "prespecified",
+   "std_curve": "defensible",
+   "per_well": "common_practice",
+   "assume_100": "common_practice"
+  },
+  "flagged": {
+   "keep": "prespecified",
+   "drop_eff": "defensible",
+   "drop_eff_low": "common_practice"
+  },
+  "late_cq": {
+   "none": "prespecified",
+   "cq35": "defensible",
+   "cq38": "defensible"
+  },
+  "nondetect": {
+   "drop": "prespecified",
+   "cap_min": "defensible",
+   "cq40": "common_practice"
+  },
+  "refs": {
+   "ALUsq": "common_practice",
+   "HMBS": "common_practice",
+   "HPRT1": "common_practice",
+   "SDHA": "common_practice",
+   "UBC": "common_practice",
+   "ALUsq+HMBS": "common_practice",
+   "ALUsq+HPRT1": "common_practice",
+   "ALUsq+SDHA": "common_practice",
+   "ALUsq+UBC": "common_practice",
+   "HMBS+HPRT1": "common_practice",
+   "HMBS+SDHA": "common_practice",
+   "HMBS+UBC": "common_practice",
+   "HPRT1+SDHA": "common_practice",
+   "HPRT1+UBC": "common_practice",
+   "SDHA+UBC": "common_practice",
+   "ALUsq+HMBS+HPRT1": "common_practice",
+   "ALUsq+HMBS+SDHA": "common_practice",
+   "ALUsq+HMBS+UBC": "common_practice",
+   "ALUsq+HPRT1+SDHA": "defensible",
+   "ALUsq+HPRT1+UBC": "common_practice",
+   "ALUsq+SDHA+UBC": "common_practice",
+   "HMBS+HPRT1+SDHA": "common_practice",
+   "HMBS+HPRT1+UBC": "common_practice",
+   "HMBS+SDHA+UBC": "common_practice",
+   "HPRT1+SDHA+UBC": "common_practice",
+   "ALUsq+HMBS+HPRT1+SDHA": "common_practice",
+   "ALUsq+HMBS+HPRT1+UBC": "common_practice",
+   "ALUsq+HMBS+SDHA+UBC": "common_practice",
+   "ALUsq+HPRT1+SDHA+UBC": "common_practice",
+   "HMBS+HPRT1+SDHA+UBC": "common_practice",
+   "ALUsq+HMBS+HPRT1+SDHA+UBC": "prespecified"
+  },
+  "cut": {
+   "top10": "defensible",
+   "top15": "prespecified",
+   "top20": "defensible"
+  },
+  "test": {
+   "welch": "prespecified",
+   "student": "defensible",
+   "mann_whitney": "defensible"
+  },
+  "multiplicity": {
+   "none": "prespecified",
+   "bh": "defensible",
+   "holm": "defensible"
+  }
+ },
+ "roles": {
+  "efficiency": "analysis",
+  "flagged": "analysis",
+  "late_cq": "analysis",
+  "nondetect": "analysis",
+  "refs": "analysis",
+  "cut": "question",
+  "test": "analysis",
+  "multiplicity": "question"
+ },
+ "rule": {
+  "alpha": 0.05,
+  "min_log2fc": 1.0
+ },
+ "qsim_version": "0.1.0",
+ "sha256": "5f5983a21a42e33ac5409641af1bc8442f4f27606211a8a2d3b9657252e2ea2a"
+}
