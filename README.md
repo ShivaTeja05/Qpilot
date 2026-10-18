@@ -6,12 +6,39 @@ qPilot reads a qPCR instrument's raw amplification curves, analyses every plate 
 
 Built at the *Reinvent the Wheel: A Tools for Science Hack* (London, 16–18 Oct 2026). Licence: Apache-2.0.
 
-## In 60 seconds
+## One product, one study
+
+From the instrument's raw curves to a record anyone can re-run, on the same study throughout:
+
+1. **qPilot Studio** (`qpilot studio`): the AI (fixed rules, a language model when one is configured, the Curve Judge) proposes the design and the curve calls, the deterministic engine checks every proposal and computes every number, and the scientist decides. [`docs/studio.md`](docs/studio.md)
+2. **The robustness audit**: the Decision Simulator (`qsim`, in [`sim/`](sim/README.md)) re-runs the study the scientist confirmed under every combination of eight analysis decisions (90,396 analyses on the demo), gives each gene a verdict, and reproduces qPilot at the baseline. [`docs/integration.md`](docs/integration.md)
+3. **The Analysis Record**: the input, the results, every decision with its reason and who made it, and the audit bound to it, hash-chained and checksummed so anyone can verify and re-run it (tamper-evident, not signed; see below).
+4. **One MCP server for agents**: `qpilot serve`, 16 tools (qPilot's 11 `qpcr_*` and the audit's 5 read-only `sim_*`). An agent can ask and propose; a choice that can change a conclusion always waits for a person.
+
+## Quickstart
+
+Python 3.11 or newer. Times are wall-clock on a laptop with no model.
 
 ```bash
-pip install -e .
-qpilot fetch-demo        # the 64-plate demo study, SHA-256 pinned (7 MB, once)
-qpilot run --out results # numbers, robustness, confidence and Decision Cards
+git clone https://github.com/ShivaTeja05/Qpilot && cd Qpilot
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -e '.[studio,sim]'                          # about 30 s
+qpilot fetch-demo                                       # the 64-plate demo study, SHA-256 pinned (7 MB, once)
+QPILOT_MODEL_PROVIDER=none qpilot studio demo --check   # Studio end to end, no browser: 28 checks, about 90 s
+QPILOT_MODEL_PROVIDER=none python -m qpilot.integration demo --out demo-run   # all 9 stages, audit and record included: 30 checks, 3–6 min
+qpilot serve --list-tools                               # the 16 MCP tools this install serves
+qsim app --results demo-run/run/simulator_audit --no-model   # the audit's results screen on 127.0.0.1:8765 (Ctrl-C to stop)
+qpilot studio                                           # the Studio page on 127.0.0.1 (Ctrl-C to stop)
+```
+
+On macOS the first `qpilot` command after installing can take about 70 s (the first load of native libraries); later calls start in seconds. `--out` must be a new or empty folder.
+
+**The model is optional.** With `QPILOT_MODEL_PROVIDER=none` the fixed rules propose alone, and the demo numbers above come from the rules. Typing the demo's 427 samples twice (854 items), the rules got 839/854 right; qwen2.5:7b 834/854; qwen2.5:14b and qwen2.5:32b 839/854. Safety held for every model: no control missed, nothing accepted without a person ([`docs/studio-measured.md`](docs/studio-measured.md)).
+
+## The engine and the one-page app
+
+```bash
+qpilot run --out results # numbers, robustness, confidence and Decision Cards (186 analyses of the demo)
 qpilot app               # the one-page app on 127.0.0.1 (or: python -m qpilot.app)
 ```
 
@@ -25,7 +52,7 @@ In the app: **Analyse** opens the study; the left column shows the study summary
 claude mcp add qpilot -- qpilot serve
 ```
 
-The MCP server reads and writes the same study store as the app. An agent can read the study, ask what each choice would change, and request a decision. A choice that can change a conclusion (with the other choices at their recommended settings) becomes a request that waits for a person, whatever the agent says; that check is made once, when the study is analysed. The full guide, including models inside qPilot and how to test a model before trusting it, is [`docs/agents.md`](docs/agents.md).
+`qpilot serve` is the one MCP server: qPilot's 11 `qpcr_*` tools and, when the Decision Simulator imports (it installs with this package), its 5 read-only `sim_*` tools over an audit; `qpilot serve --list-tools` prints what your install serves. It reads and writes the same study store as the app. An agent can read the study, ask what each choice would change, and request a decision. A choice that can change a conclusion (with the other choices at their recommended settings) becomes a request that waits for a person, whatever the agent says; that check is made once, when the study is analysed. The full guide, including models inside qPilot and how to test a model before trusting it, is [`docs/agents.md`](docs/agents.md).
 
 ## The engine
 
@@ -34,7 +61,7 @@ All maths is ordinary, deterministic Python; no language model is involved. Step
 1. **Curves**: LinRegPCR, vendored unchanged from the RDML consortium's rdmlpython, on every plate ([method card](methods/linregpcr.md)).
 2. **Control genes**: geNorm stability and the pairwise ratio check between the groups ([method card](methods/genorm.md)).
 3. **Comparison**: Welch's t-test on log2 relative quantities, with a stated rule: *up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call* ([method card](methods/contrast.md)).
-4. **Robustness**: every reasonable analysis of the same plates (31 control-gene sets × 3 group cut-offs × 2 rules for empty wells on the demo), and which choices flip which conclusions.
+4. **Robustness**: every reasonable analysis of the same plates (31 control-gene sets × 3 group cut-offs × 2 rules for empty wells on the demo: 186 analyses in `qpilot run` and the app; Studio adds four amplification-call rules, 744), and which choices flip which conclusions. The Decision Simulator's audit varies eight decisions (90,396 analyses on the demo).
 
 ### Validation
 
@@ -65,9 +92,9 @@ Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671 and Ruijter JM *et al
 
 ## Limitations
 
-- The analysis is set up for the demo study's design: the study must contain the marker gene `MYCN(4)` and the demo's candidate control genes. The command line can change the control genes, the cut-off and the experiment; the app cannot yet. Your own design is on the roadmap; `qpilot plan` sizes a design before the first plate.
+- The one-page app (`qpilot app`) is set up for the demo study's design: the study must contain the marker gene `MYCN(4)` and the demo's candidate control genes. Your own design goes through Studio, or `qpilot run --design study.yaml --samples sheet.csv` (see the table below); `qpilot plan` sizes a design before the first plate.
 - One gene per plate in the demo, so plate effects cannot be separated from gene effects; no mixed model.
-- Technical replicates are not supported: a sample with more than one well for a gene is refused (in the demo each tumour has one well per gene; only standards and controls are in triplicate). No melt-curve analysis; no kinetic outlier test.
+- Technical replicates are averaged per biological unit in a confirmed design (see the table below); the robustness audit needs one well per sample and gene, so it does not run on such a design yet. In the demo each tumour has one well per gene; only standards and controls are in triplicate. No melt-curve analysis; no kinetic outlier test.
 - Curve analysis (N0, Cq, dilution bias) is validated against published results on the standards of one study from one instrument platform (LightCycler 480, SYBR Green I). The later steps (geNorm, the contrast, robustness) are tested against reproduced numbers, not a published benchmark.
 - No correction for testing many genes: the robustness check measures sensitivity to analysis choices, not significance.
 - Results are not yet written back into the RDML file (roadmap).
@@ -76,7 +103,7 @@ Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671 and Ruijter JM *et al
 
 **Borrowed, credited, unchanged:** LinRegPCR (rdmlpython, MIT, vendored at `fce7a44`); the RDML format and schemas; the geNorm method (Vandesompele *et al.* 2002, reimplemented from the paper); SciPy's t distribution; the demo data and the published benchmark tables.
 
-**Built here:** the hardened RDML loader and pinned downloads; the per-plate curve table; quantities, groups, geNorm, the contrast and its rule; the reference-gene group check; the decision space and robustness grid; Decision Cards and the escalation rule; the on-disk study store; the Analysis Record and its hash chain; confidence grades; templated explanations whose numbers are all facts; the one-page app; the MCP server; the model layer and its test harness; `qpilot plan`; the validation script.
+**Built here:** the hardened RDML loader and pinned downloads; the per-plate curve table; quantities, groups, geNorm, the contrast and its rule; the reference-gene group check; the decision space and robustness grid; Decision Cards and the escalation rule; the on-disk study store; the Analysis Record and its hash chain; confidence grades; templated explanations whose numbers are all facts; the one-page app; qPilot Studio and the Prism bridge; the Decision Simulator (`sim/`) and the integrated workflow (`qpilot/integration/`); the MCP server; the model layer and its test harness; `qpilot plan`; the validation script.
 
 ## Related tools
 
@@ -111,7 +138,7 @@ The app binds to `127.0.0.1` only, is never shared, refuses requests for any oth
 
 ## Roadmap (not built)
 
-Your own design in the app (genes, groups, control-gene candidates) · technical replicates · QuantStudio TXT and other native importers · results written back into RDML and a per-gene CSV · Prism export · replicate-outlier and melt-peak cards on data that has them · a mixed model with plate as a random effect once a gene spans two or more plates · NormFinder, reimplemented from the paper.
+QuantStudio TXT and other native importers · results written back into RDML and a per-gene CSV · the Prism export run in a real Prism · the robustness audit on designs with technical replicates · a simulator panel on the Studio page · replicate-outlier and melt-peak cards on data that has them · a mixed model with plate as a random effect once a gene spans two or more plates · NormFinder, reimplemented from the paper.
 
 ## Licence and citation
 

@@ -9,7 +9,7 @@ Research use only.
 ```bash
 pip install -e ".[dev,ai,studio,xlsx,parquet,sim]"   # sim: the Decision Simulator stage (qsim)
 qpilot fetch-demo                                    # once
-python -m qpilot.integration demo --out run-demo     # every stage on the demo, checked (~3 min)
+python -m qpilot.integration demo --out run-demo     # every stage on the demo, checked (3–6 min)
 python -m qpilot.integration audit --study <id>      # audit a study a person analysed in Studio
 python -m qpilot.integration verify <audit> --record <record dir or zip>
 qpilot serve --list-tools                            # what the one MCP server serves here

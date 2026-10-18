@@ -16,6 +16,8 @@ claude mcp add qpilot -- python -m qpilot.mcp_server
 | `qpcr_decide(study_id, card_id, option, reason, expected_head=None)` | **`pending_human`** by default: an agent's request waits for the scientist. When the scientist sets the study to *decide and tell*, choices that cannot change any conclusion at any setting come back `applied`; choices that can are always `pending_human`. `stale` if `expected_head` is not the current `chain_head`; a stale attempt is logged without moving the head |
 | `qpcr_plan(fc, sd_log2, n_per_group, ...)` | Samples per group needed, the smallest detectable fold change, how often qPilot's own rule (p < 0.05 and at least 2-fold) would call the change (simulated), a "cannot detect" list and design rules |
 
+The other seven `qpcr_*` tools are Studio's: `qpcr_inspect` (open a session for a lab's own file), `qpcr_propose` and `qpcr_proposals` (add a proposal to the Studio inbox as an agent; list the inbox), `qpcr_check_design` (the engine's check of a would-be proposal, nothing saved), `qpcr_curve_calls` (one gene's wells under every amplification rule), `qpcr_prism_preview` and `qpcr_prism_diff` (what Send to Prism would write; what changed in Prism since export; both store nothing). No tool can accept, edit or reject a proposal: only a person can. `qpilot serve --list-tools` prints all of them.
+
 Rules the server enforces:
 - **Files:** `rdml_path` must resolve, after following symlinks, to an `.rdml`/`.xml` file inside one of `QPILOT_DATA_ROOTS` (`os.pathsep`-separated; default: the qPilot cache and the current directory).
 - **Actor:** every MCP caller is recorded as an agent; `actor="human"` is refused.
