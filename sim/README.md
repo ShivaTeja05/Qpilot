@@ -23,7 +23,8 @@ It is built on [qPilot](https://github.com/ShivaTeja05/Qpilot)'s validated engin
 ## Quick start
 
 ```bash
-python3.11 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+# sim/ is part of the qPilot repository: install once from its root (qpilot + qsim), then work here.
+(cd .. && python3.11 -m venv .venv && .venv/bin/pip install -e ".[sim,dev]") && ln -sfn ../.venv .venv
 .venv/bin/qsim demo                                     # raw curve -> verdict, narrated
 .venv/bin/qsim run                                      # every analysis + tests -> results/
 .venv/bin/qsim ask "Does NM23A depend on the reference genes?"
