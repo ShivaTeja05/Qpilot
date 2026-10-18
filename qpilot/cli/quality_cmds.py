@@ -1,10 +1,11 @@
 """CLI commands for what a study can and cannot tell you: evidence, run review, instruments.
 
-``qpilot evidence``, ``qpilot report run-review`` and ``qpilot instrument
-inspect|list|add|history|lookback|position``. Every command reads; the few that write (adding an
-instrument, ``lookback --log``) write the instrument registry or logbook, never a study's
-results, cards or decisions. A run review is only rendered here: a person signs it off in the
-app, and the command line has no way to decide or sign off anything.
+``qpilot evidence``, ``qpilot report run-review``, ``qpilot trace``, ``qpilot check sheet`` and
+``qpilot instrument inspect|list|add|history|lookback|position``. Every command reads; the few
+that write (adding an instrument, ``lookback --log``) write the instrument registry or logbook,
+never a study's results, cards or decisions. A run review is only rendered here: a person signs
+it off in the app, and the command line has no way to decide or sign off anything. ``trace``
+opens no card, and ``check sheet`` never edits the sheet.
 
 Exit codes: 0 done, 1 the command ran and the answer is negative (a logbook that does not
 verify), 2 refused or bad input.
@@ -118,6 +119,142 @@ def _report(args: argparse.Namespace) -> int:
         print("Sign-off: a person signs off this review in the qPilot app.")
     if page is not None:
         print(f"wrote {args.out}", file=sys.stderr)
+    return 0
+
+
+# ---- qpilot trace --------------------------------------------------------------------------------
+
+
+def _trace_arguments(parser: argparse.ArgumentParser) -> None:
+    _study_arg(parser)
+    root = parser.add_mutually_exclusive_group(required=True)
+    root.add_argument("--gene", default=None, help="trace one gene's result")
+    root.add_argument("--sample", default=None, help="trace one sample")
+    root.add_argument("--well", default=None, metavar="PLATE:WELL", help="trace one well")
+    parser.add_argument("--top", type=int, default=3, help="places to show (default 3)")
+
+
+def _trace(args: argparse.Namespace) -> int:
+    from qpilot.core.store import StudyNotFound
+    from qpilot.explain.templates import TemplateError
+    from qpilot.explain.trace_text import render_trace
+    from qpilot.qpcr.trace import TraceError, trace_store
+
+    store, sid = _resolve_study(args.study)
+    try:
+        result = trace_store(
+            store, sid, gene=args.gene, sample=args.sample, well=args.well, top=args.top
+        )
+        text = None if args.json else render_trace(result).plain
+    except (StudyNotFound, TraceError, TemplateError) as err:
+        return _refuse("trace", err)
+    if args.json:
+        sys.stdout.write(result.to_json())  # byte-stable: sorted keys, trailing newline
+        return 0
+    print(text)
+    return 0
+
+
+# ---- qpilot check sheet --------------------------------------------------------------------------
+
+
+def _check_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("what", choices=["sheet"], help="what to check")
+    parser.add_argument("file", help="the analysis sheet (.xlsx or .csv); it is never edited")
+    parser.add_argument(
+        "--study", default=None, help="compare with this study's results (id or its RDML file)"
+    )
+    parser.add_argument(
+        "--map",
+        action="append",
+        default=None,
+        metavar="COL=ROLE",
+        help="set what a column holds, e.g. C=cq:GAPDH or F=dcq (repeat); confirms the mapping",
+    )
+    parser.add_argument(
+        "--confirm", action="store_true", help="confirm the guessed column mapping as printed"
+    )
+    parser.add_argument("--json", action="store_true", help="print JSON")
+
+
+def _apply_map(mapping: Any, items: list[str]) -> Any:
+    """The mapping with each ``COL=ROLE[:GENE]`` of ``items`` set by a person (refuses bad ones)."""
+    from typing import get_args
+
+    from qpilot.qpcr.sheetcheck import ColumnGuess, Role
+
+    roles = set(get_args(Role))
+    columns = {c.column: c for c in mapping.columns}
+    for item in items:
+        column, sep, value = item.partition("=")
+        role, _, gene = value.partition(":")
+        column, role, gene = column.strip().upper(), role.strip(), gene.strip()
+        if not sep or not column.isalpha() or role not in roles:
+            raise ValueError(
+                f"--map takes COL=ROLE[:GENE] with ROLE one of {', '.join(sorted(roles))}, "
+                f"not {item!r}"
+            )
+        old = columns.get(column)
+        keep_gene = old.gene if old is not None and role == old.role else None
+        columns[column] = ColumnGuess(column=column, role=role, gene=gene or keep_gene)
+    ordered = sorted(columns.values(), key=lambda c: (len(c.column), c.column))
+    return mapping.model_copy(update={"columns": ordered, "confirmed": True})
+
+
+def _mapping_lines(mapping: Any) -> list[str]:
+    lines = [f"Column mapping ({mapping.status}; {mapping.layout} sheet):"]
+    for col in mapping.columns:
+        if col.role == "ignored":
+            continue
+        gene = f" {col.gene}" if col.gene else ""
+        scale = f" on {col.scale}" if col.scale else ""
+        how = "set by you" if col.basis == "user" else f"from the {col.basis}"
+        lines.append(f"  {col.column}: {col.role}{gene}{scale} ({how})")
+    if mapping.references:
+        lines.append(f"  reference genes: {', '.join(mapping.references)}")
+    if not mapping.confirmed:
+        lines.append(
+            "  Not confirmed: check it, then rerun with --confirm, or set columns with "
+            "--map COL=ROLE[:GENE]."
+        )
+    return lines
+
+
+def _check(args: argparse.Namespace) -> int:
+    from qpilot.core.store import StudyNotFound
+    from qpilot.explain.sheetcheck_text import FINDINGS_KEY, render
+    from qpilot.explain.templates import TemplateError
+    from qpilot.qpcr.sheetcheck import (
+        SheetCheckError,
+        check_sheet,
+        check_sheet_store,
+        guess_mapping,
+    )
+
+    try:
+        mapping = None
+        if args.map or args.confirm:
+            mapping = guess_mapping(args.file)
+            if args.map:
+                mapping = _apply_map(mapping, args.map)
+            mapping = mapping.model_copy(update={"confirmed": True})
+        if args.study:
+            store, sid = _resolve_study(args.study)
+            result = check_sheet_store(store, sid, args.file, mapping)
+        else:
+            result = check_sheet(args.file, mapping)
+        if args.json:
+            sys.stdout.write(result.to_json())  # byte-stable: sorted keys, trailing newline
+            return 0
+        text = render(result).plain
+        findings = render(result, FINDINGS_KEY).plain if result.findings else ""
+    except (SheetCheckError, StudyNotFound, TemplateError, ValueError, OSError) as err:
+        return _refuse("check sheet", err)
+    print("\n".join(_mapping_lines(result.mapping)))
+    print(text)
+    if findings:
+        print(findings)
+    print("The sheet was read only; it is never edited.")
     return 0
 
 
@@ -400,6 +537,19 @@ COMMANDS: list[Command] = [
         "`report run-review`: one review page per study (renders only; sign-off is in the app)",
         _report_arguments,
         _report,
+    ),
+    (
+        "trace",
+        "from a gene's result, a sample or a well (PLATE:WELL) back to the places to look "
+        "(reads only)",
+        _trace_arguments,
+        _trace,
+    ),
+    (
+        "check",
+        "`check sheet FILE`: recompute a lab's own ΔΔCq sheet; the file is never edited",
+        _check_arguments,
+        _check,
     ),
     (
         "instrument",

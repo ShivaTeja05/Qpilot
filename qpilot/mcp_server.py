@@ -21,6 +21,9 @@ Rules enforced here, in code:
   returns its ``model_view`` only: serial numbers and identity strings never leave the machine.
   Logbook views count the text a person typed instead of showing it. ``qpcr_incident_log`` is
   a proposal: the incident is written ``proposed`` by an agent and only a person confirms it.
+- **Trace and sheets.** ``qpcr_trace`` and ``qpcr_check_sheet`` only read: Trace opens no
+  card (setting a place aside is a person's decision), and a sheet is never edited; its
+  column mapping stays "guessed, not confirmed" until a person confirms it.
 - **Annotations.** Every tool carries a title and MCP tool annotations (:data:`TOOL_META`):
   the read tools say ``readOnlyHint``; none is destructive and none reaches the network.
 - **JSON only.** Tools return engine numbers, never prose written by a model.
@@ -54,7 +57,9 @@ INSTRUCTIONS = (
     "and the curves. You may propose; only a person in qPilot Studio accepts. "
     "qpcr_evidence says what a study cannot tell you; qpcr_run_context reads what a run file "
     "says about the instrument (never its serial numbers); qpcr_incident_log only proposes "
-    "an incident, which a person confirms. Report only "
+    "an incident, which a person confirms. qpcr_trace goes from a gene's result, a sample or "
+    "a well back to the places to look; qpcr_check_sheet recomputes a lab's own spreadsheet "
+    "(its column mapping is a guess until a person confirms it). Report only "
     "numbers these tools return. Research use only; not for clinical or diagnostic use."
 )
 UNKNOWN_STUDY = "unknown study_id; call qpcr_study first"
@@ -70,6 +75,13 @@ INCIDENT_NEXT = (
     "proposed: a person confirms or turns it down in qPilot; until then it matches nothing"
 )
 MAX_INCIDENT_WELLS = 96  # an agent's proposal names a few wells, never a whole plate list
+TRACE_ROOT = "give exactly one of gene, sample or well (PLATE:WELL, e.g. HMBS_20080318:K22)"
+MAX_TRACE_TOP = 20  # places an agent gets back (the summary counts every place)
+MAX_TRACE_ABSENT = 20  # samples in no comparison listed (n_absent counts them all)
+SHEET_NEXT = (
+    "mapping guessed, not confirmed: a person confirms the columns with "
+    "`qpilot check sheet FILE --confirm` (or sets them with --map COL=ROLE)"
+)
 MAX_QUOTED = 400  # names returned to an agent as quoted data
 KIND_TO_DIMENSION: dict[str, str | None] = {
     "reference_set": "refs",
@@ -1025,6 +1037,111 @@ class QpilotTools:
             "next": INCIDENT_NEXT,
         }
 
+    # ---- trace and the spreadsheet check ---------------------------------------------------
+
+    def qpcr_trace(
+        self,
+        study_id: str,
+        gene: str | None = None,
+        sample: str | None = None,
+        well: str | None = None,
+        top: int = 3,
+    ) -> dict[str, Any]:
+        """Trace one gene's result, a sample or a well back to the places to look (read-only).
+
+        Give exactly one of ``gene``, ``sample`` or ``well`` (``PLATE:WELL``, for example
+        ``HMBS_20080318:K22``). ``places`` lists the ``top`` places (1 to 20), ranked by what
+        each option there would do: ``changes_call``, ``beyond_ci`` or ``changes_nothing``.
+        Each names the sample, plate and well, the checks it fails, how many values it feeds
+        and every option's consequence; ``summary`` counts every place found. ``text`` is the
+        "Where to look" panel and ``facts`` hold every number it shows. Opens no card and
+        writes nothing; a Studio session stays blind until a person confirms the design and
+        the curves. Setting a place aside is a person's decision in qPilot.
+        """
+        given = [v for v in (gene, sample, well) if v is not None]
+        if len(given) != 1 or not isinstance(given[0], str) or not given[0].strip():
+            return {"error": TRACE_ROOT}
+        if isinstance(top, bool) or not isinstance(top, int) or not 1 <= top <= MAX_TRACE_TOP:
+            return {"error": f"top must be a whole number from 1 to {MAX_TRACE_TOP}"}
+        from qpilot.explain.trace_text import render_trace
+        from qpilot.qpcr.trace import TraceError, trace_store
+        from qpilot.studio_service import StudioError
+
+        try:
+            sid = self._study_id(study_id)
+            result = trace_store(self.store, sid, gene=gene, sample=sample, well=well, top=top)
+            rendered = render_trace(result)
+        except StudyNotFound:
+            return {"error": UNKNOWN_STUDY}
+        except StudioError:
+            return {"error": BLIND}
+        except TraceError as err:
+            return {"error": f"no trace: {err}"}
+        except Exception as err:  # answer, never raise
+            return {"error": f"no trace ({type(err).__name__})"}
+        return {"study_id": sid, **trace_view(result, rendered, top), "saved": False}
+
+    def qpcr_check_sheet(self, sheet_path: str, study_id: str | None = None) -> dict[str, Any]:
+        """Recompute a lab's own ΔΔCq sheet from its Cq values; name the first step that differs.
+
+        ``sheet_path`` is an ``.xlsx`` or ``.csv`` file inside ``QPILOT_DATA_ROOTS``; it is read,
+        never edited. The column mapping is guessed: the answer says ``mapping guessed, not
+        confirmed`` (``confirmed: false``) until a person confirms it. Findings name the first
+        column and row that differ and the known path that reproduces them. With ``study_id``,
+        genes whose sheet arithmetic reproduces but whose fold change differs from the study's
+        are hand-overs (the causes listed). Sample and group labels never appear in the answer.
+        """
+        if not isinstance(sheet_path, str) or not (study_id is None or isinstance(study_id, str)):
+            return {"error": "sheet_path (and study_id) are text"}
+        try:
+            path = check_sheet(sheet_path)
+        except PermissionError as err:
+            return {"error": str(err)}
+        from qpilot.explain.sheetcheck_text import render
+        from qpilot.qpcr import sheetcheck
+        from qpilot.studio_service import StudioError
+
+        try:
+            if study_id is None:
+                result = sheetcheck.check_sheet(path)
+            else:
+                sid = self._study_id(study_id)
+                result = sheetcheck.check_sheet_store(self.store, sid, path)
+            text = render(result).plain
+        except StudyNotFound:
+            return {"error": UNKNOWN_STUDY}
+        except StudioError:
+            return {"error": BLIND}
+        except sheetcheck.SheetCheckError as err:
+            return {"error": f"could not check this sheet: {err}"}
+        except Exception as err:  # answer, never raise
+            return {"error": f"could not check this sheet ({type(err).__name__})"}
+        return {
+            **result.model_dump(mode="json"),
+            "confirmed": result.mapping.confirmed,
+            "text": text,
+            "next": SHEET_NEXT,
+            "saved": False,
+        }
+
+
+def trace_view(result: Any, rendered: Any, top: int) -> dict[str, Any]:
+    """A trace trimmed for an agent: no lineage graph, ``top`` places, the facts its text cites.
+
+    ``absent`` lists at most :data:`MAX_TRACE_ABSENT` samples (``n_absent`` counts them all).
+    """
+    data = result.model_dump(mode="json", exclude={"nodes", "facts"})
+    data["places"] = data["places"][:top]
+    data["n_absent"] = len(data["absent"])
+    data["absent"] = data["absent"][:MAX_TRACE_ABSENT]
+    data["facts"] = {
+        fid: result.facts[fid].model_dump(mode="json")
+        for fid in rendered.fact_ids
+        if fid in result.facts
+    }
+    data["text"] = rendered.plain
+    return data
+
 
 def _evidence_statuses(store: StudyStore, study_id: str) -> dict[str, str] | None:
     """The Evidence Ledger's item statuses when the study kept one (cheap: no re-analysis)."""
@@ -1073,6 +1190,8 @@ TOOL_NAMES = (
     "qpcr_instrument_history",
     "qpcr_instrument_status",
     "qpcr_incident_log",
+    "qpcr_trace",
+    "qpcr_check_sheet",
 )
 
 #: MCP tool annotations by kind (``mcp.types.ToolAnnotations`` fields, built in create_server).
@@ -1111,6 +1230,8 @@ TOOL_META: dict[str, tuple[str, str]] = {
     "qpcr_instrument_history": ("An instrument's logbook", "read"),
     "qpcr_instrument_status": ("An instrument's open incidents and calibration age", "read"),
     "qpcr_incident_log": ("Propose an incident (a person confirms)", "propose"),
+    "qpcr_trace": ("Trace a result to the wells to look at", "read"),
+    "qpcr_check_sheet": ("Recompute a lab's analysis spreadsheet", "read"),
 }
 
 

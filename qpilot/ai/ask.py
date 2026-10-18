@@ -3,7 +3,8 @@
 Two steps, portable to any endpoint (no native tool calling needed):
 
 1. The model replies with JSON ``{"tool": ..., "args": {...}}`` naming one of ``qpcr_study``,
-   ``qpcr_robustness``, ``qpcr_decide``, ``qpcr_plan``, ``explain_number`` (or ``none``).
+   ``qpcr_robustness``, ``qpcr_decide``, ``qpcr_plan``, ``qpcr_trace``, ``explain_number`` (or
+   ``none``).
    qPilot runs it in-process against the same on-disk store and the same tool code as the MCP
    server, so an in-app model has exactly an external agent's powers, including the
    ``pending_human`` answer on choices that can change a conclusion.
@@ -32,7 +33,47 @@ from qpilot.core.validator import names_from_result, render_tokens, validate
 from qpilot.qpcr.confidence_checks import METHOD_PHRASES
 from qpilot.schemas import DecisionCard, Fact, StudyResult
 
-TOOLS = ("qpcr_study", "qpcr_robustness", "qpcr_decide", "qpcr_plan", "explain_number", "none")
+TOOLS = (
+    "qpcr_study",
+    "qpcr_robustness",
+    "qpcr_decide",
+    "qpcr_plan",
+    "qpcr_trace",
+    "explain_number",
+    "none",
+)
+TRACE_ARGS = ("gene", "sample", "well")  # exactly one, as text
+# "trace ...", "where should I look", "what should I check", "why is X no call" (not a what-if)
+TRACE_WORDS = re.compile(
+    r"\btrac(e|ing)\b|\bwhere\s+(should|do|can|would|must)\s+(i|we|you)\s+(look|check)\b|"
+    r"\bwhere\s+to\s+(look|check)\b|\bwhat\s+(should|do|must)\s+(i|we)\s+check\b",
+    re.I,
+)
+TRACE_WHY = re.compile(
+    r"\bwhy\s+(is|isn'?t|does|doesn'?t|did|didn'?t|was|wasn'?t|has|hasn'?t)\b", re.I
+)
+WHAT_IF = re.compile(r"\b(if|suppose|would|instead)\b", re.I)
+WELL_IN_TEXT = re.compile(r"(?<![\w()\-.])([\w()\-.]+)[:/]([A-Za-z]{1,2}\d{1,3})(?!\w)")
+# a sample id after "sample", "tumour"...; it must carry a digit ("sample 2016", "mouse-c1")
+SAMPLE_IN_TEXT = re.compile(
+    r"\b(?:sample|tumou?r|patient|subject)\s+([\w()\-.]*\d[\w()\-.]*)", re.I
+)
+TRACE_CALL_WORDS = {"up": "up", "down": "down", "none": "no call"}
+# Trace's addresses reach a model as tokens only, never as the names they stand for
+ADDRESS_FACT = re.compile(r"^f_ans_trace_(root|\d+_(sample|plate|well))$")
+HIDDEN_ADDRESS = "a sample, plate or well name, not shown; write the token to name it"
+TRACE_NO_ROOT = (
+    "qPilot could not trace that. Name one gene, one sample, or a plate and well "
+    "(PLATE:WELL) from this study."
+)
+NOTHING_TEXT = {
+    "nothing_to_look_at": "Trace found nothing unusual behind it; the wells read as expected.",
+    "choice_to_look_at": (
+        "Trace found nothing unusual in the wells; an analysis choice can change it, so look at "
+        "the Decision Cards."
+    ),
+    "absent": "It is in no comparison; trace the sample to see which well left it out.",
+}
 # qpcr_plan arguments a model may pass (the replicate budget included); counts are whole numbers
 PLAN_ARGS = frozenset(
     {
@@ -175,6 +216,9 @@ def run_tool(ctx: _Context, tool: str, args: dict[str, Any]) -> dict[str, Any]:
         if any(not isinstance(kwargs[k], int) for k in PLAN_INT_ARGS if kwargs.get(k) is not None):
             raise TypeError("n_rt and n_tech must be whole numbers")
         return ctx.tools.qpcr_plan(**kwargs)
+    if tool == "qpcr_trace":
+        kw = {k: str(v) for k, v in args.items() if k in TRACE_ARGS and v is not None}
+        return ctx.tools.qpcr_trace(ctx.study_id, **kw)
     if tool == "explain_number":
         fid = str(args.get("fact_id", ""))
         fact = ctx.result.facts.get(fid)
@@ -247,9 +291,49 @@ def answer_facts(ctx: _Context, tool: str, out: dict[str, Any]) -> tuple[dict, d
                 )
         view["rules"] = out.get("rules", [])
         return view, facts
+    if tool == "qpcr_trace":
+        return _trace_view(out, tok), facts
     if tool == "explain_number":
         return {"fact": "{{" + out["fact_id"] + "}}", "computed_from": out["path"]}, facts
     return {}, facts
+
+
+def _trace_view(out: dict[str, Any], tok: Any) -> dict[str, Any]:
+    """A trace as the model sees it: addresses carry digits, so they are string facts too."""
+    from qpilot.qpcr.trace import CHECKS
+
+    root = out.get("root") or {}
+    summary = out.get("summary") or {}
+    view: dict[str, Any] = {
+        "root_kind": root.get("kind"),
+        "answer": out.get("answer"),
+        "places_to_look": [],
+    }
+    if root.get("kind") == "gene":
+        view["gene"] = root.get("id")
+        view["call"] = summary.get("call")
+    else:
+        view["root"] = tok("f_ans_trace_root", str(root.get("id", "")))
+    for i, place in enumerate(out.get("places") or [], 1):
+        item: dict[str, Any] = {"sample": tok(f"f_ans_trace_{i}_sample", str(place["sample"]))}
+        for key in ("plate", "well", "target"):
+            if place.get(key):
+                item[key] = tok(f"f_ans_trace_{i}_{key}", str(place[key]))
+        if place.get("fold_off") is not None:
+            item["values_read_off_by"] = tok(
+                f"f_ans_trace_{i}_fold", place["fold_off"], "{:.3g}", "×"
+            )
+        if place.get("feeds"):
+            item["values_fed"] = tok(f"f_ans_trace_{i}_feeds", place["feeds"])
+        item["looks_like"] = [
+            CHECKS[c]["looks_like"] for c in place.get("checks") or [] if c in CHECKS
+        ]
+        item["consequence"] = place.get("consequence")
+        view["places_to_look"].append(item)
+    n_more = summary.get("n_more")
+    if isinstance(n_more, int) and n_more > 0:
+        view["more_places"] = tok("f_ans_trace_n_more", n_more)
+    return view
 
 
 def _tokenise_reason(reason: str, tok: Any) -> str:
@@ -273,6 +357,11 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
             )
         if tool == "qpcr_decide":
             return f"Not applied: {out['error']}. Nothing was changed."
+        if tool == "qpcr_trace":
+            err = str(out["error"])
+            if any(ch.isnumeric() for ch in err) or err.startswith("give exactly one"):
+                return TRACE_NO_ROOT
+            return f"qPilot could not trace that: {err}."
         return f"qPilot could not answer that: {out['error']}."
     if tool == "qpcr_robustness":
         group = ctx.result.design.group_var.replace("_", " ")
@@ -327,9 +416,43 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
                 text += "{{f_ans_planned_called}} of the time"
             text += "."
         return text
+    if tool == "qpcr_trace":
+        return _trace_answer(view)
     if tool == "explain_number":
         return f"{view['fact']} is computed from {_path_words(view['computed_from'])}."
     return "qPilot could not answer that."
+
+
+def _trace_answer(view: dict[str, Any]) -> str:
+    """Fixed wording for a trace, in tokens: every address and number is a fact."""
+    from qpilot.explain.trace_text import CONSEQUENCE_WORDS
+
+    if view.get("root_kind") == "gene":
+        call = TRACE_CALL_WORDS.get(view.get("call") or "", "")
+        text = f"Trace for {view['gene']}" + (f" ({call})" if call else "") + ". "
+    else:
+        text = f"Trace for {view.get('root_kind') or 'this'} {view.get('root', '')}. "
+    places = view.get("places_to_look") or []
+    if not places:
+        return text + NOTHING_TEXT.get(view.get("answer") or "", NOTHING_TEXT["nothing_to_look_at"])
+    parts = []
+    for place in places:
+        where = f"sample {place['sample']}"
+        if "plate" in place:
+            where += f", plate {place['plate']}"
+        if "well" in place:
+            where += f", well {place['well']}"
+        what = CONSEQUENCE_WORDS.get(place.get("consequence") or "", "changes nothing here")
+        line = f"{where}: {what}"
+        if "values_read_off_by" in place:
+            line += f" (the sample's values read {place['values_read_off_by']} off)"
+        parts.append(line)
+    text += "Where to look first: " + parts[0] + "."
+    if len(parts) > 1:
+        text += " Then " + "; then ".join(parts[1:]) + "."
+    if "more_places" in view:
+        text += " Trace found {{f_ans_trace_n_more}} more unusual places."
+    return text + " Setting a place aside is a decision for a person in qPilot."
 
 
 def _kind(ctx: _Context, card_id: str) -> str:
@@ -354,11 +477,23 @@ def route(ctx: _Context, question: str) -> tuple[str, dict[str, Any]]:
             reason = "requested from Ask your data"
             return "qpcr_decide", {"card_id": card_id, "option": option_id, "reason": reason}
     gene = ctx.gene(question)
+    traced = bool(TRACE_WORDS.search(question)) or (
+        bool(gene) and bool(TRACE_WHY.search(question)) and not WHAT_IF.search(question)
+    )
+    if traced:
+        if well := WELL_IN_TEXT.search(question):
+            return "qpcr_trace", {"well": f"{well.group(1)}:{well.group(2)}"}
+        if gene:
+            return "qpcr_trace", {"gene": gene}
+        if sample := SAMPLE_IN_TEXT.search(question):
+            return "qpcr_trace", {"sample": sample.group(1)}
     if gene:
         return "qpcr_robustness", {"gene": gene}
     known = {n.lower() for n in ctx.names}
     if any(w.lower() not in known for w in GENE_LIKE.findall(question)):
         return "none", {"reason": NOT_IN_STUDY}
+    if traced:
+        return "qpcr_trace", {}
     return "qpcr_study", {}
 
 
@@ -546,6 +681,9 @@ def _tool_prompt(ctx: _Context, question: str, profile: Profile) -> str:
 
 def _model_answer(client, ctx, question, tool, view, facts):
     table = fact_table(facts, [fid for fid in facts if fid.startswith("f_ans_")])
+    for fid, row in table.items():
+        if ADDRESS_FACT.match(fid):  # a sample, plate or well name: the model copies the token
+            row["value_for_reading_only"] = HIDDEN_ADDRESS
     content = json.dumps(
         {"question": question, "tool": tool, "result": view, "facts": table}, ensure_ascii=False
     )
