@@ -29,6 +29,7 @@ python3.11 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/qsim ask "Does NM23A depend on the reference genes?"
 .venv/bin/qsim whatif --set refs=HMBS --set late_cq=cq35
 .venv/bin/qsim validate                                 # dPCR known answers + null plate
+.venv/bin/qsim external                                 # new public data: held-out plates, low copy, inhibition
 .venv/bin/pytest -q
 ```
 
@@ -115,6 +116,18 @@ The data are Ruijter's ds_380: 380 wells of 150,000 copies on one CFX384, conver
 - **Across all analyses, 1.33 % and 1.01 % of cells made a call.** That is just above the 1 % bar. Every one came from per-well efficiency (3–4 % of its cells), which is already common practice.
 - **This is an easy null.** At 150,000 copies the Cq SD is 0.19 cycles. There are no reference genes, so normalisation is not tested.
 
+### New public data, scored with nothing refitted
+
+These tests were planned before scoring (`docs/review/32-external-data-tests.md`); every interval component is fixed from the results above.
+
+| Test | Result |
+|---|---|
+| 3 new Untergasser plates of the same tubes (2 on a QuantStudio), 120 cases | **Pass.** The interval with the between-plate term covers 100 %, and the round-2 interval covers 97.5 %. Only 4 distinct truths stand behind these cases. |
+| A constant added to every curve (RDML technical file) | **Pass.** Nothing changes; the largest difference is 0.00008 log2. |
+| Ruijter ds_94_4, triplicates at 15–15,000 copies against nominal 10-fold steps | **Fail: 85 %.** The plate reads 0.26–0.39 log2 short of 10-fold per decade, which is either efficiency error or dilution error. |
+| ds_94_4 no-difference at 15 and 150 copies | **Defensible analyses never call.** Per-well efficiency makes almost every call (3–5 % of its cells). |
+| Ruijter competimer (efficiency lowered on purpose) | The assay-mean baseline is biased by up to −10.6 log2. Per-well efficiency is less biased only at ≥ 30 % competitor; it is as bad or worse at 5–10 % and on clean wells. The efficiency detectors also flag clean wells (17–83 %). |
+
 ### Small experiments drawn from real data
 
 100 draws per size.
@@ -137,7 +150,7 @@ With a real difference, the filter does not make small-study calls agree better 
 
 These come from the review and from validation round 2, in priority order:
 
-1. Make the coverage claim robust. A between-plate term estimated without truth lifts coverage to 92 % (±1.33-fold intervals), but it rests mostly on how three instruments disagreed on one tube; Poisson sampling, with nothing fitted, explains 87 % (`docs/review/31-research-closing-the-coverage-gap.md`). More instruments measuring shared tubes would pin the between-plate term down. Quote 92 % with the term and 83 % without, never a nominal 95 %.
+1. Make the coverage claim robust. A between-plate term estimated without truth lifts coverage to 92 % (±1.33-fold intervals), but it rests mostly on one pair from the instrument comparison, which mixes instrument disagreement with one plate's separate dilution; Poisson sampling, with nothing fitted, explains 87 % (`docs/review/31-research-closing-the-coverage-gap.md`). More instruments measuring shared tubes would pin the between-plate term down. Quote 92 % with the term and 83 % without, never a nominal 95 %.
 2. Have an outside qPCR scientist sign off every tier, including the result that the standard curve beat the baseline against dPCR on one machine.
 3. Run low-copy no-difference and fragility tests on ds_94_4 and MAQC.
 4. Add Cq method and baseline choices, a Cq-only import, paired tests and ANOVA.
@@ -148,5 +161,6 @@ These come from the review and from validation round 2, in priority order:
 
 - Vermeulen et al. 2009 / Ruijter et al. 2013 (CC BY 4.0), fetched SHA-256-pinned by qPilot.
 - Untergasser, van der Hoff and Benes, via the RDML consortium (MIT), in `data/untergasser/`.
-- Ruijter et al. 2013 ds_380, via the `ruijter` R package (CC BY 4.0), in `data/ruijter/`.
+- Ruijter et al. 2013 ds_380, ds_94_4 and competimer, via the `ruijter` R package (CC BY 4.0), in `data/ruijter/`.
+- RDML consortium technical files (MIT), in `data/technical/`.
 - Code: Apache-2.0.

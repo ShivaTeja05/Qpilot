@@ -52,9 +52,10 @@ error, or the nominal error bar). Pass: at least 90 % of baseline intervals cont
 **V2 addendum, efficiency calibration.** :func:`calibrate` corrects the assay-mean efficiency by
 one per-cycle offset, log2 E + delta. The offset is fitted on the dPCR-measured dilution series
 (:func:`series_offsets`, :func:`efficiency_offset`) of the *other* plate groups
-(:func:`calibration_training`) and scored under the same pass rule. The method and its variants
-were fixed before any calibrated number was computed. It is a validation variant, not an
-analysis option, so no tier changes.
+(:func:`calibration_training`) and scored under the same pass rule. The method and four variants
+were fixed before any calibrated number was computed (recorded in the session notes, not in a
+separate plan commit); the SE-free diagnostic variant was added after the primary result. It is
+a validation variant, not an analysis option, so no tier changes.
 """
 
 from __future__ import annotations
@@ -443,7 +444,11 @@ def calibrate(base: pd.DataFrame, offsets: dict[str, dict]) -> pd.DataFrame:
     return out
 
 
-#: the physical dilution series each tube group measured: AMC and DKFZ used the same tubes
+#: the dilution series each tube group measured. AMC and DKFZ used the same December 2024 tubes.
+#: The Feb 2024 instrument comparison is one series but not one set of tubes: only QuantStudio and
+#: StepOne share reaction tubes; the LC480 plate (AMC) used its own premixes, with its 0.2 and
+#: 0.5 ng/µl levels from a separate 1:100 dilution. Its plate x pair excess therefore mixes
+#: dilution error with instrument disagreement.
 PHYSICAL_SERIES = {"amc": "gDNA Dec 2024", "dkfz": "gDNA Dec 2024", "volume": "gDNA Feb 2024"}
 
 
@@ -755,6 +760,9 @@ def score(t: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             "by_plate": {k: cover(g) for k, g in x.groupby("plate", sort=False)},
             "bias_by_machine": bias_by("machine", x),
         }
+    cal_variants["diagnostic_offset_without_its_se"]["why"] = (
+        "added after the primary result, to explain it; not pre-registered; not counted"
+    )
     every = series_offsets(base)
     machine_bias = bias_by("machine", cal_ok)
     out["efficiency_calibration"] = {
@@ -764,7 +772,12 @@ def score(t: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             "group: the median over the other groups' dPCR-measured dilution series of each "
             "series' least-squares offset; its SE joins the efficiency term; run effect as above"
         ),
-        "preregistered": "method and variants fixed before any calibrated number was computed",
+        "preregistered": (
+            "method and the truth_disjoint, with_nominal_truth_plates, genomic_only and in_sample "
+            "variants fixed before any calibrated number was computed; written in the session "
+            "notes, not committed separately (method, code and results share commit 56b4c8f); "
+            "diagnostic_offset_without_its_se was added after the primary result"
+        ),
         "offsets": rounded(cal),
         "series_offsets_descriptive": {
             f"{plate} {template}": {
@@ -866,8 +879,9 @@ def score(t: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             },
             "post_hoc_sensitivity_term_without_lowest_tubes": {
                 "why": (
-                    "added after scoring: each term is dominated by pairs with the lowest tube "
-                    "(0.2 ng, 0.2 ng/µl); not counted for the pass"
+                    "added after scoring: one pair with the lowest tube carries 71 % of the "
+                    "instrument-comparison excess, and the two 0.2 ng pairs 62 % of the genomic "
+                    "excess; not counted for the pass"
                 ),
                 "terms": {g: round(c["sd_plate_pair_log2"], 4) for g, c in pp_no_low.items()},
                 **gap_report(p1_no_low),
@@ -945,9 +959,13 @@ def first_round_coverage(data: Path, components: dict, offset: dict | None = Non
     }
 
 
-def amplicon_standard_check(data: Path, base: pd.DataFrame, components: dict) -> dict:
+def amplicon_standard_check(
+    data: Path, base: pd.DataFrame, components: dict, round_2: dict | None = None
+) -> dict:
     """Descriptive check for test P2: DKFZ genomic pairs quantified with the efficiency of the same
-    run's amplicon standard curve (all four levels), as a lab with a separate standard would."""
+    run's amplicon standard curve (all four levels), as a lab with a separate standard would.
+    ``round_2`` (added after review) also scores the assay-mean comparator with the round-2
+    interval it was validated with."""
     plate = next(p for p in PLATES if p.key == "dkfz")
     group = next(g for g in plate.groups if g.unit == "copies")
     name = dpcr_truth.qpcr_name
@@ -973,7 +991,16 @@ def amplicon_standard_check(data: Path, base: pd.DataFrame, components: dict) ->
         "with_amplicon_standard": cover(x) | _bias(x["error_log2"]),
         "with_genomic_assay_mean": cover(base.loc[g.index].pipe(propagate, {"dkfz": components}))
         | _bias(base.loc[g.index, "error_log2"]),
-    }
+        "with_genomic_assay_mean_note": "scored with P2's standard-curve run effect, as above",
+    } | (
+        {}
+        if round_2 is None
+        else {
+            "with_genomic_assay_mean_round_2_interval": cover(
+                base.loc[g.index].pipe(propagate, {"dkfz": round_2})
+            )
+        }
+    )
 
 
 def validate(data: str | Path = DATA, out: str | Path = "results") -> dict:
@@ -1004,7 +1031,7 @@ def validate(data: str | Path = DATA, out: str | Path = "results") -> dict:
     )
     p2 = summary["coverage_gap_tests"]["p2_std_curve"]
     p2["dkfz_genomic_with_amplicon_standard"] = amplicon_standard_check(
-        Path(data), scored, p2["components"]["dkfz"]
+        Path(data), scored, p2["components"]["dkfz"], summary["v2_coverage"]["components"]["dkfz"]
     )
     out = Path(out)
     t.round(6).to_csv(out / "validation_dpcr.csv", index=False)

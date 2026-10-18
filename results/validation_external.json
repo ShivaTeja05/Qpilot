@@ -15,6 +15,7 @@
    "p1_amc_term": 0.1693
   },
   "cases": 120,
+  "cases_with_efficiency_se_missing_filled_0": 4,
   "assays_by_plate": {
    "LightCycler 480 AMC, probe mixes (10.12.2024)": 10,
    "QuantStudio, Eva Green B (17.09.2025)": 10,
@@ -547,8 +548,8 @@
     "present": true,
     "cq": 27.67,
     "eff_indiv": 1.882,
-    "d_cq_vs_intact_median": -1.7,
-    "d_eff_vs_intact_median": 0.002,
+    "d_cq_vs_intact_same_row": 0.09,
+    "d_eff_vs_intact_same_row": 0.041,
     "note": ""
    },
    "K5": {
@@ -556,8 +557,8 @@
     "present": true,
     "cq": 28.01,
     "eff_indiv": 1.914,
-    "d_cq_vs_intact_median": -1.94,
-    "d_eff_vs_intact_median": 0.004,
+    "d_cq_vs_intact_same_row": -0.03,
+    "d_eff_vs_intact_same_row": 0.024,
     "note": ""
    },
    "K7": {
@@ -565,8 +566,8 @@
     "present": true,
     "cq": 28.01,
     "eff_indiv": 1.836,
-    "d_cq_vs_intact_median": -1.94,
-    "d_eff_vs_intact_median": -0.074,
+    "d_cq_vs_intact_same_row": -0.03,
+    "d_eff_vs_intact_same_row": -0.054,
     "note": ""
    },
    "K9": {
@@ -574,8 +575,8 @@
     "present": true,
     "cq": 27.78,
     "eff_indiv": 1.842,
-    "d_cq_vs_intact_median": -1.85,
-    "d_eff_vs_intact_median": -0.038,
+    "d_cq_vs_intact_same_row": 0.01,
+    "d_eff_vs_intact_same_row": -0.026,
     "note": ""
    },
    "K11": {
@@ -583,8 +584,8 @@
     "present": true,
     "cq": 27.74,
     "eff_indiv": 1.86,
-    "d_cq_vs_intact_median": -1.9,
-    "d_eff_vs_intact_median": -0.02,
+    "d_cq_vs_intact_same_row": -0.04,
+    "d_eff_vs_intact_same_row": -0.007,
     "note": ""
    },
    "L2": {
@@ -592,8 +593,8 @@
     "present": true,
     "cq": 31.01,
     "eff_indiv": 1.954,
-    "d_cq_vs_intact_median": 1.65,
-    "d_eff_vs_intact_median": 0.073,
+    "d_cq_vs_intact_same_row": -0.11,
+    "d_eff_vs_intact_same_row": 0.023,
     "note": ""
    },
    "L5": {
@@ -601,8 +602,8 @@
     "present": true,
     "cq": 32.19,
     "eff_indiv": 1.873,
-    "d_cq_vs_intact_median": 2.25,
-    "d_eff_vs_intact_median": -0.037,
+    "d_cq_vs_intact_same_row": 0.36,
+    "d_eff_vs_intact_same_row": -0.038,
     "note": ""
    },
    "L7": {
@@ -610,8 +611,8 @@
     "present": true,
     "cq": 31.65,
     "eff_indiv": 1.842,
-    "d_cq_vs_intact_median": 1.71,
-    "d_eff_vs_intact_median": -0.067,
+    "d_cq_vs_intact_same_row": -0.18,
+    "d_eff_vs_intact_same_row": -0.069,
     "note": ""
    },
    "L9": {
@@ -619,8 +620,8 @@
     "present": true,
     "cq": 31.6,
     "eff_indiv": 1.885,
-    "d_cq_vs_intact_median": 1.96,
-    "d_eff_vs_intact_median": 0.005,
+    "d_cq_vs_intact_same_row": 0.01,
+    "d_eff_vs_intact_same_row": -0.004,
     "note": ""
    },
    "L11": {
@@ -628,8 +629,8 @@
     "present": true,
     "cq": 31.63,
     "eff_indiv": 1.873,
-    "d_cq_vs_intact_median": 1.99,
-    "d_eff_vs_intact_median": -0.007,
+    "d_cq_vs_intact_same_row": 0.04,
+    "d_eff_vs_intact_same_row": -0.016,
     "note": ""
    },
    "M3": {
@@ -637,8 +638,8 @@
     "present": true,
     "cq": 35.51,
     "eff_indiv": 1.872,
-    "d_cq_vs_intact_median": 0.32,
-    "d_eff_vs_intact_median": -0.031,
+    "d_cq_vs_intact_same_row": 1.39,
+    "d_eff_vs_intact_same_row": -0.033,
     "note": "Ncopy < 10"
    },
    "M5": {
@@ -646,8 +647,8 @@
     "present": true,
     "cq": 36.0,
     "eff_indiv": 1.859,
-    "d_cq_vs_intact_median": 0.27,
-    "d_eff_vs_intact_median": 0.409,
+    "d_cq_vs_intact_same_row": 0.27,
+    "d_eff_vs_intact_same_row": -0.083,
     "note": "Ncopy < 10"
    },
    "M7": {
@@ -655,8 +656,8 @@
     "present": true,
     "cq": 35.43,
     "eff_indiv": 1.896,
-    "d_cq_vs_intact_median": -0.3,
-    "d_eff_vs_intact_median": 0.446,
+    "d_cq_vs_intact_same_row": -0.3,
+    "d_eff_vs_intact_same_row": -0.046,
     "note": "Ncopy < 10"
    },
    "M9": {
@@ -664,8 +665,8 @@
     "present": true,
     "cq": 34.98,
     "eff_indiv": 1.927,
-    "d_cq_vs_intact_median": -0.6,
-    "d_eff_vs_intact_median": -0.001,
+    "d_cq_vs_intact_same_row": -0.47,
+    "d_eff_vs_intact_same_row": -0.001,
     "note": ""
    },
    "N3": {
@@ -673,8 +674,8 @@
     "present": true,
     "cq": 37.62,
     "eff_indiv": 1.896,
-    "d_cq_vs_intact_median": 2.42,
-    "d_eff_vs_intact_median": -0.008,
+    "d_cq_vs_intact_same_row": 1.72,
+    "d_eff_vs_intact_same_row": -0.005,
     "note": "Ncopy < 10"
    },
    "N5": {
@@ -682,8 +683,8 @@
     "present": true,
     "cq": 38.6,
     "eff_indiv": 1.943,
-    "d_cq_vs_intact_median": 2.87,
-    "d_eff_vs_intact_median": 0.493,
+    "d_cq_vs_intact_same_row": NaN,
+    "d_eff_vs_intact_same_row": 0.943,
     "note": "Ncopy < 10"
    },
    "N7": {
@@ -691,8 +692,8 @@
     "present": true,
     "cq": 38.7,
     "eff_indiv": 1.987,
-    "d_cq_vs_intact_median": 2.97,
-    "d_eff_vs_intact_median": 0.537,
+    "d_cq_vs_intact_same_row": NaN,
+    "d_eff_vs_intact_same_row": 0.987,
     "note": "Ncopy < 10"
    },
    "N9": {
@@ -700,8 +701,8 @@
     "present": true,
     "cq": null,
     "eff_indiv": 1.0,
-    "d_cq_vs_intact_median": null,
-    "d_eff_vs_intact_median": -0.928,
+    "d_cq_vs_intact_same_row": null,
+    "d_eff_vs_intact_same_row": -0.958,
     "note": "no amplification;no TD0 found"
    },
    "N11": {
@@ -709,17 +710,17 @@
     "present": true,
     "cq": 38.04,
     "eff_indiv": 1.932,
-    "d_cq_vs_intact_median": 2.46,
-    "d_eff_vs_intact_median": 0.005,
+    "d_cq_vs_intact_same_row": 1.02,
+    "d_eff_vs_intact_same_row": -0.026,
     "note": "Ncopy < 10"
    },
    "O1": {
-    "gap": "cycles 1-8, 20-22, 44-45",
+    "gap": "cycles 1-7, 20-22, 44-45",
     "present": true,
     "cq": 35.65,
     "eff_indiv": 1.884,
-    "d_cq_vs_intact_median": -1.47,
-    "d_eff_vs_intact_median": 0.0,
+    "d_cq_vs_intact_same_row": -0.22,
+    "d_eff_vs_intact_same_row": -0.007,
     "note": "Ncopy < 10"
    },
    "O3": {
@@ -727,8 +728,8 @@
     "present": true,
     "cq": null,
     "eff_indiv": 1.0,
-    "d_cq_vs_intact_median": null,
-    "d_eff_vs_intact_median": -0.884,
+    "d_cq_vs_intact_same_row": null,
+    "d_eff_vs_intact_same_row": -0.891,
     "note": "no amplification;no TD0 found"
    },
    "O7": {
@@ -736,8 +737,8 @@
     "present": true,
     "cq": null,
     "eff_indiv": 1.0,
-    "d_cq_vs_intact_median": null,
-    "d_eff_vs_intact_median": -0.9,
+    "d_cq_vs_intact_same_row": null,
+    "d_eff_vs_intact_same_row": 0.0,
     "note": "no amplification;no TD0 found"
    }
   }

@@ -1791,7 +1791,7 @@
  "efficiency_calibration": {
   "rule": "baseline 95 % interval with truth uncertainty contains the truth in >= 90% of cases",
   "method": "log2 E_cal = log2 E_LinRegPCR + delta, one per-cycle offset for every run of a plate group: the median over the other groups' dPCR-measured dilution series of each series' least-squares offset; its SE joins the efficiency term; run effect as above",
-  "preregistered": "method and variants fixed before any calibrated number was computed",
+  "preregistered": "method and the truth_disjoint, with_nominal_truth_plates, genomic_only and in_sample variants fixed before any calibrated number was computed; written in the session notes, not committed separately (method, code and results share commit 56b4c8f); diagnostic_offset_without_its_se was added after the primary result",
   "offsets": {
    "amc": {
     "delta_log2e": 0.0285,
@@ -2795,7 +2795,8 @@
        "share_within_0.15": 0.5
       }
      }
-    }
+    },
+    "why": "added after the primary result, to explain it; not pre-registered; not counted"
    }
   },
   "pass": false,
@@ -3513,7 +3514,7 @@
     "pass": true
    },
    "post_hoc_sensitivity_term_without_lowest_tubes": {
-    "why": "added after scoring: each term is dominated by pairs with the lowest tube (0.2 ng, 0.2 ng/\u00b5l); not counted for the pass",
+    "why": "added after scoring: one pair with the lowest tube carries 71 % of the instrument-comparison excess, and the two 0.2 ng pairs 62 % of the genomic excess; not counted for the pass",
     "terms": {
      "amc": 0.071,
      "dkfz": 0.071,
@@ -4001,6 +4002,15 @@
      "median_abs_error_log2": 0.199,
      "median_bias_log2": 0.089,
      "share_within_0.15": 0.25
+    },
+    "with_genomic_assay_mean_note": "scored with P2's standard-curve run effect, as above",
+    "with_genomic_assay_mean_round_2_interval": {
+     "cases": 20,
+     "old_welch_ci": 0.75,
+     "propagated_ci": 0.85,
+     "propagated_ci_with_truth_se": 0.85,
+     "median_half_width_old": 0.316,
+     "median_half_width_new": 0.36
     }
    }
   },

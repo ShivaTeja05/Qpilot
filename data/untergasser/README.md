@@ -63,7 +63,7 @@ These come from the same upstream folder, at commit `e9f936b1d986df3938eb43c85f9
 
 | File | Plate | SHA-256 |
 |---|---|---|
-| `eva_green_b.rdml` | Eva Green B (QuantStudio, 17.09.2025), 13 assays × 20/7/2/0.7 ng | `99695d5897bbef30bcb0621bc289ad787b890b4b2fd42728699a6244d8f708f0` |
+| `eva_green_b.rdml` | Eva Green B (QuantStudio, 17.09.2025), 10 assays × 20/7/2/0.7 ng, plus 18 primer and EvaGreen variants at 7 ng only | `99695d5897bbef30bcb0621bc289ad787b890b4b2fd42728699a6244d8f708f0` |
 | `eva_green_b_pipett.tsv` | its pipetting scheme | `3e3472e085911e622467fd90686a544c9e53ac7c4d700ad187a5d2f1b935c3a8` |
 | `quantification_methods.rdml` | Quantification Methods (QuantStudio, 22.10.2025), 20 assay×reporter × 7/2/0.7 ng | `fe529c0705f9a8b43ef124dc0212368d60ba631f56270310c2a3191b556eacc0` |
 | `quantification_methods_pipett.tsv` | its pipetting scheme | `2f6e85b1f2427d7efc641f2e2c88207ab4a869ba5d0c2fc21b824eef70f6ecf4` |
@@ -72,4 +72,8 @@ These come from the same upstream folder, at commit `e9f936b1d986df3938eb43c85f9
 | `unused_qpcr_dpcr_comparison.rdml` | Primer and DNA Dilutions (QuantStudio, 30.05.2025): genomic 20 ng and "genomic DNA 20ng - EMBL" | `a88707720a6c392e293ec4d0b60ab5ace13fb3f4e1569cff35845a25301530ca` |
 | `unused_qpcr_dpcr_comparison_pipett.tsv` | its pipetting scheme | `ab75b1d59161f79e4f1278c5371c23771133740ce755c02127e0299ee5e8b4a6` |
 
-`sybr_conc.rdml` was not added. Its dilution wells are wells of the AMC plates already in `amplicon_primer_mix.rdml`: 576 of its 672 wells share a run and well, and 481 have identical Cq. Every other file in the upstream folder is in `~/Wheel-hack/qpcr-datasets/untergasser/`, outside the repo.
+`sybr_conc.rdml` was not added. Its DNA-dilution runs (P3, P6) hold 672 wells, and 576 of them are the same reactions as the AMC plates already in `amplicon_primer_mix.rdml`: identical raw curves and Cq. The other 96 are extra-SYBR wells at one level only.
+
+Every other data file in the upstream folder is in `~/Wheel-hack/qpcr-datasets/untergasser/`, outside the repo. The exceptions are the primer lists (`primers_*.fa`, `primers_*.tsv`) and the run-protocol image.
+
+In the instrument comparison (`volume_machine.rdml`), only the QuantStudio and StepOne plates share reaction tubes. The LC480 plate used its own premixes, and its 0.2 and 0.5 ng/µl levels came from a separate 1:100 dilution (`volume_pipett_AMC.tsv`).

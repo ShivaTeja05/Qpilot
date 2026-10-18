@@ -78,7 +78,7 @@ The run effect is estimated without any truth: it comes from how estimates of th
 | Instrument comparison (13) | 0.075 | 0.041 | 92.3 % | 0.128 → 0.249 |
 | **All (197)** | | | **83.2 %** | 0.186 → 0.251 |
 
-**Why it still fails.** At 20→0.7 ng (ΔCq ≈ 5) the AMC baseline is biased by −0.11 log2. The assay-mean efficiency there runs about 1.6 % per cycle low, and a bias cannot be covered by a variance term: coverage at that level is 71 %. On the other three genomic levels it is 86–88 %. The EMBL comparison covers 1 of 4.
+**Why it still fails.** At 20→0.7 ng (ΔCq ≈ 5) the AMC baseline is biased by −0.11 log2. The assay-mean efficiency there runs about 1.6 % per cycle low, and a bias cannot be covered by a variance term: coverage at that level is 71 % (corrected: 65.8 % on AMC and 69 % with DKFZ, from the JSON). On the other three genomic levels it is 86–88 % (corrected: 84–90 %). The EMBL comparison covers 1 of 4.
 
 **What I changed after seeing results.** My first estimator was the plain variance. On the AMC plate it was dominated by the five broken assays: the per-level SD came out at 0.40 log2, and intervals were ±2.2-fold or wider. Between groups, its per-cycle efficiency SD swings from 0.01 to 0.17. I switched to a robust (MAD) scale after that run. All four versions are in the JSON:
 
@@ -125,6 +125,8 @@ The data are 380 wells of 150,000 copies on a CFX384, converted to RDML so that 
 Reproduce it with `qsim validate`. The numbers are under `efficiency_calibration` in `results/validation_dpcr.json`, and per-case `*_calibrated` columns are appended to `validation_dpcr_baseline.csv`. Every round-2 number above is unchanged, and so are the option tiers.
 
 ### Method, fixed before any calibrated number was computed
+
+The method was written in the session's notes folder before scoring. It was not committed on its own: method, code and results share commit 56b4c8f.
 
 - **Model.** One per-cycle offset δ on the LinRegPCR assay mean: log2 E_cal = log2 E + δ. This moves each baseline estimate by −ΔCq·δ.
 - **One δ per series.** Each dPCR-measured dilution series (one run, assay and template, either genomic DNA or the amplicon standard) gives its own δ: the least-squares slope through the origin of error on ΔCq.
@@ -191,11 +193,11 @@ The same two machines are within 0.15 before and after.
 | Truth-disjoint: no training pair uses a tube the scored group is scored on | +0.0741 (4 amplicon series). DKFZ has no series left and stays uncalibrated. | 80.2 % |
 | Nominal-truth plates also used in training | +0.0080 (11) | 87.3 % |
 | Genomic DNA only | −0.0112 (4) | 82.2 % |
-| In sample: one offset from every group, own truth included | +0.0138 (46) | 86.3 % |
+| In sample: one offset from all 46 dPCR series, AMC's and DKFZ's own truth included (the nominal-truth plates are not in the fit) | +0.0138 (46) | 86.3 % |
 | Diagnostic: primary offsets with their SE left out | +0.0285 | 83.2 % |
 
 - **The primary leaks truth.** AMC and DKFZ are scored against the same dPCR ratios (same tubes), so the DKFZ genomic series that calibrate AMC carry the error of AMC's own truth, and the reverse. The truth-disjoint variant removes that leak. It is the cleanest test, and it does worst: the only dPCR series left for AMC are the amplicon standard's, and they overcorrect (AMC bias +0.09, median \|error\| 0.155).
-- **Even the in-sample fit stays at 86.3 %.** It sees every plate's own truth, so no single per-cycle offset closes the gap.
+- **Even the in-sample fit stays at 86.3 %.** It sees AMC's and DKFZ's own dPCR truth, so no single per-cycle offset closes the gap.
 
 **Decided after seeing results:**
 - The diagnostic variant (SE left out) and the step-pattern sign test in point 3 were added after the primary result, to explain it.

@@ -1,6 +1,6 @@
 # Tests on new public data: plan fixed before scoring
 
-18 Oct 2026, about 03:30. The user asked for new data to test the simulator on. All files were downloaded from the sources the repo already uses:
+18 Oct 2026; this plan was committed as d0cfd27 at 02:52 BST, before any scoring code existed. The user asked for new data to test the simulator on. All files were downloaded from the sources the repo already uses:
 
 - **RDML-consortium.** `rdmlpython/experiments`, at commit `e9f936b1d986df3938eb43c85f9cd9c0348a68ed`, MIT licence.
 - **r-universe.** The `ruijter` R package's data endpoint, CC BY 4.0.
@@ -9,7 +9,7 @@ Sizes were checked against the GitHub API, and every RDML file was confirmed to 
 
 **Already known when this plan was written** (without the truth):
 - **Which plates hold the genomic dilution series.** The README upstream says one series, made in AMC in December 2024, was used for every later experiment.
-- **`sybr_conc.rdml` is excluded.** 576 of its 672 wells are wells of the AMC plates already scored (same run and well, and 481 have identical Cq).
+- **`sybr_conc.rdml` is excluded.** Its DNA-dilution runs (P3, P6) hold 672 wells. 576 of them are the same reactions as the AMC plates already scored: same run and well, identical raw curves, and identical Cq wherever one exists (481 wells; the other 95 have no Cq in either file). The other 96 are extra-SYBR wells at one level only, which give no dilution pair. The file also holds 407 further wells in another experiment.
 - **ds_94_4's labels run the right way.** More copies amplify earlier: the half-maximum cycle is 26, 29, 32 and 35 at 15,000, 1,500, 150 and 15 copies.
 
 **Applies to every test:**
@@ -21,7 +21,7 @@ Sizes were checked against the GitHub API, and every RDML file was confirmed to 
 
 **Plates.** Same genomic tubes as the dPCR truth:
 
-| File | Experiment / run | Instrument (from the file) | Date | Chemistry |
+| File | Experiment / run | Instrument | Date | Chemistry |
 |---|---|---|---|---|
 | `eva_green_b.rdml` | Eva Green B / Run 1 | QuantStudio | 17.09.2025 | EvaGreen in IDT probe mix |
 | `quantification_methods.rdml` | Quantification Methods / Run 1 | QuantStudio | 22.10.2025 | probe, EvaGreen and SYBR reporters |
@@ -130,9 +130,13 @@ Reproduce with `qsim external` (about 45 s). Output: `results/validation_externa
 **The EMBL pair, reported separately.** On the QuantStudio, the "20ng - EMBL" sample reads 0.29 log2 above the dPCR ratio (10 cases). That is the same direction as the round-2 EMBL disagreement. P1 covers all 10 (half-width 0.36).
 
 **What this shows:**
-- **The intervals carry over to new plates.** Coverage holds on plates no component was estimated on, including a new instrument (QuantStudio) and new chemistries (EvaGreen, probes), measured within 3 months of the dPCR.
+- **The intervals carry over to new plates.** Coverage holds on plates no component was estimated on, including a new instrument (QuantStudio) and new chemistries (EvaGreen, probes).
+  - The two QuantStudio plates were measured 3 weeks and 2 months after the dPCR.
+  - The LC480 probe plate was measured on 10.12.2024, the same day and machine as the AMC round-2 runs, about 8.5 months before the dPCR.
 - **But only 4 distinct truths stand behind the 120 cases,** so the confidence interval over truths is degenerate.
-- **Even the round-2 interval passes here.** On the AMC plate, measured 8 months before the dPCR, it does not. That is consistent with the AMC gap being partly a time gap between the plate and its truth.
+- **Even the round-2 interval passes here.**
+  - The comparison with AMC needs the same components. The 97.5 % uses the fixed in-sample run effect (0.0768, 0.0408). Scored with those, the AMC round-2 plate reaches 88.8 %, still under the bar; its 81.6 % used leave-one-group-out components.
+  - The LC480 probe plate, from the same day and machine as AMC, is covered 40 of 40. So a time gap between plate and truth does **not** explain the AMC shortfall. (An earlier draft said it did; corrected after review.)
 
 ### X2. Baseline-shift invariance: pass
 
@@ -146,7 +150,13 @@ Adding a constant to a curve changes nothing.
 
 ### X3. Missing cycles (descriptive)
 
-**The analysis runs, and 19 of 22 damaged wells get a Cq.** The three without one are N9 (cycles 5–9 and 31–35 missing), O3 (only cycle 20 present) and O7 (no data). All three are noted "no amplification; no TD0 found", so none of them fails silently.
+**The analysis runs, and 19 of 22 damaged wells get a Cq.**
+- **The three without one** are N9 (cycles 5–9 and 31–35 missing), O3 (only cycle 20 present) and O7 (no data). All three are noted "no amplification; no TD0 found", so none of them fails silently.
+- **The pre-registered distances.** These are measured against intact wells of the same sample *and plate row*. Each sample spans two rows about 3.5 cycles apart, so the row-matched reference was adopted after review.
+  - **Wells missing only start or end cycles** (K3–K11, L2–L11, O1) are within 0.4 cycles of their row.
+  - **Wells missing cycles inside the curve** move more: M3 by +1.39, N3 (cycles 17–20) by +1.72 and N11 by +1.02 cycles.
+  - **N5 and N7** have no intact reference in their row.
+- **One upstream error.** The upstream README lists O1 as missing cycles 1–8, but the file holds cycle 8.
 
 ### X4. Ruijter ds_94_4
 
@@ -175,7 +185,7 @@ Adding a constant to a curve changes nothing.
 
 This is the same picture as ds_380:
 - **Defensible analyses never call,** and nothing passes the robust filter.
-- **Every call comes from per-well efficiency,** which is common practice.
+- **Almost every call comes from per-well efficiency,** which is common practice. The exception is about 0.1 % of assume-100 % cells at 15 copies, 3 vs 3.
 - **At 15 copies (3 vs 3), the baseline median |log2| of 0.205 exceeds 0.15.** Poisson noise alone predicts about 0.2.
 
 ### X5. Competimer: a real efficiency fault
@@ -204,7 +214,10 @@ All 147 wells are one target, so LinRegPCR's plate-mean efficiency (1.668) mixes
 - **False alarm.** It is still 25 %.
 
 **What this shows (for the outside reviewer):**
-- **The defensible options are the most biased under real inhibition.** When inhibition is confined to some samples, the assay mean and the standard curve are badly biased. Per-well efficiency, currently common practice, is much less biased.
+- **Under strong inhibition, the defensible options are the most biased.**
+  - **At 30–50 % competitor,** the assay mean and the standard curve are badly biased (median |error| 3.65–10.56 log2). Per-well efficiency, currently common practice, is much less biased (0.97–2.85).
+  - **At 5–10 %,** per-well is as biased or worse: at 10 %, bias −1.09 against −1.04, and median |error| 1.54 against 1.04.
+  - **On the clean 0 % dilution,** per-well is far worse (median |error| 3.63 against 0.33).
 - **The current tiers assume clean, comparable wells.** The simulator's "per-well vs assay mean" spread is exactly the signal that flags this.
 - **The detectors are not frozen-ready.** Their false alarms on this assay exceed the 2 % bar.
 
@@ -218,4 +231,17 @@ All 147 wells are one target, so LinRegPCR's plate-mean efficiency (1.668) mixes
 **Must say:**
 - **Low copy.** The known-answer test at low copy fails (85 % with P1) because of a systematic −0.3 log2 per decade against the nominal dilution. The data cannot tell whether that is efficiency error or dilution error.
 - **Detectors.** The efficiency detectors flag real inhibition but also flag clean wells of a low-efficiency assay (false alarm 17–83 %).
-- **Inhibited samples.** Under inhibition confined to some samples, per-well efficiency beats the baseline.
+- **Inhibited samples.** Only under strong inhibition (≥ 30 % competitor) confined to some samples does per-well efficiency beat the baseline. Under mild inhibition, or none, it is as bad or worse.
+
+## Corrections after an adversarial review (18 Oct 2026)
+
+A review workflow ran three reviewers (code, claims and data), plus a skeptic for each of the seven most severe findings. All seven were confirmed. **No pass or fail changed, and no scored number changed.** Corrected:
+
+1. **Timing.** The time-gap explanation of the AMC shortfall is withdrawn (X1 above).
+2. **Per-well efficiency.** The claim is now limited to strong inhibition (X5).
+3. **sybr_conc counts.** The duplicate counts are restated.
+4. **X3 distances.** These now use a same-row reference.
+5. **O1 gap.** The O1 gap is corrected.
+6. **Instrument column.** It no longer says "from the file". probes.rdml names no instrument, and both QuantStudio files store "QuantStudio Dx" with a placeholder date, so instruments and those dates come from the upstream README.
+7. **Assume-100 % calls.** The 0.1 % of assume-100 % calls is now mentioned.
+8. **Efficiency SE.** 4 X1 cases (Eva Green B FSTL_1_L_412) have no efficiency SE. That happens because LinRegPCR writes an assay-level note on every well of an assay below 1.7, and `_assay_mean_se` then counts no unflagged wells. Their efficiency term is filled with 0, as it is for 8 AMC rows in round 2. The true SE is about 0.003, so coverage is unaffected. `results/validation_external.json` now counts these cases.

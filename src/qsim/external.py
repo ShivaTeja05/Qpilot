@@ -178,6 +178,7 @@ def held_out_plates(data: Path = DATA / "untergasser") -> tuple[dict, pd.DataFra
             "p1_amc_term": P1_TERM_AMC,
         },
         "cases": int(len(resolved)),
+        "cases_with_efficiency_se_missing_filled_0": int(resolved["se_log2e"].isna().sum()),
         "assays_by_plate": {k: int(g["assay"].nunique()) for k, g in resolved.groupby("plate")},
     }
     scored = {}
@@ -281,15 +282,16 @@ MATRIX_GAPS = {
     "N7": "cycles 5-9",
     "N9": "cycles 5-9, 31-35",
     "N11": "cycles 1-10, 43-45",
-    "O1": "cycles 1-8, 20-22, 44-45",
+    "O1": "cycles 1-7, 20-22, 44-45",  # upstream lists 1-8, but the file has cycle 8
     "O3": "only cycle 20 present",
     "O7": "no data",
-}  # from data/technical/UPSTREAM_README.md; cycle 1 is missing everywhere
+}  # from data/technical/UPSTREAM_README.md, checked against the file; cycle 1 is missing everywhere
 
 
 def matrix_gaps(path: Path = DATA / "technical" / "matrix_gaps.rdml") -> dict:
-    """Descriptive: does every damaged well get a result, and how far is it from intact wells of
-    the same sample."""
+    """Descriptive: does every damaged well get a result, and how far is it from the intact wells of
+    the same sample in the same plate row (each sample spans two rows about 3.5 cycles apart; the
+    row-matched reference was adopted after review)."""
     _quiet()
     try:
         c = analyse_study(path, "Experiment 1", reference_targets=())
@@ -299,8 +301,9 @@ def matrix_gaps(path: Path = DATA / "technical" / "matrix_gaps.rdml") -> dict:
     c["well_id"] = c["well"].map(
         lambda w: "ABCDEFGHIJKLMNOP"[well_position(w)[0]] + str(well_position(w)[1] + 1)
     )
+    c["row"] = c["well_id"].str[0]
     intact = c[~c["well_id"].isin(MATRIX_GAPS)]
-    ref = intact.groupby("sample").agg(cq=("cq", "median"), eff=("eff_indiv", "median"))
+    ref = intact.groupby(["sample", "row"]).agg(cq=("cq", "median"), eff=("eff_indiv", "median"))
     rows = {}
     for well, gap in MATRIX_GAPS.items():
         w = c[c["well_id"] == well]
@@ -308,16 +311,17 @@ def matrix_gaps(path: Path = DATA / "technical" / "matrix_gaps.rdml") -> dict:
             rows[well] = {"gap": gap, "present": False}
             continue
         r = w.iloc[0]
-        s = ref.loc[r["sample"]] if r["sample"] in ref.index else None
+        key = (r["sample"], r["row"])
+        s = ref.loc[key] if key in ref.index else None
         rows[well] = {
             "gap": gap,
             "present": True,
             "cq": None if pd.isna(r["cq"]) else round(float(r["cq"]), 2),
             "eff_indiv": None if pd.isna(r["eff_indiv"]) else round(float(r["eff_indiv"]), 3),
-            "d_cq_vs_intact_median": None
+            "d_cq_vs_intact_same_row": None
             if s is None or pd.isna(r["cq"])
             else round(float(r["cq"] - s["cq"]), 2),
-            "d_eff_vs_intact_median": None
+            "d_eff_vs_intact_same_row": None
             if s is None or pd.isna(r["eff_indiv"])
             else round(float(r["eff_indiv"] - s["eff"]), 3),
             "note": str(r["note"] or ""),

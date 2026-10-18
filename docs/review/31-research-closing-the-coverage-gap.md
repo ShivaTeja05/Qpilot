@@ -25,7 +25,7 @@ Sources: two literature searches and checks on the data, using no truth. I opene
 | Individual well efficiency by input level, AMC | Within ±0.007 log2 of the run mean at every level | No high-input inhibition, so a per-sample efficiency will not help. |
 | Standard-curve efficiency (run's own nominal dilution, leave-pair-out) minus LinRegPCR | AMC +0.030 (+0.020 for assays passing QC); DKFZ −0.010; LC480 Feb 2024 +0.003; QuantStudio −0.045; StepOne −0.012 | Same signs as the dPCR-fitted offsets (AMC +0.014, DKFZ −0.011). The run's own dilution sees its plate's offset; another plate does not. |
 | AMC vs DKFZ, same genomic tubes, 8 months apart | Median estimates differ by +0.00 (20→7), +0.12 (7→2), −0.23 (2→0.7), −0.17 (20→0.7), −0.23 (0.7→0.2) log2 | A plate×pair component the interval does not include. The run effect is estimated within each plate, so it cannot see this. |
-| LC480, QuantStudio, StepOne, same tubes | Median SD across the three instruments is 0.13 log2 per pair | The same component, between instruments. |
+| LC480, QuantStudio, StepOne, one dilution series | Median SD across the three instruments is 0.13 log2 per pair | The same component, between instruments, plus dilution error: only QuantStudio and StepOne share reaction tubes. The LC480 plate used its own premixes, and its 0.2 and 0.5 ng/µl levels came from a separate 1:100 dilution. |
 | Distinct truths behind the 197 cases | 13. The 4 genomic pairs each carry 42 cases. | A truth error of 1.5 SE on one pair fails up to 42 cases together. |
 | dPCR per tube | Relative to nominal, dPCR puts the 2 ng tube 0.06 log2 low. F_109 and K_219 differ by 0.04–0.15 per tube. | The "2 ng tube disagreement" in the addendum is within about 1.5 truth SE. It may be truth error rather than qPCR error. |
 
@@ -173,7 +173,7 @@ Median \|error\| by machine, log2. P1 changes only the interval, so its errors a
 
 **P1 passes, but the pass is fragile.**
 - **The terms.** The term is 0.169 log2 for AMC and DKFZ, taken from the three instruments on 4 pairs. For the instrument comparison it is 0.132, taken from AMC against DKFZ on 6 pairs.
-- **One tube drives the AMC/DKFZ term.** The three instruments' disagreement on the 1 vs 0.2 ng/µl pair contributes an excess variance of 0.081 against 0.000–0.023 for the other pairs. The 0.2 ng tubes dominate the other term in the same way.
+- **One pair drives the AMC/DKFZ term.** The 1 vs 0.2 ng/µl pair contributes an excess variance of 0.081 (71 % of the total) against 0.000–0.023 for the other pairs. On the LC480 plate its 0.2 ng/µl level came from a separate 1:100 dilution, so this is partly dilution error, not only instrument disagreement. In the genomic term, the two 0.2 ng pairs carry about 62 %.
 - **Without the lowest tubes, it fails.** Leaving out pairs that use the lowest tube of each series cuts the terms to 0.071 and 0.099, and coverage falls to 85.8 %. This check was added after scoring and is not counted.
 - **The confidence interval reaches below the bar.** Its lower end, 89.1 %, is under 90 %.
 - **Reading.** Between-plate disagreement is real and visible without truth, but it is much larger for low-copy tubes. A single constant term borrowed from a low-copy tube widens every interval.
@@ -186,7 +186,7 @@ Median \|error\| by machine, log2. P1 changes only the interval, so its errors a
 - **The leave-pair-out curve is optimistic.** It uses the same genomic tubes' other levels, which a real experiment would not have.
 - **A separate standard does not help.** On DKFZ, quantifying the genomic pairs with the same run's amplicon-standard efficiency (E 1.90–1.93) gave:
   - median bias +0.187 and median \|error\| 0.189, against 0.199 with the assay mean;
-  - 80 % coverage in both cases, over 20 cases.
+  - 80 % coverage in both cases, over 20 cases, when both are scored with P2's run effect. Scored with its own round-2 interval, the assay mean covers 85 %, so the separate standard is worse, not equal. (Corrected after review.)
 
 **P3 over-covers.** It reaches 96.4 % with ±1.39-fold intervals. It combines the two tests above and adds nothing new.
 
@@ -218,7 +218,7 @@ Median \|error\| by machine, log2. P1 changes only the interval, so its errors a
 | Series | Pairs | Fitted b | Poisson theory, 1/ln²2 | Reading |
 |---|---|---|---|---|
 | Genomic, Dec 2024 (AMC vs DKFZ) | 6 | 1.77 | 2.08 | Matches one Poisson draw per tube per plate. |
-| Instrument comparison, Feb 2024 | 4 | 28.5 | 2.08 | 14 times too large. The lowest tube there is 606 copies per reaction, so this is instrument behaviour, not sampling. |
+| Instrument comparison, Feb 2024 | 4 | 28.5 | 2.08 | 14 times too large. The lowest tube there is 606 copies per reaction, so this is not sampling: it is instrument disagreement plus the LC480 plate's separate 1:100 dilution. |
 
 **Primary.**
 - **Term.** σ²_pp(pair) = (1/c_hi + 1/c_lo) / ln²2: the variance of log2 of one extra Poisson draw of each tube per plate.
@@ -252,12 +252,12 @@ Median \|error\| by machine, log2. P1 changes only the interval, so its errors a
 
 **Reading:**
 - **Sampling explains part of the gap.** One Poisson draw per tube per plate, with no fitted number, explains about half the gap: 83 → 87 %, at a small cost in width (±1.19 → ±1.24-fold). The fitted slope from both series (2.01) agrees with theory (2.08).
-- **The rest is instrument disagreement.** It is larger than sampling, and so far we have seen it only on the instrument-comparison tubes.
+- **The rest is instrument and dilution disagreement.** It is larger than sampling, and so far we have seen it only on the instrument comparison, where the LC480 plate's lowest level came from a separate dilution.
 - **P5a passes, but it does not count.** It reaches 90 % only by projecting that disagreement onto low-copy AMC tubes, which gives ±1.51-fold intervals. It is a variant.
 
 **Decision, by the rule fixed in the plan.** P5 is below 90 %, so the reported interval is **P1: 92.4 %, ±1.33-fold, with its caveats**.
 
-**The claim:** *"Replicate, efficiency, run, premix and sampling error together explain 87 % coverage. Reaching 92 % needs a between-plate term the size of the disagreement between three instruments on the same tubes (0.17 log2). Without it, a new instrument's interval is too narrow."*
+**The claim:** *"Replicate, efficiency, run, premix and sampling error together explain 87 % coverage. Reaching 92 % needs a between-plate term the size of the disagreement between three instruments on one dilution series (0.17 log2, which includes one plate's separate dilution). Without it, a new instrument's interval is too narrow."*
 
 **Checks run:**
 - `pytest` (28 pass, including P5's scale, slope and propagation);
