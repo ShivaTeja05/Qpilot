@@ -8,7 +8,7 @@ is confirmed or any analysis has run::
     $QPILOT_STUDIES_DIR/sessions/<input_sha256>/
         proposals.jsonl   hash-chained, append-only, one ProposalEntry per line
         quarantine.json   the free text proposals cite (core/firewall.py)
-        source.json       where the input file is
+        source.json       where the input file (and its sample sheet) is
         .lock
 
 There is one chain per input file. Its root is the input's sha256 (the root of the decision
@@ -29,6 +29,11 @@ Rules enforced here, in code:
   lock on every proposal and again on everything a person accepts (with any edits merged in).
 - **Bulk acceptance is narrow.** It takes only the listed ids, and only those still pending
   with an engine check of ``consistent``.
+- **Only the system proposes a confirm step.** A ``stage.confirm`` is refused unless the system
+  proposes it as the rule's; an agent's proposal is always recorded as made by an agent.
+- **Agents cannot fill the inbox.** Agent-made proposals have their own, much smaller caps
+  (pending proposals and bytes of history), so a flood from an agent never refuses a rule's,
+  the model's or the system's proposal; a confirm step is never capped, like a decision.
 - **Version check.** With ``expected_head``, a decision is ``stale`` when its own proposal
   changed or a person decided anything since that head (an agent's new proposals elsewhere
   never make a person's decision stale, so an agent cannot block a person by proposing).
@@ -81,6 +86,9 @@ MAX_LIST = 50  # alternatives, reasons, check rule ids
 MAX_STRING = 2_000
 MAX_PENDING = 2_000
 MAX_CHAIN_BYTES = 64 * 1024 * 1024  # new proposals stop here; decisions never do
+MAX_AGENT_PENDING = 200  # agents' own share: an agent flood never refuses anyone else
+MAX_AGENT_BYTES = 4 * 1024 * 1024
+SYSTEM_ONLY_KINDS = ("stage.confirm",)  # the confirm step of a person's click
 HUMAN_ONLY = "only a person in qPilot Studio can accept, edit or reject a proposal"
 STALE_REASON = "the inbox changed since you read it"
 CONTRADICTED_REASON = "a reason is required to accept a proposal the engine's check contradicts"
@@ -159,6 +167,16 @@ class Replay:
     proposed_at: dict[str, int] = field(default_factory=dict)  # proposal id -> seq
     decided: list[str] = field(default_factory=list)  # accepted or edited, in chain order
     problems: list[str] = field(default_factory=list)
+    agent_bytes: int = 0  # propose and supersede lines of agent-made proposals (set on load)
+
+
+@dataclass(frozen=True)
+class InboxView:
+    """The inbox at one moment: its head, every proposal, and what a person accepted."""
+
+    head: str
+    proposals: list[Proposal]
+    accepted: list[Proposal]  # in the order a person decided them, as :meth:`accepted` gives
 
 
 def _step(state: Replay, entry: ProposalEntry, study_id: str | None) -> str | None:
@@ -343,6 +361,19 @@ def _require_human(actor: Any) -> None:
         raise ProposalError(HUMAN_ONLY)
 
 
+def _check_maker(proposal: Proposal, actor: str) -> None:
+    """An agent's proposal is an agent's; only the system proposes a confirm step, as the rule."""
+    if actor == "agent" and proposal.made_by.kind != "agent":
+        raise ProposalError("an agent's proposal is always recorded as made by an agent")
+    if proposal.kind in SYSTEM_ONLY_KINDS and (
+        actor != "system" or proposal.made_by.kind != "rule"
+    ):
+        raise ProposalError(
+            f"only qPilot itself proposes a {proposal.kind}; a person confirms a stage in "
+            "qPilot Studio"
+        )
+
+
 def _ask(guard: Guard | None, candidate: Proposal, current: list[Proposal]) -> str | None:
     """The guard's refusal, on copies: a guard can read the inbox but never change it."""
     if guard is None:
@@ -434,6 +465,12 @@ class ProposalStore:
         state = replay(entries, self.study_id)
         if state.problems:
             raise ProposalError(f"{PROPOSALS_FILE}: {state.problems[0]}")
+        state.agent_bytes = sum(
+            len(line.encode("utf-8")) + 1
+            for line, entry in zip(lines, entries, strict=True)
+            if entry.action in ("propose", "supersede")
+            and state.proposals[entry.proposal_id].made_by.kind == "agent"
+        )
         return entries, state
 
     def _read(self) -> tuple[list[ProposalEntry], Replay]:
@@ -455,6 +492,19 @@ class ProposalStore:
         """Head and every proposal, read together (pass the head back as ``expected_head``)."""
         entries, state = self._read()
         return (entries[-1].hash if entries else self.root), list(state.proposals.values())
+
+    def view(self) -> InboxView:
+        """Head, every proposal and what a person accepted, all from one read of the chain.
+
+        Use it when one answer needs several of them (a stage's status and the design it
+        confirms), so a decision made in between can never mix two moments.
+        """
+        entries, state = self._read()
+        return InboxView(
+            head=entries[-1].hash if entries else self.root,
+            proposals=list(state.proposals.values()),
+            accepted=[state.proposals[pid] for pid in state.decided],
+        )
 
     def proposals(
         self, status: str | None = None, kind_prefix: str | None = None
@@ -499,16 +549,19 @@ class ProposalStore:
         here, and the engine's check replaces the caller's when a checker is set. Sizes are
         capped (refused, never cut): payload 64 KB, 200 evidence items, 50 alternatives or
         reasons, 2,000 characters per string, 256 KB in all, 2,000 pending proposals, and no new
-        proposal once the chain holds 64 MB (a person's decisions are never capped, so a flood
-        of proposals cannot stop a person deciding). An older pending proposal for the same kind
-        and subject from the same kind of maker (rule, model or agent) is superseded in the same
-        write; one from another maker stays pending beside it, so an agent can never push a
-        rule's or the model's proposal out of the inbox.
+        proposal once the chain holds 64 MB. Agent-made proposals count against their own
+        share instead (200 pending, 4 MB of history), and a ``stage.confirm`` (the system's
+        proposal for a person's confirm click) is never capped, like a person's decisions: a
+        flood of proposals from an agent cannot stop a person deciding or confirming. An older
+        pending proposal for the same kind and subject from the same kind of maker (rule, model
+        or agent) is superseded in the same write; one from another maker stays pending beside
+        it, so an agent can never push a rule's or the model's proposal out of the inbox.
         """
         if type(actor) is not str or actor not in ACTORS:
             raise ProposalError(f"actor must be one of {', '.join(ACTORS)}")
         try:
             clean = self._clean(proposal)
+            _check_maker(clean, actor)
             if self._checker is not None:
                 clean = clean.model_copy(update={"check": self._engine_check(clean)})
         except ProposalError as err:
@@ -518,11 +571,8 @@ class ProposalStore:
             head = entries[-1].hash if entries else self.root
             current = list(state.proposals.values())
             pending = [p for p in current if p.status == "proposed"]
-            if len(pending) >= MAX_PENDING:
-                reason = f"the inbox already holds {MAX_PENDING:,} pending proposals"
-                return ProposalOutcome(status="refused", head=head, reason=reason)
-            if self.path.exists() and self.path.stat().st_size >= MAX_CHAIN_BYTES:
-                reason = f"the inbox is full ({MAX_CHAIN_BYTES // (1024 * 1024)} MB of history)"
+            reason = self._full(clean, pending, state)
+            if reason:
                 return ProposalOutcome(status="refused", head=head, reason=reason)
             refusal = _ask(self._guard, clean, current)
             if refusal:
@@ -544,6 +594,32 @@ class ProposalStore:
             self._write(new)
             stored = state.proposals[pid]
         return ProposalOutcome(status="proposed", head=new[-1].hash, proposal=stored)
+
+    def _full(self, proposal: Proposal, pending: list[Proposal], state: Replay) -> str | None:
+        """Why the inbox takes no more proposals from this proposal's maker, or None.
+
+        Agents fill only their own share, and nothing an agent wrote counts against anyone
+        else's: the system's caps count the pending proposals and the history agents did not
+        make. A confirm step is never refused for size.
+        """
+        if proposal.kind in SYSTEM_ONLY_KINDS:
+            return None
+        size = self.path.stat().st_size if self.path.exists() else 0
+        by_agents = sum(1 for p in pending if p.made_by.kind == "agent")
+        many = f"the inbox already holds {MAX_PENDING:,} pending proposals"
+        full = f"the inbox is full ({MAX_CHAIN_BYTES // (1024 * 1024)} MB of history)"
+        if proposal.made_by.kind != "agent":
+            if len(pending) - by_agents >= MAX_PENDING:
+                return many
+            return full if size - state.agent_bytes >= MAX_CHAIN_BYTES else None
+        if by_agents >= MAX_AGENT_PENDING:
+            return f"agents already have {MAX_AGENT_PENDING:,} proposals waiting for a decision"
+        if len(pending) >= MAX_PENDING:
+            return many
+        if state.agent_bytes >= MAX_AGENT_BYTES:
+            share = MAX_AGENT_BYTES // (1024 * 1024)
+            return f"agents have used their share of this inbox ({share} MB of history)"
+        return full if size >= MAX_CHAIN_BYTES else None
 
     def _clean(self, proposal: Proposal) -> Proposal:
         """The proposal re-validated as plain JSON, undecided, and within the caps."""
@@ -770,6 +846,8 @@ class ProposalStore:
 
 __all__ = [
     "PROPOSALS_FILE",
+    "SYSTEM_ONLY_KINDS",
+    "InboxView",
     "ProposalError",
     "ProposalStore",
     "Replay",

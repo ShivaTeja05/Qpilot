@@ -698,8 +698,9 @@ class DeclaredDesign:
     sheet_units: Mapping[str, str] = field(default_factory=dict)
 
 
+Resolved = Path | tuple[Path, Path | None] | None  # the input, or (input, sample sheet)
 _DECLARED: dict[str, DeclaredDesign] = {}
-_RESOLVER: list[Callable[[str], Path | None]] = []
+_RESOLVER: list[Callable[[str], Resolved]] = []
 
 
 _DECLARED_BY_INPUT: dict[tuple[str, str | None], DeclaredDesign] = {}
@@ -751,8 +752,13 @@ def register_declared(study_id: str, source: FileFacts | DeclaredDesign | str | 
         _DECLARED[study_id] = declared_design(file_facts(source))
 
 
-def set_input_resolver(resolver: Callable[[str], Path | None] | None) -> None:
-    """Install how :func:`hard_ban` finds a study's input file when nothing is registered."""
+def set_input_resolver(resolver: Callable[[str], Resolved] | None) -> None:
+    """Install how :func:`hard_ban` finds a study's input when nothing is registered.
+
+    The resolver returns the input file, or ``(input file, sample sheet or None)`` so the
+    sheet's unit column counts; ``None`` when the input (or its bound sheet) is not available,
+    and then the bans fail closed.
+    """
     _RESOLVER.clear()
     if resolver is not None:
         _RESOLVER.append(resolver)
@@ -761,13 +767,18 @@ def set_input_resolver(resolver: Callable[[str], Path | None] | None) -> None:
 def _declared_for(study_id: str) -> DeclaredDesign | None:
     if study_id in _DECLARED:
         return _DECLARED[study_id]
-    facts = cached_facts(study_id) if all(c in "0123456789abcdef" for c in study_id) else None
-    if facts is None and _RESOLVER:
+    if _RESOLVER:
+        # The resolver knows the session's own sheet; facts cached for another sheet (or for
+        # none) would hide the units a person wrote in it.
         try:
-            path = _RESOLVER[0](study_id)
-            facts = file_facts(path) if path is not None else None
+            found = _RESOLVER[0](study_id)
+            path, sheet = found if isinstance(found, tuple) else (found, None)
+            facts = file_facts(path, sheet) if path is not None else None
         except (RdmlLoadError, SheetError, CurveAnalysisError, OSError, KeyError):
             facts = None
+    else:
+        hexadecimal = all(c in "0123456789abcdef" for c in study_id)
+        facts = cached_facts(study_id) if hexadecimal else None
     if facts is None:
         return None
     _DECLARED[study_id] = declared_design(facts)
@@ -785,7 +796,11 @@ def hard_ban(proposal: Proposal, current: list[Proposal]) -> str | None:
 
     (b) A ``design.bio_unit`` proposal may not move a sample out of a biological unit a person
     confirmed (an accepted proposal, or the sheet's explicit unit column): that merges or
-    splits confirmed units.
+    splits confirmed units. When the input and its sheet are not known in this process, unit
+    proposals are refused (fail closed) until they are.
+
+    A ``design.dilution_series`` must list its samples as an object of sample to quantity; any
+    other shape is refused, so no member can slip past (a).
 
     Args:
         proposal: The proposal about to be stored.
@@ -821,6 +836,11 @@ def hard_ban(proposal: Proposal, current: list[Proposal]) -> str | None:
             "refused: the engine has not read this study's input file yet, so it cannot make "
             "sure the proposal does not demote a control"
         )
+    if kind == "design.bio_unit" and declared is None:
+        return (
+            "refused: the engine has not read this study's input file and sample sheet yet, so "
+            "it cannot make sure the proposal does not merge or split a confirmed unit"
+        )
     if kind == "design.well_role" and payload.get("role") not in CONTROL_ROLES:
         if is_control(proposal.subject):
             return (
@@ -829,8 +849,10 @@ def hard_ban(proposal: Proposal, current: list[Proposal]) -> str | None:
                 "given another role"
             )
     if kind == "design.dilution_series":
-        members = payload.get("samples") or {}
-        if isinstance(members, Mapping) and any(is_control(str(s)) for s in members):
+        members = payload.get("samples")
+        if not isinstance(members, Mapping) or not members:
+            return "refused: a dilution series lists its samples as an object of sample to quantity"
+        if any(is_control(str(s)) for s in members):
             return "refused: a dilution series may not include a declared or confirmed control"
     if kind in ("design.group", "design.bio_unit") and is_control(proposal.subject):
         return "refused: a control cannot join a biological group or unit"
