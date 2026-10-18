@@ -5,9 +5,12 @@ it installs qPilot from this checkout and Ollama, pulls each model, and runs one
 model in parallel against the Ollama server on the same machine, so nothing is sent anywhere
 else. Only the public demo dataset is used (fetched with its SHA-256 pin).
 
-Usage, from the root of a qPilot checkout on a Linux GPU machine (a RunPod or Kaggle box)::
+Usage, from the root of a qPilot checkout on a Linux GPU machine (a RunPod or Kaggle box),
+in a fresh virtual environment so the image's own packages never get in the way::
 
-    python scripts/gpu_harness.py --models qwen2.5:72b,llama3.3:70b --out /workspace/scorecards
+    python -m venv /workspace/venv
+    /workspace/venv/bin/python scripts/gpu_harness.py --models qwen2.5:72b,llama3.3:70b \
+        --out /workspace/scorecards
 
 Each model's ``scorecard.md`` and ``scorecard.json`` are written under ``--out``, and every
 scorecard is printed at the end. The per-call timeout is raised (``--timeout``, default 600 s)
@@ -85,6 +88,9 @@ def main() -> int:
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
 
+    # Run this script with a virtual environment's Python on images whose system packages pip
+    # cannot upgrade (RunPod's PyTorch image ships a Debian PyJWT); its scripts go on PATH.
+    os.environ["PATH"] = str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"]
     sh(f"{sys.executable} -m pip install -q -e '{ROOT}[ai,studio]'")
     os.environ.setdefault("QPILOT_CACHE_DIR", str(out / "cache"))
     sh("qpilot fetch-demo")
