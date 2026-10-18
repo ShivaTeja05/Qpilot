@@ -92,7 +92,11 @@ def test_untergasser_files_get_a_plain_reason():
             check(path, progress=quiet)
         problem = err.value
         assert problem.design and "two-group design" in problem.message
-        assert "biomarker_set" in problem.message and "Its experiments are" in problem.message
+        assert "biomarker_set" in problem.message
+        # eva_green_b.rdml (added with the validation data) has a single experiment
+        assert (
+            "Its experiments are" in problem.message or "Its only experiment is" in problem.message
+        )
         assert "MYCN(4)" in problem.full()  # the terminal also states the design
         assert not JARGON.findall(problem.full())
 
