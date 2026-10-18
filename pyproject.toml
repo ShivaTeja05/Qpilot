@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "qpilot"
 version = "0.1.0"
-description = "Open, validated qPCR analysis that shows which of your choices could change the conclusion. Research use only."
+description = "Open qPCR analysis, benchmarked against published results, that shows which of your choices could change the conclusion. Research use only."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
