@@ -176,7 +176,7 @@ def export_study(
     send_back = launch_command(join(folder, SEND_BACK_SCRIPT, platform), platform)
     readme = readme_text(bundle, template_present=present, launch=launch, send_back=send_back)
     write_bytes(directory / README_FILE, readme.encode("utf-8"))
-    bundle = finalize(bundle, directory, [*written, README_FILE])
+    bundle = finalize(bundle, directory, [*written, README_FILE], inputs)
     provenance = write_provenance(bundle, inputs, directory)
     files = {table.csv: directory / table.csv for table in bundle.tables}
     files |= written | {README_FILE: directory / README_FILE, PROVENANCE_FILE: provenance}

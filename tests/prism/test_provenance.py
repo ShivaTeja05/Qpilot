@@ -12,14 +12,16 @@ from qpilot.prism.provenance import (
     BUNDLE_FILE,
     INFO_NOTE,
     PROVENANCE_FILE,
+    PROVENANCE_SHA256,
     UNVERIFIED,
     caption,
     finalize,
     load_bundle,
+    provenance_digest,
     verify_provenance,
     write_provenance,
 )
-from qpilot.prism.tables import PrismExportError, build_bundle
+from qpilot.prism.tables import PrismExportError, build_bundle, bundle_digest
 from tests.prism.conftest import TOY_CHAIN, toy_inputs
 
 
@@ -34,7 +36,7 @@ def _toy_bundle(tmp_path):
         chain_head=TOY_CHAIN,
         design_hash="d0" * 32,
     )
-    bundle = finalize(bundle, tmp_path, [])
+    bundle = finalize(bundle, tmp_path, [], inputs)
     write_provenance(bundle, inputs, tmp_path)
     return bundle
 
@@ -82,6 +84,79 @@ def test_write_provenance_refuses_a_stale_digest(tmp_path):
     stale = bundle.model_copy(update={"test": "something else"})
     with pytest.raises(PrismExportError, match="finalize"):
         write_provenance(stale, toy_inputs(), tmp_path)
+
+
+def test_write_provenance_refuses_inputs_the_bundle_was_not_finalized_with(tmp_path):
+    bundle = _toy_bundle(tmp_path)
+    other = toy_inputs(refs=("R1",))
+    with pytest.raises(PrismExportError, match="provenance digest"):
+        write_provenance(bundle, other, tmp_path)
+
+
+def _edit_provenance(directory, change):
+    data = json.loads((directory / PROVENANCE_FILE).read_text())
+    change(data)
+    (directory / PROVENANCE_FILE).write_text(json.dumps(data, indent=2))
+
+
+def _forge_choice(data):
+    data["choices"] = [
+        {
+            "card_id": "card_refset",
+            "dimension": "refs",
+            "option": "recommended",
+            "recommended": "recommended",
+            "value": ["R1", "R2"],
+            "actor": "human",
+            "status": "decided",
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        _forge_choice,  # a person's decision nobody made
+        lambda d: d.update(refs=["R1"]),
+        lambda d: d.update(groups=["B", "A"]),
+        lambda d: d.update(undetermined="cap"),
+        lambda d: d.update(caption=d["caption"] + " 9.9x"),
+        lambda d: d.update(at_recommended_choices=False),
+        lambda d: d["study"].update(input_sha256="0" * 64),
+        lambda d: d["genes"]["T"].update(layout="nested"),
+        lambda d: d["conclusion_rule"].update(alpha=0.5),
+        lambda d: d.pop("unverified_until_step_0_1"),
+        lambda d: d.update(note_added_later="anything"),
+    ],
+)
+def test_any_edit_to_the_provenance_file_is_detected(tmp_path, change):
+    _toy_bundle(tmp_path)
+    _edit_provenance(tmp_path, change)
+    assert f"{PROVENANCE_FILE}: changed since export (its digest differs)" in verify_provenance(
+        tmp_path
+    )
+
+
+def test_the_provenance_digest_is_covered_by_the_bundle_sha256(tmp_path):
+    bundle = _toy_bundle(tmp_path)
+    data = json.loads((tmp_path / PROVENANCE_FILE).read_text())
+    assert bundle.info[PROVENANCE_SHA256] == provenance_digest(data)
+    shown = json.loads((tmp_path / BUNDLE_FILE).read_text())
+    shown["info"][PROVENANCE_SHA256] = "0" * 64  # a forged digest breaks the bundle's own
+    (tmp_path / BUNDLE_FILE).write_text(json.dumps(shown))
+    problems = verify_provenance(tmp_path)
+    assert any("not the digest" in p for p in problems)
+    assert any("changed since export" in p for p in problems)
+
+
+def test_a_bundle_without_the_provenance_digest_does_not_verify(tmp_path):
+    bundle = _toy_bundle(tmp_path)
+    info = {k: v for k, v in bundle.info.items() if k != PROVENANCE_SHA256}
+    old = bundle.model_copy(update={"info": info})
+    old = old.model_copy(update={"bundle_sha256": bundle_digest(old)})
+    (tmp_path / BUNDLE_FILE).write_text(json.dumps(old.model_dump(mode="json")))
+    _edit_provenance(tmp_path, lambda d: d.update(bundle_sha256=old.bundle_sha256))
+    assert verify_provenance(tmp_path) == [f"{BUNDLE_FILE}: no digest of {PROVENANCE_FILE}"]
 
 
 def test_caption_without_study_facts_has_no_numbers():
@@ -163,6 +238,26 @@ def test_demo_export_is_deterministic(demo_study, demo_export, tmp_path):
     assert (tmp_path / "again" / PROVENANCE_FILE).read_bytes() == (
         demo_export.out_dir / PROVENANCE_FILE
     ).read_bytes()
+
+
+@pytest.mark.demo_data
+def test_the_reviewers_forged_provenance_no_longer_verifies(demo_export, tmp_path):
+    from qpilot.cli import main
+
+    copy = tmp_path / "copy"
+    shutil.copytree(demo_export.out_dir, copy)
+
+    def forge(data):
+        refset = next(c for c in data["choices"] if c["card_id"] == "card_refset")
+        refset.update(actor="human", status="decided")  # a decision nobody made
+        data["genes"]["ODC1"]["recommended_analysis"].update(fc=9.9, p=1e-30)
+        data["caption"] = data["caption"].replace("3.6×", "9.9×")
+
+    _edit_provenance(copy, forge)
+    assert verify_provenance(copy) == [
+        f"{PROVENANCE_FILE}: changed since export (its digest differs)"
+    ]
+    assert main(["prism", "verify", "--bundle", str(copy)]) == 1
 
 
 @pytest.mark.demo_data
