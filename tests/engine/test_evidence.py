@@ -423,7 +423,7 @@ def test_rdml_fields_are_read_from_a_real_file(fixtures_dir):
     sample.new_annotation("primer lot", "P-0319 <script>")
     sample["interRunCalibrator"] = True
     run = doc.experiments()[0].runs()[0]
-    run["instrument"] = "CFX96 SN: CC009466"
+    run["instrument"] = "CFX96 SN: CC900001"
     run["runDate"] = "2024-01-01T10:00:00"
     found = rdml_evidence(doc)
     flags = found.samples[sample["id"]]
@@ -431,7 +431,7 @@ def test_rdml_fields_are_read_from_a_real_file(fixtures_dir):
         True, True, False, True,
     )  # fmt: skip
     assert sum(r.instrument for r in found.runs) == sum(r.run_date for r in found.runs) == 1
-    assert "P-0319" not in repr(found) and "CC009466" not in repr(found)  # never copied
+    assert "P-0319" not in repr(found) and "CC900001" not in repr(found)  # never copied
 
 
 def test_the_engine_module_never_mentions_the_name_readers():

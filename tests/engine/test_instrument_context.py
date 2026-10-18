@@ -352,16 +352,16 @@ def test_log_without_a_start_line_uses_the_cycles():
 
 
 def test_serial_line_in_either_order():
-    value_first = ic._log_serials("272530975 [Instrument] 2733 [Block] 4444 [Heated Cover]", "p")
+    value_first = ic._log_serials("900000001 [Instrument] 2733 [Block] 4444 [Heated Cover]", "p")
     label_first = ic._log_serials("[Block] 2733, [Heated Cover] 4444", "p")
-    plain = ic._log_serials("272530975", "p")
+    plain = ic._log_serials("900000001", "p")
     assert value_first == [
-        ("serial", "272530975", "p"),
+        ("serial", "900000001", "p"),
         ("block_serial", "2733", "p"),
         ("cover_serial", "4444", "p"),
     ]
     assert label_first == [("block_serial", "2733", "p"), ("cover_serial", "4444", "p")]
-    assert plain == [("serial", "272530975", "p")]
+    assert plain == [("serial", "900000001", "p")]
 
 
 def test_events_are_capped(monkeypatch):
@@ -673,8 +673,8 @@ def test_biorad_instrument_string():
 
 
 def test_other_instrument_strings():
-    assert parse_instrument_string("LC96SN11301")["serial"] == "11301"
-    assert parse_instrument_string("LC96SN11301")["model"] == "LightCycler 96"
+    assert parse_instrument_string("LC96SN90001")["serial"] == "90001"
+    assert parse_instrument_string("LC96SN90001")["model"] == "LightCycler 96"
     assert parse_instrument_string("QuantStudio Dx")["model"] == "QuantStudio Dx"
     assert parse_instrument_string("the machine in room 4")["model"] is None
     assert parse_instrument_string(None)["model"] is None
@@ -707,7 +707,7 @@ def test_biorad_rdml_zip_whose_member_is_named_after_the_file(tmp_path):
 def test_rdml_run_dates_and_the_u7_flag(tmp_path):
     runs = [
         {"id": "a", "instrument": "QuantStudio Dx", "runDate": "2010-01-01T03:12:59.214"},
-        {"id": "b", "instrument": "LC96SN11301", "runDate": "2014-08-19T11:30:20"},
+        {"id": "b", "instrument": "LC96SN90001", "runDate": "2014-08-19T11:30:20"},
         {"id": "c", "runDate": "2024-12-10T14:00:00Z"},
         {"id": "d", "runDate": "1970-01-01T00:00:00"},
     ]
@@ -715,7 +715,7 @@ def test_rdml_run_dates_and_the_u7_flag(tmp_path):
     assert a.run["start"] is None and ic.NOTE_RUN_DATE_DOUBTFUL in a.notes
     assert a.facts["f_instr_a_recorded_run_date"].value == "2010-01-01T03:12:59"
     assert b.run["start"] == "2014-08-19T11:30:20" and ic.NOTE_TZ_NOT_IN_FILE in b.notes
-    assert b.run["date_source"] == "instrument" and b.identity["serial"] == "11301"
+    assert b.run["date_source"] == "instrument" and b.identity["serial"] == "90001"
     assert c.run["start"] == "2024-12-10T14:00:00Z"
     assert d.run["start"] is None  # before any real-time instrument: not a run date
 

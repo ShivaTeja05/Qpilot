@@ -32,7 +32,7 @@ from qpilot.core.instruments import (
 )
 from qpilot.core.store import StudyNotFound, StudyStore
 
-SERIAL = "272530975"
+SERIAL = "900000001"
 RUN_A = "a" * 64
 RUN_B = "b" * 64
 BANNED = (
@@ -117,7 +117,7 @@ def test_root_sits_next_to_study_workspaces_and_is_never_a_study(tmp_studies_dir
 
 def test_register_round_trips_through_strict_yaml(registry, root):
     text = (root / "instruments.yaml").read_text()
-    assert "'272530975'" in text  # serials are written quoted, so YAML keeps them as text
+    assert "'900000001'" in text  # serials are written quoted, so YAML keeps them as text
     again = Registry(root).get("qs5-room-2110")
     assert again == registry.get("qs5-room-2110")
     assert again.display_name == "QS5 – Room 2.110" and again.shared is True
@@ -132,7 +132,7 @@ def test_register_round_trips_through_strict_yaml(registry, root):
         ("instruments:\n  a: {display_name: A, colour: red}\n", "colour"),
         ("version: 1\nowner: me\n", "unknown field"),
         ("version: 2\n", "version"),
-        ("instruments:\n  a: {display_name: A, serials: [272530975]}\n", "serials"),
+        ("instruments:\n  a: {display_name: A, serials: [900000001]}\n", "serials"),
         ("instruments:\n  Bad/Id: {display_name: A}\n", "instrument id"),
         (
             "instruments:\n  a: {display_name: A, serials: ['1']}\n"
@@ -177,9 +177,9 @@ def test_update_keeps_serials(registry):
 
 
 def test_serials_and_aliases_never_leave_through_export(registry):
-    registry.remember_alias("Cycler SN: CC009466", "qs5-room-2110")
+    registry.remember_alias("Cycler SN: CC900001", "qs5-room-2110")
     exported = json.dumps(registry.export())
-    assert SERIAL not in exported and "CC009466" not in exported
+    assert SERIAL not in exported and "CC900001" not in exported
     assert registry.export()[0]["display_name"] == "QS5 – Room 2.110"
     assert "serials" not in registry.get("qs5-room-2110").public()
     asked = json.dumps(registry.ask(_summary(serial="999")))
@@ -221,21 +221,21 @@ def test_a_file_without_a_serial_asks_once_and_is_remembered_by_alias(registry):
 
 def test_remember_records_the_serial_when_there_is_one(registry):
     registry.register("qs3", "QS3")
-    registry.remember({"serial": "272321808", "aliases": ["QuantStudio 3 System"]}, "qs3")
+    registry.remember({"serial": "900000002", "aliases": ["QuantStudio 3 System"]}, "qs3")
     got = registry.get("qs3")
-    assert got.serials == ("272321808",) and got.aliases == ()
-    assert registry.resolve({"serial": "272321808"}) == "qs3"
+    assert got.serials == ("900000002",) and got.aliases == ()
+    assert registry.resolve({"serial": "900000002"}) == "qs3"
     with pytest.raises(InstrumentError, match="neither"):
         registry.remember({"serial": None, "aliases": []}, "qs3")
 
 
 def test_an_alias_names_one_instrument(registry):
     registry.register("other", "Other")
-    registry.remember_alias("LC96SN11301", "other")
-    registry.remember_alias("lc96sn11301", "other")  # idempotent, case-folded
-    assert registry.get("other").aliases == ("LC96SN11301",)
+    registry.remember_alias("LC96SN90001", "other")
+    registry.remember_alias("lc96sn90001", "other")  # idempotent, case-folded
+    assert registry.get("other").aliases == ("LC96SN90001",)
     with pytest.raises(InstrumentError, match="already names"):
-        registry.remember_alias("LC96SN11301", "qs5-room-2110")
+        registry.remember_alias("LC96SN90001", "qs5-room-2110")
     with pytest.raises(InstrumentError):
         registry.remember_alias("   ", "other")
     with pytest.raises(UnknownInstrument):
@@ -246,7 +246,7 @@ def test_malformed_summaries_are_refused(registry):
     with pytest.raises(InstrumentError):
         registry.resolve(["not", "a", "mapping"])
     with pytest.raises(InstrumentError):
-        registry.resolve({"serial": 272530975})
+        registry.resolve({"serial": 900000001})
     with pytest.raises(InstrumentError):
         registry.resolve({"aliases": "one string"})
 
