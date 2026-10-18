@@ -494,3 +494,21 @@ def test_a_replicate_exclusion_names_one_well():
         design_from_proposals(base, [_toy_exclusion(4)], curves)
     with pytest.raises(DesignError, match="not a well of 'G'"):
         design_from_proposals(base, [_toy_exclusion(well="p1/B1")], curves)
+
+
+def test_a_dilution_series_must_be_a_mapping_of_sample_to_quantity():
+    from qpilot.qpcr.designs import DesignError, design_from_proposals, vermeulen_design
+    from qpilot.schemas_studio import MadeBy, Proposal
+
+    for samples in ([["comp_00_conc_1.0", 1.0]], {}, "comp_00_conc_1.0"):
+        series = Proposal(
+            study_id="abcdefabcdef",
+            kind="design.dilution_series",
+            subject="comp_00",
+            payload={"experiment_id": "technical_datasets", "samples": samples},
+            made_by=MadeBy(kind="rule"),
+            status="accepted",
+            decided_by="human",
+        )
+        with pytest.raises(DesignError, match="non-empty mapping"):
+            design_from_proposals(vermeulen_design(), [series])

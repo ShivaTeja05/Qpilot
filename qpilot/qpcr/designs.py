@@ -491,7 +491,10 @@ def _apply(
         data["mode"] = "groups"
         data["marker_split"] = None
     elif kind == "design.dilution_series":
-        for sample, quantity in dict(payload["samples"]).items():
+        samples = payload["samples"]
+        if not isinstance(samples, Mapping) or not samples:
+            raise DesignError("a dilution series is a non-empty mapping of sample -> quantity")
+        for sample, quantity in samples.items():
             entry = _sample(data, str(sample))
             entry["role"] = "std"
             entry["quantity"] = float(quantity)

@@ -8,7 +8,7 @@
 
 | Step | Definition |
 |---|---|
-| Input | The engine's Cq (LinRegPCR's TD0) of the study wells; technical replicates averaged per biological unit (mean Cq). Wells a person excluded or called not amplified are left out; wells without a Cq are skipped |
+| Input | The engine's Cq (LinRegPCR's TD0) of the study wells; technical replicates averaged per biological unit (mean Cq). Wells a person excluded or called not amplified are left out, and so are wells the engine's primary amplification rule does not count (with the default `linregpcr` rule, wells without a quantity); wells without a Cq are skipped |
 | Samples, groups, control genes | The engine's own: the units of its matrix, its groups fixed from the primary analysis, its primary control genes |
 | ΔCq | `Cq(gene) − mean(Cq of the control genes)` per unit; units missing a control gene are skipped |
 | `ddcq` | Efficiency assumed 2.0: log2 relative quantity = −ΔCq; Welch's t test on that log2 scale; log2 fold change = difference of the group means |
@@ -21,7 +21,7 @@ Facts: `f_n_differ_route_ddcq`, `f_n_differ_route_linear_welch`, `f_n_differ_rou
 
 **On the demo study.** Of 58 genes, `ddcq` differs for 4 (CAMTA2, IGSF4, PAICS, PRKACB_bis), `linear_welch` for 14 and `linear_student` for 21 (`docs/studio-measured.md`). The only change in `ddcq` is the assumed efficiency; the linear routes also test on a skewed scale.
 
-**What is not claimed.** These are three common ways, not every way a lab works; other tests Prism offers (for example a test on log-transformed values) are not computed here. No route applies a Cq cut-off; that choice is the `amp_call` dimension ([`amp_call.md`](amp_call.md)).
+**What is not claimed.** These are three common ways, not every way a lab works; other tests Prism offers (for example a test on log-transformed values) are not computed here. No route applies a Cq cut-off of its own: the routes use the wells of the engine's primary `amp_call` rule, so when a person chose a Cq cut-off as the primary rule, the routes and the engine compare like with like ([`amp_call.md`](amp_call.md)).
 
 **Validation.** `tests/engine/test_routes.py` (hand-computed toy values; the demo counts and gene list).
 
