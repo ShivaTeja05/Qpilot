@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import zipfile
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
@@ -255,47 +256,24 @@ DEMO_FINGERPRINT = {
     "target_type": ["toi"],
 }
 
+#: An instrument a variant of the standards fixture names in every run.
+NAMED = "Roche LightCycler 480"
 
-def _transfer(path, sha, *passed, fingerprint=DEMO_FINGERPRINT):
+
+def _transfer(path, sha, *passed, fingerprint=DEMO_FINGERPRINT, tested=None):
+    """A ``transfer.json`` for model ``sha``, criteria passing as given, run on file ``tested``."""
     criteria = {f"c{i}": {"passed": p} for i, p in enumerate(passed)}
     result = {"model_sha256": sha, "criteria": criteria}
+    if tested is not None:
+        result["data"] = {"sha256": tested}
     if fingerprint is not None:
         result["fingerprint"] = fingerprint
     path.write_text(json.dumps(result))
     return path
 
 
-def test_validated_reflects_transfer_json(tmp_path, std_rdml):
-    good = cj.MODEL_SHA256
-
-    def accepts(transfer):
-        return cj.validated(std_rdml, transfer_path=transfer)
-
-    assert accepts(_transfer(tmp_path / "a.json", good, True, True, True))
-    assert not accepts(_transfer(tmp_path / "b.json", good, True, False, True))
-    assert not accepts(_transfer(tmp_path / "c.json", "0" * 64, True, True, True))
-    assert not accepts(_transfer(tmp_path / "d.json", good))
-    assert not accepts(tmp_path / "missing.json")
-    (tmp_path / "e.json").write_text("{not json")
-    assert not accepts(tmp_path / "e.json")
-    (tmp_path / "f.json").write_text(json.dumps({"model_sha256": good, "criteria": {"a": 1}}))
-    assert not accepts(tmp_path / "f.json")
-    # no recorded fingerprint, or one that lacks a field: no claim for any file
-    assert not accepts(_transfer(tmp_path / "g.json", good, True, fingerprint=None))
-    partial = {k: v for k, v in DEMO_FINGERPRINT.items() if k != "cycles"}
-    assert not accepts(_transfer(tmp_path / "h.json", good, True, fingerprint=partial))
-    wider = {**DEMO_FINGERPRINT, "cycles": [40, 45, 50]}  # a superset still covers the file
-    assert accepts(_transfer(tmp_path / "i.json", good, True, fingerprint=wider))
-
-
-def test_no_file_no_claim(tmp_path):
-    passing = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, True, True)
-    assert cj.validated() is False
-    assert cj.validated(None, transfer_path=passing) is False
-    assert cj.status() == cj.NOT_VALIDATED
-    assert cj.validated(tmp_path / "missing.rdml", transfer_path=passing) is False
-    (tmp_path / "junk.rdml").write_bytes(b"not an RDML file")
-    assert cj.validated(tmp_path / "junk.rdml", transfer_path=passing) is False
+def _sha(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def _variant(source, target, edit):
@@ -307,6 +285,23 @@ def _variant(source, target, edit):
     return target
 
 
+def _name_instrument(xml, instrument=NAMED):
+    """Every run names ``instrument``, where the RDML schema puts it."""
+    return xml.replace(
+        "<backgroundDeterminationMethod>",
+        f"<instrument>{instrument}</instrument><backgroundDeterminationMethod>",
+    )
+
+
+def _rescaled(xml):
+    """Every fluorescence value as ``3 F + 50``: another machine's scale, the same metadata."""
+
+    def scale(match):
+        return f"<fluor>{3 * float(match.group(1)) + 50:.4f}</fluor>"
+
+    return re.sub(r"<fluor>([^<]*)</fluor>", scale, xml)
+
+
 def _first_react_cut_to_40_cycles(xml):
     start = xml.index("<react ")
     end = xml.index("</react>", start)
@@ -314,24 +309,120 @@ def _first_react_cut_to_40_cycles(xml):
     return xml[:start] + late.sub("", xml[start:end]) + xml[end:]
 
 
+@pytest.fixture
+def named_rdml(std_rdml, tmp_path):
+    """The standards fixture with every run naming :data:`NAMED`."""
+    return _variant(std_rdml, tmp_path / "named.rdml", _name_instrument)
+
+
+@pytest.fixture
+def named_transfer(named_rdml, tmp_path):
+    """A passing transfer record whose tested file declared exactly what ``named_rdml`` does."""
+    recorded = cj.fingerprint(named_rdml)
+    return _transfer(tmp_path / "named.json", cj.MODEL_SHA256, True, True, fingerprint=recorded)
+
+
+def test_validated_reflects_transfer_json(tmp_path, std_rdml):
+    good, tested = cj.MODEL_SHA256, _sha(std_rdml)
+
+    def accepts(transfer):
+        return cj.validated(std_rdml, transfer_path=transfer)
+
+    assert accepts(_transfer(tmp_path / "a.json", good, True, True, True, tested=tested))
+    assert not accepts(_transfer(tmp_path / "b.json", good, True, False, True, tested=tested))
+    assert not accepts(_transfer(tmp_path / "c.json", "0" * 64, True, True, True, tested=tested))
+    assert not accepts(_transfer(tmp_path / "d.json", good, tested=tested))
+    assert not accepts(tmp_path / "missing.json")
+    (tmp_path / "e.json").write_text("{not json")
+    assert not accepts(tmp_path / "e.json")
+    (tmp_path / "f.json").write_text(
+        json.dumps({"model_sha256": good, "criteria": {"a": 1}, "data": {"sha256": tested}})
+    )
+    assert not accepts(tmp_path / "f.json")
+    # the tested file is named by its exact lower-case SHA-256 or not at all
+    assert not accepts(_transfer(tmp_path / "g.json", good, True, tested=tested.upper()))
+    assert not accepts(_transfer(tmp_path / "h.json", good, True, tested=tested[:-1]))
+    # another file was tested: the same declared fingerprint is not enough (no instrument named)
+    assert not accepts(_transfer(tmp_path / "i.json", good, True, tested="0" * 64))
+    assert not accepts(_transfer(tmp_path / "j.json", good, True))
+
+
+def test_no_file_no_claim(tmp_path):
+    passing = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, True, True)
+    assert cj.validated() is False
+    assert cj.validated(None, transfer_path=passing) is False
+    assert cj.status() == cj.NOT_VALIDATED
+    assert cj.validated(tmp_path / "missing.rdml", transfer_path=passing) is False
+    (tmp_path / "junk.rdml").write_bytes(b"not an RDML file")
+    assert cj.validated(tmp_path / "junk.rdml", transfer_path=passing) is False
+    named = {**DEMO_FINGERPRINT, "instrument": [NAMED]}  # a record that can cover other files
+    passing = _transfer(tmp_path / "n.json", cj.MODEL_SHA256, True, fingerprint=named)
+    assert cj.validated(tmp_path / "junk.rdml", transfer_path=passing) is False
+
+
+def test_a_file_that_names_no_instrument_is_validated_only_by_its_hash(std_rdml, tmp_path):
+    """Regression (c26): any SYBR file of 45 or 50 cycles that named no instrument was validated.
+
+    The demo names no instrument, and neither do many exports (a Bio-Rad CFX384 plate, a copy
+    rescaled to another machine's units), so "no instrument named" matched the record for all.
+    """
+    rescaled = _variant(std_rdml, tmp_path / "rescaled.rdml", _rescaled)
+    for path in (std_rdml, rescaled):  # cut from the tested file: the very same declarations
+        assert cj.fingerprint(path) == DEMO_FINGERPRINT
+        assert cj.validated(path) is False
+        assert cj.status(path) == cj.NOT_VALIDATED
+
+    own = cj.fingerprint(std_rdml)
+    wider = {**own, "instrument": ["", NAMED]}
+    for recorded in (own, wider):  # no record covers a run that names no instrument
+        transfer = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, fingerprint=recorded)
+        assert cj.validated(std_rdml, transfer_path=transfer) is False
+
+    # the tested file itself, wherever it lies, is validated by its hash; a rescaled copy is not
+    tested = _transfer(tmp_path / "s.json", cj.MODEL_SHA256, True, tested=_sha(std_rdml))
+    copy = Path(shutil.copy(std_rdml, tmp_path / "copy.rdml"))
+    assert cj.validated(std_rdml, transfer_path=tested) is True
+    assert cj.validated(copy, transfer_path=tested) is True
+    assert cj.status(copy, transfer_path=tested) == "validated"
+    assert cj.validated(rescaled, transfer_path=tested) is False
+
+
+def test_a_file_that_names_its_instrument_is_validated_by_its_fingerprint(
+    named_rdml, named_transfer, tmp_path
+):
+    own = cj.fingerprint(named_rdml)
+    assert own == {**DEMO_FINGERPRINT, "instrument": [NAMED]}
+    assert cj.validated(named_rdml, transfer_path=named_transfer) is True
+    assert cj.status(named_rdml, transfer_path=named_transfer) == "validated"
+
+    def accepts(recorded):
+        transfer = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, fingerprint=recorded)
+        return cj.validated(named_rdml, transfer_path=transfer)
+
+    assert accepts({**own, "cycles": [40, 45, 50], "instrument": ["", NAMED]})  # a superset
+    assert not accepts({k: v for k, v in own.items() if k != "cycles"})  # a field missing
+    assert not accepts({**own, "dye": "SYBR"})  # not a list
+    assert not accepts(None)
+    # the shipped record's file named no instrument, so it covers no file that names one
+    assert cj.validated(named_rdml) is False
+    assert cj.status(named_rdml) == cj.NOT_VALIDATED
+
+
 @pytest.mark.parametrize(
     ("label", "edit"),
     [
         (
-            "another instrument",
-            lambda x: x.replace(
-                "<backgroundDeterminationMethod>",
-                "<instrument>Applied Biosystems QuantStudio 7 Flex</instrument>"
-                "<backgroundDeterminationMethod>",
-                1,
-            ),
+            "another instrument in one run",
+            lambda x: x.replace(NAMED, "Applied Biosystems QuantStudio 7 Flex", 1),
         ),
         (
-            "the same instrument, now named",  # the test never saw a file that names it
+            "a run that names no instrument",
+            lambda x: x.replace(f"<instrument>{NAMED}</instrument>", "", 1),
+        ),
+        (
+            "a run whose instrument is blank",
             lambda x: x.replace(
-                "<backgroundDeterminationMethod>",
-                "<instrument>Roche LightCycler 480</instrument><backgroundDeterminationMethod>",
-                1,
+                f"<instrument>{NAMED}</instrument>", "<instrument> </instrument>", 1
             ),
         ),
         (
@@ -353,14 +444,81 @@ def _first_react_cut_to_40_cycles(xml):
     ],
 )
 def test_validation_holds_only_for_the_instrument_and_chemistry_tested(
-    std_rdml, tmp_path, label, edit
+    named_rdml, named_transfer, tmp_path, label, edit
 ):
-    assert cj.validated(std_rdml) is True  # cut from the transfer-tested file
-    assert cj.status(std_rdml) == "validated"
-    changed = _variant(std_rdml, tmp_path / "changed.rdml", edit)
-    assert cj.fingerprint(changed) != cj.fingerprint(std_rdml), label
-    assert cj.validated(changed) is False, label
-    assert cj.status(changed) == cj.NOT_VALIDATED
+    assert cj.validated(named_rdml, transfer_path=named_transfer) is True
+    changed = _variant(named_rdml, tmp_path / "changed.rdml", edit)
+    assert cj.fingerprint(changed) != cj.fingerprint(named_rdml), label
+    assert cj.validated(changed, transfer_path=named_transfer) is False, label
+    assert cj.status(changed, transfer_path=named_transfer) == cj.NOT_VALIDATED
+
+
+def test_the_shipped_record_reads_no_file_but_hashes(std_rdml, named_rdml, monkeypatch):
+    """It covers its tested file only, so no other file is parsed (the demo takes ~11 s)."""
+
+    def never(path):
+        raise AssertionError(f"read {path}")
+
+    monkeypatch.setattr(cj, "_read_fingerprint", never)
+    assert cj.validated(std_rdml) is False
+    assert cj.validated(named_rdml) is False
+
+
+def test_the_tested_file_is_validated_without_being_read(std_rdml, tmp_path, monkeypatch):
+    tested = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, tested=_sha(std_rdml))
+
+    def never(path):
+        raise AssertionError(f"read {path}")
+
+    monkeypatch.setattr(cj, "_read_fingerprint", never)
+    assert cj.validated(std_rdml, transfer_path=tested) is True
+
+
+def test_fingerprints_are_cached_by_content(std_rdml, tmp_path, monkeypatch):
+    monkeypatch.setattr(cj, "_FINGERPRINTS", OrderedDict())
+    reads = []
+    read = cj._read_fingerprint
+
+    def counted(path):
+        reads.append(Path(path).name)
+        return read(path)
+
+    monkeypatch.setattr(cj, "_read_fingerprint", counted)
+    copy = Path(shutil.copy(std_rdml, tmp_path / "copy.rdml"))
+    first = cj.fingerprint(std_rdml)
+    first["dye"].append("changed by the caller")
+    assert cj.fingerprint(copy) == DEMO_FINGERPRINT  # same content at another path: no re-read
+    assert reads == [std_rdml.name]
+    _variant(std_rdml, copy, lambda x: x.replace('"SYBR"', '"FAM"'))  # new content, same path
+    assert cj.fingerprint(copy)["dye"] == [["FAM", ""]]
+    assert reads == [std_rdml.name, "copy.rdml"]
+    monkeypatch.setattr(cj, "FINGERPRINT_CACHE_SIZE", 1)  # bounded: the oldest file goes first
+    rescaled = _variant(std_rdml, tmp_path / "rescaled.rdml", _rescaled)
+    cj.fingerprint(rescaled)
+    assert list(cj._FINGERPRINTS) == [_sha(rescaled)]
+    cj.fingerprint(std_rdml)
+    assert reads == [std_rdml.name, "copy.rdml", "rescaled.rdml", std_rdml.name]
+
+
+def test_a_file_that_changes_while_it_is_read_is_not_fingerprinted(
+    named_rdml, named_transfer, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(cj, "_FINGERPRINTS", OrderedDict())
+    other = _variant(named_rdml, tmp_path / "other.rdml", lambda x: x.replace('"SYBR"', '"FAM"'))
+    moving = Path(shutil.copy(named_rdml, tmp_path / "moving.rdml"))
+    read = cj._read_fingerprint
+
+    def swapped(path):
+        out = read(path)
+        shutil.copy(other, path)  # replaced between the hash and the end of the read
+        return out
+
+    monkeypatch.setattr(cj, "_read_fingerprint", swapped)
+    with pytest.raises(cj.CurveJudgeError, match="changed while"):
+        cj.fingerprint(moving)
+    assert not cj._FINGERPRINTS  # neither content was filed under the other's hash
+    shutil.copy(named_rdml, moving)
+    assert cj.validated(moving, transfer_path=named_transfer) is False
 
 
 def test_a_file_without_amplification_curves_is_not_validated(smoke_rdml):
@@ -374,9 +532,12 @@ def test_a_file_without_amplification_curves_is_not_validated(smoke_rdml):
 
 
 def test_shipped_transfer_result_is_for_the_shipped_model(std_rdml):
+    from qpilot.io.datasets import VERMEULEN_SHA256
+
     result = json.loads((MODEL_DIR / "transfer.json").read_text())
     assert result["model_sha256"] == cj.MODEL_SHA256
     assert len(result["preregistered_in_commit"]) == 40
+    assert result["data"]["sha256"] == VERMEULEN_SHA256
     criteria = result["criteria"]
     assert set(criteria) == {
         "a_standards_called_amplified",
@@ -387,8 +548,8 @@ def test_shipped_transfer_result_is_for_the_shipped_model(std_rdml):
     assert result["verdict"] == ("pass" if passed else "fail")
     assert result["fingerprint"] == DEMO_FINGERPRINT
     assert cj.validated() is False  # no file, no claim
-    assert cj.validated(std_rdml) is passed
-    assert cj.status(std_rdml) == ("validated" if passed else cj.NOT_VALIDATED)
+    assert cj.validated(std_rdml) is False  # cut from the tested file, but not that file
+    assert cj.status(std_rdml) == cj.NOT_VALIDATED
     a, b = (
         criteria["a_standards_called_amplified"],
         criteria["b_agreement_with_linregpcr_cq_below_30"],
@@ -409,8 +570,40 @@ def test_the_recorded_fingerprint_is_the_transfer_tested_files(demo_rdml_path):
     assert cj.status(demo_rdml_path) == "validated"
 
 
+def _transfer_script():
+    import importlib.util
+
+    path = ROOT / "training" / "curve_judge" / "transfer.py"
+    spec = importlib.util.spec_from_file_location("curve_judge_transfer_script", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.demo_data
+def test_the_transfer_script_writes_the_shipped_record(demo_rdml_path, tmp_path, monkeypatch):
+    """A re-run writes ``transfer.json`` byte for byte (but the date), the fingerprint included.
+
+    The test itself is not re-run: the measured parts are the shipped ones, passed through.
+    """
+    shipped_text = (MODEL_DIR / "transfer.json").read_text(encoding="utf-8")
+    shipped = json.loads(shipped_text)
+    script = _transfer_script()
+    monkeypatch.setattr(script, "run", lambda rdml: range(shipped["data"]["wells"]))
+    monkeypatch.setattr(script, "criteria", lambda table: json.loads(shipped_text)["criteria"])
+    monkeypatch.setattr(
+        script, "descriptive", lambda table: json.loads(shipped_text)["descriptive_not_gated"]
+    )
+    args = ["--rdml", str(demo_rdml_path), "--out", str(tmp_path)]
+    assert script.main([*args, "--preregistered-in", shipped["preregistered_in_commit"]]) == 0
+    written = json.loads((tmp_path / "transfer.json").read_text(encoding="utf-8"))
+    assert list(written) == list(shipped)  # "fingerprint" right after "data"
+    written["date"] = shipped["date"]
+    assert json.dumps(written, indent=1) + "\n" == shipped_text
+
+
 def test_validated_is_false_when_the_model_is_refused(tmp_path, monkeypatch, std_rdml):
-    transfer = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, True, True)
+    transfer = _transfer(tmp_path / "t.json", cj.MODEL_SHA256, True, True, tested=_sha(std_rdml))
     assert cj.validated(std_rdml, transfer_path=transfer)
 
     def refuse():
