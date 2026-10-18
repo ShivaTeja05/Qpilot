@@ -7,8 +7,10 @@ else. A design comes from one of three places:
   expression vs the rest), and runs byte for byte as the engine always has;
 * a file: :func:`load_design` reads a ``study.yaml`` and, optionally, a sample sheet (CSV);
 * a person's decisions: :func:`design_from_proposals` applies the proposals a person accepted
-  (or edited and accepted) to a base design, in order. A proposal that is only proposed,
-  rejected or superseded has no effect, so the AI can never change a number on its own.
+  (or edited and accepted) to a base design: an accepted preset first, then the other
+  decisions in order, so no decision is lost to the order of the clicks. A proposal that is
+  only proposed, rejected or superseded has no effect, so the AI can never change a number on
+  its own.
 
 :func:`design_curves` applies a design's well-level choices to the per-well table (re-typed
 wells, sample roles, excluded wells) before any quantity is computed; :func:`study_key` names a
@@ -32,7 +34,7 @@ import pandas as pd
 import yaml
 from pydantic import BaseModel, ValidationError
 
-from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS, AmpCallError, get_rule, well_keys
+from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS, AmpCallError, apply_rule, get_rule, well_keys
 from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS
 from qpilot.qpcr.design import DEMO_GROUP_VAR, DEMO_MARKER
 from qpilot.qpcr.quant import EXCLUDED
@@ -350,36 +352,65 @@ def load_design(yaml_path: str | Path, samples_csv: str | Path | None = None) ->
 def design_from_proposals(
     base: StudyDesign, accepted: Iterable[Proposal], curves: pd.DataFrame | None = None
 ) -> StudyDesign:
-    """Apply the accepted (or edited and accepted) proposals to ``base``, in list order.
+    """Apply the accepted (or edited and accepted) proposals to ``base``.
 
     Only ``accepted`` and ``edited`` proposals are read, through
     :meth:`~qpilot.schemas_studio.Proposal.effective_payload`; any other status has no effect.
-    A later proposal on the same kind and subject wins. ``prism.exclusion_reason`` needs
-    ``curves`` (the per-well table) to find the wells of a gene and sample.
+    The result does not depend on the order a person accepted them in wherever that order
+    would otherwise throw a decision away:
+
+    * a ``design.preset`` is the base: it replaces ``base`` and is applied first, whenever it
+      was accepted, so a preset accepted after other decisions never discards them;
+    * every other proposal follows in list order, and a later proposal on the same kind and
+      subject wins;
+    * ``prism.exclusion_reason`` comes last, on the finished design (its units, sample roles
+      and amplification rule), again in list order.
+
+    ``curves`` (the per-well table) is needed to find the wells of an exclusion and of a sample
+    re-typed as a study sample (a sample-level ``design.well_role`` of ``"unkn"``).
 
     Raises:
         DesignError: A proposal cannot be applied, or the result is not a valid design.
     """
+    applied = [p for p in accepted if p.status in APPLIED]
+    exclusions = [p for p in applied if p.kind == "prism.exclusion_reason"]
+    changes = [p for p in applied if p.kind not in ("design.preset", "prism.exclusion_reason")]
     data = base.model_dump()
-    start_refs: tuple[str, ...] | None = None  # set once a target role changes
-    for proposal in accepted:
-        if proposal.status not in APPLIED:
-            continue
-        name = proposal.id or proposal.kind
-        payload = proposal.effective_payload()
-        if proposal.kind == "design.preset":
-            start_refs = None
-        elif proposal.kind == "design.target_role" and start_refs is None:
-            start_refs = tuple(data["reference_candidates"])
-        try:
-            data = _apply(data, proposal.kind, proposal.subject, payload, curves)
-        except (DesignError, AmpCallError) as err:
-            raise DesignError(f"proposal {name}: {err}") from None
-        except (KeyError, TypeError, ValueError) as err:
-            raise DesignError(f"proposal {name}: payload not usable ({err!r})") from None
-    if start_refs is not None:
-        data["reference_candidates"] = _rebuild_references(start_refs, data["targets"])
+    for proposal in (p for p in applied if p.kind == "design.preset"):
+        data = _applied(data, proposal, curves)
+    start_refs = tuple(data["reference_candidates"])
+    target_roles: dict[str, str] = {}  # what accepted design.target_role proposals set
+    sample_roles: dict[str, str] = {}  # what accepted sample-level roles set
+    for proposal in changes:
+        data = _applied(data, proposal, curves)
+        if proposal.kind == "design.target_role":
+            target_roles[proposal.subject] = data["targets"][proposal.subject]["role"]
+        elif proposal.kind == "design.well_role" and "/" not in proposal.subject:
+            sample_roles[proposal.subject] = data["samples"][proposal.subject]["role"]
+        elif proposal.kind == "design.dilution_series":
+            samples = dict(proposal.effective_payload()["samples"])
+            sample_roles.update(dict.fromkeys(map(str, samples), "std"))
+    if target_roles:
+        data["reference_candidates"] = _rebuild_references(start_refs, target_roles, data)
+    studied = sorted(s for s, role in sample_roles.items() if role == "unkn")
+    if studied:
+        _study_samples(data, studied, curves)
+    for proposal in exclusions:
+        data = _applied(data, proposal, curves)
     return _validate(data, "design from accepted proposals")
+
+
+def _applied(
+    data: dict[str, Any], proposal: Proposal, curves: pd.DataFrame | None
+) -> dict[str, Any]:
+    """:func:`_apply` for one proposal, with any error naming the proposal."""
+    name = proposal.id or proposal.kind
+    try:
+        return _apply(data, proposal.kind, proposal.subject, proposal.effective_payload(), curves)
+    except (DesignError, AmpCallError) as err:
+        raise DesignError(f"proposal {name}: {err}") from None
+    except (KeyError, TypeError, ValueError) as err:
+        raise DesignError(f"proposal {name}: payload not usable ({err!r})") from None
 
 
 def _sample(data: dict[str, Any], sample: str) -> dict[str, Any]:
@@ -392,16 +423,37 @@ def _target(data: dict[str, Any], target: str) -> dict[str, Any]:
     return data["targets"].setdefault(target, {"target": target})
 
 
-def _rebuild_references(start: tuple[str, ...], targets: dict[str, Any]) -> tuple[str, ...]:
+def _rebuild_references(
+    start: tuple[str, ...], roles: Mapping[str, str], data: dict[str, Any]
+) -> tuple[str, ...]:
     """Reference candidates after target-role changes, independent of the order they came in.
 
-    The candidates the design started with keep their order unless now marked ``toi``; targets
-    newly marked ``ref`` follow, sorted by name.
+    ``roles`` are the roles accepted ``design.target_role`` proposals set. The candidates the
+    design started with keep their order unless one of those marked them ``toi`` (a target
+    entry made for another reason, such as a confirmed gene symbol, never drops a candidate);
+    targets marked ``ref`` follow, sorted by name.
     """
-    roles = {t: entry.get("role", "toi") for t, entry in targets.items()}
     kept = [t for t in start if roles.get(t, "ref") == "ref"]
-    added = sorted(t for t, role in roles.items() if role == "ref" and t not in kept)
+    marked = {t for t, entry in data["targets"].items() if entry.get("role") == "ref"}
+    added = sorted((marked | {t for t, role in roles.items() if role == "ref"}) - set(kept))
     return (*kept, *added)
+
+
+def _study_samples(data: dict[str, Any], samples: list[str], curves: pd.DataFrame | None):
+    """Re-type, well by well, the samples a person accepted as study samples (``"unkn"``).
+
+    A sample's ``role`` of ``"unkn"`` is also the default, which keeps the type the file
+    declares (:func:`design_curves`), so the decision is written as ``well_roles`` for the
+    sample's wells the file types otherwise. A well with its own accepted role keeps it. When
+    the design names its experiment, only that experiment's wells are re-typed.
+    """
+    if curves is None:
+        raise DesignError(f"re-typing {samples[:5]} as study samples needs the per-well table")
+    rows = curves[curves["sample"].isin(samples) & (curves["sample_type"] != "unkn")]
+    if data.get("experiment_id") is not None and "experiment_id" in rows.columns:
+        rows = rows[rows["experiment_id"] == data["experiment_id"]]
+    for key in well_keys(rows):
+        data["well_roles"].setdefault(key, "unkn")
 
 
 def _apply(
@@ -459,20 +511,77 @@ def _apply(
 
 
 def _exclusion(data: dict[str, Any], payload: Mapping[str, Any], curves: pd.DataFrame | None):
+    """Exclude or restore one value of one gene: a unit's (``well_rep`` 0) or one replicate's.
+
+    A value of the column layout (``well_rep`` 0) is the unit's: every well of the gene for that
+    sample or biological unit. A value of the nested layout is one technical replicate: the
+    exact ``well`` (``"<run_id>/<well>"``) when the payload names it, else the ``well_rep``-th
+    replicate as the nested export numbers them (:func:`_replicate_well`). Excluding a unit's
+    last replicate with a value excludes all its wells of the gene, so the value is left out
+    (never capped as undetermined), as in the consequence shown with the proposal. When the
+    design names its experiment, only that experiment's wells are looked at.
+    """
     action, gene, sample = payload["action"], payload["gene"], payload["sample"]
+    rep, well = int(payload.get("well_rep") or 0), payload.get("well")
     if action not in ("exclude", "restore"):
         raise DesignError(f"action must be 'exclude' or 'restore', not {action!r}")
+    if rep < 0:
+        raise DesignError(f"well_rep must be 0 (the unit) or a replicate number, not {rep}")
     if curves is None:
         raise DesignError("an exclusion needs the per-well table to find the wells")
     units = {s: (e.get("biological_unit") or s) for s, e in data["samples"].items()}
     in_sample = curves["sample"].map(lambda s: s == sample or units.get(s, s) == sample)
     rows = curves[(curves["target"] == gene) & in_sample]
+    if data.get("experiment_id") is not None and "experiment_id" in rows.columns:
+        rows = rows[rows["experiment_id"] == data["experiment_id"]]
     if rows.empty:
         raise DesignError(f"no well of {gene!r} for sample {sample!r}")
-    wells = set(well_keys(rows))
+    keys = set(well_keys(rows))
     current = set(data["excluded_wells"])
+    wells = keys  # the unit's value: every well of the gene
+    if well is not None or rep:
+        if well is not None and well not in keys:
+            raise DesignError(f"{well!r} is not a well of {gene!r} for sample {sample!r}")
+        valued = _valued(data, curves, rows) - current
+        wells = {str(well)} if well is not None else _replicate_well(rows, valued, rep)
+        if action == "exclude" and not valued - wells:
+            wells = keys  # the unit's last value: left out, never capped
     current = current | wells if action == "exclude" else current - wells
     data["excluded_wells"] = tuple(sorted(current))
+
+
+def _valued(data: dict[str, Any], curves: pd.DataFrame, rows: pd.DataFrame) -> set[str]:
+    """The keys of ``rows`` that carry a value, whether excluded or not.
+
+    A well carries a value when the design types it as a study well and it has a quantity under
+    the design's primary amplification rule.
+    """
+    design = _validate({**data, "excluded_wells": ()}, "the design the replicates are counted on")
+    table = design_curves(curves, design).loc[rows.index]
+    table = apply_rule(table, design.amp_calls[0], design.well_calls)
+    used = (table["sample_type"] == "unkn") & table["n0"].notna()
+    return set(well_keys(table[used]))
+
+
+def _replicate_well(rows: pd.DataFrame, valued: set[str], rep: int) -> set[str]:
+    """The well behind replicate ``rep`` of one unit and gene in the nested export.
+
+    :func:`qpilot.qpcr.export.sample_table` numbers a unit's wells of a gene 1, 2, ... by sample
+    name, then well key, counting the wells that carry a value and are not excluded
+    (``valued``). The same count is made here on the design as it stands, so a well an earlier
+    exclusion removed is not counted, as in the export made after it. A unit with no such well
+    has one row, its capped value: replicate 1 is then the whole unit.
+
+    Raises:
+        DesignError: The unit has no replicate ``rep`` for this gene.
+    """
+    keys = well_keys(rows)
+    order = sorted((str(s), k) for s, k in zip(rows["sample"], keys, strict=True) if k in valued)
+    if not order and rep == 1:
+        return set(keys)
+    if rep > len(order):
+        raise DesignError(f"no replicate {rep} (the unit has {len(order)} with a value)")
+    return {order[rep - 1][1]}
 
 
 # ---------- the per-well table as the design says ----------
