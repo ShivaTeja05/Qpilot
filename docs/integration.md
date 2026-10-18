@@ -1,14 +1,13 @@
 # The qPCR workflow, integrated
 
 `qpilot/integration/` runs every part of qPilot as one pipeline, from the instrument's RDML file to
-a verified Analysis Record, and adds the Decision Simulator (`qsim`, the separate
-`qpilot-simulator` package) as an audit of the analysis a person confirmed. It changes no existing
+a verified Analysis Record, and adds the Decision Simulator (`qsim`, vendored in
+`sim/` and installed with the `sim` extra) as an audit of the analysis a person confirmed. It changes no existing
 module: the engine, Studio, the Prism bridge, the record and the MCP server are used as they are.
 Research use only.
 
 ```bash
-pip install -e ".[dev,ai,studio,xlsx,parquet]"
-pip install --no-deps -e ../qpilot-simulator        # optional: the simulator stage
+pip install -e ".[dev,ai,studio,xlsx,parquet,sim]"   # sim: the Decision Simulator stage (qsim)
 qpilot fetch-demo                                    # once
 python -m qpilot.integration demo --out run-demo     # every stage on the demo, checked (~3 min)
 python -m qpilot.integration audit --study <id>      # audit a study a person analysed in Studio

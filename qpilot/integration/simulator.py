@@ -83,8 +83,8 @@ def available() -> bool:
 def _require_qsim() -> None:
     if not available():
         raise SimulatorUnavailable(
-            "the Decision Simulator (qsim) is not installed; install qpilot-simulator "
-            "(pip install --no-deps -e <path to qpilot-simulator>) to audit a study"
+            "the Decision Simulator (qsim) is not installed; from a qPilot clone run "
+            "pip install -e '.[sim]' to audit a study"
         )
 
 
