@@ -22,6 +22,13 @@ Rules the server enforces:
 - **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (or the in-app model). People decide in the app; the command line has no decide command. **An agent that can run commands as you can still act as you,** for example by importing qPilot's library or driving the app on 127.0.0.1. Give agents MCP access, not your shell.
 - **Output:** tools return engine output as JSON, never model-written prose.
 
+### The Decision Simulator's tools (when it is installed)
+With `qpilot-simulator` installed, the same server also serves five read-only `sim_*` tools
+(`sim_audit`, `sim_gene`, `sim_decisions`, `sim_whatif`, `sim_findings`) over the audit a person
+ran with `python -m qpilot.integration audit`. Without it they are not listed and the server says
+so on stderr; `qpilot serve --list-tools` prints what your install serves. None of them can decide
+or store anything; see [`docs/integration.md`](integration.md#agents-one-mcp-server).
+
 ### In a closed loop
 `run → qpcr_study → qpcr_robustness → qpcr_decide → pending_human → (scientist decides in the app) → record`. Choices that cannot change a conclusion are decided automatically and logged as `system`. Choices that can are always a person's. Every attempt is appended to a hash-chained log. This is the same contract the self-driving-lab papers specify at the analysis step; no robot is connected.
 

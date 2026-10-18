@@ -12,7 +12,8 @@ qpilot fetch-demo                                    # once
 python -m qpilot.integration demo --out run-demo     # every stage on the demo, checked (~3 min)
 python -m qpilot.integration audit --study <id>      # audit a study a person analysed in Studio
 python -m qpilot.integration verify <audit> --record <record dir or zip>
-python -m qpilot.integration serve                   # MCP: qPilot's 11 tools + 4 read-only sim_* tools
+qpilot serve --list-tools                            # what the one MCP server serves here
+qpilot serve                                        # MCP: qPilot's 11 tools + 5 read-only sim_* tools
 ```
 
 ## The system
@@ -138,7 +139,7 @@ sequenceDiagram
 
 ## Tests
 
-`tests/integration/` (28 tests, about 4 minutes with the demo cached):
+`tests/integration/` (33 tests, about 4 minutes with the demo cached):
 
 * `test_workflow_demo.py`: every stage and check; only the person decides, always with a reason;
   the audit comes after the blind stages, reproduces qPilot, equals the simulator's own published
@@ -149,9 +150,34 @@ sequenceDiagram
 * `test_simulator_adapter.py`: two named groups, technical replicates (not applicable), a
   person's Cq ≤ 35 choice, a refused audit writes nothing.
 * `test_mcp_tools.py`: the tools are read-only, serve verified audits only, and return errors as
-  data.
+  data; `sim_findings` pages, filters by gene, and refuses a changed, linked or oversized file.
+* `test_mcp_stdio.py`: an agent over a real stdio connection, through `python -m qpilot.integration
+  serve` and through `python -m qpilot.mcp_server` (what `qpilot serve` runs).
 * `test_audit_files.py` (no demo data): checksums, unlisted and missing files, the missing
   simulator, the empty-folder rule.
+
+## Agents: one MCP server
+
+`qpilot serve` (and `python -m qpilot.mcp_server`, `claude mcp add qpilot -- qpilot serve`) registers
+qPilot's eleven `qpcr_*` tools and, when the Decision Simulator (`qsim`) imports, its five read-only
+tools: `sim_audit`, `sim_gene`, `sim_decisions`, `sim_whatif` and `sim_findings`. Without `qsim` the
+server lists the eleven tools, does not fail, and prints on stderr that the `sim_*` tools are off;
+`qpilot serve --list-tools` prints what this install serves. `python -m qpilot.integration serve`
+is the same server with the `sim_*` tools always on (the audit readers need only the saved files).
+
+| Tool | What it returns |
+|---|---|
+| `sim_audit(study_id)` | Verdict counts, scope, the reproduction check, the lock hash and what to lock in advance |
+| `sim_gene(study_id, gene)` | One gene's verdict, how often its call holds, what flips it, margins |
+| `sim_decisions(study_id)` | The decisions the audit varied: options, tiers, roles, the prespecified baseline |
+| `sim_whatif(study_id, changes, genes=None)` | Every gene recomputed under some choices; nothing stored, nothing chosen |
+| `sim_findings(study_id, table="issues", gene=None, offset=0, limit=50)` | A page of `issues.json`, `one_sample_flips.csv` or `reference_wells_top50.csv` (`table`: `issues`, `one_sample_flips`, `reference_wells`), with the file's sha256 and `next_offset` |
+
+The `sim_*` tools read only `<study store>/simulator_audits/<study_id>/`, where
+`python -m qpilot.integration audit` writes; an agent never names a path. An audit is served only
+when it verifies (`AUDIT.sha256`, lock, manifest) and is that study's. `sim_findings` opens only
+the three files above, by fixed name, refuses a symlink or anything that resolves outside the audit
+folder, refuses a file over 4 MB, and returns at most 200 rows per call.
 
 ## Not yet integrated
 
