@@ -38,6 +38,8 @@ def _inputs(curves, design) -> ExportInputs:
         group_order=(first, second),
         units=units,
         genes=tuple(model.space.items),
+        design=design,  # the consequence runs the engine again on this design
+        curves=curves,
     )
 
 
@@ -135,3 +137,26 @@ def test_a_cleared_unit_in_the_column_layout_still_excludes_every_replicate(tmp_
     assert proposal.payload["well_rep"] == 0
     accepted = _engine_matches_consequence(curves, design, proposal)
     assert accepted.excluded_wells == ("p1/A0", "p1/A1", "p1/A2")
+
+
+def test_excluding_one_target_of_a_multiplex_well_is_refused_not_widened():
+    """A duplex well (REF and T1 measured in the same well): excluding T1 alone would drop REF."""
+    from qpilot.qpcr.designs import DesignError
+    from qpilot.schemas_studio import MadeBy, Proposal
+
+    curves = toy_wells()
+    gene = next(t for t in curves["target"].unique() if t != "REF")
+    ref_plate = curves.loc[curves["target"] == "REF", "run_id"].iloc[0]
+    curves.loc[curves["target"] == gene, "run_id"] = ref_plate  # same plate, same well names
+    sample = curves.loc[curves["target"] == gene, "sample"].iloc[0]
+    exclusion = Proposal(
+        study_id="70y0000000c1",
+        kind="prism.exclusion_reason",
+        subject=f"{gene}/{sample}",
+        payload={"gene": gene, "sample": sample, "action": "exclude", "well_rep": 0},
+        made_by=MadeBy(kind="rule"),
+        status="accepted",
+        decided_by="human",
+    )
+    with pytest.raises(DesignError, match="multiplex"):
+        design_from_proposals(toy_design(), [exclusion], curves)

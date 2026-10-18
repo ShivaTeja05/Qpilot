@@ -207,19 +207,36 @@ def _from_linregpcr(name: str) -> str:
     return well_label(ord(match.group(1)) - ord("A") + 1, int(match.group(2)))
 
 
-def _check_well_keys(table: pd.DataFrame) -> None:
-    """Refuse a table in which two rows share a ``run_id/well`` key.
+def _check_run_ids(raw_ids: list[str]) -> None:
+    """Refuse two runs whose ids become the same safe name (their wells would share keys)."""
+    seen: dict[str, str] = {}
+    for raw in raw_ids:
+        safe = safe_name(raw, "run")
+        if safe in seen and seen[safe] != raw:
+            raise CurveAnalysisError(
+                f"runs {seen[safe]!r} and {raw!r} both become {safe!r}, so their wells would "
+                "share run_id/well keys; qPilot keys every well-level decision by run_id/well, "
+                "so this file is refused (rename one run)"
+            )
+        seen[safe] = raw
 
-    Two curves in one well (a multiplex well) or two runs whose ids become the same safe name
-    would share it, and one person's exclusion or call would then apply to both.
+
+def _check_well_keys(table: pd.DataFrame) -> None:
+    """Refuse a table in which two curves of the same target share a ``run_id/well`` key.
+
+    Two runs whose ids become the same safe name, or two wells whose names collide, would share
+    it, and one person's exclusion or call would then apply to wells nobody chose. A multiplex
+    well (several targets in one well) is legitimate and keeps one key for the well; decisions
+    that would hit more than one of its targets are refused where they are applied
+    (``qpcr/designs.py``).
     """
-    shared = table.duplicated(list(WELL_KEY), keep=False)
+    shared = table.duplicated([*WELL_KEY, "target_raw"], keep=False)
     if shared.any():
         run_id, well = table.loc[shared, list(WELL_KEY)].iloc[0]
         raise CurveAnalysisError(
-            f"run {run_id} well {well}: {int(shared.sum())} curves share run_id/well keys (a well "
-            "with more than one target, or runs whose ids become the same safe name); qPilot "
-            "keys every well-level decision by run_id/well, so this table is refused"
+            f"run {run_id} well {well}: {int(shared.sum())} curves of one target share a "
+            "run_id/well key (runs or wells whose names become the same safe name); qPilot keys "
+            "every well-level decision by run_id/well, so this table is refused"
         )
 
 
@@ -361,7 +378,9 @@ def analyse_study(
                 # written before every well had its own name (plates over 26 rows)
                 log.warning("cached curve table %s predates unique well names", cached.name)
         doc = load(path)
-    plates = [analyse_run(run, settings) for run in runs(doc, experiment_id)]
+    found = runs(doc, experiment_id)
+    _check_run_ids([str(run["id"]) for run in found])
+    plates = [analyse_run(run, settings) for run in found]
     if not plates:
         raise CurveAnalysisError(f"experiment {experiment_id!r} has no runs")
     table = _tidy(pd.concat(plates, ignore_index=True), references)

@@ -546,6 +546,13 @@ def _exclusion(data: dict[str, Any], payload: Mapping[str, Any], curves: pd.Data
         wells = {str(well)} if well is not None else _replicate_well(rows, valued, rep)
         if action == "exclude" and not valued - wells:
             wells = keys  # the unit's last value: left out, never capped
+    shared = curves[well_keys(curves).isin(wells) & (curves["target"] != gene)]
+    if action == "exclude" and not shared.empty:  # a multiplex well holds other targets too
+        others = sorted(set(shared["target"]))
+        raise DesignError(
+            f"the well of {gene!r} for sample {sample!r} also measures {others}; excluding one "
+            "target of a multiplex well is not supported yet (it would exclude the others too)"
+        )
     current = current | wells if action == "exclude" else current - wells
     data["excluded_wells"] = tuple(sorted(current))
 
