@@ -78,6 +78,7 @@ Full table and sources: [`validation/validation_table.md`](validation/validation
 Export writes one zip: the input RDML (byte for byte, when the original file is still on disk; the export message says so), the results, the cards, the robustness grid (`grid.csv`), the facts every sentence cites, the design, every decision with its reason and who made it (`human`, `agent` or `system`), the software versions and the vendored method's commit, and a `CHECKSUMS.sha256`.
 
 ```bash
+qpilot record --study <id> --out rec      # the record of a study decided in Studio (the id the page shows)
 qpilot verify qpilot-record-<study>.zip   # checksums and the decision chain
 qpilot rerun <unzipped record folder>     # re-runs the analysis from the record's input; compares results.json
 ```

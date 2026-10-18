@@ -1,4 +1,4 @@
-"""CLI commands owned by Dev 2: serve (MCP), plan, verify, rerun, harness."""
+"""CLI commands owned by Dev 2: serve (MCP), plan, record, verify, rerun, harness."""
 
 from __future__ import annotations
 
@@ -23,6 +23,51 @@ def _record_dir(path: str, scratch: Path) -> Path:
     if p.exists():
         raise RecordError(f"not an Analysis Record folder or zip: {p}")
     raise RecordError(f"no such record: {p}")
+
+
+def _record_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--study",
+        default=None,
+        help="study id, or the 12 characters Studio shows (default: the only study)",
+    )
+    parser.add_argument("--out", required=True, help="a new or empty folder for the record")
+    parser.add_argument(
+        "--no-input",
+        action="store_true",
+        help="leave the raw input file out: the record verifies but cannot be re-run",
+    )
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        help="pseudonymise texts for sharing; the raw input is always left out",
+    )
+
+
+def _record(args: argparse.Namespace) -> int:
+    """Write the Analysis Record of a study in the store, e.g. one a person decided in Studio."""
+    from qpilot.core.record import RecordError, write_record
+    from qpilot.core.store import StudyNotFound, StudyStore
+
+    if args.study is None:
+        studies = StudyStore().list_studies()
+        if len(studies) != 1:
+            listed = ", ".join(s[:12] for s in studies) or "none"
+            print(f"qpilot record: give --study <id> (studies here: {listed})", file=sys.stderr)
+            return 2
+    store, study = _pick_study(args)
+    try:
+        info = write_record(
+            store, study, args.out, include_input=not args.no_input, share=args.share
+        )
+    except (RecordError, StudyNotFound) as err:
+        print(f"qpilot record: {err}", file=sys.stderr)
+        return 2
+    print(f"wrote {info.record_dir}: {info.n_files} files, chain head {info.chain_head[:12]}")
+    if not info.input_included:
+        print("the raw input is not in this record: it verifies but cannot be re-run")
+    print(f"check it with: qpilot verify {info.record_dir}")
+    return 0
 
 
 def _verify_arguments(parser: argparse.ArgumentParser) -> None:
@@ -340,6 +385,12 @@ COMMANDS: list[Command] = [
         "before the first plate: samples needed and what a design cannot detect",
         _plan_arguments,
         _plan,
+    ),
+    (
+        "record",
+        "write the Analysis Record of a study, e.g. one decided in Studio",
+        _record_arguments,
+        _record,
     ),
     (
         "verify",
