@@ -241,3 +241,32 @@ def test_the_same_design_gives_byte_identical_files(study, tmp_path):
     second = write_outputs(*run(), tmp_path / "b")
     for name in first:
         assert first[name].read_bytes() == second[name].read_bytes(), name
+
+
+def test_a_sample_retyped_as_a_study_sample_counts_in_its_group(caplog):
+    """Review c3: the file calls sB1 a positive control; a person's 'unkn' puts it back in n."""
+    from qpilot.qpcr.designs import design_from_proposals
+    from qpilot.schemas_studio import MadeBy, Proposal
+
+    pos = {("sB1", t, rep): {"sample_type": "pos"} for t in ("REF", *REL) for rep in range(3)}
+    curves = toy_wells(overrides=pos)
+    with caplog.at_level("WARNING", logger="qpilot.qpcr.study"):
+        left_out = run(curves)[0]
+    assert (left_out.contrasts["T1"].n_hi, left_out.contrasts["T1"].n_lo) == (3, 2)
+    assert "sB1 (pos)" in caplog.text  # not silently: the sample is named
+    retype = Proposal(
+        id="p_1",
+        study_id="abc123def456",
+        kind="design.well_role",
+        subject="sB1",
+        payload={"role": "pos"},
+        made_by=MadeBy(kind="rule"),
+        status="edited",
+        edits={"role": "unkn"},
+    )
+    design = design_from_proposals(toy_design(), [retype], curves)
+    result = run(curves, design)[0]
+    plain = run()[0]
+    assert (result.design.n_hi, result.design.n_lo) == (3, 3)
+    assert result.contrasts["T1"].fc == pytest.approx(plain.contrasts["T1"].fc, rel=1e-12)
+    assert result.contrasts["T1"].p == pytest.approx(plain.contrasts["T1"].p, rel=1e-12)

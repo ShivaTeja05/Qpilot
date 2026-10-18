@@ -359,3 +359,138 @@ def test_demo_exclusion_through_an_accepted_proposal(demo_curves):
     assert (result.design.n_hi, result.design.n_lo, result.n_samples) == (53, 294, 366)
     contrasts = legacy.contrasts.items()
     assert [g for g, c in contrasts if c.conclusion != result.contrasts[g].conclusion] == []
+
+
+# ---------- the order a person decided in never discards a decision ----------
+
+PRESET = ("design.preset", "design", {"preset": "vermeulen_expression_defined"})
+
+
+def _symbols(*targets):
+    return [_proposal("design.gene_symbol", t, {"symbol": t.split("(")[0]}) for t in targets]
+
+
+def test_accepted_gene_symbols_never_drop_a_reference():
+    """Review c0: a symbol's target entry has no role of its own; it is not a 'toi' decision."""
+    preset, symbols = _proposal(*PRESET), _symbols("SDHA(1)", "UBC(2)", "HPRT1")
+    confirm = _proposal("design.target_role", "HMBS", {"role": "ref"})
+    design = design_from_proposals(vermeulen_design(), [preset, *symbols, confirm])
+    assert design.reference_candidates == REFERENCE_TARGETS
+    assert design.targets["SDHA(1)"].symbol == "SDHA"
+    drop = _proposal("design.target_role", "HPRT1", {"role": "toi"})
+    design = design_from_proposals(vermeulen_design(), [preset, *symbols, drop])
+    assert design.reference_candidates == ("ALUsq(Eurogentec)", "HMBS", "SDHA(1)", "UBC(2)")
+
+
+def test_a_preset_is_the_base_whatever_the_click_order():
+    """Review c2: a preset accepted last no longer wipes the decisions accepted before it."""
+    curves = pd.DataFrame(
+        {"run_id": ["p1"], "well": ["A1"], "sample": ["1496"], "target": ["ODC1"]}
+    )
+    decisions = [
+        _proposal("design.target_role", "HPRT1", {"role": "toi"}),
+        _proposal("design.well_role", "water", {"role": "ntc"}),
+        _proposal("curve.call_rule", "amp_call", {"rule": "cq_le_35"}),
+        _proposal(
+            "prism.exclusion_reason",
+            "ODC1/1496",
+            {"gene": "ODC1", "sample": "1496", "action": "exclude"},
+        ),
+    ]
+    preset = _proposal(*PRESET)
+    first = design_from_proposals(_groups_base(), [preset, *decisions], curves)
+    last = design_from_proposals(_groups_base(), [*decisions, preset], curves)
+    assert last == first and last.design_hash() == first.design_hash()
+    assert last.reference_candidates == ("ALUsq(Eurogentec)", "HMBS", "SDHA(1)", "UBC(2)")
+    assert last.samples["water"].role == "ntc" and last.amp_calls[0] == "cq_le_35"
+    assert last.excluded_wells == ("p1/A1",) and last.mode == "marker_split"
+
+
+def _typed_curves():
+    """sB1 is declared a positive control in the file; s2 is a study sample."""
+    return pd.DataFrame(
+        {
+            "run_id": ["p1"] * 5,
+            "well": ["A1", "A2", "A3", "A4", "A5"],
+            "sample": ["sB1", "sB1", "s2", "ntc", "sB1"],
+            "sample_type": ["pos", "pos", "unkn", "ntc", "pos"],
+            "target": ["G", "G", "G", "G", "R"],
+            "n0": [1.0, 2.0, 3.0, float("nan"), 4.0],
+        }
+    )
+
+
+def test_a_sample_retyped_as_a_study_sample_takes_effect():
+    """Review c3: an accepted sample-level role 'unkn' re-types the wells the file typed."""
+    retype = _proposal("design.well_role", "sB1", {"role": "unkn"})
+    design = design_from_proposals(_groups_base(), [retype], _typed_curves())
+    assert design.well_roles == {"p1/A1": "unkn", "p1/A2": "unkn", "p1/A5": "unkn"}
+    out = design_curves(_typed_curves(), design)
+    assert list(out["sample_type"]) == ["unkn", "unkn", "unkn", "ntc", "unkn"]
+    # a study sample confirmed as one needs no well-level entry
+    confirm = _proposal("design.well_role", "s2", {"role": "unkn"})
+    assert design_from_proposals(_groups_base(), [confirm], _typed_curves()).well_roles == {}
+    # a later decision on the same sample wins; a well-level decision wins over a sample's
+    later = _proposal("design.well_role", "sB1", {"role": "pos"})
+    assert design_from_proposals(_groups_base(), [retype, later], _typed_curves()).well_roles == {}
+    well = _proposal("design.well_role", "p1/A2", {"role": "opt"})
+    design = design_from_proposals(_groups_base(), [well, retype], _typed_curves())
+    assert design.well_roles == {"p1/A1": "unkn", "p1/A2": "opt", "p1/A5": "unkn"}
+    with pytest.raises(DesignError, match="per-well table"):
+        design_from_proposals(_groups_base(), [retype])
+    demote = _proposal("design.well_role", "ntc", {"role": "unkn"})
+    demoted = design_from_proposals(_groups_base(), [demote], _typed_curves())
+    with pytest.raises(DesignError, match="declared control"):
+        design_curves(_typed_curves(), demoted)
+
+
+def _toy_exclusion(rep=None, well=None, action="exclude"):
+    payload = {"gene": "G", "sample": "u1", "action": action}
+    if rep is not None:
+        payload["well_rep"] = rep
+    if well is not None:
+        payload["well"] = well
+    return _proposal("prism.exclusion_reason", "G/u1", payload)
+
+
+def _unit_curves():
+    """Unit u1 (samples a and b) has four G wells; A3 is undetermined, so it is no replicate."""
+    return pd.DataFrame(
+        {
+            "run_id": ["p1"] * 6,
+            "well": ["A10", "A9", "A2", "A3", "B1", "B2"],
+            "sample": ["b", "a", "a", "a", "a", "b"],
+            "sample_type": ["unkn"] * 6,
+            "target": ["G", "G", "G", "G", "R", "R"],
+            "n0": [1.0, 2.0, 4.0, float("nan"), 1.0, 1.0],
+        }
+    )
+
+
+def _unit_base() -> StudyDesign:
+    samples = {s: SampleDesign(sample=s, biological_unit="u1") for s in ("a", "b")}
+    return vermeulen_design().model_copy(update={"samples": samples})
+
+
+def test_a_replicate_exclusion_names_one_well():
+    """Review c1: replicates are numbered as the nested export numbers them (sample, well)."""
+    curves, base = _unit_curves(), _unit_base()
+    whole = design_from_proposals(base, [_toy_exclusion()], curves)
+    assert whole.excluded_wells == ("p1/A10", "p1/A2", "p1/A3", "p1/A9")
+    for rep, key in ((1, "p1/A2"), (2, "p1/A9"), (3, "p1/A10")):
+        assert design_from_proposals(base, [_toy_exclusion(rep)], curves).excluded_wells == (key,)
+    exact = design_from_proposals(base, [_toy_exclusion(rep=3, well="p1/A9")], curves)
+    assert exact.excluded_wells == ("p1/A9",)  # the exact well wins over a replicate number
+    restore = _toy_exclusion(well="p1/A9", action="restore")
+    assert design_from_proposals(whole, [restore], curves).excluded_wells == (
+        "p1/A10",
+        "p1/A2",
+        "p1/A3",
+    )
+    # numbered among the wells still in the analysis, as the next export numbers them
+    twice = design_from_proposals(base, [_toy_exclusion(1), _toy_exclusion(1)], curves)
+    assert twice.excluded_wells == ("p1/A2", "p1/A9")
+    with pytest.raises(DesignError, match="no replicate 4"):
+        design_from_proposals(base, [_toy_exclusion(4)], curves)
+    with pytest.raises(DesignError, match="not a well of 'G'"):
+        design_from_proposals(base, [_toy_exclusion(well="p1/B1")], curves)

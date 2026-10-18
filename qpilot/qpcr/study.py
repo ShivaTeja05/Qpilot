@@ -29,6 +29,7 @@ relies on. No model is called and nothing touches the network.
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import statistics
 from collections.abc import Callable, Mapping, Sequence
@@ -80,6 +81,8 @@ from qpilot.schemas import (
     StudyResult,
 )
 from qpilot.schemas_studio import StudyDesign
+
+log = logging.getLogger(__name__)
 
 HOLDS_LOW = 0.80  # "holds in fewer than 80 %" is counted in f_n_hold_lt_80
 FC_FMT = "{:.2g}"
@@ -267,16 +270,29 @@ def _stability(matrix: pd.DataFrame, candidates: tuple[str, ...]) -> GenormResul
 
 
 def _design_groups(
-    design: StudyDesign, curves: pd.DataFrame, matrix: pd.DataFrame
+    design: StudyDesign, table: pd.DataFrame, matrix: pd.DataFrame
 ) -> tuple[tuple[frozenset[str], frozenset[str]], tuple[str, str]]:
-    """The compared units of a groups design, measured for every gene."""
+    """The compared units of a groups design, measured for every gene.
+
+    ``table`` is the per-well table as the design says (:func:`design_curves`). A sample of the
+    groups with no study well there (the file types it otherwise, and no accepted decision
+    re-typed it) is not a study sample, so it is left out of n; the log names it and its type.
+    """
     comparison = design.comparison
     names = (comparison.group_a, comparison.group_b)
     by_unit = unit_groups(design)
     compared = {s for s, d in design.samples.items() if d.group in names}
-    absent = sorted(compared - set(curves["sample"]))
+    absent = sorted(compared - set(table["sample"]))
     if absent:
         raise DesignError(f"samples of the comparison groups not in the data: {absent[:5]}")
+    studied = set(table.loc[table["sample_type"] == "unkn", "sample"])
+    typed = table[table["sample"].isin(compared - studied)].groupby("sample")["sample_type"]
+    left_out = [f"{s} ({', '.join(sorted(set(types)))})" for s, types in typed]
+    if left_out:
+        log.warning(
+            "samples of the comparison groups that are not study samples are left out: %s",
+            "; ".join(left_out),
+        )
     present = set(matrix.index)
     group_a, group_b = (
         frozenset(u for u, g in by_unit.items() if g == name and u in present) for name in names
@@ -331,7 +347,7 @@ def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> 
     stability = _stability(matrix, settings.candidates)
     groups = labels = None
     if settings.groups_mode:
-        groups, labels = _design_groups(settings.design, curves, matrix)
+        groups, labels = _design_groups(settings.design, inputs.table, matrix)
         _n_guard(groups, labels)
     spec = None
     if groups is None:
@@ -412,6 +428,7 @@ def study_from_curves(
             primary,
             settings.rule,
             calls,
+            amp_call=settings.amp_calls[0],
         )
     extras = _Extras(
         withheld=space.withheld,

@@ -6,7 +6,8 @@ primary analysis) and the same primary control genes, and counts the genes whose
 differs from the engine's. Three variants, each a common way to do it:
 
 * ``ddcq`` — ΔΔCq with the efficiency assumed to be 2.0 on the engine's Cq, Welch's t test on
-  the log2 scale (``-ΔCq``). Only the assumed efficiency differs from the engine;
+  the log2 scale (``-ΔCq``). Only the assumed efficiency differs from the engine's primary
+  cell, which uses the same wells;
 * ``linear_welch`` — then 2^-ΔΔCq per sample (calibrator: the mean ΔCq of the comparison group,
   the "rest"), Welch's t test on that linear scale, fold change = ratio of the group means;
 * ``linear_student`` — the same with Student's equal-variance t test (Prism's older default).
@@ -14,9 +15,11 @@ differs from the engine's. Three variants, each a common way to do it:
 ΔCq = Cq(gene) - mean(Cq of the control genes) per sample; samples missing a control gene's Cq
 are skipped, as are wells without a Cq (the spreadsheet route has no quantity to drop or cap).
 Technical replicates are averaged per biological unit (mean Cq), as the engine averages
-log2 N0. Wells a person excluded or called not amplified are left out. Conclusions use the
-engine's call rule (p < 0.05 and at least two-fold). A gene with fewer than two values in a
-group gets "none".
+log2 N0. Wells a person excluded or called not amplified are left out, and so are the wells
+the engine's primary amplification rule does not count (a Cq cut-off a person chose as the
+primary rule applies to the routes as to the engine; no route applies a cut-off of its own).
+Conclusions use the engine's call rule (p < 0.05 and at least two-fold). A gene with fewer
+than two values in a group gets "none".
 
 The routes are reported as facts, never used for a conclusion. Deterministic; no model call.
 """
@@ -31,7 +34,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from qpilot.qpcr.amp_call import well_keys
+from qpilot.qpcr.amp_call import amplified, well_keys
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule, conclude, welch
 from qpilot.qpcr.quant import EXCLUDED, unit_map
 from qpilot.schemas import Conclusion
@@ -62,11 +65,13 @@ def cq_matrix(
     curves: pd.DataFrame,
     units: Mapping[str, str] | None = None,
     well_calls: Mapping[str, bool] | None = None,
+    amp_call: str | None = None,
 ) -> pd.DataFrame:
     """Mean Cq per biological unit and gene over the study wells that have a Cq.
 
     Wells excluded by a person (``design_excluded``) or called not amplified by a person
-    (``well_calls[...] = False``) are left out.
+    (``well_calls[...] = False``) are left out; with ``amp_call`` (the engine's primary rule),
+    so are the wells that rule does not count as amplified.
     """
     unknown = curves[curves["sample_type"] == "unkn"]
     keep = unknown["cq"].notna()
@@ -74,6 +79,8 @@ def cq_matrix(
         keep &= ~unknown[EXCLUDED].astype(bool)
     if well_calls:
         keep &= ~well_keys(unknown).map(well_calls).eq(False)
+    if amp_call is not None:
+        keep &= amplified(curves, amp_call, well_calls).loc[unknown.index]
     rows = unknown[keep]
     table = pd.DataFrame(
         {
@@ -122,6 +129,7 @@ def compare_routes(
     engine: Mapping[str, Conclusion],
     rule: ConclusionRule = DEFAULT_RULE,
     well_calls: Mapping[str, bool] | None = None,
+    amp_call: str | None = None,
 ) -> dict[str, RouteResult]:
     """Every route's conclusions and the genes where each differs from the engine.
 
@@ -135,8 +143,10 @@ def compare_routes(
         engine: Each compared gene's conclusion in the engine's primary cell.
         rule: The call rule.
         well_calls: A person's per-well resolutions (``False`` leaves the well out).
+        amp_call: The engine's primary amplification rule; the routes leave out the wells it
+            does not count, so they use the primary cell's wells.
     """
-    cq = cq_matrix(curves, units, well_calls).reindex(index=list(samples))
+    cq = cq_matrix(curves, units, well_calls, amp_call).reindex(index=list(samples))
     reference = cq.reindex(columns=list(refs))
     refs_ok = reference.notna().all(axis=1)
     ref_mean = reference.mean(axis=1)
