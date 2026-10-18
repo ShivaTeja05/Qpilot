@@ -20,12 +20,16 @@ combination of the choices a lab would make here, and each result is compared wi
 It answers four questions. Which choices are right? Does the simulator's spread warn when the
 baseline answer is wrong? Does the range across defensible analyses contain the truth? And with
 real technical replicates, are planted single-well errors detected?
+
+This is round 1, with nominal ng as the truth. Round 2 (:mod:`qsim.known_answers`) reuses
+:func:`run` with digital-PCR truth on four machines and adds propagated intervals.
 """
 
 from __future__ import annotations
 
 import itertools
 import json
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -60,21 +64,41 @@ BASELINE = ("assay_mean", "mean_log", "keep")
 SPREAD_RULE = 0.5  # cycles; the common "replicates within half a cycle" rule
 
 
-def load(path: str | Path, experiment: str = "DNA Dilution - AMC") -> pd.DataFrame:
+def load(
+    path: str | Path,
+    experiment: str = "DNA Dilution - AMC",
+    levels: dict[str, float] | None = None,
+    series: dict[str, str] | None = None,
+) -> pd.DataFrame:
+    """LinRegPCR wells of the given samples, with nominal amount ``ng`` and ``series`` columns."""
+    levels = LEVELS if levels is None else levels
     curves = analyse_study(Path(path), experiment, reference_targets=())
-    curves = curves[curves["sample"].isin(LEVELS)].copy()
-    curves["ng"] = curves["sample"].map(LEVELS)
+    curves = curves[curves["sample"].isin(levels)].copy()
+    curves["ng"] = curves["sample"].map(levels)
+    curves["series"] = curves["sample"].map(series or {}).fillna("dilution")
     curves["log2_nq"] = np.log2(curves["n0"]) + curves["cq"] * np.log2(curves["eff_target"])
     curves["flagged"] = curves["note"].fillna("").str.len() > 0
     return curves
 
 
-def _std_curve_eff(assay: pd.DataFrame, exclude: tuple[float, float]) -> float:
-    use = assay[(assay["ng"] > 0) & ~assay["ng"].isin(exclude) & assay["cq"].notna()]
+def _std_curve(assay: pd.DataFrame, exclude: tuple[str, str], series: str) -> tuple[float, float]:
+    """Standard-curve efficiency from the series' other levels, and the SE of its log2."""
+    use = assay[
+        (assay["ng"] > 0)
+        & (assay["series"] == series)
+        & ~assay["sample"].isin(exclude)
+        & assay["cq"].notna()
+    ]
     if use["ng"].nunique() < 2:
-        return float("nan")
-    slope = np.polyfit(np.log10(use["ng"]), use["cq"], 1)[0]
-    return float(10 ** (-1 / slope))
+        return float("nan"), float("nan")
+    x = np.log10(use["ng"].to_numpy())
+    slope, intercept = np.polyfit(x, use["cq"], 1)
+    se_log2e = float("nan")
+    if len(use) > 2:
+        resid = use["cq"].to_numpy() - (slope * x + intercept)
+        se_slope = np.sqrt(resid @ resid / (len(x) - 2) / ((x - x.mean()) ** 2).sum())
+        se_log2e = float(np.log2(10) * se_slope / slope**2)
+    return float(10 ** (-1 / slope)), se_log2e
 
 
 def _level_value(
@@ -108,23 +132,63 @@ def _level_value(
     raise ValueError(replicates)
 
 
-def run(curves: pd.DataFrame) -> pd.DataFrame:
+def _assay_mean_se(assay: pd.DataFrame) -> float:
+    """Delta-method SE of log2 of LinRegPCR's mean efficiency: SD of the wells' efficiencies over
+    the square root of the unflagged amplified wells, divided by E ln 2."""
+    e = float(assay["eff_target"].iloc[0])
+    sd = float(assay["eff_target_sd"].iloc[0])
+    n = int((~assay["flagged"] & assay["cq"].notna()).sum())
+    if not (np.isfinite(sd) and n >= 2 and e > 1):
+        return float("nan")
+    return sd / (e * np.log(2) * np.sqrt(n))
+
+
+Truth = Callable[[str, str, str, str], "tuple[float, float, str] | None"]
+
+
+def run(
+    curves: pd.DataFrame,
+    pairs: list[tuple[str, str]] | None = None,
+    truth: Truth | None = None,
+    labels: dict[str, str] | None = None,
+    unit: str = "ng",
+) -> pd.DataFrame:
+    """Every analysis of every (run, assay, pair of samples), scored against ``truth``.
+
+    ``pairs`` are (higher, lower) sample names; by default the nominal-ng :data:`PAIRS`.
+    ``truth(run, assay, hi, lo)`` returns (log2 ratio, its SE, source) or None to skip; by
+    default the nominal ratio. Each row also keeps what the propagated interval needs: the
+    replicate SE and Welch df, the Cq difference and the SE of log2 efficiency.
+    """
+    nominal = curves.drop_duplicates("sample").set_index("sample")["ng"].to_dict()
+    if pairs is None:
+        by_ng = {v: k for k, v in nominal.items()}
+        pairs = [(by_ng[hi], by_ng[lo]) for hi, lo in PAIRS if hi in by_ng and lo in by_ng]
+    labels = labels or {s: f"{v:g}" for s, v in nominal.items()}
+    series = curves.drop_duplicates("sample").set_index("sample")["series"].to_dict()
     rows = []
     for (run_id, target), assay in curves.groupby(["run_id", "target"]):
-        for hi, lo in PAIRS:
-            truth = np.log2(hi / lo)
-            e_std = _std_curve_eff(assay, (hi, lo))
+        se_assay = _assay_mean_se(assay)
+        for hi, lo in pairs:
+            if truth is None:
+                t = (float(np.log2(nominal[hi] / nominal[lo])), 0.0, "nominal")
+            else:
+                t = truth(run_id, target, hi, lo)
+            if t is None:
+                continue
+            truth_log2, truth_se, source = t
+            e_std, se_std = _std_curve(assay, (hi, lo), series[lo])
             for eff, rep, flag in itertools.product(EFFICIENCY, REPLICATES, FLAGGED):
                 sub = assay[assay["cq"].notna() & assay["n0"].notna()]
                 if flag == "drop_flagged":
                     sub = sub[~sub["flagged"]]
-                a, b = sub[sub["ng"] == hi], sub[sub["ng"] == lo]
+                a, b = sub[sub["sample"] == hi], sub[sub["sample"] == lo]
                 if len(a) < 2 or len(b) < 2 or (eff == "std_curve" and not np.isfinite(e_std)):
                     continue
                 va, wa = _level_value(a, eff, rep, e_std)
                 vb, wb = _level_value(b, eff, rep, e_std)
                 est = va - vb
-                lo_ci = hi_ci = np.nan
+                lo_ci = hi_ci = se = df = np.nan
                 if len(wa) >= 2 and len(wb) >= 2:
                     w = stats.ttest_ind(wa, wb, equal_var=False)
                     se = abs(est / w.statistic) if w.statistic else np.nan
@@ -134,21 +198,34 @@ def run(curves: pd.DataFrame) -> pd.DataFrame:
                     )
                     half = stats.t.ppf(0.975, df) * se
                     lo_ci, hi_ci = est - half, est + half
+                se_log2e = {"assay_mean": se_assay, "std_curve": se_std}.get(eff, 0.0)
                 rows.append(
                     {
                         "run": run_id,
                         "assay": target,
-                        "pair": f"{hi:g} vs {lo:g} ng",
-                        "truth_log2": truth,
+                        "pair": f"{labels[hi]} vs {labels[lo]} {unit}",
+                        "hi": hi,
+                        "lo": lo,
+                        "truth_log2": truth_log2,
+                        "truth_se": truth_se,
+                        "truth_source": source,
                         "efficiency": eff,
                         "replicates": rep,
                         "flagged": flag,
                         "defensible": EFFICIENCY[eff] == "defensible"
                         and REPLICATES[rep] == "defensible",
                         "estimate_log2": est,
-                        "error_log2": est - truth,
+                        "error_log2": est - truth_log2,
                         "ci_lo": lo_ci,
                         "ci_hi": hi_ci,
+                        "se_rep": float(
+                            np.sqrt(wa.var(ddof=1) / len(wa) + wb.var(ddof=1) / len(wb))
+                        )
+                        if len(wa) >= 2 and len(wb) >= 2
+                        else np.nan,
+                        "df": df,
+                        "dcq": float(a["cq"].mean() - b["cq"].mean()),
+                        "se_log2e": se_log2e,
                         "e_used": float(np.nanmean(a["eff_target"]))
                         if eff == "assay_mean"
                         else (
