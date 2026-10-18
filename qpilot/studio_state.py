@@ -10,7 +10,8 @@ dashboard (:mod:`qpilot.studio`) only wires these to the Studio service
   text drawn by Plotly is escaped too;
 * during the blind stages a card's consequence says at most "this matters for at least one
   conclusion" (the service's boolean); fold changes, p-values and conclusions are rendered only
-  for the round trip, and only while the results are visible;
+  for the round trip, and only while the results are visible; "What the model saw" shows only
+  the Design Interpreter's payload then, since any other model call may have been sent results;
 * every number is the engine's (a check's details, a consequence, a fact) or a plain count;
   nothing is typed by hand.
 
@@ -32,6 +33,7 @@ from typing import Any
 import plotly.graph_objects as go
 
 from qpilot.ai.payload_log import canonical
+from qpilot.ai.prompts import SYSTEM_INTERPRET
 from qpilot.app_state import conclusion_word, esc
 from qpilot.core.facts import slug
 from qpilot.explain.templates import to_html
@@ -108,6 +110,10 @@ NOT_MATTERS_TEXT = "Neither reading changes any conclusion."
 BLIND_TEXT = (
     "Hidden in the blind stages: no gene, direction or number is shown before the design and "
     "the curves are confirmed."
+)
+SEEN_HIDDEN_TEXT = (
+    "Hidden: the design or the curves are not confirmed (again) yet, and the last model call did "
+    "not come from the Design Interpreter, so what it was sent may include results."
 )
 CURVE_JUDGE = "qpilot-curve-judge"
 MAX_EVIDENCE_SHOWN = 30
@@ -561,12 +567,49 @@ def payload_sha256(payload: Mapping[str, Any]) -> str:
     return hashlib.sha256(canonical(dict(payload)).encode("utf-8")).hexdigest()
 
 
-def model_saw_html(made_by: MadeBy, last_payload: Mapping[str, Any] | None) -> str:
-    """The card footer's "What the model saw" toggle (language-model proposals only)."""
+def interpreter_payload(payload: Mapping[str, Any]) -> bool:
+    """True for a payload sent with the Design Interpreter's system prompt (it holds no result).
+
+    The Design Interpreter is the only model call of the blind stages; every other call (the
+    Prism caption, an explanation) may be sent fold changes, intervals and p-values.
+    """
+    return payload.get("system") == SYSTEM_INTERPRET
+
+
+def _seen_hidden(payload: Mapping[str, Any], results_visible: bool) -> bool:
+    return not results_visible and not interpreter_payload(payload)
+
+
+def seen_html(last_payload: Mapping[str, Any] | None, *, results_visible: bool = False) -> str:
+    """The intake panel "What the model saw": the last model call's payload, blind-gated.
+
+    While the blind stages are open only the Design Interpreter's payload is shown; any other
+    is withheld (:data:`SEEN_HIDDEN_TEXT`), so no result reaches the page through it.
+    """
+    if last_payload is None:
+        body = "<p>No model call yet in this qPilot process.</p>"
+    elif _seen_hidden(last_payload, results_visible):
+        body = f"<p>{esc(SEEN_HIDDEN_TEXT)}</p>"
+    else:
+        text = json.dumps(last_payload, indent=2, ensure_ascii=False, default=str)
+        body = f'<pre class="qs-pre">{esc(text)}</pre>'
+    return f"<h4>What the model saw (the last call)</h4>{body}"
+
+
+def model_saw_html(
+    made_by: MadeBy, last_payload: Mapping[str, Any] | None, *, results_visible: bool = False
+) -> str:
+    """The card footer's "What the model saw" toggle (language-model proposals only).
+
+    Blind-gated like :func:`seen_html`: while the results are hidden, only the Design
+    Interpreter's payload is shown.
+    """
     if made_by.kind != "model" or made_by.provider == CURVE_JUDGE:
         return ""
     if last_payload is None:
         body = "<p>No model call in this qPilot process yet (payloads are kept in memory only).</p>"
+    elif _seen_hidden(last_payload, results_visible):
+        body = f"<p>{esc(SEEN_HIDDEN_TEXT)}</p>"
     else:
         same = made_by.prompt_sha256 and made_by.prompt_sha256 == payload_sha256(last_payload)
         label = (
@@ -604,7 +647,7 @@ def card_html(
         f'<p class="qs-meta"><code>{esc(p.kind)}</code> · '
         f"{esc(STATUS_WORDS.get(p.status, p.status))} · <span class='qs-id'>{esc(p.id)}</span></p>"
     )
-    saw = model_saw_html(p.made_by, last_payload)
+    saw = model_saw_html(p.made_by, last_payload, results_visible=results_visible)
     footer = f'<div class="qs-footer">{esc(maker_text(p.made_by))}{saw}</div>'
     return (
         f'<div class="qs-card check-{esc(p.check.status)}" data-proposal="{esc(p.id)}">'

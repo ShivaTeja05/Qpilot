@@ -1,6 +1,7 @@
 """Studio's pure views: every proposal kind in words, the six parts, escaping and blindness."""
 
 import hashlib
+import json
 import math
 import re
 
@@ -9,6 +10,7 @@ from scipy import stats
 
 from qpilot import studio_state as ss
 from qpilot.ai.payload_log import canonical
+from qpilot.ai.prompts import SYSTEM_INTERPRET
 from qpilot.schemas import Fact
 from qpilot.schemas_studio import (
     PROPOSAL_KINDS,
@@ -268,7 +270,7 @@ def test_every_view_escapes_text_from_files_models_and_agents():
 
 
 def test_what_the_model_saw_names_whether_it_is_this_cards_payload():
-    payload = {"system": "You propose a design.", "messages": [{"content": EVIL}]}
+    payload = {"system": SYSTEM_INTERPRET, "messages": [{"content": EVIL}]}
     sha = ss.payload_sha256(payload)
     assert sha == hashlib.sha256(canonical(payload).encode("utf-8")).hexdigest()
     mine = MadeBy(kind="model", provider="openai_compatible", model="m", prompt_sha256=sha)
@@ -280,6 +282,55 @@ def test_what_the_model_saw_names_whether_it_is_this_cards_payload():
     assert ss.model_saw_html(MadeBy(kind="rule"), payload) == ""
     judge = MadeBy(kind="model", provider="qpilot-curve-judge", model="39ea518cb716")
     assert ss.model_saw_html(judge, payload) == ""
+
+
+#: What a Prism-draft call sends a local model: the caption and the fact table, values included.
+PRISM_PAYLOAD = {
+    "system": "You reword a figure caption.",
+    "messages": [
+        {
+            "role": "user",
+            "content": json.dumps(
+                {
+                    "facts": {
+                        "f_fc_1_mar_recommended": {"value_for_reading_only": "0.56×"},
+                        "f_ci_lo_1_mar_recommended": {"value_for_reading_only": "0.19×"},
+                        "f_p_1_mar_recommended": {"value_for_reading_only": "0.094"},
+                    }
+                },
+                ensure_ascii=False,
+            ),
+        }
+    ],
+}
+
+
+def test_what_the_model_saw_shows_no_result_while_the_stages_are_blind():
+    """Only the Design Interpreter's payload is shown before both blind stages are confirmed."""
+    interpreter = {"system": SYSTEM_INTERPRET, "messages": [{"content": "samples S1, S2"}]}
+    assert ss.interpreter_payload(interpreter) and not ss.interpreter_payload(PRISM_PAYLOAD)
+    model = MadeBy(kind="model", provider="openai_compatible", model="m")
+    card = proposal(made_by=model)
+    for blind in (
+        ss.seen_html(PRISM_PAYLOAD, results_visible=False),
+        ss.seen_html(PRISM_PAYLOAD),
+        ss.model_saw_html(model, PRISM_PAYLOAD),
+        ss.card_html(card, results_visible=False, last_payload=PRISM_PAYLOAD),
+    ):
+        assert "0.56" not in blind and "f_fc_" not in blind and "<pre" not in blind
+        assert ss.SEEN_HIDDEN_TEXT in blind
+    for shown in (
+        ss.seen_html(interpreter, results_visible=False),
+        ss.model_saw_html(model, interpreter, results_visible=False),
+    ):
+        assert "samples S1, S2" in shown and ss.SEEN_HIDDEN_TEXT not in shown
+    for shown in (
+        ss.seen_html(PRISM_PAYLOAD, results_visible=True),
+        ss.card_html(card, results_visible=True, last_payload=PRISM_PAYLOAD),
+    ):
+        assert "0.56×" in shown and ss.SEEN_HIDDEN_TEXT not in shown
+    assert "No model call yet" in ss.seen_html(None)
+    assert "<script" not in ss.seen_html({"system": EVIL}, results_visible=True)
 
 
 # ---------- stages, model line, routes ----------
