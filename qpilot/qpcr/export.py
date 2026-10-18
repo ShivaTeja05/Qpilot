@@ -27,6 +27,10 @@ already in the store: the per-well table from the curve cache, the groups exactl
 :meth:`qpilot.qpcr.space.QpcrSpace.groups` gives them, and every card's decided option mapped
 back to its dimension value with the same option specs ``qpcr/study.py`` builds the cards from.
 
+:class:`Reanalysis` answers the round trip's question "what does leaving this value out do?"
+by running the engine again on the study's design with the exclusion applied, the way accepting
+it applies it, so the numbers a person approves are the numbers the engine then reports.
+
 Integration point for any confirmed design (``qpcr/designs.py``, ``StudyDesign``): the bridge
 takes only plain mappings (``groups``: sample -> group, ``units``: sample -> biological unit,
 ``group_order``, ``refs``, ``undetermined``), so ``designs.py`` can build an
@@ -36,6 +40,7 @@ takes only plain mappings (``groups``: sample -> group, ``units``: sample -> bio
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -51,6 +56,8 @@ from qpilot.schemas import ContrastResult, DecisionCard, StudyResult
 
 if TYPE_CHECKING:
     from qpilot.core.store import StudyStore
+    from qpilot.qpcr.study import StudyModel
+    from qpilot.schemas_studio import Proposal, StudyDesign
 
 TABLE_COLUMNS: tuple[str, ...] = (
     "gene",
@@ -64,7 +71,12 @@ Layout = Literal["column", "nested"]
 UNIT_ROW = 0  # ``well_rep`` of a column-layout row: the unit's value, not one well
 SAFE_LABEL = re.compile(r"^[\w()\-. ]{1,64}$")  # the rule of ``curves.safe_name``
 DEMO_DESIGN_ID = "vermeulen_expression_defined"
+EXCLUSION_KIND = "prism.exclusion_reason"
+WITHHELD = "withheld"  # an excluded gene's conclusion when the engine then withholds the gene
 _CURVE_COLUMNS = {"sample", "sample_type", "target", "n0"}
+
+Exclusion = tuple[str, str, int]  # (gene, biological unit, well_rep); well_rep 0: the whole unit
+Results = tuple[dict[str, ContrastResult], dict[str, str]]  # compared genes, withheld genes
 
 
 class ExportError(ValueError):
@@ -104,7 +116,10 @@ class ExportInputs:
     ``data`` is the per-well table (or a samples x genes ``log2(n0)`` matrix); ``groups`` maps
     each sample in the comparison to its group label; ``group_order`` is the contrast's order
     (``log2fc = mean(group_order[0]) - mean(group_order[1])``); ``units`` maps samples to
-    biological units (``None``: every sample is its own unit).
+    biological units (``None``: every sample is its own unit). ``design`` (the confirmed
+    design the study was analysed with) and ``curves`` (the curve analysis's per-well table,
+    before the design is applied) let :class:`Reanalysis` run the engine again; without them
+    no consequence is computed.
     """
 
     study_id: str
@@ -124,6 +139,8 @@ class ExportInputs:
     chain_head: str = ""
     result: StudyResult | None = None
     at_primary: bool = True
+    design: StudyDesign | None = None
+    curves: pd.DataFrame | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
     def table(self, layout: Layout = "column", genes: Sequence[str] | None = None) -> pd.DataFrame:
@@ -412,51 +429,207 @@ def unit_contrasts(
     return out
 
 
+class Reanalysis:
+    """The study analysed again by the engine with exclusions accepted, at the exported choices.
+
+    Each exclusion is applied to the study's design by the function that applies a person's
+    acceptance of a ``prism.exclusion_reason`` proposal
+    (:func:`qpilot.qpcr.designs.design_from_proposals`, on an in-memory copy: nothing is stored
+    and nothing is decided), and the study is rebuilt from the per-well table with
+    :func:`qpilot.qpcr.study.build_model`. Everything accepting recomputes is therefore
+    recomputed here too: the cap floor (each gene's lowest remaining value), the withheld genes,
+    the units each group keeps. ``accepted`` are the ``prism.exclusion_reason`` proposals a
+    person already accepted (whether or not the study's design holds them yet); they are part
+    of every comparison, "before" included. Results are kept per set of exclusions, so asking
+    twice costs one analysis.
+
+    Raises:
+        ExportError: The inputs carry no design or per-well table (:func:`study_inputs` gives
+            both), or an accepted exclusion cannot be applied to the design.
+    """
+
+    def __init__(self, inputs: ExportInputs, accepted: Sequence[Proposal] = ()) -> None:
+        from qpilot.qpcr.designs import APPLIED
+
+        if inputs.design is None or inputs.curves is None:
+            raise ExportError(
+                "the consequence needs the study's design and per-well table; rebuild the "
+                "inputs with study_inputs"
+            )
+        self.inputs = inputs
+        self.accepted = [p for p in accepted if p.kind == EXCLUSION_KIND and p.status in APPLIED]
+        self._base = self._applied(inputs.design, self.accepted)
+        self._results: dict[frozenset[Exclusion], Results] = {}
+
+    def _applied(self, design: StudyDesign, proposals: Sequence[Proposal]) -> StudyDesign:
+        from qpilot.qpcr.designs import DesignError, design_from_proposals
+
+        if not proposals:
+            return design
+        try:
+            return design_from_proposals(design, proposals, self.inputs.curves)
+        except DesignError as err:
+            raise ExportError(f"the exclusion cannot be applied: {err}") from err
+
+    def results(self, exclusions: Collection[Exclusion] = ()) -> Results:
+        """Every compared gene's result at the exported choices, and the withheld genes."""
+        from qpilot.qpcr.study import NGuardError, StudySettings, build_model
+
+        key = frozenset((str(g), str(u), int(r)) for g, u, r in exclusions)
+        if key not in self._results:
+            what_if = [_as_accepted(self.inputs.study_id, *e) for e in sorted(key)]
+            design = self._applied(self._base, what_if)
+            try:
+                model = build_model(self.inputs.curves, StudySettings.from_design(design))
+            except NGuardError as err:
+                raise ExportError(f"the engine cannot compare the groups: {err}") from err
+            space = model.space
+            self._results[key] = (space.evaluate(_cell(self.inputs, model)), dict(space.withheld))
+        return self._results[key]
+
+    def consequence(self, gene: str, unit: str, well_rep: int = UNIT_ROW) -> dict[str, Any]:
+        """What leaving one value out does: see :func:`exclusion_consequence`."""
+        before, _ = self.results()
+        if gene not in before:
+            raise ExportError(f"gene {gene!r} is not in the exported comparison")
+        after = self.results([(gene, unit, int(well_rep))])
+        return {
+            "gene": gene,
+            "biological_unit": unit,
+            "well_rep": int(well_rep),
+            **_change(gene, before, after),
+            **self._summary(before, after),
+        }
+
+    def combined(self, exclusions: Sequence[Exclusion]) -> dict[str, Any]:
+        """What leaving every one of ``exclusions`` out together does (numbers only).
+
+        Returns:
+            The exclusions, each excluded gene's numbers before and after (as in
+            :func:`exclusion_consequence`), and how many of all genes' conclusions change.
+        """
+        before, _ = self.results()
+        excluded = [(str(g), str(u), int(r)) for g, u, r in exclusions]
+        unknown = sorted({g for g, _, _ in excluded} - set(before))
+        if unknown:
+            raise ExportError(f"genes not in the exported comparison: {unknown}")
+        after = self.results(excluded)
+        return {
+            "exclusions": [
+                {"gene": g, "biological_unit": u, "well_rep": r} for g, u, r in excluded
+            ],
+            "genes": {
+                g: _change(g, before, after) for g in dict.fromkeys(g for g, _, _ in excluded)
+            },
+            **self._summary(before, after),
+        }
+
+    def _summary(self, before: dict[str, ContrastResult], after: Results) -> dict[str, Any]:
+        compared, _ = after
+        genes = sorted(set(before) | set(compared))
+        changed = [g for g in genes if _conclusion(before, g) != _conclusion(compared, g)]
+        return {
+            "n_conclusions_changed": len(changed),
+            "n_genes": len(before),
+            "changed_genes": changed,
+            "rule": self.inputs.rule.as_dict(),
+            "basis": {
+                "study_id": self.inputs.study_id,
+                "chain_head": self.inputs.chain_head,
+                "accepted": [p.id for p in self.accepted],
+            },
+        }
+
+
 def exclusion_consequence(
     inputs: ExportInputs,
     gene: str,
     unit: str,
     well_rep: int = UNIT_ROW,
     *,
-    layout: Layout = "column",
+    accepted: Sequence[Proposal] = (),
 ) -> dict[str, Any]:
     """What leaving one value out of one gene's comparison does, computed by the engine.
 
-    Every gene of the study is compared again (Welch on log2 per unit, at the exported
-    choices) with ``unit`` (or one of its replicates) left out of ``gene`` only, and the
-    conclusions are compared with the same comparison without the exclusion.
+    The study is analysed again with ``unit`` excluded for ``gene`` exactly as accepting the
+    exclusion would do it (:class:`Reanalysis`), and every gene's conclusion at the exported
+    choices is compared with the analysis without it. Exclusions a person already accepted
+    (``accepted``) are in both. A gene the engine then withholds (fewer than two units with a
+    value in a group) has no numbers after: its conclusion is ``"withheld"`` and
+    ``withheld_after`` gives the engine's reason.
 
     Returns:
-        Numbers only (no prose): fold change, p and conclusion before and after for ``gene``,
-        and how many of all genes' conclusions change.
+        Numbers only (no prose): fold change, p, units per group and conclusion before and after
+        for ``gene`` (``None`` where the engine gives no number), how many of all genes'
+        conclusions change, and the basis (study, chain head, accepted exclusions) it was
+        computed at.
+
+    Raises:
+        ExportError: See :class:`Reanalysis`; also a gene that is not compared.
     """
-    table = inputs.table(layout, list(inputs.genes) or None)
-    if gene not in set(table["gene"]):
-        raise ExportError(f"gene {gene!r} is not in the exported comparison")
-    before = unit_contrasts(table, inputs.group_order, inputs.rule)
-    after = unit_contrasts(
-        table, inputs.group_order, inputs.rule, exclude=[(gene, unit, int(well_rep))]
+    return Reanalysis(inputs, accepted).consequence(gene, unit, well_rep)
+
+
+def _as_accepted(study_id: str, gene: str, unit: str, well_rep: int) -> Proposal:
+    """An exclusion as the proposal a person would accept (in memory only, never stored)."""
+    from qpilot.schemas_studio import MadeBy, Proposal
+
+    return Proposal(
+        study_id=study_id,
+        kind=EXCLUSION_KIND,
+        subject=f"{gene}/{unit}",
+        payload={"gene": gene, "sample": unit, "action": "exclude", "well_rep": well_rep},
+        made_by=MadeBy(kind="rule"),
+        status="accepted",
     )
-    changed = sorted(g for g in before if before[g].conclusion != after[g].conclusion)
-    b, a = before[gene], after[gene]
+
+
+def _cell(inputs: ExportInputs, model: StudyModel) -> dict[str, Any]:
+    """The decision-space cell the export was computed at, in a re-analysed space.
+
+    Raises:
+        ExportError: The exported amplification rule is no longer an option of the space.
+    """
+    space = model.space
+    chosen = {choice.dimension: choice.value for choice in inputs.choices}
+    cell: dict[str, Any] = {"refs": tuple(inputs.refs), "undetermined": inputs.undetermined}
+    if "cut" in space.dimensions:
+        cell["cut"] = chosen.get("cut", space.primary["cut"])
+    primary = model.settings.amp_calls[0]
+    rule = chosen.get("amp_call", primary)
+    if rule in space.dimensions.get("amp_call", ()):
+        cell["amp_call"] = rule
+    elif rule != primary:
+        raise ExportError(f"the amplification rule {rule!r} is no longer an option of the study")
+    return cell
+
+
+def _conclusion(compared: Mapping[str, ContrastResult], gene: str) -> str:
+    """A gene's conclusion, or ``"withheld"`` when the engine does not compare it."""
+    return compared[gene].conclusion if gene in compared else WITHHELD
+
+
+def _number(value: float) -> float | None:
+    """A finite float, or ``None`` (no number) for NaN and infinity."""
+    return float(value) if math.isfinite(value) else None
+
+
+def _change(gene: str, before: Mapping[str, ContrastResult], after: Results) -> dict[str, Any]:
+    """One gene's numbers before and after an exclusion (``None`` where there is none)."""
+    compared, withheld = after
+    b, a = before[gene], compared.get(gene)
     return {
-        "gene": gene,
-        "biological_unit": unit,
-        "well_rep": int(well_rep),
-        "fc_before": b.fc,
-        "fc_after": a.fc,
-        "log2fc_before": b.log2fc,
-        "log2fc_after": a.log2fc,
-        "p_before": b.p,
-        "p_after": a.p,
+        "fc_before": _number(b.fc),
+        "fc_after": _number(a.fc) if a else None,
+        "log2fc_before": _number(b.log2fc),
+        "log2fc_after": _number(a.log2fc) if a else None,
+        "p_before": _number(b.p),
+        "p_after": _number(a.p) if a else None,
         "n_units_before": [b.n_hi, b.n_lo],
-        "n_units_after": [a.n_hi, a.n_lo],
+        "n_units_after": [a.n_hi, a.n_lo] if a else None,
         "conclusion_before": b.conclusion,
-        "conclusion_after": a.conclusion,
-        "n_conclusions_changed": len(changed),
-        "n_genes": len(before),
-        "changed_genes": changed,
-        "rule": inputs.rule.as_dict(),
+        "conclusion_after": a.conclusion if a else WITHHELD,
+        "withheld_after": withheld.get(gene),
     }
 
 
@@ -482,7 +655,9 @@ def study_inputs(
     study was analysed with. Each choice is its card's decided option (the recommended option
     while the card is open), mapped back to its dimension value with the option specs
     ``qpcr/study.py`` builds the cards from; the per-well table is the design's under the
-    chosen amplification rule, and the groups are the study's fixed comparison.
+    chosen amplification rule, and the groups are the study's fixed comparison. The design
+    (the demo preset when there is none) and the curve analysis's own per-well table come along,
+    so :class:`Reanalysis` can run the engine again.
 
     Raises:
         ExportError: The input file is unknown or changed, or the re-analysis does not
@@ -581,6 +756,8 @@ def study_inputs(
         chain_head=head,
         result=result,
         at_primary=all(c.option == c.recommended for c in choices),
+        design=design or vermeulen_design(),
+        curves=curves,
     )
 
 
@@ -640,9 +817,12 @@ def _choice(card: DecisionCard, specs: Mapping[str, Any]) -> Choice:
 
 __all__ = [
     "TABLE_COLUMNS",
+    "WITHHELD",
     "Choice",
+    "Exclusion",
     "ExportError",
     "ExportInputs",
+    "Reanalysis",
     "check_label",
     "demo_inputs",
     "study_inputs",
