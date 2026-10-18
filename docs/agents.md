@@ -23,7 +23,7 @@ Rules the server enforces:
 - **Output:** tools return engine output as JSON, never model-written prose.
 
 ### The Decision Simulator's tools (when it is installed)
-With `qpilot-simulator` installed, the same server also serves five read-only `sim_*` tools
+With the simulator installed (`pip install -e '.[sim]'` from a clone), the same server also serves five read-only `sim_*` tools
 (`sim_audit`, `sim_gene`, `sim_decisions`, `sim_whatif`, `sim_findings`) over the audit a person
 ran with `python -m qpilot.integration audit`. Without it they are not listed and the server says
 so on stderr; `qpilot serve --list-tools` prints what your install serves. None of them can decide

@@ -607,7 +607,8 @@ TOOL_NAMES = (
 
 SIM_OFF_NOTICE = (
     "qpilot serve: the Decision Simulator (qsim) is not installed, so the sim_* tools are not "
-    "served; install qpilot-simulator to add them (qpilot serve --list-tools shows the tools)"
+    "served; add them with pip install -e '.[sim]' from a clone (qpilot serve --list-tools "
+    "shows the tools)"
 )
 
 
