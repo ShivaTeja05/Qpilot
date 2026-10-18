@@ -31,11 +31,9 @@ Deterministic: no model call and no network.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Literal
-
-from pydantic import BaseModel, Field
 
 from qpilot.core.facts import slug
+from qpilot.qpcr.gate_lines import GateLine, GateStatus
 from qpilot.qpcr.instrument_context import (
     INTERRUPTIONS,
     NOTE_CAL_NOT_IN_FILE,
@@ -47,7 +45,6 @@ from qpilot.schemas import Fact
 RULE_ID = "G-INSTR"
 DEFAULT_HOLD_LIMIT_C = 0.5  # a lab sets its own; the default is a placeholder, not a vendor spec
 MAX_LABELS = 3  # calibrations named on one line; the rest are counted
-GateStatus = Literal["pass", "info", "warn", "not_applicable"]
 
 #: Every code a G-INSTR line can carry, and its status.
 CODES: dict[str, GateStatus] = {
@@ -68,19 +65,11 @@ CODES: dict[str, GateStatus] = {
 }
 
 
-class GateLine(BaseModel):
-    """One Gate line: a rule, a status, a code for the wording, its facts and cycles."""
-
-    rule_id: str = RULE_ID
-    status: GateStatus
-    code: str
-    facts: dict[str, Fact] = Field(default_factory=dict)
-    cycles: list[int] = Field(default_factory=list)
-
-
 def _line(code: str, facts: Sequence[Fact] = (), cycles: Sequence[int] = ()) -> GateLine:
     shown = {fact.id: fact for fact in facts if not is_local_only(fact)}
-    return GateLine(status=CODES[code], code=code, facts=shown, cycles=list(cycles))
+    return GateLine(
+        rule_id=RULE_ID, status=CODES[code], code=code, facts=shown, cycles=list(cycles)
+    )
 
 
 def _get(ctx: RunContext, name: str) -> Fact | None:

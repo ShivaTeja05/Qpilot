@@ -33,6 +33,25 @@ from qpilot.qpcr.confidence_checks import METHOD_PHRASES
 from qpilot.schemas import DecisionCard, Fact, StudyResult
 
 TOOLS = ("qpcr_study", "qpcr_robustness", "qpcr_decide", "qpcr_plan", "explain_number", "none")
+# qpcr_plan arguments a model may pass (the replicate budget included); counts are whole numbers
+PLAN_ARGS = frozenset(
+    {
+        "fc",
+        "sd_log2",
+        "n_per_group",
+        "alpha",
+        "power",
+        "sd_rt",
+        "sd_well",
+        "n_rt",
+        "n_tech",
+        "cost_subject",
+        "cost_rt",
+        "cost_well",
+        "expected_cq",
+    }
+)
+PLAN_INT_ARGS = ("n_rt", "n_tech")
 NOT_IN_STUDY = "not in this study"
 PENDING_TEXT = (
     "Not applied: this choice can change a conclusion, so a person must decide it in qPilot. "
@@ -149,11 +168,12 @@ def run_tool(ctx: _Context, tool: str, args: dict[str, Any]) -> dict[str, Any]:
             str(args.get("reason") or "requested from Ask your data"),
         )
     if tool == "qpcr_plan":
-        allowed = {"fc", "sd_log2", "n_per_group", "alpha", "power"}
-        kwargs = {k: v for k, v in args.items() if k in allowed}
+        kwargs = {k: v for k, v in args.items() if k in PLAN_ARGS}
         values = [v for v in kwargs.values() if v is not None]
         if any(isinstance(v, bool) or not isinstance(v, int | float) for v in values):
             raise TypeError("qpcr_plan arguments must be numbers")
+        if any(not isinstance(kwargs[k], int) for k in PLAN_INT_ARGS if kwargs.get(k) is not None):
+            raise TypeError("n_rt and n_tech must be whole numbers")
         return ctx.tools.qpcr_plan(**kwargs)
     if tool == "explain_number":
         fid = str(args.get("fact_id", ""))

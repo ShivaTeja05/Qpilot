@@ -32,12 +32,12 @@ call and no network.
 from __future__ import annotations
 
 import math
-from typing import Any, Literal
+from typing import Any
 
 import pandas as pd
-from pydantic import BaseModel
 
 from qpilot.qpcr.designs import design_curves
+from qpilot.qpcr.gate_lines import GateLine
 from qpilot.qpcr.quant import EXCLUDED
 from qpilot.schemas import Fact
 from qpilot.schemas_studio import StudyDesign
@@ -85,20 +85,6 @@ METHOD_CARD: dict[str, Any] = {
     "licence": "Apache-2.0",
     "card": "methods/evidence.md",
 }
-
-
-class GateLine(BaseModel):
-    """One rule's verdict on a study, in the Run Gate's line shape (BUILD-DESIGN §2.3).
-
-    The same fields as ``qpilot.qpcr.gate_instr.GateLine`` (built separately), so the two can
-    be merged into one class. A line is a reported check: it never changes a conclusion.
-    """
-
-    rule_id: str
-    status: Literal["pass", "info", "warn", "not_applicable"]
-    code: str
-    facts: dict[str, Fact]
-    cycles: list[int] = []
 
 
 def rt_labels(design: StudyDesign | None) -> dict[str, tuple[str, str]]:

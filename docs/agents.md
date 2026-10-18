@@ -14,10 +14,21 @@ claude mcp add qpilot -- python -m qpilot.mcp_server
 | `qpcr_study(rdml_path)` | Study id, `record_root_hash` (the input file's sha256), `chain_head`, plate/sample/reaction counts, geNorm stability, every gene's fold change, CI, p, conclusion and holds fraction, the Decision Cards, and the facts they cite |
 | `qpcr_robustness(study_id, gene)` | The gene's conclusion and fold change under the recommended choices, `holds_fraction` over the grid of reasonable analyses, `impact_by_dimension`, its confidence level with named reasons, and the cards that can flip it |
 | `qpcr_decide(study_id, card_id, option, reason, expected_head=None)` | **`pending_human`** by default: an agent's request waits for the scientist. When the scientist sets the study to *decide and tell*, choices that cannot change any conclusion at any setting come back `applied`; choices that can are always `pending_human`. `stale` if `expected_head` is not the current `chain_head`; a stale attempt is logged without moving the head |
-| `qpcr_plan(fc, sd_log2, n_per_group, ...)` | Samples per group needed, the smallest detectable fold change, how often qPilot's own rule (p < 0.05 and at least 2-fold) would call the change (simulated), a "cannot detect" list and design rules |
+| `qpcr_plan(fc, sd_log2, n_per_group, ..., sd_rt, sd_well, n_rt, n_tech, cost_subject, cost_rt, cost_well, expected_cq)` | Samples per group needed, the smallest detectable fold change, how often qPilot's own rule (p < 0.05 and at least 2-fold) would call the change (simulated), a "cannot detect" list and design rules. With any replicate-budget argument `sd_log2` is the SD between subjects alone, the answer gains `budget` (effective SD, one more well against one more RT reaction against more subjects, the cheapest design when all three costs are given) and the simulation uses the effective SD |
+| `qpcr_propose`, `qpcr_proposals`, `qpcr_inspect`, `qpcr_check_design`, `qpcr_curve_calls`, `qpcr_prism_preview`, `qpcr_prism_diff` | qPilot Studio's proposal inbox and checks, and the Prism round trip (see [section 5](#5-qpilot-studio-the-design-interpreter-the-prism-draft-and-their-scorecard)) |
+| `qpcr_evidence(study_id)` | The Evidence Ledger: eleven items (NTC, no-RT, reference genes, efficiency, raw-ness, RNA integrity, RT replicates, biological units, inter-run calibrator, lots, instrument), each `present`, `absent`, `unknown` or `not_applicable`, what that means for the conclusions, MIQE 2.0 tags, `counts`, the facts behind every number and the rendered text. `qpcr_study` also carries an `evidence` key (item → status) once the study kept its ledger |
+| `qpcr_run_review(study_id)` | The Run Review: headline genes, the Evidence Ledger, recorded sign-offs (outcome, reviewer, time; what a reviewer typed is counted as `comment_chars`, not shown) and what is not built yet. **No tool signs off**: a person does, in the app |
+| `qpcr_run_context(run_path)` | What a run file (`.eds`, QuantStudio or CFX export `.csv`/`.txt`, `.rdml`/`.xml`, inside `QPILOT_DATA_ROOTS`) says about the instrument and the run, as its `model_view` only (model, firmware, run state, calibrations and their age, pauses, temperature, vendor well flags; `serials_present` names serial fields without their values), the G-INSTR gate lines, and the registered `instrument_id` it resolves to (else the one question to ask) |
+| `qpcr_lookback(study_id, instrument_id, start, end)` | Leaving out the study's runs on that instrument between two ISO dates: "changes k of N conclusions", the genes, the runs and wells in the window. The runs come from the study's recorded run → instrument map; without one, every run counts as on that instrument (`assumed_all_runs`). Logs nothing |
+| `qpcr_instrument_history(instrument_id, since=None)` | The instrument's logbook in chain order and whether its hash chain verifies. No serials; text a person typed is counted (`note_chars`), not shown |
+| `qpcr_instrument_status(instrument_id)` | Open incidents (proposed, or confirmed without a fix), the latest calibration of each type with its age in days (from the logbook), and the chain check |
+| `qpcr_incident_log(instrument_id, wells, metric, direction, run_hash=None)` | **A proposal.** Writes an incident with status `proposed`, actor `agent`, codes only (wells, metric, `low`/`high`, run hash; no free text). It matches nothing until a person confirms it in qPilot; confirmed incidents it has "seen before" are listed. It never touches a study's results, cards or decision log |
+
+Every tool carries a title and MCP tool annotations: the read tools are `readOnlyHint: true`; no tool is destructive and none reaches the network (`openWorldHint: false`).
 
 Rules the server enforces:
-- **Files:** `rdml_path` must resolve, after following symlinks, to an `.rdml`/`.xml` file inside one of `QPILOT_DATA_ROOTS` (`os.pathsep`-separated; default: the qPilot cache and the current directory).
+- **Files:** `rdml_path` must resolve, after following symlinks, to an `.rdml`/`.xml` file inside one of `QPILOT_DATA_ROOTS` (`os.pathsep`-separated; default: the qPilot cache and the current directory). `run_path` follows the same rule for `.eds`, `.csv`, `.txt`, `.rdml` and `.xml` run files.
+- **Instruments:** serial numbers and identity strings stay in the local registry (`$QPILOT_STUDIES_DIR/instruments/instruments.yaml`); no tool returns them. An agent's incident is a proposal; only a person confirms, turns down or notes the fix of an incident.
 - **Actor:** every MCP caller is recorded as an agent; `actor="human"` is refused.
 - **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (or the in-app model). People decide in the app; the command line has no decide command. **An agent that can run commands as you can still act as you,** for example by importing qPilot's library or driving the app on 127.0.0.1. Give agents MCP access, not your shell.
 - **Output:** tools return engine output as JSON, never model-written prose.
@@ -90,6 +101,21 @@ So for this model, qPilot carries the numbers and the safety, and the model's wo
 qpilot plan --fc 2 --sd 1.95 --n 3
 ```
 `--sd` is the SD of log2 normalised expression **between biological replicates**, not technical-replicate Cq SD. The planner reports the samples per group needed for a given fold change at 80 % power, and the smallest change a planned design can detect. It is never a post-hoc "power" of a study you already ran.
+
+Replicate budget (same flags as `qpcr_plan`'s arguments): `--sd-rt`, `--sd-well`, `--n-rt`, `--n-tech`, `--cost-subject`, `--cost-rt`, `--cost-well`, `--cq`. With any of them, `--sd` is the SD between subjects alone and `--n` counts subjects.
+
+### What a study cannot tell you, and its instruments (command line)
+
+| Command | What it does |
+|---|---|
+| `qpilot evidence [study] [--json]` | The Evidence Ledger of a study (id, or its RDML file; default the only study) |
+| `qpilot report run-review [study] [--json] [--out FILE.html]` | Renders the Run Review (text, JSON, or an HTML page). Renders only: sign-off is in the app, and the command line has no way to sign off or decide |
+| `qpilot instrument inspect FILE [--json] [--date-order DMY\|MDY] [--show-serials]` | What a run file says about the instrument, and the G-INSTR lines. Serial numbers are hidden unless `--show-serials` (local screen only) |
+| `qpilot instrument list [--json]` | The registered instruments (no serials) |
+| `qpilot instrument add ID --name NAME [--model M] [--location L] [--shared] [--alias A]... [--serial S]...` | Register an instrument; serials and aliases link later run files to it |
+| `qpilot instrument history ID [--since DATE] [--show-notes] [--json]` | The logbook and whether its chain verifies (exit 1 if not); typed notes only with `--show-notes` |
+| `qpilot instrument lookback --instrument ID --from DATE --to DATE [--study S]... [--map RUN=INSTR... \| --all-runs INSTR] [--log] [--json]` | Prints `Study X: k of N conclusions change` per study; without a map, the study's recorded run map, else every run on `ID` (said in a note). `--log` records the result in the instrument's logbook |
+| `qpilot instrument position --instrument ID [--study S]... [--map ... \| --all-runs INSTR] [--json]` | Position history on demand: well positions that follow the instrument across people and plate layouts |
 
 ## 5. qPilot Studio: the Design Interpreter, the Prism draft and their scorecard
 

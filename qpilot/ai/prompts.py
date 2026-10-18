@@ -36,7 +36,9 @@ SYSTEM_ASK_TOOL = (
     "confidence and which choices can flip it\n"
     '- qpcr_decide {"card_id": "<id>", "option": "<option id>", "reason": "<why>"}: request a '
     "choice; choices that can change a conclusion wait for a human (pending_human)\n"
-    '- qpcr_plan {"fc": <fold>, "sd_log2": <sd>, "n_per_group": <n>}: design check\n'
+    '- qpcr_plan {"fc": <fold>, "sd_log2": <sd>, "n_per_group": <n>}: design check; optional '
+    'replicate budget "sd_rt", "sd_well" (SDs), "n_rt", "n_tech" (whole numbers), "cost_subject", '
+    '"cost_rt", "cost_well"\n'
     '- explain_number {"fact_id": "<id>"}: where one number comes from\n'
     'If the question is about a gene that is not in the study, reply {"tool": "none", '
     '"args": {"reason": "not in this study"}}.'
