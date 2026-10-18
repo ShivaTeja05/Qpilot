@@ -20,6 +20,7 @@ from qpilot.ai.explain import KIND_TITLE
 from qpilot.ai.profile import autonomy_policy
 from qpilot.core.decisions import needs_human
 from qpilot.core.facts import render_fact, slug
+from qpilot.core.store import ON_DEMAND_KINDS
 from qpilot.explain.templates import TemplateError, render_template, to_html
 from qpilot.qpcr.contrast import ConclusionRule
 from qpilot.schemas import DecisionCard, Fact, Grade, StudyResult
@@ -209,6 +210,7 @@ class CardView:
     genes: tuple[str, ...]
     options: tuple[OptionRow, ...]
     html: str
+    where_html: str = ""  # a Trace card: the place it is about and what to check
 
 
 def _status_line(
@@ -247,10 +249,13 @@ def card_view(
     named while the card waits for a person, because ``card.decision`` keeps the earlier choice.
     """
     labels = {o.id: o.label for o in card.options}
-    genes = tuple(card.options[0].per_gene) if card.options else ()
+    genes = _card_genes(card)
+    on_demand = card.kind in ON_DEMAND_KINDS
     rows = []
     for option in card.options:
         context = option.id.removesuffix("_alone")
+        if on_demand and option.id == card.recommended:  # keep: the study as analysed
+            context = "recommended"
         cells = tuple(
             (
                 esc(gene),
@@ -258,6 +263,7 @@ def card_view(
                 esc(conclusion_word(result.conclusion)),
             )
             for gene, result in option.per_gene.items()
+            if gene in genes
         )
         rows.append(
             OptionRow(
@@ -283,6 +289,9 @@ def card_view(
         if card.kind == "reference_set" and "f_n_flipped_refset_min3" in facts:
             tokens += "; {{f_n_flipped_refset_min3}} even between sets of three or more genes"
         impact = to_html(tokens, facts)
+    elif card.impact.get("flips") and on_demand and card.impact.get("flipped_genes"):
+        changed = ", ".join(esc(g) for g in card.impact["flipped_genes"])
+        impact = f"Can change a conclusion: the call of {changed}"
     elif card.impact.get("flips"):
         impact = "Can change a conclusion"
     else:
@@ -301,8 +310,43 @@ def card_view(
         genes=tuple(esc(g) for g in genes),
         options=tuple(rows),
         html="",
+        where_html=_where_html(card) if on_demand else "",
     )
     return _with_html(view)
+
+
+#: Columns a Trace card shows when no option changes a call (its options cover every gene).
+TRACE_CARD_GENES = 4
+
+
+def _card_genes(card: DecisionCard) -> tuple[str, ...]:
+    """The genes a card's table shows: every gene, or a Trace card's changed calls."""
+    genes = tuple(card.options[0].per_gene) if card.options else ()
+    if card.kind not in ON_DEMAND_KINDS:
+        return genes
+    flipped = [g for g in card.impact.get("flipped_genes") or () if g in genes]
+    return tuple(flipped) or genes[:TRACE_CARD_GENES]
+
+
+def _where_html(card: DecisionCard) -> str:
+    """A Trace card's place (sample, plate, well) and what to check, all escaped."""
+    ev = card.evidence
+    parts = [f"sample {esc(ev['sample'])}"] if ev.get("sample") else []
+    if ev.get("plate") and ev.get("well"):
+        parts.append(f"plate {esc(ev['plate'])}, well {esc(ev['well'])}")
+    text = f'<p class="qp-rule">Place: {" · ".join(parts)}.</p>' if parts else ""
+    checks = [c for c in ev.get("what_to_check") or () if isinstance(c, str)]
+    if checks:
+        items = "".join(f"<li>{esc(c)}</li>" for c in checks)
+        text += f'<p class="qp-rule">What to check:</p><ul class="qp-ev-lines">{items}</ul>'
+    text += f'<p class="qp-rule">{esc(TRACE_CARD_NOTE)}</p>'
+    return text
+
+
+TRACE_CARD_NOTE = (
+    "Opened from Trace. The groups stay as they are; deciding this card is logged, and the "
+    "study's numbers stay as analysed."
+)
 
 
 def _with_html(view: CardView) -> CardView:
@@ -328,7 +372,7 @@ def _with_html(view: CardView) -> CardView:
         f"<h3>{view.rank}. {view.title}</h3>"
         f'<p class="qp-impact">{view.impact_html}</p>'
         f'<p class="qp-status">{view.status_line}</p>'
-        f'<p class="qp-explain">{view.explanation_html}</p>'
+        f'<p class="qp-explain">{view.explanation_html}</p>{view.where_html}'
         f'<table class="qp-options"><thead><tr><th>Option</th>{head}</tr></thead>'
         f"<tbody>{''.join(body)}</tbody></table></div>"
     )
@@ -336,8 +380,18 @@ def _with_html(view: CardView) -> CardView:
 
 
 def cards_in_order(cards: Sequence[DecisionCard]) -> list[DecisionCard]:
-    """Cards by rank (most impact first)."""
-    return sorted(cards, key=lambda c: c.rank)
+    """Cards by rank (most impact first); cards opened from Trace come after the analysis's."""
+    return sorted(cards, key=lambda c: (c.kind in ON_DEMAND_KINDS, c.rank))
+
+
+def card_label(card: DecisionCard) -> str:
+    """The card picker's label: rank and kind, or the place a Trace card is about; and status."""
+    status = card.status.replace("_", " ")
+    if card.kind in ON_DEMAND_KINDS:
+        ev = card.evidence
+        where = f"{ev.get('plate')}/{ev.get('well')}" if ev.get("well") else "tube"
+        return f"Trace: sample {ev.get('sample')} · {where} ({status})"
+    return f"{card.rank}. {card.kind.replace('_', ' ')} ({status})"
 
 
 def next_card(cards: Sequence[DecisionCard]) -> DecisionCard | None:
@@ -478,3 +532,81 @@ def review_head_line(head: str | None) -> str:
     if not head:
         return ""
     return f'<p class="qp-rule">Decision log head: <code>{esc(head[:16])}</code></p>'
+
+
+# ---------- Trace: where to look ----------
+
+TRACE_NOTHING = "nothing unusual"
+TRACE_DECIDE_NOTE = (
+    "Decide… opens that place as a decision card above. A choice that can change a conclusion "
+    "is a person's, and it is logged; the study's numbers stay as analysed."
+)
+
+
+@dataclass(frozen=True)
+class TracePlace:
+    """A place to look whose options change a call: one Decide… button."""
+
+    rank: int
+    label: str  # button text (plain; Gradio shows it as text)
+
+
+@dataclass(frozen=True)
+class TraceView:
+    """The Trace panel: escaped HTML (numbers only through the trace's facts) and the places."""
+
+    html: str
+    plain: str
+    root: dict[str, str]
+    places: tuple[TracePlace, ...]
+
+
+def place_address(place) -> str:
+    """``HMBS_20080318/K22 (2016)`` for a well, ``2016 (tube)`` for a sample's tube."""
+    if place.well:
+        return f"{place.plate}/{place.well} ({place.sample})"
+    return f"{place.sample} (tube)"
+
+
+def trace_cell(result) -> str:
+    """One line for a result's top place: ``HMBS_20080318/K22 (2016): changes the call``.
+
+    ``nothing unusual`` when the trace found no place to look.
+    """
+    from qpilot.explain.trace_text import CONSEQUENCE_WORDS
+
+    if not result.places:
+        return TRACE_NOTHING
+    top = result.places[0]
+    return f"{place_address(top)}: {CONSEQUENCE_WORDS.get(top.consequence, top.consequence)}"
+
+
+def trace_view(result, *, allowed_names: Iterable[str] = ()) -> TraceView:
+    """The "Trace: where to look" panel for a :class:`qpilot.qpcr.trace.TraceResult`.
+
+    The text is :func:`qpilot.explain.trace_text.render_trace` (validated: every number is one
+    of the trace's facts, every address a string fact), one paragraph per line, escaped. Places
+    whose most consequential option changes a call get a Decide… button (``places``).
+    """
+    from qpilot.explain.trace_text import render_trace
+
+    root = {"kind": str(result.root.get("kind")), "id": str(result.root.get("id"))}
+    head = f"Trace from gene {esc(root['id'])}" if root["kind"] == "gene" else (
+        f"Trace from a {esc(root['kind'])}"
+    )  # fmt: skip
+    try:
+        rendered = render_trace(result, allowed_names=allowed_names)
+    except TemplateError:
+        body, plain = f"<p>{esc('The trace could not be shown in words.')}</p>", ""
+    else:
+        lines = [line for line in rendered.tokens.split("\n") if line]
+        body = "".join(f"<p>{to_html(line, result.facts)}</p>" for line in lines)
+        plain = rendered.plain
+    places = tuple(
+        TracePlace(rank=p.rank, label=f"Decide… {p.rank}. {place_address(p)}")
+        for p in result.places
+        if p.consequence == "changes_call"
+    )
+    note = f'<p class="qp-rule">{esc(TRACE_DECIDE_NOTE)}</p>' if places else ""
+    markup = f'<div class="qp-trace"><h4>{head}</h4>{body}{note}</div>'
+    return TraceView(html=markup, plain=plain, root=root, places=places)

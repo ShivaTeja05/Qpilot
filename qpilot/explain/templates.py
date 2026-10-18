@@ -18,8 +18,12 @@ Templates: ``refset_v1``, ``cutoff_v1``, ``undetermined_auto_v1``, ``undetermine
 modules and registered here: ``evidence_v1``, ``grt_v1`` and ``runreview_v1``
 (:mod:`qpilot.explain.evidence_text`), ``instrument_gate_v1``
 (:mod:`qpilot.explain.instrument_text`), ``lookback_v1`` and ``position_v1``
-(:mod:`qpilot.explain.lookback_text`). Each renders a digit-free sentence when its facts are
-absent; the last three need their structured result for anything more.
+(:mod:`qpilot.explain.lookback_text`), ``trace_v1`` (needs ``gene=`` and that gene's trace facts
+for the panel) and ``trace_set_aside_v1`` (:mod:`qpilot.explain.trace_text`; the rationale of a
+``trace_set_aside`` card), ``sheetcheck_v1``, ``sheetcheck_findings_v1`` and
+``sheetcheck_handover_v1`` (:mod:`qpilot.explain.sheetcheck_text`). Each renders a digit-free
+sentence when its facts are absent; ``instrument_gate_v1``, ``lookback_v1`` and ``position_v1``
+need their structured result for anything more.
 """
 
 from __future__ import annotations
@@ -332,6 +336,41 @@ def _position(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
     return NO_POSITIONS
 
 
+def _trace(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``trace_v1``: one gene's "Where to look" panel from its trace facts (digit-free without)."""
+    from qpilot.explain.trace_text import trace_v1
+
+    return trace_v1(facts, card, gene)
+
+
+def _trace_set_aside(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``trace_set_aside_v1``: the rationale of a Trace card (no numbers)."""
+    from qpilot.explain.trace_text import trace_set_aside_v1
+
+    return trace_set_aside_v1(facts, card, gene)
+
+
+def _sheetcheck(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``sheetcheck_v1``: the headline of a Spreadsheet Check (digit-free without its facts)."""
+    from qpilot.explain.sheetcheck_text import sheetcheck_v1
+
+    return sheetcheck_v1(facts, card, gene)
+
+
+def _sheetcheck_findings(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``sheetcheck_findings_v1``: one sentence per finding (only that gene's with ``gene=``)."""
+    from qpilot.explain.sheetcheck_text import sheetcheck_findings_v1
+
+    return sheetcheck_findings_v1(facts, card, gene)
+
+
+def _sheetcheck_handover(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``sheetcheck_handover_v1``: one gene's method hand-over (``gene=``)."""
+    from qpilot.explain.sheetcheck_text import sheetcheck_handover_v1
+
+    return sheetcheck_handover_v1(facts, card, gene)
+
+
 Template = Callable[[Facts, "DecisionCard | None", "str | None"], str]
 
 TEMPLATES: dict[str, Template] = {
@@ -349,6 +388,11 @@ TEMPLATES: dict[str, Template] = {
     "instrument_gate_v1": _instrument_gate,
     "lookback_v1": _lookback,
     "position_v1": _position,
+    "trace_v1": _trace,
+    "trace_set_aside_v1": _trace_set_aside,
+    "sheetcheck_v1": _sheetcheck,
+    "sheetcheck_findings_v1": _sheetcheck_findings,
+    "sheetcheck_handover_v1": _sheetcheck_handover,
 }
 
 

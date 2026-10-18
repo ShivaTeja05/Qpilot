@@ -177,3 +177,92 @@ def test_review_body_keeps_only_the_main_part():
     assert review_body("<p>no main</p>") == ""
     assert review_head_line(None) == ""
     assert "<code>abcdef0123456789</code>" in review_head_line("abcdef0123456789" * 4)
+
+
+# ---------- Trace: where to look ----------
+
+EVIL = '<img src=x onerror="alert(1)">'
+
+
+@pytest.fixture(scope="module")
+def toy_trace():
+    from qpilot.qpcr import trace as T
+    from tests.app.trace_toys import GENE, toy_trace_table
+    from tests.engine.test_trace import context
+
+    ctx = context(toy_trace_table(sample_name=EVIL))
+    return ctx, T.trace_gene(ctx, GENE, top=3)
+
+
+def _strip_facts(markup, names):
+    import html
+    import re
+
+    text = re.sub(r'<span class="fact"[^>]*>[^<]*</span>', "", markup)
+    text = html.unescape(re.sub(r"<[^>]+>", "", text))
+    for name in sorted(names, key=len, reverse=True):
+        text = text.replace(name, "")
+    return text
+
+
+def test_trace_view_escapes_names_and_shows_numbers_only_through_facts(toy_trace):
+    import re
+
+    from qpilot.app_state import trace_view
+
+    ctx, result = toy_trace
+    view = trace_view(result, allowed_names=ctx.items)
+    assert view.root == {"kind": "gene", "id": "DOWN"}
+    assert "<img" not in view.html and "&lt;img" in view.html  # the sample name is text
+    assert "Where to look first" in view.html and 'data-fact="f_trace_down_1_sample"' in view.html
+    assert not re.search(r"\d", _strip_facts(view.html, set(ctx.items) | set(ctx.refs)))
+    assert banned_words(view.plain) == []
+    (place,) = view.places  # one place changes the call: one Decide… button
+    assert place.rank == 1 and place.label.startswith("Decide… 1. R1_20260101/")
+    assert EVIL in place.label  # a button label is plain text; Gradio shows it as text
+
+
+def test_trace_view_without_a_place_that_changes_a_call(toy_trace):
+    from qpilot.app_state import TRACE_NOTHING, trace_cell, trace_view
+    from qpilot.qpcr import trace as T
+
+    ctx, result = toy_trace
+    flat = T.trace_gene(ctx, "FLAT", top=3)
+    view = trace_view(flat, allowed_names=ctx.items)
+    assert view.places == () and "Decide…" not in view.html
+    assert trace_cell(result).endswith(": changes the call")
+    assert trace_cell(result).startswith("R1_20260101/") and f"({EVIL})" in trace_cell(result)
+    empty = flat.model_copy(update={"places": []})
+    assert trace_cell(empty) == TRACE_NOTHING
+
+
+def test_a_trace_card_shows_its_place_and_only_the_calls_it_changes(toy_trace, fixture_facts):
+    from qpilot.app_state import card_label
+
+    _, result = toy_trace
+    card = result.card(1)
+    view = card_view(card, fixture_facts)
+    assert view.title == "What to do with one unusual well"
+    assert view.needs_human
+    assert view.status_line == "Your decision: this choice can change a conclusion."
+    assert view.genes == tuple(card.impact["flipped_genes"]) == ("DOWN",)
+    assert "Can change a conclusion: the call of DOWN" in view.impact_html
+    assert "<img" not in view.html and "&lt;img" in view.html and "What to check:" in view.html
+    assert "Trace found this place unusual" in view.explanation_plain
+    assert [r.id for r in view.options] == ["keep", "read_from_other_refs", "set_aside"]
+    keep = dict((g, fc) for g, fc, _ in _row(view, "keep").cells)
+    assert keep["DOWN"] == f"{card.options[0].per_gene['DOWN'].fc:.2g}×"
+    fact = Fact(id="f_fc_down_recommended", value=0.123, fmt="{:.1f}", unit="×")
+    shown = card_view(card, {**fixture_facts, fact.id: fact})  # keep reads the study's own facts
+    assert dict((g, fc) for g, fc, _ in _row(shown, "keep").cells)["DOWN"] == "0.1×"
+    label = card_label(card)
+    assert label.startswith("Trace: sample ") and label.endswith("(open)")
+    assert "&lt;img" not in label  # plain text: Gradio escapes a dropdown label itself
+
+
+def test_trace_cards_come_after_the_analysis_cards(toy_trace, fixture_cards):
+    _, result = toy_trace
+    card = result.card(1)
+    ordered = cards_in_order([card, *fixture_cards])
+    assert ordered[-1] is card and [c.id for c in ordered[:-1]] == [c.id for c in fixture_cards]
+    assert next_card([card, *fixture_cards]).id == "card_refset"
