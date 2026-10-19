@@ -213,4 +213,4 @@ def test_gate_and_capture_kinds():
     assert ck.card_kind("gate.invalidate_plate").always_human
     assert not ck.card_kind("gate.rule").always_human
     assert ck.card_kind("capture.import_trust").always_human
-    assert ck.card_kind("numbers.efficiency_model").dimension == "efficiency_model"
+    assert ck.card_kind("numbers.efficiency_model").dimension == "efficiency"

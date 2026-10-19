@@ -21,7 +21,7 @@ register_card_kind(
     "numbers.efficiency_model",
     "Which efficiency turns Cq into quantity?",
     "numbers",
-    dimension="efficiency_model",
+    dimension="efficiency",
 )
 # capture (agents/capture): the Import Trust Card. Its options have no grid dimension, so the
 # consequence cannot be measured: every card of the kind is a human decision.
