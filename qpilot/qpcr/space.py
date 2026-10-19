@@ -28,7 +28,8 @@ seconds; results equal :func:`qpilot.qpcr.contrast.welch_contrast` cell by cell.
 from __future__ import annotations
 
 import warnings
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
+from dataclasses import replace
 from itertools import combinations
 from typing import Any
 
@@ -36,6 +37,18 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from qpilot.qpcr.axes import (
+    DIMENSION_ORDER,
+    AxisDef,
+    AxisError,
+    AxisOption,
+    AxisState,
+    AxisStatus,
+    get_axis,
+    option_text,
+    ordered,
+)
+from qpilot.qpcr.axes import state as axes_state
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule, conclude
 from qpilot.qpcr.curves import REFERENCE_TARGETS
 from qpilot.qpcr.design import GroupSpec, groups_by_cut
@@ -45,6 +58,8 @@ from qpilot.schemas import Conclusion, ContrastResult, GenormResult
 DEFAULT_CUTS: tuple[float, ...] = (0.10, 0.15, 0.20)
 DEFAULT_UNDETERMINED: tuple[Undetermined, ...] = ("drop", "cap")
 DEFAULT_AMP_CALL = "linregpcr"
+#: Non-detect rules the space can apply today (see :mod:`qpilot.qpcr.axes`).
+NONDETECT_RULES: tuple[str, ...] = ("drop", "cap")
 
 
 def ref_subsets(candidates: Sequence[str]) -> list[tuple[str, ...]]:
@@ -61,14 +76,15 @@ class QpcrSpace:
 
     Args:
         matrix: Units x genes ``log2(n0)`` from :func:`qpilot.qpcr.quant.log2_matrix`, under the
-            primary amplification rule.
+            primary option of every matrix-stage axis (amplification rule, efficiency model).
         genorm: geNorm result for ``candidates``; its recommended set is the primary choice.
         design: Marker gene and primary cut-off; ``design.refs_primary`` is replaced by the
             geNorm-recommended set so groups always come from the primary control genes. Not
             used when ``groups`` is given.
         candidates: Candidate control genes (default: the five demo reference genes).
         cuts: Cut-off options for the high group.
-        undetermined: Options for wells that never amplified.
+        undetermined: Options for wells that never amplified (``drop`` and ``cap`` in the
+            legacy grid; see :mod:`qpilot.qpcr.axes`).
         rule: The conclusion rule.
         groups: Fixed ``(group_a, group_b)`` units from a confirmed design. When given there is
             no ``cut`` dimension and no marker gene.
@@ -78,6 +94,12 @@ class QpcrSpace:
         excluded: Units x genes, ``True`` where a person excluded every well; such a value is
             left out under every option (never capped).
         group_labels: Names of the two groups, for the withheld-gene reasons.
+        matrix_axes: Further matrix-stage axes -> their options, primary first, e.g.
+            ``{"efficiency": ("linregpcr", "per_well")}``. An axis with one option is held.
+        matrix_source: Builds the matrix for any combination of matrix-stage options
+            (``{"amp_call": ..., "efficiency": ...}``) that is not the primary matrix or an
+            ``amp_alternatives`` entry. Required when ``matrix_axes`` offers a second option.
+        option_labels: Axis -> option value -> label, for :attr:`axes` (plain words).
     """
 
     def __init__(
@@ -95,6 +117,9 @@ class QpcrSpace:
         amp_alternatives: Mapping[str, pd.DataFrame] | None = None,
         excluded: pd.DataFrame | None = None,
         group_labels: tuple[str, str] | None = None,
+        matrix_axes: Mapping[str, Sequence[Any]] | None = None,
+        matrix_source: Callable[[Mapping[str, Any]], pd.DataFrame] | None = None,
+        option_labels: Mapping[str, Mapping[Any, str]] | None = None,
     ) -> None:
         marker_mode = groups is None
         design = design or GroupSpec()
@@ -109,6 +134,21 @@ class QpcrSpace:
         alternatives = dict(amp_alternatives or {})
         if amp_call in alternatives:
             raise ValueError(f"amp_call option {amp_call!r} is listed twice")
+        undetermined = list(undetermined)
+        unknown = [u for u in undetermined if u not in NONDETECT_RULES]
+        if unknown or "drop" not in undetermined:
+            raise AxisError(
+                f"undetermined options must include 'drop' and be among {list(NONDETECT_RULES)}, "
+                f"not {undetermined}"
+            )
+        extra = {name: list(options) for name, options in (matrix_axes or {}).items()}
+        for name, options in extra.items():
+            if get_axis(name).stage != "matrix" or name == "amp_call":
+                raise AxisError(f"{name!r} is not a further matrix-stage axis")
+            if not options or len(set(map(repr, options))) != len(options):
+                raise AxisError(f"axis {name!r} needs distinct options, primary first")
+            if len(options) > 1 and matrix_source is None:
+                raise AxisError(f"axis {name!r} offers several options but no matrix_source")
         self.rule = rule
         self.design: GroupSpec | None = (
             GroupSpec(design.marker, design.cut, primary_refs, design.group_var)
@@ -120,15 +160,27 @@ class QpcrSpace:
         if marker_mode:
             self.dimensions["cut"] = list(cuts)
             self.primary["cut"] = design.cut
-        self.dimensions["undetermined"] = list(undetermined)
+        self.dimensions["undetermined"] = undetermined
         self.primary["undetermined"] = "drop"
         if alternatives:
             self.dimensions["amp_call"] = [amp_call, *alternatives]
             self.primary["amp_call"] = amp_call
+        for name in ordered(list(extra)):
+            if len(extra[name]) > 1:
+                self.dimensions[name] = extra[name]
+                self.primary[name] = extra[name][0]
         self._amp_primary = amp_call
+        # every matrix-stage axis has a primary, swept or not: it keys the stage caches
+        self._matrix_primary: dict[str, Any] = {"amp_call": amp_call}
+        self._matrix_primary.update({name: options[0] for name, options in extra.items()})
+        self._matrix_names = [n for n in DIMENSION_ORDER if n in self._matrix_primary]
+        self._matrix_source = matrix_source
+        self._offered = {"amp_call": [amp_call, *alternatives], **extra}
         excluded_genes = {*candidates, design.marker} if marker_mode else set(candidates)
         genes = [gene for gene in matrix.columns if gene not in excluded_genes]
         self._samples = matrix.index
+        self._columns = matrix.columns
+        self._candidates = candidates
         if marker_mode:
             self._groups = groups_by_cut(matrix, self.design, cuts)
             labels = group_labels or (design.group_var, "rest")
@@ -140,18 +192,95 @@ class QpcrSpace:
             cut: (self._samples.isin(high), self._samples.isin(rest))
             for cut, (high, rest) in self._groups.items()
         }
-        matrices = {amp_call: matrix}
-        for rule_id, other in alternatives.items():  # same units and genes: a rule never drops one
-            matrices[rule_id] = other.reindex(index=matrix.index, columns=matrix.columns)
         self.withheld = self._withheld(matrix, genes, primary_refs, labels)
         self.items: list[str] = [gene for gene in genes if gene not in self.withheld]
         self._excluded: np.ndarray | None = None
         if excluded is not None:
             mask = excluded.reindex(index=matrix.index, columns=self.items)
             self._excluded = mask.astype("boolean").fillna(False).to_numpy(dtype=bool)
-        self._by_rule = {rid: self._rule_arrays(m, candidates) for rid, m in matrices.items()}
-        self._values, self._lowest, self._refs = self._by_rule[amp_call]
-        self._ref_mean: dict[tuple[tuple[str, ...], str], tuple[np.ndarray, np.ndarray]] = {}
+        # stage caches: matrix arrays per matrix key, non-detect arrays per (key, rule),
+        # control-gene means per (refs, key)
+        primary_key = self._matrix_key({})
+        self._given = {primary_key: matrix}
+        for rule_id, other in alternatives.items():  # same units and genes: a rule never drops one
+            key = self._matrix_key({"amp_call": rule_id})
+            self._given[key] = other.reindex(index=matrix.index, columns=matrix.columns)
+        self._by_key: dict[tuple[Any, ...], tuple[np.ndarray, np.ndarray, pd.DataFrame]] = {}
+        self._nondetect: dict[tuple[tuple[Any, ...], str], np.ndarray] = {}
+        self._ref_mean: dict[
+            tuple[tuple[str, ...], tuple[Any, ...]], tuple[np.ndarray, np.ndarray]
+        ] = {}
+        self.axes: dict[str, AxisState] = self._axis_states(option_labels or {}, candidates)
+
+    # ---- the axes as this study offers them --------------------------------------------
+
+    def _axis_states(
+        self, labels: Mapping[str, Mapping[Any, str]], candidates: tuple[str, ...]
+    ) -> dict[str, AxisState]:
+        """Every registered axis, with its options and whether this grid sweeps it."""
+        out: dict[str, AxisState] = {}
+        for name in DIMENSION_ORDER:
+            axis = get_axis(name)
+            if name == "refs":
+                values: list[Any] = self.dimensions["refs"]
+                primary = self.primary["refs"]
+            elif name == "cut":
+                if self.design is None:
+                    reason = "groups come from the confirmed design, so there is no cut-off"
+                    option = AxisOption("none", None, "Groups from the design", "primary")
+                    out[name] = axes_state(name, [option], "none", "not_applicable", reason)
+                    continue
+                values, primary = self.dimensions["cut"], self.primary["cut"]
+            elif name == "undetermined":
+                values, primary = self.dimensions["undetermined"], "drop"
+            else:
+                values = self._offered.get(name) or [_DEFAULT_PRIMARY.get(name)]
+                primary = values[0]
+            options = [
+                _option(axis, value, labels.get(name, {}), value == primary, candidates)
+                for value in values
+            ]
+            primary_id = next(o.id for o, v in zip(options, values, strict=True) if v == primary)
+            if name in self.dimensions:
+                status, reason = "swept", ""
+            else:
+                status, reason = "single_option", "only one option offered"
+            out[name] = axes_state(name, options, primary_id, status, reason)
+        return out
+
+    def hold(self, name: str, status: AxisStatus, reason: str) -> None:
+        """Take an opt-in axis out of the grid, held at its primary option, and say why.
+
+        Used after screening (:func:`qpilot.core.robustness.screen_axis`): the stage caches
+        are kept, so the cells already evaluated are not recomputed. Legacy axes cannot be
+        held.
+        """
+        if self.axes[name].legacy:
+            raise AxisError(f"axis {name!r} is in the legacy grid and cannot be held")
+        if name in self.dimensions:
+            del self.dimensions[name]
+            del self.primary[name]
+        self.axes[name] = replace(self.axes[name], status=status, reason=reason)
+
+    # ---- stages ----------------------------------------------------------------------
+
+    def _matrix_key(self, cell: Mapping[str, Any]) -> tuple[Any, ...]:
+        return tuple(cell.get(name, self._matrix_primary[name]) for name in self._matrix_names)
+
+    def _matrix_arrays(self, key: tuple[Any, ...]) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
+        """Stage 1: values of the items, their lowest detected value and the control genes."""
+        if key not in self._by_key:
+            matrix = self._given.get(key)
+            if matrix is None:
+                for name, value in zip(self._matrix_names, key, strict=True):
+                    if value not in self._offered.get(name, ()):
+                        raise AxisError(f"unknown {name} option {value!r}")
+                if self._matrix_source is None:
+                    raise AxisError(f"no matrix for the options {key!r}")
+                built = self._matrix_source(dict(zip(self._matrix_names, key, strict=True)))
+                matrix = built.reindex(index=self._samples, columns=self._columns)
+            self._by_key[key] = self._rule_arrays(matrix, self._candidates)
+        return self._by_key[key]
 
     def _rule_arrays(
         self, matrix: pd.DataFrame, candidates: tuple[str, ...]
@@ -162,6 +291,22 @@ class QpcrSpace:
             warnings.simplefilter("ignore", RuntimeWarning)
             lowest = np.nanmin(values, axis=0)  # per gene, for the "cap" option
         return values, lowest, matrix[list(candidates)]
+
+    def _nondetect_values(self, key: tuple[Any, ...], rule: str) -> np.ndarray:
+        """Stage 2: the items' values after the non-detect rule."""
+        cached = self._nondetect.get((key, rule))
+        if cached is not None:
+            return cached
+        values, lowest, _ = self._matrix_arrays(key)
+        if rule == "cap":
+            if self._excluded is None:
+                values = np.where(np.isnan(values), lowest, values)
+            else:  # an excluded value stays out; only undetermined wells are capped
+                values = np.where(np.isnan(values) & ~self._excluded, lowest, values)
+        elif rule != "drop":
+            raise AxisError(f"unknown undetermined option {rule!r}")
+        self._nondetect[(key, rule)] = values
+        return values
 
     def _withheld(
         self,
@@ -196,31 +341,32 @@ class QpcrSpace:
             return self._groups[None]
         return self._groups[cut]
 
-    def _reference(self, refs: tuple[str, ...], amp_call: str) -> tuple[np.ndarray, np.ndarray]:
-        key = (refs, amp_call)
-        if key not in self._ref_mean:
-            block = self._by_rule[amp_call][2][list(refs)]
-            self._ref_mean[key] = (
+    def _reference(
+        self, refs: tuple[str, ...], key: tuple[Any, ...]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Stage 3: the mean of the chosen control genes per unit, and where all are present."""
+        cache_key = (refs, key)
+        if cache_key not in self._ref_mean:
+            block = self._matrix_arrays(key)[2][list(refs)]
+            self._ref_mean[cache_key] = (
                 block.mean(axis=1).to_numpy(dtype=float),
                 block.notna().all(axis=1).to_numpy(),
             )
-        return self._ref_mean[key]
+        return self._ref_mean[cache_key]
 
     def evaluate(self, cell: dict[str, Any]) -> dict[str, ContrastResult]:
-        """Every gene's group comparison (high vs rest, or group A vs B) under one cell."""
+        """Every gene's group comparison (high vs rest, or group A vs B) under one cell.
+
+        A cell may leave out an opt-in axis (``amp_call``, ``efficiency``): its primary option
+        is used.
+        """
         refs = tuple(cell["refs"])
         amp_call = cell.get("amp_call", self._amp_primary)
-        if amp_call not in self._by_rule:
+        if amp_call not in self._offered["amp_call"]:
             raise ValueError(f"unknown amp_call option {amp_call!r}")
-        ref_mean, refs_ok = self._reference(refs, amp_call)
-        values, lowest, _ = self._by_rule[amp_call]
-        if cell["undetermined"] == "cap":
-            if self._excluded is None:
-                values = np.where(np.isnan(values), lowest, values)
-            else:  # an excluded value stays out; only undetermined wells are capped
-                values = np.where(np.isnan(values) & ~self._excluded, lowest, values)
-        elif cell["undetermined"] != "drop":
-            raise ValueError(f"unknown undetermined option {cell['undetermined']!r}")
+        key = self._matrix_key(cell)
+        values = self._nondetect_values(key, cell["undetermined"])
+        ref_mean, refs_ok = self._reference(refs, key)
         relative = values - ref_mean[:, None]
         valid = refs_ok[:, None] & ~np.isnan(relative)
         in_high, in_rest = self._masks[cell["cut"] if self.design is not None else None]
@@ -231,6 +377,35 @@ class QpcrSpace:
     def conclude(self, result: ContrastResult) -> Conclusion:
         """Up / down / none for a result under this space's conclusion rule."""
         return conclude(result.log2fc, result.p, self.rule)
+
+
+_DEFAULT_PRIMARY: dict[str, Any] = {"amp_call": DEFAULT_AMP_CALL, "efficiency": "linregpcr"}
+
+
+def _option(
+    axis: AxisDef,
+    value: Any,
+    labels: Mapping[Any, str],
+    is_primary: bool,
+    candidates: tuple[str, ...],
+) -> AxisOption:
+    """The :class:`AxisOption` for one value of an axis (catalogue entry when there is one)."""
+    tier = "primary" if is_primary else "defensible"
+    if axis.name == "refs":
+        option_id = option_text(value)
+        label = labels.get(value) or ", ".join(value)
+        if len(value) == 1 and len(candidates) > 1:
+            tier = "primary" if is_primary else "common_practice"
+        return AxisOption(option_id, value, label, tier)
+    if axis.name == "cut":
+        return AxisOption(
+            f"cut_{round(value * 100)}", value, labels.get(value) or f"Top {value:g}", tier
+        )
+    for option in axis.catalogue:
+        if option.value == value:
+            label = labels.get(value) or option.label
+            return AxisOption(option.id, value, label, "primary" if is_primary else option.tier)
+    return AxisOption(str(value), value, labels.get(value) or str(value), tier)
 
 
 def _group_stats(values: np.ndarray, mask: np.ndarray) -> tuple[np.ndarray, ...]:
