@@ -52,6 +52,7 @@ from qpilot.qpcr.amp_call import (
     apply_rule,
     screen_amp_call,
 )
+from qpilot.qpcr.axes import efficiency as eff_axis
 from qpilot.qpcr.confidence_checks import START_LEVEL, checks_for, mde_fold, upgrade_rule
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule
 from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS, CurveSettings, analyse_study
@@ -69,7 +70,7 @@ from qpilot.qpcr.designs import (
 from qpilot.qpcr.quant import EXCLUDED, Undetermined, excluded_cells, log2_matrix
 from qpilot.qpcr.refgenes import RefGroupEffect, genorm, group_effect
 from qpilot.qpcr.routes import ROUTES, RouteResult, compare_routes
-from qpilot.qpcr.space import DEFAULT_CUTS, DEFAULT_UNDETERMINED, QpcrSpace
+from qpilot.qpcr.space import DEFAULT_CUTS, DEFAULT_UNDETERMINED, MatrixStage, QpcrSpace
 from qpilot.schemas import (
     Autonomy,
     DecisionCard,
@@ -122,7 +123,10 @@ class StudySettings:
     ``design`` is the confirmed design for anything but the legacy demo analysis (``None``
     then); ``amp_calls`` are the options of the amplification-call dimension, primary first
     (one option: no dimension); ``studio_facts`` adds the Studio facts (the routes to Prism and
-    the amp_call screening), which the legacy output does not carry.
+    the amp_call screening), which the legacy output does not carry. ``efficiency`` are the
+    options of the efficiency-model axis, primary first (opt-in; one option: no axis, see
+    :mod:`qpilot.qpcr.axes.efficiency`); ``max_cells`` caps the grid with seeded sampling
+    (:func:`qpilot.core.robustness.run_grid`; ``None``: the full product).
     """
 
     experiment_id: str | None = DEMO_EXPERIMENT
@@ -139,6 +143,8 @@ class StudySettings:
     amp_calls: tuple[str, ...] = DEFAULT_AMP_CALLS
     design: StudyDesign | None = None
     studio_facts: bool = False
+    efficiency: tuple[str, ...] = (eff_axis.PRIMARY,)
+    max_cells: int | None = None
 
     @property
     def marker_label(self) -> str:
@@ -330,6 +336,7 @@ class StudyModel:
     screen: AmpScreen | None
     high: frozenset[str]
     rest: frozenset[str]
+    screens: dict[str, robustness.AxisScreen] = field(default_factory=dict)
 
 
 def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> StudyModel:
@@ -362,17 +369,70 @@ def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> 
         excluded=inputs.excluded,
         group_labels=labels,
     )
-    space = QpcrSpace(matrix, stability, spec, amp_alternatives=inputs.alternatives, **options)
+    efficiency = _efficiency_axis(inputs, settings)
+    space = QpcrSpace(
+        matrix, stability, spec, amp_alternatives=inputs.alternatives, **options, **efficiency
+    )
     screen = None
     if inputs.alternatives:
         dims = space.dimensions["amp_call"]
         screen = screen_amp_call(space.evaluate, space.primary, dims, space.items)
         if not screen.admitted:  # the choice changes nothing that matters: no axis in the grid
-            space = QpcrSpace(matrix, stability, spec, **options)
+            space.hold("amp_call", "screened_out", SCREENED_REASON)
+    screens = {}
+    if "efficiency" in space.dimensions:
+        screens["efficiency"] = robustness.screen_axis(space, "efficiency")
+        if not screens["efficiency"].admitted:
+            space.hold("efficiency", "screened_out", SCREENED_REASON)
     high, rest = space.groups(settings.cut)
     if groups is None:
         _n_guard((high, rest), (settings.group_var, "rest"))
-    return StudyModel(settings, inputs, matrix, stability, space, labels, screen, high, rest)
+    return StudyModel(
+        settings, inputs, matrix, stability, space, labels, screen, high, rest, screens
+    )
+
+
+SCREENED_REASON = (
+    "no option, changed alone, flips a conclusion or moves a log2 fold change by more than 0.5"
+)
+
+
+def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> dict:
+    """``QpcrSpace`` keywords for the efficiency axis (none when only the primary is offered).
+
+    Options that do not apply to the study (no dilution series, every amplicon on one run)
+    are not offered and are reported with the reason. The matrix of any other option is
+    rebuilt from Cq and the per-run threshold, under the same amplification rule and design.
+    """
+    offered = tuple(settings.efficiency)
+    if offered == (eff_axis.PRIMARY,):
+        return {}
+    if not offered or offered[0] != eff_axis.PRIMARY:
+        raise DesignError(f"the efficiency options must start with {eff_axis.PRIMARY!r}")
+    for option in offered:
+        if option not in eff_axis.OPTIONS:
+            raise DesignError(f"unknown efficiency option {option!r}")
+    quantities = None
+    if settings.design is not None:
+        quantities = {s: d.quantity for s, d in settings.design.samples.items() if d.quantity}
+    curves = eff_axis.standard_curves(inputs.table, quantities)
+    missing = {k: v for k, v in eff_axis.unavailable(inputs.table, curves).items() if k in offered}
+    kept = [o for o in offered if o not in missing]
+    legacy = settings.design is None and settings.amp_calls == DEFAULT_AMP_CALLS
+    calls = dict(settings.design.well_calls) if settings.design is not None else {}
+
+    def source(chosen: Mapping[str, object]) -> MatrixStage:
+        table = eff_axis.universe(inputs.table, str(chosen["efficiency"]), curves).table
+        if not legacy:
+            table = apply_rule(table, str(chosen["amp_call"]), calls)
+        excluded = excluded_cells(table, inputs.units) if EXCLUDED in table.columns else None
+        return MatrixStage(log2_matrix(table, inputs.units), excluded)
+
+    return {
+        "matrix_axes": {"efficiency": kept},
+        "matrix_source": source,
+        "unavailable": {"efficiency": missing},
+    }
 
 
 def study_from_curves(
@@ -388,7 +448,7 @@ def study_from_curves(
     model = build_model(curves, settings)
     inputs, matrix, stability, space = model.inputs, model.matrix, model.stability, model.space
     labels, screen, high, rest = model.labels, model.screen, model.high, model.rest
-    grid = robustness.run_grid(space)
+    grid = robustness.run_grid(space, max_cells=settings.max_cells)
     summary = robustness.summary(grid, space)
     fragility = robustness.fragility(grid, space)
     counts = _counts(inputs.primary_table)

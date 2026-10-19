@@ -113,6 +113,8 @@ class QpcrSpace:
             (``{"amp_call": ..., "efficiency": ...}``) that is not the primary matrix or an
             ``amp_alternatives`` entry. Required when ``matrix_axes`` offers a second option.
         option_labels: Axis -> option value -> label, for :attr:`axes` (plain words).
+        unavailable: Axis -> option id -> why that option does not apply to this study; such
+            options are not offered and are reported in :attr:`axes`.
     """
 
     def __init__(
@@ -133,6 +135,7 @@ class QpcrSpace:
         matrix_axes: Mapping[str, Sequence[Any]] | None = None,
         matrix_source: Callable[[Mapping[str, Any]], pd.DataFrame | MatrixStage] | None = None,
         option_labels: Mapping[str, Mapping[Any, str]] | None = None,
+        unavailable: Mapping[str, Mapping[str, str]] | None = None,
     ) -> None:
         marker_mode = groups is None
         design = design or GroupSpec()
@@ -224,6 +227,7 @@ class QpcrSpace:
         self._ref_mean: dict[
             tuple[tuple[str, ...], tuple[Any, ...]], tuple[np.ndarray, np.ndarray]
         ] = {}
+        self._unavailable = {k: dict(v) for k, v in (unavailable or {}).items()}
         self.axes: dict[str, AxisState] = self._axis_states(option_labels or {}, candidates)
 
     # ---- the axes as this study offers them --------------------------------------------
@@ -255,11 +259,14 @@ class QpcrSpace:
                 for value in values
             ]
             primary_id = next(o.id for o, v in zip(options, values, strict=True) if v == primary)
+            missing = tuple(self._unavailable.get(name, {}).items())
             if name in self.dimensions:
                 status, reason = "swept", ""
+            elif missing:
+                status, reason = "not_applicable", "; ".join(f"{k}: {v}" for k, v in missing)
             else:
                 status, reason = "single_option", "only one option offered"
-            out[name] = axes_state(name, options, primary_id, status, reason)
+            out[name] = axes_state(name, options, primary_id, status, reason, None, missing)
         return out
 
     def hold(self, name: str, status: AxisStatus, reason: str) -> None:

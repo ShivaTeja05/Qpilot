@@ -224,7 +224,7 @@ def flipped_by(summaries: dict[str, GeneRobustness], dimension: str) -> list[str
 
 def summary(grid: pd.DataFrame, space: DecisionSpace) -> dict[str, GeneRobustness]:
     """One ``GeneRobustness`` per item: primary conclusion and fold change, holds, impact."""
-    total = n_cells(space)
+    total = len(grid) // len(space.items) if space.items else n_cells(space)  # cells evaluated
     out: dict[str, GeneRobustness] = {}
     for item in space.items:
         prim = primary_row(grid, space, item)

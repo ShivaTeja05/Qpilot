@@ -99,6 +99,7 @@ class AxisState:
     status: AxisStatus
     reason: str = ""
     legacy: bool = False
+    unavailable: tuple[tuple[str, str], ...] = ()  # (option id, why it does not apply here)
 
     def as_dict(self) -> dict[str, Any]:
         """JSON form for ``axes.json``, MCP and the UI (stable key order)."""
@@ -111,6 +112,7 @@ class AxisState:
             "reason": self.reason,
             "primary": self.primary.id,
             "options": [o.as_dict() for o in self.options],
+            "unavailable": dict(self.unavailable),
         }
 
 
@@ -238,6 +240,7 @@ def state(
     status: AxisStatus,
     reason: str = "",
     title: str | None = None,
+    unavailable: Sequence[tuple[str, str]] = (),
 ) -> AxisState:
     """An :class:`AxisState` for a registered axis; checks the primary is one of the options."""
     axis = get_axis(name)
@@ -254,6 +257,7 @@ def state(
         status=status,
         reason=reason,
         legacy=axis.legacy,
+        unavailable=tuple(unavailable),
     )
 
 
