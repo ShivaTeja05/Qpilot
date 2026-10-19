@@ -20,16 +20,14 @@ from qpilot.ai import payload_log
 from qpilot.ai.client import ModelClient, ModelUnavailable
 from qpilot.ai.profile import Profile
 from qpilot.ai.prompts import SYSTEM_EXPLAIN
+from qpilot.core.card_kinds import TITLES
 from qpilot.core.facts import render_fact, slug
 from qpilot.core.validator import TOKEN, render_tokens, validate
 from qpilot.schemas import DecisionCard, Fact
 
-KIND_TITLE = {
-    "reference_set": "Which control genes to normalise to",
-    "group_cutoff": "Where to cut the comparison groups",
-    "undetermined": "What to do with wells that never amplified",
-    "amp_call": "Which curves count as amplified",
-}
+#: Card kind -> title: a live view of the registry in ``core/card_kinds.py`` (kinds a plugin
+#: registers later appear here too; the original four keep their titles).
+KIND_TITLE = TITLES
 #: The fact that counts the genes a card's choice flips, by card kind.
 FLIP_FACT = {
     "reference_set": "f_n_flipped_refset",

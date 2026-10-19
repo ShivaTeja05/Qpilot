@@ -633,16 +633,20 @@ def unzip_record(zip_path: str | Path, target_dir: str | Path) -> Path:
             dest = (target / name).resolve()
             if not dest.is_relative_to(target):
                 raise RecordError(f"unsafe path in record zip: {member.filename!r}")
+            if not member.is_dir() and (not name.parts or dest == target):
+                raise RecordError(f"unsafe path in record zip: {member.filename!r}")
         for member in members:
             if member.is_dir():
                 continue
             dest = target / PurePosixPath(member.filename)
-            dest.parent.mkdir(parents=True, exist_ok=True)
             try:
+                dest.parent.mkdir(parents=True, exist_ok=True)
                 with zf.open(member) as src, open(dest, "wb") as out:
                     shutil.copyfileobj(src, out)
             except (zipfile.BadZipFile, zlib.error, EOFError, NotImplementedError) as err:
                 raise RecordError(f"damaged record zip ({member.filename}): {err}") from err
+            except OSError as err:  # a file and a folder of one name, a '.' member, ...
+                raise RecordError(f"unsafe path in record zip: {member.filename!r}") from err
     children = [c for c in target.iterdir() if c.name != "__MACOSX"]
     if not (target / CHECKSUMS).exists() and len(children) == 1 and children[0].is_dir():
         return children[0]  # a zip made of the record folder itself (zip -r rec.zip rec)
