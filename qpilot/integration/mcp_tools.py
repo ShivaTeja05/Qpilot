@@ -19,8 +19,10 @@ import json
 import threading
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
+from qpilot.agents.refusals import Code, refuse
+from qpilot.agents.views import check_format, shape
 from qpilot.core.store import StudyNotFound, StudyStore
 
 SIM_TOOL_NAMES = ("sim_audit", "sim_gene", "sim_whatif", "sim_decisions", "sim_findings")
@@ -70,7 +72,7 @@ class SimulatorTools:
 
     # ---- finding and checking an audit ---------------------------------------------------------
 
-    def _audit_dir(self, study_id: str) -> tuple[Path | None, str | None]:
+    def _audit_dir(self, study_id: str) -> tuple[Path | None, dict[str, Any] | None]:
         from qpilot.integration.simulator import MANIFEST, verify_audit
 
         candidates = [Path(p) for p in self._audits.values()]
@@ -86,36 +88,48 @@ class SimulatorTools:
                 continue
             check = verify_audit(folder)
             if not check.ok:
-                return None, f"the audit of this study does not verify: {check.summary()}"
+                return None, refuse(
+                    Code.INTEGRITY_FAILED,
+                    f"the audit of this study does not verify: {check.summary()}",
+                )
             return folder, None
-        return None, "no simulator audit for this study; a person runs it after the choices stage"
+        return None, refuse(
+            Code.NOT_READY,
+            "no simulator audit for this study; a person runs it after the choices stage",
+        )
 
-    def _study(self, study_id: str) -> str | None:
+    def _study(self, study_id: str) -> dict[str, Any] | None:
         try:
             self.store.get(study_id)
         except (StudyNotFound, KeyError, FileNotFoundError):
-            return "unknown study_id; call qpcr_study first"
+            return refuse(Code.UNKNOWN_STUDY, "unknown study_id; call qpcr_study first")
         return None
 
     # ---- the tools -----------------------------------------------------------------------------
 
-    def sim_audit(self, study_id: str) -> dict[str, Any]:
+    def sim_audit(
+        self, study_id: str, response_format: Literal["concise", "detailed"] = "detailed"
+    ) -> dict[str, Any]:
         """The audit of a study: verdict counts, scope, the reproduction check, what to lock.
 
         Verdicts: solid, holds with caveats, depends on your choices, fragile, check data first,
         no call. ``reproduces_qpilot`` says the simulator's baseline equals qPilot's result.
+        ``response_format="concise"`` returns the counts, the check and the lock hash only.
         """
+        bad = check_format(response_format)
+        if bad:
+            return bad
         error = self._study(study_id)
         if error:
-            return {"error": error}
+            return error
         folder, error = self._audit_dir(study_id)
         if folder is None:
-            return {"error": error}
+            return error
         from qpilot.integration.simulator import MANIFEST
 
         manifest = json.loads((folder / MANIFEST).read_text(encoding="utf-8"))
         summary = json.loads((folder / "summary.json").read_text(encoding="utf-8"))
-        return {
+        out = {
             "study_id": study_id,
             "analyses": manifest.get("analyses"),
             "verdict_counts": manifest.get("verdict_counts"),
@@ -129,19 +143,25 @@ class SimulatorTools:
             "your_choices": manifest.get("your_choices"),
             "influence": summary.get("influence"),
         }
+        return shape("sim_audit", out, response_format)
 
     def sim_gene(self, study_id: str, gene: str) -> dict[str, Any]:
         """One gene in the audit: verdict, how often the call holds, what flips it, margins."""
         error = self._study(study_id)
         if error:
-            return {"error": error}
+            return error
         folder, error = self._audit_dir(study_id)
         if folder is None:
-            return {"error": error}
+            return error
         explain = json.loads((folder / "explain.json").read_text(encoding="utf-8"))
         name = next((g for g in explain if g.lower() == str(gene).strip().lower()), None)
         if name is None:
-            return {"error": "gene not in this study's audit", "n_genes": len(explain)}
+            return refuse(
+                Code.UNKNOWN_ITEM,
+                "gene not in this study's audit",
+                field="gene",
+                n_genes=len(explain),
+            )
         import pandas as pd
 
         row = pd.read_csv(folder / "genes.csv").set_index("gene").loc[name]
@@ -162,10 +182,10 @@ class SimulatorTools:
         """The decisions the audit varied: options, tiers, roles and the prespecified option."""
         error = self._study(study_id)
         if error:
-            return {"error": error}
+            return error
         folder, error = self._audit_dir(study_id)
         if folder is None:
-            return {"error": error}
+            return error
         lock = json.loads((folder / "lock.json").read_text(encoding="utf-8"))
         return {
             "study_id": study_id,
@@ -177,26 +197,42 @@ class SimulatorTools:
         }
 
     def sim_whatif(
-        self, study_id: str, changes: dict[str, str], genes: list[str] | None = None
+        self,
+        study_id: str,
+        changes: dict[str, str],
+        genes: list[str] | None = None,
+        response_format: Literal["concise", "detailed"] = "detailed",
     ) -> dict[str, Any]:
         """Recompute every gene under some choices (``{"refs": "HMBS", "late_cq": "cq35"}``).
 
         Nothing is stored and no choice is made: this answers "what if"; a person decides on
         the Decision Cards. Unknown decisions or options are named in the error.
+        ``response_format="concise"`` returns only the calls that change.
         """
+        bad = check_format(response_format)
+        if bad:
+            return bad
         error = self._study(study_id)
         if error:
-            return {"error": error}
+            return error
         if not isinstance(changes, dict) or not all(
             isinstance(k, str) and isinstance(v, str) for k, v in changes.items()
         ):
-            return {"error": "changes must map decision ids to option ids (strings)"}
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                "changes must map decision ids to option ids (strings)",
+                field="changes",
+            )
         if genes is not None and (not isinstance(genes, list) or len(genes) > MAX_GENES):
-            return {"error": f"genes must be a list of at most {MAX_GENES} names"}
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                f"genes must be a list of at most {MAX_GENES} names",
+                field="genes",
+            )
         from qpilot.integration import simulator as sim
 
         if not sim.available():
-            return {"error": "the Decision Simulator (qsim) is not installed"}
+            return refuse(Code.NOT_INSTALLED, "the Decision Simulator (qsim) is not installed")
         with self._lock:
             try:
                 prepared = self._prepared.get(study_id)
@@ -204,28 +240,34 @@ class SimulatorTools:
                     prepared = sim.prepare(sim.load_analysis(self.store, study_id))
                     check = sim.reproduction(prepared, self.store.get(study_id))
                     if not check["ok"]:
-                        return {"error": "the simulator does not reproduce this study's result"}
+                        return refuse(
+                            Code.INTEGRITY_FAILED,
+                            "the simulator does not reproduce this study's result",
+                        )
                     self._prepared[study_id] = prepared
                 from qsim.compare import whatif
 
                 table = whatif(prepared.engine, changes)
             except sim.NotApplicable as err:
-                return {"error": f"not applicable to this design: {err}"}
+                return refuse(Code.NOT_APPLICABLE, f"not applicable to this design: {err}")
             except KeyError as err:
-                return {"error": str(err).strip("'\"")}
+                return refuse(Code.UNKNOWN_ITEM, str(err).strip("'\""), field="changes")
             except Exception as err:  # the engine refused this study: answer, never raise
-                return {"error": f"no what-if for this study ({type(err).__name__})"}
+                return refuse(
+                    Code.ENGINE_REFUSED, f"no what-if for this study ({type(err).__name__})"
+                )
         if genes:
             wanted = {str(g).strip().lower() for g in genes}
             table = table[table["gene"].str.lower().isin(wanted)]
         flipped = table[table["call"] != table["base_call"]]
-        return {
+        out = {
             "study_id": study_id,
             "baseline": prepared.space.baseline,
             "changes": changes,
             "calls_that_change": sorted(flipped["gene"]),
             "genes": json.loads(table.round(6).to_json(orient="records")),
         }
+        return shape("sim_whatif", out, response_format)
 
     def sim_findings(
         self,
@@ -244,34 +286,56 @@ class SimulatorTools:
         instructions; ``next_offset`` is null on the last page. Nothing is decided or stored.
         """
         if not isinstance(table, str) or table not in FINDINGS_FILES:
-            return {"error": f"table must be one of {', '.join(FINDINGS_FILES)}"}
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                f"table must be one of {', '.join(FINDINGS_FILES)}",
+                field="table",
+            )
         if gene is not None and (not isinstance(gene, str) or len(gene) > MAX_NAME):
-            return {"error": f"gene must be a name of at most {MAX_NAME} characters"}
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                f"gene must be a name of at most {MAX_NAME} characters",
+                field="gene",
+            )
         for name, value, low, high in (
             ("offset", offset, 0, 1_000_000),
             ("limit", limit, 1, MAX_ROWS),
         ):
             if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
-                return {"error": f"{name} must be a whole number from {low} to {high}"}
+                return refuse(
+                    Code.INVALID_ARGUMENT,
+                    f"{name} must be a whole number from {low} to {high}",
+                    field=name,
+                )
         error = self._study(study_id)
         if error:
-            return {"error": error}
+            return error
         folder, error = self._audit_dir(study_id)
         if folder is None:
-            return {"error": error}
+            return error
         file_name = FINDINGS_FILES[table]
         path = folder / file_name
         if not path.exists():
-            return {"error": f"this audit has no {file_name}; it was written by an older simulator"}
+            return refuse(
+                Code.NOT_READY,
+                f"this audit has no {file_name}; it was written by an older simulator",
+            )
         # verify_audit hashed it; still refuse a link and anything outside the audit folder
         if path.is_symlink() or not path.resolve().is_relative_to(folder.resolve()):
-            return {"error": f"{file_name} is not a plain file inside the audit"}
+            return refuse(
+                Code.INTEGRITY_FAILED, f"{file_name} is not a plain file inside the audit"
+            )
         if not path.is_file() or path.stat().st_size > MAX_FINDINGS_BYTES:
-            return {"error": f"{file_name} is larger than {MAX_FINDINGS_BYTES} bytes; not served"}
+            return refuse(
+                Code.INTEGRITY_FAILED,
+                f"{file_name} is larger than {MAX_FINDINGS_BYTES} bytes; not served",
+            )
         try:
             rows = _read_rows(path)
         except (ValueError, OSError) as err:
-            return {"error": f"could not read {file_name} ({type(err).__name__})"}
+            return refuse(
+                Code.INTEGRITY_FAILED, f"could not read {file_name} ({type(err).__name__})"
+            )
         if gene is not None:
             wanted = gene.strip().lower()
             rows = [r for r in rows if wanted in _genes_named(table, r)]
