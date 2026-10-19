@@ -280,7 +280,11 @@ def raw_data(m: MiqeCtx) -> Outcome:
     sha = m.ctx.facts.derive(
         "input_sha256", m.ctx.result.input_sha256, path="results.json:input_sha256"
     )
-    curves = m.n("rdml_n_curves", meta.n_reactions_with_curves, "input.rdml:react.data.adp")
+    curves = tok(
+        m.ctx.facts.derive(
+            "rdml_n_curves", meta.n_reactions_with_curves, "{:,}", path="input.rdml:react.data.adp"
+        )
+    )
     return Fill(
         "Yes",
         f"Raw fluorescence of {curves} reactions in RDML, kept in the record as input.rdml "
@@ -399,6 +403,16 @@ def lod(m: MiqeCtx) -> Outcome:
     )
 
 
+def dynamic_range(m: MiqeCtx) -> Outcome:
+    """5.14: the linear range of a standard curve (levels), never called an LOQ."""
+    return Fill(
+        "No",
+        "The linear range of a standard curve is not evaluated by this analysis (quantities "
+        "come from each curve's own efficiency); change this answer if determined elsewhere.",
+        [],
+    )
+
+
 def refgene_validation(m: MiqeCtx) -> Outcome:
     """5.15: geNorm M and V, and the control-gene group-effect check."""
     c = m.ctx
@@ -486,6 +500,7 @@ RESOLVERS: dict[str, Callable[[MiqeCtx], Outcome]] = {
         quantity_method,
         replicates,
         lod,
+        dynamic_range,
         refgene_validation,
         normalisation,
         statistics,

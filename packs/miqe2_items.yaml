@@ -82,7 +82,7 @@ items:
   - {id: "5.11", class: a, fill: null, label: "Repeatability (intra-experiment variation)"}
   - {id: "5.12", class: a, fill: null, label: "Reproducibility (inter-run, inter-user or inter-laboratory variation)"}
   - {id: "5.13", class: a, fill: lod, label: "Whether a limit of detection was calculated"}
-  - {id: "5.14", class: a, fill: lod, label: "Dynamic range (linear range of the standard curve)"}
+  - {id: "5.14", class: a, fill: dynamic_range, label: "Dynamic range (linear range of the standard curve)"}
   - {id: "5.15", class: a, fill: refgene_validation, label: "Method used to validate the reference genes"}
   - {id: "5.16", class: a, fill: normalisation, label: "Normalisation method and calculation"}
   - {id: "5.17", class: a, fill: statistics, label: "Statistical methods"}
