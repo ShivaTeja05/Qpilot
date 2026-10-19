@@ -337,6 +337,7 @@ class StudyModel:
     high: frozenset[str]
     rest: frozenset[str]
     screens: dict[str, robustness.AxisScreen] = field(default_factory=dict)
+    axis_notes: dict[str, dict] = field(default_factory=dict)  # per opt-in axis, for facts
 
 
 def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> StudyModel:
@@ -369,7 +370,7 @@ def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> 
         excluded=inputs.excluded,
         group_labels=labels,
     )
-    efficiency = _efficiency_axis(inputs, settings)
+    efficiency, eff_notes = _efficiency_axis(inputs, settings)
     space = QpcrSpace(
         matrix, stability, spec, amp_alternatives=inputs.alternatives, **options, **efficiency
     )
@@ -387,8 +388,9 @@ def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> 
     high, rest = space.groups(settings.cut)
     if groups is None:
         _n_guard((high, rest), (settings.group_var, "rest"))
+    notes = {"efficiency": eff_notes} if eff_notes else {}
     return StudyModel(
-        settings, inputs, matrix, stability, space, labels, screen, high, rest, screens
+        settings, inputs, matrix, stability, space, labels, screen, high, rest, screens, notes
     )
 
 
@@ -397,8 +399,8 @@ SCREENED_REASON = (
 )
 
 
-def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> dict:
-    """``QpcrSpace`` keywords for the efficiency axis (none when only the primary is offered).
+def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, dict]:
+    """``QpcrSpace`` keywords and notes for the efficiency axis (none: only the primary).
 
     Options that do not apply to the study (no dilution series, every amplicon on one run)
     are not offered and are reported with the reason. The matrix of any other option is
@@ -406,7 +408,7 @@ def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> dict:
     """
     offered = tuple(settings.efficiency)
     if offered == (eff_axis.PRIMARY,):
-        return {}
+        return {}, {}
     if not offered or offered[0] != eff_axis.PRIMARY:
         raise DesignError(f"the efficiency options must start with {eff_axis.PRIMARY!r}")
     for option in offered:
@@ -428,11 +430,18 @@ def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> dict:
         excluded = excluded_cells(table, inputs.units) if EXCLUDED in table.columns else None
         return MatrixStage(log2_matrix(table, inputs.units), excluded)
 
-    return {
+    notes: dict = {"unavailable": missing}
+    if "per_well" in kept:
+        notes["n_excluded_per_well"] = eff_axis.universe(inputs.table, "per_well").n_excluded
+    if "standard_curve" in kept:
+        fallback = eff_axis.universe(inputs.table, "standard_curve", curves).fallback
+        notes["std_curve_fallback"] = list(fallback)
+    keywords = {
         "matrix_axes": {"efficiency": kept},
         "matrix_source": source,
         "unavailable": {"efficiency": missing},
     }
+    return keywords, notes
 
 
 def study_from_curves(
@@ -470,6 +479,8 @@ def study_from_curves(
     specs = _card_specs(space, stability, summary, settings, headline, counts)
     if "amp_call" in space.dimensions:
         specs.append(_amp_call_spec(space, grid, summary, headline, inputs.not_amplified))
+    if "efficiency" in space.dimensions:
+        specs.append(_efficiency_spec(space, grid, summary, headline, model.axis_notes))
     cards = build_cards(space, summary, specs, headline, settings.autonomy, grid=grid)
     ref_flips = refset_flip_counts(grid, space, summary)
     ref_effect = group_effect(matrix, settings.candidates, high, rest)
@@ -495,6 +506,9 @@ def study_from_curves(
         screen=screen if settings.studio_facts else None,
         routes=routes,
         groups=labels,
+        axis_notes=model.axis_notes,
+        axes=space.axes,
+        screens=model.screens,
     )
     facts = _facts(base, confidence, cards, space, settings, headline, counts, extras)
     result = base.model_copy(update={"confidence": confidence, "facts": facts.as_dict()})
@@ -791,6 +805,63 @@ def _card_specs(
     return specs
 
 
+def flip_counts(
+    grid: pd.DataFrame, space: QpcrSpace, summary: dict[str, GeneRobustness], dimension: str
+) -> dict[str, int]:
+    """Per option of ``dimension``: genes whose conclusion changes when only it changes."""
+    rows = _only_varying(grid, space, dimension)
+    primary = rows["item"].map({gene: s.conclusion for gene, s in summary.items()})
+    changed = rows[rows["conclusion"] != primary]
+    return {
+        str(value): int(changed.loc[changed[dimension] == value, "item"].nunique())
+        for value in space.dimensions[dimension]
+    }
+
+
+EFFICIENCY_WORDING = (
+    "The answer depends on which efficiency turns each Cq into a quantity, e.g. each well's own "
+    "efficiency or the assay's mean efficiency; none of them is the correct one by default."
+)
+
+
+def _efficiency_spec(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    notes: Mapping[str, dict],
+) -> CardSpec:
+    """The "Which efficiency turns Cq into quantity" card (only when the axis is in the grid)."""
+    axis = space.axes["efficiency"]
+    options = list(space.dimensions["efficiency"])
+    by_value = {o.value: o for o in axis.options}
+    eff_notes = dict(notes.get("efficiency", {}))
+    slugs = [slug(str(o)) for o in options]
+    return CardSpec(
+        card_id="card_efficiency",
+        kind="numbers.efficiency_model",
+        dimension="efficiency",
+        options=[OptionSpec(id=str(o), label=by_value[o].label, value=o) for o in options],
+        recommended=str(space.primary["efficiency"]),
+        rationale_template="efficiency_v1",
+        evidence={
+            "title": axis.title,
+            "wording": EFFICIENCY_WORDING,
+            "n_flipped_by_option": flip_counts(grid, space, summary, "efficiency"),
+            "unavailable": dict(axis.unavailable),
+            **{k: v for k, v in eff_notes.items() if k != "unavailable"},
+            "method_card": eff_axis.METHOD_CARD_PATH,
+        },
+        facts=[
+            "f_n_flipped_efficiency",
+            "f_n_genes",
+            *[f"f_eff_label_{s}" for s in slugs],
+            *[f"f_n_flipped_eff_{s}" for s in slugs],
+            *_option_facts(headline, [str(o) for o in options]),
+        ],
+    )
+
+
 def _amp_call_spec(
     space: QpcrSpace,
     grid: pd.DataFrame,
@@ -840,6 +911,9 @@ class _Extras:
     screen: AmpScreen | None
     routes: Mapping[str, RouteResult] | None
     groups: tuple[str, str] | None
+    axis_notes: Mapping[str, dict] = field(default_factory=dict)
+    axes: Mapping[str, object] = field(default_factory=dict)
+    screens: Mapping[str, robustness.AxisScreen] = field(default_factory=dict)
 
 
 def _facts(
@@ -876,6 +950,11 @@ def _facts(
         **({"f_n_flipped_cutoff": len(flipped["cut"])} if "cut" in flipped else {}),
         "f_n_flipped_undetermined": len(flipped["undetermined"]),
         **({"f_n_flipped_amp_call": len(flipped["amp_call"])} if "amp_call" in flipped else {}),
+        **(
+            {"f_n_flipped_efficiency": len(flipped["efficiency"])}
+            if "efficiency" in flipped
+            else {}
+        ),
         "f_n_hold_lt_80": sum(result.robustness[gene].holds < HOLDS_LOW for gene in items),
         **{f"f_{key}": value for key, value in counts.items()},
     }
@@ -928,6 +1007,8 @@ def _facts(
             _refset_facts(add, card)
         if card.id == "card_amp_call":
             _amp_call_facts(add, card)
+        if card.id == "card_efficiency":
+            _efficiency_card_facts(add, card)
     worst = slug(stability.order[-1])
     for gene in headline:
         source = f"f_fc_{slug(gene)}_{worst}"
@@ -935,6 +1016,7 @@ def _facts(
             path = f"cards.card_refset.{worst}_alone.{gene}.fc"
             add(f"f_fc_{slug(gene)}_worst", registry.get(source).value, FC_FMT, TIMES, path)
     _extra_facts(add, extras, settings)
+    _axis_facts(add, extras)
     return registry
 
 
@@ -980,6 +1062,50 @@ def _amp_call_facts(add: Callable[..., None], card: DecisionCard) -> None:
         wells = int(evidence["n_not_amplified_by_rule"][option.id])
         path = f"{root}.n_not_amplified_by_rule.{option.id}"
         add(f"f_n_undetermined_amp_{s}", wells, COUNT_FMT, path=path)
+
+
+def _efficiency_card_facts(add: Callable[..., None], card: DecisionCard) -> None:
+    """Facts for the efficiency-model card, read from the card itself."""
+    root = f"cards.{card.id}"
+    for option in card.options:
+        s = slug(option.id)
+        add(f"f_eff_label_{s}", option.label, path=f"{root}.{option.id}.label")
+        flips = int(card.evidence["n_flipped_by_option"][option.id])
+        add(f"f_n_flipped_eff_{s}", flips, path=f"{root}.evidence.n_flipped_by_option.{option.id}")
+
+
+def _axis_facts(add: Callable[..., None], extras: _Extras) -> None:
+    """Facts for the opt-in axes a study offered: status, screening, what did not apply.
+
+    None exist in the legacy output (no opt-in axis is offered there).
+    """
+    for name, notes in extras.axis_notes.items():
+        axis = extras.axes[name]
+        base = f"axes.{name}"
+        add(f"f_axis_{name}", axis.status, path=f"{base}.status")
+        for option_id, reason in axis.unavailable:
+            add(f"f_axis_{name}_unavailable_{slug(option_id)}", reason, path=f"{base}.unavailable")
+        if "n_excluded_per_well" in notes:
+            n = int(notes["n_excluded_per_well"])
+            add("f_n_eff_excluded_per_well", n, COUNT_FMT, path=f"{base}.n_excluded_per_well")
+        if "std_curve_fallback" in notes:
+            genes = ", ".join(notes["std_curve_fallback"]) or "none"
+            add("f_eff_std_fallback", genes, path=f"{base}.std_curve_fallback")
+        screen = extras.screens.get(name)
+        if screen is not None:
+            add(
+                f"f_screen_{name}",
+                "admitted" if screen.admitted else "not admitted",
+                path=f"screen.{name}.admitted",
+            )
+            delta = screen.max_delta_log2fc
+            add(f"f_screen_{name}_dlog2fc", delta, "{:.2f}", path=f"screen.{name}.max_delta_log2fc")
+            for option, items in screen.flipped.items():
+                add(
+                    f"f_screen_{name}_flips_{slug(option)}",
+                    len(items),
+                    path=f"screen.{name}.flipped.{option}",
+                )
 
 
 def _extra_facts(add: Callable[..., None], extras: _Extras, settings: StudySettings) -> None:

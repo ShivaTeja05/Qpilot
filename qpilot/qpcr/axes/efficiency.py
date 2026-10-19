@@ -176,8 +176,10 @@ def unavailable(table: pd.DataFrame, curves: Mapping[tuple[str, str], StdCurve])
 
 
 def _amplicon_mean(table: pd.DataFrame) -> pd.Series:
-    """Per well: its amplicon's LinRegPCR mean E averaged over runs, weighted by wells."""
-    used = table[table["n0"].notna() & table["eff_target"].notna()]
+    """Per well: its amplicon's LinRegPCR mean E averaged over runs, weighted by study wells."""
+    used = table[
+        (table["sample_type"] == "unkn") & table["n0"].notna() & table["eff_target"].notna()
+    ]
     weights = used.groupby(["target", "run_id"]).size()
     means = used.groupby(["target", "run_id"])["eff_target"].first()
     pooled = (means * weights).groupby(level="target").sum() / weights.groupby(level="target").sum()

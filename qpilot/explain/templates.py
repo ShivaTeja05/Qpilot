@@ -270,12 +270,36 @@ def _confidence(facts: Facts, card: DecisionCard | None, gene: str | None) -> st
 
 Template = Callable[[Facts, "DecisionCard | None", "str | None"], str]
 
+
+def _efficiency(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    text = (
+        "Which efficiency turns each Cq into a quantity is a choice; none of the options is the "
+        "correct one by default. "
+    )
+    prefix = "f_eff_label_"
+    options = [fid[len(prefix) :] for fid in facts if fid.startswith(prefix)]
+    if "f_n_flipped_efficiency" not in facts or "linregpcr" not in options:
+        return text + "This analysis uses LinRegPCR's mean efficiency of each assay only."
+    _need(facts, "f_n_genes")
+    text += f"This analysis uses {_t('f_eff_label_linregpcr')}. Changing only this choice: "
+    parts = []
+    for s in sorted(o for o in options if o != "linregpcr"):
+        _need(facts, f"f_n_flipped_eff_{s}")
+        parts.append(
+            f"with {_t(f'f_eff_label_{s}')}, {_t(f'f_n_flipped_eff_{s}')} of {_t('f_n_genes')} "
+            "genes change their conclusion"
+        )
+    text += "; ".join(parts) + ". "
+    return text + _flips_sentence(facts, "f_n_flipped_efficiency")
+
+
 TEMPLATES: dict[str, Template] = {
     "refset_v1": _refset,
     "cutoff_v1": _cutoff,
     "undetermined_auto_v1": _undetermined,
     "undetermined_v1": _undetermined,
     "ampcall_v1": _ampcall,
+    "efficiency_v1": _efficiency,
     "summary_v1": _summary,
     "meter_v1": _meter,
     "confidence_v1": _confidence,
