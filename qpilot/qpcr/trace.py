@@ -60,7 +60,7 @@ from qpilot.qpcr.design import marker_groups
 from qpilot.qpcr.influence import CALL_NAMES, Comparison, Effect, WelchArrays, robust_z
 from qpilot.qpcr.quant import EXCLUDED
 from qpilot.qpcr.study import StudyModel
-from qpilot.schemas import Conclusion, ContrastResult, Fact
+from qpilot.schemas import ContrastResult, Fact
 from qpilot.schemas_trace import (
     CallChange,
     ConclusionNode,
@@ -77,13 +77,14 @@ from qpilot.schemas_trace import (
 THRESHOLDS: dict[str, float] = {
     "robust_z": 3.5,  # Iglewicz & Hoaglin 1993: modified z-score beyond 3.5 = potential outlier
     "ntc_window_cycles": 5.0,  # MIQE 2.0 via gate's G-NTC-1: Cq_ntc - Cq_unkn < 5 is tainted
+    "moves_number_cap_log2": 0.5,  # class 2: |d log2FC| >= min(CI half-width, 0.5 log2)
     "influential_top": 3,  # units listed in "influential, nothing unusual" besides call-changers
 }
 NTC_TYPES = ("ntc", "ntp")
 CONSEQUENCE_ORDER: dict[str, int] = {"changes_call": 0, "moves_number": 1, "changes_nothing": 2}
 NO_AMPLIFICATION = re.compile(r"^no amplification", re.I)
 TIMES = "×"
-FOLD_FMT = "{:.2g}"
+FOLD_FMT = "{:.3g}"  # 1.98× must not read as 2× next to a 2-fold line
 
 CHECK_NAMES = {
     "S1": "one reference well disagrees with the unit's other references",
@@ -291,7 +292,7 @@ def _wells(
     std = out[(out["sample_type"] == "std") & out["cq"].notna()]
     low = std.groupby([*key, "sample"])["cq"].median().reset_index()
     low = low.sort_values([*key, "cq", "sample"], ascending=[True, True, False, True])
-    low = low.groupby(key).tail(1).set_index(key)
+    low = low.groupby(key).head(1).set_index(key)  # the latest standard = the fewest copies
     low = low.rename(columns={"cq": "std_low_cq", "sample": "std_low_name"})
     out = out.join(low[["std_low_cq", "std_low_name"]], on=key)
     return out
@@ -302,9 +303,7 @@ def _input_shift(matrix: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     values = matrix.to_numpy(dtype=float)
     with np.errstate(invalid="ignore"):
         centred = values - np.nanmedian(values, axis=0, keepdims=True)
-    shift = np.array(
-        [np.nanmedian(row) if np.isfinite(row).any() else np.nan for row in centred]
-    )
+    shift = np.array([np.nanmedian(row) if np.isfinite(row).any() else np.nan for row in centred])
     return shift, robust_z(shift)
 
 
@@ -466,11 +465,12 @@ class _Facts:
                 value, fmt, unit = "not available", "{}", ""
         elif isinstance(value, np.integer | bool):
             value = int(value)
-        fact = Fact(id=fid, value=value, fmt=fmt, unit=unit, path=path or f"trace.{key}")
         old = self.facts.get(fid)
-        if old is not None and old != fact:
-            raise ValueError(f"trace fact {fid} registered twice with different values")
-        self.facts[fid] = fact
+        if old is not None:  # the same number reached twice keeps its first path
+            if (old.value, old.fmt, old.unit) != (value, fmt, unit):
+                raise ValueError(f"trace fact {fid} registered twice with different values")
+            return "{{" + fid + "}}"
+        self.facts[fid] = Fact(id=fid, value=value, fmt=fmt, unit=unit, path=path or f"trace.{key}")
         return "{{" + fid + "}}"
 
     def ids(self, start: int) -> list[str]:
@@ -487,6 +487,15 @@ class _Facts:
 
 def _fold(log2: float) -> float:
     return float(2 ** abs(log2))
+
+
+def _pct(log2: float) -> float:
+    """A change in log2 fold change as a percentage change of the fold change (unsigned)."""
+    return float(100 * (2 ** abs(log2) - 1))
+
+
+def _verb(names: Sequence[str], one: str, many: str) -> str:
+    return one if len(names) == 1 else many
 
 
 def _call_word(call: str) -> str:
@@ -538,9 +547,12 @@ def _unit_wells(ctx: TraceContext, unit: str, gene: str) -> pd.DataFrame:
 
 
 def _consequence(changes_call: bool, d_log2fc: float, half_width: float) -> Consequence:
+    """Changes the call > moves the number by min(CI half-width, 0.5 log2) > changes nothing."""
     if changes_call:
         return "changes_call"
-    if math.isfinite(half_width) and abs(d_log2fc) >= half_width:
+    cap = THRESHOLDS["moves_number_cap_log2"]
+    yardstick = min(half_width, cap) if math.isfinite(half_width) else cap
+    if abs(d_log2fc) >= yardstick:
         return "moves_number"
     return "changes_nothing"
 
@@ -594,6 +606,8 @@ def trace_gene(ctx: TraceContext, gene: str) -> TraceResult:
         _place(ctx, facts, rank, c, gene, base, half) for rank, c in enumerate(ranked, start=1)
     ]
     in_place = {c.i for c in candidates}
+    for c in candidates:  # every unit with a well in a place is unusual, not "nothing unusual"
+        in_place |= {ctx.unit_index(u) for u in c.wells["unit"] if u in ctx.units}
     influential, n_flips = _influential(ctx, j, used, in_place, facts)
     left_out = _left_out_for_gene(ctx, j, facts)
     checked = _checked_for_gene(ctx, j, used, candidates, facts)
@@ -721,9 +735,11 @@ def _option_read(ctx: TraceContext, what: WhatIf, j: int, i: int) -> TraceOption
     if what.regrouped:
         parts = []
         if what.left:
-            parts.append(f"{', '.join(what.left)} leave {ctx.labels[0]}")
+            verb = _verb(what.left, "leaves", "leave")
+            parts.append(f"{', '.join(what.left)} {verb} {ctx.labels[0]}")
         if what.joined:
-            parts.append(f"{', '.join(what.joined)} join {ctx.labels[0]}")
+            verb = _verb(what.joined, "joins", "join")
+            parts.append(f"{', '.join(what.joined)} {verb} {ctx.labels[0]}")
         change = "; ".join(parts)
     return TraceOption(
         id="read_from_other_references",
@@ -772,7 +788,9 @@ def _ntc_candidates(ctx: TraceContext, j: int, used: np.ndarray) -> list[_Candid
             d_log2fc=d,
             changes=_changes(ctx, after, [j] if target else None),
         )
-        ntc = w[(w["plate"] == plate) & (w["gene"] == gene) & (w["well"] == group["ntc_well"].iloc[0])]
+        ntc = w[
+            (w["plate"] == plate) & (w["gene"] == gene) & (w["well"] == group["ntc_well"].iloc[0])
+        ]
         wells = pd.concat([ntc, group.sort_values(["cq", "well"], ascending=[False, True])])
         gap = float(group["ntc_gap"].min())
         out.append(
@@ -870,9 +888,11 @@ def _place(
         _well_model(row, facts, f"{key}_w{n}")
         for n, (_, row) in enumerate(c.wells.iterrows(), start=1)
     ]
-    checks = [_check(ctx, facts, f"{key}_{cid.lower()}", cid, st, z, d, c) for cid, st, z, d in c.checks]
+    checks = [
+        _check(ctx, facts, f"{key}_{cid.lower()}", cid, st, z, d, c) for cid, st, z, d in c.checks
+    ]
     consequence = _consequence(c.changes_gene, c.d_on_gene, half)
-    words = _why(ctx, facts, key, c, u, wells, gene, base, consequence)
+    words = _why(ctx, facts, key, c, u, wells, checks, gene, consequence)
     path = [f"conclusion:{gene}", f"unit:{unit}"]
     if c.kind == "reference_well":
         path.append("normaliser")
@@ -906,28 +926,30 @@ def _check(
     c: _Candidate,
 ) -> TraceCheck:
     start = len(facts.facts)
+    t = facts.tok
+    zt = t(key + "_z", z, "{:+.1f}") if z is not None else ""
     if cid == "S1":
         ref = ctx.refs[data["r"]]
         dev = float(ctx.ref.dev[c.i, data["r"]])
         word = "less" if dev < 0 else "more"
+        fold = t(key + "_fold", _fold(dev), FOLD_FMT, TIMES)
         detail = (
-            f"{facts.tok(key + '_gene', ref)} reads {facts.tok(key + '_fold', _fold(dev), FOLD_FMT, TIMES)} "
-            f"{word} than the unit's other references predict "
-            f"(robust z {facts.tok(key + '_z', z, '{:+.1f}')})"
+            f"{t(key + '_gene', ref)} reads {fold} {word} than the unit's other references "
+            f"predict (robust z {zt})"
         )
     elif cid == "S2":
         shift = float(data["shift"])
         word = "lower" if shift < 0 else "higher"
+        fold = t(key + "_fold", _fold(shift), FOLD_FMT, TIMES)
         detail = (
-            f"every gene of the unit reads about {facts.tok(key + '_fold', _fold(shift), FOLD_FMT, TIMES)} "
-            f"{word} than the study's typical unit (robust z {facts.tok(key + '_z', z, '{:+.1f}')}); "
-            "consistent with the amount of RNA or cDNA put in"
+            f"every gene of the unit reads about {fold} {word} than the study's typical unit "
+            f"(robust z {zt}); consistent with the amount of RNA or cDNA put in"
         )
     elif cid == "S4":
         detail = (
             "the unit's wells amplify less efficiently than their plates' other wells "
-            f"(median shift {facts.tok(key + '_shift', float(data['shift']), '{:+.3f}')}, "
-            f"robust z {facts.tok(key + '_z', z, '{:+.1f}')}); consistent with an inhibitor "
+            f"(median shift {t(key + '_shift', float(data['shift']), '{:+.3f}')}, "
+            f"robust z {zt}); consistent with an inhibitor "
             "carried over from extraction"
         )
     elif cid == "S5":
@@ -936,10 +958,13 @@ def _check(
             facts.tok(f"{key}_note{n}", note) for n, note in enumerate(notes, start=1)
         )
     elif cid == "S6":
+        n, plate = t(key + "_n", data["n"]), t(key + "_plate", data["plate"])
+        gap = t(key + "_gap", data["gap"], "{:.1f}")
+        window = t("ntc_window", THRESHOLDS["ntc_window_cycles"], "{:g}")
         detail = (
-            f"{facts.tok(key + '_n', data['n'])} study wells on plate {facts.tok(key + '_plate', data['plate'])} "
-            "sit within the NTC window of the no-template control "
-            f"(closest {facts.tok(key + '_gap', data['gap'], '{:.1f}')} cycles)"
+            f"{n} study wells on plate {plate} come up less than {window} cycles before it "
+            f"(closest {gap} cycles); MIQE counts a sample positive only when it precedes an "
+            "amplifying negative control by at least that much"
         )
     else:
         detail = ""
@@ -960,12 +985,13 @@ def _why(
     c: _Candidate,
     u: str,
     wells: list[TraceWell],
+    checks: list[TraceCheck],
     gene: str,
-    base: ContrastResult,
     consequence: str,
 ) -> str:
     """'Look here first because …' in token text."""
-    g = facts.tok("gene", gene)
+    t = facts.tok
+    g = t("gene", gene)
     if c.kind == "reference_well":
         well = wells[0] if wells else None
         where = ""
@@ -978,21 +1004,20 @@ def _why(
             if well.cq is not None:
                 where += f" read Cq {facts.tok(key + '_w1_cq', well.cq, '{:.1f}')}"
                 if well.plate_median_cq is not None:
-                    where += (
-                        f" (plate median {facts.tok(key + '_w1_plate_median_cq', well.plate_median_cq, '{:.1f}')}"
-                    )
+                    median = t(key + "_w1_plate_median_cq", well.plate_median_cq, "{:.1f}")
+                    where += f" (plate median {median}"
                     if isinstance(row["std_low_name"], str):
-                        where += (
-                            f"; lowest standard {facts.tok(key + '_std_name', row['std_low_name'])} "
-                            f"reads {facts.tok(key + '_std_cq', float(row['std_low_cq']), '{:.1f}')}"
-                        )
+                        name = t(key + "_std_name", row["std_low_name"])
+                        std_cq = t(key + "_std_cq", float(row["std_low_cq"]), "{:.1f}")
+                        where += f"; lowest standard {name} reads {std_cq}"
                     where += ")"
             else:
                 where += " gave no Cq"
         shift = c.unit_shift or 0.0
         direction = "too high" if shift < 0 else "too low"
+        lead = _lead(consequence)
         text = (
-            f"Look here first because this reference well{where} makes every value of unit {u} "
+            f"{lead} this reference well{where} makes every value of unit {u} "
             f"{facts.tok(key + '_unit_fold', _fold(shift), FOLD_FMT, TIMES)} {direction}"
         )
         read = c.options[0]
@@ -1004,28 +1029,38 @@ def _why(
         text += _option_effect(facts, key, read, gene, g, "read as expected")
         text += _option_effect(facts, key, c.options[1], gene, g, "set aside")
         return text + "."
+    lead = _lead(consequence)
     if c.kind == "plate_control":
         ntc = wells[0]
         return (
-            f"Look here first because the no-template control at plate "
-            f"{facts.tok(key + '_w1_plate', ntc.plate)} well {facts.tok(key + '_w1_well', ntc.well)} "
-            f"amplified (Cq {facts.tok(key + '_w1_cq', ntc.cq, '{:.1f}')}), and study wells feeding "
-            f"{g} sit within the NTC window"
+            f"{lead} the no-template control at plate {t(key + '_w1_plate', ntc.plate)} "
+            f"well {t(key + '_w1_well', ntc.well)} amplified "
+            f"(Cq {t(key + '_w1_cq', ntc.cq, '{:.1f}')}): {checks[0].detail}"
             + _option_effect(facts, key, c.options[0], gene, g, "set aside")
             + "."
         )
     if c.kind == "target_well":
         well = wells[0]
         return (
-            f"Look at the {g} well of unit {u} (plate {facts.tok(key + '_w1_plate', well.plate)} "
-            f"well {facts.tok(key + '_w1_well', well.well)}): it carries a curve note and this "
-            "value matters here" + _option_effect(facts, key, c.options[0], gene, g, "set aside") + "."
+            f"{lead} the {g} well of unit {u} at plate "
+            f"{facts.tok(key + '_w1_plate', well.plate)} well "
+            f"{facts.tok(key + '_w1_well', well.well)} carries a curve note "
+            f"({checks[0].detail})"
+            + _option_effect(facts, key, c.options[0], gene, g, "set aside")
+            + "."
         )
     return (
-        f"Look at unit {u} as a whole: its wells share a pattern across genes"
+        f"{lead} unit {u} as a whole stands out: "
+        + "; ".join(check.detail for check in checks)
         + _option_effect(facts, key, c.options[0], gene, g, "set aside")
         + "."
     )
+
+
+def _lead(consequence: str) -> str:
+    if consequence == "changes_nothing":
+        return "Unusual, but it changes nothing for this result:"
+    return "Look here first because"
 
 
 def _option_effect(
@@ -1044,8 +1079,8 @@ def _option_effect(
     else:
         d = option.d_log2fc or 0.0
         text = (
-            f"; {verb}, {g} keeps its call (fold change moves "
-            f"{facts.tok(oid + '_dfold', _fold(d), '{:.3g}', TIMES)})"
+            f"; {verb}, {g} keeps its call (fold change moves by "
+            f"{facts.tok(oid + '_dpct', _pct(d), '{:.1f}', ' %')})"
         )
     others = [ch.gene for ch in option.changes if ch.gene != gene]
     if others:
@@ -1065,21 +1100,27 @@ def _influential(
     calm = used.copy()
     calm[list(in_place)] = False
     order = sorted(np.flatnonzero(calm), key=lambda i: (-abs(d[i]), ctx.units[i]))
-    chosen = [i for i in order if flips[i]] + [
-        i for i in order[: int(THRESHOLDS["influential_top"])] if not flips[i]
-    ]
+    n = int(used.sum())
+    se = float(ctx.comparison.base.se[j])
+    cutoff = 2 / math.sqrt(n) if n else math.inf  # size-adjusted DFBETAS (Belsley et al. 1980)
+    big = [i for i in order[: int(THRESHOLDS["influential_top"])] if abs(d[i]) / se > cutoff]
+    chosen = [i for i in order if flips[i]] + big
     chosen = sorted(set(chosen), key=lambda i: (-abs(d[i]), ctx.units[i]))
     rel = ctx.comparison.x[:, j]
     out = []
     for n, i in enumerate(chosen, start=1):
         start = len(facts.facts)
-        group_mask = (ctx.comparison.a[:, j] if ctx.in_a[i] else ctx.comparison.b[:, j])
+        group_mask = ctx.comparison.a[:, j] if ctx.in_a[i] else ctx.comparison.b[:, j]
         values = rel[group_mask]
         z = float(robust_z(values)[np.flatnonzero(group_mask).tolist().index(i)])
         key = f"i{n}"
         facts.tok(f"{key}_unit", ctx.units[i])
         facts.tok(f"{key}_dfold", _fold(float(d[i])), "{:.3g}", TIMES)
         note = "nothing unusual in its wells"
+        target = _unit_wells(ctx, ctx.units[i], ctx.items[j])
+        noted = sorted({x for x in target["note"] if x})
+        if noted:
+            note = "a curve note on its well (" + "; ".join(noted) + "); nothing else unusual"
         if math.isfinite(z) and abs(z) > THRESHOLDS["robust_z"] and not ctx.replicates:
             note = (
                 "its value is far from its group; with one well per unit and gene this "
@@ -1245,14 +1286,14 @@ def _gene_summary(
 ) -> str:
     t = facts.tok
     g, call = t("gene", gene), t("call", _call_word(base.conclusion))
+    rule_fold = t("rule_fold", 2**ctx.model.space.rule.min_log2fc, "{:g}", "-fold")
     if base.log2fc < 0:
         size = f"{t('fold_down', 1 / base.fc, FOLD_FMT, TIMES)} lower"
     else:
         size = f"{t('fc', base.fc, FOLD_FMT, TIMES)} higher"
     text = (
         f"{g}: {call}, {size} in {t('group_a', ctx.labels[0])} than {t('group_b', ctx.labels[1])} "
-        f"(p {t('p', base.p, '{:.2g}')}; rule: at least {t('rule_fold', 2 ** ctx.model.space.rule.min_log2fc, '{:g}', '-fold')} "
-        "and significant)."
+        f"(p {t('p', base.p, '{:.2g}')}; rule: at least {rule_fold} and significant)."
     )
     if n_flips:
         text += (
@@ -1281,11 +1322,10 @@ def _gene_summary(
         text += " Nothing to look at: the result is what the wells say."
     calm = [i for i in influential if i.note == "nothing unusual in its wells"]
     if calm:
+        n = influential.index(calm[0]) + 1
         text += (
-            f" Most influential with nothing unusual: unit {t('i1_unit', influential[0].unit)}"
+            f" Most influential with nothing unusual: unit {t(f'i{n}_unit', calm[0].unit)}"
             " (keep it; its value is what its wells say)."
-            if influential[0].note == "nothing unusual in its wells"
-            else ""
         )
     if left_out:
         text += (
