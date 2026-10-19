@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable, Collection, Mapping, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from itertools import combinations
 from typing import Any
 
@@ -60,6 +60,19 @@ DEFAULT_UNDETERMINED: tuple[Undetermined, ...] = ("drop", "cap")
 DEFAULT_AMP_CALL = "linregpcr"
 #: Non-detect rules the space can apply today (see :mod:`qpilot.qpcr.axes`).
 NONDETECT_RULES: tuple[str, ...] = ("drop", "cap")
+
+
+@dataclass(frozen=True)
+class MatrixStage:
+    """What a matrix source returns for one combination of matrix-stage options.
+
+    ``excluded`` (units x genes, ``True`` where every well of the unit was excluded, e.g. by
+    the ``per_well`` efficiency's validity range) keeps such values out under every non-detect
+    rule, as a person's exclusion does.
+    """
+
+    values: pd.DataFrame
+    excluded: pd.DataFrame | None = None
 
 
 def ref_subsets(candidates: Sequence[str]) -> list[tuple[str, ...]]:
@@ -118,7 +131,7 @@ class QpcrSpace:
         excluded: pd.DataFrame | None = None,
         group_labels: tuple[str, str] | None = None,
         matrix_axes: Mapping[str, Sequence[Any]] | None = None,
-        matrix_source: Callable[[Mapping[str, Any]], pd.DataFrame] | None = None,
+        matrix_source: Callable[[Mapping[str, Any]], pd.DataFrame | MatrixStage] | None = None,
         option_labels: Mapping[str, Mapping[Any, str]] | None = None,
     ) -> None:
         marker_mode = groups is None
@@ -207,6 +220,7 @@ class QpcrSpace:
             self._given[key] = other.reindex(index=matrix.index, columns=matrix.columns)
         self._by_key: dict[tuple[Any, ...], tuple[np.ndarray, np.ndarray, pd.DataFrame]] = {}
         self._nondetect: dict[tuple[tuple[Any, ...], str], np.ndarray] = {}
+        self._excl_by_key: dict[tuple[Any, ...], np.ndarray] = {}
         self._ref_mean: dict[
             tuple[tuple[str, ...], tuple[Any, ...]], tuple[np.ndarray, np.ndarray]
         ] = {}
@@ -278,7 +292,14 @@ class QpcrSpace:
                 if self._matrix_source is None:
                     raise AxisError(f"no matrix for the options {key!r}")
                 built = self._matrix_source(dict(zip(self._matrix_names, key, strict=True)))
-                matrix = built.reindex(index=self._samples, columns=self._columns)
+                if not isinstance(built, MatrixStage):
+                    built = MatrixStage(built)
+                matrix = built.values.reindex(index=self._samples, columns=self._columns)
+                if built.excluded is not None:
+                    mask = built.excluded.reindex(index=self._samples, columns=self.items)
+                    mask = mask.astype("boolean").fillna(False).to_numpy(dtype=bool)
+                    base = self._excluded
+                    self._excl_by_key[key] = mask if base is None else (mask | base)
             self._by_key[key] = self._rule_arrays(matrix, self._candidates)
         return self._by_key[key]
 
@@ -298,11 +319,12 @@ class QpcrSpace:
         if cached is not None:
             return cached
         values, lowest, _ = self._matrix_arrays(key)
+        excluded = self._excl_by_key.get(key, self._excluded)
         if rule == "cap":
-            if self._excluded is None:
+            if excluded is None:
                 values = np.where(np.isnan(values), lowest, values)
             else:  # an excluded value stays out; only undetermined wells are capped
-                values = np.where(np.isnan(values) & ~self._excluded, lowest, values)
+                values = np.where(np.isnan(values) & ~excluded, lowest, values)
         elif rule != "drop":
             raise AxisError(f"unknown undetermined option {rule!r}")
         self._nondetect[(key, rule)] = values
