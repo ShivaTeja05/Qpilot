@@ -211,27 +211,30 @@ def register(server: Any, owners: dict[str, Any], store: Callable[[], Any]) -> N
         )
 
 
+def _reader(name: str, store: Callable[[], Any]) -> Callable[[str], str]:
+    def read(study_id: str) -> str:
+        workspace = store().workspace(study_id)  # the store checks the id (hex only)
+        path = workspace / name
+        if path.is_symlink() or not path.is_file():
+            raise FileNotFoundError(f"this study has no {name}")
+        if path.stat().st_size > MAX_RESOURCE_BYTES:
+            raise ValueError(f"{name} is too large to serve")
+        return path.read_text(encoding="utf-8")
+
+    read.__name__ = "study_" + name.replace(".", "_")
+    return read
+
+
 def register_resources(server: Any, store: Callable[[], Any]) -> None:
     """Serve each study file in :data:`STUDY_FILES` as a read-only resource template."""
     for name, (mime, description) in STUDY_FILES.items():
-
-        def read(study_id: str, _name: str = name) -> str:
-            workspace = store().workspace(study_id)  # the store checks the id (hex only)
-            path = workspace / _name
-            if path.is_symlink() or not path.is_file():
-                raise FileNotFoundError(f"this study has no {_name}")
-            if path.stat().st_size > MAX_RESOURCE_BYTES:
-                raise ValueError(f"{_name} is too large to serve")
-            return path.read_text(encoding="utf-8")
-
-        read.__name__ = "study_" + name.replace(".", "_")
         server.resource(
             RESOURCE_SCHEME.replace("{name}", name),
             name=name,
             title=name,
             description=description,
             mime_type=mime,
-        )(read)
+        )(_reader(name, store))
 
 
 __all__ = [
