@@ -30,8 +30,8 @@ controls:
 technical_replicates: yes (triplicates)
 melt: false
 truth: 'truth.csv: per well n0 (copies), efficiency, offset_rfu, slope_rfu_per_cycle, rfu_per_copy, nmax, rox_rfu,
-  group, and the CFX-style threshold Cq (250 RFU on the baseline-subtracted curve). True fold change GOI/REF, group
-  B vs A = 4.0 (copies).'
+  group, and the CFX-style threshold Cq (250 RFU on the baseline-subtracted curve). Design fold change GOI/REF,
+  group B vs A = 4.0; realised in truth.csv n0 (geometric means, 5 % per-well pipetting noise) = 3.69.'
 retrieved: n/a
 files:
 - name: qpilot-synthetic-baselined -  Quantification Amplification Results_SYBR.csv
