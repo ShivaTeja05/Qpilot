@@ -112,7 +112,7 @@ COLUMN_ORDER = (
     "plateau",
 )
 
-_SAFE_NAME = re.compile(r"^[\w()\-. ]{1,64}$")
+_SAFE_NAME = re.compile(r"^[\w()\-. ]{1,64}\Z")
 _DATE_TOKEN = re.compile(r"_20\d{6}(?=_|$)")
 _WELL_LABEL = re.compile(r"^[A-Z]+[1-9][0-9]*$")
 _LINREGPCR_WELL = re.compile(r"^(.)([1-9][0-9]*)$", re.DOTALL)

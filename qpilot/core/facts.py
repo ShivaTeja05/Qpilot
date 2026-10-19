@@ -17,7 +17,7 @@ from pathlib import Path
 
 from qpilot.schemas import Fact
 
-FACT_ID = re.compile(r"^f_[a-z0-9_]+$")
+FACT_ID = re.compile(r"^f_[a-z0-9_]+\Z")
 
 
 def slug(name: str) -> str:

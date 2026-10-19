@@ -75,7 +75,7 @@ TABLE_COLUMNS: tuple[str, ...] = (
 WELL_COLUMN = "well"  # with ``wells=True``: the well key behind a row ("" for a unit's value)
 Layout = Literal["column", "nested"]
 UNIT_ROW = 0  # ``well_rep`` of a column-layout row: the unit's value, not one well
-SAFE_LABEL = re.compile(r"^[\w()\-. ]{1,64}$")  # the rule of ``curves.safe_name``
+SAFE_LABEL = re.compile(r"^[\w()\-. ]{1,64}\Z")  # the rule of ``curves.safe_name``
 DEMO_DESIGN_ID = "vermeulen_expression_defined"
 EXCLUSION_KIND = "prism.exclusion_reason"
 WITHHELD = "withheld"  # an excluded gene's conclusion when the engine then withholds the gene

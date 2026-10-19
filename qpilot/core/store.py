@@ -49,8 +49,8 @@ if TYPE_CHECKING:
     from qpilot.core.proposals import ProposalStore
     from qpilot.core.pseudonym import Pseudonymiser
 
-STUDY_ID = re.compile(r"^[0-9a-f]{6,64}$")
-INPUT_SHA = re.compile(r"^[0-9a-f]{64}$")
+STUDY_ID = re.compile(r"^[0-9a-f]{6,64}\Z")
+INPUT_SHA = re.compile(r"^[0-9a-f]{64}\Z")
 SESSIONS_DIR = "sessions"
 DESIGN_FILE = "study_design.json"
 NO_ENGINE_CHECK = "engine check not available in this build"
