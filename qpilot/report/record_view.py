@@ -222,9 +222,9 @@ def open_record(path: str | Path) -> RecordView:
     try:
         root = unzip_record(source, Path(tmp) / "record")
         return RecordView(root, source, tmp)
-    except RecordError as err:
+    except (RecordError, OSError) as err:  # OSError: unsafe members unzip_record misses (RT-005)
         shutil.rmtree(tmp, ignore_errors=True)
-        raise ReportError(str(err)) from err
+        raise ReportError(f"unsafe or damaged record zip: {source.name}") from err
     except BaseException:
         shutil.rmtree(tmp, ignore_errors=True)
         raise

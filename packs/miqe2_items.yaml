@@ -4,8 +4,14 @@
 # Information for Publication of Quantitative Real-Time PCR Experiments Guidelines.
 # Clin Chem 2025;71(6):634-651. doi:10.1093/clinchem/hvaf043 (Table 1).
 # Labels are short paraphrases for finding an item; Table 1 of the paper has the exact wording.
-# Item list and classes from research note 14 (KQ1); the paper's response format is
-# "Yes" (with location or value) or "No" (with the rationale for omission).
+# The published table is unnumbered: ids such as "5.13" are qPilot's section.position ids.
+# Its columns are "Provided" (Yes or No) and "Description/Justification" (if Yes, the location
+# or value; if No, the rationale). MIQE 2.0 has no essential/desirable split.
+# Item list from research note 14 (KQ1), confirmed by `scientist` (53 items: 8/13/7/6/19).
+# Classes below are qPilot's own triage, not part of MIQE; reports never quote class counts.
+# Footnotes encoded in the resolvers: c (sequences highly desirable, else assay context
+# sequences), d (section 3 and parts of 5 may not apply), e (no-RT control desirable, no longer
+# essential once DNA-free), f (reagent details), j (efficiency-corrected quantities necessary).
 #
 # class: a = from the RDML file plus the engine; b = from instrument/QC exports or a lab profile;
 #        c = a short per-study form; d = only a person can attest (never answered by qPilot).
@@ -16,7 +22,7 @@
 schema: qpilot.miqe2_items/1
 name: miqe2-items
 version: "1.0.0"
-reviewed_by: pending (scientist)
+reviewed_by: scientist (bus #0052, 19 Oct 2026)
 citation: >-
   Bustin SA, Ruijter JM, van den Hoff MJB, Kubista M, Pfaffl MW, Shipley GL, Tran N, Rödiger S,
   Untergasser A, Mueller R, Nolan T, Milavec M, Burns MJ, Huggett JF, Vandesompele J, Wittwer CT.
@@ -76,7 +82,7 @@ items:
   - {id: "5.11", class: a, fill: null, label: "Repeatability (intra-experiment variation)"}
   - {id: "5.12", class: a, fill: null, label: "Reproducibility (inter-run, inter-user or inter-laboratory variation)"}
   - {id: "5.13", class: a, fill: lod, label: "Whether a limit of detection was calculated"}
-  - {id: "5.14", class: a, fill: lod, label: "Dynamic range (limits of quantification)"}
+  - {id: "5.14", class: a, fill: lod, label: "Dynamic range (linear range of the standard curve)"}
   - {id: "5.15", class: a, fill: refgene_validation, label: "Method used to validate the reference genes"}
   - {id: "5.16", class: a, fill: normalisation, label: "Normalisation method and calculation"}
   - {id: "5.17", class: a, fill: statistics, label: "Statistical methods"}
