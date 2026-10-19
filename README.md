@@ -138,7 +138,7 @@ The app binds to `127.0.0.1` only, is never shared, refuses requests for any oth
 
 ## Roadmap (not built)
 
-QuantStudio TXT and other native importers · results written back into RDML and a per-gene CSV · the Prism export run in a real Prism · the robustness audit on designs with technical replicates · a simulator panel on the Studio page · replicate-outlier and melt-peak cards on data that has them · a mixed model with plate as a random effect once a gene spans two or more plates · NormFinder, reimplemented from the paper.
+QuantStudio TXT and other native importers · results written back into RDML and a per-gene CSV · the Prism export run in a real Prism · the robustness audit on designs with technical replicates · a simulator panel on the Studio page · replicate-outlier and melt-peak cards on data that has them · plate effects estimated once a gene spans two or more plates · NormFinder, reimplemented from the paper.
 
 ## Licence and citation
 
