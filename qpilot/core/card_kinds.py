@@ -176,3 +176,11 @@ register_card_kind(
     dimension="undetermined",
 )
 register_card_kind("amp_call", "Which curves count as amplified", "qpcr", dimension="amp_call")
+
+# Run Gate's kinds (built by core/gate.py, domain-agnostic). A gate card exists only when
+# excluding what a rule flags can change a conclusion; deciding to set a whole plate aside is
+# always a person's call (W2 spec D.4).
+register_card_kind("gate.rule", "What a failing control check means for the conclusions", "gate")
+register_card_kind(
+    "gate.invalidate_plate", "Whether to set a whole plate aside", "gate", always_human=True
+)

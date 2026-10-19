@@ -182,3 +182,35 @@ def test_existing_records_load_unchanged(fixture_cards):
     assert {c.kind for c in fixture_cards} <= set(LEGACY)
     for card in fixture_cards:
         assert DecisionCard.model_validate(card.model_dump(mode="json")) == card
+
+
+EMITTED = {
+    *LEGACY,
+    "numbers.efficiency_model",
+    "capture.import_trust",
+    "gate.rule",
+    "gate.invalidate_plate",
+}
+
+
+@pytest.mark.parametrize("module", ["qpilot.mcp_server", "qpilot.qpcr.study", "qpilot.qpcr.plan"])
+def test_every_kind_is_registered_whichever_module_a_process_imports(module):
+    import subprocess
+    import sys
+
+    code = (
+        f"import {module}\n"
+        "from qpilot.core.card_kinds import registered_kinds\n"
+        "print(' '.join(k.name for k in registered_kinds()))\n"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    assert EMITTED <= set(out.stdout.split())
+
+
+def test_gate_and_capture_kinds():
+    import qpilot.qpcr  # noqa: F401  (registers the plugin's kinds)
+
+    assert ck.card_kind("gate.invalidate_plate").always_human
+    assert not ck.card_kind("gate.rule").always_human
+    assert ck.card_kind("capture.import_trust").always_human
+    assert ck.card_kind("numbers.efficiency_model").dimension == "efficiency_model"
