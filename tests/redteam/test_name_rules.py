@@ -6,7 +6,8 @@ RT-004: the allow-list patterns are written ``^...$`` and applied with ``.match`
 attribute normalisation only folds literal line breaks), so a run, sample or target id from a
 file can carry one past the rule that promises "letters, digits, spaces, ``_ - . ( )``".
 Measured on main @ 81484f7: ``<run id="Run 1&#10;">`` loads as ``'Run 1\\n'`` and LinRegPCR's
-error names ``run Run 1\\n:``. The fix is ``\\Z`` or ``re.fullmatch``.
+error names ``run Run 1\\n:``. Fixed on agents/integration @ a5983d4 (every pattern ends
+at ``\\Z``); these tests guard it.
 """
 
 from __future__ import annotations
@@ -32,27 +33,23 @@ def test_an_rdml_attribute_can_carry_a_trailing_newline(tmp_path: Path) -> None:
     assert runs(load(path))[0]["id"] == "Run 1\n"
 
 
-@pytest.mark.xfail(strict=True, reason="RT-004: '$' lets a trailing newline through")
 @pytest.mark.parametrize("name", ["Run 1\n", "ODC1\n", "Sample 50\n"])
 def test_safe_name_never_returns_a_line_break(name: str) -> None:
     assert "\n" not in safe_name(name, "target")
 
 
-@pytest.mark.xfail(strict=True, reason="RT-004: '$' lets a trailing newline through")
 def test_the_export_label_rule_refuses_a_trailing_newline() -> None:
     from qpilot.qpcr.export import SAFE_LABEL
 
     assert not SAFE_LABEL.match("ODC1\n")
 
 
-@pytest.mark.xfail(strict=True, reason="RT-004: '$' lets a trailing newline through")
 def test_the_model_label_rule_refuses_a_trailing_newline() -> None:
     from qpilot.ai.interpret import _LABEL
 
     assert not _LABEL.match("ODC1\n")
 
 
-@pytest.mark.xfail(strict=True, reason="RT-004: '$' lets a trailing newline through")
 def test_a_study_id_with_a_trailing_newline_is_not_an_id() -> None:
     from qpilot.core.store import STUDY_ID
 

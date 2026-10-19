@@ -6,6 +6,7 @@ data; never hang, never resolve an entity or include, never raise anything else.
 * RT-005: ``core.record.unzip_record`` lets ``OSError`` escape on a member named ``.`` or a
   file member that is also a folder (``qpilot verify`` prints a traceback instead of
   ``qpilot verify: unsafe ...``); containment itself held on every case.
+  Fixed on agents/integration; guarded here.
 """
 
 from __future__ import annotations
@@ -104,15 +105,7 @@ def test_the_sheet_reader_refuses_or_reads_hostile_xlsx_safely(
 ESCAPES = ("escaped.txt", "qpilot_redteam_absolute.txt")
 
 
-@pytest.mark.parametrize(
-    "case",
-    [
-        c
-        if c not in {"dot_member.zip", "file_then_dir.zip"}
-        else pytest.param(c, marks=pytest.mark.xfail(strict=True, reason="RT-005"))
-        for c in sorted(zip_cases())
-    ],
-)
+@pytest.mark.parametrize("case", sorted(zip_cases()))
 def test_unzip_record_refuses_escaping_or_broken_zips_with_record_error(
     case: str, tmp_path: Path
 ) -> None:

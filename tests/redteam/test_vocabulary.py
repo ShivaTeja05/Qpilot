@@ -51,9 +51,7 @@ ALLOWED_LINES: dict[tuple[str, str], str] = {
 #: (file, rule) -> finding id, for violations reported to the owner and not yet fixed. The main
 #: lint skips these; ``test_known_open_findings_are_fixed`` fails strictly once they are gone,
 #: so the entry must then be deleted.
-KNOWN_OPEN: dict[tuple[str, str], str] = {
-    ("qpilot/__init__.py", "validated (about a run or result)"): "RT-003",
-}
+KNOWN_OPEN: dict[tuple[str, str], str] = {}
 
 _RESULT = r"(?:run|plate|result|analysis|assay|experiment|conclusion|study|data ?set)s?"
 RULES: dict[str, re.Pattern[str]] = {
