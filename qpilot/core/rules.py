@@ -193,6 +193,13 @@ class BasedOn(_Strict):
         return value
 
 
+class ConsequenceParams(_Strict):
+    """Thresholds of the consequence test (project conventions, unsourced; lab-editable)."""
+
+    magnitude_log2: float = Field(default=0.5, ge=0, le=10)
+    magnitude_agreement: float = Field(default=0.10, ge=0, le=1)
+
+
 class RulePack(_Strict):
     """A validated rule pack."""
 
@@ -200,6 +207,7 @@ class RulePack(_Strict):
     version: str
     label: str = Field(min_length=1, max_length=MAX_TEXT)
     based_on: BasedOn | None = None
+    consequence: ConsequenceParams = Field(default_factory=ConsequenceParams)
     sources: dict[str, Source] = Field(min_length=1, max_length=200)
     rules: list[Rule] = Field(min_length=1, max_length=MAX_RULES)
 
