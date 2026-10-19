@@ -64,7 +64,7 @@ HEADER_KEYS: dict[str, str] = {
 
 
 def canonical_header(key: str) -> str:
-    """qPilot's key for a vendor header key (``other_<slug>`` for keys it does not know).
+    """QPilot's key for a vendor header key (``other_<slug>`` for keys it does not know).
 
     Calibration lines keep their meaning: ``Calibration Background is expired`` ->
     ``calibration_background_is_expired``.
