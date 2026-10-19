@@ -200,7 +200,7 @@ AXES: dict[str, AxisDef] = {
             "matrix",
             "Which efficiency turns Cq into quantity",
             legacy=False,
-            card_kind="efficiency_model",
+            card_kind="numbers.efficiency_model",
             method_card="methods/efficiency_model.md",
             catalogue=_EFFICIENCY,
         ),

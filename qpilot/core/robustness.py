@@ -13,14 +13,26 @@ Definitions (they match the oracle, ``planning/verification/verify.py``):
   largest absolute change in log2 fold change.
 - **min_flip_changes**: the fewest dimensions that must change, from the primary cell, to reach
   a cell with a different conclusion (0 when no cell changes it).
+- **rests on**: the dimensions whose change alone, from the primary cell, flips an item's
+  conclusion (:func:`fragility_by_axis`), i.e. which choice the answer depends on.
+
+Keeping big grids affordable (W3 §4.2): :func:`screen_axis` varies one dimension alone from the
+primary cell so a plugin can leave out an optional axis that changes nothing that matters, and
+``run_grid(space, max_cells=N)`` evaluates, when the full product is larger than ``N``, the
+primary cell, every one-at-a-time cell (so ``impact`` stays exact) and a seeded uniform sample
+of the other cells. :func:`grid_plan` says which of the two happened. Without ``max_cells`` the
+grid is the full product, exactly as before.
 """
 
 from __future__ import annotations
 
 import itertools
-from collections.abc import Iterator
+import math
+from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from qpilot.schemas import DecisionSpace, GeneRobustness
@@ -53,16 +65,63 @@ def _primary_index(space: DecisionSpace) -> dict[str, int]:
     return out
 
 
-def run_grid(space: DecisionSpace) -> pd.DataFrame:
-    """Evaluate every cell and return one row per cell x item.
+def _sampled_combos(
+    space: DecisionSpace, names: list[str], sizes: list[int], max_cells: int, seed: int
+) -> list[tuple[int, ...]]:
+    """Primary + one-at-a-time cells + a seeded uniform sample of the rest, in product order."""
+    primary = _primary_index(space)
+    base = tuple(primary[n] for n in names)
+    must = {base}
+    for d, size in enumerate(sizes):
+        for i in range(size):
+            must.add(base[:d] + (i,) + base[d + 1 :])
+    total = math.prod(sizes)
+    flat_must = {int(np.ravel_multi_index(c, sizes)) for c in must}
+    room = max(0, max_cells - len(flat_must))
+    rest = np.setdiff1d(np.arange(total, dtype=np.int64), np.fromiter(flat_must, np.int64))
+    rng = np.random.default_rng(seed)
+    picked = rng.choice(rest, size=min(room, len(rest)), replace=False) if room else rest[:0]
+    flat = np.sort(np.concatenate([np.fromiter(flat_must, np.int64), picked]))
+    return [tuple(int(i) for i in c) for c in zip(*np.unravel_index(flat, sizes), strict=True)]
+
+
+def grid_plan(space: DecisionSpace, max_cells: int | None = None, seed: int = 0) -> dict[str, Any]:
+    """What :func:`run_grid` evaluates: the full product, or a seeded sample of it."""
+    total = n_cells(space)
+    sampled = max_cells is not None and total > max_cells
+    if sampled:
+        sizes = [len(options) for options in space.dimensions.values()]
+        evaluated = len(_sampled_combos(space, list(space.dimensions), sizes, max_cells, seed))
+    else:
+        evaluated = total
+    return {
+        "dimensions": list(space.dimensions),
+        "full_product": total,
+        "n_cells": evaluated,
+        "sampled": sampled,
+        "max_cells": max_cells,
+        "seed": seed if sampled else None,
+    }
+
+
+def run_grid(space: DecisionSpace, *, max_cells: int | None = None, seed: int = 0) -> pd.DataFrame:
+    """Evaluate every cell (or a capped sample of them) and return one row per cell x item.
 
     Columns: one per dimension (the option value), one ``<dimension>__idx`` per dimension (the
     option's position, used for comparisons because option values may be tuples), then ``item``,
     ``log2fc``, ``fc``, ``p`` and ``conclusion`` (from ``space.conclude``).
+
+    With ``max_cells`` and a product larger than it, only the primary cell, every
+    one-at-a-time cell and a sample (``numpy`` generator seeded with ``seed``) of the other
+    cells are evaluated, still in product order; see :func:`grid_plan`.
     """
     names = list(space.dimensions)
     rows: list[dict[str, Any]] = []
-    index_combos = itertools.product(*(range(len(space.dimensions[n])) for n in names))
+    sizes = [len(space.dimensions[n]) for n in names]
+    if max_cells is not None and math.prod(sizes) > max_cells:
+        index_combos: Any = _sampled_combos(space, names, sizes, max_cells, seed)
+    else:
+        index_combos = itertools.product(*(range(size) for size in sizes))
     for idx_combo in index_combos:
         cell = {n: space.dimensions[n][i] for n, i in zip(names, idx_combo, strict=True)}
         results = space.evaluate(cell)
@@ -191,3 +250,106 @@ def to_csv_frame(grid: pd.DataFrame) -> pd.DataFrame:
 def fragility(grid: pd.DataFrame, space: DecisionSpace) -> dict[str, int]:
     """``min_flip_changes`` for every item (input for the confidence checks)."""
     return {item: min_flip_changes(grid, space, item) for item in space.items}
+
+
+@dataclass(frozen=True)
+class AxisScreen:
+    """One dimension varied alone from the primary cell: does any option matter?"""
+
+    name: str
+    flipped: dict[str, tuple[str, ...]]  # option (as grid.csv writes it) -> items that flip
+    max_delta_log2fc: float  # over options and items, finite values only
+    min_log2fc: float
+    admitted: bool  # some option flips an item or moves a log2 fold change > min_log2fc
+
+    def as_dict(self) -> dict[str, Any]:
+        """JSON form (stable key order)."""
+        return {
+            "name": self.name,
+            "admitted": self.admitted,
+            "min_log2fc": self.min_log2fc,
+            "max_delta_log2fc": self.max_delta_log2fc,
+            "flipped": {k: list(v) for k, v in self.flipped.items()},
+        }
+
+
+def _text(value: Any) -> str:
+    return "|".join(map(str, value)) if isinstance(value, tuple) else str(value)
+
+
+def screen_axis(
+    space: DecisionSpace,
+    name: str,
+    options: Sequence[Any] | None = None,
+    min_log2fc: float = 0.5,
+) -> AxisScreen:
+    """Vary ``name`` alone from the primary cell and decide whether it belongs in the grid.
+
+    Admitted when some option flips an item's conclusion or moves a log2 fold change by more
+    than ``min_log2fc`` (W3 §4.2; 0.5 log2 is the prototypes' reporting threshold). An axis
+    that moves nothing alone can still interact with others; the plugin records it as
+    screened out, never as absent.
+    """
+    options = list(space.dimensions[name] if options is None else options)
+    base = space.evaluate(dict(space.primary))
+    flipped: dict[str, tuple[str, ...]] = {}
+    largest = 0.0
+    for option in options:
+        if option == space.primary.get(name):
+            continue
+        results = space.evaluate({**space.primary, name: option})
+        flips = tuple(
+            item
+            for item in space.items
+            if space.conclude(results[item]) != space.conclude(base[item])
+        )
+        flipped[_text(option)] = flips
+        shifts = [abs(results[i].log2fc - base[i].log2fc) for i in space.items]
+        finite = [s for s in shifts if math.isfinite(s)]
+        largest = max(largest, max(finite, default=0.0))
+    admitted = any(flipped.values()) or largest > min_log2fc
+    return AxisScreen(name, flipped, float(largest), float(min_log2fc), bool(admitted))
+
+
+def fragility_by_axis(grid: pd.DataFrame, space: DecisionSpace) -> dict[str, dict[str, Any]]:
+    """Per item: which choices its conclusion rests on (JSON-serialisable, stable order).
+
+    ``rests_on`` lists the dimensions whose change alone, from the primary cell, flips the
+    conclusion; ``by_axis`` gives for every dimension ``flips`` (alone), ``flips_anywhere``
+    (at some setting of the others), ``max_delta_log2fc`` (alone) and ``flipping_options``
+    (alone; option values as ``grid.csv`` writes them, in option order).
+    """
+    primary_idx = _primary_index(space)
+    names = list(space.dimensions)
+    prim_rows = grid[_primary_mask(grid, primary_idx)].set_index("item")
+    anywhere = {name: set(flipped_anywhere(grid, name)) for name in names}
+    alone: dict[str, pd.DataFrame] = {}
+    for name in names:
+        rows = grid[_primary_mask(grid, primary_idx, skip=name)]
+        base = prim_rows.loc[rows["item"]]
+        alone[name] = rows.assign(
+            changed=rows["conclusion"].to_numpy() != base["conclusion"].to_numpy(),
+            delta=(rows["log2fc"].to_numpy() - base["log2fc"].to_numpy()),
+        )
+    out: dict[str, dict[str, Any]] = {}
+    for item in space.items:
+        conclusion = str(prim_rows.loc[item, "conclusion"])
+        by_axis: dict[str, dict[str, Any]] = {}
+        for name in names:
+            rows = alone[name][alone[name]["item"] == item]
+            changed = rows[rows["changed"]].sort_values(f"{name}{IDX_SUFFIX}")
+            deltas = rows["delta"].abs()
+            by_axis[name] = {
+                "flips": bool(len(changed)),
+                "flips_anywhere": item in anywhere[name],
+                "max_delta_log2fc": float(deltas.max()) if len(deltas) else 0.0,
+                "flipping_options": [_text(v) for v in changed[name]],
+            }
+        out[item] = {
+            "conclusion": conclusion,
+            "holds": holds_fraction(grid, item, conclusion),
+            "min_flip_changes": min_flip_changes(grid, space, item),
+            "rests_on": [name for name in names if by_axis[name]["flips"]],
+            "by_axis": by_axis,
+        }
+    return out
