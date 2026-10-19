@@ -52,13 +52,13 @@ ALLOWED_LINES: dict[tuple[str, str], str] = {
 #: lint skips these; ``test_known_open_findings_are_fixed`` fails strictly once they are gone,
 #: so the entry must then be deleted.
 KNOWN_OPEN: dict[tuple[str, str], str] = {
-    ("README.md", "mixed model (as a feature)"): "RT-002",
+    ("qpilot/__init__.py", "validated (about a run or result)"): "RT-003",
 }
 
 _RESULT = r"(?:run|plate|result|analysis|assay|experiment|conclusion|study|data ?set)s?"
 RULES: dict[str, re.Pattern[str]] = {
     "validated (about a run or result)": re.compile(
-        rf"\bvalidated {_RESULT}\b"
+        rf"\bvalidated (?:qPCR |PCR )?{_RESULT}\b"
         rf"|\b{_RESULT} (?:is|are|was|were|has been|have been|gets?|got) validated\b(?! against)"
         rf"|\bvalidates? (?:the|your|a|an|this|each|every) {_RESULT}\b",
         re.IGNORECASE,
@@ -127,6 +127,7 @@ def violations(text: str) -> list[tuple[int, str, str]]:
     "text",
     [
         "This is a validated run.",
+        "Open, validated qPCR analysis.",
         "Your results are validated by qPilot.",
         "qPilot validates your plate in seconds.",
         "A valid run needs three NTCs.",
