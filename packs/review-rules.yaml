@@ -1,0 +1,68 @@
+# Reviewer's Report: the eight questions a qPCR reviewer asks, answered from the Analysis Record.
+# Each rule names the evaluator in qpilot/report/review.py ("check"), what passes, its sources
+# and at most one base rate, quoted only from Drude et al. 2026 (2021 articles; field and n given).
+# Verdicts: pass / warn / fail / not_applicable (not_applicable = the record cannot show it; the
+# reason is always printed). Thresholds marked "unsourced, lab-editable" are qPilot defaults.
+# Format follows qpilot/core/rules.py RulePack (gate); base rates live in params.
+pack: review-rules
+version: "1.0.0"
+label: "Reviewer's Report checks. Research use only; not for clinical use."
+based_on: scientist-spec-report.md (19 Oct 2026)
+sources:
+  miqe2:
+    citation: "Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0. Clin Chem 2025;71(6):634-651. doi:10.1093/clinchem/hvaf043"
+  vandesompele2002:
+    citation: "Vandesompele J, De Preter K, Pattyn F, et al. Accurate normalization of real-time quantitative RT-PCR data by geometric averaging of multiple internal control genes. Genome Biol 2002;3(7):research0034"
+  drude2026:
+    citation: "Drude N, Baselly C, Gazda MA, et al. Reporting quality of quantitative polymerase chain reaction (qPCR) methods in scientific publications. Res Integr Peer Rev 2026;11:6. doi:10.1186/s41073-026-00188-0 (CC BY 4.0)"
+  ruizvillalba2021:
+    citation: "Ruiz-Villalba A, Ruijter JM, van den Hoff MJB. Use and Misuse of Cq in qPCR Data Analysis and Reporting. Life 2021;11(6):496. doi:10.3390/life11060496"
+rules:
+  - id: R1
+    name: Reference genes
+    check: reference_genes
+    statement: At least two reference genes, with their stability assessed (geNorm M and V) and checked for a shift between the groups.
+    params: {min_refs: 2, base_rate: "M-values were reported in 0.4 % of 2021 articles in genetics (186) and plant science (246) [Drude 2026]."}
+    sources: [miqe2, vandesompele2002, drude2026]
+  - id: R2
+    name: Efficiency
+    check: efficiency
+    statement: PCR efficiency measured per assay and used in the quantities, not assumed.
+    params: {base_rate: "Efficiency was reported in 5 % of genetics (186) and 8 % of plant-science (246) articles from 2021 [Drude 2026]."}
+    sources: [miqe2, drude2026]
+  - id: R3
+    name: Normalisation
+    check: normalisation
+    statement: Normalisation by the geometric mean of the reference genes, not a single gene.
+    params: {}
+    sources: [vandesompele2002]
+  - id: R4
+    name: Biological n
+    check: biological_n
+    statement: n counts biological units; technical replicates are averaged within a unit, never counted as n.
+    params: {min_units: 3, base_rate: "The experimental unit was described in 75 % of genetics and 84 % of plant-science articles from 2021 [Drude 2026]."}
+    sources: [miqe2, drude2026]
+  - id: R5
+    name: Scale of the test
+    check: scale
+    statement: Tests run on per-unit log quantities before averaging per group.
+    params: {}
+    sources: [miqe2]
+  - id: R6
+    name: Non-detects and cut-offs
+    check: nondetects
+    statement: How wells without a quantity were handled is stated, and whether that choice or a Cq cut-off changes any conclusion.
+    params: {}
+    sources: [miqe2, ruizvillalba2021]
+  - id: R7
+    name: Controls
+    check: controls
+    statement: No-template controls typed and evaluated; a no-RT control present or the samples shown free of DNA; melt curves for dye assays.
+    params: {base_rate: "Drude 2026 found no evidence of no-RT controls in their 2021 sample."}
+    sources: [miqe2, drude2026]
+  - id: R8
+    name: Disclosure
+    check: disclosure
+    statement: Primer sequences or assay ids, and the raw curves in RDML or RDES.
+    params: {base_rate: "Primer sequences were given in 88 % of genetics and 92 % of plant-science articles from 2021 [Drude 2026]."}
+    sources: [miqe2, drude2026]
