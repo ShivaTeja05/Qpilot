@@ -57,8 +57,8 @@ INFO_NOTE = (
 NOT_AFFILIATED = (
     "Works with GraphPad Prism. Not affiliated with or endorsed by GraphPad Software or Dotmatics."
 )
-RECORD_REF = re.compile(r"^[A-Za-z0-9_.-]{1,40}$")
-CHAIN_HEAD = re.compile(r"^[0-9a-f]{64}$")
+RECORD_REF = re.compile(r"^[A-Za-z0-9_.-]{1,40}\Z")
+CHAIN_HEAD = re.compile(r"^[0-9a-f]{64}\Z")
 _WINDOWS_RESERVED = {"CON", "PRN", "AUX", "NUL"} | {
     f"{prefix}{i}" for prefix in ("COM", "LPT") for i in range(1, 10)
 }

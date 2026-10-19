@@ -54,7 +54,7 @@ from qpilot.schemas import Actor, Level
 # Untrusted text (core/firewall.py)
 # ---------------------------------------------------------------------------------------------
 
-TEXT_ID = re.compile(r"^t_[0-9a-f]{12}$")
+TEXT_ID = re.compile(r"^t_[0-9a-f]{12}\Z")
 
 
 def text_id_for(origin: str, value: str) -> str:

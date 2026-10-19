@@ -9,16 +9,20 @@ the card's impact from the robustness summary, ranks the cards, and enforces one
     every actor. An agent (or the system) asking to make it gets ``pending_human``.
 
 A card whose dimension flips no conclusion is decided automatically (recommended option, actor
-``system``) and logged; a human can reopen it.
+``system``) and logged; a human can reopen it. A card's ``kind`` must be registered in
+``core/card_kinds.py``; a kind registered ``always_human`` (and a kind this build does not know)
+makes its cards human-only even when nothing flips. The kind can make the rule stricter, never
+looser.
 """
 
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
+from qpilot.core.card_kinds import CardKindError, card_kind, requires_human
 from qpilot.schemas import (
     Actor,
     Autonomy,
@@ -56,7 +60,7 @@ class CardSpec(BaseModel):
     """What a plugin tells the core about one card; the core adds consequences and impact."""
 
     card_id: str
-    kind: Literal["reference_set", "group_cutoff", "undetermined", "amp_call"]
+    kind: str  # a registered kind (core/card_kinds.py)
     dimension: str
     options: list[OptionSpec]
     recommended: str
@@ -64,10 +68,23 @@ class CardSpec(BaseModel):
     evidence: dict[str, Any] = {}
     facts: list[str] = []
 
+    @field_validator("kind")
+    @classmethod
+    def _registered(cls, value: str) -> str:
+        try:
+            return card_kind(value).name
+        except CardKindError as exc:
+            raise ValueError(str(exc)) from None
 
-def effective_level(user_level: Autonomy, impact: dict[str, Any]) -> Autonomy:
-    """The autonomy that actually applies to a card: a flipping card is always ``suggest``."""
-    if impact.get("flips") and user_level in ("decide_and_tell", "automatic"):
+
+def effective_level(
+    user_level: Autonomy, impact: dict[str, Any], always_human: bool = False
+) -> Autonomy:
+    """The autonomy that actually applies to a card: a flipping card is always ``suggest``.
+
+    So is every card of a kind that is always a human decision (``always_human``).
+    """
+    if (impact.get("flips") or always_human) and user_level in ("decide_and_tell", "automatic"):
         return "suggest"
     return user_level
 
@@ -136,6 +153,7 @@ def build_cards(
         anywhere = flipped_anywhere(grid, spec.dimension)
         impact["flips_anywhere"] = bool(anywhere)
         impact["n_genes_flipped_anywhere"] = len(anywhere)
+        human_kind = requires_human(spec.kind)
         card = DecisionCard(
             id=spec.card_id,
             kind=spec.kind,
@@ -147,9 +165,9 @@ def build_cards(
             rationale_template=spec.rationale_template,
             facts=spec.facts,
             autonomy=autonomy,
-            effective_autonomy=effective_level(autonomy, impact),
+            effective_autonomy=effective_level(autonomy, impact, human_kind),
         )
-        if not impact["flips"]:
+        if not impact["flips"] and not human_kind:
             card = card.model_copy(
                 update={
                     "status": "auto_decided",
@@ -163,12 +181,17 @@ def build_cards(
 
 
 def needs_human(card: DecisionCard) -> bool:
-    """True when the card can flip a conclusion at any setting (or is in teaching mode)."""
+    """True when the card can flip a conclusion at any setting (or is in teaching mode).
+
+    Also true for every card whose kind is always a human decision, and for a card whose kind
+    this build does not register (fail closed).
+    """
     impact = card.impact
     return (
         bool(impact.get("flips"))
         or bool(impact.get("flips_anywhere"))
         or card.effective_autonomy == "teach"
+        or requires_human(card.kind)
     )
 
 
