@@ -74,6 +74,7 @@ MIXED_SHARE = 0.1
 SMOOTHED_RATIO = 0.7
 SCALED_TOLERANCE = 0.01
 AMPLIFIED_SIGMAS = 10.0
+TAKEOFF_SHARE = 0.1
 
 
 def _sig(value: float | None) -> float | None:
@@ -105,6 +106,25 @@ class WellResult:
     y_max: float = math.nan
 
 
+def takeoff(cycles: np.ndarray, fluor: np.ndarray) -> float | None:
+    """A rough Cq for a curve without one: the first cycle above 10 % of its rise.
+
+    The rise is measured from the median of cycles 3-8; ``None`` when the curve does not rise
+    by more than :data:`AMPLIFIED_SIGMAS` noise units there (no amplification to avoid).
+    """
+    early = fluor[(cycles >= 3) & (cycles <= 8)]
+    if early.size < 3:
+        return None
+    base = float(np.median(early))
+    diffs = np.diff(early)
+    noise = 1.4826 * float(np.median(np.abs(diffs - np.median(diffs)))) / math.sqrt(2)
+    rise = float(fluor.max()) - base
+    if rise <= 0 or rise <= AMPLIFIED_SIGMAS * noise:
+        return None
+    above = np.nonzero((fluor - base > TAKEOFF_SHARE * rise) & (cycles > 3))[0]
+    return float(cycles[above[0]]) if above.size else None
+
+
 def ground_window(cycles: np.ndarray, cq: float | None) -> np.ndarray:
     """Boolean mask of the ground-phase cycles (3..G), as gate's DRIFT rule chooses them."""
     if cq is not None and math.isfinite(cq):
@@ -122,6 +142,10 @@ def assess_well(
     y = np.asarray(fluor, dtype=float)
     if x.size == 0:
         return WellResult("unknown", "no_curve")
+    order = np.argsort(x)
+    x, y = x[order], y[order]
+    if cq is None:  # no vendor Cq: keep the exponential phase out of the ground window
+        cq = takeoff(x, y)
     mask = ground_window(x, cq)
     gx, gy = x[mask], y[mask]
     n = int(gy.size)
@@ -209,8 +233,8 @@ def assess_plate(plate: PlateData) -> PlateResult:
     out.evidence += [
         {"run_id": run, "test": "negative_values", "n_wells": neg_wells, "of": n_eval,
          "passed": neg_wells == 0},
-        {"run_id": run, "test": "ground_level", "value": _sig(_median([r.level for r in evaluable])),
-         "unit": plate.value_kind},
+        {"run_id": run, "test": "ground_level",
+         "value": _sig(_median([r.level for r in evaluable])), "unit": plate.value_kind},
         {"run_id": run, "test": "ground_offset",
          "value": _sig(_median([r.offset for r in evaluable])), "threshold": RAW_OFFSET},
         {"run_id": run, "test": "zero_centred",
@@ -255,9 +279,8 @@ def assess_plate(plate: PlateData) -> PlateResult:
             out.verdict = top if top_n / n_eval >= PLATE_SHARE else "unknown"
             if out.verdict == "unknown":
                 out.note_keys.append("no_majority")
-        if out.verdict == "raw" and smoothed:
-            out.verdict = "unknown"
-            out.note_keys.append("smoothed")
+    if smoothed:  # evidence only: real raw ground phases are not white noise (measured)
+        out.note_keys.append("smoothing_ratio_low")
     clean = neg_wells == 0 and not any(r.flat_fit and r.zero_centred for r in evaluable)
     out.linregpcr_ok = out.verdict in ("raw", "normalized") or (out.verdict == "scaled" and clean)
     return out

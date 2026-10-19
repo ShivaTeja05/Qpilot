@@ -105,7 +105,7 @@ class CfxConnector:
     suffixes = (".csv", ".txt", ".xlsx")
 
     def sniff(self, probe: Probe) -> Sniff | None:
-        """Amplification / melt sheets by ``Cycle``/``Temperature`` + well columns; others by name."""
+        """Curve sheets by ``Cycle``/``Temperature`` + well columns; other sheets by name."""
         name = probe.path.name.lower()
         for rows in _sheets(probe):
             for row in rows[:20]:
