@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from qpilot.core import gate as core_gate
 from qpilot.core.facts import FactRegistry
 from qpilot.core.rules import (
     NOT_APPLICABLE,
@@ -763,3 +764,112 @@ def plate_status(evals: Collection[RuleEval]) -> dict[str, str]:
         if ev.check == "typed_controls" and "plate" in ev.scope:
             out[ev.scope["plate"]] = "gated" if ev.outcome == "typed" else "ungated"
     return out
+
+
+def run_gate(
+    curves: pd.DataFrame,
+    settings: Any = None,
+    pack: RulePack | str | Path | None = None,
+    *,
+    quantities: Mapping[tuple[str, str], float] | None = None,
+    rawness: str | None = None,
+    confirmed_no_controls: Collection[str] = (),
+    model: Any = None,
+) -> core_gate.GateReport:
+    """Evaluate ``pack`` on a study's wells and run the consequence test on every hit.
+
+    Args:
+        curves: The study's per-well table (:func:`qpilot.qpcr.curves.analyse_study`).
+        settings: The study's :class:`qpilot.qpcr.study.StudySettings` (default: the demo's).
+        pack: A pack, a shipped pack name, or a path (default ``research-default``).
+        quantities: ``(sample, target) -> declared quantity`` of the standards (target ``""``
+            = every target), e.g. from :func:`study_quantities`.
+        rawness: ``capture``'s raw-ness verdict for the input, when known.
+        confirmed_no_controls: Plates a person confirmed have no control wells.
+        model: The study's :class:`qpilot.qpcr.study.StudyModel` when already built.
+
+    Returns:
+        The report; deterministic for the same inputs.
+    """
+    from qpilot.qpcr.designs import DesignError, design_curves
+    from qpilot.qpcr.study import NGuardError, StudySettings, build_model
+
+    settings = settings or StudySettings()
+    rule_pack = resolve_pack(pack)
+    table = design_curves(curves, settings.design) if settings.design is not None else curves
+    ctx = GateContext(
+        table=table,
+        quantities=dict(quantities or {}),
+        rawness=rawness,
+        confirmed_no_controls=frozenset(confirmed_no_controls),
+    )
+    evals = evaluate(rule_pack, ctx)
+    model = model or build_model(curves, settings)
+    base = core_gate.baseline(model.space)
+    analysed = set(ctx.table.loc[ctx.table["sample_type"] == ANALYSED, "key"])
+
+    def variant(keys: list[str]) -> Any:
+        if not analysed.intersection(keys):
+            return core_gate.unchanged(
+                "", keys, "These wells are not study samples, so no conclusion uses them."
+            )
+        try:
+            return build_model(curves, settings, extra_excluded=keys).space
+        except (NGuardError, DesignError, ValueError) as err:
+            return core_gate.unknown("", keys, f"The analysis cannot be re-run without them: {err}")
+
+    params = rule_pack.consequence
+    done = core_gate.run_consequences(
+        evals, base, variant, params.magnitude_log2, params.magnitude_agreement
+    )
+    headline = [g for g in settings.headline if g in base.items]
+    return core_gate.build_report(
+        rule_pack.ref(),
+        plate_status(evals),
+        evals,
+        done,
+        base,
+        ctx.facts.as_dict(),
+        OPTION_LABELS,
+        headline,
+    )
+
+
+def study_quantities(rdml_path: str | Path) -> dict[tuple[str, str], float]:
+    """Declared quantities of the file's samples: ``(sample, target) -> value``."""
+    from qpilot.qpcr.inspect import file_facts
+
+    facts = file_facts(rdml_path)
+    out: dict[tuple[str, str], float] = {}
+    for sample, entries in facts.sample_quantities.items():
+        for value, _unit, target in entries:
+            out.setdefault((sample, target), float(value))
+    return out
+
+
+def gate_file(
+    rdml_path: str | Path,
+    settings: Any = None,
+    pack: RulePack | str | Path | None = None,
+    *,
+    cache_dir: str | Path | None = None,
+    rawness: str | None = None,
+    confirmed_no_controls: Collection[str] = (),
+) -> core_gate.GateReport:
+    """:func:`run_gate` on an RDML file with the study's settings (curves from the cache)."""
+    from qpilot.qpcr.curves import analyse_study
+    from qpilot.qpcr.study import StudySettings
+
+    settings = settings or StudySettings()
+    curves = analyse_study(
+        rdml_path, settings.experiment_id, settings.candidates, settings.curves, cache_dir=cache_dir
+    )
+    quantities = study_quantities(rdml_path) if (curves["sample_type"] == "std").any() else {}
+    return run_gate(
+        curves,
+        settings,
+        pack,
+        quantities=quantities,
+        rawness=rawness,
+        confirmed_no_controls=confirmed_no_controls,
+    )

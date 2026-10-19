@@ -36,7 +36,8 @@ import pandas as pd
 from pydantic import BaseModel
 
 from qpilot.core import robustness
-from qpilot.core.rules import RuleEval
+from qpilot.core.decisions import rank_cards
+from qpilot.core.rules import RuleEval, summarise
 from qpilot.schemas import CardOption, ContrastResult, DecisionCard, DecisionSpace, Fact
 
 ConsequenceClass = Literal["none", "magnitude", "flip", "unknown"]
@@ -441,3 +442,92 @@ def run_consequences(
             )
         )
     return out
+
+
+# ---------- the report ----------
+
+GATE_SCHEMA = "qpilot.gate/1"
+
+
+def _clean(value: Any) -> Any:
+    """JSON-safe: NaN and infinities become ``None`` (strict JSON has no NaN)."""
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {k: _clean(v) for k, v in value.items()}
+    if isinstance(value, list | tuple):
+        return [_clean(v) for v in value]
+    return value
+
+
+class GateReport(BaseModel):
+    """Everything one gate run produced. ``gate.json`` is all but ``evals`` and ``cards``.
+
+    ``units`` are the plugin's gating units (plates, for qPCR) -> ``gated`` | ``ungated``.
+    """
+
+    pack: dict[str, str]
+    units: dict[str, str]
+    counts: dict[str, int]
+    consequences: list[Consequence]
+    triage: dict[str, int]
+    facts: dict[str, Fact]
+    evals: list[RuleEval]
+    cards: list[DecisionCard]
+
+    def gate_data(self) -> dict[str, Any]:
+        """The content of ``gate.json``."""
+        return _clean(
+            {
+                "schema": GATE_SCHEMA,
+                "pack": self.pack,
+                "units": self.units,
+                "counts": self.counts,
+                "triage": self.triage,
+                "consequences": [c.model_dump(mode="json") for c in self.consequences],
+                "cards": [c.id for c in self.cards],
+                "facts": {fid: f.model_dump(mode="json") for fid, f in sorted(self.facts.items())},
+                "note": "Research use only. Rules label; they never change a conclusion.",
+            }
+        )
+
+    def evals_data(self) -> list[dict[str, Any]]:
+        """The content of ``rule_evals.json``."""
+        return _clean([ev.model_dump(mode="json") for ev in self.evals])
+
+
+def build_report(
+    pack: dict[str, str],
+    units: Mapping[str, str],
+    evals: list[RuleEval],
+    done: list[tuple[RuleEval, Consequence, dict[str, dict[str, ContrastResult]]]],
+    base: Baseline,
+    facts: Mapping[str, Fact],
+    option_labels: Mapping[str, str],
+    headline: Iterable[str] = (),
+) -> GateReport:
+    """Assemble the report: consequence facts, one card per rule that can change a conclusion."""
+    all_facts = dict(facts)
+    consequences, cards = [], []
+    for ev, consequence, results in done:
+        extra, _per_option = consequence_facts(ev, consequence.options)
+        all_facts.update(extra)
+        consequence = consequence.model_copy(update={"facts": sorted(extra)})
+        card = gate_card(ev, consequence, base.results, results, option_labels, headline)
+        if card is not None:
+            consequence = consequence.model_copy(update={"card_id": card.id})
+            cards.append(card)
+        consequences.append(consequence)
+    triage = dict.fromkeys(("ignore", "rescue", "human", "defer"), 0)
+    for consequence in consequences:
+        triage[consequence.triage] += 1
+    return GateReport(
+        pack=dict(pack),
+        units=dict(units),
+        counts=summarise(evals),
+        consequences=consequences,
+        triage=triage,
+        facts=all_facts,
+        evals=evals,
+        cards=rank_cards(cards),
+    )
