@@ -32,6 +32,10 @@ CARD_DIMENSION = {
 }
 
 
+#: Method names with digits that prose may use verbatim (they name a method, not a result).
+METHOD_NAMES = {"MIQE 2.0", "SHA-256", "log2", "N0", "21 CFR Part 11"}
+
+
 def dim_label(dim: str) -> str:
     """A dimension's name in words; unknown dimensions keep their id, underscores as spaces."""
     return DIM_LABELS.get(dim, dim.replace("_", " ").replace(".", " "))
@@ -47,7 +51,7 @@ class Ctx:
         names = set(self.result.contrasts) | set(self.result.robustness)
         names |= set(self.result.genorm.M_initial) | set(self.result.design.refs_primary)
         names |= set(self.result.efficiency) | {self.result.design.group_var}
-        names |= method_constants(self.result)
+        names |= method_constants(self.result) | METHOD_NAMES
         self.names: set[str] = {n for n in names if n}
 
     def t(self, tokens: str) -> Text:
