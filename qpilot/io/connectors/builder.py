@@ -19,12 +19,12 @@ then the rest) and a ``TYPE_CONFLICT`` warning says so.
 
 from __future__ import annotations
 
+import io
 import re
 import zipfile
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from lxml import etree
 
@@ -295,14 +295,16 @@ def _data(react: etree._Element, target: str, reaction: Reaction) -> None:
             _sub(point, "fluor", _num(fluor))
 
 
-def write_rdml(xml: bytes, path: Path) -> None:
-    """Write ``xml`` as an RDML archive at ``path`` (stored member, fixed timestamp)."""
+def rdml_archive(xml: bytes) -> bytes:
+    """``xml`` as RDML archive bytes: one stored member, fixed timestamp (deterministic)."""
+    buffer = io.BytesIO()
     info = zipfile.ZipInfo(RDML_MEMBER, date_time=ZIP_TIMESTAMP)
     info.compress_type = zipfile.ZIP_STORED
     info.external_attr = 0o644 << 16
     info.create_system = 3
-    with zipfile.ZipFile(path, "w") as archive:
+    with zipfile.ZipFile(buffer, "w") as archive:
         archive.writestr(info, xml)
+    return buffer.getvalue()
 
 
 def load_xml(xml: bytes):  # -> rdml.Rdml
@@ -333,5 +335,5 @@ __all__ = [
     "plate_format",
     "unique_run_ids",
     "well_name",
-    "write_rdml",
+    "rdml_archive",
 ]
