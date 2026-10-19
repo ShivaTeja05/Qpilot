@@ -1,0 +1,2 @@
+# Corpus files are byte-pinned by sha256 in MANIFEST.yaml: never convert line endings.
+* -text
