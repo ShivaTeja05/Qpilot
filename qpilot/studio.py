@@ -40,6 +40,7 @@ import os
 os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"  # read when Blocks() is built
 os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"  # frozen when huggingface_hub is imported
 
+import hashlib  # noqa: E402
 import inspect  # noqa: E402
 import json  # noqa: E402
 import math  # noqa: E402
@@ -101,6 +102,7 @@ from qpilot.studio_state import (  # noqa: E402
     stage_strip_html,
     table_html,
 )
+from qpilot.ui.guide import count_inbox, next_step_html  # noqa: E402
 
 PAGE_SIZE = 6
 MAX_SENTENCE = 500
@@ -132,10 +134,24 @@ MOVED_ANALYSIS = (
     "Here is the current card: please look again, then decide."
 )
 BLIND_PANE = (
-    '<div class="qs-blind"><p><b>Results stay hidden</b> until you confirm the Design and the '
-    "Curves stages. The design and the curve calls are facts about the experiment and are "
-    "decided on the evidence, never on the answer they give.</p></div>"
+    '<div class="qs-blind"><p><b>Results appear here</b> once you confirm the Design and the '
+    "Curves stages: every gene's fold change and conclusion, how often it holds across the "
+    "reasonable analyses, the Decision Cards and the Prism project.</p><p>Until then they stay "
+    "hidden: the design and the curve calls are facts about the experiment and are decided on "
+    "the evidence, never on the answer they give.</p></div>"
 )
+REMEMBER_KEY = "qpilot-studio-session"
+#: Gradio passes each slow handler its own progress tracker in place of this default.
+PROGRESS = gr.Progress()
+#: What each slow step is doing, shown while it runs (the rest of the page stays still).
+WORKING = {
+    "open": "Reading the file: every sample, target and well (nothing is analysed).",
+    "design": "Proposing the design: the rules read sample names, types and the sheet.",
+    "curves": "Checking the curves: LinRegPCR and the Curve Judge read every well.",
+    "confirm": "Confirming the stage (the analysis runs once both blind stages are confirmed).",
+    "send": "Writing the Prism bundle.",
+    "roundtrip": "Reading what came back from Prism and computing each change's consequence.",
+}
 HEADER = (
     "<h2>qPilot Studio</h2><p class='qs-hint'>The AI proposes. The engine checks. You decide: "
     "nothing below changes the analysis, the record or a Prism file until you press a button."
@@ -187,6 +203,15 @@ STUDIO_CSS = """
 .qs-blind { padding: .6rem .8rem; border-radius: .4rem; background: rgba(127,127,127,.12); }
 .qs-scroll { max-height: 18rem; overflow: auto; }
 .qs-model { font-size: .85rem; margin: 0; }
+.qs-guide { border: 1px solid rgba(42,120,214,.45); border-left: 5px solid #2a78d6;
+  border-radius: .5rem; padding: .5rem .8rem; margin: .3rem 0 .5rem 0;
+  background: rgba(42,120,214,.07); }
+.qs-guide.done { border-color: rgba(22,163,74,.45); border-left-color: #16a34a;
+  background: rgba(22,163,74,.07); }
+.qs-guide h4 { margin: 0 0 .25rem 0; }
+.qs-guide p, .qs-guide li { margin: .15rem 0; }
+.qs-steps { margin: .2rem 0 .2rem 1.1rem; padding: 0; }
+h4.qs-what { font-size: 1rem; margin: .1rem 0; }
 """
 
 
@@ -226,6 +251,20 @@ def _fresh(session: dict[str, Any] | None) -> dict[str, Any]:
 def _error(err: BaseException) -> str:
     text = str(err.args[0]) if isinstance(err, KeyError) and err.args else str(err)
     return (text[:1].upper() + text[1:]) if text else type(err).__name__
+
+
+def _toast(text: str) -> None:
+    """A short message where the person is looking (the notice may be scrolled out of view)."""
+    if text:
+        gr.Info(text, duration=4)
+
+
+def _working(progress: Any, step: str) -> None:
+    """Say what a slow step is doing, on the Next-step box, while it runs."""
+    try:
+        progress(None, desc=WORKING[step])
+    except Exception:  # a page without a progress tracker (a test calling the handler)
+        pass
 
 
 def _within(path: Path, root: Path) -> bool:
@@ -320,6 +359,7 @@ def build_app(
             out.update(empty_inbox())
             out.update(hidden_results())
             out[ui.seen] = seen_panel(session, False)
+            out[ui.guide] = next_step_html(opened=False)
             out[ui.session] = {**session, "slots": [], "send": None}
             return out
         stages = studio.stages(sid)
@@ -344,15 +384,14 @@ def build_app(
         out[ui.file_info] = file_info(session, sid)
         out[ui.strip] = stage_strip_html(stages, stage)
         out[ui.stage_pick] = gr.update(
-            choices=[(STAGE_LABELS[s.stage], s.stage) for s in stages if s.open], value=stage
+            choices=[(STAGE_LABELS[s.stage], s.stage) for s in stages if s.open],
+            value=stage,
+            visible=True,
         )
-        head_html = inbox_head_html(stage, len(pending), len(decided), page, n_pages)
-        if stage == "choices":
-            head_html += (
-                "<p>The Choices stage has no AI proposals: its Decision Cards are in the "
-                "right-hand pane.</p>"
-            )
-        out[ui.inbox_head] = head_html
+        out[ui.inbox_head] = inbox_head_html(stage, len(pending), len(decided), page, n_pages)
+        out[ui.pager] = gr.update(visible=n_pages > 1)
+        out[ui.seen_btn] = gr.update(visible=True)
+        out[ui.refresh_btn] = gr.update(visible=True)
         out.update(stage_buttons(stage, by, proposals, pending, confirms))
 
         # the bulk lists: shown exactly as they will be acted on, dropped when the stage changes
@@ -468,6 +507,7 @@ def build_app(
             dict.fromkeys(e.ref for p in pending for e in p.evidence if e.kind in ("well", "curve"))
         )[:MAX_WELLS]
         out[ui.well_pick] = gr.update(choices=wells, value=None)
+        out[ui.well_row] = gr.update(visible=bool(wells))
 
         session = {
             **session,
@@ -481,8 +521,9 @@ def build_app(
             "reject": rejecting,
             "confirm": {"stage": stage, "id": confirm.id} if confirm else None,
         }
+        shown_now: dict[str, Any] = {}  # what the results pane found, for the guide
         if visible:
-            session = results(session, sid, by, out)
+            session = results(session, sid, by, out, shown_now)
         else:  # blind: nothing of the analysis is read, and nothing of it stays on the page
             out.update(hidden_results())
             session = {
@@ -493,6 +534,15 @@ def build_app(
                 "gene": None,
                 "send": None,
             }
+        out[ui.guide] = next_step_html(
+            opened=True,
+            stages=stages,
+            stage=stage,
+            counts=count_inbox(pending, decided, confirms),
+            results_visible=visible,
+            open_cards=shown_now.get("open_cards"),
+            project=shown_now.get("project"),
+        )
         out[ui.session] = session
         return out
 
@@ -535,7 +585,7 @@ def build_app(
             ui.curves_btn: gr.update(
                 visible=stage == "curves", interactive=status.open and not status.confirmed
             ),
-            ui.bulk_show: gr.update(visible=bool(pending)),
+            ui.bulk_show: gr.update(visible=any(p.check.status == "consistent" for p in pending)),
             ui.reject_show: gr.update(visible=bool(ai_contradicted)),
             ui.confirm_prepare: gr.update(
                 visible=stage in CONFIRMABLE
@@ -553,10 +603,12 @@ def build_app(
         out: dict[Any, Any] = {
             ui.file_info: "<p class='qs-hint'>Nothing open yet.</p>",
             ui.strip: "",
-            ui.stage_pick: gr.update(choices=[], value=None),
-            ui.inbox_head: (
-                "<h3>What the AI thinks</h3><p class='qs-hint'>Open a file to begin.</p>"
-            ),
+            ui.stage_pick: gr.update(choices=[], value=None, visible=False),
+            ui.inbox_head: "",
+            ui.pager: gr.update(visible=False),
+            ui.well_row: gr.update(visible=False),
+            ui.seen_btn: gr.update(visible=False),
+            ui.refresh_btn: gr.update(visible=False),
             ui.design_btn: gr.update(visible=False),
             ui.comparison_btn: gr.update(visible=False),
             ui.curves_btn: gr.update(visible=False),
@@ -612,12 +664,24 @@ def build_app(
             ui.sent_back: gr.update(value=""),
         }
 
-    def results(session: dict[str, Any], sid: str, by, out: dict[Any, Any]) -> dict[str, Any]:
-        """The right-hand pane, read fresh from the service (only once results are visible)."""
+    def results(
+        session: dict[str, Any],
+        sid: str,
+        by,
+        out: dict[Any, Any],
+        shown_now: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """The right-hand pane, read fresh from the service (only once results are visible).
+
+        ``shown_now`` receives what the guide needs: the Decision Cards still open and the
+        Prism project's state.
+        """
+        shown_now = {} if shown_now is None else shown_now
         study_id = studio.study(sid)
         result = studio.store.get(study_id)
         chain_head, cards, pending = studio.store.snapshot(study_id)
         cards = cards_in_order(cards)
+        shown_now["open_cards"] = sum(1 for c in cards if c.status in ("open", "pending_human"))
         out[ui.blind_note] = gr.update(visible=False)
         out[ui.right] = gr.update(visible=True)
         out[ui.summary] = (
@@ -674,6 +738,7 @@ def build_app(
             and p.effective_payload().get("study_id") == study_id
         ]
         waiting = [p for p in projects if p.status == "proposed"]
+        shown_now["project"] = "accepted" if accepted else ("waiting" if waiting else None)
         if accepted:
             project = accepted[-1]
             words = describe(project, project.effective_payload())
@@ -752,6 +817,34 @@ def build_app(
     def on_load(session):
         return render(session)
 
+    def on_refresh(session):
+        return render(session)
+
+    def on_restore(session, remembered):
+        """Reopen the session this browser last opened (a reload keeps the work in view).
+
+        Only reads: the session must already exist in the store; nothing is opened, bound or
+        proposed.
+        """
+        session = _fresh(session)
+        if session["sid"] or not isinstance(remembered, dict):
+            return render(session)
+        sid = remembered.get("sid")
+        if not isinstance(sid, str) or not sid:
+            return render(session)
+        try:
+            studio.stages(sid)
+        except ERRORS:
+            return render(session)
+        name = str(remembered.get("name") or sid)[:200]
+        restored = {
+            **new_session(),
+            "sid": sid,
+            "name": name,
+            "sheet": bool(remembered.get("sheet")),
+        }
+        return render(restored, f"Reopened {name} where you left it.")
+
     def on_stage(session, stage):
         session = _fresh(session)
         return render({**session, "stage": stage or None, "page": 0})
@@ -814,7 +907,8 @@ def build_app(
 
     # ---------- handlers: proposing (the system proposes; nothing is decided) ----------
 
-    def on_open(session, upload, sheet_file):
+    def on_open(session, upload, sheet_file, progress=PROGRESS):
+        _working(progress, "open")
         path = Path(upload) if upload else default_rdml
         if path is None or not Path(path).exists():
             return render(
@@ -836,6 +930,7 @@ def build_app(
         )
         out = render(fresh, note)
         out[ui.curve_plot] = gr.update(value=None, visible=False)
+        out[ui.remember] = {"sid": sid, "name": fresh["name"], "sheet": fresh["sheet"]}
         return out
 
     def report_note(report: dict[str, Any], what: str) -> str:
@@ -853,7 +948,8 @@ def build_app(
             parts.append(note if note.endswith((".", "!", "?")) else note + ".")
         return " ".join(parts)
 
-    def on_propose_design(session, sentence):
+    def on_propose_design(session, sentence, progress=PROGRESS):
+        _working(progress, "design")
         session = _fresh(session)
         if not session["sid"]:
             return render(session, OPEN_FIRST)
@@ -882,7 +978,8 @@ def build_app(
             note = f"No comparison proposed: {outcome.reason or outcome.status}"
         return render(session, note)
 
-    def on_propose_curves(session):
+    def on_propose_curves(session, progress=PROGRESS):
+        _working(progress, "curves")
         session = _fresh(session)
         if not session["sid"]:
             return render(session, OPEN_FIRST)
@@ -931,7 +1028,8 @@ def build_app(
             "The Prism project is drafted: check it in the Prism draft inbox, then accept it.",
         )
 
-    def on_roundtrip(session, bundle, folder):
+    def on_roundtrip(session, bundle, folder, progress=PROGRESS):
+        _working(progress, "roundtrip")
         session = _fresh(session)
         sid = session["sid"]
         if not sid:
@@ -981,6 +1079,7 @@ def build_app(
         if outcome.status == "stale":
             return render(session, STALE_PROPOSAL)
         if outcome.status in DECIDED:
+            _toast(done)
             return render(session, done)
         return render(session, f"Not done: {outcome.reason or outcome.status}")
 
@@ -1143,7 +1242,8 @@ def build_app(
             note += f" {len(others)} not accepted: " + "; ".join(
                 sorted({str(o.reason or o.status) for o in others})
             )
-        return render({**session, "bulk": None}, note)
+        _toast(note)
+        return render({**session, "bulk": None, "page": 0}, note)
 
     def on_bulk_cancel(session):
         return render({**_fresh(session), "bulk": None})
@@ -1186,15 +1286,15 @@ def build_app(
         except ERRORS as err:
             return render({**session, "reject": None}, _error(err))
         done = sum(1 for o in outcomes if o.status == "rejected")
-        return render(
-            {**session, "reject": None},
-            f"Rejected {done} proposal(s), one record entry each, with your reason.",
-        )
+        note = f"Rejected {done} proposal(s), one record entry each, with your reason."
+        _toast(note)
+        return render({**session, "reject": None, "page": 0}, note)
 
     def on_reject_cancel(session):
         return render({**_fresh(session), "reject": None})
 
-    def on_confirm(session):
+    def on_confirm(session, progress=PROGRESS):
+        _working(progress, "confirm")
         session = _fresh(session)
         sid, shown = session["sid"], session["confirm"]
         if not sid or not shown or shown.get("stage") != session["shown"]:
@@ -1221,6 +1321,7 @@ def build_app(
                     " Both blind stages are confirmed: the results are shown in the right-hand "
                     "pane."
                 )
+        _toast(note)
         return render({**session, "stage": None, "page": 0, "confirm": None}, note)
 
     def on_confirm_withdraw(session, reason):
@@ -1267,10 +1368,13 @@ def build_app(
             return render(session, STALE_NOTICE)
         if outcome.status == "applied":
             labels = {o.id: o.label for o in outcome.card.options} if outcome.card else {}
-            return render({**session, "card_id": None}, f"Decided: {labels.get(option, option)}.")
+            note = f"Decided: {labels.get(option, option)}."
+            _toast(note)
+            return render({**session, "card_id": None}, note)
         return render(session, outcome.reason or outcome.status)
 
-    def on_send(session):
+    def on_send(session, progress=PROGRESS):
+        _working(progress, "send")
         session = _fresh(session)
         sid = session["sid"]
         if not sid:
@@ -1318,6 +1422,11 @@ def build_app(
 
     with gr.Blocks(title="qPilot Studio", analytics_enabled=False) as page:
         ui.session = gr.State(new_session())
+        ui.remember = gr.BrowserState(
+            None,
+            storage_key=REMEMBER_KEY,
+            secret=hashlib.sha256(str(studio.store.root).encode()).hexdigest(),
+        )
         gr.HTML(HEADER)
         ui.model_line = gr.HTML()
         with gr.Row(equal_height=False):
@@ -1345,12 +1454,23 @@ def build_app(
                 ui.open_btn = gr.Button("Open", variant="primary", elem_id="qs-open")
                 ui.file_info = gr.HTML()
                 ui.strip = gr.HTML()
-                ui.seen_btn = gr.Button("What the model saw", size="sm", elem_id="qs-seen-btn")
+                ui.refresh_btn = gr.Button(
+                    "Refresh (show what an agent or another tab changed)",
+                    size="sm",
+                    visible=False,
+                    elem_id="qs-refresh",
+                )
+                ui.seen_btn = gr.Button(
+                    "What the model saw", size="sm", visible=False, elem_id="qs-seen-btn"
+                )
                 ui.seen = gr.HTML(visible=False)
             with gr.Column(scale=2, min_width=380):
                 gr.HTML("<h3>2 · What the AI thinks</h3>")
-                ui.notice = gr.HTML()
-                ui.stage_pick = gr.Radio(choices=[], label="Inbox of stage", elem_id="qs-stage")
+                ui.notice = gr.HTML(elem_id="qs-notice")
+                ui.guide = gr.HTML(next_step_html(opened=False), elem_id="qs-guide")
+                ui.stage_pick = gr.Radio(
+                    choices=[], label="Inbox of stage", visible=False, elem_id="qs-stage"
+                )
                 ui.inbox_head = gr.HTML()
                 with gr.Row():
                     ui.design_btn = gr.Button(
@@ -1442,12 +1562,12 @@ def build_app(
                             edit=edit,
                         )
                     )
-                with gr.Row():
+                with gr.Row(visible=False) as ui.pager:
                     ui.prev_btn = gr.Button("◀ Previous", size="sm", elem_id="qs-prev")
                     ui.page_info = gr.HTML()
                     ui.next_btn = gr.Button("Next ▶", size="sm", elem_id="qs-next")
                 ui.decided = gr.HTML()
-                with gr.Row():
+                with gr.Row(visible=False) as ui.well_row:
                     ui.well_pick = gr.Dropdown(
                         choices=[], label="Curve of a cited well", elem_id="qs-well", scale=3
                     )
@@ -1456,7 +1576,7 @@ def build_app(
                     )
                 ui.curve_plot = gr.Plot(visible=False, show_label=False)
             with gr.Column(scale=2, min_width=380):
-                gr.HTML("<h3>3 · Prism preview</h3>")
+                gr.HTML("<h3>3 · Results and Prism</h3>")
                 ui.blind_note = gr.HTML(BLIND_PANE)
                 with gr.Column(visible=False) as ui.right:
                     ui.summary = gr.HTML()
@@ -1553,6 +1673,11 @@ def build_app(
             ui.bundle_pick,
             ui.sent_back,
             ui.seen,
+            ui.guide,
+            ui.pager,
+            ui.well_row,
+            ui.seen_btn,
+            ui.refresh_btn,
         ]
         for slot in ui.slots:
             view += [
@@ -1568,40 +1693,45 @@ def build_app(
         private = {"api_visibility": "private"}
         s = ui.session
 
-        page.load(on_load, [s], view, **private)
-        ui.stage_pick.input(on_stage, [s, ui.stage_pick], view, **private)
-        ui.prev_btn.click(on_prev, [s], view, **private)
-        ui.next_btn.click(on_next, [s], view, **private)
-        ui.card_pick.input(on_card_pick, [s, ui.card_pick], view, **private)
+        calm = {**private, "show_progress_on": [ui.guide]}  # one progress line, not fifty
+        loaded = page.load(on_load, [s], view, **calm)
+        loaded.then(on_restore, [s, ui.remember], view, **calm)
+        ui.refresh_btn.click(on_refresh, [s], view, **calm)
+        ui.stage_pick.input(on_stage, [s, ui.stage_pick], view, **calm)
+        ui.prev_btn.click(on_prev, [s], view, **calm)
+        ui.next_btn.click(on_next, [s], view, **calm)
+        ui.card_pick.input(on_card_pick, [s, ui.card_pick], view, **calm)
         ui.gene_pick.input(
             on_gene, [s, ui.gene_pick], [s, ui.prism_plot, ui.prism_table], **private
         )
         ui.curve_btn.click(on_curve, [s, ui.well_pick], [ui.curve_plot, ui.notice], **private)
         ui.seen_btn.click(on_seen, [s], [s, ui.seen], **private)
-        ui.open_btn.click(on_open, [s, ui.upload, ui.sheet], view, concurrency_limit=1, **private)
+        ui.open_btn.click(
+            on_open, [s, ui.upload, ui.sheet], [*view, ui.remember], concurrency_limit=1, **calm
+        )
         ui.design_btn.click(
             on_propose_design, [s, ui.sentence], view, concurrency_limit=1, **private
         )
-        ui.comparison_btn.click(on_propose_comparison, [s], view, **private)
-        ui.curves_btn.click(on_propose_curves, [s], view, concurrency_limit=1, **private)
-        ui.confirm_prepare.click(on_confirm_prepare, [s], view, **private)
-        ui.prism_btn.click(on_propose_prism, [s], view, **private)
-        ui.roundtrip_btn.click(on_roundtrip, [s, ui.bundle_pick, ui.sent_back], view, **private)
-        ui.bulk_show.click(on_bulk_show, [s], view, **private)
-        ui.bulk_accept.click(on_bulk_accept, [s], view, **private)
-        ui.bulk_cancel.click(on_bulk_cancel, [s], view, **private)
-        ui.reject_show.click(on_reject_show, [s], view, **private)
-        ui.reject_all.click(on_reject_all, [s, ui.reject_reason], view, **private)
-        ui.reject_cancel.click(on_reject_cancel, [s], view, **private)
-        ui.confirm_btn.click(on_confirm, [s], view, **private)
-        ui.withdraw_btn.click(on_confirm_withdraw, [s, ui.confirm_reason], view, **private)
-        ui.decide_btn.click(on_decide, [s, ui.card_options, ui.card_reason], view, **private)
-        ui.send_btn.click(on_send, [s], view, concurrency_limit=1, **private)
+        ui.comparison_btn.click(on_propose_comparison, [s], view, **calm)
+        ui.curves_btn.click(on_propose_curves, [s], view, concurrency_limit=1, **calm)
+        ui.confirm_prepare.click(on_confirm_prepare, [s], view, **calm)
+        ui.prism_btn.click(on_propose_prism, [s], view, **calm)
+        ui.roundtrip_btn.click(on_roundtrip, [s, ui.bundle_pick, ui.sent_back], view, **calm)
+        ui.bulk_show.click(on_bulk_show, [s], view, **calm)
+        ui.bulk_accept.click(on_bulk_accept, [s], view, **calm)
+        ui.bulk_cancel.click(on_bulk_cancel, [s], view, **calm)
+        ui.reject_show.click(on_reject_show, [s], view, **calm)
+        ui.reject_all.click(on_reject_all, [s, ui.reject_reason], view, **calm)
+        ui.reject_cancel.click(on_reject_cancel, [s], view, **calm)
+        ui.confirm_btn.click(on_confirm, [s], view, **calm)
+        ui.withdraw_btn.click(on_confirm_withdraw, [s, ui.confirm_reason], view, **calm)
+        ui.decide_btn.click(on_decide, [s, ui.card_options, ui.card_reason], view, **calm)
+        ui.send_btn.click(on_send, [s], view, concurrency_limit=1, **calm)
         for i, slot in enumerate(ui.slots):
-            slot.accept.click(make_accept(i), [s, slot.reason], view, **private)
-            slot.reject.click(make_reject(i), [s, slot.reason], view, **private)
-            slot.edit.click(make_edit(i), [s, slot.code, slot.reason], view, **private)
-            slot.matters.click(make_matters(i), [s], view, **private)
+            slot.accept.click(make_accept(i), [s, slot.reason], view, **calm)
+            slot.reject.click(make_reject(i), [s, slot.reason], view, **calm)
+            slot.edit.click(make_edit(i), [s, slot.code, slot.reason], view, **calm)
+            slot.matters.click(make_matters(i), [s], view, **calm)
     page.qpilot_export_root = exports  # for launch_options and tests
     page.qpilot_ui = ui  # for tests
     return page
