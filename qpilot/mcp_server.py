@@ -10,9 +10,10 @@ the app, so both read and write the same workspace through ``qpilot.core.store``
 
 Rules enforced here, in code:
 
-- **Path policy.** ``qpcr_study`` only opens files whose resolved real path lies inside one of
-  ``QPILOT_DATA_ROOTS`` (``os.pathsep``-separated; default: the qPilot cache and the current
-  directory). Symlinks are resolved first; there is no string-prefix comparison.
+- **Path policy.** Tools only open files whose resolved real path lies inside one of
+  ``QPILOT_DATA_ROOTS`` (``os.pathsep``-separated; default: the qPilot cache, plus the current
+  directory unless it is the filesystem root, the home folder or a folder above it). Symlinks
+  are resolved first; there is no string-prefix comparison.
 - **An MCP caller is an agent.** ``qpcr_decide`` records every request as ``actor="agent"``.
   A choice that can flip a conclusion comes back ``pending_human``; only a person in the app can
   make it.
@@ -69,14 +70,48 @@ KIND_TO_DIMENSION = {
 }
 
 
+def implicit_cwd_root(cwd: Path | None = None, home: Path | None = None) -> Path | None:
+    """The current directory as a data root when ``QPILOT_DATA_ROOTS`` is unset, or None.
+
+    An MCP client picks the server's working directory (Claude Desktop starts servers in ``/``,
+    others in the home folder), so the current directory counts only when it is a folder of its
+    own: never the filesystem root (or a drive), the home folder, or any folder that contains
+    the home folder. Otherwise every sheet on the disk would be readable through the tools.
+    """
+    cwd = (cwd or Path.cwd()).resolve()
+    home = (home or Path.home()).resolve()
+    if cwd == Path(cwd.anchor) or home.is_relative_to(cwd):
+        return None
+    return cwd
+
+
 def data_roots() -> list[Path]:
-    """Directories an agent may read input files from."""
+    """Directories an agent may read input files from.
+
+    ``QPILOT_DATA_ROOTS`` (``os.pathsep``-separated) when set; otherwise the qPilot cache and
+    the current directory, unless the current directory is too wide (:func:`implicit_cwd_root`).
+    """
     env = os.environ.get("QPILOT_DATA_ROOTS")
     if env:
         roots = [Path(p).expanduser() for p in env.split(os.pathsep) if p.strip()]
     else:
-        roots = [Path.home() / ".cache" / "qpilot", Path.cwd()]
+        roots = [Path.home() / ".cache" / "qpilot"]
+        cwd = implicit_cwd_root()
+        if cwd is not None:
+            roots.append(cwd)
     return [r.resolve() for r in roots if r.exists()]
+
+
+def roots_notice() -> str | None:
+    """One line for stderr when ``QPILOT_DATA_ROOTS`` is unset: which folders agents may read."""
+    if os.environ.get("QPILOT_DATA_ROOTS"):
+        return None
+    shown = ", ".join(str(r) for r in data_roots()) or "none"
+    skipped = "" if implicit_cwd_root() else " (the current folder is too wide to share)"
+    return (
+        f"qpilot serve: agents may read input files only from {shown}{skipped}; set "
+        "QPILOT_DATA_ROOTS to your data folders"
+    )
 
 
 def check_path(rdml_path: str) -> Path:
@@ -679,6 +714,9 @@ def main() -> None:
     simulator = simulator_available()
     if not simulator:
         print(SIM_OFF_NOTICE, file=sys.stderr)
+    notice = roots_notice()
+    if notice:
+        print(notice, file=sys.stderr)
     create_server(simulator=simulator).run("stdio")
 
 
