@@ -31,9 +31,13 @@ import os
 import sys
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ValidationError
+
+from qpilot.agents.idempotency import IdempotencyLedger
+from qpilot.agents.refusals import Code, mark, refuse
+from qpilot.agents.views import check_format, fact_index, gene_fact_ids, shape
 
 from qpilot.core.decisions import DecisionError, apply_decision, check_request, needs_human
 from qpilot.core.proposals import STATUSES, SYSTEM_ONLY_KINDS, ProposalError
@@ -114,42 +118,51 @@ def roots_notice() -> str | None:
     )
 
 
+class PathRefused(PermissionError):
+    """A path an agent may not use; ``code`` says why (outside the roots, or the wrong kind)."""
+
+    def __init__(self, message: str, code: Code = Code.PATH_NOT_ALLOWED) -> None:
+        super().__init__(message)
+        self.code = code
+
+    def refusal(self, field: str) -> dict[str, Any]:
+        """The typed refusal for this path."""
+        return refuse(self.code, str(self), field=field)
+
+
+def _resolve(raw: Any, missing: str) -> Path:
+    if not isinstance(raw, str) or not raw.strip():
+        raise PathRefused("a path is required", Code.INVALID_ARGUMENT)
+    try:
+        path = Path(raw).expanduser().resolve(strict=True)
+    except (OSError, RuntimeError, ValueError) as err:
+        raise PathRefused(missing) from err
+    if not any(path.is_relative_to(root) for root in data_roots()):
+        raise PathRefused("path outside QPILOT_DATA_ROOTS")
+    return path
+
+
 def check_path(rdml_path: str) -> Path:
     """Resolve ``rdml_path`` and require it to be an RDML file inside a data root."""
-    try:
-        path = Path(rdml_path).expanduser().resolve(strict=True)
-    except (OSError, RuntimeError) as err:
-        raise PermissionError("file not found") from err
-    if not any(path.is_relative_to(root) for root in data_roots()):
-        raise PermissionError("path outside QPILOT_DATA_ROOTS")
+    path = _resolve(rdml_path, "file not found")
     if not path.is_file() or path.suffix.lower() not in RDML_SUFFIXES:
-        raise PermissionError("not an .rdml file")
+        raise PathRefused("not an .rdml file", Code.UNSUPPORTED_INPUT)
     return path
 
 
 def check_sheet(sheet_path: str) -> Path:
     """Resolve a sample sheet and require it to be an .xlsx or .csv file inside a data root."""
-    try:
-        path = Path(sheet_path).expanduser().resolve(strict=True)
-    except (OSError, RuntimeError) as err:
-        raise PermissionError("file not found") from err
-    if not any(path.is_relative_to(root) for root in data_roots()):
-        raise PermissionError("path outside QPILOT_DATA_ROOTS")
+    path = _resolve(sheet_path, "file not found")
     if not path.is_file() or path.suffix.lower() not in SHEET_SUFFIXES:
-        raise PermissionError("not an .xlsx or .csv sample sheet")
+        raise PathRefused("not an .xlsx or .csv sample sheet", Code.UNSUPPORTED_INPUT)
     return path
 
 
 def check_dir(directory: str) -> Path:
     """Resolve a folder (a Prism bundle or sent-back folder) and require it inside a data root."""
-    try:
-        path = Path(directory).expanduser().resolve(strict=True)
-    except (OSError, RuntimeError) as err:
-        raise PermissionError("folder not found") from err
-    if not any(path.is_relative_to(root) for root in data_roots()):
-        raise PermissionError("path outside QPILOT_DATA_ROOTS")
+    path = _resolve(directory, "folder not found")
     if not path.is_dir():
-        raise PermissionError("not a folder")
+        raise PathRefused("not a folder", Code.UNSUPPORTED_INPUT)
     return path
 
 
@@ -205,53 +218,82 @@ class QpilotTools:
             self._store = StudyStore()
         return self._store
 
-    def qpcr_study(self, rdml_path: str, design: dict | None = None) -> dict[str, Any]:
+    @property
+    def ledger(self) -> IdempotencyLedger:
+        """Keyed answers of the write tools, kept beside (never inside) the workspaces."""
+        return IdempotencyLedger(self.store.root)
+
+    def qpcr_study(
+        self,
+        rdml_path: str,
+        design: dict | None = None,
+        response_format: Literal["concise", "detailed"] = "detailed",
+    ) -> dict[str, Any]:
         """Analyse (or reopen) the qPCR study in an RDML file.
 
         Returns the study id, the root hash of its decision record, plate and sample counts,
-        reference-gene stability, every gene's fold change and conclusion, and the Decision
-        Cards. Without ``design`` the demo design (MYCN-high, top 15 %) is used; with
-        ``design={"session": "<id>"}`` the design a person confirmed in that Studio session
-        (refused while its design or curve stage is still open: results stay hidden until then).
+        reference-gene stability, every gene's fold change and conclusion (each number with the
+        id of the fact that carries it), and the Decision Cards. Without ``design`` the demo
+        design (MYCN-high, top 15 %) is used; with ``design={"session": "<id>"}`` the design a
+        person confirmed in that Studio session (refused while its design or curve stage is still
+        open: results stay hidden until then). ``response_format="concise"`` returns each gene's
+        conclusion, fold change, agreement and confidence level, and the open cards.
         """
+        bad = check_format(response_format)
+        if bad:
+            return bad
         try:
             path = check_path(rdml_path)
-        except PermissionError as err:
-            return {"error": str(err)}
+        except PathRefused as err:
+            return err.refusal("rdml_path")
         confirmed = None
         if design:
-            if set(design) != {"session"} or not isinstance(design.get("session"), str):
-                return {"error": 'design must be {"session": "<Studio session id>"}'}
+            if (
+                not isinstance(design, dict)
+                or set(design) != {"session"}
+                or not isinstance(design.get("session"), str)
+            ):
+                return refuse(
+                    Code.INVALID_ARGUMENT,
+                    'design must be {"session": "<Studio session id>"}',
+                    field="design",
+                )
             from qpilot.studio_service import StudioError
 
             try:
                 studio = self.studio
                 if studio.source(design["session"]) != path:
-                    return {"error": "this session belongs to another input file"}
+                    return refuse(
+                        Code.INVALID_ARGUMENT,
+                        "this session belongs to another input file",
+                        field="design",
+                    )
                 # the design analysed is the one the gate checked, read in the same snapshot
                 assembly = studio.confirmed_assembly(design["session"])
                 if assembly is None:
-                    return {"error": BLIND}
+                    return refuse(Code.RESULTS_HIDDEN, BLIND)
                 confirmed = assembly.design
             except (StudyNotFound, StudioError) as err:
-                return {"error": str(err) if isinstance(err, StudioError) else UNKNOWN_STUDY}
+                return _studio_refusal(err)
         try:
             study_id = self.store.ensure_study(path, design=confirmed)
         except ImportError:
-            return {"error": "the qPCR engine is not installed in this build"}
+            return refuse(Code.NOT_INSTALLED, "the qPCR engine is not installed in this build")
         except Exception as err:  # loader or engine refused the file: answer, never raise
             from qpilot.io.rdml_io import RdmlLoadError
 
             if isinstance(err, RdmlLoadError):
-                return {"error": f"could not read this RDML file: {err}"}
-            return {
-                "error": "could not analyse this file: it does not fit the demo study design "
-                f"({type(err).__name__})"
-            }
+                return refuse(Code.INPUT_UNREADABLE, f"could not read this RDML file: {err}")
+            return refuse(
+                Code.INPUT_UNREADABLE,
+                "could not analyse this file: it does not fit the demo study design "
+                f"({type(err).__name__})",
+            )
         result = self.store.get(study_id)
         cards = self.store.cards(study_id)
         fact_ids = sorted({f for c in cards for f in c.facts})
-        return {
+        index = fact_index(result.facts)
+        out = {
             "study_id": study_id,
             "record_root_hash": result.input_sha256,
             "chain_head": self.store.chain_head(study_id),
@@ -271,6 +313,8 @@ class QpilotTools:
                     "p": c.p,
                     "conclusion": c.conclusion,
                     "holds": result.robustness[g].holds if g in result.robustness else None,
+                    "level": result.confidence[g].level if g in result.confidence else None,
+                    "fact_ids": gene_fact_ids(index, g),
                 }
                 for g, c in result.contrasts.items()
             },
@@ -282,21 +326,39 @@ class QpilotTools:
                 f: result.facts[f].model_dump(mode="json") for f in fact_ids if f in result.facts
             },
         }
+        return shape("qpcr_study", out, response_format)
 
-    def qpcr_robustness(self, study_id: str, gene: str) -> dict[str, Any]:
+    def qpcr_robustness(
+        self,
+        study_id: str,
+        gene: str,
+        response_format: Literal["concise", "detailed"] = "detailed",
+    ) -> dict[str, Any]:
         """How robust one gene's conclusion is across every reasonable analysis.
 
         Returns the conclusion and fold change under the recommended choices, the share of the
         grid that agrees (``holds_fraction``), which single choices could flip it, its
-        confidence level with named reasons, and the open cards that can change it.
+        confidence level with named reasons, the open cards that can change it, and the fact id
+        of each number. ``response_format="concise"`` leaves out the interval, p, the impact of
+        each choice and the reasons.
         """
+        bad = check_format(response_format)
+        if bad:
+            return bad
         try:
             result = self.store.get(study_id)
         except StudyNotFound:
-            return {"error": "unknown study_id; call qpcr_study first"}
+            return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
+        if not isinstance(gene, str):
+            return refuse(Code.INVALID_ARGUMENT, "gene must be a gene name", field="gene")
         name = next((g for g in result.contrasts if g.lower() == gene.strip().lower()), None)
         if name is None:
-            return {"error": "gene not in this study", "n_genes": len(result.contrasts)}
+            return refuse(
+                Code.UNKNOWN_ITEM,
+                "gene not in this study",
+                field="gene",
+                n_genes=len(result.contrasts),
+            )
         contrast = result.contrasts[name]
         robust = result.robustness.get(name)
         grade = result.confidence.get(name)
@@ -307,7 +369,7 @@ class QpilotTools:
                 dim = KIND_TO_DIMENSION.get(card.kind)
                 if dim in robust.impact and robust.impact[dim]["flips"]:
                     flipping.append(card.id)
-        return {
+        out = {
             "study_id": study_id,
             "gene": name,
             "conclusion": contrast.conclusion,
@@ -320,7 +382,12 @@ class QpilotTools:
             "confidence": grade.model_dump(mode="json", exclude={"checks"}) if grade else None,
             "cards_that_can_flip_it": flipping,
             "open_cards": [c.id for c in cards if c.status in ("open", "pending_human")],
+            "fact_ids": {
+                ("holds_fraction" if k == "holds" else k): v
+                for k, v in gene_fact_ids(fact_index(result.facts), name).items()
+            },
         }
+        return shape("qpcr_robustness", out, response_format)
 
     def qpcr_decide(
         self,
@@ -330,18 +397,53 @@ class QpilotTools:
         reason: str,
         actor: str = "agent",
         expected_head: str | None = None,
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
         """Ask to decide a Decision Card, as an agent, with a reason.
 
-        Returns ``applied`` for a choice that cannot change any conclusion, ``pending_human``
-        for one that can (a person decides it in the qPilot app), or ``stale`` when
-        ``expected_head`` (the ``chain_head`` you last read) is out of date. ``actor`` must be
-        ``agent``: an MCP caller is always recorded as an agent.
+        Returns ``applied`` for a choice the study lets agents apply (one that changes no
+        conclusion, in decide-and-tell mode), ``pending_human`` when it waits for a person
+        (``code``: ``needs_human_decision`` when it can change a conclusion, at every autonomy
+        level; ``autonomy_forbids`` in Suggest mode), or ``stale`` when ``expected_head`` (the
+        ``chain_head`` you last read) is out of date. ``actor`` must be ``agent``: an MCP caller
+        is always recorded as an agent. With ``idempotency_key`` (a fresh UUID per request) a
+        retry of the same request gets the first answer back and is never logged twice.
         """
         if actor != "agent":
-            return {
-                "error": "over MCP the actor is always 'agent'; people decide in the qPilot app"
-            }
+            return refuse(
+                Code.HUMAN_ONLY,
+                "over MCP the actor is always 'agent'; people decide in the qPilot app",
+                field="actor",
+            )
+        for field, value in (
+            ("study_id", study_id),
+            ("card_id", card_id),
+            ("option", option),
+            ("reason", reason),
+        ):
+            if not isinstance(value, str):
+                return refuse(Code.INVALID_ARGUMENT, f"{field} must be text", field=field)
+        if expected_head is not None and not isinstance(expected_head, str):
+            return refuse(
+                Code.INVALID_ARGUMENT, "expected_head must be a chain head", field="expected_head"
+            )
+        args = {
+            "study_id": study_id,
+            "card_id": card_id,
+            "option": option,
+            "reason": reason,
+            "expected_head": expected_head,
+        }
+        return self.ledger.run(
+            "qpcr_decide",
+            idempotency_key,
+            args,
+            lambda: self._decide(study_id, card_id, option, reason, expected_head),
+        )
+
+    def _decide(
+        self, study_id: str, card_id: str, option: str, reason: str, expected_head: str | None
+    ) -> dict[str, Any]:
         try:
             if self.agent_policy and self.store.autonomy(study_id) != "decide_and_tell":
                 card = self.store.card(study_id, card_id)
@@ -356,17 +458,29 @@ class QpilotTools:
                     self.store, study_id, card_id, option, reason, "agent", expected_head
                 )
         except StudyNotFound:
-            return {"error": "unknown study_id; call qpcr_study first"}
+            return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
         except (DecisionError, KeyError) as err:
             # KeyError's str() adds quotes; take its argument so the id reads back exactly
-            text = err.args[0] if isinstance(err, KeyError) and err.args else str(err)
-            return {"error": str(text)}
-        return {
+            text = str(err.args[0] if isinstance(err, KeyError) and err.args else err)
+            unknown = text.startswith(("unknown card", "unknown option"))
+            code = Code.UNKNOWN_ITEM if unknown else Code.INVALID_ARGUMENT
+            field = "card_id" if text.startswith("unknown card") else None
+            field = field or ("option" if text.startswith("unknown option") else "reason")
+            return refuse(code, text, field=field)
+        out = {
             "status": outcome.status,
+            "applied": outcome.status == "applied",
             "chain_head": outcome.chain_head,
             "reason": outcome.reason,
+            "card_id": card_id,
             "card": _card_view(outcome.card) if outcome.card else None,
         }
+        if outcome.status == "stale":
+            return mark(out, Code.STALE_HEAD)
+        if outcome.status == "pending_human":
+            human = outcome.card is None or needs_human(outcome.card)
+            return mark(out, Code.NEEDS_HUMAN_DECISION if human else Code.AUTONOMY_FORBIDS)
+        return out
 
     def qpcr_plan(
         self,
