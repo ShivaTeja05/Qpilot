@@ -119,6 +119,41 @@ CURVE_JUDGE = "qpilot-curve-judge"
 MAX_EVIDENCE_SHOWN = 30
 MAX_JSON_CHARS = 20_000
 CHECK_ORDER = {"contradicted": 0, "cannot_check": 1, "consistent": 2}
+RULE_WORDS = {
+    "D-SERIES": "dilution series: Cq against log10 quantity falls on a line; a standard amplifies",
+    "D-NTC": "negative controls: a control does not amplify close to the study wells",
+    "D-REP": "technical replicates agree",
+    "D-SYMBOL": "the gene symbol is the approved HGNC symbol",
+    "D-COVER": "every well has exactly one role",
+    "D-NGUARD": "each group has at least two biological units",
+    "D-CURVE": "LinRegPCR's fit of the curve",
+}
+ORIGIN_WORDS = {
+    "rdml:sample.id": "a sample name in the file",
+    "rdml:sample.description": "a sample description in the file",
+    "rdml:sample.annotation": "a sample annotation in the file",
+    "rdml:target.id": "a target name in the file",
+    "rdml:target.description": "a target description in the file",
+    "rdml:run.id": "a run (plate) name in the file",
+    "rdml:run.description": "a run description in the file",
+    "rdml:experiment.id": "an experiment name in the file",
+    "rdml:experiment.description": "an experiment description in the file",
+    "studio:sentence": "your sentence about the experiment",
+}
+DETAIL_WORDS = {
+    "n_wells": "wells",
+    "n_amplified": "wells called amplified",
+    "n_with_cq": "wells with a Cq",
+    "n_level_wells": "wells at its dilution level",
+    "n_level_amplified": "wells at its dilution level called amplified",
+    "r2": "R² of Cq against log10 quantity",
+    "cq": "Cq",
+    "eff_indiv": "this well's efficiency (LinRegPCR)",
+    "linregpcr_amplification": "LinRegPCR: amplified",
+    "linregpcr_plateau": "LinRegPCR: plateau reached",
+    "linregpcr_quantity": "LinRegPCR: quantity computed",
+}
+QUOTE_CHARS = 60
 GROUP_COLORS = ("#2a78d6", "#eb6834")  # categorical slots 1-2, validated as a pair
 INK = "#52514e"
 
@@ -290,9 +325,19 @@ def is_blind_kind(proposal: Proposal) -> bool:
 
 
 def ordered_pending(proposals: Sequence[Proposal]) -> list[Proposal]:
-    """Pending proposals: what the engine contradicts first, then cannot-check, then the rest."""
+    """Pending proposals: a built-in design first, then contradicted, then cannot-check, the rest.
+
+    A built-in design leads because one accept sets the groups, the comparison and the reference
+    genes; what the engine contradicts comes next, before anything it finds consistent.
+    """
     indexed = list(enumerate(proposals))
-    indexed.sort(key=lambda item: (CHECK_ORDER.get(item[1].check.status, 3), item[0]))
+    indexed.sort(
+        key=lambda item: (
+            item[1].kind != "design.preset",
+            CHECK_ORDER.get(item[1].check.status, 3),
+            item[0],
+        )
+    )
     return [p for _, p in indexed]
 
 
@@ -324,7 +369,7 @@ def details_rows(details: Mapping[str, Any]) -> list[tuple[str, str]]:
     """A check's (or consequence's) details as escaped table rows; nested parts fold away."""
     rows = []
     for key, value in details.items():
-        label = esc(str(key).replace("_", " "))
+        label = esc(DETAIL_WORDS.get(str(key), str(key).replace("_", " ")))
         if key == "checks" and isinstance(value, Mapping):
             for rule, sub in value.items():
                 if isinstance(sub, Mapping):
@@ -332,7 +377,7 @@ def details_rows(details: Mapping[str, Any]) -> list[tuple[str, str]]:
                     text = f"{esc(word)}: {esc(sub.get('note', ''))}"
                     if sub.get("details"):
                         text += _folded(sub["details"], "details")
-                    rows.append((esc(rule), text))
+                    rows.append((rule_label(rule), text))
             continue
         if isinstance(value, Mapping | list | tuple) and not _scalars(value):
             rows.append((label, _folded(value, f"{len(value)} item(s)")))
@@ -343,6 +388,23 @@ def details_rows(details: Mapping[str, Any]) -> list[tuple[str, str]]:
         else:
             rows.append((label, esc(_value_text(value))))
     return rows
+
+
+def rule_label(rule: Any) -> str:
+    """A check's rule id in words, the id after it (escaped)."""
+    words = RULE_WORDS.get(str(rule))
+    code = f"<code>{esc(rule)}</code>"
+    return f"{esc(words)} {code}" if words else code
+
+
+def origin_words(origin: str) -> str:
+    """Where a quarantined text came from, in words (plain text: the caller escapes it)."""
+    if origin in ORIGIN_WORDS:
+        return ORIGIN_WORDS[origin]
+    if origin.startswith("sheet:"):
+        cell = origin.rpartition("!")[2] if "!" in origin else ""
+        return f"cell {cell} of the sample sheet" if cell else "the sample sheet's title"
+    return origin
 
 
 def _scalars(value: Any) -> bool:
@@ -370,7 +432,7 @@ def _evidence_item(
     note_html = f" <span class='qs-note'>({esc(note)})</span>" if note else ""
     if kind == "text" or TEXT_ID.match(ref):
         entry = quarantine.get(ref)
-        title = f"text {esc(ref)}"
+        title = _quote_title(entry) if entry else f"text {esc(ref)}"
         body = _quoted(entry) if entry else "<p>This text is not in the session's quarantine.</p>"
     elif kind == "cell":
         text_id = sheet_cells.get(ref) or next(
@@ -378,6 +440,7 @@ def _evidence_item(
         )
         title = f"cell {esc(ref)}"
         if text_id and text_id in quarantine:
+            title = _quote_title(quarantine[text_id])
             body = _quoted(quarantine[text_id])
         elif ref.startswith("sent_back/"):
             body = "<p>A cell of the table Prism sent back.</p>"
@@ -395,6 +458,13 @@ def _evidence_item(
     return f"<li><details><summary>{title}{note_html}</summary>{body}</details></li>"
 
 
+def _quote_title(entry: QuarantineEntry) -> str:
+    """A source's title: the start of the original text, quoted, and where it came from."""
+    value = entry.value if len(entry.value) <= QUOTE_CHARS else entry.value[:QUOTE_CHARS] + "…"
+    flag = " · reads like an instruction; never obeyed" if "instruction_like" in entry.flags else ""
+    return f"“{esc(value)}” <span class='qs-note'>({esc(origin_words(entry.origin))}{flag})</span>"
+
+
 def _quoted(entry: QuarantineEntry) -> str:
     flag = ""
     if "instruction_like" in entry.flags:
@@ -406,7 +476,8 @@ def _quoted(entry: QuarantineEntry) -> str:
     extra = f" · flags: {esc(', '.join(others))}" if others else ""
     return (
         f'<blockquote class="qs-quote">{esc(entry.value)}</blockquote>'
-        f'<p class="qs-origin">Original text from {esc(entry.origin)}{extra}</p>{flag}'
+        f'<p class="qs-origin">Original text: {esc(origin_words(entry.origin))} '
+        f"<code>{esc(entry.origin)}</code>{extra}</p>{flag}"
     )
 
 
@@ -441,8 +512,8 @@ def check_html(proposal: Proposal, *, details: bool = True) -> str:
     if check.note:
         parts.append(f'<p class="qs-check-note">{esc(check.note)}</p>')
     if check.rule_ids:
-        rules = ", ".join(f"<code>{esc(r)}</code>" for r in check.rule_ids)
-        parts.append(f"<p>Rules: {rules}</p>")
+        rules = "; ".join(rule_label(r) for r in check.rule_ids)
+        parts.append(f"<p>Checks run: {rules}</p>")
     if check.details and details:
         parts.append(kv_table(details_rows(check.details)))
     return "".join(parts)
@@ -591,7 +662,9 @@ def level_html(proposal: Proposal) -> str:
     level = proposal.level
     badge = f'<span class="qp-badge level-{esc(slug(level))}">{esc(level)}</span>'
     reasons = "".join(f"<li>{esc(r)}</li>" for r in proposal.reasons)
-    return f"<p>{badge}</p>" + (f'<ul class="qs-reasons">{reasons}</ul>' if reasons else "")
+    return f"<p>How sure the proposal is: {badge}</p>" + (
+        f'<ul class="qs-reasons">{reasons}</ul>' if reasons else ""
+    )
 
 
 def actions_html(proposal: Proposal) -> str:
@@ -708,7 +781,7 @@ def card_html(
     its numbers (neither in the consequence nor in the check's details).
     """
     p = proposal
-    what = [f'<p class="qs-what">{esc(describe(p))}</p>']
+    what = [f'<h4 class="qs-what">{esc(describe(p))}</h4>']
     question = p.payload.get("question")
     if p.kind.startswith("prism.") and isinstance(question, str):
         what.append(f'<p class="qs-question">{esc(question)}</p>')
@@ -717,12 +790,10 @@ def card_html(
     if p.alternatives:
         alts = "; ".join(esc(describe(p, alt)) for alt in p.alternatives[:6])
         what.append(f'<p class="qs-alt">Other reading(s): {alts}</p>')
-    what.append(
-        f'<p class="qs-meta"><code>{esc(p.kind)}</code> · '
-        f"{esc(STATUS_WORDS.get(p.status, p.status))} · <span class='qs-id'>{esc(p.id)}</span></p>"
-    )
+    what.append(f'<p class="qs-meta">{esc(STATUS_WORDS.get(p.status, p.status))}</p>')
     saw = model_saw_html(p.made_by, last_payload, results_visible=results_visible)
-    footer = f'<div class="qs-footer">{esc(maker_text(p.made_by))}{saw}</div>'
+    ids = f"<span class='qs-id'>{esc(p.kind)} · {esc(p.id)}</span>"
+    footer = f'<div class="qs-footer">{esc(maker_text(p.made_by))} {ids}{saw}</div>'
     return (
         f'<div class="qs-card check-{esc(p.check.status)}" data-proposal="{esc(p.id)}">'
         + _part(1, "Proposal", "".join(what))
@@ -743,14 +814,24 @@ def card_html(
 # ---------- lists, the stage strip and the inbox header ----------
 
 
-def proposal_list_html(proposals: Sequence[Proposal], title: str) -> str:
-    """A numbered list of proposals with their checks (what a bulk action would cover)."""
+def proposal_list_html(
+    proposals: Sequence[Proposal], title: str, *, flag_decided: bool = True
+) -> str:
+    """A numbered list of proposals with their checks (what a bulk action would cover).
+
+    ``flag_decided`` marks a proposal that is no longer waiting (a bulk action would refuse
+    it); a confirm's list is of accepted proposals, so it passes False.
+    """
     items = "".join(
         f"<li>{esc(describe(p))} "
         f'<span class="qs-check {esc(p.check.status)}">'
         f"{esc(CHECK_WORDS.get(p.check.status, p.check.status))}</span> "
         f'<span class="qs-id">{esc(p.id)}</span>'
-        + ("" if p.status == "proposed" else f" <b>(already {esc(p.status)}; will be refused)</b>")
+        + (
+            ""
+            if p.status == "proposed" or not flag_decided
+            else f" <b>(already {esc(p.status)}; will be refused)</b>"
+        )
         + "</li>"
         for p in proposals
     )
@@ -841,7 +922,9 @@ def confirm_html(confirm: Proposal, covered: Sequence[Proposal]) -> str:
         )
     if covered:
         lines.append(
-            proposal_list_html(covered, f"It covers these {len(covered)} accepted proposals:")
+            proposal_list_html(
+                covered, f"It covers these {len(covered)} accepted proposals:", flag_decided=False
+            )
         )
     elif stage != "choices":
         lines.append("<p>It covers no accepted proposal of this stage.</p>")

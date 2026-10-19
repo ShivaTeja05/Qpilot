@@ -153,7 +153,8 @@ def test_the_engine_check_shows_its_rules_and_details():
     )
     html = ss.check_html(proposal(check=check))
     assert "contradicted" in html and "D-SERIES" in html and "the fit is poor" in html
-    assert "<th>r2</th><td>0.7071</td>" in html and "<th>n wells</th><td>21</td>" in html
+    assert "<th>R² of Cq against log10 quantity</th><td>0.7071</td>" in html
+    assert "<th>wells</th><td>21</td>" in html
     assert "cannot check: no set" in html
 
 
