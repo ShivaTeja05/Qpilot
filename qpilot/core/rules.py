@@ -449,9 +449,11 @@ class RuleEval(BaseModel):
     """One verdict of one rule on one scope (a plate, a plate x target, a sample ...).
 
     ``reason`` is plain words with ``{{fact_id}}`` tokens for every number (it passes
-    ``core/validator.py`` against ``facts``). ``evidence`` holds the same numbers as structured
-    values, keyed by name. ``flagged`` are the item keys (wells, for qPCR) the rule points at;
-    ``options`` are the consequence-test options, option id -> the item keys it would exclude.
+    ``core/validator.py`` against ``facts``). ``code`` is a machine reason, always set for
+    ``not_applicable`` (``no_ntc_typed``, ``processed_input`` ...). ``evidence`` holds the same
+    numbers as structured values, keyed by name. ``flagged`` are the item keys (wells, for qPCR)
+    the rule points at; ``options`` are the consequence-test options, option id -> the item
+    keys it would exclude.
     """
 
     rule_id: str
@@ -459,6 +461,7 @@ class RuleEval(BaseModel):
     scope: dict[str, str]
     outcome: str
     verdict: Verdict
+    code: str = ""
     reason: str
     facts: list[str] = []
     evidence: dict[str, float | int | str | bool | None] = {}
@@ -478,10 +481,17 @@ class Finding(BaseModel):
     scope: dict[str, str]
     outcome: str
     reason: str
+    code: str = ""
     facts: list[str] = []
     evidence: dict[str, float | int | str | bool | None] = {}
     flagged: list[str] = []
     options: dict[str, list[str]] = {}
+
+    @model_validator(mode="after")
+    def _na_has_code(self) -> Finding:
+        if self.outcome == NOT_APPLICABLE and not self.code:
+            raise ValueError("a not_applicable finding needs a machine reason (code)")
+        return self
 
 
 #: An evaluator: (rule, plugin context) -> findings. Registered per check name by the plugin.
@@ -525,6 +535,7 @@ def evaluate_pack(
                 else Finding(
                     scope={},
                     outcome=NOT_APPLICABLE,
+                    code="no_evaluator",
                     reason=f"This build has no evaluator for the check {rule.check}.",
                 )
             )
@@ -547,6 +558,7 @@ def _to_eval(rule: Rule, check: str, finding: Finding, defaults: Mapping[str, st
         scope=dict(finding.scope),
         outcome=finding.outcome,
         verdict=verdict,
+        code=finding.code,
         reason=finding.reason,
         facts=list(finding.facts),
         evidence=dict(finding.evidence),
