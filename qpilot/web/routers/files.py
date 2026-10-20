@@ -581,6 +581,32 @@ def prism_roundtrip(sid: str, body: RoundTripRequest, ctx: Ctx) -> JobStarted:
     return JobStarted(job=view)
 
 
+def _study_gate(ctx: AppContext, study_id: str) -> None:
+    """The results routes' rule for a study: 404 unknown, 403 ``blind`` while its session is."""
+    from qpilot.web.routers.results import study
+
+    study(ctx, study_id)
+
+
+def _download_gate(ctx: AppContext, path: Path) -> None:
+    """A record or bundle of a workspace that is blind (again) is not served (403 ``blind``)."""
+    parts = path.relative_to(_exports(ctx).resolve()).parts
+    key = parts[0] if len(parts) > 1 else ""
+    if not KEY.match(key):
+        raise api_error(404, "not_found", "This download is not available.")
+    if parts[1].startswith(folders.RECORD_PREFIX):  # exports/<study>/record-*/…
+        _study_gate(ctx, key)
+        return
+    if not is_session(ctx.store, key):  # exports/<session>/prism-* and their zips
+        raise api_error(404, "not_found", "This download is not available.")
+    try:
+        visible = ctx.studio.results_visible(key)
+    except (StudyNotFound, StudioError, OSError):
+        visible = False
+    if not visible:
+        raise api_error(403, "blind", BLIND)
+
+
 # ---- the Analysis Record -------------------------------------------------------------------------
 
 
@@ -593,9 +619,7 @@ def export_record(
     study_id: str, ctx: Ctx, body: Annotated[RecordRequest | None, Body()] = None
 ) -> JobStarted:
     """Export the Analysis Record (input, results, every decision, checksums) as a zip."""
-    check_key(study_id)
-    if not is_study(ctx.store, study_id):
-        raise api_error(404, "not_found", "There is no analysed study with this id.")
+    _study_gate(ctx, study_id)
     options = body or RecordRequest()
 
     def work(progress: Progress) -> dict[str, Any]:
@@ -662,9 +686,7 @@ def export_record(
 @router.get("/studies/{study_id}/records", response_model=RecordList)
 def list_records(study_id: str, ctx: Ctx) -> RecordList:
     """The records of this study in qPilot's export folder, newest first."""
-    check_key(study_id)
-    if not is_study(ctx.store, study_id):
-        raise api_error(404, "not_found", "There is no analysed study with this id.")
+    _study_gate(ctx, study_id)
     found = []
     for path in _ws_exports(ctx, study_id).glob(f"{folders.RECORD_PREFIX}*/{EXPORT_FILE}"):
         try:
@@ -693,6 +715,7 @@ def download(download_id: str, ctx: Ctx) -> FileResponse:
         raise api_error(
             404, "not_found", "This download is not available (qPilot may have restarted)."
         )
+    _download_gate(ctx, path)
     media = "application/zip" if path.suffix == ".zip" else "application/octet-stream"
     return FileResponse(path, media_type=media, filename=path.name)
 
