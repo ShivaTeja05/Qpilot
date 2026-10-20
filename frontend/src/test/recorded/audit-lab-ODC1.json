@@ -1,0 +1,78 @@
+{
+ "gene": "ODC1",
+ "rows": [
+  {
+   "label": "Samples in each group",
+   "value": "53 MYCN-high · 294 rest"
+  },
+  {
+   "label": "Plates for this assay",
+   "value": "1"
+  },
+  {
+   "label": "Cq, median (lowest to highest)",
+   "value": "24.5 (16.5 to 34.7)"
+  },
+  {
+   "label": "Wells with Cq above 35",
+   "value": "0"
+  },
+  {
+   "label": "Wells with Cq above 38",
+   "value": "0"
+  },
+  {
+   "label": "Wells that never amplified",
+   "value": "0"
+  },
+  {
+   "label": "Efficiency, LinRegPCR assay mean",
+   "value": "1.91 (91 % per cycle)"
+  },
+  {
+   "label": "Efficiency, plate standard curve",
+   "value": "1.92 (92 % per cycle)"
+  },
+  {
+   "label": "Wells flagged for efficiency",
+   "value": "0"
+  },
+  {
+   "label": "Wells flagged as very low copy number",
+   "value": "0"
+  },
+  {
+   "label": "p-value, planned analysis",
+   "value": "2.1e-08"
+  }
+ ],
+ "references": [
+  {
+   "gene": "ALUsq(Eurogentec)",
+   "m": "1.68",
+   "differs": false
+  },
+  {
+   "gene": "HMBS",
+   "m": "1.96",
+   "differs": true
+  },
+  {
+   "gene": "HPRT1",
+   "m": "1.64",
+   "differs": false
+  },
+  {
+   "gene": "SDHA(1)",
+   "m": "1.99",
+   "differs": false
+  },
+  {
+   "gene": "UBC(2)",
+   "m": "2.03",
+   "differs": true
+  }
+ ],
+ "refs_label": "normalise to 5 reference genes: ALUsq+HMBS+HPRT1+SDHA+UBC",
+ "stable_below": "1"
+}
