@@ -154,6 +154,62 @@ class Screen(LabViews):
     """Everything the page shows, built from the engine's files and live engine calls."""
 
     def __init__(self, results: str | Path = "results", rdml: str | None = None, asker=None):
+        self._read(results)
+        source = self.summary.get("source") or {}
+        if rdml is None and source.get("rdml") and Path(source["rdml"]).is_file():
+            rdml = source["rdml"]  # the file this run was made from
+        study = load_study(rdml)
+        if study.input_sha256 != self.summary["input_sha256"]:
+            raise ValueError(
+                f"{self.dir} was made from a different file than "
+                f"{rdml or 'the benchmark'}: pass the matching --rdml or --results."
+            )
+        self._bind(Engine(study, space_for(study)[0]), rdml, asker)
+
+    @classmethod
+    def from_prepared(cls, results: str | Path, prepared, asker=None) -> Screen:
+        """The screen of a run made from a study prepared elsewhere, with that study's engine.
+
+        qPilot's audit (``qpilot.integration.simulator``) builds the study from the design a
+        person confirmed (well roles, excluded wells, the two named groups) and runs the
+        simulator on it; re-reading the raw RDML here would describe other numbers. So the live
+        views (what-if, analyses, effects, samples, lab) use ``prepared.engine`` as it is.
+
+        Args:
+            results: The run's results folder (``explain.json``, ``genes.csv``, ...).
+            prepared: Anything with ``engine`` (the run's engine) and optionally ``scope``
+                (``{"mode": "groups" | "marker_split", "groups": [high, rest]}``), as
+                ``qpilot.integration.simulator.Prepared`` has.
+            asker: An Ask engine to reuse (built on first use otherwise).
+
+        Raises:
+            FileNotFoundError: The folder has no complete run.
+            ValueError: The run was made from another input file or for other genes.
+        """
+        screen = cls.__new__(cls)
+        screen._read(results)
+        engine = prepared.engine
+        if engine.study.input_sha256 != screen.summary["input_sha256"]:
+            raise ValueError(f"{screen.dir} was made from another input file than this study")
+        unknown = sorted(set(screen.explain) - set(engine.items))
+        if unknown:
+            raise ValueError(f"{screen.dir} has genes this study does not compare: {unknown[:5]}")
+        screen._bind(engine, None, asker)
+        scope = getattr(prepared, "scope", None) or {}
+        groups = scope.get("groups") or []
+        if scope.get("mode") == "groups" and len(groups) == 2:
+            high, rest = (str(g) for g in groups)
+            screen.group, screen.rest, screen.rest_short = high, rest, rest
+            screen.group_def = f"the {high} group of the confirmed design, compared with {rest}"
+            screen.stage_text["Define the groups"] = (
+                f"The confirmed design's two groups are compared: {high} and {rest}."
+            )
+        elif groups:
+            screen.group = str(groups[0])
+        return screen
+
+    def _read(self, results: str | Path) -> None:
+        """Read the run's files (everything the screen shows that is not computed live)."""
         self.dir = Path(results)
         missing = [f for f in REQUIRED if not (self.dir / f).exists()]
         if missing:
@@ -167,25 +223,22 @@ class Screen(LabViews):
         self.summary: dict = json.loads((self.dir / "summary.json").read_text())
         flips = self.dir / "one_sample_flips.csv"
         self.sample_flips = pd.read_csv(flips, dtype={"sample": str}) if flips.exists() else None
-        source = self.summary.get("source") or {}
-        if rdml is None and source.get("rdml") and Path(source["rdml"]).is_file():
-            rdml = source["rdml"]  # the file this run was made from
-        self.source = source.get("name") or BENCHMARK_NAME
-        study = load_study(rdml)
-        if study.input_sha256 != self.summary["input_sha256"]:
-            raise ValueError(
-                f"{self.dir} was made from a different file than "
-                f"{rdml or 'the benchmark'}: pass the matching --rdml or --results."
-            )
-        self.engine = Engine(study, space_for(study)[0])
+        self.source = (self.summary.get("source") or {}).get("name") or BENCHMARK_NAME
+
+    def _bind(self, engine: Engine, rdml: str | None, asker) -> None:
+        """Use ``engine`` for the live views and set the words that depend on its study."""
+        self.engine = engine
         self.space = self.engine.space
         self.rules = self.summary["verdicts"]["rules"]
         self.line = 2**self.engine.rule.min_log2fc
         self.alpha = self.engine.rule.alpha
-        marker = study.marker.split("(")[0]
+        marker = engine.study.marker.split("(")[0]
         cut = self.space.decision("cut")
         self.group = f"{marker}-high"
+        self.rest = "the rest"  # the other group, in a sentence ("than in the rest")
+        self.rest_short = "rest"  # ... and in a count ("294 rest")
         self.group_def = cut.options[cut.index(self.space.baseline["cut"])].label
+        self.stage_text: dict[str, str] = {}  # how-it-works stage text that differs here
         self.n_samples = self.summary["study"]["samples"]
         self._asker = asker
         self._rdml = rdml
@@ -268,6 +321,7 @@ class Screen(LabViews):
                 "plates": study["plates"],
                 "group": self.group,
                 "group_def": self.group_def,
+                "rest": self.rest,
                 "analyses": self.summary["ledger"]["total_cells"],
                 "reasonable": self.explain[genes[0]]["analyses_defensible"],
             },
@@ -285,6 +339,7 @@ class Screen(LabViews):
                     "gene": g,
                     "fold": _fold(self.explain[g]["fold"]),
                     "call": self.explain[g]["call"],
+                    "call_key": self.explain[g]["call"],
                     "verdict": self.explain[g]["verdict"],
                     "label": VERDICT_LABEL[self.explain[g]["verdict"]],
                     "headline": g in HEADLINE,
@@ -376,7 +431,7 @@ class Screen(LabViews):
                 f"{holds} of 100 reasonable analyses agree there is no call."
             )
         result = {
-            "headline": f"{gene} is {_fold(e['fold'])} in {self.group} samples than in the rest.",
+            "headline": f"{gene} is {_fold(e['fold'])} in {self.group} samples than in {self.rest}.",
             "lines": [
                 (
                     f"With your planned analysis it is {self.call_words(e['call'])}."
@@ -409,6 +464,7 @@ class Screen(LabViews):
                 "choice": " and ".join(f["choices"]),
                 "fold": _fold(f["fold"]),
                 "call": self.call_words(f["call"]),
+                "call_key": f["call"],
                 "same_call": f["call"] == e["call"],
             }
             for f in e["flips"]
@@ -545,6 +601,7 @@ class Screen(LabViews):
         return {
             "tiles": tiles,
             "gene": gene,
+            "call_key": e["call"],
             "verdict": verdict,
             "label": VERDICT_LABEL[verdict],
             "headline_gene": gene in HEADLINE,
@@ -565,7 +622,13 @@ class Screen(LabViews):
         sf = self.sample_flips
         rows = sf[(sf["gene"] == gene) & sf["flips"]]
         return [
-            {"sample": r.sample, "plate": r.plate, "well": r.well, "call": self.call_words(r.call)}
+            {
+                "sample": r.sample,
+                "plate": r.plate,
+                "well": r.well,
+                "call": self.call_words(r.call),
+                "call_key": r.call,
+            }
             for r in rows.itertuples()
         ]
 
@@ -593,8 +656,10 @@ class Screen(LabViews):
                     "verdict": self.explain[g]["verdict"] if g in self.explain else "",
                     "base": _fold(r["base_fold"]),
                     "base_call": SHORT_CALL[r["base_call"]],
+                    "base_call_key": r["base_call"],
                     "new": _fold(r["fold"]),
                     "new_call": SHORT_CALL[r["call"]],
+                    "new_call_key": r["call"],
                     "base_log2": float(np.log2(r["base_fold"])),
                     "new_log2": float(np.log2(r["fold"])),
                     "changed": bool(r["call"] != r["base_call"]),
