@@ -97,7 +97,9 @@ for path, entry in sorted(lock["packages"].items()):
             holder = "none in the package"
     rows.append((name, version, lic or "UNKNOWN", holder, name in root_deps))
 
-print("| Package | Version | Licence | Copyright notice (first line in the package's licence file) |")
+print(
+    "| Package | Version | Licence | Copyright notice (first line in the package's licence file) |"
+)
 print("|---|---|---|---|")
 for name, version, lic, holder, direct in rows:
     bold = "**" if direct else ""
