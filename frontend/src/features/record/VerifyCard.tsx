@@ -130,7 +130,7 @@ export function VerifyResultView({ result, size }: { result: VerifyResult; size?
             {result.ok
               ? "Nothing in it was altered since qPilot wrote it."
               : "Something in it changed after it was written. Do not rely on it; ask its author for the original zip."}{" "}
-            <span className="break-all font-mono text-[12px]">{result.file_name}</span>
+            <span className="font-mono text-[12px] [overflow-wrap:anywhere]">{result.file_name}</span>
             {size != null ? <span className="text-faint"> · {bytes(size)}</span> : null}
           </p>
         </div>
