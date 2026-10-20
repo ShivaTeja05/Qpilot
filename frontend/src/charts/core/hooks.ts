@@ -37,7 +37,10 @@ export interface Tip {
 
 export function useTip() {
   const [tip, setTip] = useState<Tip | null>(null);
-  const show = useCallback((x: number, y: number, content: TipContent) => setTip({ x, y, content }), []);
+  const show = useCallback(
+    (x: number, y: number, content: TipContent) => setTip({ x, y, content }),
+    [],
+  );
   const hide = useCallback(() => setTip(null), []);
   return { tip, show, hide };
 }

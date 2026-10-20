@@ -70,7 +70,10 @@ export function LevelBars({ level, className }: { level: Level; className?: stri
       {[1, 2, 3, 4].map((i) => (
         <span
           key={i}
-          className={cn("w-[3px] rounded-[1px]", i <= n ? LEVEL_BG[level] : "bg-line-strong")}
+          className={cn(
+            "w-1 rounded-[1px]",
+            i <= n ? LEVEL_BG[level] : "bg-line ring-1 ring-line-strong ring-inset",
+          )}
           style={{ height: `${4 + i * 2}px` }}
         />
       ))}

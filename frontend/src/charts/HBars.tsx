@@ -43,7 +43,16 @@ export function barPath(x0: number, x1: number, y: number, h: number): string {
   return `M${x0} ${y} H${x1 - r} Q${x1} ${y} ${x1} ${y + r} V${y + h - r} Q${x1} ${y + h} ${x1 - r} ${y + h} H${x0} Z`;
 }
 
-export function HBars({ rows, summary, caption, max, ref_, legend, valueHeader = "Value", onSelect }: HBarsProps) {
+export function HBars({
+  rows,
+  summary,
+  caption,
+  max,
+  ref_,
+  legend,
+  valueHeader = "Value",
+  onSelect,
+}: HBarsProps) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
   const narrow = width < 520;
@@ -53,14 +62,22 @@ export function HBars({ rows, summary, caption, max, ref_, legend, valueHeader =
   const height = top + rows.length * rowH + 4;
   const textRoom = narrow ? 64 : 150;
   const vmax = Math.max(max ?? 0, ref_?.value ?? 0, ...rows.map((r) => r.value), 1e-9);
-  const x = scaleLinear().domain([0, vmax]).range([labelW, Math.max(labelW + 40, width - textRoom)]);
+  const x = scaleLinear()
+    .domain([0, vmax])
+    .range([labelW, Math.max(labelW + 40, width - textRoom)]);
   const nav = usePointNav(rows.length, (i) => onSelect?.(rows[i]!.key));
   const active = nav.active != null ? rows[nav.active] : null;
   const bh = 14;
 
   const columns: Column<BarRow>[] = [
     { key: "label", header: "", cell: (r) => r.label, sort: (r) => r.label },
-    { key: "value", header: valueHeader, cell: (r) => r.valueText, sort: (r) => r.value, numeric: true },
+    {
+      key: "value",
+      header: valueHeader,
+      cell: (r) => r.valueText,
+      sort: (r) => r.value,
+      numeric: true,
+    },
     { key: "note", header: "Note", cell: (r) => r.note ?? "" },
   ];
 
@@ -69,8 +86,20 @@ export function HBars({ rows, summary, caption, max, ref_, legend, valueHeader =
       summary={summary}
       legend={legend ?? (ref_ ? [{ swatch: <LineSwatch dashed />, label: ref_.label }] : undefined)}
       caption={caption}
-      live={active ? `${active.label}: ${active.valueText}${active.note ? `, ${active.note}` : ""}` : undefined}
-      table={() => <DataTable columns={columns} rows={rows} rowKey={(r) => r.key} onRowClick={onSelect ? (r) => onSelect(r.key) : undefined} caption={summary} />}
+      live={
+        active
+          ? `${active.label}: ${active.valueText}${active.note ? `, ${active.note}` : ""}`
+          : undefined
+      }
+      table={() => (
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.key}
+          onRowClick={onSelect ? (r) => onSelect(r.key) : undefined}
+          caption={summary}
+        />
+      )}
     >
       <div
         ref={ref}
@@ -84,11 +113,32 @@ export function HBars({ rows, summary, caption, max, ref_, legend, valueHeader =
           hide();
         }}
       >
-        <svg width={width} height={height} role="img" aria-label={summary} className="block overflow-visible" onPointerLeave={hide}>
+        <svg
+          width={width}
+          height={height}
+          role="img"
+          aria-label={summary}
+          className="block overflow-visible"
+          onPointerLeave={hide}
+        >
           {ref_ && (
             <g aria-hidden="true">
-              <line x1={x(ref_.value)} x2={x(ref_.value)} y1={top - 4} y2={height} stroke="var(--text-faint)" strokeWidth={1.25} strokeDasharray="4 3" />
-              <text x={x(ref_.value)} y={top - 8} textAnchor="middle" fontSize={11} fill="var(--text-muted)">
+              <line
+                x1={x(ref_.value)}
+                x2={x(ref_.value)}
+                y1={top - 4}
+                y2={height}
+                stroke="var(--text-faint)"
+                strokeWidth={1.25}
+                strokeDasharray="4 3"
+              />
+              <text
+                x={x(ref_.value)}
+                y={top - 8}
+                textAnchor="middle"
+                fontSize={11}
+                fill="var(--text-muted)"
+              >
                 {ref_.label}
               </text>
             </g>
@@ -101,23 +151,67 @@ export function HBars({ rows, summary, caption, max, ref_, legend, valueHeader =
             return (
               <g
                 key={r.key}
-                onPointerEnter={() => show(Math.max(x1, labelW + 8), by + bh / 2, { title: r.label, value: r.valueText, lines: [r.note] })}
+                onPointerEnter={() =>
+                  show(Math.max(x1, labelW + 8), by + bh / 2, {
+                    title: r.label,
+                    value: r.valueText,
+                    lines: [r.note],
+                  })
+                }
                 onClick={onSelect ? () => onSelect(r.key) : undefined}
                 className={onSelect ? "cursor-pointer" : undefined}
               >
-                <rect x={0} y={y} width={width} height={rowH} fill={on ? "var(--accent-soft)" : "transparent"} fillOpacity={0.6} />
+                <rect
+                  x={0}
+                  y={y}
+                  width={width}
+                  height={rowH}
+                  fill={on ? "var(--accent-soft)" : "transparent"}
+                  fillOpacity={0.6}
+                />
                 {narrow ? (
-                  <text x={0} y={y + 14} fontSize={12} fill="var(--text)" fontWeight={r.strong ? 600 : 400}>
+                  <text
+                    x={0}
+                    y={y + 14}
+                    fontSize={12}
+                    fill="var(--text)"
+                    fontWeight={r.strong ? 600 : 400}
+                  >
                     {r.label}
                   </text>
                 ) : (
-                  <text x={labelW - 10} y={by + 11} textAnchor="end" fontSize={12} fill="var(--text)" fontWeight={r.strong ? 600 : 400}>
+                  <text
+                    x={labelW - 10}
+                    y={by + 11}
+                    textAnchor="end"
+                    fontSize={12}
+                    fill="var(--text)"
+                    fontWeight={r.strong ? 600 : 400}
+                  >
                     {r.label}
                   </text>
                 )}
-                <rect x={labelW} y={by} width={Math.max(0, x(vmax) - labelW)} height={bh} rx={2} fill="var(--surface-sunken)" />
-                {r.value > 0 && <path d={barPath(labelW, Math.max(labelW + 2, x1), by, bh)} fill={r.tone ?? "var(--accent)"} />}
-                <text x={Math.max(x1, labelW) + 6} y={by + 11} fontSize={12} fill="var(--text)" className="tabular">
+                <rect
+                  x={labelW}
+                  y={by}
+                  width={Math.max(0, x(vmax) - labelW)}
+                  height={bh}
+                  rx={2}
+                  fill="var(--surface-sunken)"
+                />
+                {r.value > 0 && (
+                  <path
+                    d={barPath(labelW, Math.max(labelW + 2, x1), by, bh)}
+                    fill={r.tone ?? "var(--accent)"}
+                  />
+                )}
+                <text
+                  x={Math.max(x1, labelW) + 6}
+                  y={by + 11}
+                  fontSize={12}
+                  fill="var(--text)"
+                  className="tabular"
+                >
                   {r.valueText}
                   {r.note && !narrow && <tspan fill="var(--text-muted)"> · {r.note}</tspan>}
                 </text>
