@@ -72,7 +72,7 @@ It moves up one level only when the change is at least 4-fold (or at most a quar
 | **Check data first** | A problem found in the data changes this call when it is fixed. |
 | **No change called** | Not called a change (see the rule above). |
 
-Every one of these has a shape and a word as well as a colour, so none depends on colour alone. **Holds** (for example "holds 64 %") is a robustness fraction: the share of reasonable analyses that give the gene the same call. It is not a probability that the call is right.
+Every one of these has a shape and a word as well as a colour, so none depends on colour alone. **Holds** (for example "holds 64 %") is a robustness fraction: the share of reasonable analyses that give the gene the same call. It is not a probability that the call is right. Two sets of analyses are in play and the page says which: on **Results** and **Gene**, the reasonable analyses qPilot itself runs (744 on the demo: 31 sets of control genes × 3 group cut-offs × 2 ways of treating empty wells × 4 rules for which curves count as amplified); in the **Audit**, the audit's own *defensible* analyses (144 on the demo, out of the 90,396 it runs in all).
 
 ## 4. Open
 
@@ -148,7 +148,7 @@ The header gives the call, the fold change with its 95 % confidence interval, p,
 
 ## 9. Audit
 
-The audit re-runs your **confirmed** study under every combination of eight analysis decisions (efficiency model, flagged wells, late Cq, empty wells, which control genes, where to cut the groups, which test, correction for many genes): 90,396 analyses on the demo, about 50 seconds. It first checks that its own baseline reproduces qPilot's results gene by gene; if it does not, it refuses and writes nothing. It then gives each gene one of the six verdicts of [section 3](#3-three-scales-you-will-see-everywhere).
+The audit re-runs your **confirmed** study under every combination of eight analysis decisions (efficiency model, flagged wells, late Cq, empty wells, which control genes, where to cut the groups, which test, correction for many genes): 90,396 analyses on the demo, about 50 seconds. It first checks that its own baseline reproduces qPilot's results gene by gene; if it does not, it refuses and writes nothing. It then gives each gene one of the six verdicts of [section 3](#3-three-scales-you-will-see-everywhere). A verdict counts only the options the audit marks *defensible* (144 analyses on the demo); the other options are there so that you can see how far a choice would take a result. Two of the decisions, where to cut the groups and the correction for many genes, change the claim rather than the analysis, and are reported separately.
 
 * **Not run yet:** the page says what the audit is and offers **Run the audit** (a job with stages).
 * **Not applicable:** a design with technical replicates, today, because the audit needs one well per sample and gene. The page says so in words.
