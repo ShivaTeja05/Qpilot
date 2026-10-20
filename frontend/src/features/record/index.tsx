@@ -59,7 +59,7 @@ export default function RecordSection({ workspace }: SectionProps) {
   const next = workspace?.next_step;
 
   return (
-    <div className="mx-auto w-full max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader
         eyebrow="Analysis Record"
         title="Record"
@@ -130,7 +130,7 @@ export default function RecordSection({ workspace }: SectionProps) {
         </div>
 
         <aside className="flex min-w-0 flex-col gap-6" aria-label="Export and verify">
-          <ExportCard studyId={studyId} head={head} jobId={jobId} onJob={setJobId} disabledReason={notYet} />
+          <ExportCard workspaceKey={key} studyId={studyId} head={head} jobId={jobId} onJob={setJobId} disabledReason={notYet} />
           <VerifyCard />
           <CommandsCard fileName={exported?.file_name} />
         </aside>

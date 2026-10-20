@@ -43,7 +43,7 @@ export default function AgentsSection({ workspace }: SectionProps) {
   const recent = (agents.data?.recent ?? []).filter((a: AgentActivity) => scope === "all" || isHere(a.study_id));
 
   return (
-    <div className="mx-auto w-full max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader
         eyebrow="Agents"
         title="Agents"
@@ -81,7 +81,7 @@ export default function AgentsSection({ workspace }: SectionProps) {
               ) : (
                 <ul className="flex flex-col gap-3" aria-label="Requests waiting for a person">
                   {[...here, ...elsewhere].map((r) => (
-                    <RequestItem key={r.hash} request={r} now={now} studyNote={note(r)} seeCard={seeCard(r)} />
+                    <RequestItem key={r.hash} request={r} workspaceKey={key} now={now} studyNote={note(r)} seeCard={seeCard(r)} />
                   ))}
                 </ul>
               )}

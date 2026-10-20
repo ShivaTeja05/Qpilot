@@ -5,24 +5,28 @@
 import { Bot, Check, X } from "lucide-react";
 import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { dateTime, relativeTime, shortHash } from "@/lib/format";
+import { dateTime, relativeTime } from "@/lib/format";
 import { MOD } from "@/lib/hooks";
 import { cardTitle, optionLabel } from "@/features/record/words";
-import { Button, ErrorPanel, Kbd, Textarea, toast } from "@/ui";
-import { useApprove, useTurnDown } from "./api";
+import { Button, Kbd, Textarea } from "@/ui";
+import { useAnswerRequest } from "./api";
+import type { Verdict } from "./api";
 import type { PendingRequest } from "./types";
 
 const MAX_REASON = 500;
 
-type Mode = "approve" | "turn_down" | null;
+type Mode = Verdict | null;
 
 export function RequestItem({
   request,
+  workspaceKey,
   now,
   studyNote,
   seeCard,
 }: {
   request: PendingRequest;
+  /** The open workspace (re-read after the answer). */
+  workspaceKey?: string | null;
   now: number;
   /** Which study it is about, when that is not the open one. */
   studyNote?: ReactNode;
@@ -32,34 +36,18 @@ export function RequestItem({
   const [mode, setMode] = useState<Mode>(null);
   const [reason, setReason] = useState("");
   const reasonId = useId();
-  const approve = useApprove();
-  const turnDown = useTurnDown();
-  const busy = approve.isPending || turnDown.isPending;
-  const error = mode === "approve" ? approve.error : mode === "turn_down" ? turnDown.error : null;
+  const answer = useAnswerRequest(workspaceKey, () => {
+    setMode(null);
+    setReason("");
+  });
+  const busy = answer.isPending;
   const title = cardTitle(request);
   const option = optionLabel(request);
   const trimmed = reason.trim();
 
   const submit = () => {
     if (!mode || !trimmed || busy) return;
-    const call = mode === "approve" ? approve : turnDown;
-    call.mutate(
-      { request, reason: trimmed },
-      {
-        onSuccess: (outcome) => {
-          if (outcome.status === "stale") {
-            toast.warning("Something was decided on this card first; here is the current state.");
-            return;
-          }
-          toast.success(
-            mode === "approve" ? `Approved: ${title} → ${option}` : `Turned down: ${title} → ${option}`,
-            { description: outcome.chain_head ? `Added to the record (chain ${shortHash(outcome.chain_head)}).` : undefined },
-          );
-          setMode(null);
-          setReason("");
-        },
-      },
-    );
+    answer.mutate({ request, verdict: mode, reason: trimmed });
   };
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -115,7 +103,6 @@ export function RequestItem({
                 onChange={(e) => setReason(e.target.value)}
                 onKeyDown={onKey}
               />
-              {error ? <ErrorPanel compact error={error} /> : null}
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant={mode === "approve" ? "primary" : "danger"}

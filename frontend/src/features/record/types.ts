@@ -46,6 +46,8 @@ export interface RecordExport {
   /** A download id (`/api/downloads/{id}`) or a same-origin URL. */
   download: string;
   file_name?: string | null;
+  /** Choices that can change a conclusion and are still open (the record says so). */
+  open_flips?: { count: number; card_ids?: string[] } | null;
   warnings?: string[];
 }
 

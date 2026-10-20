@@ -8,6 +8,7 @@ import { useId, useRef, useState, type DragEvent, type ReactNode } from "react";
 import type { JobView } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { bytes, count, plural } from "@/lib/format";
+import { useFocusTarget } from "@/shell/actions";
 import { Badge, Button, Card, CardBody, CardHeader, ErrorPanel, JobCard } from "@/ui";
 import { useVerifyRecord } from "./api";
 import type { VerifyResult } from "./types";
@@ -157,6 +158,7 @@ export function VerifyCard() {
   const [over, setOver] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const verify = useVerifyRecord();
+  useFocusTarget("Verify a record", input);
 
   const check = (picked: File | null | undefined) => {
     if (!picked) return;

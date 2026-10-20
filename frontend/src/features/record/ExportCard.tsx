@@ -1,7 +1,9 @@
 /** Export the Analysis Record: a job, then the record's id, chain head, files and a download. */
 import { AlertTriangle, Download, PackageCheck } from "lucide-react";
-import { count } from "@/lib/format";
-import { Badge, Button, Card, CardBody, CardHeader, ErrorPanel, Hash, JobCard, KeyValues, Tooltip } from "@/ui";
+import { useRef } from "react";
+import { count, plural } from "@/lib/format";
+import { useFocusTarget } from "@/shell/actions";
+import { Button, Card, CardBody, CardHeader, Hash, JobCard, KeyValues, Tooltip } from "@/ui";
 import { downloadUrl, useExportRecord } from "./api";
 import type { RecordExport } from "./types";
 
@@ -12,12 +14,14 @@ export function asRecordExport(result: unknown): RecordExport | null {
 }
 
 export function ExportCard({
+  workspaceKey,
   studyId,
   head,
   jobId,
   onJob,
   disabledReason,
 }: {
+  workspaceKey: string;
   studyId: string | null | undefined;
   /** The chain head the timeline shows (sent as `expected_head`). */
   head: string | null | undefined;
@@ -26,18 +30,18 @@ export function ExportCard({
   /** Why exporting is not possible yet (no analysis), in words. */
   disabledReason?: string | null;
 }) {
-  const start = useExportRecord(studyId);
+  const start = useExportRecord(workspaceKey, studyId, onJob);
+  const ref = useRef<HTMLButtonElement>(null);
+  useFocusTarget("Export the Analysis Record", ref);
+  useFocusTarget("Export", ref);
   const button = (
     <Button
+      ref={ref}
       variant="primary"
       icon={<PackageCheck />}
       loading={start.isPending}
       disabled={Boolean(disabledReason) || !studyId}
-      onClick={() =>
-        start.mutate(head, {
-          onSuccess: (answer) => onJob(answer.job.id),
-        })
-      }
+      onClick={() => start.mutate(head)}
     >
       {jobId ? "Export again" : "Export the Analysis Record"}
     </Button>
@@ -63,7 +67,6 @@ export function ExportCard({
           )}
           {disabledReason ? <p className="mt-2 text-xs text-muted">{disabledReason}</p> : null}
         </div>
-        {start.error ? <ErrorPanel compact error={start.error} /> : null}
         {jobId ? (
           <JobCard id={jobId} onDismiss={() => onJob(null)}>
             {(result) => <ExportResult result={asRecordExport(result)} head={head} />}
@@ -76,7 +79,15 @@ export function ExportCard({
 
 function ExportResult({ result, head }: { result: RecordExport | null; head: string | null | undefined }) {
   if (!result) return <p className="text-[13px] text-muted">The record was written, but its details did not come back.</p>;
-  const behind = head && result.chain_head !== head;
+  const behind = Boolean(head && result.chain_head !== head);
+  const open = result.open_flips?.count ?? 0;
+  const warnings = [
+    ...(open
+      ? [`${plural(open, "choice")} that can change a conclusion ${open === 1 ? "is" : "are"} still open; the record says so.`]
+      : []),
+    ...(behind ? ["Something was decided after this page last refreshed; the record includes it."] : []),
+    ...(result.warnings ?? []),
+  ];
   return (
     <div className="flex flex-col gap-3">
       <KeyValues
@@ -86,20 +97,16 @@ function ExportResult({ result, head }: { result: RecordExport | null; head: str
             "Chain head",
             <span key="h" className="inline-flex flex-wrap items-center gap-1.5">
               <Hash value={result.chain_head} />
-              {behind ? (
-                <Badge tone="warn">not the head shown here</Badge>
-              ) : head ? (
-                <span className="text-xs text-muted">same as the timeline</span>
-              ) : null}
+              {head && !behind ? <span className="text-xs text-muted">same as the timeline</span> : null}
             </span>,
           ],
           ["Files", <span key="f" className="font-mono">{count(result.n_files)}</span>],
           ["Input file", result.input_included ? "included" : "not included (re-running it needs the file)"],
         ]}
       />
-      {result.warnings?.length ? (
+      {warnings.length ? (
         <ul className="flex flex-col gap-1.5">
-          {result.warnings.map((w) => (
+          {warnings.map((w) => (
             <li key={w} className="flex gap-2 rounded-lg border border-warn/30 bg-warn-soft/50 px-3 py-2 text-[13px] text-fg">
               <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warn" aria-hidden />
               {w}

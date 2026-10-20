@@ -4,6 +4,7 @@
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ApiError, postForm, type JobView } from "@/api/client";
+import { useWrite } from "@/shell/writes";
 import type { DecisionsView, VerifyResult } from "./types";
 
 const OFFLINE = "qPilot is not answering. Is `qpilot app` still running?";
@@ -48,14 +49,16 @@ export function useDecisions(workspaceKey: string, studyId: string | null | unde
   });
 }
 
-/** Start exporting the Analysis Record; the answer names the job to follow. */
-export function useExportRecord(studyId: string | null | undefined) {
-  return useMutation({
-    mutationFn: (expectedHead: string | null | undefined) =>
+/** Start exporting the Analysis Record; the answer names the job to follow (its card says the rest). */
+export function useExportRecord(workspaceKey: string, studyId: string | null | undefined, onJob: (id: string) => void) {
+  return useWrite<string | null | undefined, { job: JobView }>({
+    workspaceKey,
+    mutationFn: (expectedHead) =>
       requestJson<{ job: JobView }>(`${studyPath(studyId!)}/record`, {
         method: "POST",
         body: JSON.stringify({ expected_head: expectedHead ?? null }),
       }),
+    onSuccess: (answer) => onJob(answer.job.id),
   });
 }
 

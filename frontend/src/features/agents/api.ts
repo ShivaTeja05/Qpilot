@@ -2,8 +2,11 @@
  * The Agents section's requests. Approve and Turn down are a person's decisions on the card
  * the agent asked about: the same calls the Decision Cards in Results make.
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { requestJson } from "@/features/record/api";
+import { cardTitle, optionLabel } from "@/features/record/words";
+import { shortHash } from "@/lib/format";
+import { useWrite } from "@/shell/writes";
 import type { AgentsView, PendingRequest } from "./types";
 
 /** Agents' tools, the requests waiting for a person and recent agent activity. */
@@ -21,31 +24,32 @@ interface Outcome {
   reason?: string | null;
 }
 
+export type Verdict = "approve" | "turn_down";
+
 const cardPath = (r: PendingRequest) =>
   `/api/studies/${encodeURIComponent(r.study_id)}/cards/${encodeURIComponent(r.card_id)}`;
 
-/** Approve an agent's request: decide its card with the option it asked for, with a reason. */
-export function useApprove() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ request, reason }: { request: PendingRequest; reason: string }) =>
-      requestJson<Outcome>(`${cardPath(request)}/decide`, {
+/**
+ * Approve an agent's request (decide its card with the option it asked for) or turn it down,
+ * with the person's reason. Re-reads the workspace and says what happened in a toast.
+ */
+export function useAnswerRequest(workspaceKey: string | null | undefined, onDone?: () => void) {
+  return useWrite<{ request: PendingRequest; verdict: Verdict; reason: string }, Outcome>({
+    workspaceKey,
+    mutationFn: ({ request, verdict, reason }) =>
+      requestJson<Outcome>(`${cardPath(request)}/${verdict === "approve" ? "decide" : "turn-down"}`, {
         method: "POST",
         body: JSON.stringify({ option: request.option, reason, expected_head: request.head ?? null }),
       }),
-    onSettled: (_d, _e, { request }) => void qc.invalidateQueries({ predicate: (q) => q.queryKey.includes(request.study_id) }),
-  });
-}
-
-/** Turn an agent's request down, with a reason (it stays in the chain as turned down). */
-export function useTurnDown() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ request, reason }: { request: PendingRequest; reason: string }) =>
-      requestJson<Outcome>(`${cardPath(request)}/turn-down`, {
-        method: "POST",
-        body: JSON.stringify({ option: request.option, reason, expected_head: request.head ?? null }),
-      }),
-    onSettled: (_d, _e, { request }) => void qc.invalidateQueries({ predicate: (q) => q.queryKey.includes(request.study_id) }),
+    success: (outcome, { request, verdict }) => {
+      const what = `${cardTitle(request)} → ${optionLabel(request)}`;
+      const chain = outcome.chain_head ? `Added to the record (chain ${shortHash(outcome.chain_head)}).` : undefined;
+      if (outcome.status === "stale")
+        return { title: "Something was decided on this card first", description: "Here is the current state; look again." };
+      return { title: verdict === "approve" ? `Approved: ${what}` : `Turned down: ${what}`, description: chain };
+    },
+    onSuccess: (outcome) => {
+      if (outcome.status !== "stale") onDone?.();
+    },
   });
 }
