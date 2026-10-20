@@ -4,6 +4,7 @@
  */
 import { ArrowRight, BookCheck, Bot } from "lucide-react";
 import { useState } from "react";
+import { ApiError } from "@/api/client";
 import { Link } from "wouter";
 import { plural } from "@/lib/format";
 import { SECTION, sectionPath, type SectionProps } from "@/shell/sections";
@@ -17,8 +18,10 @@ import { VerifyCard } from "./VerifyCard";
 export default function RecordSection({ workspace }: SectionProps) {
   const key = workspace?.key ?? "";
   const studyId = workspace?.study_id ?? null;
-  const decisions = useDecisions(key, studyId);
-  const records = useRecords(key, studyId);
+  // A Studio session stays blind until its design and curves are confirmed: nothing to read yet.
+  const readable = studyId && workspace?.results_visible !== false ? studyId : null;
+  const decisions = useDecisions(key, readable);
+  const records = useRecords(key, readable);
   // An export started here, or one still running (started in another tab, say).
   const [startedId, setStartedId] = useState<string | null>(null);
   const running = workspace?.active_jobs.find((j) => j.kind === "record.export")?.id ?? null;
@@ -26,11 +29,13 @@ export default function RecordSection({ workspace }: SectionProps) {
   const latest = records.data?.records[0] ?? null;
 
   const head = decisions.data?.head ?? workspace?.decisions_head ?? null;
-  const notYet = !studyId
-    ? workspace?.kind === "session"
-      ? "The record starts when this study is analysed: confirm the design and the curves first."
-      : "This study has not been analysed yet."
-    : null;
+  const blind = decisions.error instanceof ApiError && decisions.error.code === "blind";
+  const notYet =
+    !readable || blind
+      ? workspace?.kind === "session"
+        ? "The record starts when this study is analysed: confirm the design and the curves first."
+        : "This study has not been analysed yet."
+      : null;
   const pending = decisions.data?.waiting.length ?? 0;
   const next = workspace?.next_step;
 
