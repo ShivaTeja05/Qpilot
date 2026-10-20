@@ -128,9 +128,9 @@ class AskAnswer(BaseModel):
 
     question: str
     answer: str = Field(description="The answer as text; every number in it is a cited fact.")
-    engine: Literal["study", "audit"] = Field(
+    engine: Literal["study", "audit", "none"] = Field(
         description="study: qPilot's own tools (the MCP tool code); audit: the robustness "
-        "audit's Ask engine."
+        "audit's Ask engine; none: only the audit answers this and it has not been run."
     )
     tool: str
     args: dict[str, Any] = Field(default_factory=dict, description="The tool's arguments.")

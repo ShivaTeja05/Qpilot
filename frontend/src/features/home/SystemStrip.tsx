@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import { Link } from "wouter";
 import { ErrorPanel, Skeleton } from "@/ui";
 import { ModelChip } from "@/features/settings/ModelChip";
-import type { SystemView } from "@/features/settings/system";
+import type { SystemView } from "@/shell/data";
 
 function Item({ label, icon, children }: { label: string; icon?: ReactNode; children: ReactNode }) {
   return (
