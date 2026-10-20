@@ -68,7 +68,10 @@ test.describe("Audit", () => {
     const gene = o.genes[0]!.gene;
     await app.open(route(demo, "audit"));
     const list = app.page.getByRole("list", { name: "Genes" });
-    await list.getByRole("link", { name: new RegExp(`^${literal(gene).source}\\b`) }).click();
+    // The link reads "<verdict> <gene> <fold>": find the gene as a whole word.
+    await list
+      .getByRole("link", { name: new RegExp(`(^|\\s)${literal(gene).source}(\\s|$)`) })
+      .click();
     await app.settle();
     expect(decodeURIComponent(new URL(app.page.url()).hash)).toBe(`#${route(demo, "gene", gene)}`);
     await expect(app.page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText(gene);
@@ -124,7 +127,7 @@ test.describe("Gene", () => {
     test.skip(!view.next_gene, "the first gene has no next gene");
     await app.open(route(demo, "gene", start));
     const nav = app.page.getByRole("navigation", { name: "Genes" });
-    await nav.getByRole("link", { name: `Next gene: ${view.next_gene}` }).click();
+    await nav.getByRole("button", { name: `Next gene: ${view.next_gene}` }).click();
     await app.settle();
     const h1 = app.page.getByRole("main").getByRole("heading", { level: 1 });
     await expect(h1).toHaveText(view.next_gene!);

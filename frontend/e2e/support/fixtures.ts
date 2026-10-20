@@ -36,6 +36,8 @@ export interface AxeFinding {
 export class App {
   readonly consoleErrors: string[] = [];
   readonly outbound: string[] = [];
+  /** Responses with a 4xx/5xx status, as "404 GET http://…". */
+  readonly failedResponses: string[] = [];
   private allowedConsole: RegExp[] = [];
   private inflight = new Set<Request>();
   private keyed = false;
@@ -48,6 +50,11 @@ export class App {
       if (msg.type() === "error") this.consoleErrors.push(msg.text());
     });
     page.on("pageerror", (error) => this.consoleErrors.push(`uncaught: ${error.message}`));
+    // A failed load shows in the console without its address: record which request it was.
+    page.on("response", (res) => {
+      if (res.status() >= 400)
+        this.failedResponses.push(`${res.status()} ${res.request().method()} ${res.url()}`);
+    });
     page.on("request", (req) => {
       const url = req.url();
       if (!url.startsWith(E2E.origin) && !url.startsWith("data:") && !url.startsWith("blob:")) {
@@ -192,7 +199,10 @@ export const test = base.extend<{ api: APIRequestContext; app: App }>({
     const app = new App(page, info);
     await provide(app);
     expect(app.outbound, "requests that left this machine").toEqual([]);
-    expect(app.unexpectedConsole(), "console errors").toEqual([]);
+    expect(
+      app.unexpectedConsole(),
+      `console errors (failed responses: ${app.failedResponses.join(", ") || "none"})`,
+    ).toEqual([]);
   },
 });
 

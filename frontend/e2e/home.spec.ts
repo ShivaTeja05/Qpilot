@@ -87,8 +87,9 @@ test.describe("Settings", () => {
     await expect(app.page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText(
       "Settings",
     );
+    // The server's reason, as a sentence (capitalised) on the page.
     await expect(app.page.getByRole("region", { name: "Model" })).toContainText(
-      system.model.reason,
+      literal(system.model.reason, "i"),
     );
     const never = app.page.getByRole("region", { name: "What qPilot never does" });
     for (const line of system.never) await expect(never).toContainText(line);
@@ -102,8 +103,9 @@ test.describe("Settings", () => {
     const system = (await (await api.get("/api/system")).json()) as SystemView;
     await app.open("/settings");
     const card = app.page.getByRole("region", { name: "What agents may do on their own" });
+    const choice = app.page.getByRole("radiogroup", { name: "What agents may do on their own" });
     const title = system.autonomy === "suggest" ? "Suggest" : "Decide and tell me";
-    await expect(card.getByRole("radio", { name: title, exact: true })).toBeChecked();
+    await expect(choice.getByRole("radio", { name: title, exact: true })).toBeChecked();
     for (const line of system.policy) {
       // Each policy line is shown as its head (bold) and the rest: check the words, not markup.
       for (const part of line.split(/:\s*/)) await expect(card).toContainText(part.trim());
@@ -116,7 +118,9 @@ test.describe("Settings", () => {
     await theme.getByRole("radio", { name: /dark/i }).click();
     await expect(app.page.locator("html")).toHaveAttribute("data-theme", "dark");
     await app.axe("Settings, dark");
+    // Following the system again: the page shows the system's theme (light here).
     await theme.getByRole("radio", { name: /system/i }).click();
-    await expect(app.page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
+    await expect(app.page.locator("html")).toHaveAttribute("data-theme", "light");
+    expect(await app.page.evaluate(() => localStorage.getItem("qpilot.theme"))).toBeNull();
   });
 });
