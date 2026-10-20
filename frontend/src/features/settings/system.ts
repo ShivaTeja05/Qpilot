@@ -39,3 +39,9 @@ export function namesWords(m: ModelStatus): string {
     ? `Sample names go only to this local endpoint, ${m.sample_names}.`
     : `Sample names are ${m.sample_names}.`;
 }
+
+/** "Automatic: a choice that …" → ["Automatic", "a choice that …"]. */
+export function policyParts(line: string): [string | null, string] {
+  const i = line.indexOf(": ");
+  return i > 0 && i < 24 ? [line.slice(0, i), line.slice(i + 2)] : [null, line];
+}

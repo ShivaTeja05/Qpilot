@@ -5,11 +5,11 @@
  */
 import { BookCheck, Cpu, Sparkles, UserCheck } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";
-import { Mark } from "@/shell/Brand";
 import { useSystem, useWorkspaces } from "@/shell/data";
 import type { SectionProps } from "@/shell/sections";
 import { DemoCard } from "./DemoCard";
-import { OpenFile, useIntake } from "./OpenFile";
+import { OpenFile } from "./OpenFile";
+import { useIntake } from "./useIntake";
 import { Recent } from "./Recent";
 import { SystemStrip } from "./SystemStrip";
 
@@ -133,11 +133,6 @@ export default function Section(_: SectionProps) {
       <div className="mx-auto max-w-6xl pt-2 pb-4 sm:pt-6 lg:pt-8">
         <header className="grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
           <div className="lg:col-span-7">
-            {/* The rail shows the name from 768 px up; on phones the hero does. */}
-            <div className="mb-5 flex items-center gap-2 md:hidden">
-              <Mark />
-              <span className="text-[15px] font-semibold tracking-tight text-fg">qPilot</span>
-            </div>
             <h1 className="text-2xl leading-tight font-semibold tracking-tight text-balance text-fg sm:text-[32px] sm:leading-[1.15]">
               Know which of your qPCR conclusions hold.
             </h1>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import recorded from "@/features/home/recorded/system.json";
-import { namesWords, providerWords, type ModelStatus } from "./system";
+import { namesWords, policyParts, providerWords, type ModelStatus } from "./system";
 
 // The recorded answer of a launch with no model (QPILOT_MODEL_PROVIDER=none); the other cases
 // change only the provider flags of that same answer.
@@ -29,5 +29,17 @@ describe("providerWords", () => {
     expect(namesWords(local)).toBe(
       `Sample names go only to this local endpoint, ${none.sample_names}.`,
     );
+  });
+});
+
+describe("policyParts", () => {
+  it("splits each served policy line into its level and its rule", () => {
+    const parts = recorded.policy.map(policyParts);
+    expect(parts.map(([head]) => head)).toEqual(["Automatic", "Agent may apply", "Human only"]);
+    expect(parts[2]?.[1]).toBe(recorded.policy[2]!.slice("Human only: ".length));
+  });
+
+  it("keeps a line without a level whole", () => {
+    expect(policyParts("No colon here")).toEqual([null, "No colon here"]);
   });
 });
