@@ -3,9 +3,10 @@
  * since, and the four tabs. The tab and the what-if choices live in the URL.
  */
 import { History, RefreshCw } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { SectionProps } from "@/shell/sections";
-import { count, relativeTime, shortHash } from "@/lib/format";
+import { count, plural, relativeTime, shortHash } from "@/lib/format";
+import { useSystem } from "@/shell/data";
 import {
   Button,
   ErrorPanel,
@@ -15,8 +16,17 @@ import {
   TabsList,
   TabsTrigger,
   Tooltip,
+  JobCard,
 } from "@/ui";
-import { useAuditOverview, useRunAudit, type AuditTarget } from "./api";
+import type { JobView } from "@/api/client";
+import { useJob } from "@/api/jobs";
+import {
+  useAuditOverview,
+  useInvalidateAudit,
+  useRunAudit,
+  useSeedJob,
+  type AuditTarget,
+} from "./api";
 import { HowTab } from "./HowTab";
 import { StudyTab } from "./StudyTab";
 import type { AuditStatus, Changes } from "./types";
@@ -53,10 +63,18 @@ export function AuditReady({
     if (place.tab === "whatif") lastChanges.current = place.changes;
   });
 
+  const system = useSystem();
   const audited = manifest.chain_head ?? null;
-  const current = workspace.decisions_head ?? null;
-  const behind = Boolean(audited && current && audited !== current);
+  const head = workspace.decisions_head ?? null;
+  const behind =
+    status.current != null ? !status.current : Boolean(audited && head && audited !== head);
   const analyses = manifest.analyses ?? overview.data?.study.analyses;
+  const dir = system.data?.studies_dir
+    ? `${system.data.studies_dir}/simulator_audits/${target.studyId}`
+    : null;
+  const invalidateAll = useInvalidateAudit(target);
+  const invalidate = useCallback(() => void invalidateAll(), [invalidateAll]);
+  const loading = !status.views_ready && status.loading ? status.loading : null;
 
   return (
     <div className={PAGE}>
@@ -67,14 +85,14 @@ export function AuditReady({
             <>
               {count(analyses)} analyses of {count(overview.data.study.genes)} genes in{" "}
               {count(overview.data.study.samples)} samples: {overview.data.study.group} (
-              {overview.data.study.group_def}) against the rest.
+              {overview.data.study.group_def}) against {overview.data.study.rest ?? "the rest"}.
             </>
           ) : (
             "Your confirmed study under every combination of eight analysis decisions, and one verdict per gene."
           )
         }
         actions={
-          status.created != null ? (
+          status.created_at != null ? (
             <Tooltip
               content={`Decision chain ${shortHash(audited, 12)} · lock ${shortHash(manifest.lock_sha256, 12)}`}
             >
@@ -83,14 +101,23 @@ export function AuditReady({
                 className="inline-flex items-center gap-1.5 text-[13px] text-muted"
               >
                 <History className="size-3.5" aria-hidden />
-                Audited {relativeTime(status.created)}
+                Audited {relativeTime(status.created_at)}
               </span>
             </Tooltip>
           ) : null
         }
       />
 
-      {behind ? <BehindNotice target={target} /> : null}
+      {behind ? <BehindNotice target={target} since={status.decisions_since} /> : null}
+      {loading ? (
+        <div className="mb-5 space-y-2">
+          <p className="text-[13px] text-muted">
+            The first look at an audit rebuilds the study it describes and runs every reasonable
+            analysis once; the views open when that is done.
+          </p>
+          <LoadingViews job={loading} onDone={invalidate} />
+        </div>
+      ) : null}
 
       <Tabs
         value={place.tab}
@@ -136,15 +163,27 @@ export function AuditReady({
           <HowTab target={target} manifest={manifest} />
         </TabsContent>
         <TabsContent value="verify">
-          <VerifyTab workspace={workspace} target={target} manifest={manifest} dir={status.dir} />
+          <VerifyTab workspace={workspace} target={target} manifest={manifest} dir={dir} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
+/** The job loading the audit's live views; the views are re-read when it is done. */
+function LoadingViews({ job: given, onDone }: { job: JobView; onDone: () => void }) {
+  useSeedJob(given);
+  const id = given.id;
+  const job = useJob(id);
+  const done = job.data?.status === "done";
+  useEffect(() => {
+    if (done) onDone();
+  }, [done, onDone]);
+  return <JobCard id={id} />;
+}
+
 /** Decisions were made after the audit ran: it describes an earlier state of the study. */
-function BehindNotice({ target }: { target: AuditTarget }) {
+function BehindNotice({ target, since }: { target: AuditTarget; since?: number }) {
   const run = useRunAudit(target);
   return (
     <div
@@ -153,7 +192,9 @@ function BehindNotice({ target }: { target: AuditTarget }) {
     >
       <History className="mt-0.5 size-4 shrink-0 text-info" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-fg">Decided since this audit</p>
+        <p className="font-semibold text-fg">
+          {since ? `${plural(since, "decision")} since this audit` : "Decided since this audit"}
+        </p>
         <p className="mt-0.5 text-[13px] text-muted">
           The audit describes the study as it was before the latest decisions. Its verdicts still
           hold for that state; run it again to include what was decided since. The Verify tab shows
@@ -168,7 +209,7 @@ function BehindNotice({ target }: { target: AuditTarget }) {
         variant="secondary"
         icon={<RefreshCw />}
         loading={run.isPending}
-        onClick={() => run.mutate()}
+        onClick={() => run.mutate(true)}
       >
         Run the audit again
       </Button>

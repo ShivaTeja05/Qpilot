@@ -4,10 +4,11 @@
  * plus the audit's status and its verification. Structural types: only the fields this section
  * reads, so the generated contract types (`Schemas`) fit them once api-audit's routes land.
  */
+import type { JobView } from "@/api/client";
 
 /** A study's audit, in one word (GET /api/studies/{id}/audit). */
 export type AuditState =
-  "none" | "running" | "ready" | "refused" | "not_applicable" | "unavailable";
+  "none" | "running" | "ready" | "refused" | "not_applicable" | "unavailable" | "failed";
 
 export interface ReproducesQpilot {
   ok: boolean;
@@ -54,26 +55,32 @@ export interface AuditManifest {
   settings?: Record<string, unknown>;
   versions?: Record<string, string>;
   checksums_sha256?: string;
-}
-
-export interface JobLike {
-  id: string;
-  status: "queued" | "running" | "done" | "failed";
+  /** The simulator's own measured run time (seconds). */
+  seconds?: number | null;
 }
 
 export interface AuditStatus {
+  study_id?: string;
   status: AuditState;
-  /** Why the audit cannot run or was refused, in words. */
+  /** Why not, in plain words (refused, not applicable, unavailable, failed). */
   reason?: string | null;
-  /** The running audit (so a reload re-attaches to it). */
-  job?: JobLike | null;
+  /** The running (or failed) audit job; a reload re-attaches to it. */
+  job?: JobView | null;
   manifest?: AuditManifest | null;
-  /** For a study not audited yet: what the audit would cover (when cheap to know). */
+  /** Ready: true when no decision was made on the study since it was audited. */
+  current?: boolean | null;
+  /** Decisions made after the audit. */
+  decisions_since?: number;
+  /** Ready: the audit's live views are loaded (the first load takes a while). */
+  views_ready?: boolean;
+  /** The job loading the live views. */
+  loading?: JobView | null;
+  /** How long an audit usually takes on the demo, measured (seconds). */
+  typical_s?: number | null;
+  /** For a study not audited yet: what the audit would cover (when the server knows it). */
   scope?: AuditScope | null;
-  /** The audit's folder on this computer (for the verify command). */
-  dir?: string | null;
   /** When the audit was written (unix seconds or ISO). */
-  created?: number | string | null;
+  created_at?: number | string | null;
 }
 
 // ---- Screen.overview() --------------------------------------------------------------------------
@@ -132,6 +139,8 @@ export interface AuditOverview {
     plates: number;
     group: string;
     group_def: string;
+    /** The second group as a sentence says it ("the rest"). */
+    rest?: string;
     analyses: number;
     reasonable: number;
   };
@@ -238,16 +247,21 @@ export interface AuditWhatif {
 
 export interface AuditVerify {
   ok: boolean;
+  /** One line: OK, or every problem found. */
+  summary?: string;
   problems: string[];
+  files_checked?: number;
   checksums_sha256?: string | null;
+  lock_sha256?: string | null;
+  /** Whether the binding to the study's record was checked (a record is written and read). */
+  bound_to_record?: boolean;
+  audit_chain_head?: string | null;
+  record_chain_head?: string | null;
+  /** Decisions in the record after the audited head. */
+  decisions_since?: number | null;
+  head_in_chain?: boolean | null;
+  is_current?: boolean | null;
   files?: { name: string; sha256: string; bytes?: number | null }[];
-  binding?: {
-    audited_head?: string | null;
-    current_head?: string | null;
-    head_in_chain?: boolean | null;
-    is_current?: boolean | null;
-    decisions_since?: number | null;
-  } | null;
 }
 
 /** Decision id → option id: the what-if lab's choices that differ from the planned analysis. */

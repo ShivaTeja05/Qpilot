@@ -6,10 +6,10 @@ import { Play } from "lucide-react";
 import { useEffect } from "react";
 import type { SectionProps } from "@/shell/sections";
 import { useJob } from "@/api/jobs";
-import { count } from "@/lib/format";
+import { count, duration } from "@/lib/format";
 import type { Verdict } from "@/lib/vocab";
 import { Button, Card, CardBody, CardHeader, ErrorPanel, JobCard, VerdictTag } from "@/ui";
-import { useInvalidateAudit, useRunAudit, type AuditTarget } from "./api";
+import { useInvalidateAudit, useRunAudit, useSeedJob, type AuditTarget } from "./api";
 import type { AuditStatus } from "./types";
 import { DECISION_WORDS } from "./words";
 
@@ -36,27 +36,32 @@ export function NotRun({
   status: AuditStatus;
 }) {
   const run = useRunAudit(target);
+  useSeedJob(status.job);
   const jobId = run.data?.job.id ?? status.job?.id ?? null;
   const job = useJob(jobId);
   const invalidate = useInvalidateAudit(target);
-  const finished = job.data?.status === "done";
+  // A finished audit opens the verdicts; a refused one turns into its reason (the status says).
+  const settled = job.data?.status === "done" || job.data?.status === "failed";
   useEffect(() => {
-    if (finished) void invalidate();
-  }, [finished, invalidate]);
+    if (settled) void invalidate();
+  }, [settled, invalidate]);
+  const running = job.data
+    ? job.data.status === "queued" || job.data.status === "running"
+    : Boolean(jobId);
 
   const scope = status.scope;
   const decisions = DECISION_WORDS.join(", ").replace(/, ([^,]*)$/, " and $1");
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
       <Card as="section" aria-labelledby="audit-what">
         <CardHeader id="audit-what" title="What the audit does" />
-        <CardBody className="space-y-4 text-sm leading-relaxed text-fg">
+        <CardBody className="@container space-y-4 text-sm leading-relaxed text-fg">
           <p>
             It re-runs your confirmed study under every combination of eight analysis decisions (
             {decisions}) and gives each gene a verdict: does its call hold whichever reasonable
             analysis you had picked?
           </p>
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="grid gap-2 @lg:grid-cols-2 @3xl:grid-cols-3">
             {(Object.keys(VERDICT_MEANING) as Verdict[]).map((v) => (
               <li key={v} className="rounded-lg border border-line p-2.5">
                 <VerdictTag verdict={v} />
@@ -79,11 +84,12 @@ export function NotRun({
         </CardBody>
       </Card>
 
-      <Card as="section" aria-labelledby="audit-run" className="self-start">
-        <CardHeader
-          id="audit-run"
-          title={status.status === "running" || jobId ? "The audit is running" : "Run the audit"}
-        />
+      <Card
+        as="section"
+        aria-labelledby="audit-run"
+        className="order-first self-start xl:order-none"
+      >
+        <CardHeader id="audit-run" title={running ? "The audit is running" : "Run the audit"} />
         <CardBody className="space-y-4">
           {scope?.analyses_in_full_grid ? (
             <dl className="grid grid-cols-2 gap-3">
@@ -94,10 +100,11 @@ export function NotRun({
             </dl>
           ) : (
             // The scale of this study is known once the audit has prepared it; until then, the
-            // demo's (docs/app.md §4).
+            // demo's (docs/app.md §4), with the server's measured time.
             <p className="text-[13px] text-muted">
               Every combination of the decisions' options is one analysis: on the demo study that is
-              90 396 analyses, about 50 s on a laptop.
+              90 396 analyses
+              {status.typical_s ? `, about ${duration(status.typical_s)} on a laptop` : ""}.
             </p>
           )}
           {scope?.groups?.length === 2 ? (
@@ -116,12 +123,17 @@ export function NotRun({
               variant="primary"
               icon={<Play />}
               loading={run.isPending}
-              onClick={() => run.mutate()}
+              onClick={() => run.mutate(false)}
               className="w-full"
             >
               Run the audit
             </Button>
           )}
+          {status.status === "failed" && status.reason && !jobId ? (
+            <p className="rounded-lg border border-danger/30 bg-danger-soft/50 px-3 py-2 text-[13px] text-fg">
+              The last audit stopped: {status.reason}
+            </p>
+          ) : null}
           {run.isError ? (
             <ErrorPanel compact error={run.error} title="The audit did not start" />
           ) : null}
@@ -129,7 +141,7 @@ export function NotRun({
             <Button
               variant="secondary"
               icon={<Play />}
-              onClick={() => run.mutate()}
+              onClick={() => run.mutate(false)}
               className="w-full"
             >
               Try again

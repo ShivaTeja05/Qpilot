@@ -99,7 +99,7 @@ function AuditBody({
   return (
     <div className={PAGE}>
       <PageHeader title="Audit" hint={HINT} />
-      {s.status === "none" || s.status === "running" ? (
+      {s.status === "none" || s.status === "running" || s.status === "failed" ? (
         <NotRun workspace={workspace} target={target} status={s} />
       ) : (
         <CannotRun workspace={workspace} status={s} />

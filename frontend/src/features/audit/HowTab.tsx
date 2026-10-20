@@ -77,7 +77,7 @@ function Steps({ how, manifest }: { how: AuditHow; manifest: AuditManifest }) {
     <Card as="section" aria-labelledby="how-steps">
       <CardHeader id="how-steps" title="The audit, step by step" hint={how.call_rule} />
       <CardBody>
-        <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 min-[1600px]:grid-cols-6">
           {AUDIT_STEPS.map((s, i) => (
             <li key={s.title} className="relative rounded-lg border border-line p-3">
               <p className="flex items-center gap-2 text-[13px] font-semibold text-fg">
@@ -95,7 +95,7 @@ function Steps({ how, manifest }: { how: AuditHow; manifest: AuditManifest }) {
               {i < AUDIT_STEPS.length - 1 ? (
                 <ArrowRight
                   aria-hidden
-                  className="absolute top-1/2 -right-3 hidden size-3.5 -translate-y-1/2 text-faint xl:block"
+                  className="absolute top-1/2 -right-3 hidden size-3.5 -translate-y-1/2 text-faint min-[1600px]:block"
                 />
               ) : null}
             </li>

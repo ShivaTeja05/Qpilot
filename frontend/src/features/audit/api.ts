@@ -4,7 +4,8 @@
  * `study.changed` event for either key (a decision, a finished audit job) re-reads it.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "@/api/client";
+import { useCallback, useEffect } from "react";
+import { ApiError, type JobView } from "@/api/client";
 import type {
   AuditHow,
   AuditOverview,
@@ -14,7 +15,6 @@ import type {
   AuditWhatif,
   Changes,
   IssueView,
-  JobLike,
 } from "./types";
 
 interface ErrorShape {
@@ -81,19 +81,37 @@ export function useAuditStatus({ workspaceKey, studyId }: AuditTarget) {
   });
 }
 
-/** Start the audit (a job, about 50 s on the demo). */
+/**
+ * Start the audit (a job, about a minute on the demo). `again` replaces an existing audit (the
+ * server keeps the earlier one beside it); without it, an existing audit is a 409.
+ */
 export function useRunAudit({ workspaceKey, studyId }: AuditTarget) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => request<{ job: JobLike }>("POST", base(studyId)),
+    mutationFn: (again: boolean = false) =>
+      request<{ job: JobView }>("POST", base(studyId), { again }),
     onSuccess: () => qc.invalidateQueries({ queryKey: auditKey(workspaceKey, studyId, "status") }),
   });
+}
+
+/**
+ * Put a job the status answer carries into the job cache, so its card shows at once (the event
+ * stream and `useJob` keep it current from there).
+ */
+export function useSeedJob(job: JobView | null | undefined) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (job && !qc.getQueryData(["job", job.id])) qc.setQueryData(["job", job.id], job);
+  }, [qc, job]);
 }
 
 /** Re-read every view of the audit (after a job finishes). */
 export function useInvalidateAudit({ workspaceKey, studyId }: AuditTarget) {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: auditKey(workspaceKey, studyId) });
+  return useCallback(
+    () => qc.invalidateQueries({ queryKey: auditKey(workspaceKey, studyId) }),
+    [qc, workspaceKey, studyId],
+  );
 }
 
 export function useAuditOverview(t: AuditTarget, enabled = true) {
@@ -131,11 +149,16 @@ export function useAuditIssues(t: AuditTarget, enabled = true) {
   });
 }
 
+/**
+ * Check the audit's checksums and its binding to the study's record (the server writes the
+ * record to a scratch folder and reads it back; nothing is kept). A POST that writes nothing.
+ */
 export function useAuditVerify(t: AuditTarget, enabled = true) {
   return useQuery({
     queryKey: auditKey(t.workspaceKey, t.studyId, "verify"),
     enabled,
-    queryFn: () => request<AuditVerify>("GET", `${base(t.studyId)}/verify`),
+    queryFn: () =>
+      request<AuditVerify>("POST", `${base(t.studyId)}/verify`, { bind_to_record: true }),
   });
 }
 

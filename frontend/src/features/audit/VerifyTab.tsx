@@ -3,13 +3,14 @@
  * binding to the record (the same study and input file, the decision chain it describes, and
  * whether decisions were made since). With the command that checks it outside the page.
  */
-import { CheckCircle2, CircleAlert, History, XCircle } from "lucide-react";
+import { CheckCircle2, CircleAlert, History, RefreshCw, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "wouter";
 import { cn } from "@/lib/cn";
-import { bytes, count, plural } from "@/lib/format";
+import { bytes, count, duration, plural } from "@/lib/format";
 import { sectionPath, type SectionProps } from "@/shell/sections";
 import {
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -17,7 +18,6 @@ import {
   ErrorPanel,
   Hash,
   KeyValues,
-  LoadingBlock,
   Table,
   TBody,
   TD,
@@ -26,6 +26,7 @@ import {
   TR,
 } from "@/ui";
 import { useAuditVerify, type AuditTarget } from "./api";
+import { asSentence } from "./CannotRun";
 import { scientific } from "./HowTab";
 import type { AuditManifest, AuditVerify } from "./types";
 
@@ -45,12 +46,14 @@ export function VerifyTab({
 }) {
   const verify = useAuditVerify(target);
   const v = verify.data;
-  const audited = v?.binding?.audited_head ?? manifest.chain_head ?? null;
-  const current = v?.binding?.current_head ?? workspace.decisions_head ?? null;
-  const isCurrent = v?.binding?.is_current ?? (audited && current ? audited === current : null);
-  const inChain = v?.binding?.head_in_chain ?? null;
-  const since = v?.binding?.decisions_since ?? null;
   const r = manifest.reproduces_qpilot;
+  // verify_audit's problems: the files' own, then (with the record) the binding's.
+  const bindingProblems = (v?.problems ?? []).filter(isBindingProblem);
+  const fileProblems = (v?.problems ?? []).filter((p) => !isBindingProblem(p));
+  const audited = v?.audit_chain_head ?? manifest.chain_head ?? null;
+  const head = v?.record_chain_head ?? workspace.decisions_head ?? null;
+  const since = v?.decisions_since ?? null;
+  const current = since != null ? since === 0 : audited && head ? audited === head : null;
 
   return (
     <div className="space-y-5">
@@ -58,12 +61,26 @@ export function VerifyTab({
         <CardHeader
           id="verify-checks"
           title="Is this audit intact, and is it this study's?"
-          hint="Checked by qPilot when you opened this tab, from the files on this computer."
+          hint="Checked by qPilot now, from the files on this computer: the audit's checksums, and the study's record written to a scratch folder and read back (nothing is kept)."
+          actions={
+            v ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<RefreshCw />}
+                loading={verify.isFetching}
+                onClick={() => void verify.refetch()}
+              >
+                Check again
+              </Button>
+            ) : null
+          }
         />
         <CardBody>
           {verify.isError ? (
             <ErrorPanel
               compact
+              className="mb-3"
               error={verify.error}
               title="The audit could not be checked"
               onRetry={() => void verify.refetch()}
@@ -71,27 +88,28 @@ export function VerifyTab({
           ) : null}
           <ul className="divide-y divide-line">
             <Check
-              tone={!v ? null : v.ok ? "ok" : "bad"}
+              tone={!v ? null : fileProblems.length ? "bad" : "ok"}
               title={
                 !v
-                  ? "Checking the files…"
-                  : v.ok
-                    ? "Every file matches its checksum"
-                    : "The audit's files do not match their checksums"
+                  ? verify.isError
+                    ? "The files were not checked"
+                    : "Checking the files…"
+                  : fileProblems.length
+                    ? "The audit's files do not match their checksums"
+                    : "Every file matches its checksum"
               }
             >
               {v ? (
-                v.ok ? (
-                  <>
-                    {plural(v.files?.length ?? 0, "file")} listed in AUDIT.sha256, none changed,
-                    none missing, none added; the lock matches the manifest and the input file.
-                  </>
+                fileProblems.length ? (
+                  <Problems items={fileProblems} />
                 ) : (
-                  <ul className="list-disc pl-5">
-                    {v.problems.map((p) => (
-                      <li key={p}>{p}</li>
-                    ))}
-                  </ul>
+                  <>
+                    {v.files_checked != null
+                      ? `${plural(v.files_checked, "file")} listed in AUDIT.sha256: `
+                      : ""}
+                    none changed, none missing, none added; the lock matches the manifest and the
+                    input file.
+                  </>
                 )
               ) : null}
             </Check>
@@ -115,38 +133,46 @@ export function VerifyTab({
               ) : null}
             </Check>
             <Check
-              tone={
-                manifest.study_id ? (manifest.study_id === target.studyId ? "ok" : "bad") : null
-              }
+              tone={!v ? null : !v.bound_to_record ? null : bindingProblems.length ? "bad" : "ok"}
               title={
-                manifest.study_id === target.studyId
-                  ? "It is this study's audit"
-                  : "It names another study"
+                !v || !v.bound_to_record
+                  ? "Its binding to the study's record"
+                  : bindingProblems.length
+                    ? "It does not belong to this study's record"
+                    : "It belongs to this study's record"
               }
             >
-              Study {manifest.study_id ?? "—"}, from the file {manifest.source_file ?? "—"}, sha256{" "}
-              <Hash value={manifest.input_sha256 ?? ""} length={12} />
+              {v?.bound_to_record ? (
+                bindingProblems.length ? (
+                  <Problems items={bindingProblems} />
+                ) : (
+                  <>
+                    The record verifies, names study {manifest.study_id ?? "—"} and the file{" "}
+                    {manifest.source_file ?? "—"} (sha256{" "}
+                    <Hash value={manifest.input_sha256 ?? ""} length={12} />) and contains the
+                    decision chain the audit describes.
+                  </>
+                )
+              ) : v ? (
+                "Not checked against the record."
+              ) : null}
             </Check>
             <Check
-              tone={
-                isCurrent == null ? null : isCurrent ? "ok" : inChain === false ? "bad" : "warn"
-              }
-              icon={isCurrent === false && inChain !== false ? <History /> : undefined}
+              tone={current == null ? null : current ? "ok" : "warn"}
+              icon={current === false ? <History /> : undefined}
               title={
-                isCurrent == null
-                  ? "The decision chain it describes"
-                  : isCurrent
+                current == null
+                  ? "The decisions it describes"
+                  : current
                     ? "It describes the current decisions"
-                    : inChain === false
-                      ? "Its decision chain is not this study's"
-                      : "Decisions were made since it ran"
+                    : "Decisions were made since it ran"
               }
             >
-              Audited at chain <Hash value={audited ?? ""} length={12} />
-              {current && !isCurrent ? (
+              Audited at decision chain <Hash value={audited ?? ""} length={12} />
+              {current === false ? (
                 <>
-                  ; the study is now at <Hash value={current} length={12} />
-                  {since != null ? ` (${plural(since, "decision")} later)` : ""}
+                  ; the study is now at <Hash value={head ?? ""} length={12} />
+                  {since ? ` (${plural(since, "decision")} later)` : ""}
                   <span className="block">
                     Its verdicts hold for the earlier state; run the audit again to include them.
                   </span>
@@ -190,8 +216,13 @@ export function VerifyTab({
                     "—"
                   ),
                 ],
+                ...(manifest.seconds != null
+                  ? [["Run time", duration(manifest.seconds)] as [string, string]]
+                  : []),
                 ["Versions", versions(manifest)],
-                ["Settings", settings(manifest)],
+                ...(manifest.settings
+                  ? [["Settings", settings(manifest)] as [string, string]]
+                  : []),
               ]}
             />
           </CardBody>
@@ -224,8 +255,23 @@ export function VerifyTab({
         </Card>
       </div>
 
-      <Files verify={v} loading={verify.isPending} />
+      {v?.files?.length ? <Files files={v.files} studyId={target.studyId} /> : null}
     </div>
+  );
+}
+
+/** A problem `verify_audit` reports about the record binding (not the audit's own files). */
+function isBindingProblem(p: string): boolean {
+  return /^the record|^the audited decision chain/i.test(p);
+}
+
+function Problems({ items }: { items: string[] }) {
+  return (
+    <ul className="list-disc pl-5">
+      {items.map((p) => (
+        <li key={p}>{asSentence(p)}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -275,43 +321,46 @@ function Check({
   );
 }
 
-function Files({ verify, loading }: { verify: AuditVerify | undefined; loading: boolean }) {
+/** The audit's files with their checksums; each one downloads (only files AUDIT.sha256 lists). */
+function Files({ files, studyId }: { files: NonNullable<AuditVerify["files"]>; studyId: string }) {
   return (
     <Card as="section" aria-labelledby="verify-files">
       <CardHeader
         id="verify-files"
         title="The audit's files"
-        hint="Each file's sha256, as listed in AUDIT.sha256."
+        hint="Each file's sha256, as listed in AUDIT.sha256. Click a name to save the file."
       />
       <CardBody>
-        {loading ? (
-          <LoadingBlock lines={5} />
-        ) : verify?.files?.length ? (
-          <div className="overflow-x-auto">
-            <Table>
-              <THead>
-                <TR>
-                  <TH>File</TH>
-                  <TH numeric>Size</TH>
-                  <TH>sha256</TH>
+        <div className="overflow-x-auto">
+          <Table>
+            <THead>
+              <TR>
+                <TH>File</TH>
+                <TH numeric>Size</TH>
+                <TH>sha256</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {files.map((f) => (
+                <TR key={f.name}>
+                  <TD className="font-mono text-xs">
+                    <a
+                      href={`/api/studies/${encodeURIComponent(studyId)}/audit/files/${encodeURIComponent(f.name)}`}
+                      download={f.name}
+                      className="text-accent underline-offset-2 hover:underline"
+                    >
+                      {f.name}
+                    </a>
+                  </TD>
+                  <TD numeric>{bytes(f.bytes)}</TD>
+                  <TD>
+                    <Hash value={f.sha256} length={16} />
+                  </TD>
                 </TR>
-              </THead>
-              <TBody>
-                {verify.files.map((f) => (
-                  <TR key={f.name}>
-                    <TD className="font-mono text-xs">{f.name}</TD>
-                    <TD numeric>{bytes(f.bytes)}</TD>
-                    <TD>
-                      <Hash value={f.sha256} length={16} />
-                    </TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
-          </div>
-        ) : (
-          <p className="text-[13px] text-muted">The file list is not available.</p>
-        )}
+              ))}
+            </TBody>
+          </Table>
+        </div>
       </CardBody>
     </Card>
   );
