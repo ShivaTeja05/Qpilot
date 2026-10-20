@@ -19,12 +19,13 @@ from qpilot.schemas_studio import PrismBundle, PrismDiffItem
 
 
 class DownloadLink(BaseModel):
-    """A file this server wrote into its private export folder, offered for download."""
+    """A file qPilot wrote into its export folder (beside the store), offered for download."""
 
-    id: str = Field(description="Opaque; valid until the server stops.")
+    id: str = Field(description="Opaque; registered by this server (listings re-register).")
     url: str = Field(description="`/api/downloads/<id>` (served as an attachment).")
     name: str = Field(description="The file name the browser saves it under.")
     bytes: int
+    path: str = Field(description="Where the file is kept on this computer.")
 
 
 # ---- Prism: the section's frame ------------------------------------------------------------------
@@ -55,7 +56,7 @@ class PrismStatus(BaseModel):
     can_draft: bool
     can_send: bool
     next: str = Field(description="What to do next, in words.")
-    bundles: int = Field(description="Bundles this launch wrote for this session.")
+    bundles: int = Field(description="Bundles in qPilot's export folder for this session.")
 
 
 # ---- Prism: what would be written ----------------------------------------------------------------
@@ -182,8 +183,8 @@ class PrismBundleView(BaseModel):
     """One bundle sent to Prism from this session."""
 
     id: str | None = Field(
-        description="Opaque id of a bundle this launch wrote (round trip, download); None for "
-        "one written before this launch or elsewhere."
+        description="Opaque id of a bundle Send to Prism wrote into qPilot's export folder (round "
+        "trip, download); None for one written elsewhere or no longer there."
     )
     study_id: str
     bundle_sha256: str
@@ -298,7 +299,7 @@ class RecordExported(BaseModel):
 
 
 class RecordList(BaseModel):
-    """``GET /api/studies/{id}/records``: the records this launch exported, newest first."""
+    """``GET /api/studies/{id}/records``: the records in qPilot's export folder, newest first."""
 
     study_id: str
     records: list[RecordExported]
@@ -340,3 +341,12 @@ class RecordVerified(BaseModel):
     audit_note: str = Field(description="Which audit was checked, or why none was.")
     known_study: bool = Field(description="The record's study is in this qPilot's store.")
     note: str
+
+
+#: The model of each job's ``result`` (``JobView.result`` is ``Any`` in the schema), by job kind.
+JOB_RESULTS: dict[str, type[BaseModel]] = {
+    "prism.draft": PrismDrafted,
+    "prism.send": PrismSent,
+    "prism.roundtrip": PrismRoundTrip,
+    "record.export": RecordExported,
+}

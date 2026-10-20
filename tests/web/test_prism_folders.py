@@ -171,3 +171,16 @@ def test_group_points_and_mean_ci():
     mean, lo, hi = folders.mean_ci([1.0, 3.0])
     assert mean == 2.0 and lo < 2.0 < hi
     assert folders.mean_ci([1.0]) is None
+
+
+def test_the_export_folder_is_beside_the_store_one_folder_per_workspace(tmp_path):
+    store = tmp_path / "cache" / "studies"
+    store.mkdir(parents=True)
+    assert folders.exports_root(store) == tmp_path / "cache" / "exports"
+    assert (
+        folders.workspace_exports(store, "bc1d233e3866")
+        == tmp_path / "cache" / "exports" / "bc1d233e3866"
+    )
+    for key in ("../etc", "BC1D233E3866", "", "bc1d233e3866/..", "g" * 12):
+        with pytest.raises(FolderRefused):
+            folders.workspace_exports(store, key)

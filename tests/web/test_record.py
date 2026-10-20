@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import hashlib
 import io
+import json
 import os
 import time
 import zipfile
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -18,6 +20,7 @@ from fastapi.testclient import TestClient
 from qpilot.core.decisions import apply_decision
 from qpilot.core.store import StudyStore
 from qpilot.web.context import make_context
+from qpilot.web.folders import exports_root
 from qpilot.web.routers import files as files_router
 from qpilot.web.server import create_app
 from tests.web.conftest import BASE, TOKEN
@@ -125,7 +128,9 @@ def test_the_export_is_a_zip_of_the_record(study, exported):
     assert body["record_id"] == hashlib.sha256(checksums).hexdigest()
     # only the zip is kept in the export folder: the unpacked record folder is gone
     leftovers = [
-        p for p in ctx.exports.rglob("*") if p.is_file() and p.suffix not in (".zip", ".json")
+        p
+        for p in (exports_root(ctx.store.root) / study_id).rglob("*")
+        if p.is_file() and p.suffix not in (".zip", ".json")
     ]
     assert leftovers == []
 
@@ -274,7 +279,7 @@ def test_downloads_serve_only_registered_files_inside_exports(study, exported, t
     secret.write_text("not for the page")
     upload = ctx.uploads / "kept.rdml"
     upload.write_text("an upload, not an export")
-    link = ctx.exports / "link.zip"
+    link = exports_root(ctx.store.root) / "link.zip"
     os.symlink(secret, link)
     ctx.downloads.update({"outsideAAAAA": secret, "uploadsAAAAA": upload, "linkedAAAAAA": link})
     for token in ("outsideAAAAA", "uploadsAAAAA", "linkedAAAAAA"):
@@ -300,3 +305,35 @@ def test_writes_from_another_site_are_refused(study):
         headers={"origin": "https://evil.example"},
     )
     assert r.status_code == 403
+
+
+def test_a_study_id_in_an_uploaded_record_never_names_a_path(study, exported):
+    client, *_ = study
+    _, r = exported
+
+    def edit(name: str, content: bytes) -> bytes:
+        if name != "record.json":
+            return content
+        meta = json.loads(content)
+        meta["study_id"] = "../simulator_audits/../../.."
+        return json.dumps(meta).encode()
+
+    out = verify(client, rezip(r.content, edit)).json()
+    assert out["ok"] is False and "record.json" in out["report"]["changed"]
+    assert out["known_study"] is False and out["audit"] is None
+
+
+def test_records_outlive_the_server(study, exported):
+    """A new server over the same store lists the record and serves its zip again."""
+    _, ctx, study_id = study
+    body, r = exported
+    assert Path(body["download"]["path"]).parent.parent == (
+        exports_root(ctx.store.root).resolve() / study_id
+    )
+    later = make_context(ctx.store, token=TOKEN, watch=False)
+    with TestClient(create_app(later), base_url=BASE) as client:
+        client.headers.update({"x-qpilot-token": TOKEN, "origin": BASE})
+        listed = client.get(f"/api/studies/{study_id}/records").json()["records"]
+        mine = next(x for x in listed if x["record_id"] == body["record_id"])
+        again = client.get(mine["download"]["url"])
+        assert again.status_code == 200 and again.content == r.content

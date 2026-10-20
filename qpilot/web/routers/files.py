@@ -3,12 +3,12 @@
 * **Prism** (a Studio session's, blind-gated like every result): where Prism stands, the preview
   of what Send would write, how the usual Excel→Prism routes would change this study's
   conclusions, the bundles sent, and three jobs: draft the project (a proposal, accepted like any
-  other), send (bundle into this launch's private export folder, zipped for download, then Prism
-  started when it is installed here), and the round trip (what came back from Prism becomes
+  other), send (bundle into qPilot's export folder beside the store, zipped for download, then
+  Prism started when it is installed here), and the round trip (what came back from Prism becomes
   proposals with their consequences).
 * **Record** (a study's): export the Analysis Record (a job; the zip is offered for download) and
   verify an uploaded record (checksums, both hash chains, and its binding to an audit).
-* **Downloads**: only files this server registered, only inside its private export folder, always
+* **Downloads**: only files this server registered, only inside the export folder, always
   as an attachment.
 
 Every write is a person's (``actor="human"``, set here). Folder rules: :mod:`qpilot.web.folders`.
@@ -30,6 +30,7 @@ from fastapi.responses import FileResponse
 from qpilot.core.record import (
     CHECKSUMS,
     RecordError,
+    VerifyReport,
     unzip_record,
     verify,
     write_record,
@@ -38,7 +39,7 @@ from qpilot.core.record import (
 from qpilot.core.store import StudyNotFound
 from qpilot.studio_service import StudioError
 from qpilot.web import folders, views
-from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session, is_study
+from qpilot.web.context import KEY, AppContext, Ctx, api_error, check_key, is_session, is_study
 from qpilot.web.contract import JobStarted, JobView
 from qpilot.web.contract_files import (
     AuditBinding,
@@ -86,7 +87,7 @@ BLIND = (
     "Results stay hidden until you confirm the Design and the Curves stages: Prism shows "
     "group differences."
 )
-NOT_FROM_HERE = "Choose a bundle that Send to Prism wrote from this page (since qPilot started)."
+NOT_FROM_HERE = "Choose a bundle that Send to Prism wrote from this page."
 TAMPER_NOTE = "Tamper-evident, not tamper-proof. Research use only."
 FIGURE_NOTE = (
     "An approximation of the template's graph: every biological unit, the group mean and its "
@@ -167,16 +168,27 @@ def _sentence(err: BaseException) -> str:
 def _link(ctx: AppContext, path: Path) -> DownloadLink:
     """The download link of a file in the export folder (the same id when it is offered again)."""
     target = path.resolve()
-    token = next((t for t, p in ctx.downloads.items() if p == target), None)
-    if token is None:
-        with ctx.lock:
-            token = folders.register_download(ctx.downloads, ctx.exports, target)
+    with ctx.lock:  # jobs register downloads from their own threads
+        token = next((t for t, p in ctx.downloads.items() if p == target), None)
+        if token is None:
+            token = folders.register_download(ctx.downloads, _exports(ctx), target)
     return DownloadLink(
         id=token,
         url=f"/api/downloads/{token}",
         name=target.name,
         bytes=target.stat().st_size,
+        path=str(target),
     )
+
+
+def _exports(ctx: AppContext) -> Path:
+    """The export folder beside the store (every download is inside it)."""
+    return folders.exports_root(ctx.store.root)
+
+
+def _ws_exports(ctx: AppContext, key: str) -> Path:
+    """A workspace's own export folder."""
+    return folders.workspace_exports(ctx.store.root, key)
 
 
 # ---- Prism: reading ------------------------------------------------------------------------------
@@ -196,9 +208,12 @@ def prism_status(sid: str, ctx: Ctx) -> PrismStatus:
         step = "No Prism project yet: press “Draft the Prism project”."
     else:
         step = "Confirm the analysis choices first (Results): the Prism project follows them."
-    exports = ctx.exports.resolve()
+    exports = _ws_exports(ctx, sid).resolve()
     here = [
-        e for e in ctx.studio.exports(sid) if folders.within(Path(e.get("bundle_dir", "")), exports)
+        e
+        for e in ctx.studio.exports(sid)
+        if folders.within(Path(e.get("bundle_dir", "")), exports)
+        and Path(e.get("bundle_dir", "")).is_dir()
     ]
     return PrismStatus(
         session_id=sid,
@@ -360,12 +375,12 @@ def _gene_list(value: Any, n: int, known: list[str]) -> list[str]:
 
 
 def _bundle_views(ctx: AppContext, sid: str, current: str | None) -> list[PrismBundleView]:
-    exports = ctx.exports.resolve()
+    exports = _ws_exports(ctx, sid).resolve()
     out = []
     for entry in reversed(ctx.studio.exports(sid)):
         folder = Path(str(entry.get("bundle_dir", "")))
         token = folders.bundle_id(folder) if folders.within(folder, exports) else None
-        if token is not None and folders.bundle_folder(ctx.exports, token) != folder:
+        if token is not None and folders.bundle_folder(exports, token) != folder:
             token = None
         archive = exports / _bundle_zip_name(str(entry.get("study_id", "")), token or "")
         sent_back = entry.get("sent_back_dir") or (
@@ -451,7 +466,8 @@ def prism_send(sid: str, ctx: Ctx) -> JobStarted:
 
     def work(progress: Progress) -> dict[str, Any]:
         progress("Writing the bundle: tables, scripts and provenance", 0.1)
-        folder = folders.private_dir(ctx.exports, folders.BUNDLE_PREFIX)
+        exports = _ws_exports(ctx, sid)
+        folder = folders.private_dir(exports, folders.BUNDLE_PREFIX)
         try:
             result = ctx.studio.send_to_prism(sid, folder, actor="human")
         except (StudioError, *PRISM_ERRORS) as err:
@@ -459,7 +475,7 @@ def prism_send(sid: str, ctx: Ctx) -> JobStarted:
             raise JobError("studio", f"Not sent: {_sentence(err)}") from err
         progress("Zipping the bundle for download", 0.6)
         name = _bundle_zip_name(result.bundle.study_id, folders.bundle_id(folder) or "bundle")
-        base = ctx.exports / name.removesuffix(".zip")
+        base = exports / name.removesuffix(".zip")
         archive = Path(shutil.make_archive(str(base), "zip", root_dir=folder))
         progress("Starting Prism (when it is installed on this computer)", 0.7)
         try:
@@ -497,14 +513,14 @@ def prism_send(sid: str, ctx: Ctx) -> JobStarted:
 def prism_roundtrip(sid: str, body: RoundTripRequest, ctx: Ctx) -> JobStarted:
     """Compare what Prism sent back with the bundle; each change becomes a proposal."""
     _visible_study(ctx, sid)
-    bundle = folders.bundle_folder(ctx.exports, body.bundle)
+    bundle = folders.bundle_folder(_ws_exports(ctx, sid), body.bundle)
     if bundle is None:
         raise api_error(404, "not_found", NOT_FROM_HERE)
     if not any(Path(str(e.get("bundle_dir", ""))) == bundle for e in ctx.studio.exports(sid)):
         raise api_error(409, "studio", "This bundle was not sent to Prism from this session.")
     try:
         folder = folders.allowed_folder(
-            body.folder, roots=(ctx.exports, Path.home()), store_root=ctx.store.root
+            body.folder, roots=(_exports(ctx), Path.home()), store_root=ctx.store.root
         )
     except folders.FolderRefused as err:
         raise api_error(400, "bad_folder", str(err)) from err
@@ -577,7 +593,7 @@ def export_record(
 
     def work(progress: Progress) -> dict[str, Any]:
         progress("Copying the study and hashing every file", 0.1)
-        folder = folders.private_dir(ctx.exports, folders.RECORD_PREFIX)
+        folder = folders.private_dir(_ws_exports(ctx, study_id), folders.RECORD_PREFIX)
         try:
             info = write_record(
                 ctx.store, study_id, folder / "record", include_input=options.include_input
@@ -638,12 +654,12 @@ def export_record(
 
 @router.get("/studies/{study_id}/records", response_model=RecordList)
 def list_records(study_id: str, ctx: Ctx) -> RecordList:
-    """The records of this study exported since qPilot started, newest first."""
+    """The records of this study in qPilot's export folder, newest first."""
     check_key(study_id)
     if not is_study(ctx.store, study_id):
         raise api_error(404, "not_found", "There is no analysed study with this id.")
     found = []
-    for path in ctx.exports.glob(f"{folders.RECORD_PREFIX}*/{EXPORT_FILE}"):
+    for path in _ws_exports(ctx, study_id).glob(f"{folders.RECORD_PREFIX}*/{EXPORT_FILE}"):
         try:
             exported = RecordExported.model_validate_json(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -665,7 +681,7 @@ def list_records(study_id: str, ctx: Ctx) -> RecordList:
 )
 def download(download_id: str, ctx: Ctx) -> FileResponse:
     """A file this server wrote into its export folder (a record or a Prism bundle zip)."""
-    path = folders.download_path(ctx.downloads, ctx.exports, download_id)
+    path = folders.download_path(ctx.downloads, _exports(ctx), download_id)
     if path is None:
         raise api_error(
             404, "not_found", "This download is not available (qPilot may have restarted)."
@@ -680,7 +696,7 @@ async def verify_record(
     record: Annotated[UploadFile, File(description="An Analysis Record as a .zip.")],
 ) -> RecordVerified:
     """Check an uploaded record: every checksum, both hash chains, and its audit binding."""
-    name = Path(record.filename or "record.zip").name or "record.zip"
+    name = (Path(record.filename or "record.zip").name or "record.zip")[:200]
     work = folders.private_dir(ctx.private / "verify", folders.VERIFY_PREFIX)
     try:
         upload = work / "upload.zip"
@@ -720,7 +736,12 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
             400, "not_record", f"{name} holds more than one record: verify them one at a time."
         )
     record_dir = records[0]
-    report = verify(record_dir)
+    try:
+        report = verify(record_dir)
+    except (OSError, ValueError, KeyError, TypeError, RecursionError) as err:
+        report = VerifyReport(
+            ok=False, inconsistent=[f"the record cannot be read: {_sentence(err)}"]
+        )
     facts = _record_facts(record_dir)
     known = bool(facts.study_id) and _known_study(ctx, facts.study_id or "")
 
@@ -757,6 +778,9 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
 
 
 def _known_study(ctx: AppContext, study_id: str) -> bool:
+    """True when ``study_id`` (read from an uploaded record) names a study in this store."""
+    if not KEY.match(study_id):
+        return False
     try:
         return is_study(ctx.store, study_id)
     except (OSError, ValueError):

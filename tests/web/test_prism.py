@@ -25,6 +25,7 @@ from qpilot.prism import verify_provenance
 from qpilot.qpcr.contrast import ConclusionRule
 from qpilot.studio_service import Studio
 from qpilot.web.context import make_context
+from qpilot.web.folders import exports_root
 from qpilot.web.server import create_app
 from tests.web.conftest import BASE, TOKEN
 
@@ -173,11 +174,12 @@ def test_the_routes_are_the_studys_own_facts(walk):
 
 def test_the_preview_writes_nothing_and_shows_every_unit(walk):
     client, ctx, studio, sid, _ = walk
-    before = sorted(p.name for p in ctx.exports.iterdir())
+    exports = exports_root(ctx.store.root)
+    before = sorted(p.relative_to(exports).as_posix() for p in exports.rglob("*"))
     r = client.get(f"/api/sessions/{sid}/prism/preview", params={"rows": 2})
     assert r.status_code == 200, r.text
     body = r.json()
-    assert sorted(p.name for p in ctx.exports.iterdir()) == before
+    assert sorted(p.relative_to(exports).as_posix() for p in exports.rglob("*")) == before
     assert body["writes_nothing"] is True and "run.pzc" in body["would_write"]
     assert body["genes"] and [t["gene"] for t in body["tables"]] == body["genes"]
     engine = studio.preview_prism(sid, rows=100_000)
@@ -229,7 +231,9 @@ def test_send_writes_the_bundle_into_exports_and_offers_its_zip(walk, sent, tmp_
     bundle = sent["bundle"]
     folder = Path(bundle["folder"])
     assert bundle["id"] and bundle["round_trip"] and bundle["current"] and bundle["exists"]
-    assert folder.parent == ctx.exports.resolve() and folder.name == f"prism-{bundle['id']}"
+    assert folder.parent == exports_root(ctx.store.root).resolve() / sid
+    assert folder.name == f"prism-{bundle['id']}"
+    assert Path(sent["download"]["path"]).parent == folder.parent  # the zip beside its folder
     assert bundle["study_id"] == log["study"]
     assert sent["launched"] is False and "not installed" in sent["launch_note"]
     assert "run.pzc" in sent["command_line"] and "send_back.pzc" in sent["send_back_command"]
@@ -310,3 +314,18 @@ def test_a_bundle_sent_from_elsewhere_is_listed_but_not_round_tripped(walk, sent
     other = next(b for b in listed if Path(b["folder"]) == elsewhere.resolve())
     assert other["id"] is None and other["round_trip"] is False and other["download"] is None
     assert listed[0]["folder"] == other["folder"]  # newest first
+
+
+def test_bundles_outlive_the_server(walk, sent):
+    """A new server over the same store lists the bundle, serves its zip and can round-trip it."""
+    _, ctx, studio, sid, _ = walk
+    later = make_context(ctx.store, studio, token=TOKEN, watch=False)
+    with TestClient(create_app(later), base_url=BASE) as client:
+        client.headers.update({"x-qpilot-token": TOKEN, "origin": BASE})
+        assert client.get(sent["download"]["url"]).status_code == 404  # ids are per server
+        listed = client.get(f"/api/sessions/{sid}/prism/bundles").json()["bundles"]
+        mine = next(b for b in listed if b["id"] == sent["bundle"]["id"])
+        assert mine["round_trip"] and mine["download"]["path"] == sent["download"]["path"]
+        r = client.get(mine["download"]["url"])
+        assert r.status_code == 200 and len(r.content) == sent["download"]["bytes"]
+        assert client.get(f"/api/sessions/{sid}/prism").json()["bundles"] >= 1

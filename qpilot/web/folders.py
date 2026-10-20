@@ -2,14 +2,14 @@
 
 Copied (Gradio-free) from the old pages, never imported from them: the folder Prism sends the
 tables back to (``qpilot.studio`` ``allowed_folder``, made stricter: no ``..``, no relative path,
-no link anywhere below the allowed root), the private folders bundles and records are written
-into, the opaque download ids, a size-capped upload, and the preview helpers the Studio page used
-to draw the Prism graph (``qpilot.studio_state`` ``preview_tables``, ``group_points``,
-``mean_ci``, ``ROUTES``).
+no link anywhere below the allowed root), the export folder bundles and records are written into
+(``exports/<workspace>/`` beside the study store, kept across launches), the opaque download
+ids, a size-capped upload, and the preview helpers the Studio page used to draw the Prism graph
+(``qpilot.studio_state`` ``preview_tables``, ``group_points``, ``mean_ci``, ``ROUTES``).
 
 Nothing here reaches outside the folders it is given: every path a person or a request names is
 checked against an allowed root after resolving it, and a download is served only when it is a
-regular file inside the private exports folder that this server registered itself.
+regular file inside the export folder that this server registered itself.
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from typing import Any
 
 from qpilot.prism.provenance import BUNDLE_FILE
 
+EXPORTS_DIR = "exports"
 BUNDLE_PREFIX = "prism-"
 RECORD_PREFIX = "record-"
 VERIFY_PREFIX = "verify-"
@@ -84,7 +85,7 @@ def allowed_folder(text: str, *, roots: Sequence[Path], store_root: Path) -> Pat
 
     The rules of the old Studio page, stricter: a full path (``~`` is the home folder), with no
     ``..`` and no link (neither the folder nor any folder between an allowed root and it), that
-    is a folder inside one of ``roots`` (this launch's exports folder and the home folder) and
+    is a folder inside one of ``roots`` (qPilot's export folder and the home folder) and
     not inside the study store.
 
     Args:
@@ -127,6 +128,26 @@ def allowed_folder(text: str, *, roots: Sequence[Path], store_root: Path) -> Pat
     raise FolderRefused("The folder must be inside your home folder or qPilot's export folder.")
 
 
+def exports_root(store_root: Path) -> Path:
+    """Where bundles and records are written: ``exports/`` beside the study store.
+
+    They are the person's files, so they outlive the server (unlike its private folder); they
+    are offered for download only through ids this server registered.
+    """
+    path = Path(store_root).parent / EXPORTS_DIR
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def workspace_exports(store_root: Path, key: str) -> Path:
+    """One workspace's export folder (``exports/<session or study id>``)."""
+    if not re.fullmatch(r"[0-9a-f]{12}", key or ""):
+        raise FolderRefused("not a workspace id")
+    path = exports_root(store_root) / key
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def private_dir(parent: Path, prefix: str) -> Path:
     """A new, empty folder with a random name inside ``parent`` (for one bundle or record)."""
     parent.mkdir(parents=True, exist_ok=True)
@@ -162,11 +183,11 @@ def download_path(downloads: Mapping[str, Path], exports: Path, token: str) -> P
     return resolved
 
 
-# ---- Prism bundles written by this launch --------------------------------------------------------
+# ---- Prism bundles in the export folder ----------------------------------------------------------
 
 
 def bundle_id(folder: Path) -> str | None:
-    """The opaque id of a bundle folder this launch wrote (``<exports>/prism-<id>``), or None."""
+    """The opaque id of a bundle folder in an export folder (``<exports>/prism-<id>``), or None."""
     name = folder.name
     if not name.startswith(BUNDLE_PREFIX):
         return None
@@ -188,7 +209,7 @@ def bundle_folder(exports: Path, token: str) -> Path | None:
 
 
 def bundles_here(exports: Path) -> list[Path]:
-    """Every bundle folder this launch wrote, oldest first."""
+    """Every bundle folder in ``exports``, oldest first."""
     found = [p.parent for p in exports.glob(f"{BUNDLE_PREFIX}*/{BUNDLE_FILE}")]
     ok = [f for f in found if bundle_id(f) and bundle_folder(exports, bundle_id(f) or "")]
     return sorted(ok, key=lambda p: (p / BUNDLE_FILE).stat().st_mtime)
