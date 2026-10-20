@@ -7255,6 +7255,16 @@ export type components = {
              * @description Calls that change if its unusual control-gene well read as its other control genes predict.
              */
             read_as_expected?: components["schemas"]["TraceCallChange"][] | null;
+            /**
+             * Read Groups Held
+             * @description The calls that change when that well is read as expected and every sample keeps its group (given only when the groups would change).
+             */
+            read_groups_held?: components["schemas"]["TraceCallChange"][] | null;
+            /**
+             * Read Regrouped
+             * @description Marker split: how the groups change when that well is read as expected.
+             */
+            read_regrouped?: string | null;
             /** Unit */
             unit: string;
             /**
