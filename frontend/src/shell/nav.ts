@@ -80,14 +80,12 @@ export function sectionStates(
         s.done = frame.has_audit;
         break;
       case "prism": {
+        // Reachable with the results (docs/app.md §2): its routes table and preview help before
+        // the choices are locked; Draft / Send wait for that step and the server says so.
         const st = stageOf(frame, "prism");
         const rt = stageOf(frame, "roundtrip");
         s.done = Boolean(st?.confirmed);
         s.count = (st?.pending ?? 0) + (rt?.pending ?? 0);
-        if (s.reachable && st && !st.open) {
-          s.reachable = false;
-          s.lockReason = st.blockers[0] ?? "Decide the analysis choices first";
-        }
         break;
       }
       case "agents":

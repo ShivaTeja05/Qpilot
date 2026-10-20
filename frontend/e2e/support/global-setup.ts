@@ -41,6 +41,20 @@ export default async function globalSetup(): Promise<void> {
         "Copy the seed (e2e/reset-store.sh) and point the server at the copy, or set E2E_READONLY=1.",
     );
   }
+  // Warm the server: the first read of each workspace is slow (it opens the study); do it once
+  // here, not inside a test's timeout.
+  const headers = { "x-qpilot-token": E2E.token };
+  const list = (await (await fetch(`${E2E.origin}/api/workspaces`, { headers })).json()) as {
+    workspaces: { key: string; kind: string; study_id?: string | null; results_visible: boolean }[];
+  };
+  for (const w of list.workspaces) {
+    const frame = w.kind === "session" ? `/api/sessions/${w.key}` : `/api/studies/${w.key}`;
+    await fetch(`${E2E.origin}${frame}`, { headers });
+    if (w.results_visible && w.study_id) {
+      await fetch(`${E2E.origin}/api/studies/${w.study_id}/results`, { headers });
+      await fetch(`${E2E.origin}/api/studies/${w.study_id}/cards`, { headers });
+    }
+  }
   process.env.E2E_STUDIES_DIR = system.studies_dir;
   console.log(`e2e: qPilot ${system.version} at ${E2E.origin}, store ${system.studies_dir}`);
 }

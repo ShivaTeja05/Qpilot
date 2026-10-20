@@ -26,11 +26,25 @@ const media =
   typeof window !== "undefined" && window.matchMedia
     ? window.matchMedia("(prefers-color-scheme: dark)")
     : null;
-media?.addEventListener?.("change", () => listeners.forEach((l) => l()));
 
 function systemTheme(): Theme {
   return media?.matches ? "dark" : "light";
 }
+
+/**
+ * Put the theme in effect on <html data-theme>, also when it follows the system, so the
+ * `dark:` variant (which reads data-theme) and the tokens always agree.
+ */
+function apply(): void {
+  if (typeof document === "undefined") return;
+  document.documentElement.dataset.theme = choice === "system" ? systemTheme() : choice;
+}
+
+apply();
+media?.addEventListener?.("change", () => {
+  apply();
+  listeners.forEach((l) => l());
+});
 
 /** Set the theme for this browser (and apply it now). */
 export function setTheme(next: ThemeChoice): void {
@@ -41,8 +55,7 @@ export function setTheme(next: ThemeChoice): void {
   } catch {
     /* storage unavailable: this tab only */
   }
-  if (next === "system") delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = next;
+  apply();
   listeners.forEach((l) => l());
 }
 

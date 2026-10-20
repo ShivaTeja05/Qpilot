@@ -1,0 +1,74 @@
+{
+ "key": "2529de8272eb",
+ "kind": "session",
+ "title": "2529de8272eb75c7579239d7.rdml",
+ "facts": {
+  "file_name": "2529de8272eb75c7579239d7.rdml",
+  "input_sha256": "2529de8272eb75c7579239d7735aa1251383118988e6fa4a7c7ef69fb97ef53d",
+  "sheet_name": null,
+  "n_plates": 2,
+  "n_wells": 582,
+  "n_samples": 41,
+  "n_targets": 6,
+  "declared_types": {
+   "ntc": 1,
+   "std": 21,
+   "unkn": 19
+  }
+ },
+ "stages": [
+  {
+   "stage": "design",
+   "open": true,
+   "confirmed": false,
+   "pending": 2,
+   "blockers": [
+    "no comparison yet: accept the groups to compare (or the demo preset)",
+    "no reference genes yet: accept at least one target as a reference"
+   ]
+  },
+  {
+   "stage": "curves",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": []
+  },
+  {
+   "stage": "choices",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": []
+  },
+  {
+   "stage": "prism",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": []
+  },
+  {
+   "stage": "roundtrip",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [
+    "nothing has been sent to Prism yet"
+   ]
+  }
+ ],
+ "results_visible": false,
+ "study_id": null,
+ "proposals_head": "ecf7d7b9eb65c5f0ff84f087af54f905c33ef3c7d902e68f4246fc530e1c6e92",
+ "decisions_head": null,
+ "next_step": {
+  "title": "Review 2 design proposals",
+  "detail": "Accept, edit or reject each one; contradicted proposals come first.",
+  "section": "design",
+  "action": "Accept all consistent\u2026"
+ },
+ "active_jobs": [],
+ "has_audit": false,
+ "is_demo": false
+}

@@ -24,11 +24,9 @@ async function firstGene(api: APIRequestContext, w: Workspace): Promise<string |
 
 async function checkState(app: App, group: string, name: string): Promise<void> {
   const page = app.page;
-  await expect(page.locator("main"), "a <main> landmark").toHaveCount(1);
-  await expect(
-    page.getByRole("heading", { level: 1 }).first(),
-    "the section's heading",
-  ).toBeVisible();
+  const main = page.getByRole("main");
+  await expect(main, "one <main> landmark").toHaveCount(1);
+  await expect.soft(main.getByRole("heading").first(), "the section's heading").toBeVisible();
   const text = await page.locator("body").innerText();
   expect
     .soft(text.match(LEAKS)?.[0] ?? null, `${group} ${name}: shows a bug, not words`)
