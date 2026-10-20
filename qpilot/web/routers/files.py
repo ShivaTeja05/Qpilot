@@ -66,6 +66,7 @@ from qpilot.web.contract_files import (
     RecordVerified,
     RoundTripRefused,
     RoundTripRequest,
+    UnitValue,
 )
 from qpilot.web.jobs import JobError, Progress
 
@@ -215,10 +216,9 @@ def prism_status(sid: str, ctx: Ctx) -> PrismStatus:
 def prism_preview(
     sid: str,
     ctx: Ctx,
-    gene: Annotated[str | None, Query(max_length=200)] = None,
     rows: Annotated[int, Query(ge=1, le=50)] = 5,
 ) -> PrismPreview:
-    """What Send to Prism would write (nothing is written), with the graph of one gene."""
+    """What Send to Prism would write (nothing is written), with each gene's graph as data."""
     from qpilot.prism import PrismExportError
     from qpilot.qpcr.export import ExportError
 
@@ -230,33 +230,20 @@ def prism_preview(
     except (PrismExportError, ExportError, *PRISM_ERRORS) as err:
         raise api_error(409, "no_preview", f"No Prism preview: {_sentence(err)}") from err
     parsed = folders.preview_tables(full)
-    genes = list(parsed)
-    if gene is not None and gene not in parsed:
-        raise api_error(404, "not_found", "This gene is not in the Prism project.")
-    shown = gene if gene is not None else (genes[0] if genes else None)
     template = full.get("template") or {}
     bundle = full.get("bundle") or {}
-    figure = None
-    if shown is not None and template.get("layout") == "column":
-        table = parsed[shown]
-        groups = []
-        for group, points in folders.group_points(table["columns"], table["rows"]).items():
-            values = [v for _, v in points]
-            ci = folders.mean_ci(values)
-            groups.append(
-                GroupPoints(
-                    group=group,
-                    units=[u for u, _ in points],
-                    values=values,
-                    n=len(values),
-                    mean=ci[0] if ci else None,
-                    ci_lo=ci[1] if ci else None,
-                    ci_hi=ci[2] if ci else None,
-                )
-            )
-        if any(g.n for g in groups):
-            scale = str((bundle.get("info") or {}).get("scale", "log2 relative quantity"))
-            figure = PrismFigure(gene=shown, scale=scale, groups=groups, note=FIGURE_NOTE)
+    info = bundle.get("info") or {}
+    figures: dict[str, PrismFigure] = {}
+    if template.get("layout") == "column":
+        scale = str(info.get("scale") or "log2 relative quantity")
+        for gene, table in parsed.items():
+            groups = [
+                _group(name, points)
+                for name, points in folders.group_points(table["columns"], table["rows"]).items()
+            ]
+            if any(g.n for g in groups):
+                figures[gene] = PrismFigure(gene=gene, scale=scale, groups=groups, note=FIGURE_NOTE)
+    cards = {c.id: c for c in ctx.store.cards(study_id)}
     return PrismPreview(
         session_id=sid,
         study_id=study_id,
@@ -264,7 +251,7 @@ def prism_preview(
         bundle=bundle,
         would_write=[str(f) for f in full.get("would_write", [])],
         template=PrismTemplate(**template),
-        genes=genes,
+        genes=list(parsed),
         tables=[
             PreviewTable(
                 gene=g,
@@ -274,19 +261,47 @@ def prism_preview(
             )
             for g, t in parsed.items()
         ],
-        choices=[
-            PrismChoice(**c, decided_by=folders.who_decided(c.get("actor")))
-            for c in full.get("choices", [])
-        ],
-        caption=(bundle.get("info") or {}).get("caption"),
-        figure=figure,
+        choices=[_choice(c, cards.get(str(c.get("card_id")))) for c in full.get("choices", [])],
+        caption=info.get("caption"),
+        figures=figures,
+        project=_project(ctx, sid, study_id),
+        choices_confirmed=_choices_confirmed(ctx, sid),
         not_affiliated=str(full.get("not_affiliated", "")),
+    )
+
+
+def _group(name: str, points: list[tuple[str, float]]) -> GroupPoints:
+    ci = folders.mean_ci([v for _, v in points])
+    return GroupPoints(
+        name=name,
+        n=len(points),
+        mean=ci[0] if ci else None,
+        ci_lo=ci[1] if ci else None,
+        ci_hi=ci[2] if ci else None,
+        points=[UnitValue(unit=u, value=v) for u, v in points],
+    )
+
+
+def _choice(choice: dict[str, Any], card: Any) -> PrismChoice:
+    """A choice the bundle is exported at, with the card's question and the option's words."""
+    from qpilot.ai.explain import KIND_TITLE
+
+    option = str(choice.get("option", ""))
+    labels = {o.id: o.label for o in card.options} if card is not None else {}
+    kind = card.kind if card is not None else str(choice.get("dimension", ""))
+    return PrismChoice(
+        **choice,
+        title=KIND_TITLE.get(kind, kind.replace("_", " ").capitalize()),
+        option_label=labels.get(option, option.replace("_", " ")),
+        decided_by=folders.who_decided(choice.get("actor")),
     )
 
 
 @router.get("/sessions/{sid}/prism/routes", response_model=PrismRoutes)
 def prism_routes(sid: str, ctx: Ctx) -> PrismRoutes:
     """How often the usual Excel→Prism routes would change a conclusion on this study."""
+    from qpilot.qpcr.routes import ROUTE_LABELS
+
     study_id = _visible_study(ctx, sid)
     result = ctx.store.get(study_id)
     facts = result.facts
@@ -302,6 +317,7 @@ def prism_routes(sid: str, ctx: Ctx) -> PrismRoutes:
             PrismRoute(
                 route=route,
                 label=label,
+                method=ROUTE_LABELS.get(route, route),
                 n_differ=n_differ,
                 n_genes=int(n_genes),
                 genes=_gene_list(facts[gid].value, n_differ, list(result.contrasts))
@@ -311,13 +327,25 @@ def prism_routes(sid: str, ctx: Ctx) -> PrismRoutes:
                 genes_fact=gid if gid in facts else None,
             )
         )
+    changed = {g for r in routes for g in r.genes}
     return PrismRoutes(
         session_id=sid,
         study_id=study_id,
         n_genes=int(n_genes) if n_genes is not None else None,
+        rule=_rule_words(result.conclusion_rule),
+        engine={g: c.conclusion for g, c in result.contrasts.items() if g in changed},
         routes=routes,
         note=folders.ROUTES_NOTE,
     )
+
+
+def _rule_words(rule: dict[str, Any] | None) -> str:
+    """The study's conclusion rule in the engine's own words."""
+    from qpilot.qpcr.contrast import ConclusionRule
+
+    given = rule or {}
+    known = {k: float(given[k]) for k in ("alpha", "min_log2fc") if k in given}
+    return ConclusionRule(**known).describe()
 
 
 def _gene_list(value: Any, n: int, known: list[str]) -> list[str]:
@@ -447,6 +475,9 @@ def prism_send(sid: str, ctx: Ctx) -> JobStarted:
         return PrismSent(
             bundle=view,
             n_files=len(result.files),
+            files=sorted(
+                p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()
+            ),
             notes=[str(n) for n in result.notes],
             launched=bool(launched.get("launched")),
             done=launched.get("done") if launched.get("launched") else None,
@@ -560,7 +591,7 @@ def export_record(
         shutil.rmtree(info.record_dir, ignore_errors=True)  # keep only the zip
         warnings = []
         open_flips = [
-            c
+            c.id
             for c in ctx.store.cards(study_id)
             if c.impact.get("flips") and c.status in ("open", "pending_human")
         ]
@@ -570,7 +601,8 @@ def export_record(
                 f"{n} choice{'s' * (n != 1)} that can change a conclusion "
                 f"{'are' if n != 1 else 'is'} still open; the record says so."
             )
-        if options.expected_head and info.chain_head != options.expected_head:
+        moved = bool(options.expected_head) and info.chain_head != options.expected_head
+        if moved:
             warnings.append("Something was decided after this page last refreshed.")
         if options.include_input and not info.input_included:
             warnings.append(
@@ -585,6 +617,8 @@ def export_record(
             input_included=info.input_included,
             written_at=meta.get("written_at"),
             download=_link(ctx, archive),
+            open_flips=open_flips,
+            head_moved=moved,
             warnings=warnings,
             commands=_commands(archive.name),
         )

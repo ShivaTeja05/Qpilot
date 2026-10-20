@@ -91,19 +91,27 @@ class PrismChoice(BaseModel):
     value: Any = None
     actor: str | None = None
     status: str
+    title: str = Field(description="The card's question, e.g. which control genes to use.")
+    option_label: str = Field(description="The exported option in words (never a raw id).")
     decided_by: str = Field(description="Who decided, in words.")
 
 
-class GroupPoints(BaseModel):
-    """Every biological unit of one group (log2 relative quantity), and the mean with its CI."""
+class UnitValue(BaseModel):
+    """One biological unit's value in a Prism table (log2 relative quantity)."""
 
-    group: str
-    units: list[str]
-    values: list[float]
+    unit: str
+    value: float
+
+
+class GroupPoints(BaseModel):
+    """Every biological unit of one group, and the group mean with its 95 % CI (Student t)."""
+
+    name: str
     n: int
-    mean: float | None = None
+    mean: float | None = Field(default=None, description="None for fewer than two units.")
     ci_lo: float | None = None
     ci_hi: float | None = None
+    points: list[UnitValue]
 
 
 class PrismFigure(BaseModel):
@@ -128,9 +136,12 @@ class PrismPreview(BaseModel):
     tables: list[PreviewTable]
     choices: list[PrismChoice]
     caption: str | None = None
-    figure: PrismFigure | None = Field(
-        default=None, description="For the gene asked for (or the first); column layout only."
+    figures: dict[str, PrismFigure] = Field(
+        default={},
+        description="Per gene, from the full table (column layout only; empty otherwise).",
     )
+    project: PrismProject
+    choices_confirmed: bool
     not_affiliated: str
 
 
@@ -141,7 +152,8 @@ class PrismRoute(BaseModel):
     """How many of this study's conclusions one usual Excel→Prism route would change."""
 
     route: str
-    label: str
+    label: str = Field(description="The route in the page's words.")
+    method: str = Field(description="The route's method, briefly (qpilot.qpcr.routes).")
     n_differ: int
     n_genes: int
     genes: list[str]
@@ -155,6 +167,10 @@ class PrismRoutes(BaseModel):
     session_id: str
     study_id: str
     n_genes: int | None
+    rule: str = Field(description="The conclusion rule, in words.")
+    engine: dict[str, str] = Field(
+        description="The engine's conclusion (up / down / none) for every gene a route changes."
+    )
     routes: list[PrismRoute]
     note: str
 
@@ -194,6 +210,7 @@ class PrismSent(BaseModel):
 
     bundle: PrismBundleView
     n_files: int
+    files: list[str] = Field(description="Every file of the bundle, relative to its folder.")
     notes: list[str]
     launched: bool
     done: bool | None = Field(default=None, description="Prism finished run.pzc (when launched).")
@@ -272,6 +289,10 @@ class RecordExported(BaseModel):
     input_included: bool
     written_at: str | None = None
     download: DownloadLink
+    open_flips: list[str] = Field(
+        description="Cards that can change a conclusion and are still open (the record says so)."
+    )
+    head_moved: bool = Field(description="Something was decided after the page's view.")
     warnings: list[str]
     commands: RecordCommands
 
