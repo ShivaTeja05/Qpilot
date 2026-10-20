@@ -76,13 +76,13 @@ Every one of these has a shape and a word as well as a colour, so none depends o
 
 ## 4. Open
 
-The first screen. It says what qPilot does and offers three things:
+The first screen. It says what qPilot does in four steps (the AI proposes; the engine checks; you decide; the record keeps it) and offers three things:
 
-* **Drop a file.** An RDML export from your instrument (`.rdml`; RDML is the instrument-neutral format most qPCR software can write). You may add a **sample sheet** (`.xlsx` or `.csv`) and **one sentence about the experiment** (at most 500 characters), for example "LPS versus PBS, three mice each". Opening reads the file and quarantines every name in it; it analyses nothing and proposes nothing yet.
-* **Open the demo study.** The public 64-plate dataset. If it is not on your computer yet, the page asks first: it downloads 7 MB from the RDML consortium's repository, checked against a pinned SHA-256. That is the only thing on this screen that goes to the internet, and only when you press the button.
-* **Recent.** Your earlier workspaces: title, file, plates · samples · genes, the stages done, decisions made, requests waiting from agents, whether an audit exists, and when it was last changed. The demo has a badge.
+* **Open your RDML file.** Drop the instrument's RDML export on the box, or press **Choose a file…** (⌘O does the same anywhere). RDML (`.rdml` or `.xml`) is the instrument-neutral format most qPCR software can write. You may add a **sample sheet** (`.xlsx` or `.csv`) and **one sentence about the experiment**, for example "LPS versus PBS, three mice each" (at most 500 characters; the AI reads it when it proposes the design, and it is never obeyed as an instruction). Then press **Open this file**. Opening reads the file and quarantines every name in it; it analyses nothing and proposes nothing yet, and the file stays on this computer.
+* **Open the demo study.** A public neuroblastoma study (Vermeulen et al. 2009, Ruijter et al. 2013), to see every step on real data before you open your own. The card shows the study, its licence and its SHA-256. If the file is not on your computer yet, the button reads **Download 7.0 MB and open**, and the card says where it comes from (the RDML consortium's repository, at a pinned commit, checked against its SHA-256 before it is used). That is the only thing this screen downloads, and only when you click. Once the demo has been opened the card says **Continue the demo study** and your work on it is kept; to start again from a clean study, use **Start a fresh demo** in Settings.
+* **Recent.** Your earlier workspaces, the most recently changed first, with a filter box. Each card shows the title, the file, plates · samples · genes, a chip for each stage (confirmed, or how many proposals wait), the number of decisions recorded, when it was last changed, and badges: **Demo**, **Audited**, **Analysed outside Studio** (results are shown straight away, with no blind stages), the number of agent requests waiting for you, and **File missing or changed** when the original file is no longer where it was.
 
-Below: the version, the vendored curve method's commit, the line that says what can leave the machine (the same as `qpilot doctor`), whether the Decision Simulator is installed (it is needed for the audit), and the model chip.
+At the bottom: the qPilot version, the model chip (click for Settings), the vendored curve method and its commit, the line that says what can leave this machine (the same as `qpilot doctor`), and whether the robustness audit is installed.
 
 ## 5. Design (blind)
 
@@ -221,7 +221,7 @@ Everything can also be done with the Tab key, and every control shows where the 
 | "Open the link qPilot printed in your terminal" | This tab does not carry this launch's key (the page was restarted, or opened by typing the address) | Open the link from the terminal where `qpilot app` runs |
 | "Something was decided since you loaded this" | Another tab or an agent changed the record while you were reading | Read the current state shown and decide again |
 | A section is locked | The step before it is not confirmed | The lock says which one |
-| "The demo study is not downloaded yet" | The demo is not on this computer | Press **Download** on Open, or run `qpilot fetch-demo` |
+| "The demo study is not downloaded yet" | The demo is not on this computer | Click **Download 7.0 MB and open** on Open, or run `qpilot fetch-demo` |
 | The audit is refused | Its baseline does not reproduce qPilot, or the design has technical replicates | The page gives the reason in words |
 | The model chip says "not answering" | The model is configured but does not answer; hover for the reason | Rules answer alone meanwhile; check the endpoint and name |
 | The live dot is not green | The page lost its connection to qPilot | It reconnects by itself; if not, is `qpilot app` still running? |

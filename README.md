@@ -63,7 +63,7 @@ One hash-routed page, one study at a time. The rail lists the workflow in order,
 | **Agents** | How to connect an agent, and what agents are asking or have done |
 | **Settings** | The model's status and a test of it, autonomy, theme |
 
-What the page never does: it never makes a choice that can change a conclusion; it never shows a group difference before the design and the curves are confirmed (the server refuses, the page does not merely hide it); it never shows a number the engine did not compute; it never loads anything from the internet on its own (the demo download happens only when you press **Download**); and it never records a decision as anyone but the person at the page.
+What the page never does: it never makes a choice that can change a conclusion; it never shows a group difference before the design and the curves are confirmed (the server refuses, the page does not merely hide it); it never shows a number the engine did not compute; it never loads anything from the internet on its own (the demo download happens only when you click **Download 7.0 MB and open**); and it never records a decision as anyone but the person at the page.
 
 ## The engine and the command line
 
