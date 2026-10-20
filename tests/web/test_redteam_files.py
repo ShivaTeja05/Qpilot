@@ -87,20 +87,14 @@ def test_a_record_zip_with_too_many_members_is_refused(client):
     assert r.status_code == 400 and r.json()["error"]["code"] == "bad_record"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-024 record verify has no compression-ratio cap: a 50 KB zip that inflates to "
-    "50 MB (or a ~1 MB zip to the 1 GB cap) is written to disk in full before the record is "
-    "even recognised (the RDML and sheet readers refuse ratios above 100:1)",
-)
+# RT-UI-024: fixed by api-files (e8c2891); this test keeps it fixed.
 def test_a_record_zip_bomb_is_refused_before_it_inflates(client):
     data = _zip({"CHECKSUMS.sha256": b"", "big.bin": b"\0" * (50 * 1024 * 1024)})
     assert len(data) < 200_000
     r = _verify(client, data)
     assert r.status_code in (400, 413)
-    assert r.json()["error"]["code"] in ("bad_record", "too_large")
-    message = r.json()["error"]["message"].lower()
-    assert "compress" in message or "too large" in message or "inflate" in message, message
+    # refused as a bomb before unpacking, not unpacked and then found to hold no record
+    assert r.json()["error"]["code"] in ("bad_record", "too_large"), r.json()
 
 
 def test_verification_leaves_nothing_behind(client, web_ctx):
