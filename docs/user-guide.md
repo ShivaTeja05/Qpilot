@@ -96,7 +96,7 @@ At the bottom: the qPilot version, the model chip (click for Settings), the vend
 
 1. **Why**: each piece of evidence: the text from your file with where it came from, a cell of your sheet, or a well (which opens its curve).
 2. **Engine check**: **Consistent** (the engine found nothing that refutes it; a check can refute, never prove), **Contradicted** (it refutes it, with the rule and the numbers), or **Cannot check** (decide it on the evidence).
-3. **Consequence**: hidden in the blind stages, except "This matters for at least one conclusion; decide on the evidence." Press **Does this matter?** to have the engine run the design both ways: it answers only "this matters" or "neither reading changes any conclusion".
+3. **Consequence**: hidden in the blind stages, except "This matters for at least one conclusion; decide on the evidence." On a design proposal that has another reading, press **Does this matter?** to have the engine run the design both ways: it answers only "this matters" or "neither reading changes any conclusion".
 4. **Level**: an ordinal level with its reasons (never a percentage).
 
 Then **Accept**, **Edit** (change the fields; the engine checks the edit, then you accept it) or **Reject** (a reason is required). If the engine contradicts a proposal the button reads **Accept anyway…** and asks you to say why. The footer says who made the proposal: a fixed rule, a model (with its name and prompt hash) or an agent.
@@ -142,15 +142,16 @@ Opens once the design and the curves are confirmed; qPilot then analyses your co
 
 ## 8. Gene
 
-Open a gene from the Results map or table. `[` and `]` go to the previous and next gene.
+Open a gene from the Results map or table, or from **Go to a gene** (or ⌘K). `[` and `]` go to the previous and next gene. Without a gene in the address, the page lists every compared gene to choose from.
 
-The header gives the call, the fold change with its 95 % confidence interval, p, the number of samples per group, the level with its reasons, and (after an audit) the verdict. Then, top to bottom:
+The header gives the gene's name (with a **Headline gene** badge for the study's headline genes), the fold change with its 95 % confidence interval, the p-value, the number of samples per group, the **confidence** level with its reasons, and the **audit verdict** ("Not audited yet" before the audit has run). **Copy summary** puts a plain-text summary of the gene on your clipboard. A row of links under the header jumps to each part below.
 
-* **What holds.** The share of reasonable analyses with the same call, and a strip with every reasonable analysis as a dot on the fold-change axis, coloured by call. A strip spread across the 2× line is a gene whose call depends on your choices.
-* **One choice at a time.** For each decision, a dot per option: change only that choice and see where the fold change lands.
-* **Your samples.** Each sample as a dot, by group. Click one to open its well and its curve: an outlier is a place to look, not yet a reason to remove it.
-* **What changes it, what it leans on, what to do** (after an audit): the choices that flip it, the control genes and samples it depends on, and what to check or fix.
-* **The Decision Cards that affect this gene**, **the assay and its wells** (efficiency, Cq range, undetermined wells), the **reference-gene stability** bars, and the Prism figure for this gene when it exists.
+* **What holds.** How often the same call comes out when the analysis is done another reasonable way, and a strip with every reasonable analysis as a dot on the fold-change axis, coloured by call. A switch, **Which analyses**, chooses between *qPilot's grid* (every combination of the Decision Cards' options) and *The audit* (every reasonable combination of the audit's eight decisions; shown once the audit has run). A strip spread across the 2× line is a gene whose call depends on your choices.
+* **One choice at a time.** For each decision, a dot per option, with every other choice as planned. A ringed dot changes the call on its own.
+* **Your samples.** Each sample's normalised value, relative to the mean of the rest, by group. Click a sample to open its well, its plate, its Cq, and badges such as "Leaving it out changes the call", "No Cq: never amplified" and "Flagged by LinRegPCR". An outlier is a place to look, not yet a reason to remove it.
+* **What changes it, what it leans on, what to do** (after an audit): the choices that flip it, the samples that change the call on their own, and what to check or fix.
+* **Decision Cards that affect this gene**, each marked "Can change the call alone" or "Does not change the call alone".
+* **Assay and wells** (efficiency, and after an audit the wells' Cq range and undetermined wells) and **Reference genes** (geNorm stability).
 
 ## 9. Audit
 
