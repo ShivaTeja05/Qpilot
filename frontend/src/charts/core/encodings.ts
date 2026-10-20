@@ -83,7 +83,7 @@ export const VERDICTS: Record<VerdictKey, Mark & { token: string }> = {
     label: "Depends on your choices",
     token: "v-depends",
   },
-  fragile: { shape: "cross", tone: "var(--v-fragile)", label: "Fragile", token: "v-fragile" },
+  fragile: { shape: "triangle", tone: "var(--v-fragile)", label: "Fragile", token: "v-fragile" },
   "check data first": {
     shape: "square-alert",
     tone: "var(--v-check)",
@@ -107,7 +107,7 @@ export const LEVELS: Record<LevelKey, Mark & { bars: number; token: string }> = 
   High: { shape: "circle", tone: "var(--l-high)", label: "High", bars: 4, token: "l-high" },
   Moderate: { shape: "half", tone: "var(--l-moderate)", label: "Moderate", bars: 3, token: "l-moderate" },
   Low: { shape: "ring", tone: "var(--l-low)", label: "Low", bars: 2, token: "l-low" },
-  "Very low": { shape: "triangle", tone: "var(--l-verylow)", label: "Very low", bars: 1, token: "l-verylow" },
+  "Very low": { shape: "cross", tone: "var(--l-verylow)", label: "Very low", bars: 1, token: "l-verylow" },
 };
 
 export function isLevel(v: unknown): v is LevelKey {

@@ -15,8 +15,8 @@ export function Tooltip({ tip, width }: { tip: Tip | null; width: number }) {
         top: Math.max(0, tip.y - 12),
       }}
     >
-      {value && <div className="tabular text-[13px] font-semibold">{value}</div>}
-      <div className={value ? "text-muted" : "font-semibold"}>{title}</div>
+      <div className="font-semibold">{title}</div>
+      {value && <div className="tabular text-[13px] font-medium">{value}</div>}
       {lines.filter(Boolean).map((l, i) => (
         <div key={i} className="text-muted">
           {l}

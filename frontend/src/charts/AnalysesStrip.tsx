@@ -77,14 +77,7 @@ export function AnalysesStrip({ rows, line, lineLabel, lower, higher, summary, c
   const counts = CALL_ORDER.map((c) => ({ c, n: rows.filter((d) => d.call === c).length })).filter((x) => x.n);
   const legend: LegendItem[] = [
     ...counts.map(({ c, n }) => ({ mark: CALLS[c], label: CALLS[c].label, count: n })),
-    {
-      swatch: (
-        <svg width="14" height="14" aria-hidden="true">
-          <circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--accent)" strokeWidth="2" />
-        </svg>
-      ),
-      label: "Your planned analysis",
-    },
+    { mark: { shape: "diamond", tone: "var(--accent)" }, label: "Your planned analysis" },
     ...(line ? [{ swatch: <LineSwatch dashed />, label: lineLabel ?? "Call line" }] : []),
   ];
 
@@ -124,8 +117,12 @@ export function AnalysesStrip({ rows, line, lineLabel, lower, higher, summary, c
             return (
               <g key={i} onPointerEnter={() => show(p.x, y, tipFor(d))}>
                 <circle cx={p.x} cy={y} r={Math.max(6, r + 2)} fill="transparent" />
-                <GlyphMark mark={CALLS[d.call]} x={p.x} y={y} r={on ? r + 1.5 : r} />
-                {(d.planned || on) && <circle cx={p.x} cy={y} r={r + 3.5} fill="none" stroke="var(--accent)" strokeWidth={2} />}
+                {d.planned ? (
+                  <GlyphMark mark={{ shape: "diamond", tone: "var(--accent)" }} x={p.x} y={y} r={r + 2} />
+                ) : (
+                  <GlyphMark mark={CALLS[d.call]} x={p.x} y={y} r={on ? r + 1.5 : r} />
+                )}
+                {on && <circle cx={p.x} cy={y} r={r + 4} fill="none" stroke="var(--accent)" strokeWidth={1.5} />}
               </g>
             );
           })}

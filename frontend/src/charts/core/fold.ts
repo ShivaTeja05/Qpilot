@@ -17,12 +17,10 @@ export interface FoldTick {
   label: string;
 }
 
-/** The label of a whole-number log2 tick: `1×`, `2×`, `16×`, `½×`, `¼×`, `1/8×`. */
+/** The label of a whole-number log2 tick: `1×`, `2×`, `16×`, `1/2×`, `1/4×`, `1/8×`. */
 export function foldTickLabel(k: number): string {
   if (k === 0) return "1×";
   if (k > 0) return `${2 ** k}×`;
-  if (k === -1) return "½×";
-  if (k === -2) return "¼×";
   return `1/${2 ** -k}×`;
 }
 

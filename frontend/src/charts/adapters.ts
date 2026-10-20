@@ -207,10 +207,10 @@ export type MapEncoding = "conclusion" | "level" | "verdict";
 
 /** The mark a results gene gets under an encoding (falls back to the conclusion). */
 export function geneMark(g: GeneRowLike, by: MapEncoding): Mark {
-  if (by === "level" && isLevel(g.level)) return LEVELS[g.level];
-  if (by === "verdict" && isVerdict(g.verdict)) return { ...VERDICTS[g.verdict], label: g.verdict_label ?? VERDICTS[g.verdict].label };
+  if (by === "level" && isLevel(g.level)) return { ...LEVELS[g.level], label: `Confidence: ${g.level}` };
+  if (by === "verdict" && isVerdict(g.verdict)) return { ...VERDICTS[g.verdict], label: `Audit: ${g.verdict_label ?? VERDICTS[g.verdict].label}` };
   const c = (["up", "down", "none"].includes(g.conclusion) ? g.conclusion : "none") as CallKey;
-  return CALLS[c];
+  return { ...CALLS[c], label: `Call: ${CALLS[c].label}` };
 }
 
 export function resultsMapPoints(genes: readonly GeneRowLike[], by: MapEncoding): MapPoint[] {

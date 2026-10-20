@@ -56,7 +56,7 @@ export function GenormBars({ m, order, cutoffM, v, cutoffV, used, differs, only 
     <div className="grid gap-6 lg:grid-cols-2">
       {only !== "v" && (
         <div className="min-w-0">
-          <h4 className="mb-1 text-[13px] font-semibold text-fg">Stability of each candidate (geNorm M)</h4>
+          <p className="mb-1 text-[13px] font-semibold text-fg">Stability of each candidate (geNorm M)</p>
           <HBars
             rows={mRows}
             valueHeader="geNorm M"
@@ -68,7 +68,7 @@ export function GenormBars({ m, order, cutoffM, v, cutoffV, used, differs, only 
       )}
       {only !== "m" && vRows.length > 0 && cutoffV != null && (
         <div className="min-w-0">
-          <h4 className="mb-1 text-[13px] font-semibold text-fg">Adding one more reference gene (geNorm V)</h4>
+          <p className="mb-1 text-[13px] font-semibold text-fg">Adding one more reference gene (geNorm V)</p>
           <HBars
             rows={vRows}
             valueHeader="geNorm V"

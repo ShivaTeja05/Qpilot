@@ -36,7 +36,7 @@ describe("numbers as the page writes them (docs/app.md §5)", () => {
 
 describe("the fold axis", () => {
   it("labels whole log2 steps in ×", () => {
-    expect([-4, -3, -2, -1, 0, 1, 2, 5].map(foldTickLabel)).toEqual(["1/16×", "1/8×", "¼×", "½×", "1×", "2×", "4×", "32×"]);
+    expect([-4, -3, -2, -1, 0, 1, 2, 5].map(foldTickLabel)).toEqual(["1/16×", "1/8×", "1/4×", "1/2×", "1×", "2×", "4×", "32×"]);
   });
   it("always shows 1× and both call lines", () => {
     const [lo, hi] = foldDomain([1.4, 1.9], 1);
@@ -50,7 +50,7 @@ describe("the fold axis", () => {
     const dense = foldTicks(-6, 6, 10, 44);
     const gaps = dense.slice(1).map((t, i) => (t.log2 - dense[i]!.log2) * 10);
     expect(Math.min(...gaps)).toBeGreaterThanOrEqual(44);
-    expect(foldTicks(-2, 2, 100).map((t) => t.label)).toEqual(["¼×", "½×", "1×", "2×", "4×"]);
+    expect(foldTicks(-2, 2, 100).map((t) => t.label)).toEqual(["1/4×", "1/2×", "1×", "2×", "4×"]);
   });
   it("says which side of the call lines a fold is on", () => {
     expect(sideOfLine(1.2, 1)).toBe("up");

@@ -77,14 +77,7 @@ export function Dumbbell({ rows, line, lineLabel, lower, higher, summary, captio
   });
 
   const legend: LegendItem[] = [
-    {
-      swatch: (
-        <svg width="14" height="14" aria-hidden="true">
-          <circle cx="7" cy="7" r="4.5" fill="var(--surface)" stroke="var(--text-muted)" strokeWidth="1.8" />
-        </svg>
-      ),
-      label: fromLabel,
-    },
+    { mark: { shape: "diamond", tone: "var(--accent)" }, label: fromLabel },
     { mark: CALLS.up, label: `${toLabel}: up` },
     { mark: CALLS.down, label: "down" },
     { mark: CALLS.none, label: "no call" },
@@ -138,7 +131,7 @@ export function Dumbbell({ rows, line, lineLabel, lower, higher, summary, captio
                   {r.gene}
                 </text>
                 <line x1={x0} x2={x1} y1={y} y2={y} stroke={changed ? "var(--text)" : "var(--line-strong)"} strokeWidth={2} strokeLinecap="round" />
-                <circle cx={x0} cy={y} r={4} fill="var(--surface)" stroke="var(--text-muted)" strokeWidth={1.8} />
+                <GlyphMark mark={{ shape: "diamond", tone: "var(--accent)" }} x={x0} y={y} r={4} />
                 <GlyphMark mark={CALLS[r.newCall]} x={x1} y={y} r={4.5} />
               </g>
             );

@@ -94,10 +94,10 @@ export function ChoiceDotPlot({ decisions, line, lineLabel, lower, higher, summa
     {
       swatch: (
         <svg width="14" height="14" aria-hidden="true">
-          <circle cx="7" cy="7" r="4.5" fill="var(--surface)" stroke="var(--text-muted)" strokeWidth="1.8" />
+          <circle cx="7" cy="7" r="4.5" fill="var(--surface)" stroke="var(--up)" strokeWidth="1.8" />
         </svg>
       ),
-      label: "Common shortcut (hollow)",
+      label: "Common shortcut (hollow, in its call's colour)",
     },
     {
       swatch: (
@@ -150,7 +150,7 @@ export function ChoiceDotPlot({ decisions, line, lineLabel, lower, higher, summa
               <g key={row.id}>
                 {ri > 0 && <line x1={0} x2={width} y1={TOP + ri * rowH} y2={TOP + ri * rowH} stroke="var(--line)" strokeOpacity={0.6} />}
                 {narrow ? (
-                  <text x={2} y={TOP + ri * rowH + 15} fontSize={12} fill="var(--text)" fontWeight={n ? 600 : 400}>
+                  <text x={2} y={TOP + ri * rowH + 15} fontSize={12} fill="var(--text)" fontWeight={n ? 600 : 400} stroke="var(--surface)" strokeWidth={4} paintOrder="stroke">
                     {row.name}
                     {sub && (
                       <tspan fill="var(--warn)" fontWeight={400}>
@@ -161,11 +161,11 @@ export function ChoiceDotPlot({ decisions, line, lineLabel, lower, higher, summa
                   </text>
                 ) : (
                   <>
-                    <text x={0} y={centre + (sub ? -2 : 4)} fontSize={12} fill="var(--text)" fontWeight={n ? 600 : 400}>
+                    <text x={0} y={centre + (sub ? -2 : 4)} fontSize={12} fill="var(--text)" fontWeight={n ? 600 : 400} stroke="var(--surface)" strokeWidth={4} paintOrder="stroke">
                       {row.name}
                     </text>
                     {sub && (
-                      <text x={0} y={centre + 12} fontSize={11} fill="var(--warn)">
+                      <text x={0} y={centre + 12} fontSize={11} fill="var(--warn)" stroke="var(--surface)" strokeWidth={4} paintOrder="stroke">
                         {sub}
                       </text>
                     )}

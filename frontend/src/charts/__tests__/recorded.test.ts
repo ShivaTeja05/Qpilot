@@ -99,7 +99,7 @@ describe("results → chart props", () => {
       expect(pts).toHaveLength(Object.keys(results.contrasts).length);
     }
     const lv = resultsMapPoints(rows, "level");
-    expect(new Set(lv.map((p) => p.mark.label))).toEqual(new Set(rows.map((r) => r.level)));
+    expect(new Set(lv.map((p) => p.mark.label))).toEqual(new Set(rows.map((r) => `Confidence: ${r.level}`)));
   });
   it("flip matrix ranks the genes that flip most first", () => {
     const dims = Object.keys(Object.values(results.robustness)[0]!.impact).map((id) => ({ id }));

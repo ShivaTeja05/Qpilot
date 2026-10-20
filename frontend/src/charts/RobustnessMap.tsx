@@ -51,7 +51,7 @@ export interface RobustnessMapProps {
   onSelect?: (gene: string) => void;
 }
 
-const M = { top: 30, right: 18, left: 46 };
+const M = { top: 40, right: 18, left: 46 };
 
 export function RobustnessMap(props: RobustnessMapProps) {
   const { points, line, lineLabel, lower, higher, legend, summary, caption, controls, selected, highlight, holdsLine, extraColumns = [], onSelect } = props;
@@ -149,8 +149,8 @@ export function RobustnessMap(props: RobustnessMapProps) {
                 </text>
               </g>
             ))}
-            <text x={0} y={M.top - 16} fontSize={11} fill="var(--text-muted)">
-              Same call in … of reasonable analyses
+            <text x={0} y={12} fontSize={11} fill="var(--text-muted)">
+              Share of reasonable analyses with the same call
             </text>
             {holdsLine && holdsLine.share >= yMin && (
               <g>
