@@ -28,7 +28,8 @@ function show(head: string | null, disabledReason?: string) {
 describe("ExportCard", () => {
   it("shows the latest record in full: download, files, the server's warnings, where it is kept", () => {
     show(latest.chain_head);
-    const link = screen.getByRole("link", { name: new RegExp(`Download ${latest.download.name}`) });
+    const link = screen.getByRole("link", { name: /^Download the record/ });
+    expect(screen.getByText(latest.download.name)).toBeTruthy();
     expect(link.getAttribute("href")).toBe(latest.download.url);
     expect(link.getAttribute("download")).toBe(latest.download.name);
     expect(screen.getByText("same as the timeline")).toBeTruthy();
