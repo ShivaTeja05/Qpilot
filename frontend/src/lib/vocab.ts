@@ -19,26 +19,99 @@ export type StageName = Schemas["StageView"]["stage"];
 export type Proposal = Schemas["Proposal"];
 export type CheckStatus = Schemas["ProposalCheck"]["status"];
 
-export const CONCLUSION: Record<Conclusion, { glyph: string; word: string; long: string }> = {
-  up: { glyph: "▲", word: "up", long: "called up" },
-  down: { glyph: "▼", word: "down", long: "called down" },
-  none: { glyph: "—", word: "no call", long: "no change called" },
-};
+/**
+ * A mark: a shape, a colour token and a word, so meaning is never carried by colour alone
+ * (docs/app.md §5). Drawn by `Glyph` / `GlyphMark` from `@/ui` in tags, legends and charts.
+ */
+export type Shape =
+  | "circle"
+  | "half"
+  | "diamond"
+  | "triangle"
+  | "square-alert"
+  | "ring"
+  | "up"
+  | "down"
+  | "dash"
+  | "cross";
 
-/** A conclusion from any spelling the engine or the audit uses ("no call", "none", "ns"). */
+export interface Mark {
+  shape: Shape;
+  /** A CSS colour from the tokens (`var(--up)`), never a raw hex. */
+  tone: string;
+  /** The word the mark stands for ("Up", "Fragile", "Moderate"). */
+  label: string;
+}
+
+// ---- conclusions (qPilot's call rule: up or down only if p < 0.05 and at least 2-fold) --------
+
+export const CONCLUSION: Record<
+  Conclusion,
+  Mark & { glyph: string; word: string; long: string; token: string }
+> = {
+  up: {
+    shape: "up",
+    tone: "var(--up)",
+    label: "Up",
+    glyph: "▲",
+    word: "up",
+    long: "called up",
+    token: "up",
+  },
+  down: {
+    shape: "down",
+    tone: "var(--down)",
+    label: "Down",
+    glyph: "▼",
+    word: "down",
+    long: "called down",
+    token: "down",
+  },
+  none: {
+    shape: "dash",
+    tone: "var(--none)",
+    label: "No call",
+    glyph: "—",
+    word: "no call",
+    long: "no change called",
+    token: "none",
+  },
+};
+export const CONCLUSIONS: Conclusion[] = ["up", "down", "none"];
+
+/**
+ * A conclusion from any spelling the engine or the audit uses: "up", "down", "none", "no call",
+ * "called up (higher in …)", "called down", "no change called".
+ */
 export function asConclusion(value: unknown): Conclusion {
-  const v = String(value ?? "").toLowerCase();
-  if (v === "up") return "up";
-  if (v === "down") return "down";
+  const v = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (v === "up" || v.startsWith("called up")) return "up";
+  if (v === "down" || v.startsWith("called down")) return "down";
   return "none";
 }
 
+// ---- confidence levels (ordinal, never a probability) -----------------------------------------
+
 export const LEVELS: Level[] = ["High", "Moderate", "Low", "Very low"];
-export const LEVEL: Record<Level, { bars: number; token: string }> = {
-  High: { bars: 4, token: "l-high" },
-  Moderate: { bars: 3, token: "l-moderate" },
-  Low: { bars: 2, token: "l-low" },
-  "Very low": { bars: 1, token: "l-verylow" },
+export const LEVEL: Record<Level, Mark & { bars: number; token: string }> = {
+  High: { shape: "circle", tone: "var(--l-high)", label: "High", bars: 4, token: "l-high" },
+  Moderate: {
+    shape: "half",
+    tone: "var(--l-moderate)",
+    label: "Moderate",
+    bars: 3,
+    token: "l-moderate",
+  },
+  Low: { shape: "ring", tone: "var(--l-low)", label: "Low", bars: 2, token: "l-low" },
+  "Very low": {
+    shape: "cross",
+    tone: "var(--l-verylow)",
+    label: "Very low",
+    bars: 1,
+    token: "l-verylow",
+  },
 };
 
 export function asLevel(value: unknown): Level | null {
@@ -48,7 +121,9 @@ export function asLevel(value: unknown): Level | null {
   return LEVELS.find((l) => l.toLowerCase() === v) ?? null;
 }
 
-/** The audit's six verdicts: glyph shape + word (never colour alone). */
+// ---- the audit's verdicts ---------------------------------------------------------------------
+
+/** The audit's six verdicts, in reading order (best first). */
 export const VERDICTS: Verdict[] = [
   "solid",
   "holds with caveats",
@@ -57,19 +132,48 @@ export const VERDICTS: Verdict[] = [
   "check data first",
   "no call",
 ];
-export type VerdictShape = "disc" | "half" | "diamond" | "cross" | "alert" | "ring";
-export const VERDICT: Record<Verdict, { label: string; token: string; shape: VerdictShape }> = {
-  solid: { label: "Solid", token: "v-solid", shape: "disc" },
-  "holds with caveats": { label: "Holds with caveats", token: "v-caveats", shape: "half" },
+/** The verdicts most urgent first (qsim.verdict.ORDER): for queues and strips. */
+export const VERDICT_ORDER: Verdict[] = [
+  "check data first",
+  "fragile",
+  "depends on your choices",
+  "holds with caveats",
+  "solid",
+  "no call",
+];
+/** Each verdict's mark (the old audit page's shapes) and token. */
+export const VERDICT: Record<Verdict, Mark & { token: string }> = {
+  solid: { shape: "circle", tone: "var(--v-solid)", label: "Solid", token: "v-solid" },
+  "holds with caveats": {
+    shape: "half",
+    tone: "var(--v-caveats)",
+    label: "Holds with caveats",
+    token: "v-caveats",
+  },
   "depends on your choices": {
+    shape: "diamond",
+    tone: "var(--v-depends)",
     label: "Depends on your choices",
     token: "v-depends",
-    shape: "diamond",
   },
-  fragile: { label: "Fragile", token: "v-fragile", shape: "cross" },
-  "check data first": { label: "Check data first", token: "v-check", shape: "alert" },
-  "no call": { label: "No change called", token: "v-nocall", shape: "ring" },
+  fragile: { shape: "triangle", tone: "var(--v-fragile)", label: "Fragile", token: "v-fragile" },
+  "check data first": {
+    shape: "square-alert",
+    tone: "var(--v-check)",
+    label: "Check data first",
+    token: "v-check",
+  },
+  "no call": {
+    shape: "ring",
+    tone: "var(--v-nocall)",
+    label: "No change called",
+    token: "v-nocall",
+  },
 };
+
+export function isVerdict(v: unknown): v is Verdict {
+  return typeof v === "string" && v in VERDICT;
+}
 
 export function asVerdict(value: unknown): Verdict | null {
   const v = String(value ?? "")

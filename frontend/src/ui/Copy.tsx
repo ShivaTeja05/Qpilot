@@ -91,19 +91,19 @@ export function Hash({
   className?: string;
 }) {
   const [copied, copy] = useCopied();
-  if (!value) return <span className={cn("font-mono text-faint", className)}>—</span>;
+  if (!value) return <span className={cn("font-mono text-muted", className)}>—</span>;
   return (
     <Tooltip content={copied ? "Copied" : <span className="font-mono break-all">{value}</span>}>
       <button
         type="button"
         onClick={() => copy(value)}
-        aria-label={`${prefix ? `${String(prefix)} ` : ""}${value} (copy)`}
+        aria-label={`${prefix ? `${String(prefix)} ` : ""}${shortHash(value, length)}, copy the full value`}
         className={cn(
           "inline-flex items-center gap-1 rounded px-1 font-mono text-[12px] text-muted transition-colors hover:bg-bg-subtle hover:text-fg",
           className,
         )}
       >
-        {prefix ? <span className="font-sans text-faint">{prefix}</span> : null}
+        {prefix ? <span className="font-sans text-muted">{prefix}</span> : null}{" "}
         {shortHash(value, length)}
         {copied ? <Check className="size-3 text-ok" aria-hidden /> : null}
       </button>
