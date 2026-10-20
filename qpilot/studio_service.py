@@ -104,6 +104,10 @@ STALE_CHOICES = (
     "its consequence was computed at analysis choices that have changed since; export again "
     "and send the tables back from the new project"
 )
+NOT_CHECKED = (
+    "not checked yet: “Check connection” sends one short request to {provider}; qPilot never "
+    "contacts a remote model just to show its status"
+)
 STALE_EXPORT = "its consequence belongs to a bundle that was not sent to Prism from this session"
 
 
@@ -203,7 +207,7 @@ class Studio:
                 self._client = ModelClient(backend=backend)
         return self._client
 
-    def model_status(self) -> dict[str, Any]:
+    def model_status(self, check: bool = False) -> dict[str, Any]:
         """Which model Studio uses, whether it answers, and whether anything leaves this machine.
 
         ``available`` is True only when a model is configured and answered a one-token request.
@@ -214,10 +218,11 @@ class Studio:
         A real call's outcome counts too. When the model is not available, ``reason`` says why
         (not configured or misconfigured, the endpoint refused or timed out, an HTTP error such
         as a model that is not pulled), so a down local model is never shown as working, nor as
-        "no model".
+        "no model". A remote model is asked only with ``check`` (the person's "Check
+        connection"); otherwise its last known answer is returned and nothing leaves the machine.
         """
         local = self._local()
-        answers, reason = self._answers()
+        answers, reason = self._answers(ask=local or check)
         configured = bool(self.client.available)
         return {
             "provider": self.client.provider,
@@ -225,7 +230,7 @@ class Studio:
             "available": configured and answers is True,
             "configured": configured,
             "answers": answers,
-            "checking": configured and answers is None,
+            "checking": configured and answers is None and (local or check),
             "misconfigured": self._not_configured is not None,
             "reason": reason,
             "local": local,
@@ -252,7 +257,7 @@ class Studio:
         """The model configuration a ping answer belongs to: provider, model, endpoint."""
         return str(self.client.provider), self.client.model, self._endpoint()
 
-    def _answers(self) -> tuple[bool | None, str | None]:
+    def _answers(self, ask: bool = True) -> tuple[bool | None, str | None]:
         """Whether the model answers a one-token request, and why not (None: not known yet).
 
         The request runs on a background thread, at most once per :data:`PING_TTL_S` for each
@@ -266,6 +271,12 @@ class Studio:
             return True, None
         key = self._model_key()
         waiting: threading.Thread | None = None
+        if not ask:  # a remote model is never contacted just to show its status
+            with self._ping_lock:
+                known = self._pings.get(key)
+                if known is not None and known.at is not None:
+                    return known.answers, known.reason
+            return None, NOT_CHECKED.format(provider=client.provider)
         with self._ping_lock:
             ping = self._pings.setdefault(key, _Ping())
             due = ping.at is None or time.monotonic() - ping.at > PING_TTL_S

@@ -1,0 +1,136 @@
+{
+  "id": "16539c5cc32e4d2f",
+  "kind": "ask",
+  "title": "Answering “What if I normalise to HMBS alone?”",
+  "key": "bc1d233e3866",
+  "status": "done",
+  "step": "Reading the audit",
+  "fraction": null,
+  "typical_s": 1.0,
+  "elapsed_s": 0.02,
+  "result": {
+    "question": "What if I normalise to HMBS alone?",
+    "answer": "With normalise to 1 reference gene: HMBS, ODC1 goes from 3.32× (up) to 2.52× (up); BIRC5 goes from 4.01× (up) to 2.97× (up); NTRK1 goes from 15.04× (down) to 21.35× (down); NM23A goes from 2.19× (up) to 1.62× (no call). Overall 17 of 58 calls change.",
+    "engine": "audit",
+    "tool": "whatif",
+    "args": {
+      "changes": {
+        "refs": "HMBS"
+      }
+    },
+    "tool_words": "a live what-if run of the audit's engine",
+    "routed_by": "rules",
+    "routed_words": "fixed reading rules",
+    "written_by": "template",
+    "writer_words": "the engine's checked template",
+    "provider": "none",
+    "model": null,
+    "facts": [
+      {
+        "id": "f_changes",
+        "meaning": "the choices changed",
+        "value": "normalise to 1 reference gene: HMBS"
+      },
+      {
+        "id": "f_n_changed",
+        "meaning": "number of genes whose call changes",
+        "value": "17"
+      },
+      {
+        "id": "f_n_genes",
+        "meaning": "number of genes compared",
+        "value": "58"
+      },
+      {
+        "id": "f_g1_base",
+        "meaning": "ODC1 fold change at baseline",
+        "value": "3.32×"
+      },
+      {
+        "id": "f_g1_new",
+        "meaning": "ODC1 fold change with the new choices",
+        "value": "2.52×"
+      },
+      {
+        "id": "f_g1_call",
+        "meaning": "ODC1 call with the new choices",
+        "value": "up"
+      },
+      {
+        "id": "f_g1_base_call",
+        "meaning": "ODC1 call at baseline",
+        "value": "up"
+      },
+      {
+        "id": "f_g2_base",
+        "meaning": "BIRC5 fold change at baseline",
+        "value": "4.01×"
+      },
+      {
+        "id": "f_g2_new",
+        "meaning": "BIRC5 fold change with the new choices",
+        "value": "2.97×"
+      },
+      {
+        "id": "f_g2_call",
+        "meaning": "BIRC5 call with the new choices",
+        "value": "up"
+      },
+      {
+        "id": "f_g2_base_call",
+        "meaning": "BIRC5 call at baseline",
+        "value": "up"
+      },
+      {
+        "id": "f_g3_base",
+        "meaning": "NTRK1 fold change at baseline",
+        "value": "15.04×"
+      },
+      {
+        "id": "f_g3_new",
+        "meaning": "NTRK1 fold change with the new choices",
+        "value": "21.35×"
+      },
+      {
+        "id": "f_g3_call",
+        "meaning": "NTRK1 call with the new choices",
+        "value": "down"
+      },
+      {
+        "id": "f_g3_base_call",
+        "meaning": "NTRK1 call at baseline",
+        "value": "down"
+      },
+      {
+        "id": "f_g4_base",
+        "meaning": "NM23A fold change at baseline",
+        "value": "2.19×"
+      },
+      {
+        "id": "f_g4_new",
+        "meaning": "NM23A fold change with the new choices",
+        "value": "1.62×"
+      },
+      {
+        "id": "f_g4_call",
+        "meaning": "NM23A call with the new choices",
+        "value": "no call"
+      },
+      {
+        "id": "f_g4_base_call",
+        "meaning": "NM23A call at baseline",
+        "value": "up"
+      }
+    ],
+    "validated": true,
+    "note": null,
+    "status": null,
+    "card_id": null,
+    "focus": null,
+    "autonomy": "suggest",
+    "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
+    "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
+  },
+  "result_type": null,
+  "error": null
+}

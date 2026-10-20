@@ -26,7 +26,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import type { JobView } from "@/api/client";
+import { ApiError, type JobView } from "@/api/client";
 import { useJob } from "@/api/jobs";
 import { cn } from "@/lib/cn";
 import { relativeTime } from "@/lib/format";
@@ -144,6 +144,11 @@ const STATUS_TONE: Record<Proposal["status"], Tone> = {
   rejected: "neutral",
   superseded: "neutral",
 };
+
+/** "Not done" for a refusal; the panel's own heading for a stale view, a lost key or no server. */
+function errorTitle(error: unknown): string | undefined {
+  return error instanceof ApiError && (error.stale || error.needsKey || error.code === "offline") ? undefined : "Not done";
+}
 
 /** A `{matters: bool|null}` job result (or a bare boolean) → the answer. */
 function readMatters(result: unknown): boolean | null | undefined {
@@ -633,7 +638,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   />
                 </>
               ) : null}
-              {error ? <ErrorPanel error={error} compact title="Not done" /> : null}
+              {error ? <ErrorPanel error={error} compact title={errorTitle(error)} /> : null}
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant={mode === "reject" ? "danger" : "primary"}
@@ -682,7 +687,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   <Kbd>a</Kbd> accept <Kbd>e</Kbd> edit <Kbd>x</Kbd> reject
                 </span>
               ) : null}
-              {error && !mode ? <ErrorPanel error={error} compact title="Not done" className="w-full" /> : null}
+              {error && !mode ? <ErrorPanel error={error} compact title={errorTitle(error)} className="w-full" /> : null}
             </div>
           )
         ) : null}

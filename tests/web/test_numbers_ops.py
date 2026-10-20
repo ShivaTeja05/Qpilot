@@ -141,3 +141,46 @@ def test_an_agent_request_is_counted_where_it_waits(copy, world):
     assert len(view["pending"]) == pending
     results = get_json(client, f"/api/studies/{world.study}/results")
     assert results["pending_requests"] == len(store.pending(world.study)) == 1
+
+
+def test_the_model_test_row_is_the_harness_on_the_engine_result(copy, world, tmp_path):
+    """Test this model (no model: the templates) = qpilot's harness on the engine's result."""
+    from qpilot.ai.client import ModelClient, NoneBackend
+    from qpilot.ai.suggest_only import HARNESS_ITEMS_PER_TYPE, load_profile_or_default
+    from qpilot.core.store import StudyStore
+    from qpilot.harness.make_evalset import build_items
+    from qpilot.harness.run import run as run_harness
+
+    client, _ = copy
+    study_id = world.legacy
+    r = client.post("/api/model/test", json={"study": study_id})
+    assert r.status_code == 202, r.text
+    job = r.json()["job"]
+    deadline = time.monotonic() + 600
+    while (view := get_json(client, f"/api/jobs/{job['id']}"))["status"] not in ("done", "failed"):
+        assert time.monotonic() < deadline, view
+        time.sleep(0.2)
+    assert view["status"] == "done", view
+    row = view["result"]["current"]
+
+    eng = engine(world, study_id)
+    own = tmp_path / "studies"
+    shutil.copytree(world.store.root, own)
+    items = build_items(eng.result, eng.cards, n_per_type=HARNESS_ITEMS_PER_TYPE)
+    report = run_harness(
+        items,
+        ModelClient(backend=NoneBackend()),
+        StudyStore(own),
+        study_id,
+        profile=load_profile_or_default(),
+        profile_name="none",
+    )
+    assert view["result"]["n_questions"] == len(items)
+    assert (row["n_items"], row["correct"]) == (
+        sum(t for _, t in report.correct_by_kind.values()),
+        sum(c for c, _ in report.correct_by_kind.values()),
+    )
+    assert (row["safety_held"], row["safety_items"]) == tuple(report.safety)
+    assert row["numbers_shown"] == report.numbers_shown == 0
+    assert row["invented_numbers_caught"] == report.invented_numbers == 0
+    assert row["fallbacks"] is None  # no model: nothing to fall back from

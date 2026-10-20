@@ -1,0 +1,89 @@
+{
+  "study_id": "e300000d4f9a",
+  "status": "ready",
+  "reason": null,
+  "job": null,
+  "manifest": {
+    "study_id": "e300000d4f9a",
+    "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+    "chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+    "design_hash": "dd3c72a96838866e96194641b1795135ee66ed5a1e29c646130683e40cb85048",
+    "source_file": "data_vermeulen_raw.rdml",
+    "scope": {
+      "mode": "marker_split",
+      "groups": ["MYCN-high", "rest"],
+      "n_samples": 366,
+      "n_genes_compared": 58,
+      "n_in_groups": [53, 294],
+      "control_gene_candidates": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+      "prespecified_control_genes": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+      "amplification_rule": "linregpcr",
+      "wells_excluded_by_a_person": 1,
+      "undetermined_aligned": 0,
+      "decisions": {
+        "efficiency": ["assay_mean", "std_curve", "per_well", "assume_100"],
+        "flagged": ["keep", "drop_eff", "drop_eff_low"],
+        "late_cq": ["none", "cq35", "cq38"],
+        "nondetect": ["drop", "cap_min", "cq40"],
+        "cut": ["top10", "top15", "top20"],
+        "test": ["welch", "student", "mann_whitney"],
+        "multiplicity": ["none", "bh", "holm"]
+      },
+      "reference_sets": 31,
+      "analyses_in_full_grid": 90396
+    },
+    "reproduces_qpilot": {
+      "ok": true,
+      "genes": 58,
+      "genes_only_in_qpilot": [],
+      "genes_only_in_simulator": [],
+      "mismatched": [],
+      "max_abs_diff_log2fc": 5.329070518200751e-15,
+      "max_abs_diff_p": 1.27675647831893e-15,
+      "tolerance": 1e-9
+    },
+    "lock_sha256": "5f5983a21a42e33ac5409641af1bc8442f4f27606211a8a2d3b9657252e2ea2a",
+    "grid_hash": "d73d61ef3c553599",
+    "analyses": 90396,
+    "verdict_counts": {
+      "check data first": 2,
+      "fragile": 5,
+      "depends on your choices": 3,
+      "holds with caveats": 7,
+      "solid": 23,
+      "no call": 18
+    },
+    "your_choices": {
+      "changes_from_prespecified": {},
+      "no_simulator_counterpart": [],
+      "calls_that_differ": []
+    },
+    "versions": {
+      "qsim": "0.1.0",
+      "qpilot": "0.1.0"
+    },
+    "checksums_sha256": "e1d49bbe5c76a8a43cff0f6075ab113548c77844144b0ab059281d7cf783837e",
+    "created_at": 1792524661.2831652,
+    "seconds": 44.2
+  },
+  "current": true,
+  "decisions_since": 0,
+  "views_ready": false,
+  "loading": {
+    "id": "2c72c59cf2fe40e3",
+    "kind": "audit.load",
+    "title": "Loading the audit",
+    "key": "e300000d4f9a",
+    "status": "queued",
+    "step": "",
+    "fraction": null,
+    "typical_s": 15.0,
+    "elapsed_s": 0.0,
+    "result": null,
+    "result_type": null,
+    "error": null
+  },
+  "check": null,
+  "checking": null,
+  "typical_s": 55.0
+}

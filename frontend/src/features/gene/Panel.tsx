@@ -19,7 +19,8 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <Card as="section" aria-labelledby={`${id}-title`} id={id} className={cn("scroll-mt-6", className)}>
+    // tabIndex -1: the page's jump list moves focus here (not into the tab order).
+    <Card as="section" aria-labelledby={`${id}-title`} id={id} tabIndex={-1} className={cn("scroll-mt-6 outline-none", className)}>
       <CardHeader id={`${id}-title`} title={title} hint={hint} actions={actions} />
       <CardBody>{children}</CardBody>
     </Card>

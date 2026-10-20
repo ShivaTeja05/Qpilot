@@ -9,6 +9,8 @@ audit, Prism and record routes are checked as they land.
 
 from __future__ import annotations
 
+import pytest
+
 from qpilot.mcp_server import QpilotTools
 from tests.web.conftest import wait_job
 from tests.web.test_ask import CAP
@@ -79,26 +81,26 @@ def test_undo_and_turn_down_with_an_old_head_write_nothing(walked):
     assert r.status_code == 200 and not store.pending(study)
 
 
-# ---- the page's own question does not make it stale (P26) ------------------------------------
+# ---- the page's Ask never writes; a person decides next (P10, P26, RT-UI-017) -----------------
 
 
-def test_a_decision_right_after_ask_is_not_stale(walked):
-    c, study = walked["client"], walked["study"]
+@pytest.mark.parametrize("autonomy", ["suggest", "decide_and_tell"])
+def test_ask_never_writes_and_leads_to_the_card(walked, autonomy):
+    c, study, store = walked["client"], walked["study"], walked["store"]
+    assert c.put("/api/settings", json={"autonomy": autonomy}).status_code == 200
     before = c.get(f"/api/studies/{study}/cards").json()["head"]
+    files = decision_files(store)
     r = c.post(f"/api/studies/{study}/ask", json={"question": CAP})
     assert r.status_code == 202, r.text
     answer = wait_job(c, r.json()["job"])["result"]
-    assert answer["status"] == "pending_human", "Suggest mode: the model only asks"
-    assert answer["head_before"] == before and answer["head_after"] != before
+    assert decision_files(store) == files and store.chain_head(study) == before, "Ask wrote"
+    assert not store.pending(study) and store.card(study, CARD).decision == "drop"
+    assert answer["focus"] == f"card:{CARD}", "the answer leads the person to the card"
 
-    # the page re-reads after its own question (live events), then decides: accepted
-    now = c.get(f"/api/studies/{study}/cards").json()["head"]
-    assert now == answer["head_after"]
-    r = post(c, study, CARD, "decide", option="cap", reason="yes, cap them", expected_head=now)
+    # the person decides on the card, with the head the page already had: not stale
+    r = post(c, study, CARD, "decide", option="cap", reason="yes, cap them", expected_head=before)
     assert r.status_code == 200 and r.json()["outcome"]["status"] == "applied"
-    # a page that did not re-read is told, and nothing is written
-    r = post(c, study, CARD, "decide", option="drop", reason="old view", expected_head=before)
-    assert r.status_code == 409 and r.json()["error"]["code"] == "stale"
+    assert store.entries(study)[-1].actor == "human"
 
 
 # ---- text a person types comes back as data (P12) --------------------------------------------

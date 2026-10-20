@@ -11,18 +11,22 @@ from __future__ import annotations
 import hashlib
 import shutil
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, File, Form, UploadFile
 
 from qpilot.core.store import StudyNotFound
 from qpilot.studio_service import StudioError
 from qpilot.web import studio_views, views
-from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session, is_study
+from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session
 from qpilot.web.contract import (
+    DemoFetched,
     JobStarted,
     JobView,
+    OpenDone,
     ProposalList,
+    WarmAllDone,
+    WarmDone,
     WorkspaceList,
     WorkspaceView,
 )
@@ -30,6 +34,12 @@ from qpilot.web.jobs import JobError, Progress
 from qpilot.web.routers.system import demo_info
 
 router = APIRouter(tags=["workspaces"])
+JOB_RESULTS = {
+    "open": OpenDone,
+    "demo.fetch": DemoFetched,
+    "warm": WarmDone,
+    "warm.all": WarmAllDone,
+}
 
 MAX_SHEET_BYTES = 20 * 1024 * 1024
 MAX_RDML_BYTES = 200 * 1024 * 1024
@@ -44,7 +54,11 @@ def _jobs(ctx: AppContext, key: str) -> list[JobView]:
 @router.get("/workspaces", response_model=WorkspaceList)
 def list_workspaces(ctx: Ctx) -> WorkspaceList:
     """Every Studio session and every study analysed outside one, newest first."""
-    return WorkspaceList(workspaces=views.workspaces(ctx.studio))
+    from qpilot.web.warm import warm_session
+
+    return WorkspaceList(
+        workspaces=views.workspaces(ctx.studio, warm=lambda sid: warm_session(ctx, sid))
+    )
 
 
 async def _keep(ctx: AppContext, upload: UploadFile, kind: str, limit: int) -> Path:
@@ -73,18 +87,25 @@ async def _keep(ctx: AppContext, upload: UploadFile, kind: str, limit: int) -> P
         kept = folder / f"{digest.hexdigest()[:24]}{suffix}"
         if not kept.exists():
             shutil.move(str(tmp), kept)
+        views.remember_name(kept, name)
         return kept
     finally:
         tmp.unlink(missing_ok=True)
 
 
 def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) -> JobView:
+    """Open as a job, named by the file the person dropped; one job per file (and sheet)."""
+    name = views.display_name(rdml) or rdml.name
+
     def work(progress: Progress) -> dict[str, Any]:
-        progress("Reading the file and quarantining every name")
+        progress(f"Reading {name} and quarantining every name")
         try:
             sid = ctx.studio.open(rdml, sheet, actor="human")
-        except (StudioError, ValueError, OSError) as err:
-            raise JobError("cannot_open", str(err)) from err
+        except Exception as err:  # any reader failure is a sentence about the person's file
+            text = str(err).replace(str(rdml), name).replace(rdml.name, name).strip()
+            raise JobError(
+                "cannot_open", f"{name} could not be opened: {text or type(err).__name__}"
+            ) from err
         if sentence:
             with ctx.lock:
                 ctx.settings.setdefault("sentences", {})[sid] = sentence[: views.MAX_SENTENCE]
@@ -92,7 +113,12 @@ def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) ->
         return {"key": sid}
 
     job = ctx.jobs.submit(
-        "open", work, title=f"Opening {rdml.name}", key=None, typical_s=OPEN_TYPICAL_S
+        "open",
+        work,
+        title=f"Opening {name}",
+        key=None,
+        typical_s=OPEN_TYPICAL_S,
+        tag=f"{rdml}|{sheet or ''}",
     )
     return JobView(**job.view())
 
@@ -150,17 +176,20 @@ def get_session(sid: str, ctx: Ctx) -> WorkspaceView:
     if not is_session(ctx.store, sid):
         raise api_error(404, "not_found", "There is no Studio session with this id.")
     from qpilot.web.routers.studio import ensure_analysis
+    from qpilot.web.warm import ready
 
-    ensure_analysis(ctx, sid)  # confirmed but not analysed yet (e.g. after a restart)
-    return views.session_view(ctx.studio, sid, _jobs(ctx, sid))
+    warm = ready(ctx, sid)  # a cold file is read in the background; the frame never waits long
+    if warm:
+        ensure_analysis(ctx, sid)  # confirmed but not analysed yet (e.g. after a restart)
+    return views.session_view(ctx.studio, sid, _jobs(ctx, sid), ready=warm)
 
 
 @router.get("/studies/{study_id}", response_model=WorkspaceView)
 def get_study(study_id: str, ctx: Ctx) -> WorkspaceView:
     """A study's frame (a study analysed outside a Studio session, or a session's study)."""
-    check_key(study_id)
-    if not is_study(ctx.store, study_id):
-        raise api_error(404, "not_found", "There is no analysed study with this id.")
+    from qpilot.web.routers.results import study
+
+    study(ctx, study_id)  # 404, or 403 blind for a session's study while it is blind
     return views.study_view(ctx.store, study_id, _jobs(ctx, study_id))
 
 
@@ -169,7 +198,7 @@ def list_proposals(
     sid: str,
     ctx: Ctx,
     stage: str | None = None,
-    status: str | None = None,
+    status: Literal["proposed", "accepted", "edited", "rejected", "superseded"] | None = None,
 ) -> ProposalList:
     """A stage's inbox (or every stage's): contradicted first, then cannot-check, then rest."""
     check_key(sid)
@@ -177,6 +206,11 @@ def list_proposals(
         raise api_error(400, "bad_stage", f"There is no stage {stage!r}.")
     if not is_session(ctx.store, sid):
         raise api_error(404, "not_found", "There is no Studio session with this id.")
+    from qpilot.web.routers.studio import file_or_409
+    from qpilot.web.warm import require
+
+    file_or_409(ctx, sid)
+    require(ctx, sid)
     try:
         proposals = ctx.studio.inbox(sid, stage, status)
         head = ctx.studio.head(sid)
