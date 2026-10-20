@@ -149,3 +149,13 @@ def test_the_demo_is_the_documented_size(world):
 def test_every_workspace_has_its_own_key(listed):
     keys = [w["key"] for kind in listed.values() for w in kind]
     assert len(keys) == len(set(keys)), sorted(k for k in keys if keys.count(k) > 1)
+
+
+def test_the_demo_download_is_the_cached_file(api):
+    """/api/system's demo bytes and SHA-256 are the cached file's own (the Open page says them)."""
+    import hashlib
+
+    demo = get_json(api, "/api/system")["demo"]
+    assert demo["cached"] is True
+    assert demo["bytes"] == DEMO_RDML.stat().st_size
+    assert demo["sha256"] == hashlib.sha256(DEMO_RDML.read_bytes()).hexdigest()

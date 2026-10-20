@@ -240,3 +240,5 @@ def test_the_model_test_row_is_the_harness_on_the_engine_result(copy, world, tmp
     assert row["numbers_shown"] == report.numbers_shown == 0
     assert row["invented_numbers_caught"] == report.invented_numbers == 0
     assert row["fallbacks"] is None  # no model: nothing to fall back from
+    saved = get_json(client, f"/api/model/scorecards?study={study_id}")
+    assert [r for r in saved["saved"] if r["profile"] == row["profile"]] == [row]
