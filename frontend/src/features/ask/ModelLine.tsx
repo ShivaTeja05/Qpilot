@@ -20,9 +20,8 @@ export function ModelLine({
   let text: string;
   let detail: string | null = null;
   if (!model.configured) {
-    text = "No model configured.";
-    detail =
-      "qPilot's templates answer questions about genes and the study; the words are fixed, the numbers are the engine's.";
+    text = "No model configured:";
+    detail = "qPilot's templates write the answers.";
   } else if (model.misconfigured) {
     tone = "warn";
     text = `The model settings are incomplete${model.reason ? `: ${model.reason}` : ""}.`;

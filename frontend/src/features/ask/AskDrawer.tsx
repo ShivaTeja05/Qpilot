@@ -83,7 +83,7 @@ function BlindNotice({ workspace }: { workspace: Schemas["WorkspaceView"] }) {
   if (!next) {
     return (
       <EmptyState icon={<Loader2 className="animate-spin" />} title="The results are not ready yet">
-        {workspace.next_step.title}. Ask opens as soon as qPilot has analysed the confirmed design.
+        qPilot is analysing the confirmed design. Ask opens as soon as the results are ready.
       </EmptyState>
     );
   }
