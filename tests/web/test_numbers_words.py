@@ -18,7 +18,7 @@ from typing import Any
 import pytest
 
 from tests.conftest import DEMO_RDML
-from tests.web.numbers_world import BASE, World, api_client, demo_world, get_json
+from tests.web.numbers_world import BASE, World, api_client, call_ready, demo_world, get_json
 
 pytestmark = pytest.mark.demo_data
 
@@ -63,7 +63,7 @@ def problems(texts: Iterator[tuple[str, str]], allowed: set[int]) -> list[str]:
     out = []
     for where, text in texts:
         for m in BARE.finditer(text):
-            if "audit's" not in text[max(0, m.start() - 40) : m.start()]:
+            if "audit" not in text[max(0, m.start() - 40) : m.start()]:
                 out.append(f"{where}: bare 'reasonable analyses': {text!r}")
         if PER_100.search(text):
             out.append(f"{where}: 'of 100': {text!r}")
@@ -83,8 +83,8 @@ def _texts(api, study_id: str, genes: list[str]) -> Iterator[tuple[str, str]]:
 
 @pytest.mark.xfail(
     strict=True,
-    reason="#0257: the engine's confidence reasons (qpcr/confidence_checks.py) say 'holds in "
-    "fewer than 80 % of the reasonable analyses'; owner to be named by the coordinator",
+    reason="#0286 to api: the engine's confidence reasons (qpcr/confidence_checks.py) say "
+    "'holds in fewer than 80 % of the reasonable analyses'",
 )
 @pytest.mark.parametrize("which", ["legacy", "study"])
 def test_results_shares_name_qpilot_s_grid(api, world, which):
@@ -120,19 +120,28 @@ def test_ask_shares_name_qpilot_s_grid(api, world):
     assert not found, "\n".join(found)
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason="#0274: api-audit's next commit names the audit's set; strict once it is merged",
-)
 def test_audit_shares_name_the_audit_s_set(api, world):
     pytest.importorskip("qpilot.web.routers.audit", reason="the audit routes are not merged yet")
     if not world.audited:
         pytest.skip("the Decision Simulator is not installed")
     base = f"/api/studies/{world.study}/audit"
-    overview = get_json(api, f"{base}/overview")
-    texts = [*strings(overview, "overview"), *strings(get_json(api, f"{base}/how"), "how")]
+    overview = call_ready(api, f"{base}/overview")
+    texts = [*strings(overview, "overview"), *strings(call_ready(api, f"{base}/how"), "how")]
     for gene in ("ODC1", "NM23A", "CLSTN1"):
-        texts += strings(get_json(api, f"{base}/gene/{gene}"), f"gene {gene}")
+        texts += strings(call_ready(api, f"{base}/gene/{gene}"), f"gene {gene}")
     allowed = {overview["study"]["reasonable"], overview["study"]["analyses"]}
     found = problems(iter(texts), allowed)
     assert not found, "\n".join(found[:8])
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="to coordinator: qpilot/prism/provenance.py writes 'holds in 99% of 744 reasonable "
+    "analyses' into the Prism caption (no owner in app.md §7)",
+)
+def test_the_prism_caption_names_qpilot_s_grid(api, world):
+    pytest.importorskip("qpilot.web.routers.files", reason="the Prism routes are not merged")
+    preview = get_json(api, f"/api/sessions/{world.sid}/prism/preview")
+    n_cells = world.store.get(world.study).robustness["ODC1"].n_cells
+    found = problems(iter([("caption", preview["caption"] or "")]), {n_cells})
+    assert not found, "\n".join(found)

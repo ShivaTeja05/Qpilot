@@ -26,7 +26,7 @@ import pytest
 
 from tests.conftest import DEMO_RDML
 from tests.web.numbers_engine import engine
-from tests.web.numbers_world import BASE, World, api_client, demo_world, get_json
+from tests.web.numbers_world import BASE, World, api_client, call_ready, demo_world
 
 pytestmark = pytest.mark.demo_data
 pytest.importorskip("qpilot.web.routers.audit", reason="the audit routes are not merged yet")
@@ -112,7 +112,7 @@ def url(world: World, tail: str) -> str:
 
 
 def test_the_overview_counts_are_the_audit_and_the_engine(api, world, audit):
-    view = get_json(api, url(world, "overview"))
+    view = call_ready(api, url(world, "overview"))
     eng = engine(world, world.study).result
     per_gene = Counter(audit.grid["gene"])
     assert set(per_gene.values()) == {view["study"]["analyses"]} == {90_396}
@@ -143,7 +143,7 @@ def test_the_audit_baseline_is_qpilot_s_planned_analysis(audit, world):
 
 
 def test_the_map_is_the_planned_fold_and_the_reasonable_share(api, world, audit):
-    view = get_json(api, url(world, "study"))
+    view = call_ready(api, url(world, "study"))
     assert len(view["map"]) == len(audit.genes)
     for point in view["map"]:
         gene = point["gene"]
@@ -155,7 +155,7 @@ def test_the_map_is_the_planned_fold_and_the_reasonable_share(api, world, audit)
 
 
 def test_choices_alone_count_the_genes_each_choice_flips(api, world, audit):
-    view = get_json(api, url(world, "study"))
+    view = call_ready(api, url(world, "study"))
     flipped = pd.read_csv(audit_folder(world) / "decisions.csv").set_index("decision")
     for choice in view["choices"]:
         assert choice["alone"] == flipped.loc[choice["id"], "genes_flipped_alone"], choice
@@ -172,7 +172,7 @@ def audit_folder(world: World) -> Path:
 
 @pytest.mark.parametrize("gene", GENES)
 def test_the_analyses_strip_is_every_reasonable_analysis(api, world, audit, gene):
-    view = get_json(api, url(world, f"analyses/{gene}"))
+    view = call_ready(api, url(world, f"analyses/{gene}"))
     rows = audit.reasonable[audit.reasonable["gene"] == gene]
     base = audit.planned.loc[gene, "call"]
     assert view["n"] == len(view["rows"]) == len(rows)
@@ -189,7 +189,7 @@ def test_the_analyses_strip_is_every_reasonable_analysis(api, world, audit, gene
 
 @pytest.mark.parametrize("gene", GENES)
 def test_one_choice_at_a_time_is_that_analysis(api, world, audit, gene):
-    view = get_json(api, url(world, f"effects/{gene}"))
+    view = call_ready(api, url(world, f"effects/{gene}"))
     base = audit.planned.loc[gene]
     assert math.isclose(view["planned_log2"], base["log2fc"], abs_tol=1e-12)
     for decision in view["decisions"]:
@@ -212,9 +212,7 @@ def test_one_choice_at_a_time_is_that_analysis(api, world, audit, gene):
     [{"refs": "HMBS", "late_cq": "cq35"}, {"efficiency": "assume_100", "test": "student"}],
 )
 def test_the_what_if_lab_is_the_audit_at_those_choices(api, world, audit, changes):
-    r = api.post(url(world, "whatif"), json={"changes": changes})
-    assert r.status_code == 200, r.text
-    view = r.json()
+    view = call_ready(api, url(world, "whatif"), {"changes": changes})
     cell = audit.cell(**changes)
     base = audit.planned
     assert view["n_genes"] == len(view["rows"]) == len(audit.genes)
@@ -235,9 +233,7 @@ def test_the_what_if_lab_is_the_audit_at_those_choices(api, world, audit, change
 
 @pytest.mark.parametrize("gene", GENES)
 def test_your_samples_average_to_the_planned_fold(api, world, audit, gene):
-    r = api.post(url(world, "samples"), json={"gene": gene})
-    assert r.status_code == 200, r.text
-    view = r.json()
+    view = call_ready(api, url(world, "samples"), {"gene": gene})
     contrast = engine(world, world.study).result.contrasts[gene]
     groups = view["groups"]
     assert (groups["high"]["n"], groups["rest"]["n"]) == (contrast.n_hi, contrast.n_lo)
@@ -255,7 +251,7 @@ def test_your_samples_average_to_the_planned_fold(api, world, audit, gene):
 
 @pytest.mark.parametrize("gene", GENES)
 def test_the_gene_card_tiles_are_the_audit(api, world, audit, gene):
-    view = get_json(api, url(world, f"gene/{gene}"))
+    view = call_ready(api, url(world, f"gene/{gene}"))
     tiles = {t["label"]: t for t in view["tiles"]}
     base = audit.planned.loc[gene]
     assert tiles["Fold change, planned analysis"]["value"] == fold_words(base["log2fc"])
@@ -271,32 +267,29 @@ def test_the_gene_card_tiles_are_the_audit(api, world, audit, gene):
 
 @pytest.mark.parametrize("gene", GENES)
 def test_the_lab_numbers_are_the_engine_s(api, world, audit, gene):
-    view = get_json(api, url(world, f"lab/{gene}"))
+    view = call_ready(api, url(world, f"lab/{gene}"))
     numbers = view["numbers"]
     eng = engine(world, world.study)
     contrast = eng.result.contrasts[gene]
     # the groups' sizes; the contrast counts the units with a value for this gene
-    samples = api.post(url(world, "samples"), json={"gene": gene}).json()["groups"]
+    samples = call_ready(api, url(world, "samples"), {"gene": gene})["groups"]
     assert (numbers["n_high"], numbers["n_rest"]) == (
         contrast.n_hi + samples["high"]["missing"],
         contrast.n_lo + samples["rest"]["missing"],
     )
+    assert (numbers["n_high_value"], numbers["n_rest_value"]) == (contrast.n_hi, contrast.n_lo)
     assert math.isclose(numbers["p"], audit.planned.loc[gene, "p"], rel_tol=1e-9)
     assert math.isclose(numbers["p"], contrast.p, rel_tol=1e-9)
     assert numbers["eff_assay"] == eng.result.efficiency[gene]
     stability = eng.result.genorm.M_initial
     for ref in view["references"]:
-        assert math.isclose(ref["m_value"], stability[ref["gene"]], abs_tol=5e-4), ref
+        assert math.isclose(ref["m_value"], stability[ref["gene"]], rel_tol=1e-9), ref
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="to api-audit: summary.json keeps geNorm M to 3 decimals and the words round it "
-    "again (HPRT1 1.6349 -> 1.635 -> '1.64'; Results shows 1.63)",
-)
 def test_the_audit_words_geNorm_M_as_results_does(api, world):
+    """Each M is worded once from the unrounded value (was 1.6349 -> 1.635 -> '1.64')."""
     stability = engine(world, world.study).result.genorm.M_initial
-    view = get_json(api, url(world, "lab/ODC1"))
-    study = get_json(api, url(world, "study"))
+    view = call_ready(api, url(world, "lab/ODC1"))
+    study = call_ready(api, url(world, "study"))
     for ref in [*view["references"], *study["references"]]:
         assert ref["m"] == f"{stability[ref['gene']]:.2f}", ref

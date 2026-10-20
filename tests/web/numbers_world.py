@@ -136,3 +136,27 @@ def engine_for(world: World, study_id: str) -> tuple[Any, list[Any], Any]:
     """``run_study`` on the study's confirmed design (or none for the legacy study)."""
     design = world.store.design(study_id)
     return engine_run(world.rdml, None if design is None else design.model_dump_json())
+
+
+def call_ready(client: TestClient, url: str, body: Any = None, timeout: float = 600.0) -> Any:
+    """GET (or POST ``body``) a route that may answer 409 ``loading``: wait for its job, retry.
+
+    The audit's live views load in a job the first time (``details.job``); this follows that
+    job and asks again, so a test reads the view, not the wait.
+    """
+    import time
+
+    deadline = time.monotonic() + timeout
+    while True:
+        response = client.get(url) if body is None else client.post(url, json=body)
+        if response.status_code != 409 or response.json()["error"]["code"] != "loading":
+            assert response.status_code == 200, f"{url}: {response.status_code} {response.text}"
+            return response.json()
+        job = (response.json()["error"].get("details") or {}).get("job") or {}
+        while job.get("id"):
+            view = client.get(f"/api/jobs/{job['id']}").json()
+            if view["status"] in ("done", "failed"):
+                break
+            assert time.monotonic() < deadline, view
+            time.sleep(0.2)
+        assert time.monotonic() < deadline, f"{url}: still loading"
