@@ -14,11 +14,13 @@ import {
   choiceRows,
   sampleGroups,
   samplePoints,
+  type AnalysisDot,
+  type ChoiceRow,
   type SamplePoint,
 } from "@/charts";
 import type { JobView, Schemas } from "@/api/client";
 import { sectionPath } from "@/shell/sections";
-import { Button, EmptyState, ErrorPanel, JobCard, LoadingBlock } from "@/ui";
+import { Button, EmptyState, ErrorPanel, JobCard, LoadingBlock, SegmentedControl } from "@/ui";
 import { cn } from "@/lib/cn";
 import { count, ofTotal, percent } from "@/lib/format";
 import type { AuditAnalyses, AuditEffects, AuditGeneCard, AuditSamples, AuditStatus } from "./api";
@@ -38,7 +40,7 @@ function Loaded<T>({
   warming,
   children,
 }: {
-  query: { data?: T; error: unknown; isPending: boolean; refetch: () => unknown };
+  query: Query<T>;
   label: string;
   /** The job loading the audit's live views (the first time, ~15 s): shown while waiting. */
   warming?: JobView | null;
@@ -50,43 +52,80 @@ function Loaded<T>({
   return <LoadingBlock label={label} lines={4} />;
 }
 
+// ---- the source switch ------------------------------------------------------------------------
+
+export type Source = "qpilot" | "audit";
+
+/** qPilot's own grid or the audit's reasonable analyses (shown when both exist). */
+export function SourceSwitch({ value, onChange }: { value: Source; onChange: (v: Source) => void }) {
+  return (
+    <SegmentedControl
+      size="sm"
+      label="Which analyses"
+      value={value}
+      onValueChange={onChange}
+      options={[
+        { value: "audit", label: "The audit", title: "Every reasonable combination of the audit's eight decisions" },
+        { value: "qpilot", label: "qPilot's grid", title: "Every combination of the Decision Cards' options" },
+      ]}
+    />
+  );
+}
+
+type Query<T> = { data?: T; error: unknown; isPending: boolean; refetch: () => unknown };
+
 // ---- What holds -------------------------------------------------------------------------------
 
 export function WhatHolds({
+  gene,
   holds,
   nCells,
+  dots,
+  line,
   analyses,
   card,
-  audited,
+  source,
+  onSource,
   labels,
   invite,
   warming,
 }: {
-  /** qPilot's robustness fraction: share of its analyses with the planned call. */
-  holds: number;
+  gene: string;
+  /** qPilot's robustness share: its analyses with the planned call (0–1). */
+  holds: number | null | undefined;
   nCells?: number | null;
-  analyses: { data?: AuditAnalyses; error: unknown; isPending: boolean; refetch: () => unknown } | null;
+  /** qPilot's grid, one dot per analysis. */
+  dots: AnalysisDot[];
+  /** The call rule's size line (log2). */
+  line: number;
+  /** The audit's analyses (null: not audited, or the audit does not cover this gene). */
+  analyses: Query<AuditAnalyses> | null;
   card: AuditGeneCard | null;
-  audited: boolean;
+  source: Source;
+  onSource: (v: Source) => void;
   labels: { hi: string; lo: string };
+  /** What to say about the audit when it is not there. */
   invite?: ReactNode;
   warming?: JobView | null;
 }) {
   const a = analyses?.data;
+  const showAudit = Boolean(analyses) && source === "audit";
+  const sameQ = dots.filter((d) => d.same).length;
   return (
     <Panel
       id="gene-holds"
       title="What holds"
       hint="How often the same call comes out when the analysis is done another reasonable way."
+      actions={analyses && dots.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined}
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-line bg-sunken/40 p-3">
           <Stat
             label="Same call, qPilot's grid"
             value={percent(holds)}
             sub={nCells ? `of ${count(nCells)} analyses over the Decision Cards' options` : "of qPilot's analyses over the Decision Cards' options"}
           />
-          <HoldsBar share={holds} />
+          <HoldsBar share={holds ?? null} />
         </div>
         <div className="rounded-lg border border-line bg-sunken/40 p-3">
           {a ? (
@@ -94,21 +133,21 @@ export function WhatHolds({
               <Stat
                 label="Same call, the audit"
                 value={ofTotal(a.n_same, a.n)}
-                sub="reasonable analyses (every combination of the audit's decisions a careful lab could defend)"
+                sub="reasonable analyses over the audit's eight decisions"
               />
               <HoldsBar share={a.n ? a.n_same / a.n : null} />
             </>
           ) : (
             <Stat
               label="Same call, the audit"
-              value={audited ? "…" : "not run"}
-              sub={audited ? "Reading the audit…" : "The audit tries every reasonable combination of eight decisions."}
+              value={analyses ? "…" : "—"}
+              sub={analyses ? "Reading the audit…" : "Not audited: the audit tries every reasonable combination of eight decisions."}
             />
           )}
         </div>
       </div>
-      {audited && analyses ? (
-        <div className="mt-4">
+      <div className="mt-4">
+        {showAudit && analyses ? (
           <Loaded query={analyses} label="Reading every reasonable analysis" warming={warming}>
             {(data) => (
               <AnalysesStrip
@@ -116,15 +155,23 @@ export function WhatHolds({
                 line={data.line_log2}
                 lineLabel={`${data.line} line`}
                 {...sideWords(labels.hi)}
-                summary={`Every reasonable analysis of ${data.gene} on the fold axis: ${ofTotal(data.n_same, data.n)} give the planned call (${data.base_call}); the planned analysis is ringed.`}
+                summary={`Every reasonable analysis of ${data.gene} in the audit, on the fold axis: ${ofTotal(data.n_same, data.n)} give the planned call (${data.base_call}); the planned analysis is ringed.`}
                 caption={card?.holds.lines.length ? <Sentences items={card.holds.lines} /> : undefined}
               />
             )}
           </Loaded>
-        </div>
-      ) : (
-        invite
-      )}
+        ) : dots.length ? (
+          <AnalysesStrip
+            rows={dots}
+            line={line}
+            {...sideWords(labels.hi)}
+            summary={`Every analysis of ${gene} in qPilot's grid, on the fold axis: ${ofTotal(sameQ, dots.length)} give the planned call; the planned analysis is ringed.`}
+          />
+        ) : (
+          <p className="text-[13px] text-muted">qPilot's grid for this study is not available.</p>
+        )}
+      </div>
+      {invite ? <div className="mt-4">{invite}</div> : null}
     </Panel>
   );
 }
@@ -142,24 +189,35 @@ function HoldsBar({ share }: { share: number | null }) {
 // ---- One choice at a time ---------------------------------------------------------------------
 
 export function OneChoice({
+  gene,
+  rows,
+  line,
   effects,
+  source,
+  onSource,
   labels,
-  fallback,
   warming,
 }: {
-  effects: { data?: AuditEffects; error: unknown; isPending: boolean; refetch: () => unknown } | null;
+  gene: string;
+  /** qPilot's decisions, one option at a time. */
+  rows: ChoiceRow[];
+  line: number;
+  effects: Query<AuditEffects> | null;
+  source: Source;
+  onSource: (v: Source) => void;
   labels: { hi: string; lo: string };
   warming?: JobView | null;
-  /** What to show without an audit (qPilot's own grid, one decision at a time). */
-  fallback: ReactNode;
 }) {
+  const showAudit = Boolean(effects) && source === "audit";
+  const changingQ = rows.filter((r) => r.options.some((o) => o.changesCall));
   return (
     <Panel
       id="gene-choices"
       title="One choice at a time"
-      hint="Each option of each decision, with every other choice as planned."
+      hint="Each option of each decision, with every other choice as planned. A ringed dot changes the call on its own."
+      actions={effects && rows.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined}
     >
-      {effects ? (
+      {showAudit && effects ? (
         <Loaded query={effects} label="Reading one choice at a time" warming={warming}>
           {(data) => {
             const changing = data.decisions.filter((d) => d.n_change > 0);
@@ -171,15 +229,26 @@ export function OneChoice({
                 {...sideWords(labels.hi)}
                 summary={
                   changing.length
-                    ? `${data.gene} at ${data.planned} as planned. ${count(changing.length)} of ${count(data.decisions.length)} decisions have an option that changes the call on its own: ${changing.map((d) => d.name).join(", ")}.`
-                    : `${data.gene} at ${data.planned} as planned. No single option of the ${count(data.decisions.length)} decisions changes the call on its own.`
+                    ? `${data.gene} at ${data.planned} as planned. ${count(changing.length)} of ${count(data.decisions.length)} of the audit's decisions have an option that changes the call on its own: ${changing.map((d) => d.name).join(", ")}.`
+                    : `${data.gene} at ${data.planned} as planned. No single option of the audit's ${count(data.decisions.length)} decisions changes the call on its own.`
                 }
               />
             );
           }}
         </Loaded>
+      ) : rows.length ? (
+        <ChoiceDotPlot
+          decisions={rows}
+          line={line}
+          {...sideWords(labels.hi)}
+          summary={
+            changingQ.length
+              ? `${gene}, one Decision Card choice at a time: ${count(changingQ.length)} of ${count(rows.length)} decisions have an option that changes the call on its own: ${changingQ.map((r) => r.name).join(", ")}.`
+              : `${gene}, one Decision Card choice at a time: no single option of the ${count(rows.length)} decisions changes the call on its own.`
+          }
+        />
       ) : (
-        fallback
+        <p className="text-[13px] text-muted">No decision is varied for this gene.</p>
       )}
     </Panel>
   );
@@ -196,7 +265,7 @@ export function YourSamples({
   invite,
   warming,
 }: {
-  samples: { data?: AuditSamples; error: unknown; isPending: boolean; refetch: () => unknown } | null;
+  samples: Query<AuditSamples> | null;
   labels: { hi: string; lo: string };
   selected: string | null;
   onSelect: (p: SamplePoint) => void;

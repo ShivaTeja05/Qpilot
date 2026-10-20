@@ -74,125 +74,175 @@ export function isNotFound(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;
 }
 
-// ---- qPilot's views -----------------------------------------------------------------------------
+// ---- qPilot's views (api: qpilot/web/contract.py, "results") ----------------------------------
 
 export type CallKey = "up" | "down" | "none";
 
-/** One confidence check of a gene (ordinal level reasons). */
+/** A sentence whose numbers are the engine's facts. */
+export interface FactText {
+  plain: string;
+  segments?: { text: string; fact?: string | null }[];
+  facts?: { id: string; text: string }[];
+  source?: "template" | "model";
+}
+
+/** One confidence check of a gene (the reasons behind its ordinal level). */
 export interface ConfidenceCheck {
   id: string;
   passed: boolean;
   note: string;
 }
 
-/** One gene as the Results table lists it (api's GeneRow). */
+/** A gene's result at the options a person chose on the Decision Cards. */
+export interface AtChoices {
+  fc: number;
+  log2fc: number;
+  p: number;
+  conclusion: CallKey;
+  differs: boolean;
+}
+
+/** One compared gene (api's GeneRow): contrast, robustness share, confidence, verdict. */
 export interface GeneRow {
   gene: string;
-  headline?: boolean;
-  conclusion: CallKey | string;
+  headline: boolean;
+  conclusion: CallKey;
   fc: number;
+  log2fc?: number;
   ci: [number, number] | number[];
-  p: number | null;
-  n_hi?: number | null;
-  n_lo?: number | null;
-  holds: number;
-  n_cells?: number | null;
+  p: number;
+  n_hi: number;
+  n_lo: number;
+  /** Share of reasonable analyses with the same call (0–1). */
+  holds?: number | null;
+  n_cells?: number;
   level?: string | null;
   reasons?: string[];
-  checks?: ConfidenceCheck[];
-  /** Decision dimensions whose single change flips this gene's call. */
+  min_flip_changes?: number | null;
+  /** Decisions that alone can change this call. */
   flips_by?: string[];
   efficiency?: number | null;
+  at_your_choices?: AtChoices | null;
   verdict?: string | null;
   verdict_label?: string | null;
 }
 
-export interface Genorm {
-  M_initial: Record<string, number>;
+/** Reference genes: which are used, and geNorm's stability (M) and pairwise V. */
+export interface GenormView {
+  used: string[];
+  candidates?: string[];
+  m: Record<string, number>;
   order?: string[];
-  V?: Record<string, number> | null;
+  v?: Record<string, number>;
   recommended?: string[];
-  cutoff_M: number;
-  cutoff_V?: number;
+  cutoff_m: number;
+  cutoff_v?: number;
+  stable?: string[];
 }
 
-/** The study's results (api's ResultsView): the gene list, the groups, the rule, the references. */
+/** The study's results (api's ResultsView): the genes, the groups, the rule, the references. */
 export interface ResultsView {
   study_id: string;
-  summary?: {
+  summary: {
     n_plates?: number;
-    n_reactions?: number;
     n_samples?: number;
-    groups?: { label: string; n: number }[];
+    groups: { label: string; n: number }[];
     design_line?: string;
-    mode?: string;
   };
-  rule?: { alpha: number; min_log2fc: number; text?: string };
-  references?: { used?: string[]; candidates?: string[]; genorm?: Genorm | null } | null;
+  rule: { alpha: number; min_log2fc: number; min_fold?: number; text: string };
+  references: GenormView;
   genes: GeneRow[];
   headline?: string[];
-  audit?: { status: string; verdict_counts?: Record<string, number> } | null;
-  chain_head?: string | null;
+  head?: string;
+  audit?: { status: string; current?: boolean };
 }
 
-/** How one decision moves this gene (robustness impact, from qPilot's own grid). */
-export interface GeneImpact {
-  flips: boolean;
-  max_delta_log2fc: number;
+/** One option of one decision, the other choices as planned (aligned with the genes asked). */
+export interface FlipOption {
+  value: string;
+  label: string;
+  card_option?: string | null;
+  planned: boolean;
+  chosen?: boolean;
+  conclusion: CallKey[];
+  log2fc: number[];
+  flips: boolean[];
 }
 
-/** A Decision Card that touches this gene. */
+/** One decision for this gene: can it flip the call alone, how far it moves it, each option. */
+export interface FlipRow {
+  dimension: string;
+  title: string;
+  card_id?: string | null;
+  status?: string | null;
+  flips: boolean[];
+  max_delta_log2fc: number[];
+  n_flipped?: number;
+  options: FlipOption[];
+}
+
+/** Every analysis in qPilot's grid for one gene, compactly. */
+export interface GeneGrid {
+  dimensions: string[];
+  options: Record<string, string[]>;
+  /** The planned option's index per dimension. */
+  planned: number[];
+  /** Option index per dimension, one per analysis. */
+  cells: number[][];
+  log2fc: number[];
+  p: number[];
+  conclusion: CallKey[];
+}
+
+/** A Decision Card as the API words it (only what this section reads). */
+export interface CardViewLike {
+  card: { id: string; kind: string; status: string; decision?: string | null; recommended?: string | null; rank?: number | null };
+  title: string;
+  status_line: string;
+  needs_human?: boolean;
+  options: {
+    id: string;
+    label: string;
+    recommended?: boolean;
+    chosen?: boolean;
+    /** E.g. a single control gene (MIQE): a shortcut, not a reasonable option. */
+    not_recommended?: boolean;
+    effects?: { gene: string; changes_call: boolean; log2fc: number }[];
+  }[];
+}
+
+/** Everything about one gene (api's GeneView). */
+export interface GeneView {
+  study_id: string;
+  gene: string;
+  row: GeneRow;
+  confidence?: { level: string; reasons: string[]; checks: ConfidenceCheck[]; min_flip_changes?: number | null } | null;
+  confidence_text?: FactText | null;
+  grid?: GeneGrid | null;
+  /** One decision at a time (this gene only). */
+  effects: FlipRow[];
+  /** Decision Cards that can change this gene. */
+  cards: CardViewLike[];
+  is_reference?: boolean;
+  reference_m?: number | null;
+  prev_gene?: string | null;
+  next_gene?: string | null;
+  audit_verdict?: string | null;
+  audit_verdict_label?: string | null;
+}
+
+/** A Decision Card that touches this gene, as the Gene section lists it. */
 export interface GeneCardRef {
   id: string;
-  kind: string;
-  title?: string | null;
+  title: string;
   status: string;
-  decision?: string | null;
-  decision_label?: string | null;
-  recommended?: string | null;
-  recommended_label?: string | null;
-  rank?: number | null;
-  decided_by?: string | null;
+  /** The server's words for where the card stands. */
+  statusLine?: string | null;
   /** Whether this card's choice alone can flip this gene's call. */
-  flips?: boolean | null;
-  max_delta_log2fc?: number | null;
-}
-
-/** The wells behind this gene. */
-export interface GeneAssay {
-  efficiency?: number | null;
-  n_wells?: number | null;
-  n_amplified?: number | null;
-  n_undetermined?: number | null;
-  cq_median?: number | null;
-  cq_min?: number | null;
-  cq_max?: number | null;
-}
-
-/** One gene (api's GeneView: the GeneRow plus what only this page needs). */
-export interface GeneView extends GeneRow {
-  role?: "toi" | "ref" | string | null;
-  groups?: { label: string; n: number }[];
-  order?: string[];
-  impact?: Record<string, GeneImpact> | null;
-  cards?: GeneCardRef[];
-  assay?: GeneAssay | null;
-  references?: ResultsView["references"];
-  rule?: ResultsView["rule"];
-}
-
-/** A Decision Card as `/cards` serves it (only what this section reads). */
-export interface CardLike {
-  id: string;
-  kind: string;
-  title?: string | null;
-  status: string;
-  decision?: string | null;
-  decided_by?: string | null;
-  recommended?: string | null;
-  rank?: number | null;
-  options?: { id: string; label: string }[];
-  impact?: { flips?: boolean; n_genes_flipped?: number } | null;
+  flips: boolean;
+  maxDeltaLog2: number | null;
+  /** The option applied now (or planned), in words. */
+  chosenLabel?: string | null;
 }
 
 export function useResults(s: GeneScope) {
@@ -203,20 +253,13 @@ export function useResults(s: GeneScope) {
   });
 }
 
+/** One gene (404 `not_found` for a gene the study does not compare, e.g. a reference gene). */
 export function useGene(s: GeneScope, gene: string | null) {
   return useQuery({
     queryKey: wkey(s, "gene", gene),
     enabled: Boolean(s.studyId && gene),
     queryFn: () => requestJson<GeneView>(studyUrl(s, `/genes/${enc(gene ?? "")}`)),
     placeholderData: keepPreviousData,
-  });
-}
-
-export function useCards(s: GeneScope, enabled = true) {
-  return useQuery({
-    queryKey: wkey(s, "cards"),
-    enabled: Boolean(s.studyId) && enabled,
-    queryFn: () => requestJson<{ head?: string; cards: CardLike[] }>(studyUrl(s, "/cards")),
   });
 }
 

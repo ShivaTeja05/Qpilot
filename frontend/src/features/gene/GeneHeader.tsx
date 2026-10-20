@@ -101,7 +101,7 @@ function Fact({ label, children, hint, className }: { label: string; children: R
 
 /** The gene's result in one band. */
 export function GeneHeader({
-  gene,
+  view,
   labels,
   audit,
   auditPending,
@@ -111,7 +111,7 @@ export function GeneHeader({
   summary,
   auditOutdated = 0,
 }: {
-  gene: GeneView;
+  view: Pick<GeneView, "row" | "confidence" | "confidence_text" | "audit_verdict">;
   labels: { hi: string; lo: string };
   /** The audit's card for this gene (null: not audited or not loaded). */
   audit: AuditGeneCard | null;
@@ -126,12 +126,15 @@ export function GeneHeader({
   /** Decisions made on the study since it was audited (0: the audit is current). */
   auditOutdated?: number;
 }) {
+  const gene = view.row;
+  const checks = view.confidence?.checks ?? [];
   const conclusion = asConclusion(gene.conclusion);
   const [lo, hi] = gene.ci ?? [];
-  const level = asLevel(gene.level);
-  const failed = (gene.checks ?? []).filter((c) => !c.passed);
-  const reasons = gene.reasons?.length ? gene.reasons : failed.map((c) => c.note);
-  const verdict = audit?.verdict ?? gene.verdict ?? null;
+  const level = asLevel(gene.level ?? view.confidence?.level);
+  const reasons = gene.reasons?.length ? gene.reasons : (view.confidence?.reasons ?? []);
+  const verdict = audit?.verdict ?? view.audit_verdict ?? gene.verdict ?? null;
+  const yours = gene.at_your_choices;
+  const yoursMoved = yours && (yours.differs || Math.abs(yours.log2fc - (gene.log2fc ?? Math.log2(gene.fc))) > 1e-9);
   const ruleWords =
     ruleText ??
     (alpha != null && minLog2fc != null ? `A call needs p below ${alpha} and at least ${fold(2 ** minLog2fc)}.` : undefined);
@@ -153,6 +156,13 @@ export function GeneHeader({
         {callSentence(gene)}
         {gene.fc > 0 ? <>: {directionWords(gene, labels)}.</> : "."}
       </p>
+      {yours && yoursMoved ? (
+        <p className={cn("mt-1 text-[13px]", yours.differs ? "text-warn" : "text-muted")}>
+          With the options chosen on the Decision Cards: <span className="tabular">{fold(yours.fc)}</span>, p{" "}
+          <span className="tabular">{pValue(yours.p)}</span>, <ConclusionTag conclusion={yours.conclusion} long />
+          {yours.differs ? " — a different call from the planned analysis." : "."}
+        </p>
+      ) : null}
 
       <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 rounded-xl border border-line bg-surface p-4 sm:grid-cols-4 xl:grid-cols-[repeat(4,minmax(0,auto))_minmax(0,1.6fr)]">
         <Fact label="Fold change" hint={<>95&nbsp;% CI <span className="tabular">{ci(lo, hi)}</span></>}>
@@ -212,13 +222,14 @@ export function GeneHeader({
           </ul>
         </div>
       ) : null}
-      {gene.checks?.length ? (
+      {view.confidence_text?.plain ? <p className="mt-2 text-[13px] text-muted">{view.confidence_text.plain}</p> : null}
+      {checks.length ? (
         <details className="group mt-2 text-[13px]">
           <summary className="cursor-pointer text-muted hover:text-fg">
-            All {gene.checks.length} confidence checks
+            All {checks.length} confidence checks
           </summary>
           <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
-            {gene.checks.map((c) => (
+            {checks.map((c) => (
               <li key={c.id} className="flex gap-2 rounded-lg border border-line bg-surface px-3 py-2">
                 <span aria-hidden className={c.passed ? "text-ok" : "text-warn"}>
                   {c.passed ? "✓" : "!"}

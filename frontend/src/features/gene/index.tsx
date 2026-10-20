@@ -22,19 +22,18 @@ import {
   useAuditSamples,
   useAuditStatus,
   useAuditView,
-  useCards,
   useGene,
   useResults,
   useRunAudit,
   type GeneRow,
 } from "./api";
-import { AuditInvite, AuditReading, OneChoice, WhatHolds, YourSamples } from "./AuditParts";
-import { cardsForGene } from "./cards";
+import { effectChoiceRows, geneCardRefs, gridDots } from "./adapters";
+import { AuditInvite, AuditReading, OneChoice, WhatHolds, YourSamples, type Source } from "./AuditParts";
 import { GeneHeader, GeneNav } from "./GeneHeader";
 import { neighbours, resolveGene } from "./nav";
 import { SampleDetail } from "./SampleDetail";
 import { WellCurve } from "./WellCurve";
-import { AssayWells, GeneCards, ImpactTable, ReferenceStability } from "./StudyParts";
+import { AssayWells, GeneCards, ReferenceStability } from "./StudyParts";
 import { geneSummary, groupLabels } from "./words";
 
 const NO_CHANGES: Record<string, string> = {};
@@ -67,7 +66,12 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   const order = useMemo(() => results.data?.genes.map((g) => g.gene) ?? [], [results.data]);
   const geneName = resolveGene(order, wanted) ?? wanted ?? null;
   const gene = useGene(scope, geneName);
-  const near = neighbours(gene.data?.order ?? order, geneName);
+  const near = neighbours(order, geneName);
+  // The server names the neighbours too (the study's order); prefer its words when the list is not loaded.
+  if (!order.length && gene.data) {
+    near.prev = gene.data.prev_gene ?? null;
+    near.next = gene.data.next_gene ?? null;
+  }
   const go = (g: string) => navigate(sectionPath(workspace, "gene", g));
 
   useHotkeys({
@@ -104,8 +108,11 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   }, [job.data?.status, qc, scope.key]);
   const startAudit = () => run.mutate(false, { onSuccess: (r) => setJobId(r.job.id) });
 
-  const cards = useCards(scope, Boolean(gene.data && !gene.data.cards));
-  const geneCards = useMemo(() => (gene.data ? cardsForGene(gene.data, cards.data?.cards) : []), [gene.data, cards.data]);
+  const geneCards = useMemo(() => (gene.data ? geneCardRefs(gene.data) : []), [gene.data]);
+  const dots = useMemo(() => (gene.data ? gridDots(gene.data) : []), [gene.data]);
+  const choiceRowsQ = useMemo(() => (gene.data ? effectChoiceRows(gene.data) : []), [gene.data]);
+  // Which analyses the charts draw: the audit's when there is one, else qPilot's grid.
+  const [sourcePick, setSource] = useState<Source | null>(null);
 
   // ---- the selected sample, cleared when the gene changes
   const [selected, setSelected] = useState<{ gene: string | null; sample: string } | null>(null);
@@ -114,11 +121,11 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   const point = selectedSample ? samples.data?.points.find((p) => p.sample === selectedSample) : undefined;
 
   const labels = groupLabels(results.data);
-  const rule = gene.data?.rule ?? results.data?.rule;
-  const references = gene.data?.references ?? results.data?.references;
+  const rule = results.data?.rule;
+  const references = results.data?.references;
   const used = references?.used ?? [];
 
-  const nav = <GeneNav workspace={workspace} gene={geneName} order={gene.data?.order ?? order} near={near} onGo={go} />;
+  const nav = <GeneNav workspace={workspace} gene={geneName} order={order} near={near} onGo={go} />;
 
   if (!scope.studyId) {
     return (
@@ -152,7 +159,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
             <p className="mb-6 text-sm text-muted">
               A reference gene: the other genes are normalised to it, so it is not compared between the groups itself.
             </p>
-            <ReferenceStability gene={geneName} genorm={references?.genorm} used={used} />
+            <ReferenceStability gene={geneName} genorm={references} />
           </>
         ) : unknown ? (
           <ErrorPanel title={`No gene called “${wanted}” in this study`} error={gene.error}>
@@ -179,8 +186,11 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
     );
   }
 
-  const g = gene.data;
+  const view = gene.data;
+  const g = view.row;
   const auditCard = covered ? (card.data ?? null) : null;
+  const source: Source = sourcePick ?? (covered ? "audit" : "qpilot");
+  const line = rule?.min_log2fc ?? 1;
   const invite = (
     <AuditInvite
       workspace={workspace}
@@ -201,7 +211,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
       {nav}
       <div className={cn("transition-opacity duration-150", gene.isPlaceholderData && "opacity-60")} aria-busy={gene.isPlaceholderData}>
         <GeneHeader
-          gene={g}
+          view={view}
           labels={labels}
           audit={auditCard}
           auditPending={covered && card.isPending}
@@ -209,38 +219,34 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
           minLog2fc={rule?.min_log2fc}
           ruleText={rule?.text}
           auditOutdated={auditOutdated}
-          summary={geneSummary({ gene: g, labels, audit: auditCard, studyId: scope.studyId, chainHead: results.data?.chain_head ?? workspace.decisions_head })}
+          summary={geneSummary({ gene: g, labels, audit: auditCard, studyId: scope.studyId, chainHead: results.data?.head ?? workspace.decisions_head })}
         />
         <JumpList hasAudit={Boolean(auditCard)} />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="flex min-w-0 flex-col gap-5">
             <WhatHolds
+              gene={g.gene}
               holds={g.holds}
               nCells={g.n_cells}
+              dots={dots}
+              line={line}
               analyses={covered ? analyses : null}
               warming={warming}
               card={auditCard}
-              audited={covered}
+              source={source}
+              onSource={setSource}
               labels={labels}
-              invite={notCoveredNote ?? invite}
+              invite={notCoveredNote ?? (covered ? null : invite)}
             />
             <OneChoice
+              gene={g.gene}
+              rows={choiceRowsQ}
+              line={line}
               effects={covered ? effects : null}
               warming={warming}
+              source={source}
+              onSource={setSource}
               labels={labels}
-              fallback={
-                g.impact && Object.keys(g.impact).length ? (
-                  <>
-                    <p className="mb-3 text-[13px] text-muted">
-                      From qPilot's grid over the Decision Cards' options. The audit draws every option of eight
-                      decisions here.
-                    </p>
-                    <ImpactTable impact={g.impact} />
-                  </>
-                ) : (
-                  (notCoveredNote ?? invite)
-                )
-              }
             />
             <YourSamples
               samples={covered ? samples : null}
@@ -278,9 +284,9 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
             ) : null}
           </div>
           <aside className="flex min-w-0 flex-col gap-5" aria-label={`More about ${g.gene}`}>
-            <GeneCards workspace={workspace} gene={g.gene} cards={geneCards} loading={!g.cards && cards.isPending} />
-            <AssayWells efficiency={g.efficiency} assay={g.assay} lab={covered ? lab.data : null} />
-            <ReferenceStability gene={g.gene} genorm={references?.genorm} used={used} lab={covered ? lab.data : null} />
+            <GeneCards workspace={workspace} gene={g.gene} cards={geneCards} />
+            <AssayWells efficiency={g.efficiency} lab={covered ? lab.data : null} />
+            <ReferenceStability gene={g.gene} genorm={references} lab={covered ? lab.data : null} />
           </aside>
         </div>
       </div>
