@@ -36,6 +36,10 @@ export interface AxeFinding {
 export class App {
   readonly consoleErrors: string[] = [];
   readonly outbound: string[] = [];
+  /** Responses with a 4xx/5xx status, as "404 GET http://…". */
+  readonly failedResponses: string[] = [];
+  /** 409 "loading" answers seen (the browser logs each as a failed load). */
+  private expectedFailures = 0;
   private allowedConsole: RegExp[] = [];
   private inflight = new Set<Request>();
   private keyed = false;
@@ -48,6 +52,23 @@ export class App {
       if (msg.type() === "error") this.consoleErrors.push(msg.text());
     });
     page.on("pageerror", (error) => this.consoleErrors.push(`uncaught: ${error.message}`));
+    // A failed load shows in the console without its address: record which request it was.
+    page.on("response", (res) => {
+      if (res.status() < 400) return;
+      const what = `${res.status()} ${res.request().method()} ${res.url()}`;
+      if (res.status() === 409) {
+        // 409 "loading" is the API's "a job is preparing this view, ask again": expected.
+        void res
+          .json()
+          .then((b: { error?: { code?: string } }) => {
+            if (b?.error?.code === "loading") this.expectedFailures += 1;
+            else this.failedResponses.push(what);
+          })
+          .catch(() => this.failedResponses.push(what));
+        return;
+      }
+      this.failedResponses.push(what);
+    });
     page.on("request", (req) => {
       const url = req.url();
       if (!url.startsWith(E2E.origin) && !url.startsWith("data:") && !url.startsWith("blob:")) {
@@ -67,7 +88,15 @@ export class App {
 
   /** Console errors not allowed by {@link allowConsole}. */
   unexpectedConsole(): string[] {
-    return this.consoleErrors.filter((t) => !this.allowedConsole.some((p) => p.test(t)));
+    let loading = this.expectedFailures;
+    return this.consoleErrors.filter((t) => {
+      if (this.allowedConsole.some((p) => p.test(t))) return false;
+      if (loading > 0 && /status of 409/.test(t)) {
+        loading -= 1;
+        return false;
+      }
+      return true;
+    });
   }
 
   /**
@@ -107,6 +136,15 @@ export class App {
     }
     await this.page.evaluate(async () => {
       await document.fonts.ready;
+      // Let transitions and animations finish (a sheet sliding in, a theme fading): axe reads
+      // colours as painted, so a half-faded layer is not a contrast problem of the page.
+      const until = Date.now() + 3000;
+      while (
+        Date.now() < until &&
+        document.getAnimations().some((a) => a.playState === "running")
+      ) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     });
   }
@@ -116,6 +154,7 @@ export class App {
    * the test goes on so every state gets checked); all findings are attached to the report.
    */
   async axe(state: string): Promise<AxeFinding[]> {
+    await this.settle();
     const results = await new AxeBuilder({ page: this.page }).withTags(AXE_TAGS).analyze();
     const findings: AxeFinding[] = results.violations.map((v) => ({
       id: v.id,
@@ -192,7 +231,10 @@ export const test = base.extend<{ api: APIRequestContext; app: App }>({
     const app = new App(page, info);
     await provide(app);
     expect(app.outbound, "requests that left this machine").toEqual([]);
-    expect(app.unexpectedConsole(), "console errors").toEqual([]);
+    expect(
+      app.unexpectedConsole(),
+      `console errors (failed responses: ${app.failedResponses.join(", ") || "none"})`,
+    ).toEqual([]);
   },
 });
 

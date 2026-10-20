@@ -2,6 +2,8 @@
  * Before any test: the server must be answering with the built page, over a store that is not
  * the shared seed (writing tests decide and undo cards). Fails in plain words otherwise.
  */
+import { rmSync } from "node:fs";
+import { join } from "node:path";
 import { E2E } from "./env";
 
 interface SystemView {
@@ -55,6 +57,8 @@ export default async function globalSetup(): Promise<void> {
       await fetch(`${E2E.origin}/api/studies/${w.study_id}/cards`, { headers });
     }
   }
+  // Each run reports its own axe findings (e2e/axe-summary.mjs reads them).
+  rmSync(join(E2E.screenshotDir, "axe"), { recursive: true, force: true });
   process.env.E2E_STUDIES_DIR = system.studies_dir;
   console.log(`e2e: qPilot ${system.version} at ${E2E.origin}, store ${system.studies_dir}`);
 }

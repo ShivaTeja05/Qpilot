@@ -1,6 +1,7 @@
 /** All genes: a virtualised, sortable table with filters that also dim the map. */
 import { Search } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useMediaQuery } from "@/lib/hooks";
 import { CALLS, CALL_ORDER, LEVEL_ORDER, VERDICTS, VERDICT_ORDER } from "@/charts";
 import { ci, count, fold, pValue, percent } from "@/lib/format";
 import {
@@ -65,6 +66,103 @@ function HoldsCell({ holds }: { holds: number | null | undefined }) {
       </span>
       <span>{percent(holds)}</span>
     </span>
+  );
+}
+
+type Sort = "holds" | "fold" | "gene";
+
+/** The phone layout: one card per gene, the robustness first, sorted like the table. */
+function GeneCards({
+  genes,
+  rowFilter,
+  cells,
+  dimLabel,
+  onOpen,
+}: {
+  genes: GeneRow[];
+  rowFilter: (g: GeneRow) => boolean;
+  cells: number | null;
+  dimLabel: (dim: string) => string;
+  onOpen: (gene: string) => void;
+}) {
+  const [sort, setSort] = useState<Sort>("holds");
+  const shown = useMemo(() => {
+    const list = genes.filter(rowFilter);
+    const key: Record<Sort, (g: GeneRow) => number | string> = {
+      holds: (g) => g.holds ?? -1,
+      fold: (g) => -Math.abs(Math.log2(g.fc)),
+      gene: (g) => g.gene.toLowerCase(),
+    };
+    return list.sort((a, b) =>
+      key[sort](a) < key[sort](b) ? -1 : key[sort](a) > key[sort](b) ? 1 : 0,
+    );
+  }, [genes, rowFilter, sort]);
+  return (
+    <div className="space-y-2">
+      <SegmentedControl<Sort>
+        label="Sort the genes by"
+        size="sm"
+        value={sort}
+        onValueChange={setSort}
+        options={[
+          { value: "holds", label: "Least robust" },
+          { value: "fold", label: "Largest change" },
+          { value: "gene", label: "Name" },
+        ]}
+      />
+      {shown.length === 0 ? (
+        <p className="p-4 text-center text-[13px] text-muted">
+          No gene matches these filters. Clear a filter to see more.
+        </p>
+      ) : (
+        <ul
+          className="divide-y divide-line rounded-xl border border-line bg-surface"
+          aria-label="All genes"
+        >
+          {shown.map((g) => {
+            const flips = g.flips_by.map(dimLabel);
+            return (
+              <li key={g.gene}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(g.gene)}
+                  className="block w-full space-y-1 px-3 py-2.5 text-left hover:bg-surface-2 focus-visible:bg-surface-2"
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate font-medium text-fg">{g.gene}</span>
+                      {g.headline && <Badge tone="accent">headline</Badge>}
+                    </span>
+                    <ConclusionTag conclusion={g.conclusion} />
+                  </span>
+                  <span className="tabular flex flex-wrap gap-x-3 text-[13px] text-fg">
+                    <span>{fold(g.fc)}</span>
+                    <span className="text-muted">{ci(g.ci[0], g.ci[1])}</span>
+                    <span className="text-muted">p {pValue(g.p)}</span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
+                    <span className="text-muted">
+                      Holds{" "}
+                      <span className="tabular font-medium text-fg">
+                        {g.holds == null ? "—" : percent(g.holds)}
+                      </span>
+                      {cells ? ` of ${count(cells)}` : ""}
+                    </span>
+                    <LevelTag level={g.level} />
+                    {g.verdict && <VerdictTag verdict={g.verdict} />}
+                  </span>
+                  {flips.length > 0 && (
+                    <span className="block text-[12px] text-muted">
+                      A single choice can flip it: {flips.join(", ").toLowerCase()}.
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -191,6 +289,9 @@ export function GenesPanel({
   );
 
   const set = (patch: Partial<GeneFilter>) => onFilter({ ...filter, ...patch });
+  // Stable while the filter is unchanged, so the table keeps its rows between renders.
+  const phone = useMediaQuery("(max-width: 639px)");
+  const rowFilter = useCallback((g: (typeof genes)[number]) => matches(g, filter), [filter]);
   const callCount = (c: string) => genes.filter((g) => g.conclusion === c).length;
 
   return (
@@ -257,18 +358,28 @@ export function GenesPanel({
             label="Only genes one choice can flip"
           />
         </div>
-        <DataTable
-          data={genes}
-          columns={columns}
-          getRowId={(g) => g.gene}
-          label={`All genes: call, fold change with its 95 % confidence interval, p, the share ${cells ? `of the ${count(cells)} analyses` : "of the analyses"} qPilot checks that give the same call, and the confidence level`}
-          rowFilter={(g) => matches(g, filter)}
-          initialSorting={[{ id: "holds", desc: false }]}
-          onRowClick={(g) => onOpen(g.gene)}
-          selectedId={selected}
-          height={520}
-          empty="No gene matches these filters. Clear a filter to see more."
-        />
+        {phone ? (
+          <GeneCards
+            genes={genes}
+            rowFilter={rowFilter}
+            cells={cells}
+            dimLabel={dimLabel}
+            onOpen={onOpen}
+          />
+        ) : (
+          <DataTable
+            data={genes}
+            columns={columns}
+            getRowId={(g) => g.gene}
+            label={`All genes: call, fold change with its 95 % confidence interval, p, the share ${cells ? `of the ${count(cells)} analyses` : "of the analyses"} qPilot checks that give the same call, and the confidence level`}
+            rowFilter={rowFilter}
+            initialSorting={[{ id: "holds", desc: false }]}
+            onRowClick={(g) => onOpen(g.gene)}
+            selectedId={selected}
+            height={520}
+            empty="No gene matches these filters. Clear a filter to see more."
+          />
+        )}
       </CardBody>
     </Card>
   );

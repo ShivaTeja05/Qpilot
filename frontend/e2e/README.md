@@ -12,8 +12,11 @@ frontend/e2e/reset-store.sh               # fresh copy of the seeded demo store 
 qpilot app --no-open --port $APP_PORT &   # the server under test
 cd frontend && npx playwright install chromium   # once per machine (browsers are not committed)
 nice -n 10 npm run e2e                    # all specs; or: npx playwright test e2e/screens.spec.ts
-git checkout -- ../qpilot/web/static      # before committing
 ```
+
+Commit only `frontend/e2e/**` and `playwright.config.ts` (`git add frontend/e2e …`); never
+`git checkout -- qpilot/web/static` while a run is going: it swaps the page under the test for the
+last committed build. Restore it only before merging `ui/one-page`, then build again.
 
 - `E2E_URL` — the link qPilot printed (default `http://127.0.0.1:$APP_PORT/?token=qpilot-dev`).
 - `E2E_READONLY=1` — skip the tests that write (decide + undo, export).
@@ -23,6 +26,9 @@ git checkout -- ../qpilot/web/static      # before committing
 The report is `frontend/playwright-report/` (`npx playwright show-report`); traces of failures
 are in `frontend/test-results/`. Screenshots of every section at 1440 / 1024 / 768 / 390 px in
 light and dark go to `frontend/e2e/screenshots/<section>/<width>-<theme>.png` (gitignored).
+Every state's axe findings are saved to `frontend/e2e/screenshots/axe/<state>.json` (cleared at
+the start of a run); `node e2e/axe-summary.mjs [--all]` groups them by rule and element, with the
+states each was seen in, ready to post to the owners.
 
 ## What every test checks
 

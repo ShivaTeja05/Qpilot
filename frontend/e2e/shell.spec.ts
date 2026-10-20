@@ -189,7 +189,8 @@ test.describe("the theme", () => {
     }
     await app.page.getByRole("button", { name: /^Theme:/ }).click();
     await app.page.getByRole("menuitem", { name: /^Same as the system/ }).click();
-    await expect(html).not.toHaveAttribute("data-theme", /.+/);
+    await expect(html).toHaveAttribute("data-theme", "light"); // the emulated system theme
+    expect(await app.page.evaluate(() => localStorage.getItem("qpilot.theme"))).toBeNull();
   });
 
   test("the system's dark mode is followed with no saved choice", async ({ app }) => {

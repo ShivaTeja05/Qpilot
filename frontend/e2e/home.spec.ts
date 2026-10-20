@@ -9,6 +9,7 @@ import { LANDED, notLanded } from "./support/sections";
 interface SystemView {
   version: string;
   method: string;
+  studies_dir: string;
   model: { reason: string; outbound: string };
   autonomy: string;
   policy: string[];
@@ -77,22 +78,49 @@ test.describe("Open", () => {
 test.describe("Settings", () => {
   test.beforeEach(() => test.fixme(!LANDED.settings, notLanded("settings")));
 
-  test("shows the model's status in words, the autonomy and the never-does lines", async ({
+  test("the model's status, the never-does lines and this install, from the server", async ({
     app,
     api,
   }) => {
     const system = (await (await api.get("/api/system")).json()) as SystemView;
     await app.open("/settings");
-    await expect(app.page.getByText(system.model.reason, { exact: false }).first()).toBeVisible();
-    for (const line of system.never) await expect(app.page.getByText(line).first()).toBeVisible();
-    await expect(app.page.getByText(system.version, { exact: false }).first()).toBeVisible();
+    await expect(app.page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText(
+      "Settings",
+    );
+    // The server's reason, as a sentence (capitalised) on the page.
+    await expect(app.page.getByRole("region", { name: "Model" })).toContainText(
+      literal(system.model.reason, "i"),
+    );
+    const never = app.page.getByRole("region", { name: "What qPilot never does" });
+    for (const line of system.never) await expect(never).toContainText(line);
+    await expect(never).toContainText(`qPilot ${system.version}`);
+    await expect(never).toContainText(system.method);
+    await expect(never).toContainText(system.studies_dir);
     await app.axe("Settings");
   });
 
-  test("the autonomy switch shows the server's setting", async ({ app, api }) => {
+  test("the autonomy shows the server's setting and its policy lines", async ({ app, api }) => {
     const system = (await (await api.get("/api/system")).json()) as SystemView;
     await app.open("/settings");
-    const label = system.autonomy === "suggest" ? /suggest/i : /decide and tell me/i;
-    await expect(app.page.getByRole("radio", { name: label }).first()).toBeChecked();
+    const card = app.page.getByRole("region", { name: "What agents may do on their own" });
+    const choice = app.page.getByRole("radiogroup", { name: "What agents may do on their own" });
+    const title = system.autonomy === "suggest" ? "Suggest" : "Decide and tell me";
+    await expect(choice.getByRole("radio", { name: title, exact: true })).toBeChecked();
+    for (const line of system.policy) {
+      // Each policy line is shown as its head (bold) and the rest: check the words, not markup.
+      for (const part of line.split(/:\s*/)) await expect(card).toContainText(part.trim());
+    }
+  });
+
+  test("the theme control switches the page to dark and back", async ({ app }) => {
+    await app.open("/settings");
+    const theme = app.page.getByRole("radiogroup", { name: "Theme" });
+    await theme.getByRole("radio", { name: /dark/i }).click();
+    await expect(app.page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await app.axe("Settings, dark");
+    // Following the system again: the page shows the system's theme (light here).
+    await theme.getByRole("radio", { name: /system/i }).click();
+    await expect(app.page.locator("html")).toHaveAttribute("data-theme", "light");
+    expect(await app.page.evaluate(() => localStorage.getItem("qpilot.theme"))).toBeNull();
   });
 });

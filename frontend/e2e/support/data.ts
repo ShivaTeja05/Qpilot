@@ -30,6 +30,8 @@ export async function demoSession(api: APIRequestContext): Promise<Workspace> {
     demo,
     "the store has a Studio session (copy agent-bus/scratch/ui-seed/studies)",
   ).toBeTruthy();
+  // On a cold server the list may not name the study yet; the session's own frame does.
+  if (!demo!.study_id) demo!.study_id = (await workspaceView(api, demo!)).study_id ?? null;
   return demo!;
 }
 

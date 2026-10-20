@@ -139,8 +139,8 @@ ANSWER_FACTS = {
     "f_ans_ci_lo": "lower end of the 95 % confidence interval",
     "f_ans_ci_hi": "upper end of the 95 % confidence interval",
     "f_ans_p": "p-value",
-    "f_ans_holds": "share of reasonable analyses with the same call",
-    "f_ans_n_cells": "reasonable analyses",
+    "f_ans_holds": "share of the analyses qPilot checks with the same call",
+    "f_ans_n_cells": "analyses qPilot checks",
     "f_ans_level": "confidence level",
     "f_ans_min_flip": "choices that flip the call together",
     "f_ans_n_plates": "plates",
@@ -151,6 +151,15 @@ ANSWER_FACTS = {
     "f_ans_mde_fold": "smallest change the planned design detects",
     "f_ans_needed_called": "how often qPilot's rule calls it at the needed size",
     "f_ans_planned_called": "how often qPilot's rule calls it at the planned size",
+    "f_ans_n_up": "genes higher in the group",
+    "f_ans_n_down": "genes lower in the group",
+    "f_ans_n_no_call": "genes with no call",
+    "f_ans_m_cutoff": "geNorm's stability cut-off (M)",
+}
+#: Facts numbered by rank: their meaning by prefix.
+ANSWER_FACT_PREFIXES = {
+    "f_ans_m_": "geNorm stability M among all candidates",
+    "f_ans_flips_": "genes whose call this choice can change",
 }
 STUDY_TOOL_WORDS = {
     "qpcr_study": "the study summary",
@@ -756,7 +765,10 @@ def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
         fact = facts.get(fid)
         if fact is None:
             continue
-        meaning = ANSWER_FACTS.get(fid) or _path_words(fact.path)
+        meaning = ANSWER_FACTS.get(fid) or next(
+            (words for prefix, words in ANSWER_FACT_PREFIXES.items() if fid.startswith(prefix)),
+            _path_words(fact.path),
+        )
         out.append(CitedFact(id=fid, meaning=meaning, value=_page_value(fid, fact)))
     return out
 

@@ -1,7 +1,8 @@
 /**
  * A stage's two bulk actions and its confirm step. Each shows exactly what it covers first and
  * then does exactly that: "Accept all consistent…" accepts the listed ids (one record entry
- * each), "Reject contradicted AI calls…" rejects the listed ones with one reason, "Confirm this
+ * each), "Reject contradicted AI calls…" rejects the listed ones with one reason (the AI's calls,
+ * or, by the person's choice, every contradicted proposal, the rules' too), "Confirm this
  * stage…" shows what the confirm covers and waits for "Yes, confirm".
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import { ApiError, api, unwrap, type Schemas } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { count } from "@/lib/format";
 import {
+  CURVE_JUDGE,
   KIND_TITLE,
   STAGE_LABEL,
   describeProposal,
@@ -25,7 +27,7 @@ import { Hash } from "../Copy";
 import { ErrorPanel } from "../ErrorPanel";
 import { LoadingBlock } from "../feedback";
 import { Dialog } from "../overlay";
-import { Textarea } from "../controls";
+import { SegmentedControl, Textarea } from "../controls";
 import { CheckTag } from "../tags";
 import { toast } from "../Toaster";
 import { MAX_REASON } from "./ProposalCard";
@@ -33,7 +35,25 @@ import { StageSummary } from "./summary";
 import { useStageProposals, type ConfirmableStage, type InboxStage } from "./hooks";
 
 type BulkAction = "accept" | "reject";
+/** Reject: the contradicted proposals of a model or an agent (`ai`), or every one (`all`). */
+export type BulkMakers = Schemas["BulkRequest"]["makers"];
 type StageView = Schemas["StageView"];
+
+/** The label of the reject button: the spec's words while an AI call is contradicted. */
+export const REJECT_AI_LABEL = "Reject contradicted AI calls…";
+export const REJECT_ALL_LABEL = "Reject contradicted proposals…";
+
+const SCOPE_WORDS: Record<BulkMakers, string> = {
+  ai: "Only proposals made by a model or an agent are listed.",
+  all: "Every contradicted proposal is listed, the ones qPilot's rules made too.",
+};
+
+/** Who made a proposal, in a word or two (for a list line). */
+function makerWord(m: Proposal["made_by"]): string {
+  if (m.kind === "rule") return "rule";
+  if (m.kind === "agent") return m.agent ? `agent ${m.agent}` : "agent";
+  return m.provider === CURVE_JUDGE ? "Curve Judge" : "model";
+}
 
 const BULK: Record<
   BulkAction,
@@ -46,8 +66,8 @@ const BULK: Record<
     empty: "No waiting proposal is consistent with the engine's checks.",
   },
   reject: {
-    button: "Reject contradicted AI calls…",
-    title: "Reject the AI's contradicted proposals",
+    button: REJECT_AI_LABEL,
+    title: "Reject contradicted proposals",
     go: (n) => `Reject these ${count(n)}`,
     empty: "No waiting proposal from a model or an agent is contradicted.",
   },
@@ -60,12 +80,18 @@ export function BulkAction({
   action,
   disabled,
   size = "md",
+  aiContradicted,
+  contradicted,
 }: {
   sid: string;
   stage: InboxStage;
   action: BulkAction;
   disabled?: boolean;
   size?: "sm" | "md";
+  /** Reject: how many contradicted proposals of a model or an agent wait (labels the scopes). */
+  aiContradicted?: number;
+  /** Reject: how many contradicted proposals wait in all, the rules' too. */
+  contradicted?: number;
 }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -73,18 +99,28 @@ export function BulkAction({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [changed, setChanged] = useState(false);
+  // Reject's scope: the AI's calls while any is contradicted, else every contradicted proposal.
+  const [chosen, setChosen] = useState<BulkMakers | null>(null);
+  const makers: BulkMakers =
+    chosen ?? (aiContradicted === 0 && (contradicted ?? 0) > 0 ? "all" : "ai");
   const button = useRef<HTMLButtonElement>(null);
+  const label =
+    action === "reject" && makers === "all" && aiContradicted === 0
+      ? REJECT_ALL_LABEL
+      : BULK[action].button;
   useFocusTarget(BULK[action].button, button);
   const list = useQuery({
-    queryKey: ["w", sid, "bulk", action, stage],
+    queryKey: ["w", sid, "bulk", action, stage, action === "reject" ? makers : "consistent"],
     // Not while its own write runs: every proposal it decides re-reads the session.
     enabled: open && !busy,
-    queryFn: () =>
-      unwrap(
-        api.GET("/api/sessions/{sid}/bulk/{action}", {
-          params: { path: { sid, action }, query: { stage } },
-        }),
-      ),
+    queryFn: async () => {
+      const query = action === "reject" ? { stage, makers } : { stage };
+      const data = await unwrap(
+        api.GET("/api/sessions/{sid}/bulk/{action}", { params: { path: { sid, action }, query } }),
+      );
+      // The scope travels with the list, so the write names exactly the list shown.
+      return { ...data, makers };
+    },
     staleTime: 0,
   });
   const words = BULK[action];
@@ -97,8 +133,14 @@ export function BulkAction({
       const done = await unwrap(
         api.POST("/api/sessions/{sid}/bulk/{action}", {
           params: { path: { sid, action } },
-          // The scope of the list shown: the GET above lists the AI's calls (its default).
-          body: { stage, ids, reason: reason.trim(), makers: "ai", expected_head: list.data.head },
+          // Exactly the list shown, with the scope it was listed under.
+          body: {
+            stage,
+            ids,
+            reason: reason.trim(),
+            makers: list.data.makers,
+            expected_head: list.data.head,
+          },
         }),
       );
       await refreshWorkspace(qc, sid);
@@ -141,14 +183,20 @@ export function BulkAction({
           disabled={disabled}
           data-action={words.button}
         >
-          {words.button}
+          {label}
         </Button>
       }
-      title={words.title}
+      title={
+        action === "accept"
+          ? words.title
+          : makers === "ai"
+            ? "Reject the AI's contradicted calls"
+            : words.title
+      }
       description={
         action === "accept"
           ? "Exactly the proposals listed here are accepted, one record entry each."
-          : "Exactly these proposals are rejected, one record entry each, all with the one reason you give. Only proposals made by a model or an agent are listed."
+          : `Exactly these proposals are rejected, one record entry each, all with the one reason you give. ${SCOPE_WORDS[makers]}`
       }
       footer={
         <>
@@ -167,6 +215,35 @@ export function BulkAction({
       }
     >
       <div className="flex flex-col gap-3">
+        {action === "reject" ? (
+          <div className="flex flex-col gap-1.5">
+            <span id={`bulk-scope-${sid}-${stage}`} className="text-[13px] font-medium text-fg">
+              Which contradicted proposals
+            </span>
+            <SegmentedControl<BulkMakers>
+              label="Which contradicted proposals"
+              value={makers}
+              onValueChange={(v) => {
+                setChosen(v);
+                setChanged(false);
+                setError(null);
+              }}
+              options={[
+                {
+                  value: "ai",
+                  label: `The AI's calls${aiContradicted != null ? ` · ${count(aiContradicted)}` : ""}`,
+                  title:
+                    "Contradicted proposals made by a model (the Design Interpreter, the Curve Judge) or an agent",
+                },
+                {
+                  value: "all",
+                  label: `Every contradicted proposal, rules included${contradicted != null ? ` · ${count(contradicted)}` : ""}`,
+                  title: "Also the contradicted proposals qPilot's own rules made",
+                },
+              ]}
+            />
+          </div>
+        ) : null}
         {changed ? (
           <p
             role="status"
@@ -187,10 +264,15 @@ export function BulkAction({
               <ProposalLines
                 proposals={list.data.proposals}
                 descriptions={list.data.descriptions}
+                showMaker={action === "reject"}
               />
             </>
           ) : (
-            <p className="text-[13px] text-muted">{words.empty}</p>
+            <p className="text-[13px] text-muted">
+              {action === "reject" && makers === "all"
+                ? "No waiting proposal of this stage is contradicted."
+                : words.empty}
+            </p>
           )
         ) : null}
         {needsReason && ids.length ? (
@@ -229,10 +311,13 @@ export function ProposalLines({
   proposals,
   descriptions,
   max = 400,
+  showMaker,
 }: {
   proposals: Proposal[];
   descriptions?: Record<string, string>;
   max?: number;
+  /** Say who made each one (rule, model, Curve Judge, agent). */
+  showMaker?: boolean;
 }) {
   const kinds = new Map<string, number>();
   for (const p of proposals) kinds.set(p.kind, (kinds.get(p.kind) ?? 0) + 1);
@@ -253,7 +338,12 @@ export function ProposalLines({
           >
             <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <span className="min-w-0">{descriptions?.[p.id] ?? describeProposal(p)}</span>
-              <CheckTag status={p.check.status} />
+              <span className="flex shrink-0 items-center gap-2">
+                {showMaker ? (
+                  <span className="text-xs text-muted">made by {makerWord(p.made_by)}</span>
+                ) : null}
+                <CheckTag status={p.check.status} />
+              </span>
             </span>
           </li>
         ))}
@@ -284,14 +374,20 @@ export function BulkActions({
     (p) => p.status === "proposed" && p.kind !== "stage.confirm",
   );
   const consistent = waiting.filter((p) => p.check.status === "consistent").length;
-  const aiContradicted = waiting.filter(
-    (p) => p.check.status === "contradicted" && p.made_by.kind !== "rule",
-  ).length;
+  const contradicted = waiting.filter((p) => p.check.status === "contradicted");
+  const aiContradicted = contradicted.filter((p) => p.made_by.kind !== "rule").length;
   const none = pending === 0;
   return (
     <div className="flex flex-wrap items-center gap-2">
       <BulkAction sid={sid} stage={stage} action="accept" disabled={none || !consistent} />
-      <BulkAction sid={sid} stage={stage} action="reject" disabled={none || !aiContradicted} />
+      <BulkAction
+        sid={sid}
+        stage={stage}
+        action="reject"
+        disabled={none || !contradicted.length}
+        aiContradicted={aiContradicted}
+        contradicted={contradicted.length}
+      />
     </div>
   );
 }

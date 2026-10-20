@@ -21,6 +21,11 @@ export interface SectionState {
   done: boolean;
   /** Proposals or requests waiting for a person. */
   count: number;
+  /**
+   * The study's file is still being read after a server start (`frame.warming`): its stages are
+   * not known yet, so nothing is shown as locked or confirmed.
+   */
+  unknown: boolean;
 }
 
 const stageOf = (frame: Frame, name: Stage["stage"]) => frame.stages.find((s) => s.stage === name);
@@ -34,7 +39,14 @@ export function sectionStates(
 ): Record<SectionId, SectionState> {
   const out = {} as Record<SectionId, SectionState>;
   for (const section of SECTIONS) {
-    const s: SectionState = { section, absent: false, reachable: true, done: false, count: 0 };
+    const s: SectionState = {
+      section,
+      absent: false,
+      reachable: true,
+      done: false,
+      count: 0,
+      unknown: false,
+    };
     out[section.id] = s;
     if (section.scope === "global") continue;
     if (!frame) {
@@ -47,6 +59,11 @@ export function sectionStates(
       s.absent = true;
       s.reachable = false;
       s.lockReason = "Only for files opened in Studio";
+      continue;
+    }
+    if (frame.warming) {
+      s.unknown = true;
+      if (section.id === "agents") s.count = pendingRequests;
       continue;
     }
     if (section.needsResults && !frame.results_visible) {

@@ -14,7 +14,7 @@ import time
 import pytest
 
 from tests.conftest import DEMO_RDML
-from tests.web.numbers_engine import engine
+from tests.web.numbers_engine import CARD_DIMENSION, engine, flips_alone
 from tests.web.numbers_world import BASE, World, api_client, demo_world, get_json
 
 pytestmark = pytest.mark.demo_data
@@ -58,15 +58,25 @@ def ask(client, study_id: str, question: str) -> dict:
     return view["result"]
 
 
+def _plain(text: str) -> str:
+    """Digits as written, without the page's grouping (``24 576`` with U+202F, ``24,576``)."""
+    return re.sub(r"(?<=\d)[,\u202f\u2009 ](?=\d{3}\b)", "", text)
+
+
 def shown(text: str) -> float:
-    """The number a cited value shows (``3.3×`` -> 3.3, ``99%`` -> 99)."""
-    (number,) = NUMBER.findall(text.replace(",", "").replace(" ", ""))
+    """The number a cited value shows (``3.32×`` -> 3.32, ``99 %`` -> 99, ``24 576`` -> 24576)."""
+    (number,) = NUMBER.findall(_plain(text))
     return float(number)
 
 
 def same_at_shown_precision(text: str, value: float) -> bool:
-    """``text`` is ``value`` written with as many digits as ``text`` shows."""
-    number = NUMBER.findall(text.replace(",", "").replace(" ", ""))[0]
+    """``text`` is ``value`` written with as many digits as ``text`` shows (``> 99 %`` included)."""
+    plain = _plain(text)
+    number = NUMBER.findall(plain)[0]
+    if plain.lstrip().startswith(">"):
+        return float(number) < value < float(number) + 1
+    if plain.lstrip().startswith("<"):
+        return float(number) - 1 < value < float(number)
     decimals = len(number.split(".")[1]) if "." in number else 0
     return abs(float(number) - value) <= 0.5 * 10**-decimals + 1e-12
 
@@ -77,7 +87,7 @@ def every_number_is_cited(answer: dict, genes: list[str]) -> None:
     for gene in sorted(genes, key=len, reverse=True):
         text = text.replace(gene, "")
     cited = {str(shown(f["value"])) for f in answer["facts"] if NUMBER.search(f["value"])}
-    written = {str(float(n)) for n in NUMBER.findall(text.replace(",", ""))}
+    written = {str(float(n)) for n in NUMBER.findall(_plain(text))}
     assert written <= cited, (answer["answer"], answer["facts"])
 
 
@@ -116,6 +126,52 @@ def test_the_study_answer_cites_the_engine_counts(copy, world, which):
         "f_ans_n_samples": eng.result.n_samples,
         "f_ans_n_genes": len(eng.result.contrasts),
     }
+    every_number_is_cited(answer, list(eng.result.contrasts))
+
+
+@pytest.mark.parametrize("which", ["legacy", "study"])
+def test_the_calls_answer_counts_the_engine_s_calls(copy, world, which):
+    client, _ = copy
+    study_id = getattr(world, which)
+    eng = engine(world, study_id).result
+    answer = ask(client, study_id, "Which genes are up?")
+    facts = {f["id"]: shown(f["value"]) for f in answer["facts"]}
+    calls = {
+        c: sorted(g for g, r in eng.contrasts.items() if r.conclusion == c)
+        for c in ("up", "down", "none")
+    }
+    assert facts == {
+        "f_ans_n_up": len(calls["up"]),
+        "f_ans_n_down": len(calls["down"]),
+        "f_ans_n_no_call": len(calls["none"]),
+    }
+    for gene in calls["up"] + calls["down"]:
+        assert gene in answer["answer"], gene
+    every_number_is_cited(answer, list(eng.contrasts))
+
+
+def test_the_references_answer_is_geNorm(copy, world):
+    client, _ = copy
+    eng = engine(world, world.study).result
+    answer = ask(client, world.study, "Which control genes are most stable?")
+    facts = {f["id"]: f["value"] for f in answer["facts"]}
+    order = [g for g in eng.genorm.order if g in eng.genorm.M_initial]
+    for rank, gene in enumerate(order, 1):
+        assert same_at_shown_precision(facts[f"f_ans_m_{rank}"], eng.genorm.M_initial[gene])
+    assert shown(facts["f_ans_m_cutoff"]) == eng.genorm.cutoff_M
+    every_number_is_cited(answer, [*eng.contrasts, *order])
+
+
+def test_the_choices_answer_counts_each_card_s_flips(copy, world):
+    client, _ = copy
+    eng = engine(world, world.study)
+    answer = ask(client, world.study, "How many genes can each analysis choice change?")
+    assert answer["tool"] != "none", answer["answer"]
+    flips = sorted(
+        int(shown(f["value"])) for f in answer["facts"] if f["id"].startswith("f_ans_flips_")
+    )
+    want = sorted(sum(flips_alone(eng, CARD_DIMENSION[c.kind]).values()) for c in eng.cards)
+    assert flips == want == sorted(c.impact["n_genes_flipped"] for c in eng.cards)
     every_number_is_cited(answer, list(eng.result.contrasts))
 
 
@@ -184,3 +240,5 @@ def test_the_model_test_row_is_the_harness_on_the_engine_result(copy, world, tmp
     assert row["numbers_shown"] == report.numbers_shown == 0
     assert row["invented_numbers_caught"] == report.invented_numbers == 0
     assert row["fallbacks"] is None  # no model: nothing to fall back from
+    saved = get_json(client, f"/api/model/scorecards?study={study_id}")
+    assert [r for r in saved["saved"] if r["profile"] == row["profile"]] == [row]
