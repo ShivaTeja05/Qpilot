@@ -308,13 +308,13 @@ export function MenuItem({
     >
       {icon}
       <span className="min-w-0 flex-1">{children}</span>
-      {shortcut ? <span className="ml-4 text-xs text-faint">{shortcut}</span> : null}
+      {shortcut ? <span className="ml-4 text-xs text-muted">{shortcut}</span> : null}
     </M.Item>
   );
 }
 
 export function MenuLabel({ children }: { children: ReactNode }) {
-  return <M.Label className="px-2 pt-1.5 pb-1 text-xs font-medium text-faint">{children}</M.Label>;
+  return <M.Label className="px-2 pt-1.5 pb-1 text-xs font-medium text-muted">{children}</M.Label>;
 }
 
 export function MenuSeparator() {

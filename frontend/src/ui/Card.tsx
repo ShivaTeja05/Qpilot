@@ -99,7 +99,7 @@ export function PageHeader({
     <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0 max-w-3xl">
         {eyebrow ? (
-          <div className="mb-1 text-xs font-medium uppercase tracking-wider text-faint">
+          <div className="mb-1 text-xs font-medium uppercase tracking-wider text-muted">
             {eyebrow}
           </div>
         ) : null}
