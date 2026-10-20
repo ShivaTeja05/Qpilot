@@ -23,6 +23,7 @@ import { Textarea } from "../controls";
 import { CheckTag } from "../tags";
 import { toast } from "../Toaster";
 import { MAX_REASON } from "./ProposalCard";
+import { StageSummary } from "./summary";
 import { useStageProposals, type ConfirmableStage, type InboxStage } from "./hooks";
 
 type BulkAction = "accept" | "reject";
@@ -417,6 +418,14 @@ export function ConfirmStage({
                 {w}
               </p>
             ))}
+            {stage === "design" || stage === "curves" ? (
+              <section aria-labelledby={`confirm-summary-${sid}`} className="rounded-lg border border-line bg-surface-2 p-3">
+                <h3 id={`confirm-summary-${sid}`} className="mb-2 text-[13px] font-semibold text-fg">
+                  {stage === "design" ? "The design this gives" : "The curve calls this gives"}
+                </h3>
+                <StageSummary stage={stage} proposals={view.covers} />
+              </section>
+            ) : null}
             {view.covers.length ? (
               <>
                 <p className="text-[13px] font-medium text-fg">
