@@ -79,6 +79,17 @@ export const RULE_WORDS: Record<string, string> = {
   "D-CURVE": "The well's curve as LinRegPCR fitted it (an exponential phase, a plateau, a quantity).",
 };
 
+/** A rule's short name, shown on its chip next to the id. */
+export const RULE_TITLE: Record<string, string> = {
+  "D-SERIES": "Dilution series",
+  "D-NTC": "Negative controls",
+  "D-REP": "Replicates",
+  "D-SYMBOL": "Gene symbol",
+  "D-COVER": "One role per well",
+  "D-NGUARD": "Group sizes",
+  "D-CURVE": "The curve",
+};
+
 /** Plain labels for the numbers and fields engine checks report (`ProposalCheck.details`). */
 const DETAIL_LABEL: Record<string, string> = {
   amplification_factor: "amplification factor (E)",

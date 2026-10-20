@@ -9,12 +9,22 @@ export function FileFacts({
   facts,
   summary,
   analysed,
+  warming,
 }: {
   facts: Schemas["FileFacts"] | null | undefined;
   summary: Schemas["InspectSummary"] | null | undefined;
   /** Results exist (both blind stages confirmed). */
   analysed?: boolean;
+  /** The server is reading the file for the first time since it started. */
+  warming?: boolean;
 }) {
+  if (!facts && warming) {
+    return (
+      <Card as="section">
+        <CardHeader title="The file" hint="Being read for the first time since qPilot started; its facts appear here when that is done." />
+      </Card>
+    );
+  }
   if (!facts) {
     return (
       <Card as="section">
