@@ -261,7 +261,7 @@ export function TopBar({
             className="hidden shrink-0 min-[1600px]:inline-flex"
           />
         ) : null}
-        {frame ? (
+        {frame && !frame.warming ? (
           <Tooltip
             content={
               head

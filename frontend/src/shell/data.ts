@@ -38,6 +38,10 @@ export function useWorkspaceFrame(kind: WorkspaceKind | undefined, key: string |
       kind === "s"
         ? unwrap(api.GET("/api/sessions/{sid}", { params: { path: { sid: key! } } }))
         : unwrap(api.GET("/api/studies/{study_id}", { params: { path: { study_id: key! } } })),
+    // While the file warms after a start, the warm job's done event re-reads the frame; poll
+    // slowly as well, in case the event stream is down.
+    refetchInterval: (q) =>
+      (q.state.data as { warming?: boolean } | undefined)?.warming ? 3000 : false,
   });
 }
 

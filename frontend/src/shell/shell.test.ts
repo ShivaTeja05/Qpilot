@@ -67,6 +67,14 @@ describe("sectionStates (recorded demo session)", () => {
     });
     expect(closed.curves.lockReason).toBe("confirm the design first");
   });
+  it("shows no lock and no tick while the file warms after a start (stages unknown)", () => {
+    const warming = sectionStates({ ...frame, warming: true, results_visible: false }, 1);
+    for (const id of ["design", "curves", "results", "audit", "prism"] as const) {
+      expect(warming[id]).toMatchObject({ unknown: true, reachable: true, done: false });
+      expect(warming[id].lockReason).toBeUndefined();
+    }
+    expect(warming.agents.count).toBe(1);
+  });
   it("counts agent requests and hides Studio sections for a plain study", () => {
     expect(states.agents.count).toBe(2);
     const study = sectionStates({ ...frame, kind: "study", stages: [] });
