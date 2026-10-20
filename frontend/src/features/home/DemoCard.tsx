@@ -122,7 +122,7 @@ export function DemoCard({
             <dd className="text-fg">{demo.citation}</dd>
             {workspace ? (
               <>
-                <dt className="text-muted">File</dt>
+                <dt className="text-muted">In the file</dt>
                 <dd className="text-fg tabular">{countsLine(workspace)}</dd>
               </>
             ) : null}
@@ -154,10 +154,10 @@ export function DemoCard({
                   <ArrowRight />
                 </Link>
               </Button>
-              <p className="text-xs text-faint">
+              <p className="text-xs text-muted">
                 Your work on it is kept. To start again from a clean study, use Start a fresh demo
                 in{" "}
-                <Link href="/settings" className="text-accent underline-offset-2 hover:underline">
+                <Link href="/settings" className="text-accent underline underline-offset-2">
                   Settings
                 </Link>
                 .

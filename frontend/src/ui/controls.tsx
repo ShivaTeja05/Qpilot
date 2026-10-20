@@ -2,7 +2,9 @@
 import { Select as S, Switch as Sw, Tabs as Tb, ToggleGroup as TG } from "radix-ui";
 import { Check, ChevronDown } from "lucide-react";
 import {
+  createContext,
   forwardRef,
+  useContext,
   useId,
   type InputHTMLAttributes,
   type ReactNode,
@@ -12,12 +14,38 @@ import { cn } from "@/lib/cn";
 import { count } from "@/lib/format";
 
 const FIELD =
-  "w-full rounded-lg border border-line-strong bg-surface px-3 text-sm text-fg placeholder:text-faint shadow-sm transition-colors hover:border-faint focus-visible:border-focus focus-visible:outline-2 focus-visible:outline-offset-0 disabled:opacity-55 aria-[invalid=true]:border-danger";
+  "w-full rounded-lg border border-line-strong bg-surface px-3 text-sm text-fg placeholder:text-faint shadow-sm transition-colors hover:border-faint focus-visible:border-focus focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus disabled:opacity-55 aria-[invalid=true]:border-danger";
 
 // ---------------------------------------------------------------------------------------------
 // Field
 
-/** A label, the control, and a hint or an error under it. */
+interface FieldIds {
+  id: string;
+  describedBy?: string;
+  invalid: boolean;
+}
+
+const FieldContext = createContext<FieldIds | null>(null);
+
+/** The id, description and invalid state a control inside a {@link Field} takes by default. */
+function useFieldProps(props: {
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: InputHTMLAttributes<HTMLInputElement>["aria-invalid"];
+}) {
+  const field = useContext(FieldContext);
+  return {
+    id: props.id ?? field?.id,
+    "aria-describedby": props["aria-describedby"] ?? field?.describedBy,
+    "aria-invalid": props["aria-invalid"] ?? (field?.invalid ? true : undefined),
+  };
+}
+
+/**
+ * A label, the control, and a hint or an error under it. The label, the hint and the error are
+ * wired to the control inside (Input, Textarea, Select) without passing ids; pass `htmlFor` only
+ * for another kind of control (then give that control the same id).
+ */
 export function Field({
   label,
   hint,
@@ -35,27 +63,39 @@ export function Field({
   className?: string;
   optional?: boolean;
 }) {
+  const auto = useId();
+  const id = htmlFor ?? `${auto}-control`;
+  const noteId = `${auto}-note`;
+  const note = error || hint;
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={htmlFor} className="text-[13px] font-medium text-fg">
-        {label}
-        {optional ? <span className="ml-1 font-normal text-muted">(optional)</span> : null}
-      </label>
-      {children}
-      {error ? (
-        <p className="text-xs text-danger" role="alert">
-          {error}
-        </p>
-      ) : hint ? (
-        <p className="text-xs text-muted">{hint}</p>
-      ) : null}
-    </div>
+    <FieldContext.Provider
+      value={{ id, describedBy: note ? noteId : undefined, invalid: Boolean(error) }}
+    >
+      <div className={cn("flex flex-col gap-1.5", className)}>
+        <label htmlFor={id} className="text-[13px] font-medium text-fg">
+          {label}
+          {optional ? <span className="ml-1 font-normal text-muted">(optional)</span> : null}
+        </label>
+        {children}
+        {error ? (
+          <p id={noteId} className="text-xs text-danger" role="alert">
+            {error}
+          </p>
+        ) : hint ? (
+          <p id={noteId} className="text-xs text-muted">
+            {hint}
+          </p>
+        ) : null}
+      </div>
+    </FieldContext.Provider>
   );
 }
 
+/** A one-line text input (takes its id and description from an enclosing Field). */
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, ...rest }, ref) {
-    return <input ref={ref} className={cn(FIELD, "h-8", className)} {...rest} />;
+    const wired = useFieldProps(rest);
+    return <input ref={ref} className={cn(FIELD, "h-8", className)} {...rest} {...wired} />;
   },
 );
 
@@ -69,6 +109,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   { className, showCount, maxLength, value, ...rest },
   ref,
 ) {
+  const wired = useFieldProps(rest);
   const length = typeof value === "string" ? value.length : 0;
   const near = maxLength != null && length > maxLength * 0.9;
   return (
@@ -84,10 +125,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
           className,
         )}
         {...rest}
+        {...wired}
       />
       {showCount && maxLength != null ? (
         <span
-          aria-live="polite"
+          aria-live={near ? "polite" : "off"}
           className={cn(
             "pointer-events-none absolute right-2.5 bottom-1.5 font-mono text-[11px] tabular",
             near ? "text-warn" : "text-muted",
@@ -133,10 +175,11 @@ export function Select<V extends string = string>({
   id?: string;
   disabled?: boolean;
 }) {
+  const wired = useFieldProps({ id });
   return (
     <S.Root value={value} onValueChange={(v) => onValueChange(v as V)} disabled={disabled}>
       <S.Trigger
-        id={id}
+        {...wired}
         aria-label={label}
         className={cn(
           FIELD,
@@ -206,7 +249,7 @@ export function Switch({
         checked={checked}
         onCheckedChange={onCheckedChange}
         disabled={disabled}
-        className="relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent bg-line-strong transition-colors duration-150 data-[state=checked]:bg-accent disabled:opacity-55"
+        className="relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent bg-faint transition-colors duration-150 data-[state=checked]:bg-accent disabled:opacity-55"
       >
         <Sw.Thumb className="block size-4 translate-x-0.5 rounded-full bg-surface shadow-sm transition-transform duration-150 data-[state=checked]:translate-x-[18px]" />
       </Sw.Root>
@@ -258,7 +301,7 @@ export function SegmentedControl<V extends string>({
           title={o.title}
           disabled={o.disabled}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-md px-2.5 font-medium whitespace-nowrap text-muted transition-colors duration-150 hover:text-fg disabled:opacity-50 data-[state=on]:bg-surface data-[state=on]:text-fg data-[state=on]:shadow-sm [&_svg]:size-3.5",
+            "inline-flex items-center gap-1.5 rounded-md px-2.5 font-medium whitespace-nowrap text-muted transition-colors duration-150 hover:text-fg disabled:opacity-50 data-[state=on]:bg-surface data-[state=on]:text-accent-strong data-[state=on]:shadow-sm data-[state=on]:ring-1 data-[state=on]:ring-line-strong focus-visible:outline-offset-0 [&_svg]:size-3.5",
             size === "sm" ? "h-6 text-xs" : "h-7 text-[13px]",
           )}
         >
@@ -305,7 +348,7 @@ export function TabsTrigger({
   return (
     <Tb.Trigger
       value={value}
-      className="relative -mb-px inline-flex h-9 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-3 text-sm font-medium text-muted transition-colors hover:text-fg data-[state=active]:border-accent data-[state=active]:text-fg"
+      className="relative -mb-px inline-flex h-9 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-3 text-sm font-medium text-muted transition-colors hover:text-fg data-[state=active]:border-accent data-[state=active]:text-fg focus-visible:outline-offset-[-2px]"
     >
       {children}
       {n != null ? (

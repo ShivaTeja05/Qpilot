@@ -5,68 +5,22 @@
  */
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, FileSpreadsheet, FileUp, FlaskConical, Plus, X } from "lucide-react";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Button, ErrorPanel, Field, IconButton, JobCard, Kbd, ProgressBar, Textarea } from "@/ui";
 import { cn } from "@/lib/cn";
 import { bytes } from "@/lib/format";
-import { MOD, useHotkeys } from "@/lib/hooks";
+import { MOD } from "@/lib/hooks";
+import { useOpenFileRequest } from "@/shell/actions";
 import { openFile } from "./upload";
+import type { Intake } from "./useIntake";
 import { openedKey, useGoToSession, useJobOutcome } from "./useOpenWorkspace";
-import { MAX_SENTENCE, RDML_SUFFIXES, SHEET_SUFFIXES, sortFiles } from "./workspace";
+import { MAX_SENTENCE, SHEET_SUFFIXES, RDML_SUFFIXES } from "./workspace";
 
 type Phase =
   | { kind: "choose" }
   | { kind: "uploading"; loaded: number; total: number; abort: () => void }
   | { kind: "opening"; jobId: string }
   | { kind: "failed"; error: unknown };
-
-/** The files chosen so far, shared with the page so a drop anywhere on it lands here. */
-export interface Intake {
-  rdml: File | null;
-  sheet: File | null;
-  sentence: string;
-  /** What the last drop or choice could not use, in words. */
-  notice: string | null;
-  setSentence: (s: string) => void;
-  add: (files: readonly File[]) => void;
-  removeRdml: () => void;
-  removeSheet: () => void;
-  reset: () => void;
-}
-
-/** The intake's state (lifted to the page so the whole page is a drop target). */
-export function useIntake(): Intake {
-  const [rdml, setRdml] = useState<File | null>(null);
-  const [sheet, setSheet] = useState<File | null>(null);
-  const [sentence, setSentence] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
-  return {
-    rdml,
-    sheet,
-    sentence,
-    notice,
-    setSentence,
-    add: (files) => {
-      const sorted = sortFiles(files);
-      if (sorted.rdml) setRdml(sorted.rdml);
-      if (sorted.sheet) setSheet(sorted.sheet);
-      if (sorted.ignored.length) {
-        const names = sorted.ignored.map((f) => f.name).join(", ");
-        setNotice(
-          `Not used: ${names}. qPilot opens an RDML file (${RDML_SUFFIXES.join(" or ")}) and an optional sample sheet (${SHEET_SUFFIXES.join(" or ")}).`,
-        );
-      } else setNotice(null);
-    },
-    removeRdml: () => setRdml(null),
-    removeSheet: () => setSheet(null),
-    reset: () => {
-      setRdml(null);
-      setSheet(null);
-      setSentence("");
-      setNotice(null);
-    },
-  };
-}
 
 function FileRow({
   file,
@@ -111,6 +65,11 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
   const fileInput = useRef<HTMLInputElement>(null);
   const sheetInput = useRef<HTMLInputElement>(null);
   const titleId = useId();
+  // Open and Cancel give way to the progress: keep keyboard focus there, not on the page.
+  const status = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (phase.kind === "uploading" || phase.kind === "failed") status.current?.focus();
+  }, [phase.kind]);
   const sentenceId = useId();
   const busy = phase.kind === "uploading" || phase.kind === "opening";
 
@@ -122,7 +81,8 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
     }
   });
 
-  useHotkeys({ "mod+o": () => !busy && fileInput.current?.click() });
+  // ⌘O (the shell binds it everywhere, comes here, and asks): show the file picker.
+  useOpenFileRequest(() => !busy && fileInput.current?.click());
 
   const start = () => {
     if (!intake.rdml || busy) return;
@@ -225,7 +185,7 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
             {intake.notice}
           </p>
         ) : null}
-        <p className="max-w-sm text-xs text-faint">
+        <p className="max-w-sm text-xs text-muted">
           Opening reads the file and quarantines every name in it; nothing is analysed yet. The file
           stays on this computer.
         </p>
@@ -310,7 +270,11 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
         />
       </Field>
 
-      <div className="mt-auto flex flex-col gap-3">
+      <div
+        ref={status}
+        tabIndex={-1}
+        className="mt-auto flex flex-col gap-3 rounded-xl outline-none focus-visible:outline-2 focus-visible:outline-offset-4"
+      >
         {phase.kind === "uploading" ? (
           <div className="rounded-xl border border-line bg-surface-2 p-3" aria-live="polite">
             <div className="flex items-baseline justify-between gap-3 text-sm">

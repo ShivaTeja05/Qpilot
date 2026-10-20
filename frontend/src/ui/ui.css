@@ -3,6 +3,18 @@
  * 120–200 ms ease-out; nothing moves under prefers-reduced-motion (styles.css also caps it).
  */
 
+/*
+ * One focus ring colour. Elements with transition-colors also transition outline-color, which
+ * starts at currentColor: start it at --focus instead so the ring never shows grey or white.
+ */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    outline-color: var(--focus);
+  }
+}
+
 @keyframes qp-fade-in {
   from {
     opacity: 0;

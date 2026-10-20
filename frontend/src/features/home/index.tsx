@@ -3,38 +3,15 @@
  * demo study, or go back to a recent workspace — and what this install is. The whole screen is a
  * drop target for the RDML file and its sample sheet.
  */
-import { useQuery } from "@tanstack/react-query";
 import { BookCheck, Cpu, Sparkles, UserCheck } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";
-import { api, unwrap } from "@/api/client";
+import { useSystem, useWorkspaces } from "@/shell/data";
 import type { SectionProps } from "@/shell/sections";
-import { Badge, TooltipProvider } from "@/ui";
-import { useSystem } from "@/features/settings/system";
 import { DemoCard } from "./DemoCard";
-import { OpenFile, useIntake } from "./OpenFile";
+import { OpenFile } from "./OpenFile";
+import { useIntake } from "./useIntake";
 import { Recent } from "./Recent";
 import { SystemStrip } from "./SystemStrip";
-
-/** qPilot's mark: an amplification curve rising out of its baseline (decoration, not data). */
-function Mark() {
-  return (
-    <span
-      className="flex size-9 items-center justify-center rounded-xl bg-accent text-accent-fg shadow-sm"
-      aria-hidden
-    >
-      <svg
-        viewBox="0 0 24 24"
-        className="size-5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-      >
-        <path d="M3.5 17.5h3.2c3.6 0 4.4-11 9.3-11h4.5" />
-      </svg>
-    </span>
-  );
-}
 
 const STEPS = [
   {
@@ -64,7 +41,7 @@ const STEPS = [
 /** How qPilot works, as a short vertical path (the hero's right column on wide screens). */
 function HowItWorks() {
   return (
-    <ol className="relative flex flex-col gap-4 rounded-2xl border border-line bg-surface/80 p-5 shadow-sm backdrop-blur-sm sm:p-6">
+    <ol className="relative flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-6">
       {STEPS.map((s, i) => (
         <li key={s.title} className="relative flex gap-3">
           {i < STEPS.length - 1 ? (
@@ -96,15 +73,12 @@ function hasFiles(e: DragEvent): boolean {
 
 export default function Section(_: SectionProps) {
   const system = useSystem();
-  const workspaces = useQuery({
-    queryKey: ["workspaces"],
-    queryFn: () => unwrap(api.GET("/api/workspaces")),
-  });
+  const workspaces = useWorkspaces();
   const intake = useIntake();
   const [dragging, setDragging] = useState(false);
   const depth = useRef(0);
 
-  const list = workspaces.data?.workspaces;
+  const list = workspaces.data;
   const demoWorkspace = list?.find((w) => w.is_demo && w.kind === "session" && w.file_present);
 
   const drag = {
@@ -134,94 +108,87 @@ export default function Section(_: SectionProps) {
   };
 
   return (
-    <TooltipProvider>
-      <div className="relative isolate min-h-full" {...drag}>
-        {/* A faint plate-well dot grid and a soft accent glow behind the hero (decoration). */}
+    <div className="relative isolate min-h-full" {...drag}>
+      {/* A faint plate-well dot grid and a soft accent glow behind the hero (decoration). */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-x-4 -top-6 -z-10 h-[560px] overflow-hidden sm:-inset-x-6 lg:-inset-x-8"
+      >
         <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] overflow-hidden"
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "radial-gradient(var(--line-strong) 1.2px, transparent 1.6px)",
-              backgroundSize: "22px 22px",
-              maskImage: "radial-gradient(ellipse 80% 70% at 75% 0%, black 10%, transparent 75%)",
-              WebkitMaskImage:
-                "radial-gradient(ellipse 80% 70% at 75% 0%, black 10%, transparent 75%)",
-            }}
-          />
-          <div
-            className="absolute -top-40 right-[-10%] h-[440px] w-[640px] rounded-full opacity-60 blur-3xl"
-            style={{ background: "radial-gradient(closest-side, var(--accent-soft), transparent)" }}
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "radial-gradient(var(--line-strong) 1.2px, transparent 1.6px)",
+            backgroundSize: "22px 22px",
+            maskImage: "radial-gradient(ellipse 80% 70% at 75% 0%, black 10%, transparent 75%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 80% 70% at 75% 0%, black 10%, transparent 75%)",
+          }}
+        />
+        <div
+          className="absolute -top-40 right-[-10%] h-[440px] w-[640px] rounded-full opacity-60 blur-3xl"
+          style={{ background: "radial-gradient(closest-side, var(--accent-soft), transparent)" }}
+        />
+      </div>
+
+      <div className="mx-auto max-w-6xl pt-2 pb-4 sm:pt-6 lg:pt-8">
+        <header className="grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
+          <div className="lg:col-span-7">
+            <h1 className="text-2xl leading-tight font-semibold tracking-tight text-balance text-fg sm:text-[32px] sm:leading-[1.15]">
+              Know which of your qPCR conclusions hold.
+            </h1>
+            <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-pretty text-muted sm:text-base">
+              qPilot analyses every plate from the raw amplification curves with one published
+              method, shows which of your analysis choices could change a conclusion, and leaves
+              those choices to you.
+            </p>
+            <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium text-fg lg:hidden">
+              {STEPS.slice(0, 3).map((s, i) => (
+                <span key={s.title} className="inline-flex items-center gap-2">
+                  {i ? (
+                    <span className="text-faint" aria-hidden>
+                      ·
+                    </span>
+                  ) : null}
+                  {s.title}
+                </span>
+              ))}
+            </p>
+          </div>
+          <div className="hidden lg:col-span-5 lg:block">
+            <HowItWorks />
+          </div>
+        </header>
+
+        <div className="mt-8 grid items-stretch gap-4 lg:mt-10 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <OpenFile intake={intake} dragging={dragging} />
+          </div>
+          <div className="lg:col-span-5">
+            <DemoCard
+              demo={system.data?.demo}
+              workspace={demoWorkspace}
+              loading={system.isPending || workspaces.isPending}
+            />
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <Recent
+            workspaces={list}
+            loading={workspaces.isPending}
+            error={workspaces.error}
+            onRetry={() => void workspaces.refetch()}
           />
         </div>
 
-        <div className="mx-auto max-w-6xl px-4 pt-8 pb-10 sm:px-6 sm:pt-12 lg:px-10 lg:pt-14">
-          <header className="grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-7">
-              <div className="flex items-center gap-2.5">
-                <Mark />
-                <span className="text-[17px] font-semibold tracking-tight text-fg">qPilot</span>
-                <Badge className="ml-1">Research use only</Badge>
-              </div>
-              <h1 className="mt-6 text-2xl leading-tight font-semibold tracking-tight text-balance text-fg sm:text-[32px] sm:leading-[1.15]">
-                Know which of your qPCR conclusions hold.
-              </h1>
-              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-pretty text-muted sm:text-base">
-                qPilot analyses every plate from the raw amplification curves with one published
-                method, shows which of your analysis choices could change a conclusion, and leaves
-                those choices to you.
-              </p>
-              <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium text-fg lg:hidden">
-                {STEPS.slice(0, 3).map((s, i) => (
-                  <span key={s.title} className="inline-flex items-center gap-2">
-                    {i ? (
-                      <span className="text-faint" aria-hidden>
-                        ·
-                      </span>
-                    ) : null}
-                    {s.title}
-                  </span>
-                ))}
-              </p>
-            </div>
-            <div className="hidden lg:col-span-5 lg:block">
-              <HowItWorks />
-            </div>
-          </header>
-
-          <div className="mt-8 grid items-stretch gap-4 lg:mt-10 lg:grid-cols-12">
-            <div className="lg:col-span-7">
-              <OpenFile intake={intake} dragging={dragging} />
-            </div>
-            <div className="lg:col-span-5">
-              <DemoCard
-                demo={system.data?.demo}
-                workspace={demoWorkspace}
-                loading={system.isPending || workspaces.isPending}
-              />
-            </div>
-          </div>
-
-          <div className="mt-12">
-            <Recent
-              workspaces={list}
-              loading={workspaces.isPending}
-              error={workspaces.error}
-              onRetry={() => void workspaces.refetch()}
-            />
-          </div>
-
-          <div className="mt-12">
-            <SystemStrip
-              system={system.data}
-              error={system.error}
-              onRetry={() => void system.refetch()}
-            />
-          </div>
+        <div className="mt-12">
+          <SystemStrip
+            system={system.data}
+            error={system.error}
+            onRetry={() => void system.refetch()}
+          />
         </div>
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
