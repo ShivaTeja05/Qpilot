@@ -90,7 +90,8 @@ export function StageInbox({
   const refs = useRef(new Map<string, ProposalCardHandle>());
 
   const all = useMemo(() => list.data?.proposals ?? [], [list.data]);
-  const pendingAll = useMemo(() => all.filter((p) => p.status === "proposed"), [all]);
+  // A waiting confirm step is the confirm dialog's (ConfirmStage), not a card of the inbox.
+  const pendingAll = useMemo(() => all.filter((p) => p.status === "proposed" && p.kind !== "stage.confirm"), [all]);
   const decided = useMemo(() => all.filter((p) => p.status !== "proposed"), [all]);
 
   const byCheck = useMemo(() => {
@@ -104,16 +105,19 @@ export function StageInbox({
     return [...n].sort((a, b) => b[1] - a[1]);
   }, [pendingAll]);
 
+  // A filter whose last proposal was just decided falls back to everything waiting.
+  const checkNow: CheckFilter = check !== "all" && byCheck[check] === 0 ? "all" : check;
+  const kindNow = kind !== "all" && !kinds.some(([k]) => k === kind) ? "all" : kind;
   const pending = useMemo(() => {
     const q = query.trim().toLowerCase();
     return pendingAll.filter(
       (p) =>
-        (check === "all" || p.check.status === check) &&
-        (kind === "all" || p.kind === kind) &&
+        (checkNow === "all" || p.check.status === checkNow) &&
+        (kindNow === "all" || p.kind === kindNow) &&
         (!filter || filter.match(p)) &&
         (!q || searchable(p).includes(q)),
     );
-  }, [pendingAll, check, kind, filter, query]);
+  }, [pendingAll, checkNow, kindNow, filter, query]);
   const visible = pending.slice(0, shown);
 
   const focusIndex = visible.findIndex((p) => p.id === focusAt.id);
@@ -160,7 +164,7 @@ export function StageInbox({
     );
   }
 
-  const filtered = check !== "all" || kind !== "all" || Boolean(query.trim()) || Boolean(filter);
+  const filtered = checkNow !== "all" || kindNow !== "all" || Boolean(query.trim()) || Boolean(filter);
   const checkOptions: { value: CheckFilter; label: string; n: number }[] = [
     { value: "all", label: "All waiting", n: pendingAll.length },
     { value: "contradicted", label: CHECK.contradicted.word, n: byCheck.contradicted },
@@ -179,7 +183,7 @@ export function StageInbox({
                   <button
                     key={o.value}
                     type="button"
-                    aria-pressed={check === o.value}
+                    aria-pressed={checkNow === o.value}
                     disabled={o.value !== "all" && o.n === 0}
                     onClick={() => {
                       setCheck(o.value);
@@ -187,7 +191,7 @@ export function StageInbox({
                     }}
                     className={cn(
                       "inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors disabled:opacity-40",
-                      check === o.value
+                      checkNow === o.value
                         ? "border-accent/40 bg-accent-soft text-accent-strong"
                         : "border-line bg-surface text-muted hover:border-line-strong hover:text-fg",
                     )}
@@ -203,7 +207,7 @@ export function StageInbox({
                     size="sm"
                     label="Kind of proposal"
                     className="w-48"
-                    value={kind}
+                    value={kindNow}
                     onValueChange={(v) => {
                       setKind(v);
                       setShown(PAGE);

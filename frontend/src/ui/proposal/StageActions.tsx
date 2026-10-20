@@ -23,7 +23,7 @@ import { Textarea } from "../controls";
 import { CheckTag } from "../tags";
 import { toast } from "../Toaster";
 import { MAX_REASON } from "./ProposalCard";
-import type { ConfirmableStage, InboxStage } from "./hooks";
+import { useStageProposals, type ConfirmableStage, type InboxStage } from "./hooks";
 
 type BulkAction = "accept" | "reject";
 type StageView = Schemas["StageView"];
@@ -236,12 +236,19 @@ export function ProposalLines({
   );
 }
 
-/** Both bulk actions of a stage, side by side. */
-export function BulkActions({ sid, stage, pending }: { sid: string; stage: InboxStage; pending: number }) {
+/**
+ * Both bulk actions of a stage, side by side; each is off when the inbox shows nothing it
+ * would cover (the dialog still lists exactly what the server says it covers).
+ */
+export function BulkActions({ sid, stage }: { sid: string; stage: InboxStage }) {
+  const list = useStageProposals(sid, stage);
+  const waiting = (list.data?.proposals ?? []).filter((p) => p.status === "proposed" && p.kind !== "stage.confirm");
+  const consistent = waiting.filter((p) => p.check.status === "consistent").length;
+  const aiContradicted = waiting.filter((p) => p.check.status === "contradicted" && p.made_by.kind !== "rule").length;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <BulkAction sid={sid} stage={stage} action="accept" disabled={!pending} />
-      <BulkAction sid={sid} stage={stage} action="reject" disabled={!pending} />
+      <BulkAction sid={sid} stage={stage} action="accept" disabled={!consistent} />
+      <BulkAction sid={sid} stage={stage} action="reject" disabled={!aiContradicted} />
     </div>
   );
 }
@@ -292,7 +299,9 @@ export function ConfirmStage({
     );
   }
   const ready = waiting.data?.ready ? waiting.data : null;
-  const blocked = !ready && (status.pending > 0 || status.blockers.length > 0);
+  // The server counts a waiting confirm step as pending; it is not a proposal to decide first.
+  const waitingProposals = Math.max(0, status.pending - (ready ? 1 : 0));
+  const blocked = !ready && (waitingProposals > 0 || status.blockers.length > 0);
 
   const prepare = async () => {
     setError(null);
@@ -361,8 +370,8 @@ export function ConfirmStage({
         </Button>
         {blocked ? (
           <span className="text-xs text-muted">
-            {status.pending
-              ? `Decide the ${count(status.pending)} waiting proposal${status.pending === 1 ? "" : "s"} first.`
+            {waitingProposals
+              ? `Decide the ${count(waitingProposals)} waiting proposal${waitingProposals === 1 ? "" : "s"} first.`
               : `${status.blockers[0]?.replace(/^./, (c) => c.toUpperCase()) ?? ""}.`}
           </span>
         ) : null}
