@@ -4,9 +4,11 @@
  * answers 404 in the server's error shape.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/ui";
+import { fold } from "@/lib/format";
+import { describeProposal } from "@/lib/vocab";
 import type { ProposalList, Workspace } from "./api";
 import PrismSection from "./index";
 import sessionJson from "./recorded/session.json";
@@ -91,12 +93,29 @@ describe("the Prism section", () => {
     }
   });
 
-  it("lists the round trip's questions with their words", async () => {
+  it("lists the round trip's questions in words, each with the engine's numbers", async () => {
     show();
     const list = roundTripJson as unknown as ProposalList;
+    const decided = list.proposals.filter((p) => p.status !== "proposed");
+    if (decided.length)
+      fireEvent.click(await screen.findByRole("button", { name: /Decided in this stage/ }));
     for (const p of list.proposals) {
-      const question = (p.payload as { question?: string }).question;
-      if (question) expect(await screen.findByText(question)).toBeTruthy();
+      expect(
+        (await screen.findAllByText(describeProposal(p), { exact: false })).length,
+      ).toBeGreaterThan(0);
+    }
+    const exclusion = decided.find((p) => p.kind === "prism.exclusion_reason");
+    if (exclusion) {
+      fireEvent.click(
+        screen.getByRole("button", { name: new RegExp(describeProposal(exclusion).slice(0, 30)) }),
+      );
+      const c = exclusion.consequence as { fc_before: number; fc_after: number };
+      expect(
+        (await screen.findAllByText(fold(c.fc_before), { exact: false })).length,
+      ).toBeGreaterThan(0);
+      expect(
+        (await screen.findAllByText(fold(c.fc_after), { exact: false })).length,
+      ).toBeGreaterThan(0);
     }
   });
 });

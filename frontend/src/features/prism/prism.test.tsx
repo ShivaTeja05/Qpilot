@@ -1,13 +1,9 @@
 /**
- * The Prism section's logic and blocks on JSON recorded from the real API of the seeded demo
- * session (`recorded/record.py`). Expected strings are built from the recorded values with the
- * page's formatters, never typed in.
+ * The Prism section's logic on JSON recorded from the real API of the seeded demo session
+ * (`recorded/record.py`).
  */
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import { fold, ofTotal } from "@/lib/format";
-import type { Proposal, ProposalList, Workspace } from "./api";
-import { PrismConsequence } from "./Consequence";
+import { describe, expect, it } from "vitest";
+import type { ProposalList, Workspace } from "./api";
 import { flowOf, projectState } from "./flow";
 import sessionJson from "./recorded/session.json";
 import prismJson from "./recorded/proposals-prism.json";
@@ -17,8 +13,6 @@ import { cellNumber } from "./tables";
 const session = sessionJson as unknown as Workspace;
 const prism = prismJson as unknown as ProposalList;
 const roundTrip = roundTripJson as unknown as ProposalList;
-
-afterEach(cleanup);
 
 describe("flow", () => {
   it("waits for the choices while they are not confirmed", () => {
@@ -59,29 +53,6 @@ describe("flow", () => {
     const flow = flowOf(confirmed, prism.proposals, roundTrip.proposals);
     expect(flow.sendBlocked).toBeNull();
     expect(flow.steps.map((s) => s.state)).toEqual(["done", "done", "current", "waiting"]);
-  });
-});
-
-describe("round-trip consequence", () => {
-  const exclusion = roundTrip.proposals.find(
-    (p) => p.kind === "prism.exclusion_reason",
-  ) as Proposal;
-  const c = exclusion.consequence as Record<string, number | number[]>;
-
-  it("shows the gene's fold change before and after, and the conclusions it changes", () => {
-    render(<PrismConsequence proposal={exclusion} />);
-    expect(screen.getByText(fold(c.fc_before as number))).toBeTruthy();
-    expect(screen.getByText(fold(c.fc_after as number))).toBeTruthy();
-    expect(
-      screen.getByText(ofTotal(c.n_conclusions_changed as number, c.n_genes as number)),
-    ).toBeTruthy();
-  });
-
-  it("says when the consequence is out of date", () => {
-    render(
-      <PrismConsequence proposal={exclusion} stale="the decisions changed since this export." />,
-    );
-    expect(screen.getByText(/Out of date/)).toBeTruthy();
   });
 });
 

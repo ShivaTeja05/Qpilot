@@ -4,7 +4,10 @@
  * change into a question with its consequence. Nothing is accepted silently.
  */
 import { FolderInput, Inbox as InboxIcon } from "lucide-react";
+import { useQueries } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
+import { api, unwrap } from "@/api/client";
+import { StageInbox } from "@/ui/proposal";
 import {
   Badge,
   Button,
@@ -30,7 +33,6 @@ import {
   type ProposalList,
   type Workspace,
 } from "./api";
-import { ProposalItem } from "./Inbox";
 import { DIFF_KIND_WORDS } from "./words";
 
 export function RoundTripCard({
@@ -66,6 +68,7 @@ export function RoundTripCard({
   const proposals = inbox.data?.proposals ?? [];
   const waiting = proposals.filter((p) => p.status === "proposed");
   const decided = proposals.filter((p) => p.status !== "proposed");
+  const stale = useStaleConsequences(workspace.key, waiting);
 
   return (
     <Card
@@ -210,38 +213,26 @@ export function RoundTripCard({
               </p>
             ) : null}
           </div>
-          {inbox.isPending ? (
-            <LoadingBlock label="Reading the questions" lines={2} />
-          ) : inbox.error ? (
-            <ErrorPanel
-              error={inbox.error}
-              title="The questions could not be read"
-              onRetry={() => void inbox.refetch()}
-              compact
-            />
-          ) : !proposals.length ? (
-            <EmptyState icon={<InboxIcon />} title="No questions yet" compact>
-              When the tables come back with a value changed, excluded or deleted, each one is asked
-              here — with what it does to the conclusions.
-            </EmptyState>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {[...waiting, ...decided].map((p) => (
-                <li key={p.id}>
-                  <ProposalItem
-                    sid={workspace.key}
-                    proposal={p}
-                    head={inbox.data?.head ?? null}
-                    note={
-                      basisStudy(p) && basisStudy(p) !== workspace.study_id
-                        ? "About a bundle sent for an earlier analysis."
-                        : undefined
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
+          <StageInbox
+            sid={workspace.key}
+            stage="roundtrip"
+            resultsVisible={workspace.results_visible}
+            label="Questions from Prism"
+            empty={
+              <EmptyState icon={<InboxIcon />} title="No questions yet" compact>
+                When the tables come back with a value changed, excluded or deleted, each one is
+                asked here — with what it does to the conclusions.
+              </EmptyState>
+            }
+            cardExtra={(p) =>
+              basisStudy(p) && basisStudy(p) !== workspace.study_id ? (
+                <p className="text-[12.5px] text-muted">
+                  About a bundle sent for an earlier analysis.
+                </p>
+              ) : null
+            }
+            cardProps={(p) => ({ stale: stale[p.id] ?? null })}
+          />
         </section>
       </CardBody>
     </Card>
@@ -304,4 +295,27 @@ export function RoundTripSummary({ result }: { result: PrismRoundTrip }) {
       ) : null}
     </div>
   );
+}
+
+/**
+ * Why each waiting question's consequence no longer holds (the exclusions accepted since, or the
+ * decisions, moved): the card then hides its numbers, and the server would refuse it anyway.
+ */
+function useStaleConsequences(sid: string, waiting: Proposal[]): Record<string, string | null> {
+  const views = useQueries({
+    queries: waiting
+      .filter((p) => p.kind === "prism.exclusion_reason")
+      .map((p) => ({
+        queryKey: ["w", sid, "proposal", p.id],
+        queryFn: () =>
+          unwrap(
+            api.GET("/api/sessions/{sid}/proposals/{pid}", {
+              params: { path: { sid, pid: p.id } },
+            }),
+          ),
+      })),
+  });
+  const out: Record<string, string | null> = {};
+  for (const v of views) if (v.data) out[v.data.proposal.id] = v.data.stale_consequence ?? null;
+  return out;
 }

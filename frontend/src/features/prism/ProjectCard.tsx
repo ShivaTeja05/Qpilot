@@ -18,6 +18,7 @@ import {
   LoadingBlock,
 } from "@/ui";
 import { effectivePayload, makerText } from "@/lib/vocab";
+import { ProposalCard, useProposalActions, useQuotes } from "@/ui/proposal";
 import {
   activeJob,
   useStartDraft,
@@ -27,7 +28,6 @@ import {
   type Workspace,
 } from "./api";
 import type { Flow } from "./flow";
-import { ProposalItem } from "./Inbox";
 
 export function ProjectCard({
   workspace,
@@ -39,6 +39,8 @@ export function ProjectCard({
   inbox: { data?: ProposalList; isPending: boolean; error: unknown; refetch: () => unknown };
 }) {
   const draft = useStartDraft(workspace.key);
+  const actions = useProposalActions(workspace.key, inbox.data?.head);
+  const quotes = useQuotes(workspace.key);
   const [jobId, setJobId] = useState<string | null>(null);
   const running = activeJob(workspace, "prism.draft");
   const shownJob = jobId ?? running?.id ?? null;
@@ -102,7 +104,15 @@ export function ProjectCard({
             <p className="text-[13px] text-muted">
               A drafted project is waiting for you: check it, then accept or reject it.
             </p>
-            <ProposalItem sid={workspace.key} proposal={waiting} head={inbox.data?.head ?? null} />
+            <ProposalCard
+              proposal={waiting}
+              resultsVisible={workspace.results_visible}
+              quotes={quotes.lookup}
+              headingLevel={3}
+              onAccept={(reason) => actions.accept(waiting.id, reason)}
+              onEdit={(edits, reason) => actions.edit(waiting.id, edits, reason)}
+              onReject={(reason) => actions.reject(waiting.id, reason)}
+            />
           </div>
         ) : accepted ? (
           <div className="flex flex-col gap-3">

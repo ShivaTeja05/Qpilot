@@ -217,19 +217,6 @@ export interface PrismRoundTrip {
   message: string;
 }
 
-/** One gene's numbers before → after leaving values out (a round-trip consequence). */
-export interface GeneChange {
-  fc_before?: number | null;
-  fc_after?: number | null;
-  p_before?: number | null;
-  p_after?: number | null;
-  n_units_before?: number[] | null;
-  n_units_after?: number[] | null;
-  conclusion_before?: string | null;
-  conclusion_after?: string | null;
-  withheld_after?: string | null;
-}
-
 // ---------------------------------------------------------------------------------------------
 // Requests
 
