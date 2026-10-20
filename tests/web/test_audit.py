@@ -626,6 +626,33 @@ def test_lab_numbers_are_the_worded_rows(served, screen):
             assert rows[f"Wells with Cq above {cut}"] == str(count)
         for ref in lab["references"]:
             assert ref["m_value"] is None or ref["m"] == f"{ref['m_value']:.2f}"
+        groups = rows["Samples in each group"]
+        assert (f"({n['n_high_value']} with a value for {gene})" in groups) == (
+            n["n_high_value"] != n["n_high"]
+        )
+        assert 0 < n["n_high_value"] <= n["n_high"] and 0 < n["n_rest_value"] <= n["n_rest"]
+        samples = client.post(
+            f"/api/studies/{study}/audit/samples", json={"gene": gene}, headers=WRITE
+        ).json()["groups"]
+        assert (samples["high"]["n"], samples["rest"]["n"]) == (
+            n["n_high_value"],
+            n["n_rest_value"],
+        )
+
+
+def test_geNorm_M_is_worded_once_as_results_words_it(served, screen):
+    """The audit words the unrounded M (the summary's 3 decimals would round twice)."""
+    client, study = served["client"], served["study"]
+    results = served["ctx"].store.get(study)
+    summary = screen.summary["space_rules"]["geNorm_M"]
+    refs = client.get(f"/api/studies/{study}/audit/study").json()["references"]
+    assert {r["gene"] for r in refs} == set(summary)
+    for ref in refs:
+        assert round(ref["m_value"], 3) == summary[ref["gene"]]
+        assert ref["m"] == f"{ref['m_value']:.2f}"
+        genorm = getattr(results, "genorm", None)
+        if genorm is not None and ref["gene"] in getattr(genorm, "M_initial", {}):
+            assert math.isclose(ref["m_value"], genorm.M_initial[ref["gene"]], rel_tol=1e-9)
 
 
 def test_ask_uses_the_same_screen_safely(served, screen):

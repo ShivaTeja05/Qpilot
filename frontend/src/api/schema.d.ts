@@ -2330,12 +2330,22 @@ export type components = {
             n_flag_low: number;
             /** N High */
             n_high: number;
+            /**
+             * N High Value
+             * @description Samples of the first group with a value (the p's n).
+             */
+            n_high_value: number;
             /** N Nondetect */
             n_nondetect: number;
             /** N Plates */
             n_plates: number;
             /** N Rest */
             n_rest: number;
+            /**
+             * N Rest Value
+             * @description Samples of the second group with a value.
+             */
+            n_rest_value: number;
             /** P */
             p: number | null;
         };

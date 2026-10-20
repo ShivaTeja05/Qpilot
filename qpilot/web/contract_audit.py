@@ -590,6 +590,8 @@ class AuditLabNumbers(BaseModel):
 
     n_high: int
     n_rest: int
+    n_high_value: int = Field(description="Samples of the first group with a value (the p's n).")
+    n_rest_value: int = Field(description="Samples of the second group with a value.")
     n_plates: int
     cq_median: float | None
     cq_min: float | None
