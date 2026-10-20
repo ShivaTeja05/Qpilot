@@ -18,6 +18,8 @@ from qpilot.schemas import DecisionOutcome
 from qpilot.web import results_views as rv
 from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_study
 from qpilot.web.contract import (
+    AutonomyBody,
+    AutonomyView,
     CardsView,
     CardView,
     DecideBody,
@@ -342,3 +344,22 @@ def explain(study_id: str, card_id: str, ctx: Ctx) -> JobStarted:
         tag=card_id,  # one job per card: another card's explanation is never this one's
     )
     return JobStarted(job=JobView(**job.view()))
+
+
+# ---- autonomy: what agents may do in this study ----------------------------------------------
+
+
+@router.get("/studies/{study_id}/autonomy", response_model=AutonomyView)
+def get_autonomy(study_id: str, ctx: Ctx) -> AutonomyView:
+    """What agents (``qpilot serve``) may do in this study, and the policy in words."""
+    study(ctx, study_id)
+    return rv.autonomy_view(ctx.store, study_id)
+
+
+@router.put("/studies/{study_id}/autonomy", response_model=AutonomyView)
+def put_autonomy(study_id: str, body: AutonomyBody, ctx: Ctx) -> AutonomyView:
+    """A person sets the study's autonomy (Suggest · Decide and tell me); agents obey it."""
+    sid = writable(ctx, study_id)
+    if rv.set_autonomy(ctx.store, study_id, body.autonomy):
+        changed(ctx, study_id, sid)
+    return rv.autonomy_view(ctx.store, study_id)

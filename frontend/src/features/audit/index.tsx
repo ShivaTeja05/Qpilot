@@ -129,7 +129,7 @@ function AuditBody({
       <AuditReady
         workspace={workspace}
         target={attachedAudit(workspace.key, studyId, info.name)}
-        status={{ status: "ready", views_ready: true }}
+        status={{ views_ready: true }}
         attached={info}
         switcher={switcher}
         place={place}

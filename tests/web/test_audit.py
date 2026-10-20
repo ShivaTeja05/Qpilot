@@ -81,13 +81,22 @@ def served(seeded):
     root, study_id = seeded
     ctx, client = _client(StudyStore(root))
     with client:
+        _loaded(client, f"/api/studies/{study_id}/audit")
         yield {"client": client, "ctx": ctx, "study": study_id, "root": root}
     _close(ctx)
 
 
+def _loaded(client, url: str) -> dict:
+    """Open an audit (its status, or an attached folder) and wait for its live views."""
+    body = client.get(url).json()
+    if body.get("loading"):
+        assert _job(client, body["loading"]["id"])["status"] == "done"
+    return body
+
+
 @pytest.fixture(scope="module")
 def screen(served):
-    """The server's own cached screen (built by the first view request)."""
+    """The server's own cached screen (loaded when the module's server opened the audit)."""
     client, study = served["client"], served["study"]
     assert client.get(f"/api/studies/{study}/audit/overview").status_code == 200
     return audit_router.screens(served["ctx"])._entries[study].screen
@@ -477,7 +486,11 @@ def test_an_attached_audit_has_the_same_views(served, seeded, tmp_path):
         listed = client.get("/api/audits").json()["audits"]
         assert [a["name"] for a in listed] == ["mine"]
         assert listed[0]["qpilot_audit"] and listed[0]["available"]
-        assert listed[0]["study_id"] == study
+        assert listed[0]["study_id"] == study and not listed[0]["views_ready"]
+        r = client.get("/api/audits/mine/overview")
+        assert r.status_code == 409 and r.json()["error"]["code"] == "loading"
+        _loaded(client, "/api/audits/mine")
+        assert client.get("/api/audits").json()["audits"][0]["views_ready"]
         ours = client.get("/api/audits/mine/overview").json()
         theirs = served["client"].get(f"/api/studies/{study}/audit/overview").json()
         assert ours == theirs
@@ -512,7 +525,7 @@ def test_a_plain_simulator_run_can_be_attached(tmp_path):
         pytest.skip("the simulator's results folder is not in this checkout")
     ctx, client = _client(StudyStore(tmp_path / "studies"), audit_dirs={"results": results})
     with client:
-        info = client.get("/api/audits").json()["audits"][0]
+        info = _loaded(client, "/api/audits/results")
         assert info["available"] and not info["qpilot_audit"] and info["study_id"] is None
         overview = client.get("/api/audits/results/overview").json()
         expected = Screen(results).overview()
@@ -613,6 +626,33 @@ def test_lab_numbers_are_the_worded_rows(served, screen):
             assert rows[f"Wells with Cq above {cut}"] == str(count)
         for ref in lab["references"]:
             assert ref["m_value"] is None or ref["m"] == f"{ref['m_value']:.2f}"
+        groups = rows["Samples in each group"]
+        assert (f"({n['n_high_value']} with a value for {gene})" in groups) == (
+            n["n_high_value"] != n["n_high"]
+        )
+        assert 0 < n["n_high_value"] <= n["n_high"] and 0 < n["n_rest_value"] <= n["n_rest"]
+        samples = client.post(
+            f"/api/studies/{study}/audit/samples", json={"gene": gene}, headers=WRITE
+        ).json()["groups"]
+        assert (samples["high"]["n"], samples["rest"]["n"]) == (
+            n["n_high_value"],
+            n["n_rest_value"],
+        )
+
+
+def test_geNorm_M_is_worded_once_as_results_words_it(served, screen):
+    """The audit words the unrounded M (the summary's 3 decimals would round twice)."""
+    client, study = served["client"], served["study"]
+    results = served["ctx"].store.get(study)
+    summary = screen.summary["space_rules"]["geNorm_M"]
+    refs = client.get(f"/api/studies/{study}/audit/study").json()["references"]
+    assert {r["gene"] for r in refs} == set(summary)
+    for ref in refs:
+        assert round(ref["m_value"], 3) == summary[ref["gene"]]
+        assert ref["m"] == f"{ref['m_value']:.2f}"
+        genorm = getattr(results, "genorm", None)
+        if genorm is not None and ref["gene"] in getattr(genorm, "M_initial", {}):
+            assert math.isclose(ref["m_value"], genorm.M_initial[ref["gene"]], rel_tol=1e-9)
 
 
 def test_ask_uses_the_same_screen_safely(served, screen):
@@ -650,3 +690,95 @@ def test_no_audit_screen_without_an_audit(seeded, tmp_path):
         assert audit_router.audit_screen(ctx, seeded[1]) is None
     finally:
         _close(ctx)
+
+
+def test_views_never_wait_for_a_build(seeded, monkeypatch):
+    """While the screen loads, views answer at once with the one job loading it."""
+    root, study = seeded
+    built: list[int] = []
+    real = audit_router._build_for_study
+
+    def counting(ctx, study_id, folder):
+        build = real(ctx, study_id, folder)
+
+        def wrapped():
+            built.append(1)
+            return build()
+
+        return wrapped
+
+    monkeypatch.setattr(audit_router, "_build_for_study", counting)
+    ctx, client = _client(StudyStore(root))  # a new server: nothing loaded
+    url = f"/api/studies/{study}/audit"
+    with client:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            answers = list(pool.map(lambda _: client.get(f"{url}/overview"), range(8)))
+        jobs = set()
+        for r in answers:
+            assert r.status_code == 409 and r.json()["error"]["code"] == "loading", r.text
+            if r.json()["error"]["details"]["job"]:
+                jobs.add(r.json()["error"]["details"]["job"]["id"])
+        assert len(jobs) == 1
+        assert _job(client, jobs.pop())["status"] == "done"
+        assert client.get(f"{url}/overview").status_code == 200
+        assert client.get(url).json()["views_ready"] is True
+    _close(ctx)
+    assert built == [1]
+
+
+def test_the_audits_set_is_always_named_with_its_size(served, screen):
+    """Never "N of 100" and never "reasonable analyses" bare (qPilot's grid is another set)."""
+    import re
+
+    client, study = served["client"], served["study"]
+    url = f"/api/studies/{study}/audit"
+    texts = [client.get(f"{url}/overview").text, client.get(f"{url}/how").text]
+    texts += [client.get(f"{url}/gene/{g}").text for g in _genes(screen)]
+    n = screen.explain[_genes(screen)[0]]["analyses_defensible"]
+    for text in texts:
+        assert " of 100" not in text
+        bare = re.findall(r"(?<!audit's )(?<!ran \d{3} )(?<!ran \d{2} )reasonable analyses", text)
+        assert not bare, text[:300]
+    card = client.get(f"{url}/gene/{_genes(screen)[0]}").json()
+    holds = card["holds"]
+    assert holds["of"] == n and 0 <= holds["same"] <= n
+    assert holds["n"] == round(100 * holds["same"] / n)
+    assert f"{holds['same']} of {n}" in " ".join(card["holds"]["lines"])
+
+
+def test_hostile_file_names_are_not_found_and_links_are_not_listed(seeded, tmp_path):
+    root = _copy(seeded, tmp_path)
+    folder = root / "simulator_audits" / seeded[1]
+    outside = tmp_path / "secret.txt"
+    outside.write_text("outside the audit")
+    (folder / "REPORT.md").unlink()
+    (folder / "REPORT.md").symlink_to(outside)  # listed in AUDIT.sha256, now a link out
+    ctx, client = _client(StudyStore(root))
+    url = f"/api/studies/{seeded[1]}/audit/files"
+    with client:
+        names = [f["name"] for f in client.get(url).json()["files"]]
+        answers = {
+            bad: client.get(f"{url}/{bad}").status_code
+            for bad in ("AUDIT.sha256%00.txt", "REPORT.md", "%00", "genes.csv%00")
+        }
+    _close(ctx)
+    assert "REPORT.md" not in names and "genes.csv" in names
+    assert set(answers.values()) == {404}, answers
+
+
+def test_a_damaged_manifest_is_a_verification_problem_not_a_crash(seeded, tmp_path):
+    root = _copy(seeded, tmp_path)
+    folder = root / "simulator_audits" / seeded[1]
+    (folder / "audit_manifest.json").write_text("{not json")
+    ctx, client = _client(StudyStore(root))
+    url = f"/api/studies/{seeded[1]}/audit"
+    with client:
+        status = client.get(url).json()
+        check = client.post(f"{url}/verify", json={}, headers=WRITE)
+    _close(ctx)
+    assert status["status"] == "failed" and "manifest" in status["reason"]
+    assert check.status_code == 200, check.text
+    body = check.json()
+    assert (
+        body["ok"] is False and "audit_manifest.json cannot be read (damaged)" in body["problems"]
+    )

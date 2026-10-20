@@ -15,39 +15,6 @@ from qpilot.web.contract import DemoInfo, JobView, ModelStatus, Settings, System
 router = APIRouter(tags=["system"])
 
 
-NOT_CHECKED = (
-    "not checked yet: “Check connection” sends one short request to {provider}; qPilot never "
-    "contacts a remote model just to show this page"
-)
-
-
-def _remote_status(studio: Any) -> dict[str, Any]:
-    """A remote model's configuration and last known answer, without contacting it."""
-    client = studio.client
-    configured = bool(client.available)
-    with studio._ping_lock:
-        ping = studio._pings.get(studio._model_key())
-        answers, reason = (
-            (ping.answers, ping.reason) if ping and ping.at is not None else (None, None)
-        )
-    if not configured:
-        answers, reason = False, studio._not_configured or "no model is configured"
-    elif answers is None:
-        reason = NOT_CHECKED.format(provider=client.provider)
-    return {
-        "provider": client.provider,
-        "model": client.model,
-        "available": configured and answers is True,
-        "configured": configured,
-        "answers": answers,
-        "checking": False,
-        "misconfigured": studio._not_configured is not None,
-        "reason": reason,
-        "local": False,
-        "sample_names": "replaced by pseudonyms before anything leaves this machine",
-    }
-
-
 def model_status(ctx: AppContext, check: bool = False) -> ModelStatus:
     """The model's status plus the ``outbound`` line of ``qpilot doctor``.
 
@@ -60,7 +27,7 @@ def model_status(ctx: AppContext, check: bool = False) -> ModelStatus:
     studio = ctx.studio
     if check:
         _check_now(studio)
-    status = studio.model_status() if studio._local() or check else _remote_status(studio)
+    status = studio.model_status(check=check)
     try:
         outbound = studio_outbound_line()
     except Exception:  # a misconfigured model is reported by the status itself

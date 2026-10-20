@@ -23,6 +23,7 @@ from __future__ import annotations
 import hmac
 import os
 import secrets
+import traceback
 from collections.abc import Awaitable, Callable, MutableMapping
 from http.cookies import SimpleCookie
 from typing import Any
@@ -35,6 +36,10 @@ TOKEN_ENV = "QPILOT_APP_TOKEN"
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # an RDML file; sheets and records are capped lower
 MAX_BODY_BYTES = 1024 * 1024  # any other write (JSON) is small
 CROSS_ORIGIN = "Requests from another site are refused."
+INTERNAL = (
+    "Something went wrong inside qPilot (nothing was changed by it). The terminal where qPilot "
+    "runs shows the details; please report them."
+)
 WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 CSP = "; ".join(
@@ -241,6 +246,10 @@ class Guard:
         except _TooLarge:
             if not started:
                 await _json(send, 413, "too_large", _too_large(headers))
+        except Exception:  # a bug: the person reads a sentence, the terminal the traceback
+            traceback.print_exc()
+            if not started:
+                await _json(send, 500, "internal", INTERNAL)
 
 
 def _body_cap(headers: dict[str, str]) -> int:

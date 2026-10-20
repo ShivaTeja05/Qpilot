@@ -76,6 +76,7 @@ M = TypeVar("M", bound=BaseModel)
 
 AUDIT_TYPICAL_S = 55.0  # the demo's audit through this route: rebuild ~8 s + run ~45 s, measured
 LOAD_TYPICAL_S = 15.0  # rebuilding the study (~8 s) and the reasonable-analyses sweep (~5 s)
+LOAD_RETRY_S = 60.0  # a failed load is reported for this long before a view tries again
 CHECK_TYPICAL_S = 9.0  # rebuilding the study and the reproduction check, measured on the demo
 KEEP_SCREENS = 3  # live screens kept in memory (each holds a study's engine)
 POLL_S = 0.5
@@ -142,8 +143,19 @@ class Screens:
             entry = self._entries.get(name)
         return entry is not None and entry.screen is not None and entry.stamp == _stamp(folder)
 
-    def call(self, name: str, folder: Path, build: Callable[[], Any], fn: Callable[[Any], Any]):
-        """``fn(screen)`` under the screen's lock, building the screen first when needed."""
+    def call(
+        self,
+        name: str,
+        folder: Path,
+        build: Callable[[], Any] | None,
+        fn: Callable[[Any], Any],
+    ):
+        """``fn(screen)`` under the screen's lock, building the screen first when needed.
+
+        With ``build=None`` a screen not built yet raises :class:`NotLoaded` at once: request
+        threads never wait for a build (a load job makes it), so a slow build cannot take every
+        thread the server has.
+        """
         stamp = _stamp(folder)
         with self._lock:
             entry = self._entries.get(name)
@@ -153,10 +165,18 @@ class Screens:
             self._entries.move_to_end(name)
             while len(self._entries) > self._keep:
                 self._entries.popitem(last=False)
+        if build is None and entry.screen is None:
+            raise NotLoaded(name)
         with entry.lock:
             if entry.screen is None:
+                if build is None:
+                    raise NotLoaded(name)
                 entry.screen = build()
             return fn(entry.screen)
+
+
+class NotLoaded(Exception):
+    """The audit's screen is not built yet."""
 
 
 def _stamp(folder: Path) -> tuple[int, ...]:
@@ -420,7 +440,7 @@ def _study_view(ctx: AppContext, study_id: str, fn: Callable[[Any], M]) -> M:
         raise api_error(409, "unavailable", NO_SIMULATOR)
     folder = _audit_folder(ctx, study_id)
     build = _build_for_study(ctx, study_id, folder)
-    return _run_view(lambda: screens(ctx).call(study_id, folder, build, fn))
+    return _run_view(ctx, study_id, folder, build, fn, key=study_id)
 
 
 def _attached_view(ctx: AppContext, name: str, fn: Callable[[Any], M]) -> M:
@@ -431,18 +451,40 @@ def _attached_view(ctx: AppContext, name: str, fn: Callable[[Any], M]) -> M:
     if info.study_id is not None:
         require_visible(ctx, info.study_id)
     build = _build_for_attached(ctx, folder, info)
-    return _run_view(lambda: screens(ctx).call(f"attached:{name}", folder, build, fn))
+    return _run_view(ctx, _attached_key(name), folder, build, fn, key=_attached_key(name))
 
 
-def _run_view(call: Callable[[], M]) -> M:
-    from qpilot.integration.simulator import AuditRefused, NotApplicable
+def _attached_key(name: str) -> str:
+    return f"audits/{name}"
 
+
+def _run_view(
+    ctx: AppContext,
+    name: str,
+    folder: Path,
+    build: Callable[[], Any],
+    fn: Callable[[Any], M],
+    key: str,
+) -> M:
+    """``fn`` on the loaded screen; while it loads, 409 ``loading`` with the job loading it."""
     try:
-        return call()
-    except (NotApplicable, AuditRefused) as err:
-        raise api_error(409, "not_applicable", _sentence(err)) from err
-    except FileNotFoundError as err:
-        raise api_error(409, "incomplete", f"The audit's files are incomplete: {err}") from err
+        return screens(ctx).call(name, folder, None, fn)
+    except NotLoaded:
+        pass
+    failed = ctx.jobs.latest("audit.load", key)
+    if failed is not None and failed.status == "failed" and failed.error:
+        if time.time() - (failed.finished or 0) < LOAD_RETRY_S:
+            raise api_error(
+                409, failed.error.get("code", "failed"), failed.error.get("message", "")
+            )
+    job = _load_job(ctx, name, folder, build, key)
+    raise api_error(
+        409,
+        "loading",
+        "The audit's live views are loading (about 15 s the first time on the demo). Ask again "
+        "when the job is done.",
+        job=job.model_dump() if job is not None else None,
+    )
 
 
 def _sentence(err: BaseException, capital: bool = True) -> str:
@@ -491,10 +533,14 @@ def _decisions_since(hashes: list[str], head: str | None) -> int:
     return len(hashes) if head else 0
 
 
-def _load_job(ctx: AppContext, study_id: str, folder: Path) -> JobView | None:
-    """Start (or find) the job that loads the audit's live views, unless they are loaded."""
+def _load_job(
+    ctx: AppContext, name: str, folder: Path, build: Callable[[], Any], key: str
+) -> JobView | None:
+    """Start (or find) the job that loads an audit's live views, unless they are loaded."""
+    from qpilot.integration.simulator import AuditRefused, NotApplicable
+
     cache = screens(ctx)
-    if cache.ready(study_id, folder):
+    if cache.ready(name, folder):
         return None
 
     def work(progress: Progress) -> dict[str, Any]:
@@ -504,11 +550,19 @@ def _load_job(ctx: AppContext, study_id: str, folder: Path) -> JobView | None:
             progress("Running every reasonable analysis once", 0.6)
             screen.reasonable()
 
-        cache.call(study_id, folder, _build_for_study(ctx, study_id, folder), warm)
-        return {"study_id": study_id}
+        try:
+            cache.call(name, folder, build, lambda screen: None)
+            cache.call(name, folder, None, warm)  # views may run in between
+        except (NotApplicable, AuditRefused) as err:
+            raise JobError("not_applicable", _sentence(err)) from err
+        except FileNotFoundError as err:
+            raise JobError("incomplete", f"The audit's files are incomplete: {err}") from err
+        except NotLoaded as err:  # replaced on disk meanwhile: the next view loads it again
+            raise JobError("incomplete", "The audit changed while it was loading.") from err
+        return {"study_id": key}
 
     job = ctx.jobs.submit(
-        "audit.load", work, title="Loading the audit", key=study_id, typical_s=LOAD_TYPICAL_S
+        "audit.load", work, title="Loading the audit", key=key, typical_s=LOAD_TYPICAL_S
     )
     return JobView(**job.view())
 
@@ -588,7 +642,9 @@ def audit_status(study_id: str, ctx: Ctx) -> AuditStatus:
             manifest=view,
             current=since == 0,
             decisions_since=since,
-            loading=_load_job(ctx, study_id, folder),
+            loading=_load_job(
+                ctx, study_id, folder, _build_for_study(ctx, study_id, folder), study_id
+            ),
             views_ready=screens(ctx).ready(study_id, folder),
         )
     if job is not None and job.status == "failed" and job.error:
@@ -721,7 +777,7 @@ def _listed(folder: Path) -> dict[str, str]:
     """The audit's own file list (AUDIT.sha256): name -> sha256."""
     try:
         text = (folder / "AUDIT.sha256").read_text(encoding="utf-8")
-    except OSError:
+    except (OSError, ValueError):  # missing, or not text
         return {}
     out: dict[str, str] = {}
     for line in text.splitlines():
@@ -738,28 +794,57 @@ def _files(folder: Path) -> list[AuditFile]:
         if listed
         else [n for n in RUN_FILES if (folder / n).is_file()]
     )
+    root = folder.resolve()
     out = []
     for name in names:
         path = folder / name
-        if "/" in name or not path.is_file():
+        if "/" in name or "\x00" in name or not path.is_file():
             continue
+        if path.resolve().parent != root:
+            continue  # a link to a file elsewhere: never listed, never served
         out.append(AuditFile(name=name, bytes=path.stat().st_size, sha256=listed.get(name)))
     return out
 
 
 def _download(folder: Path, name: str) -> FileResponse:
-    allowed = {f.name for f in _files(folder)}
-    root = folder.resolve()
+    missing = api_error(404, "not_found", "This audit has no file with that name.")
+    if name not in {f.name for f in _files(folder)}:  # checked before the name meets the disk
+        raise missing
     path = (folder / name).resolve()
-    if name not in allowed or path.parent != root or not path.is_file():
-        raise api_error(404, "not_found", "This audit has no file with that name.")
+    if path.parent != folder.resolve() or not path.is_file():
+        raise missing
     media = MEDIA.get(path.suffix, "application/octet-stream")
     return FileResponse(path, media_type=media, filename=name)
 
 
+def _verify_files(folder: Path, record: Path | None) -> Any:
+    """:func:`~qpilot.integration.simulator.verify_audit`, with unreadable files as problems."""
+    from qpilot.integration.simulator import AuditCheck as Check
+    from qpilot.integration.simulator import verify_audit
+
+    try:
+        return verify_audit(folder, record)
+    except (ValueError, OSError) as err:  # a damaged manifest or lock: not JSON, unreadable
+        damaged = [
+            name
+            for name in ("audit_manifest.json", "lock.json")
+            if (folder / name).exists() and not _readable_json(folder / name)
+        ]
+        problems = [f"{name} cannot be read (damaged)" for name in damaged]
+        return Check(False, problems or [f"the audit's files cannot be read: {err}"])
+
+
+def _readable_json(path: Path) -> bool:
+    try:
+        json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return True
+
+
 def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> AuditVerifyView:
     from qpilot.core.record import RecordError, write_record
-    from qpilot.integration.simulator import sha256_file, verify_audit
+    from qpilot.integration.simulator import sha256_file
 
     manifest = _manifest(folder) or {}
     sums = folder / "AUDIT.sha256"
@@ -774,7 +859,7 @@ def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> 
         "bound_to_record": False,
     }
     if not bind or study_id is None:
-        check = verify_audit(folder)
+        check = _verify_files(folder, None)
     else:
         with tempfile.TemporaryDirectory(dir=ctx.private) as tmp:
             record = Path(tmp) / "record"
@@ -784,7 +869,7 @@ def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> 
                 raise api_error(
                     409, "no_record", f"The study's record cannot be written: {err}"
                 ) from err
-            check = verify_audit(folder, record)
+            check = _verify_files(folder, record)
         hashes = _chain_hashes(ctx, study_id)
         since = _decisions_since(hashes, head)
         out.update(
@@ -956,17 +1041,27 @@ def _attached_visible(ctx: AppContext, name: str) -> tuple[Path, AttachedAudit]:
 @router.get("/audits", response_model=AttachedAuditList)
 def list_attached_audits(ctx: Ctx) -> AttachedAuditList:
     """Results folders attached read-only with ``qpilot app --audit DIR``."""
-    return AttachedAuditList(
-        audits=[
-            _attached_info(ctx, name, folder) for name, folder in sorted(ctx.audit_dirs.items())
-        ]
-    )
+    out = []
+    for name, folder in sorted(ctx.audit_dirs.items()):
+        info = _attached_info(ctx, name, folder)
+        info.views_ready = screens(ctx).ready(_attached_key(name), folder)
+        out.append(info)
+    return AttachedAuditList(audits=out)
 
 
 @router.get("/audits/{name}", response_model=AttachedAudit)
 def attached_audit(name: str, ctx: Ctx) -> AttachedAudit:
-    """One attached folder: what it describes and whether its views can be shown."""
-    return _attached_info(ctx, name, _attached(ctx, name))
+    """One attached folder: what it describes; opening it starts loading its live views."""
+    folder = _attached(ctx, name)
+    info = _attached_info(ctx, name, folder)
+    if info.available:
+        if info.study_id is not None:
+            require_visible(ctx, info.study_id)
+        key = _attached_key(name)
+        build = _build_for_attached(ctx, folder, info)
+        info.loading = _load_job(ctx, key, folder, build, key)
+        info.views_ready = screens(ctx).ready(key, folder)
+    return info
 
 
 @router.get("/audits/{name}/overview", response_model=AuditOverview)

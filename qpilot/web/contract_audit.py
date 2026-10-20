@@ -316,7 +316,9 @@ class AuditMapPoint(BaseModel):
     gene: str
     log2: float | None
     fold: str
-    holds: int = Field(description="Reasonable analyses with the same call, of 100.")
+    holds: int = Field(
+        description="Percent (0–100) of the audit's reasonable analyses with the same call."
+    )
     verdict: str
     headline: bool
 
@@ -470,7 +472,11 @@ class AuditGeneResult(BaseModel):
 class AuditHolds(BaseModel):
     """How often the same answer comes out."""
 
-    n: int = Field(description="Reasonable analyses with the same call, of 100.")
+    n: int = Field(
+        description="Percent (0–100) of the audit's reasonable analyses with the same call."
+    )
+    same: int = Field(description="How many of the audit's reasonable analyses have the same call.")
+    of: int = Field(description="How many reasonable analyses the audit ran (144 on the demo).")
     lines: list[str]
 
 
@@ -584,6 +590,8 @@ class AuditLabNumbers(BaseModel):
 
     n_high: int
     n_rest: int
+    n_high_value: int = Field(description="Samples of the first group with a value (the p's n).")
+    n_rest_value: int = Field(description="Samples of the second group with a value.")
     n_plates: int
     cq_median: float | None
     cq_min: float | None
@@ -719,6 +727,10 @@ class AttachedAudit(BaseModel):
     reason: str | None = Field(default=None, description="Why not, in plain words.")
     analyses: int | None = None
     verdict_counts: dict[str, int] = {}
+    views_ready: bool = Field(default=False, description="Its live views are loaded.")
+    loading: JobView | None = Field(
+        default=None, description="The job loading its live views (started by opening it)."
+    )
 
 
 class AttachedAuditList(BaseModel):

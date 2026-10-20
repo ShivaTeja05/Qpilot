@@ -99,9 +99,11 @@ def facts_warm(store: StudyStore, sid: str) -> bool:
     import sys
 
     inspect = sys.modules.get("qpilot.qpcr.inspect")
-    if inspect is None:  # nothing was read in this process yet (and importing it is slow)
+    # Not imported yet (nothing was read in this process, and importing it is slow), or being
+    # imported right now by another thread: either way nothing is in memory yet.
+    cached_facts = getattr(inspect, "cached_facts", None)
+    if cached_facts is None:
         return False
-    cached_facts = inspect.cached_facts
 
     try:
         folder = store.find_session(sid)
