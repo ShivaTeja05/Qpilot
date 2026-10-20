@@ -50,7 +50,17 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
 }
 
 /** A status dot with a word for screen readers. */
-export function Dot({ tone, label, pulse, className }: { tone: Tone; label?: string; pulse?: boolean; className?: string }) {
+export function Dot({
+  tone,
+  label,
+  pulse,
+  className,
+}: {
+  tone: Tone;
+  label?: string;
+  pulse?: boolean;
+  className?: string;
+}) {
   const colour: Record<Tone, string> = {
     neutral: "bg-faint",
     accent: "bg-accent",
@@ -60,9 +70,18 @@ export function Dot({ tone, label, pulse, className }: { tone: Tone; label?: str
     info: "bg-info",
   };
   return (
-    <span className={cn("relative inline-flex size-2 shrink-0", className)} role={label ? "img" : undefined} aria-label={label}>
+    <span
+      className={cn("relative inline-flex size-2 shrink-0", className)}
+      role={label ? "img" : undefined}
+      aria-label={label}
+    >
       {pulse ? (
-        <span className={cn("absolute inset-0 animate-ping rounded-full opacity-60 motion-reduce:hidden", colour[tone])} />
+        <span
+          className={cn(
+            "absolute inset-0 animate-ping rounded-full opacity-60 motion-reduce:hidden",
+            colour[tone],
+          )}
+        />
       ) : null}
       <span className={cn("relative size-2 rounded-full", colour[tone])} />
     </span>

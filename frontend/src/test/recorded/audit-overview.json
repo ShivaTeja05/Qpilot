@@ -1,0 +1,1053 @@
+{
+ "study": {
+  "samples": 366,
+  "genes": 58,
+  "plates": 64,
+  "group": "MYCN-high",
+  "group_def": "top 15 % by MYCN expression",
+  "analyses": 90396,
+  "reasonable": 144
+ },
+ "verdicts": [
+  {
+   "key": "check data first",
+   "label": "Check data first",
+   "count": 2,
+   "rule": "A problem found in the data changes this call when it is fixed."
+  },
+  {
+   "key": "fragile",
+   "label": "Fragile",
+   "count": 5,
+   "rule": "Same call in fewer than 80 of 100 reasonable analyses, or 2 or fewer samples change it, or it sits within 7 % of the 2× line."
+  },
+  {
+   "key": "depends on your choices",
+   "label": "Depends on your choices",
+   "count": 3,
+   "rule": "Same call in 80 to 95 of 100 reasonable analyses: the rest depend on the choices made."
+  },
+  {
+   "key": "holds with caveats",
+   "label": "Holds with caveats",
+   "count": 7,
+   "rule": "Same call in at least 95 of 100 reasonable analyses, but 5 or fewer samples change it, or the difference is not always clear."
+  },
+  {
+   "key": "solid",
+   "label": "Solid",
+   "count": 23,
+   "rule": "Same call in at least 95 of 100 reasonable analyses, no 5 or fewer samples change it, and the difference is clear in at least 95 of 100."
+  },
+  {
+   "key": "no call",
+   "label": "No change called",
+   "count": 18,
+   "rule": "Not called a change: a call needs at least 2× and a p-value below 0.05."
+  }
+ ],
+ "genes": [
+  {
+   "gene": "DPYSL3",
+   "fold": "2.03× lower",
+   "call": "down",
+   "verdict": "check data first",
+   "label": "Check data first",
+   "headline": false
+  },
+  {
+   "gene": "PDE4DIP",
+   "fold": "2.14× lower",
+   "call": "down",
+   "verdict": "check data first",
+   "label": "Check data first",
+   "headline": false
+  },
+  {
+   "gene": "CLSTN1",
+   "fold": "2.21× lower",
+   "call": "down",
+   "verdict": "fragile",
+   "label": "Fragile",
+   "headline": false
+  },
+  {
+   "gene": "EPN2",
+   "fold": "2.40× lower",
+   "call": "down",
+   "verdict": "fragile",
+   "label": "Fragile",
+   "headline": false
+  },
+  {
+   "gene": "PLAGL1",
+   "fold": "2.27× lower",
+   "call": "down",
+   "verdict": "fragile",
+   "label": "Fragile",
+   "headline": false
+  },
+  {
+   "gene": "PLAT",
+   "fold": "3.40× lower",
+   "call": "down",
+   "verdict": "fragile",
+   "label": "Fragile",
+   "headline": false
+  },
+  {
+   "gene": "PTPRF",
+   "fold": "2.46× lower",
+   "call": "down",
+   "verdict": "fragile",
+   "label": "Fragile",
+   "headline": false
+  },
+  {
+   "gene": "HIVEP2",
+   "fold": "2.39× lower",
+   "call": "down",
+   "verdict": "depends on your choices",
+   "label": "Depends on your choices",
+   "headline": false
+  },
+  {
+   "gene": "NTRK1",
+   "fold": "15.04× lower",
+   "call": "down",
+   "verdict": "depends on your choices",
+   "label": "Depends on your choices",
+   "headline": true
+  },
+  {
+   "gene": "PTPRH",
+   "fold": "11.44× lower",
+   "call": "down",
+   "verdict": "depends on your choices",
+   "label": "Depends on your choices",
+   "headline": false
+  },
+  {
+   "gene": "INPP1",
+   "fold": "2.37× lower",
+   "call": "down",
+   "verdict": "holds with caveats",
+   "label": "Holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "MAP7",
+   "fold": "2.85× lower",
+   "call": "down",
+   "verdict": "holds with caveats",
+   "label": "Holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "NM23A",
+   "fold": "2.19× higher",
+   "call": "up",
+   "verdict": "holds with caveats",
+   "label": "Holds with caveats",
+   "headline": true
+  },
+  {
+   "gene": "PIK3R1",
+   "fold": "2.24× lower",
+   "call": "down",
+   "verdict": "holds with caveats",
+   "label": "Holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "PTN",
+   "fold": "2.78× lower",
+   "call": "down",
+   "verdict": "holds with caveats",
+   "label": "Holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "PTPRN2",
+   "fold": "2.47× lower",
+   "call": "down",
+   "verdict": "holds with caveats",
+   "label": "Holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "TNFRSF",
+   "fold": "2.65× lower",
+   "call": "down",
+   "verdict": "holds with caveats",
+   "label": "Holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "AHCY",
+   "fold": "2.61× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "AKR1C1",
+   "fold": "3.40× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "BIRC5",
+   "fold": "4.01× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": true
+  },
+  {
+   "gene": "CAMTA1",
+   "fold": "2.79× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "CD44",
+   "fold": "3.49× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "CDCA5",
+   "fold": "2.47× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "CDH5",
+   "fold": "10.00× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "CDKN3",
+   "fold": "2.38× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "CPSG3",
+   "fold": "21.19× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "DDC",
+   "fold": "3.69× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "ECEL1",
+   "fold": "9.13× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "EPB41L3",
+   "fold": "4.30× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "EPHA5",
+   "fold": "7.42× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "MAPT",
+   "fold": "2.72× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "MCM2",
+   "fold": "2.67× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "NHLH2",
+   "fold": "14.96× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "NRCAM",
+   "fold": "3.51× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "ODC1",
+   "fold": "3.32× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": true
+  },
+  {
+   "gene": "PMP22",
+   "fold": "3.57× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "PRAME",
+   "fold": "4.24× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "QPCT",
+   "fold": "3.56× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "SCG2",
+   "fold": "3.97× lower",
+   "call": "down",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "TYMS",
+   "fold": "2.31× higher",
+   "call": "up",
+   "verdict": "solid",
+   "label": "Solid",
+   "headline": false
+  },
+  {
+   "gene": "ARHGEF7",
+   "fold": "1.11× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "CAMTA2",
+   "fold": "1.98× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "ELAVL4",
+   "fold": "1.19× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "FYN",
+   "fold": "1.51× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "GNB1",
+   "fold": "1.71× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "IGSF4",
+   "fold": "1.94× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "MAP2K4",
+   "fold": "1.84× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "MRPL3",
+   "fold": "1.78× higher",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "MTSS1",
+   "fold": "1.88× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "PAICS",
+   "fold": "1.94× higher",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "PRDM2",
+   "fold": "1.76× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "PRKACB_bis",
+   "fold": "1.92× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "PRKCZ",
+   "fold": "1.87× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "SLC25A5",
+   "fold": "1.82× higher",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "SLC6A8",
+   "fold": "1.54× higher",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "SNAPC1",
+   "fold": "1.71× higher",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "ULK2",
+   "fold": "1.54× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  },
+  {
+   "gene": "WSB1",
+   "fold": "1.69× lower",
+   "call": "none",
+   "verdict": "no call",
+   "label": "No change called",
+   "headline": false
+  }
+ ],
+ "headline": [
+  "ODC1",
+  "BIRC5",
+  "NTRK1",
+  "NM23A"
+ ],
+ "source": {
+  "name": "data_vermeulen_raw.rdml (qPilot study e300000d4f9a)",
+  "benchmark": false
+ },
+ "decisions": [
+  {
+   "id": "efficiency",
+   "name": "The efficiency model",
+   "question": "Which amplification efficiency turns Cq into quantity?",
+   "changes_claim": false,
+   "baseline": "assay_mean",
+   "options": [
+    {
+     "id": "assay_mean",
+     "label": "LinRegPCR mean efficiency per assay",
+     "tier": "your planned analysis"
+    },
+    {
+     "id": "std_curve",
+     "label": "standard-curve slope of the plate's dilution series",
+     "tier": "reasonable alternative"
+    },
+    {
+     "id": "per_well",
+     "label": "each well's own efficiency",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "assume_100",
+     "label": "assume 100 % (the ddCq shortcut)",
+     "tier": "common shortcut"
+    }
+   ]
+  },
+  {
+   "id": "flagged",
+   "name": "How flagged wells are handled",
+   "question": "What happens to wells LinRegPCR flagged?",
+   "changes_claim": false,
+   "baseline": "keep",
+   "options": [
+    {
+     "id": "keep",
+     "label": "keep every quantified well",
+     "tier": "your planned analysis"
+    },
+    {
+     "id": "drop_eff",
+     "label": "drop efficiency-outlier wells",
+     "tier": "reasonable alternative"
+    },
+    {
+     "id": "drop_eff_low",
+     "label": "also drop wells below 10 copies",
+     "tier": "common shortcut"
+    }
+   ]
+  },
+  {
+   "id": "late_cq",
+   "name": "The late-Cq cut-off",
+   "question": "Are very late Cq values treated as not detected?",
+   "changes_claim": false,
+   "baseline": "none",
+   "options": [
+    {
+     "id": "none",
+     "label": "keep every Cq",
+     "tier": "your planned analysis"
+    },
+    {
+     "id": "cq35",
+     "label": "Cq above 35 counts as not detected",
+     "tier": "reasonable alternative"
+    },
+    {
+     "id": "cq38",
+     "label": "Cq above 38 counts as not detected",
+     "tier": "reasonable alternative"
+    }
+   ]
+  },
+  {
+   "id": "nondetect",
+   "name": "How non-detects are handled",
+   "question": "What happens to wells that never amplified?",
+   "changes_claim": false,
+   "baseline": "drop",
+   "options": [
+    {
+     "id": "drop",
+     "label": "leave them out",
+     "tier": "your planned analysis"
+    },
+    {
+     "id": "cap_min",
+     "label": "set to the lowest amount detected",
+     "tier": "reasonable alternative"
+    },
+    {
+     "id": "cq40",
+     "label": "substitute Cq = 40",
+     "tier": "common shortcut"
+    }
+   ]
+  },
+  {
+   "id": "refs",
+   "name": "The reference genes",
+   "question": "Which reference genes is each sample divided by?",
+   "changes_claim": false,
+   "baseline": "ALUsq+HMBS+HPRT1+SDHA+UBC",
+   "options": [
+    {
+     "id": "ALUsq+HMBS+HPRT1+SDHA+UBC",
+     "label": "normalise to 5 reference genes: ALUsq+HMBS+HPRT1+SDHA+UBC",
+     "tier": "your planned analysis"
+    },
+    {
+     "id": "ALUsq+HPRT1+SDHA",
+     "label": "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+     "tier": "reasonable alternative"
+    },
+    {
+     "id": "ALUsq",
+     "label": "normalise to 1 reference gene: ALUsq",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HMBS",
+     "label": "normalise to 1 reference gene: HMBS",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HPRT1",
+     "label": "normalise to 1 reference gene: HPRT1",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "SDHA",
+     "label": "normalise to 1 reference gene: SDHA",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "UBC",
+     "label": "normalise to 1 reference gene: UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HMBS",
+     "label": "normalise to 2 reference genes: ALUsq+HMBS",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HPRT1",
+     "label": "normalise to 2 reference genes: ALUsq+HPRT1",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+SDHA",
+     "label": "normalise to 2 reference genes: ALUsq+SDHA",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+UBC",
+     "label": "normalise to 2 reference genes: ALUsq+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HMBS+HPRT1",
+     "label": "normalise to 2 reference genes: HMBS+HPRT1",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HMBS+SDHA",
+     "label": "normalise to 2 reference genes: HMBS+SDHA",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HMBS+UBC",
+     "label": "normalise to 2 reference genes: HMBS+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HPRT1+SDHA",
+     "label": "normalise to 2 reference genes: HPRT1+SDHA",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HPRT1+UBC",
+     "label": "normalise to 2 reference genes: HPRT1+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "SDHA+UBC",
+     "label": "normalise to 2 reference genes: SDHA+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HMBS+HPRT1",
+     "label": "normalise to 3 reference genes: ALUsq+HMBS+HPRT1",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HMBS+SDHA",
+     "label": "normalise to 3 reference genes: ALUsq+HMBS+SDHA",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HMBS+UBC",
+     "label": "normalise to 3 reference genes: ALUsq+HMBS+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HPRT1+UBC",
+     "label": "normalise to 3 reference genes: ALUsq+HPRT1+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+SDHA+UBC",
+     "label": "normalise to 3 reference genes: ALUsq+SDHA+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HMBS+HPRT1+SDHA",
+     "label": "normalise to 3 reference genes: HMBS+HPRT1+SDHA",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HMBS+HPRT1+UBC",
+     "label": "normalise to 3 reference genes: HMBS+HPRT1+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HMBS+SDHA+UBC",
+     "label": "normalise to 3 reference genes: HMBS+SDHA+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HPRT1+SDHA+UBC",
+     "label": "normalise to 3 reference genes: HPRT1+SDHA+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HMBS+HPRT1+SDHA",
+     "label": "normalise to 4 reference genes: ALUsq+HMBS+HPRT1+SDHA",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HMBS+HPRT1+UBC",
+     "label": "normalise to 4 reference genes: ALUsq+HMBS+HPRT1+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HMBS+SDHA+UBC",
+     "label": "normalise to 4 reference genes: ALUsq+HMBS+SDHA+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "ALUsq+HPRT1+SDHA+UBC",
+     "label": "normalise to 4 reference genes: ALUsq+HPRT1+SDHA+UBC",
+     "tier": "common shortcut"
+    },
+    {
+     "id": "HMBS+HPRT1+SDHA+UBC",
+     "label": "normalise to 4 reference genes: HMBS+HPRT1+SDHA+UBC",
+     "tier": "common shortcut"
+    }
+   ]
+  },
+  {
+   "id": "cut",
+   "name": "The group cut-off",
+   "question": "Where is the MYCN-high group cut?",
+   "changes_claim": true,
+   "baseline": "top15",
+   "options": [
+    {
+     "id": "top15",
+     "label": "top 15 % by MYCN expression",
+     "tier": "your planned analysis"
+    },
+    {
+     "id": "top10",
+     "label": "top 10 % by MYCN expression",
+     "tier": "reasonable alternative"
+    },
+    {
+     "id": "top20",
+     "label": "top 20 % by MYCN expression",
+     "tier": "reasonable alternative"
+    }
+   ]
+  },
+  {
+   "id": "test",
+   "name": "The statistical test",
+   "question": "Which two-group test gives the p-value?",
+   "changes_claim": false,
+   "baseline": "welch",
+   "options": [
+    {
+     "id": "welch",
+     "label": "Welch t-test",
+     "tier": "your planned analysis"
+    },
+    {
+     "id": "student",
+     "label": "Student t-test (equal variances)",
+     "tier": "reasonable alternative"
+    },
+    {
+     "id": "mann_whitney",
+     "label": "Mann-Whitney U (rank test)",
+     "tier": "reasonable alternative"
+    }
+   ]
+  },
+  {
+   "id": "multiplicity",
+   "name": "The multiple-testing correction",
+   "question": "Is the p-value corrected for testing many genes?",
+   "changes_claim": true,
+   "baseline": "none",
+   "options": [
+    {
+     "id": "none",
+     "label": "no correction",
+     "tier": "your planned analysis"
+    },
+    {
+     "id": "bh",
+     "label": "Benjamini-Hochberg false discovery rate",
+     "tier": "reasonable alternative"
+    },
+    {
+     "id": "holm",
+     "label": "Holm family-wise error rate",
+     "tier": "reasonable alternative"
+    }
+   ]
+  }
+ ],
+ "issues": [
+  {
+   "id": "D-refs",
+   "title": "The reference genes: changing only this changes 31 call(s)",
+   "about": "an analysis choice",
+   "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+   "changes": [
+    "AHCY",
+    "CAMTA2",
+    "CDCA5",
+    "CDKN3",
+    "CLSTN1",
+    "DPYSL3",
+    "EPN2",
+    "FYN",
+    "GNB1",
+    "HIVEP2",
+    "IGSF4",
+    "INPP1",
+    "MAP2K4",
+    "MCM2",
+    "MRPL3",
+    "MTSS1",
+    "NM23A",
+    "PAICS",
+    "PDE4DIP",
+    "PIK3R1",
+    "PLAGL1",
+    "PRDM2",
+    "PRKACB_bis",
+    "PRKCZ",
+    "PTPRF",
+    "PTPRN2",
+    "SLC25A5",
+    "SNAPC1",
+    "TYMS",
+    "ULK2",
+    "WSB1"
+   ],
+   "headline": [
+    "NM23A"
+   ],
+   "causes": [
+    "analysis sensitivity, not an error"
+   ],
+   "wells": [],
+   "samples": [],
+   "plate": ""
+  },
+  {
+   "id": "D-cut",
+   "title": "The group cut-off: changing only this changes 17 call(s)",
+   "about": "an analysis choice",
+   "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+   "changes": [
+    "CAMTA2",
+    "DPYSL3",
+    "HIVEP2",
+    "IGSF4",
+    "MAP2K4",
+    "MTSS1",
+    "NM23A",
+    "PAICS",
+    "PDE4DIP",
+    "PIK3R1",
+    "PLAGL1",
+    "PRDM2",
+    "PRKACB_bis",
+    "PRKCZ",
+    "PTPRN2",
+    "SLC25A5",
+    "SNAPC1"
+   ],
+   "headline": [
+    "NM23A"
+   ],
+   "causes": [
+    "analysis sensitivity, not an error"
+   ],
+   "wells": [],
+   "samples": [],
+   "plate": ""
+  },
+  {
+   "id": "D-late_cq",
+   "title": "The late-Cq cut-off: changing only this changes 11 call(s)",
+   "about": "an analysis choice",
+   "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+   "changes": [
+    "CLSTN1",
+    "EPN2",
+    "MRPL3",
+    "NTRK1",
+    "PAICS",
+    "PLAGL1",
+    "PLAT",
+    "PRKACB_bis",
+    "PTPRF",
+    "PTPRH",
+    "SLC25A5"
+   ],
+   "headline": [
+    "NTRK1"
+   ],
+   "causes": [
+    "analysis sensitivity, not an error"
+   ],
+   "wells": [],
+   "samples": [],
+   "plate": ""
+  },
+  {
+   "id": "D-efficiency",
+   "title": "The efficiency model: changing only this changes 6 call(s)",
+   "about": "an analysis choice",
+   "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+   "changes": [
+    "CAMTA2",
+    "DPYSL3",
+    "IGSF4",
+    "PAICS",
+    "PRKACB_bis",
+    "SLC25A5"
+   ],
+   "headline": [],
+   "causes": [
+    "analysis sensitivity, not an error"
+   ],
+   "wells": [],
+   "samples": [],
+   "plate": ""
+  },
+  {
+   "id": "D-flagged",
+   "title": "How flagged wells are handled: changing only this changes 4 call(s)",
+   "about": "an analysis choice",
+   "action": "Decide this choice before looking at results and record the reason (Decision Card).",
+   "changes": [
+    "EPN2",
+    "PAICS",
+    "PLAT",
+    "PRKACB_bis"
+   ],
+   "headline": [],
+   "causes": [
+    "analysis sensitivity, not an error"
+   ],
+   "wells": [],
+   "samples": [],
+   "plate": ""
+  },
+  {
+   "id": "I0109",
+   "title": "Reference pair HMBS/UBC(2) differs between groups",
+   "about": "a reference gene",
+   "action": "Assess whether this reference gene is stable between the groups before using it.",
+   "changes": [
+    "DPYSL3",
+    "PAICS",
+    "PDE4DIP"
+   ],
+   "headline": [],
+   "causes": [
+    "a reference gene regulated by the condition",
+    "assay drift between groups"
+   ],
+   "wells": [],
+   "samples": [],
+   "plate": ""
+  }
+ ],
+ "n_issues": 129,
+ "model": {
+  "state": "checking"
+ },
+ "provenance": {
+  "run": "d73d61ef3c553599",
+  "lock": "5f5983a21a42",
+  "input": "bc1d233e3866",
+  "qsim": "0.1.0",
+  "files": [
+   "explain.json",
+   "genes.csv",
+   "issues.json",
+   "summary.json",
+   "one_sample_flips.csv",
+   "decisions.csv"
+  ]
+ }
+}

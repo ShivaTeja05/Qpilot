@@ -120,6 +120,154 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{sid}/bulk/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bulk List
+         * @description Exactly what “Accept all consistent…” or “Reject contradicted AI calls…” would cover.
+         */
+        get: operations["bulk_list"];
+        put?: never;
+        /**
+         * Bulk Do
+         * @description Accept (or reject, with one reason) exactly the list the person was shown.
+         */
+        post: operations["bulk_do"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/confirm/{stage}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Confirm
+         * @description The stage's pending confirm step and exactly what it covers.
+         */
+        get: operations["get_confirm"];
+        put?: never;
+        /**
+         * Prepare Confirm
+         * @description “Confirm this stage…”: the system proposes the confirm step; it shows what it covers.
+         */
+        post: operations["prepare_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/confirm/{stage}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm
+         * @description “Yes, confirm”: a person accepts the confirm step that was shown.
+         */
+        post: operations["confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/curve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Curve
+         * @description One well's raw curve, its replicates, and LinRegPCR's Cq and baseline once shown.
+         */
+        get: operations["get_curve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/curve-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Curve Calls
+         * @description Each well of one target called under every rule (and the Curve Judge where validated).
+         */
+        get: operations["get_curve_calls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/model-seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Model Seen
+         * @description What the model was sent in its last call (withheld while blind).
+         */
+        get: operations["get_model_seen"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/plate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Plate
+         * @description One plate's wells for the plate map (curve numbers once the design is confirmed).
+         */
+        get: operations["get_plate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{sid}/proposals": {
         parameters: {
             query?: never;
@@ -132,6 +280,186 @@ export type paths = {
          * @description A stage's inbox (or every stage's): contradicted first, then cannot-check, then rest.
          */
         get: operations["list_proposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/proposals/{pid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Proposal
+         * @description One proposal with its evidence quoted, alternatives in words, and its status.
+         */
+        get: operations["get_proposal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/proposals/{pid}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept
+         * @description Accept a proposal as it is (a reason is needed when the engine's check contradicts it).
+         */
+        post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/proposals/{pid}/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Edit
+         * @description Change some payload fields and accept; the edited proposal is checked again first.
+         */
+        post: operations["edit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/proposals/{pid}/matters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Matters
+         * @description Does this proposal (or its first alternative) change a conclusion? Yes / no (a job).
+         */
+        post: operations["matters"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/proposals/{pid}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject
+         * @description Turn a proposal down, with a reason (also how a confirm step is withdrawn).
+         */
+        post: operations["reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/propose/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose Comparison
+         * @description Once exactly two groups are accepted, the rule proposes which one is the reference.
+         */
+        post: operations["propose_comparison"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/propose/curves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose Curves
+         * @description Check the curves: the call rule and the Curve Judge's disagreements that matter (a job).
+         */
+        post: operations["propose_curves"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/propose/design": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose Design
+         * @description Ask for design proposals: the rules always, the model when one answers (a job).
+         */
+        post: operations["propose_design"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/quarantine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Quarantine
+         * @description The session's quarantined texts (quoted file text, its origin and flags).
+         */
+        get: operations["get_quarantine"];
         put?: never;
         post?: never;
         delete?: never;
@@ -271,6 +599,216 @@ export type components = {
             sheet?: string | null;
         };
         /**
+         * BulkDone
+         * @description What a bulk action did, one chain entry per proposal.
+         */
+        BulkDone: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "accept" | "reject";
+            /** Done */
+            done: number;
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            /** Outcomes */
+            outcomes: components["schemas"]["ProposalOutcome"][];
+            /**
+             * Results Visible
+             * @default false
+             */
+            results_visible: boolean;
+            /**
+             * Stages
+             * @default []
+             */
+            stages: components["schemas"]["StageView"][];
+        };
+        /**
+         * BulkList
+         * @description Exactly what a bulk action would cover, shown before anything is written.
+         */
+        BulkList: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "accept" | "reject";
+            /**
+             * Descriptions
+             * @default {}
+             */
+            descriptions: {
+                [key: string]: string;
+            };
+            /** Head */
+            head: string;
+            /** Ids */
+            ids: string[];
+            /** Message */
+            message: string;
+            /** Proposals */
+            proposals: components["schemas"]["Proposal"][];
+            /** Stage */
+            stage: string;
+        };
+        /**
+         * BulkRequest
+         * @description Act on exactly the listed proposals (the list the person was shown).
+         */
+        BulkRequest: {
+            /** Expected Head */
+            expected_head?: string | null;
+            /** Ids */
+            ids: string[];
+            /**
+             * Reason
+             * @description Kept in the record (≤ 500 chars).
+             * @default
+             */
+            reason: string;
+            /** Stage */
+            stage: string;
+        };
+        /**
+         * ConfirmRequest
+         * @description Yes, confirm: accept this confirm step.
+         */
+        ConfirmRequest: {
+            /** Expected Head */
+            expected_head?: string | null;
+            /** Proposal Id */
+            proposal_id: string;
+        };
+        /**
+         * ConfirmView
+         * @description A stage's pending confirm step and exactly what it covers (nothing written yet).
+         */
+        ConfirmView: {
+            /**
+             * Covers
+             * @default []
+             */
+            covers: components["schemas"]["Proposal"][];
+            /**
+             * Descriptions
+             * @default {}
+             */
+            descriptions: {
+                [key: string]: string;
+            };
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            proposal?: components["schemas"]["Proposal"] | null;
+            /**
+             * Ready
+             * @description True when a confirm step waits for 'Yes, confirm'.
+             */
+            ready: boolean;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "design" | "curves" | "choices";
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+        };
+        /**
+         * CurveCallsView
+         * @description Each well of one target called under every rule (facts about curves, no conclusion).
+         */
+        CurveCallsView: {
+            /** Curve Judge */
+            curve_judge: string;
+            /** Disagreements */
+            disagreements: string[];
+            /** Gene */
+            gene: string;
+            /** Rule Labels */
+            rule_labels: {
+                [key: string]: string;
+            };
+            /** Rules */
+            rules: string[];
+            /** Wells */
+            wells: components["schemas"]["WellCall"][];
+        };
+        /**
+         * CurveSeries
+         * @description One well's raw curve.
+         */
+        CurveSeries: {
+            /** Cycle */
+            cycle: number[];
+            /** Fluorescence */
+            fluorescence: (number | null)[];
+            /** Key */
+            key: string;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * CurveView
+         * @description One well's raw amplification curve, with LinRegPCR's numbers once they may be shown.
+         */
+        CurveView: {
+            /** Amplified */
+            amplified?: boolean | null;
+            /**
+             * Baseline
+             * @description LinRegPCR's baseline (raw units).
+             */
+            baseline?: number | null;
+            /** Cq */
+            cq?: number | null;
+            /** Cycle */
+            cycle: number[];
+            /** Declared Type */
+            declared_type: string;
+            /** Efficiency */
+            efficiency?: number | null;
+            /**
+             * Fluorescence
+             * @description Raw fluorescence as in the file.
+             */
+            fluorescence: (number | null)[];
+            /** Judge */
+            judge?: boolean | null;
+            /** Key */
+            key: string;
+            /** Note */
+            note: string;
+            /** Numbers Shown */
+            numbers_shown: boolean;
+            /** R2 */
+            r2?: number | null;
+            /**
+             * Replicates
+             * @description Other wells of the same sample and target on the same plate.
+             */
+            replicates: components["schemas"]["CurveSeries"][];
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target: string;
+            /** Well */
+            well: string;
+        };
+        /**
          * DemoInfo
          * @description The public demo study (Vermeulen 2009 / Ruijter 2013), SHA-256 pinned.
          */
@@ -311,6 +849,38 @@ export type components = {
             note: string;
             /** Ref */
             ref: string;
+        };
+        /**
+         * EvidenceView
+         * @description One evidence item with the file's text it points at (quoted, never obeyed).
+         */
+        EvidenceView: {
+            /**
+             * Flags
+             * @default []
+             */
+            flags: string[];
+            /** Kind */
+            kind: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Origin */
+            origin?: string | null;
+            /** Ref */
+            ref: string;
+            /**
+             * Text
+             * @description The quoted text behind a text id / cell.
+             */
+            text?: string | null;
+            /**
+             * Well
+             * @description `run_id/well` when it points at a well.
+             */
+            well?: string | null;
         };
         /**
          * FileFacts
@@ -502,6 +1072,36 @@ export type components = {
             provider?: string | null;
         };
         /**
+         * ModelSeen
+         * @description What the model was sent in its last call — withheld while blind unless it held no result.
+         */
+        ModelSeen: {
+            /**
+             * Interpreter
+             * @description Sent by the Design Interpreter (holds no result).
+             */
+            interpreter: boolean;
+            /** Message */
+            message: string;
+            /**
+             * Payload Text
+             * @description The payload as indented JSON.
+             */
+            payload_text?: string | null;
+            /**
+             * Same As Proposal
+             * @description With ?proposal=: the payload is the one behind that card.
+             */
+            same_as_proposal?: boolean | null;
+            /** Sha256 */
+            sha256?: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "none" | "hidden" | "shown";
+        };
+        /**
          * ModelStatus
          * @description Which model the AI layer uses, whether it answers, and what leaves this machine.
          */
@@ -560,6 +1160,146 @@ export type components = {
             section: string;
             /** Title */
             title: string;
+        };
+        /**
+         * PlateRun
+         * @description One plate (run) of the file.
+         */
+        PlateRun: {
+            /** Experiment Id */
+            experiment_id: string;
+            /**
+             * In Design
+             * @description On the experiment the design analyses.
+             */
+            in_design: boolean;
+            /** N Wells */
+            n_wells: number;
+            /** Run Id */
+            run_id: string;
+            /** Targets */
+            targets: string[];
+        };
+        /**
+         * PlateView
+         * @description One plate's wells, for the plate map (blind: no group next to a number).
+         */
+        PlateView: {
+            /**
+             * Curve Judge
+             * @description The Curve Judge's status in words.
+             */
+            curve_judge: string;
+            /** Curves Note */
+            curves_note: string;
+            /**
+             * Curves Shown
+             * @description Cq, efficiency, R² and calls are included.
+             */
+            curves_shown: boolean;
+            /** Key */
+            key: string;
+            /** N Cols */
+            n_cols: number;
+            /** N Rows */
+            n_rows: number;
+            /** Results Visible */
+            results_visible: boolean;
+            run: components["schemas"]["PlateRun"];
+            /** Runs */
+            runs: components["schemas"]["PlateRun"][];
+            /** Targets */
+            targets: string[];
+            /** Wells */
+            wells: components["schemas"]["PlateWell"][];
+        };
+        /**
+         * PlateWell
+         * @description One well (and target) of a plate; curve numbers once the design is confirmed.
+         */
+        PlateWell: {
+            /**
+             * Amplified
+             * @description LinRegPCR's call (with a person's).
+             */
+            amplified?: boolean | null;
+            /**
+             * Col
+             * @description 1-based column.
+             */
+            col?: number | null;
+            /** Cq */
+            cq?: number | null;
+            /**
+             * Declared Type
+             * @description What the file declares (unkn, std, ntc, nrt, …).
+             */
+            declared_type: string;
+            /**
+             * Disagrees
+             * @default false
+             */
+            disagrees: boolean;
+            /** Efficiency */
+            efficiency?: number | null;
+            /**
+             * Excluded By Person
+             * @default false
+             */
+            excluded_by_person: boolean;
+            /**
+             * Excluded Note
+             * @description The file's or LinRegPCR's exclusion note.
+             * @default
+             */
+            excluded_note: string;
+            /**
+             * Group
+             * @description Only once results are visible.
+             */
+            group?: string | null;
+            /**
+             * Judge
+             * @description The Curve Judge's call, when it ran.
+             */
+            judge?: boolean | null;
+            /**
+             * Key
+             * @description `run_id/well`: what the curve routes take.
+             */
+            key: string;
+            /**
+             * Person Call
+             * @description A call a person accepted.
+             */
+            person_call?: boolean | null;
+            /**
+             * Proposal Id
+             * @description A pending well-call proposal.
+             */
+            proposal_id?: string | null;
+            /** R2 */
+            r2?: number | null;
+            /**
+             * Role
+             * @description Its role in the design assembled so far.
+             */
+            role?: string | null;
+            /**
+             * Row
+             * @description 1-based row (A = 1).
+             */
+            row?: number | null;
+            /** Sample */
+            sample: string;
+            /** Sample Text Id */
+            sample_text_id?: string | null;
+            /** Target */
+            target: string;
+            /** Target Text Id */
+            target_text_id?: string | null;
+            /** Well */
+            well: string;
         };
         /**
          * Proposal
@@ -651,6 +1391,24 @@ export type components = {
             superseded_by?: string | null;
         };
         /**
+         * ProposalAction
+         * @description Accept, edit or reject one proposal (always as a person).
+         */
+        ProposalAction: {
+            /** Edits */
+            edits?: {
+                [key: string]: unknown;
+            } | null;
+            /** Expected Head */
+            expected_head?: string | null;
+            /**
+             * Reason
+             * @description Kept in the record (≤ 500 chars).
+             * @default
+             */
+            reason: string;
+        };
+        /**
          * ProposalCheck
          * @description The engine's refute-only check of a proposal.
          *
@@ -682,6 +1440,26 @@ export type components = {
             status: "consistent" | "contradicted" | "cannot_check";
         };
         /**
+         * ProposalDecided
+         * @description The answer to accept / edit / reject: the outcome and the session's stages after it.
+         */
+        ProposalDecided: {
+            /** Head */
+            head: string;
+            /** @description The analysis this decision started (results became visible). */
+            job?: components["schemas"]["JobView"] | null;
+            /** Message */
+            message: string;
+            outcome: components["schemas"]["ProposalOutcome"];
+            /** Results Visible */
+            results_visible: boolean;
+            /**
+             * Stages
+             * @default []
+             */
+            stages: components["schemas"]["StageView"][];
+        };
+        /**
          * ProposalList
          * @description A stage's inbox, in the order the page shows it (contradicted first, then the rest).
          */
@@ -693,12 +1471,127 @@ export type components = {
             counts: {
                 [key: string]: number;
             };
+            /**
+             * Descriptions
+             * @description Proposal id -> the proposal in plain words (as made, or edited).
+             * @default {}
+             */
+            descriptions: {
+                [key: string]: string;
+            };
             /** Head */
             head: string;
             /** Proposals */
             proposals: components["schemas"]["Proposal"][];
             /** Stage */
             stage: string | null;
+        };
+        /**
+         * ProposalOutcome
+         * @description What happened when someone tried to act on a proposal.
+         *
+         *     ``refused`` means the action is not allowed for this actor (only a person accepts, edits or
+         *     rejects) or the proposal is already settled; ``stale`` means ``expected_head`` was out of
+         *     date. Neither writes to the chain.
+         */
+        ProposalOutcome: {
+            /** Head */
+            head: string;
+            proposal?: components["schemas"]["Proposal"] | null;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "accepted" | "edited" | "rejected" | "superseded" | "stale" | "refused";
+        };
+        /**
+         * ProposalView
+         * @description One proposal with everything its card shows, in words.
+         */
+        ProposalView: {
+            /**
+             * Alternatives
+             * @description Each alternative in plain words.
+             */
+            alternatives: string[];
+            /**
+             * Blind
+             * @description A design/curves proposal: its consequence is only 'matters'.
+             */
+            blind: boolean;
+            /** Description */
+            description: string;
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceView"][];
+            /** Head */
+            head: string;
+            /**
+             * Model Made
+             * @description Made by a language model (its payload can be shown).
+             */
+            model_made: boolean;
+            proposal: components["schemas"]["Proposal"];
+            /**
+             * Stale Consequence
+             * @description Why a round-trip consequence no longer holds (then refused).
+             */
+            stale_consequence?: string | null;
+        };
+        /**
+         * ProposeDesign
+         * @description Ask for design proposals; the sentence given at Open is used when none is sent.
+         */
+        ProposeDesign: {
+            /** Sentence */
+            sentence?: string | null;
+        };
+        /**
+         * ProposeOne
+         * @description The answer to proposing a single thing (the comparison): what was added, or why not.
+         */
+        ProposeOne: {
+            /** Message */
+            message: string;
+            outcome?: components["schemas"]["ProposalOutcome"] | null;
+        };
+        /**
+         * QuarantineEntry
+         * @description One piece of free text from a file, stored once and cited by ``text_id`` everywhere else.
+         *
+         *     ``value`` is the original text. Prompts show it only inside a fenced, labelled quote block
+         *     (``firewall.as_quoted``); the engine never computes with it.
+         */
+        QuarantineEntry: {
+            /**
+             * Flags
+             * @default []
+             */
+            flags: string[];
+            /** Origin */
+            origin: string;
+            /** Text Id */
+            text_id: string;
+            /** Value */
+            value: string;
+        };
+        /**
+         * QuarantineView
+         * @description The session's quarantined texts: what the file (or sheet, or sentence) says, quoted.
+         */
+        QuarantineView: {
+            /** Entries */
+            entries: components["schemas"]["QuarantineEntry"][];
+            /** N Flagged */
+            n_flagged: number;
+            /**
+             * Sheet Cells
+             * @description Sheet cell (`Sheet1!B2`) -> text id.
+             */
+            sheet_cells: {
+                [key: string]: string;
+            };
         };
         /**
          * Settings
@@ -801,6 +1694,30 @@ export type components = {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * WellCall
+         * @description One well's amplification call under every rule (``qpcr_curve_calls``).
+         */
+        WellCall: {
+            /** Calls */
+            calls: {
+                [key: string]: boolean;
+            };
+            /** Cq */
+            cq?: number | null;
+            /** Learned P */
+            learned_p?: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Sample Type */
+            sample_type: string;
+            /** Target */
+            target: string;
+            /** Well */
+            well: string;
         };
         /**
          * WorkspaceList
@@ -1082,6 +1999,310 @@ export interface operations {
             };
         };
     };
+    bulk_list: {
+        parameters: {
+            query: {
+                stage: string;
+            };
+            header?: never;
+            path: {
+                action: "accept" | "reject";
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_do: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action: "accept" | "reject";
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkDone"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+                stage: "design" | "curves" | "choices";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prepare_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+                stage: "design" | "curves" | "choices";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+                stage: "design" | "curves" | "choices";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_curve: {
+        parameters: {
+            query: {
+                target?: string | null;
+                /** @description `plate/well`, e.g. `AHCY_20080229/A1`. */
+                well: string;
+            };
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurveView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_curve_calls: {
+        parameters: {
+            query: {
+                gene: string;
+            };
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurveCallsView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_model_seen: {
+        parameters: {
+            query?: {
+                proposal?: string | null;
+            };
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelSeen"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_plate: {
+        parameters: {
+            query?: {
+                run?: string | null;
+            };
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlateView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_proposals: {
         parameters: {
             query?: {
@@ -1103,6 +2324,309 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProposalList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_proposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    matters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    propose_comparison: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposeOne"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    propose_curves: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    propose_design: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProposeDesign"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quarantine: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated. */
+                ids?: string | null;
+            };
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuarantineView"];
                 };
             };
             /** @description Validation Error */

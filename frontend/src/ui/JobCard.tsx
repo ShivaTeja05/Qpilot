@@ -38,7 +38,12 @@ export function JobCard({
 
   if (!job) {
     return (
-      <div className={cn("flex items-center gap-2 rounded-xl border border-line bg-surface p-3 text-sm text-muted", className)}>
+      <div
+        className={cn(
+          "flex items-center gap-2 rounded-xl border border-line bg-surface p-3 text-sm text-muted",
+          className,
+        )}
+      >
         <Loader2 className="size-4 animate-spin" aria-hidden /> Starting…
       </div>
     );
@@ -50,7 +55,11 @@ export function JobCard({
     <div
       className={cn(
         "rounded-xl border bg-surface p-3",
-        job.status === "failed" ? "border-danger/40" : job.status === "done" ? "border-ok/30" : "border-line",
+        job.status === "failed"
+          ? "border-danger/40"
+          : job.status === "done"
+            ? "border-ok/30"
+            : "border-line",
         className,
       )}
       aria-live="polite"
@@ -73,7 +82,9 @@ export function JobCard({
               {running ? (
                 <>
                   {duration(elapsed)}
-                  {typical ? <span className="text-faint"> · usually ~{duration(typical)}</span> : null}
+                  {typical ? (
+                    <span className="text-faint"> · usually ~{duration(typical)}</span>
+                  ) : null}
                 </>
               ) : job.status === "done" ? (
                 <>done in {duration(job.elapsed_s)}</>
@@ -84,18 +95,30 @@ export function JobCard({
           </div>
           {running ? (
             <>
-              <p className="mt-0.5 truncate text-[13px] text-muted">{job.step || (job.status === "queued" ? "Waiting to start" : "Working")}</p>
+              <p className="mt-0.5 truncate text-[13px] text-muted">
+                {job.step || (job.status === "queued" ? "Waiting to start" : "Working")}
+              </p>
               <ProgressBar className="mt-2" label={job.title} value={job.fraction} />
               {over ? (
-                <p className="mt-1.5 text-xs text-faint">Taking longer than usual; it is still working.</p>
+                <p className="mt-1.5 text-xs text-faint">
+                  Taking longer than usual; it is still working.
+                </p>
               ) : null}
             </>
           ) : job.status === "failed" ? (
-            <p className="mt-0.5 text-[13px] text-danger">{job.error?.message ?? "It stopped before finishing."}</p>
+            <p className="mt-0.5 text-[13px] text-danger">
+              {job.error?.message ?? "It stopped before finishing."}
+            </p>
           ) : null}
-          {job.status === "done" && children ? <div className="mt-2">{children(job.result, job)}</div> : null}
+          {job.status === "done" && children ? (
+            <div className="mt-2">{children(job.result, job)}</div>
+          ) : null}
           {!running && onDismiss ? (
-            <button type="button" onClick={onDismiss} className="mt-2 text-xs text-muted underline-offset-2 hover:underline">
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="mt-2 text-xs text-muted underline-offset-2 hover:underline"
+            >
               Dismiss
             </button>
           ) : null}
