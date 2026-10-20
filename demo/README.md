@@ -16,7 +16,7 @@ python -m qpilot.integration demo --out demo-run # all 9 stages, audit and recor
 
 * `vermeulen.study.yaml`: the demo's design as a study file. `qpilot run --design demo/vermeulen.study.yaml` gives the same output as `qpilot run`, byte for byte.
 * `demo_study.yaml`: the demo's facts (study, groups, control-gene candidates, headline genes) and the question asked of the model. Its `path:` list is the click path of the earlier pages; the path of the page is below.
-* `demo.mp4`: a 1 min 50 s recording (no sound, captions on screen) of the earlier pages, made before the one page existed. It shows screens that no longer exist; it is kept as a record of the earlier version, not as a guide to the page.
+* `demo.mp4`: a 1 min 50 s recording (no sound, captions on screen) of the earlier pages, made before the one page existed. The one page replaced those screens (`qpilot studio` and `qsim app` now open it); the recording is kept as a record of the earlier version, not as a guide to the page.
 
 ## The path on the page
 
