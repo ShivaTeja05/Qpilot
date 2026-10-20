@@ -84,7 +84,8 @@ export function BulkAction({
       const done = await unwrap(
         api.POST("/api/sessions/{sid}/bulk/{action}", {
           params: { path: { sid, action } },
-          body: { stage, ids, reason: reason.trim(), expected_head: list.data.head },
+          // Exactly the scope of the list the person was shown.
+          body: { stage, ids, reason: reason.trim(), makers: list.data.makers, expected_head: list.data.head },
         }),
       );
       await refreshWorkspace(qc, sid);
