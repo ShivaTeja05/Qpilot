@@ -42,7 +42,7 @@ HTTP), **G** a test of Gradio wiring only.
 | P6 | Stale heads: a write carries the head the view showed; anything newer → nothing written, the view re-reads | A `test_a_change_elsewhere_makes_the_card_stale`, `…is_flagged_even_when_nothing_is_written` (B); S `test_a_decision_on_a_changed_inbox_is_stale_and_writes_nothing` (B) | 409 `stale` + `details.head`. An agent's request never makes a person's decision stale (core `changed_since`); a request that arrived after the page looked makes its turn-down stale · `test_studio_flow.py::test_decisions_refuse_stale_and_settled`, `test_results_routes.py::test_decide_then_undo_writes_new_entries_as_a_person`, `test_parity_decisions.py::test_undo_and_turn_down_with_an_old_head_write_nothing` | covered |
 | P7 | Bulk actions act on exactly the list shown | S `test_accept_all_consistent_lists_then_accepts_exactly_that_list`, `test_reject_all_lists_contradicted_ai_calls_and_needs_a_reason` (B) | `GET` then `POST /bulk/{action}` with the ids and `expected_head` (stronger than the old page, which sent no head) · `test_studio_flow.py::test_bulk_lists_are_exactly_what_is_acted_on` | covered |
 | P8 | Reasons are required where the record needs one (reject, contradicted accept, exclusion, undo) and are at most 500 characters | A, S · S `test_reject_needs_a_reason…` (B) | 422 `bad_request` · `test_studio_flow.py::test_reject_needs_a_reason_and_edit_must_change_something`, `test_results_routes.py::test_decide_refuses_bad_requests` | covered |
-| P9 | Undo is a new chain entry; only Undo can write the `Undo:` prefix | A `test_undo_steps_back_through_the_history`, `test_a_decide_reason_cannot_pose_as_an_undo` (B) | `qpilot/ai/suggest_only.py` `undo_target` · `test_parity_suggest_only.py::test_undo_steps_back_through_the_cards_own_history`, `test_results_routes.py::test_decide_then_undo_writes_new_entries_as_a_person` | covered |
+| P9 | Undo is a new chain entry; only Undo can write the `Undo:` prefix | A `test_undo_steps_back_through_the_history`, `test_a_decide_reason_cannot_pose_as_an_undo` (B) | `qpilot/web/results_views.py` `undo_target` · `test_parity_suggest_only.py::test_undo_steps_back_through_the_cards_own_history`, `test_results_routes.py::test_decide_then_undo_writes_new_entries_as_a_person` | covered |
 | P10 | Suggest mode: the model may only ask (a request for a person, on every card) | A `test_ask_in_suggest_mode_only_asks_and_shows_the_request`, `test_decide_and_tell_applies_only_what_changes_no_conclusion` (B) | Stronger now (RT-UI-017, coordinator #0233, api-ops 7b4ff82): the page's Ask never writes, in any autonomy mode; it names the card and returns `focus: "card:<id>"`, and a person decides there. `SuggestOnlyStore` keeps the rule for the model · `test_parity_suggest_only.py`; `test_parity_decisions.py::test_ask_never_writes_and_leads_to_the_card` | covered |
 | P11 | A choice that can change a conclusion always waits for a person, at every autonomy level | A `test_decide_and_tell_applies_only_what_changes_no_conclusion` (B) | `core.decisions` · `tests/ai/test_safety_regressions.py`, `test_ask.py::test_decide_and_tell_applies_only_what_changes_no_conclusion` | covered |
 | P12 | Text is text: every string from a file, a sheet, a model or an agent reaches the screen as text | A `test_a_reason_with_markup_is_shown_as_text`, `test_a_hostile_label_from_an_rdml_file_is_shown_as_text`, `test_model_text_with_markup_is_escaped` (B); S `test_hostile_text_is_escaped_in_every_html_output` (G), `test_names_from_the_file_and_agent_text_are_escaped_with_the_real_service` (B); Q `esc()` in the page | The server sends JSON only (never HTML it builds from data), `nosniff`, CSP `default-src 'self'`; hostile names come back verbatim as data; React escapes; lint forbids `dangerouslySetInnerHTML` / `innerHTML` (`frontend/eslint.config.js`) · `test_parity_studio.py::test_hostile_names_come_back_as_data_in_json_only`; `test_guard.py::test_every_answer_carries_the_security_headers` | covered |
@@ -163,19 +163,35 @@ and `app_page.html` go.
 | Q18 | Open your own plate (upload, progress, reopen, failure kept the screen) | `test_plates.py::test_open_your_own_plate_endpoints` | Open (upload → session) + Run the audit (job) | dropped: replaced by Open and the audit job; the safety rows (P14, P15, P20) carry |
 | Q19 | `qsim app --results DIR` | none | `qsim app --results DIR` serves the one page with that run attached; `qpilot app --audit DIR` · `test_cli_one_page.py::test_qsim_app_serves_the_one_page_with_the_run_attached`, `::test_qpilot_app_attaches_audit_folders` | covered |
 
-## 5. Removal notes (step 4, after "remove now")
+## 5. Removal (done on the coordinator's "remove now", #0385, base ui/one-page a08edef)
 
-* Keep: `qsim.app.Screen` and everything it needs (`RAW_FILES`, wording tables, helpers),
-  `qsim.app_lab.LabViews`. Delete: `HOST`, `PAGE`, `Busy`, `App`, `make_handler`, `serve`,
-  `_known` (port its gene check, Q12), `app_page.html`. `sim/src/qsim/cli.py` (api-ops) must stop
-  importing `serve` first; `sim/tests/test_plates.py::test_open_your_own_plate_endpoints` uses
-  `App` / `make_handler` and goes with them. `frontend/src/test/recorded/record.py` (insight)
-  builds a `Screen` by hand and keeps working.
-* `qpilot/app_state.py` is Gradio-free; `qpilot/web/routers/system.py` imports its `FOOTER`
-  and `tests/engine/test_groups_wording.py` imports it too: keep what is still imported, or move
-  it, before deleting.
-* `tests/ai/test_safety_regressions.py` imports `SuggestOnlyStore` from `qpilot.app`; it must
-  import from `qpilot.ai.suggest_only` before `qpilot/app.py` goes.
-* Tests that stay (not about the page): `test_doctor_*`, `test_example_profile_loads`,
-  `tests/app/test_templates.py`, `tests/app/test_smoke.py` (if it is not about the page),
-  `test_studio_demo_ui.py` D1 and D2 (CLI).
+Deleted:
+
+* `qpilot/app.py` (Gradio `qpilot app`) and `qpilot/studio.py` (Gradio `qpilot studio`);
+  `gradio` is no longer a dependency (`pyproject.toml`).
+* `sim/src/qsim/app_page.html` and, in `sim/src/qsim/app.py`, the stdlib server: `HOST`,
+  `PAGE`, `_known`, `Busy`, `App`, `make_handler`, `serve`. `Screen` (with `from_prepared`,
+  `evidence_html`), `LabViews` and the wording tables stay: the API serves them.
+* The page-only tests: `tests/app/test_app.py`, `tests/studio/test_studio_app.py`, the page
+  half of `tests/studio/test_studio_demo_ui.py` (D3, D4),
+  `sim/tests/test_app.py::test_page_markup_types_no_numbers` and `::test_http_endpoints` (now
+  `::test_every_view_the_page_serves`, on `Screen`),
+  `sim/tests/test_plates.py::test_open_your_own_plate_endpoints`.
+* HTML builders nobody imports any more: `app_state` `meter_rows`, `meter_html`, `MeterRow`,
+  `confidence_badge`, `results_table`, `RESULT_COLUMNS`, `policy_lines`, `footer_lines`,
+  `_fact_html`; `studio_state` `STAGE_HINTS`, `inbox_head_html`; and in
+  `qpilot/ai/suggest_only.py` the copies the old page used (`undo_target`, `UNDO_PREFIX`,
+  `snapshot`, `acting_store`; Undo is `qpilot.web.results_views.undo_target`).
+
+Kept:
+
+* `qpilot/app_state.py` (the summary, the design sentence, the Decision Card view-models,
+  `FOOTER`: used by `qpilot/web`, `qpilot/ai`, `qpilot/core`) and `qpilot/studio_state.py`
+  (`describe` for the page; its HTML views for the Studio service's tests).
+* `qpilot/ai/suggest_only.py`: `SuggestOnlyStore` and the scorecard helpers
+  (`POST /api/model/test`).
+* Tests that were never about the page: `tests/app/test_cli_doctor.py` (`qpilot doctor`, the
+  example profile), `tests/app/test_templates.py`, `tests/app/test_smoke.py`,
+  `tests/app/test_app_state.py`, `tests/studio/test_studio_demo_ui.py` D1, D2
+  (`qpilot studio demo --check`).
+* `tests/ai/test_safety_regressions.py` imports `SuggestOnlyStore` from `qpilot.ai.suggest_only`.

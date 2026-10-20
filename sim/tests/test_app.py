@@ -1,20 +1,20 @@
-"""The results screen: plain words, numbers traced to the engine, live what-if and Ask."""
+"""The results screen's views: plain words, numbers traced to the engine, live what-if and Ask.
+
+qPilot's one page serves these views (``qpilot/web/routers/audit.py``; its tests are
+``tests/web/test_audit*.py``); here they are checked on the committed run in ``sim/results``.
+"""
 
 from __future__ import annotations
 
 import json
 import re
-import threading
-import urllib.error
-import urllib.request
-from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
 from qpilot.ai.client import ModelClient
 from qpilot.ai.config import ModelConfig
 
-from qsim.app import PAGE, Screen, make_handler
+from qsim.app import Screen
 from qsim.ask import Asker
 from qsim.compare import whatif
 
@@ -45,7 +45,6 @@ def test_no_statistics_jargon_on_any_screen(screen):
         views = [screen.gene_effects(gene), screen.lab_parameters(gene), screen.gene_samples(gene)]
         text += json.dumps(views, ensure_ascii=False)
     text += json.dumps([screen.study_view(), screen.how_view()], ensure_ascii=False)
-    text += PAGE.read_text()
     assert not JARGON.findall(text)
 
 
@@ -63,13 +62,6 @@ def test_card_numbers_come_from_explain_json(screen):
             assert any(f"any one of {len(card['singles'])}" in line for line in card["leans"])
         elif e["drop_k"]:
             assert any(f"Removing {e['drop_k']} of" in line for line in card["leans"])
-
-
-def test_page_markup_types_no_numbers():
-    html = PAGE.read_text()
-    markup = re.sub(r"<style>.*?</style>|<script>.*?</script>", "", html, flags=re.S)
-    text = re.sub(r"<[^>]+>", " ", markup)
-    assert not re.findall(r"\d", text)
 
 
 def test_whatif_matches_the_engine(screen):
@@ -109,47 +101,20 @@ def test_samples_and_choices_match_the_engine(screen):
     assert screen.gene_samples("NTRK1", changes)["fold_log2"] == pytest.approx(row["new_log2"])
 
 
-def test_http_endpoints(screen):
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(screen))
-    threading.Thread(target=httpd.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{httpd.server_address[1]}"
-
-    def get(path):
-        with urllib.request.urlopen(base + path, timeout=30) as r:
-            return r.read().decode()
-
-    def post(path, body):
-        req = urllib.request.Request(
-            base + path, json.dumps(body).encode(), {"Content-Type": "application/json"}
-        )
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.loads(r.read())
-
-    try:
-        assert "Does your qPCR result hold up?" in get("/")
-        assert json.loads(get("/api/overview"))["study"]["genes"] == len(screen.explain)
-        assert json.loads(get("/api/gene/NM23A"))["gene"] == "NM23A"
-        assert "Evidence for NM23A" in get("/evidence/NM23A")
-        assert json.loads(get("/files/explain.json")) == screen.explain
-        assert post("/api/whatif", {"changes": {"late_cq": "cq35"}})["n_changed"] > 0
-        assert json.loads(get("/api/analyses/NM23A"))["n"] == 144
-        assert json.loads(get("/api/effects/NM23A"))["decisions"]
-        assert json.loads(get("/api/lab/NM23A"))["rows"]
-        assert json.loads(get("/api/study"))["map"]
-        assert json.loads(get("/api/how"))["stages"]
-        assert post("/api/samples", {"gene": "NM23A", "changes": {}})["points"]
-        ans = post("/api/ask", {"question": "Does NM23A depend on the reference genes?"})
-        assert ans["tool"] == "gene" and ans["written_by"] == "the engine's checked template"
-        fold = next(f["value"] for f in ans["facts"] if f["meaning"] == "fold change at baseline")
-        assert fold in ans["text"]
-        for bad in (
-            "/files/../summary.json",
-            "/files/lock.json",
-            "/api/gene/NOPE",
-            "/api/lab/NOPE",
-        ):
-            with pytest.raises(urllib.error.HTTPError):
-                get(bad)
-    finally:
-        httpd.shutdown()
-        httpd.server_close()
+def test_every_view_the_page_serves(screen):
+    assert screen.overview()["study"]["genes"] == len(screen.explain)
+    assert screen.gene_card("NM23A")["gene"] == "NM23A"
+    assert "Evidence for NM23A" in screen.evidence_html("NM23A")
+    assert screen.run_whatif({"late_cq": "cq35"})["n_changed"] > 0
+    assert screen.gene_analyses("NM23A")["n"] == 144
+    assert screen.gene_effects("NM23A")["decisions"]
+    assert screen.lab_parameters("NM23A")["rows"]
+    assert screen.study_view()["map"]
+    assert screen.how_view()["stages"]
+    assert screen.gene_samples("NM23A", {})["points"]
+    ans = screen.ask("Does NM23A depend on the reference genes?")
+    assert ans["tool"] == "gene" and ans["written_by"] == "the engine's checked template"
+    fold = next(f["value"] for f in ans["facts"] if f["meaning"] == "fold change at baseline")
+    assert fold in ans["text"]
+    with pytest.raises(KeyError):
+        screen.gene_card("NOPE")
