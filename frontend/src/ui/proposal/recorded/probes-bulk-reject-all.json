@@ -1,0 +1,2127 @@
+{
+ "stage": "design",
+ "action": "reject",
+ "ids": [
+  "p_6b117c2aaeaebf2f"
+ ],
+ "proposals": [
+  {
+   "id": "p_6b117c2aaeaebf2f",
+   "study_id": "49fba8329cdf",
+   "kind": "design.dilution_series",
+   "subject": "declared_standards",
+   "payload": {
+    "experiment_id": "Probes - AMC",
+    "samples": {
+     "genomic DNA 0.2ng": 7.5,
+     "genomic DNA 0.7ng": 26.0,
+     "genomic DNA 20ng": 750.0,
+     "genomic DNA 2ng": 75.0,
+     "genomic DNA 4ng": 150.0,
+     "genomic DNA 7ng": 260.0
+    }
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_2049617b63bc",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_1fae9dd15e96",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_3e3e1e475944",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_0d751c8a4440",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_ef63ff77be13",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_174f1df37f44",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "contradicted",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP"
+    ],
+    "details": {
+     "amplification_factor": 1.95296,
+     "checks": {
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 26,
+        "n_over_tolerance_at_known_copies": 26,
+        "n_sets": 122,
+        "n_sets_at_known_copies": 122,
+        "over_tolerance": [
+         {
+          "copies": 7.5,
+          "efficiency": 1.8838,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 2.7562,
+          "run_id": "P4 - Probe Mixes - DNA Dilution",
+          "sample": "genomic DNA 0.2ng",
+          "target": "FSTL_1_T_770 250nM 150nM",
+          "tolerance": 1.309
+         },
+         {
+          "copies": 26.0,
+          "efficiency": 1.8838,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.881,
+          "run_id": "P4 - Probe Mixes - DNA Dilution",
+          "sample": "genomic DNA 0.7ng",
+          "target": "FSTL_1_T_770 250nM 150nM",
+          "tolerance": 0.8187
+         },
+         {
+          "copies": 750.0,
+          "efficiency": 1.8838,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 4.137,
+          "run_id": "P4 - Probe Mixes - DNA Dilution",
+          "sample": "genomic DNA 20ng",
+          "target": "FSTL_1_T_770 250nM 150nM",
+          "tolerance": 0.5119
+         },
+         {
+          "copies": 75.0,
+          "efficiency": 1.8838,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 2.9225,
+          "run_id": "P4 - Probe Mixes - DNA Dilution",
+          "sample": "genomic DNA 2ng",
+          "target": "FSTL_1_T_770 250nM 150nM",
+          "tolerance": 0.6277
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.7278,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 0.6998,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_D_105 100nM 250nM",
+          "tolerance": 0.6558
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.7685,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 2.3731,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_D_105 750nM 500nM",
+          "tolerance": 0.629
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.9347,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.8877,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_F_109 100nM 250nM",
+          "tolerance": 0.5435
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 2.163,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.6364,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_F_109 750nM 500nM",
+          "tolerance": 0.4649
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.8146,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 1.4717,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_K_219 250nM 150nM",
+          "tolerance": 0.6019
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.7271,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 1.0428,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_K_219 250nM 250nM",
+          "tolerance": 0.6563
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.8931,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 2.1708,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_K_219 250nM 500nM",
+          "tolerance": 0.562
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.7172,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 2.8304,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_K_219 750nM 150nM",
+          "tolerance": 0.6633
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.8328,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 1.902,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_K_219 750nM 250nM",
+          "tolerance": 0.592
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.5335,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 7.0462,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_K_219 750nM 500nM",
+          "tolerance": 0.8388
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.9982,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.5395,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_K_219 750nM 75nM",
+          "tolerance": 0.5181
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.9819,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.6083,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_O_417 100nM 75nM",
+          "tolerance": 0.5243
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.9166,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 1.0208,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_O_417 250nM 250nM",
+          "tolerance": 0.5513
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 2.1453,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 2.8,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_O_417 250nM 500nM",
+          "tolerance": 0.4699
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.6904,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 1.9095,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_O_417 750nM 500nM",
+          "tolerance": 0.6832
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.6428,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 0.8066,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_T_770 250nM 150nM",
+          "tolerance": 0.7225
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.752,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 1.0,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_T_770 250nM 25nM",
+          "tolerance": 0.6396
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.8171,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 2.0149,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_T_770 250nM 50nM",
+          "tolerance": 0.6005
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.7654,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 0.7424,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_T_770 250nM 75nM",
+          "tolerance": 0.631
+         },
+         {
+          "copies": 150.0,
+          "efficiency": 1.9387,
+          "judged_at_known_copies": true,
+          "n": 2,
+          "range": 4.4165,
+          "run_id": "P8 - Primer conc - Probe conc",
+          "sample": "genomic DNA 4ng",
+          "target": "FSTL_1_T_770 750nM 75nM",
+          "tolerance": 0.5417
+         },
+         {
+          "copies": 260.0,
+          "efficiency": 1.9142,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.526,
+          "run_id": "P4 - Probe Mixes - DNA Dilution",
+          "sample": "genomic DNA 7ng",
+          "target": "FSTL_1_O_417 250nM 150nM",
+          "tolerance": 0.5249
+         },
+         {
+          "copies": 260.0,
+          "efficiency": 1.8838,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 2.1369,
+          "run_id": "P4 - Probe Mixes - DNA Dilution",
+          "sample": "genomic DNA 7ng",
+          "target": "FSTL_1_T_770 250nM 150nM",
+          "tolerance": 0.5382
+         }
+        ],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": true
+       },
+       "note": "some replicate sets differ by more than the expected spread (a warning only)",
+       "status": "consistent"
+      }
+     },
+     "efficiency": 0.95296,
+     "efficiency_range": [
+      0.9,
+      1.1
+     ],
+     "efficiency_warning": true,
+     "family_series": [
+      "declared_standards"
+     ],
+     "fits": [
+      {
+       "amplification_factor": 1.975408,
+       "efficiency": 0.975408,
+       "efficiency_fraction_of_doubling": 0.987704,
+       "efficiency_warning": false,
+       "intercept": 35.025364,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.999028,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.3823,
+       "status": "consistent",
+       "target": "FSTL_1_D_105 250nM 150nM"
+      },
+      {
+       "amplification_factor": 1.990946,
+       "efficiency": 0.990946,
+       "efficiency_fraction_of_doubling": 0.995473,
+       "efficiency_warning": false,
+       "intercept": 35.081539,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.996653,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.343817,
+       "status": "consistent",
+       "target": "FSTL_1_D_105 250nM 150nM IDT"
+      },
+      {
+       "amplification_factor": 1.959015,
+       "efficiency": 0.959015,
+       "efficiency_fraction_of_doubling": 0.979507,
+       "efficiency_warning": false,
+       "intercept": 35.30846,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.997288,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.424215,
+       "status": "consistent",
+       "target": "FSTL_1_F_109 250nM 150nM"
+      },
+      {
+       "amplification_factor": 1.928031,
+       "efficiency": 0.928031,
+       "efficiency_fraction_of_doubling": 0.964016,
+       "efficiency_warning": false,
+       "intercept": 35.682118,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.997931,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.507368,
+       "status": "consistent",
+       "target": "FSTL_1_F_109 250nM 150nM IDT"
+      },
+      {
+       "amplification_factor": 1.921537,
+       "efficiency": 0.921537,
+       "efficiency_fraction_of_doubling": 0.960769,
+       "efficiency_warning": false,
+       "intercept": 35.617739,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.996411,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.525486,
+       "status": "consistent",
+       "target": "FSTL_1_K_219 250nM 150nM"
+      },
+      {
+       "amplification_factor": 1.953778,
+       "efficiency": 0.953778,
+       "efficiency_fraction_of_doubling": 0.976889,
+       "efficiency_warning": false,
+       "intercept": 35.51942,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.996304,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.437901,
+       "status": "consistent",
+       "target": "FSTL_1_K_219 250nM 150nM IDT"
+      },
+      {
+       "amplification_factor": 1.952142,
+       "efficiency": 0.952142,
+       "efficiency_fraction_of_doubling": 0.976071,
+       "efficiency_warning": false,
+       "intercept": 36.407827,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.992363,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.442206,
+       "status": "consistent",
+       "target": "FSTL_1_O_417 250nM 150nM"
+      },
+      {
+       "amplification_factor": 1.93269,
+       "efficiency": 0.93269,
+       "efficiency_fraction_of_doubling": 0.966345,
+       "efficiency_warning": false,
+       "intercept": 35.877156,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.998485,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.49452,
+       "status": "consistent",
+       "target": "FSTL_1_O_417 250nM 150nM IDT"
+      },
+      {
+       "amplification_factor": 2.309733,
+       "efficiency": 1.309733,
+       "efficiency_fraction_of_doubling": 1.154866,
+       "efficiency_warning": true,
+       "intercept": 41.101436,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.685578,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -2.750565,
+       "status": "contradicted",
+       "target": "FSTL_1_T_770 250nM 150nM"
+      },
+      {
+       "amplification_factor": 1.804841,
+       "efficiency": 0.804841,
+       "efficiency_fraction_of_doubling": 0.902421,
+       "efficiency_warning": true,
+       "intercept": 37.853114,
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 15,
+       "r2": 0.996619,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "slope": -3.899562,
+       "status": "consistent",
+       "target": "FSTL_1_T_770 250nM 150nM IDT"
+      },
+      {
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 0,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "status": "cannot_check",
+       "target": "No Primer 0nM 150nM"
+      },
+      {
+       "levels": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        7.5,
+        26.0,
+        75.0,
+        260.0,
+        750.0
+       ],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 15,
+       "n_wells_used": 0,
+       "run_id": "P4 - Probe Mixes - DNA Dilution",
+       "status": "cannot_check",
+       "target": "No Primer 0nM 150nM IDT"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 100nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 2,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 100nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 100nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 100nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 100nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 100nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 250nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 250nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 250nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 250nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 250nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 250nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 750nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 750nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 750nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 750nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 750nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_D_105 750nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 100nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 100nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 100nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 100nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 100nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 100nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 250nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 250nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 250nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 250nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 250nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 250nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 750nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 750nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 750nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 750nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 750nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_F_109 750nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 100nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        150.0
+       ],
+       "n_late_cq_not_counted": 2,
+       "n_wells": 3,
+       "n_wells_used": 0,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 100nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 100nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 100nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 100nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 100nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 250nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 250nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 250nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 250nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 250nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 250nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 750nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 750nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 750nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 750nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 750nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_K_219 750nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 100nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 100nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 100nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        150.0
+       ],
+       "n_late_cq_not_counted": 1,
+       "n_wells": 3,
+       "n_wells_used": 0,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 100nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 100nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 100nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 250nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 250nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 250nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 250nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 250nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 250nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 750nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 750nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 750nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 750nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 750nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_O_417 750nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 2,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 100nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        150.0
+       ],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 0,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 100nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 100nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        150.0
+       ],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 0,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 100nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 2,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 100nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 100nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 2,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 250nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        150.0
+       ],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 0,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 250nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 250nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        150.0
+       ],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 0,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 250nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 250nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 2,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 250nM 75nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 750nM 150nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 1,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 750nM 250nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 750nM 25nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [],
+       "levels_without_amplification": [
+        150.0
+       ],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 0,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 750nM 500nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 750nM 50nM"
+      },
+      {
+       "levels": [
+        150.0
+       ],
+       "levels_used": [
+        150.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 3,
+       "n_wells_used": 3,
+       "run_id": "P8 - Primer conc - Probe conc",
+       "status": "cannot_check",
+       "target": "FSTL_1_T_770 750nM 75nM"
+      }
+     ],
+     "invalid_quantities": [],
+     "levels_used": [
+      7.5,
+      26.0,
+      75.0,
+      260.0,
+      750.0
+     ],
+     "levels_without_amplification": [
+      7.5,
+      26.0,
+      75.0,
+      150.0,
+      260.0,
+      750.0
+     ],
+     "missing_samples": [],
+     "n_fits": 10,
+     "n_fits_contradicted": 1,
+     "r2": 0.685578,
+     "r2_max": 0.999028,
+     "r2_min_required": 0.98,
+     "slope": -3.440054
+    },
+    "note": "on some plates the wells do not fall on a line of Cq against the logarithm of quantity; some replicate sets differ by more than the expected spread (a warning only)"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "declared standards with quantities in the file"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T21:22:26Z"
+  }
+ ],
+ "descriptions": {
+  "p_6b117c2aaeaebf2f": "Samples genomic DNA 0.2ng \u2026 genomic DNA 7ng (6 in all, experiment Probes - AMC) form a dilution series declared_standards, quantities 7.5 to 750"
+ },
+ "head": "da2eaa82cfdae504cebf48367c855d0c72a7c676c2cd170dfd5850d81b52b398",
+ "message": "Check the list and give one reason; only these are rejected, and only when you press the button."
+}

@@ -1,0 +1,9 @@
+{
+ "stage": "design",
+ "action": "reject",
+ "ids": [],
+ "proposals": [],
+ "descriptions": {},
+ "head": "da2eaa82cfdae504cebf48367c855d0c72a7c676c2cd170dfd5850d81b52b398",
+ "message": "No waiting proposal of this stage (in this list) is contradicted by the engine's check."
+}

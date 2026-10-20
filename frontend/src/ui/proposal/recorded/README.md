@@ -64,3 +64,16 @@ running (`qpilot app --port 7881`; the key is in `$QPILOT_APP_TOKEN`):
 curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" 'http://127.0.0.1:7881/api/sessions/2529de8272eb/proposals?stage=design' > untergasser-design-proposals.json
 curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" 'http://127.0.0.1:7881/api/sessions/2529de8272eb/quarantine' > untergasser-quarantine.json
 ```
+
+`probes-design-proposals.json`, `probes-bulk-reject-ai.json`, `probes-bulk-reject-all.json`: the real
+API's answers for a Studio session of `sim/data/untergasser/probes.rdml` (Untergasser et al., CC BY
+4.0) opened through `POST /api/workspaces` and proposed in the page (rules only): the inbox, and what
+"Reject contradicted…" lists for each scope (the AI's calls: none; every contradicted proposal: the
+one rule-made contradiction).
+
+```bash
+S=49fba8329cdf
+curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" "http://127.0.0.1:7881/api/sessions/$S/proposals?stage=design" > probes-design-proposals.json
+curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" "http://127.0.0.1:7881/api/sessions/$S/bulk/reject?stage=design&makers=ai" > probes-bulk-reject-ai.json
+curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" "http://127.0.0.1:7881/api/sessions/$S/bulk/reject?stage=design&makers=all" > probes-bulk-reject-all.json
+```
