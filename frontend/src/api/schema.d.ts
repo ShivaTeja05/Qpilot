@@ -1701,6 +1701,116 @@ export type components = {
             summary: string;
         };
         /**
+         * AskAnswer
+         * @description An answer and how it was made (the result of an ``ask`` job).
+         */
+        AskAnswer: {
+            /**
+             * Answer
+             * @description The answer as text; every number in it is a cited fact.
+             */
+            answer: string;
+            /**
+             * Args
+             * @description The tool's arguments.
+             */
+            args?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Autonomy
+             * @description What the study lets agents do (Ask itself never decides).
+             * @enum {string}
+             */
+            autonomy: "suggest" | "decide_and_tell";
+            /**
+             * Card Id
+             * @description The Decision Card a change request names (decide it there).
+             * @default null
+             */
+            card_id: string | null;
+            /**
+             * Engine
+             * @description study: qPilot's own tools (the MCP tool code); audit: the robustness audit's Ask engine; none: only the audit answers this and it has not been run.
+             * @enum {string}
+             */
+            engine: "study" | "audit" | "none";
+            /**
+             * Facts
+             * @description The numbers the answer cites, nothing else.
+             */
+            facts: components["schemas"]["CitedFact"][];
+            /**
+             * Focus
+             * @description What the page should focus: 'card:<card_id>' for a change.
+             * @default null
+             */
+            focus: string | null;
+            /**
+             * Head After
+             * @description The chain head after the answer (moved when Ask wrote).
+             * @default null
+             */
+            head_after: string | null;
+            /**
+             * Head Before
+             * @default null
+             */
+            head_before: string | null;
+            /**
+             * Model
+             * @description The model's name, when one was used.
+             * @default null
+             */
+            model: string | null;
+            /**
+             * Note
+             * @description Why a template answered, or what happened to a request.
+             * @default null
+             */
+            note: string | null;
+            /** Provider */
+            provider: string;
+            /** Question */
+            question: string;
+            /**
+             * Routed By
+             * @description Who picked the tool: the model, keyword matching, or fixed reading rules.
+             * @enum {string}
+             */
+            routed_by: "model" | "keywords" | "rules";
+            /** Routed Words */
+            routed_words: string;
+            /**
+             * Status
+             * @description Always null: Ask never writes (a change is decided on its card).
+             * @default null
+             */
+            status: string | null;
+            /** Tool */
+            tool: string;
+            /**
+             * Tool Words
+             * @description Which tool answered, in plain words.
+             */
+            tool_words: string;
+            /**
+             * Validated
+             * @description Every number in the text is a cited fact.
+             */
+            validated: boolean;
+            /**
+             * Writer Words
+             * @description Who wrote the words, in plain words.
+             */
+            writer_words: string;
+            /**
+             * Written By
+             * @enum {string}
+             */
+            written_by: "template" | "model";
+        };
+        /**
          * AskBody
          * @description A question about the open study.
          */
@@ -3238,6 +3348,21 @@ export type components = {
             note: string;
             /** Passed */
             passed: boolean;
+        };
+        /**
+         * CitedFact
+         * @description A number the answer cites: what it is and its value as shown.
+         */
+        CitedFact: {
+            /**
+             * Id
+             * @default null
+             */
+            id: string | null;
+            /** Meaning */
+            meaning: string;
+            /** Value */
+            value: string;
         };
         /**
          * ConfirmRequest
