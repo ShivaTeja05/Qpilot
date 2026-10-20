@@ -107,9 +107,13 @@ At the bottom: the qPilot version, the model chip (click for Settings), the vend
 
 ## 6. Curves (blind)
 
-Opens when the design is confirmed. Press **Check the curves** (about 15 seconds on the demo). qPilot fits every curve with LinRegPCR and a second, learned reader (the *Curve Judge*) classifies each as amplified or not. Wherever the two disagree **and it could change a conclusion**, you get a proposal card (a well call), and a card for the call rule you want to use. Reject or accept them as in Design, then confirm.
+Opens when the design is confirmed (until then it is locked: "Confirm the design first"). Press **Check the curves** (about 15 seconds on the demo; afterwards it reads **Check the curves again**). qPilot fits every curve with LinRegPCR and a second, learned reader (the *Curve Judge*) classifies each as amplified or not. Wherever the two disagree **and it could change a conclusion**, you get a proposal card (a well call), and a card for the call rule you want to use. Accept, edit or reject them exactly as in Design, then confirm the stage.
 
-The **plate heatmap** shows each well's call (by shape and colour), Cq, efficiency or R² (switch between them), disagreements outlined; filter by gene. Click a well for the **curve viewer**: the raw fluorescence by cycle, with a linear/log switch, the Cq marker and baseline when known, and the neighbouring wells of the same sample. There are still no group labels here.
+* **The curves stage** card says which rule is in use ("LinRegPCR's call (the engine's default), until you accept a rule"), how many proposals you have accepted, rejected and have waiting, and lists the waiting ones with their engine check and level; **Open the curve** takes you to the well a proposal is about.
+* **The plate** shows every well of one plate. Choose the **Gene** and the **Plate** (`[` and `]` step through the plates), and **Colour the wells by** *Sample type*, *Amplification call*, *Cq*, *Efficiency* or *R²*. The number and call layers are available once the design is confirmed; a well where the Curve Judge reads the curve differently is outlined, and a corner mark shows a call a person set. Pick one well, or several, on the plate.
+* **The curve** shows the raw fluorescence by cycle of the wells you picked, with a linear/log switch. For one well it also gives its Cq, efficiency, R² and baseline, and how the well is called under each amplification rule; for several wells, a table with each one's LinRegPCR call, Curve Judge call, Cq and efficiency. The first curve can take a few seconds, because it is read from your file.
+
+There is no group, fold change or p-value anywhere on this screen.
 
 *On the demo:* the Curve Judge disagrees with LinRegPCR on 166 study wells; only 110 early curves of one reference gene (ALUsq) could change a conclusion, and LinRegPCR contradicts each of them with a complete fit. Reject them with one reason, keep LinRegPCR's call rule, confirm. The learned reader is validated only on the demo's instrument (LightCycler 480, SYBR Green I); on another file it is a second opinion at most.
 
