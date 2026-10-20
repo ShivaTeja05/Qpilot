@@ -1,0 +1,13 @@
+{
+  "provider": "openai_compatible",
+  "model": "qwen2.5:7b",
+  "available": false,
+  "configured": true,
+  "answers": false,
+  "checking": false,
+  "misconfigured": false,
+  "reason": "endpoint call failed: ConnectError",
+  "local": true,
+  "sample_names": "sent as quoted data",
+  "outbound": "outbound (Studio): local, http://127.0.0.1:9 (provider openai_compatible); sample names stay on this machine unless that endpoint forwards them"
+}

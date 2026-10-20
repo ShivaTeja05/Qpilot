@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import platform
+from typing import Any
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
@@ -14,11 +15,52 @@ from qpilot.web.contract import DemoInfo, JobView, ModelStatus, Settings, System
 router = APIRouter(tags=["system"])
 
 
-def model_status(ctx: AppContext) -> ModelStatus:
-    """Studio's model status plus the ``outbound`` line of ``qpilot doctor``."""
+NOT_CHECKED = (
+    "not checked yet: “Check connection” sends one short request to {provider}; qPilot never "
+    "contacts a remote model just to show this page"
+)
+
+
+def _remote_status(studio: Any) -> dict[str, Any]:
+    """A remote model's configuration and last known answer, without contacting it."""
+    client = studio.client
+    configured = bool(client.available)
+    with studio._ping_lock:
+        ping = studio._pings.get(studio._model_key())
+        answers, reason = (
+            (ping.answers, ping.reason) if ping and ping.at is not None else (None, None)
+        )
+    if not configured:
+        answers, reason = False, studio._not_configured or "no model is configured"
+    elif answers is None:
+        reason = NOT_CHECKED.format(provider=client.provider)
+    return {
+        "provider": client.provider,
+        "model": client.model,
+        "available": configured and answers is True,
+        "configured": configured,
+        "answers": answers,
+        "checking": False,
+        "misconfigured": studio._not_configured is not None,
+        "reason": reason,
+        "local": False,
+        "sample_names": "replaced by pseudonyms before anything leaves this machine",
+    }
+
+
+def model_status(ctx: AppContext, check: bool = False) -> ModelStatus:
+    """The model's status plus the ``outbound`` line of ``qpilot doctor``.
+
+    A local model (or none) is asked a one-token question at most once a minute, in the
+    background, as Studio does. A remote one is never contacted to render a page: its last known
+    answer is shown, and only ``check`` (the person's “Check connection”) sends the request.
+    """
     from qpilot.cli.core_cmds import studio_outbound_line
 
-    status = ctx.studio.model_status()
+    studio = ctx.studio
+    if check:
+        _check_now(studio)
+    status = studio.model_status() if studio._local() or check else _remote_status(studio)
     try:
         outbound = studio_outbound_line()
     except Exception:  # a misconfigured model is reported by the status itself
@@ -85,6 +127,27 @@ def put_settings(body: Settings, ctx: Ctx) -> Settings:
     ctx.settings.update(body.model_dump())
     ctx.bus.publish({"type": "settings.changed"})
     return Settings(**ctx.settings)
+
+
+def _check_now(studio: Any) -> None:
+    """Send the one-token request now (whatever the last answer's age) and wait for it."""
+    from qpilot.studio_service import PING_TIMEOUT_S, _Ping
+
+    with studio._ping_lock:
+        ping = studio._pings.setdefault(studio._model_key(), _Ping())
+        if ping.thread is None or not ping.thread.is_alive():
+            ping.at = None  # due now
+    studio._answers()
+    with studio._ping_lock:
+        thread = ping.thread
+    if thread is not None:
+        thread.join(PING_TIMEOUT_S + 1.0)
+
+
+@router.post("/model/check", response_model=ModelStatus)
+def check_model(ctx: Ctx) -> ModelStatus:
+    """“Check connection”: ask the model one short question now (the only remote contact)."""
+    return model_status(ctx, check=True)
 
 
 @router.get("/model", response_model=ModelStatus)

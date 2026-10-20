@@ -110,7 +110,9 @@ def create_app(ctx: AppContext) -> FastAPI:
     @app.get("/{name:path}", include_in_schema=False)
     async def page(name: str) -> Response:
         # Files at the root of the build (favicon, fonts manifest); everything else is the page,
-        # whose hash router shows the right section.
+        # whose hash router shows the right section. A NUL is no name of anything.
+        if "\x00" in name:
+            return Response(status_code=404)
         if name and "/" not in name:
             path = _static_file(Path(name))
             if path is not None:
@@ -157,36 +159,17 @@ def _static_file(relative: Path) -> Path | None:
     """A file inside ``static/`` (never outside it, never a dotfile), or None."""
     if any(part.startswith(".") or part == ".." for part in relative.parts):
         return None
-    root = STATIC.resolve()
-    path = (STATIC / relative).resolve()
-    if not path.is_file() or root not in path.parents:
+    try:
+        root = STATIC.resolve()
+        path = (STATIC / relative).resolve()
+        if not path.is_file() or root not in path.parents:
+            return None
+    except (OSError, ValueError):  # a NUL or an over-long name is no file of the build
         return None
     return path
 
 
-WARM = (
-    "qpilot.qpcr.curves",
-    "qpilot.qpcr.study",
-    "qpilot.explain.templates",
-    "qpilot.app_state",
-    "qpilot.studio_state",
-    "qsim.app",
-)
-
-
-def _warm_imports() -> None:
-    """Import the analysis modules in the background, so the first page view is not the wait."""
-    import importlib
-    import threading
-
-    def run() -> None:
-        for name in WARM:
-            try:
-                importlib.import_module(name)
-            except Exception:  # an optional part (the simulator) may be missing
-                continue
-
-    threading.Thread(target=run, name="qpilot-warm-imports", daemon=True).start()
+FACTS_WAIT_S = 0.25  # a request waits this long for a cold file, then answers "warming"
 
 
 def free_port(start: int = DEFAULT_PORT, tries: int = 50) -> int:
@@ -221,7 +204,10 @@ def main(
             print(f"Earlier demo work moved to {moved} (kept, never deleted)")
     token = launch_token()
     ctx = make_context(store, Studio(store), token=token, audit_dirs=audit_dirs)
-    _warm_imports()
+    ctx.facts_wait = FACTS_WAIT_S
+    from qpilot.web.warm import warm_all
+
+    warm_all(ctx)  # imports, then every session's file, in the background
     app = create_app(ctx)
     port = port or free_port()
     url = f"http://{HOST}:{port}/?token={token}" + (f"#/{section}" if section else "")

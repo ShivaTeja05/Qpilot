@@ -39,6 +39,9 @@ class AppContext:
     watcher: StoreWatcher | None = None
     lock: threading.Lock = field(default_factory=threading.Lock)
     downloads: dict[str, Path] = field(default_factory=dict)  # opaque id -> file in exports/
+    # How long a request waits for a cold session file to be read before answering "warming"
+    # (None: as long as it takes; the server sets a fraction of a second, tests keep None).
+    facts_wait: float | None = None
 
     @property
     def uploads(self) -> Path:

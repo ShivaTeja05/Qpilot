@@ -120,7 +120,7 @@ export default function Section(_: SectionProps) {
               ))}
             </ul>
             <div className="border-t border-line pt-4">
-              <h3 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">
+              <h3 className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">
                 This install
               </h3>
               <KeyValues

@@ -8,6 +8,8 @@ only presentation (colours, layout) belongs to the frontend; anything that is a 
 from __future__ import annotations
 
 import json
+import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +23,7 @@ from qpilot.web.contract import (
     WorkspaceView,
 )
 
+STUDY_KEY = re.compile(r"^[0-9a-f]{12}\Z")
 INPUT_SUFFIXES = {"rdml": (".rdml", ".xml"), "sheet": (".xlsx", ".csv")}
 MAX_SENTENCE = 500
 
@@ -41,6 +44,44 @@ def inputs_dir(store: StudyStore) -> Path:
     path = store.root.parent / "studio-inputs"
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+MAX_NAME = 200
+
+
+def _name_file(kept: Path) -> Path | None:
+    """Where a kept upload's original name is written (beside the kept-inputs folder)."""
+    if kept.parent.name != "studio-inputs":
+        return None
+    return kept.parent.parent / "studio-input-names" / kept.name
+
+
+def remember_name(kept: Path, name: str) -> None:
+    """Remember the name a kept upload had on the person's computer (shown, never opened)."""
+    name = "".join(ch for ch in Path(name or "").name if ch.isprintable())[:MAX_NAME].strip()
+    target = _name_file(kept)
+    if not name or name == kept.name or target is None:
+        return
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(name, encoding="utf-8")
+    except OSError:  # the content-named copy is enough to work with
+        pass
+
+
+def display_name(path: str | Path | None) -> str | None:
+    """A file's name as the person knows it (an upload's original name when it was kept)."""
+    if not path:
+        return None
+    path = Path(path)
+    target = _name_file(path)
+    if target is None:
+        return path.name
+    try:
+        name = target.read_text(encoding="utf-8").strip()
+    except OSError:
+        return path.name
+    return name[:MAX_NAME] or path.name
 
 
 def session_meta(store: StudyStore, sid: str) -> dict[str, Any]:
@@ -167,7 +208,7 @@ def file_facts(studio: Studio, sid: str) -> FileFacts | None:
     record = session_source_record(studio.store, sid)
     sheet = record.get("sheet") or {}
     return FileFacts(
-        file_name=Path(record["path"]).name if record.get("path") else None,
+        file_name=display_name(record.get("path")),
         input_sha256=summary.input_sha256,
         sheet_name=Path(sheet["path"]).name if sheet.get("path") else None,
         n_plates=len(summary.runs),
@@ -231,25 +272,35 @@ def analysed_study(studio: Studio, sid: str, meta: dict[str, Any] | None = None)
     return current
 
 
-def session_summary(studio: Studio, sid: str) -> WorkspaceSummary:
-    """One line of the workspace list for a Studio session."""
+def session_summary(studio: Studio, sid: str, ready: bool | None = None) -> WorkspaceSummary:
+    """One line of the workspace list for a Studio session.
+
+    Stages, counts and results need the file's facts; while they are not in memory yet (``ready``
+    False, or not known and cold) only what is cheap is returned, with ``warming`` set.
+    """
+    from qpilot.web.warm import facts_warm, session_file_present
+
     store = studio.store
     folder = store.find_session(sid)
     record = session_source_record(store, sid)
     meta = session_meta(store, sid)
-    stages = stage_views(studio, sid)
+    present = session_file_present(store, sid)
+    warm = (present and facts_warm(store, sid)) if ready is None else ready
+    stages: list[StageView] = []
+    facts: dict[str, Any] = {}
+    if present and warm:
+        stages = stage_views(studio, sid)
+        try:
+            summary = studio.summary(sid)
+            facts = {
+                "n_plates": len(summary.runs),
+                "n_samples": summary.n_samples,
+                "n_genes": len(summary.targets),
+            }
+        except (StudioError, StudyNotFound, OSError, ValueError):
+            pass
     visible = bool(stages) and all(s.confirmed for s in stages if s.stage in ("design", "curves"))
     study_id = analysed_study(studio, sid, meta) if visible else None
-    facts: dict[str, Any] = {}
-    try:
-        summary = studio.summary(sid)
-        facts = {
-            "n_plates": len(summary.runs),
-            "n_samples": summary.n_samples,
-            "n_genes": len(summary.targets),
-        }
-    except (StudioError, StudyNotFound, OSError, ValueError):
-        pass
     decisions = pending = 0
     if study_id:
         try:
@@ -257,14 +308,14 @@ def session_summary(studio: Studio, sid: str) -> WorkspaceSummary:
             pending = len(store.pending(study_id))
         except (StudyNotFound, OSError, ValueError):
             pass
-    name = Path(record["path"]).name if record.get("path") else None
+    name = display_name(record.get("path"))
     return WorkspaceSummary(
         key=sid,
         kind="session",
         title=_title(name, folder.name),
         input_sha256=folder.name,
         file_name=name,
-        file_present=store.session_source(sid) is not None,
+        file_present=present,
         study_id=study_id,
         results_visible=visible,
         stages=stages,
@@ -273,6 +324,7 @@ def session_summary(studio: Studio, sid: str) -> WorkspaceSummary:
         has_audit=audit_dir(store, study_id) is not None,
         is_demo=folder.name == demo_sha(),
         updated_at=last_write(folder),
+        warming=present and not warm,
         **facts,
     )
 
@@ -285,9 +337,9 @@ def study_summary(store: StudyStore, study_id: str) -> WorkspaceSummary:
     return WorkspaceSummary(
         key=study_id,
         kind="study",
-        title=_title(source.name if source else None, result.input_sha256),
+        title=_title(display_name(source), result.input_sha256),
         input_sha256=result.input_sha256,
-        file_name=source.name if source else None,
+        file_name=display_name(source),
         file_present=source is not None,
         study_id=study_id,
         results_visible=True,
@@ -308,8 +360,33 @@ def _title(file_name: str | None, sha: str) -> str:
     return file_name or f"Study {sha[:12]}"
 
 
-def workspaces(studio: Studio) -> list[WorkspaceSummary]:
-    """Every Studio session and every study not reached through one, newest first."""
+def study_ids(store: StudyStore) -> list[str]:
+    """Study ids of the store's complete workspaces; a damaged one is skipped, never fatal."""
+    from qpilot.web.events import _study_id
+    from qpilot.web.warm import regular_file
+
+    out = []
+    try:
+        folders = sorted(store.root.iterdir())
+    except OSError:
+        return out
+    for folder in folders:
+        try:
+            if not folder.is_dir() or not regular_file(folder / "results.json"):
+                continue
+        except OSError:
+            continue
+        study_id = _study_id(folder)
+        if study_id and STUDY_KEY.match(study_id) and folder.name.startswith(study_id):
+            out.append(study_id)
+    return out
+
+
+def workspaces(studio: Studio, warm: Callable[[str], Any] | None = None) -> list[WorkspaceSummary]:
+    """Every Studio session and every study not reached through one, newest first.
+
+    ``warm(sid)`` is called for each session whose file is still cold (it starts the read).
+    """
     store = studio.store
     out: list[WorkspaceSummary] = []
     session_studies: set[str] = set()
@@ -322,9 +399,11 @@ def workspaces(studio: Studio) -> list[WorkspaceSummary]:
                 except (StudyNotFound, OSError, ValueError):
                     continue
                 out.append(item)
+                if item.warming and warm is not None:
+                    warm(item.key)
                 studies = session_meta(store, folder.name[:12]).get("studies") or {}
                 session_studies.update(studies)
-    for study_id in store.list_studies():
+    for study_id in study_ids(store):
         if study_id in session_studies:
             continue
         try:
@@ -335,10 +414,28 @@ def workspaces(studio: Studio) -> list[WorkspaceSummary]:
     return out
 
 
-def session_view(studio: Studio, sid: str, active_jobs: list[Any] | None = None) -> WorkspaceView:
+def session_view(
+    studio: Studio,
+    sid: str,
+    active_jobs: list[Any] | None = None,
+    ready: bool | None = None,
+) -> WorkspaceView:
     """Everything the page needs to show a session's frame: file, stages, next step."""
     store = studio.store
-    line = session_summary(studio, sid)
+    line = session_summary(studio, sid, ready)
+    if line.warming:
+        from qpilot.web.warm import COLD_MESSAGE
+
+        return WorkspaceView(
+            key=sid,
+            kind="session",
+            title=line.title,
+            results_visible=False,
+            next_step=NextStep(title="Reading the file", detail=COLD_MESSAGE, section="design"),
+            active_jobs=active_jobs or [],
+            is_demo=line.is_demo,
+            warming=True,
+        )
     try:
         summary = studio.summary(sid)
     except (StudioError, StudyNotFound, OSError, ValueError):
