@@ -65,6 +65,8 @@ export interface DownloadLink {
   /** The file name the browser saves it under. */
   name: string;
   bytes: number;
+  /** Where the file is kept on this computer (beside the study store). */
+  path?: string | null;
 }
 
 /** The result of `POST /api/studies/{id}/record` (on the job); also each row of `GET …/records`. */

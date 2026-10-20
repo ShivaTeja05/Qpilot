@@ -7,7 +7,7 @@ import { useRef } from "react";
 import { bytes, count, dateTime, relativeTime } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { useFocusTarget } from "@/shell/actions";
-import { Button, Card, CardBody, CardHeader, Hash, JobCard, KeyValues, Tooltip } from "@/ui";
+import { Button, Card, CardBody, CardHeader, CopyButton, Hash, JobCard, KeyValues, Tooltip } from "@/ui";
 import { useExportRecord } from "./api";
 import type { RecordExport } from "./types";
 
@@ -149,6 +149,14 @@ function LatestRecord({ record, head, now }: { record: RecordExport; head: strin
       <div>
         <DownloadButton record={record} primary />
       </div>
+      {record.download.path ? (
+        <div className="flex items-start gap-1 text-xs text-muted">
+          <p className="min-w-0 pt-1">
+            Also kept on this computer: <span className="break-all font-mono text-[11.5px] text-fg">{record.download.path}</span>
+          </p>
+          <CopyButton text={record.download.path} label="Copy the file's path" />
+        </div>
+      ) : null}
     </div>
   );
 }
