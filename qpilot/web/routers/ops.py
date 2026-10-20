@@ -74,9 +74,9 @@ TOOL_ACCESS: dict[str, tuple[ToolAccess, str]] = {
     "qpcr_robustness": ("read", "Nothing."),
     "qpcr_decide": (
         "request",
-        "Asks to decide a Decision Card, recorded as the agent's. In Suggest every request waits "
-        "for a person; in Decide and tell me a choice that changes no conclusion is applied. A "
-        "choice that can change a conclusion always waits for a person.",
+        "Asks to decide a Decision Card, recorded as the agent's. A choice that can change a "
+        "conclusion always waits for a person; any other choice is applied only when the "
+        "study lets agents decide and tell, and otherwise waits too.",
     ),
     "qpcr_plan": ("read", "Nothing."),
     "qpcr_propose": (
@@ -115,6 +115,19 @@ AUDIT_WORDS = re.compile(
     r"lean[s]?\s+on|survives?)\b",
     re.I,
 )
+#: Questions only the audit answers: what-if and what to check first (the study's own tools
+#: would answer them with something else).
+AUDIT_ONLY_WORDS = re.compile(
+    r"\b(what[\s-]+if|suppose|hypothetically|would\s+(it|the|this|that|my|our)|instead|"
+    r"look\s+at\s+first|check\s+(the\s+)?data|issues?)\b",
+    re.I,
+)
+NEEDS_AUDIT = (
+    "This is a question for the robustness audit, which re-runs the study under every "
+    "combination of the analysis choices. Run it in Audit, then ask again."
+)
+NO_AUDIT_ENGINE = "The audit's answers are not available in this build of qPilot."
+
 #: Plain words for the facts qPilot's Ask adds to an answer (``qpilot/ai/ask.py``).
 ANSWER_FACTS = {
     "f_ans_fc": "fold change under the recommended choices",
@@ -496,24 +509,52 @@ def _audit_engine() -> Any:
     return audit_screen
 
 
-def _pick_engine(question: str, source: str, has_audit: bool) -> Literal["study", "audit"]:
-    """Which engine answers: the audit for verdict and what-if questions, else the study's."""
+Engine = Literal["study", "audit", "none"]
+Autonomy = Literal["suggest", "decide_and_tell"]
+
+
+def _pick_engine(question: str, source: str, audit: bool, engine: bool) -> Engine:
+    """Which engine answers: the audit for verdict and what-if questions, else the study's.
+
+    ``none`` when only the audit could answer and it has not been run (or this build lacks it).
+    A request to change a choice always goes to the study's tools (and so to the human gate).
+    """
     from qpilot.ai.ask import DECIDE_WORDS, NOT_A_REQUEST
 
     if source == "study":
         return "study"
     if source == "audit":
-        if not has_audit:
-            raise api_error(
-                409,
-                "no_audit",
-                "This study has no robustness audit yet: run it in Audit first.",
-            )
+        if not audit:
+            raise api_error(409, "no_audit", NEEDS_AUDIT)
+        if not engine:
+            raise api_error(409, "no_audit", NO_AUDIT_ENGINE)
         return "audit"
-    if not has_audit:
+    if DECIDE_WORDS.search(question) and not NOT_A_REQUEST.search(question):
         return "study"
-    change_request = DECIDE_WORDS.search(question) and not NOT_A_REQUEST.search(question)
-    return "audit" if AUDIT_WORDS.search(question) and not change_request else "study"
+    if audit and engine and AUDIT_WORDS.search(question):
+        return "audit"
+    return "none" if AUDIT_ONLY_WORDS.search(question) else "study"
+
+
+def _no_engine(question: str, audit: bool, autonomy: Autonomy, head: str) -> AskAnswer:
+    """The answer to a question only the audit answers, when there is no audit to ask."""
+    return AskAnswer(
+        question=question,
+        answer=NO_AUDIT_ENGINE if audit else NEEDS_AUDIT,
+        engine="none",
+        tool="none",
+        tool_words="no tool: only the robustness audit answers this",
+        routed_by="rules",
+        routed_words=ROUTED_WORDS["rules"],
+        written_by="template",
+        writer_words="qPilot's fixed words",
+        provider="none",
+        facts=[],
+        validated=True,
+        autonomy=autonomy,
+        head_before=head,
+        head_after=head,
+    )
 
 
 def _autonomy(ctx: AppContext) -> Literal["suggest", "decide_and_tell"]:
@@ -555,9 +596,6 @@ def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
             CitedFact(id=fid, meaning=meaning, value=render_tokens("{{" + fid + "}}", facts))
         )
     return out
-
-
-Autonomy = Literal["suggest", "decide_and_tell"]
 
 
 def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy) -> AskAnswer:
@@ -679,10 +717,13 @@ def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
         raise api_error(422, "bad_request", "Type a question first.")
     study_id, place, _ = resolve_study(ctx, study_id)
     autonomy = _autonomy(ctx)
-    has_audit = views.audit_dir(ctx.store, study_id) is not None and _audit_engine() is not None
-    engine = _pick_engine(question, body.source, has_audit)
+    audit = views.audit_dir(ctx.store, study_id) is not None
+    engine = _pick_engine(question, body.source, audit, _audit_engine() is not None)
 
     def work(progress: Progress) -> dict[str, Any]:
+        if engine == "none":
+            answer = _no_engine(question, audit, autonomy, ctx.store.chain_head(study_id))
+            return answer.model_dump(mode="json")
         progress("Reading the audit" if engine == "audit" else "Looking it up in the study")
         answer = (_ask_audit if engine == "audit" else _ask_study)(
             ctx, study_id, question, autonomy
