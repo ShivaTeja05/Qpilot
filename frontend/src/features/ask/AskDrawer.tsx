@@ -1,8 +1,7 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { EyeOff, FolderOpen, Loader2, MessageCircleQuestion, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Schemas } from "@/api/client";
-import { useReducedMotion } from "@/lib/hooks";
+import { useMediaQuery, useReducedMotion } from "@/lib/hooks";
 import { focusAction } from "@/shell/actions";
 import { useSystem } from "@/shell/data";
 import { pathOf } from "@/shell/route";
@@ -33,7 +32,7 @@ const SOURCES: { value: AskSource; label: string }[] = [
  * The Ask drawer's content. The shell renders it inside its drawer frame (⌘J); it fills the
  * frame's height: the model line, the conversation (scrolls), and the question box.
  */
-export default function AskDrawer({ workspace, open }: AskDrawerProps) {
+export default function AskDrawer({ workspace, open, onClose }: AskDrawerProps) {
   const system = useSystem();
   const model = system.data?.model;
   return (
@@ -65,6 +64,7 @@ export default function AskDrawer({ workspace, open }: AskDrawerProps) {
           workspace={workspace}
           studyId={workspace.study_id}
           open={open}
+          onClose={onClose}
           model={model}
         />
       )}
@@ -114,14 +114,15 @@ function Conversation({
   workspace,
   studyId,
   open,
+  onClose,
   model,
 }: {
   workspace: Schemas["WorkspaceView"];
   studyId: string;
   open: boolean;
+  onClose: () => void;
   model: Schemas["ModelStatus"] | undefined;
 }) {
-  const qc = useQueryClient();
   const turns = useTurns(studyId);
   const recall = useMemo(() => recallList(turns), [turns]);
   const { examples, loading } = useExamples(workspace);
@@ -129,6 +130,9 @@ function Conversation({
   const box = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+  // Below 1280 px the drawer covers the page (the shell makes it modal): following a link out of
+  // an answer closes it, so the gene or the card is in view and can take the focus.
+  const beside = useMediaQuery("(min-width: 1280px)");
   const sending = turns.some((t) => t.state === "sending");
   const answered = turns.filter((t) => t.state === "done").length;
 
@@ -137,9 +141,15 @@ function Conversation({
     () => ({
       gene: (g) => `#${pathOf(kind, workspace.key, "gene", g)}`,
       results: `#${pathOf(kind, workspace.key, "results")}`,
-      onOpenCard: (focus) => focusAction(focus),
+      onOpenCard: (focus) => {
+        if (!beside) onClose();
+        focusAction(focus);
+      },
+      onFollow: () => {
+        if (!beside) onClose();
+      },
     }),
-    [kind, workspace.key],
+    [kind, workspace.key, beside, onClose],
   );
 
   const run = useCallback(
@@ -170,14 +180,6 @@ function Conversation({
     },
     [run, studyId],
   );
-
-  // An answer that wrote to the decision chain (a change request) changes what other sections show.
-  const lastWrite = turns.findLast(
-    (t) => t.answer && t.answer.headAfter && t.answer.headAfter !== t.answer.headBefore,
-  );
-  useEffect(() => {
-    if (lastWrite) void qc.invalidateQueries({ queryKey: ["w", workspace.key] });
-  }, [lastWrite?.id, qc, workspace.key]); // eslint-disable-line react-hooks/exhaustive-deps -- once per writing answer
 
   // Focus the box when the drawer opens.
   useEffect(() => {

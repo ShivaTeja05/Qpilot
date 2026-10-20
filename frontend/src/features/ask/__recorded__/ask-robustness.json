@@ -1,13 +1,13 @@
 {
-  "id": "51c01941a0fc47d3",
+  "id": "1d9764bfe5674a23",
   "kind": "ask",
   "title": "Answering “Is the AHCY result robust?”",
   "key": "bc1d233e3866",
   "status": "done",
   "step": "Looking it up in the study",
   "fraction": null,
-  "typical_s": 1.5,
-  "elapsed_s": 0.04,
+  "typical_s": 0.5,
+  "elapsed_s": 0.07,
   "result": {
     "question": "Is the AHCY result robust?",
     "answer": "AHCY is higher in the MYCN high group under the recommended choices: 2.6× (confidence interval 2.1× to 3.2×). It holds in 91% of the 744 reasonable analyses; confidence Moderate. It can change with: which control genes to normalise to.",
@@ -56,12 +56,14 @@
       }
     ],
     "validated": true,
-    "note": "No model is used: no model is configured; a template answered.",
+    "note": "A template answered: no model is configured.",
     "status": null,
     "card_id": null,
+    "focus": null,
     "autonomy": "suggest",
-    "head_before": "973dd133a2283bc5fdaeb634da8670b7ff2883ff7440aa90a3d5cd489ff0be1a",
-    "head_after": "973dd133a2283bc5fdaeb634da8670b7ff2883ff7440aa90a3d5cd489ff0be1a"
+    "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
+    "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
   },
+  "result_type": null,
   "error": null
 }

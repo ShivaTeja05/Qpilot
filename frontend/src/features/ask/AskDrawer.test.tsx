@@ -1,4 +1,4 @@
-/** The drawer on a recorded real session frame: open, blind, a refused question, and keyboard. */
+/** The drawer on a recorded real session frame: open, blind, refused, answered, retried. */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -149,14 +149,14 @@ describe("AskDrawer", () => {
     expect(screen.getByRole("link", { name: `Open ${robustness.result.args.gene}` })).toBeTruthy();
   });
 
-  it("re-reads the workspace when Ask wrote to the decision chain (a request for a person)", async () => {
+  it("a change request answers in the drawer with its card, and nothing is re-read", async () => {
     const qc = client();
     const invalidate = vi.spyOn(qc, "invalidateQueries");
     answerWith(request, qc);
     renderDrawer(session, qc);
     ask(request.result.question);
-    await screen.findByText("Waiting for a person");
-    expect(request.result.head_after).not.toBe(request.result.head_before);
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["w", session.key] });
+    await screen.findByText(request.result.answer);
+    expect(screen.getByRole("link", { name: "Open the card" })).toBeTruthy();
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["w", session.key] });
   });
 });

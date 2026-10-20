@@ -1,16 +1,16 @@
 {
-  "id": "890ff7b8731a48b7",
+  "id": "f73a846742874324",
   "kind": "ask",
   "title": "Answering “Normalise to HMBS alone”",
   "key": "bc1d233e3866",
   "status": "done",
   "step": "Looking it up in the study",
   "fraction": null,
-  "typical_s": 1.5,
-  "elapsed_s": 0.07,
+  "typical_s": 0.5,
+  "elapsed_s": 0.02,
   "result": {
     "question": "Normalise to HMBS alone",
-    "answer": "Not applied: this choice can change a conclusion, so a person must decide it in qPilot. The request is waiting for their review.",
+    "answer": "Ask never changes a choice. Decide “Which control genes to normalise to” on its Decision Card (you asked for “HMBS alone”), with your reason.",
     "engine": "study",
     "tool": "qpcr_decide",
     "args": {
@@ -27,12 +27,14 @@
     "model": null,
     "facts": [],
     "validated": true,
-    "note": "The request waits for a person on the Decision Card, with Approve and Turn down.",
-    "status": "pending_human",
+    "note": "Nothing was written: every choice is a person's, made on its card.",
+    "status": null,
     "card_id": "card_refset",
+    "focus": "card:card_refset",
     "autonomy": "suggest",
-    "head_before": "973dd133a2283bc5fdaeb634da8670b7ff2883ff7440aa90a3d5cd489ff0be1a",
+    "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
     "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
   },
+  "result_type": null,
   "error": null
 }
