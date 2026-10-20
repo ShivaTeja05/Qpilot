@@ -95,7 +95,9 @@ export default function RecordSection({ workspace }: SectionProps) {
               root={decisions.data.root}
               head={decisions.data.head}
               intact={decisions.data.chain_intact}
+              brokenAt={decisions.data.broken_at}
               waiting={decisions.data.waiting}
+              attempts={decisions.data.attempts}
               actions={
                 pending ? (
                   <Button asChild size="sm" variant="secondary">

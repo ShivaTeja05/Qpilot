@@ -7,8 +7,8 @@ import humanChain from "./recorded/decisions-cf49ccd72052.json";
 import { renderWithProviders } from "./test-utils";
 import { fromApi, type DecisionsApi } from "./types";
 
-const withAgents = fromApi(agentChain as DecisionsApi);
-const decided = fromApi(humanChain as DecisionsApi);
+const withAgents = fromApi(agentChain as unknown as DecisionsApi);
+const decided = fromApi(humanChain as unknown as DecisionsApi);
 
 afterEach(cleanup);
 
@@ -41,24 +41,33 @@ describe("ChainTimeline", () => {
     expect(screen.getAllByText("Applied")).toHaveLength(decided.entries.filter((e) => e.status === "applied").length);
   });
 
-  it("shows an agent's requests as waiting, and filters by actor", () => {
+  it("shows which agent requests still wait, and filters by actor", () => {
     renderWithProviders(
-      <ChainTimeline entries={withAgents.entries} root={withAgents.root} head={withAgents.head} waiting={withAgents.waiting} />,
+      <ChainTimeline
+        entries={withAgents.entries}
+        root={withAgents.root}
+        head={withAgents.head}
+        waiting={withAgents.waiting}
+        attempts={withAgents.attempts}
+      />,
     );
-    const agents = withAgents.entries.filter((e) => e.actor === "agent");
-    expect(screen.getAllByText("Waiting for a person")).toHaveLength(agents.length);
+    const requests = withAgents.entries.filter((e) => e.status === "pending_human");
+    const waiting = requests.filter((e) => withAgents.waiting.includes(e.hash));
+    expect(waiting.length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Waiting for a person")).toHaveLength(waiting.length);
+    expect(screen.getAllByText("Request, answered")).toHaveLength(requests.length - waiting.length);
     fireEvent.click(screen.getByRole("radio", { name: /Agents/ }));
-    expect(entries()).toHaveLength(agents.length);
+    expect(entries()).toHaveLength(withAgents.entries.filter((e) => e.actor === "agent").length);
     expect(screen.getByText(/hidden by the filter/)).toBeTruthy();
   });
 
-  it("says a request was answered once it no longer waits", () => {
+  it("lists the attempts that did not change the study beside the chain", () => {
     renderWithProviders(
-      <ChainTimeline entries={withAgents.entries} root={withAgents.root} head={withAgents.head} waiting={[]} />,
+      <ChainTimeline entries={withAgents.entries} root={withAgents.root} head={withAgents.head} attempts={withAgents.attempts} />,
     );
-    const agents = withAgents.entries.filter((e) => e.actor === "agent" && e.status === "pending_human");
-    expect(screen.getAllByText("Request, answered")).toHaveLength(agents.length);
-    expect(screen.queryByText("Waiting for a person")).toBeNull();
+    expect(withAgents.attempts.length).toBeGreaterThan(0);
+    expect(screen.getByText(new RegExp(`${withAgents.attempts.length} attempts? did not change the study`))).toBeTruthy();
+    for (const a of withAgents.attempts) expect(screen.getByText(`“${a.reason}”`)).toBeTruthy();
   });
 
   it("marks a link that does not match its predecessor", () => {
