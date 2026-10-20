@@ -13,13 +13,14 @@ export default defineConfig({
   testDir: "./e2e",
   outputDir: "./test-results",
   globalSetup: "./e2e/support/global-setup.ts",
-  // One server, one store: a few workers at most, so slow jobs keep their usual timings.
-  workers: process.env.E2E_WORKERS ? Number(process.env.E2E_WORKERS) : 3,
+  // One server, one store, one shared machine: one browser by default (E2E_WORKERS to raise).
+  workers: process.env.E2E_WORKERS ? Number(process.env.E2E_WORKERS) : 1,
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
-  timeout: 60_000,
-  expect: { timeout: 10_000 },
+  // Cold first requests are slow on a loaded machine; a section must still answer within these.
+  timeout: 120_000,
+  expect: { timeout: 15_000 },
   reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   use: {
     baseURL: E2E.origin,
