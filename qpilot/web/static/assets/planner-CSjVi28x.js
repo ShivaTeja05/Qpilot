@@ -1,0 +1,1 @@
+import{_ as e}from"./sections-CIFSUlKS.js";import{t}from"./SectionPending-Dp5C3WKr.js";var n=e();function r(e){return(0,n.jsx)(t,{id:`planner`})}export{r as default};
