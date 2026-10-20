@@ -7,7 +7,7 @@ qPilot's engine never uses a language model; every number is deterministic. AI c
 ```bash
 claude mcp add qpilot -- python -m qpilot.mcp_server
 ```
-(or `qpilot serve`). The server speaks MCP over stdio, runs as its own process, and reads and writes the same on-disk study workspace as the app (`$QPILOT_STUDIES_DIR`, default `~/.cache/qpilot/studies`).
+(or `qpilot serve`). The server speaks MCP over stdio, runs as its own process, and reads and writes the same on-disk study workspace as the page (`$QPILOT_STUDIES_DIR`, default `~/.cache/qpilot/studies`), so an agent's request reaches the page within about a second, without a reload.
 
 | Tool | What it returns |
 |---|---|
@@ -21,7 +21,7 @@ The other seven `qpcr_*` tools are Studio's: `qpcr_inspect` (open a session for 
 Rules the server enforces:
 - **Files:** `rdml_path` must resolve, after following symlinks, to an `.rdml`/`.xml` file inside one of `QPILOT_DATA_ROOTS` (`os.pathsep`-separated; default: the qPilot cache and the current directory).
 - **Actor:** every MCP caller is recorded as an agent; `actor="human"` is refused.
-- **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (or the in-app model). People decide in the app; the command line has no decide command. **An agent that can run commands as you can still act as you,** for example by importing qPilot's library or driving the app on 127.0.0.1. Give agents MCP access, not your shell.
+- **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (or the in-app model). People decide on the page (`qpilot app`); the command line has no decide command. **An agent that can run commands as you can still act as you,** for example by importing qPilot's library, or by reading the launch key `qpilot app` printed and calling the page's API on 127.0.0.1. Give agents MCP access, not your shell.
 - **Output:** tools return engine output as JSON, never model-written prose.
 
 ### The Decision Simulator's tools (when it is installed)
@@ -32,11 +32,11 @@ so on stderr; `qpilot serve --list-tools` prints what your install serves. None 
 or store anything; see [`docs/integration.md`](integration.md#agents-one-mcp-server).
 
 ### In a closed loop
-`run → qpcr_study → qpcr_robustness → qpcr_decide → pending_human → (scientist decides in the app) → record`. Choices that cannot change a conclusion are decided automatically and logged as `system`. Choices that can are always a person's. Every attempt is appended to a hash-chained log. This is the same contract the self-driving-lab papers specify at the analysis step; no robot is connected.
+`run → qpcr_study → qpcr_robustness → qpcr_decide → pending_human → (scientist decides on the page) → record`. Choices that cannot change a conclusion are decided automatically and logged as `system`. Choices that can are always a person's. Every attempt is appended to a hash-chained log. This is the same contract the self-driving-lab papers specify at the analysis step; no robot is connected.
 
 ## 2. A model inside qPilot (explanations and "Ask your data")
 
-Choose with environment variables (or in the app):
+Choose with environment variables; the page shows the result in Settings (the model's status, the reason when it does not answer, a test of it) but has no field to change the provider, the endpoint or the key:
 
 | Variable | Values |
 |---|---|
