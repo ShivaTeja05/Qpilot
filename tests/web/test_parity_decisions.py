@@ -85,9 +85,9 @@ def test_undo_and_turn_down_with_an_old_head_write_nothing(walked):
 
 
 @pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-017 (api-ops): the page's Ask must never write (coordinator #0233); today it "
-    "files a request in Suggest mode and applies in Decide and tell me",
+    strict=False,  # fixed on ui/api-ops @ 7b4ff82; the marker goes once that is in ui/one-page
+    reason="RT-UI-017 (api-ops): the page's Ask must never write (coordinator #0233); before "
+    "7b4ff82 it filed a request in Suggest mode and applied in Decide and tell me",
 )
 @pytest.mark.parametrize("autonomy", ["suggest", "decide_and_tell"])
 def test_ask_never_writes_and_leads_to_the_card(walked, autonomy):
