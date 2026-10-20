@@ -90,12 +90,13 @@ def test_a_what_if_question_runs_the_audits_engine(served):
     assert answer["head_after"] == head == store.chain_head(study_id)  # what-if decides nothing
 
 
-def test_a_change_request_still_goes_to_the_study_and_waits_for_a_person(served):
+def test_a_change_request_goes_to_the_study_and_names_the_card(served):
     client, study_id, store = served
+    head = store.chain_head(study_id)
     answer = ask(client, study_id, "Apply HMBS alone as the control gene")
     assert answer["engine"] == "study" and answer["tool"] == "qpcr_decide"
-    assert answer["status"] == "pending_human"
-    assert any(p.card_id == answer["card_id"] for p in store.pending(study_id))
+    assert answer["focus"] == f"card:{answer['card_id']}" and answer["status"] is None
+    assert store.chain_head(study_id) == head  # Ask never writes
 
 
 def test_the_study_can_be_asked_instead(served):

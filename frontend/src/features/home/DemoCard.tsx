@@ -154,10 +154,10 @@ export function DemoCard({
                   <ArrowRight />
                 </Link>
               </Button>
-              <p className="text-xs text-faint">
+              <p className="text-xs text-muted">
                 Your work on it is kept. To start again from a clean study, use Start a fresh demo
                 in{" "}
-                <Link href="/settings" className="text-accent underline-offset-2 hover:underline">
+                <Link href="/settings" className="text-accent underline underline-offset-2">
                   Settings
                 </Link>
                 .

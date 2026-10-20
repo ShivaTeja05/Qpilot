@@ -15,6 +15,9 @@ import type { JobView } from "./client";
 
 export type LiveState = "connecting" | "live" | "offline";
 
+/** How long a burst of events must be quiet before the views it touched are re-read. */
+const COALESCE_MS = 150;
+
 interface LiveEvent {
   type: string;
   key?: string | null;
@@ -72,20 +75,35 @@ export function useLiveEvents(): void {
         if (job.status === "done" || job.status === "failed") {
           void qc.invalidateQueries({ queryKey: ["job", job.id] });
           if (job.key) invalidateKey(job.key);
-          void qc.invalidateQueries({ queryKey: ["workspaces"] });
+          else void qc.invalidateQueries({ queryKey: ["workspaces"] });
         }
         return;
       }
       if (event.type === "study.changed" || event.type === "proposals.changed") {
         if (event.key) invalidateKey(event.key);
-        void qc.invalidateQueries({ queryKey: ["workspaces"] });
         return;
       }
       if (event.type === "settings.changed") void qc.invalidateQueries({ queryKey: ["system"] });
     };
 
-    const invalidateKey = (key: string) =>
-      void qc.invalidateQueries({ predicate: (q) => q.queryKey.includes(key) });
+    // Writes come in bursts (a bulk accept of 100 proposals is 100 events): invalidations are
+    // coalesced per key and flushed once the burst has been quiet for a moment, so a burst costs
+    // one refetch per query, not one per event.
+    const pending = new Set<string>();
+    let flushTimer: ReturnType<typeof setTimeout> | undefined;
+    const flush = () => {
+      flushTimer = undefined;
+      const keys = [...pending];
+      pending.clear();
+      if (keys.length === 0) return;
+      void qc.invalidateQueries({ predicate: (q) => keys.some((k) => q.queryKey.includes(k)) });
+      void qc.invalidateQueries({ queryKey: ["workspaces"] });
+    };
+    const invalidateKey = (key: string) => {
+      pending.add(key);
+      clearTimeout(flushTimer);
+      flushTimer = setTimeout(flush, COALESCE_MS);
+    };
 
     const connect = () => {
       if (closed || document.hidden) return;
@@ -131,6 +149,7 @@ export function useLiveEvents(): void {
     return () => {
       closed = true;
       clearTimeout(retry);
+      clearTimeout(flushTimer);
       source?.close();
       document.removeEventListener("visibilitychange", onVisibility);
     };

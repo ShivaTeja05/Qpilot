@@ -16,7 +16,7 @@ import {
   LoadingBlock,
 } from "@/ui";
 import { dateTime } from "@/lib/format";
-import { modelChip } from "@/shell/TopBar";
+import { modelChip } from "@/shell/ModelChip";
 import { namesWords, providerWords, useModelStatus, type ModelStatus } from "./system";
 
 /** How to start qPilot with each kind of model (the variables `qpilot/ai/config.py` reads). */
