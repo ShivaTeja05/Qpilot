@@ -22,7 +22,7 @@ import {
 } from "@/ui";
 import { useWhatif, type AuditTarget } from "./api";
 import { ChoiceSelect } from "./ChoiceSelect";
-import type { AuditManifest, AuditOverview, Changes, DecisionView, WhatifRow } from "./types";
+import type { AuditOverview, Changes, DecisionView, ManifestLike, WhatifRow } from "./types";
 import { DECISION_ORDER } from "./words";
 
 /** The changes that name a real decision and option and differ from the plan; the rest, named. */
@@ -58,7 +58,7 @@ export function WhatifTab({
 }: {
   target: AuditTarget;
   overview: AuditOverview | undefined;
-  manifest: AuditManifest;
+  manifest: ManifestLike;
   changes: Changes;
   /** Where a gene opens (the Gene section); null when the audit is not about this study. */
   geneHref: ((gene: string) => string) | null;
@@ -99,7 +99,7 @@ function Lab({
   geneHref: ((gene: string) => string) | null;
   target: AuditTarget;
   overview: AuditOverview;
-  manifest: AuditManifest;
+  manifest: ManifestLike;
   changes: Changes;
   onChanges: (changes: Changes) => void;
 }) {
@@ -292,7 +292,18 @@ function Outcome({
   setShow: (v: "some" | "all") => void;
   onSelect?: (gene: string) => void;
 }) {
-  const rows = useMemo(() => whatifRows(data), [data]);
+  // A gene whose fold the engine cannot compute under these choices has no place on the axis.
+  const rows = useMemo(
+    () =>
+      whatifRows({
+        ...data,
+        rows: data.rows.filter(
+          (r): r is typeof r & { base_log2: number; new_log2: number } =>
+            r.base_log2 != null && r.new_log2 != null,
+        ),
+      }),
+    [data],
+  );
   const changed = data.rows.filter((r) => r.changed);
   const shown =
     show === "all" || !moved ? rows : rows.filter((r) => r.baseCall !== r.newCall || r.headline);
