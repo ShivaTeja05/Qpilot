@@ -83,8 +83,8 @@ def _texts(api, study_id: str, genes: list[str]) -> Iterator[tuple[str, str]]:
 
 @pytest.mark.xfail(
     strict=True,
-    reason="#0286 to api: the engine's confidence reasons (qpcr/confidence_checks.py) say "
-    "'holds in fewer than 80 % of the reasonable analyses'",
+    reason="#0358 to api: studies analysed before #0286 keep 'holds in fewer than 80 % of the "
+    "reasonable analyses' in results.json; the views are to re-word it on read",
 )
 @pytest.mark.parametrize("which", ["legacy", "study"])
 def test_results_shares_name_qpilot_s_grid(api, world, which):

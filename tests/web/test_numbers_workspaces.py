@@ -154,11 +154,7 @@ def test_the_demo_is_the_documented_size(world):
         assert (result.n_plates, result.n_samples) == (64, 366)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bus #0122 to api: the demo session and its qpilot-run study share a key; api "
-    "91206d8 adds a unique id (kind:key) — not merged here yet",
-)
 def test_every_workspace_has_its_own_id(listed):
-    ids = [w.get("id") or w["key"] for kind in listed.values() for w in kind]
+    """A session and its qpilot-run study share a key (sha[:12]); their ids differ (#0122)."""
+    ids = [w["id"] for kind in listed.values() for w in kind]
     assert len(ids) == len(set(ids)), sorted(k for k in ids if ids.count(k) > 1)
