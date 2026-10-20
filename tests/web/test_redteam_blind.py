@@ -250,6 +250,13 @@ BODIES = {
 }
 
 
+# Routes with their own strict xfail below (so this scan does not report them twice).
+KNOWN_OPEN = {
+    "GET /api/studies/{study_id}/records": "RT-UI-023",
+    "POST /api/studies/{study_id}/record": "RT-UI-023",
+}
+
+
 def test_every_study_route_of_a_blind_session_is_blind(reblinded):
     """Every study route (results, gene, cards, audit, files, ask …) answers 403 blind."""
     c, app = reblinded["client"], reblinded["app"]
@@ -260,6 +267,8 @@ def test_every_study_route_of_a_blind_session_is_blind(reblinded):
             url = _fill(route, reblinded, c)
             if url is None:
                 continue
+            if f"{method} {route}" in KNOWN_OPEN:
+                continue
             checked.append(f"{method} {route}")
             body = BODIES.get(url.rsplit("/", 1)[-1], {})
             r = c.request(method, url, json=body, params={"gene": "1-Mar"})
@@ -269,6 +278,22 @@ def test_every_study_route_of_a_blind_session_is_blind(reblinded):
                 open_routes[f"{method} {route}"] = r.status_code
     assert len(checked) >= 8, checked  # the results routes at least
     assert not open_routes, open_routes
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="RT-UI-023 the Analysis Record of a blind session's study can be exported and listed "
+    "(POST /api/studies/{id}/record → 202, its zip holds results.json with fold changes and "
+    "p-values, grid.csv; GET …/records → 200): the files routes skip the session's blind gate",
+)
+def test_a_blind_sessions_record_cannot_be_exported(reblinded):
+    c, app, study_id = reblinded["client"], reblinded["app"], reblinded["study_id"]
+    if "/api/studies/{study_id}/record" not in app.openapi()["paths"]:
+        pytest.skip("the files router is not merged in this checkout")
+    r = c.post(f"/api/studies/{study_id}/record", json={})
+    listed = c.get(f"/api/studies/{study_id}/records")
+    assert r.status_code == 403 and r.json()["error"]["code"] == "blind", r.text[:200]
+    assert listed.status_code == 403, listed.text[:200]
 
 
 def test_the_plate_of_a_blind_session_pairs_no_group_with_a_number(reblinded):
