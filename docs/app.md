@@ -232,14 +232,34 @@ lines. Theme. Fresh demo. The never-does lines and the version.
 
 ## 7. Who builds what
 
-| Owner | Paths |
-|---|---|
-| **api** (backend) | `qpilot/web/**` except `static/`, `qpilot/cli/*`, `sim/src/qsim/app*.py`, `tests/web/**`, `frontend/src/api/schema.d.ts` (generated) |
-| **shell** (frontend 1) | `frontend/src/{ui,shell,lib}/**`, `frontend/src/charts/{plate,curves}/**`, `frontend/src/features/{home,design,curves,record,agents,settings}/**`, `frontend/e2e/**` |
-| **insight** (frontend 2) | `frontend/src/charts/**` except plate and curves, `frontend/src/features/{results,gene,audit,prism,ask}/**` |
-| **coordinator** | `qpilot/web/contract.py` changes requested by others, `frontend/src/shell/sections.ts`, `frontend/src/api/{client,live,jobs}.ts`, `docs/app.md`, merges, removal of the old pages |
+Twenty agents, each owning paths nobody else edits (the coordinator merges into `ui/one-page`).
+API modules each define their own response models in `qpilot/web/contract_<area>.py`;
+`contract.py` is the shared core (owner: **api**). Routers are discovered (one module per area).
 
-Reusable UI primitives (Button, Card, Badge, Dialog, Tabs, Tooltip, Popover, Select, Table,
-Skeleton, EmptyState, JobCard, NumberCell, ConclusionTag, LevelTag, VerdictTag, Kbd) live in
-`src/ui/` (shell). Insight uses them and asks shell for missing ones (or adds a local component
-in its feature folder and offers it up later).
+| Agent | Owns |
+|---|---|
+| **api** | `qpilot/web/{contract,views,context,server,security,jobs,events}.py`, `routers/{system,workspaces,studio,results}.py`, `tests/web/test_{guard,workspaces,studio,results}*.py` |
+| **api-audit** | `routers/audit.py`, `contract_audit.py`, `sim/src/qsim/app.py` + `app_lab.py` (adding `Screen.from_prepared`), `tests/web/test_audit*.py` |
+| **api-files** | `routers/files.py` (Prism, record export, downloads, record verify), `contract_files.py`, `qpilot/web/folders.py`, `tests/web/test_{prism,record}*.py` |
+| **api-ops** | `routers/ops.py` (agents, ask, model test, fresh demo), `contract_ops.py`, `qpilot/cli/*`, `sim/src/qsim/cli.py`, `tests/web/test_{agents,ask,cli}*.py` |
+| **legacy** | the old pages until they are removed: `qpilot/{app,studio,app_state,studio_state}.py`, `sim/src/qsim/app_page.html`, `tests/app/**`, `tests/studio/test_studio_{app,demo_ui}.py`, `sim/tests/test_app.py`; new `qpilot/ai/suggest_only.py`; `tests/web/test_parity*.py`; the `gradio` dependency |
+| **redteam** | `tests/web/test_redteam*.py` (adversarial tests; findings go to owners) |
+| **science** | `tests/web/test_numbers*.py` (every number the API serves equals the engine's / CLI's) |
+| **shell** | `frontend/src/{lib,shell}/**` (not `sections.ts`), `frontend/src/ui/**` except `ui/proposal/` |
+| **insight** | `frontend/src/charts/**` except `plate/` and `curves/`, `frontend/src/test/recorded/**`, `features/results/**` |
+| **home** | `features/home/**`, `features/settings/**` |
+| **design** | `features/design/**`, `frontend/src/ui/proposal/**` (ProposalCard, reused by Curves and Prism) |
+| **curves** | `features/curves/**`, `frontend/src/charts/{plate,curves}/**` |
+| **record** | `features/record/**`, `features/agents/**` |
+| **gene** | `features/gene/**` |
+| **audit** | `features/audit/**` |
+| **prism** | `features/prism/**` |
+| **ask** | `features/ask/**` (the Ask drawer's content; keep `AskDrawer` props) |
+| **e2e** | `frontend/e2e/**`, `frontend/playwright.config.ts` (Playwright + axe on the real seeded store) |
+| **docs** | `README.md`, `docs/{studio,integration,agents}.md`, `THREAT_MODEL.md`, `THIRD_PARTY_NOTICES.md`, `CONTRIBUTING.md`, `demo/README.md`, `docs/user-guide.md` |
+| **ux-review** | nothing in the repo: reviews merged builds in a browser and files issues to owners |
+| **coordinator** | `docs/app.md`, `frontend/src/shell/sections.ts`, `frontend/src/api/{client,live,jobs}.ts`, `qpilot/web/routers/__init__.py`, `qpilot/web/static/` (built on merge), CI, merges |
+
+Reusable UI primitives live in `src/ui/` (barrel `src/ui/index.ts`), charts in `src/charts/`
+(barrel `src/charts/index.ts`), formatting in `src/lib/format.ts`. Use them; ask their owner on the
+bus for what is missing (or build a local component in your feature folder and offer it up).
