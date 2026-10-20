@@ -106,10 +106,6 @@ def _ask(api, study_id: str, question: str) -> dict:
     return view["result"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#0254 to api-ops: Ask says 'holds in 65% of the 744 reasonable analyses'",
-)
 def test_ask_shares_name_qpilot_s_grid(api, world):
     n_cells = world.store.get(world.study).robustness["ODC1"].n_cells
     texts = []
@@ -136,8 +132,8 @@ def test_audit_shares_name_the_audit_s_set(api, world):
 
 @pytest.mark.xfail(
     strict=True,
-    reason="to coordinator: qpilot/prism/provenance.py writes 'holds in 99% of 744 reasonable "
-    "analyses' into the Prism caption (no owner in app.md §7)",
+    reason="#0333/#0334 to api-files: qpilot/prism/provenance.py writes 'holds in 99% of 744 "
+    "reasonable analyses' into the Prism caption",
 )
 def test_the_prism_caption_names_qpilot_s_grid(api, world):
     pytest.importorskip("qpilot.web.routers.files", reason="the Prism routes are not merged")
