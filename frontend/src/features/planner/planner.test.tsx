@@ -135,6 +135,18 @@ describe("the planner", () => {
       "listitem",
     );
     expect(tiles).toHaveLength(layout.plates.length);
+    // each list item holds one plain toggle button (a listitem itself cannot be pressed: axe)
+    const buttons = tiles.map((li) => within(li).getByRole("button"));
+    expect(tiles.every((li) => !li.hasAttribute("aria-pressed"))).toBe(true);
+    expect(buttons.filter((b) => b.getAttribute("aria-pressed") === "true")).toHaveLength(1);
+    const first = layout.plates[0]!;
+    expect(buttons[0]!.textContent).toContain(first.name);
+    expect(buttons[0]!.textContent).toContain(first.genes.join(", "));
+    if (buttons.length > 1) {
+      fireEvent.click(buttons[1]!);
+      expect(buttons[1]!.getAttribute("aria-pressed")).toBe("true");
+      expect(buttons[0]!.getAttribute("aria-pressed")).toBe("false");
+    }
   });
 
   it("shows a refusal in the server's own words", async () => {
