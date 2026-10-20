@@ -99,7 +99,9 @@ export function flowOf(
         ? "Accepted"
         : project.waiting
           ? "Waiting for you"
-          : "Not drafted yet",
+          : project.earlier
+            ? "Draft again: the choices changed"
+            : "Not drafted yet",
     },
     {
       id: "send",
