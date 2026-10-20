@@ -9,7 +9,12 @@ export { RobustnessMap, type MapPoint, type RobustnessMapProps } from "./Robustn
 /** Every reasonable analysis of one gene as a stacked dot on the fold axis, by call; planned ringed. Props: `rows: AnalysisDot[]`, `line`. */
 export { AnalysesStrip, type AnalysisDot, type AnalysesStripProps } from "./AnalysesStrip";
 /** One choice at a time: a row per decision, a dot per option on the fold axis; planned diamond, shortcuts hollow, call-changers ringed. */
-export { ChoiceDotPlot, type ChoiceOption, type ChoiceRow, type ChoiceDotPlotProps } from "./ChoiceDotPlot";
+export {
+  ChoiceDotPlot,
+  type ChoiceOption,
+  type ChoiceRow,
+  type ChoiceDotPlotProps,
+} from "./ChoiceDotPlot";
 /** Samples by group as a beeswarm with group means and the fold between them; late/no-Cq/flagged marks; click → `onSelectSample(point)`. */
 export { Beeswarm, type SampleGroup, type SamplePoint, type BeeswarmProps } from "./Beeswarm";
 /** What-if: planned → chosen fold per gene, changed calls first (`dumbbellOrder`); click → `onSelect(gene)`. */

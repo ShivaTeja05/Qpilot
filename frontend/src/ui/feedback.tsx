@@ -35,6 +35,7 @@ export function EmptyState({
   action,
   className,
   compact,
+  headingLevel = 2,
 }: {
   icon?: ReactNode;
   title: ReactNode;
@@ -42,7 +43,10 @@ export function EmptyState({
   action?: ReactNode;
   className?: string;
   compact?: boolean;
+  /** The title's heading level (1 when the empty state is the whole page section). */
+  headingLevel?: 1 | 2 | 3;
 }) {
+  const H = `h${headingLevel}` as "h1" | "h2" | "h3";
   return (
     <div
       className={cn(
@@ -60,7 +64,7 @@ export function EmptyState({
         </div>
       ) : null}
       <div className="max-w-md">
-        <p className="text-sm font-semibold text-fg">{title}</p>
+        <H className="text-sm font-semibold text-fg">{title}</H>
         {children ? <div className="mt-1 text-[13px] text-muted">{children}</div> : null}
       </div>
       {action ? (

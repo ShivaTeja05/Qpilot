@@ -8,6 +8,9 @@ It writes, next to this file:
 
 * ``results.json`` -- the stored :class:`~qpilot.schemas.StudyResult` (``StudyStore.get``);
 * ``cards.json`` -- the study's Decision Cards (``StudyStore.cards``);
+* ``api-results.json``, ``api-flips.json``, ``api-cards.json`` -- the page's own views of them,
+  exactly as ``GET /api/studies/{id}/results|flips|cards`` serve them
+  (``qpilot.web.results_views``);
 * ``audit-*.json`` -- the robustness audit's views, from qsim's ``Screen`` built over the
   integration's prepared engine for the stored audit (``overview``, ``study_view``,
   ``how_view``, ``gene_card``, ``gene_analyses``, ``gene_effects``, ``gene_samples``,
@@ -20,48 +23,18 @@ from __future__ import annotations
 
 import argparse
 import json
-import threading
 from pathlib import Path
-
-import pandas as pd
 
 HERE = Path(__file__).resolve().parent
 
 
 def _screen(store, study_id: str, audit_dir: Path):
-    """Qsim's results screen over a qPilot audit (the prepared engine, not the benchmark's)."""
+    """Qsim's results screen over a qPilot audit (the prepared engine, as the API builds it)."""
     from qsim.app import Screen
-    from qsim.data import BENCHMARK_NAME
 
     from qpilot.integration.simulator import load_analysis, prepare
 
-    prepared = prepare(load_analysis(store, study_id))
-    s = Screen.__new__(Screen)
-    s.dir = audit_dir
-    s.explain = json.loads((audit_dir / "explain.json").read_text())
-    s.genes = pd.read_csv(audit_dir / "genes.csv").set_index("gene")
-    s.issues = json.loads((audit_dir / "issues.json").read_text())
-    s.summary = json.loads((audit_dir / "summary.json").read_text())
-    flips = audit_dir / "one_sample_flips.csv"
-    s.sample_flips = pd.read_csv(flips, dtype={"sample": str}) if flips.exists() else None
-    s.source = (s.summary.get("source") or {}).get("name") or BENCHMARK_NAME
-    s.engine = prepared.engine
-    s.space = prepared.space
-    s.rules = s.summary["verdicts"]["rules"]
-    s.line = 2**s.engine.rule.min_log2fc
-    s.alpha = s.engine.rule.alpha
-    study = prepared.study
-    marker = study.marker.split("(")[0]
-    cut = s.space.decision("cut")
-    s.group = f"{marker}-high"
-    s.group_def = cut.options[cut.index(s.space.baseline["cut"])].label
-    s.n_samples = s.summary["study"]["samples"]
-    s._asker = None
-    s._rdml = None
-    s._engine_lock = threading.Lock()
-    s._ask_lock = threading.Lock()
-    s._asker_lock = threading.Lock()
-    return s
+    return Screen.from_prepared(audit_dir, prepare(load_analysis(store, study_id)))
 
 
 def _write(name: str, data) -> None:
@@ -84,6 +57,12 @@ def main() -> None:
     result = store.get(args.study)
     _write("results.json", result.model_dump(mode="json"))
     _write("cards.json", [c.model_dump(mode="json") for c in store.cards(args.study)])
+    from qpilot.web import results_views as rv
+
+    session = rv.session_of_study(store, args.study)
+    _write("api-results.json", rv.results_view(store, args.study, session).model_dump(mode="json"))
+    _write("api-flips.json", rv.flips_view(store, args.study).model_dump(mode="json"))
+    _write("api-cards.json", rv.cards_view(store, args.study).model_dump(mode="json"))
 
     audit_dir = store.root / "simulator_audits" / args.study
     if not (audit_dir / "explain.json").exists():

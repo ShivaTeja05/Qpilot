@@ -75,7 +75,18 @@ interface Dot {
   y: number;
 }
 
-export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, summary, caption, selected, onSelectSample }: BeeswarmProps) {
+export function Beeswarm({
+  groups,
+  points,
+  foldText,
+  lateCut,
+  lower,
+  higher,
+  summary,
+  caption,
+  selected,
+  onSelectSample,
+}: BeeswarmProps) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
   const narrow = width < 560;
@@ -84,7 +95,13 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
   const bandTop = narrow ? 34 : 6;
   const r = narrow ? 2.8 : 3.2;
   const fs = useMemo(
-    () => foldScale(points.map((p) => p.x).concat(groups.map((g) => g.mean)), 0, labelW + 12, width - 14),
+    () =>
+      foldScale(
+        points.map((p) => p.x).concat(groups.map((g) => g.mean)),
+        0,
+        labelW + 12,
+        width - 14,
+      ),
     [points, groups, labelW, width],
   );
   const bottom = TOP + rowH * groups.length;
@@ -97,7 +114,8 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
       const half = (rowH - bandTop - 10) / 2;
       const centre = top + half;
       const mine = points.filter((p) => p.group === g.key);
-      for (const b of beeswarm(mine, (p) => fs.x(p.x), r, half - r, 0.6)) out.push({ p: b.item, gi, x: b.x, y: centre + b.dy });
+      for (const b of beeswarm(mine, (p) => fs.x(p.x), r, half - r, 0.6))
+        out.push({ p: b.item, gi, x: b.x, y: centre + b.dy });
     });
     return out;
   }, [groups, points, fs, rowH, bandTop, r]);
@@ -112,7 +130,9 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
       value: d.p.valueText ?? fmtFoldWords(d.p.x),
       lines: [
         g?.label,
-        [d.p.plate && `plate ${d.p.plate}`, d.p.well && `well ${d.p.well}`].filter(Boolean).join(" · "),
+        [d.p.plate && `plate ${d.p.plate}`, d.p.well && `well ${d.p.well}`]
+          .filter(Boolean)
+          .join(" · "),
         d.p.cq ? `Cq ${d.p.cq}` : d.p.nondetect ? "No Cq (non-detect)" : null,
         d.p.late ? `Cq above ${lateCut ?? "the late cut-off"}` : null,
         d.p.flagged ? "Flagged by LinRegPCR" : null,
@@ -124,10 +144,26 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
 
   const has = (f: (p: SamplePoint) => boolean | undefined) => points.some((p) => f(p));
   const legend: LegendItem[] = [
-    ...groups.slice(0, 4).map((g, gi) => ({ mark: { shape: "circle" as const, tone: GROUP_TONES[gi]! }, label: g.label })),
-    ...(has((p) => p.late) ? [{ mark: { shape: "ring" as const, tone: "var(--warn)" }, label: `Cq above ${lateCut ?? "the late cut-off"}` }] : []),
-    ...(has((p) => p.nondetect) ? [{ mark: { shape: "cross" as const, tone: "var(--warn)" }, label: "No Cq" }] : []),
-    ...(has((p) => p.flagged) ? [{ mark: { shape: "diamond" as const, tone: "var(--v-check)" }, label: "Flagged well" }] : []),
+    ...groups
+      .slice(0, 4)
+      .map((g, gi) => ({
+        mark: { shape: "circle" as const, tone: GROUP_TONES[gi]! },
+        label: g.label,
+      })),
+    ...(has((p) => p.late)
+      ? [
+          {
+            mark: { shape: "ring" as const, tone: "var(--warn)" },
+            label: `Cq above ${lateCut ?? "the late cut-off"}`,
+          },
+        ]
+      : []),
+    ...(has((p) => p.nondetect)
+      ? [{ mark: { shape: "cross" as const, tone: "var(--warn)" }, label: "No Cq" }]
+      : []),
+    ...(has((p) => p.flagged)
+      ? [{ mark: { shape: "diamond" as const, tone: "var(--v-check)" }, label: "Flagged well" }]
+      : []),
     ...(has((p) => p.carries)
       ? [
           {
@@ -143,7 +179,15 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
     {
       swatch: (
         <svg width="10" height="14" aria-hidden="true">
-          <line x1="5" x2="5" y1="1" y2="13" stroke="var(--text)" strokeWidth="3" strokeLinecap="round" />
+          <line
+            x1="5"
+            x2="5"
+            y1="1"
+            y2="13"
+            stroke="var(--text)"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
         </svg>
       ),
       label: "Group mean",
@@ -152,15 +196,44 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
 
   const columns: Column<SamplePoint>[] = [
     { key: "sample", header: "Sample", cell: (p) => p.sample, sort: (p) => p.sample },
-    { key: "group", header: "Group", cell: (p) => groups.find((g) => g.key === p.group)?.label ?? p.group, sort: (p) => p.group },
-    { key: "level", header: "Level", cell: (p) => p.valueText ?? fmtFoldWords(p.x), sort: (p) => p.x, numeric: true },
-    { key: "well", header: "Plate · well", cell: (p) => [p.plate, p.well].filter(Boolean).join(" · "), sort: (p) => `${p.plate}${p.well}` },
-    { key: "cq", header: "Cq", cell: (p) => p.cq ?? (p.nondetect ? "none" : ""), sort: (p) => (p.cq ? Number(p.cq) : null), numeric: true },
+    {
+      key: "group",
+      header: "Group",
+      cell: (p) => groups.find((g) => g.key === p.group)?.label ?? p.group,
+      sort: (p) => p.group,
+    },
+    {
+      key: "level",
+      header: "Level",
+      cell: (p) => p.valueText ?? fmtFoldWords(p.x),
+      sort: (p) => p.x,
+      numeric: true,
+    },
+    {
+      key: "well",
+      header: "Plate · well",
+      cell: (p) => [p.plate, p.well].filter(Boolean).join(" · "),
+      sort: (p) => `${p.plate}${p.well}`,
+    },
+    {
+      key: "cq",
+      header: "Cq",
+      cell: (p) => p.cq ?? (p.nondetect ? "none" : ""),
+      sort: (p) => (p.cq ? Number(p.cq) : null),
+      numeric: true,
+    },
     {
       key: "flags",
       header: "Notes",
       cell: (p) =>
-        [p.late && "late Cq", p.nondetect && "no Cq", p.flagged && "flagged", p.carries && "removing it changes the call"].filter(Boolean).join(", "),
+        [
+          p.late && "late Cq",
+          p.nondetect && "no Cq",
+          p.flagged && "flagged",
+          p.carries && "removing it changes the call",
+        ]
+          .filter(Boolean)
+          .join(", "),
     },
   ];
 
@@ -173,7 +246,13 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
       caption={caption}
       live={active ? `${tipFor(active).title}: ${tipFor(active).value}` : undefined}
       table={() => (
-        <DataTable columns={columns} rows={points} rowKey={(p) => `${p.group}:${p.sample}`} onRowClick={onSelectSample} caption={summary} />
+        <DataTable
+          columns={columns}
+          rows={points}
+          rowKey={(p) => `${p.group}:${p.sample}`}
+          onRowClick={onSelectSample}
+          caption={summary}
+        />
       )}
     >
       <div
@@ -188,7 +267,14 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
           hide();
         }}
       >
-        <svg width={width} height={height} role="img" aria-label={summary} className="block overflow-visible" onPointerLeave={hide}>
+        <svg
+          width={width}
+          height={height}
+          role="img"
+          aria-label={summary}
+          className="block overflow-visible"
+          onPointerLeave={hide}
+        >
           <FoldAxis scale={fs} top={TOP} bottom={bottom} lower={lower} higher={higher} />
           {groups.map((g, gi) => {
             const rowTop = TOP + gi * rowH;
@@ -218,7 +304,15 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
                     </text>
                   </>
                 )}
-                <line x1={meanX} x2={meanX} y1={centre - half - 2} y2={centre + half + 2} stroke="var(--text)" strokeWidth={3} strokeLinecap="round" />
+                <line
+                  x1={meanX}
+                  x2={meanX}
+                  y1={centre - half - 2}
+                  y2={centre + half + 2}
+                  stroke="var(--text)"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                />
               </g>
             );
           })}
@@ -235,9 +329,36 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
                   onClick={onSelectSample ? () => onSelectSample(d.p) : undefined}
                 >
                   <circle cx={d.x} cy={d.y} r={Math.max(5, r + 2)} fill="transparent" />
-                  <GlyphMark mark={markFor(d.p, d.gi)} x={d.x} y={d.y} r={on ? r + 1.5 : r} ring={false} style={{ opacity: d.p.late || d.p.nondetect || d.p.flagged || d.p.carries ? 1 : 0.7 }} />
-                  {d.p.carries && <circle cx={d.x} cy={d.y} r={r + 3} fill="none" stroke="var(--text)" strokeWidth={1.6} />}
-                  {on && <circle cx={d.x} cy={d.y} r={r + 5} fill="none" stroke="var(--accent)" strokeWidth={2} />}
+                  <GlyphMark
+                    mark={markFor(d.p, d.gi)}
+                    x={d.x}
+                    y={d.y}
+                    r={on ? r + 1.5 : r}
+                    ring={false}
+                    style={{
+                      opacity: d.p.late || d.p.nondetect || d.p.flagged || d.p.carries ? 1 : 0.7,
+                    }}
+                  />
+                  {d.p.carries && (
+                    <circle
+                      cx={d.x}
+                      cy={d.y}
+                      r={r + 3}
+                      fill="none"
+                      stroke="var(--text)"
+                      strokeWidth={1.6}
+                    />
+                  )}
+                  {on && (
+                    <circle
+                      cx={d.x}
+                      cy={d.y}
+                      r={r + 5}
+                      fill="none"
+                      stroke="var(--accent)"
+                      strokeWidth={2}
+                    />
+                  )}
                 </g>
               );
             })}
@@ -252,8 +373,24 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
                 return (
                   <>
                     <line x1={xa} x2={xb} y1={yb} y2={yb} stroke="var(--text)" strokeWidth={1.5} />
-                    <rect x={mid - w / 2} y={yb - 9} width={w} height={18} rx={9} fill="var(--surface)" stroke="var(--line-strong)" />
-                    <text x={mid} y={yb + 4} textAnchor="middle" fontSize={11.5} fontWeight={600} fill="var(--text)" className="tabular">
+                    <rect
+                      x={mid - w / 2}
+                      y={yb - 9}
+                      width={w}
+                      height={18}
+                      rx={9}
+                      fill="var(--surface)"
+                      stroke="var(--line-strong)"
+                    />
+                    <text
+                      x={mid}
+                      y={yb + 4}
+                      textAnchor="middle"
+                      fontSize={11.5}
+                      fontWeight={600}
+                      fill="var(--text)"
+                      className="tabular"
+                    >
                       {foldText}
                     </text>
                   </>
@@ -262,7 +399,10 @@ export function Beeswarm({ groups, points, foldText, lateCut, lower, higher, sum
             </g>
           )}
         </svg>
-        <Tooltip tip={active ? { x: active.x, y: active.y, content: tipFor(active) } : tip} width={width} />
+        <Tooltip
+          tip={active ? { x: active.x, y: active.y, content: tipFor(active) } : tip}
+          width={width}
+        />
       </div>
     </ChartFrame>
   );

@@ -88,7 +88,7 @@ export function useLiveEvents(): void {
       void qc.invalidateQueries({ predicate: (q) => q.queryKey.includes(key) });
 
     const connect = () => {
-      if (closed) return;
+      if (closed || document.hidden) return;
       setState("connecting");
       source = new EventSource("/api/events", { withCredentials: true });
       source.onopen = () => {
@@ -99,6 +99,7 @@ export function useLiveEvents(): void {
       source.onerror = () => {
         setState("offline");
         source?.close();
+        source = null;
         retry = setTimeout(connect, 2000);
       };
       for (const type of [
@@ -112,11 +113,26 @@ export function useLiveEvents(): void {
         source.addEventListener(type, handle as EventListener);
       }
     };
-    connect();
+    // Browsers allow about six connections per site: a hidden tab gives its stream back and
+    // reconnects (re-reading everything) when it is shown again, so many open tabs never starve
+    // the API of connections.
+    const onVisibility = () => {
+      if (document.hidden) {
+        clearTimeout(retry);
+        source?.close();
+        source = null;
+        setState("connecting");
+      } else if (!source) {
+        connect();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    if (!document.hidden) connect();
     return () => {
       closed = true;
       clearTimeout(retry);
       source?.close();
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [qc]);
 }
