@@ -16,6 +16,7 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import {
+  useMemo,
   useRef,
   useState,
   type HTMLAttributes,
@@ -176,7 +177,9 @@ export function DataTable<T>({
   className,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
-  const rows = rowFilter ? data.filter(rowFilter) : data;
+  // The rows must keep their identity between renders: a new array makes TanStack reset the
+  // page index, which re-renders, which makes a new array… (a render loop that pegged a core).
+  const rows = useMemo(() => (rowFilter ? data.filter(rowFilter) : data), [data, rowFilter]);
   // TanStack Table returns functions that cannot be memoised; the compiler lint is told so.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -189,6 +192,9 @@ export function DataTable<T>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    // There is no pagination: never reset state when the data changes.
+    autoResetPageIndex: false,
+    autoResetExpanded: false,
   });
   const model = table.getRowModel().rows;
   const scrollRef = useRef<HTMLDivElement>(null);
