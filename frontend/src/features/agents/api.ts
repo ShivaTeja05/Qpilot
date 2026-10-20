@@ -39,7 +39,7 @@ export function useAnswerRequest(workspaceKey: string | null | undefined, onDone
     mutationFn: ({ request, verdict, reason }) =>
       requestJson<Outcome>(`${cardPath(request)}/${verdict === "approve" ? "decide" : "turn-down"}`, {
         method: "POST",
-        body: JSON.stringify({ option: request.option, reason, expected_head: request.head ?? null }),
+        body: JSON.stringify({ option: request.option, reason, expected_head: request.expected_head }),
       }),
     success: (outcome, { request, verdict }) => {
       const what = `${cardTitle(request)} → ${optionLabel(request)}`;

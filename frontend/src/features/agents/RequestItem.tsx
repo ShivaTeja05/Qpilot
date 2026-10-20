@@ -66,7 +66,10 @@ export function RequestItem({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
             <p className="text-[13px] text-muted">
-              <span className="font-medium text-fg">{request.agent || "An agent"}</span> asks for a choice that can change a conclusion
+              <span className="font-medium text-fg">An agent</span>{" "}
+              {request.can_change_a_conclusion
+                ? "asks for a choice that can change a conclusion"
+                : "asks for a choice (in Suggest mode every agent request waits for you)"}
               {studyNote ? <> · {studyNote}</> : null}
             </p>
             <time className="text-xs text-muted" dateTime={request.at} title={dateTime(request.at)}>
