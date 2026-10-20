@@ -8,6 +8,7 @@ blind session. One such session is walked once for this module (the mini file; ~
 
 from __future__ import annotations
 
+import re
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -186,8 +187,10 @@ def _fill(path: str, reblinded: dict[str, Any], c: TestClient) -> str | None:
         "stage": "design",
         "action": "accept",
         "job_id": reblinded["analyse_job"],
+        "card_id": "card_undetermined",
+        "g": "1-Mar",
     }
-    out = path
+    out = re.sub(r"\{(\w+):\w+\}", r"{\1}", path)  # {gene:path} -> {gene}
     for name, value in values.items():
         out = out.replace("{" + name + "}", value)
     return None if "{" in out else out
@@ -196,13 +199,17 @@ def _fill(path: str, reblinded: dict[str, Any], c: TestClient) -> str | None:
 QUERY = {"well": None, "gene": "1-Mar", "stage": "design"}
 
 
+def _paths(app, method: str = "get") -> list[str]:
+    """Every API path served for ``method``, from the OpenAPI schema.
+
+    (FastAPI keeps included routers as nested objects in ``app.routes``; the schema is the
+    flat list of every route the page can call.)
+    """
+    return sorted(p for p, ops in app.openapi()["paths"].items() if method in ops)
+
+
 def _get_routes(app) -> list[str]:
-    return sorted(
-        r.path
-        for r in app.routes
-        if "GET" in getattr(r, "methods", set())
-        and r.path.startswith(("/api/sessions/{", "/api/studies/{"))
-    )
+    return [p for p in _paths(app) if p.startswith(("/api/sessions/{", "/api/studies/{"))]
 
 
 def test_no_route_of_a_blind_session_answers_with_a_result(reblinded):
@@ -210,7 +217,9 @@ def test_no_route_of_a_blind_session_answers_with_a_result(reblinded):
     plate = c.get(f"/api/sessions/{sid}/plate").json()
     params = {**QUERY, "well": plate["wells"][0]["key"]}
     problems: dict[str, list[str]] = {}
-    for route in _get_routes(app):
+    routes = _get_routes(app)
+    assert len([r for r in routes if r.startswith("/api/sessions/")]) >= 8, routes
+    for route in routes:
         if route.startswith("/api/studies/"):
             continue  # RT-UI-009 (above) covers the study routes
         url = _fill(route, reblinded, c)
@@ -226,13 +235,11 @@ def test_no_route_of_a_blind_session_answers_with_a_result(reblinded):
 
 
 def _study_routes(app, method: str) -> list[str]:
-    return sorted(
-        r.path
-        for r in app.routes
-        if method in getattr(r, "methods", set())
-        and r.path.startswith("/api/studies/{")
-        and r.path != "/api/studies/{study_id}"
-    )
+    return [
+        p
+        for p in _paths(app, method.lower())
+        if p.startswith("/api/studies/{") and p != "/api/studies/{study_id}"
+    ]
 
 
 BODIES = {
@@ -247,20 +254,20 @@ def test_every_study_route_of_a_blind_session_is_blind(reblinded):
     """Every study route (results, gene, cards, audit, files, ask …) answers 403 blind."""
     c, app = reblinded["client"], reblinded["app"]
     open_routes: dict[str, int] = {}
+    checked: list[str] = []
     for method in ("GET", "POST", "PUT"):
         for route in _study_routes(app, method):
-            url = _fill(route.replace("{card_id}", "reference_set"), reblinded, c)
+            url = _fill(route, reblinded, c)
             if url is None:
-                url = route.replace("{study_id}", reblinded["study_id"])
-                url = url.replace("{gene}", "1-Mar").replace("{g}", "1-Mar")
-                if "{" in url:
-                    continue
+                continue
+            checked.append(f"{method} {route}")
             body = BODIES.get(url.rsplit("/", 1)[-1], {})
             r = c.request(method, url, json=body, params={"gene": "1-Mar"})
             if r.status_code not in (403, 422) or (
                 r.status_code == 403 and r.json()["error"]["code"] != "blind"
             ):
                 open_routes[f"{method} {route}"] = r.status_code
+    assert len(checked) >= 8, checked  # the results routes at least
     assert not open_routes, open_routes
 
 
