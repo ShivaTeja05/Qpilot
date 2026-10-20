@@ -1,0 +1,117 @@
+{
+  "workspaces": [
+    {
+      "key": "bc1d233e3866",
+      "kind": "session",
+      "title": "Vermeulen 2013 neuroblastoma study (demo)",
+      "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+      "file_name": "data_vermeulen_raw.rdml",
+      "file_present": true,
+      "study_id": "e300000d4f9a",
+      "results_visible": true,
+      "stages": [
+        {
+          "stage": "design",
+          "open": true,
+          "confirmed": true,
+          "pending": 0,
+          "blockers": []
+        },
+        {
+          "stage": "curves",
+          "open": true,
+          "confirmed": true,
+          "pending": 0,
+          "blockers": []
+        },
+        {
+          "stage": "choices",
+          "open": true,
+          "confirmed": false,
+          "pending": 0,
+          "blockers": []
+        },
+        {
+          "stage": "prism",
+          "open": false,
+          "confirmed": false,
+          "pending": 0,
+          "blockers": []
+        },
+        {
+          "stage": "roundtrip",
+          "open": false,
+          "confirmed": false,
+          "pending": 0,
+          "blockers": []
+        }
+      ],
+      "n_plates": 67,
+      "n_samples": 427,
+      "n_genes": 66,
+      "decisions": 1,
+      "pending_requests": 0,
+      "has_audit": true,
+      "is_demo": true,
+      "updated_at": 1792525937.6919217
+    },
+    {
+      "key": "fe529c0705f9",
+      "kind": "session",
+      "title": "fe529c0705f9a8b43ef124dc.rdml",
+      "input_sha256": "fe529c0705f9a8b43ef124dc0212368d60ba631f56270310c2a3191b556eacc0",
+      "file_name": "fe529c0705f9a8b43ef124dc.rdml",
+      "file_present": true,
+      "study_id": null,
+      "results_visible": false,
+      "stages": [
+        {
+          "stage": "design",
+          "open": true,
+          "confirmed": false,
+          "pending": 0,
+          "blockers": [
+            "no comparison yet: accept the groups to compare (or the demo preset)",
+            "no reference genes yet: accept at least one target as a reference"
+          ]
+        },
+        {
+          "stage": "curves",
+          "open": false,
+          "confirmed": false,
+          "pending": 0,
+          "blockers": []
+        },
+        {
+          "stage": "choices",
+          "open": false,
+          "confirmed": false,
+          "pending": 0,
+          "blockers": []
+        },
+        {
+          "stage": "prism",
+          "open": false,
+          "confirmed": false,
+          "pending": 0,
+          "blockers": []
+        },
+        {
+          "stage": "roundtrip",
+          "open": false,
+          "confirmed": false,
+          "pending": 0,
+          "blockers": ["nothing has been sent to Prism yet"]
+        }
+      ],
+      "n_plates": 1,
+      "n_samples": 3,
+      "n_genes": 20,
+      "decisions": 0,
+      "pending_requests": 0,
+      "has_audit": false,
+      "is_demo": false,
+      "updated_at": 1792525626.17451
+    }
+  ]
+}

@@ -74,3 +74,21 @@ def test_ensure_study_uses_existing_workspace(store, tmp_path, fixture_result, f
     result = fixture_result.model_copy(update={"input_sha256": digest, "study_id": digest[:12]})
     store.put(result, fixture_cards)
     assert store.ensure_study(rdml) == digest[:12]
+
+
+def test_two_auto_decided_cards_make_an_unbroken_chain(store, fixture_result, fixture_cards):
+    # Regression: put() appended each auto entry twice to its in-memory list, so the second
+    # auto entry was written with seq 3 and `qpilot verify` reported the chain broken.
+    from qpilot.core.record import verify_chain
+
+    autos = [
+        c.model_copy(
+            update={"status": "auto_decided", "decision": c.recommended, "reason": "no conclusion"}
+        )
+        for c in fixture_cards[:2]
+    ]
+    store.put(fixture_result, autos + fixture_cards[2:])
+    entries = store.entries(fixture_result.study_id)
+    assert len(entries) >= 2
+    assert [e.seq for e in entries] == list(range(1, len(entries) + 1))
+    assert verify_chain(entries, fixture_result.input_sha256) is None

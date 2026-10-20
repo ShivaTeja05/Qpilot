@@ -44,7 +44,7 @@ const MAX_STACK_PX = 190;
 export function AnalysesStrip({ rows, line, lineLabel, lower, higher, summary, caption }: AnalysesStripProps) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
-  const fs = useMemo(() => foldScale(rows.map((d) => d.log2), line, 14, width - 14), [rows, line, width]);
+  const fs = useMemo(() => foldScale(rows.map((d) => d.log2), line, 14, width - 14, 44, false), [rows, line, width]);
 
   const { placed, r, step } = useMemo(() => {
     // shrink the dots until the tallest pile fits, then squeeze if it still does not
