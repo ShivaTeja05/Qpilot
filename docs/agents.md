@@ -122,7 +122,7 @@ The one rule: **AI proposes, the engine checks, the scientist decides.** `qpilot
 | Environment | What Studio does |
 |---|---|
 | `QPILOT_MODEL_PROVIDER` set (to anything, `none` included) | honoured exactly; a remote provider is used only because you named it |
-| `QPILOT_MODEL_PROVIDER` unset | the local OpenAI-compatible endpoint `http://127.0.0.1:11434/v1` (Ollama), model `QPILOT_STUDIO_MODEL` or `qwen2.5:7b`; no API key is sent |
+| `QPILOT_MODEL_PROVIDER` unset | the local OpenAI-compatible endpoint `http://127.0.0.1:11434/v1` (Ollama), model `QPILOT_STUDIO_MODEL` or `qwen2.5:7b`; no key is sent |
 | provider unset, `QPILOT_MODEL_ENDPOINT` not on this machine | refused (a remote model needs the provider named) |
 
 - **No server running:** the first call is refused, the model is not asked again, and qPilot's rules answer alone, with a note asking you to type your controls (`tests/ai/test_interpret.py`, network blocked).
