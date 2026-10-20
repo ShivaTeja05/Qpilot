@@ -293,3 +293,23 @@ def test_the_audit_words_geNorm_M_as_results_does(api, world):
     study = call_ready(api, url(world, "study"))
     for ref in [*view["references"], *study["references"]]:
         assert ref["m"] == f"{stability[ref['gene']]:.2f}", ref
+
+
+def test_the_issue_queue_is_the_audit_s_and_its_counts_recount(api, world, audit):
+    """Every issue is the audit's own (issues.json, in order); a decision's 'changes N calls'
+    is the number of genes whose call that choice alone changes, recounted from the grid."""
+    view = call_ready(api, url(world, "issues"))
+    queue = json.loads((audit_folder(world) / "issues.json").read_text())
+    assert view["n_issues"] == len(view["issues"]) == len(queue)
+    assert [i["id"] for i in view["issues"]] == [q["issue_id"] for q in queue]
+    for issue, raw in zip(view["issues"], queue, strict=True):
+        if raw["kind"] != "decision":
+            continue
+        d = raw["loci"]["decision"]
+        alone = set()
+        for option in audit.options[d]:
+            cell = audit.cell(**{d: option})
+            alone |= set(cell.index[cell["call"] != audit.planned["call"]])
+        assert sorted(raw["evidence"]["genes_flipped_alone"]) == sorted(alone), d
+        counts = [int(n) for n in re.findall(r"changes (\d+) call", issue["title"])]
+        assert counts in ([], [len(alone)]), issue["title"]
