@@ -8,7 +8,7 @@ import { useState } from "react";
 import { sectionPath } from "@/shell/sections";
 import { Button, Card, CardBody, CardHeader, EmptyState, ErrorPanel, JobCard, KeyValues, LoadingBlock } from "@/ui";
 import { effectivePayload, makerText } from "@/lib/vocab";
-import { activeJob, useStartDraft, type Proposal, type ProposalList, type Workspace } from "./api";
+import { activeJob, useStartDraft, type PrismDrafted, type Proposal, type ProposalList, type Workspace } from "./api";
 import type { Flow } from "./flow";
 import { ProposalItem } from "./Inbox";
 
@@ -23,12 +23,11 @@ export function ProjectCard({
 }) {
   const draft = useStartDraft(workspace.key);
   const [jobId, setJobId] = useState<string | null>(null);
-  const running = activeJob(workspace, "draft");
+  const running = activeJob(workspace, "prism.draft");
   const shownJob = jobId ?? running?.id ?? null;
   const { accepted, waiting, earlier } = flow.project;
 
-  const start = () =>
-    draft.mutate({ expected_head: inbox.data?.head ?? workspace.proposals_head ?? null }, { onSuccess: ({ job }) => setJobId(job.id) });
+  const start = () => draft.mutate(undefined, { onSuccess: ({ job }) => setJobId(job.id) });
 
   const draftButton = (label: string, variant: "primary" | "secondary" = "primary") => (
     <Button
@@ -100,7 +99,7 @@ export function ProjectCard({
         {draft.error ? <ErrorPanel error={draft.error} title="No Prism project drafted" compact /> : null}
         {shownJob ? (
           <JobCard id={shownJob} onDismiss={() => setJobId(null)}>
-            {() => <p className="text-[13px] text-fg">Drafted. Check the project above, then accept it.</p>}
+            {(result) => <p className="text-[13px] text-fg">{(result as PrismDrafted | null)?.message ?? "Drafted."}</p>}
           </JobCard>
         ) : null}
       </CardBody>

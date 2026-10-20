@@ -3,7 +3,7 @@
  * Studio inbox of the two Prism stages. Every query key starts with ["w", sid] so a live event
  * about the session refreshes it; slow work answers 202 {job} and is followed with `useJob`.
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, unwrap, type JobView, type Schemas } from "@/api/client";
 
 export type Proposal = Schemas["Proposal"];
@@ -11,132 +11,202 @@ export type ProposalList = Schemas["ProposalList"];
 export type Workspace = Schemas["WorkspaceView"];
 
 // ---------------------------------------------------------------------------------------------
-// Shapes (the service's JSON; `qpilot/studio_service.py` preview_prism / exports / round_trip)
+// Shapes: api-files' contract (`qpilot/web/contract_files.py`), mirrored until it lands in
+// `schema.d.ts`; then each becomes `Schemas["…"]`.
+
+/** A file the server wrote into its private export folder, offered for download. */
+export interface DownloadLink {
+  id: string;
+  /** `/api/downloads/<id>` (served as an attachment). */
+  url: string;
+  name: string;
+  bytes: number;
+}
+
+/** `GET …/prism`: where Prism stands for this session. */
+export interface PrismStatus {
+  session_id: string;
+  study_id: string;
+  choices_confirmed: boolean;
+  project: { status: "accepted" | "waiting" | "none"; proposal_id?: string | null; template_id?: string | null; genes: string[]; made_by?: string | null };
+  can_draft: boolean;
+  can_send: boolean;
+  /** What to do next, in words. */
+  next: string;
+  bundles: number;
+}
 
 /** One usual route from the instrument to Prism, recomputed by the engine on this study. */
-export interface RouteRow {
+export interface PrismRoute {
   /** `ddcq` | `linear_welch` | `linear_student`. */
-  id: string;
+  route: string;
   label: string;
   /** How many conclusions this route draws differently from the engine. */
   n_differ: number;
+  n_genes: number;
   /** Which genes. */
   genes: string[];
-  /** Each differing gene's conclusion under this route, when the server computed it. */
-  conclusions?: Record<string, string> | null;
+  /** The fact id of `n_differ`. */
+  fact: string;
+  genes_fact?: string | null;
 }
 
+/** `GET …/prism/routes`: why the bridge matters, on this study's own plates. */
 export interface PrismRoutes {
+  session_id: string;
   study_id: string;
-  n_genes: number;
-  routes: RouteRow[];
-  /** The engine's conclusion per gene (for "engine ▲ up · this route — no call"). */
-  engine?: Record<string, string> | null;
+  n_genes: number | null;
+  routes: PrismRoute[];
+  note: string;
 }
 
+/** The first rows of one table Prism will import (cells as text, as in the CSV). */
 export interface PreviewTable {
+  gene: string;
   columns: string[];
   n_rows: number;
-  /** The CSV's first lines (header first), exactly as the file will hold them. */
-  head: string[];
+  rows: string[][];
 }
 
-export interface ExportedChoice {
+/** One analysis choice the bundle is exported at, and who decided it. */
+export interface PrismChoice {
   card_id: string;
   /** The card's title ("Reference genes"), when the server sends it. */
   title?: string | null;
-  dimension?: string | null;
+  dimension: string;
   option: string;
   /** The option's label ("Top 15 % by MYCN expression"), when the server sends it. */
   option_label?: string | null;
-  recommended?: string | null;
+  recommended: string;
   value?: unknown;
-  /** `human` | `system` | an agent name; null while the card is open (recommended option). */
-  actor: string | null;
-  status?: string | null;
+  /** `human` | `system` | an agent; null while the card is open (exported at its recommended option). */
+  actor?: string | null;
+  status: string;
+  /** Who decided, in words. */
+  decided_by: string;
 }
 
-export interface FigureGroup {
-  name: string;
+/** Every biological unit of one group (log2 relative quantity), and the mean with its 95 % CI. */
+export interface GroupPoints {
+  group: string;
+  units: string[];
+  values: number[];
   n: number;
-  mean: number | null;
-  ci_lo: number | null;
-  ci_hi: number | null;
-  points: { unit: string; value: number }[];
+  mean?: number | null;
+  ci_lo?: number | null;
+  ci_hi?: number | null;
 }
 
-/** One gene's figure: every biological unit per group with the group mean and its 95 % CI. */
-export interface GeneFigure {
+/** An approximation of the template's graph for one gene (Prism draws the real one). */
+export interface PrismFigureData {
   gene: string;
-  /** What the values are (log2 relative quantity). */
-  scale?: string | null;
-  groups: FigureGroup[];
+  scale: string;
+  groups: GroupPoints[];
+  note: string;
 }
 
+export interface PrismTemplate {
+  id: string;
+  file: string;
+  /** False: not made in Prism yet (the bundle's README says how). */
+  available: boolean;
+  layout: string;
+  test: string;
+  graph: string;
+}
+
+/** `GET …/prism/preview?gene=`: what Send to Prism would write (nothing is written). */
 export interface PrismPreview {
-  writes_nothing?: boolean;
+  session_id: string;
+  study_id: string;
+  writes_nothing: boolean;
   bundle: {
     study_id: string;
     template_id: string;
     test: string;
-    chain_head?: string | null;
+    chain_head: string;
     info: Record<string, string | undefined>;
-    tables: { gene: string; columns: string[]; n_rows: number; csv: string }[];
+    tables: { name?: string; gene?: string; csv: string; n_rows?: number }[];
   };
-  template: { id: string; file: string; available: boolean; layout: string; test: string; graph: string };
-  tables: Record<string, PreviewTable>;
-  choices: ExportedChoice[];
   would_write: string[];
+  template: PrismTemplate;
+  genes: string[];
+  tables: PreviewTable[];
+  choices: PrismChoice[];
+  caption?: string | null;
+  /** For the gene asked for (or the first); column layout only. */
+  figure?: PrismFigureData | null;
   not_affiliated: string;
-  /** Per gene, when the server sends the figure's points (else the page reads the tables). */
-  figures?: Record<string, GeneFigure> | null;
 }
 
-/** A bundle Send to Prism wrote from this session. */
-export interface BundleEntry {
-  /** Opaque id the round trip names it by (never a path). */
-  id: string;
+/** One bundle sent to Prism from this session. */
+export interface PrismBundleView {
+  /** Opaque id of a bundle this launch wrote (round trip, download); null for an older one. */
+  id: string | null;
   study_id: string;
-  at: string;
   bundle_sha256: string;
-  /** True when it was sent for the analysis shown now (its decisions have not moved since). */
-  current?: boolean | null;
-  /** The folder its tables were last sent back from, when a round trip read one. */
-  sent_back_dir?: string | null;
-  /** Where Prism is told to send the tables back to (`<bundle>/sent_back`). */
-  suggested_folder?: string | null;
-  /** A download id for the zip (GET /api/downloads/{id}). */
-  download?: string | null;
+  at: string;
+  folder: string;
+  exists: boolean;
+  /** Its analysis is the session's current one. */
+  current: boolean;
+  /** The folder a round trip read, or where send_back.pzc writes. */
+  sent_back_folder?: string | null;
+  /** A round trip can be started from this page. */
+  round_trip: boolean;
+  download?: DownloadLink | null;
 }
 
-export interface SendResult {
-  bundle_id?: string | null;
-  bundle_sha256?: string | null;
-  files?: string[];
-  notes?: string[];
-  /** GET /api/downloads/{id}. */
-  download?: string | null;
-  download_name?: string | null;
-  launched?: boolean;
-  /** Prism finished the script (its done file appeared). */
+/** The result of a Send to Prism job. */
+export interface PrismSent {
+  bundle: PrismBundleView;
+  n_files: number;
+  notes: string[];
+  launched: boolean;
+  /** Prism finished run.pzc (when launched). */
   done?: boolean | null;
   /** Why Prism was not started, in words. */
-  note?: string | null;
-  /** What to run on the computer that has Prism. */
-  command_line?: string | null;
+  launch_note?: string | null;
+  /** What to run on the computer with Prism. */
+  command_line: string;
+  send_back_command: string;
+  download: DownloadLink;
+}
+
+/** The result of a Draft the Prism project job. */
+export interface PrismDrafted {
+  status: string;
+  proposal_id?: string | null;
+  reason?: string | null;
+  message: string;
 }
 
 export interface DiffItem {
   kind: string;
-  table?: string;
+  table: string;
   gene: string;
   row?: string | null;
   column?: string | null;
   exported?: number | null;
-  returned?: unknown;
-  detail?: string | null;
+  returned?: number | null;
+  note: string;
 }
 
+/** The result of a round trip: what changed in Prism, as proposals with consequences. */
+export interface PrismRoundTrip {
+  bundle_id: string;
+  study_id: string;
+  items: DiffItem[];
+  /** Ids of the proposals added to the Round trip inbox. */
+  proposed: string[];
+  refused: { reason?: string | null; subject?: string | null }[];
+  notes: string[];
+  /** What all the proposed exclusions do together. */
+  combined?: Record<string, unknown> | null;
+  message: string;
+}
+
+/** One gene's numbers before → after leaving values out (a round-trip consequence). */
 export interface GeneChange {
   fc_before?: number | null;
   fc_after?: number | null;
@@ -147,22 +217,6 @@ export interface GeneChange {
   conclusion_before?: string | null;
   conclusion_after?: string | null;
   withheld_after?: string | null;
-}
-
-export interface CombinedConsequence {
-  exclusions: { gene: string; biological_unit: string; well_rep?: number; well?: string }[];
-  genes: Record<string, GeneChange>;
-  n_conclusions_changed: number;
-  n_genes: number;
-  changed_genes: string[];
-}
-
-export interface RoundTripResult {
-  items: DiffItem[];
-  notes: string[];
-  combined_consequence?: CombinedConsequence | null;
-  /** The inbox outcome: ids proposed, and ids already decided / refused. */
-  inbox?: Record<string, string[] | undefined> | null;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -190,8 +244,9 @@ const base = (sid: string) => `/api/sessions/${encodeURIComponent(sid)}/prism`;
 
 export const prismKeys = {
   all: (sid: string) => ["w", sid, "prism"] as const,
+  status: (sid: string) => ["w", sid, "prism", "status"] as const,
   routes: (sid: string) => ["w", sid, "prism", "routes"] as const,
-  preview: (sid: string) => ["w", sid, "prism", "preview"] as const,
+  preview: (sid: string, gene: string | null) => ["w", sid, "prism", "preview", gene ?? ""] as const,
   bundles: (sid: string) => ["w", sid, "prism", "bundles"] as const,
   inbox: (sid: string, stage: "prism" | "roundtrip") => ["w", sid, "proposals", stage] as const,
 };
@@ -206,24 +261,38 @@ export function usePrismRoutes(sid: string, enabled = true) {
   });
 }
 
-/** What Send to Prism would write (nothing is written). */
-export function usePrismPreview(sid: string, enabled = true) {
+/** Where Prism stands: the project of the current analysis, and what can be done next. */
+export function usePrismStatus(sid: string, enabled = true) {
   return useQuery({
-    queryKey: prismKeys.preview(sid),
+    queryKey: prismKeys.status(sid),
     enabled,
-    queryFn: () => request<PrismPreview>(`${base(sid)}/preview`),
+    queryFn: () => request<PrismStatus>(base(sid)),
   });
 }
 
-/** Every bundle Send to Prism wrote from this session, newest last. */
+/**
+ * What Send to Prism would write (nothing is written), with the figure of `gene` (the first
+ * gene when null). Switching genes keeps the previous answer on screen until the next arrives.
+ */
+export function usePrismPreview(sid: string, gene: string | null = null, enabled = true) {
+  return useQuery({
+    queryKey: prismKeys.preview(sid, gene),
+    enabled,
+    queryFn: () =>
+      request<PrismPreview>(`${base(sid)}/preview?rows=${PREVIEW_ROWS}${gene ? `&gene=${encodeURIComponent(gene)}` : ""}`),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Rows of each table shown in the preview. */
+export const PREVIEW_ROWS = 8;
+
+/** Every bundle sent to Prism from this session, newest first. */
 export function usePrismBundles(sid: string, enabled = true) {
   return useQuery({
     queryKey: prismKeys.bundles(sid),
     enabled,
-    queryFn: async () => {
-      const data = await request<BundleEntry[] | { bundles: BundleEntry[] }>(`${base(sid)}/bundles`);
-      return Array.isArray(data) ? data : data.bundles;
-    },
+    queryFn: async () => (await request<{ session_id: string; bundles: PrismBundleView[] }>(`${base(sid)}/bundles`)).bundles,
   });
 }
 
@@ -243,7 +312,7 @@ type Started = { job: JobView };
 function useStart<B>(sid: string, action: "draft" | "send" | "roundtrip") {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: B) => request<Started>(`${base(sid)}/${action}`, { method: "POST", body }),
+    mutationFn: (body: B) => request<Started>(`${base(sid)}/${action}`, { method: "POST", body: body ?? undefined }),
     onSuccess: ({ job }) => {
       qc.setQueryData(["job", job.id], job);
     },
@@ -251,22 +320,16 @@ function useStart<B>(sid: string, action: "draft" | "send" | "roundtrip") {
 }
 
 /** POST draft: the AI (or the rule) drafts the Prism project as a proposal. */
-export const useStartDraft = (sid: string) => useStart<{ expected_head?: string | null }>(sid, "draft");
+export const useStartDraft = (sid: string) => useStart<void>(sid, "draft");
 
 /** POST send: write the bundle, zip it, and start Prism when it is installed. */
-export const useStartSend = (sid: string) => useStart<{ expected_head?: string | null; share?: boolean }>(sid, "send");
+export const useStartSend = (sid: string) => useStart<void>(sid, "send");
 
 /** POST roundtrip: compare what came back from Prism with the bundle. */
-export const useStartRoundTrip = (sid: string) =>
-  useStart<{ bundle: string; folder: string; expected_head?: string | null }>(sid, "roundtrip");
+export const useStartRoundTrip = (sid: string) => useStart<{ bundle: string; folder: string }>(sid, "roundtrip");
 
-/** The URL a download id is served from (a same-origin link; the server sends it as a file). */
-export function downloadUrl(id: string): string {
-  return `/api/downloads/${encodeURIComponent(id)}`;
-}
-
-/** The newest still-running job of this session whose kind ends with `suffix` (survives navigation). */
-export function activeJob(workspace: Workspace, suffix: string): JobView | null {
-  const jobs = (workspace.active_jobs ?? []).filter((j) => j.kind.endsWith(suffix));
+/** The newest still-running job of this session of one kind (`prism.send` …): it survives navigation. */
+export function activeJob(workspace: Workspace, kind: "prism.draft" | "prism.send" | "prism.roundtrip"): JobView | null {
+  const jobs = (workspace.active_jobs ?? []).filter((j) => j.kind === kind);
   return jobs.length ? jobs[jobs.length - 1]! : null;
 }

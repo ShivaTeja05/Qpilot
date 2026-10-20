@@ -6,11 +6,10 @@
 import { AlertTriangle, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { sectionPath } from "@/shell/sections";
-import { Card, CardBody, CardHeader, ConclusionTag, ErrorPanel, LoadingBlock } from "@/ui";
+import { Card, CardBody, CardHeader, ErrorPanel, LoadingBlock } from "@/ui";
 import { cn } from "@/lib/cn";
 import { count, ofTotal } from "@/lib/format";
-import { asConclusion } from "@/lib/vocab";
-import { usePrismRoutes, type PrismRoutes, type RouteRow, type Workspace } from "./api";
+import { usePrismRoutes, type PrismRoute, type PrismRoutes, type Workspace } from "./api";
 import { ROUTE_ORDER, ROUTE_WORDS } from "./words";
 
 /** The route a lab most often takes (2^-ΔΔCq, then a t test in Prism): the headline. */
@@ -40,7 +39,7 @@ export function RoutesCard({ workspace }: { workspace: Workspace }) {
 }
 
 export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: Workspace }) {
-  const rows = [...data.routes].sort((a, b) => rank(a.id) - rank(b.id));
+  const rows = [...data.routes].sort((a, b) => rank(a.route) - rank(b.route));
   if (!rows.length) {
     return (
       <p className="text-[13px] text-muted">
@@ -49,7 +48,7 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
       </p>
     );
   }
-  const headline = rows.find((r) => r.id === HEADLINE) ?? rows.reduce((a, b) => (b.n_differ > a.n_differ ? b : a));
+  const headline = rows.find((r) => r.route === HEADLINE) ?? rows.reduce((a, b) => (b.n_differ > a.n_differ ? b : a));
   const alarming = headline.n_differ > 0;
   return (
     <div className="flex flex-col gap-4">
@@ -63,7 +62,7 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
         <p className="text-[15px] leading-snug text-fg">
           Taken the usual way — 2^-ΔΔCq in a spreadsheet, then a t test in Prism —{" "}
           <strong className={cn("font-semibold tabular", alarming && "text-danger")}>
-            {ofTotal(headline.n_differ, data.n_genes)}
+            {ofTotal(headline.n_differ, headline.n_genes)}
           </strong>{" "}
           conclusions on this study come out differently from the engine's.
         </p>
@@ -71,7 +70,7 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
 
       <ol className="flex flex-col divide-y divide-line rounded-lg border border-line" aria-label="Routes into Prism">
         {rows.map((row) => (
-          <RouteItem key={row.id} row={row} nGenes={data.n_genes} engine={data.engine ?? null} workspace={workspace} />
+          <RouteItem key={row.route} row={row} workspace={workspace} />
         ))}
       </ol>
 
@@ -89,22 +88,13 @@ function rank(id: string): number {
   return i < 0 ? ROUTE_ORDER.length : i;
 }
 
-function RouteItem({
-  row,
-  nGenes,
-  engine,
-  workspace,
-}: {
-  row: RouteRow;
-  nGenes: number;
-  engine: Record<string, string> | null;
-  workspace: Workspace;
-}) {
+function RouteItem({ row, workspace }: { row: PrismRoute; workspace: Workspace }) {
   const [all, setAll] = useState(false);
-  const words = ROUTE_WORDS[row.id];
+  const nGenes = row.n_genes;
+  const words = ROUTE_WORDS[row.route];
   const share = nGenes > 0 ? row.n_differ / nGenes : 0;
   const genes = all ? row.genes : row.genes.slice(0, SHOWN);
-  const listId = `prism-route-genes-${row.id}`;
+  const listId = `prism-route-genes-${row.route}`;
   return (
     <li className="grid gap-3 p-3 md:grid-cols-[minmax(0,1fr)_9.5rem]">
       <div className="min-w-0">
@@ -115,7 +105,7 @@ function RouteItem({
             <ul id={listId} className="flex flex-wrap gap-1.5" aria-label={`Genes this route concludes differently (${count(row.genes.length)})`}>
               {genes.map((g) => (
                 <li key={g}>
-                  <GeneChip gene={g} workspace={workspace} engine={engine?.[g]} route={row.conclusions?.[g]} />
+                  <GeneChip gene={g} workspace={workspace} />
                 </li>
               ))}
             </ul>
@@ -153,33 +143,14 @@ function RouteItem({
   );
 }
 
-function GeneChip({
-  gene,
-  workspace,
-  engine,
-  route,
-}: {
-  gene: string;
-  workspace: Workspace;
-  engine?: string;
-  route?: string;
-}) {
-  const both = engine != null && route != null;
+function GeneChip({ gene, workspace }: { gene: string; workspace: Workspace }) {
   return (
     <a
       href={`#${sectionPath(workspace, "gene", gene)}`}
-      className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-fg hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      title={both ? `Engine: ${asConclusion(engine)}; this route: ${asConclusion(route)}. Open ${gene}.` : `Open ${gene}`}
+      className="inline-flex items-center rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-fg hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      title={`Open ${gene}`}
     >
       {gene}
-      {both ? (
-        <span className="inline-flex items-center gap-1 font-sans text-[11px] text-muted">
-          <ConclusionTag conclusion={asConclusion(engine)} compact />
-          <span aria-hidden>→</span>
-          <span className="sr-only">this route:</span>
-          <ConclusionTag conclusion={asConclusion(route)} compact />
-        </span>
-      ) : null}
     </a>
   );
 }

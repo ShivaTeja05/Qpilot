@@ -6,15 +6,15 @@
 import { FolderInput, Inbox as InboxIcon } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Badge, Button, Card, CardBody, CardHeader, EmptyState, ErrorPanel, Field, Input, JobCard, LoadingBlock, Select } from "@/ui";
-import { count, dateTime, ofTotal, plural, shortHash } from "@/lib/format";
+import { count, dateTime, plural, shortHash } from "@/lib/format";
 import {
   activeJob,
   usePrismBundles,
   useStartRoundTrip,
-  type BundleEntry,
+  type PrismBundleView,
+  type PrismRoundTrip,
   type Proposal,
   type ProposalList,
-  type RoundTripResult,
   type Workspace,
 } from "./api";
 import { ProposalItem } from "./Inbox";
@@ -30,15 +30,17 @@ export function RoundTripCard({
   const bundles = usePrismBundles(workspace.key);
   const start = useStartRoundTrip(workspace.key);
   const [jobId, setJobId] = useState<string | null>(null);
-  const running = activeJob(workspace, "roundtrip");
+  const running = activeJob(workspace, "prism.roundtrip");
   const shownJob = jobId ?? running?.id ?? null;
 
-  const list = useMemo(() => [...(bundles.data ?? [])].reverse(), [bundles.data]);
+  // newest first; only bundles this launch wrote can be read back from the page
+  const list = useMemo(() => (bundles.data ?? []).filter((b): b is PrismBundleView & { id: string } => Boolean(b.id && b.round_trip)), [bundles.data]);
+  const older = (bundles.data?.length ?? 0) - list.length;
   const [bundleId, setBundleId] = useState<string | undefined>(undefined);
   const bundle = list.find((b) => b.id === bundleId) ?? list[0];
   // The folder Prism sends this bundle's tables back to is suggested until the person types one.
   const [typed, setTyped] = useState<string | null>(null);
-  const folder = typed ?? bundle?.sent_back_dir ?? bundle?.suggested_folder ?? "";
+  const folder = typed ?? bundle?.sent_back_folder ?? "";
   const folderId = useId();
   const bundleSelectId = useId();
 
@@ -59,9 +61,23 @@ export function RoundTripCard({
         ) : bundles.error ? (
           <ErrorPanel error={bundles.error} title="The bundles could not be listed" onRetry={() => void bundles.refetch()} compact />
         ) : !list.length ? (
-          <EmptyState icon={<FolderInput />} title="Nothing has been sent to Prism yet" compact>
-            Send to Prism first. After editing in Prism, run <span className="font-mono">send_back.pzc</span> there and come
-            back here.
+          <EmptyState
+            icon={<FolderInput />}
+            title={older ? "No bundle from this launch to read back" : "Nothing has been sent to Prism yet"}
+            compact
+          >
+            {older ? (
+              <>
+                {plural(older, "bundle was", "bundles were")} sent from this session before qPilot was last started (or from
+                another page); the page reads back only bundles it wrote itself. Send again, or compare in a terminal with{" "}
+                <span className="font-mono">qpilot prism diff</span>.
+              </>
+            ) : (
+              <>
+                Send to Prism first. After editing in Prism, run <span className="font-mono">send_back.pzc</span> there and
+                come back here.
+              </>
+            )}
           </EmptyState>
         ) : (
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
@@ -78,10 +94,7 @@ export function RoundTripCard({
               onSubmit={(e) => {
                 e.preventDefault();
                 if (!bundle || !folder.trim()) return;
-                start.mutate(
-                  { bundle: bundle.id, folder: folder.trim(), expected_head: inbox.data?.head ?? null },
-                  { onSuccess: ({ job }) => setJobId(job.id) },
-                );
+                start.mutate({ bundle: bundle.id, folder: folder.trim() }, { onSuccess: ({ job }) => setJobId(job.id) });
               }}
             >
               <Field label="Bundle sent from this session" htmlFor={bundleSelectId}>
@@ -92,10 +105,10 @@ export function RoundTripCard({
                     setBundleId(v);
                     setTyped(null);
                   }}
-                  options={list.map((b) => ({ value: b.id, label: bundleLabel(b, workspace.study_id), hint: shortHash(b.bundle_sha256, 12) }))}
+                  options={list.map((b) => ({ value: b.id, label: bundleLabel(b), hint: shortHash(b.bundle_sha256, 12) }))}
                 />
               </Field>
-              {bundle && !isCurrent(bundle, workspace.study_id) ? (
+              {bundle && !bundle.current ? (
                 <p className="text-[12.5px] text-warn">
                   This bundle was sent for an earlier analysis: the choices changed since, so no consequences can be computed.
                   Send again and edit the new projects.
@@ -134,7 +147,7 @@ export function RoundTripCard({
         {start.error ? <ErrorPanel error={start.error} title="Could not read what came back from Prism" compact /> : null}
         {shownJob ? (
           <JobCard id={shownJob} onDismiss={() => setJobId(null)}>
-            {(result) => <RoundTripSummary result={(result ?? { items: [], notes: [] }) as RoundTripResult} />}
+            {(result) => (result ? <RoundTripSummary result={result as PrismRoundTrip} /> : null)}
           </JobCard>
         ) : null}
 
@@ -184,27 +197,17 @@ function basisStudy(p: Proposal): string | null {
   return typeof basis?.study_id === "string" ? basis.study_id : null;
 }
 
-function isCurrent(b: BundleEntry, studyId: string | null | undefined): boolean {
-  return b.current ?? b.study_id === studyId;
+function bundleLabel(b: PrismBundleView): string {
+  return `Sent ${dateTime(b.at)} · ${b.current ? "this analysis" : "an earlier analysis"}`;
 }
 
-function bundleLabel(b: BundleEntry, studyId: string | null | undefined): string {
-  return `Sent ${dateTime(b.at)} · ${isCurrent(b, studyId) ? "this analysis" : "an earlier analysis"}`;
-}
-
-export function RoundTripSummary({ result }: { result: RoundTripResult }) {
-  const items = result.items ?? [];
-  const added = result.inbox?.proposed?.length ?? 0;
-  const combined = result.combined_consequence;
-  const byKind = items.reduce<Record<string, number>>((acc, it) => ({ ...acc, [it.kind]: (acc[it.kind] ?? 0) + 1 }), {});
+export function RoundTripSummary({ result }: { result: PrismRoundTrip }) {
+  const byKind = result.items.reduce<Record<string, number>>((acc, it) => ({ ...acc, [it.kind]: (acc[it.kind] ?? 0) + 1 }), {});
   return (
     <div className="flex flex-col gap-2 text-[13px] text-fg">
-      <p>
-        {items.length ? `${plural(items.length, "difference")} since the export` : "No differences: Prism sent back exactly what qPilot wrote"}
-        {items.length ? `; ${plural(added, "question")} added below.` : "."}
-      </p>
-      {items.length ? (
-        <ul className="flex flex-wrap gap-1.5">
+      <p>{result.items.length ? result.message : "No differences: Prism sent back exactly what qPilot wrote."}</p>
+      {result.items.length ? (
+        <ul className="flex flex-wrap gap-1.5" aria-label="Differences by kind">
           {Object.entries(byKind).map(([kind, n]) => (
             <li key={kind}>
               <Badge tone={kind === "changed" ? "danger" : "warn"}>
@@ -214,16 +217,21 @@ export function RoundTripSummary({ result }: { result: RoundTripResult }) {
           ))}
         </ul>
       ) : null}
-      {combined && combined.exclusions.length > 1 ? (
-        <p>
-          All {count(combined.exclusions.length)} exclusions together change{" "}
-          <strong className={combined.n_conclusions_changed ? "text-danger" : "text-ok"}>
-            {ofTotal(combined.n_conclusions_changed, combined.n_genes)}
-          </strong>{" "}
-          conclusions{combined.changed_genes.length ? ` (${combined.changed_genes.join(", ")})` : ""}.
-        </p>
+      {result.refused.length ? (
+        <div className="text-[12.5px] text-muted">
+          <p>Not asked ({count(result.refused.length)}):</p>
+          <ul className="list-disc pl-5">
+            {result.refused.map((r, i) => (
+              <li key={i}>
+                {r.subject ? <span className="font-mono">{r.subject}</span> : null}
+                {r.subject && r.reason ? ": " : null}
+                {r.reason}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
-      {result.notes?.length ? (
+      {result.notes.length ? (
         <ul className="list-disc pl-5 text-[12.5px] text-muted">
           {result.notes.map((n, i) => (
             <li key={i}>{n}</li>

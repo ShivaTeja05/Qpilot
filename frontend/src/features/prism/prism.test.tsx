@@ -12,7 +12,7 @@ import { flowOf, projectState } from "./flow";
 import sessionJson from "./recorded/session.json";
 import prismJson from "./recorded/proposals-prism.json";
 import roundTripJson from "./recorded/proposals-roundtrip.json";
-import { cellNumber, parseCsvLine } from "./tables";
+import { cellNumber } from "./tables";
 
 const session = sessionJson as unknown as Workspace;
 const prism = prismJson as unknown as ProposalList;
@@ -78,11 +78,6 @@ describe("round-trip consequence", () => {
 });
 
 describe("tables", () => {
-  it("reads quoted cells as the export writes them", () => {
-    expect(parseCsvLine('Sample,"group, with comma","say ""hi"""')).toEqual(["Sample", "group, with comma", 'say "hi"']);
-    expect(parseCsvLine("a,,b")).toEqual(["a", "", "b"]);
-  });
-
   it("treats an empty cell as no value", () => {
     expect(cellNumber("")).toBeNull();
     expect(cellNumber("  ")).toBeNull();

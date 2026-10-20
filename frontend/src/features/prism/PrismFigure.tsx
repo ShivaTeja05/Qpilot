@@ -12,7 +12,7 @@ import { usePointNav, useTip, useWidth } from "@/charts/core/hooks";
 import { beeswarm } from "@/charts/core/layout";
 import { Tooltip } from "@/charts/core/Tooltip";
 import { count, fixed, MINUS } from "@/lib/format";
-import type { GeneFigure } from "./api";
+import type { PrismFigureData } from "./api";
 
 const TONES = ["var(--accent)", "var(--text-muted)", "var(--info)", "var(--warn)"];
 const TOP = 12;
@@ -32,7 +32,7 @@ interface Dot {
   y: number;
 }
 
-export function PrismFigure({ figure, caption }: { figure: GeneFigure; caption?: string }) {
+export function PrismFigure({ figure, caption }: { figure: PrismFigureData; caption?: string }) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
   const height = Math.max(260, Math.min(360, Math.round(width * 0.55)));
@@ -40,7 +40,7 @@ export function PrismFigure({ figure, caption }: { figure: GeneFigure; caption?:
 
   const y = useMemo(() => {
     const values = groups.flatMap((g) => [
-      ...g.points.map((p) => p.value),
+      ...g.values,
       ...[g.ci_lo, g.ci_hi, g.mean].filter((v): v is number => typeof v === "number" && Number.isFinite(v)),
     ]);
     const lo = values.length ? Math.min(...values) : 0;
@@ -61,7 +61,8 @@ export function PrismFigure({ figure, caption }: { figure: GeneFigure; caption?:
     const out: Dot[] = [];
     groups.forEach((g, gi) => {
       const half = Math.min(band * 0.34, 90);
-      for (const b of beeswarm(g.points, (p) => y(p.value), r, half, 0.5)) {
+      const points = g.values.map((value, i) => ({ unit: g.units[i] ?? "", value }));
+      for (const b of beeswarm(points, (p) => y(p.value), r, half, 0.5)) {
         out.push({ unit: b.item.unit, value: b.item.value, gi, x: centreX(gi) + b.dy, y: b.x });
       }
     });
@@ -77,18 +78,18 @@ export function PrismFigure({ figure, caption }: { figure: GeneFigure; caption?:
   const tipFor = (d: Dot) => ({
     title: `Unit ${d.unit}`,
     value: log2Text(d.value),
-    lines: [groups[d.gi]?.name, "log2 relative quantity"],
+    lines: [groups[d.gi]?.group, "log2 relative quantity"],
   });
 
   const summary = summaryOf(figure);
   const legend: LegendItem[] = [
-    ...groups.slice(0, 4).map((g, gi) => ({ mark: { shape: "circle" as const, tone: TONES[gi]! }, label: `${g.name} (${count(g.n)})` })),
+    ...groups.slice(0, 4).map((g, gi) => ({ mark: { shape: "circle" as const, tone: TONES[gi]! }, label: `${g.group} (${count(g.n)})` })),
     { swatch: <LineSwatch tone="var(--text)" width={3} />, label: "Mean and 95 % confidence interval" },
   ];
 
   const columns: Column<Dot>[] = [
     { key: "unit", header: "Biological unit", cell: (d) => d.unit, sort: (d) => d.unit },
-    { key: "group", header: "Group", cell: (d) => groups[d.gi]?.name ?? "", sort: (d) => d.gi },
+    { key: "group", header: "Group", cell: (d) => groups[d.gi]?.group ?? "", sort: (d) => d.gi },
     { key: "value", header: "log2 relative quantity", cell: (d) => log2Text(d.value), sort: (d) => d.value, numeric: true },
   ];
 
@@ -98,7 +99,7 @@ export function PrismFigure({ figure, caption }: { figure: GeneFigure; caption?:
       summary={summary}
       legend={legend}
       caption={caption}
-      live={active ? `${tipFor(active).title}, ${groups[active.gi]?.name}: ${tipFor(active).value}` : undefined}
+      live={active ? `${tipFor(active).title}, ${groups[active.gi]?.group}: ${tipFor(active).value}` : undefined}
       table={() => <DataTable columns={columns} rows={order} rowKey={(d) => `${d.gi}:${d.unit}`} caption={summary} />}
     >
       <div
@@ -134,11 +135,11 @@ export function PrismFigure({ figure, caption }: { figure: GeneFigure; caption?:
             const cx = centreX(gi);
             const capW = Math.min(band * 0.22, 26);
             const meanW = Math.min(band * 0.42, 52);
-            const has = (v: number | null) => typeof v === "number" && Number.isFinite(v);
+            const has = (v: number | null | undefined): v is number => typeof v === "number" && Number.isFinite(v);
             return (
-              <g key={g.name}>
+              <g key={g.group}>
                 <text x={cx} y={height - BOTTOM + 18} textAnchor="middle" fontSize={12} fontWeight={600} fill="var(--text)">
-                  {g.name}
+                  {g.group}
                 </text>
                 <text x={cx} y={height - BOTTOM + 33} textAnchor="middle" fontSize={11} fill="var(--text-muted)" className="tabular">
                   {count(g.n)} units
@@ -183,11 +184,11 @@ export function PrismFigure({ figure, caption }: { figure: GeneFigure; caption?:
 }
 
 /** One sentence for screen readers: the gene, each group's n and mean with its interval. */
-export function summaryOf(figure: GeneFigure): string {
+export function summaryOf(figure: PrismFigureData): string {
   const parts = figure.groups.map((g) => {
     const mean = g.mean != null ? `, mean ${log2Text(g.mean)}` : "";
     const ci = g.ci_lo != null && g.ci_hi != null ? ` (95 % CI ${log2Text(g.ci_lo)} to ${log2Text(g.ci_hi)})` : "";
-    return `${g.name}: ${count(g.n)} units${mean}${ci}`;
+    return `${g.group}: ${count(g.n)} units${mean}${ci}`;
   });
   return `${figure.gene}, log2 relative quantity per biological unit. ${parts.join("; ")}.`;
 }

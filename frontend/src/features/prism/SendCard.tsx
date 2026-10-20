@@ -7,8 +7,8 @@
 import { CheckCircle2, Download, Info, Send, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { Button, Card, CardBody, CardHeader, CommandLine, ErrorPanel, Hash, JobCard } from "@/ui";
-import { dateTime, plural, relativeTime } from "@/lib/format";
-import { activeJob, downloadUrl, usePrismBundles, useStartSend, type BundleEntry, type SendResult, type Workspace } from "./api";
+import { bytes, dateTime, plural, relativeTime } from "@/lib/format";
+import { activeJob, usePrismBundles, useStartSend, type PrismBundleView, type PrismSent, type Workspace } from "./api";
 import type { Flow } from "./flow";
 import { NOT_AFFILIATED, NOT_RUN_YET } from "./words";
 
@@ -16,9 +16,9 @@ export function SendCard({ workspace, flow }: { workspace: Workspace; flow: Flow
   const send = useStartSend(workspace.key);
   const bundles = usePrismBundles(workspace.key);
   const [jobId, setJobId] = useState<string | null>(null);
-  const running = activeJob(workspace, "send");
+  const running = activeJob(workspace, "prism.send");
   const shownJob = jobId ?? running?.id ?? null;
-  const last = latestFor(bundles.data ?? [], workspace.study_id);
+  const last = bundles.data?.find((b) => b.current) ?? null;
 
   return (
     <Card as="section" aria-labelledby="prism-send-title" id="prism-step-send" tabIndex={-1} className="scroll-mt-4 outline-none">
@@ -43,9 +43,7 @@ export function SendCard({ workspace, flow }: { workspace: Workspace; flow: Flow
             icon={<Send />}
             loading={send.isPending}
             disabled={Boolean(flow.sendBlocked) || Boolean(running)}
-            onClick={() =>
-              send.mutate({ expected_head: workspace.proposals_head ?? null }, { onSuccess: ({ job }) => setJobId(job.id) })
-            }
+            onClick={() => send.mutate(undefined, { onSuccess: ({ job }) => setJobId(job.id) })}
           >
             {flow.sent ? "Send again" : "Send to Prism"}
           </Button>
@@ -55,7 +53,7 @@ export function SendCard({ workspace, flow }: { workspace: Workspace; flow: Flow
         {send.error ? <ErrorPanel error={send.error} title="Not sent" compact /> : null}
         {shownJob ? (
           <JobCard id={shownJob} onDismiss={() => setJobId(null)}>
-            {(result) => <SendOutcome result={(result ?? {}) as SendResult} />}
+            {(result) => (result ? <SendOutcome result={result as PrismSent} /> : null)}
           </JobCard>
         ) : last ? (
           <LastBundle bundle={last} />
@@ -65,13 +63,7 @@ export function SendCard({ workspace, flow }: { workspace: Workspace; flow: Flow
   );
 }
 
-/** The newest bundle sent for the analysis shown now. */
-export function latestFor(bundles: BundleEntry[], studyId: string | null | undefined): BundleEntry | null {
-  const mine = bundles.filter((b) => (b.current ?? b.study_id === studyId) === true);
-  return mine.at(-1) ?? null;
-}
-
-function LastBundle({ bundle }: { bundle: BundleEntry }) {
+function LastBundle({ bundle }: { bundle: PrismBundleView }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 p-3">
       <p className="text-[13px] text-fg">
@@ -80,7 +72,7 @@ function LastBundle({ bundle }: { bundle: BundleEntry }) {
       </p>
       {bundle.download ? (
         <Button asChild variant="secondary" size="sm">
-          <a href={downloadUrl(bundle.download)} download>
+          <a href={bundle.download.url} download={bundle.download.name}>
             <Download aria-hidden />
             Download the bundle
           </a>
@@ -90,30 +82,20 @@ function LastBundle({ bundle }: { bundle: BundleEntry }) {
   );
 }
 
-export function SendOutcome({ result }: { result: SendResult }) {
-  const files = result.files ?? [];
+export function SendOutcome({ result }: { result: PrismSent }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[13px] text-fg">
-        Wrote {plural(files.length, "file")}
-        {result.bundle_sha256 ? (
-          <>
-            {" "}
-            · <Hash value={result.bundle_sha256} prefix="bundle sha256" />
-          </>
-        ) : null}
-        .
+        Wrote {plural(result.n_files, "file")} · <Hash value={result.bundle.bundle_sha256} prefix="bundle sha256" />.
       </p>
-      {result.download ? (
-        <div>
-          <Button asChild variant="primary" size="sm">
-            <a href={downloadUrl(result.download)} download={result.download_name ?? undefined}>
-              <Download aria-hidden />
-              Download the bundle (zip)
-            </a>
-          </Button>
-        </div>
-      ) : null}
+      <div>
+        <Button asChild variant="primary" size="sm">
+          <a href={result.download.url} download={result.download.name}>
+            <Download aria-hidden />
+            Download the bundle ({bytes(result.download.bytes)} zip)
+          </a>
+        </Button>
+      </div>
 
       {result.launched ? (
         <p className="flex items-start gap-2 text-[13px] text-fg">
@@ -130,15 +112,18 @@ export function SendOutcome({ result }: { result: SendResult }) {
           <p className="flex items-start gap-2">
             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
             <span>
-              {result.note || "Prism was not started."} Download the bundle, unzip it on the computer that has Prism and
+              {sentence(result.launch_note) || "Prism was not started."} Download the bundle, unzip it on the computer that has Prism and
               open <span className="font-mono">run.pzc</span> there (double-click it on a Mac), or run:
             </span>
           </p>
           {result.command_line ? <CommandLine command={result.command_line} /> : null}
+          <p className="text-[12.5px] text-muted">
+            That computer needs GraphPad Prism with a licence; qPilot never writes or reads Prism files itself.
+          </p>
         </div>
       )}
 
-      {result.notes?.length ? (
+      {result.notes.length ? (
         <ul className="list-disc pl-5 text-[12.5px] text-muted">
           {result.notes.map((n, i) => (
             <li key={i}>{n}</li>
@@ -151,4 +136,12 @@ export function SendOutcome({ result }: { result: SendResult }) {
       </p>
     </div>
   );
+}
+
+/** A note from the service as a sentence (capital first letter, full stop). */
+function sentence(text: string | null | undefined): string {
+  const t = (text ?? "").trim();
+  if (!t) return "";
+  const s = t[0]!.toUpperCase() + t.slice(1);
+  return /[.!?]$/.test(s) ? s : `${s}.`;
 }
