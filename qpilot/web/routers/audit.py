@@ -379,9 +379,11 @@ def _run_view(call: Callable[[], M]) -> M:
         raise api_error(409, "incomplete", f"The audit's files are incomplete: {err}") from err
 
 
-def _sentence(err: BaseException) -> str:
+def _sentence(err: BaseException, capital: bool = True) -> str:
+    """An exception's message as a sentence (the simulator's messages start in lower case)."""
     text = str(err).strip() or type(err).__name__
-    text = text[0].upper() + text[1:]
+    if capital:
+        text = text[0].upper() + text[1:]
     return text if text.endswith(".") else text + "."
 
 
@@ -535,7 +537,7 @@ def _audit(ctx: AppContext, study_id: str, progress: Progress, replace: bool) ->
             result = simulator.audit(ctx.store, study_id, partial)
         except simulator.NotApplicable as err:
             raise JobError(
-                "not_applicable", "The audit does not apply here: " + _sentence(err)
+                "not_applicable", "The audit does not apply here: " + _sentence(err, capital=False)
             ) from err
         except simulator.AuditRefused as err:
             raise JobError(
@@ -557,7 +559,10 @@ def _audit(ctx: AppContext, study_id: str, progress: Progress, replace: bool) ->
                 shutil.rmtree(partial, ignore_errors=True)
                 raise JobError("audit_exists", "Another audit of this study finished first.")
             stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-            final.rename(root / f"{study_id}.earlier-{stamp}")
+            earlier = root / f"{study_id}.earlier-{stamp}"
+            while earlier.exists():
+                earlier = earlier.with_name(earlier.name + "x")
+            final.rename(earlier)
         partial.rename(final)
     progress("Done", 1.0)
     return {
