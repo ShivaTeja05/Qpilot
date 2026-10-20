@@ -83,7 +83,7 @@ The red-team review keeps every finding it has demonstrated and the owner has no
 | RT-UI-011 | One damaged `results.json` makes the workspace list fail | The Open page lists nothing |
 | RT-UI-012 | A session whose `source.json` names a named pipe hangs the workspace list | Listing holds a worker thread |
 
-All of these need either a local attacker who already holds the launch key, or damage to the study store on this computer; none lets a web page in the browser past the Host check, the key or the same-origin rule except RT-UI-001, which needs the key as well.
+None of these lets a web page in the browser get past the Host check, the launch key or the same-origin rule today: RT-UI-001 starts only from a request that already carries the right key, and RT-UI-003 concerns a kind of route the server does not have. The rest need the key, or damage to the study store on this computer.
 
 ## Out of scope
 A compromised host or Python environment; another program running as the user that can read the terminal, the browser's cookies or a process's memory (it can use the launch key, row 24); a malicious lab profile written by the user themself; proving who authored a record (signatures are roadmap); multi-user hosting, accounts and roles; 21 CFR Part 11; clinical or diagnostic use.
