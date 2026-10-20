@@ -157,16 +157,28 @@ export function SendOutcome({ result }: { result: PrismSent }) {
         <div className="flex flex-col gap-2 rounded-lg border border-warn/30 bg-warn-soft p-3 text-[13px] text-fg">
           <p className="flex items-start gap-2">
             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
-            <span>
-              {sentence(result.launch_note) || "Prism was not started."} Download the bundle, unzip
-              it on the computer that has Prism and open <span className="font-mono">run.pzc</span>{" "}
-              there (double-click it on a Mac), or run:
-            </span>
+            <span>{sentence(result.launch_note) || "Prism was not started."}</span>
           </p>
-          {result.command_line ? <CommandLine command={result.command_line} /> : null}
+          <ol className="list-decimal pl-9 text-[12.5px]">
+            <li>
+              Download the bundle and unzip it on the computer that has GraphPad Prism (with its
+              licence).
+            </li>
+            <li>
+              Open <span className="font-mono">run.pzc</span> there (double-click it on a Mac):
+              Prism builds one project per gene.
+            </li>
+          </ol>
+          {result.command_line ? (
+            <>
+              <p className="text-[12.5px] text-muted">
+                Or, once Prism is installed on this computer, run:
+              </p>
+              <CommandLine command={result.command_line} />
+            </>
+          ) : null}
           <p className="text-[12.5px] text-muted">
-            That computer needs GraphPad Prism with a licence; qPilot never writes or reads Prism
-            files itself.
+            qPilot never writes or reads Prism files itself.
           </p>
         </div>
       )}
@@ -174,7 +186,7 @@ export function SendOutcome({ result }: { result: PrismSent }) {
       {result.notes.length ? (
         <ul className="list-disc pl-5 text-[12.5px] text-muted">
           {result.notes.map((n, i) => (
-            <li key={i}>{n}</li>
+            <li key={i}>{sentence(n)}</li>
           ))}
         </ul>
       ) : null}

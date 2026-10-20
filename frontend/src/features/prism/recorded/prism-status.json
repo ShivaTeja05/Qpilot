@@ -1,0 +1,16 @@
+{
+  "session_id": "bc1d233e3866",
+  "study_id": "6f6513925b05",
+  "choices_confirmed": false,
+  "project": {
+    "status": "none",
+    "proposal_id": null,
+    "template_id": null,
+    "genes": [],
+    "made_by": null
+  },
+  "can_draft": false,
+  "can_send": false,
+  "next": "Confirm the analysis choices first (Results): the Prism project follows them.",
+  "bundles": 1
+}

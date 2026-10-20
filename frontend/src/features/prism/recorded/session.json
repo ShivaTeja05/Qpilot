@@ -37,14 +37,14 @@
       "stage": "roundtrip",
       "open": false,
       "confirmed": false,
-      "pending": 0,
+      "pending": 1,
       "blockers": []
     }
   ],
   "results_visible": true,
-  "study_id": "e300000d4f9a",
-  "proposals_head": "b27a0111f1164a55ee837e0525bb86597563954bd1f9aed5427ab899f574d95a",
-  "decisions_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "study_id": "6f6513925b05",
+  "proposals_head": "bc831061772eb1ea0980471f59e03b57d340c03df7d300f3abbc46042b1459ea",
+  "decisions_head": "4d408afefc69482b2706ab4de6407b470049ac63c0891fe40597118cd737e682",
   "next_step": {
     "title": "Decide 3 analysis choices",
     "detail": "Each card shows what every option would change; you give the reason.",
@@ -52,6 +52,8 @@
     "action": "Decide"
   },
   "active_jobs": [],
-  "has_audit": true,
-  "is_demo": true
+  "has_audit": false,
+  "is_demo": true,
+  "warming": false,
+  "autonomy": "suggest"
 }

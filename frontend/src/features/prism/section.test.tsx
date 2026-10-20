@@ -7,9 +7,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/ui";
-import { fold } from "@/lib/format";
+import { fold, ofTotal } from "@/lib/format";
 import { describeProposal } from "@/lib/vocab";
-import type { ProposalList, Workspace } from "./api";
+import type { PrismBundleView, PrismPreview, PrismRoutes, ProposalList, Workspace } from "./api";
+import { summaryOf } from "./PrismFigure";
 import PrismSection from "./index";
 import sessionJson from "./recorded/session.json";
 import prismJson from "./recorded/proposals-prism.json";
@@ -118,4 +119,42 @@ describe("the Prism section", () => {
       ).toBeGreaterThan(0);
     }
   });
+
+  it("says how often the usual routes change a conclusion, from the engine's facts", async () => {
+    show();
+    const routes = recordedJson<PrismRoutes>("routes");
+    const headline = routes.routes.find((r) => r.route === "linear_welch") ?? routes.routes[0]!;
+    expect(await screen.findByText(ofTotal(headline.n_differ, headline.n_genes))).toBeTruthy();
+    const list = screen.getByRole("list", { name: "Routes into Prism" });
+    expect(
+      within(list)
+        .getAllByRole("listitem")
+        .filter((li) => li.parentElement === list),
+    ).toHaveLength(routes.routes.length);
+  });
+
+  it("previews the first gene's table and figure, and the choices it is exported at", async () => {
+    show();
+    const preview = recordedJson<PrismPreview>("preview");
+    const gene = preview.genes[0]!;
+    expect((await screen.findAllByText(`${gene}.csv`)).length).toBeGreaterThan(0);
+    const figure = preview.figures[gene];
+    if (figure)
+      expect(screen.getAllByRole("img", { name: summaryOf(figure) }).length).toBeGreaterThan(0);
+    for (const c of preview.choices)
+      if (c.option_label) expect(screen.getByText(c.option_label)).toBeTruthy();
+  });
+
+  it("offers the bundles this launch wrote for the round trip, with their sent-back folder", async () => {
+    show();
+    const bundles = recordedJson<{ bundles: PrismBundleView[] }>("bundles").bundles.filter(
+      (b) => b.id && b.round_trip,
+    );
+    const folder = await screen.findByLabelText("Folder Prism sent the tables back to");
+    expect((folder as HTMLInputElement).value).toBe(bundles[0]?.sent_back_folder ?? "");
+  });
 });
+
+function recordedJson<T>(name: string): T {
+  return recorded[`./recorded/prism-${name}.json`]!.default as T;
+}

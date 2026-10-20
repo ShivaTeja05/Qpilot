@@ -155,8 +155,9 @@ export function RoundTripCard({
               </Field>
               {bundle && !bundle.current ? (
                 <p className="text-[12.5px] text-warn">
-                  This bundle was sent for an earlier analysis: the choices changed since, so no
-                  consequences can be computed. Send again and edit the new projects.
+                  This bundle was sent for an earlier analysis (a choice or an accepted exclusion
+                  has changed it since). What it brings back is compared with that analysis; send
+                  again to edit projects of the current one.
                 </p>
               ) : null}
               <Field

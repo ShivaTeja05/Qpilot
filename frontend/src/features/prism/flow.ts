@@ -100,7 +100,7 @@ export function flowOf(
         : project.waiting
           ? "Waiting for you"
           : project.earlier
-            ? "Draft again: the choices changed"
+            ? "Draft again: the analysis changed"
             : "Not drafted yet",
     },
     {

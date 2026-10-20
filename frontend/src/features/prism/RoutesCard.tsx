@@ -88,7 +88,8 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
       </ol>
 
       <p className="text-[12px] leading-relaxed text-muted">
-        Computed by qPilot's engine on this study, with the engine's call rule
+        Next to each gene is the engine's call; the route's call differs from it. Computed by
+        qPilot's engine on this study, with the engine's call rule
         {data.rule ? ` (${data.rule})` : " (up or down only if p < 0.05 and at least two-fold)"};
         never used for a conclusion. What Send to Prism writes is the engine's own analysis — log2
         values, one per biological unit, and Welch's t test — so Prism starts from the engine's
@@ -196,9 +197,11 @@ function GeneChip({
       href={`#${sectionPath(workspace, "gene", gene)}`}
       className="inline-flex items-center gap-1 rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-fg hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       title={
-        engine
-          ? `The engine calls ${gene} ${CONCLUSION[asConclusion(engine)].word}; this route does not. Open ${gene}.`
-          : `Open ${gene}`
+        !engine
+          ? `Open ${gene}`
+          : asConclusion(engine) === "none"
+            ? `The engine makes no call on ${gene}; this route calls it up or down. Open ${gene}.`
+            : `The engine calls ${gene} ${CONCLUSION[asConclusion(engine)].word}; this route does not. Open ${gene}.`
       }
     >
       {gene}

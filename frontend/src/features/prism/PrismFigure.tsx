@@ -12,7 +12,7 @@ import { usePointNav, useTip, useWidth } from "@/charts/core/hooks";
 import { beeswarm } from "@/charts/core/layout";
 import { Tooltip } from "@/charts/core/Tooltip";
 import { count, fixed, MINUS } from "@/lib/format";
-import type { PrismFigureData } from "./api";
+import type { FigureGroup, PrismFigureData } from "./api";
 
 const TONES = ["var(--accent)", "var(--text-muted)", "var(--info)", "var(--warn)"];
 const TOP = 12;
@@ -178,10 +178,6 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
           </text>
           {groups.map((g, gi) => {
             const cx = centreX(gi);
-            const capW = Math.min(band * 0.22, 26);
-            const meanW = Math.min(band * 0.42, 52);
-            const has = (v: number | null | undefined): v is number =>
-              typeof v === "number" && Number.isFinite(v);
             return (
               <g key={g.name}>
                 <text
@@ -204,46 +200,6 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
                 >
                   {count(g.n)} units
                 </text>
-                {has(g.ci_lo) && has(g.ci_hi) ? (
-                  <g aria-hidden="true">
-                    <line
-                      x1={cx}
-                      x2={cx}
-                      y1={y(g.ci_lo!)}
-                      y2={y(g.ci_hi!)}
-                      stroke="var(--text)"
-                      strokeWidth={2}
-                    />
-                    <line
-                      x1={cx - capW / 2}
-                      x2={cx + capW / 2}
-                      y1={y(g.ci_lo!)}
-                      y2={y(g.ci_lo!)}
-                      stroke="var(--text)"
-                      strokeWidth={2}
-                    />
-                    <line
-                      x1={cx - capW / 2}
-                      x2={cx + capW / 2}
-                      y1={y(g.ci_hi!)}
-                      y2={y(g.ci_hi!)}
-                      stroke="var(--text)"
-                      strokeWidth={2}
-                    />
-                  </g>
-                ) : null}
-                {has(g.mean) ? (
-                  <line
-                    aria-hidden="true"
-                    x1={cx - meanW / 2}
-                    x2={cx + meanW / 2}
-                    y1={y(g.mean!)}
-                    y2={y(g.mean!)}
-                    stroke="var(--text)"
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                  />
-                ) : null}
               </g>
             );
           })}
@@ -272,6 +228,9 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
               </g>
             );
           })}
+          {groups.map((g, gi) => (
+            <SummaryMarks key={g.name} group={g} cx={centreX(gi)} band={band} y={y} />
+          ))}
         </svg>
         <Tooltip
           tip={active ? { x: active.x, y: active.y, content: tipFor(active) } : tip}
@@ -293,4 +252,47 @@ export function summaryOf(figure: PrismFigureData): string {
     return `${g.name}: ${count(g.n)} units${mean}${ci}`;
   });
   return `${figure.gene}, log2 relative quantity per biological unit. ${parts.join("; ")}.`;
+}
+
+/**
+ * A group's mean (a bar) and its 95 % confidence interval (a capped whisker), drawn over the
+ * dots with a halo in the surface colour so they stay readable on a dense swarm.
+ */
+function SummaryMarks({
+  group: g,
+  cx,
+  band,
+  y,
+}: {
+  group: FigureGroup;
+  cx: number;
+  band: number;
+  y: (v: number) => number;
+}) {
+  const finite = (v: number | null | undefined): v is number =>
+    typeof v === "number" && Number.isFinite(v);
+  const capW = Math.min(band * 0.22, 26);
+  const meanW = Math.min(band * 0.42, 52);
+  const lines: { x1: number; x2: number; y1: number; y2: number; w: number }[] = [];
+  if (finite(g.ci_lo) && finite(g.ci_hi)) {
+    const lo = y(g.ci_lo);
+    const hi = y(g.ci_hi);
+    lines.push({ x1: cx, x2: cx, y1: lo, y2: hi, w: 2 });
+    lines.push({ x1: cx - capW / 2, x2: cx + capW / 2, y1: lo, y2: lo, w: 2 });
+    lines.push({ x1: cx - capW / 2, x2: cx + capW / 2, y1: hi, y2: hi, w: 2 });
+  }
+  if (finite(g.mean)) {
+    const m = y(g.mean);
+    lines.push({ x1: cx - meanW / 2, x2: cx + meanW / 2, y1: m, y2: m, w: 3 });
+  }
+  return (
+    <g aria-hidden="true" strokeLinecap="round">
+      {lines.map((l, i) => (
+        <line key={`h${i}`} {...l} stroke="var(--surface)" strokeWidth={l.w + 3} />
+      ))}
+      {lines.map((l, i) => (
+        <line key={`l${i}`} {...l} stroke="var(--text)" strokeWidth={l.w} />
+      ))}
+    </g>
+  );
 }

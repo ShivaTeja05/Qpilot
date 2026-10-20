@@ -5,6 +5,7 @@
  */
 import { FileSpreadsheet, Lock, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { useJob } from "@/api/jobs";
 import { sectionPath } from "@/shell/sections";
 import {
   Button,
@@ -44,6 +45,7 @@ export function ProjectCard({
   const [jobId, setJobId] = useState<string | null>(null);
   const running = activeJob(workspace, "prism.draft");
   const shownJob = jobId ?? running?.id ?? null;
+  const jobDone = useJob(shownJob).data?.status === "done";
   const { accepted, waiting, earlier } = flow.project;
 
   const start = () => draft.mutate(undefined, { onSuccess: ({ job }) => setJobId(job.id) });
@@ -132,7 +134,7 @@ export function ProjectCard({
             action={draftButton("Draft the Prism project")}
           >
             {earlier
-              ? "The project accepted earlier was for an analysis whose choices have changed since."
+              ? "The project accepted earlier belongs to an earlier analysis of this session: a decided choice or an accepted exclusion has changed the analysis since."
               : "qPilot drafts it from this analysis: a table for each headline gene, Welch's t test on log2 values, the graph and a caption whose numbers are facts of this study."}
             {flow.draftBlocked && flow.choicesConfirmed ? (
               <span className="mt-1 block text-faint">{flow.draftBlocked}</span>
@@ -143,13 +145,19 @@ export function ProjectCard({
         {draft.error ? (
           <ErrorPanel error={draft.error} title="No Prism project drafted" compact />
         ) : null}
-        {shownJob ? (
+        {/* a finished draft has done its job once its project is decided */}
+        {shownJob && !(jobDone && accepted && !waiting) ? (
           <JobCard id={shownJob} onDismiss={() => setJobId(null)}>
-            {(result) => (
-              <p className="text-[13px] text-fg">
-                {(result as PrismDrafted | null)?.message ?? "Drafted."}
-              </p>
-            )}
+            {(result) => {
+              const r = result as PrismDrafted | null;
+              return (
+                <p className="text-[13px] text-fg">
+                  {r?.status === "proposed"
+                    ? "Drafted: check the project above, then accept it."
+                    : (r?.message ?? "Drafted.")}
+                </p>
+              );
+            }}
           </JobCard>
         ) : null}
       </CardBody>
@@ -161,8 +169,7 @@ export function ProjectCard({
 export function ProjectSummary({ proposal }: { proposal: Proposal }) {
   const d = effectivePayload(proposal);
   const genes = Array.isArray(d.genes) ? d.genes.map(String) : [];
-  const graph =
-    d.graph && typeof d.graph === "object" ? (d.graph as Record<string, unknown>).label : d.graph;
+  const test = described(d.test);
   return (
     <div className="rounded-lg border border-ok/30 bg-ok-soft/40 p-3">
       <p className="mb-2 text-[13px] font-medium text-fg">Accepted for this analysis</p>
@@ -171,17 +178,40 @@ export function ProjectSummary({ proposal }: { proposal: Proposal }) {
           [
             ["Tables", genes.length ? genes.join(", ") : "the headline genes"],
             ["Template", typeof d.template_id === "string" ? d.template_id : undefined],
-            ["Test", typeof d.test === "string" ? d.test : undefined],
-            ["Graph", typeof graph === "string" ? graph : undefined],
+            ["Test", test.label],
+            ["Graph", described(d.graph).label],
           ] as [string, string | undefined][]
         )
           .filter(([, v]) => Boolean(v))
           .map(([k, v]) => [k, v])}
       />
+      {test.why.length ? (
+        <details className="mt-2 text-[12.5px]">
+          <summary className="cursor-pointer text-muted hover:text-fg">Why this test</summary>
+          <ul className="mt-1 list-disc pl-5 text-fg">
+            {test.why.map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
       <p className="mt-2 text-[12px] text-muted">
         {makerText(proposal.made_by)}
         {proposal.reason ? ` Reason given: ${proposal.reason}` : ""}
       </p>
     </div>
   );
+}
+
+/** A payload field that is either words or `{label, why: [...]}` (the draft's test and graph). */
+function described(v: unknown): { label?: string; why: string[] } {
+  if (typeof v === "string") return { label: v, why: [] };
+  if (v && typeof v === "object") {
+    const o = v as { label?: unknown; why?: unknown };
+    return {
+      label: typeof o.label === "string" ? o.label : undefined,
+      why: Array.isArray(o.why) ? o.why.filter((w): w is string => typeof w === "string") : [],
+    };
+  }
+  return { why: [] };
 }

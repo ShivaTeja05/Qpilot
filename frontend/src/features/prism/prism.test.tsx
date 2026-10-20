@@ -27,19 +27,22 @@ describe("flow", () => {
   });
 
   it("tells a project accepted for an earlier analysis from one for this analysis", () => {
-    const accepted = prism.proposals.find(
+    const studyOf = (p: { payload: unknown }) =>
+      String((p.payload as { study_id?: string }).study_id);
+    const accepted = prism.proposals.filter(
       (p) => p.kind === "prism.project" && p.status === "accepted",
-    )!;
-    const forStudy = String((accepted.payload as { study_id?: string }).study_id);
+    );
     const now = projectState(prism.proposals, session.study_id);
-    if (forStudy === session.study_id) {
-      expect(now.accepted?.id).toBe(accepted.id);
-    } else {
-      expect(now.accepted).toBeNull();
-      expect(now.earlier?.id).toBe(accepted.id);
+    const mine = accepted.filter((p) => studyOf(p) === session.study_id);
+    const others = accepted.filter((p) => studyOf(p) !== session.study_id);
+    expect(now.accepted?.id ?? null).toBe(mine.at(-1)?.id ?? null);
+    // an earlier analysis's project only matters while this one has none
+    expect(now.earlier?.id ?? null).toBe(mine.length ? null : (others.at(-1)?.id ?? null));
+    // the same proposals, read for the study each was accepted for
+    for (const p of accepted) {
+      const latest = accepted.filter((q) => studyOf(q) === studyOf(p)).at(-1)!;
+      expect(projectState(prism.proposals, studyOf(p)).accepted?.id).toBe(latest.id);
     }
-    // the same proposals, read for the study the project was accepted for
-    expect(projectState(prism.proposals, forStudy).accepted?.id).toBe(accepted.id);
   });
 
   it("allows Send only once a project for this analysis is accepted and the choices are confirmed", () => {

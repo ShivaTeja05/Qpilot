@@ -10,9 +10,11 @@ It writes, next to this file, exactly what the page reads:
 * ``session.json`` -- ``GET /api/sessions/{sid}`` (the workspace frame: stages, study id), with
   the file facts and inspect summary left out (``null``; the section does not read them);
 * ``proposals-prism.json`` / ``proposals-roundtrip.json`` -- ``GET /api/sessions/{sid}/proposals``;
-* ``prism-routes.json``, ``prism-preview.json``, ``prism-bundles.json`` -- the Prism routes.
+* ``prism-status.json``, ``prism-routes.json``, ``prism-preview.json``, ``prism-bundles.json``
+  -- the Prism routes.
 
-A route the server does not have (yet) is skipped with a note.
+A route the server does not have (yet) is skipped with a note. The home folder in paths (the bundle
+folders) is written as ``~`` so the recordings name no person's account.
 """
 
 from __future__ import annotations
@@ -52,6 +54,7 @@ def main() -> None:
         "session.json": f"/api/sessions/{sid}",
         "proposals-prism.json": f"/api/sessions/{sid}/proposals?stage=prism",
         "proposals-roundtrip.json": f"/api/sessions/{sid}/proposals?stage=roundtrip",
+        "prism-status.json": f"/api/sessions/{sid}/prism",
         "prism-routes.json": f"/api/sessions/{sid}/prism/routes",
         "prism-preview.json": f"/api/sessions/{sid}/prism/preview",
         "prism-bundles.json": f"/api/sessions/{sid}/prism/bundles",
@@ -61,7 +64,8 @@ def main() -> None:
         if name == "session.json" and isinstance(data, dict):
             data = {**data, "facts": None, "summary": None}
         if data is not None:
-            (HERE / name).write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
+            text = json.dumps(data, indent=1, ensure_ascii=False).replace(str(Path.home()), "~")
+            (HERE / name).write_text(text + "\n")
             print(f"wrote {name}")
 
 
