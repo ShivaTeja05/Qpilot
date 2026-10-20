@@ -57,9 +57,11 @@ CONNECT_NOTE = (
     "and writes this same study store, and what it does appears here within about a second."
 )
 ACTIVITY_LIMIT = 60
-ASK_TYPICAL_S = 1.5  # the demo study with no model, measured (20 Oct); a local 7B model: ~20 s
-AUDIT_ASK_TYPICAL_S = 2.0  # the demo's audit with no model, measured (20 Oct)
-MODEL_TEST_TYPICAL_S = 12.0  # nine questions on the demo with no model, measured (20 Oct)
+# How long the work usually takes on the demo with no model (templates answer), measured on
+# 20 Oct under load. With a model the time is the model's: no typical time is claimed.
+ASK_TYPICAL_S = 0.5  # 0.03-0.4 s
+AUDIT_ASK_TYPICAL_S = 1.0
+MODEL_TEST_TYPICAL_S = 3.5  # nine questions
 
 #: What each tool of ``qpilot serve`` can change (``tests/web/test_agents.py`` checks that every
 #: served tool is here). ``sim_*`` tools all read the study's verified audit and change nothing.
@@ -486,12 +488,12 @@ def _session_ids(store: StudyStore) -> set[str]:
 
 
 def _audit_engine() -> Any:
-    """The audit routes' cached-screen accessor, or None in a build without it."""
+    """The audit routes' cached-screen accessor (``audit_screen``), or None in a build without."""
     try:
-        from qpilot.web.routers.audit import screen_for
+        from qpilot.web.routers.audit import audit_screen
     except ImportError:
         return None
-    return screen_for
+    return audit_screen
 
 
 def _pick_engine(question: str, source: str, has_audit: bool) -> Literal["study", "audit"]:
@@ -524,6 +526,11 @@ def _client(ctx: AppContext) -> Any:
     from qpilot.ai.client import ModelClient
 
     return ModelClient(backend=ctx.studio.client.backend)
+
+
+def _typical(ctx: AppContext, seconds: float) -> float | None:
+    """The measured time without a model; none is claimed when a model answers."""
+    return None if ctx.studio.client.available else seconds
 
 
 def _model_note(ctx: AppContext) -> str | None:
@@ -607,10 +614,33 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
     )
 
 
+def _shown(text: str, facts: list[dict[str, Any]]) -> list[CitedFact]:
+    """The audit's facts that its answer shows (its words are rendered; values are matched).
+
+    The audit's Ask returns every fact its tool computed; the answer cites some of them. A fact
+    is listed when its value appears in the answer as a whole token.
+    """
+    out = []
+    for fact in facts:
+        value = str(fact.get("value", ""))
+        if value and re.search(rf"(?<![\w.]){re.escape(value)}(?![\w])", text):
+            meaning = str(fact.get("meaning") or fact.get("id") or "")
+            out.append(CitedFact(id=fact.get("id"), meaning=meaning, value=value))
+    return out
+
+
 def _ask_audit(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy) -> AskAnswer:
     """The audit's Ask engine (qsim's ``Asker``) over the study's cached audit screen."""
-    screen_for = _audit_engine()
-    screen = screen_for(ctx, study_id) if screen_for is not None else None
+    from fastapi import HTTPException
+
+    audit_screen = _audit_engine()
+    try:
+        screen = audit_screen(ctx, study_id) if audit_screen is not None else None
+    except HTTPException as err:  # the audit routes' own refusals (blind, not found), in words
+        detail = err.detail if isinstance(err.detail, dict) else {}
+        raise JobError(
+            str(detail.get("code", "audit")), str(detail.get("message", err.detail))
+        ) from err
     if screen is None:
         raise JobError("no_audit", "This study has no robustness audit yet: run it in Audit first.")
     out = screen.ask(question)
@@ -632,10 +662,7 @@ def _ask_audit(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
         writer_words=str(out.get("written_by") or "the audit's checked template"),
         provider=ctx.studio.client.provider,
         model=model,
-        facts=[
-            CitedFact(id=f.get("id"), meaning=str(f["meaning"]), value=str(f["value"]))
-            for f in out.get("facts") or []
-        ],
+        facts=_shown(str(out["text"]), out.get("facts") or []),
         validated=True,  # the audit's answers are rendered from its facts, or rejected
         note=("A template answered: " + "; ".join(problems) + ".") if problems else None,
         autonomy=autonomy,
@@ -670,7 +697,7 @@ def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
         work,
         title=f"Answering “{question[:60]}{'…' if len(question) > 60 else ''}”",
         key=place.key,
-        typical_s=AUDIT_ASK_TYPICAL_S if engine == "audit" else ASK_TYPICAL_S,
+        typical_s=_typical(ctx, AUDIT_ASK_TYPICAL_S if engine == "audit" else ASK_TYPICAL_S),
         dedupe=False,
     )
     return JobStarted(job=JobView(**job.view()))
@@ -769,7 +796,7 @@ def test_model(ctx: Ctx, body: ModelTestBody | None = None) -> JobStarted:
         work,
         title=f"Testing the model on {title}",
         key=place.key,
-        typical_s=MODEL_TEST_TYPICAL_S,
+        typical_s=_typical(ctx, MODEL_TEST_TYPICAL_S),
     )
     return JobStarted(job=JobView(**job.view()))
 
