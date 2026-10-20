@@ -71,6 +71,18 @@ class AgentActivity(BaseModel):
     reason: str | None = None
     card_id: str | None = None
     option: str | None = None
+    seq: int | None = Field(default=None, description="The decision entry's place in the chain.")
+    hash: str | None = Field(default=None, description="The decision entry's hash.")
+    request_state: (
+        Literal["waiting", "approved", "turned_down", "decided_otherwise", "closed"] | None
+    ) = Field(
+        default=None,
+        description="For a request (status pending_human): still waiting, approved (the card "
+        "was set to this option), turned down by a person, decided otherwise (set to another "
+        "option), or closed under an earlier qPilot's rules.",
+    )
+    settled_by: str | None = Field(default=None, description="Who settled the request.")
+    settled_at: str | None = None
     proposal_id: str | None = None
     proposal_kind: str | None = None
     check: str | None = Field(default=None, description="The engine's check of a proposal.")
@@ -204,13 +216,17 @@ class ScorecardRow(BaseModel):
 
 
 class ModelTestResult(BaseModel):
-    """The result of a ``model.test`` job: this run's row and every saved row for the study."""
+    """A study's saved scorecards; ``current`` is the page's model's row.
+
+    The result of a ``model.test`` job (``current`` is the run just made) and of
+    ``GET /api/model/scorecards`` (``current`` is the last saved run of the page's model, or null).
+    """
 
     study_id: str
     title: str
-    current: ScorecardRow
+    current: ScorecardRow | None = None
     saved: list[ScorecardRow]
-    n_questions: int
+    n_questions: int = Field(description="Questions in ``current`` (0 when there is none).")
     note: str
 
 

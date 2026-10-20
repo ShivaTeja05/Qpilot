@@ -44,7 +44,14 @@ export function FoldAxis({
             stroke={t.log2 === 0 ? "var(--line-strong)" : "var(--line)"}
             strokeWidth={1}
           />
-          <text x={x(t.log2)} y={bottom + 15} textAnchor="middle" fontSize={11} fill="var(--text-faint)" className="tabular">
+          <text
+            x={x(t.log2)}
+            y={bottom + 15}
+            textAnchor="middle"
+            fontSize={11}
+            fill="var(--text-faint)"
+            className="tabular"
+          >
             {t.label}
           </text>
         </g>
@@ -52,7 +59,15 @@ export function FoldAxis({
       <line x1={x0} x2={x1} y1={bottom} y2={bottom} stroke="var(--line-strong)" />
       {lines.map((v) => (
         <g key={v}>
-          <line x1={x(v)} x2={x(v)} y1={top - 4} y2={bottom} stroke="var(--text-faint)" strokeWidth={1.25} strokeDasharray="4 3" />
+          <line
+            x1={x(v)}
+            x2={x(v)}
+            y1={top - 4}
+            y2={bottom}
+            stroke="var(--text-faint)"
+            strokeWidth={1.25}
+            strokeDasharray="4 3"
+          />
           {lineLabel && !(crowded && v < 0) && (
             <text x={x(v)} y={top - 8} textAnchor="middle" fontSize={11} fill="var(--text-muted)">
               {lineLabel}

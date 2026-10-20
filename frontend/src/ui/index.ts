@@ -51,10 +51,11 @@
  * States
  *   Skeleton        shimmer block (className sets size)
  *   LoadingBlock    a few skeleton lines + "Loading…" for screen readers: label · lines
- *   EmptyState      icon · title · children (what to do) · action · compact
+ *   EmptyState      icon · title · children (what to do) · action · compact · headingLevel (default 2)
  *   ProgressBar     value 0–1 (indeterminate when null) · label
  *   ErrorPanel      error (ApiError aware: needsKey / stale / offline) · title · onRetry · compact
- *   errorMessage    an error's plain words
+ *   errorMessage    an error's plain words; errorHeading: a heading from its code
+ *   TickText        text with `backticks` shown as code (server messages): text
  *   JobCard         id (followed with useJob) or job · children(result, job) once done · onDismiss
  * Copy
  *   CopyButton      text · label · showLabel · size
@@ -124,7 +125,7 @@ export {
   type SortingState,
 } from "./Table";
 export { EmptyState, LoadingBlock, ProgressBar, Skeleton } from "./feedback";
-export { ErrorPanel, errorMessage } from "./ErrorPanel";
+export { ErrorPanel, TickText, errorHeading, errorMessage } from "./ErrorPanel";
 export { JobCard } from "./JobCard";
 export { CommandLine, CopyButton, Hash } from "./Copy";
 export { Toaster, toast } from "./Toaster";

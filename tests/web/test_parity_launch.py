@@ -335,3 +335,33 @@ def test_a_broken_profile_does_not_stop_the_server(monkeypatch, tmp_path, tmp_st
             assert client.get("/api/workspaces").status_code == 200
     finally:
         ctx.close()
+
+
+# ---- a remote model is reached only on a click (P27) -----------------------------------------
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="PARITY-4 (api): GET /api/model pings a configured REMOTE model in the background; "
+    "docs/app.md §1.5 and the coordinator (#0180): only an explicit click may reach it",
+)
+def test_reading_the_model_status_never_calls_a_remote_model(anthropic_env, tmp_studies_dir):
+    from qpilot.ai.client import AnthropicBackend, ModelUnavailable
+
+    calls: list[str] = []
+
+    def recorded(*_args, **_kwargs):
+        calls.append("complete")
+        raise ModelUnavailable("no network in this test")
+
+    anthropic_env.setattr(AnthropicBackend, "complete", recorded)
+    anthropic_env.setenv("QPILOT_API_KEY", "sk-ant-test-not-a-key")
+    ctx, client = _served(tmp_studies_dir)
+    try:
+        with client:
+            for path in ("/api/model", "/api/system", "/api/model"):
+                assert client.get(path).status_code == 200
+            ctx.studio.model_status()  # the background ping, if any, has had its chance
+    finally:
+        ctx.close()
+    assert calls == [], "reading the status sent a request to the remote model"

@@ -17,12 +17,10 @@ export interface FoldTick {
   label: string;
 }
 
-/** The label of a whole-number log2 tick: `1×`, `2×`, `16×`, `½×`, `¼×`, `1/8×`. */
+/** The label of a whole-number log2 tick: `1×`, `2×`, `16×`, `1/2×`, `1/4×`, `1/8×`. */
 export function foldTickLabel(k: number): string {
   if (k === 0) return "1×";
   if (k > 0) return `${2 ** k}×`;
-  if (k === -1) return "½×";
-  if (k === -2) return "¼×";
   return `1/${2 ** -k}×`;
 }
 
@@ -32,7 +30,12 @@ export function foldTickLabel(k: number): string {
  * always inside; without it, only the call line on the data's side is (a one-gene chart whose
  * analyses all sit above 2× then uses its width for the data).
  */
-export function foldDomain(values: readonly number[], line = 0, pad = 0.1, zero = true): [number, number] {
+export function foldDomain(
+  values: readonly number[],
+  line = 0,
+  pad = 0.1,
+  zero = true,
+): [number, number] {
   const finite = values.filter(Number.isFinite);
   if (!finite.length) return [-Math.max(1, line) * 1.2, Math.max(1, line) * 1.2];
   const dmin = Math.min(...finite);
@@ -70,11 +73,16 @@ export function foldTicks(lo: number, hi: number, pxPerUnit: number, minGap = 44
   }
   if (out.length >= 3) return out;
   const n = Math.max(2, Math.floor(((hi - lo) * pxPerUnit) / (minGap * 2)));
-  const fine = scaleLinear().domain([2 ** lo, 2 ** hi]).ticks(n);
-  const ticks = fine.filter((v) => v > 0).map((v) => ({ log2: Math.log2(v), label: `${Number(v.toPrecision(3))}×` }));
+  const fine = scaleLinear()
+    .domain([2 ** lo, 2 ** hi])
+    .ticks(n);
+  const ticks = fine
+    .filter((v) => v > 0)
+    .map((v) => ({ log2: Math.log2(v), label: `${Number(v.toPrecision(3))}×` }));
   // keep the labels apart where the log scale squeezes them
   const kept: FoldTick[] = [];
-  for (const t of ticks) if (!kept.length || (t.log2 - kept[kept.length - 1]!.log2) * pxPerUnit >= minGap) kept.push(t);
+  for (const t of ticks)
+    if (!kept.length || (t.log2 - kept[kept.length - 1]!.log2) * pxPerUnit >= minGap) kept.push(t);
   return kept.length >= 2 ? kept : out;
 }
 
@@ -88,7 +96,9 @@ export function foldScale(
   zero = true,
 ): FoldScale {
   const [lo, hi] = foldDomain(values, line, 0.1, zero);
-  const x = scaleLinear().domain([lo, hi]).range([x0, Math.max(x0 + 1, x1)]);
+  const x = scaleLinear()
+    .domain([lo, hi])
+    .range([x0, Math.max(x0 + 1, x1)]);
   return { x, lo, hi, ticks: foldTicks(lo, hi, (x1 - x0) / (hi - lo), minGap) };
 }
 
