@@ -1703,6 +1703,70 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/planner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Planner
+         * @description The study's noise per gene, its group sizes and efficiencies, and the planner's defaults.
+         */
+        get: operations["get_planner"];
+        put?: never;
+        /**
+         * Post Planner
+         * @description The plan: samples needed, what a size detects, the right call's chance, curves, rules.
+         */
+        post: operations["post_planner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/planner/layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Layout
+         * @description Every plate of the next experiment: balanced, randomised (seeded), controls on each.
+         */
+        post: operations["post_layout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/planner/layout.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Layout Csv
+         * @description The same plates as CSV (plate, well, sample, group, target, type) to import.
+         */
+        get: operations["get_layout_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -5696,6 +5760,680 @@ export type components = {
             reason: string;
             /** Seq */
             seq: number;
+        };
+        /**
+         * PlanBudget
+         * @description What fits in the plates available.
+         */
+        PlanBudget: {
+            /**
+             * N Fit
+             * @description The most samples per group whose layout fits; None: not even two.
+             */
+            n_fit: number | null;
+            /** Plates */
+            plates: number;
+            /** Text */
+            text: string;
+        };
+        /**
+         * PlanControls
+         * @description Controls on every plate, per assay.
+         */
+        PlanControls: {
+            /**
+             * Calibrator
+             * @description An inter-run calibrator on every plate when a gene's samples span plates.
+             * @default true
+             */
+            calibrator: boolean;
+            /**
+             * Nrt
+             * @description NRT wells per assay.
+             * @default 0
+             */
+            nrt: number;
+            /**
+             * Ntc
+             * @description NTC wells per assay.
+             * @default 1
+             */
+            ntc: number;
+            /**
+             * Standards
+             * @description Standard dilution points per assay, each in the technical replicates.
+             * @default 0
+             */
+            standards: number;
+        };
+        /**
+         * PlanCurvePoint
+         * @description One group size on a power curve.
+         */
+        PlanCurvePoint: {
+            /** N */
+            n: number;
+            /** P Called */
+            p_called: number;
+            /** P Significant */
+            p_significant: number;
+        };
+        /**
+         * PlanEfficiency
+         * @description The genes' efficiencies and which fall outside the engine's usual range.
+         */
+        PlanEfficiency: {
+            /** Outside */
+            outside: string[];
+            /**
+             * Range
+             * @description The usual range as E - 1 (0.90–1.10).
+             */
+            range: [
+                number,
+                number
+            ];
+            spread: components["schemas"]["PlanSpread"] | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * PlanGene
+         * @description One gene under the plan: samples needed, what the plan's size detects, the right call.
+         */
+        PlanGene: {
+            /**
+             * Call Reachable
+             * @description Whether any size reaches the power for a call; None: not asked.
+             */
+            call_reachable?: boolean | null;
+            /**
+             * Cannot Detect
+             * @description qpilot.qpcr.plan.plan's lines, as text.
+             */
+            cannot_detect: string[];
+            /**
+             * Current Mde Fold
+             * @description mde_fold_groups at the study's own group sizes.
+             */
+            current_mde_fold: number;
+            /**
+             * Current P Called
+             * @description Simulated P(called) at the study's own (unbalanced) group sizes.
+             */
+            current_p_called: number;
+            /**
+             * Detectable
+             * @description mde_fold at the plan's size ≤ the target change.
+             */
+            detectable: boolean;
+            /**
+             * Focus
+             * @description One of the next experiment's genes.
+             */
+            focus: boolean;
+            /** Gene */
+            gene: string;
+            /**
+             * Mde Fold
+             * @description The smallest change the plan's size detects (mde_fold).
+             */
+            mde_fold: number;
+            /**
+             * N For Call
+             * @description Per group for qPilot's rule to call the change with the chosen power (qpilot.qpcr.plan.n_for_call); None: no size reaches it, or not computed (not focus).
+             */
+            n_for_call?: number | null;
+            /**
+             * N Needed
+             * @description Per group for p < alpha with the chosen power (qpilot.qpcr.plan.n_needed).
+             */
+            n_needed: number;
+            /**
+             * P Called
+             * @description Simulated P(qPilot calls it, right way) at that size.
+             */
+            p_called: number;
+            /**
+             * P Significant
+             * @description Simulated P(p < alpha) at the plan's size.
+             */
+            p_significant: number;
+            /** Sigma */
+            sigma: number;
+        };
+        /**
+         * PlanLayoutBalance
+         * @description The checks every layout passes (or says why not).
+         */
+        PlanLayoutBalance: {
+            /** Controls On Every Plate */
+            controls_on_every_plate: boolean;
+            /**
+             * Each Reaction Once
+             * @description Every planned gene reaction on exactly one plate; a reference gene's once per gene panel (each plate normalises its own samples).
+             */
+            each_reaction_once: boolean;
+            /** Every Plate Every Group */
+            every_plate_every_group: boolean;
+            /**
+             * Group Plate Association
+             * @description Cramér's V of plate × group over samples: 0 means plate says nothing of group.
+             */
+            group_plate_association: number;
+            /**
+             * Max Share Gap
+             * @description Largest gap between a group's share on a plate and its share overall.
+             */
+            max_share_gap: number;
+            /** Plates With One Group */
+            plates_with_one_group: number[];
+            /** Refs On Every Plate */
+            refs_on_every_plate: boolean;
+            /** Wells Controls */
+            wells_controls: number;
+            /** Wells Free */
+            wells_free: number;
+            /** Wells Samples */
+            wells_samples: number;
+            /** Wells Total */
+            wells_total: number;
+        };
+        /**
+         * PlanLayoutBody
+         * @description The next experiment to lay out on plates.
+         */
+        PlanLayoutBody: {
+            /**
+             * Calibrator
+             * @default true
+             */
+            calibrator: boolean;
+            /** Genes */
+            genes: string[];
+            /** N Per Group */
+            n_per_group: number;
+            /**
+             * Nrt
+             * @default 0
+             */
+            nrt: number;
+            /**
+             * Ntc
+             * @default 1
+             */
+            ntc: number;
+            /** Refs */
+            refs?: string[] | null;
+            /**
+             * Replicates
+             * @default 2
+             */
+            replicates: number;
+            /**
+             * Seed
+             * @default 1
+             */
+            seed: number;
+            /**
+             * Standards
+             * @default 0
+             */
+            standards: number;
+            /**
+             * Wells Per Plate
+             * @default 96
+             * @enum {integer}
+             */
+            wells_per_plate: 96 | 384;
+        };
+        /**
+         * PlanLayoutEstimate
+         * @description How the plan would be laid out (no well assigned yet).
+         */
+        PlanLayoutEstimate: {
+            /** Batches */
+            batches: number;
+            /** Calibrated */
+            calibrated: boolean;
+            /** Panels */
+            panels: number;
+            /** Plates */
+            plates: number;
+            /** Samples Per Plate */
+            samples_per_plate: number;
+            /**
+             * Wells
+             * @description Wells the plates hold in all.
+             */
+            wells: number;
+        };
+        /**
+         * PlanLayoutPlate
+         * @description One plate of the layout with its balance.
+         */
+        PlanLayoutPlate: {
+            /** Batch */
+            batch: number;
+            /**
+             * Controls
+             * @description Control type → wells.
+             */
+            controls: {
+                [key: string]: number;
+            };
+            /**
+             * Edge Share
+             * @description Group → share of its wells on the plate's outer rows and columns.
+             */
+            edge_share: {
+                [key: string]: number | null;
+            };
+            /** Genes */
+            genes: string[];
+            /** Groups Present */
+            groups_present: number;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+            /** Panel */
+            panel: number;
+            /** Refs */
+            refs: string[];
+            /** Refs Present */
+            refs_present: boolean;
+            /**
+             * Samples
+             * @description Group → samples on this plate.
+             */
+            samples: {
+                [key: string]: number;
+            };
+            /** Wells */
+            wells: components["schemas"]["PlanLayoutWell"][];
+            /** Wells Free */
+            wells_free: number;
+            /** Wells Used */
+            wells_used: number;
+        };
+        /**
+         * PlanLayoutView
+         * @description Every plate of the next experiment, its balance, and the CSV to import.
+         */
+        PlanLayoutView: {
+            balance: components["schemas"]["PlanLayoutBalance"];
+            /** Batches */
+            batches: number;
+            /** Calibrated */
+            calibrated: boolean;
+            /** Csv Name */
+            csv_name: string;
+            /**
+             * Csv Url
+             * @description GET this for the CSV (same inputs, same plates).
+             */
+            csv_url: string;
+            /** Genes */
+            genes: string[];
+            /** Groups */
+            groups: components["schemas"]["PlannerGroup"][];
+            /** Notes */
+            notes: string[];
+            /** Panels */
+            panels: string[][];
+            /** Plates */
+            plates: components["schemas"]["PlanLayoutPlate"][];
+            /** Refs */
+            refs: string[];
+            /** Replicates */
+            replicates: number;
+            /** Rules */
+            rules: string[];
+            /** Samples Per Plate */
+            samples_per_plate: number;
+            /** Seed */
+            seed: number;
+            /** Study Id */
+            study_id: string;
+            /** Warnings */
+            warnings: string[];
+            /** Wells Per Plate */
+            wells_per_plate: number;
+        };
+        /**
+         * PlanLayoutWell
+         * @description One well: position, sample (and group), assay, RDML sample type, replicate.
+         */
+        PlanLayoutWell: {
+            /** Group */
+            group: string | null;
+            /** Replicate */
+            replicate: number;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "unkn" | "std" | "ntc" | "nrt" | "pos";
+            /** Well */
+            well: string;
+        };
+        /**
+         * PlannerBody
+         * @description What to plan: the change worth finding, the power, and the next experiment's shape.
+         */
+        PlannerBody: {
+            /**
+             * Alpha
+             * @description Two-sided; default the study's rule.
+             */
+            alpha?: number | null;
+            controls?: components["schemas"]["PlanControls"];
+            /**
+             * Fold
+             * @description The smallest fold change worth detecting (e.g. 2, or 0.5).
+             * @default 2
+             */
+            fold: number;
+            /**
+             * Genes
+             * @description The next experiment's genes (default: the study's headline genes).
+             */
+            genes?: string[] | null;
+            /**
+             * N Per Group
+             * @description Planned samples per group; none: the size the chosen genes need.
+             */
+            n_per_group?: number | null;
+            /**
+             * Plates
+             * @description Plates available (a budget).
+             */
+            plates?: number | null;
+            /**
+             * Power
+             * @default 0.8
+             */
+            power: number;
+            /**
+             * Refs
+             * @description Reference genes on every plate (default: the study's control genes).
+             */
+            refs?: string[] | null;
+            /**
+             * Replicates
+             * @default 2
+             */
+            replicates: number;
+            /**
+             * Wells Per Plate
+             * @default 96
+             * @enum {integer}
+             */
+            wells_per_plate: 96 | 384;
+        };
+        /**
+         * PlannerGene
+         * @description One compared gene: its noise in this study, and what the study found.
+         */
+        PlannerGene: {
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /**
+             * Df
+             * @description Degrees of freedom of sigma: units with a value minus groups.
+             */
+            df: number;
+            /**
+             * Efficiency
+             * @description The gene's PCR efficiency (fold per cycle; 2 is doubling).
+             */
+            efficiency?: number | null;
+            /**
+             * Efficiency Outside
+             * @description Efficiency outside the engine's 90–110 % range (a warning only).
+             */
+            efficiency_outside: boolean;
+            /**
+             * Fc
+             * @description The fold change this study found (group 1 / group 2).
+             */
+            fc: number;
+            /** Gene */
+            gene: string;
+            /** Headline */
+            headline: boolean;
+            /**
+             * N
+             * @description Units with a value in each group, in the groups' order.
+             */
+            n: number[];
+            /**
+             * Sigma
+             * @description Pooled SD of log2 relative quantity between biological units of one group (qpilot.qpcr.plan.pooled_sd over the engine's per-unit values).
+             */
+            sigma: number;
+            /**
+             * Sigma Ci
+             * @description 95 % chi-square interval of sigma (qpilot.qpcr.plan.sigma_interval).
+             */
+            sigma_ci: [
+                number,
+                number
+            ];
+        };
+        /**
+         * PlannerGroup
+         * @description One group of the study's comparison and how many biological units it holds.
+         */
+        PlannerGroup: {
+            /** Label */
+            label: string;
+            /** N */
+            n: number;
+        };
+        /**
+         * PlannerView
+         * @description What the study measured that a plan needs: noise per gene, group sizes, efficiencies.
+         */
+        PlannerView: {
+            /** Alpha */
+            alpha: number;
+            /**
+             * Candidates
+             * @description The reference candidates the study tested.
+             */
+            candidates: string[];
+            defaults: components["schemas"]["PlannerBody"];
+            efficiency: components["schemas"]["PlanEfficiency"];
+            /** Genes */
+            genes: components["schemas"]["PlannerGene"][];
+            /** Groups */
+            groups: components["schemas"]["PlannerGroup"][];
+            /** Head */
+            head: string;
+            /** Headline */
+            headline: string[];
+            /**
+             * Min Fold
+             * @description The rule's fold threshold for a call (2 = two-fold).
+             */
+            min_fold: number;
+            /**
+             * N Equivalent
+             * @description The balanced group size as precise as the study's groups (harmonic mean).
+             */
+            n_equivalent: number;
+            plates: components["schemas"]["PlanStudyPlates"] | null;
+            /**
+             * Refs
+             * @description The control genes this study normalises by.
+             */
+            refs: string[];
+            /** Rule Text */
+            rule_text: string;
+            sigma: components["schemas"]["PlanSpread"];
+            /**
+             * Sigma Source
+             * @description How sigma was measured, in words.
+             */
+            sigma_source: string;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * PlanPowerCurve
+         * @description P(significant) and P(called) against samples per group, at the gene's sigma.
+         */
+        PlanPowerCurve: {
+            /** Gene */
+            gene: string;
+            /** N For Call */
+            n_for_call: number | null;
+            /** N Needed */
+            n_needed: number;
+            /** Points */
+            points: components["schemas"]["PlanCurvePoint"][];
+            /** Sigma */
+            sigma: number;
+        };
+        /**
+         * PlanSpread
+         * @description Five numbers that describe a spread (min, quartiles, median, max) over genes.
+         */
+        PlanSpread: {
+            /** Max */
+            max: number;
+            /** Median */
+            median: number;
+            /** Min */
+            min: number;
+            /** N */
+            n: number;
+            /** Q1 */
+            q1: number;
+            /** Q3 */
+            q3: number;
+        };
+        /**
+         * PlanStudyPlates
+         * @description How this study laid out its plates (from its per-well table).
+         */
+        PlanStudyPlates: {
+            /**
+             * Controls Per Plate
+             * @description Median wells per plate by control type (std, ntc, nrt, …).
+             */
+            controls_per_plate: {
+                [key: string]: number;
+            };
+            /** N Plates */
+            n_plates: number;
+            /**
+             * Sample Maximisation
+             * @description Every plate held one target for every sample (Hellemans 2007).
+             */
+            sample_maximisation: boolean;
+            /**
+             * Samples Per Plate
+             * @description Median number of study samples per plate.
+             */
+            samples_per_plate: number;
+            /**
+             * Targets Per Plate
+             * @description Median number of targets per plate.
+             */
+            targets_per_plate: number;
+            /** Text */
+            text: string;
+            /**
+             * Wells Per Plate
+             * @description The most wells any plate used.
+             */
+            wells_per_plate: number;
+        };
+        /**
+         * PlanView
+         * @description The plan: per gene numbers, power curves, the rules, what it cannot detect, plates.
+         */
+        PlanView: {
+            /** Alpha */
+            alpha: number;
+            budget?: components["schemas"]["PlanBudget"] | null;
+            /** Cannot Detect */
+            cannot_detect: string[];
+            /**
+             * Ceiling
+             * @description When the target is at or below the rule's threshold: why no size calls it.
+             */
+            ceiling?: string | null;
+            /**
+             * Curve Reps
+             * @description Simulated studies behind each curve point.
+             */
+            curve_reps: number;
+            /** Curves */
+            curves: components["schemas"]["PlanPowerCurve"][];
+            /** Focus */
+            focus: string[];
+            /** Fold */
+            fold: number;
+            /** Genes */
+            genes: components["schemas"]["PlanGene"][];
+            /** Head */
+            head: string;
+            /**
+             * Headline
+             * @description One sentence: what this plan detects.
+             */
+            headline: string;
+            layout: components["schemas"]["PlanLayoutEstimate"] | null;
+            /** Layout Error */
+            layout_error?: string | null;
+            /** Min Fold */
+            min_fold: number;
+            /**
+             * N Current
+             * @description The study's own group sizes.
+             */
+            n_current: number[];
+            /** N Equivalent */
+            n_equivalent: number;
+            /**
+             * N Plan
+             * @description The samples per group the numbers are at.
+             */
+            n_plan: number;
+            /** N Plan Reason */
+            n_plan_reason: string;
+            /** Power */
+            power: number;
+            /** Refs */
+            refs: string[];
+            /**
+             * Rules
+             * @description qpilot.qpcr.plan's design rules for this plan.
+             */
+            rules: string[];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Table Reps
+             * @description Simulated studies behind each table probability.
+             */
+            table_reps: number;
+            /**
+             * Target
+             * @description The change in either direction, ≥ 1 (max(fold, 1/fold)).
+             */
+            target: number;
         };
         /**
          * PlateRun
@@ -10416,6 +11154,149 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HistoryDiff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_planner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannerView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_planner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlannerBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_layout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanLayoutBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanLayoutView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_layout_csv: {
+        parameters: {
+            query: {
+                calibrator?: boolean;
+                genes: string[];
+                n_per_group: number;
+                nrt?: number;
+                ntc?: number;
+                refs?: string[] | null;
+                replicates?: number;
+                seed?: number;
+                standards?: number;
+                wells_per_plate?: 96 | 384;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The layout as CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
                 };
             };
             /** @description Validation Error */
