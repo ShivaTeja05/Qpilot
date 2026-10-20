@@ -9,7 +9,7 @@ import { type MapEncoding } from "@/charts";
 import { useMediaQuery } from "@/lib/hooks";
 import { sectionPath, type SectionProps } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
-import { isWarming, useCards, useFlips, useResults } from "./api";
+import { isWarming, useCards, useFlips, useResults, type ResultsView } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
@@ -18,8 +18,8 @@ import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
 
 /** Genes the analysis could not give a result for, and why (never a made-up number). */
-function Withheld({ view }: { view: object }) {
-  const list = (view as { withheld?: { gene: string; reason: string }[] }).withheld ?? [];
+function Withheld({ view }: { view: ResultsView }) {
+  const list = view.withheld;
   if (!list.length) return null;
   return (
     <details className="rounded-xl border border-line bg-surface px-4 py-3 text-[13px]">
