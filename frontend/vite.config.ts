@@ -6,8 +6,10 @@ import { defineConfig } from "vitest/config";
 // The build goes straight into the Python package, which serves it (qpilot/web/static).
 // `npm run dev` serves the page on :5173 and forwards /api to a running `qpilot app`
 // (QPILOT_API, default http://127.0.0.1:7860). Origin is rewritten to the API's own origin so its
-// same-origin check passes; the launch key comes from the API's cookie (open its printed link once).
+// same-origin check passes, and the launch key is added from QPILOT_APP_TOKEN (dev servers only:
+// `scripts/serve-dev.sh` fixes it), so the dev page needs no cookie.
 const api = process.env.QPILOT_API ?? "http://127.0.0.1:7860";
+const devKey = process.env.QPILOT_APP_TOKEN;
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -23,13 +25,13 @@ export default defineConfig({
   },
   server: {
     host: "127.0.0.1",
-    port: 5173,
+    port: Number(process.env.VITE_PORT ?? 5173),
     strictPort: true,
     proxy: {
       "/api": {
         target: api,
         changeOrigin: true,
-        headers: { origin: api },
+        headers: { origin: api, ...(devKey ? { "x-qpilot-token": devKey } : {}) },
       },
     },
   },
