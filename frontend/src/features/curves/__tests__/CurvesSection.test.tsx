@@ -40,6 +40,7 @@ vi.mock("uplot", () => ({
 }));
 
 import CurvesSection from "../index";
+import { disagreementSentence, disagreementsByPlate } from "../StageBar";
 
 beforeAll(() => {
   // jsdom has no media queries: the page is narrow (one column).
@@ -82,6 +83,22 @@ function show(workspace: Frame, path: string, rest: string[] = []) {
 const waiting = waitingFrame as unknown as Frame;
 const confirmed = confirmedFrame as unknown as Frame;
 
+describe("the Curve Judge's disagreements in words", () => {
+  it("says how many wells, where, and how many the engine refutes", () => {
+    const proposals = (waitingInbox as Schemas["ProposalList"]).proposals;
+    const rows = disagreementsByPlate(proposals);
+    const calls = proposals.filter((p) => p.kind === "curve.well_call" && p.status === "proposed");
+    expect(rows.reduce((n, r) => n + r.wells, 0)).toBe(calls.length);
+    expect(rows).toHaveLength(
+      new Set(calls.map((p) => p.subject.slice(0, p.subject.lastIndexOf("/")))).size,
+    );
+    const refuted = calls.filter((p) => p.check.status === "contradicted").length;
+    const text = disagreementSentence(rows);
+    if (rows.length === 1) expect(text).toContain(`all on plate ${rows[0]!.run}`);
+    if (refuted === calls.length) expect(text).toContain("the engine’s check refutes all");
+  });
+});
+
 describe("Curves section", { timeout: 30_000 }, () => {
   it("is locked with a reason until the design is confirmed", () => {
     const stages = waiting.stages.map((s) =>
@@ -90,6 +107,13 @@ describe("Curves section", { timeout: 30_000 }, () => {
     show({ ...waiting, stages }, "/s/bc1d233e3866/curves");
     expect(screen.getByText("Confirm the design first")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Go to Design" })).toBeTruthy();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("waits for the file's first read instead of guessing the stages", () => {
+    show({ ...waiting, warming: true, stages: [] }, "/s/bc1d233e3866/curves");
+    expect(screen.queryByText("Confirm the design first")).toBeNull();
+    expect(screen.getByRole("status")).toBeTruthy();
     expect(calls).toHaveLength(0);
   });
 
@@ -106,6 +130,9 @@ describe("Curves section", { timeout: 30_000 }, () => {
     expect(screen.getByRole("button", { name: "Accept all consistent…" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Reject contradicted AI calls…" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Check the curves again" })).toBeTruthy();
+    // The disagreements in one sentence, by plate, from the recorded inbox.
+    const plates = disagreementsByPlate((waitingInbox as Schemas["ProposalList"]).proposals);
+    expect(screen.getByText(disagreementSentence(plates))).toBeTruthy();
     // j focuses the first waiting card (the inbox keeps the server's order: contradicted first).
     const first = (waitingInbox as Schemas["ProposalList"]).proposals.find(
       (p) => p.status === "proposed",

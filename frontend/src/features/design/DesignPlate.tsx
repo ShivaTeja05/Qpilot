@@ -13,7 +13,7 @@ import { PlateMap, plateWells } from "@/charts/plate";
 import { count } from "@/lib/format";
 import { ROLE_WORDS } from "@/lib/vocab";
 import { Badge, Button, Card, CardBody, CardHeader, ErrorPanel, IconButton, LoadingBlock, Select } from "@/ui";
-import { Quote, visibleText, type QuoteLookup } from "@/ui/proposal";
+import { Quote, Warming, isWarming, visibleText, type QuoteLookup } from "@/ui/proposal";
 
 export type PlateWell = Schemas["PlateWell"];
 type PlateView = Schemas["PlateView"];
@@ -131,7 +131,11 @@ export function DesignPlate({
             size="sm"
           />
         ) : null}
-        {plate.error ? <ErrorPanel error={plate.error} compact onRetry={() => void plate.refetch()} /> : null}
+        {isWarming(plate.error) ? (
+          <Warming message="The plate appears when qPilot has read the file." />
+        ) : plate.error ? (
+          <ErrorPanel error={plate.error} compact onRetry={() => void plate.refetch()} />
+        ) : null}
         {!data && plate.isPending ? <LoadingBlock label="Reading the plate" lines={5} /> : null}
         {data ? (
           <>

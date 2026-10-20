@@ -12,6 +12,11 @@ import type { Payload } from "./edit";
 import type { QuoteLookup } from "./parts";
 
 export type InboxStage = "design" | "curves" | "prism" | "roundtrip";
+
+/** The server is reading the session's file for the first time since it started (503 `warming`). */
+export function isWarming(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.code === "warming";
+}
 export type ConfirmableStage = "design" | "curves" | "choices";
 export type ProposalList = Schemas["ProposalList"];
 export type ProposalDecided = Schemas["ProposalDecided"];

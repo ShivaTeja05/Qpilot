@@ -24,6 +24,7 @@
  *   BulkActions         "Accept all consistent…" and "Reject contradicted AI calls…" (sid · stage):
  *                       the exact list first, then exactly that list; off when nothing qualifies.
  *   ConfirmStage        "Confirm this stage…" (sid · stage · status): what it covers, "Yes, confirm".
+ *   StageSummary        "The design this gives" / "The curve calls this gives" from accepted proposals
  *   DecidedList, ProposalLines, BulkAction
  *   useStageProposals(sid, stage) · useQuotes(sid) → {lookup, sheetCells} ·
  *   useProposalActions(sid, head, stage) · useMattersJobs(sid)
@@ -46,12 +47,14 @@ export {
   MattersLine,
   Quote,
   RuleChip,
+  Warming,
   evidenceSummary,
   type ProposalCheck,
   type QuoteLookup,
 } from "./parts";
 export {
   FLAG_WORDS,
+  RULE_TITLE,
   RULE_WORDS,
   detailLabel,
   detailValue,
@@ -61,7 +64,9 @@ export {
 } from "./words";
 export { DecidedList, StageInbox, type InboxFilter, type StageInboxProps } from "./StageInbox";
 export { BulkAction, BulkActions, ConfirmStage, ProposalLines } from "./StageActions";
+export { StageSummary } from "./summary";
 export {
+  isWarming,
   useMattersJobs,
   useProposalActions,
   useQuotes,
