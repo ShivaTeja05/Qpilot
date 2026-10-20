@@ -122,7 +122,7 @@ export function DemoCard({
             <dd className="text-fg">{demo.citation}</dd>
             {workspace ? (
               <>
-                <dt className="text-muted">File</dt>
+                <dt className="text-muted">In the file</dt>
                 <dd className="text-fg tabular">{countsLine(workspace)}</dd>
               </>
             ) : null}
