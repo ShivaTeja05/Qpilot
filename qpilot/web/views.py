@@ -126,11 +126,37 @@ def last_write(folder: Path) -> float:
 
 
 def stage_views(studio: Studio, sid: str) -> list[StageView]:
-    """Every stage's status (empty when the session's file is missing)."""
+    """Every stage's status (empty when the session's file is missing).
+
+    ``pending`` counts the proposals waiting for a decision; a waiting confirm step is told
+    apart (``confirm_waiting``), and ``consistent`` counts what "Accept all consistent" would
+    cover.
+    """
+    from qpilot.studio_service import _in_stage
+
     try:
-        return [StageView(**s.as_dict()) for s in studio.stages(sid)]
+        inbox = studio.store.proposals(sid).view()
+        assembly = studio.assemble(sid, inbox.accepted)
+        stages = studio._stages(sid, inbox, assembly)
     except (StudioError, StudyNotFound, OSError):
         return []
+    waiting = [p for p in inbox.proposals if p.status == "proposed"]
+    out = []
+    for s in stages:
+        mine = [p for p in waiting if _in_stage(p, s.stage)]
+        confirms = [p for p in mine if p.kind == "stage.confirm"]
+        others = [p for p in mine if p.kind != "stage.confirm"]
+        out.append(
+            StageView(
+                **{
+                    **s.as_dict(),
+                    "pending": len(others),
+                    "consistent": sum(1 for p in others if p.check.status == "consistent"),
+                    "confirm_waiting": bool(confirms),
+                }
+            )
+        )
+    return out
 
 
 def next_step(
@@ -170,10 +196,17 @@ def next_step(
                 title=f"Review {status.pending} {stage} proposal{'s' * (status.pending != 1)}",
                 detail="Accept, edit or reject each one; contradicted proposals come first.",
                 section=stage,
-                action="Accept all consistent…",
+                action="Accept all consistent…" if status.consistent else None,
             )
         if status.blockers:
             return NextStep(title=status.blockers[0], section=stage)
+        if status.confirm_waiting:
+            return NextStep(
+                title=f"Confirm the {stage}",
+                detail="The confirm step shows what it covers; “Yes, confirm” confirms it.",
+                section=stage,
+                action="Confirm this stage…",
+            )
         return NextStep(
             title=f"Confirm the {stage}",
             detail="Confirming shows exactly what it covers before anything is written.",
@@ -314,15 +347,25 @@ def session_summary(studio: Studio, sid: str, ready: bool | None = None) -> Work
     visible = bool(stages) and all(s.confirmed for s in stages if s.stage in ("design", "curves"))
     study_id = analysed_study(studio, sid, meta) if visible else None
     decisions = pending = 0
+    counts_of = "file"
     if study_id:
         try:
             decisions = len(store.entries(study_id))
             pending = len(store.pending(study_id))
+            result = store.get(study_id)
+            facts = {
+                "n_plates": result.n_plates,
+                "n_samples": result.n_samples,
+                "n_genes": len(result.contrasts),
+            }
+            counts_of = "analysis"
         except (StudyNotFound, OSError, ValueError):
             pass
     name = display_name(record.get("path"))
     return WorkspaceSummary(
         key=sid,
+        id=f"session:{sid}",
+        counts_of=counts_of,  # type: ignore[arg-type]
         kind="session",
         title=_title(name, folder.name),
         input_sha256=folder.name,
@@ -348,6 +391,8 @@ def study_summary(store: StudyStore, study_id: str) -> WorkspaceSummary:
     source = store.source(study_id)
     return WorkspaceSummary(
         key=study_id,
+        id=f"study:{study_id}",
+        counts_of="analysis",
         kind="study",
         title=_title(display_name(source), result.input_sha256),
         input_sha256=result.input_sha256,
