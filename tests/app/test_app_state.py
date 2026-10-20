@@ -1,22 +1,15 @@
-"""Task 9 gate: pure view-models for the app; every name and value is escaped."""
+"""The view-models the one page builds on (qpilot/app_state.py); every name is escaped."""
 
 from qpilot.app_state import (
     FOOTER,
     card_view,
     cards_in_order,
-    confidence_badge,
     decision_counter,
-    footer_lines,
-    meter_html,
-    meter_rows,
+    design_line,
     next_card,
-    policy_lines,
-    results_table,
     study_summary,
 )
-from qpilot.schemas import CardOption, ContrastResult, DecisionCard, Grade
-
-HEADLINE = ["ODC1", "BIRC5", "NTRK1", "NM23A"]
+from qpilot.schemas import CardOption, ContrastResult, DecisionCard
 
 
 def _row(view, option_id):
@@ -55,19 +48,6 @@ def test_script_names_render_escaped(fixture_facts):
     view = card_view(card, fixture_facts)
     assert "<script>" not in view.html
     assert view.html.count("&lt;script&gt;") == 2  # the label and the gene column
-    badge = confidence_badge(Grade(level="Low", reasons=[evil], checks=[]))
-    assert "<script>" not in badge and "&lt;script&gt;" in badge
-
-
-def test_meter_rows_and_html(fixture_result):
-    rows = {r.gene: r for r in meter_rows(fixture_result, HEADLINE)}
-    assert list(rows) == HEADLINE
-    assert rows["ODC1"].holds_text == "100%" and rows["ODC1"].level == "Moderate"
-    assert rows["NM23A"].holds == fixture_result.robustness["NM23A"].holds
-    assert rows["NM23A"].conclusion == "up" and rows["NM23A"].level == "Very low"
-    markup = meter_html(fixture_result, HEADLINE)
-    assert markup.count("qp-meter-row") == 4 and "fragile" in markup
-    assert 'data-fact="f_holds_nm23a"' in markup and "186" in markup
 
 
 def test_summary_and_rule(fixture_result):
@@ -75,12 +55,6 @@ def test_summary_and_rule(fixture_result):
     assert "64 plates" in summary.plain and "366 samples" in summary.plain
     assert summary.rule.startswith("up or down only if p < 0.05")
     assert 'data-fact="f_n_hi"' in summary.html
-
-
-def test_confidence_badge_lists_reasons(fixture_result, fixture_facts):
-    badge = confidence_badge(fixture_result.confidence["NM23A"], "NM23A", fixture_facts)
-    assert "level-very_low" in badge
-    assert badge.count("<li>") == len(fixture_result.confidence["NM23A"].reasons) == 3
 
 
 def test_card_order_counter_and_next(fixture_cards):
@@ -94,17 +68,7 @@ def test_card_order_counter_and_next(fixture_cards):
     assert next_card(decided) is None
 
 
-def test_results_table(fixture_result):
-    table = results_table(fixture_result)
-    assert len(table) == len(fixture_result.contrasts) == 58
-    odc1 = table.set_index("Gene").loc["ODC1"]
-    assert odc1["Fold change"] == "3.6×" and odc1["95 % CI"] == "2.4× – 5.3×"
-    assert odc1["Conclusion"] == "up" and odc1["Confidence"] == "Moderate"
-
-
-def test_policy_and_footer():
-    lines = policy_lines()
-    assert len(lines) == 3 and lines[2].startswith("Human only")
-    footer = footer_lines("0.1.0", "fce7a44e8b47b90759c646b557de568f7af77e75")
-    assert footer[: len(FOOTER)] == list(FOOTER)
-    assert footer[-1] == "qPilot 0.1.0 · LinRegPCR (rdmlpython) @ fce7a44"
+def test_the_never_does_lines_and_the_design_sentence(fixture_result):
+    assert FOOTER[0] == "For research use only. Not for clinical or diagnostic use."
+    assert "wait for a person" in FOOTER[1]
+    assert design_line(fixture_result).endswith("Expression-defined, not a clinical call.")

@@ -209,7 +209,7 @@ def test_an_applied_agent_choice_is_reported_in_qpilots_words(store, study):
 
 
 def test_suggest_mode_does_not_claim_the_choice_changes_a_conclusion(tmp_studies_dir, study):
-    from qpilot.app import SuggestOnlyStore
+    from qpilot.ai.suggest_only import SuggestOnlyStore
 
     suggest = SuggestOnlyStore(tmp_studies_dir)
     out = ask("Use count empty wells as very low (cap)", suggest, study)
