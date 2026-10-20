@@ -51,11 +51,13 @@ def _card(card_view: dict[str, Any]) -> dict[str, Any]:
     "writes as an agent, and the record says an agent asked for what a person typed "
     "(docs/app.md §1.1: every write from the page is human; agents act only through MCP)",
 )
-def test_ask_never_writes_to_the_chain_as_an_agent(visible):
+# decide_and_tell first: each case changes the card, so the other still has an option to ask for
+@pytest.mark.parametrize("autonomy", ["decide_and_tell", "suggest"])
+def test_ask_never_writes_to_the_chain_as_an_agent(visible, autonomy):
     c, study_id, store = visible["client"], visible["study_id"], visible["store"]
-    assert c.put("/api/settings", json={"autonomy": "suggest"}).status_code == 200
+    assert c.put("/api/settings", json={"autonomy": autonomy}).status_code == 200
     try:
-        before = len(store.entries(study_id))
+        before = len(store.entries(study_id)), len(store.attempts(study_id))
         card = next(
             _card(v) for v in _cards(c, study_id) if any(not o["chosen"] for o in v["options"])
         )
@@ -64,8 +66,12 @@ def test_ask_never_writes_to_the_chain_as_an_agent(visible):
         assert r.status_code == 202, r.text
         answer = wait_job(c, r.json()["job"])
         assert answer["status"] == "done", answer
-        written = [e for e in store.entries(study_id)[before:] if e.actor != "human"]
-        assert not written, [(e.actor, e.card_id, e.option, e.status) for e in written]
+        written = [e for e in store.entries(study_id)[before[0] :] if e.actor != "human"]
+        tried = store.attempts(study_id)[before[1] :]
+        assert not written and not tried, (
+            [(e.actor, e.card_id, e.option, e.status) for e in written],
+            tried,
+        )
     finally:
         c.put("/api/settings", json={"autonomy": "suggest"})
 
