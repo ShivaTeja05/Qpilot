@@ -27,29 +27,53 @@ async function results(api: APIRequestContext, studyId: string): Promise<Results
   return (await res.json()) as ResultsView;
 }
 
+/** Wait until the session has no job running (a proposal job fills the inbox as it goes). */
+async function jobsDone(api: APIRequestContext, sid: string): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        const res = await api.get(`/api/sessions/${sid}`, { timeout: 60_000 });
+        const frame = (await res.json()) as { active_jobs?: unknown[] };
+        return frame.active_jobs?.length ?? 0;
+      },
+      { timeout: 600_000, intervals: [2000] },
+    )
+    .toBe(0);
+}
+
 /** Decide every waiting proposal of the stage the way the seeded walk did. */
-async function reviewStage(app: App, stage: "design" | "curves"): Promise<void> {
+async function reviewStage(
+  app: App,
+  api: APIRequestContext,
+  sid: string,
+  stage: "design" | "curves",
+): Promise<void> {
   const page = app.page;
   const bulk = async (button: RegExp, go: RegExp) => {
-    const open = page.getByRole("button", { name: button });
+    const open = page.getByRole("main").getByRole("button", { name: button });
     if (!(await open.count()) || (await open.isDisabled())) return;
     await open.click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
+    // The dialog lists exactly what it will do; wait for that list (a non-zero count).
+    const goButton = dialog.getByRole("button", { name: go });
+    const nothing = dialog.getByText(/^No waiting proposal/);
+    await expect(goButton.or(nothing).first()).toBeVisible({ timeout: 120_000 });
+    if (!(await goButton.count())) {
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      return;
+    }
     const reason = dialog.getByRole("textbox", { name: "One reason for all of them" });
     if (await reason.count()) await reason.fill(REASON);
-    const goButton = dialog.getByRole("button", { name: go });
-    if (await goButton.count()) {
-      await app.axe(`${stage}, bulk dialog`);
-      await goButton.click();
-      await expect(dialog).toBeHidden({ timeout: 120_000 });
-    } else {
-      await page.keyboard.press("Escape");
-    }
+    await app.axe(`${stage}, bulk dialog`);
+    await expect(goButton).toBeEnabled({ timeout: 60_000 });
+    await goButton.click();
+    await expect(dialog).toBeHidden({ timeout: 300_000 });
     await app.settle(120_000);
   };
-  await bulk(/^Accept all consistent/, /^Accept these \d/);
-  await bulk(/^Reject contradicted AI calls/, /^Reject these \d/);
+  await bulk(/^Accept all consistent/, /^Accept these [1-9]/);
+  await bulk(/^Reject contradicted AI calls/, /^Reject these [1-9]/);
 
   // What is left one by one: contradicted → Reject, the rest → Accept (with a reason).
   const waiting = page.getByRole("list", { name: /proposals waiting for you$/ });
@@ -71,9 +95,15 @@ async function reviewStage(app: App, stage: "design" | "curves"): Promise<void> 
     await app.settle(60_000);
   }
   await expect(page.getByText("Nothing is waiting in this stage")).toBeVisible({ timeout: 60_000 });
+  // …and the server agrees.
+  const waitingOnServer = async () =>
+    (await proposals(api, sid, stage)).proposals.filter((p) => p.status === "proposed").length;
+  await expect.poll(waitingOnServer, { timeout: 60_000 }).toBe(0);
 
   await page
+    .getByRole("main")
     .getByRole("button", { name: /^(Confirm this stage|Review the confirm step)…$/ })
+    .first()
     .click();
   const confirm = page.getByRole("dialog", { name: `Confirm the ${stage}` });
   await expect(confirm).toBeVisible();
@@ -100,23 +130,29 @@ test.describe("a Studio walk of the demo", () => {
     const before = await results(api, seeded.study_id!);
 
     // Setup (not under test here): move the seeded demo aside, as Settings' "Start a fresh demo".
-    const fresh = await api.post("/api/demo/fresh");
+    // Refused (409 busy) while a job on the demo runs, e.g. the cold start's: ask again.
+    let fresh = await api.post("/api/demo/fresh");
+    for (let i = 0; i < 60 && fresh.status() === 409; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      fresh = await api.post("/api/demo/fresh");
+    }
     expect(fresh.status(), await fresh.text()).toBe(200);
 
     await app.open("/");
-    await app.page.getByRole("button", { name: "Open the demo study" }).click();
+    await app.page.getByRole("main").getByRole("button", { name: "Open the demo study" }).click();
     await app.page.waitForURL(/#\/s\/[0-9a-f]{12}\/design/, { timeout: 300_000 });
     await app.settle(120_000);
     const sid = new URL(app.page.url()).hash.split("/")[2]!;
 
     // Design: propose (a job), then review and confirm.
-    await app.page.getByRole("button", { name: "Propose the design" }).click();
+    await app.page.getByRole("main").getByRole("button", { name: "Propose the design" }).click();
+    await jobsDone(api, sid);
     await expect(app.page.getByRole("list", { name: /proposals waiting for you$/ })).toBeVisible({
       timeout: 300_000,
     });
     await app.axe("design, proposals waiting");
     await app.shot("walk", "design-waiting");
-    await reviewStage(app, "design");
+    await reviewStage(app, api, sid, "design");
     expect(
       (await proposals(api, sid, "design")).proposals.some((p) => p.status === "proposed"),
     ).toBe(false);
@@ -124,13 +160,14 @@ test.describe("a Studio walk of the demo", () => {
     // Curves: check (a job), then review and confirm.
     await app.page.goto(`${E2E.origin}/#${route({ key: sid, kind: "session" }, "curves")}`);
     await app.settle(120_000);
-    await app.page.getByRole("button", { name: "Check the curves" }).click();
+    await app.page.getByRole("main").getByRole("button", { name: "Check the curves" }).click();
+    await jobsDone(api, sid);
     await expect(app.page.getByRole("list", { name: /proposals waiting for you$/ })).toBeVisible({
       timeout: 300_000,
     });
     await app.axe("curves, proposals waiting");
     await app.shot("walk", "curves-waiting");
-    await reviewStage(app, "curves");
+    await reviewStage(app, api, sid, "curves");
 
     // Results: the same genes and calls as the seeded walk.
     const walked = await demoSession(api);

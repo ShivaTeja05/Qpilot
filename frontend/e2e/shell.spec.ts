@@ -76,7 +76,7 @@ test.describe("the rail", () => {
     expect(new URL(app.page.url()).hash).toContain(`/${demo.key}/`);
 
     const nav = rail.getByRole("navigation", { name: "Workflow" });
-    for (const s of SECTIONS.filter((x) => !x.hidden && x.scope === "workspace")) {
+    for (const s of SECTIONS.filter((x) => !x.hidden && !x.notInRail && x.scope === "workspace")) {
       if (s.sessionOnly && demo.kind !== "session") continue;
       const link = nav.getByRole("link", { name: new RegExp(`^${s.label}\\b`) });
       await link.click();
@@ -120,7 +120,7 @@ test.describe("the rail", () => {
     await app.open(route(demo, "results"));
     const bar = app.page.getByRole("navigation", { name: "Sections" });
     await expect(bar).toBeVisible();
-    for (const s of SECTIONS.filter((x) => !x.hidden && x.scope === "workspace")) {
+    for (const s of SECTIONS.filter((x) => !x.hidden && !x.notInRail && x.scope === "workspace")) {
       const direct = bar.getByRole("link", { name: new RegExp(`^${s.label}\\b`) });
       if (await direct.count()) {
         await direct.click();
