@@ -379,7 +379,8 @@ def test_the_built_page_loads_nothing_from_the_internet():
                 if not url.startswith("//"):
                     offenders.append(f"{path.name}: {url}")
         for url in re.findall(r"""url\(\s*['"]?([^'")]+)""", text):
-            if not url.startswith(("/", "data:", "#")):
+            # `url(` in JS string checks (motion: startsWith(`url(`)) is code, not a fetch.
+            if not url.startswith(("/", "data:", "#", "`", "$")):
                 offenders.append(f"{path.name}: url({url})")
     assert not offenders, offenders[:10]
 
