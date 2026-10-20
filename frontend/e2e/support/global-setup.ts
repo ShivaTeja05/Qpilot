@@ -43,18 +43,38 @@ export default async function globalSetup(): Promise<void> {
         "Copy the seed (e2e/reset-store.sh) and point the server at the copy, or set E2E_READONLY=1.",
     );
   }
-  // Warm the server: the first read of each workspace is slow (it opens the study); do it once
-  // here, not inside a test's timeout.
+  // Warm the server: the first read of each session reads its file (its frame has no stages
+  // meanwhile). Wait for each frame to settle, then read its views once, so no test is timed
+  // against the cold start.
   const headers = { "x-qpilot-token": E2E.token };
+  interface Frame {
+    key: string;
+    kind: string;
+    study_id?: string | null;
+    results_visible: boolean;
+    /** The session is still reading its file (the cold start). */
+    warming?: boolean;
+    stages: { stage: string; confirmed: boolean }[];
+  }
   const list = (await (await fetch(`${E2E.origin}/api/workspaces`, { headers })).json()) as {
-    workspaces: { key: string; kind: string; study_id?: string | null; results_visible: boolean }[];
+    workspaces: Frame[];
   };
   for (const w of list.workspaces) {
-    const frame = w.kind === "session" ? `/api/sessions/${w.key}` : `/api/studies/${w.key}`;
-    await fetch(`${E2E.origin}${frame}`, { headers });
-    if (w.results_visible && w.study_id) {
-      await fetch(`${E2E.origin}/api/studies/${w.study_id}/results`, { headers });
-      await fetch(`${E2E.origin}/api/studies/${w.study_id}/cards`, { headers });
+    const path = w.kind === "session" ? `/api/sessions/${w.key}` : `/api/studies/${w.key}`;
+    let frame: Frame = w;
+    for (let i = 0; i < 60; i++) {
+      frame = (await (await fetch(`${E2E.origin}${path}`, { headers })).json()) as Frame;
+      const confirmed = ["design", "curves"].every(
+        (s) => frame.stages?.find((x) => x.stage === s)?.confirmed,
+      );
+      // Still reading the file: `warming` (older servers: no stages yet).
+      const loading = Boolean(frame.warming) || (w.kind === "session" && !frame.stages?.length);
+      if (!loading && (w.kind !== "session" || !confirmed || frame.study_id)) break;
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    if (frame.results_visible && frame.study_id) {
+      await fetch(`${E2E.origin}/api/studies/${frame.study_id}/results`, { headers });
+      await fetch(`${E2E.origin}/api/studies/${frame.study_id}/cards`, { headers });
     }
   }
   // Each run reports its own axe findings (e2e/axe-summary.mjs reads them).

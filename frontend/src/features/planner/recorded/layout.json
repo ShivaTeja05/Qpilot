@@ -1,0 +1,2743 @@
+{
+  "study_id": "e300000d4f9a",
+  "seed": 1,
+  "groups": [
+    {
+      "label": "MYCN-high",
+      "n": 6
+    },
+    {
+      "label": "rest",
+      "n": 6
+    }
+  ],
+  "genes": ["ODC1", "BIRC5", "NTRK1", "NM23A"],
+  "refs": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+  "replicates": 2,
+  "wells_per_plate": 96,
+  "panels": [["ODC1", "BIRC5", "NTRK1", "NM23A"]],
+  "batches": 4,
+  "samples_per_plate": 3,
+  "calibrated": true,
+  "plates": [
+    {
+      "number": 1,
+      "name": "Plate 01",
+      "panel": 1,
+      "batch": 1,
+      "genes": ["ODC1", "BIRC5", "NTRK1", "NM23A"],
+      "refs": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+      "wells": [
+        {
+          "well": "A1",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B1",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C1",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D1",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E1",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F1",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G1",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H1",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A2",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B2",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C2",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D2",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E2",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F2",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G2",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H2",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A3",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B3",
+          "sample": "MYCN-high-04",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C3",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D3",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E3",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F3",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G3",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H3",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A4",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B4",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C4",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D4",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E4",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F4",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G4",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H4",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A5",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B5",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C5",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D5",
+          "sample": "MYCN-high-01",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E5",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F5",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G5",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H5",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A6",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B6",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C6",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D6",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E6",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F6",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G6",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H6",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A7",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B7",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C7",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D7",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E7",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F7",
+          "sample": "rest-04",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G7",
+          "sample": "IRC",
+          "group": null,
+          "target": "ODC1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H7",
+          "sample": "IRC",
+          "group": null,
+          "target": "ODC1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A8",
+          "sample": "IRC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "B8",
+          "sample": "IRC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "C8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "D8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "E8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NM23A",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "F8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NM23A",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "G8",
+          "sample": "IRC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H8",
+          "sample": "IRC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HMBS",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "B9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HMBS",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "C9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "D9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "E9",
+          "sample": "IRC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "F9",
+          "sample": "IRC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "G9",
+          "sample": "IRC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H9",
+          "sample": "IRC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A10",
+          "sample": "NTC",
+          "group": null,
+          "target": "ODC1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "B10",
+          "sample": "NTC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "C10",
+          "sample": "NTC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "D10",
+          "sample": "NTC",
+          "group": null,
+          "target": "NM23A",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "E10",
+          "sample": "NTC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "F10",
+          "sample": "NTC",
+          "group": null,
+          "target": "HMBS",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "G10",
+          "sample": "NTC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "H10",
+          "sample": "NTC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "A11",
+          "sample": "NTC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "ntc",
+          "replicate": 1
+        }
+      ],
+      "wells_used": 81,
+      "wells_free": 15,
+      "samples": {
+        "MYCN-high": 2,
+        "rest": 1
+      },
+      "groups_present": 2,
+      "refs_present": true,
+      "controls": {
+        "pos": 18,
+        "ntc": 9
+      },
+      "edge_share": {
+        "MYCN-high": 0.4166666666666667,
+        "rest": 0.2222222222222222
+      }
+    },
+    {
+      "number": 2,
+      "name": "Plate 02",
+      "panel": 1,
+      "batch": 2,
+      "genes": ["ODC1", "BIRC5", "NTRK1", "NM23A"],
+      "refs": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+      "wells": [
+        {
+          "well": "A1",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B1",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C1",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D1",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E1",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F1",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G1",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H1",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A2",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B2",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C2",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D2",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E2",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F2",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G2",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H2",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A3",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B3",
+          "sample": "MYCN-high-02",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C3",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D3",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E3",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F3",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G3",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H3",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A4",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B4",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C4",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D4",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E4",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F4",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G4",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H4",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A5",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B5",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C5",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D5",
+          "sample": "MYCN-high-03",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E5",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F5",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G5",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H5",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A6",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B6",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C6",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D6",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E6",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F6",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G6",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H6",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A7",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B7",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C7",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D7",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E7",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F7",
+          "sample": "rest-03",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G7",
+          "sample": "IRC",
+          "group": null,
+          "target": "ODC1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H7",
+          "sample": "IRC",
+          "group": null,
+          "target": "ODC1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A8",
+          "sample": "IRC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "B8",
+          "sample": "IRC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "C8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "D8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "E8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NM23A",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "F8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NM23A",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "G8",
+          "sample": "IRC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H8",
+          "sample": "IRC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HMBS",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "B9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HMBS",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "C9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "D9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "E9",
+          "sample": "IRC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "F9",
+          "sample": "IRC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "G9",
+          "sample": "IRC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H9",
+          "sample": "IRC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A10",
+          "sample": "NTC",
+          "group": null,
+          "target": "ODC1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "B10",
+          "sample": "NTC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "C10",
+          "sample": "NTC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "D10",
+          "sample": "NTC",
+          "group": null,
+          "target": "NM23A",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "E10",
+          "sample": "NTC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "F10",
+          "sample": "NTC",
+          "group": null,
+          "target": "HMBS",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "G10",
+          "sample": "NTC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "H10",
+          "sample": "NTC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "A11",
+          "sample": "NTC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "ntc",
+          "replicate": 1
+        }
+      ],
+      "wells_used": 81,
+      "wells_free": 15,
+      "samples": {
+        "MYCN-high": 2,
+        "rest": 1
+      },
+      "groups_present": 2,
+      "refs_present": true,
+      "controls": {
+        "pos": 18,
+        "ntc": 9
+      },
+      "edge_share": {
+        "MYCN-high": 0.4166666666666667,
+        "rest": 0.2222222222222222
+      }
+    },
+    {
+      "number": 3,
+      "name": "Plate 03",
+      "panel": 1,
+      "batch": 3,
+      "genes": ["ODC1", "BIRC5", "NTRK1", "NM23A"],
+      "refs": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+      "wells": [
+        {
+          "well": "A1",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B1",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C1",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D1",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E1",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F1",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G1",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H1",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A2",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B2",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C2",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D2",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E2",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F2",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G2",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H2",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A3",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B3",
+          "sample": "rest-06",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C3",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D3",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E3",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F3",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G3",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H3",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A4",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B4",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C4",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D4",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E4",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F4",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G4",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H4",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A5",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B5",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C5",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D5",
+          "sample": "rest-01",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E5",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F5",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G5",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H5",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A6",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B6",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C6",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D6",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E6",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F6",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G6",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H6",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A7",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B7",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C7",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D7",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E7",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F7",
+          "sample": "MYCN-high-05",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G7",
+          "sample": "IRC",
+          "group": null,
+          "target": "ODC1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H7",
+          "sample": "IRC",
+          "group": null,
+          "target": "ODC1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A8",
+          "sample": "IRC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "B8",
+          "sample": "IRC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "C8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "D8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "E8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NM23A",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "F8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NM23A",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "G8",
+          "sample": "IRC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H8",
+          "sample": "IRC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HMBS",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "B9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HMBS",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "C9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "D9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "E9",
+          "sample": "IRC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "F9",
+          "sample": "IRC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "G9",
+          "sample": "IRC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H9",
+          "sample": "IRC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A10",
+          "sample": "NTC",
+          "group": null,
+          "target": "ODC1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "B10",
+          "sample": "NTC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "C10",
+          "sample": "NTC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "D10",
+          "sample": "NTC",
+          "group": null,
+          "target": "NM23A",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "E10",
+          "sample": "NTC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "F10",
+          "sample": "NTC",
+          "group": null,
+          "target": "HMBS",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "G10",
+          "sample": "NTC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "H10",
+          "sample": "NTC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "A11",
+          "sample": "NTC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "ntc",
+          "replicate": 1
+        }
+      ],
+      "wells_used": 81,
+      "wells_free": 15,
+      "samples": {
+        "MYCN-high": 1,
+        "rest": 2
+      },
+      "groups_present": 2,
+      "refs_present": true,
+      "controls": {
+        "pos": 18,
+        "ntc": 9
+      },
+      "edge_share": {
+        "MYCN-high": 0.2222222222222222,
+        "rest": 0.4166666666666667
+      }
+    },
+    {
+      "number": 4,
+      "name": "Plate 04",
+      "panel": 1,
+      "batch": 4,
+      "genes": ["ODC1", "BIRC5", "NTRK1", "NM23A"],
+      "refs": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+      "wells": [
+        {
+          "well": "A1",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B1",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C1",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D1",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E1",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F1",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G1",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H1",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A2",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B2",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C2",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D2",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E2",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F2",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G2",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H2",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A3",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B3",
+          "sample": "MYCN-high-06",
+          "group": "MYCN-high",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C3",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D3",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E3",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F3",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G3",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H3",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A4",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B4",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C4",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D4",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E4",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F4",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G4",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H4",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A5",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B5",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C5",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D5",
+          "sample": "rest-05",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E5",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F5",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "ODC1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G5",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H5",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "BIRC5",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A6",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B6",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "NTRK1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C6",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D6",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "NM23A",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E6",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F6",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "ALUsq(Eurogentec)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G6",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "H6",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "HMBS",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "A7",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "B7",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "HPRT1",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "C7",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "D7",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "SDHA(1)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "E7",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 1
+        },
+        {
+          "well": "F7",
+          "sample": "rest-02",
+          "group": "rest",
+          "target": "UBC(2)",
+          "type": "unkn",
+          "replicate": 2
+        },
+        {
+          "well": "G7",
+          "sample": "IRC",
+          "group": null,
+          "target": "ODC1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H7",
+          "sample": "IRC",
+          "group": null,
+          "target": "ODC1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A8",
+          "sample": "IRC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "B8",
+          "sample": "IRC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "C8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "D8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "E8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NM23A",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "F8",
+          "sample": "IRC",
+          "group": null,
+          "target": "NM23A",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "G8",
+          "sample": "IRC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H8",
+          "sample": "IRC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HMBS",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "B9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HMBS",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "C9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "D9",
+          "sample": "IRC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "E9",
+          "sample": "IRC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "F9",
+          "sample": "IRC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "G9",
+          "sample": "IRC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "pos",
+          "replicate": 1
+        },
+        {
+          "well": "H9",
+          "sample": "IRC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "pos",
+          "replicate": 2
+        },
+        {
+          "well": "A10",
+          "sample": "NTC",
+          "group": null,
+          "target": "ODC1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "B10",
+          "sample": "NTC",
+          "group": null,
+          "target": "BIRC5",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "C10",
+          "sample": "NTC",
+          "group": null,
+          "target": "NTRK1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "D10",
+          "sample": "NTC",
+          "group": null,
+          "target": "NM23A",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "E10",
+          "sample": "NTC",
+          "group": null,
+          "target": "ALUsq(Eurogentec)",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "F10",
+          "sample": "NTC",
+          "group": null,
+          "target": "HMBS",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "G10",
+          "sample": "NTC",
+          "group": null,
+          "target": "HPRT1",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "H10",
+          "sample": "NTC",
+          "group": null,
+          "target": "SDHA(1)",
+          "type": "ntc",
+          "replicate": 1
+        },
+        {
+          "well": "A11",
+          "sample": "NTC",
+          "group": null,
+          "target": "UBC(2)",
+          "type": "ntc",
+          "replicate": 1
+        }
+      ],
+      "wells_used": 81,
+      "wells_free": 15,
+      "samples": {
+        "MYCN-high": 1,
+        "rest": 2
+      },
+      "groups_present": 2,
+      "refs_present": true,
+      "controls": {
+        "pos": 18,
+        "ntc": 9
+      },
+      "edge_share": {
+        "MYCN-high": 0.6111111111111112,
+        "rest": 0.2222222222222222
+      }
+    }
+  ],
+  "balance": {
+    "every_plate_every_group": true,
+    "plates_with_one_group": [],
+    "refs_on_every_plate": true,
+    "controls_on_every_plate": true,
+    "each_reaction_once": true,
+    "group_plate_association": 0.3333333333333333,
+    "max_share_gap": 0.16666666666666669,
+    "wells_total": 384,
+    "wells_samples": 216,
+    "wells_controls": 108,
+    "wells_free": 60
+  },
+  "notes": [
+    "4 plates of 96 wells: the 4 genes in 1 panel × the 12 samples in 4 batches; every sample in 2 replicates per assay.",
+    "Every plate carries the reference genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2)) for its own samples, so each sample is normalised within its plate.",
+    "A gene's samples span plates, so the same inter-run calibrator (IRC) is on every plate for every assay: it links the runs (Hellemans 2007).",
+    "Samples are dealt to plates group by group in a random order (seeded), and shuffled within each plate, so neither plate nor position is group."
+  ],
+  "warnings": [],
+  "rules": [],
+  "csv_url": "/api/studies/e300000d4f9a/planner/layout.csv?n_per_group=6&genes=ODC1&genes=BIRC5&genes=NTRK1&genes=NM23A&replicates=2&wells_per_plate=96&ntc=1&nrt=0&standards=0&calibrator=true&seed=1",
+  "csv_name": "qpilot-plate-layout-e300000d4f9a-seed1.csv"
+}
