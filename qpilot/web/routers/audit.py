@@ -777,7 +777,7 @@ def _listed(folder: Path) -> dict[str, str]:
     """The audit's own file list (AUDIT.sha256): name -> sha256."""
     try:
         text = (folder / "AUDIT.sha256").read_text(encoding="utf-8")
-    except OSError:
+    except (OSError, ValueError):  # missing, or not text
         return {}
     out: dict[str, str] = {}
     for line in text.splitlines():
@@ -794,28 +794,57 @@ def _files(folder: Path) -> list[AuditFile]:
         if listed
         else [n for n in RUN_FILES if (folder / n).is_file()]
     )
+    root = folder.resolve()
     out = []
     for name in names:
         path = folder / name
-        if "/" in name or not path.is_file():
+        if "/" in name or "\x00" in name or not path.is_file():
             continue
+        if path.resolve().parent != root:
+            continue  # a link to a file elsewhere: never listed, never served
         out.append(AuditFile(name=name, bytes=path.stat().st_size, sha256=listed.get(name)))
     return out
 
 
 def _download(folder: Path, name: str) -> FileResponse:
-    allowed = {f.name for f in _files(folder)}
-    root = folder.resolve()
+    missing = api_error(404, "not_found", "This audit has no file with that name.")
+    if name not in {f.name for f in _files(folder)}:  # checked before the name meets the disk
+        raise missing
     path = (folder / name).resolve()
-    if name not in allowed or path.parent != root or not path.is_file():
-        raise api_error(404, "not_found", "This audit has no file with that name.")
+    if path.parent != folder.resolve() or not path.is_file():
+        raise missing
     media = MEDIA.get(path.suffix, "application/octet-stream")
     return FileResponse(path, media_type=media, filename=name)
 
 
+def _verify_files(folder: Path, record: Path | None) -> Any:
+    """:func:`~qpilot.integration.simulator.verify_audit`, with unreadable files as problems."""
+    from qpilot.integration.simulator import AuditCheck as Check
+    from qpilot.integration.simulator import verify_audit
+
+    try:
+        return verify_audit(folder, record)
+    except (ValueError, OSError) as err:  # a damaged manifest or lock: not JSON, unreadable
+        damaged = [
+            name
+            for name in ("audit_manifest.json", "lock.json")
+            if (folder / name).exists() and not _readable_json(folder / name)
+        ]
+        problems = [f"{name} cannot be read (damaged)" for name in damaged]
+        return Check(False, problems or [f"the audit's files cannot be read: {err}"])
+
+
+def _readable_json(path: Path) -> bool:
+    try:
+        json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return True
+
+
 def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> AuditVerifyView:
     from qpilot.core.record import RecordError, write_record
-    from qpilot.integration.simulator import sha256_file, verify_audit
+    from qpilot.integration.simulator import sha256_file
 
     manifest = _manifest(folder) or {}
     sums = folder / "AUDIT.sha256"
@@ -830,7 +859,7 @@ def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> 
         "bound_to_record": False,
     }
     if not bind or study_id is None:
-        check = verify_audit(folder)
+        check = _verify_files(folder, None)
     else:
         with tempfile.TemporaryDirectory(dir=ctx.private) as tmp:
             record = Path(tmp) / "record"
@@ -840,7 +869,7 @@ def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> 
                 raise api_error(
                     409, "no_record", f"The study's record cannot be written: {err}"
                 ) from err
-            check = verify_audit(folder, record)
+            check = _verify_files(folder, record)
         hashes = _chain_hashes(ctx, study_id)
         since = _decisions_since(hashes, head)
         out.update(

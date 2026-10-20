@@ -744,3 +744,41 @@ def test_the_audits_set_is_always_named_with_its_size(served, screen):
     assert holds["of"] == n and 0 <= holds["same"] <= n
     assert holds["n"] == round(100 * holds["same"] / n)
     assert f"{holds['same']} of {n}" in " ".join(card["holds"]["lines"])
+
+
+def test_hostile_file_names_are_not_found_and_links_are_not_listed(seeded, tmp_path):
+    root = _copy(seeded, tmp_path)
+    folder = root / "simulator_audits" / seeded[1]
+    outside = tmp_path / "secret.txt"
+    outside.write_text("outside the audit")
+    (folder / "REPORT.md").unlink()
+    (folder / "REPORT.md").symlink_to(outside)  # listed in AUDIT.sha256, now a link out
+    ctx, client = _client(StudyStore(root))
+    url = f"/api/studies/{seeded[1]}/audit/files"
+    with client:
+        names = [f["name"] for f in client.get(url).json()["files"]]
+        answers = {
+            bad: client.get(f"{url}/{bad}").status_code
+            for bad in ("AUDIT.sha256%00.txt", "REPORT.md", "%00", "genes.csv%00")
+        }
+    _close(ctx)
+    assert "REPORT.md" not in names and "genes.csv" in names
+    assert set(answers.values()) == {404}, answers
+
+
+def test_a_damaged_manifest_is_a_verification_problem_not_a_crash(seeded, tmp_path):
+    root = _copy(seeded, tmp_path)
+    folder = root / "simulator_audits" / seeded[1]
+    (folder / "audit_manifest.json").write_text("{not json")
+    ctx, client = _client(StudyStore(root))
+    url = f"/api/studies/{seeded[1]}/audit"
+    with client:
+        status = client.get(url).json()
+        check = client.post(f"{url}/verify", json={}, headers=WRITE)
+    _close(ctx)
+    assert status["status"] == "failed" and "manifest" in status["reason"]
+    assert check.status_code == 200, check.text
+    body = check.json()
+    assert (
+        body["ok"] is False and "audit_manifest.json cannot be read (damaged)" in body["problems"]
+    )
