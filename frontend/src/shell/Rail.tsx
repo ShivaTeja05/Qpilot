@@ -146,7 +146,7 @@ function NavItem({
             active
               ? "bg-accent-soft text-accent-strong"
               : "text-muted hover:bg-bg-subtle hover:text-fg",
-            locked && !active && "text-faint",
+            locked && !active && "text-muted",
           )}
         >
           {active ? (
@@ -199,7 +199,6 @@ function WorkspaceSwitcher({
       <MenuTrigger asChild>
         <button
           type="button"
-          aria-label={frame ? `Workspace: ${frame.title}. Switch workspace` : "Choose a workspace"}
           className="flex w-full items-center gap-2.5 rounded-lg border border-line bg-surface-2 p-2 text-left transition-colors hover:border-line-strong hover:bg-bg-subtle max-lg:justify-center max-lg:border-transparent max-lg:bg-transparent max-lg:p-1.5"
         >
           <span
@@ -208,6 +207,8 @@ function WorkspaceSwitcher({
           >
             <Library className="size-4" />
           </span>
+          <span className="sr-only">Switch study. Open: </span>
+          <span className="sr-only lg:hidden">{frame?.title ?? "none"}</span>
           <span className="hidden min-w-0 flex-1 lg:block">
             <span className="block truncate text-[13px] font-semibold text-fg">
               {frame?.title ?? "No study open"}
@@ -296,7 +297,7 @@ export function Rail({ route, frame, states, workspaces }: RailProps) {
         </ul>
         {inWorkspace ? (
           <>
-            <p className="mt-4 mb-1.5 hidden px-3 text-[11px] font-semibold tracking-wider text-faint uppercase lg:block">
+            <p className="mt-4 mb-1.5 hidden px-3 text-[11px] font-semibold tracking-wider text-muted uppercase lg:block">
               Workflow
             </p>
             <div className="my-2 h-px bg-line lg:hidden" aria-hidden />
@@ -338,7 +339,7 @@ export function Rail({ route, frame, states, workspaces }: RailProps) {
               active={route.section === "settings"}
             />
           </ul>
-          <p className="mt-3 hidden px-3 text-[11px] leading-snug text-faint lg:block">
+          <p className="mt-3 hidden px-3 text-[11px] leading-snug text-muted lg:block">
             Research use only. Not for clinical or diagnostic use.
           </p>
         </div>
@@ -352,7 +353,7 @@ function RecentList({ workspaces }: { workspaces: WorkspaceSummary[] | undefined
   if (!recent.length) return null;
   return (
     <div className="mt-4 hidden lg:block">
-      <p className="mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-faint uppercase">
+      <p className="mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-muted uppercase">
         Recent
       </p>
       <ul className="flex flex-col gap-0.5">
@@ -399,7 +400,7 @@ function BarItem({
         aria-label={words ? `${label} (${words})` : label}
         className={cn(
           "flex h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
-          active ? "text-accent-strong" : state && !state.reachable ? "text-faint" : "text-muted",
+          active ? "text-accent-strong" : state && !state.reachable ? "text-muted" : "text-muted",
         )}
       >
         <span className="relative flex">
@@ -509,7 +510,7 @@ export function BottomBar({ route, frame, states, workspaces }: RailProps) {
         </ul>
         {workspaces?.length ? (
           <div className="border-t border-line p-2">
-            <p className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wider text-faint uppercase">
+            <p className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wider text-muted uppercase">
               Recent
             </p>
             {workspaces.slice(0, 5).map((w) => (

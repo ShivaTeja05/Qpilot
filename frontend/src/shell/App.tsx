@@ -184,7 +184,9 @@ function Shell() {
   }, [route.section, frame]);
 
   // After moving to another section, start reading at its top (focus follows for screen readers).
-  const sectionKey = `${route.kind}/${route.key}/${route.section}/${route.rest.join("/")}`;
+  // Keyed on the section, not its `rest`: a section that keeps state in the path (the Audit's
+  // tab and what-if choices, the Gene page's gene) is not remounted or scrolled when it changes.
+  const sectionKey = `${route.kind}/${route.key}/${route.section}`;
   useEffect(() => {
     const main = mainRef.current;
     if (!main) return;

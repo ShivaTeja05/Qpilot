@@ -111,13 +111,13 @@ export function ofTotal(part: number | null | undefined, total: number | null | 
   return `${count(part)} of ${count(total)}`;
 }
 
-/** Bytes as the page says them: `7.0 MB`, `640 KB`, `12 B`. */
+/** Bytes in decimal units, as the server and the CLI say them: `7.0 MB`, `640 KB`, `12 B`. */
 export function bytes(n: number | null | undefined): string {
   if (!finite(n) || n < 0) return MISSING;
-  if (n < 1024) return `${n}${NNBSP}B`;
-  if (n < 1024 * 1024) return `${Math.round(n / 1024)}${NNBSP}KB`;
-  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)}${NNBSP}MB`;
-  return `${(n / 1024 ** 3).toFixed(1)}${NNBSP}GB`;
+  if (n < 1000) return `${Math.round(n)}${NNBSP}B`;
+  if (n < 1e6) return `${Math.round(n / 1000)}${NNBSP}KB`;
+  if (n < 1e9) return `${(n / 1e6).toFixed(1)}${NNBSP}MB`;
+  return `${(n / 1e9).toFixed(1)}${NNBSP}GB`;
 }
 
 /** Seconds as the page shows them: `8 s`, `1 min 12 s`, `2 h 5 min`. */
