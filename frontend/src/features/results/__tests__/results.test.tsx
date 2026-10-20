@@ -22,7 +22,9 @@ afterEach(() => {
 });
 
 function wrap(children: ReactNode) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
 }
 
@@ -36,10 +38,13 @@ describe("results logic", { timeout: 30_000 }, () => {
   });
   it("cards: requests first, then open ones by rank, decided last", () => {
     const order = cardOrder(cards.cards);
-    const weight = (s: string, pending: number) => (pending || s === "pending_human" ? 0 : s === "open" ? 1 : 2);
+    const weight = (s: string, pending: number) =>
+      pending || s === "pending_human" ? 0 : s === "open" ? 1 : 2;
     const ws = order.map((c) => weight(c.card.status, c.pending.length));
     expect(ws).toEqual([...ws].sort((a, b) => a - b));
-    expect(new Set(order.map((c) => c.card.id))).toEqual(new Set(cards.cards.map((c) => c.card.id)));
+    expect(new Set(order.map((c) => c.card.id))).toEqual(
+      new Set(cards.cards.map((c) => c.card.id)),
+    );
   });
 });
 
@@ -48,7 +53,13 @@ describe("Decision Cards", { timeout: 30_000 }, () => {
     // the server's refusal (no data): someone decided since the view was read
     const refusal = () =>
       Promise.resolve({
-        error: { error: { code: "stale", message: "Something was decided since you loaded this.", details: {} } },
+        error: {
+          error: {
+            code: "stale",
+            message: "Something was decided since you loaded this.",
+            details: {},
+          },
+        },
         response: new Response(null, { status: 409 }),
       });
     const post = vi.spyOn(api, "POST").mockImplementation(refusal as never);
@@ -60,11 +71,19 @@ describe("Decision Cards", { timeout: 30_000 }, () => {
     for (const g of first.genes) expect(within(article).getAllByText(g).length).toBeGreaterThan(0);
     const decide = within(article).getByRole("button", { name: /^Decide:/ });
     expect((decide as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(within(article).getByRole("textbox"), { target: { value: "Prespecified in our protocol" } });
+    fireEvent.change(within(article).getByRole("textbox"), {
+      target: { value: "Prespecified in our protocol" },
+    });
     expect((decide as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(decide);
     await waitFor(() => expect(post).toHaveBeenCalled());
-    const [route, init] = post.mock.calls[0] as unknown as [string, { params: { path: { card_id: string } }; body: { option: string; reason: string; expected_head: string } }];
+    const [route, init] = post.mock.calls[0] as unknown as [
+      string,
+      {
+        params: { path: { card_id: string } };
+        body: { option: string; reason: string; expected_head: string };
+      },
+    ];
     expect(route).toBe("/api/studies/{study_id}/cards/{card_id}/decide");
     expect(init.params.path.card_id).toBe(first.card.id);
     const sent = init.body;

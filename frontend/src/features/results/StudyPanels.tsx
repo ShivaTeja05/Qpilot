@@ -5,7 +5,13 @@ import { count } from "@/lib/format";
 import { Card, CardBody, CardHeader, Skeleton } from "@/ui";
 import type { FlipsView, ResultsView } from "./api";
 
-export function FlipPanel({ flips, onOpen }: { flips: FlipsView | undefined; onOpen: (gene: string) => void }) {
+export function FlipPanel({
+  flips,
+  onOpen,
+}: {
+  flips: FlipsView | undefined;
+  onOpen: (gene: string) => void;
+}) {
   const index = useMemo(() => new Map((flips?.genes ?? []).map((g, i) => [g, i])), [flips]);
   const rows = useMemo(() => new Map((flips?.rows ?? []).map((r) => [r.dimension, r])), [flips]);
   const cell = useCallback(
@@ -24,7 +30,10 @@ export function FlipPanel({ flips, onOpen }: { flips: FlipsView | undefined; onO
     },
     [rows, index],
   );
-  const decisions = useMemo(() => (flips?.rows ?? []).map((r) => ({ id: r.dimension, label: r.title })), [flips]);
+  const decisions = useMemo(
+    () => (flips?.rows ?? []).map((r) => ({ id: r.dimension, label: r.title })),
+    [flips],
+  );
   if (!flips) return <Skeleton className="h-64 w-full rounded-xl" />;
   const flipping = flips.genes.filter((_, i) => flips.rows.some((r) => r.flips[i])).length;
   const perDim = flips.rows.map((r) => `${r.title.toLowerCase()} ${count(r.n_flipped)}`).join(", ");
@@ -60,7 +69,14 @@ export function ReferencesPanel({ view }: { view: ResultsView }) {
         hint={`The analysis normalises to ${g.used.join(", ")}. geNorm ranks the candidates by how steady they are across samples.`}
       />
       <CardBody>
-        <GenormBars m={g.m} order={g.order} cutoffM={g.cutoff_m} v={g.v} cutoffV={g.cutoff_v} used={g.used} />
+        <GenormBars
+          m={g.m}
+          order={g.order}
+          cutoffM={g.cutoff_m}
+          v={g.v}
+          cutoffV={g.cutoff_v}
+          used={g.used}
+        />
       </CardBody>
     </Card>
   );

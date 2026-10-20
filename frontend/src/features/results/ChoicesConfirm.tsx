@@ -22,7 +22,12 @@ export function ChoicesConfirm({
   const stage = workspace.stages.find((s) => s.stage === "choices");
   const [view, setView] = useState<ConfirmView | null>(null);
   const prepare = useMutation({
-    mutationFn: () => unwrap(api.POST("/api/sessions/{sid}/confirm/{stage}", { params: { path: { sid, stage: "choices" } } })),
+    mutationFn: () =>
+      unwrap(
+        api.POST("/api/sessions/{sid}/confirm/{stage}", {
+          params: { path: { sid, stage: "choices" } },
+        }),
+      ),
     onSuccess: (v) => setView(v),
   });
   const accept = useMutation({
@@ -35,7 +40,9 @@ export function ChoicesConfirm({
       ),
     onSuccess: () => {
       setView(null);
-      toast.success("Analysis choices confirmed", { description: "The option in use on every card is now fixed for Prism and the record." });
+      toast.success("Analysis choices confirmed", {
+        description: "The option in use on every card is now fixed for Prism and the record.",
+      });
     },
     onSettled: () => void qc.invalidateQueries({ queryKey: ["w", sid] }),
   });
@@ -47,7 +54,10 @@ export function ChoicesConfirm({
         <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" aria-hidden />
         <div>
           <p className="font-medium text-fg">Analysis choices confirmed</p>
-          <p className="text-muted">The option in use on every card is fixed. Prism and the Analysis Record use these choices.</p>
+          <p className="text-muted">
+            The option in use on every card is fixed. Prism and the Analysis Record use these
+            choices.
+          </p>
         </div>
       </Card>
     );
@@ -60,7 +70,8 @@ export function ChoicesConfirm({
         <div className="min-w-0">
           <p className="font-medium text-fg">Confirm the analysis choices</p>
           <p className="text-muted">
-            When every card is decided, confirm the choices: they are fixed for the Prism export and recorded with the analysis.
+            When every card is decided, confirm the choices: they are fixed for the Prism export and
+            recorded with the analysis.
           </p>
           {blockers.length > 0 && (
             <ul className="mt-1 list-disc pl-4 text-muted">
@@ -71,7 +82,13 @@ export function ChoicesConfirm({
           )}
         </div>
       </div>
-      <Button size="sm" variant="secondary" autoFocus={autoFocus} loading={prepare.isPending} onClick={() => prepare.mutate()}>
+      <Button
+        size="sm"
+        variant="secondary"
+        autoFocus={autoFocus}
+        loading={prepare.isPending}
+        onClick={() => prepare.mutate()}
+      >
         Confirm the analysis choices…
       </Button>
       {prepare.error && <ErrorPanel error={prepare.error} compact />}
@@ -85,7 +102,11 @@ export function ChoicesConfirm({
             <Button variant="ghost" onClick={() => setView(null)}>
               Not yet
             </Button>
-            <Button disabled={!view?.ready || !view.proposal} loading={accept.isPending} onClick={() => view && accept.mutate(view)}>
+            <Button
+              disabled={!view?.ready || !view.proposal}
+              loading={accept.isPending}
+              onClick={() => view && accept.mutate(view)}
+            >
               Yes, confirm
             </Button>
           </>

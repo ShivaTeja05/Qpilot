@@ -10,7 +10,16 @@ import type { DumbbellRow } from "./Dumbbell";
 import type { BarRow } from "./HBars";
 import type { MapPoint } from "./RobustnessMap";
 import { fmtFoldLog2, fmtPct, plural } from "./core/format";
-import { CALLS, LEVELS, VERDICTS, callKey, isLevel, isVerdict, type CallKey, type Mark } from "./core/encodings";
+import {
+  CALLS,
+  LEVELS,
+  VERDICTS,
+  callKey,
+  isLevel,
+  isVerdict,
+  type CallKey,
+  type Mark,
+} from "./core/encodings";
 
 // ---- audit views (qsim Screen) ------------------------------------------------------------------
 
@@ -25,7 +34,15 @@ export interface AuditAnalyses extends AuditScale {
   n_same: number;
   n_other: number;
   base_call: string;
-  rows: { log2: number; fold: string; call: string; call_key?: string | null; same: boolean; choices: string[]; planned: boolean }[];
+  rows: {
+    log2: number;
+    fold: string;
+    call: string;
+    call_key?: string | null;
+    same: boolean;
+    choices: string[];
+    planned: boolean;
+  }[];
 }
 
 export function analysesDots(a: AuditAnalyses): AnalysisDot[] {
@@ -48,7 +65,16 @@ export interface AuditEffects extends AuditScale {
     id: string;
     name: string;
     n_change: number;
-    options: { label: string; tier: string; log2: number; fold: string; call: string; call_key?: string | null; changes_call: boolean; planned: boolean }[];
+    options: {
+      label: string;
+      tier: string;
+      log2: number;
+      fold: string;
+      call: string;
+      call_key?: string | null;
+      changes_call: boolean;
+      planned: boolean;
+    }[];
   }[];
 }
 
@@ -92,7 +118,13 @@ export interface AuditSamples extends AuditScale {
 }
 
 export function sampleGroups(s: AuditSamples): SampleGroup[] {
-  return Object.entries(s.groups).map(([key, g]) => ({ key, label: g.label, n: g.n, missing: g.missing, mean: g.mean }));
+  return Object.entries(s.groups).map(([key, g]) => ({
+    key,
+    label: g.label,
+    n: g.n,
+    missing: g.missing,
+    mean: g.mean,
+  }));
 }
 
 export function samplePoints(s: AuditSamples): SamplePoint[] {
@@ -112,7 +144,14 @@ export function samplePoints(s: AuditSamples): SamplePoint[] {
 }
 
 export interface AuditStudy extends AuditScale {
-  map: { gene: string; log2: number; fold: string; holds: number; verdict: string; headline: boolean }[];
+  map: {
+    gene: string;
+    log2: number;
+    fold: string;
+    holds: number;
+    verdict: string;
+    headline: boolean;
+  }[];
   choices: { id: string; name: string; alone: number; spread: number; question: boolean }[];
   references: { gene: string; m: string; differs: boolean }[];
   stable_below: string;
@@ -121,7 +160,9 @@ export interface AuditStudy extends AuditScale {
 /** The audit's map: holds is "of 100" there; verdict glyphs. */
 export function auditMapPoints(s: AuditStudy, verdictLabel?: (v: string) => string): MapPoint[] {
   return s.map.map((g) => {
-    const mark: Mark = isVerdict(g.verdict) ? VERDICTS[g.verdict] : { ...VERDICTS["no call"], label: g.verdict };
+    const mark: Mark = isVerdict(g.verdict)
+      ? VERDICTS[g.verdict]
+      : { ...VERDICTS["no call"], label: g.verdict };
     return {
       gene: g.gene,
       log2: g.log2,
@@ -151,7 +192,13 @@ export function choicesAloneBars(s: AuditStudy): BarRow[] {
 export function choicesSpreadBars(s: AuditStudy): BarRow[] {
   return [...s.choices]
     .sort((a, b) => b.spread - a.spread)
-    .map((c) => ({ key: c.id, label: c.name, value: c.spread, valueText: fmtPct(c.spread), strong: c.spread >= 10 }));
+    .map((c) => ({
+      key: c.id,
+      label: c.name,
+      value: c.spread,
+      valueText: fmtPct(c.spread),
+      strong: c.spread >= 10,
+    }));
 }
 
 export interface AuditWhatif extends AuditScale {
@@ -207,8 +254,13 @@ export type MapEncoding = "conclusion" | "level" | "verdict";
 
 /** The mark a results gene gets under an encoding (falls back to the conclusion). */
 export function geneMark(g: GeneRowLike, by: MapEncoding): Mark {
-  if (by === "level" && isLevel(g.level)) return { ...LEVELS[g.level], label: `Confidence: ${g.level}` };
-  if (by === "verdict" && isVerdict(g.verdict)) return { ...VERDICTS[g.verdict], label: `Audit: ${g.verdict_label ?? VERDICTS[g.verdict].label}` };
+  if (by === "level" && isLevel(g.level))
+    return { ...LEVELS[g.level], label: `Confidence: ${g.level}` };
+  if (by === "verdict" && isVerdict(g.verdict))
+    return {
+      ...VERDICTS[g.verdict],
+      label: `Audit: ${g.verdict_label ?? VERDICTS[g.verdict].label}`,
+    };
   const c = (["up", "down", "none"].includes(g.conclusion) ? g.conclusion : "none") as CallKey;
   return { ...CALLS[c], label: `Call: ${CALLS[c].label}` };
 }
@@ -222,7 +274,9 @@ export function resultsMapPoints(genes: readonly GeneRowLike[], by: MapEncoding)
     headline: g.headline,
     foldText: fmtFoldLog2(Math.log2(g.fc)),
     details: [
-      by !== "conclusion" ? `Call: ${CALLS[(g.conclusion as CallKey) in CALLS ? (g.conclusion as CallKey) : "none"].label}` : null,
+      by !== "conclusion"
+        ? `Call: ${CALLS[(g.conclusion as CallKey) in CALLS ? (g.conclusion as CallKey) : "none"].label}`
+        : null,
       by !== "level" && isLevel(g.level) ? `Confidence: ${g.level}` : null,
       by !== "verdict" && g.verdict ? `Audit: ${g.verdict_label ?? g.verdict}` : null,
     ].filter((x): x is string => Boolean(x)),

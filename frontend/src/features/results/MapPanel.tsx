@@ -35,7 +35,11 @@ export function MapPanel({
   const genes = view.genes;
   const audited = genes.some((g) => g.verdict);
   const points = useMemo(
-    () => resultsMapPoints(genes.filter((g): g is GeneRow & { holds: number } => g.holds != null), by),
+    () =>
+      resultsMapPoints(
+        genes.filter((g): g is GeneRow & { holds: number } => g.holds != null),
+        by,
+      ),
     [genes, by],
   );
   const line = view.rule.min_log2fc;
@@ -44,11 +48,26 @@ export function MapPanel({
     const tally = (pred: (g: GeneRow) => boolean) => genes.filter(pred).length;
     const items: LegendItem[] =
       by === "level"
-        ? LEVEL_ORDER.map((l) => ({ mark: LEVELS[l], label: `${l} confidence`, count: tally((g) => g.level === l) }))
+        ? LEVEL_ORDER.map((l) => ({
+            mark: LEVELS[l],
+            label: `${l} confidence`,
+            count: tally((g) => g.level === l),
+          }))
         : by === "verdict"
-          ? VERDICT_ORDER.map((v) => ({ mark: VERDICTS[v], label: VERDICTS[v].label, count: tally((g) => g.verdict === v) }))
-          : CALL_ORDER.map((c) => ({ mark: CALLS[c], label: CALLS[c].label, count: tally((g) => g.conclusion === c) }));
-    return [...items.filter((i) => i.count), { swatch: <LineSwatch dashed />, label: `${lineFold} line` }];
+          ? VERDICT_ORDER.map((v) => ({
+              mark: VERDICTS[v],
+              label: VERDICTS[v].label,
+              count: tally((g) => g.verdict === v),
+            }))
+          : CALL_ORDER.map((c) => ({
+              mark: CALLS[c],
+              label: CALLS[c].label,
+              count: tally((g) => g.conclusion === c),
+            }));
+    return [
+      ...items.filter((i) => i.count),
+      { swatch: <LineSwatch dashed />, label: `${lineFold} line` },
+    ];
   }, [genes, by, lineFold]);
 
   const oneChoice = genes.filter((g) => g.conclusion !== "none" && g.flips_by.length > 0).length;

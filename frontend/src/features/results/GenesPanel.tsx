@@ -28,7 +28,13 @@ export interface GeneFilter {
   flips: boolean;
 }
 
-export const NO_FILTER: GeneFilter = { text: "", call: "all", level: "all", verdict: "all", flips: false };
+export const NO_FILTER: GeneFilter = {
+  text: "",
+  call: "all",
+  level: "all",
+  verdict: "all",
+  flips: false,
+};
 
 export function isFiltered(f: GeneFilter): boolean {
   return Boolean(f.text) || f.call !== "all" || f.level !== "all" || f.verdict !== "all" || f.flips;
@@ -47,8 +53,14 @@ function HoldsCell({ holds }: { holds: number | null | undefined }) {
   if (holds == null) return <span className="text-faint">—</span>;
   return (
     <span className="inline-flex items-center justify-end gap-2">
-      <span className="hidden h-1.5 w-12 overflow-hidden rounded-full bg-sunken sm:inline-block" aria-hidden>
-        <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.round(holds * 100)}%` }} />
+      <span
+        className="hidden h-1.5 w-12 overflow-hidden rounded-full bg-sunken sm:inline-block"
+        aria-hidden
+      >
+        <span
+          className="block h-full rounded-full bg-accent"
+          style={{ width: `${Math.round(holds * 100)}%` }}
+        />
       </span>
       <span>{percent(holds)}</span>
     </span>
@@ -128,7 +140,8 @@ export function GenesPanel({
       {
         id: "level",
         header: "Confidence",
-        accessorFn: (g) => (g.level ? LEVEL_ORDER.indexOf(g.level as (typeof LEVEL_ORDER)[number]) : 9),
+        accessorFn: (g) =>
+          g.level ? LEVEL_ORDER.indexOf(g.level as (typeof LEVEL_ORDER)[number]) : 9,
         meta: { width: "8rem" },
         cell: ({ row }) => <LevelTag level={row.original.level} />,
       },
@@ -137,9 +150,11 @@ export function GenesPanel({
             {
               id: "verdict",
               header: "Audit",
-              accessorFn: (g) => (g.verdict ? VERDICT_ORDER.indexOf(g.verdict as (typeof VERDICT_ORDER)[number]) : 9),
+              accessorFn: (g) =>
+                g.verdict ? VERDICT_ORDER.indexOf(g.verdict as (typeof VERDICT_ORDER)[number]) : 9,
               meta: { width: "11rem" },
-              cell: ({ row }) => (row.original.verdict ? <VerdictTag verdict={row.original.verdict} /> : null),
+              cell: ({ row }) =>
+                row.original.verdict ? <VerdictTag verdict={row.original.verdict} /> : null,
             },
           ] satisfies ColumnDef<GeneRow, unknown>[])
         : []),
@@ -151,8 +166,16 @@ export function GenesPanel({
         cell: ({ row }) => {
           const g = row.original;
           const flips = g.flips_by.map(dimLabel);
-          const now = g.at_your_choices?.differs ? `With your choices: ${fold(g.at_your_choices.fc)}, ${g.at_your_choices.conclusion === "none" ? "no call" : g.at_your_choices.conclusion}.` : null;
-          const text = [now, ...g.reasons, flips.length ? `A single choice can flip it: ${flips.join(", ").toLowerCase()}.` : null].filter(Boolean).join(" ");
+          const now = g.at_your_choices?.differs
+            ? `With your choices: ${fold(g.at_your_choices.fc)}, ${g.at_your_choices.conclusion === "none" ? "no call" : g.at_your_choices.conclusion}.`
+            : null;
+          const text = [
+            now,
+            ...g.reasons,
+            flips.length ? `A single choice can flip it: ${flips.join(", ").toLowerCase()}.` : null,
+          ]
+            .filter(Boolean)
+            .join(" ");
           return (
             <span className="block truncate text-[12px] text-muted" title={text}>
               {text || "—"}
@@ -177,7 +200,10 @@ export function GenesPanel({
       <CardBody className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative w-full sm:w-52">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-faint" aria-hidden />
+            <Search
+              className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-faint"
+              aria-hidden
+            />
             <Input
               type="search"
               aria-label="Find a gene"
@@ -194,7 +220,10 @@ export function GenesPanel({
             onValueChange={(v) => set({ call: v })}
             options={[
               { value: "all", label: "All" },
-              ...CALL_ORDER.map((c) => ({ value: c, label: `${CALLS[c].arrow} ${CALLS[c].label} ${count(callCount(c))}` })),
+              ...CALL_ORDER.map((c) => ({
+                value: c,
+                label: `${CALLS[c].arrow} ${CALLS[c].label} ${count(callCount(c))}`,
+              })),
             ]}
           />
           <Select
@@ -202,7 +231,10 @@ export function GenesPanel({
             size="sm"
             value={filter.level}
             onValueChange={(v) => set({ level: v })}
-            options={[{ value: "all", label: "Any confidence" }, ...LEVEL_ORDER.map((l) => ({ value: l, label: l }))]}
+            options={[
+              { value: "all", label: "Any confidence" },
+              ...LEVEL_ORDER.map((l) => ({ value: l, label: l })),
+            ]}
           />
           {audited && (
             <Select
@@ -210,10 +242,17 @@ export function GenesPanel({
               size="sm"
               value={filter.verdict}
               onValueChange={(v) => set({ verdict: v })}
-              options={[{ value: "all", label: "Any verdict" }, ...VERDICT_ORDER.map((v) => ({ value: v, label: VERDICTS[v].label }))]}
+              options={[
+                { value: "all", label: "Any verdict" },
+                ...VERDICT_ORDER.map((v) => ({ value: v, label: VERDICTS[v].label })),
+              ]}
             />
           )}
-          <Switch checked={filter.flips} onCheckedChange={(v) => set({ flips: v })} label="Only genes one choice can flip" />
+          <Switch
+            checked={filter.flips}
+            onCheckedChange={(v) => set({ flips: v })}
+            label="Only genes one choice can flip"
+          />
         </div>
         <DataTable
           data={genes}

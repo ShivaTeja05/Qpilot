@@ -33,7 +33,12 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
         <Stat label="Reactions" value={count(s.n_reactions)} />
         <Stat label="Samples" value={count(s.n_samples)} />
         {s.groups.slice(0, 2).map((grp, i) => (
-          <Stat key={grp.label} label={grp.label} value={count(grp.n)} sub={i === 0 ? "the compared group" : "the comparison group"} />
+          <Stat
+            key={grp.label}
+            label={grp.label}
+            value={count(grp.n)}
+            sub={i === 0 ? "the compared group" : "the comparison group"}
+          />
         ))}
         <Stat label="Genes compared" value={count(s.n_genes)} />
       </div>
@@ -77,7 +82,9 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
                 ))}
               </ul>
               <p className="mt-1 text-[12px] text-muted">
-                {view.audit.current ? "Audited at the current decisions." : "Decisions changed since the audit: run it again to bring it up to date."}{" "}
+                {view.audit.current
+                  ? "Audited at the current decisions."
+                  : "Decisions changed since the audit: run it again to bring it up to date."}{" "}
                 <Link href={auditHref} className="font-medium text-accent hover:underline">
                   Open the audit
                 </Link>
@@ -86,7 +93,10 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
           ) : (
             <p className="mt-0.5 text-[13px] text-fg">
               Not run yet.{" "}
-              <Link href={auditHref} className="inline-flex items-center gap-1 font-medium text-accent hover:underline">
+              <Link
+                href={auditHref}
+                className="inline-flex items-center gap-1 font-medium text-accent hover:underline"
+              >
                 <ShieldCheck size={13} aria-hidden />
                 Test every reasonable analysis
               </Link>

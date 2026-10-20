@@ -26,7 +26,11 @@ export type VerdictKey = Verdict;
 export type LevelKey = Level;
 
 /** Conclusions with the arrow and the short word the charts print. */
-const callMark = (c: CallKey) => ({ ...CONCLUSION[c], arrow: CONCLUSION[c].glyph, short: CONCLUSION[c].word });
+const callMark = (c: CallKey) => ({
+  ...CONCLUSION[c],
+  arrow: CONCLUSION[c].glyph,
+  short: CONCLUSION[c].word,
+});
 export const CALLS: Record<CallKey, Mark & { arrow: string; short: string }> = {
   up: callMark("up"),
   down: callMark("down"),

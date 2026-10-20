@@ -8,7 +8,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, unwrap } from "@/api/client";
 
 const path = (study_id: string) => ({ params: { path: { study_id } } });
-const cardPath = (study_id: string, card_id: string) => ({ params: { path: { study_id, card_id } } });
+const cardPath = (study_id: string, card_id: string) => ({
+  params: { path: { study_id, card_id } },
+});
 
 const getResults = (id: string) => unwrap(api.GET("/api/studies/{study_id}/results", path(id)));
 const getFlips = (id: string) => unwrap(api.GET("/api/studies/{study_id}/flips", path(id)));
@@ -72,7 +74,10 @@ export function useCardWrite(key: string, studyId: string) {
         );
       if (w.kind === "undo")
         return unwrap(
-          api.POST("/api/studies/{study_id}/cards/{card_id}/undo", { ...at, body: { reason: w.reason, expected_head: w.head } }),
+          api.POST("/api/studies/{study_id}/cards/{card_id}/undo", {
+            ...at,
+            body: { reason: w.reason, expected_head: w.head },
+          }),
         );
       return unwrap(
         api.POST("/api/studies/{study_id}/cards/{card_id}/reject-request", {
@@ -88,12 +93,17 @@ export function useCardWrite(key: string, studyId: string) {
 /** Explain a card with the model: a job whose result is the checked explanation. */
 export function useExplain(studyId: string) {
   return useMutation({
-    mutationFn: (card: string) => unwrap(api.POST("/api/studies/{study_id}/cards/{card_id}/explain", cardPath(studyId, card))),
+    mutationFn: (card: string) =>
+      unwrap(api.POST("/api/studies/{study_id}/cards/{card_id}/explain", cardPath(studyId, card))),
   });
 }
 
 /** The model's status: whether "Explain with the model" can be offered. */
 export function useModelAnswers(): boolean {
-  const q = useQuery({ queryKey: ["model"], queryFn: () => unwrap(api.GET("/api/model")), staleTime: 60_000 });
+  const q = useQuery({
+    queryKey: ["model"],
+    queryFn: () => unwrap(api.GET("/api/model")),
+    staleTime: 60_000,
+  });
   return Boolean(q.data?.answers);
 }
