@@ -268,7 +268,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
                     point={point}
                     samples={samples.data}
                     onClose={() => setSelected(null)}
-                    curve={<WellCurve scope={scope} plate={point.plate} well={point.well} gene={g.gene} />}
+                    curve={<WellCurve workspace={workspace} scope={scope} plate={point.plate} well={point.well} gene={g.gene} />}
                   />
                 ) : null
               }

@@ -154,7 +154,7 @@ describe("what holds and one choice at a time", () => {
     expect(screen.getByRole("img", { name: /Every reasonable analysis of NM23A in the audit/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: "qPilot's grid" }));
     expect(onSource).toHaveBeenCalledWith("qpilot");
-  });
+  }, 20_000); // 744 + 144 dots laid out in jsdom
 
   it("one choice at a time from qPilot's decisions, or from the audit's", () => {
     const rows = effectChoiceRows(ODC1);

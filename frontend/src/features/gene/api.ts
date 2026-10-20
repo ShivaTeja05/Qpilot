@@ -72,162 +72,28 @@ export function isNotFound(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;
 }
 
-// ---- qPilot's views (api: qpilot/web/contract.py, "results") ----------------------------------
+// ---- qPilot's views (api: qpilot/web/contract.py, "results"; generated types) ----------------
 
 export type CallKey = "up" | "down" | "none";
 
-/** A sentence whose numbers are the engine's facts. */
-export interface FactText {
-  plain: string;
-  segments?: { text: string; fact?: string | null }[];
-  facts?: { id: string; text: string }[];
-  source?: "template" | "model";
+/** `GET /api/studies/{id}/results`. */
+function fetchResults(studyId: string) {
+  return unwrap(api.GET("/api/studies/{study_id}/results", { params: { path: { study_id: studyId } } }));
 }
 
-/** One confidence check of a gene (the reasons behind its ordinal level). */
-export interface ConfidenceCheck {
-  id: string;
-  passed: boolean;
-  note: string;
+/** `GET /api/studies/{id}/genes/{gene}` (404 `not_found` for a gene the study does not compare). */
+function fetchGene(studyId: string, gene: string) {
+  return unwrap(api.GET("/api/studies/{study_id}/genes/{gene}", { params: { path: { study_id: studyId, gene } } }));
 }
 
-/** A gene's result at the options a person chose on the Decision Cards. */
-export interface AtChoices {
-  fc: number;
-  log2fc: number;
-  p: number;
-  conclusion: CallKey;
-  differs: boolean;
-}
-
-/** One compared gene (api's GeneRow): contrast, robustness share, confidence, verdict. */
-export interface GeneRow {
-  gene: string;
-  headline: boolean;
-  conclusion: CallKey;
-  fc: number;
-  log2fc?: number;
-  ci: [number, number] | number[];
-  p: number;
-  n_hi: number;
-  n_lo: number;
-  /** Share of reasonable analyses with the same call (0–1). */
-  holds?: number | null;
-  n_cells?: number;
-  level?: string | null;
-  reasons?: string[];
-  min_flip_changes?: number | null;
-  /** Decisions that alone can change this call. */
-  flips_by?: string[];
-  efficiency?: number | null;
-  at_your_choices?: AtChoices | null;
-  verdict?: string | null;
-  verdict_label?: string | null;
-}
-
-/** Reference genes: which are used, and geNorm's stability (M) and pairwise V. */
-export interface GenormView {
-  used: string[];
-  candidates?: string[];
-  m: Record<string, number>;
-  order?: string[];
-  v?: Record<string, number>;
-  recommended?: string[];
-  cutoff_m: number;
-  cutoff_v?: number;
-  stable?: string[];
-}
-
-/** The study's results (api's ResultsView): the genes, the groups, the rule, the references. */
-export interface ResultsView {
-  study_id: string;
-  summary: {
-    n_plates?: number;
-    n_samples?: number;
-    groups: { label: string; n: number }[];
-    design_line?: string;
-  };
-  rule: { alpha: number; min_log2fc: number; min_fold?: number; text: string };
-  references: GenormView;
-  genes: GeneRow[];
-  headline?: string[];
-  head?: string;
-  audit?: { status: string; current?: boolean };
-}
-
-/** One option of one decision, the other choices as planned (aligned with the genes asked). */
-export interface FlipOption {
-  value: string;
-  label: string;
-  card_option?: string | null;
-  planned: boolean;
-  chosen?: boolean;
-  conclusion: CallKey[];
-  log2fc: number[];
-  flips: boolean[];
-}
-
-/** One decision for this gene: can it flip the call alone, how far it moves it, each option. */
-export interface FlipRow {
-  dimension: string;
-  title: string;
-  card_id?: string | null;
-  status?: string | null;
-  flips: boolean[];
-  max_delta_log2fc: number[];
-  n_flipped?: number;
-  options: FlipOption[];
-}
-
-/** Every analysis in qPilot's grid for one gene, compactly. */
-export interface GeneGrid {
-  dimensions: string[];
-  options: Record<string, string[]>;
-  /** The planned option's index per dimension. */
-  planned: number[];
-  /** Option index per dimension, one per analysis. */
-  cells: number[][];
-  log2fc: number[];
-  p: number[];
-  conclusion: CallKey[];
-}
-
-/** A Decision Card as the API words it (only what this section reads). */
-export interface CardViewLike {
-  card: { id: string; kind: string; status: string; decision?: string | null; recommended?: string | null; rank?: number | null };
-  title: string;
-  status_line: string;
-  needs_human?: boolean;
-  options: {
-    id: string;
-    label: string;
-    recommended?: boolean;
-    chosen?: boolean;
-    /** E.g. a single control gene (MIQE): a shortcut, not a reasonable option. */
-    not_recommended?: boolean;
-    effects?: { gene: string; changes_call: boolean; log2fc: number }[];
-  }[];
-}
-
-/** Everything about one gene (api's GeneView). */
-export interface GeneView {
-  study_id: string;
-  gene: string;
-  row: GeneRow;
-  confidence?: { level: string; reasons: string[]; checks: ConfidenceCheck[]; min_flip_changes?: number | null } | null;
-  confidence_text?: FactText | null;
-  grid?: GeneGrid | null;
-  /** One decision at a time (this gene only). */
-  effects: FlipRow[];
-  /** Decision Cards that can change this gene. */
-  cards: CardViewLike[];
-  is_reference?: boolean;
-  reference_m?: number | null;
-  prev_gene?: string | null;
-  next_gene?: string | null;
-  audit_verdict?: string | null;
-  audit_verdict_label?: string | null;
-}
+// The types are the client's own answers (generated from the contract): openapi-fetch reads a
+// tuple such as `ci` as an array, so they are taken from the calls, not from Schemas directly.
+export type ResultsView = Awaited<ReturnType<typeof fetchResults>>;
+export type GeneView = Awaited<ReturnType<typeof fetchGene>>;
+export type GeneRow = GeneView["row"];
+export type GenormView = ResultsView["references"];
+export type FlipRow = GeneView["effects"][number];
+export type CardView = GeneView["cards"][number];
 
 /** A Decision Card that touches this gene, as the Gene section lists it. */
 export interface GeneCardRef {
@@ -247,7 +113,7 @@ export function useResults(s: GeneScope) {
   return useQuery({
     queryKey: wkey(s, "results"),
     enabled: Boolean(s.studyId),
-    queryFn: () => requestJson<ResultsView>(studyUrl(s, "/results")),
+    queryFn: () => fetchResults(s.studyId!),
   });
 }
 
@@ -255,7 +121,7 @@ export function useResults(s: GeneScope) {
 export function geneQuery(s: GeneScope, gene: string | null) {
   return {
     queryKey: wkey(s, "gene", gene),
-    queryFn: () => requestJson<GeneView>(studyUrl(s, `/genes/${enc(gene ?? "")}`)),
+    queryFn: () => fetchGene(s.studyId!, gene!),
   };
 }
 
