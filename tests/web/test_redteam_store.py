@@ -54,11 +54,12 @@ def _finishes(fn: Callable[[], Any], pipe: Path, seconds: float = 2.0) -> bool:
 @pytest.mark.xfail(
     strict=True,
     reason="RT-UI-011 one damaged results.json (half-written, or without study_id) makes "
-    "GET /api/workspaces a 500: StudyStore.list_studies raises and views.workspaces does "
-    "not catch it, so the Open page lists nothing",
+    "GET /api/workspaces and GET /api/agents a 500: StudyStore.list_studies raises and neither "
+    "views.workspaces nor ops.agents catches it, so the Open and Agents pages show nothing",
 )
+@pytest.mark.parametrize("route", ["/api/workspaces", "/api/agents"])
 @pytest.mark.parametrize("content", ['{"study_', "{}", "[]", ""])
-def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content):
+def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content, route):
     from fastapi.testclient import TestClient
 
     from qpilot.web.server import create_app
@@ -68,9 +69,8 @@ def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content)
     (web_store.root / "damaged").mkdir()
     (web_store.root / "damaged" / "results.json").write_text(content)
     with TestClient(create_app(web_ctx), base_url=BASE, raise_server_exceptions=False) as c:
-        r = c.get("/api/workspaces", headers={"x-qpilot-token": TOKEN})
+        r = c.get(route, headers={"x-qpilot-token": TOKEN})
     assert r.status_code == 200, r.text
-    assert r.json() == {"workspaces": []}
 
 
 @pytest.mark.xfail(

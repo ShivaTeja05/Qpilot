@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Iterator
+from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -67,9 +69,13 @@ def _leaks(value: Any, where: str = "$") -> list[str]:
 # ---- one session walked to results, then re-opened (module scope) ----------------------------
 
 
-@pytest.fixture(scope="module")
-def reblinded(tmp_path_factory) -> Iterator[dict[str, Any]]:
-    """A session confirmed and analysed, then blind again after a person's design change."""
+@contextmanager
+def walked(base: Path, reblind: bool) -> Iterator[dict[str, Any]]:
+    """The mini file walked over HTTP to results (and, with ``reblind``, re-opened after).
+
+    Re-opening: an agent proposes moving one sample to the other group and a person accepts
+    it, so the design changes and the session is blind again.
+    """
     from qpilot.ai.client import ModelClient, NoneBackend
     from qpilot.core.store import StudyStore
     from qpilot.qpcr import design_checks
@@ -80,7 +86,6 @@ def reblinded(tmp_path_factory) -> Iterator[dict[str, Any]]:
     from tests.fixtures.studio.studio_mini import write_studio_mini
     from tests.web.test_studio_flow import accept_all, confirm, design_ready, head, propose
 
-    base = tmp_path_factory.mktemp("reblind")
     with pytest.MonkeyPatch.context() as mp:
         (base / "data").mkdir()
         (base / "studies").mkdir()
@@ -95,46 +100,55 @@ def reblinded(tmp_path_factory) -> Iterator[dict[str, Any]]:
         real_publish = ctx.bus.publish
         ctx.bus.publish = lambda e: (events.append(e), real_publish(e))[1]  # type: ignore[method-assign]
         app = create_app(ctx)
-        with TestClient(app, base_url=BASE) as c:
-            c.headers["x-qpilot-token"] = TOKEN
-            c.headers["origin"] = BASE
-            r = c.post("/api/workspaces", files={"rdml": ("mini.rdml", rdml.read_bytes())})
-            sid = wait_job(c, r.json()["job"])["result"]["key"]
-            design_ready(c, store, sid)
-            confirm(c, sid, "design")
-            propose(c, sid, "curves")
-            accept_all(c, sid, "curves")
-            job = wait_job(c, confirm(c, sid, "curves")["job"])
-            study_id = job["result"]["study_id"]
-            assert c.get(f"/api/sessions/{sid}").json()["results_visible"]
-            # An agent proposes moving one sample to the other group; a person accepts it.
-            QpilotTools(store).qpcr_propose(sid, "design.group", "WT_1", {"group": "KO"})
-            change = next(
-                p
-                for p in c.get(f"/api/sessions/{sid}/proposals", params={"stage": "design"}).json()[
-                    "proposals"
-                ]
-                if p["status"] == "proposed" and p["kind"] == "design.group"
-            )
-            r = c.post(
-                f"/api/sessions/{sid}/proposals/{change['id']}/accept",
-                json={"reason": "the lab book says KO", "expected_head": head(c, sid)},
-            )
-            assert r.status_code == 200, r.text
-            assert not r.json()["results_visible"]
-            yield {
-                "client": c,
-                "app": app,
-                "store": store,
-                "sid": sid,
-                "study_id": study_id,
-                "analyse_job": job["id"],
-                "events": events,
-            }
-        ctx.close()
-        design_checks._DECLARED.clear()
-        design_checks.set_input_resolver(None)
-        qinspect.clear_cache()
+        try:
+            with TestClient(app, base_url=BASE) as c:
+                c.headers["x-qpilot-token"] = TOKEN
+                c.headers["origin"] = BASE
+                r = c.post("/api/workspaces", files={"rdml": ("mini.rdml", rdml.read_bytes())})
+                sid = wait_job(c, r.json()["job"])["result"]["key"]
+                design_ready(c, store, sid)
+                confirm(c, sid, "design")
+                propose(c, sid, "curves")
+                accept_all(c, sid, "curves")
+                job = wait_job(c, confirm(c, sid, "curves")["job"])
+                study_id = job["result"]["study_id"]
+                assert c.get(f"/api/sessions/{sid}").json()["results_visible"]
+                if reblind:
+                    QpilotTools(store).qpcr_propose(sid, "design.group", "WT_1", {"group": "KO"})
+                    listed = c.get(f"/api/sessions/{sid}/proposals", params={"stage": "design"})
+                    change = next(
+                        p
+                        for p in listed.json()["proposals"]
+                        if p["status"] == "proposed" and p["kind"] == "design.group"
+                    )
+                    r = c.post(
+                        f"/api/sessions/{sid}/proposals/{change['id']}/accept",
+                        json={"reason": "the lab book says KO", "expected_head": head(c, sid)},
+                    )
+                    assert r.status_code == 200, r.text
+                    assert not r.json()["results_visible"]
+                yield {
+                    "client": c,
+                    "app": app,
+                    "ctx": ctx,
+                    "store": store,
+                    "sid": sid,
+                    "study_id": study_id,
+                    "analyse_job": job["id"],
+                    "events": events,
+                }
+        finally:
+            ctx.close()
+            design_checks._DECLARED.clear()
+            design_checks.set_input_resolver(None)
+            qinspect.clear_cache()
+
+
+@pytest.fixture(scope="module")
+def reblinded(tmp_path_factory) -> Iterator[dict[str, Any]]:
+    """A session confirmed and analysed, then blind again after a person's design change."""
+    with walked(tmp_path_factory.mktemp("reblind"), reblind=True) as walk:
+        yield walk
 
 
 def test_the_reblinded_frame_hides_the_old_study(reblinded):
@@ -209,6 +223,45 @@ def test_no_route_of_a_blind_session_answers_with_a_result(reblinded):
         if found:
             problems[url] = found[:5]
     assert not problems, problems
+
+
+def _study_routes(app, method: str) -> list[str]:
+    return sorted(
+        r.path
+        for r in app.routes
+        if method in getattr(r, "methods", set())
+        and r.path.startswith("/api/studies/{")
+        and r.path != "/api/studies/{study_id}"
+    )
+
+
+BODIES = {
+    "decide": {"option": "x", "reason": "r"},
+    "undo": {"reason": "r"},
+    "reject-request": {"reason": "r"},
+    "ask": {"question": "Which genes changed?"},
+}
+
+
+def test_every_study_route_of_a_blind_session_is_blind(reblinded):
+    """Every study route (results, gene, cards, audit, files, ask …) answers 403 blind."""
+    c, app = reblinded["client"], reblinded["app"]
+    open_routes: dict[str, int] = {}
+    for method in ("GET", "POST", "PUT"):
+        for route in _study_routes(app, method):
+            url = _fill(route.replace("{card_id}", "reference_set"), reblinded, c)
+            if url is None:
+                url = route.replace("{study_id}", reblinded["study_id"])
+                url = url.replace("{gene}", "1-Mar").replace("{g}", "1-Mar")
+                if "{" in url:
+                    continue
+            body = BODIES.get(url.rsplit("/", 1)[-1], {})
+            r = c.request(method, url, json=body, params={"gene": "1-Mar"})
+            if r.status_code not in (403, 422) or (
+                r.status_code == 403 and r.json()["error"]["code"] != "blind"
+            ):
+                open_routes[f"{method} {route}"] = r.status_code
+    assert not open_routes, open_routes
 
 
 def test_the_plate_of_a_blind_session_pairs_no_group_with_a_number(reblinded):
