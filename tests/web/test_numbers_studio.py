@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import zipfile
+from collections import Counter
 
 import pandas as pd
 import pytest
@@ -225,3 +226,45 @@ def test_curve_calls_follow_the_rule_definitions(api, world, design, engine_well
     assert sorted(view["disagreements"]) == sorted(
         k for k, v in want.items() if len(set(v["calls"].values())) > 1
     )
+
+
+def test_the_inbox_counts_are_the_service_s_and_the_documented_ones(api, world):
+    """studio_cmds EXPECTED: 131 rule proposals, 121 consistent, 9 contradicted (7 well roles),
+    110 Curve Judge well calls; R² 0.707 (comp_50) and 0.694 (the ALUsq standards)."""
+    from qpilot.ai.client import ModelClient, NoneBackend
+    from qpilot.studio_service import Studio
+
+    studio = Studio(world.store, client=ModelClient(backend=NoneBackend()))
+    views = {}
+    for stage in ("design", "curves"):
+        view = get_json(api, f"/api/sessions/{world.sid}/proposals?stage={stage}")
+        inbox = studio.inbox(world.sid, stage)
+        assert sorted(p["id"] for p in view["proposals"]) == sorted(p.id for p in inbox)
+        want = Counter(p.status for p in inbox)
+        want.update(p.check.status for p in inbox if p.status == "proposed")
+        assert view["counts"] == dict(want), stage
+        views[stage] = view["proposals"]
+    design = [p for p in views["design"] if p["kind"] != "stage.confirm"]
+    checks = Counter(p["check"]["status"] for p in design)
+    assert len(design) == EXPECTED["design_proposals"]
+    assert checks["consistent"] == EXPECTED["consistent_listed"]
+    assert checks["contradicted"] == EXPECTED["contradicted_left"]
+    roles = [p for p in design if p["kind"] == "design.well_role"]
+    assert (
+        sum(p["check"]["status"] == "contradicted" for p in roles)
+        == EXPECTED["well_roles_contradicted"]
+    )
+    series = {p["subject"]: p["check"] for p in design if p["kind"] == "design.dilution_series"}
+    assert (series["comp_50"]["status"], round(series["comp_50"]["details"]["r2"], 3)) == (
+        "contradicted",
+        EXPECTED["comp_50_r2"],
+    )
+    assert (series["STD"]["status"], round(series["STD"]["details"]["r2"], 3)) == (
+        "contradicted",
+        EXPECTED["std_series_r2"],
+    )
+    consistent = sum(c["status"] == "consistent" for c in series.values())
+    assert consistent >= EXPECTED["dilution_series_consistent_min"]
+    calls = [p for p in views["curves"] if p["kind"] == "curve.well_call"]
+    assert len(calls) == EXPECTED["curve_judge_well_calls"]
+    assert all(p["subject"].startswith(EXPECTED["curve_judge_target"] + "_") for p in calls)

@@ -42,9 +42,19 @@ def api(world):
 
 
 @pytest.fixture(scope="module")
-def listed(api) -> dict[str, list[dict]]:
+def listed(api, world) -> dict[str, list[dict]]:
+    """The workspace list once every session's file is read (a cold line has no counts yet)."""
+    import time
+
+    get_json(api, f"/api/sessions/{world.sid}")  # reads the file (tests never answer warming)
+    deadline = time.monotonic() + 300
+    items = get_json(api, "/api/workspaces")["workspaces"]
+    while any(w.get("warming") for w in items):
+        assert time.monotonic() < deadline, "the workspace list is still warming"
+        time.sleep(0.2)
+        items = get_json(api, "/api/workspaces")["workspaces"]
     by_kind: dict[str, list[dict]] = {"session": [], "study": []}
-    for item in get_json(api, "/api/workspaces")["workspaces"]:
+    for item in items:
         by_kind[item["kind"]].append(item)
     return by_kind
 
@@ -78,13 +88,15 @@ def test_the_session_frame_counts_what_the_file_declares(api, world):
 
 
 def test_the_session_line_counts_the_file_and_its_study_chain(listed, world):
+    """``counts_of`` says what the line counts: the file, or (results shown) the analysis."""
     (line,) = (w for w in listed["session"] if w["key"] == world.sid)
-    file = xml_counts(world.rdml)
-    assert (line["n_plates"], line["n_samples"], line["n_genes"]) == (
-        file["n_plates"],
-        file["n_samples"],
-        file["n_targets"],
-    )
+    got = (line["n_plates"], line["n_samples"], line["n_genes"])
+    if line.get("counts_of", "file") == "analysis":
+        result, _cards, _grid = engine_for(world, world.study)
+        assert got == (result.n_plates, result.n_samples, len(result.contrasts))
+    else:
+        file = xml_counts(world.rdml)
+        assert got == (file["n_plates"], file["n_samples"], file["n_targets"])
     assert line["study_id"] == session_meta(world.store, world.sid)["current_study"]
     assert line["decisions"] == len(world.store.entries(world.study))
     assert line["pending_requests"] == len(world.store.pending(world.study))
@@ -142,10 +154,7 @@ def test_the_demo_is_the_documented_size(world):
         assert (result.n_plates, result.n_samples) == (64, 366)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bus #0122 to api: the demo session's id is its qpilot-run study's id (sha[:12])",
-)
-def test_every_workspace_has_its_own_key(listed):
-    keys = [w["key"] for kind in listed.values() for w in kind]
-    assert len(keys) == len(set(keys)), sorted(k for k in keys if keys.count(k) > 1)
+def test_every_workspace_has_its_own_id(listed):
+    """A session and its qpilot-run study share a key (sha[:12]); their ids differ (#0122)."""
+    ids = [w["id"] for kind in listed.values() for w in kind]
+    assert len(ids) == len(set(ids)), sorted(k for k in ids if ids.count(k) > 1)
