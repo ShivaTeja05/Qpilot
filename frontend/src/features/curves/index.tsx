@@ -137,7 +137,7 @@ function CurvesStage({
           curveRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" })
         }
       />
-      <div ref={curveRef} className="min-w-0 scroll-mt-20">
+      <div ref={curveRef} className={cn("min-w-0 scroll-mt-20", reviewing && "order-first")}>
         <CurvePanel sid={sid} run={run} wells={wells} onClear={() => setPlace(run, [])} />
       </div>
     </div>
@@ -166,13 +166,15 @@ function CurvesStage({
           )}
         >
           <StageSummary workspace={workspace} onOpenWell={openWell} />
-          {reviewing ? (
-            <div className="sticky top-[68px] max-h-[calc(100dvh-84px)] overflow-y-auto">
-              {workbench}
-            </div>
-          ) : (
-            workbench
-          )}
+          {/* One tree in both layouts, so switching never remounts the plate or the curve. */}
+          <div
+            className={cn(
+              "min-w-0",
+              reviewing && "sticky top-[68px] max-h-[calc(100dvh-84px)] overflow-y-auto",
+            )}
+          >
+            {workbench}
+          </div>
         </div>
       </div>
     </div>

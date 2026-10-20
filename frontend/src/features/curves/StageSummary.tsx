@@ -107,7 +107,12 @@ export function StageSummary({
                         </p>
                       </div>
                       {well ? (
-                        <Button size="sm" variant="ghost" onClick={() => onOpenWell(well)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Open the curve of well ${well.slice(well.lastIndexOf("/") + 1)}`}
+                          onClick={() => onOpenWell(well)}
+                        >
                           Open the curve
                         </Button>
                       ) : null}

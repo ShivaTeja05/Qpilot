@@ -56,8 +56,8 @@ export function CurvePanel({
 
   const title = !wells.length
     ? "The curve"
-    : one
-      ? `Well ${one.well}`
+    : wells.length === 1
+      ? `Well ${wells[0]}`
       : `${count(Math.min(wells.length, MAX_CURVES))} wells`;
   const hint = one
     ? `Sample ${one.sample} · ${one.target} · plate ${one.run_id}`
