@@ -277,3 +277,14 @@ def test_the_agents_page_shows_text_only(visible):
     r = c.get("/api/agents")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("application/json")
+
+
+def test_the_model_test_never_writes_to_the_studys_chain(visible):
+    c, study_id, store = visible["client"], visible["study_id"], visible["store"]
+    before = [e.hash for e in store.entries(study_id)]
+    r = c.post("/api/model/test", json={"study": study_id})
+    assert r.status_code == 202, r.text
+    job = wait_job(c, r.json()["job"], timeout=600)
+    assert job["status"] == "done", job
+    assert job["result"]["n_questions"] > 0
+    assert [e.hash for e in store.entries(study_id)] == before
