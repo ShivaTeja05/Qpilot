@@ -31,7 +31,7 @@ import {
 import { requestOpenFile } from "./actions";
 import { Brand, Mark } from "./Brand";
 import type { WorkspaceSummary, WorkspaceView } from "./data";
-import { WORKFLOW, type SectionState } from "./nav";
+import { TOOLS, WORKFLOW, type SectionState } from "./nav";
 import { pathOf, type Route } from "./route";
 import { SECTION, type SectionId } from "./sections";
 import { MOD } from "@/lib/hooks";
@@ -264,6 +264,7 @@ function WorkspaceSwitcher({
 export function Rail({ route, frame, states, workspaces }: RailProps) {
   const inWorkspace = Boolean(route.key && frame);
   const workflow = WORKFLOW.filter((id) => !states[id].absent);
+  const tools = TOOLS.filter((id) => !states[id].absent);
   const href = (id: SectionId) => pathOf(route.kind, route.key, id);
   return (
     <aside
@@ -315,6 +316,27 @@ export function Rail({ route, frame, states, workspaces }: RailProps) {
                 />
               ))}
             </ol>
+            {tools.length ? (
+              <>
+                <p className="mt-4 mb-1.5 hidden px-3 text-[11px] font-semibold tracking-wider text-muted uppercase lg:block">
+                  Tools
+                </p>
+                <div className="my-2 h-px bg-line lg:hidden" aria-hidden />
+                <ul className="flex flex-col gap-0.5">
+                  {tools.map((id) => (
+                    <NavItem
+                      key={id}
+                      href={href(id)}
+                      icon={SECTION[id].icon}
+                      label={SECTION[id].label}
+                      hint={SECTION[id].hint}
+                      state={states[id]}
+                      active={route.section === id}
+                    />
+                  ))}
+                </ul>
+              </>
+            ) : null}
             <div className="my-3 h-px bg-line" aria-hidden />
             <ul className="flex flex-col gap-0.5">
               <NavItem
@@ -421,7 +443,11 @@ export function BottomBar({ route, frame, states, workspaces }: RailProps) {
   const inWorkspace = Boolean(route.key && frame);
   const loading = Boolean(route.key && !frame);
   const all = inWorkspace
-    ? [...WORKFLOW.filter((id) => !states[id].absent), "agents" as SectionId]
+    ? [
+        ...WORKFLOW.filter((id) => !states[id].absent),
+        "agents" as SectionId,
+        ...TOOLS.filter((id) => !states[id].absent),
+      ]
     : [];
   const shown = inWorkspace ? all.slice(0, 4) : [];
   const rest = all.slice(4);
