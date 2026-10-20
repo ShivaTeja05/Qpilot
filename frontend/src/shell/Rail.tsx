@@ -90,6 +90,22 @@ function StateMark({ state, compact }: { state: SectionState; compact?: boolean 
 
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/**
+ * A rail item's accessible name: it starts with the visible text in visible order (the label,
+ * then the count badge) so speech input can say what it sees: "Design 19 to review",
+ * "Prism (locked: …)", "Curves (confirmed)".
+ */
+function navName(label: string, state: SectionState | undefined): string {
+  if (!state) return label;
+  if (state.count > 0 && state.reachable) {
+    const badge = state.count > 99 ? "99+" : String(state.count);
+    const what = state.section.id === "agents" ? "waiting for you" : "to review";
+    return `${label} ${badge} ${what}${state.done ? ", confirmed" : ""}`;
+  }
+  const words = stateWords(state);
+  return words ? `${label} (${words})` : label;
+}
+
 /** Words for screen readers and tooltips: "Curves — locked: Confirm the design first". */
 function stateWords(state: SectionState): string {
   const parts: string[] = [];
@@ -139,7 +155,7 @@ function NavItem({
         <Link
           href={href}
           aria-current={active ? "page" : undefined}
-          aria-label={words ? `${label} (${words})` : label}
+          aria-label={navName(label, state)}
           className={cn(
             "group relative flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm font-medium transition-colors duration-150 lg:px-3",
             "justify-center lg:justify-start",
@@ -414,23 +430,24 @@ function BarItem({
   state?: SectionState;
   active: boolean;
 }) {
-  const words = state ? stateWords(state) : "";
   return (
     <li className="min-w-0 flex-1">
       <Link
         href={href}
         aria-current={active ? "page" : undefined}
-        aria-label={words ? `${label} (${words})` : label}
+        aria-label={navName(label, state)}
         className={cn(
           "flex h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
-          active ? "text-accent-strong" : state && !state.reachable ? "text-muted" : "text-muted",
+          active ? "text-accent-strong" : "text-muted",
         )}
       >
-        <span className="relative flex">
+        {/* The label comes first in the DOM (so the name reads "Design 19 …"); order puts the
+            icon and its badge above it. */}
+        <span className="order-2 max-w-full truncate">{label}</span>
+        <span className="relative order-1 flex">
           <Icon className="size-5" aria-hidden />
           {state ? <StateMark state={state} compact /> : null}
         </span>
-        <span className="max-w-full truncate">{label}</span>
       </Link>
     </li>
   );
