@@ -98,6 +98,15 @@ export function useProposalActions(sid: string, head: string | null | undefined,
   };
 }
 
+/** The engine's check of an edited reading, before anyone accepts it (writes nothing). */
+export function useCheckEdit(sid: string) {
+  return useCallback(
+    (pid: string, edits: Payload) =>
+      unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/check", { ...path(sid, pid), body: { edits } })),
+    [sid],
+  );
+}
+
 // ---------------------------------------------------------------------------------------------
 // "Does this matter?" jobs, kept per session across navigation (the job keeps running).
 

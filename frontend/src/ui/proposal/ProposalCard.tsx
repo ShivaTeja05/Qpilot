@@ -338,11 +338,17 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
   const edits = mode === "edit" ? diffPayload(p.payload as Payload, draft) : {};
   const editKey = JSON.stringify(edits);
   const checking = mode === "edit" && Boolean(onCheckEdit) && editKey !== "{}";
+  // The latest onCheckEdit, so a parent that re-renders does not restart the check.
+  const checkRef = useRef(onCheckEdit);
   useEffect(() => {
-    if (!checking || !onCheckEdit) return;
+    checkRef.current = onCheckEdit;
+  });
+  useEffect(() => {
+    const check = checkRef.current;
+    if (!checking || !check) return;
     let live = true;
     const timer = setTimeout(() => {
-      onCheckEdit(JSON.parse(editKey) as Payload).then(
+      check(JSON.parse(editKey) as Payload).then(
         (check) => live && setRecheck({ key: editKey, check }),
         () => live && setRecheck({ key: editKey, failed: true }),
       );
@@ -351,7 +357,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
       live = false;
       clearTimeout(timer);
     };
-  }, [checking, editKey, onCheckEdit]);
+  }, [checking, editKey]);
   const recheckNow = checking && recheck?.key === editKey ? recheck : null;
   const recheckStatus = !checking ? "idle" : !recheckNow ? "checking" : recheckNow.failed ? "failed" : "done";
 
