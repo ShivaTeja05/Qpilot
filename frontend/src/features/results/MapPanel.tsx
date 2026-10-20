@@ -13,7 +13,7 @@ import {
   type LegendItem,
   type MapEncoding,
 } from "@/charts";
-import { count, fold } from "@/lib/format";
+import { count } from "@/lib/format";
 import { Card, CardBody, CardHeader, SegmentedControl } from "@/ui";
 import type { GeneRow, ResultsView } from "./api";
 
@@ -49,7 +49,7 @@ export function MapPanel({
     [genes, by],
   );
   const line = view.rule.min_log2fc;
-  const lineFold = fold(2 ** line);
+  const lineFold = `${Number((2 ** line).toPrecision(3))}×`;
   const legend: LegendItem[] = useMemo(() => {
     const tally = (pred: (g: GeneRow) => boolean) => genes.filter(pred).length;
     const items: LegendItem[] =
@@ -92,7 +92,7 @@ export function MapPanel({
       <CardHeader
         id="map-title"
         title="Robustness map"
-        hint={`Every gene: how large the change is, and how often it keeps its call ${setWords} (qPilot's choice grid: every control-gene set, cut-off, empty-well rule and amplification-call rule). Genes low on the map lean on the choices made.`}
+        hint={`Every gene: how large the change is, and in what share ${setWords} it keeps its call (qPilot's choice grid: every control-gene set, cut-off, empty-well rule and amplification-call rule). Genes low on the map lean on the choices made.`}
         actions={
           <SegmentedControl<MapEncoding>
             label="Colour the genes by"

@@ -72,7 +72,7 @@ export function DecisionCards({
   const ordered = useMemo(() => cardOrder(view.cards), [view.cards]);
   const firstOpen = ordered.findIndex((c) => c.card.status === "open" || c.pending.length > 0);
   const refs = useRef<(HTMLElement | null)[]>([]);
-  const [focus, setFocus] = useState(0);
+  const [focus, setFocus] = useState(-1);
   const modelAnswers = useModelAnswers();
   useEffect(() => {
     if (!focusCard) return;
@@ -246,7 +246,13 @@ function DecisionCardItem({
         if (e.key === "Enter" && e.target === e.currentTarget) {
           e.preventDefault();
           setOpen(true);
-          requestAnimationFrame(() => reasonRef.current?.focus());
+          const el = e.currentTarget;
+          // the reason box when there is one, else the card's first action (Change, Undo)
+          requestAnimationFrame(() => {
+            const target =
+              reasonRef.current ?? el.querySelector<HTMLElement>("[data-card-body] button");
+            target?.focus();
+          });
         }
       }}
       className={cn(
@@ -311,7 +317,7 @@ function DecisionCardItem({
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 px-4 pb-4">
+            <div className="space-y-3 px-4 pb-4" data-card-body>
               <p className="text-[13px] leading-relaxed text-muted">
                 <FactText text={view.explanation} />
               </p>
