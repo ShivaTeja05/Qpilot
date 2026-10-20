@@ -1701,6 +1701,116 @@ export type components = {
             summary: string;
         };
         /**
+         * AskAnswer
+         * @description An answer and how it was made (the result of an ``ask`` job).
+         */
+        AskAnswer: {
+            /**
+             * Answer
+             * @description The answer as text; every number in it is a cited fact.
+             */
+            answer: string;
+            /**
+             * Args
+             * @description The tool's arguments.
+             */
+            args?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Autonomy
+             * @description What the study lets agents do (Ask itself never decides).
+             * @enum {string}
+             */
+            autonomy: "suggest" | "decide_and_tell";
+            /**
+             * Card Id
+             * @description The Decision Card a change request names (decide it there).
+             * @default null
+             */
+            card_id: string | null;
+            /**
+             * Engine
+             * @description study: qPilot's own tools (the MCP tool code); audit: the robustness audit's Ask engine; none: only the audit answers this and it has not been run.
+             * @enum {string}
+             */
+            engine: "study" | "audit" | "none";
+            /**
+             * Facts
+             * @description The numbers the answer cites, nothing else.
+             */
+            facts: components["schemas"]["CitedFact"][];
+            /**
+             * Focus
+             * @description What the page should focus: 'card:<card_id>' for a change.
+             * @default null
+             */
+            focus: string | null;
+            /**
+             * Head After
+             * @description The chain head after the answer (moved when Ask wrote).
+             * @default null
+             */
+            head_after: string | null;
+            /**
+             * Head Before
+             * @default null
+             */
+            head_before: string | null;
+            /**
+             * Model
+             * @description The model's name, when one was used.
+             * @default null
+             */
+            model: string | null;
+            /**
+             * Note
+             * @description Why a template answered, or what happened to a request.
+             * @default null
+             */
+            note: string | null;
+            /** Provider */
+            provider: string;
+            /** Question */
+            question: string;
+            /**
+             * Routed By
+             * @description Who picked the tool: the model, keyword matching, or fixed reading rules.
+             * @enum {string}
+             */
+            routed_by: "model" | "keywords" | "rules";
+            /** Routed Words */
+            routed_words: string;
+            /**
+             * Status
+             * @description Always null: Ask never writes (a change is decided on its card).
+             * @default null
+             */
+            status: string | null;
+            /** Tool */
+            tool: string;
+            /**
+             * Tool Words
+             * @description Which tool answered, in plain words.
+             */
+            tool_words: string;
+            /**
+             * Validated
+             * @description Every number in the text is a cited fact.
+             */
+            validated: boolean;
+            /**
+             * Writer Words
+             * @description Who wrote the words, in plain words.
+             */
+            writer_words: string;
+            /**
+             * Written By
+             * @enum {string}
+             */
+            written_by: "template" | "model";
+        };
+        /**
          * AskBody
          * @description A question about the open study.
          */
@@ -3268,6 +3378,21 @@ export type components = {
             passed: boolean;
         };
         /**
+         * CitedFact
+         * @description A number the answer cites: what it is and its value as shown.
+         */
+        CitedFact: {
+            /**
+             * Id
+             * @default null
+             */
+            id: string | null;
+            /** Meaning */
+            meaning: string;
+            /** Value */
+            value: string;
+        };
+        /**
          * ConfirmRequest
          * @description Yes, confirm: accept this confirm step.
          */
@@ -3388,21 +3513,35 @@ export type components = {
          * @description One well's raw amplification curve, with LinRegPCR's numbers once they may be shown.
          */
         CurveView: {
-            /** Amplified */
+            /**
+             * Amplified
+             * @description Counts as amplified under the analysis rule (see PlateWell).
+             */
             amplified?: boolean | null;
             /**
              * Baseline
-             * @description LinRegPCR's baseline (raw units).
+             * @description LinRegPCR's baseline, in the fluorescence's units.
              */
             baseline?: number | null;
-            /** Cq */
+            /**
+             * Cq
+             * @description LinRegPCR's Cq (a cycle).
+             */
             cq?: number | null;
             /** Cycle */
             cycle: number[];
             /** Declared Type */
             declared_type: string;
-            /** Efficiency */
+            /**
+             * Efficiency
+             * @description The well's own amplification factor per cycle (2.0 = 100 %).
+             */
             efficiency?: number | null;
+            /**
+             * Efficiency Target
+             * @description The target's mean amplification factor, used for N0.
+             */
+            efficiency_target?: number | null;
             /**
              * Fluorescence
              * @description Raw fluorescence as in the file.
@@ -3412,6 +3551,11 @@ export type components = {
             judge?: boolean | null;
             /** Key */
             key: string;
+            /**
+             * Linregpcr Note
+             * @default
+             */
+            linregpcr_note: string;
             /** Note */
             note: string;
             /** Numbers Shown */
@@ -3588,12 +3732,39 @@ export type components = {
          * @description The study's hash-chained decision log, requests waiting, and its head.
          */
         DecisionsView: {
+            /**
+             * Attempts
+             * @default []
+             */
+            attempts: components["schemas"]["StaleAttempt"][];
+            /**
+             * Broken At
+             * @description The first entry that fails.
+             */
+            broken_at?: number | null;
+            /**
+             * Chain Intact
+             * @description Every entry's link and hash re-computed on the server.
+             * @default true
+             */
+            chain_intact: boolean;
             /** Entries */
             entries: components["schemas"]["DecisionEntryView"][];
             /** Head */
             head: string;
+            /**
+             * N Pending
+             * @default 0
+             */
+            n_pending: number;
             /** Pending */
             pending: components["schemas"]["DecisionEntryView"][];
+            /**
+             * Root
+             * @description The chain's genesis: the input file's sha256.
+             * @default
+             */
+            root: string;
             /** Study Id */
             study_id: string;
         };
@@ -4429,15 +4600,23 @@ export type components = {
         PlateWell: {
             /**
              * Amplified
-             * @description LinRegPCR's call (with a person's).
+             * @description Counts as amplified under the analysis rule: LinRegPCR found a starting quantity (or a person's call for this well).
              */
             amplified?: boolean | null;
+            /**
+             * Baseline
+             * @description LinRegPCR's baseline (raw units).
+             */
+            baseline?: number | null;
             /**
              * Col
              * @description 1-based column.
              */
             col?: number | null;
-            /** Cq */
+            /**
+             * Cq
+             * @description LinRegPCR's Cq (a cycle).
+             */
             cq?: number | null;
             /**
              * Declared Type
@@ -4449,8 +4628,16 @@ export type components = {
              * @default false
              */
             disagrees: boolean;
-            /** Efficiency */
+            /**
+             * Efficiency
+             * @description The well's own amplification factor per cycle (2.0 = 100 %); the starting quantity uses the target's mean (efficiency_target).
+             */
             efficiency?: number | null;
+            /**
+             * Efficiency Target
+             * @description The target's mean amplification factor, used for N0.
+             */
+            efficiency_target?: number | null;
             /**
              * Excluded By Person
              * @default false
@@ -4477,6 +4664,12 @@ export type components = {
              * @description `run_id/well`: what the curve routes take.
              */
             key: string;
+            /**
+             * Linregpcr Note
+             * @description LinRegPCR's own note on this well.
+             * @default
+             */
+            linregpcr_note: string;
             /**
              * Person Call
              * @description A call a person accepted.
@@ -5010,6 +5203,38 @@ export type components = {
              * @enum {string}
              */
             stage: "design" | "curves" | "choices" | "prism" | "roundtrip";
+        };
+        /**
+         * StaleAttempt
+         * @description A write refused as stale (kept outside the chain, so it never moved the head).
+         */
+        StaleAttempt: {
+            /** Actor */
+            actor: string;
+            /** At */
+            at: string;
+            /**
+             * Attempted
+             * @description applied, pending_human or rejected
+             */
+            attempted: string;
+            /** Card Id */
+            card_id: string;
+            /** Card Title */
+            card_title: string;
+            /** Expected Head */
+            expected_head?: string | null;
+            /** Head */
+            head?: string | null;
+            /** Option */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
         };
         /**
          * SystemView

@@ -162,11 +162,16 @@ class AskAnswer(BaseModel):
     )
     status: str | None = Field(
         default=None,
-        description="For a request to change a choice: applied / pending_human / stale.",
+        description="Always null: Ask never writes (a change is decided on its card).",
     )
-    card_id: str | None = Field(default=None, description="The card a request was made on.")
+    card_id: str | None = Field(
+        default=None, description="The Decision Card a change request names (decide it there)."
+    )
+    focus: str | None = Field(
+        default=None, description="What the page should focus: 'card:<card_id>' for a change."
+    )
     autonomy: Literal["suggest", "decide_and_tell"] = Field(
-        description="The autonomy mode the question was answered under."
+        description="What the study lets agents do (Ask itself never decides)."
     )
     head_before: str | None = None
     head_after: str | None = Field(
