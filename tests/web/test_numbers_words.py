@@ -82,7 +82,7 @@ def _texts(api, study_id: str, genes: list[str]) -> Iterator[tuple[str, str]]:
 
 
 @pytest.mark.xfail(
-    strict=True,
+    strict=False,  # a store analysed after #0286 already passes; strict once #0358 merges
     reason="#0358 to api: studies analysed before #0286 keep 'holds in fewer than 80 % of the "
     "reasonable analyses' in results.json; the views are to re-word it on read",
 )
