@@ -65,6 +65,7 @@ def create_app(ctx: AppContext) -> FastAPI:
     app.state.ctx = ctx
     for router in ROUTERS:
         app.include_router(router, prefix="/api")
+    _type_job_results(app)
 
     @app.exception_handler(HTTPException)
     async def http_error(_: Request, exc: HTTPException) -> JSONResponse:
@@ -123,6 +124,35 @@ def create_app(ctx: AppContext) -> FastAPI:
     return app
 
 
+def _type_job_results(app: FastAPI) -> None:
+    """Add every registered job-result model to the schema; ``x-job-results`` maps the kinds."""
+    from qpilot.web.routers import job_results
+
+    plain = app.openapi
+    done = False
+
+    def openapi() -> dict[str, Any]:
+        nonlocal done
+        schema = plain()
+        if done:
+            return schema
+        components = schema.setdefault("components", {}).setdefault("schemas", {})
+        mapping: dict[str, str] = {}
+        for kind, model in sorted(job_results().items()):
+            body = model.model_json_schema(
+                ref_template="#/components/schemas/{model}", mode="serialization"
+            )
+            for name, sub in body.pop("$defs", {}).items():
+                components.setdefault(name, sub)
+            components.setdefault(model.__name__, body)
+            mapping[kind] = model.__name__
+        schema["x-job-results"] = mapping
+        done = True
+        return schema
+
+    app.openapi = openapi  # type: ignore[method-assign]
+
+
 def _static_file(relative: Path) -> Path | None:
     """A file inside ``static/`` (never outside it, never a dotfile), or None."""
     if any(part.startswith(".") or part == ".." for part in relative.parts):
@@ -132,6 +162,31 @@ def _static_file(relative: Path) -> Path | None:
     if not path.is_file() or root not in path.parents:
         return None
     return path
+
+
+WARM = (
+    "qpilot.qpcr.curves",
+    "qpilot.qpcr.study",
+    "qpilot.explain.templates",
+    "qpilot.app_state",
+    "qpilot.studio_state",
+    "qsim.app",
+)
+
+
+def _warm_imports() -> None:
+    """Import the analysis modules in the background, so the first page view is not the wait."""
+    import importlib
+    import threading
+
+    def run() -> None:
+        for name in WARM:
+            try:
+                importlib.import_module(name)
+            except Exception:  # an optional part (the simulator) may be missing
+                continue
+
+    threading.Thread(target=run, name="qpilot-warm-imports", daemon=True).start()
 
 
 def free_port(start: int = DEFAULT_PORT, tries: int = 50) -> int:
@@ -166,6 +221,7 @@ def main(
             print(f"Earlier demo work moved to {moved} (kept, never deleted)")
     token = launch_token()
     ctx = make_context(store, Studio(store), token=token, audit_dirs=audit_dirs)
+    _warm_imports()
     app = create_app(ctx)
     port = port or free_port()
     url = f"http://{HOST}:{port}/?token={token}" + (f"#/{section}" if section else "")

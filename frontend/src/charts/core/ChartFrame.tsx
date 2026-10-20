@@ -59,7 +59,7 @@ export function ChartFrame({ summary, legend, controls, table, caption, live, cl
   const [asTable, setAsTable] = useState(false);
   const captionId = useId();
   return (
-    <figure className={cn("m-0 min-w-0", className)} aria-label={summary} aria-describedby={caption ? captionId : undefined}>
+    <figure className={cn("m-0 min-w-0 [contain:inline-size]", className)} aria-label={summary} aria-describedby={caption ? captionId : undefined}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">{legend && !asTable && <Legend items={legend} />}</div>
         <div className="flex items-center gap-2">

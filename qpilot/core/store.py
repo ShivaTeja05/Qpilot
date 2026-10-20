@@ -495,17 +495,17 @@ class StudyStore:
             if not entries:
                 for card in sorted(cards, key=lambda c: c.rank):
                     if card.status == "auto_decided" and card.decision:
-                        entries.append(
-                            self._append(
-                                log,
-                                entries,
-                                result.input_sha256,
-                                card.id,
-                                card.decision,
-                                card.reason or "",
-                                "system",
-                                "auto",
-                            )
+                        # _append adds the entry to ``entries`` itself (appending it here too
+                        # made the next entry's seq skip one and broke the chain).
+                        self._append(
+                            log,
+                            entries,
+                            result.input_sha256,
+                            card.id,
+                            card.decision,
+                            card.reason or "",
+                            "system",
+                            "auto",
                         )
             states = {c.id: c for c in cards}
             for entry in entries:
