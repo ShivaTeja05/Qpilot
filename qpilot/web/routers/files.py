@@ -72,17 +72,24 @@ from qpilot.web.contract_files import (
 from qpilot.web.jobs import JobError, Progress
 
 router = APIRouter(tags=["files"])
+#: The model of each job's result, by job kind (typed in the schema: ``routers.job_results``).
+JOB_RESULTS = {
+    "prism.draft": PrismDrafted,
+    "prism.send": PrismSent,
+    "prism.roundtrip": PrismRoundTrip,
+    "record.export": RecordExported,
+}
 
 MAX_RECORD_BYTES = 200 * 1024 * 1024  # the old pages' upload cap (Gradio max_file_size 200mb)
 MAX_JSON_BYTES = 1024 * 1024  # record.json / audit_manifest.json read from an upload
 PROJECT_KIND = "prism.project"
 EXPORT_FILE = "export.json"  # beside each exported record zip: what the export job answered
-# Typical times on the demo (measured on this laptop, 20 Oct, under the 20-session build load);
-# the page shows them as "usually ~N s", never as a promise.
-DRAFT_TYPICAL_S = 2.0
-SEND_TYPICAL_S = 6.0
-ROUNDTRIP_TYPICAL_S = 8.0
-RECORD_TYPICAL_S = 3.0
+# Typical times on the demo, measured on this laptop on 20 Oct while twenty build sessions shared
+# it (so on the slow side); the page shows them as "usually ~N s", never as a promise.
+DRAFT_TYPICAL_S = 6.5  # the rules' draft, no model
+SEND_TYPICAL_S = 25.0  # the bundle (the engine rebuilds the export inputs) and its zip
+ROUNDTRIP_TYPICAL_S = 8.5  # one edited table: the diff and each exclusion's consequence
+RECORD_TYPICAL_S = 1.5  # copy, hash and zip (7.8 MB with the input file)
 BLIND = (
     "Results stay hidden until you confirm the Design and the Curves stages: Prism shows "
     "group differences."

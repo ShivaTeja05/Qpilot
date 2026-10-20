@@ -341,12 +341,3 @@ class RecordVerified(BaseModel):
     audit_note: str = Field(description="Which audit was checked, or why none was.")
     known_study: bool = Field(description="The record's study is in this qPilot's store.")
     note: str
-
-
-#: The model of each job's ``result`` (``JobView.result`` is ``Any`` in the schema), by job kind.
-JOB_RESULTS: dict[str, type[BaseModel]] = {
-    "prism.draft": PrismDrafted,
-    "prism.send": PrismSent,
-    "prism.roundtrip": PrismRoundTrip,
-    "record.export": RecordExported,
-}
