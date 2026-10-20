@@ -67,7 +67,8 @@ export function BulkAction({
   useFocusTarget(BULK[action].button, button);
   const list = useQuery({
     queryKey: ["w", sid, "bulk", action, stage],
-    enabled: open,
+    // Not while its own write runs: every proposal it decides re-reads the session.
+    enabled: open && !busy,
     queryFn: () =>
       unwrap(api.GET("/api/sessions/{sid}/bulk/{action}", { params: { path: { sid, action }, query: { stage } } })),
     staleTime: 0,

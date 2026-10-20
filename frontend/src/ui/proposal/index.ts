@@ -26,7 +26,7 @@
  *   ConfirmStage        "Confirm this stage…" (sid · stage · status): what it covers, "Yes, confirm".
  *   DecidedList, ProposalLines, BulkAction
  *   useStageProposals(sid, stage) · useQuotes(sid) → {lookup, sheetCells} ·
- *   useProposalActions(sid, head) · useMattersJobs(sid)
+ *   useProposalActions(sid, head, stage) · useMattersJobs(sid)
  *
  * The words for origins, flags, rule ids and check fields live in `./words`.
  */

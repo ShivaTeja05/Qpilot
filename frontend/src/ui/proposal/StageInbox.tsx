@@ -79,7 +79,7 @@ export function StageInbox({
 }: StageInboxProps) {
   const list = useStageProposals(sid, stage);
   const { lookup, sheetCells } = useQuotes(sid);
-  const actions = useProposalActions(sid, list.data?.head);
+  const actions = useProposalActions(sid, list.data?.head, stage);
   const matters = useMattersJobs(sid);
   const [check, setCheck] = useState<CheckFilter>("all");
   const [kind, setKind] = useState<string>("all");
