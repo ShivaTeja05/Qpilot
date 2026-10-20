@@ -99,8 +99,16 @@ def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) ->
 
     def work(progress: Progress) -> dict[str, Any]:
         progress(f"Reading {name} and quarantining every name")
+        from qpilot.io.rdml_io import RdmlLoadError
+
         try:
             sid = ctx.studio.open(rdml, sheet, actor="human")
+        except RdmlLoadError as err:
+            raise JobError(
+                "cannot_open",
+                f"{name} could not be read: it is not a valid RDML file. Export RDML again from "
+                "your instrument's software, then open that file.",
+            ) from err
         except Exception as err:  # any reader failure is a sentence about the person's file
             text = str(err).replace(str(rdml), name).replace(rdml.name, name).strip()
             raise JobError(

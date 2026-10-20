@@ -440,3 +440,42 @@ def test_an_edit_is_checked_before_it_is_accepted(sclient, web_store, opened):
     r = sclient.post(f"/api/sessions/{sid}/proposals/{p['id']}/check", json={"edits": {"x": 1}})
     assert r.status_code == 422
     assert pending(sclient, sid, "design")[0]["status"] == "proposed", "a check writes nothing"
+
+
+def test_the_next_step_tells_a_waiting_confirm_from_proposals(sclient, web_store, opened):
+    sid = opened
+    propose(sclient, sid, "design")
+    frame = sclient.get(f"/api/sessions/{sid}").json()
+    design = next(s for s in frame["stages"] if s["stage"] == "design")
+    assert design["pending"] and design["consistent"] and not design["confirm_waiting"]
+    assert frame["next_step"]["action"] == "Accept all consistent…"
+    design_ready(sclient, web_store, sid)
+    sclient.post(f"/api/sessions/{sid}/confirm/design")
+    frame = sclient.get(f"/api/sessions/{sid}").json()
+    design = next(s for s in frame["stages"] if s["stage"] == "design")
+    assert design["pending"] == 0 and design["confirm_waiting"]
+    assert frame["next_step"]["title"] == "Confirm the design"
+    assert frame["next_step"]["action"] == "Confirm this stage…"
+
+
+def test_bulk_reject_can_cover_the_rules_contradicted_proposals(sclient, web_store, opened):
+    sid = opened
+    propose(sclient, sid, "design")
+    QpilotTools(web_store).qpcr_propose(sid, "design.well_role", "WT_1", {"role": "ntc"})
+    every = sclient.get(
+        f"/api/sessions/{sid}/bulk/reject", params={"stage": "design", "makers": "all"}
+    ).json()
+    contradicted = [
+        p["id"] for p in pending(sclient, sid, "design") if p["check"]["status"] == "contradicted"
+    ]
+    assert sorted(every["ids"]) == sorted(contradicted)
+    ai = sclient.get(f"/api/sessions/{sid}/bulk/reject", params={"stage": "design"}).json()
+    assert set(ai["ids"]) <= set(every["ids"])
+    assert all(p["made_by"]["kind"] in ("model", "agent") for p in ai["proposals"])
+    if every["ids"]:
+        r = sclient.post(
+            f"/api/sessions/{sid}/bulk/reject",
+            json={"stage": "design", "ids": every["ids"], "makers": "all",
+                  "reason": "checked: not in this experiment", "expected_head": every["head"]},
+        )  # fmt: skip
+        assert r.status_code == 200 and r.json()["done"] == len(every["ids"])

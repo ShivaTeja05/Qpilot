@@ -35,7 +35,9 @@ TWO_FOLD = 2.0
 # The thresholds the check notes quote, in that phrasing: method, not data, so prose may repeat
 # them (``qpilot.ai.ask`` adds these to the names a model's answer may use).
 METHOD_PHRASES = (
-    "80 % of the reasonable analyses",
+    "at least 80 % of the",
+    "fewer than 80 % of the",
+    "analyses qPilot checks",
     "geNorm stability cut-off (M 1.5)",
     "below M 1.5",
     "M 1.5",
@@ -98,7 +100,7 @@ def checks_for(
     if flips is None:
         fragility_note = "Fragility not computed."
     elif flips == 0:
-        fragility_note = "No combination of the reasonable choices flips this conclusion."
+        fragility_note = "No combination of the choices qPilot checks flips this conclusion."
     else:
         word = "choice" if flips == 1 else "choices"
         fragility_note = f"Changing {flips} {word} at once can flip this conclusion."
@@ -114,10 +116,12 @@ def checks_for(
         Check(
             id="robustness",
             passed=holds_ok,
-            note="The conclusion holds in at least 80 % of the reasonable analyses."
+            note=f"The conclusion holds in at least 80 % of the {robust.n_cells} analyses qPilot "
+            "checks."
             if holds_ok
-            else "The conclusion holds in fewer than 80 % of the reasonable analyses.",
-            fact_ids=[f"f_holds_{s}"],
+            else f"The conclusion holds in fewer than 80 % of the {robust.n_cells} analyses "
+            "qPilot checks.",
+            fact_ids=[f"f_holds_{s}", "f_n_cells"],
         ),
         Check(
             id="fragility",

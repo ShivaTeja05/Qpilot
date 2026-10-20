@@ -143,8 +143,12 @@ class StageView(BaseModel):
     stage: StageName
     open: bool
     confirmed: bool
-    pending: int
+    pending: int = Field(description="Proposals waiting for a decision (not the confirm step).")
     blockers: list[str] = []
+    consistent: int = Field(default=0, description="Waiting proposals the engine finds consistent.")
+    confirm_waiting: bool = Field(
+        default=False, description="A confirm step waits for “Yes, confirm”."
+    )
 
 
 class NextStep(BaseModel):
@@ -164,6 +168,11 @@ class WorkspaceSummary(BaseModel):
 
     key: str = Field(description="12 hex: the session id, or the study id of a study-only one.")
     kind: WorkspaceKind
+    id: str = Field(
+        default="",
+        description="Unique in the list: kind:key (a session and the demo's qpilot-run study "
+        "can share a key).",
+    )
     title: str
     input_sha256: str
     file_name: str | None = None
@@ -174,6 +183,11 @@ class WorkspaceSummary(BaseModel):
     n_plates: int | None = None
     n_samples: int | None = None
     n_genes: int | None = None
+    counts_of: Literal["file", "analysis"] = Field(
+        default="file",
+        description="file: plates, declared samples and targets in the file; analysis: the "
+        "analysed study's plates, samples and compared genes.",
+    )
     decisions: int = 0
     pending_requests: int = 0
     has_audit: bool = False
@@ -359,6 +373,7 @@ class MattersAnswer(BaseModel):
 
 
 BulkAction = Literal["accept", "reject"]
+BulkMakers = Literal["ai", "all"]
 
 
 class BulkList(BaseModel):
@@ -379,6 +394,9 @@ class BulkRequest(BaseModel):
     stage: str
     ids: list[str] = Field(max_length=2000)
     reason: Reason = ""
+    makers: BulkMakers = Field(
+        default="ai", description="Reject: the list's scope, as it was shown (ai or all)."
+    )
     expected_head: str = Field(
         min_length=1,
         max_length=128,

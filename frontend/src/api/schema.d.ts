@@ -592,7 +592,7 @@ export type paths = {
         };
         /**
          * Bulk List
-         * @description Exactly what “Accept all consistent…” or “Reject contradicted AI calls…” would cover.
+         * @description Exactly what “Accept all consistent…” or “Reject contradicted …” would cover.
          */
         get: operations["bulk_list"];
         put?: never;
@@ -3629,6 +3629,13 @@ export type components = {
             /** Ids */
             ids: string[];
             /**
+             * Makers
+             * @description Reject: the list's scope, as it was shown (ai or all).
+             * @default ai
+             * @enum {string}
+             */
+            makers: "ai" | "all";
+            /**
              * Reason
              * @description Kept in the record (≤ 500 chars).
              * @default
@@ -6428,11 +6435,26 @@ export type components = {
              * @default []
              */
             blockers: string[];
+            /**
+             * Confirm Waiting
+             * @description A confirm step waits for “Yes, confirm”.
+             * @default false
+             */
+            confirm_waiting: boolean;
             /** Confirmed */
             confirmed: boolean;
+            /**
+             * Consistent
+             * @description Waiting proposals the engine finds consistent.
+             * @default 0
+             */
+            consistent: number;
             /** Open */
             open: boolean;
-            /** Pending */
+            /**
+             * Pending
+             * @description Proposals waiting for a decision (not the confirm step).
+             */
             pending: number;
             /**
              * Stage
@@ -6691,6 +6713,13 @@ export type components = {
          */
         WorkspaceSummary: {
             /**
+             * Counts Of
+             * @description file: plates, declared samples and targets in the file; analysis: the analysed study's plates, samples and compared genes.
+             * @default file
+             * @enum {string}
+             */
+            counts_of: "file" | "analysis";
+            /**
              * Decisions
              * @default 0
              */
@@ -6704,6 +6733,12 @@ export type components = {
              * @default false
              */
             has_audit: boolean;
+            /**
+             * Id
+             * @description Unique in the list: kind:key (a session and the demo's qpilot-run study can share a key).
+             * @default
+             */
+            id: string;
             /** Input Sha256 */
             input_sha256: string;
             /**
@@ -7665,6 +7700,8 @@ export interface operations {
     bulk_list: {
         parameters: {
             query: {
+                /** @description Reject: contradicted proposals of a model or an agent (ai), or every contradicted proposal, the rules' too (all). */
+                makers?: "ai" | "all";
                 stage: string;
             };
             header?: never;
