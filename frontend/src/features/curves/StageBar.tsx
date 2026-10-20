@@ -54,7 +54,7 @@ export function StageBar({
       </div>
       {!confirmed ? (
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {curvesWaiting ? <BulkActions sid={sid} stage="curves" pending={curvesWaiting} /> : null}
+          {curvesWaiting ? <BulkActions sid={sid} stage="curves" /> : null}
           <CheckCurvesButton state={check} again />
         </div>
       ) : null}
