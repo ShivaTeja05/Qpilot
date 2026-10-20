@@ -174,11 +174,6 @@ def test_an_upload_over_the_cap_is_refused(web_ctx, small_caps):
     assert status == 413 and pulled == 0, "refused before reading the body"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="PARITY-1 (api): the Guard caps by Content-Length only; a chunked body is read to "
-    "the end before the 413 (old Gradio and qsim refused while it streamed)",
-)
 def test_a_chunked_upload_over_the_cap_is_refused_while_it_streams(web_ctx, small_caps):
     headers, body = _multipart(8 * MB)  # no Content-Length: Transfer-Encoding chunked
     status, pulled = _upload(create_app(web_ctx), headers, body)
