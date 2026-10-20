@@ -97,7 +97,6 @@ function PointNode({
         type="button"
         tabIndex={focusable ? 0 : -1}
         aria-current={selected ? "step" : undefined}
-        aria-label={pointTitle(point)}
         onClick={onSelect}
         onKeyDown={onKeyDown}
         className={cn(
@@ -105,6 +104,7 @@ function PointNode({
           "focus-visible:ring-2 focus-visible:ring-focus",
         )}
       >
+        <span className="sr-only">{pointTitle(point)}. </span>
         <span
           className={cn(
             "relative grid size-11 place-items-center rounded-full border-2 bg-surface transition-[border-color,background-color,box-shadow] duration-150 ease-out [&_svg]:size-[18px]",

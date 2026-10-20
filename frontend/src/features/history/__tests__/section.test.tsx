@@ -103,11 +103,11 @@ describe("the History section", () => {
       expect(timeline().closest("section")!.textContent).toContain("Point 3 of 3"),
     );
     expect(current()).toHaveLength(1);
-    expect(current()[0]!.getAttribute("aria-label")).toMatch(/^Step 1: qPilot \(automatic\) chose/);
+    expect(current()[0]!.textContent).toMatch(/^Step 1: qPilot \(automatic\) chose/);
     const buttons = within(timeline()).getAllByRole("button");
-    expect(
-      buttons.some((b) => /earlier analysis of this file/.test(b.getAttribute("aria-label") ?? "")),
-    ).toBe(true);
+    expect(buttons.some((b) => /earlier analysis of this file/.test(b.textContent ?? ""))).toBe(
+      true,
+    );
     expect(
       buttons.filter((b) => /^Studio, /.test(b.getAttribute("aria-label") ?? "")),
     ).toHaveLength(after.studio.length);
@@ -121,7 +121,7 @@ describe("the History section", () => {
       expect(timeline().closest("section")!.textContent).toContain("Point 3 of 3"),
     );
     fireEvent.keyDown(current()[0]!, { key: "ArrowLeft" });
-    expect(current()[0]!.getAttribute("aria-label")).toMatch(/^Step 0/);
+    expect(current()[0]!.textContent).toMatch(/^Step 0/);
     await screen.findByText("What changed since the earlier analysis");
     const panel = screen.getByRole("region", { name: "What changed" });
     await within(panel).findByText(compare.summary);
@@ -129,9 +129,9 @@ describe("the History section", () => {
     expect(odc1).toBeTruthy();
     expect(within(panel).getAllByRole("button", { name: "ODC1" }).length).toBeGreaterThan(0);
     fireEvent.keyDown(current()[0]!, { key: "Home" });
-    expect(current()[0]!.getAttribute("aria-label")).toMatch(/earlier analysis/);
+    expect(current()[0]!.textContent).toMatch(/earlier analysis/);
     fireEvent.keyDown(current()[0]!, { key: "End" });
-    expect(current()[0]!.getAttribute("aria-label")).toMatch(/^Step 1/);
+    expect(current()[0]!.textContent).toMatch(/^Step 1/);
   });
 
   it("compares with the other analysis of the file: the design change, item by item", async () => {

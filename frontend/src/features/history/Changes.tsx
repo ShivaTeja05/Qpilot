@@ -118,9 +118,7 @@ export function GeneChanges({
               {showCause ? (
                 <TD className="text-muted">{r.cause ? CAUSE_WORD[r.cause] : "—"}</TD>
               ) : null}
-              {showVerdict ? (
-                <TD>{r.verdict ? <VerdictTag verdict={r.verdict} compact /> : "—"}</TD>
-              ) : null}
+              {showVerdict ? <TD>{r.verdict ? <VerdictTag verdict={r.verdict} /> : "—"}</TD> : null}
             </TR>
           ))}
         </TBody>
