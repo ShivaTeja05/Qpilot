@@ -188,27 +188,36 @@ For people who finish their figures in GraphPad Prism. qPilot does not replace P
 
 ## 11. Record
 
-The decision chain as a timeline: every entry has its sequence number, the card and the option, who decided (a person, an agent or the system), the reason, the time, its hash and the previous entry's hash, and its status (applied, waiting, turned down, out of date).
+**The decision chain**, newest first: every entry has its sequence number, the card and the option, who decided (a person, an agent or the system), the reason, the time, its hash and the previous entry's hash, and its status (applied, waiting, turned down, out of date). Each entry's hash covers the entry before it, so changing any line breaks every later link. A filter ("Show entries by") narrows the list; the chain starts with the input file. Before the study is analysed the section says the record starts when the design and the curves are confirmed.
 
-* **Export the Analysis Record** writes one zip: your input file (when it is still on disk), the results, the cards, the grid of analyses, the facts every sentence cites, the design, every decision with its reason and actor, the versions, and a list of checksums. The page then shows the record's id and chain head and the file to download.
-* **Verify a record** takes a zip (yours, or one you received) and checks its checksums, the decision chain, and, if there is one, the audit bound to it.
-* The page also gives the two commands to repeat the checks outside it: `qpilot verify <record.zip>` and `qpilot rerun <unzipped folder>` (re-analyses the input and compares the results byte for byte).
+* **Export the Analysis Record** (**Export again** once you have one) writes one zip: your input file (when it is still on disk), the design, every decision with its reason and actor, the results, and their checksums. The page then shows the record's id and chain head and the file to download, and lists the records exported since qPilot started. If decisions were made after an export, it warns: "Decisions were made after this record was exported; export again to include them."
+* **Verify a record** takes a zip (yours, or one you received; it is read on this computer only) and checks that every file matches its checksum, that the files agree with the chain, that the decisions, the cards and the record's summary say the same thing, and, if there is one, that the audit bound to it verifies and belongs to it. The answer is "This record checks out" or "This record does not check out", with what it says about itself.
+* The page also gives the commands that repeat the checks outside it: `qpilot verify <record.zip>` (checksums, the decision chain and the proposal chain) and `qpilot rerun <unzipped folder>` (re-analyses the input and compares every result byte for byte).
 
 The chain is **tamper-evident, not tamper-proof**: nothing is signed, so someone who rewrites every hash consistently is not detected unless you compare the record's id with a copy kept elsewhere. qPilot is not a 21 CFR Part 11 system.
 
 ## 12. Agents
 
-For agents that work with qPilot over MCP (Claude Code, for example):
+For agents that work with qPilot over MCP (Claude Code, for example). The section opens with "AI agents work on your studies through qPilot's MCP server. They read, open and propose; a choice that can change a conclusion always waits for a person."
 
 ```bash
 claude mcp add qpilot -- qpilot serve
 ```
 
-The page shows this command (with a copy button), the tools an agent has (read, ask, propose; **none can decide a choice that changes a conclusion**), a live list of requests waiting for you (the same **Approve** and **Turn down** as on Results), and the recent entries agents made in the record and in the proposal inbox. The agent bell in the top bar counts the waiting requests. An agent's autonomy over MCP is a setting of each study, not of this page: by default every request waits for you. An agent that can run commands as you can still act as you; give agents MCP access, not your shell.
+* **Connect an agent** shows this command with a copy button (it names the study store when `qpilot serve` would otherwise use another one), and the rules qPilot's code enforces whatever an agent or its model says.
+* **The tools** are grouped by what they can change: **Read** (studies, genes, the audit and the inbox; they change nothing), **Open** (open a file as a study or a Studio session; they decide nothing), **Propose** (add a proposal to a Studio inbox; only a person accepts, edits or rejects it) and **Request a decision** (ask for a choice on a Decision Card; one that can change a conclusion always waits for a person). Each tool says what it can change.
+* **Requests waiting for a person** lists every agent request in every study, oldest first, with the agent's reason. Choose **Approve** or **Turn down** and say why (the same as on Results); one that could change a conclusion is marked as such. The agent bell in the top bar counts them, and a request an agent makes reaches the page within about a second.
+* **Recent agent activity**, newest first: the requests and choices agents made on Decision Cards, and the proposals they made in Studio inboxes, for this study or for all; each says what happened ("Waiting for a person", "Answered by a person", "Not applied: the card changed"). For a study whose design and curves are not confirmed yet, requests and entries are counted but not listed.
+
+An agent's autonomy over MCP is a setting of each study: by default every request waits for you, and the autonomy switch for that study is the one described in [section 14](#14-settings). An agent that can run commands as you can still act as you; give agents MCP access, not your shell.
 
 ## 13. Ask
 
-Press ⌘J (or the Ask button) and ask the open study a question in plain words, for example "Is ODC1 up, and does it depend on the reference genes?". Every answer says which tool answered it, who wrote the words (a template or the model) and the facts it cites. Numbers in an answer are facts qPilot computed; text that contains a number the engine did not produce is discarded. Asking to *change* a choice does not change it: it goes to the person (you).
+Press ⌘J (or the Ask button in the top bar) and ask the open study a question in plain words; the box says "Ask about a gene, a choice or the study", and **Try one of these** offers questions written from your own study. Until the design and the curves are confirmed the drawer says it waits until the study is unblinded. **Answer from** chooses between the study's own engine and, once the audit has run, the audit's (verdicts, what-if and what-to-check-first questions go to the audit by default).
+
+Every answer says which tool answered it (the study summary, one gene's robustness, the sample-size planner, where a number comes from, a change request on a Decision Card, or an audit look-up), how the question was routed (the model, keyword matching, or fixed reading rules), who wrote the words (the model, with every number checked, or qPilot's checked template), and a table of **the numbers in this answer, from the study's facts**. Text that contains a number the engine did not produce is discarded. **What the model saw** shows the exact last payload this qPilot process sent to a model (kept in memory only; withheld while a design or curves stage is unconfirmed unless it came from the Design Interpreter).
+
+Asking to *change* a choice is a request, not a change: in *Suggest* it waits for you on the Decision Card, with a button to turn it down; in *Decide and tell me* Ask may apply a choice that cannot change any conclusion, recorded as an agent's entry in the decision log (Undo is on its card), and anything that can change a conclusion still waits for you.
 
 ## 14. Settings
 
