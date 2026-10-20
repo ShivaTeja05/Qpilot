@@ -1,0 +1,6676 @@
+{
+ "header": {
+  "study_id": "e300000d4f9a",
+  "session": "bc1d233e3866",
+  "title": "Groups by MYCN expression, top 15 %: MYCN-high 53 vs rest 294. Expression-defined, not a clinical call.",
+  "source_name": "data_vermeulen_raw.rdml",
+  "demo": true,
+  "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+  "chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "n_decisions": 1,
+  "generated_at": "2026-10-20T23:10:40Z",
+  "versions": {
+   "python": "3.12.14",
+   "platform": "Darwin arm64",
+   "qpilot": "0.1.0",
+   "qpilot_git": "unknown",
+   "rdmlpython_vendored": "fce7a44e8b47b90759c646b557de568f7af77e75"
+  },
+  "research_use": "Research use only; not for clinical use."
+ },
+ "summary": {
+  "plain": "64 plates, 366 samples and 24,576 reactions. 58 genes compared between MYCN-high (53 units) and rest (294). At the planned analysis 11 genes are up, 29 down and 18 have no call; 21 keep their call in fewer than 80 % of the 744 analyses qPilot checks. The audit finds 23 genes solid and 5 fragile.",
+  "segments": [
+   {
+    "text": "64",
+    "fact": "f_rpt_n_plates",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " plates, ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "366",
+    "fact": "f_n_samples",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " samples and ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "24,576",
+    "fact": "f_n_reactions",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " reactions. ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "58",
+    "fact": "f_n_genes",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " genes compared between ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "MYCN-high",
+    "fact": null,
+    "quote": true,
+    "cite": null
+   },
+   {
+    "text": " (",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "53",
+    "fact": "f_n_hi",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " units) and ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "rest",
+    "fact": null,
+    "quote": true,
+    "cite": null
+   },
+   {
+    "text": " (",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "294",
+    "fact": "f_n_lo",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "). ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "At the planned analysis ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "11",
+    "fact": "f_rpt_n_up",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " genes are up, ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "29",
+    "fact": "f_rpt_n_down",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " down and ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "18",
+    "fact": "f_rpt_n_none",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " have no call",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "; ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "21",
+    "fact": "f_n_hold_lt_80",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " keep their call in fewer than ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "80 %",
+    "fact": "f_rpt_holds_min",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " of the ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "744",
+    "fact": "f_n_cells",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " analyses qPilot checks",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": ".",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " The audit finds ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "23",
+    "fact": "f_rpt_audit_verdict_solid",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " genes solid and ",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": "5",
+    "fact": "f_rpt_audit_verdict_fragile",
+    "quote": false,
+    "cite": null
+   },
+   {
+    "text": " fragile.",
+    "fact": null,
+    "quote": false,
+    "cite": null
+   }
+  ],
+  "facts": [
+   "f_rpt_n_plates",
+   "f_n_samples",
+   "f_n_reactions",
+   "f_n_genes",
+   "f_n_hi",
+   "f_n_lo",
+   "f_rpt_n_up",
+   "f_rpt_n_down",
+   "f_rpt_n_none",
+   "f_n_hold_lt_80",
+   "f_rpt_holds_min",
+   "f_n_cells",
+   "f_rpt_audit_verdict_solid",
+   "f_rpt_audit_verdict_fragile"
+  ]
+ },
+ "key_numbers": [
+  {
+   "label": "plates",
+   "fact": "f_rpt_n_plates"
+  },
+  {
+   "label": "samples",
+   "fact": "f_n_samples"
+  },
+  {
+   "label": "reactions",
+   "fact": "f_n_reactions"
+  },
+  {
+   "label": "genes compared",
+   "fact": "f_n_genes"
+  },
+  {
+   "label": "analyses qPilot checks",
+   "fact": "f_n_cells"
+  },
+  {
+   "label": "analyses in the audit",
+   "fact": "f_rpt_audit_analyses"
+  }
+ ],
+ "methods": {
+  "paragraphs": [
+   {
+    "id": "data",
+    "title": "Data",
+    "text": {
+     "plain": "Raw fluorescence of 24,576 reactions on 64 plates (366 samples) was read from the RDML file data_vermeulen_raw.rdml (RDML version 1.4; SHA-256 bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151). These are the published neuroblastoma data of Vermeulen et al. , as redistributed for the benchmark of Ruijter et al. .",
+     "segments": [
+      {
+       "text": "Raw fluorescence of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "24,576",
+       "fact": "f_n_reactions",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " reactions on ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "64",
+       "fact": "f_rpt_n_plates",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " plates (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "366",
+       "fact": "f_n_samples",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " samples) was read from ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "the RDML file ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "data_vermeulen_raw.rdml",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": " ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "[1]",
+       "fact": null,
+       "quote": false,
+       "cite": 1
+      },
+      {
+       "text": " (RDML version ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.4",
+       "fact": "f_rpt_rdml_version",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; SHA-256 ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+       "fact": "f_rpt_input_sha256",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ").",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " These are the published neuroblastoma data of Vermeulen et al. ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "[2]",
+       "fact": null,
+       "quote": false,
+       "cite": 2
+      },
+      {
+       "text": ", as redistributed for the benchmark of Ruijter et al. ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "[3]",
+       "fact": null,
+       "quote": false,
+       "cite": 3
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_n_reactions",
+      "f_rpt_n_plates",
+      "f_n_samples",
+      "f_rpt_rdml_version",
+      "f_rpt_input_sha256"
+     ]
+    }
+   },
+   {
+    "id": "curves",
+    "title": "Curve analysis",
+    "text": {
+     "plain": "Each well's baseline, amplification efficiency and starting quantity (N0) were estimated with LinRegPCR , using the RDML consortium's rdmlpython vendored unchanged at commit fce7a44e8b47b90759c646b557de568f7af77e75; Cq is TD0, the cycle where the third derivative of the curve crosses zero (qPilot compares N0, not Cq). Each assay's efficiency is the mean of its wells' individual efficiencies, from 1.73 to 1.94 across the 64 assays (median 1.90), as amplification factor per cycle; N0 uses that mean. A curve counts as amplified by LinRegPCR's own call (a starting quantity was found). Of 23,423 sample wells, 323 (1.4 %) gave no quantity; they were left out (Drop empty wells). A person excluded 1 well: ODC1_20080226/A3.",
+     "segments": [
+      {
+       "text": "Each well's baseline, amplification efficiency and starting quantity (N0) were estimated with LinRegPCR ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "[4]",
+       "fact": null,
+       "quote": false,
+       "cite": 4
+      },
+      {
+       "text": "[5]",
+       "fact": null,
+       "quote": false,
+       "cite": 5
+      },
+      {
+       "text": ", using the RDML consortium's rdmlpython vendored unchanged at commit ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "fce7a44e8b47b90759c646b557de568f7af77e75",
+       "fact": "f_rpt_version_rdmlpython_vendored",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; Cq is TD0, the cycle where the third derivative of the curve crosses zero (qPilot compares N0, not Cq).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " Each assay's efficiency is the mean of its wells' individual efficiencies, from ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.73",
+       "fact": "f_rpt_eff_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " to ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.94",
+       "fact": "f_rpt_eff_max",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " across the ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "64",
+       "fact": "f_rpt_n_assays",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " assays (median ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.90",
+       "fact": "f_eff_median",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "), as amplification factor per cycle; N0 uses that mean.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " A curve counts as amplified by ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "LinRegPCR's own call (a starting quantity was found)",
+       "fact": "f_amp_primary",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " Of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "23,423",
+       "fact": "f_n_unknown_wells",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " sample wells, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "323",
+       "fact": "f_n_undetermined",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.4 %",
+       "fact": "f_pct_undetermined",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ") gave no quantity",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; they were left out (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Drop empty wells",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " A person excluded ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1",
+       "fact": "f_rpt_n_excluded",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " well: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "ODC1_20080226/A3",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_version_rdmlpython_vendored",
+      "f_rpt_eff_min",
+      "f_rpt_eff_max",
+      "f_rpt_n_assays",
+      "f_eff_median",
+      "f_amp_primary",
+      "f_n_unknown_wells",
+      "f_n_undetermined",
+      "f_pct_undetermined",
+      "f_rpt_n_excluded"
+     ]
+    }
+   },
+   {
+    "id": "normalisation",
+    "title": "Reference genes and normalisation",
+    "text": {
+     "plain": "The 5 candidate control genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)) were ranked by geNorm stability M : M from 1.63 (HPRT1) to 2.03 (UBC(2)); none is below the usual cut-off M 1.5, and the lowest pairwise variation V is 0.33 (usual cut-off 0.15). Each gene's quantity was divided by the geometric mean of 5 control genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)) in each biological unit, on the log2 scale; this is the recommended option and the choice is still open. Between the groups, 3 of 10 control-gene pairs shift by at least 1.4× (largest HMBS:UBC(2): 1.8×, p 0.058).",
+     "segments": [
+      {
+       "text": "The ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "5",
+       "fact": "f_rpt_n_candidates",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " candidate control genes (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ") were ranked by geNorm stability M ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "[6]",
+       "fact": null,
+       "quote": false,
+       "cite": 6
+      },
+      {
+       "text": ": M from ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.63",
+       "fact": "f_rpt_m_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "HPRT1",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ") to ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "2.03",
+       "fact": "f_rpt_m_max",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "UBC(2)",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; none is below the usual cut-off M ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.5",
+       "fact": "f_rpt_cutoff_m",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", and the lowest pairwise variation V is ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.33",
+       "fact": "f_genorm_v_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (usual cut-off ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.15",
+       "fact": "f_rpt_cutoff_v",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Each gene's quantity was divided by the geometric mean of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "5",
+       "fact": "f_rpt_n_refs",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " control genes (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ") in each biological unit, on the log2 scale",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; this is the recommended option and the choice is still open",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " Between the groups, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "3",
+       "fact": "f_n_ref_pairs_flagged",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "10",
+       "fact": "f_n_ref_pairs",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " control-gene pairs shift by at least ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.4×",
+       "fact": "f_ref_flag_fold",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (largest ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "HMBS:UBC(2)",
+       "fact": "f_ref_pair_top",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ": ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.8×",
+       "fact": "f_ref_ratio_top",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", p ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.058",
+       "fact": "f_ref_ratio_top_p",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_n_candidates",
+      "f_rpt_m_min",
+      "f_rpt_m_max",
+      "f_rpt_cutoff_m",
+      "f_genorm_v_min",
+      "f_rpt_cutoff_v",
+      "f_rpt_n_refs",
+      "f_n_ref_pairs_flagged",
+      "f_n_ref_pairs",
+      "f_ref_flag_fold",
+      "f_ref_pair_top",
+      "f_ref_ratio_top",
+      "f_ref_ratio_top_p"
+     ]
+    }
+   },
+   {
+    "id": "comparison",
+    "title": "Groups and comparison",
+    "text": {
+     "plain": "Biological units were split by the expression of MYCN(4): the top 15 % form the MYCN-high group (53 units) and the rest the reference group (294 units); the groups are defined from the data, not by a clinical call. Technical replicates were averaged within each biological unit (mean log2 N0) and never counted as n. Each gene was compared between the groups with Welch's t-test on per-unit log2 normalised quantities; fold changes are reported with 95 % confidence intervals. A gene is called up or down only if p < 0.05 and the change is at least 2-fold; otherwise it has no call. No correction for multiple testing was applied across the 58 genes. At this analysis 11 genes are up, 29 down and 18 have no call.",
+     "segments": [
+      {
+       "text": "Biological units were split by the expression of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "MYCN(4)",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ": the top ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "15 %",
+       "fact": "f_rpt_cut",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " form the ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "MYCN-high",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": " group",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "53",
+       "fact": "f_n_hi",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " units)",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " and the rest the reference group",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "294",
+       "fact": "f_n_lo",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " units)",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; the groups are defined from the data, not by a clinical call. ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Technical replicates were averaged within each biological unit (mean log2 N0) and never counted as n. Each gene was compared between the groups with Welch's t-test ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "[7]",
+       "fact": null,
+       "quote": false,
+       "cite": 7
+      },
+      {
+       "text": " on per-unit log2 normalised quantities; fold changes are reported with 95 % confidence intervals. A gene is called up or down only if p < 0.05 and the change is at least 2-fold; otherwise it has no call.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " No correction for multiple testing was applied across the ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "58",
+       "fact": "f_n_genes",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " genes.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " At this analysis ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "11",
+       "fact": "f_rpt_n_up",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " genes are up, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "29",
+       "fact": "f_rpt_n_down",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " down and ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "18",
+       "fact": "f_rpt_n_none",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " have no call",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_cut",
+      "f_n_hi",
+      "f_n_lo",
+      "f_n_genes",
+      "f_rpt_n_up",
+      "f_rpt_n_down",
+      "f_rpt_n_none"
+     ]
+    }
+   },
+   {
+    "id": "robustness",
+    "title": "Robustness to analysis choices",
+    "text": {
+     "plain": "Every conclusion was recomputed under the 744 analyses qPilot checks (qPilot's choice grid: every combination of 31 control-gene sets, 3 group cut-offs, 2 rules for wells without a quantity and 4 amplification-call rules). 21 of 58 genes keep their call in fewer than 80 % of them. The control genes alone change 31 calls, the group cut-off alone 17, the amplification-call rule alone 11 and the rule for wells without a quantity alone 0.",
+     "segments": [
+      {
+       "text": "Every conclusion was recomputed under the ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "744",
+       "fact": "f_n_cells",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " analyses qPilot checks (qPilot's choice grid",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ": every combination of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "31",
+       "fact": "f_rpt_grid_refs",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " control-gene sets, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "3",
+       "fact": "f_rpt_grid_cut",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " group cut-offs, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "2",
+       "fact": "f_rpt_grid_undetermined",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " rules for wells without a quantity and ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "4",
+       "fact": "f_rpt_grid_amp_call",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " amplification-call rules).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "21",
+       "fact": "f_n_hold_lt_80",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "58",
+       "fact": "f_n_genes",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " genes keep their call in fewer than ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "80 %",
+       "fact": "f_rpt_holds_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of them.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " The control genes alone change ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "31",
+       "fact": "f_n_flipped_refset",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " calls, the group cut-off alone ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "17",
+       "fact": "f_n_flipped_cutoff",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", the amplification-call rule alone ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "11",
+       "fact": "f_n_flipped_amp_call",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " and the rule for wells without a quantity alone ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0",
+       "fact": "f_n_flipped_undetermined",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_n_cells",
+      "f_rpt_grid_refs",
+      "f_rpt_grid_cut",
+      "f_rpt_grid_undetermined",
+      "f_rpt_grid_amp_call",
+      "f_n_hold_lt_80",
+      "f_n_genes",
+      "f_rpt_holds_min",
+      "f_n_flipped_refset",
+      "f_n_flipped_cutoff",
+      "f_n_flipped_amp_call",
+      "f_n_flipped_undetermined"
+     ]
+    }
+   },
+   {
+    "id": "decisions",
+    "title": "Analysis decisions",
+    "text": {
+     "plain": "The analysis choices are recorded in a hash-chained decision log (1 entry; head 63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62). Which control genes to normalise to: Recommended set (all five), the recommended option; still open (another option changes at least one conclusion). Where to cut the comparison groups: Top 15 % by MYCN expression, the recommended option; still open (another option changes at least one conclusion). Which curves count as amplified: LinRegPCR's own call (a starting quantity was found), the recommended option; still open (another option changes at least one conclusion). What to do with wells that never amplified: Drop empty wells, set automatically because no option changes a conclusion here. In Studio, 247 proposals about the design and the curves were made (137 by rules and 110 by a model); a person accepted 128 and rejected 119 before the design and the curves were confirmed.",
+     "segments": [
+      {
+       "text": "The analysis choices are recorded in a hash-chained decision log (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1",
+       "fact": "f_rpt_n_entries",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " entry; head ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+       "fact": "f_rpt_chain_head",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "). ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Which control genes to normalise to",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ": ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Recommended set (all five)",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ", the recommended option; still open",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (another option changes at least one conclusion)",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Where to cut the comparison groups",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ": ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Top 15 % by MYCN expression",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ", the recommended option; still open",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (another option changes at least one conclusion)",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Which curves count as amplified",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ": ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "LinRegPCR's own call (a starting quantity was found)",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ", the recommended option; still open",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (another option changes at least one conclusion)",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "What to do with wells that never amplified",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ": ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Drop empty wells",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ", set automatically because no option changes a conclusion here",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "In Studio, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "247",
+       "fact": "f_rpt_n_proposed",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " proposals about the design and the curves were made (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "137",
+       "fact": "f_rpt_n_made_rule",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " by rules and ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "110",
+       "fact": "f_rpt_n_made_model",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " by a model); a person accepted ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "128",
+       "fact": "f_rpt_n_accepted",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " and rejected ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "119",
+       "fact": "f_rpt_n_rejected",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " before the design and the curves were confirmed.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_n_entries",
+      "f_rpt_chain_head",
+      "f_rpt_n_proposed",
+      "f_rpt_n_made_rule",
+      "f_rpt_n_made_model",
+      "f_rpt_n_accepted",
+      "f_rpt_n_rejected"
+     ]
+    }
+   },
+   {
+    "id": "audit",
+    "title": "Robustness audit",
+    "text": {
+     "plain": "A robustness audit (qPilot's Decision Simulator, qsim 0.1.0) re-ran the confirmed study under every combination of 8 analysis decisions (90,396 analyses), after reproducing qPilot's comparison of all 58 genes (largest difference in log2 fold change 5e-15). In the audit's reasonable set (144 analyses: no shortcuts such as single or paired control genes; groups and multiplicity as planned), 23 genes are solid, 7 hold with caveats, 3 depend on the choices, 5 are fragile, 2 need their data checked first and 18 have no call. It was run at the decision log's current head.",
+     "segments": [
+      {
+       "text": "A robustness audit (qPilot's Decision Simulator, qsim ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.1.0",
+       "fact": "f_rpt_audit_qsim_version",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ") re-ran the confirmed study under every combination of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "8",
+       "fact": "f_rpt_audit_n_decisions",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " analysis decisions (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "90,396",
+       "fact": "f_rpt_audit_analyses",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " analyses)",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", after reproducing qPilot's comparison of all ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "58",
+       "fact": "f_rpt_audit_reproduced_genes",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " genes (largest difference in log2 fold change ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "5e-15",
+       "fact": "f_rpt_audit_max_diff_log2fc",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " In the audit's reasonable set (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "144",
+       "fact": "f_rpt_audit_reasonable",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " analyses: no shortcuts such as single or paired control genes; groups and multiplicity as planned), ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "23",
+       "fact": "f_rpt_audit_verdict_solid",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " genes are solid, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "7",
+       "fact": "f_rpt_audit_verdict_holds_with_caveats",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " hold with caveats, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "3",
+       "fact": "f_rpt_audit_verdict_depends_on_your_choices",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " depend on the choices, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "5",
+       "fact": "f_rpt_audit_verdict_fragile",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " are fragile, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "2",
+       "fact": "f_rpt_audit_verdict_check_data_first",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " need their data checked first and ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "18",
+       "fact": "f_rpt_audit_verdict_no_call",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " have no call.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " It was run at the decision log's current head.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_audit_qsim_version",
+      "f_rpt_audit_n_decisions",
+      "f_rpt_audit_analyses",
+      "f_rpt_audit_reproduced_genes",
+      "f_rpt_audit_max_diff_log2fc",
+      "f_rpt_audit_reasonable",
+      "f_rpt_audit_verdict_solid",
+      "f_rpt_audit_verdict_holds_with_caveats",
+      "f_rpt_audit_verdict_depends_on_your_choices",
+      "f_rpt_audit_verdict_fragile",
+      "f_rpt_audit_verdict_check_data_first",
+      "f_rpt_audit_verdict_no_call"
+     ]
+    }
+   },
+   {
+    "id": "software",
+    "title": "Software and reporting",
+    "text": {
+     "plain": "Analysis with qPilot 0.1.0 on Python 3.12.14; LinRegPCR from rdmlpython (MIT licence), geNorm reimplemented from its paper and Welch's test from SciPy's t distribution, and the audit with qPilot's Decision Simulator. The study's Analysis Record (the input file, every decision and their checksums) re-runs to the same numbers with qpilot rerun. Reported following MIQE 2.0 ; the checklist is attached.",
+     "segments": [
+      {
+       "text": "Analysis with qPilot ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.1.0",
+       "fact": "f_rpt_version_qpilot",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " on Python ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "3.12.14",
+       "fact": "f_rpt_version_python",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; LinRegPCR from rdmlpython (MIT licence), geNorm reimplemented from its paper and Welch's test from SciPy's t distribution, and the audit with qPilot's Decision Simulator. The study's Analysis Record (the input file, every decision and their checksums) re-runs to the same numbers with qpilot rerun. Reported following MIQE 2.0 ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "[8]",
+       "fact": null,
+       "quote": false,
+       "cite": 8
+      },
+      {
+       "text": "; the checklist is attached.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_version_qpilot",
+      "f_rpt_version_python"
+     ]
+    }
+   }
+  ],
+  "citations": [
+   {
+    "n": 1,
+    "id": "rdml",
+    "text": "Lefever S, Hellemans J, Pattyn F, et al. RDML: structured language and reporting guidelines for real-time quantitative PCR data. Nucleic Acids Res. 2009;37(7):2065–2069."
+   },
+   {
+    "n": 2,
+    "id": "vermeulen2009",
+    "text": "Vermeulen J, De Preter K, Naranjo A, et al. Predicting outcomes for children with neuroblastoma using a multigene-expression signature: a retrospective SIOPEN/COG/GPOH study. Lancet Oncol. 2009;10(7):663–671."
+   },
+   {
+    "n": 3,
+    "id": "ruijter2013",
+    "text": "Ruijter JM, Pfaffl MW, Zhao S, et al. Evaluation of qPCR curve analysis methods for reliable biomarker discovery: bias, resolution, precision, and implications. Methods. 2013;59(1):32–46. doi:10.1016/j.ymeth.2012.08.011"
+   },
+   {
+    "n": 4,
+    "id": "ruijter2009",
+    "text": "Ruijter JM, Ramakers C, Hoogaars WMH, et al. Amplification efficiency: linking baseline and bias in the analysis of quantitative PCR data. Nucleic Acids Res. 2009;37(6):e45. doi:10.1093/nar/gkp045"
+   },
+   {
+    "n": 5,
+    "id": "untergasser2021",
+    "text": "Untergasser A, Ruijter JM, et al. Web-based LinRegPCR: application for the visualization and analysis of (RT)-qPCR amplification and melting data. BMC Bioinformatics. 2021;22:398."
+   },
+   {
+    "n": 6,
+    "id": "vandesompele2002",
+    "text": "Vandesompele J, De Preter K, Pattyn F, et al. Accurate normalization of real-time quantitative RT-PCR data by geometric averaging of multiple internal control genes. Genome Biol. 2002;3(7):research0034. doi:10.1186/gb-2002-3-7-research0034"
+   },
+   {
+    "n": 7,
+    "id": "welch1947",
+    "text": "Welch BL. The generalization of 'Student's' problem when several different population variances are involved. Biometrika. 1947;34(1–2):28–35."
+   },
+   {
+    "n": 8,
+    "id": "miqe2",
+    "text": "Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0: revision of the Minimum Information for Publication of Quantitative Real-Time PCR Experiments guidelines. Clin Chem. 2025;71(6):634–651. doi:10.1093/clinchem/hvaf043"
+   }
+  ],
+  "plain": "Raw fluorescence of 24,576 reactions on 64 plates (366 samples) was read from the RDML file data_vermeulen_raw.rdml (RDML version 1.4; SHA-256 bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151). These are the published neuroblastoma data of Vermeulen et al. , as redistributed for the benchmark of Ruijter et al. .\n\nEach well's baseline, amplification efficiency and starting quantity (N0) were estimated with LinRegPCR , using the RDML consortium's rdmlpython vendored unchanged at commit fce7a44e8b47b90759c646b557de568f7af77e75; Cq is TD0, the cycle where the third derivative of the curve crosses zero (qPilot compares N0, not Cq). Each assay's efficiency is the mean of its wells' individual efficiencies, from 1.73 to 1.94 across the 64 assays (median 1.90), as amplification factor per cycle; N0 uses that mean. A curve counts as amplified by LinRegPCR's own call (a starting quantity was found). Of 23,423 sample wells, 323 (1.4 %) gave no quantity; they were left out (Drop empty wells). A person excluded 1 well: ODC1_20080226/A3.\n\nThe 5 candidate control genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)) were ranked by geNorm stability M : M from 1.63 (HPRT1) to 2.03 (UBC(2)); none is below the usual cut-off M 1.5, and the lowest pairwise variation V is 0.33 (usual cut-off 0.15). Each gene's quantity was divided by the geometric mean of 5 control genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)) in each biological unit, on the log2 scale; this is the recommended option and the choice is still open. Between the groups, 3 of 10 control-gene pairs shift by at least 1.4× (largest HMBS:UBC(2): 1.8×, p 0.058).\n\nBiological units were split by the expression of MYCN(4): the top 15 % form the MYCN-high group (53 units) and the rest the reference group (294 units); the groups are defined from the data, not by a clinical call. Technical replicates were averaged within each biological unit (mean log2 N0) and never counted as n. Each gene was compared between the groups with Welch's t-test on per-unit log2 normalised quantities; fold changes are reported with 95 % confidence intervals. A gene is called up or down only if p < 0.05 and the change is at least 2-fold; otherwise it has no call. No correction for multiple testing was applied across the 58 genes. At this analysis 11 genes are up, 29 down and 18 have no call.\n\nEvery conclusion was recomputed under the 744 analyses qPilot checks (qPilot's choice grid: every combination of 31 control-gene sets, 3 group cut-offs, 2 rules for wells without a quantity and 4 amplification-call rules). 21 of 58 genes keep their call in fewer than 80 % of them. The control genes alone change 31 calls, the group cut-off alone 17, the amplification-call rule alone 11 and the rule for wells without a quantity alone 0.\n\nThe analysis choices are recorded in a hash-chained decision log (1 entry; head 63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62). Which control genes to normalise to: Recommended set (all five), the recommended option; still open (another option changes at least one conclusion). Where to cut the comparison groups: Top 15 % by MYCN expression, the recommended option; still open (another option changes at least one conclusion). Which curves count as amplified: LinRegPCR's own call (a starting quantity was found), the recommended option; still open (another option changes at least one conclusion). What to do with wells that never amplified: Drop empty wells, set automatically because no option changes a conclusion here. In Studio, 247 proposals about the design and the curves were made (137 by rules and 110 by a model); a person accepted 128 and rejected 119 before the design and the curves were confirmed.\n\nA robustness audit (qPilot's Decision Simulator, qsim 0.1.0) re-ran the confirmed study under every combination of 8 analysis decisions (90,396 analyses), after reproducing qPilot's comparison of all 58 genes (largest difference in log2 fold change 5e-15). In the audit's reasonable set (144 analyses: no shortcuts such as single or paired control genes; groups and multiplicity as planned), 23 genes are solid, 7 hold with caveats, 3 depend on the choices, 5 are fragile, 2 need their data checked first and 18 have no call. It was run at the decision log's current head.\n\nAnalysis with qPilot 0.1.0 on Python 3.12.14; LinRegPCR from rdmlpython (MIT licence), geNorm reimplemented from its paper and Welch's test from SciPy's t distribution, and the audit with qPilot's Decision Simulator. The study's Analysis Record (the input file, every decision and their checksums) re-runs to the same numbers with qpilot rerun. Reported following MIQE 2.0 ; the checklist is attached.",
+  "with_citations": "Raw fluorescence of 24,576 reactions on 64 plates (366 samples) was read from the RDML file data_vermeulen_raw.rdml [1] (RDML version 1.4; SHA-256 bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151). These are the published neuroblastoma data of Vermeulen et al. [2], as redistributed for the benchmark of Ruijter et al. [3].\n\nEach well's baseline, amplification efficiency and starting quantity (N0) were estimated with LinRegPCR [4, 5], using the RDML consortium's rdmlpython vendored unchanged at commit fce7a44e8b47b90759c646b557de568f7af77e75; Cq is TD0, the cycle where the third derivative of the curve crosses zero (qPilot compares N0, not Cq). Each assay's efficiency is the mean of its wells' individual efficiencies, from 1.73 to 1.94 across the 64 assays (median 1.90), as amplification factor per cycle; N0 uses that mean. A curve counts as amplified by LinRegPCR's own call (a starting quantity was found). Of 23,423 sample wells, 323 (1.4 %) gave no quantity; they were left out (Drop empty wells). A person excluded 1 well: ODC1_20080226/A3.\n\nThe 5 candidate control genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)) were ranked by geNorm stability M [6]: M from 1.63 (HPRT1) to 2.03 (UBC(2)); none is below the usual cut-off M 1.5, and the lowest pairwise variation V is 0.33 (usual cut-off 0.15). Each gene's quantity was divided by the geometric mean of 5 control genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)) in each biological unit, on the log2 scale; this is the recommended option and the choice is still open. Between the groups, 3 of 10 control-gene pairs shift by at least 1.4× (largest HMBS:UBC(2): 1.8×, p 0.058).\n\nBiological units were split by the expression of MYCN(4): the top 15 % form the MYCN-high group (53 units) and the rest the reference group (294 units); the groups are defined from the data, not by a clinical call. Technical replicates were averaged within each biological unit (mean log2 N0) and never counted as n. Each gene was compared between the groups with Welch's t-test [7] on per-unit log2 normalised quantities; fold changes are reported with 95 % confidence intervals. A gene is called up or down only if p < 0.05 and the change is at least 2-fold; otherwise it has no call. No correction for multiple testing was applied across the 58 genes. At this analysis 11 genes are up, 29 down and 18 have no call.\n\nEvery conclusion was recomputed under the 744 analyses qPilot checks (qPilot's choice grid: every combination of 31 control-gene sets, 3 group cut-offs, 2 rules for wells without a quantity and 4 amplification-call rules). 21 of 58 genes keep their call in fewer than 80 % of them. The control genes alone change 31 calls, the group cut-off alone 17, the amplification-call rule alone 11 and the rule for wells without a quantity alone 0.\n\nThe analysis choices are recorded in a hash-chained decision log (1 entry; head 63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62). Which control genes to normalise to: Recommended set (all five), the recommended option; still open (another option changes at least one conclusion). Where to cut the comparison groups: Top 15 % by MYCN expression, the recommended option; still open (another option changes at least one conclusion). Which curves count as amplified: LinRegPCR's own call (a starting quantity was found), the recommended option; still open (another option changes at least one conclusion). What to do with wells that never amplified: Drop empty wells, set automatically because no option changes a conclusion here. In Studio, 247 proposals about the design and the curves were made (137 by rules and 110 by a model); a person accepted 128 and rejected 119 before the design and the curves were confirmed.\n\nA robustness audit (qPilot's Decision Simulator, qsim 0.1.0) re-ran the confirmed study under every combination of 8 analysis decisions (90,396 analyses), after reproducing qPilot's comparison of all 58 genes (largest difference in log2 fold change 5e-15). In the audit's reasonable set (144 analyses: no shortcuts such as single or paired control genes; groups and multiplicity as planned), 23 genes are solid, 7 hold with caveats, 3 depend on the choices, 5 are fragile, 2 need their data checked first and 18 have no call. It was run at the decision log's current head.\n\nAnalysis with qPilot 0.1.0 on Python 3.12.14; LinRegPCR from rdmlpython (MIT licence), geNorm reimplemented from its paper and Welch's test from SciPy's t distribution, and the audit with qPilot's Decision Simulator. The study's Analysis Record (the input file, every decision and their checksums) re-runs to the same numbers with qpilot rerun. Reported following MIQE 2.0 [8]; the checklist is attached.\n\nReferences\n1. Lefever S, Hellemans J, Pattyn F, et al. RDML: structured language and reporting guidelines for real-time quantitative PCR data. Nucleic Acids Res. 2009;37(7):2065–2069.\n2. Vermeulen J, De Preter K, Naranjo A, et al. Predicting outcomes for children with neuroblastoma using a multigene-expression signature: a retrospective SIOPEN/COG/GPOH study. Lancet Oncol. 2009;10(7):663–671.\n3. Ruijter JM, Pfaffl MW, Zhao S, et al. Evaluation of qPCR curve analysis methods for reliable biomarker discovery: bias, resolution, precision, and implications. Methods. 2013;59(1):32–46. doi:10.1016/j.ymeth.2012.08.011\n4. Ruijter JM, Ramakers C, Hoogaars WMH, et al. Amplification efficiency: linking baseline and bias in the analysis of quantitative PCR data. Nucleic Acids Res. 2009;37(6):e45. doi:10.1093/nar/gkp045\n5. Untergasser A, Ruijter JM, et al. Web-based LinRegPCR: application for the visualization and analysis of (RT)-qPCR amplification and melting data. BMC Bioinformatics. 2021;22:398.\n6. Vandesompele J, De Preter K, Pattyn F, et al. Accurate normalization of real-time quantitative RT-PCR data by geometric averaging of multiple internal control genes. Genome Biol. 2002;3(7):research0034. doi:10.1186/gb-2002-3-7-research0034\n7. Welch BL. The generalization of 'Student's' problem when several different population variances are involved. Biometrika. 1947;34(1–2):28–35.\n8. Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0: revision of the Minimum Information for Publication of Quantitative Real-Time PCR Experiments guidelines. Clin Chem. 2025;71(6):634–651. doi:10.1093/clinchem/hvaf043"
+ },
+ "miqe": {
+  "pack": {
+   "name": "miqe2-items",
+   "version": "1.0.0",
+   "sha256": "2a80bf929fe42b8e2d061f6c6d2218562905838fbe453912dfefc53616ab11f0",
+   "citation": "Bustin SA, Ruijter JM, van den Hoff MJB, Kubista M, Pfaffl MW, Shipley GL, Tran N, Rödiger S, Untergasser A, Mueller R, Nolan T, Milavec M, Burns MJ, Huggett JF, Vandesompele J, Wittwer CT. MIQE 2.0: Revision of the Minimum Information for Publication of Quantitative Real-Time PCR Experiments Guidelines. Clin Chem 2025;71(6):634-651. doi:10.1093/clinchem/hvaf043"
+  },
+  "items": [
+   {
+    "id": "1.1",
+    "section": "Reagent preparation",
+    "label": "Bioinformatics tools, versions and settings used to design the assays",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "1.2",
+    "section": "Reagent preparation",
+    "label": "Official gene symbol, species and accession number",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The RDML file declares no database cross-references for any target; add them.",
+     "segments": [
+      {
+       "text": "The RDML file declares no database cross-references for any target; add them.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "1.3",
+    "section": "Reagent preparation",
+    "label": "Location of the amplicon",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "1.4",
+    "section": "Reagent preparation",
+    "label": "Amplicon length",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The RDML file declares no unmasked amplicon sequences for any target; add them.",
+     "segments": [
+      {
+       "text": "The RDML file declares no unmasked amplicon sequences for any target; add them.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "1.5",
+    "section": "Reagent preparation",
+    "label": "Primer and probe sequences (or assay context sequences)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The RDML file holds no primer or probe sequences; give them in the paper.",
+     "segments": [
+      {
+       "text": "The RDML file holds no primer or probe sequences; give them in the paper.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "1.6",
+    "section": "Reagent preparation",
+    "label": "Location and identity of any modifications",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The data do not show this.",
+     "segments": [
+      {
+       "text": "The data do not show this.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "1.7",
+    "section": "Reagent preparation",
+    "label": "Manufacturer of the oligonucleotides",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "1.8",
+    "section": "Reagent preparation",
+    "label": "Details of the optimisation performed",
+    "status": "cannot_tell",
+    "attest": true,
+    "evidence": {
+     "plain": "Only a person can attest this; qPilot never answers it.",
+     "segments": [
+      {
+       "text": "Only a person can attest this; qPilot never answers it.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.1",
+    "section": "Sample preparation",
+    "label": "Sample types and numbers",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "366 samples; MYCN-high 53 and rest 294 biological units compared. Controls and standards typed in the design: 9 NTC, 50 STD.",
+     "segments": [
+      {
+       "text": "366",
+       "fact": "f_n_samples",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " samples; ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "MYCN-high",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": " ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "53",
+       "fact": "f_n_hi",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " and ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "rest",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": " ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "294",
+       "fact": "f_n_lo",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " biological units compared.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " Controls and standards typed in the design: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "9",
+       "fact": "f_rpt_role_ntc",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " NTC, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "50",
+       "fact": "f_rpt_role_std",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " STD.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_n_samples",
+      "f_n_hi",
+      "f_n_lo",
+      "f_rpt_role_ntc",
+      "f_rpt_role_std"
+     ]
+    },
+    "sources": [
+     "results.json",
+     "study_design.json:/samples"
+    ]
+   },
+   {
+    "id": "2.2",
+    "section": "Sample preparation",
+    "label": "Sampling procedure, including time to storage",
+    "status": "cannot_tell",
+    "attest": true,
+    "evidence": {
+     "plain": "Only a person can attest this; qPilot never answers it.",
+     "segments": [
+      {
+       "text": "Only a person can attest this; qPilot never answers it.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.3",
+    "section": "Sample preparation",
+    "label": "Aliquoting, storage conditions and duration",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.4",
+    "section": "Sample preparation",
+    "label": "Extraction method and amount of sample processed",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.5",
+    "section": "Sample preparation",
+    "label": "Source and amount of any spike-in",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.6",
+    "section": "Sample preparation",
+    "label": "Elution buffer volume",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.7",
+    "section": "Sample preparation",
+    "label": "Number of extraction replicates",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.8",
+    "section": "Sample preparation",
+    "label": "Extraction blanks and percentage yield",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Instrument or quality-control exports hold this, not the RDML file; add it.",
+     "segments": [
+      {
+       "text": "Instrument or quality-control exports hold this, not the RDML file; add it.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.9",
+    "section": "Sample preparation",
+    "label": "Method used to evaluate nucleic acid quality and quantity",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Instrument or quality-control exports hold this, not the RDML file; add it.",
+     "segments": [
+      {
+       "text": "Instrument or quality-control exports hold this, not the RDML file; add it.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.10",
+    "section": "Sample preparation",
+    "label": "Storage conditions of the extract (temperature, concentration, duration, buffer)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.11",
+    "section": "Sample preparation",
+    "label": "Dilution steps for the working template",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The data do not show this.",
+     "segments": [
+      {
+       "text": "The data do not show this.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.12",
+    "section": "Sample preparation",
+    "label": "Template modification (DNase treatment, pre-amplification, ...)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The data do not show this.",
+     "segments": [
+      {
+       "text": "The data do not show this.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "2.13",
+    "section": "Sample preparation",
+    "label": "Purification after modification",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "3.1",
+    "section": "Reverse transcription",
+    "label": "cDNA priming method and primer concentration",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The data do not show this.",
+     "segments": [
+      {
+       "text": "The data do not show this.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "3.2",
+    "section": "Reverse transcription",
+    "label": "One-step or two-step protocol",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "3.3",
+    "section": "Reverse transcription",
+    "label": "Amount of RNA per reaction",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The data do not show this.",
+     "segments": [
+      {
+       "text": "The data do not show this.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "3.4",
+    "section": "Reverse transcription",
+    "label": "Reaction components and conditions",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "3.5",
+    "section": "Reverse transcription",
+    "label": "Estimated copies with and without reverse transcription",
+    "status": "not_met",
+    "attest": false,
+    "evidence": {
+     "plain": "The study has no no-RT control samples, in the design or the RDML file (MIQE 2.0: desirable, no longer essential once the samples are shown to be free of DNA).",
+     "segments": [
+      {
+       "text": "The study has no no-RT control samples, in the design or the RDML file (MIQE 2.0: desirable, no longer essential once the samples are shown to be free of DNA).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": [
+     "study_design.json:/samples",
+     "input.rdml:/sample/type"
+    ]
+   },
+   {
+    "id": "3.6",
+    "section": "Reverse transcription",
+    "label": "Reagent manufacturer, catalogue and lot numbers",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Instrument or quality-control exports hold this, not the RDML file; add it.",
+     "segments": [
+      {
+       "text": "Instrument or quality-control exports hold this, not the RDML file; add it.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "3.7",
+    "section": "Reverse transcription",
+    "label": "cDNA storage conditions",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "4.1",
+    "section": "qPCR protocol",
+    "label": "Template treatment (initial heating or denaturation)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The data do not show this.",
+     "segments": [
+      {
+       "text": "The data do not show this.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "4.2",
+    "section": "qPCR protocol",
+    "label": "Primer and probe concentrations and source",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "4.3",
+    "section": "qPCR protocol",
+    "label": "Polymerase, Mg2+ and dNTP details",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Not in the data: add it from the lab's notes (one line in the paper).",
+     "segments": [
+      {
+       "text": "Not in the data: add it from the lab's notes (one line in the paper).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "4.4",
+    "section": "qPCR protocol",
+    "label": "Buffer or kit (manufacturer, catalogue and lot numbers)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Instrument or quality-control exports hold this, not the RDML file; add it.",
+     "segments": [
+      {
+       "text": "Instrument or quality-control exports hold this, not the RDML file; add it.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "4.5",
+    "section": "qPCR protocol",
+    "label": "Complete thermocycling parameters, including reaction volume",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The RDML file holds the reaction volume (8 µL); the full cycling parameters are not in it.",
+     "segments": [
+      {
+       "text": "The RDML file holds the reaction volume (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "8 µL",
+       "fact": "f_rpt_rdml_volume",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "); the full cycling parameters are not in it.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_rdml_volume"
+     ]
+    },
+    "sources": []
+   },
+   {
+    "id": "4.6",
+    "section": "qPCR protocol",
+    "label": "Manufacturer and type of instrument",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The RDML file names no instrument; give the manufacturer and model.",
+     "segments": [
+      {
+       "text": "The RDML file names no instrument; give the manufacturer and model.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "5.1",
+    "section": "Data analysis",
+    "label": "Raw fluorescence data stored or submitted as RDES or RDML",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "Raw fluorescence of 25,491 reactions in the RDML file (SHA-256 bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151); the Analysis Record carries the file byte for byte.",
+     "segments": [
+      {
+       "text": "Raw fluorescence of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "25,491",
+       "fact": "f_rpt_rdml_n_curves",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " reactions in the RDML file (SHA-256 ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+       "fact": "f_rpt_input_sha256",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "); the Analysis Record carries the file byte for byte.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_rdml_n_curves",
+      "f_rpt_input_sha256"
+     ]
+    },
+    "sources": [
+     "input.rdml"
+    ]
+   },
+   {
+    "id": "5.2",
+    "section": "Data analysis",
+    "label": "Identity of standards and quantification method",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "Relative quantification from efficiency-corrected starting quantities (LinRegPCR N0); standard curves are not used to quantify.",
+     "segments": [
+      {
+       "text": "Relative quantification from efficiency-corrected starting quantities (LinRegPCR N0); standard curves are not used to quantify.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": [
+     "methods/linregpcr.md"
+    ]
+   },
+   {
+    "id": "5.3",
+    "section": "Data analysis",
+    "label": "Baseline correction and Cq determination",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "Per-well baseline estimated and subtracted by LinRegPCR; Cq is TD0, the cycle where the third derivative of the curve crosses zero. rdmlpython commit fce7a44e8b47b90759c646b557de568f7af77e75.",
+     "segments": [
+      {
+       "text": "Per-well baseline estimated and subtracted by LinRegPCR; Cq is TD0, the cycle where the third derivative of the curve crosses zero. rdmlpython commit ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "fce7a44e8b47b90759c646b557de568f7af77e75",
+       "fact": "f_rpt_version_rdmlpython_vendored",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_version_rdmlpython_vendored"
+     ]
+    },
+    "sources": [
+     "versions",
+     "methods/linregpcr.md"
+    ]
+   },
+   {
+    "id": "5.4",
+    "section": "Data analysis",
+    "label": "qPCR analysis program (source and version)",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "qPilot 0.1.0 with LinRegPCR from rdmlpython (commit fce7a44e8b47b90759c646b557de568f7af77e75), Python 3.12.14.",
+     "segments": [
+      {
+       "text": "qPilot ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.1.0",
+       "fact": "f_rpt_version_qpilot",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " with LinRegPCR from rdmlpython (commit ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "fce7a44e8b47b90759c646b557de568f7af77e75",
+       "fact": "f_rpt_version_rdmlpython_vendored",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "), Python ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "3.12.14",
+       "fact": "f_rpt_version_python",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_version_qpilot",
+      "f_rpt_version_rdmlpython_vendored",
+      "f_rpt_version_python"
+     ]
+    },
+    "sources": [
+     "versions"
+    ]
+   },
+   {
+    "id": "5.5",
+    "section": "Data analysis",
+    "label": "Details of positive and negative controls",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "Control and standard samples: 9 NTC, 50 STD.",
+     "segments": [
+      {
+       "text": "Control and standard samples: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "9",
+       "fact": "f_rpt_ctl_ntc",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " NTC, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "50",
+       "fact": "f_rpt_ctl_std",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " STD.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_ctl_ntc",
+      "f_rpt_ctl_std"
+     ]
+    },
+    "sources": [
+     "study_design.json:/samples"
+    ]
+   },
+   {
+    "id": "5.6",
+    "section": "Data analysis",
+    "label": "Frequency and Cq of the negative controls",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The audit lists 11 observations on no-template controls (see its issue queue); qPilot does not tabulate their frequency and Cq.",
+     "segments": [
+      {
+       "text": "The audit lists ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "11",
+       "fact": "f_rpt_audit_ntc_observations",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " observations on no-template controls (see its issue queue); qPilot does not tabulate their frequency and Cq.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_audit_ntc_observations"
+     ]
+    },
+    "sources": []
+   },
+   {
+    "id": "5.7",
+    "section": "Data analysis",
+    "label": "Examples of positive and negative results",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "Every well's raw curve is in the Curves section; choose examples for the paper.",
+     "segments": [
+      {
+       "text": "Every well's raw curve is in the Curves section; choose examples for the paper.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "5.8",
+    "section": "Data analysis",
+    "label": "PCR efficiency and how it was estimated",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "Estimated per well from the log-linear phase of each curve (LinRegPCR); per-assay means from 1.73 to 1.94 (median 1.90), as amplification factor per cycle.",
+     "segments": [
+      {
+       "text": "Estimated per well from the log-linear phase of each curve (LinRegPCR); per-assay means from ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.73",
+       "fact": "f_rpt_eff_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " to ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.94",
+       "fact": "f_rpt_eff_max",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (median ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.90",
+       "fact": "f_eff_median",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "), as amplification factor per cycle.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_eff_min",
+      "f_rpt_eff_max",
+      "f_eff_median"
+     ]
+    },
+    "sources": [
+     "results.json:/efficiency"
+    ]
+   },
+   {
+    "id": "5.9",
+    "section": "Data analysis",
+    "label": "Method of target quantity calculation (efficiency-corrected)",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "Efficiency-corrected starting quantity per well (LinRegPCR N0, with the assay's mean efficiency).",
+     "segments": [
+      {
+       "text": "Efficiency-corrected starting quantity per well (LinRegPCR N0, with the assay's mean efficiency).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": [
+     "methods/linregpcr.md"
+    ]
+   },
+   {
+    "id": "5.10",
+    "section": "Data analysis",
+    "label": "Description of the replicates",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "n is the number of biological units (53 and 294); technical replicates are averaged within a unit before any test and never counted as n.",
+     "segments": [
+      {
+       "text": "n is the number of biological units (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "53",
+       "fact": "f_n_hi",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " and ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "294",
+       "fact": "f_n_lo",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "); technical replicates are averaged within a unit before any test and never counted as n.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_n_hi",
+      "f_n_lo"
+     ]
+    },
+    "sources": [
+     "results.json",
+     "methods/contrast.md"
+    ]
+   },
+   {
+    "id": "5.11",
+    "section": "Data analysis",
+    "label": "Repeatability (intra-experiment variation)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The data do not show this.",
+     "segments": [
+      {
+       "text": "The data do not show this.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "5.12",
+    "section": "Data analysis",
+    "label": "Reproducibility (inter-run, inter-user or inter-laboratory variation)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The data do not show this.",
+     "segments": [
+      {
+       "text": "The data do not show this.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   },
+   {
+    "id": "5.13",
+    "section": "Data analysis",
+    "label": "Whether a limit of detection was calculated",
+    "status": "not_met",
+    "attest": false,
+    "evidence": {
+     "plain": "Not determined by this analysis: it needs replicate detection rates at low input or a standard series evaluated for that purpose; change this answer if it was determined elsewhere.",
+     "segments": [
+      {
+       "text": "Not determined by this analysis: it needs replicate detection rates at low input or a standard series evaluated for that purpose; change this answer if it was determined elsewhere.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": [
+     "results.json:/confidence"
+    ]
+   },
+   {
+    "id": "5.14",
+    "section": "Data analysis",
+    "label": "Dynamic range (linear range of the standard curve)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "The design declares 40 standard samples with quantities, but qPilot does not fit a standard curve; give the linear range if one was evaluated.",
+     "segments": [
+      {
+       "text": "The design declares ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "40",
+       "fact": "f_rpt_n_std_quantity",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " standard samples with quantities, but qPilot does not fit a standard curve; give the linear range if one was evaluated.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_n_std_quantity"
+     ]
+    },
+    "sources": []
+   },
+   {
+    "id": "5.15",
+    "section": "Data analysis",
+    "label": "Method used to validate the reference genes",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "geNorm stability M from 1.63 to 2.03; lowest pairwise variation V 0.33. Pairwise ratios between the groups: 3 of 10 control-gene pairs shift.",
+     "segments": [
+      {
+       "text": "geNorm stability M from ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.63",
+       "fact": "f_rpt_m_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " to ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "2.03",
+       "fact": "f_rpt_m_max",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; lowest pairwise variation V ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.33",
+       "fact": "f_genorm_v_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". Pairwise ratios between the groups: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "3",
+       "fact": "f_n_ref_pairs_flagged",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "10",
+       "fact": "f_n_ref_pairs",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " control-gene pairs shift.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_m_min",
+      "f_rpt_m_max",
+      "f_genorm_v_min",
+      "f_n_ref_pairs_flagged",
+      "f_n_ref_pairs"
+     ]
+    },
+    "sources": [
+     "results.json:/genorm",
+     "methods/genorm.md"
+    ]
+   },
+   {
+    "id": "5.16",
+    "section": "Data analysis",
+    "label": "Normalisation method and calculation",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "Each target divided by the geometric mean of 5 reference genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2)), on the log2 scale per biological unit.",
+     "segments": [
+      {
+       "text": "Each target divided by the geometric mean of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "5",
+       "fact": "f_rpt_n_refs",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " reference genes (",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2)",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": "), on the log2 scale per biological unit.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_n_refs"
+     ]
+    },
+    "sources": [
+     "results.json:/design/refs_primary"
+    ]
+   },
+   {
+    "id": "5.17",
+    "section": "Data analysis",
+    "label": "Statistical methods",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "Welch's t-test on per-unit log2 normalised quantities; fold changes with 95 % confidence intervals; no correction for multiple testing; every call re-checked under qPilot's choice grid.",
+     "segments": [
+      {
+       "text": "Welch's t-test on per-unit log2 normalised quantities; fold changes with 95 % confidence intervals; no correction for multiple testing; every call re-checked under qPilot's choice grid.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": [
+     "methods/contrast.md"
+    ]
+   },
+   {
+    "id": "5.18",
+    "section": "Data analysis",
+    "label": "Significance level and statistical power",
+    "status": "met",
+    "attest": false,
+    "evidence": {
+     "plain": "A gene is called only when p < 0.05 and the change is at least 2-fold. A priori power is not in the data; add it if it was calculated.",
+     "segments": [
+      {
+       "text": "A gene is called only when p < 0.05 and the change is at least 2-fold. A priori power is not in the data; add it if it was calculated.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": [
+     "results.json:/conclusion_rule"
+    ]
+   },
+   {
+    "id": "5.19",
+    "section": "Data analysis",
+    "label": "Specificity of the assay (melt curve, sequencing)",
+    "status": "cannot_tell",
+    "attest": false,
+    "evidence": {
+     "plain": "qPilot does not analyse melt curves; say how specificity was confirmed.",
+     "segments": [
+      {
+       "text": "qPilot does not analyse melt curves; say how specificity was confirmed.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "sources": []
+   }
+  ],
+  "counts": {
+   "met": 13,
+   "not_met": 2,
+   "not_applicable": 0,
+   "cannot_tell": 38
+  },
+  "n_items": 53,
+  "headline": {
+   "plain": "Of the 53 MIQE 2.0 items, the data show 13 met and 2 not met; 0 do not apply and 38 cannot be told from the data (the scientist answers them). A count, never a score: qPilot never answers an item only a person can attest.",
+   "segments": [
+    {
+     "text": "Of the ",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": "53",
+     "fact": "f_rpt_miqe_items",
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": " MIQE 2.0 items, the data show ",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": "13",
+     "fact": "f_rpt_miqe_met",
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": " met and ",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": "2",
+     "fact": "f_rpt_miqe_not_met",
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": " not met; ",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": "0",
+     "fact": "f_rpt_miqe_not_applicable",
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": " do not apply and ",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": "38",
+     "fact": "f_rpt_miqe_cannot_tell",
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": " cannot be told from the data (the scientist answers them). A count, never a score: qPilot never answers an item only a person can attest.",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    }
+   ],
+   "facts": [
+    "f_rpt_miqe_items",
+    "f_rpt_miqe_met",
+    "f_rpt_miqe_not_met",
+    "f_rpt_miqe_not_applicable",
+    "f_rpt_miqe_cannot_tell"
+   ]
+  }
+ },
+ "review": {
+  "lead": {
+   "plain": "What a careful reviewer would raise: major points 5, minor points 7, notes 1. Each is read from this study's own numbers; none is a model's opinion.",
+   "segments": [
+    {
+     "text": "What a careful reviewer would raise: major points ",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": "5",
+     "fact": "f_rpt_review_major",
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": ", minor points ",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": "7",
+     "fact": "f_rpt_review_minor",
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": ", notes ",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": "1",
+     "fact": "f_rpt_review_note",
+     "quote": false,
+     "cite": null
+    },
+    {
+     "text": ". Each is read from this study's own numbers; none is a model's opinion.",
+     "fact": null,
+     "quote": false,
+     "cite": null
+    }
+   ],
+   "facts": [
+    "f_rpt_review_major",
+    "f_rpt_review_minor",
+    "f_rpt_review_note"
+   ]
+  },
+  "findings": [
+   {
+    "id": "open_choices",
+    "severity": "major",
+    "title": "Choices that can change a conclusion are still open",
+    "text": {
+     "plain": "3 choices that change at least one conclusion have not been decided by a person: Which control genes to normalise to; Where to cut the comparison groups; Which curves count as amplified. The recommended options are used; decide each with a reason before reporting.",
+     "segments": [
+      {
+       "text": "3",
+       "fact": "f_rpt_n_open_flipping",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " choices that change at least one conclusion have not been decided by a person: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Which control genes to normalise to; Where to cut the comparison groups; Which curves count as amplified",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ". The recommended options are used; decide each with a reason before reporting.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_n_open_flipping"
+     ]
+    },
+    "genes": [],
+    "go_to": "results",
+    "rule": null
+   },
+   {
+    "id": "headline_ntrk1",
+    "severity": "major",
+    "title": "A headline call leans on a choice: NTRK1",
+    "text": {
+     "plain": "NTRK1 (down, 0.066×) keeps its call in 84 % of the 744 analyses qPilot checks; which curves count as amplified alone can change it. The audit's verdict: Depends on your choices.",
+     "segments": [
+      {
+       "text": "NTRK1 (down, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.066×",
+       "fact": "f_fc_ntrk1_recommended",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " keeps its call in ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "84 %",
+       "fact": "f_holds_ntrk1",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of the ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "744",
+       "fact": "f_n_cells",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " analyses qPilot checks",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; which curves count as amplified alone can change it",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " The audit's verdict: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Depends on your choices",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_fc_ntrk1_recommended",
+      "f_holds_ntrk1",
+      "f_n_cells"
+     ]
+    },
+    "genes": [
+     "NTRK1"
+    ],
+    "go_to": "gene",
+    "rule": null
+   },
+   {
+    "id": "headline_nm23a",
+    "severity": "major",
+    "title": "A headline call leans on a choice: NM23A",
+    "text": {
+     "plain": "NM23A (up, 2.2×) keeps its call in 65 % of the 744 analyses qPilot checks, fewer than 80 %; the group cut-off and the control genes alone can change it. The audit's verdict: Holds with caveats.",
+     "segments": [
+      {
+       "text": "NM23A (up, ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "2.2×",
+       "fact": "f_fc_nm23a_recommended",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " keeps its call in ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "65 %",
+       "fact": "f_holds_nm23a",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of the ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "744",
+       "fact": "f_n_cells",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " analyses qPilot checks",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", fewer than ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "80 %",
+       "fact": "f_rpt_holds_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; the group cut-off and the control genes alone can change it",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " The audit's verdict: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Holds with caveats",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ".",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_fc_nm23a_recommended",
+      "f_holds_nm23a",
+      "f_n_cells",
+      "f_rpt_holds_min"
+     ]
+    },
+    "genes": [
+     "NM23A"
+    ],
+    "go_to": "gene",
+    "rule": null
+   },
+   {
+    "id": "weak_normalisation",
+    "severity": "major",
+    "title": "No stable control gene",
+    "text": {
+     "plain": "None of the 5 candidate control genes reaches geNorm's usual stability cut-off (lowest M 1.63, for HPRT1; cut-off M 1.5) and the pairwise variation never falls below its cut-off (lowest V 0.33; cut-off 0.15). Normalisation is this study's weakest link: the control genes alone change 31 of 58 calls. Report the M values and treat calls that lean on this choice as tentative.",
+     "segments": [
+      {
+       "text": "None of the ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "5",
+       "fact": "f_rpt_n_candidates",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " candidate control genes reaches geNorm's usual stability cut-off (lowest M ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.63",
+       "fact": "f_rpt_m_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", for ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "HPRT1",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": "; cut-off M ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.5",
+       "fact": "f_rpt_cutoff_m",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " and the pairwise variation never falls below its cut-off (lowest V ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.33",
+       "fact": "f_genorm_v_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; cut-off ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.15",
+       "fact": "f_rpt_cutoff_v",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". Normalisation is this study's weakest link",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ": the control genes alone change ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "31",
+       "fact": "f_n_flipped_refset",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "58",
+       "fact": "f_n_genes",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " calls",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". Report the M values and treat calls that lean on this choice as tentative.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_n_candidates",
+      "f_rpt_m_min",
+      "f_rpt_cutoff_m",
+      "f_genorm_v_min",
+      "f_rpt_cutoff_v",
+      "f_n_flipped_refset",
+      "f_n_genes"
+     ]
+    },
+    "genes": [],
+    "go_to": "results",
+    "rule": "R1"
+   },
+   {
+    "id": "check_data",
+    "severity": "major",
+    "title": "Check these genes' data first",
+    "text": {
+     "plain": "The audit marks 2 genes “check data first”: DPYSL3, PDE4DIP. Their call rests on a few samples or wells; look at them before reporting.",
+     "segments": [
+      {
+       "text": "The audit marks ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "2",
+       "fact": "f_rpt_audit_verdict_check_data_first",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " genes “",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "check data first",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": "”: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "DPYSL3, PDE4DIP",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ". Their call rests on a few samples or wells; look at them before reporting.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_audit_verdict_check_data_first"
+     ]
+    },
+    "genes": [
+     "DPYSL3",
+     "PDE4DIP"
+    ],
+    "go_to": "audit",
+    "rule": null
+   },
+   {
+    "id": "refs_shift",
+    "severity": "minor",
+    "title": "Control genes differ between the groups",
+    "text": {
+     "plain": "3 of 10 control-gene pairs shift by at least 1.4× between the groups (largest HMBS:UBC(2): 1.8×, p 0.058). A control gene that moves with the groups biases every fold change it divides.",
+     "segments": [
+      {
+       "text": "3",
+       "fact": "f_n_ref_pairs_flagged",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "10",
+       "fact": "f_n_ref_pairs",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " control-gene pairs shift by at least ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.4×",
+       "fact": "f_ref_flag_fold",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " between the groups",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " (largest ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "HMBS:UBC(2)",
+       "fact": "f_ref_pair_top",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ": ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.8×",
+       "fact": "f_ref_ratio_top",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", p ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0.058",
+       "fact": "f_ref_ratio_top_p",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ")",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". A control gene that moves with the groups biases every fold change it divides.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_n_ref_pairs_flagged",
+      "f_n_ref_pairs",
+      "f_ref_flag_fold",
+      "f_ref_pair_top",
+      "f_ref_ratio_top",
+      "f_ref_ratio_top_p"
+     ]
+    },
+    "genes": [],
+    "go_to": "results",
+    "rule": "R1"
+   },
+   {
+    "id": "plate_layout",
+    "severity": "minor",
+    "title": "Groups are clustered on the plate",
+    "text": {
+     "plain": "Group membership is clustered by plate row (p 9.3e-05): a spatial artefact on the plate could mimic a group difference. Say how the samples were laid out.",
+     "segments": [
+      {
+       "text": "Group membership is clustered by plate row (p ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "9.3e-05",
+       "fact": "f_rpt_audit_group_row_p",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "): a spatial artefact on the plate could mimic a group difference. Say how the samples were laid out.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_audit_group_row_p"
+     ]
+    },
+    "genes": [],
+    "go_to": "audit",
+    "rule": null
+   },
+   {
+    "id": "groups_from_data",
+    "severity": "minor",
+    "title": "Groups defined from the data",
+    "text": {
+     "plain": "The groups are the top 15 % by expression of MYCN(4) against the rest, cut from the same data: genes that track the marker separate by construction, and the cut-off alone changes 17 calls. Present the results as associations with the marker's expression.",
+     "segments": [
+      {
+       "text": "The groups are the top ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "15 %",
+       "fact": "f_rpt_cut",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " by expression of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "MYCN(4)",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": " against the rest, cut from the same data: genes that track the marker separate by construction",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", and the cut-off alone changes ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "17",
+       "fact": "f_n_flipped_cutoff",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " calls",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". Present the results as associations with the marker's expression.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_cut",
+      "f_n_flipped_cutoff"
+     ]
+    },
+    "genes": [],
+    "go_to": "results",
+    "rule": null
+   },
+   {
+    "id": "other_fragile",
+    "severity": "minor",
+    "title": "Other calls lean on the analysis choices",
+    "text": {
+     "plain": "10 more called genes keep their call in fewer than 80 % of the analyses qPilot checks: CLSTN1, DPYSL3, EPN2, HIVEP2, PDE4DIP, PIK3R1, PLAGL1, PLAT, PTPRF, PTPRN2. Report them as tentative or show they hold.",
+     "segments": [
+      {
+       "text": "10",
+       "fact": "f_rpt_n_weak_other",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " more called genes keep their call in fewer than ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "80 %",
+       "fact": "f_rpt_holds_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " of the analyses qPilot checks: ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "CLSTN1, DPYSL3, EPN2, HIVEP2, PDE4DIP, PIK3R1, PLAGL1, PLAT, PTPRF, PTPRN2",
+       "fact": null,
+       "quote": true,
+       "cite": null
+      },
+      {
+       "text": ". Report them as tentative or show they hold.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_n_weak_other",
+      "f_rpt_holds_min"
+     ]
+    },
+    "genes": [
+     "CLSTN1",
+     "DPYSL3",
+     "EPN2",
+     "HIVEP2",
+     "PDE4DIP",
+     "PIK3R1",
+     "PLAGL1",
+     "PLAT",
+     "PTPRF",
+     "PTPRN2"
+    ],
+    "go_to": "results",
+    "rule": null
+   },
+   {
+    "id": "amp_rule",
+    "severity": "minor",
+    "title": "Late curves decide some calls",
+    "text": {
+     "plain": "Under the rule Cq ≤ 35 (common, not recommended), 10 calls change; this study counts a curve as amplified by LinRegPCR's own call (a starting quantity was found). State the rule and its cut-off.",
+     "segments": [
+      {
+       "text": "Under the rule ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "Cq ≤ 35 (common, not recommended)",
+       "fact": "f_amp_label_cq_le_35",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "10",
+       "fact": "f_n_flipped_amp_cq_le_35",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " calls change; this study counts a curve as amplified by ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "LinRegPCR's own call (a starting quantity was found)",
+       "fact": "f_amp_primary",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ". State the rule and its cut-off.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_amp_label_cq_le_35",
+      "f_n_flipped_amp_cq_le_35",
+      "f_amp_primary"
+     ]
+    },
+    "genes": [],
+    "go_to": "results",
+    "rule": "R6"
+   },
+   {
+    "id": "no_nrt",
+    "severity": "minor",
+    "title": "No no-RT controls",
+    "text": {
+     "plain": "The study has no no-RT control samples. MIQE 2.0 no longer requires them once the samples are shown to be free of genomic DNA; say how that was shown.",
+     "segments": [
+      {
+       "text": "The study has no no-RT control samples. MIQE 2.0 no longer requires them once the samples are shown to be free of genomic DNA; say how that was shown.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": []
+    },
+    "genes": [],
+    "go_to": "design",
+    "rule": "R7"
+   },
+   {
+    "id": "no_primers",
+    "severity": "minor",
+    "title": "Primer sequences are not in the file",
+    "text": {
+     "plain": "None of the 66 targets in the RDML file carries a primer or probe sequence or an assay id; the paper must give them (or the assay context sequences).",
+     "segments": [
+      {
+       "text": "None of the ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "66",
+       "fact": "f_rpt_rdml_n_targets",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " targets in the RDML file carries a primer or probe sequence or an assay id; the paper must give them (or the assay context sequences).",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_rdml_n_targets"
+     ]
+    },
+    "genes": [],
+    "go_to": null,
+    "rule": "R8"
+   },
+   {
+    "id": "ntc",
+    "severity": "note",
+    "title": "No-template controls",
+    "text": {
+     "plain": "9 no-template control samples are typed in the design; the audit lists 11 observations on them. Report how often they amplified.",
+     "segments": [
+      {
+       "text": "9",
+       "fact": "f_rpt_role_ntc",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " no-template control samples are typed in the design",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "; the audit lists ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "11",
+       "fact": "f_rpt_audit_ntc_observations",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " observations on them. Report how often they amplified.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_role_ntc",
+      "f_rpt_audit_ntc_observations"
+     ]
+    },
+    "genes": [],
+    "go_to": "audit",
+    "rule": "R7"
+   }
+  ],
+  "passed": [
+   {
+    "id": "geomean",
+    "title": "Normalised to several control genes",
+    "text": {
+     "plain": "The geometric mean of 5 control genes, not a single gene.",
+     "segments": [
+      {
+       "text": "The geometric mean of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "5",
+       "fact": "f_rpt_n_refs",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " control genes, not a single gene.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_n_refs"
+     ]
+    }
+   },
+   {
+    "id": "undetermined",
+    "title": "Wells without a quantity",
+    "text": {
+     "plain": "Dropping them or counting them as very low changes 0 calls.",
+     "segments": [
+      {
+       "text": "Dropping them or counting them as very low changes ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0",
+       "fact": "f_n_flipped_undetermined",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " calls.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_n_flipped_undetermined"
+     ]
+    }
+   },
+   {
+    "id": "multiplicity",
+    "title": "Multiple testing",
+    "text": {
+     "plain": "58 genes are tested at p < 0.05 without a correction for multiple testing; in the audit, a correction alone (Benjamini–Hochberg or Holm) changes 0 calls.",
+     "segments": [
+      {
+       "text": "58",
+       "fact": "f_n_genes",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " genes are tested at p < 0.05 without a correction for multiple testing; in the audit, a correction alone (Benjamini–Hochberg or Holm) changes ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "0",
+       "fact": "f_rpt_audit_multiplicity_flips",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " calls.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_n_genes",
+      "f_rpt_audit_multiplicity_flips"
+     ]
+    }
+   },
+   {
+    "id": "raw_curves",
+    "title": "Raw curves can be deposited",
+    "text": {
+     "plain": "The RDML file holds the raw fluorescence of 25,491 reactions.",
+     "segments": [
+      {
+       "text": "The RDML file holds the raw fluorescence of ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "25,491",
+       "fact": "f_rpt_rdml_n_curves",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " reactions.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_rdml_n_curves"
+     ]
+    }
+   },
+   {
+    "id": "efficiency",
+    "title": "Efficiency measured, not assumed",
+    "text": {
+     "plain": "Per well by LinRegPCR; assay means from 1.73 to 1.94, used in every quantity.",
+     "segments": [
+      {
+       "text": "Per well by LinRegPCR; assay means from ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.73",
+       "fact": "f_rpt_eff_min",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " to ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "1.94",
+       "fact": "f_rpt_eff_max",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": ", used in every quantity.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_rpt_eff_min",
+      "f_rpt_eff_max"
+     ]
+    }
+   },
+   {
+    "id": "biological_n",
+    "title": "n counts biological units",
+    "text": {
+     "plain": "53 and 294 units; technical replicates are averaged within a unit and tested on the log2 scale.",
+     "segments": [
+      {
+       "text": "53",
+       "fact": "f_n_hi",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " and ",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": "294",
+       "fact": "f_n_lo",
+       "quote": false,
+       "cite": null
+      },
+      {
+       "text": " units; technical replicates are averaged within a unit and tested on the log2 scale.",
+       "fact": null,
+       "quote": false,
+       "cite": null
+      }
+     ],
+     "facts": [
+      "f_n_hi",
+      "f_n_lo"
+     ]
+    }
+   }
+  ],
+  "counts": {
+   "major": 5,
+   "minor": 7,
+   "note": 1
+  }
+ },
+ "limitations": [
+  {
+   "id": "research_use",
+   "text": {
+    "plain": "Research use only; not for clinical use. A call says that the groups differ in these samples, not why.",
+    "segments": [
+     {
+      "text": "Research use only; not for clinical use. A call says that the groups differ in these samples, not why.",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "id": "groups_from_data",
+   "text": {
+    "plain": "The groups are defined from the data (by the marker gene's expression), not by an independent clinical call: the differences describe this split.",
+    "segments": [
+     {
+      "text": "The groups are defined from the data (by the marker gene's expression), not by an independent clinical call: the differences describe this split.",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "id": "multiplicity",
+   "text": {
+    "plain": "No correction for multiple testing across the 58 genes in the planned analysis.",
+    "segments": [
+     {
+      "text": "No correction for multiple testing across the ",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes",
+      "quote": false,
+      "cite": null
+     },
+     {
+      "text": " genes in the planned analysis.",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     }
+    ],
+    "facts": [
+     "f_n_genes"
+    ]
+   }
+  },
+  {
+   "id": "refs",
+   "text": {
+    "plain": "No candidate control gene is stable by geNorm's usual cut-off, so fold changes carry the control genes' own variation.",
+    "segments": [
+     {
+      "text": "No candidate control gene is stable by geNorm's usual cut-off, so fold changes carry the control genes' own variation.",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "id": "lod",
+   "text": {
+    "plain": "Limits of detection and quantification were not determined; calls that rest on wells near detection depend on the rule for wells without a quantity.",
+    "segments": [
+     {
+      "text": "Limits of detection and quantification were not determined; calls that rest on wells near detection depend on the rule for wells without a quantity.",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "id": "specificity",
+   "text": {
+    "plain": "Melt curves are not analysed; assay specificity must be shown separately.",
+    "segments": [
+     {
+      "text": "Melt curves are not analysed; assay specificity must be shown separately.",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "id": "robustness_meaning",
+   "text": {
+    "plain": "How often a call holds across reasonable analyses measures its sensitivity to analysis choices; it is not the probability that the call is true.",
+    "segments": [
+     {
+      "text": "How often a call holds across reasonable analyses measures its sensitivity to analysis choices; it is not the probability that the call is true.",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     }
+    ],
+    "facts": []
+   }
+  },
+  {
+   "id": "record",
+   "text": {
+    "plain": "The Analysis Record is tamper-evident, not tamper-proof: verifying it shows any change, but cannot prove who made it.",
+    "segments": [
+     {
+      "text": "The Analysis Record is tamper-evident, not tamper-proof: verifying it shows any change, but cannot prove who made it.",
+      "fact": null,
+      "quote": false,
+      "cite": null
+     }
+    ],
+    "facts": []
+   }
+  }
+ ],
+ "genes": [
+  {
+   "gene": "ODC1",
+   "headline": true,
+   "conclusion": "up",
+   "fc": 3.3186076821812986,
+   "ci_lo": 2.292871356518271,
+   "ci_hi": 4.80321624539644,
+   "p": 2.065427855257047e-08,
+   "n_hi": 52,
+   "n_lo": 294,
+   "holds": 0.9946236559139785,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "BIRC5",
+   "headline": true,
+   "conclusion": "up",
+   "fc": 4.01142868409124,
+   "ci_lo": 2.933476511654864,
+   "ci_hi": 5.485491369580537,
+   "p": 5.043719769792568e-14,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "NTRK1",
+   "headline": true,
+   "conclusion": "down",
+   "fc": 0.0664778367884075,
+   "ci_lo": 0.031684262938106326,
+   "ci_hi": 0.13947942524965912,
+   "p": 1.348097591946546e-09,
+   "n_hi": 49,
+   "n_lo": 293,
+   "holds": 0.8440860215053764,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [
+    "amp_call"
+   ],
+   "verdict": "depends on your choices",
+   "verdict_label": "Depends on your choices"
+  },
+  {
+   "gene": "NM23A",
+   "headline": true,
+   "conclusion": "up",
+   "fc": 2.1878561042496822,
+   "ci_lo": 1.754371668359274,
+   "ci_hi": 2.7284494039847518,
+   "p": 1.2380920536773977e-09,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6505376344086021,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "AHCY",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.614162762583152,
+   "ci_lo": 2.118827876629596,
+   "ci_hi": 3.2252959405777344,
+   "p": 3.4236708518096045e-13,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9059139784946236,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "AKR1C1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.29441754496147543,
+   "ci_lo": 0.18522385606844702,
+   "ci_hi": 0.4679834046274814,
+   "p": 1.99122253227859e-06,
+   "n_hi": 52,
+   "n_lo": 294,
+   "holds": 0.9543010752688172,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "ARHGEF7",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.8983852933629127,
+   "ci_lo": 0.6646011100404159,
+   "ci_hi": 1.214406842145788,
+   "p": 0.4806758149773522,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9946236559139785,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "CAMTA1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.35902992696506975,
+   "ci_lo": 0.25943610672182876,
+   "ci_hi": 0.49685639398973275,
+   "p": 3.450060869749911e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.956989247311828,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CAMTA2",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5052860358240974,
+   "ci_lo": 0.3729941314882647,
+   "ci_hi": 0.6844986460781991,
+   "p": 2.9281255987049988e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6370967741935484,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "CD44",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2867377358149505,
+   "ci_lo": 0.18799269988205036,
+   "ci_hi": 0.4373495842757169,
+   "p": 1.8895090302137064e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.989247311827957,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CDCA5",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.4688648233346555,
+   "ci_lo": 1.7478711705167052,
+   "ci_hi": 3.4872670358750586,
+   "p": 1.1866626750995467e-06,
+   "n_hi": 53,
+   "n_lo": 291,
+   "holds": 0.9448924731182796,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CDH5",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.10000855498728381,
+   "ci_lo": 0.04428513625465048,
+   "ci_hi": 0.22584803653154095,
+   "p": 5.762468404506528e-07,
+   "n_hi": 49,
+   "n_lo": 292,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CDKN3",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.3799262029722064,
+   "ci_lo": 1.776316334808264,
+   "ci_hi": 3.188648677379349,
+   "p": 8.421267801514294e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8790322580645161,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CLSTN1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.45265275320143966,
+   "ci_lo": 0.2717398232627009,
+   "ci_hi": 0.7540098927007999,
+   "p": 0.002866714132671344,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.42338709677419356,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "amp_call",
+    "refs"
+   ],
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "CPSG3",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 21.192506885141203,
+   "ci_lo": 11.036389134849989,
+   "ci_hi": 40.69468216362073,
+   "p": 5.196245183671858e-15,
+   "n_hi": 50,
+   "n_lo": 229,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "DDC",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.27065052237833925,
+   "ci_lo": 0.15972141635637435,
+   "ci_hi": 0.4586216860250408,
+   "p": 6.636317354816448e-06,
+   "n_hi": 49,
+   "n_lo": 293,
+   "holds": 0.9516129032258065,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "DPYSL3",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.492509681830066,
+   "ci_lo": 0.3787158364629058,
+   "ci_hi": 0.6404954938294785,
+   "p": 1.1174235683245727e-06,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.543010752688172,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "check data first",
+   "verdict_label": "Check data first"
+  },
+  {
+   "gene": "ECEL1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.10955294796571945,
+   "ci_lo": 0.054947490418949106,
+   "ci_hi": 0.2184239592467483,
+   "p": 2.9507999637065108e-08,
+   "n_hi": 52,
+   "n_lo": 291,
+   "holds": 0.9731182795698925,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "ELAVL4",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.8401224289185042,
+   "ci_lo": 0.6473208195082375,
+   "ci_hi": 1.0903491349283652,
+   "p": 0.18732783934944833,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.989247311827957,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "EPB41L3",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2326851116799643,
+   "ci_lo": 0.14078993805520887,
+   "ci_hi": 0.3845612971026826,
+   "p": 2.4486787522165165e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "EPHA5",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.13480994236757224,
+   "ci_lo": 0.06376530834604668,
+   "ci_hi": 0.28500952998645507,
+   "p": 1.4988470486403196e-06,
+   "n_hi": 52,
+   "n_lo": 290,
+   "holds": 0.9516129032258065,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "EPN2",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.4169309307175766,
+   "ci_lo": 0.24680838066686464,
+   "ci_hi": 0.7043172542169776,
+   "p": 0.0014331518213457838,
+   "n_hi": 53,
+   "n_lo": 292,
+   "holds": 0.5094086021505376,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "amp_call",
+    "refs"
+   ],
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "FYN",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.6612568977752792,
+   "ci_lo": 0.5278443064213526,
+   "ci_hi": 0.8283895071633907,
+   "p": 0.00047971805726823325,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.967741935483871,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "GNB1",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5854419792973072,
+   "ci_lo": 0.45977555257538105,
+   "ci_hi": 0.7454557102997672,
+   "p": 3.8876339822804274e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8225806451612904,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "HIVEP2",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.41840580759135987,
+   "ci_lo": 0.2958278069721716,
+   "ci_hi": 0.5917747273928384,
+   "p": 4.381504200226157e-06,
+   "n_hi": 53,
+   "n_lo": 291,
+   "holds": 0.6841397849462365,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "depends on your choices",
+   "verdict_label": "Depends on your choices"
+  },
+  {
+   "gene": "IGSF4",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5149866336369241,
+   "ci_lo": 0.3912336355009731,
+   "ci_hi": 0.6778845394647359,
+   "p": 8.141417850125559e-06,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.5026881720430108,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "INPP1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.42230347301164417,
+   "ci_lo": 0.30360133769063347,
+   "ci_hi": 0.587415802164295,
+   "p": 2.1410174987499563e-06,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8655913978494624,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "MAP2K4",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5439324966237257,
+   "ci_lo": 0.4191576636665613,
+   "ci_hi": 0.7058502957938927,
+   "p": 1.7098607113484104e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6586021505376344,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "MAP7",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.3502710330094385,
+   "ci_lo": 0.20579011766604116,
+   "ci_hi": 0.5961889616322672,
+   "p": 0.0001994065514041904,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9771505376344086,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [],
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "MAPT",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.36827162102418615,
+   "ci_lo": 0.2542248132597999,
+   "ci_hi": 0.5334805250232738,
+   "p": 7.239595450189097e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9731182795698925,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "MCM2",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.667344479006346,
+   "ci_lo": 2.0805971711514535,
+   "ci_hi": 3.419559859224538,
+   "p": 1.0936015460338844e-11,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.956989247311828,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "MRPL3",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.775650542531332,
+   "ci_lo": 1.4931386099734336,
+   "ci_hi": 2.111615645146241,
+   "p": 6.655210806036502e-09,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8440860215053764,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "amp_call",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "MTSS1",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5315585500141006,
+   "ci_lo": 0.4057117032805626,
+   "ci_hi": 0.6964415613559406,
+   "p": 1.538488151078706e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.5483870967741935,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "NHLH2",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 14.956615437827042,
+   "ci_lo": 6.49761643122277,
+   "ci_hi": 34.42806261694776,
+   "p": 6.192153321840656e-09,
+   "n_hi": 49,
+   "n_lo": 211,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "NRCAM",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2850459501718257,
+   "ci_lo": 0.20509063516512274,
+   "ci_hi": 0.3961721296730196,
+   "p": 2.001432741169379e-10,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "PAICS",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.9431226046145078,
+   "ci_lo": 1.5656099291641246,
+   "ci_hi": 2.411664225060018,
+   "p": 5.0286315078556e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.5483870967741935,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "amp_call",
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "PDE4DIP",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.4682536760365976,
+   "ci_lo": 0.3483342014584725,
+   "ci_hi": 0.629457297628946,
+   "p": 2.956480800265039e-06,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6236559139784946,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "check data first",
+   "verdict_label": "Check data first"
+  },
+  {
+   "gene": "PIK3R1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.4464072514039836,
+   "ci_lo": 0.3399113806855774,
+   "ci_hi": 0.5862687907187065,
+   "p": 1.2515643771323066e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.7204301075268817,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "PLAGL1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.44039399666922174,
+   "ci_lo": 0.27145194806339434,
+   "ci_hi": 0.7144795743259743,
+   "p": 0.0012126577940036558,
+   "n_hi": 49,
+   "n_lo": 292,
+   "holds": 0.7137096774193549,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "amp_call",
+    "cut",
+    "refs"
+   ],
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "PLAT",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.29429341653985097,
+   "ci_lo": 0.13779976852996356,
+   "ci_hi": 0.6285105986942628,
+   "p": 0.002068187100858995,
+   "n_hi": 51,
+   "n_lo": 293,
+   "holds": 0.6653225806451613,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "amp_call"
+   ],
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "PMP22",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2798306291549031,
+   "ci_lo": 0.18398305879455282,
+   "ci_hi": 0.4256108226826984,
+   "p": 1.026739755092622e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9973118279569892,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "PRAME",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 4.242697905168655,
+   "ci_lo": 2.3051405732875234,
+   "ci_hi": 7.80884503232301,
+   "p": 1.055223667113932e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9489247311827957,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "PRDM2",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5684374556765188,
+   "ci_lo": 0.4466449668555884,
+   "ci_hi": 0.723440685542232,
+   "p": 1.6228997132393396e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.7150537634408602,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "PRKACB_bis",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.521035776584316,
+   "ci_lo": 0.3613219105804224,
+   "ci_hi": 0.7513474066511006,
+   "p": 0.0007318234961211441,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.489247311827957,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "amp_call",
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "PRKCZ",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.535666450590877,
+   "ci_lo": 0.39338777254036567,
+   "ci_hi": 0.7294038257358026,
+   "p": 0.0001476490606814073,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.5362903225806451,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "PTN",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.3599115617685497,
+   "ci_lo": 0.20822999747298565,
+   "ci_hi": 0.6220829557061379,
+   "p": 0.00042552294714856835,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9717741935483871,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [],
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "PTPRF",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.4070567756595782,
+   "ci_lo": 0.2965185060646894,
+   "ci_hi": 0.5588022845839632,
+   "p": 3.567628327633765e-07,
+   "n_hi": 53,
+   "n_lo": 293,
+   "holds": 0.625,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "amp_call",
+    "refs"
+   ],
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "PTPRH",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.087399034772291,
+   "ci_lo": 0.038677382052249666,
+   "ci_hi": 0.1974950442304776,
+   "p": 1.6370175456028043e-07,
+   "n_hi": 51,
+   "n_lo": 291,
+   "holds": 0.9018817204301075,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [
+    "amp_call"
+   ],
+   "verdict": "depends on your choices",
+   "verdict_label": "Depends on your choices"
+  },
+  {
+   "gene": "PTPRN2",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.40538437091030494,
+   "ci_lo": 0.27215941335289806,
+   "ci_hi": 0.603824376874502,
+   "p": 2.3574163320478413e-05,
+   "n_hi": 53,
+   "n_lo": 293,
+   "holds": 0.7661290322580645,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "QPCT",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2807548196924883,
+   "ci_lo": 0.18281527857790644,
+   "ci_hi": 0.43116346398242184,
+   "p": 1.6674784613007443e-07,
+   "n_hi": 52,
+   "n_lo": 293,
+   "holds": 0.9731182795698925,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "SCG2",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.25213009455013036,
+   "ci_lo": 0.16571446648509264,
+   "ci_hi": 0.3836091436445368,
+   "p": 1.0451199143928834e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "flips_by": [],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "SLC25A5",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.824123431287931,
+   "ci_lo": 1.5120438503571938,
+   "ci_hi": 2.200614943665562,
+   "p": 1.4841903400360044e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6612903225806451,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "amp_call",
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "SLC6A8",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.5356418750136271,
+   "ci_lo": 1.1484308986995966,
+   "ci_hi": 2.0534069319848727,
+   "p": 0.004408845611003432,
+   "n_hi": 53,
+   "n_lo": 293,
+   "holds": 0.918010752688172,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "SNAPC1",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.7109675394508148,
+   "ci_lo": 1.2785435316886136,
+   "ci_hi": 2.2896443089333465,
+   "p": 0.0004405978733133076,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.7352150537634409,
+   "n_cells": 744,
+   "level": "Very low",
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "TNFRSF",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.37804054974085244,
+   "ci_lo": 0.22807651729601147,
+   "ci_hi": 0.6266083810061106,
+   "p": 0.00028924703252839,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.956989247311828,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [],
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "TYMS",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.308879422758717,
+   "ci_lo": 1.7409606111621418,
+   "ci_hi": 3.0620590464020196,
+   "p": 7.7289761156205e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8413978494623656,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "ULK2",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.6505530811812227,
+   "ci_lo": 0.49574725506856854,
+   "ci_hi": 0.853699757502128,
+   "p": 0.002407178719607032,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9731182795698925,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "WSB1",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5927740136012587,
+   "ci_lo": 0.44130147774603906,
+   "ci_hi": 0.796238057020871,
+   "p": 0.0007444279712865687,
+   "n_hi": 53,
+   "n_lo": 292,
+   "holds": 0.8763440860215054,
+   "n_cells": 744,
+   "level": "Low",
+   "flips_by": [
+    "refs"
+   ],
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  }
+ ],
+ "decisions": [
+  {
+   "seq": 1,
+   "card_id": "card_undetermined",
+   "card_title": "What to do with wells that never amplified",
+   "option": "drop",
+   "option_label": "Drop empty wells",
+   "actor": "system",
+   "status": "auto",
+   "at": "2026-10-20T19:19:52Z",
+   "reason": "Decided automatically: at the recommended settings no option on this card changes any conclusion. At other settings it can, so an agent must ask a person to change it.",
+   "hash": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+   "can_flip": false
+  },
+  {
+   "seq": null,
+   "card_id": "card_refset",
+   "card_title": "Which control genes to normalise to",
+   "option": "recommended",
+   "option_label": "Recommended set (all five)",
+   "actor": null,
+   "status": "open",
+   "at": null,
+   "reason": null,
+   "hash": null,
+   "can_flip": true
+  },
+  {
+   "seq": null,
+   "card_id": "card_cutoff",
+   "card_title": "Where to cut the comparison groups",
+   "option": "cut_15",
+   "option_label": "Top 15 % by MYCN expression",
+   "actor": null,
+   "status": "open",
+   "at": null,
+   "reason": null,
+   "hash": null,
+   "can_flip": true
+  },
+  {
+   "seq": null,
+   "card_id": "card_amp_call",
+   "card_title": "Which curves count as amplified",
+   "option": "linregpcr",
+   "option_label": "LinRegPCR's own call (a starting quantity was found)",
+   "actor": null,
+   "status": "open",
+   "at": null,
+   "reason": null,
+   "hash": null,
+   "can_flip": true
+  }
+ ],
+ "audit": {
+  "status": "ready",
+  "current": true,
+  "chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "analyses": 90396,
+  "reasonable": 144,
+  "verdict_counts": {
+   "check data first": 2,
+   "fragile": 5,
+   "depends on your choices": 3,
+   "holds with caveats": 7,
+   "solid": 23,
+   "no call": 18
+  },
+  "verdict_labels": {
+   "check data first": "Check data first",
+   "fragile": "Fragile",
+   "depends on your choices": "Depends on your choices",
+   "holds with caveats": "Holds with caveats",
+   "solid": "Solid",
+   "no call": "No change called"
+  },
+  "reproduces": true
+ },
+ "rule": "up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call",
+ "facts": {
+  "f_amp_label_cq_le_35": {
+   "id": "f_amp_label_cq_le_35",
+   "text": "Cq ≤ 35 (common, not recommended)",
+   "value": "Cq ≤ 35 (common, not recommended)",
+   "unit": "",
+   "path": "cards.card_amp_call.evidence.rules.cq_le_35.label",
+   "derived": false
+  },
+  "f_amp_primary": {
+   "id": "f_amp_primary",
+   "text": "LinRegPCR's own call (a starting quantity was found)",
+   "value": "LinRegPCR's own call (a starting quantity was found)",
+   "unit": "",
+   "path": "cards.card_amp_call.evidence.rules.linregpcr",
+   "derived": false
+  },
+  "f_eff_median": {
+   "id": "f_eff_median",
+   "text": "1.90",
+   "value": 1.9030405,
+   "unit": "",
+   "path": "efficiency",
+   "derived": false
+  },
+  "f_fc_nm23a_recommended": {
+   "id": "f_fc_nm23a_recommended",
+   "text": "2.2×",
+   "value": 2.1878561042496822,
+   "unit": "×",
+   "path": "contrasts.NM23A.fc",
+   "derived": false
+  },
+  "f_fc_ntrk1_recommended": {
+   "id": "f_fc_ntrk1_recommended",
+   "text": "0.066×",
+   "value": 0.0664778367884075,
+   "unit": "×",
+   "path": "contrasts.NTRK1.fc",
+   "derived": false
+  },
+  "f_genorm_v_min": {
+   "id": "f_genorm_v_min",
+   "text": "0.33",
+   "value": 0.32702994817071,
+   "unit": "",
+   "path": "genorm.V",
+   "derived": false
+  },
+  "f_holds_nm23a": {
+   "id": "f_holds_nm23a",
+   "text": "65 %",
+   "value": 0.6505376344086021,
+   "unit": "",
+   "path": "robustness.NM23A.holds",
+   "derived": false
+  },
+  "f_holds_ntrk1": {
+   "id": "f_holds_ntrk1",
+   "text": "84 %",
+   "value": 0.8440860215053764,
+   "unit": "",
+   "path": "robustness.NTRK1.holds",
+   "derived": false
+  },
+  "f_n_cells": {
+   "id": "f_n_cells",
+   "text": "744",
+   "value": 744,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_flipped_amp_call": {
+   "id": "f_n_flipped_amp_call",
+   "text": "11",
+   "value": 11,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_flipped_amp_cq_le_35": {
+   "id": "f_n_flipped_amp_cq_le_35",
+   "text": "10",
+   "value": 10,
+   "unit": "",
+   "path": "cards.card_amp_call.evidence.n_flipped_by_rule.cq_le_35",
+   "derived": false
+  },
+  "f_n_flipped_cutoff": {
+   "id": "f_n_flipped_cutoff",
+   "text": "17",
+   "value": 17,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_flipped_refset": {
+   "id": "f_n_flipped_refset",
+   "text": "31",
+   "value": 31,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_flipped_undetermined": {
+   "id": "f_n_flipped_undetermined",
+   "text": "0",
+   "value": 0,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_genes": {
+   "id": "f_n_genes",
+   "text": "58",
+   "value": 58,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_hi": {
+   "id": "f_n_hi",
+   "text": "53",
+   "value": 53,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_hold_lt_80": {
+   "id": "f_n_hold_lt_80",
+   "text": "21",
+   "value": 21,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_lo": {
+   "id": "f_n_lo",
+   "text": "294",
+   "value": 294,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_reactions": {
+   "id": "f_n_reactions",
+   "text": "24,576",
+   "value": 24576,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_ref_pairs": {
+   "id": "f_n_ref_pairs",
+   "text": "10",
+   "value": 10,
+   "unit": "",
+   "path": "cards.card_refset.evidence.ref_group_effect.pairs",
+   "derived": false
+  },
+  "f_n_ref_pairs_flagged": {
+   "id": "f_n_ref_pairs_flagged",
+   "text": "3",
+   "value": 3,
+   "unit": "",
+   "path": "cards.card_refset.evidence.ref_group_effect.flagged",
+   "derived": false
+  },
+  "f_n_samples": {
+   "id": "f_n_samples",
+   "text": "366",
+   "value": 366,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_undetermined": {
+   "id": "f_n_undetermined",
+   "text": "323",
+   "value": 323,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_n_unknown_wells": {
+   "id": "f_n_unknown_wells",
+   "text": "23,423",
+   "value": 23423,
+   "unit": "",
+   "path": "study",
+   "derived": false
+  },
+  "f_pct_undetermined": {
+   "id": "f_pct_undetermined",
+   "text": "1.4 %",
+   "value": 1.3789864662938138,
+   "unit": "%",
+   "path": "study",
+   "derived": false
+  },
+  "f_ref_flag_fold": {
+   "id": "f_ref_flag_fold",
+   "text": "1.4×",
+   "value": 1.4142135623730951,
+   "unit": "×",
+   "path": "cards.card_refset.evidence.ref_group_effect.flag_fold",
+   "derived": false
+  },
+  "f_ref_pair_top": {
+   "id": "f_ref_pair_top",
+   "text": "HMBS:UBC(2)",
+   "value": "HMBS:UBC(2)",
+   "unit": "",
+   "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).label",
+   "derived": false
+  },
+  "f_ref_ratio_top": {
+   "id": "f_ref_ratio_top",
+   "text": "1.8×",
+   "value": 1.7557752343077617,
+   "unit": "×",
+   "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).fold",
+   "derived": false
+  },
+  "f_ref_ratio_top_p": {
+   "id": "f_ref_ratio_top_p",
+   "text": "0.058",
+   "value": 0.05827911320778609,
+   "unit": "",
+   "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).p",
+   "derived": false
+  },
+  "f_rpt_audit_analyses": {
+   "id": "f_rpt_audit_analyses",
+   "text": "90,396",
+   "value": 90396,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/analyses",
+   "derived": true
+  },
+  "f_rpt_audit_group_row_p": {
+   "id": "f_rpt_audit_group_row_p",
+   "text": "9.3e-05",
+   "value": 9.318709542624799e-05,
+   "unit": "",
+   "path": "audit:summary.json:/troubleshooting/identifiability/group_clustered_by_row_p",
+   "derived": true
+  },
+  "f_rpt_audit_max_diff_log2fc": {
+   "id": "f_rpt_audit_max_diff_log2fc",
+   "text": "5e-15",
+   "value": 5.329070518200751e-15,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/reproduces_qpilot/max_abs_diff_log2fc",
+   "derived": true
+  },
+  "f_rpt_audit_multiplicity_flips": {
+   "id": "f_rpt_audit_multiplicity_flips",
+   "text": "0",
+   "value": 0,
+   "unit": "",
+   "path": "audit:summary.json:/question_choices_flip_alone/multiplicity",
+   "derived": true
+  },
+  "f_rpt_audit_n_decisions": {
+   "id": "f_rpt_audit_n_decisions",
+   "text": "8",
+   "value": 8,
+   "unit": "",
+   "path": "audit:summary.json:/space/levels@len",
+   "derived": true
+  },
+  "f_rpt_audit_ntc_observations": {
+   "id": "f_rpt_audit_ntc_observations",
+   "text": "11",
+   "value": 11,
+   "unit": "",
+   "path": "audit:summary.json:/troubleshooting/observations/ntc",
+   "derived": true
+  },
+  "f_rpt_audit_qsim_version": {
+   "id": "f_rpt_audit_qsim_version",
+   "text": "0.1.0",
+   "value": "0.1.0",
+   "unit": "",
+   "path": "audit:summary.json:/qsim_version",
+   "derived": true
+  },
+  "f_rpt_audit_reasonable": {
+   "id": "f_rpt_audit_reasonable",
+   "text": "144",
+   "value": 144,
+   "unit": "",
+   "path": "audit:summary.json:/multiverse/defensible/cells",
+   "derived": true
+  },
+  "f_rpt_audit_reproduced_genes": {
+   "id": "f_rpt_audit_reproduced_genes",
+   "text": "58",
+   "value": 58,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/reproduces_qpilot/genes",
+   "derived": true
+  },
+  "f_rpt_audit_verdict_check_data_first": {
+   "id": "f_rpt_audit_verdict_check_data_first",
+   "text": "2",
+   "value": 2,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/verdict_counts/check data first",
+   "derived": true
+  },
+  "f_rpt_audit_verdict_depends_on_your_choices": {
+   "id": "f_rpt_audit_verdict_depends_on_your_choices",
+   "text": "3",
+   "value": 3,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/verdict_counts/depends on your choices",
+   "derived": true
+  },
+  "f_rpt_audit_verdict_fragile": {
+   "id": "f_rpt_audit_verdict_fragile",
+   "text": "5",
+   "value": 5,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/verdict_counts/fragile",
+   "derived": true
+  },
+  "f_rpt_audit_verdict_holds_with_caveats": {
+   "id": "f_rpt_audit_verdict_holds_with_caveats",
+   "text": "7",
+   "value": 7,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/verdict_counts/holds with caveats",
+   "derived": true
+  },
+  "f_rpt_audit_verdict_no_call": {
+   "id": "f_rpt_audit_verdict_no_call",
+   "text": "18",
+   "value": 18,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/verdict_counts/no call",
+   "derived": true
+  },
+  "f_rpt_audit_verdict_solid": {
+   "id": "f_rpt_audit_verdict_solid",
+   "text": "23",
+   "value": 23,
+   "unit": "",
+   "path": "audit:audit_manifest.json:/verdict_counts/solid",
+   "derived": true
+  },
+  "f_rpt_chain_head": {
+   "id": "f_rpt_chain_head",
+   "text": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+   "value": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+   "unit": "",
+   "path": "decisions.jsonl:@head",
+   "derived": true
+  },
+  "f_rpt_ctl_ntc": {
+   "id": "f_rpt_ctl_ntc",
+   "text": "9",
+   "value": 9,
+   "unit": "",
+   "path": "study_design.json:/samples@count=role:ntc",
+   "derived": true
+  },
+  "f_rpt_ctl_std": {
+   "id": "f_rpt_ctl_std",
+   "text": "50",
+   "value": 50,
+   "unit": "",
+   "path": "study_design.json:/samples@count=role:std",
+   "derived": true
+  },
+  "f_rpt_cut": {
+   "id": "f_rpt_cut",
+   "text": "15 %",
+   "value": 0.15,
+   "unit": "",
+   "path": "results.json:/design/cut",
+   "derived": true
+  },
+  "f_rpt_cutoff_m": {
+   "id": "f_rpt_cutoff_m",
+   "text": "1.5",
+   "value": 1.5,
+   "unit": "",
+   "path": "results.json:/genorm/cutoff_M",
+   "derived": true
+  },
+  "f_rpt_cutoff_v": {
+   "id": "f_rpt_cutoff_v",
+   "text": "0.15",
+   "value": 0.15,
+   "unit": "",
+   "path": "results.json:/genorm/cutoff_V",
+   "derived": true
+  },
+  "f_rpt_eff_max": {
+   "id": "f_rpt_eff_max",
+   "text": "1.94",
+   "value": 1.935544,
+   "unit": "",
+   "path": "results.json:/efficiency@max",
+   "derived": true
+  },
+  "f_rpt_eff_min": {
+   "id": "f_rpt_eff_min",
+   "text": "1.73",
+   "value": 1.726005,
+   "unit": "",
+   "path": "results.json:/efficiency@min",
+   "derived": true
+  },
+  "f_rpt_grid_amp_call": {
+   "id": "f_rpt_grid_amp_call",
+   "text": "4",
+   "value": 4,
+   "unit": "",
+   "path": "grid.csv:/amp_call@len",
+   "derived": true
+  },
+  "f_rpt_grid_cut": {
+   "id": "f_rpt_grid_cut",
+   "text": "3",
+   "value": 3,
+   "unit": "",
+   "path": "grid.csv:/cut@len",
+   "derived": true
+  },
+  "f_rpt_grid_refs": {
+   "id": "f_rpt_grid_refs",
+   "text": "31",
+   "value": 31,
+   "unit": "",
+   "path": "grid.csv:/refs@len",
+   "derived": true
+  },
+  "f_rpt_grid_undetermined": {
+   "id": "f_rpt_grid_undetermined",
+   "text": "2",
+   "value": 2,
+   "unit": "",
+   "path": "grid.csv:/undetermined@len",
+   "derived": true
+  },
+  "f_rpt_holds_min": {
+   "id": "f_rpt_holds_min",
+   "text": "80 %",
+   "value": 0.8,
+   "unit": "",
+   "path": "qpilot.qpcr.confidence_checks:/HOLDS_MIN",
+   "derived": true
+  },
+  "f_rpt_input_sha256": {
+   "id": "f_rpt_input_sha256",
+   "text": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+   "value": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+   "unit": "",
+   "path": "results.json:/input_sha256",
+   "derived": true
+  },
+  "f_rpt_m_max": {
+   "id": "f_rpt_m_max",
+   "text": "2.03",
+   "value": 2.027457232121438,
+   "unit": "",
+   "path": "results.json:/genorm/M_initial@max",
+   "derived": true
+  },
+  "f_rpt_m_min": {
+   "id": "f_rpt_m_min",
+   "text": "1.63",
+   "value": 1.6348541505971745,
+   "unit": "",
+   "path": "results.json:/genorm/M_initial@min",
+   "derived": true
+  },
+  "f_rpt_miqe_cannot_tell": {
+   "id": "f_rpt_miqe_cannot_tell",
+   "text": "38",
+   "value": 38,
+   "unit": "",
+   "path": "report:/miqe/items@count=status:cannot_tell",
+   "derived": true
+  },
+  "f_rpt_miqe_items": {
+   "id": "f_rpt_miqe_items",
+   "text": "53",
+   "value": 53,
+   "unit": "",
+   "path": "report:/miqe/items@len",
+   "derived": true
+  },
+  "f_rpt_miqe_met": {
+   "id": "f_rpt_miqe_met",
+   "text": "13",
+   "value": 13,
+   "unit": "",
+   "path": "report:/miqe/items@count=status:met",
+   "derived": true
+  },
+  "f_rpt_miqe_not_applicable": {
+   "id": "f_rpt_miqe_not_applicable",
+   "text": "0",
+   "value": 0,
+   "unit": "",
+   "path": "report:/miqe/items@count=status:not_applicable",
+   "derived": true
+  },
+  "f_rpt_miqe_not_met": {
+   "id": "f_rpt_miqe_not_met",
+   "text": "2",
+   "value": 2,
+   "unit": "",
+   "path": "report:/miqe/items@count=status:not_met",
+   "derived": true
+  },
+  "f_rpt_n_accepted": {
+   "id": "f_rpt_n_accepted",
+   "text": "128",
+   "value": 128,
+   "unit": "",
+   "path": "proposals.jsonl:@count=action:accept,actor:human",
+   "derived": true
+  },
+  "f_rpt_n_assays": {
+   "id": "f_rpt_n_assays",
+   "text": "64",
+   "value": 64,
+   "unit": "",
+   "path": "results.json:/efficiency@len",
+   "derived": true
+  },
+  "f_rpt_n_candidates": {
+   "id": "f_rpt_n_candidates",
+   "text": "5",
+   "value": 5,
+   "unit": "",
+   "path": "results.json:/genorm/M_initial@len",
+   "derived": true
+  },
+  "f_rpt_n_down": {
+   "id": "f_rpt_n_down",
+   "text": "29",
+   "value": 29,
+   "unit": "",
+   "path": "results.json:/contrasts@count=conclusion:down",
+   "derived": true
+  },
+  "f_rpt_n_entries": {
+   "id": "f_rpt_n_entries",
+   "text": "1",
+   "value": 1,
+   "unit": "",
+   "path": "decisions.jsonl:@len",
+   "derived": true
+  },
+  "f_rpt_n_excluded": {
+   "id": "f_rpt_n_excluded",
+   "text": "1",
+   "value": 1,
+   "unit": "",
+   "path": "study_design.json:/excluded_wells@len",
+   "derived": true
+  },
+  "f_rpt_n_made_model": {
+   "id": "f_rpt_n_made_model",
+   "text": "110",
+   "value": 110,
+   "unit": "",
+   "path": "proposals.jsonl:@count=action:propose,made_by:model",
+   "derived": true
+  },
+  "f_rpt_n_made_rule": {
+   "id": "f_rpt_n_made_rule",
+   "text": "137",
+   "value": 137,
+   "unit": "",
+   "path": "proposals.jsonl:@count=action:propose,made_by:rule",
+   "derived": true
+  },
+  "f_rpt_n_none": {
+   "id": "f_rpt_n_none",
+   "text": "18",
+   "value": 18,
+   "unit": "",
+   "path": "results.json:/contrasts@count=conclusion:none",
+   "derived": true
+  },
+  "f_rpt_n_open_flipping": {
+   "id": "f_rpt_n_open_flipping",
+   "text": "3",
+   "value": 3,
+   "unit": "",
+   "path": "cards.json:@count=status:open|pending_human,flips",
+   "derived": true
+  },
+  "f_rpt_n_plates": {
+   "id": "f_rpt_n_plates",
+   "text": "64",
+   "value": 64,
+   "unit": "",
+   "path": "results.json:/n_plates",
+   "derived": true
+  },
+  "f_rpt_n_proposed": {
+   "id": "f_rpt_n_proposed",
+   "text": "247",
+   "value": 247,
+   "unit": "",
+   "path": "proposals.jsonl:@count=action:propose",
+   "derived": true
+  },
+  "f_rpt_n_refs": {
+   "id": "f_rpt_n_refs",
+   "text": "5",
+   "value": 5,
+   "unit": "",
+   "path": "results.json:/design/refs_primary@len",
+   "derived": true
+  },
+  "f_rpt_n_rejected": {
+   "id": "f_rpt_n_rejected",
+   "text": "119",
+   "value": 119,
+   "unit": "",
+   "path": "proposals.jsonl:@count=action:reject,actor:human",
+   "derived": true
+  },
+  "f_rpt_n_std_quantity": {
+   "id": "f_rpt_n_std_quantity",
+   "text": "40",
+   "value": 40,
+   "unit": "",
+   "path": "study_design.json:/samples@count=role:std,quantity",
+   "derived": true
+  },
+  "f_rpt_n_up": {
+   "id": "f_rpt_n_up",
+   "text": "11",
+   "value": 11,
+   "unit": "",
+   "path": "results.json:/contrasts@count=conclusion:up",
+   "derived": true
+  },
+  "f_rpt_n_weak_other": {
+   "id": "f_rpt_n_weak_other",
+   "text": "10",
+   "value": 10,
+   "unit": "",
+   "path": "results.json:/robustness@count=called,holds_below_min,not_headline",
+   "derived": true
+  },
+  "f_rpt_rdml_n_curves": {
+   "id": "f_rpt_rdml_n_curves",
+   "text": "25,491",
+   "value": 25491,
+   "unit": "",
+   "path": "input.rdml:/react/data/adp@count",
+   "derived": true
+  },
+  "f_rpt_rdml_n_targets": {
+   "id": "f_rpt_rdml_n_targets",
+   "text": "66",
+   "value": 66,
+   "unit": "",
+   "path": "input.rdml:/target@len",
+   "derived": true
+  },
+  "f_rpt_rdml_version": {
+   "id": "f_rpt_rdml_version",
+   "text": "1.4",
+   "value": "1.4",
+   "unit": "",
+   "path": "input.rdml:/rdml/version",
+   "derived": true
+  },
+  "f_rpt_rdml_volume": {
+   "id": "f_rpt_rdml_volume",
+   "text": "8 µL",
+   "value": "8",
+   "unit": " µL",
+   "path": "input.rdml:/react/vol@distinct",
+   "derived": true
+  },
+  "f_rpt_review_major": {
+   "id": "f_rpt_review_major",
+   "text": "5",
+   "value": 5,
+   "unit": "",
+   "path": "report:/review/findings@count=severity:major",
+   "derived": true
+  },
+  "f_rpt_review_minor": {
+   "id": "f_rpt_review_minor",
+   "text": "7",
+   "value": 7,
+   "unit": "",
+   "path": "report:/review/findings@count=severity:minor",
+   "derived": true
+  },
+  "f_rpt_review_note": {
+   "id": "f_rpt_review_note",
+   "text": "1",
+   "value": 1,
+   "unit": "",
+   "path": "report:/review/findings@count=severity:note",
+   "derived": true
+  },
+  "f_rpt_role_ntc": {
+   "id": "f_rpt_role_ntc",
+   "text": "9",
+   "value": 9,
+   "unit": "",
+   "path": "study_design.json:/samples@count=role:ntc",
+   "derived": true
+  },
+  "f_rpt_role_std": {
+   "id": "f_rpt_role_std",
+   "text": "50",
+   "value": 50,
+   "unit": "",
+   "path": "study_design.json:/samples@count=role:std",
+   "derived": true
+  },
+  "f_rpt_version_python": {
+   "id": "f_rpt_version_python",
+   "text": "3.12.14",
+   "value": "3.12.14",
+   "unit": "",
+   "path": "versions:/python",
+   "derived": true
+  },
+  "f_rpt_version_qpilot": {
+   "id": "f_rpt_version_qpilot",
+   "text": "0.1.0",
+   "value": "0.1.0",
+   "unit": "",
+   "path": "versions:/qpilot",
+   "derived": true
+  },
+  "f_rpt_version_rdmlpython_vendored": {
+   "id": "f_rpt_version_rdmlpython_vendored",
+   "text": "fce7a44e8b47b90759c646b557de568f7af77e75",
+   "value": "fce7a44e8b47b90759c646b557de568f7af77e75",
+   "unit": "",
+   "path": "versions:/rdmlpython_vendored",
+   "derived": true
+  }
+ }
+}
