@@ -9,7 +9,8 @@ import { useId, useRef, useState, type ReactNode } from "react";
 import { Button, ErrorPanel, Field, IconButton, JobCard, Kbd, ProgressBar, Textarea } from "@/ui";
 import { cn } from "@/lib/cn";
 import { bytes } from "@/lib/format";
-import { MOD, useHotkeys } from "@/lib/hooks";
+import { MOD } from "@/lib/hooks";
+import { useOpenFileRequest } from "@/shell/actions";
 import { openFile } from "./upload";
 import { openedKey, useGoToSession, useJobOutcome } from "./useOpenWorkspace";
 import { MAX_SENTENCE, RDML_SUFFIXES, SHEET_SUFFIXES, sortFiles } from "./workspace";
@@ -122,7 +123,8 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
     }
   });
 
-  useHotkeys({ "mod+o": () => !busy && fileInput.current?.click() });
+  // ⌘O (the shell binds it everywhere, comes here, and asks): show the file picker.
+  useOpenFileRequest(() => !busy && fileInput.current?.click());
 
   const start = () => {
     if (!intake.rdml || busy) return;
