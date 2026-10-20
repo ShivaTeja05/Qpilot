@@ -174,11 +174,6 @@ def test_an_upload_over_the_cap_is_refused(web_ctx, small_caps):
     assert status == 413 and pulled == 0, "refused before reading the body"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="PARITY-1 (api): the Guard caps by Content-Length only; a chunked body is read to "
-    "the end before the 413 (old Gradio and qsim refused while it streamed)",
-)
 def test_a_chunked_upload_over_the_cap_is_refused_while_it_streams(web_ctx, small_caps):
     headers, body = _multipart(8 * MB)  # no Content-Length: Transfer-Encoding chunked
     status, pulled = _upload(create_app(web_ctx), headers, body)
@@ -206,11 +201,6 @@ def test_an_unexpected_error_leaks_no_traceback(web_ctx, broken_route):
     assert "secret" not in r.text and "Traceback" not in r.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="PARITY-2 (api): an unexpected error is Starlette's plain-text 500, outside the "
-    "error shape and without the security headers",
-)
 def test_an_unexpected_error_is_a_sentence_with_the_security_headers(web_ctx, broken_route):
     with keyed(create_app(web_ctx), raise_server_exceptions=False) as client:
         r = client.get("/api/workspaces")
@@ -340,11 +330,6 @@ def test_a_broken_profile_does_not_stop_the_server(monkeypatch, tmp_path, tmp_st
 # ---- a remote model is reached only on a click (P27) -----------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="PARITY-4 (api): GET /api/model pings a configured REMOTE model in the background; "
-    "docs/app.md §1.5 and the coordinator (#0180): only an explicit click may reach it",
-)
 def test_reading_the_model_status_never_calls_a_remote_model(anthropic_env, tmp_studies_dir):
     from qpilot.ai.client import AnthropicBackend, ModelUnavailable
 

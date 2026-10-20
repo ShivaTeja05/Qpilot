@@ -140,6 +140,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/model/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Model
+         * @description “Check connection”: ask the model one short question now (the only remote contact).
+         */
+        post: operations["check_model"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/model/scorecards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Model Scorecards
+         * @description A study's saved scorecards (default: the demo study, else the latest visible one).
+         */
+        get: operations["model_scorecards"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/model/seen": {
         parameters: {
             query?: never;
@@ -411,6 +451,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{sid}/proposals/{pid}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Edit
+         * @description The engine's check of an edited reading, before a person accepts it (writes nothing).
+         */
+        post: operations["check_edit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{sid}/proposals/{pid}/edit": {
         parameters: {
             query?: never;
@@ -609,6 +669,30 @@ export type paths = {
          * @description Answer a question about a study (a job); every number in the answer is a cited fact.
          */
         post: operations["ask_question"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/autonomy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Autonomy
+         * @description What agents (``qpilot serve``) may do in this study, and the policy in words.
+         */
+        get: operations["get_autonomy"];
+        /**
+         * Put Autonomy
+         * @description A person sets the study's autonomy (Suggest · Decide and tell me); agents obey it.
+         */
+        put: operations["put_autonomy"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -902,6 +986,11 @@ export type components = {
              * @description The engine's check of a proposal.
              */
             check?: string | null;
+            /**
+             * Hash
+             * @description The decision entry's hash.
+             */
+            hash?: string | null;
             /** Key */
             key: string;
             /**
@@ -917,6 +1006,23 @@ export type components = {
             proposal_kind?: string | null;
             /** Reason */
             reason?: string | null;
+            /**
+             * Request State
+             * @description For a request (status pending_human): still waiting, approved (the card was set to this option), turned down by a person, decided otherwise (set to another option), or closed under an earlier qPilot's rules.
+             */
+            request_state?: ("waiting" | "approved" | "turned_down" | "decided_otherwise" | "closed") | null;
+            /**
+             * Seq
+             * @description The decision entry's place in the chain.
+             */
+            seq?: number | null;
+            /** Settled At */
+            settled_at?: string | null;
+            /**
+             * Settled By
+             * @description Who settled the request.
+             */
+            settled_by?: string | null;
             /**
              * Status
              * @description decision: applied / pending_human / rejected / stale / auto; proposal: proposed / accepted / edited / rejected / superseded.
@@ -1075,6 +1181,14 @@ export type components = {
             summary: string;
         };
         /**
+         * AnalyseDone
+         * @description The confirmed design, analysed.
+         */
+        AnalyseDone: {
+            /** Study Id */
+            study_id: string;
+        };
+        /**
          * AskBody
          * @description A question about the open study.
          */
@@ -1109,7 +1223,7 @@ export type components = {
             /** Log2Fc */
             log2fc: number;
             /** P */
-            p: number;
+            p: number | null;
         };
         /**
          * AuditBadge
@@ -1136,6 +1250,54 @@ export type components = {
             verdict_counts: {
                 [key: string]: number;
             };
+        };
+        /**
+         * AutonomyBody
+         * @description Set what agents may do in this study (a person's switch).
+         */
+        AutonomyBody: {
+            /**
+             * Autonomy
+             * @enum {string}
+             */
+            autonomy: "suggest" | "decide_and_tell";
+        };
+        /**
+         * AutonomyChange
+         * @description One change of a study's autonomy, as written beside the decision chain.
+         */
+        AutonomyChange: {
+            /**
+             * Actor
+             * @default human
+             */
+            actor: string;
+            /** At */
+            at: string;
+            /** Level */
+            level: string;
+            /** Previous */
+            previous: string;
+        };
+        /**
+         * AutonomyView
+         * @description A study's autonomy, what each level allows, and how it was changed.
+         */
+        AutonomyView: {
+            /**
+             * Autonomy
+             * @enum {string}
+             */
+            autonomy: "suggest" | "decide_and_tell";
+            /**
+             * Changes
+             * @default []
+             */
+            changes: components["schemas"]["AutonomyChange"][];
+            /** Policy */
+            policy: string[];
+            /** Study Id */
+            study_id: string;
         };
         /** Body_open_file */
         Body_open_file: {
@@ -1217,8 +1379,11 @@ export type components = {
          * @description Act on exactly the listed proposals (the list the person was shown).
          */
         BulkRequest: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /** Ids */
             ids: string[];
             /**
@@ -1340,12 +1505,25 @@ export type components = {
             passed: boolean;
         };
         /**
+         * CheckEdits
+         * @description An edited reading of a proposal, to check before accepting it (nothing is written).
+         */
+        CheckEdits: {
+            /** Edits */
+            edits: {
+                [key: string]: unknown;
+            };
+        };
+        /**
          * ConfirmRequest
          * @description Yes, confirm: accept this confirm step.
          */
         ConfirmRequest: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /** Proposal Id */
             proposal_id: string;
         };
@@ -1528,8 +1706,11 @@ export type components = {
          * @description Decide a card (always as a person; the reason is kept in the record).
          */
         DecideBody: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /** Option */
             option: string;
             /**
@@ -1716,6 +1897,14 @@ export type components = {
             study_id: string;
         };
         /**
+         * DemoFetched
+         * @description The demo file, downloaded and verified.
+         */
+        DemoFetched: {
+            /** Path */
+            path: string;
+        };
+        /**
          * DemoInfo
          * @description The public demo study (Vermeulen 2009 / Ruijter 2013), SHA-256 pinned.
          */
@@ -1788,6 +1977,26 @@ export type components = {
              * @description `run_id/well` when it points at a well.
              */
             well?: string | null;
+        };
+        /**
+         * Explanation
+         * @description A card explained by the model (or why the template's words stand).
+         */
+        Explanation: {
+            /** Card Id */
+            card_id: string;
+            /** Fallback */
+            fallback: boolean;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Provider */
+            provider: string;
+            text: components["schemas"]["FactText"];
+            /** Validated */
+            validated: boolean;
         };
         /**
          * FactRef
@@ -1869,20 +2078,24 @@ export type components = {
             card_option?: string | null;
             /**
              * Chosen
+             * @description The option in use now (a card's applied option, else planned).
              * @default false
              */
             chosen: boolean;
             /**
              * Conclusion
-             * @description Aligned with FlipsView.genes.
+             * @description Aligned with FlipsView.genes; null where the engine computed no call.
              */
-            conclusion: ("up" | "down" | "none")[];
+            conclusion: (("up" | "down" | "none") | null)[];
             /** Flips */
             flips: boolean[];
             /** Label */
             label: string;
-            /** Log2Fc */
-            log2fc: number[];
+            /**
+             * Log2Fc
+             * @description null where the engine computed none.
+             */
+            log2fc: (number | null)[];
             /** Planned */
             planned: boolean;
             /** Value */
@@ -1950,17 +2163,20 @@ export type components = {
              */
             cells: number[][];
             /** Conclusion */
-            conclusion: ("up" | "down" | "none")[];
+            conclusion: (("up" | "down" | "none") | null)[];
             /** Dimensions */
             dimensions: string[];
             /** Log2Fc */
-            log2fc: number[];
+            log2fc: (number | null)[];
             /** Options */
             options: {
                 [key: string]: string[];
             };
-            /** P */
-            p: number[];
+            /**
+             * P
+             * @description null where a group had too few values.
+             */
+            p: (number | null)[];
             /**
              * Planned
              * @description The planned option's index per dimension.
@@ -2023,7 +2239,7 @@ export type components = {
             headline: boolean;
             /**
              * Holds
-             * @description Share of reasonable analyses with the same call (0–1).
+             * @description Share of the analyses in qPilot's choice grid (every control-gene set, cut-off, empty-well rule and amplification-call rule; n_cells of them) with the same call, 0–1. Not the audit's reasonable set.
              */
             holds?: number | null;
             /** Level */
@@ -2284,6 +2500,11 @@ export type components = {
             /** Result */
             result?: unknown;
             /**
+             * Result Type
+             * @description The schema name of ``result`` (components.schemas), from JOB_RESULTS.
+             */
+            result_type?: string | null;
+            /**
              * Status
              * @enum {string}
              */
@@ -2316,6 +2537,26 @@ export type components = {
             prompt_sha256?: string | null;
             /** Provider */
             provider?: string | null;
+        };
+        /**
+         * MattersAnswer
+         * @description Does this proposal (or its first alternative) change a conclusion? Only yes / no.
+         */
+        MattersAnswer: {
+            /**
+             * Head
+             * @description The proposal chain head this answer holds for.
+             */
+            head: string;
+            /**
+             * Matters
+             * @description None: the rest of the design does not run yet.
+             */
+            matters: boolean | null;
+            /** Message */
+            message: string;
+            /** Proposal Id */
+            proposal_id: string;
         };
         /**
          * ModelSeen
@@ -2396,6 +2637,29 @@ export type components = {
             study?: string | null;
         };
         /**
+         * ModelTestResult
+         * @description A study's saved scorecards; ``current`` is the page's model's row.
+         *
+         *     The result of a ``model.test`` job (``current`` is the run just made) and of
+         *     ``GET /api/model/scorecards`` (``current`` is the last saved run of the page's model, or null).
+         */
+        ModelTestResult: {
+            current?: components["schemas"]["ScorecardRow"] | null;
+            /**
+             * N Questions
+             * @description Questions in ``current`` (0 when there is none).
+             */
+            n_questions: number;
+            /** Note */
+            note: string;
+            /** Saved */
+            saved: components["schemas"]["ScorecardRow"][];
+            /** Study Id */
+            study_id: string;
+            /** Title */
+            title: string;
+        };
+        /**
          * NextStep
          * @description The one thing to do next, in the page's own words, and where to do it.
          */
@@ -2417,6 +2681,14 @@ export type components = {
             section: string;
             /** Title */
             title: string;
+        };
+        /**
+         * OpenDone
+         * @description An opened file: the workspace to go to.
+         */
+        OpenDone: {
+            /** Key */
+            key: string;
         };
         /**
          * OptionEffect
@@ -2725,8 +2997,11 @@ export type components = {
             edits?: {
                 [key: string]: unknown;
             } | null;
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /**
              * Reason
              * @description Kept in the record (≤ 500 chars).
@@ -2883,6 +3158,62 @@ export type components = {
             outcome?: components["schemas"]["ProposalOutcome"] | null;
         };
         /**
+         * ProposeReport
+         * @description What one round of proposing added to the inbox (the result of a propose job).
+         */
+        ProposeReport: {
+            /**
+             * Disagreements
+             * @description Curves: study wells where the Curve Judge disagrees.
+             * @default null
+             */
+            disagreements: number | null;
+            /**
+             * Fallback
+             * @description True when the model was not used at all (rules alone).
+             * @default null
+             */
+            fallback: boolean | null;
+            /**
+             * Fields By Model
+             * @description Fields the model made.
+             * @default null
+             */
+            fields_by_model: number | null;
+            /**
+             * Message
+             * @description What happened, in one or two sentences.
+             */
+            message: string;
+            /**
+             * Model Error
+             * @default null
+             */
+            model_error: string | null;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /**
+             * Proposed
+             * @description Ids of the proposals added.
+             */
+            proposed: string[];
+            /**
+             * Refused
+             * @default []
+             */
+            refused: components["schemas"]["RefusedProposal"][];
+            /** Stage */
+            stage: string;
+            /**
+             * Targets That Matter
+             * @default null
+             */
+            targets_that_matter: number | null;
+        };
+        /**
          * QuarantineEntry
          * @description One piece of free text from a file, stored once and cited by ``text_id`` everywhere else.
          *
@@ -2918,6 +3249,22 @@ export type components = {
             sheet_cells: {
                 [key: string]: string;
             };
+        };
+        /**
+         * RefusedProposal
+         * @description A proposal the inbox refused to take (with why).
+         */
+        RefusedProposal: {
+            /**
+             * Reason
+             * @default null
+             */
+            reason: string | null;
+            /**
+             * Subject
+             * @default null
+             */
+            subject: string | null;
         };
         /**
          * ResultsSummary
@@ -3003,6 +3350,12 @@ export type components = {
             /** Study Id */
             study_id: string;
             summary: components["schemas"]["ResultsSummary"];
+            /**
+             * Withheld
+             * @description Genes with no comparison (e.g. too few values in a group).
+             * @default []
+             */
+            withheld: components["schemas"]["WithheldGene"][];
         };
         /**
          * RuleView
@@ -3017,6 +3370,68 @@ export type components = {
             min_log2fc: number;
             /** Text */
             text: string;
+        };
+        /**
+         * ScorecardRow
+         * @description One model's "Ask your data" scorecard on one study (``qpilot harness``'s first table).
+         */
+        ScorecardRow: {
+            /**
+             * Correct
+             * @description Final answers that were right, template answers included.
+             */
+            correct: number;
+            /**
+             * Correct By Model
+             * @description Right with the model choosing the tool and writing the words.
+             */
+            correct_by_model?: number | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /**
+             * Fallbacks
+             * @description Answers a template replaced (none without a model).
+             */
+            fallbacks?: number | null;
+            /**
+             * Invented Numbers Caught
+             * @description Model drafts with a number that was not a fact token; the validator caught every one, so none reached the reader.
+             */
+            invented_numbers_caught: number;
+            /** Median Latency S */
+            median_latency_s: number;
+            /** Model */
+            model?: string | null;
+            /**
+             * Model Eligible
+             * @description Questions the model may answer itself (safety items excluded).
+             */
+            model_eligible?: number | null;
+            /**
+             * N Items
+             * @description Ask questions scored.
+             */
+            n_items: number;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /**
+             * Numbers Shown
+             * @description Text that reached the reader with an untokened number.
+             */
+            numbers_shown: number;
+            /** Profile */
+            profile: string;
+            /** Provider */
+            provider: string;
+            /** Run At */
+            run_at?: string | null;
+            /** Safety Held */
+            safety_held: number;
+            /** Safety Items */
+            safety_items: number;
         };
         /**
          * Settings
@@ -3154,8 +3569,11 @@ export type components = {
          * @description Turn down an agent's request on a card (one option, or every request on it).
          */
         TurnDownBody: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /** Option */
             option?: string | null;
             /**
@@ -3169,8 +3587,11 @@ export type components = {
          * @description Undo the last change on a card (a new entry restoring the option before it).
          */
         UndoBody: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /**
              * Reason
              * @description Kept in the record (≤ 500 chars).
@@ -3189,6 +3610,22 @@ export type components = {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * WarmAllDone
+         * @description Startup: how many sessions' files were read.
+         */
+        WarmAllDone: {
+            /** Sessions */
+            sessions: number;
+        };
+        /**
+         * WarmDone
+         * @description A session's file, read (its stages and results can be shown now).
+         */
+        WarmDone: {
+            /** Key */
+            key: string;
         };
         /**
          * WellCall
@@ -3213,6 +3650,16 @@ export type components = {
             target: string;
             /** Well */
             well: string;
+        };
+        /**
+         * WithheldGene
+         * @description A gene the engine compared no fold change for, and why (it is not in ``genes``).
+         */
+        WithheldGene: {
+            /** Gene */
+            gene: string;
+            /** Reason */
+            reason: string;
         };
         /**
          * WorkspaceList
@@ -3285,6 +3732,12 @@ export type components = {
              * @description Unix time of the last write to this workspace.
              */
             updated_at: number;
+            /**
+             * Warming
+             * @description The file is being read for the first time since start.
+             * @default false
+             */
+            warming: boolean;
         };
         /**
          * WorkspaceView
@@ -3296,6 +3749,11 @@ export type components = {
              * @default []
              */
             active_jobs: components["schemas"]["JobView"][];
+            /**
+             * Autonomy
+             * @description What agents may do in this study (None: no study yet).
+             */
+            autonomy?: ("suggest" | "decide_and_tell") | null;
             /** Decisions Head */
             decisions_head?: string | null;
             facts?: components["schemas"]["FileFacts"] | null;
@@ -3331,6 +3789,12 @@ export type components = {
             summary?: components["schemas"]["InspectSummary"] | null;
             /** Title */
             title: string;
+            /**
+             * Warming
+             * @description The file is being read for the first time since start: stages, facts and results follow when the 'warm' job in active_jobs is done.
+             * @default false
+             */
+            warming: boolean;
         };
     };
     responses: never;
@@ -3499,6 +3963,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelStatus"];
+                };
+            };
+        };
+    };
+    check_model: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelStatus"];
+                };
+            };
+        };
+    };
+    model_scorecards: {
+        parameters: {
+            query?: {
+                study?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelTestResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3906,7 +4421,7 @@ export interface operations {
         parameters: {
             query?: {
                 stage?: string | null;
-                status?: string | null;
+                status?: ("proposed" | "accepted" | "edited" | "rejected" | "superseded") | null;
             };
             header?: never;
             path: {
@@ -3991,6 +4506,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProposalDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckEdits"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalCheck"];
                 };
             };
             /** @description Validation Error */
@@ -4345,6 +4896,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_autonomy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutonomyView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_autonomy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutonomyBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutonomyView"];
                 };
             };
             /** @description Validation Error */

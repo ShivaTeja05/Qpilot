@@ -184,3 +184,23 @@ def test_ids_are_checked(walked):
     for key in ("../etc", "ABCDEF123456", "0" * 12):
         r = c.get(f"/api/studies/{key}/results")
         assert r.status_code == 404 and r.json()["error"]["code"] == "not_found"
+
+
+def test_autonomy_is_per_study_and_agents_obey_it(walked):
+    c, study, store, sid = walked["client"], walked["study"], walked["store"], walked["sid"]
+    view = c.get(f"/api/studies/{study}/autonomy").json()
+    assert view["autonomy"] == "suggest" and view["policy"] and view["changes"] == []
+    assert c.get(f"/api/sessions/{sid}").json()["autonomy"] == "suggest"
+    r = c.put(f"/api/studies/{study}/autonomy", json={"autonomy": "decide_and_tell"})
+    assert r.status_code == 200 and r.json()["autonomy"] == "decide_and_tell"
+    assert store.autonomy(study) == "decide_and_tell"
+    assert [ch["level"] for ch in r.json()["changes"]] == ["decide_and_tell"]
+    assert c.get(f"/api/studies/{study}").json()["autonomy"] == "decide_and_tell"
+    # an agent may now apply a choice that cannot change a conclusion
+    out = QpilotTools(store).qpcr_decide(study, "card_undetermined", "cap", "the agent prefers cap")
+    assert out["status"] == "applied", out
+    chain = c.get(f"/api/studies/{study}/decisions").json()
+    assert chain["attempts"] == [], "an autonomy change is not a stale attempt"
+    assert (
+        c.put(f"/api/studies/{study}/autonomy", json={"autonomy": "automatic"}).status_code == 422
+    )

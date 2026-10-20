@@ -225,6 +225,9 @@ class WorkspaceView(BaseModel):
         description="The file is being read for the first time since start: stages, facts and "
         "results follow when the 'warm' job in active_jobs is done.",
     )
+    autonomy: Literal["suggest", "decide_and_tell"] | None = Field(
+        default=None, description="What agents may do in this study (None: no study yet)."
+    )
 
 
 class Opened(BaseModel):
@@ -667,7 +670,10 @@ class GeneRow(BaseModel):
     n_hi: int
     n_lo: int
     holds: float | None = Field(
-        default=None, description="Share of reasonable analyses with the same call (0–1)."
+        default=None,
+        description="Share of the analyses in qPilot's choice grid (every control-gene set, "
+        "cut-off, empty-well rule and amplification-call rule; n_cells of them) with the same "
+        "call, 0–1. Not the audit's reasonable set.",
     )
     n_cells: int
     level: str | None = None
@@ -980,3 +986,32 @@ class WarmAllDone(BaseModel):
     """Startup: how many sessions' files were read."""
 
     sessions: int
+
+
+# ---- autonomy (per study) --------------------------------------------------------------------
+
+AgentLevel = Literal["suggest", "decide_and_tell"]
+
+
+class AutonomyBody(BaseModel):
+    """Set what agents may do in this study (a person's switch)."""
+
+    autonomy: AgentLevel
+
+
+class AutonomyChange(BaseModel):
+    """One change of a study's autonomy, as written beside the decision chain."""
+
+    at: str
+    level: str
+    previous: str
+    actor: str = "human"
+
+
+class AutonomyView(BaseModel):
+    """A study's autonomy, what each level allows, and how it was changed."""
+
+    study_id: str
+    autonomy: AgentLevel
+    policy: list[str]
+    changes: list[AutonomyChange] = []
