@@ -6,7 +6,7 @@
 
 /** Gene scatter: x fold change (log2, in ×), y share of analyses with the same call; marks by `MapPoint.mark`; click → `onSelect(gene)`. */
 export { RobustnessMap, type MapPoint, type RobustnessMapProps } from "./RobustnessMap";
-/** Every reasonable analysis of one gene as a stacked dot on the fold axis, by call; planned ringed. Props: `rows: AnalysisDot[]`, `line`. */
+/** Every reasonable analysis of one gene as a stacked dot on the fold axis, by call; planned = accent diamond. Props: `rows: AnalysisDot[]`, `line`. */
 export { AnalysesStrip, type AnalysisDot, type AnalysesStripProps } from "./AnalysesStrip";
 /** One choice at a time: a row per decision, a dot per option on the fold axis; planned diamond, shortcuts hollow, call-changers ringed. */
 export {
@@ -19,7 +19,7 @@ export {
 export { Beeswarm, type SampleGroup, type SamplePoint, type BeeswarmProps } from "./Beeswarm";
 /** What-if: planned → chosen fold per gene, changed calls first (`dumbbellOrder`); click → `onSelect(gene)`. */
 export { Dumbbell, dumbbellOrder, type DumbbellRow, type DumbbellProps } from "./Dumbbell";
-/** Decisions × genes heatmap: shade = how far one decision moves the fold, cross = it alone flips the call; click → gene. */
+/** Decisions × genes heatmap: shade = a magnitude you give (`delta`, `shadeLabel`), cross = it alone flips the call; click → gene. */
 export { FlipMatrix, flipOrder, type FlipCell, type FlipMatrixProps } from "./FlipMatrix";
 /** geNorm M per candidate (with the M cut-off line) and V per step (with the V cut-off line). */
 export { GenormBars, genormRows, type GenormBarsProps } from "./GenormBars";

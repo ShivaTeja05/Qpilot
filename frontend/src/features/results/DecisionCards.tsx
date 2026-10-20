@@ -187,6 +187,8 @@ function DecisionCardItem({
   const pending = Boolean(request) || card.status === "pending_human";
   const [open, setOpen] = useState(!done || expanded || pending);
   const [undoing, setUndoing] = useState(false);
+  /** A decided card reopened to choose another option (a new chain entry). */
+  const [changing, setChanging] = useState(false);
   const chosen = view.options.find((o) => o.chosen)?.id ?? card.decision ?? card.recommended;
   const [option, setOption] = useState(request?.option ?? chosen);
   const [reason, setReason] = useState("");
@@ -337,7 +339,7 @@ function DecisionCardItem({
                 >
                   {visible.map((o) => {
                     const selected = o.id === option;
-                    const locked = (done && !undoing) || pending;
+                    const locked = (done && !changing) || pending;
                     return (
                       <label
                         key={o.id}
@@ -417,7 +419,7 @@ function DecisionCardItem({
                 )}
               </fieldset>
 
-              {(!done || undoing || pending) && (
+              {(!done || undoing || changing || pending) && (
                 <div className="space-y-2">
                   <label
                     htmlFor={`reason-${card.id}`}
@@ -481,14 +483,28 @@ function DecisionCardItem({
                         </Button>
                       </>
                     ) : (
-                      <Button
-                        size="sm"
-                        disabled={!canSubmit}
-                        loading={write.isPending}
-                        onClick={() => run("decide", option)}
-                      >
-                        Decide: {labels.get(option)}
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          disabled={!canSubmit}
+                          loading={write.isPending}
+                          onClick={() => run("decide", option)}
+                        >
+                          Decide: {labels.get(option)}
+                        </Button>
+                        {changing && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setChanging(false);
+                              setOption(chosen);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </>
                     )}
                     <span className="text-[12px] text-faint">
                       <Kbd>{MOD}</Kbd>
@@ -498,18 +514,32 @@ function DecisionCardItem({
                 </div>
               )}
 
-              {done && !undoing && !pending && view.undo_option && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  icon={<Undo2 className="size-4" aria-hidden />}
-                  onClick={() => {
-                    setUndoing(true);
-                    requestAnimationFrame(() => reasonRef.current?.focus());
-                  }}
-                >
-                  Undo{view.undo_label ? `: back to ${view.undo_label}` : ""}
-                </Button>
+              {done && !undoing && !changing && !pending && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setChanging(true);
+                      requestAnimationFrame(() => reasonRef.current?.focus());
+                    }}
+                  >
+                    Change the decision
+                  </Button>
+                  {view.undo_option && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon={<Undo2 className="size-4" aria-hidden />}
+                      onClick={() => {
+                        setUndoing(true);
+                        requestAnimationFrame(() => reasonRef.current?.focus());
+                      }}
+                    >
+                      Undo{view.undo_label ? `: back to ${view.undo_label}` : ""}
+                    </Button>
+                  )}
+                </div>
               )}
 
               {modelAnswers && (
