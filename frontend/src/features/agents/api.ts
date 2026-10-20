@@ -2,7 +2,9 @@
  * The Agents section's requests. Approve and Turn down are a person's decisions on the card
  * the agent asked about: the same calls the Decision Cards in Results make.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { onLiveEvent } from "@/api/live";
 import { requestJson } from "@/features/record/api";
 import { cardTitle, optionLabel } from "@/features/record/words";
 import { shortHash } from "@/lib/format";
@@ -11,11 +13,19 @@ import type { AgentsView, PendingRequest } from "./types";
 
 /** Agents' tools, the requests waiting for a person and recent agent activity. */
 export function useAgents(workspaceKey: string, studyId: string | null | undefined) {
-  return useQuery({
-    // Includes the study id so a `study.changed` event for it refreshes the list live.
-    queryKey: ["w", workspaceKey, "agents", studyId],
-    queryFn: () => requestJson<AgentsView>("/api/agents"),
-  });
+  const qc = useQueryClient();
+  const queryKey = ["w", workspaceKey, "agents", studyId];
+  // The list spans every study: any study's or inbox's change (an agent writing from its own
+  // process, another tab) refreshes it, not only this workspace's.
+  useEffect(
+    () =>
+      onLiveEvent((event) => {
+        if (event.type === "study.changed" || event.type === "proposals.changed")
+          void qc.invalidateQueries({ queryKey: ["w", workspaceKey, "agents"] });
+      }),
+    [qc, workspaceKey],
+  );
+  return useQuery({ queryKey, queryFn: () => requestJson<AgentsView>("/api/agents") });
 }
 
 /** `DecisionDone` (`qpilot/web/contract.py`): the answer to decide / turn down. */
