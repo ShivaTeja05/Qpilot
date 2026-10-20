@@ -42,12 +42,23 @@ describe("ChainTimeline", () => {
   });
 
   it("shows an agent's requests as waiting, and filters by actor", () => {
-    renderWithProviders(<ChainTimeline entries={withAgents.entries} root={withAgents.root} head={withAgents.head} />);
+    renderWithProviders(
+      <ChainTimeline entries={withAgents.entries} root={withAgents.root} head={withAgents.head} waiting={withAgents.waiting} />,
+    );
     const agents = withAgents.entries.filter((e) => e.actor === "agent");
     expect(screen.getAllByText("Waiting for a person")).toHaveLength(agents.length);
     fireEvent.click(screen.getByRole("radio", { name: /Agents/ }));
     expect(entries()).toHaveLength(agents.length);
     expect(screen.getByText(/hidden by the filter/)).toBeTruthy();
+  });
+
+  it("says a request was answered once it no longer waits", () => {
+    renderWithProviders(
+      <ChainTimeline entries={withAgents.entries} root={withAgents.root} head={withAgents.head} waiting={[]} />,
+    );
+    const agents = withAgents.entries.filter((e) => e.actor === "agent" && e.status === "pending_human");
+    expect(screen.getAllByText("Request, answered")).toHaveLength(agents.length);
+    expect(screen.queryByText("Waiting for a person")).toBeNull();
   });
 
   it("marks a link that does not match its predecessor", () => {

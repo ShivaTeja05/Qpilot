@@ -11,7 +11,7 @@ import { count, dateTime, relativeTime } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { Badge, Card, CardHeader, Hash, SegmentedControl, Tooltip } from "@/ui";
 import type { Actor, ChainEntry } from "./types";
-import { ACTOR, STATUS, cardTitle, optionLabel } from "./words";
+import { ACTOR, ANSWERED, STATUS, cardTitle, optionLabel } from "./words";
 
 type Filter = "all" | Actor;
 
@@ -33,6 +33,7 @@ export function ChainTimeline({
   root,
   head,
   intact,
+  waiting,
   actions,
 }: {
   entries: ChainEntry[];
@@ -41,6 +42,8 @@ export function ChainTimeline({
   head: string;
   /** The server's verdict on the whole chain (hashes re-computed), when it gives one. */
   intact?: boolean | null;
+  /** Hashes of the agent requests still waiting (others were answered in later entries). */
+  waiting?: string[];
   /** Extra controls in the header (e.g. a link to the waiting requests). */
   actions?: ReactNode;
 }) {
@@ -116,6 +119,7 @@ export function ChainTimeline({
             entry={entry}
             link={linkOf(entry, previous, root)}
             isHead={entry.hash === head}
+            answered={entry.status === "pending_human" && waiting != null && !waiting.includes(entry.hash)}
             now={now}
           />
         ))}
@@ -150,14 +154,17 @@ function TimelineEntry({
   entry,
   link,
   isHead,
+  answered,
   now,
 }: {
   entry: ChainEntry;
   link: { ok: boolean; label: string };
   isHead: boolean;
+  /** An agent's request a person answered later. */
+  answered: boolean;
   now: number;
 }) {
-  const status = STATUS[entry.status] ?? { word: entry.status, tone: "neutral" as const, meaning: "" };
+  const status = answered ? ANSWERED : (STATUS[entry.status] ?? { word: entry.status, tone: "neutral" as const, meaning: "" });
   const actor = ACTOR[entry.actor] ?? { word: entry.actor, long: entry.actor };
   const settled = entry.status === "rejected" || entry.status === "stale";
   return (
@@ -172,7 +179,7 @@ function TimelineEntry({
             entry.actor === "human" && "border-accent/40 text-accent-strong",
             entry.actor === "agent" && "border-info/40 text-info",
             entry.actor === "system" && "border-line-strong text-muted",
-            entry.status === "pending_human" && "ring-2 ring-warn/40 ring-offset-2 ring-offset-surface",
+            entry.status === "pending_human" && !answered && "ring-2 ring-warn/40 ring-offset-2 ring-offset-surface",
           )}
         >
           {ACTOR_ICON[entry.actor]}

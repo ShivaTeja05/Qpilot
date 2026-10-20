@@ -31,7 +31,7 @@ export default function RecordSection({ workspace }: SectionProps) {
       ? "The record starts when this study is analysed: confirm the design and the curves first."
       : "This study has not been analysed yet."
     : null;
-  const pending = decisions.data?.entries.filter((e) => e.status === "pending_human").length ?? 0;
+  const pending = decisions.data?.waiting.length ?? 0;
   const next = workspace?.next_step;
 
   return (
@@ -90,6 +90,7 @@ export default function RecordSection({ workspace }: SectionProps) {
               root={decisions.data.root}
               head={decisions.data.head}
               intact={decisions.data.chain_intact}
+              waiting={decisions.data.waiting}
               actions={
                 pending ? (
                   <Button asChild size="sm" variant="secondary">

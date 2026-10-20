@@ -16,7 +16,6 @@ export interface ChainEntry {
   card_id: string;
   /** The card's question in words ("Which control genes to normalise to"). */
   card_title?: string | null;
-  card_kind?: string | null;
   option: string;
   /** The option's label in words. */
   option_label?: string | null;
@@ -42,7 +41,8 @@ export interface DecisionsView {
   head: string;
   entries: ChainEntry[];
   chain_intact?: boolean | null;
-  n_pending: number;
+  /** Hashes of the agent requests still waiting for a person. */
+  waiting: string[];
 }
 
 /** The server's chain view in the Record section's shape. */
@@ -54,7 +54,7 @@ export function fromApi(view: DecisionsApi): DecisionsView {
     head: view.head,
     entries,
     chain_intact: view.chain_intact,
-    n_pending: view.pending.length,
+    waiting: view.pending.map((p) => p.entry.hash),
   };
 }
 

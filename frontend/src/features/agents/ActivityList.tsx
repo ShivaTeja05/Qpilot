@@ -5,15 +5,24 @@ import { dateTime, relativeTime } from "@/lib/format";
 import { CHECK, STATUS_WORDS, type CheckStatus } from "@/lib/vocab";
 import { STATUS as ENTRY_STATUS } from "@/features/record/words";
 import { Badge, CheckTag, type Tone } from "@/ui";
-import type { AgentActivity } from "./types";
+import type { AgentActivity, RequestState } from "./types";
 
 /** Identifies an agent's request across the activity list and the waiting list. */
 export const requestKey = (r: { key: string; card_id?: string | null; option?: string | null; at: string }) =>
   `${r.key}|${r.card_id ?? ""}|${r.option ?? ""}|${r.at}`;
 
+const REQUEST_STATE: Record<RequestState, { word: string; tone: Tone }> = {
+  waiting: { word: "Waiting for a person", tone: "warn" },
+  approved: { word: "Approved", tone: "ok" },
+  turned_down: { word: "Turned down", tone: "danger" },
+  decided_otherwise: { word: "A person chose another option", tone: "neutral" },
+  closed: { word: "Closed", tone: "neutral" },
+};
+
 /** A status word and tone for a chain entry's or a proposal's status. */
 function statusOf(a: AgentActivity, waiting: Set<string>): { word: string; tone: Tone } {
-  // The log keeps a request as it was written; once a person answered it, it no longer waits.
+  // The log keeps a request as it was written; what became of it is a later entry's.
+  if (a.kind === "decision" && a.request_state && a.request_state in REQUEST_STATE) return REQUEST_STATE[a.request_state];
   if (a.kind === "decision" && a.status === "pending_human" && !waiting.has(requestKey(a)))
     return { word: "Answered by a person", tone: "neutral" };
   if (a.kind === "decision") {

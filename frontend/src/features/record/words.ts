@@ -28,25 +28,16 @@ export const STATUS: Record<EntryStatus, { word: string; tone: Tone; meaning: st
   },
 };
 
-/** Card titles by kind, as `qpilot/ai/explain.py` words them (used when the server sends none). */
-const KIND_TITLE: Record<string, string> = {
-  reference_set: "Which control genes to normalise to",
-  group_cutoff: "Where to cut the comparison groups",
-  undetermined: "What to do with wells that never amplified",
-  amp_call: "Which curves count as amplified",
-};
-const CARD_KIND: Record<string, string> = {
-  card_refset: "reference_set",
-  card_cutoff: "group_cutoff",
-  card_undetermined: "undetermined",
-  card_amp_call: "amp_call",
+/** An agent's request that a person has since approved or turned down (a later entry says which). */
+export const ANSWERED = {
+  word: "Request, answered",
+  tone: "neutral" as Tone,
+  meaning: "An agent asked for this; a person answered it in a later entry.",
 };
 
-/** The question an entry decided, in words. */
-export function cardTitle(entry: Pick<ChainEntry, "card_id" | "card_title" | "card_kind">): string {
-  if (entry.card_title) return entry.card_title;
-  const kind = entry.card_kind ?? CARD_KIND[entry.card_id];
-  return (kind && KIND_TITLE[kind]) || entry.card_id;
+/** The question an entry decided, in words (the server words every card; its id otherwise). */
+export function cardTitle(entry: Pick<ChainEntry, "card_id" | "card_title">): string {
+  return entry.card_title || entry.card_id;
 }
 
 /** The option an entry chose, in words (its id when the server sends no label). */
