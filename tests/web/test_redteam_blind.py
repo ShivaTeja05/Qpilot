@@ -245,11 +245,8 @@ BODIES = {
 }
 
 
-# Routes with their own strict xfail below (so this scan does not report them twice).
-KNOWN_OPEN = {
-    "GET /api/studies/{study_id}/records": "RT-UI-023",
-    "POST /api/studies/{study_id}/record": "RT-UI-023",
-}
+# Routes with their own strict xfail (so this scan does not report them twice); none open now.
+KNOWN_OPEN: dict[str, str] = {}
 
 
 def test_every_study_route_of_a_blind_session_is_blind(reblinded):
@@ -275,12 +272,7 @@ def test_every_study_route_of_a_blind_session_is_blind(reblinded):
     assert not open_routes, open_routes
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-023 the Analysis Record of a blind session's study can be exported and listed "
-    "(POST /api/studies/{id}/record → 202, its zip holds results.json with fold changes and "
-    "p-values, grid.csv; GET …/records → 200): the files routes skip the session's blind gate",
-)
+# RT-UI-023: fixed by api-files (0f65176); this test keeps it fixed.
 def test_a_blind_sessions_record_cannot_be_exported(reblinded):
     c, app, study_id = reblinded["client"], reblinded["app"], reblinded["study_id"]
     if "/api/studies/{study_id}/record" not in app.openapi()["paths"]:
@@ -477,21 +469,24 @@ def test_nonsense_heads_are_stale_not_errors(sclient, web_store, opened, head):
 # ---- flooding --------------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-015 'Does this matter?' is submitted with dedupe=False: every click queues two "
-    "more full analyses (~6 s each on the demo) on the 3-worker pool, so a burst of clicks "
-    "starves the analysis, the audit and every other job",
-)
-def test_does_this_matter_twice_is_one_job(sclient, web_store, opened):
+# RT-UI-015: fixed by api; this test keeps it fixed.
+def test_does_this_matter_twice_is_one_job(sclient, web_store, opened, studio_ctx):
     sid = opened
     _agent_proposal(web_store, sid)
     target = _pending(sclient, sid)[0]
-    ids = {
-        sclient.post(f"/api/sessions/{sid}/proposals/{target['id']}/matters").json()["job"]["id"]
-        for _ in range(5)
-    }
-    assert len(ids) == 1, f"5 clicks queued {len(ids)} jobs"
+    gate = threading.Event()
+    real = studio_ctx.studio.matters
+    studio_ctx.studio.matters = lambda *a, **k: (gate.wait(10), real(*a, **k))[1]  # still running
+    try:
+        ids = {
+            sclient.post(f"/api/sessions/{sid}/proposals/{target['id']}/matters").json()["job"][
+                "id"
+            ]
+            for _ in range(5)
+        }
+    finally:
+        gate.set()
+    assert len(ids) == 1, f"5 clicks while it runs queued {len(ids)} jobs"
 
 
 @pytest.mark.parametrize(
