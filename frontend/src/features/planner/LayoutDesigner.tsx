@@ -330,57 +330,60 @@ function Overview({
   onPick: (n: number) => void;
 }) {
   const groups = data.groups.map((g) => g.label);
+  // A list of toggle buttons (one pressed: the plate shown below). Each button's name is its own
+  // visible text, with the genes and the group names added for screen readers.
   return (
-    <div
-      role="list"
+    <ul
       aria-label="Every plate"
-      className="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-2"
+      className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-2 p-0"
     >
       {data.plates.map((p) => {
         const total = Object.values(p.samples).reduce((a, b) => a + b, 0) || 1;
         const on = p.number === picked;
         return (
-          <button
-            key={p.number}
-            type="button"
-            role="listitem"
-            aria-pressed={on}
-            aria-label={`${p.name}: ${p.genes.join(", ")}; ${groups
-              .map((g) => `${count(p.samples[g] ?? 0)} ${g}`)
-              .join(", ")}; ${count(p.wells_free)} wells free`}
-            onClick={() => onPick(p.number)}
-            className={cn(
-              "rounded-lg border px-2.5 py-2 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-focus",
-              on
-                ? "border-accent bg-accent-soft"
-                : "border-line bg-surface hover:border-line-strong",
-            )}
-          >
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[12px] font-semibold text-fg">{p.name}</span>
-              <span className="font-mono text-[11px] text-muted tabular">
-                {count(p.wells_free)} free
+          <li key={p.number} className="min-w-0">
+            <button
+              type="button"
+              aria-pressed={on}
+              onClick={() => onPick(p.number)}
+              className={cn(
+                "relative w-full rounded-lg border px-2.5 py-2 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-focus",
+                on
+                  ? "border-accent bg-accent-soft"
+                  : "border-line bg-surface hover:border-line-strong",
+              )}
+            >
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="text-[12px] font-semibold text-fg">{p.name}</span>
+                <span className="font-mono text-[11px] text-muted tabular">
+                  {count(p.wells_free)} free
+                </span>
               </span>
-            </div>
-            <div className="mt-1.5 flex h-2 overflow-hidden rounded-full bg-sunken" aria-hidden>
-              {groups.map((g, i) => (
-                <span
-                  key={g}
-                  style={{
-                    width: `${(100 * (p.samples[g] ?? 0)) / total}%`,
-                    background: GROUP_TONES[i % GROUP_TONES.length],
-                  }}
-                />
-              ))}
-            </div>
-            <div className="mt-1 truncate text-[11px] text-muted">
-              {groups.map((g) => count(p.samples[g] ?? 0)).join(" · ")} · {p.genes.length} gene
-              {p.genes.length === 1 ? "" : "s"}
-            </div>
-          </button>
+              <span className="sr-only">
+                {`: ${p.genes.join(", ")}; ${groups
+                  .map((g) => `${count(p.samples[g] ?? 0)} ${g}`)
+                  .join(", ")}`}
+              </span>
+              <span className="mt-1.5 flex h-2 overflow-hidden rounded-full bg-sunken" aria-hidden>
+                {groups.map((g, i) => (
+                  <span
+                    key={g}
+                    style={{
+                      width: `${(100 * (p.samples[g] ?? 0)) / total}%`,
+                      background: GROUP_TONES[i % GROUP_TONES.length],
+                    }}
+                  />
+                ))}
+              </span>
+              <span className="mt-1 block truncate text-[11px] text-muted" aria-hidden>
+                {groups.map((g) => count(p.samples[g] ?? 0)).join(" · ")} · {p.genes.length} gene
+                {p.genes.length === 1 ? "" : "s"}
+              </span>
+            </button>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
 
