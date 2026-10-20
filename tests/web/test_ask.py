@@ -118,8 +118,19 @@ def test_the_audit_cannot_be_forced_without_an_audit(client, no_model, study):
         f"/api/studies/{study}/ask", json={"question": "Is ODC1 solid?", "source": "audit"}
     )
     assert r.status_code == 409 and r.json()["error"]["code"] == "no_audit"
+    assert "Run it in Audit" in r.json()["error"]["message"]
     answer = ask(client, study, "Is ODC1 solid?")  # auto: no audit, so the study answers
-    assert answer["engine"] == "study"
+    assert answer["engine"] == "study" and answer["tool"] == "qpcr_robustness"
+
+
+def test_a_what_if_question_without_an_audit_says_to_run_it(client, no_model, study, web_store):
+    head = web_store.chain_head(study)
+    for question in ("What if I normalise to HMBS alone?", "What should I look at first?"):
+        answer = ask(client, study, question)
+        assert answer["engine"] == "none" and answer["tool"] == "none", question
+        assert "Run it in Audit" in answer["answer"] and answer["facts"] == []
+        assert answer["head_after"] == head
+    assert web_store.pending(study) == []  # a what-if is never a request
 
 
 def test_a_blind_session_cannot_be_asked(sclient, opened):
