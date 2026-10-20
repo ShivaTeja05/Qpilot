@@ -286,3 +286,15 @@ def test_nothing_unusual_says_so():
     words = traced.plain("look_first")
     assert words.startswith("Nothing unusual sits behind this result.")
     assert "keep it" in words or "cannot be told apart from biology" in words
+
+
+def test_a_fold_near_the_line_never_rounds_onto_it():
+    from qpilot.trace.words import Facts, near_line_fmt
+
+    assert near_line_fmt(1.9996, 2.0) == "{:.4f}" and near_line_fmt(2.0, 2.0) == "{:.2f}"
+    assert near_line_fmt(1.98, 2.0) == "{:.2f}" and near_line_fmt(3.594, 2.0) == "{:.2f}"
+    facts = Facts("x", 2.0)
+    token = facts.change("near", math.log2(1 / 1.99962))  # 1.99962-fold lower: no call
+    assert token.endswith(" lower")
+    fid = facts.fid("near")
+    assert facts.facts[fid].fmt.format(facts.facts[fid].value) == "1.9996"

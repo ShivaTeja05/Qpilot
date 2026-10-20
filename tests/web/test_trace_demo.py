@@ -123,6 +123,9 @@ def test_the_study_overview_names_the_fragile_genes_and_the_missing_tumours(ctx)
     assert sum(1 for m in study.left_out if m.reason == "empty_reference") >= 14
     flagged = {s.unit for s in study.suspects if "reference_pull" in s.flags}
     assert {"2016", "1924", "1772"} <= flagged
+    k22 = next(s for s in study.suspects if s.unit == "2016")
+    assert k22.read_regrouped and "2016 leaves MYCN-high" in k22.read_regrouped
+    assert {"CAMTA2", "IGSF4"} <= {c.gene for c in k22.read_groups_held or []}
     assert "4 change their call when a single sample is set aside" in out.plain("summary")
 
 
