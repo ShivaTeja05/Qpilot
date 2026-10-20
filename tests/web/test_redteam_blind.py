@@ -513,3 +513,28 @@ def test_an_unknown_status_filter_is_a_plain_refusal(web_store, opened, studio_c
         c.headers["x-qpilot-token"] = TOKEN
         r = c.get(f"/api/sessions/{opened}/proposals", params={"status": status})
     assert r.status_code in (400, 422), r.status_code
+
+
+# ---- names that look like instructions -------------------------------------------------------
+
+
+def test_a_name_that_is_an_instruction_is_flagged_quoted_and_not_obeyed(sclient, web_store, opened):
+    from tests.fixtures.studio.studio_mini import INJECTION
+    from tests.web.test_studio_flow import propose
+
+    sid = opened
+    entries = sclient.get(f"/api/sessions/{sid}/quarantine").json()["entries"]
+    hit = [e for e in entries if e["value"] == INJECTION]
+    assert hit and "instruction_like" in hit[0]["flags"], hit
+    propose(sclient, sid, "design")
+    body = sclient.get(f"/api/sessions/{sid}/proposals", params={"stage": "design"}).json()
+    ntc = [
+        p
+        for p in body["proposals"]
+        if p["kind"] == "design.well_role" and "NTC" in str(p["subject"])
+    ]
+    for p in ntc:  # the NTC is never proposed as an unknown because a sample name says so
+        assert p["payload"].get("role") != "unkn", p
+    plate = sclient.get(f"/api/sessions/{sid}/plate").json()
+    names = {w["sample"] for w in plate["wells"]}
+    assert INJECTION in names  # shown as the text it is, never acted on
