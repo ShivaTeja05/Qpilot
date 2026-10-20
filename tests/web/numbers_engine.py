@@ -100,12 +100,16 @@ _engines: dict[tuple[Path, str | None], Engine] = {}
 
 def engine(world: World, study_id: str) -> Engine:
     """The engine's study (run once per process and design)."""
-    design = world.store.design(study_id)
+    return engine_of(world.rdml, world.store.design(study_id))
+
+
+def engine_of(rdml: Path, design: Any) -> Engine:
+    """The engine's study of ``rdml`` under a confirmed design (``None``: ``qpilot run``'s)."""
     design_json = None if design is None else design.model_dump_json()
-    key = (world.rdml, design_json)
+    key = (rdml, design_json)
     if key not in _engines:
-        result, cards, grid = engine_run(world.rdml, design_json)
-        model, settings = _model(world.rdml, design_json)
+        result, cards, grid = engine_run(rdml, design_json)
+        model, settings = _model(rdml, design_json)
         _engines[key] = Engine(result, cards, grid, model.space, model.stability, settings)
     return _engines[key]
 
