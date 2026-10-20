@@ -205,6 +205,36 @@ export function DataTable<T>({
 
   const activate = (row: Row<T>) => onRowClick?.(row.original);
 
+  // Roving focus: one row is the Tab stop; arrows, Home/End and PageUp/PageDown move it.
+  const [cursor, setCursor] = useState(0);
+  const active = Math.min(cursor, Math.max(0, model.length - 1));
+  const moveTo = (index: number) => {
+    const next = Math.max(0, Math.min(model.length - 1, index));
+    setCursor(next);
+    virtualizer.scrollToIndex(next, { align: "auto" });
+    requestAnimationFrame(() =>
+      scrollRef.current?.querySelector<HTMLElement>(`tr[data-index="${next}"]`)?.focus(),
+    );
+  };
+  const page = Math.max(1, Math.floor(height / rowHeight) - 1);
+  const onRowKey = (e: React.KeyboardEvent, index: number, row: Row<T>) => {
+    const step: Record<string, number> = {
+      ArrowDown: index + 1,
+      ArrowUp: index - 1,
+      PageDown: index + page,
+      PageUp: index - page,
+      Home: 0,
+      End: model.length - 1,
+    };
+    if (e.key in step) {
+      e.preventDefault();
+      moveTo(step[e.key]!);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      activate(row);
+    }
+  };
+
   return (
     <div
       ref={scrollRef}
@@ -213,7 +243,10 @@ export function DataTable<T>({
         className,
       )}
       style={{ maxHeight: height }}
-      tabIndex={-1}
+      // Without row actions the scroller itself takes focus, so the keyboard can scroll it.
+      tabIndex={onRowClick ? -1 : 0}
+      role={onRowClick ? undefined : "region"}
+      aria-label={onRowClick ? undefined : label}
     >
       <Table caption={label} aria-rowcount={model.length + 1} className="table-fixed">
         <colgroup>
@@ -292,20 +325,20 @@ export function DataTable<T>({
             return (
               <tr
                 key={row.id}
+                data-index={v.index}
                 aria-rowindex={v.index + 2}
                 aria-selected={onRowClick ? selected : undefined}
-                tabIndex={onRowClick ? 0 : undefined}
-                onClick={onRowClick ? () => activate(row) : undefined}
-                onKeyDown={
+                tabIndex={onRowClick ? (v.index === active ? 0 : -1) : undefined}
+                onClick={
                   onRowClick
-                    ? (e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          activate(row);
-                        }
+                    ? () => {
+                        setCursor(v.index);
+                        activate(row);
                       }
                     : undefined
                 }
+                onFocus={onRowClick ? () => setCursor(v.index) : undefined}
+                onKeyDown={onRowClick ? (e) => onRowKey(e, v.index, row) : undefined}
                 style={{ height: rowHeight }}
                 className={cn(
                   "border-b border-line last:border-b-0",
@@ -316,11 +349,14 @@ export function DataTable<T>({
               >
                 {row.getVisibleCells().map((cell) => {
                   const meta = cell.column.columnDef.meta as ColumnMeta | undefined;
+                  const value = cell.getValue();
                   return (
                     <TD
                       key={cell.id}
                       numeric={meta?.numeric}
                       className={cn("truncate", meta?.className)}
+                      // The full text of a cell the column cuts short.
+                      title={typeof value === "string" ? value : undefined}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TD>

@@ -4,7 +4,7 @@
  */
 import { demoSession, literal, route, workspaceView } from "./support/data";
 import { E2E } from "./support/env";
-import { expect, test } from "./support/fixtures";
+import { App, expect, test } from "./support/fixtures";
 import { LANDED, notLanded, SECTIONS } from "./support/sections";
 
 test.describe("the launch key", () => {
@@ -42,52 +42,96 @@ test.describe("the launch key", () => {
     test.fixme(!LANDED.needsKey, notLanded("needsKey"));
     // A fresh browser profile: no cookie. Open the bare address (no ?token=).
     const context = await browser.newContext();
-    const page = await context.newPage();
-    const errors: string[] = [];
-    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-    await page.goto(`${E2E.origin}/`);
-    await expect(page.getByText(/Open the link qPilot printed/i)).toBeVisible();
-    // The screen is the whole page: no section, no rail, no raw error.
-    await expect(page.getByText(/no_token|401|Unauthorized/)).toHaveCount(0);
+    const bare = new App(await context.newPage(), test.info());
+    bare.allowConsole(/401/);
+    await bare.page.goto(`${E2E.origin}/`);
+    await bare.settle();
+    const main = bare.page.getByRole("main");
+    await expect(
+      main.getByRole("heading", { level: 1, name: /Open the link qPilot printed/ }),
+    ).toBeVisible();
+    // The screen is the whole page: no rail, no raw error code.
+    await expect(bare.page.getByRole("navigation")).toHaveCount(0);
+    await expect(bare.page.getByText(/no_token|\b401\b|Unauthorized/)).toHaveCount(0);
+    await bare.axe("needs-key screen");
+    await bare.shot("needs-key", "1440-light");
+    expect(bare.outbound).toEqual([]);
+    expect(bare.unexpectedConsole()).toEqual([]);
     await context.close();
-    expect(errors.filter((e) => !/401/.test(e))).toEqual([]);
   });
 });
 
 test.describe("the rail", () => {
   test("Open → Recent → every section is reachable from the rail", async ({ app, api }) => {
-    test.fixme(!LANDED.home, notLanded("home"));
     test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     const demo = await demoSession(api);
     await app.open("/");
-    await app.page
+    // The rail's Recent list (outside a workspace) opens the demo.
+    const rail = app.page.getByRole("complementary", { name: "Sections" });
+    await rail
       .getByRole("link", { name: literal(demo.title) })
       .first()
       .click();
     await app.settle();
-    const nav = app.page.getByRole("navigation", { name: /sections|workflow/i });
+    expect(new URL(app.page.url()).hash).toContain(`/${demo.key}/`);
+
+    const nav = rail.getByRole("navigation", { name: "Workflow" });
     for (const s of SECTIONS.filter((x) => !x.hidden && x.scope === "workspace")) {
-      await nav.getByRole("link", { name: new RegExp(`^${s.label}`) }).click();
+      if (s.sessionOnly && demo.kind !== "session") continue;
+      const link = nav.getByRole("link", { name: new RegExp(`^${s.label}\\b`) });
+      await link.click();
       await app.settle();
       expect(decodeURIComponent(new URL(app.page.url()).hash)).toBe(`#${route(demo, s.id)}`);
-      await expect(app.page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+      await expect(link).toHaveAttribute("aria-current", "page");
+      const main = app.page.getByRole("main", { name: s.label });
+      await expect(main).toBeVisible();
+      // Every state has a heading to navigate by (a locked section too).
+      await expect.soft(main.getByRole("heading").first(), `${s.label}: a heading`).toBeVisible();
+      // A locked section says why, in the rail's words and on the page.
+      const locked = (await link.getAttribute("aria-label"))?.match(/locked: (.+)\)$/)?.[1];
+      if (locked) await expect(main.getByText(/not open yet|stays hidden/).first()).toBeVisible();
       await app.axe(`rail → ${s.label}`);
     }
-    await nav.getByRole("link", { name: /^Settings/ }).click();
+    await rail.getByRole("link", { name: /^Settings/ }).click();
     await app.settle();
     expect(new URL(app.page.url()).hash).toBe("#/settings");
   });
 
-  test("the rail shows each stage's live state", async ({ app, api }) => {
+  test("the rail says each confirmed stage in words", async ({ app, api }) => {
     test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     const demo = await demoSession(api);
     const view = await workspaceView(api, demo);
     await app.open(route(demo, "results"));
-    const nav = app.page.getByRole("navigation", { name: /sections|workflow/i });
+    const nav = app.page.getByRole("navigation", { name: "Workflow" });
     for (const stage of view.stages.filter((s) => s.stage === "design" || s.stage === "curves")) {
-      const link = nav.getByRole("link", { name: new RegExp(`^${stage.stage}`, "i") });
-      // A confirmed stage says so in words (not by colour alone).
-      if (stage.confirmed) await expect(link).toHaveAccessibleName(/confirmed/i);
+      const link = nav.getByRole("link", { name: new RegExp(`^${stage.stage}\\b`, "i") });
+      if (stage.confirmed) await expect(link).toHaveAccessibleName(/confirmed/);
+      else await expect(link).not.toHaveAccessibleName(/confirmed/);
+    }
+  });
+
+  test("on a phone the bottom bar reaches every section (More for the rest)", async ({
+    app,
+    api,
+  }) => {
+    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
+    await app.page.setViewportSize({ width: 390, height: 844 });
+    const demo = await demoSession(api);
+    await app.open(route(demo, "results"));
+    const bar = app.page.getByRole("navigation", { name: "Sections" });
+    await expect(bar).toBeVisible();
+    for (const s of SECTIONS.filter((x) => !x.hidden && x.scope === "workspace")) {
+      const direct = bar.getByRole("link", { name: new RegExp(`^${s.label}\\b`) });
+      if (await direct.count()) {
+        await direct.click();
+      } else {
+        await bar.getByRole("button", { name: /^More/ }).click();
+        const more = app.page.getByRole("dialog", { name: "More" });
+        await app.axe("bottom bar, More open");
+        await more.getByRole("button", { name: new RegExp(`^${s.label}\\b`) }).click();
+      }
+      await app.settle();
+      expect(decodeURIComponent(new URL(app.page.url()).hash)).toBe(`#${route(demo, s.id)}`);
     }
   });
 
@@ -97,25 +141,55 @@ test.describe("the rail", () => {
     const view = await workspaceView(api, demo);
     test.skip(!view.next_step, "the workspace has no next step");
     await app.open(route(demo, "record"));
-    await expect(app.page.getByText(view.next_step!.title)).toBeVisible();
+    const banner = app.page.getByRole("region", { name: "Next step" });
+    await expect(banner).toContainText(view.next_step!.title);
+    if (view.next_step!.detail) await expect(banner).toContainText(view.next_step!.detail);
+  });
+
+  test("the top bar shows the study's title and the window title names the section", async ({
+    app,
+    api,
+  }) => {
+    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
+    const demo = await demoSession(api);
+    const view = await workspaceView(api, demo);
+    await app.open(route(demo, "record"));
+    await expect(app.page.getByRole("banner").getByText(view.title).first()).toBeVisible();
+    await expect(app.page).toHaveTitle(`Record · ${view.title} — qPilot`);
+  });
+
+  test("an unknown study id says so in words, with a way out", async ({ app }) => {
+    test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
+    app.allowConsole(/status of 404/);
+    await app.open("/r/000000000000/results");
+    await expect(app.page.getByText("This study is not in this qPilot's store")).toBeVisible();
+    await app.axe("unknown study");
+    await app.page.getByRole("button", { name: "Open a study" }).click();
+    await app.settle();
+    expect(new URL(app.page.url()).hash).toMatch(/^#\/?$/);
   });
 });
 
 test.describe("the theme", () => {
-  test("the toggle switches light ↔ dark and the choice survives a reload", async ({ app }) => {
+  test("the theme menu switches to dark and the choice survives a reload", async ({ app }) => {
     test.fixme(!LANDED.shellFrame, notLanded("shellFrame"));
     await app.open("/");
     const html = app.page.locator("html");
-    await app.page
-      .getByRole("button", { name: /theme|dark|light/i })
-      .first()
-      .click();
-    const after = await html.getAttribute("data-theme");
-    expect(after === "dark" || after === "light").toBe(true);
-    await app.axe(`theme ${after}`);
-    await app.page.reload();
-    await app.settle();
-    await expect(html).toHaveAttribute("data-theme", after!);
+    for (const [word, value] of [
+      ["Dark", "dark"],
+      ["Light", "light"],
+    ] as const) {
+      await app.page.getByRole("button", { name: /^Theme:/ }).click();
+      await app.page.getByRole("menuitem", { name: new RegExp(`^${word}`) }).click();
+      await expect(html).toHaveAttribute("data-theme", value);
+      await app.axe(`theme ${value}`);
+      await app.page.reload();
+      await app.settle();
+      await expect(html).toHaveAttribute("data-theme", value);
+    }
+    await app.page.getByRole("button", { name: /^Theme:/ }).click();
+    await app.page.getByRole("menuitem", { name: /^Same as the system/ }).click();
+    await expect(html).not.toHaveAttribute("data-theme", /.+/);
   });
 
   test("the system's dark mode is followed with no saved choice", async ({ app }) => {

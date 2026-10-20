@@ -23,9 +23,10 @@ const SIZE: Record<ButtonSize, string> = {
   lg: "h-10 gap-2 rounded-lg px-4 text-[15px]",
 };
 
+// On touch screens icon buttons grow to a 40 px target (WCAG 2.5.8 asks 24, phones want more).
 const ICON_SIZE: Record<ButtonSize, string> = {
-  sm: "size-7 rounded-md",
-  md: "size-8 rounded-lg",
+  sm: "size-7 rounded-md pointer-coarse:size-9",
+  md: "size-8 rounded-lg pointer-coarse:size-10",
   lg: "size-10 rounded-lg",
 };
 

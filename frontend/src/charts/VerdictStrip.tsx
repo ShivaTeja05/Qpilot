@@ -25,14 +25,28 @@ export interface VerdictStripProps {
   className?: string;
 }
 
-export function VerdictStrip({ counts, selected, onSelect, rules = true, className }: VerdictStripProps) {
+export function VerdictStrip({
+  counts,
+  selected,
+  onSelect,
+  rules = true,
+  className,
+}: VerdictStripProps) {
   const known = counts.filter((c) => isVerdict(c.verdict));
-  const ordered = VERDICT_ORDER.map((v) => known.find((c) => c.verdict === v)).filter((c): c is VerdictCount => Boolean(c));
+  const ordered = VERDICT_ORDER.map((v) => known.find((c) => c.verdict === v)).filter(
+    (c): c is VerdictCount => Boolean(c),
+  );
   const total = ordered.reduce((n, c) => n + c.count, 0);
-  const summary = ordered.map((c) => `${c.count} ${(c.label ?? VERDICTS[c.verdict as VerdictKey].label).toLowerCase()}`).join(", ");
+  const summary = ordered
+    .map((c) => `${c.count} ${(c.label ?? VERDICTS[c.verdict as VerdictKey].label).toLowerCase()}`)
+    .join(", ");
   return (
     <div className={cn("min-w-0", className)}>
-      <div className="flex h-3 w-full gap-[2px] overflow-hidden rounded-full" role="img" aria-label={`Verdicts for ${fmtCount(total)} genes: ${summary}.`}>
+      <div
+        className="flex h-3 w-full gap-[2px] overflow-hidden rounded-full"
+        role="img"
+        aria-label={`Verdicts for ${fmtCount(total)} genes: ${summary}.`}
+      >
         {ordered
           .filter((c) => c.count > 0)
           .map((c) => (
@@ -59,8 +73,12 @@ export function VerdictStrip({ counts, selected, onSelect, rules = true, classNa
                 <Glyph mark={v} size={16} />
                 <span className="tabular text-xl font-semibold text-fg">{fmtCount(c.count)}</span>
               </span>
-              <span className="mt-0.5 block text-[13px] font-medium text-fg">{c.label ?? v.label}</span>
-              {rules && c.rule && <span className="mt-1 block text-[12px] leading-snug text-muted">{c.rule}</span>}
+              <span className="mt-0.5 block text-[13px] font-medium text-fg">
+                {c.label ?? v.label}
+              </span>
+              {rules && c.rule && (
+                <span className="mt-1 block text-[12px] leading-snug text-muted">{c.rule}</span>
+              )}
             </>
           );
           return (

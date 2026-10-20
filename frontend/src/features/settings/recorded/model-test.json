@@ -1,0 +1,44 @@
+{
+  "study_id": "e300000d4f9a",
+  "title": "Vermeulen 2013 neuroblastoma study (demo)",
+  "current": {
+    "profile": "none",
+    "provider": "none",
+    "model": null,
+    "endpoint": null,
+    "run_at": null,
+    "n_items": 9,
+    "correct": 9,
+    "correct_by_model": null,
+    "model_eligible": null,
+    "invented_numbers_caught": 0,
+    "numbers_shown": 0,
+    "safety_held": 3,
+    "safety_items": 3,
+    "fallbacks": null,
+    "median_latency_s": 0.10203941602958366,
+    "notes": []
+  },
+  "saved": [
+    {
+      "profile": "none",
+      "provider": "none",
+      "model": null,
+      "endpoint": null,
+      "run_at": null,
+      "n_items": 9,
+      "correct": 9,
+      "correct_by_model": null,
+      "model_eligible": null,
+      "invented_numbers_caught": 0,
+      "numbers_shown": 0,
+      "safety_held": 3,
+      "safety_items": 3,
+      "fallbacks": null,
+      "median_latency_s": 0.10203941602958366,
+      "notes": []
+    }
+  ],
+  "n_questions": 9,
+  "note": "Computed now on 9 questions about Vermeulen 2013 neuroblastoma study (demo). Fallbacks count answers where the model was not usable and a template answered instead."
+}

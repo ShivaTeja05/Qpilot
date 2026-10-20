@@ -12,7 +12,13 @@ export interface Placed<T> {
  * another (diameter `2r + gap`). If the swarm is taller than `maxHalf`, offsets are squeezed to
  * fit (dots may then touch; the table view keeps every value reachable).
  */
-export function beeswarm<T>(items: readonly T[], xOf: (t: T) => number, r: number, maxHalf: number, gap = 1): Placed<T>[] {
+export function beeswarm<T>(
+  items: readonly T[],
+  xOf: (t: T) => number,
+  r: number,
+  maxHalf: number,
+  gap = 1,
+): Placed<T>[] {
   const d = 2 * r + gap;
   const sorted = items.map((item) => ({ item, x: xOf(item) })).sort((a, b) => a.x - b.x);
   const placed: Placed<T>[] = [];
@@ -50,7 +56,13 @@ export function beeswarm<T>(items: readonly T[], xOf: (t: T) => number, r: numbe
  * A dot histogram: dots stacked upward in pixel bins one diameter wide (`dy` = level × diameter).
  * Within a bin, items keep the order of `rank` (so colours group), lowest first.
  */
-export function dotStack<T>(items: readonly T[], xOf: (t: T) => number, r: number, rank: (t: T) => number = () => 0, gap = 1.5): Placed<T>[] {
+export function dotStack<T>(
+  items: readonly T[],
+  xOf: (t: T) => number,
+  r: number,
+  rank: (t: T) => number = () => 0,
+  gap = 1.5,
+): Placed<T>[] {
   const d = 2 * r + gap;
   const bins = new Map<number, T[]>();
   for (const it of items) {
@@ -97,7 +109,8 @@ export function placeLabels<T>(
   gap = 8,
 ): { item: T; text: string; spot: LabelSpot }[] {
   const taken = [...obstacles];
-  const hits = (b: Box) => taken.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
+  const hits = (b: Box) =>
+    taken.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
   const out: { item: T; text: string; spot: LabelSpot }[] = [];
   for (const w of wanted) {
     const tw = textWidth(w.text);
@@ -112,7 +125,8 @@ export function placeLabels<T>(
     for (const s of spots) {
       const x0 = s.anchor === "start" ? s.x : s.anchor === "end" ? s.x - tw : s.x - tw / 2;
       const box = { x0, x1: x0 + tw, y0: s.y - 10, y1: s.y + 2 };
-      if (box.x0 < bounds.x0 || box.x1 > bounds.x1 || box.y0 < bounds.y0 || box.y1 > bounds.y1) continue;
+      if (box.x0 < bounds.x0 || box.x1 > bounds.x1 || box.y0 < bounds.y0 || box.y1 > bounds.y1)
+        continue;
       if (hits(box)) continue;
       taken.push(box);
       out.push({ item: w.item, text: w.text, spot: s });
