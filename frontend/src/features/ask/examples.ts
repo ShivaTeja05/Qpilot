@@ -6,7 +6,7 @@
 export interface GeneLine {
   gene: string;
   conclusion: "up" | "down" | "none";
-  /** Share of reasonable analyses with the same call (0–1), when known. */
+  /** Share of the analyses qPilot checks (its choice grid) with the same call (0–1), when known. */
   holds: number | null;
 }
 

@@ -200,9 +200,6 @@ function Conversation({
     <>
       <div
         ref={log}
-        role="log"
-        aria-label="Questions and answers"
-        aria-live="polite"
         className="qp-scroll relative flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4"
       >
         {turns.length === 0 ? (
@@ -213,22 +210,23 @@ function Conversation({
             disabled={sending}
           />
         ) : (
-          <>
-            <div className="flex justify-end">
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={<Trash2 />}
-                onClick={() => clearTurns(studyId)}
-              >
-                Clear the conversation
-              </Button>
-            </div>
-            {turns.map((t) => (
-              <TurnView key={t.id} studyId={studyId} turn={t} links={links} onRetry={retry} />
-            ))}
-          </>
+          <div className="flex justify-end">
+            <Button size="sm" variant="ghost" icon={<Trash2 />} onClick={() => clearTurns(studyId)}>
+              Clear the conversation
+            </Button>
+          </div>
         )}
+        {/* Only the conversation is a live region; the fold-out below is read on demand. */}
+        <div
+          role="log"
+          aria-label="Questions and answers"
+          aria-live="polite"
+          className="flex flex-col gap-5 empty:hidden"
+        >
+          {turns.map((t) => (
+            <TurnView key={t.id} studyId={studyId} turn={t} links={links} onRetry={retry} />
+          ))}
+        </div>
         <div className="mt-auto pt-2">
           <ModelSaw workspaceKey={workspace.key} model={model} asked={answered} />
         </div>
