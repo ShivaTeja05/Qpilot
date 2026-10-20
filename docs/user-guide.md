@@ -165,15 +165,16 @@ The header gives the gene's name (with a **Headline gene** badge for the study's
 
 ## 9. Audit
 
-The audit re-runs your **confirmed** study under every combination of eight analysis decisions (efficiency model, flagged wells, late Cq, empty wells, which control genes, where to cut the groups, which test, correction for many genes): 90,396 analyses on the demo, about 50 seconds. It first checks that its own baseline reproduces qPilot's results gene by gene; if it does not, it refuses and writes nothing. It then gives each gene one of the six verdicts of [section 3](#3-three-scales-you-will-see-everywhere). A verdict counts only the audit's reasonable set (144 analyses on the demo: no shortcuts such as single or paired control genes, and the group cut-off and the correction for many genes as planned); the rest of the 90,396 are there so that you can see how far a choice would take a result. Those two decisions change the claim rather than the analysis, and are reported separately.
+The audit re-runs your **confirmed** study under every combination of eight analysis decisions (efficiency model, flagged wells, late Cq, empty wells, which control genes, where to cut the groups, which test, correction for many genes): 90,396 analyses on the demo, about 50 seconds. It first checks that its own baseline reproduces qPilot's results gene by gene; if it does not, it refuses and writes nothing. It then gives each gene one of the six verdicts of [section 3](#3-three-scales-you-will-see-everywhere). A verdict counts only the audit's reasonable set (144 analyses on the demo: no shortcuts such as single or paired control genes, and the group cut-off and the correction for many genes as planned); the rest of the 90,396 are there so that you can see how far a choice would take a result. Those two decisions change the claim rather than the analysis, and are reported separately. The audit changes nothing: it writes its own folder beside the Analysis Record, with a checksum for every file and the decision chain it describes.
 
-* **Not run yet:** the page says what the audit is and offers **Run the audit** (a job with stages).
-* **Not applicable:** a design with technical replicates, today, because the audit needs one well per sample and gene. The page says so in words.
-* **Done:** four tabs.
-  * **Study:** the verdict counts, the map, the calls that one choice changes, how much of the spread each decision explains, reference-gene stability, "fix these first", and the queue of data issues it found (wells, samples, plates).
-  * **What-if lab:** one menu per decision, grouped by how defensible the options are; the dumbbell shows every gene from the planned analysis to your chosen one, changed genes first. Nothing is stored and nothing is decided here.
-  * **How it works:** the stages, the verdict rules, the known-answer tests and the audit's limits.
-  * **Verify:** the audit's checksums and whether it is bound to the current decision record. If a decision changed after the audit, it is stale and the page says to run it again.
+* **Not run yet:** the page explains what the audit does and shows what it will cover (analyses, genes compared, samples, sets of reference genes), with **Run the audit** (a job with stages). Running it again keeps the earlier audit.
+* **Cannot run:** a design with technical replicates, today, because the audit needs one well per sample and gene, or an install without the Decision Simulator. The page says which, in words.
+* **Done:** four tabs, **Study**, **What-if lab**, **How it works** and **Verify**.
+  * **Study:** the verdict counts, the map, the calls that one choice changes, how much of the spread each decision explains, reference-gene stability, "fix these first", and the queue of data issues it found (wells, samples, plates); an issue about a choice offers **Try this choice in the What-if lab**.
+  * **What-if lab:** one menu per decision, with the options grouped by how defensible they are; every gene is shown from the planned analysis to your chosen one, changed genes first. Nothing is stored and nothing is decided here.
+  * **How it works:** the stages with this audit's own numbers, what is varied at each stage, the verdict rules, the known-answer tests and the audit's limits.
+  * **Verify:** "Is this audit intact, and is it this study's?": the audit's checksums, whether it reproduces qPilot's result, whether it belongs to this study's record, and whether decisions were made since it ran (then it is not current and the page says to run it again). It lists the audit's files with their SHA-256 (click a name to save one) and the command to check it from a terminal.
+* **Audit shown:** if you started `qpilot app --audit DIR` (or `qsim app --results DIR`), a menu switches between this study's audit and the attached results folder, which is shown read-only.
 
 ## 10. Prism
 
