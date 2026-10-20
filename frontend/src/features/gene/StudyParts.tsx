@@ -7,11 +7,11 @@ import { Link } from "wouter";
 import { GenormBars } from "@/charts";
 import type { Schemas } from "@/api/client";
 import { sectionPath } from "@/shell/sections";
-import { Badge, EmptyState, KeyValues } from "@/ui";
+import { Badge, EmptyState } from "@/ui";
 import { count, fixed, fold } from "@/lib/format";
 import { cardStatusWords, isOpen } from "./adapters";
 import type { AuditLab, GeneCardRef, GenormView } from "./api";
-import { Panel } from "./Panel";
+import { FactRows, Panel } from "./Panel";
 
 type Workspace = Pick<Schemas["WorkspaceView"], "key" | "kind">;
 
@@ -63,10 +63,10 @@ export function GeneCards({ workspace, gene, cards, loading }: { workspace: Work
                   )}
                   {isOpen(c) ? <Badge tone="accent">Open</Badge> : null}
                 </div>
-                <p className="mt-1.5 text-xs text-muted">
-                  {cardStatusWords(c)}
-                  {moveWords(c.maxDeltaLog2) ? ` · Across its options this choice ${moveWords(c.maxDeltaLog2)}.` : ""}
-                </p>
+                <p className="mt-1.5 text-xs text-muted">{cardStatusWords(c)}</p>
+                {moveWords(c.maxDeltaLog2) ? (
+                  <p className="mt-1 text-xs text-fg">Across its options this choice {moveWords(c.maxDeltaLog2)}.</p>
+                ) : null}
               </Link>
             </li>
           ))}
@@ -93,11 +93,11 @@ export function AssayWells({ efficiency, lab }: { efficiency?: number | null; la
     for (const r of lab.rows) if (!SHOWN_ABOVE.has(r.label)) rows.push([r.label, r.value]);
   } else {
     const eff = efficiencyWords(efficiency);
-    if (eff) rows.push(["Amplification efficiency (LinRegPCR, assay mean)", eff]);
+    if (eff) rows.push(["Efficiency, LinRegPCR assay mean", eff]);
   }
   return (
     <Panel id="gene-assay" title="Assay and wells" hint={lab ? "From the audit's reading of every well of this assay." : undefined}>
-      {rows.length ? <KeyValues rows={rows} /> : null}
+      {rows.length ? <FactRows rows={rows} /> : null}
       {!lab ? (
         <p className={rows.length ? "mt-3 text-xs text-muted" : "text-[13px] text-muted"}>
           The audit adds this assay's Cq spread, late and never-amplified wells, and flagged wells.
@@ -133,7 +133,10 @@ export function ReferenceStability({
     >
       {genorm && Object.keys(genorm.m).length ? (
         <>
-          <GenormBars m={genorm.m} order={genorm.order} cutoffM={genorm.cutoff_m} used={used} differs={differs} only="m" />
+          {/* One chart only: keep it full width (GenormBars lays M and V side by side from lg). */}
+          <div className="lg:[&>div]:grid-cols-1">
+            <GenormBars m={genorm.m} order={genorm.order} cutoffM={genorm.cutoff_m} used={used} differs={differs} only="m" />
+          </div>
           {differs.size ? (
             <p className="mt-3 text-xs text-muted">
               Marked “differs between groups”: the audit found this reference gene's level differs between the

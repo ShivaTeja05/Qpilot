@@ -17,6 +17,7 @@ import { fold } from "@/lib/format";
 import { useHotkeys } from "@/lib/hooks";
 import type { Schemas } from "@/api/client";
 import {
+  geneQuery,
   isNotFound,
   scopeOf,
   useAuditSamples,
@@ -74,6 +75,12 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   }
   const go = (g: string) => navigate(sectionPath(workspace, "gene", g));
 
+  // `[` and `]` should open at once: read the neighbours while this gene is on screen.
+  useEffect(() => {
+    if (!gene.data || !scope.studyId) return;
+    for (const n of [near.next, near.prev]) if (n) void qc.prefetchQuery({ ...geneQuery(scope, n), staleTime: 60_000 });
+  }, [gene.data, near.next, near.prev, qc, scope]);
+
   useHotkeys({
     "[": () => near.prev && go(near.prev),
     "]": () => near.next && go(near.next),
@@ -87,7 +94,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   // ---- the audit
   const status = useAuditStatus(scope);
   const statusMissing = isNotFound(status.error);
-  const audited = status.data ? status.data.status === "ready" : statusMissing && scope.hasAudit;
+  const audited = status.data?.status === "ready";
   // The first read of an audit loads its live views (~15 s); the views wait for that job.
   const warming = audited && status.data && !status.data.views_ready ? (status.data.loading ?? null) : null;
   const auditOutdated = status.data?.current === false ? (status.data.decisions_since ?? 0) : 0;

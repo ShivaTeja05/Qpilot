@@ -21,7 +21,6 @@ export interface GeneScope {
   /** The study whose results are shown (null until a session's results exist). */
   studyId: string | null;
   kind: Schemas["WorkspaceView"]["kind"];
-  hasAudit: boolean;
 }
 
 export function scopeOf(workspace: Schemas["WorkspaceView"]): GeneScope {
@@ -29,7 +28,6 @@ export function scopeOf(workspace: Schemas["WorkspaceView"]): GeneScope {
     key: workspace.key,
     studyId: workspace.study_id ?? (workspace.kind === "study" ? workspace.key : null),
     kind: workspace.kind,
-    hasAudit: workspace.has_audit,
   };
 }
 
@@ -253,12 +251,19 @@ export function useResults(s: GeneScope) {
   });
 }
 
+/** The query for one gene (shared by the view and the neighbours' prefetch). */
+export function geneQuery(s: GeneScope, gene: string | null) {
+  return {
+    queryKey: wkey(s, "gene", gene),
+    queryFn: () => requestJson<GeneView>(studyUrl(s, `/genes/${enc(gene ?? "")}`)),
+  };
+}
+
 /** One gene (404 `not_found` for a gene the study does not compare, e.g. a reference gene). */
 export function useGene(s: GeneScope, gene: string | null) {
   return useQuery({
-    queryKey: wkey(s, "gene", gene),
+    ...geneQuery(s, gene),
     enabled: Boolean(s.studyId && gene),
-    queryFn: () => requestJson<GeneView>(studyUrl(s, `/genes/${enc(gene ?? "")}`)),
     placeholderData: keepPreviousData,
   });
 }

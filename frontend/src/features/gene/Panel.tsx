@@ -51,3 +51,20 @@ export function Sentences({ items, className }: { items: readonly string[]; clas
     </ul>
   );
 }
+
+/**
+ * Label / value rows for a narrow column: the label wraps, the value stays whole on the right
+ * (the kit's KeyValues squeezes long values when its labels are long).
+ */
+export function FactRows({ rows, className }: { rows: [ReactNode, ReactNode][]; className?: string }) {
+  return (
+    <dl className={cn("divide-y divide-line text-[13px]", className)}>
+      {rows.map(([k, v], i) => (
+        <div key={i} className="flex items-baseline justify-between gap-3 py-1.5 first:pt-0 last:pb-0">
+          <dt className="min-w-0 text-muted">{k}</dt>
+          <dd className="max-w-[65%] shrink-0 text-right font-mono text-fg tabular">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}

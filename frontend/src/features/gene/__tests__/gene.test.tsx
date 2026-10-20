@@ -1,164 +1,173 @@
 /**
- * The Gene section on JSON recorded from the real services (src/test/recorded/record.py: the
- * Studio walk of the demo study and its robustness audit). No number here is typed in: each
- * expectation is read from the recording or formatted from it.
+ * The Gene section on JSON recorded from the real API of the seeded study (the Studio walk of
+ * the demo, Vermeulen 2013): `recorded/` here holds `/results` and `/genes/{gene}` (see its
+ * record.py), `src/test/recorded/` the robustness audit's views. No number is typed in: every
+ * expectation is read from a recording or formatted from it.
  */
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import cards from "@/test/recorded/cards.json";
-import geneNM23A from "@/test/recorded/audit-gene-NM23A.json";
-import geneODC1 from "@/test/recorded/audit-gene-ODC1.json";
 import analysesNM23A from "@/test/recorded/audit-analyses-NM23A.json";
+import auditGeneNM23A from "@/test/recorded/audit-gene-NM23A.json";
+import auditGeneODC1 from "@/test/recorded/audit-gene-ODC1.json";
 import effectsODC1 from "@/test/recorded/audit-effects-ODC1.json";
 import labODC1 from "@/test/recorded/audit-lab-ODC1.json";
 import samplesODC1 from "@/test/recorded/audit-samples-ODC1.json";
-import results from "@/test/recorded/results.json";
 import { TooltipProvider } from "@/ui";
 import { ci, fold, ofTotal, percent, pValue } from "@/lib/format";
-import type { AuditGeneCard, AuditLab, AuditSamples, CardLike, GeneView } from "../api";
+import { effectChoiceRows, geneCardRefs, gridDots } from "../adapters";
+import type { AuditAnalyses, AuditEffects, AuditGeneCard, AuditLab, AuditSamples, GeneView, ResultsView } from "../api";
 import { AuditInvite, AuditReading, OneChoice, WhatHolds, YourSamples } from "../AuditParts";
-import { cardsForGene } from "../cards";
 import { GeneHeader } from "../GeneHeader";
 import { neighbours, resolveGene } from "../nav";
-import { AssayWells, GeneCards, ImpactTable, ReferenceStability } from "../StudyParts";
-import { KIND_DIMENSION, geneSummary } from "../words";
+import { AssayWells, GeneCards, ReferenceStability } from "../StudyParts";
+import { geneSummary, groupLabels } from "../words";
+import geneNM23AJson from "./recorded/gene-NM23A.json";
+import geneODC1Json from "./recorded/gene-ODC1.json";
+import resultsJson from "./recorded/results-view.json";
 
 afterEach(cleanup);
 
-type Gene = keyof typeof results.contrasts;
-const ORDER = Object.keys(results.contrasts);
-const LABELS = { hi: "MYCN-high", lo: "the rest" };
+// JSON imports widen literal unions ("up") to string; the recordings are the API's own answers.
+const results = resultsJson as unknown as ResultsView;
+const NM23A = geneNM23AJson as unknown as GeneView;
+const ODC1 = geneODC1Json as unknown as GeneView;
+const ORDER = results.genes.map((g) => g.gene);
+const LABELS = groupLabels(results);
 const WS = { key: "bc1d233e3866", kind: "session" as const };
-
-/** A GeneView as the API builds it from the stored StudyResult (contrast + robustness + confidence). */
-function geneView(gene: Gene): GeneView {
-  const c = results.contrasts[gene];
-  const r = results.robustness[gene as keyof typeof results.robustness];
-  const k = results.confidence[gene as keyof typeof results.confidence];
-  return {
-    gene,
-    conclusion: c.conclusion,
-    fc: c.fc,
-    ci: c.ci,
-    p: c.p,
-    n_hi: c.n_hi,
-    n_lo: c.n_lo,
-    holds: r.holds,
-    n_cells: r.n_cells,
-    level: k.level,
-    reasons: k.reasons,
-    checks: k.checks.map(({ id, passed, note }) => ({ id, passed, note })),
-    impact: r.impact,
-    efficiency: results.efficiency[gene as keyof typeof results.efficiency],
-  };
-}
-
 const q = <T,>(data: T) => ({ data, error: null, isPending: false, refetch: () => undefined });
+const noop = () => undefined;
+/** Testing Library folds the page's narrow no-break spaces ("65 %", "< 0.001") into plain ones. */
+const text = (formatted: string) => formatted.replace(/\s+/g, " ");
 
 describe("moving between genes", () => {
-  it("has no neighbour past either end, and counts from one", () => {
+  it("follows the study's order, with no neighbour past either end", () => {
     const first = neighbours(ORDER, ORDER[0]!);
     expect(first.prev).toBeNull();
-    expect(first.next).toBe(ORDER[1]);
     expect(first.position).toBe(1);
     const last = neighbours(ORDER, ORDER.at(-1)!);
     expect(last.next).toBeNull();
     expect(last.position).toBe(ORDER.length);
-    expect(neighbours(ORDER, "not a gene").position).toBe(0);
+    const mid = neighbours(ORDER, "NM23A");
+    expect(mid.prev).toBe(NM23A.prev_gene);
+    expect(mid.next).toBe(NM23A.next_gene);
   });
 
   it("matches a gene in the link to the study's spelling", () => {
-    expect(resolveGene(ORDER, "odc1")).toBe("ODC1");
-    expect(resolveGene(ORDER, "ODC1")).toBe("ODC1");
-    expect(resolveGene(ORDER, "nothing")).toBeNull();
+    expect(resolveGene(ORDER, "nm23a")).toBe("NM23A");
+    expect(resolveGene(ORDER, "not a gene")).toBeNull();
+  });
+});
+
+describe("qPilot's grid → the charts", () => {
+  it("every analysis is one dot; the share with the planned call is the gene's robustness", () => {
+    for (const view of [NM23A, ODC1]) {
+      const dots = gridDots(view);
+      expect(dots).toHaveLength(view.grid!.cells.length);
+      expect(dots).toHaveLength(view.row.n_cells!);
+      expect(dots.filter((d) => d.planned)).toHaveLength(1);
+      expect(dots.filter((d) => d.same).length / dots.length).toBeCloseTo(view.row.holds!, 9);
+      const planned = dots.find((d) => d.planned)!;
+      expect(planned.log2).toBeCloseTo(view.row.log2fc!, 6);
+      expect(planned.choices).toEqual([]);
+    }
+  });
+
+  it("one decision at a time: one planned option per decision, the flips as the API says", () => {
+    const rows = effectChoiceRows(NM23A);
+    expect(rows).toHaveLength(NM23A.effects.filter((r) => r.options.length).length);
+    for (const row of rows) {
+      expect(row.options.filter((o) => o.planned)).toHaveLength(1);
+      const effect = NM23A.effects.find((r) => r.dimension === row.id)!;
+      expect(row.options.some((o) => o.changesCall)).toBe(effect.options.some((o) => o.flips[0]));
+    }
   });
 });
 
 describe("Decision Cards that move a gene", () => {
-  it("joins the study's cards with the gene's robustness impact, flipping cards first", () => {
-    for (const gene of ["NM23A", "ODC1", "AHCY"] as Gene[]) {
-      const view = geneView(gene);
-      const list = cardsForGene(view, cards as unknown as CardLike[]);
-      const dims = cards.map((c) => KIND_DIMENSION[c.kind]).filter((d): d is string => Boolean(d && view.impact?.[d]));
-      expect(list).toHaveLength(dims.length);
-      const flips = list.map((c) => Boolean(c.flips));
-      expect(flips).toEqual([...flips].sort((a, b) => Number(b) - Number(a)));
-      for (const c of list) {
-        const dim = KIND_DIMENSION[c.kind]!;
-        expect(c.flips).toBe(view.impact![dim]!.flips);
-        expect(c.max_delta_log2fc).toBe(view.impact![dim]!.max_delta_log2fc);
-      }
+  it("lists every card's decision for the gene, the ones that flip it first", () => {
+    const refs = geneCardRefs(NM23A);
+    expect(refs.length).toBeGreaterThanOrEqual(NM23A.effects.filter((r) => r.card_id).length);
+    const flips = refs.map((r) => r.flips);
+    expect(flips).toEqual([...flips].sort((a, b) => Number(b) - Number(a)));
+    const flipping = new Set(NM23A.row.flips_by);
+    for (const r of refs) {
+      const dim = NM23A.effects.find((e) => e.card_id === r.id)?.dimension;
+      if (dim) expect(r.flips).toBe(flipping.has(dim));
     }
   });
 
   it("links each card to Results and says whether it can change the call", () => {
-    const view = geneView("AHCY");
-    const list = cardsForGene(view, cards as unknown as CardLike[]);
-    render(<GeneCards workspace={WS} gene="AHCY" cards={list} />);
+    const refs = geneCardRefs(NM23A);
+    render(<GeneCards workspace={WS} gene="NM23A" cards={refs} />);
     const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(list.length);
-    expect(links[0]!.getAttribute("href")).toContain(`/results/card/${list[0]!.id}`);
-    expect(screen.getAllByText("Can change the call alone")).toHaveLength(list.filter((c) => c.flips).length);
+    expect(links).toHaveLength(refs.length);
+    expect(links[0]!.getAttribute("href")).toContain(`/results/card/${refs[0]!.id}`);
+    expect(screen.getAllByText("Can change the call alone")).toHaveLength(refs.filter((c) => c.flips).length);
   });
 });
 
 describe("the header", () => {
-  it("shows the call, fold [CI], p, n per group, the level and the audit's verdict", () => {
-    const view = geneView("ODC1");
-    const card = geneODC1 as unknown as AuditGeneCard;
+  it("shows the call, fold [CI], p, n per group, the level with its reasons, and the verdict", () => {
+    const card = auditGeneODC1 as unknown as AuditGeneCard;
+    const row = ODC1.row;
     render(
       <TooltipProvider>
-        <GeneHeader gene={view} labels={LABELS} audit={card} alpha={results.conclusion_rule.alpha} minLog2fc={results.conclusion_rule.min_log2fc} />
+        <GeneHeader view={ODC1} labels={LABELS} audit={card} ruleText={results.rule.text} />
       </TooltipProvider>,
     );
     expect(screen.getByRole("heading", { level: 1, name: "ODC1" })).toBeTruthy();
-    expect(screen.getByText(fold(view.fc))).toBeTruthy();
-    expect(screen.getByText(ci(view.ci[0], view.ci[1]))).toBeTruthy();
-    // Testing Library folds the narrow no-break space in "< 0.001" into a plain space.
-    expect(screen.getByText(pValue(view.p).replace(/\s+/g, " "))).toBeTruthy();
+    expect(screen.getByText(fold(row.fc))).toBeTruthy();
+    expect(screen.getByText(ci(row.ci[0], row.ci[1]))).toBeTruthy();
+    expect(screen.getByText(text(pValue(row.p)))).toBeTruthy();
+    expect(screen.getByText(results.rule.text)).toBeTruthy();
     expect(screen.getByText(card.label)).toBeTruthy();
     expect(screen.getByText(card.result.verdict_sentence)).toBeTruthy();
-    expect(screen.getAllByText(new RegExp(String(view.level))).length).toBeGreaterThan(0);
     // Each reason is said once in the list and once in the (collapsed) list of every check.
-    for (const reason of view.reasons ?? []) expect(screen.getAllByText(reason).length).toBeGreaterThan(0);
+    for (const reason of row.reasons ?? []) expect(screen.getAllByText(reason).length).toBeGreaterThan(0);
   });
 
-  it("says when the study is not audited", () => {
+  it("without the audit's card, shows the verdict the results carry", () => {
     render(
       <TooltipProvider>
-        <GeneHeader gene={geneView("NM23A")} labels={LABELS} audit={null} />
+        <GeneHeader view={NM23A} labels={LABELS} audit={null} />
       </TooltipProvider>,
     );
-    expect(screen.getByText("Not audited yet")).toBeTruthy();
+    expect(NM23A.audit_verdict).toBeTruthy();
+    expect(screen.queryByText("Not audited yet")).toBeNull();
+  });
+});
+
+describe("what holds and one choice at a time", () => {
+  it("draws qPilot's grid without an audit, the audit's analyses with one", () => {
+    const dots = gridDots(NM23A);
+    const same = dots.filter((d) => d.same).length;
+    const onSource = vi.fn();
+    const props = { gene: "NM23A", holds: NM23A.row.holds, nCells: NM23A.row.n_cells, dots, line: results.rule.min_log2fc, labels: LABELS, onSource };
+    render(<WhatHolds {...props} card={null} analyses={null} source="qpilot" />);
+    expect(screen.getByText(text(percent(NM23A.row.holds)))).toBeTruthy();
+    expect(screen.getByRole("img", { name: new RegExp(`qPilot's grid, on the fold axis: ${text(ofTotal(same, dots.length))}`) })).toBeTruthy();
+    cleanup();
+
+    const a = analysesNM23A as unknown as AuditAnalyses;
+    render(<WhatHolds {...props} card={auditGeneNM23A as unknown as AuditGeneCard} analyses={q(a)} source="audit" />);
+    expect(screen.getByText(text(ofTotal(a.n_same, a.n)))).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Every reasonable analysis of NM23A in the audit/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "qPilot's grid" }));
+    expect(onSource).toHaveBeenCalledWith("qpilot");
+  });
+
+  it("one choice at a time from qPilot's decisions, or from the audit's", () => {
+    const rows = effectChoiceRows(ODC1);
+    const props = { gene: "ODC1", rows, line: results.rule.min_log2fc, onSource: noop, labels: LABELS };
+    render(<OneChoice {...props} effects={null} source="qpilot" />);
+    expect(screen.getByRole("img", { name: /ODC1, one Decision Card choice at a time/ })).toBeTruthy();
+    cleanup();
+    render(<OneChoice {...props} effects={q(effectsODC1 as unknown as AuditEffects)} source="audit" />);
+    expect(screen.getByRole("img", { name: /of the audit's/ })).toBeTruthy();
   });
 });
 
 describe("the audit's parts", () => {
-  it("what holds: qPilot's share and the audit's count, with every analysis drawn", () => {
-    const view = geneView("NM23A");
-    render(
-      <WhatHolds
-        holds={view.holds}
-        nCells={view.n_cells}
-        analyses={q(analysesNM23A)}
-        card={geneNM23A as unknown as AuditGeneCard}
-        audited
-        labels={LABELS}
-      />,
-    );
-    expect(screen.getByText(ofTotal(analysesNM23A.n_same, analysesNM23A.n))).toBeTruthy();
-    expect(screen.getByRole("img", { name: new RegExp(`Every reasonable analysis of NM23A`) })).toBeTruthy();
-  });
-
-  it("one choice at a time: the audit's plot, or qPilot's own table without an audit", () => {
-    render(<OneChoice effects={q(effectsODC1)} labels={LABELS} fallback={null} />);
-    expect(screen.getByRole("img", { name: /ODC1 at/ })).toBeTruthy();
-    cleanup();
-    const view = geneView("NM23A");
-    render(<OneChoice effects={null} labels={LABELS} fallback={<ImpactTable impact={view.impact!} />} />);
-    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(Object.keys(view.impact!).length + 1);
-  });
-
   it("your samples: clicking a sample opens it", () => {
     const onSelect = vi.fn();
     const data = samplesODC1 as unknown as AuditSamples;
@@ -172,28 +181,20 @@ describe("the audit's parts", () => {
   }, 20_000);
 
   it("the reading: what changes it, what it leans on, what to do", () => {
-    const card = geneNM23A as unknown as AuditGeneCard;
+    const card = auditGeneNM23A as unknown as AuditGeneCard;
     render(<AuditReading card={card} />);
     for (const line of [...card.leans, ...card.todo]) expect(screen.getByText(line)).toBeTruthy();
-    if (!card.changes.length) expect(screen.getByText(card.no_changes ?? "No reasonable choice changes it.")).toBeTruthy();
   });
 
-  it("assay and references from the audit's lab view", () => {
+  it("assay from the audit's lab view; reference genes from the results", () => {
     const lab = labODC1 as unknown as AuditLab;
-    render(<AssayWells lab={lab} />);
+    render(<AssayWells lab={lab} efficiency={ODC1.row.efficiency} />);
     expect(screen.queryByText("p-value, planned analysis")).toBeNull();
     for (const r of lab.rows.filter((r) => r.label.startsWith("Cq"))) expect(screen.getByText(r.value)).toBeTruthy();
     cleanup();
-    render(
-      <ReferenceStability
-        gene="ODC1"
-        genorm={results.genorm}
-        used={results.design.refs_primary}
-        lab={lab}
-      />,
-    );
-    expect(screen.getByText(/normalised to the mean of 5 reference genes/)).toBeTruthy();
-    expect(screen.getAllByText(/differs between groups/).length).toBeGreaterThan(0);
+    render(<ReferenceStability gene="ODC1" genorm={results.references} lab={lab} />);
+    expect(screen.getByText(new RegExp(`normalised to the mean of ${results.references.used.length} reference genes`))).toBeTruthy();
+    expect(screen.getByRole("img", { name: /geNorm M for/ })).toBeTruthy();
   });
 });
 
@@ -215,15 +216,15 @@ describe("without an audit", () => {
 
 describe("copy summary", () => {
   it("says the result, the confidence, what holds and the audit's verdict in plain text", () => {
-    const view = geneView("ODC1");
-    const card = geneODC1 as unknown as AuditGeneCard;
-    const text = geneSummary({ gene: view, labels: LABELS, audit: card, studyId: results.study_id, chainHead: null });
-    expect(text).toContain("ODC1: called up with the planned analysis");
-    expect(text).toContain(`Fold ${fold(view.fc)} (95 % CI ${ci(view.ci[0], view.ci[1])})`);
-    expect(text).toContain(`Confidence: ${view.level}`);
-    expect(text).toContain(`Same call in ${percent(view.holds)}`);
-    expect(text).toContain(`Audit verdict: ${card.label}. ${card.result.verdict_sentence}`);
-    expect(text).toContain(`qPilot study ${results.study_id}`);
-    expect(text).not.toContain("undefined");
+    const card = auditGeneODC1 as unknown as AuditGeneCard;
+    const row = ODC1.row;
+    const summary = geneSummary({ gene: row, labels: LABELS, audit: card, studyId: results.study_id, chainHead: results.head });
+    expect(summary).toContain("ODC1: called up with the planned analysis");
+    expect(summary).toContain(`Fold ${fold(row.fc)} (95 % CI ${ci(row.ci[0], row.ci[1])})`);
+    expect(summary).toContain(`Confidence: ${row.level}`);
+    expect(summary).toContain(`Same call in ${percent(row.holds)}`);
+    expect(summary).toContain(`Audit verdict: ${card.label}. ${card.result.verdict_sentence}`);
+    expect(summary).toContain(`qPilot study ${results.study_id}`);
+    expect(summary).not.toContain("undefined");
   });
 });

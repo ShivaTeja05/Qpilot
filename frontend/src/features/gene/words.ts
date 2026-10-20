@@ -1,6 +1,6 @@
 /**
- * The Gene section's words: decision dimensions and card kinds in plain words, the confidence
- * checks' names, and the sentence that says which way a gene moved. Numbers go through
+ * The Gene section's words: decision dimensions in plain words, the confidence checks' names,
+ * the sentence that says which way a gene moved, and the gene's summary for the clipboard. Numbers go through
  * `@/lib/format`; nothing here types a number.
  */
 import { ci, count, fold, percent, pValue } from "@/lib/format";
@@ -16,25 +16,6 @@ export const DIMENSION: Record<string, { name: string; short: string }> = {
   efficiency: { name: "Which amplification efficiency to use", short: "Efficiency" },
   nondetect: { name: "What to do with a missing Cq", short: "Missing Cq" },
 };
-
-/** A Decision Card's kind → the dimension its choice changes (qpilot/mcp_server.py KIND_TO_DIMENSION). */
-export const KIND_DIMENSION: Record<string, string> = {
-  reference_set: "refs",
-  group_cutoff: "cut",
-  undetermined: "undetermined",
-  amp_call: "amp_call",
-};
-
-export function dimensionName(dim: string): string {
-  return DIMENSION[dim]?.name ?? dim.replace(/[_.]/g, " ");
-}
-
-/** A card's title: the server's, else its kind in words. */
-export function cardTitle(card: { kind: string; title?: string | null }): string {
-  if (card.title) return card.title;
-  const dim = KIND_DIMENSION[card.kind];
-  return dim ? dimensionName(dim) : card.kind.replace(/[_.]/g, " ");
-}
 
 /** The confidence checks (qpilot/core/confidence.py) by id. */
 export const CHECK_NAME: Record<string, string> = {
