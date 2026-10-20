@@ -38,6 +38,19 @@ describe("the audit's place in the URL", () => {
     expect(placeSegments({ tab: "study", changes: {} })).toEqual([]);
   });
 
+  it("shows an attached folder under audit/attached/<name>", () => {
+    const place = { tab: "whatif" as const, changes: { late_cq: "cq35" }, attached: "benchmark" };
+    const segments = placeSegments(place, DECISION_ORDER);
+    expect(segments).toEqual(["attached", "benchmark", "whatif", "late_cq=cq35"]);
+    expect(parsePlace(segments)).toEqual(place);
+    expect(parsePlace(["attached", "benchmark"])).toEqual({
+      tab: "study",
+      changes: {},
+      attached: "benchmark",
+    });
+    expect(parsePlace(["attached"])).toEqual({ tab: "study", changes: {} });
+  });
+
   it("keys the what-if cache by the set of choices, whatever their order", () => {
     expect(changesKey({ b: "2", a: "1" })).toBe(changesKey({ a: "1", b: "2" }));
   });

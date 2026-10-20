@@ -3,7 +3,7 @@
  * choices change calls and how much of the spread each one makes, reference-gene stability, what
  * to fix before looking at results, and the issue queue. Every gene opens the Gene section.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import {
   GenormBars,
@@ -24,7 +24,6 @@ import {
 import { ApiError } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { count, plural } from "@/lib/format";
-import { sectionPath, type SectionProps } from "@/shell/sections";
 import {
   Badge,
   Card,
@@ -43,22 +42,22 @@ import { IssueQueue } from "./IssueQueue";
 import type { AuditOverview, AuditStudyView } from "./types";
 
 export function StudyTab({
-  workspace,
   target,
   overview,
+  geneHref,
   onOpenLab,
 }: {
-  workspace: NonNullable<SectionProps["workspace"]>;
   target: AuditTarget;
   overview: AuditOverview | undefined;
+  /** Where a gene opens (the Gene section); null when the audit is not about this study. */
+  geneHref: ((gene: string) => string) | null;
   onOpenLab: () => void;
 }) {
   const study = useAuditStudy(target);
   const issues = useAuditIssues(target);
   const [, navigate] = useLocation();
   const [verdict, setVerdict] = useState<string | null>(null);
-  const geneHref = (gene: string) => sectionPath(workspace, "gene", gene);
-  const openGene = (gene: string) => navigate(geneHref(gene));
+  const openGene = geneHref ? (gene: string) => navigate(geneHref(gene)) : undefined;
 
   const highlight = useMemo(
     () =>
@@ -99,7 +98,7 @@ export function StudyTab({
           <CardHeader
             id="audit-map"
             title="Every gene"
-            hint="Fold change against how often reasonable analyses give the same call. Click a gene to open it."
+            hint={`Fold change against how often reasonable analyses give the same call.${openGene ? " Click a gene to open it." : ""}`}
           />
           <CardBody>
             {study.data && overview ? (
@@ -198,7 +197,7 @@ function StudyMap({
   study: AuditStudyView;
   overview: AuditOverview;
   highlight: ReadonlySet<string> | null;
-  onSelect: (gene: string) => void;
+  onSelect?: (gene: string) => void;
 }) {
   const label = useMemo(() => new Map(overview.verdicts.map((v) => [v.key, v.label])), [overview]);
   const points = useMemo(() => auditMapPoints(study, (v) => label.get(v) ?? v), [study, label]);
@@ -238,7 +237,7 @@ function GeneList({
   overview: AuditOverview | undefined;
   verdict: string | null;
   onClear: () => void;
-  geneHref: (gene: string) => string;
+  geneHref: ((gene: string) => string) | null;
 }) {
   const [query, setQuery] = useState("");
   const genes = useMemo(() => {
@@ -294,10 +293,7 @@ function GeneList({
           <ul aria-label="Genes">
             {genes.map((g) => (
               <li key={g.gene}>
-                <Link
-                  href={geneHref(g.gene)}
-                  className="grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-bg-subtle"
-                >
+                <GeneRow href={geneHref?.(g.gene)}>
                   <VerdictTag verdict={g.verdict} compact />
                   <span className="min-w-0">
                     <span
@@ -321,13 +317,25 @@ function GeneList({
                     {g.fold}
                     <ConclusionTag conclusion={callKey(g)} compact />
                   </span>
-                </Link>
+                </GeneRow>
               </li>
             ))}
           </ul>
         )}
       </div>
     </Card>
+  );
+}
+
+/** A gene's row: a link to the Gene section, or plain when the gene is not this study's. */
+function GeneRow({ href, children }: { href: string | undefined; children: ReactNode }) {
+  const cls = "grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1.5";
+  return href ? (
+    <Link href={href} className={cn(cls, "hover:bg-bg-subtle")}>
+      {children}
+    </Link>
+  ) : (
+    <div className={cls}>{children}</div>
   );
 }
 

@@ -17,9 +17,12 @@ export function asSentence(reason: string | null | undefined): string | null {
 export function CannotRun({
   workspace,
   status,
+  title,
 }: {
   workspace: NonNullable<SectionProps["workspace"]>;
   status: AuditStatus;
+  /** Overrides the heading (an attached folder that cannot be shown). */
+  title?: string;
 }) {
   const kind =
     status.status === "refused" || status.status === "unavailable"
@@ -40,7 +43,7 @@ export function CannotRun({
         </div>
         <div className="min-w-0 space-y-3">
           <h2 id="audit-cannot" className="text-[15px] font-semibold text-fg">
-            {words.title}
+            {title ?? words.title}
           </h2>
           {reason ? (
             <p className="rounded-lg border-l-4 border-line-strong bg-sunken px-3 py-2 text-sm text-fg">

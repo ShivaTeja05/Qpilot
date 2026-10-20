@@ -264,5 +264,20 @@ export interface AuditVerify {
   files?: { name: string; sha256: string; bytes?: number | null }[];
 }
 
+/** A results folder attached read-only when the server started (`qpilot app --audit DIR`). */
+export interface AttachedAudit {
+  name: string;
+  /** The file the run describes. */
+  source: string;
+  /** A qPilot audit bound to a study (not a plain run of the simulator). */
+  qpilot_audit: boolean;
+  study_id?: string | null;
+  available: boolean;
+  /** Why its views cannot be shown, in words. */
+  reason?: string | null;
+  analyses?: number | null;
+  verdict_counts?: Record<string, number>;
+}
+
 /** Decision id → option id: the what-if lab's choices that differ from the planned analysis. */
 export type Changes = Record<string, string>;

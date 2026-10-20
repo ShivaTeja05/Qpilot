@@ -40,7 +40,7 @@ export function IssueQueue({
   loading?: boolean;
   error?: unknown;
   onRetry?: () => void;
-  geneHref: (gene: string) => string;
+  geneHref: ((gene: string) => string) | null;
   /** Opens the What-if lab (offered on issues about an analysis choice). */
   onOpenLab?: () => void;
 }) {
@@ -211,7 +211,7 @@ function IssueRow({
 }: {
   issue: IssueView;
   rank: number;
-  geneHref: (gene: string) => string;
+  geneHref: ((gene: string) => string) | null;
   onOpenLab?: () => void;
 }) {
   const genes = issue.changes.slice(0, SHOWN_GENES);
@@ -242,18 +242,30 @@ function IssueRow({
         {genes.length ? (
           <div className="flex flex-wrap items-center gap-1 text-[13px]">
             <span className="mr-1 text-muted">Changes the call of</span>
-            {genes.map((g) => (
-              <Link
-                key={g}
-                href={geneHref(g)}
-                className={cn(
-                  "rounded-md border border-line px-1.5 py-px font-mono text-xs hover:border-accent hover:text-accent",
-                  issue.headline.includes(g) ? "font-semibold text-fg" : "text-muted",
-                )}
-              >
-                {g}
-              </Link>
-            ))}
+            {genes.map((g) =>
+              geneHref ? (
+                <Link
+                  key={g}
+                  href={geneHref(g)}
+                  className={cn(
+                    "rounded-md border border-line px-1.5 py-px font-mono text-xs hover:border-accent hover:text-accent",
+                    issue.headline.includes(g) ? "font-semibold text-fg" : "text-muted",
+                  )}
+                >
+                  {g}
+                </Link>
+              ) : (
+                <span
+                  key={g}
+                  className={cn(
+                    "rounded-md border border-line px-1.5 py-px font-mono text-xs",
+                    issue.headline.includes(g) ? "font-semibold text-fg" : "text-muted",
+                  )}
+                >
+                  {g}
+                </span>
+              ),
+            )}
             {issue.changes.length > SHOWN_GENES ? (
               <span className="text-xs text-faint">
                 and {count(issue.changes.length - SHOWN_GENES)} more

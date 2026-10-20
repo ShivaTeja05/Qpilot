@@ -3,8 +3,8 @@
  * since, and the four tabs. The tab and the what-if choices live in the URL.
  */
 import { History, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
-import type { SectionProps } from "@/shell/sections";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { sectionPath, type SectionProps } from "@/shell/sections";
 import { count, plural, relativeTime, shortHash } from "@/lib/format";
 import { useSystem } from "@/shell/data";
 import {
@@ -29,7 +29,7 @@ import {
 } from "./api";
 import { HowTab } from "./HowTab";
 import { StudyTab } from "./StudyTab";
-import type { AuditStatus, Changes } from "./types";
+import type { AttachedAudit, AuditStatus, Changes } from "./types";
 import { TABS, type AuditPlace, type AuditTab } from "./url";
 import { VerifyTab } from "./VerifyTab";
 import { WhatifTab } from "./WhatifTab";
@@ -46,16 +46,27 @@ export function AuditReady({
   workspace,
   target,
   status,
+  attached,
+  switcher,
   place,
   go,
 }: {
   workspace: NonNullable<SectionProps["workspace"]>;
   target: AuditTarget;
   status: AuditStatus;
+  /** Set when the audit shown is an attached folder, not the study's own. */
+  attached?: AttachedAudit;
+  /** Chooses between the study's audit and attached ones. */
+  switcher?: ReactNode;
   place: AuditPlace;
   go: (next: AuditPlace, replace?: boolean) => void;
 }) {
   const manifest = status.manifest ?? {};
+  // Genes open the Gene section only when the audit is about this study.
+  const ownStudy = !attached || attached.study_id === target.studyId;
+  const geneHref = ownStudy ? (gene: string) => sectionPath(workspace, "gene", gene) : null;
+  const goTo = (next: AuditPlace, replace?: boolean) =>
+    go({ ...next, attached: attached?.name }, replace);
   const overview = useAuditOverview(target);
   // Coming back to the lab restores the choices it last showed.
   const lastChanges = useRef<Changes>(place.changes);
@@ -67,7 +78,8 @@ export function AuditReady({
   const audited = manifest.chain_head ?? null;
   const head = workspace.decisions_head ?? null;
   const behind =
-    status.current != null ? !status.current : Boolean(audited && head && audited !== head);
+    !attached &&
+    (status.current != null ? !status.current : Boolean(audited && head && audited !== head));
   const analyses = manifest.analyses ?? overview.data?.study.analyses;
   const dir = system.data?.studies_dir
     ? `${system.data.studies_dir}/simulator_audits/${target.studyId}`
@@ -80,6 +92,7 @@ export function AuditReady({
     <div className={PAGE}>
       <PageHeader
         title="Audit"
+        eyebrow={attached ? `Attached: ${attached.name} · ${attached.source}` : undefined}
         hint={
           overview.data ? (
             <>
@@ -92,19 +105,22 @@ export function AuditReady({
           )
         }
         actions={
-          status.created_at != null ? (
-            <Tooltip
-              content={`Decision chain ${shortHash(audited, 12)} · lock ${shortHash(manifest.lock_sha256, 12)}`}
-            >
-              <span
-                tabIndex={0}
-                className="inline-flex items-center gap-1.5 text-[13px] text-muted"
+          <>
+            {switcher}
+            {status.created_at != null ? (
+              <Tooltip
+                content={`Decision chain ${shortHash(audited, 12)} · lock ${shortHash(manifest.lock_sha256, 12)}`}
               >
-                <History className="size-3.5" aria-hidden />
-                Audited {relativeTime(status.created_at)}
-              </span>
-            </Tooltip>
-          ) : null
+                <span
+                  tabIndex={0}
+                  className="inline-flex items-center gap-1.5 text-[13px] text-muted"
+                >
+                  <History className="size-3.5" aria-hidden />
+                  Audited {relativeTime(status.created_at)}
+                </span>
+              </Tooltip>
+            ) : null}
+          </>
         }
       />
 
@@ -123,7 +139,7 @@ export function AuditReady({
         value={place.tab}
         onValueChange={(v) => {
           const tab = (TABS as readonly string[]).includes(v) ? (v as AuditTab) : "study";
-          go({ tab, changes: tab === "whatif" ? lastChanges.current : {} });
+          goTo({ tab, changes: tab === "whatif" ? lastChanges.current : {} });
         }}
       >
         <TabsList label="Audit views">
@@ -143,27 +159,33 @@ export function AuditReady({
         ) : null}
         <TabsContent value="study">
           <StudyTab
-            workspace={workspace}
             target={target}
             overview={overview.data}
-            onOpenLab={() => go({ tab: "whatif", changes: {} })}
+            geneHref={geneHref}
+            onOpenLab={() => goTo({ tab: "whatif", changes: {} })}
           />
         </TabsContent>
         <TabsContent value="whatif">
           <WhatifTab
-            workspace={workspace}
             target={target}
             overview={overview.data}
             manifest={manifest}
             changes={place.changes}
-            onChanges={(changes) => go({ tab: "whatif", changes }, true)}
+            geneHref={geneHref}
+            onChanges={(changes) => goTo({ tab: "whatif", changes }, true)}
           />
         </TabsContent>
         <TabsContent value="how">
           <HowTab target={target} manifest={manifest} />
         </TabsContent>
         <TabsContent value="verify">
-          <VerifyTab workspace={workspace} target={target} manifest={manifest} dir={dir} />
+          <VerifyTab
+            workspace={workspace}
+            target={target}
+            manifest={manifest}
+            dir={attached ? null : dir}
+            attached={Boolean(attached)}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -4,11 +4,10 @@
  * the URL, so a set of choices is a link; "Back to your planned analysis" clears them.
  */
 import { RotateCcw, Stamp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { Dumbbell, callKey, whatifRows } from "@/charts";
 import { count, plural } from "@/lib/format";
-import { sectionPath, type SectionProps } from "@/shell/sections";
 import {
   Button,
   Card,
@@ -50,18 +49,19 @@ function ordered(decisions: DecisionView[]): DecisionView[] {
 }
 
 export function WhatifTab({
-  workspace,
   target,
   overview,
   manifest,
   changes,
+  geneHref,
   onChanges,
 }: {
-  workspace: NonNullable<SectionProps["workspace"]>;
   target: AuditTarget;
   overview: AuditOverview | undefined;
   manifest: AuditManifest;
   changes: Changes;
+  /** Where a gene opens (the Gene section); null when the audit is not about this study. */
+  geneHref: ((gene: string) => string) | null;
   onChanges: (changes: Changes) => void;
 }) {
   if (!overview) {
@@ -78,7 +78,7 @@ export function WhatifTab({
   }
   return (
     <Lab
-      workspace={workspace}
+      geneHref={geneHref}
       target={target}
       overview={overview}
       manifest={manifest}
@@ -89,14 +89,14 @@ export function WhatifTab({
 }
 
 function Lab({
-  workspace,
+  geneHref,
   target,
   overview,
   manifest,
   changes,
   onChanges,
 }: {
-  workspace: NonNullable<SectionProps["workspace"]>;
+  geneHref: ((gene: string) => string) | null;
   target: AuditTarget;
   overview: AuditOverview;
   manifest: AuditManifest;
@@ -205,7 +205,7 @@ function Lab({
           group={overview.study.group}
           show={show}
           setShow={setShow}
-          onSelect={(gene) => navigate(sectionPath(workspace, "gene", gene))}
+          onSelect={geneHref ? (gene) => navigate(geneHref(gene)) : undefined}
         />
       )}
     </div>
@@ -290,7 +290,7 @@ function Outcome({
   group: string;
   show: "some" | "all";
   setShow: (v: "some" | "all") => void;
-  onSelect: (gene: string) => void;
+  onSelect?: (gene: string) => void;
 }) {
   const rows = useMemo(() => whatifRows(data), [data]);
   const changed = data.rows.filter((r) => r.changed);
@@ -364,15 +364,13 @@ function Outcome({
   );
 }
 
-function ChangedList({ rows, onSelect }: { rows: WhatifRow[]; onSelect: (gene: string) => void }) {
+function ChangedList({ rows, onSelect }: { rows: WhatifRow[]; onSelect?: (gene: string) => void }) {
   return (
     <ul className="flex flex-wrap gap-1.5" aria-label="Genes whose call changes">
       {rows.map((r) => (
         <li key={r.gene}>
-          <button
-            type="button"
-            onClick={() => onSelect(r.gene)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-0.5 text-xs hover:border-accent"
+          <ChipOf
+            onClick={onSelect ? () => onSelect(r.gene) : undefined}
             title={`${r.gene}: ${r.base} (${r.base_call}) → ${r.new} (${r.new_call})`}
           >
             <span className={r.headline ? "font-semibold text-fg" : "text-fg"}>{r.gene}</span>
@@ -388,9 +386,32 @@ function ChangedList({ rows, onSelect }: { rows: WhatifRow[]; onSelect: (gene: s
               conclusion={callKey({ call_key: r.new_call_key, call: r.new_call })}
               compact
             />
-          </button>
+          </ChipOf>
         </li>
       ))}
     </ul>
+  );
+}
+
+/** A gene chip: a button that opens the gene, or plain when there is no gene page for it. */
+function ChipOf({
+  onClick,
+  title,
+  children,
+}: {
+  onClick?: () => void;
+  title: string;
+  children: ReactNode;
+}) {
+  const cls =
+    "inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-0.5 text-xs";
+  return onClick ? (
+    <button type="button" onClick={onClick} title={title} className={`${cls} hover:border-accent`}>
+      {children}
+    </button>
+  ) : (
+    <span title={title} className={cls}>
+      {children}
+    </span>
   );
 }

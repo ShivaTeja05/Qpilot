@@ -37,12 +37,15 @@ export function VerifyTab({
   target,
   manifest,
   dir,
+  attached,
 }: {
   workspace: NonNullable<SectionProps["workspace"]>;
   target: AuditTarget;
   manifest: AuditManifest;
-  /** The audit's folder on this computer, when the server says it. */
+  /** The audit's folder on this computer, when known. */
   dir?: string | null;
+  /** An attached folder (no command line or record export from here). */
+  attached?: boolean;
 }) {
   const verify = useAuditVerify(target);
   const v = verify.data;
@@ -184,78 +187,88 @@ export function VerifyTab({
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <Card as="section" aria-labelledby="verify-binding">
-          <CardHeader
-            id="verify-binding"
-            title="What it is bound to"
-            hint="From the audit's manifest."
-          />
-          <CardBody>
-            <KeyValues
-              rows={[
-                [
-                  "Study",
-                  <span key="s" className="font-mono">
-                    {manifest.study_id ?? "—"}
-                  </span>,
-                ],
-                ["Input file", manifest.source_file ?? "—"],
-                ["Input sha256", <Hash key="i" value={manifest.input_sha256 ?? ""} length={16} />],
-                ["Design", <Hash key="d" value={manifest.design_hash ?? ""} length={16} />],
-                ["Decision chain", <Hash key="c" value={manifest.chain_head ?? ""} length={16} />],
-                [
-                  "Lock (the plan)",
-                  <Hash key="l" value={manifest.lock_sha256 ?? ""} length={16} />,
-                ],
-                ["Analyses", count(manifest.analyses)],
-                [
-                  "Checksums file",
-                  v?.checksums_sha256 ? (
-                    <Hash key="k" value={v.checksums_sha256} length={16} />
-                  ) : (
-                    "—"
-                  ),
-                ],
-                ...(manifest.seconds != null
-                  ? [["Run time", duration(manifest.seconds)] as [string, string]]
-                  : []),
-                ["Versions", versions(manifest)],
-                ...(manifest.settings
-                  ? [["Settings", settings(manifest)] as [string, string]]
-                  : []),
-              ]}
+        {manifest.study_id ? (
+          <Card as="section" aria-labelledby="verify-binding">
+            <CardHeader
+              id="verify-binding"
+              title="What it is bound to"
+              hint="From the audit's manifest."
             />
-          </CardBody>
-        </Card>
-        <Card as="section" aria-labelledby="verify-cli">
-          <CardHeader
-            id="verify-cli"
-            title="Check it yourself"
-            hint="The same check from a terminal; with an exported Analysis Record it also checks the record verifies and contains the audited chain."
-          />
-          <CardBody className="space-y-3">
-            <CommandLine
-              command={`python -m qpilot.integration verify ${quote(dir ?? `simulator_audits/${target.studyId}`)}`}
+            <CardBody>
+              <KeyValues
+                rows={[
+                  [
+                    "Study",
+                    <span key="s" className="font-mono">
+                      {manifest.study_id ?? "—"}
+                    </span>,
+                  ],
+                  ["Input file", manifest.source_file ?? "—"],
+                  [
+                    "Input sha256",
+                    <Hash key="i" value={manifest.input_sha256 ?? ""} length={16} />,
+                  ],
+                  ["Design", <Hash key="d" value={manifest.design_hash ?? ""} length={16} />],
+                  [
+                    "Decision chain",
+                    <Hash key="c" value={manifest.chain_head ?? ""} length={16} />,
+                  ],
+                  [
+                    "Lock (the plan)",
+                    <Hash key="l" value={manifest.lock_sha256 ?? ""} length={16} />,
+                  ],
+                  ["Analyses", count(manifest.analyses)],
+                  [
+                    "Checksums file",
+                    v?.checksums_sha256 ? (
+                      <Hash key="k" value={v.checksums_sha256} length={16} />
+                    ) : (
+                      "—"
+                    ),
+                  ],
+                  ...(manifest.seconds != null
+                    ? [["Run time", duration(manifest.seconds)] as [string, string]]
+                    : []),
+                  ["Versions", versions(manifest)],
+                  ...(manifest.settings
+                    ? [["Settings", settings(manifest)] as [string, string]]
+                    : []),
+                ]}
+              />
+            </CardBody>
+          </Card>
+        ) : null}
+        {attached ? null : (
+          <Card as="section" aria-labelledby="verify-cli">
+            <CardHeader
+              id="verify-cli"
+              title="Check it yourself"
+              hint="The same check from a terminal; with an exported Analysis Record it also checks the record verifies and contains the audited chain."
             />
-            <CommandLine
-              command={`python -m qpilot.integration verify ${quote(dir ?? `simulator_audits/${target.studyId}`)} --record <record.zip>`}
-            />
-            <p className="text-[13px] text-muted">
-              {dir ? null : <>The folder is in qPilot's study store, next to the study. </>}
-              Export the record from{" "}
-              <Link
-                href={sectionPath(workspace, "record")}
-                className="text-accent underline-offset-2 hover:underline"
-              >
-                Record
-              </Link>
-              ; the audit sits beside it, never inside it.
-            </p>
-          </CardBody>
-        </Card>
+            <CardBody className="space-y-3">
+              <CommandLine
+                command={`python -m qpilot.integration verify ${quote(dir ?? `simulator_audits/${target.studyId}`)}`}
+              />
+              <CommandLine
+                command={`python -m qpilot.integration verify ${quote(dir ?? `simulator_audits/${target.studyId}`)} --record <record.zip>`}
+              />
+              <p className="text-[13px] text-muted">
+                {dir ? null : <>The folder is in qPilot's study store, next to the study. </>}
+                Export the record from{" "}
+                <Link
+                  href={sectionPath(workspace, "record")}
+                  className="text-accent underline-offset-2 hover:underline"
+                >
+                  Record
+                </Link>
+                ; the audit sits beside it, never inside it.
+              </p>
+            </CardBody>
+          </Card>
+        )}
       </div>
 
-      {v?.files?.length ? <Files files={v.files} studyId={target.studyId} /> : null}
+      {v?.files?.length ? <Files files={v.files} base={target.base} /> : null}
     </div>
   );
 }
@@ -322,7 +335,7 @@ function Check({
 }
 
 /** The audit's files with their checksums; each one downloads (only files AUDIT.sha256 lists). */
-function Files({ files, studyId }: { files: NonNullable<AuditVerify["files"]>; studyId: string }) {
+function Files({ files, base }: { files: NonNullable<AuditVerify["files"]>; base: string }) {
   return (
     <Card as="section" aria-labelledby="verify-files">
       <CardHeader
@@ -345,7 +358,7 @@ function Files({ files, studyId }: { files: NonNullable<AuditVerify["files"]>; s
                 <TR key={f.name}>
                   <TD className="font-mono text-xs">
                     <a
-                      href={`/api/studies/${encodeURIComponent(studyId)}/audit/files/${encodeURIComponent(f.name)}`}
+                      href={`${base}/files/${encodeURIComponent(f.name)}`}
                       download={f.name}
                       className="text-accent underline-offset-2 hover:underline"
                     >

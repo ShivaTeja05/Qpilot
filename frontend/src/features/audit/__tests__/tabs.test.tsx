@@ -13,6 +13,8 @@ import study from "@/test/recorded/audit-study.json";
 import whatif from "@/test/recorded/audit-whatif.json";
 import results from "@/test/recorded/results.json";
 import { TooltipProvider } from "@/ui";
+import { sectionPath } from "@/shell/sections";
+import { studyAudit } from "../api";
 import { HowTab } from "../HowTab";
 import { StudyTab } from "../StudyTab";
 import type { AuditHow, AuditOverview, AuditWhatif } from "../types";
@@ -23,7 +25,8 @@ const studyId = results.study_id;
 const key = results.input_sha256.slice(0, 12);
 // The frame of the Studio session the recordings come from (ids only; no numbers).
 const workspace = { key, kind: "session", study_id: studyId } as Schemas["WorkspaceView"];
-const target = { workspaceKey: key, studyId };
+const target = studyAudit(key, studyId);
+const geneHref = (gene: string) => sectionPath(workspace, "gene", gene);
 
 let calls: { method: string; url: string; body: unknown }[] = [];
 
@@ -66,7 +69,7 @@ function wrap(children: ReactNode) {
 
 describe("Study tab", () => {
   it("shows every verdict, every gene, and filters the list by verdict", async () => {
-    wrap(<StudyTab workspace={workspace} target={target} overview={ov} onOpenLab={() => {}} />);
+    wrap(<StudyTab target={target} overview={ov} geneHref={geneHref} onOpenLab={() => {}} />);
     const list = screen.getByRole("list", { name: "Genes" });
     expect(within(list).getAllByRole("link")).toHaveLength(ov.genes.length);
 
@@ -83,15 +86,22 @@ describe("Study tab", () => {
   });
 
   it("falls back to the overview's issues when the full queue is not served", async () => {
-    wrap(<StudyTab workspace={workspace} target={target} overview={ov} onOpenLab={() => {}} />);
+    wrap(<StudyTab target={target} overview={ov} geneHref={geneHref} onOpenLab={() => {}} />);
     const queue = await screen.findByRole("region", { name: "What to check first" });
     expect(within(queue).getByText(ov.issues[0]!.title)).toBeTruthy();
     expect(within(queue).getByText(new RegExp(`the first of ${ov.n_issues}`))).toBeTruthy();
     expect(within(queue).queryByRole("alert")).toBeNull();
   });
 
+  it("lists genes without links when the audit is not about this study", () => {
+    wrap(<StudyTab target={target} overview={ov} geneHref={null} onOpenLab={() => {}} />);
+    const list = screen.getByRole("list", { name: "Genes" });
+    expect(within(list).queryAllByRole("link")).toHaveLength(0);
+    expect(within(list).getAllByRole("listitem")).toHaveLength(ov.genes.length);
+  });
+
   it("opens a gene from the list", () => {
-    wrap(<StudyTab workspace={workspace} target={target} overview={ov} onOpenLab={() => {}} />);
+    wrap(<StudyTab target={target} overview={ov} geneHref={geneHref} onOpenLab={() => {}} />);
     const first = ov.genes[0]!.gene;
     const link = within(screen.getByRole("list", { name: "Genes" })).getAllByRole("link")[0]!;
     expect(link.getAttribute("href")).toContain(`/s/${key}/gene/${first}`);
@@ -104,7 +114,7 @@ describe("What-if lab", () => {
     const onChanges = vi.fn();
     wrap(
       <WhatifTab
-        workspace={workspace}
+        geneHref={geneHref}
         target={target}
         overview={ov}
         manifest={{}}
@@ -125,7 +135,7 @@ describe("What-if lab", () => {
   it("one dropdown per decision, the moved one marked", async () => {
     wrap(
       <WhatifTab
-        workspace={workspace}
+        geneHref={geneHref}
         target={target}
         overview={ov}
         manifest={{}}
@@ -140,7 +150,7 @@ describe("What-if lab", () => {
   it("names a link's unknown choices and leaves them out", async () => {
     wrap(
       <WhatifTab
-        workspace={workspace}
+        geneHref={geneHref}
         target={target}
         overview={ov}
         manifest={{}}

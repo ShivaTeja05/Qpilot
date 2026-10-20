@@ -13,6 +13,7 @@ import type {
   AuditStudyView,
   AuditVerify,
   AuditWhatif,
+  AttachedAudit,
   Changes,
   IssueView,
 } from "./types";
@@ -58,23 +59,33 @@ async function request<T>(
   return data as T;
 }
 
-const base = (studyId: string) => `/api/studies/${encodeURIComponent(studyId)}/audit`;
-
-/** Where the audit's queries live in the cache. */
-export function auditKey(workspaceKey: string, studyId: string, ...rest: unknown[]): unknown[] {
-  return ["w", workspaceKey, "audit", studyId, ...rest];
+/** Where an audit's queries live in the cache (both keys, so either key's events re-read it). */
+export function auditKey(t: AuditTarget, ...rest: unknown[]): unknown[] {
+  return ["w", t.workspaceKey, "audit", t.studyId, t.base, ...rest];
 }
 
 export interface AuditTarget {
   workspaceKey: string;
   studyId: string;
+  /** The audit's routes: the study's own (`/api/studies/{id}/audit`) or an attached folder's. */
+  base: string;
+}
+
+/** The study's own audit. */
+export function studyAudit(workspaceKey: string, studyId: string): AuditTarget {
+  return { workspaceKey, studyId, base: `/api/studies/${encodeURIComponent(studyId)}/audit` };
+}
+
+/** A results folder attached when the server started (`qpilot app --audit DIR`). */
+export function attachedAudit(workspaceKey: string, studyId: string, name: string): AuditTarget {
+  return { workspaceKey, studyId, base: `/api/audits/${encodeURIComponent(name)}` };
 }
 
 /** The study's audit: not run, running, ready, refused, not applicable or unavailable. */
-export function useAuditStatus({ workspaceKey, studyId }: AuditTarget) {
+export function useAuditStatus(t: AuditTarget) {
   return useQuery({
-    queryKey: auditKey(workspaceKey, studyId, "status"),
-    queryFn: () => request<AuditStatus>("GET", base(studyId)),
+    queryKey: auditKey(t, "status"),
+    queryFn: () => request<AuditStatus>("GET", t.base),
     // While an audit runs, the job's events refresh this; poll slowly as a fallback.
     refetchInterval: (q) =>
       (q.state.data as AuditStatus | undefined)?.status === "running" ? 5000 : false,
@@ -85,12 +96,11 @@ export function useAuditStatus({ workspaceKey, studyId }: AuditTarget) {
  * Start the audit (a job, about a minute on the demo). `again` replaces an existing audit (the
  * server keeps the earlier one beside it); without it, an existing audit is a 409.
  */
-export function useRunAudit({ workspaceKey, studyId }: AuditTarget) {
+export function useRunAudit(t: AuditTarget) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (again: boolean = false) =>
-      request<{ job: JobView }>("POST", base(studyId), { again }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: auditKey(workspaceKey, studyId, "status") }),
+    mutationFn: (again: boolean = false) => request<{ job: JobView }>("POST", t.base, { again }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: auditKey(t, "status") }),
   });
 }
 
@@ -106,45 +116,45 @@ export function useSeedJob(job: JobView | null | undefined) {
 }
 
 /** Re-read every view of the audit (after a job finishes). */
-export function useInvalidateAudit({ workspaceKey, studyId }: AuditTarget) {
+export function useInvalidateAudit(t: AuditTarget) {
   const qc = useQueryClient();
+  const { workspaceKey, studyId, base } = t;
   return useCallback(
-    () => qc.invalidateQueries({ queryKey: auditKey(workspaceKey, studyId) }),
-    [qc, workspaceKey, studyId],
+    () => qc.invalidateQueries({ queryKey: auditKey({ workspaceKey, studyId, base }) }),
+    [qc, workspaceKey, studyId, base],
   );
 }
 
 export function useAuditOverview(t: AuditTarget, enabled = true) {
   return useQuery({
-    queryKey: auditKey(t.workspaceKey, t.studyId, "overview"),
+    queryKey: auditKey(t, "overview"),
     enabled,
-    queryFn: () => request<AuditOverview>("GET", `${base(t.studyId)}/overview`),
+    queryFn: () => request<AuditOverview>("GET", `${t.base}/overview`),
   });
 }
 
 export function useAuditStudy(t: AuditTarget, enabled = true) {
   return useQuery({
-    queryKey: auditKey(t.workspaceKey, t.studyId, "study"),
+    queryKey: auditKey(t, "study"),
     enabled,
-    queryFn: () => request<AuditStudyView>("GET", `${base(t.studyId)}/study`),
+    queryFn: () => request<AuditStudyView>("GET", `${t.base}/study`),
   });
 }
 
 export function useAuditHow(t: AuditTarget, enabled = true) {
   return useQuery({
-    queryKey: auditKey(t.workspaceKey, t.studyId, "how"),
+    queryKey: auditKey(t, "how"),
     enabled,
-    queryFn: () => request<AuditHow>("GET", `${base(t.studyId)}/how`),
+    queryFn: () => request<AuditHow>("GET", `${t.base}/how`),
   });
 }
 
 /** The whole issue queue (the overview carries only its first few). */
 export function useAuditIssues(t: AuditTarget, enabled = true) {
   return useQuery({
-    queryKey: auditKey(t.workspaceKey, t.studyId, "issues"),
+    queryKey: auditKey(t, "issues"),
     enabled,
-    queryFn: () =>
-      request<IssueView[] | { issues: IssueView[] }>("GET", `${base(t.studyId)}/issues`),
+    queryFn: () => request<IssueView[] | { issues: IssueView[] }>("GET", `${t.base}/issues`),
     select: (data) => (Array.isArray(data) ? data : data.issues),
   });
 }
@@ -155,10 +165,28 @@ export function useAuditIssues(t: AuditTarget, enabled = true) {
  */
 export function useAuditVerify(t: AuditTarget, enabled = true) {
   return useQuery({
-    queryKey: auditKey(t.workspaceKey, t.studyId, "verify"),
+    queryKey: auditKey(t, "verify"),
     enabled,
-    queryFn: () =>
-      request<AuditVerify>("POST", `${base(t.studyId)}/verify`, { bind_to_record: true }),
+    queryFn: () => request<AuditVerify>("POST", `${t.base}/verify`, { bind_to_record: true }),
+  });
+}
+
+/**
+ * Results folders attached when the server started (`qpilot app --audit DIR`); none when the
+ * server attaches none (or does not serve the list).
+ */
+export function useAttachedAudits() {
+  return useQuery({
+    queryKey: ["audits"],
+    staleTime: Infinity,
+    queryFn: async () => {
+      try {
+        return (await request<{ audits: AttachedAudit[] }>("GET", "/api/audits")).audits;
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return [];
+        throw err;
+      }
+    },
   });
 }
 
@@ -177,11 +205,11 @@ export function changesKey(changes: Changes): string {
  */
 export function useWhatif(t: AuditTarget, changes: Changes, genes: string[], enabled = true) {
   return useQuery({
-    queryKey: auditKey(t.workspaceKey, t.studyId, "whatif", changesKey(changes)),
+    queryKey: auditKey(t, "whatif", changesKey(changes)),
     enabled,
     placeholderData: keepPreviousData,
     staleTime: Infinity,
     queryFn: ({ signal }) =>
-      request<AuditWhatif>("POST", `${base(t.studyId)}/whatif`, { changes, genes }, signal),
+      request<AuditWhatif>("POST", `${t.base}/whatif`, { changes, genes }, signal),
   });
 }
