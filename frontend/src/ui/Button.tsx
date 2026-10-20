@@ -12,7 +12,8 @@ const VARIANT: Record<ButtonVariant, string> = {
   secondary:
     "border border-line-strong bg-surface text-fg shadow-sm hover:bg-surface-2 hover:border-faint active:translate-y-px",
   ghost: "text-muted hover:bg-bg-subtle hover:text-fg",
-  danger: "border border-danger/30 bg-danger-soft text-danger hover:border-danger/60 active:translate-y-px",
+  danger:
+    "border border-danger/30 bg-danger-soft text-danger hover:border-danger/60 active:translate-y-px",
   link: "h-auto px-0 text-accent underline-offset-4 hover:underline",
 };
 
@@ -41,7 +42,18 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 /** The page's button. Primary for the one main action of a view; secondary otherwise. */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "secondary", size = "md", loading, icon, asChild, className, children, disabled, type, ...rest },
+  {
+    variant = "secondary",
+    size = "md",
+    loading,
+    icon,
+    asChild,
+    className,
+    children,
+    disabled,
+    type,
+    ...rest
+  },
   ref,
 ) {
   const classes = cn(
