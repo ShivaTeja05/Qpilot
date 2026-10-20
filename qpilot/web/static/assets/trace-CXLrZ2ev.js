@@ -1,0 +1,1 @@
+import{v as e}from"./sections-kYKAecr4.js";import{t}from"./SectionPending-BOA0zKra.js";var n=e();function r(e){return(0,n.jsx)(t,{id:`trace`})}export{r as default};
