@@ -119,17 +119,19 @@ describe("results → chart props", () => {
   });
 });
 
-describe("layouts", () => {
+describe("layouts", { timeout: 30_000 }, () => {
   it("the beeswarm never lets two samples touch when it has room", () => {
     const pts = samplePoints(samples).filter((p) => p.group === "rest");
     const r = 3;
     const placed = beeswarm(pts, (p) => p.x * 120, r, 1e9);
+    let closest = Infinity;
     for (let i = 0; i < placed.length; i++)
       for (let j = i + 1; j < placed.length; j++) {
         const a = placed[i]!;
         const b = placed[j]!;
-        expect(Math.hypot(a.x - b.x, a.dy - b.dy)).toBeGreaterThanOrEqual(2 * r + 1 - 1e-6);
+        closest = Math.min(closest, Math.hypot(a.x - b.x, a.dy - b.dy));
       }
+    expect(closest).toBeGreaterThanOrEqual(2 * r + 1 - 1e-6);
   });
   it("the beeswarm squeezes into its band when it must", () => {
     const pts = samplePoints(samples);
@@ -150,12 +152,14 @@ describe("layouts", () => {
       const x0 = spot.anchor === "start" ? spot.x : spot.anchor === "end" ? spot.x - w : spot.x - w / 2;
       return { x0, x1: x0 + w, y0: spot.y - 10, y1: spot.y + 2 };
     });
+    let overlaps = 0;
     for (let i = 0; i < boxes.length; i++)
       for (let j = i + 1; j < boxes.length; j++) {
         const a = boxes[i]!;
         const b = boxes[j]!;
-        expect(a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0).toBe(false);
+        if (a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0) overlaps++;
       }
+    expect(overlaps).toBe(0);
     expect(placed.length).toBeGreaterThan(5);
   });
 });

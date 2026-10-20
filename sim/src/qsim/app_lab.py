@@ -56,7 +56,8 @@ def _pct(share: float) -> int:
 
 
 class LabViews:
-    """Mixed into :class:`qsim.app.Screen`; needs ``engine``, ``space``, ``explain``, ``summary``."""
+    """Mixed into :class:`qsim.app.Screen`; needs ``engine``, ``space``, ``explain``, ``summary``,
+    the group words (``group``, ``rest``, ``rest_short``) and ``stage_text``."""
 
     _reasonable_cache = None
     _single_cache: dict | None = None
@@ -108,6 +109,7 @@ class LabViews:
                     "log2": float(lfc[k, i]),
                     "fold": _fold(2 ** float(lfc[k, i])),
                     "call": self.call_words(CALL_NAMES[int(call[k, i])]),
+                    "call_key": CALL_NAMES[int(call[k, i])],
                     "same": bool(call[k, i] == base_call),
                     "choices": changed,
                     "planned": not changed,
@@ -121,6 +123,7 @@ class LabViews:
             "n_same": same,
             "n_other": len(rows) - same,
             "base_call": self.call_words(CALL_NAMES[int(base_call)]),
+            "base_call_key": CALL_NAMES[int(base_call)],
             **self._scale(),
         }
 
@@ -139,6 +142,7 @@ class LabViews:
                         "log2": float(lfc[i]),
                         "fold": _fold(2 ** float(lfc[i])),
                         "call": self.call_words(CALL_NAMES[int(call[i])]),
+                        "call_key": CALL_NAMES[int(call[i])],
                         "changes_call": bool(call[i] != base_call[i]),
                         "planned": o.id == self.space.baseline[d.id],
                     }
@@ -208,7 +212,7 @@ class LabViews:
                     "mean": high_mean - rest_mean,
                 },
                 "rest": {
-                    "label": "the rest",
+                    "label": self.rest,
                     "n": int((ok & rest).sum()),
                     "missing": int((~ok & rest).sum()),
                     "mean": 0.0,
@@ -239,7 +243,10 @@ class LabViews:
         m_values = self.summary["space_rules"]["geNorm_M"]
         implicated = set(self.summary["space_rules"]["implicated_genes"])
         rows = [
-            ("Samples in each group", f"{int(high.sum())} {self.group} · {int(rest.sum())} rest"),
+            (
+                "Samples in each group",
+                f"{int(high.sum())} {self.group} · {int(rest.sum())} {self.rest_short}",
+            ),
             ("Plates for this assay", f"{len(set(s.run[:, col]))}"),
             (
                 "Cq, median (lowest to highest)",
@@ -354,6 +361,7 @@ class LabViews:
                         "more": max(0, len(dec.options) - 8),
                     }
                 )
+            text = self.stage_text.get(title, text)
             stages.append({"title": title, "text": text, "decisions": items})
         out = {
             "stages": stages,

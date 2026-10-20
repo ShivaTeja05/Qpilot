@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "python": "3.12.14",
+  "platform": "Darwin",
+  "method": "LinRegPCR (rdmlpython) @ fce7a44",
+  "studies_dir": "/Users/gangadhara/Documents/Wheel Hack/agent-bus/scratch/ui-home/studies",
+  "simulator": true,
+  "model": {
+    "provider": "none",
+    "model": null,
+    "available": false,
+    "configured": false,
+    "answers": false,
+    "checking": false,
+    "misconfigured": false,
+    "reason": "no model is configured",
+    "local": true,
+    "sample_names": "sent as quoted data",
+    "outbound": "outbound (Studio): none (provider none; no model is called)"
+  },
+  "autonomy": "suggest",
+  "demo": {
+    "cached": true,
+    "path": "/Users/gangadhara/.cache/qpilot/data_vermeulen_raw.rdml",
+    "bytes": 6985790,
+    "sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+    "source": "https://raw.githubusercontent.com/RDML-consortium/rdmlpython/fce7a44e8b47b90759c646b557de568f7af77e75/experiments/vermeulen/data_vermeulen_raw.rdml",
+    "citation": "Vermeulen J et al. (2009) Lancet Oncol 10:663-671; Ruijter JM et al. (2013) Methods 59:32-46",
+    "licence": "CC BY 4.0"
+  },
+  "policy": [
+    "Automatic: a choice that cannot change any conclusion is decided by the system and logged.",
+    "Agent may apply: such non-flipping choices, when the scientist allows decide-and-tell.",
+    "Human only: any choice that can flip a conclusion, at every level, for every actor."
+  ],
+  "never": [
+    "For research use only. Not for clinical or diagnostic use.",
+    "qPilot never makes a choice that can change a conclusion; those always wait for a person."
+  ]
+}
