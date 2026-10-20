@@ -47,7 +47,8 @@ export function ErrorPanel({
   } else if (api?.stale) {
     icon = <RefreshCw aria-hidden />;
     heading = title ?? "Something was decided since you loaded this";
-    message = "Another tab or an agent wrote to this study. Here is the current state; look again before you decide.";
+    message =
+      "Another tab or an agent wrote to this study. Here is the current state; look again before you decide.";
     tone = "border-info/30 bg-info-soft/50";
   } else if (api?.code === "offline") {
     icon = <WifiOff aria-hidden />;
@@ -57,7 +58,12 @@ export function ErrorPanel({
   return (
     <div
       role="alert"
-      className={cn("flex gap-3 rounded-xl border text-sm", compact ? "p-3" : "p-4", tone, className)}
+      className={cn(
+        "flex gap-3 rounded-xl border text-sm",
+        compact ? "p-3" : "p-4",
+        tone,
+        className,
+      )}
     >
       <div className="mt-0.5 shrink-0 text-muted [&_svg]:size-4">{icon}</div>
       <div className="min-w-0 flex-1">
