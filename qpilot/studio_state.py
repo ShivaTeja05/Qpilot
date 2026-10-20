@@ -1,8 +1,8 @@
-"""View functions for qPilot Studio: proposals, stages and the Prism preview as escaped HTML.
+"""Studio's wording and views: proposals in plain words, stages and the Prism preview.
 
-Nothing here imports Gradio, so every view is tested without a browser (``tests/studio``). The
-dashboard (:mod:`qpilot.studio`) only wires these to the Studio service
-(:mod:`qpilot.studio_service`). Three rules hold for everything returned here:
+The one page uses the plain-words descriptions (:func:`describe`, through
+:mod:`qpilot.web.studio_views`); the escaped-HTML views remain for the Studio service's tests and
+the record (``tests/studio``). Three rules hold for everything returned here:
 
 * every string that came from the input file, the sample sheet, a model or an agent (sample and
   target names, quarantined text, reasons, evidence notes, model and agent names, check notes,
@@ -47,29 +47,6 @@ STAGE_LABELS = {
     "choices": "Choices",
     "prism": "Prism draft",
     "roundtrip": "Round trip",
-}
-STAGE_HINTS = {
-    "design": (
-        "Confirm well roles, groups, biological units, gene symbols and reference genes. "
-        "Blind: no conclusion, fold change or p-value is shown until the curves are confirmed "
-        "too, so the design is decided on the evidence, not on the answer it gives."
-    ),
-    "curves": (
-        "Confirm which curves count as amplified, and each Curve Judge disagreement that could "
-        "change a conclusion. Still blind."
-    ),
-    "choices": (
-        "Decide the Decision Cards in the right-hand pane (reference genes, cut-off, empty wells, "
-        "amplification call), then confirm this stage."
-    ),
-    "prism": (
-        "Draft the Prism project in the right-hand pane, accept it here (tables, test, graph, "
-        "caption), then press Send to Prism."
-    ),
-    "roundtrip": (
-        "What changed in Prism since the export: each exclusion asks why and shows what it "
-        "changes; a changed value asks whether to restore qPilot's value."
-    ),
 }
 CHECK_WORDS = {
     "consistent": "consistent",
@@ -812,16 +789,6 @@ def stage_strip_html(stages: Sequence[Any], shown: str | None = None) -> str:
             f'<span class="qs-state">{esc(state)}</span>{blocker_html}</li>'
         )
     return f'<ol class="qs-strip">{"".join(items)}</ol>'
-
-
-def inbox_head_html(stage: str, n_pending: int, n_decided: int, page: int, n_pages: int) -> str:
-    """The inbox's title line: the stage, what it asks, and how much is waiting."""
-    return (
-        f"<h3>What the AI thinks · {esc(STAGE_LABELS.get(stage, stage))}</h3>"
-        f'<p class="qs-hint">{esc(STAGE_HINTS.get(stage, ""))}</p>'
-        f"<p>{n_pending} waiting for a decision · {n_decided} decided · "
-        f"page {page + 1} of {max(1, n_pages)}</p>"
-    )
 
 
 def confirm_html(confirm: Proposal, covered: Sequence[Proposal]) -> str:

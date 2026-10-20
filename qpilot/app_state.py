@@ -1,7 +1,7 @@
-"""View-models for the one-page app: pure functions from engine output to rows and escaped HTML.
+"""View-models over engine output: the study summary, the design sentence and the Decision Cards.
 
-Nothing here imports Gradio, so every view can be tested without a browser. Two rules hold for
-everything these functions return:
+Pure functions, used by the one page's results views (:mod:`qpilot.web.results_views`), the
+Studio views and the model layer. Two rules hold for everything these functions return:
 
 * every name, label, reason and fact value is HTML-escaped before it reaches markup;
 * every number comes from the engine (a fact, rendered with its own format, or a count of cards),
@@ -14,14 +14,11 @@ import html
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 
-import pandas as pd
-
 from qpilot.ai.explain import KIND_TITLE
-from qpilot.ai.profile import autonomy_policy
 from qpilot.core.facts import render_fact, slug
 from qpilot.explain.templates import TemplateError, render_template, to_html
 from qpilot.qpcr.contrast import ConclusionRule
-from qpilot.schemas import DecisionCard, Fact, Grade, StudyResult
+from qpilot.schemas import DecisionCard, Fact, StudyResult
 
 Facts = Mapping[str, Fact]
 
@@ -54,13 +51,6 @@ def conclusion_word(conclusion: str) -> str:
 def _fact_text(facts: Facts, fid: str, fallback: str = "") -> str:
     """A fact's rendered value (plain text), or ``fallback`` when the fact is missing."""
     return render_fact(facts[fid]) if fid in facts else fallback
-
-
-def _fact_html(facts: Facts, fid: str, fallback: str = "") -> str:
-    """A fact's rendered value wrapped in a span naming the fact (escaped)."""
-    if fid not in facts:
-        return esc(fallback)
-    return to_html("{{" + fid + "}}", facts)
 
 
 # ---------- study summary ----------
@@ -100,80 +90,6 @@ def design_line(result: StudyResult) -> str:
         f"Groups by {marker} expression, top {design.cut:.0%}: {marker}-high {design.n_hi} vs "
         f"rest {design.n_lo}. Expression-defined, not a clinical call."
     ).replace("%", " %")
-
-
-# ---------- robustness meter ----------
-
-
-@dataclass(frozen=True)
-class MeterRow:
-    """One gene in the robustness meter."""
-
-    gene: str
-    conclusion: str
-    fold_change: str
-    holds: float
-    holds_text: str
-    level: str
-
-
-def meter_rows(result: StudyResult, genes: Iterable[str] | None = None) -> list[MeterRow]:
-    """Rows for ``genes`` (default: every compared gene), in the order given."""
-    facts = result.facts
-    rows = []
-    for gene in genes if genes is not None else result.robustness:
-        if gene not in result.robustness:
-            continue
-        s, robust = slug(gene), result.robustness[gene]
-        grade = result.confidence.get(gene)
-        rows.append(
-            MeterRow(
-                gene=gene,
-                conclusion=conclusion_word(robust.conclusion),
-                fold_change=_fact_text(facts, f"f_fc_{s}_recommended", f"{robust.fc:.2g}×"),
-                holds=robust.holds,
-                holds_text=_fact_text(facts, f"f_holds_{s}", f"{robust.holds:.0%}"),
-                level=grade.level if grade else "",
-            )
-        )
-    return rows
-
-
-def meter_html(result: StudyResult, genes: Iterable[str] | None = None) -> str:
-    """HTML bars: how often each conclusion holds across the reasonable analyses."""
-    caption = render_template("meter_v1", result.facts).html
-    of_cells = f" of {_fact_html(result.facts, 'f_n_cells')}" if "f_n_cells" in result.facts else ""
-    bars = []
-    for row in meter_rows(result, genes):
-        width = max(0.0, min(1.0, row.holds)) * 100
-        tone = "solid" if row.holds >= 0.8 else "fragile"
-        holds = _fact_html(result.facts, f"f_holds_{slug(row.gene)}", row.holds_text)
-        bars.append(
-            f'<div class="qp-meter-row {tone}"><span class="qp-gene">{esc(row.gene)}</span>'
-            f'<span class="qp-call">{esc(row.fold_change)} {esc(row.conclusion)}</span>'
-            f'<span class="qp-bar"><span class="qp-fill" style="width:{width:.1f}%"></span></span>'
-            f'<span class="qp-holds">holds in {holds}{of_cells}</span></div>'
-        )
-    return f'<div class="qp-meter"><p>{caption}</p>{"".join(bars)}</div>'
-
-
-# ---------- confidence ----------
-
-
-def confidence_badge(grade: Grade, gene: str | None = None, facts: Facts | None = None) -> str:
-    """A level badge with its reasons (and the confidence sentence when facts are given)."""
-    level = esc(grade.level)
-    css = slug(grade.level)
-    parts = [f'<span class="qp-badge level-{css}">{level}</span>']
-    if gene and facts is not None:
-        try:
-            parts.append(f" {render_template('confidence_v1', facts, gene=gene).html}")
-        except TemplateError:
-            pass
-    if grade.reasons:
-        items = "".join(f"<li>{esc(reason)}</li>" for reason in grade.reasons)
-        parts.append(f'<ul class="qp-reasons">{items}</ul>')
-    return f'<div class="qp-confidence">{"".join(parts)}</div>'
 
 
 # ---------- Decision Cards ----------
@@ -351,44 +267,3 @@ def decision_counter(cards: Sequence[DecisionCard]) -> str:
     auto = sum(1 for c in cards if c.status == "auto_decided")
     noun = "decision" if human == 1 else "decisions"
     return f"{human} {noun} could change a conclusion · {auto} made automatically"
-
-
-# ---------- results table, policy and footer ----------
-
-RESULT_COLUMNS = ("Gene", "Fold change", "95 % CI", "p", "Conclusion", "Holds", "Confidence")
-
-
-def results_table(result: StudyResult) -> pd.DataFrame:
-    """One row per compared gene, numbers rendered from facts (plain text for a data grid)."""
-    facts = result.facts
-    rows = []
-    for gene, contrast in result.contrasts.items():
-        s = slug(gene)
-        lo = _fact_text(facts, f"f_ci_lo_{s}_recommended", f"{contrast.ci[0]:.2g}×")
-        hi = _fact_text(facts, f"f_ci_hi_{s}_recommended", f"{contrast.ci[1]:.2g}×")
-        grade = result.confidence.get(gene)
-        robust = result.robustness.get(gene)
-        rows.append(
-            (
-                gene,
-                _fact_text(facts, f"f_fc_{s}_recommended", f"{contrast.fc:.2g}×"),
-                f"{lo} – {hi}",
-                _fact_text(facts, f"f_p_{s}_recommended", f"{contrast.p:.2g}"),
-                conclusion_word(contrast.conclusion),
-                _fact_text(facts, f"f_holds_{s}", f"{robust.holds:.0%}" if robust else ""),
-                grade.level if grade else "",
-            )
-        )
-    return pd.DataFrame(rows, columns=list(RESULT_COLUMNS))
-
-
-def policy_lines() -> list[str]:
-    """The three-line autonomy policy (escaped), as fixed in code."""
-    return [esc(line) for line in autonomy_policy()]
-
-
-def footer_lines(version: str, vendored_commit: str) -> list[str]:
-    """Footer: research use only, what qPilot never does, version and vendored commit."""
-    return [esc(line) for line in FOOTER] + [
-        esc(f"qPilot {version} · LinRegPCR (rdmlpython) @ {vendored_commit[:7]}")
-    ]

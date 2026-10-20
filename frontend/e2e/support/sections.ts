@@ -14,6 +14,8 @@ export interface SectionUnderTest {
   sessionOnly?: boolean;
   /** Reached from other sections, not the rail. */
   hidden?: boolean;
+  /** Not in the rail yet (src/shell/nav.ts WORKFLOW): reached by its route and the palette. */
+  notInRail?: boolean;
 }
 
 export const SECTIONS: SectionUnderTest[] = [
@@ -26,6 +28,11 @@ export const SECTIONS: SectionUnderTest[] = [
   { id: "prism", label: "Prism", owner: "prism", scope: "workspace", sessionOnly: true },
   { id: "record", label: "Record", owner: "record", scope: "workspace" },
   { id: "agents", label: "Agents", owner: "record", scope: "workspace" },
+  { id: "trace", label: "Trace", owner: "trace", scope: "workspace", notInRail: true },
+  { id: "claims", label: "Claims", owner: "claims", scope: "workspace", notInRail: true },
+  { id: "report", label: "Report", owner: "report", scope: "workspace", notInRail: true },
+  { id: "history", label: "History", owner: "history", scope: "workspace", notInRail: true },
+  { id: "planner", label: "Plan next", owner: "planner", scope: "workspace", notInRail: true },
   { id: "settings", label: "Settings", owner: "home", scope: "global" },
 ];
 
@@ -67,6 +74,16 @@ export const LANDED = {
   record: true,
   /** record: the Agents section. */
   agents: true,
+  /** trace: from a result to the wells to look at. */
+  trace: false,
+  /** claims: the Claims section. */
+  claims: false,
+  /** report: the Reviewer's Report / study report. */
+  report: false,
+  /** history: the History section. */
+  history: false,
+  /** planner: Plan next. */
+  planner: false,
 };
 
 export type Feature = keyof typeof LANDED;
@@ -88,6 +105,11 @@ export const OWNER: Record<Feature, string> = {
   prism: "prism",
   record: "record",
   agents: "record",
+  trace: "trace",
+  claims: "claims",
+  report: "report",
+  history: "history",
+  planner: "planner",
 };
 
 /** The `test.fixme` reason for a feature that has not landed. */

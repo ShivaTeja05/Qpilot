@@ -1703,6 +1703,130 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History
+         * @description Every step of the decision chain: the choices in force, the calls, what each changed.
+         */
+        get: operations["get_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/history/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History Compare
+         * @description Two analyses of the same input file: the conclusions that differ, and why.
+         */
+        get: operations["get_history_compare"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/history/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History Diff
+         * @description What changed between two steps: calls, the largest fold and holds moves, the choices.
+         */
+        get: operations["get_history_diff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/planner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Planner
+         * @description The study's noise per gene, its group sizes and efficiencies, and the planner's defaults.
+         */
+        get: operations["get_planner"];
+        put?: never;
+        /**
+         * Post Planner
+         * @description The plan: samples needed, what a size detects, the right call's chance, curves, rules.
+         */
+        post: operations["post_planner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/planner/layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Layout
+         * @description Every plate of the next experiment: balanced, randomised (seeded), controls on each.
+         */
+        post: operations["post_layout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/planner/layout.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Layout Csv
+         * @description The same plates as CSV (plate, well, sample, group, target, type) to import.
+         */
+        get: operations["get_layout_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -1743,6 +1867,66 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Report
+         * @description The study's report: summary, Methods, MIQE 2.0 checklist, reviewer's report, limitations.
+         */
+        get: operations["get_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Report
+         * @description Write the report as Markdown, a printable page or the study passport (a job).
+         */
+        post: operations["export_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Exports
+         * @description The report files written for this study since qPilot started, newest first.
+         */
+        get: operations["list_exports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/results": {
         parameters: {
             query?: never;
@@ -1757,6 +1941,66 @@ export type paths = {
         get: operations["get_results"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/trace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Trace Study
+         * @description Genes by how little it takes to change their call; the samples behind the most calls.
+         */
+        get: operations["get_trace_study"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/trace/{gene}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Trace Gene
+         * @description One gene's call followed down to its samples, wells and plates.
+         */
+        get: operations["get_trace_gene"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/trace/{gene}/without": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Trace Without
+         * @description The call recomputed with these samples set aside together (a what-if; nothing changes).
+         */
+        post: operations["post_trace_without"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2926,6 +3170,24 @@ export type components = {
             verdict: string;
         };
         /**
+         * AuditMark
+         * @description Where the robustness audit sits on the chain.
+         */
+        AuditMark: {
+            /** Chain Head */
+            chain_head: string;
+            /**
+             * Current
+             * @description The audit is of the chain head of now.
+             */
+            current: boolean;
+            /**
+             * Step
+             * @description The step whose hash the audit was run at.
+             */
+            step: number | null;
+        };
+        /**
          * AuditOption
          * @description One option of an analysis choice.
          */
@@ -3824,6 +4086,72 @@ export type components = {
             };
         };
         /**
+         * ChoiceChange
+         * @description A Decision Card whose option in force differs between two points.
+         */
+        ChoiceChange: {
+            /** Card Id */
+            card_id: string;
+            /** From Label */
+            from_label: string;
+            /** From Option */
+            from_option: string;
+            /** Title */
+            title: string;
+            /** To Label */
+            to_label: string;
+            /** To Option */
+            to_option: string;
+        };
+        /**
+         * ChoiceInForce
+         * @description A Decision Card's state at one step of the chain.
+         */
+        ChoiceInForce: {
+            /** Card Id */
+            card_id: string;
+            /**
+             * Decided
+             * @description Someone had decided this card by this step.
+             */
+            decided: boolean;
+            /** Decided By */
+            decided_by?: ("human" | "agent" | "system") | null;
+            /** Dimension */
+            dimension: string | null;
+            /**
+             * Option
+             * @description The option in force (the planned one while undecided).
+             */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /**
+             * Planned
+             * @description The option in force is the planned (recommended) one.
+             */
+            planned: boolean;
+            /**
+             * Status
+             * @description open, decided, auto_decided or pending_human.
+             */
+            status: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * Citation
+         * @description A reference the Methods cite (no links: DOIs as text).
+         */
+        Citation: {
+            /** Id */
+            id: string;
+            /** N */
+            n: number;
+            /** Text */
+            text: string;
+        };
+        /**
          * CitedFact
          * @description A number the answer cites: what it is and its value as shown.
          */
@@ -4246,6 +4574,33 @@ export type components = {
             verdict_label: string;
         };
         /**
+         * CompareSide
+         * @description One of the two analyses compared, at its chain head.
+         */
+        CompareSide: {
+            /** Choices */
+            choices: components["schemas"]["ChoiceInForce"][];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Created At */
+            created_at: string | null;
+            /**
+             * Current
+             * @description The session's analysis of the design confirmed now.
+             */
+            current: boolean;
+            /** Design Hash */
+            design_hash: string | null;
+            /** Head */
+            head: string;
+            /** N Entries */
+            n_entries: number;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
          * ConfirmRequest
          * @description Yes, confirm: accept this confirm step.
          */
@@ -4656,6 +5011,38 @@ export type components = {
             source: string;
         };
         /**
+         * DesignChange
+         * @description One field of the confirmed design that differs between two analyses.
+         */
+        DesignChange: {
+            /**
+             * Added
+             * @description List items only in the later analysis.
+             * @default []
+             */
+            added: string[];
+            /** After */
+            after?: string | null;
+            /**
+             * Before
+             * @description A scalar value before, as text.
+             */
+            before?: string | null;
+            /** Field */
+            field: string;
+            /**
+             * Removed
+             * @description List items only in the earlier one.
+             * @default []
+             */
+            removed: string[];
+            /**
+             * Title
+             * @description The field in words.
+             */
+            title: string;
+        };
+        /**
          * DownloadLink
          * @description A file qPilot wrote into its export folder (beside the store), offered for download.
          */
@@ -4912,6 +5299,54 @@ export type components = {
             moved: string[];
         };
         /**
+         * GeneChange
+         * @description One gene at two points: its call, fold, p and share of analyses with the same call.
+         */
+        GeneChange: {
+            /** Call Changed */
+            call_changed: boolean;
+            /**
+             * Cause
+             * @description (compare only) whether the design, the choices, or both moved this gene.
+             */
+            cause?: ("design" | "choices" | "both" | "unknown") | null;
+            /**
+             * Delta Log2Fc
+             * @description to − from, log2.
+             */
+            delta_log2fc: number | null;
+            /** From Conclusion */
+            from_conclusion: ("up" | "down" | "none") | null;
+            /** From Holds */
+            from_holds: number | null;
+            /** From Log2Fc */
+            from_log2fc: number | null;
+            /** From P */
+            from_p: number | null;
+            /** Gene */
+            gene: string;
+            /**
+             * Headline
+             * @default false
+             */
+            headline: boolean;
+            /** To Conclusion */
+            to_conclusion: ("up" | "down" | "none") | null;
+            /** To Holds */
+            to_holds: number | null;
+            /** To Log2Fc */
+            to_log2fc: number | null;
+            /** To P */
+            to_p: number | null;
+            /**
+             * Verdict
+             * @description The audit's verdict, when audited.
+             */
+            verdict?: string | null;
+            /** Verdict Label */
+            verdict_label?: string | null;
+        };
+        /**
          * GeneGrid
          * @description Every analysis in the grid for one gene (the 'what holds' strip), compactly.
          */
@@ -5148,6 +5583,352 @@ export type components = {
             /** Points */
             points: components["schemas"]["UnitValue"][];
         };
+        /**
+         * HistoryAnalysis
+         * @description One distinct analysis that some step of the chain had in force.
+         */
+        HistoryAnalysis: {
+            /** Choices */
+            choices: components["schemas"]["HistoryChoice"][];
+            /**
+             * Counts
+             * @description Genes called up / down / none.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Genes
+             * @description Aligned with HistoryView.genes.
+             */
+            genes: components["schemas"]["HistoryGene"][];
+            /** Index */
+            index: number;
+            /**
+             * Planned
+             * @description The analysis as planned (every choice as recommended).
+             */
+            planned: boolean;
+        };
+        /**
+         * HistoryChoice
+         * @description One analysis choice (a grid dimension) and the option an analysis uses.
+         */
+        HistoryChoice: {
+            /** Dimension */
+            dimension: string;
+            /**
+             * Label
+             * @description The option in words (the card's label when a card has it).
+             */
+            label: string;
+            /**
+             * Planned
+             * @description The option of the analysis as planned.
+             */
+            planned: boolean;
+            /**
+             * Title
+             * @description The choice in words.
+             */
+            title: string;
+            /**
+             * Value
+             * @description The option as the grid writes it.
+             */
+            value: string;
+        };
+        /**
+         * HistoryCompare
+         * @description Two analyses of the same input file: which conclusions differ, and why.
+         */
+        HistoryCompare: {
+            /** @description The later analysis. */
+            after: components["schemas"]["CompareSide"];
+            /** @description The earlier analysis. */
+            before: components["schemas"]["CompareSide"];
+            /**
+             * By Choices
+             * @description Calls changed by the choices alone (same design).
+             */
+            by_choices: number;
+            /**
+             * By Design
+             * @description Calls changed by the design alone (same choices).
+             */
+            by_design: number;
+            /** Calls Changed */
+            calls_changed: components["schemas"]["GeneChange"][];
+            /**
+             * Choices
+             * @description Cards whose option in force differs.
+             */
+            choices: components["schemas"]["ChoiceChange"][];
+            /**
+             * Decomposed
+             * @description The later analysis' grid has the earlier one's choices, so each change is split into what the design did and what the choices did.
+             */
+            decomposed: boolean;
+            /** Design */
+            design: components["schemas"]["DesignChange"][];
+            /** Fold Moves */
+            fold_moves: components["schemas"]["GeneChange"][];
+            /** Genes Only After */
+            genes_only_after: string[];
+            /** Genes Only Before */
+            genes_only_before: string[];
+            /** Holds Moves */
+            holds_moves: components["schemas"]["GeneChange"][];
+            /** Input Sha256 */
+            input_sha256: string;
+            /** N Moved */
+            n_moved: number;
+            /** Summary */
+            summary: string;
+        };
+        /**
+         * HistoryDiff
+         * @description What changed between two steps of the chain (or two analyses of the same file).
+         */
+        HistoryDiff: {
+            /**
+             * Audit Note
+             * @description Which step the audit's verdicts are of, when audited.
+             */
+            audit_note?: string | null;
+            /**
+             * Calls Changed
+             * @description Every gene whose call changed.
+             */
+            calls_changed: components["schemas"]["GeneChange"][];
+            /** Choices */
+            choices: components["schemas"]["ChoiceChange"][];
+            /**
+             * Fold Moves
+             * @description The genes whose fold change moved most (up to 12), largest first.
+             */
+            fold_moves: components["schemas"]["GeneChange"][];
+            /** From Counts */
+            from_counts: {
+                [key: string]: number;
+            };
+            /** From Seq */
+            from_seq: number;
+            /**
+             * Holds Moves
+             * @description The genes whose share of same-call analyses moved most (up to 12).
+             */
+            holds_moves: components["schemas"]["GeneChange"][];
+            /**
+             * N Moved
+             * @description Genes whose fold change moved at all.
+             */
+            n_moved: number;
+            /**
+             * Same Analysis
+             * @description Both steps had the same analysis in force.
+             */
+            same_analysis: boolean;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Summary
+             * @description The change in one sentence.
+             */
+            summary: string;
+            /** To Counts */
+            to_counts: {
+                [key: string]: number;
+            };
+            /** To Seq */
+            to_seq: number;
+        };
+        /**
+         * HistoryGene
+         * @description One gene under one analysis (one cell of the study's grid).
+         */
+        HistoryGene: {
+            /** Conclusion */
+            conclusion: ("up" | "down" | "none") | null;
+            /** Fc */
+            fc: number | null;
+            /** Gene */
+            gene: string;
+            /**
+             * Holds
+             * @description Share (0–1) of the grid's analyses that give this same call.
+             */
+            holds: number | null;
+            /**
+             * Log2Fc
+             * @description null where the engine computed none.
+             */
+            log2fc: number | null;
+            /**
+             * P
+             * @description null where the engine computed none.
+             */
+            p: number | null;
+        };
+        /**
+         * HistoryStep
+         * @description One point of the chain: 0 is the study as analysed, then one per decision entry.
+         */
+        HistoryStep: {
+            /** Actor */
+            actor?: ("human" | "agent" | "system") | null;
+            /**
+             * Analysis
+             * @description Index into HistoryView.analyses; null when not replayable.
+             */
+            analysis?: number | null;
+            /** At */
+            at?: string | null;
+            /**
+             * Audited
+             * @description The robustness audit was run at this step.
+             * @default false
+             */
+            audited: boolean;
+            /** Card Id */
+            card_id?: string | null;
+            /** Card Title */
+            card_title?: string | null;
+            /**
+             * Chain Intact
+             * @description Every entry up to this one verifies.
+             */
+            chain_intact: boolean;
+            /** Choices */
+            choices: components["schemas"]["ChoiceInForce"][];
+            conclusions?: components["schemas"]["StepConclusions"] | null;
+            /**
+             * Effect
+             * @description What this step changed, in plain words.
+             */
+            effect: string;
+            /**
+             * Hash
+             * @description The entry's hash (step 0: the input file's sha256).
+             */
+            hash: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "start" | "decision";
+            /**
+             * Link Ok
+             * @description This entry's link and hash re-computed on the server.
+             */
+            link_ok: boolean;
+            /** Option */
+            option?: string | null;
+            /** Option Label */
+            option_label?: string | null;
+            /** Prev Hash */
+            prev_hash?: string | null;
+            /**
+             * Reason
+             * @description Quoted text from whoever decided.
+             */
+            reason?: string | null;
+            /**
+             * Seq
+             * @description 0: as analysed (the chain's root); then the entry's seq.
+             */
+            seq: number;
+            /** Status */
+            status?: ("applied" | "auto" | "pending_human" | "rejected" | "stale") | null;
+            /**
+             * Undo
+             * @description Written by Undo.
+             * @default false
+             */
+            undo: boolean;
+        };
+        /**
+         * HistoryView
+         * @description A study's decision chain replayed: every step, the analysis in force and its calls.
+         */
+        HistoryView: {
+            /** Alpha */
+            alpha: number;
+            /** Analyses */
+            analyses: components["schemas"]["HistoryAnalysis"][];
+            audit?: components["schemas"]["AuditMark"] | null;
+            /**
+             * Broken At
+             * @description The first entry that fails.
+             */
+            broken_at?: number | null;
+            /** Chain Intact */
+            chain_intact: boolean;
+            /**
+             * Created At
+             * @description When this analysis was made.
+             */
+            created_at?: string | null;
+            /** Genes */
+            genes: string[];
+            /**
+             * Groups
+             * @description The compared group, then the reference group.
+             */
+            groups: string[];
+            /** Head */
+            head: string;
+            /** Headline */
+            headline: string[];
+            /** Input Sha256 */
+            input_sha256: string;
+            /**
+             * Min Log2Fc
+             * @description The call rule's minimum |log2 fold|.
+             */
+            min_log2fc: number;
+            /**
+             * N Cells
+             * @description Analyses in the study's grid.
+             */
+            n_cells?: number | null;
+            /**
+             * Note
+             * @description Why a step cannot be replayed, if so.
+             */
+            note?: string | null;
+            /**
+             * Related
+             * @description Other analyses of the same input file.
+             */
+            related: components["schemas"]["RelatedStudy"][];
+            /**
+             * Replayable
+             * @description The study's grid holds the planned analysis, so each step can be replayed.
+             */
+            replayable: boolean;
+            /**
+             * Root
+             * @description The chain's genesis: the input file's sha256.
+             */
+            root: string;
+            /** Session */
+            session?: string | null;
+            /** Steps */
+            steps: components["schemas"]["HistoryStep"][];
+            /**
+             * Studio
+             * @description The session's Studio log, by stage run.
+             */
+            studio: components["schemas"]["StudioMilestone"][];
+            /**
+             * Studio Intact
+             * @default true
+             */
+            studio_intact: boolean;
+            /** Study Id */
+            study_id: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -5300,6 +6081,25 @@ export type components = {
             typical_s?: number | null;
         };
         /**
+         * KeyNumber
+         * @description One of the study's key numbers (label + the fact that holds it).
+         */
+        KeyNumber: {
+            /** Fact */
+            fact: string;
+            /** Label */
+            label: string;
+        };
+        /**
+         * Limitation
+         * @description One limitation, in plain words.
+         */
+        Limitation: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+        };
+        /**
          * MadeBy
          * @description Who produced a proposal: a language model, an MCP agent or a deterministic rule.
          */
@@ -5337,6 +6137,135 @@ export type components = {
             message: string;
             /** Proposal Id */
             proposal_id: string;
+        };
+        /**
+         * MethodsParagraph
+         * @description One paragraph of the Methods section.
+         */
+        MethodsParagraph: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * MethodsView
+         * @description The Methods section, ready to paste into a paper.
+         */
+        MethodsView: {
+            /** Citations */
+            citations: components["schemas"]["Citation"][];
+            /** Paragraphs */
+            paragraphs: components["schemas"]["MethodsParagraph"][];
+            /**
+             * Plain
+             * @description Every paragraph as plain text, without citation markers.
+             */
+            plain: string;
+            /**
+             * With Citations
+             * @description With [n] markers and the numbered reference list.
+             */
+            with_citations: string;
+        };
+        /**
+         * MilestoneItem
+         * @description One kind of action within a Studio milestone (e.g. 53 sample roles accepted).
+         */
+        MilestoneItem: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "propose" | "accept" | "edit" | "reject" | "supersede";
+            /**
+             * Actors
+             * @description Who acted: human / agent / system → count.
+             */
+            actors: {
+                [key: string]: number;
+            };
+            /**
+             * Kind
+             * @description The proposal kind (design.well_role, stage.confirm, …).
+             */
+            kind: string;
+            /** N */
+            n: number;
+            /**
+             * Reasons
+             * @description Distinct reasons given (up to three), quoted text.
+             */
+            reasons: string[];
+            /**
+             * Subjects
+             * @description What it was about (up to three), quoted text.
+             */
+            subjects: string[];
+            /**
+             * Title
+             * @description The kind in words.
+             */
+            title: string;
+        };
+        /**
+         * MiqeItem
+         * @description One MIQE 2.0 item: what the data say about it, with the evidence.
+         */
+        MiqeItem: {
+            /**
+             * Attest
+             * @description Only a person can answer this item (never answered here).
+             */
+            attest: boolean;
+            evidence?: components["schemas"]["ReportText"] | null;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Section */
+            section: string;
+            /**
+             * Sources
+             * @default []
+             */
+            sources: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "met" | "not_met" | "not_applicable" | "cannot_tell";
+        };
+        /**
+         * MiqePack
+         * @description The item list the checklist uses.
+         */
+        MiqePack: {
+            /** Citation */
+            citation: string;
+            /** Name */
+            name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Version */
+            version: string;
+        };
+        /**
+         * MiqeView
+         * @description The MIQE 2.0 checklist: counts by status, never a score.
+         */
+        MiqeView: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            headline: components["schemas"]["ReportText"];
+            /** Items */
+            items: components["schemas"]["MiqeItem"][];
+            /** N Items */
+            n_items: number;
+            pack: components["schemas"]["MiqePack"];
         };
         /**
          * ModelSeen
@@ -5538,6 +6467,680 @@ export type components = {
             reason: string;
             /** Seq */
             seq: number;
+        };
+        /**
+         * PlanBudget
+         * @description What fits in the plates available.
+         */
+        PlanBudget: {
+            /**
+             * N Fit
+             * @description The most samples per group whose layout fits; None: not even two.
+             */
+            n_fit: number | null;
+            /** Plates */
+            plates: number;
+            /** Text */
+            text: string;
+        };
+        /**
+         * PlanControls
+         * @description Controls on every plate, per assay.
+         */
+        PlanControls: {
+            /**
+             * Calibrator
+             * @description An inter-run calibrator on every plate when a gene's samples span plates.
+             * @default true
+             */
+            calibrator: boolean;
+            /**
+             * Nrt
+             * @description NRT wells per assay.
+             * @default 0
+             */
+            nrt: number;
+            /**
+             * Ntc
+             * @description NTC wells per assay.
+             * @default 1
+             */
+            ntc: number;
+            /**
+             * Standards
+             * @description Standard dilution points per assay, each in the technical replicates.
+             * @default 0
+             */
+            standards: number;
+        };
+        /**
+         * PlanCurvePoint
+         * @description One group size on a power curve.
+         */
+        PlanCurvePoint: {
+            /** N */
+            n: number;
+            /** P Called */
+            p_called: number;
+            /** P Significant */
+            p_significant: number;
+        };
+        /**
+         * PlanEfficiency
+         * @description The genes' efficiencies and which fall outside the engine's usual range.
+         */
+        PlanEfficiency: {
+            /** Outside */
+            outside: string[];
+            /**
+             * Range
+             * @description The usual range as E - 1 (0.90–1.10).
+             */
+            range: [
+                number,
+                number
+            ];
+            spread: components["schemas"]["PlanSpread"] | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * PlanGene
+         * @description One gene under the plan: samples needed, what the plan's size detects, the right call.
+         */
+        PlanGene: {
+            /**
+             * Call Reachable
+             * @description Whether any size reaches the power for a call; None: not asked.
+             */
+            call_reachable?: boolean | null;
+            /**
+             * Cannot Detect
+             * @description qpilot.qpcr.plan.plan's lines, as text.
+             */
+            cannot_detect: string[];
+            /**
+             * Current Mde Fold
+             * @description mde_fold_groups at the study's own group sizes.
+             */
+            current_mde_fold: number;
+            /**
+             * Current P Called
+             * @description Simulated P(called) at the study's own (unbalanced) group sizes.
+             */
+            current_p_called: number;
+            /**
+             * Detectable
+             * @description mde_fold at the plan's size ≤ the target change.
+             */
+            detectable: boolean;
+            /**
+             * Focus
+             * @description One of the next experiment's genes.
+             */
+            focus: boolean;
+            /** Gene */
+            gene: string;
+            /**
+             * Mde Fold
+             * @description The smallest change the plan's size detects (mde_fold).
+             */
+            mde_fold: number;
+            /**
+             * N For Call
+             * @description Per group for qPilot's rule to call the change with the chosen power (qpilot.qpcr.plan.n_for_call); None: no size reaches it, or not computed (not focus).
+             */
+            n_for_call?: number | null;
+            /**
+             * N Needed
+             * @description Per group for p < alpha with the chosen power (qpilot.qpcr.plan.n_needed).
+             */
+            n_needed: number;
+            /**
+             * P Called
+             * @description Simulated P(qPilot calls it, right way) at that size.
+             */
+            p_called: number;
+            /**
+             * P Significant
+             * @description Simulated P(p < alpha) at the plan's size.
+             */
+            p_significant: number;
+            /** Sigma */
+            sigma: number;
+        };
+        /**
+         * PlanLayoutBalance
+         * @description The checks every layout passes (or says why not).
+         */
+        PlanLayoutBalance: {
+            /** Controls On Every Plate */
+            controls_on_every_plate: boolean;
+            /**
+             * Each Reaction Once
+             * @description Every planned gene reaction on exactly one plate; a reference gene's once per gene panel (each plate normalises its own samples).
+             */
+            each_reaction_once: boolean;
+            /** Every Plate Every Group */
+            every_plate_every_group: boolean;
+            /**
+             * Group Plate Association
+             * @description Cramér's V of plate × group over samples: 0 means plate says nothing of group.
+             */
+            group_plate_association: number;
+            /**
+             * Max Share Gap
+             * @description Largest gap between a group's share on a plate and its share overall.
+             */
+            max_share_gap: number;
+            /** Plates With One Group */
+            plates_with_one_group: number[];
+            /** Refs On Every Plate */
+            refs_on_every_plate: boolean;
+            /** Wells Controls */
+            wells_controls: number;
+            /** Wells Free */
+            wells_free: number;
+            /** Wells Samples */
+            wells_samples: number;
+            /** Wells Total */
+            wells_total: number;
+        };
+        /**
+         * PlanLayoutBody
+         * @description The next experiment to lay out on plates.
+         */
+        PlanLayoutBody: {
+            /**
+             * Calibrator
+             * @default true
+             */
+            calibrator: boolean;
+            /** Genes */
+            genes: string[];
+            /** N Per Group */
+            n_per_group: number;
+            /**
+             * Nrt
+             * @default 0
+             */
+            nrt: number;
+            /**
+             * Ntc
+             * @default 1
+             */
+            ntc: number;
+            /** Refs */
+            refs?: string[] | null;
+            /**
+             * Replicates
+             * @default 2
+             */
+            replicates: number;
+            /**
+             * Seed
+             * @default 1
+             */
+            seed: number;
+            /**
+             * Standards
+             * @default 0
+             */
+            standards: number;
+            /**
+             * Wells Per Plate
+             * @default 96
+             * @enum {integer}
+             */
+            wells_per_plate: 96 | 384;
+        };
+        /**
+         * PlanLayoutEstimate
+         * @description How the plan would be laid out (no well assigned yet).
+         */
+        PlanLayoutEstimate: {
+            /** Batches */
+            batches: number;
+            /** Calibrated */
+            calibrated: boolean;
+            /** Panels */
+            panels: number;
+            /** Plates */
+            plates: number;
+            /** Samples Per Plate */
+            samples_per_plate: number;
+            /**
+             * Wells
+             * @description Wells the plates hold in all.
+             */
+            wells: number;
+        };
+        /**
+         * PlanLayoutPlate
+         * @description One plate of the layout with its balance.
+         */
+        PlanLayoutPlate: {
+            /** Batch */
+            batch: number;
+            /**
+             * Controls
+             * @description Control type → wells.
+             */
+            controls: {
+                [key: string]: number;
+            };
+            /**
+             * Edge Share
+             * @description Group → share of its wells on the plate's outer rows and columns.
+             */
+            edge_share: {
+                [key: string]: number | null;
+            };
+            /** Genes */
+            genes: string[];
+            /** Groups Present */
+            groups_present: number;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+            /** Panel */
+            panel: number;
+            /** Refs */
+            refs: string[];
+            /** Refs Present */
+            refs_present: boolean;
+            /**
+             * Samples
+             * @description Group → samples on this plate.
+             */
+            samples: {
+                [key: string]: number;
+            };
+            /** Wells */
+            wells: components["schemas"]["PlanLayoutWell"][];
+            /** Wells Free */
+            wells_free: number;
+            /** Wells Used */
+            wells_used: number;
+        };
+        /**
+         * PlanLayoutView
+         * @description Every plate of the next experiment, its balance, and the CSV to import.
+         */
+        PlanLayoutView: {
+            balance: components["schemas"]["PlanLayoutBalance"];
+            /** Batches */
+            batches: number;
+            /** Calibrated */
+            calibrated: boolean;
+            /** Csv Name */
+            csv_name: string;
+            /**
+             * Csv Url
+             * @description GET this for the CSV (same inputs, same plates).
+             */
+            csv_url: string;
+            /** Genes */
+            genes: string[];
+            /** Groups */
+            groups: components["schemas"]["PlannerGroup"][];
+            /** Notes */
+            notes: string[];
+            /** Panels */
+            panels: string[][];
+            /** Plates */
+            plates: components["schemas"]["PlanLayoutPlate"][];
+            /** Refs */
+            refs: string[];
+            /** Replicates */
+            replicates: number;
+            /** Rules */
+            rules: string[];
+            /** Samples Per Plate */
+            samples_per_plate: number;
+            /** Seed */
+            seed: number;
+            /** Study Id */
+            study_id: string;
+            /** Warnings */
+            warnings: string[];
+            /** Wells Per Plate */
+            wells_per_plate: number;
+        };
+        /**
+         * PlanLayoutWell
+         * @description One well: position, sample (and group), assay, RDML sample type, replicate.
+         */
+        PlanLayoutWell: {
+            /** Group */
+            group: string | null;
+            /** Replicate */
+            replicate: number;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "unkn" | "std" | "ntc" | "nrt" | "pos";
+            /** Well */
+            well: string;
+        };
+        /**
+         * PlannerBody
+         * @description What to plan: the change worth finding, the power, and the next experiment's shape.
+         */
+        PlannerBody: {
+            /**
+             * Alpha
+             * @description Two-sided; default the study's rule.
+             */
+            alpha?: number | null;
+            controls?: components["schemas"]["PlanControls"];
+            /**
+             * Fold
+             * @description The smallest fold change worth detecting (e.g. 2, or 0.5).
+             * @default 2
+             */
+            fold: number;
+            /**
+             * Genes
+             * @description The next experiment's genes (default: the study's headline genes).
+             */
+            genes?: string[] | null;
+            /**
+             * N Per Group
+             * @description Planned samples per group; none: the size the chosen genes need.
+             */
+            n_per_group?: number | null;
+            /**
+             * Plates
+             * @description Plates available (a budget).
+             */
+            plates?: number | null;
+            /**
+             * Power
+             * @default 0.8
+             */
+            power: number;
+            /**
+             * Refs
+             * @description Reference genes on every plate (default: the study's control genes).
+             */
+            refs?: string[] | null;
+            /**
+             * Replicates
+             * @default 2
+             */
+            replicates: number;
+            /**
+             * Wells Per Plate
+             * @default 96
+             * @enum {integer}
+             */
+            wells_per_plate: 96 | 384;
+        };
+        /**
+         * PlannerGene
+         * @description One compared gene: its noise in this study, and what the study found.
+         */
+        PlannerGene: {
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /**
+             * Df
+             * @description Degrees of freedom of sigma: units with a value minus groups.
+             */
+            df: number;
+            /**
+             * Efficiency
+             * @description The gene's PCR efficiency (fold per cycle; 2 is doubling).
+             */
+            efficiency?: number | null;
+            /**
+             * Efficiency Outside
+             * @description Efficiency outside the engine's 90–110 % range (a warning only).
+             */
+            efficiency_outside: boolean;
+            /**
+             * Fc
+             * @description The fold change this study found (group 1 / group 2).
+             */
+            fc: number;
+            /** Gene */
+            gene: string;
+            /** Headline */
+            headline: boolean;
+            /**
+             * N
+             * @description Units with a value in each group, in the groups' order.
+             */
+            n: number[];
+            /**
+             * Sigma
+             * @description Pooled SD of log2 relative quantity between biological units of one group (qpilot.qpcr.plan.pooled_sd over the engine's per-unit values).
+             */
+            sigma: number;
+            /**
+             * Sigma Ci
+             * @description 95 % chi-square interval of sigma (qpilot.qpcr.plan.sigma_interval).
+             */
+            sigma_ci: [
+                number,
+                number
+            ];
+        };
+        /**
+         * PlannerGroup
+         * @description One group of the study's comparison and how many biological units it holds.
+         */
+        PlannerGroup: {
+            /** Label */
+            label: string;
+            /** N */
+            n: number;
+        };
+        /**
+         * PlannerView
+         * @description What the study measured that a plan needs: noise per gene, group sizes, efficiencies.
+         */
+        PlannerView: {
+            /** Alpha */
+            alpha: number;
+            /**
+             * Candidates
+             * @description The reference candidates the study tested.
+             */
+            candidates: string[];
+            defaults: components["schemas"]["PlannerBody"];
+            efficiency: components["schemas"]["PlanEfficiency"];
+            /** Genes */
+            genes: components["schemas"]["PlannerGene"][];
+            /** Groups */
+            groups: components["schemas"]["PlannerGroup"][];
+            /** Head */
+            head: string;
+            /** Headline */
+            headline: string[];
+            /**
+             * Min Fold
+             * @description The rule's fold threshold for a call (2 = two-fold).
+             */
+            min_fold: number;
+            /**
+             * N Equivalent
+             * @description The balanced group size as precise as the study's groups (harmonic mean).
+             */
+            n_equivalent: number;
+            plates: components["schemas"]["PlanStudyPlates"] | null;
+            /**
+             * Refs
+             * @description The control genes this study normalises by.
+             */
+            refs: string[];
+            /** Rule Text */
+            rule_text: string;
+            sigma: components["schemas"]["PlanSpread"];
+            /**
+             * Sigma Source
+             * @description How sigma was measured, in words.
+             */
+            sigma_source: string;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * PlanPowerCurve
+         * @description P(significant) and P(called) against samples per group, at the gene's sigma.
+         */
+        PlanPowerCurve: {
+            /** Gene */
+            gene: string;
+            /** N For Call */
+            n_for_call: number | null;
+            /** N Needed */
+            n_needed: number;
+            /** Points */
+            points: components["schemas"]["PlanCurvePoint"][];
+            /** Sigma */
+            sigma: number;
+        };
+        /**
+         * PlanSpread
+         * @description Five numbers that describe a spread (min, quartiles, median, max) over genes.
+         */
+        PlanSpread: {
+            /** Max */
+            max: number;
+            /** Median */
+            median: number;
+            /** Min */
+            min: number;
+            /** N */
+            n: number;
+            /** Q1 */
+            q1: number;
+            /** Q3 */
+            q3: number;
+        };
+        /**
+         * PlanStudyPlates
+         * @description How this study laid out its plates (from its per-well table).
+         */
+        PlanStudyPlates: {
+            /**
+             * Controls Per Plate
+             * @description Median wells per plate by control type (std, ntc, nrt, …).
+             */
+            controls_per_plate: {
+                [key: string]: number;
+            };
+            /** N Plates */
+            n_plates: number;
+            /**
+             * Sample Maximisation
+             * @description Every plate held one target for every sample (Hellemans 2007).
+             */
+            sample_maximisation: boolean;
+            /**
+             * Samples Per Plate
+             * @description Median number of study samples per plate.
+             */
+            samples_per_plate: number;
+            /**
+             * Targets Per Plate
+             * @description Median number of targets per plate.
+             */
+            targets_per_plate: number;
+            /** Text */
+            text: string;
+            /**
+             * Wells Per Plate
+             * @description The most wells any plate used.
+             */
+            wells_per_plate: number;
+        };
+        /**
+         * PlanView
+         * @description The plan: per gene numbers, power curves, the rules, what it cannot detect, plates.
+         */
+        PlanView: {
+            /** Alpha */
+            alpha: number;
+            budget?: components["schemas"]["PlanBudget"] | null;
+            /** Cannot Detect */
+            cannot_detect: string[];
+            /**
+             * Ceiling
+             * @description When the target is at or below the rule's threshold: why no size calls it.
+             */
+            ceiling?: string | null;
+            /**
+             * Curve Reps
+             * @description Simulated studies behind each curve point.
+             */
+            curve_reps: number;
+            /** Curves */
+            curves: components["schemas"]["PlanPowerCurve"][];
+            /** Focus */
+            focus: string[];
+            /** Fold */
+            fold: number;
+            /** Genes */
+            genes: components["schemas"]["PlanGene"][];
+            /** Head */
+            head: string;
+            /**
+             * Headline
+             * @description One sentence: what this plan detects.
+             */
+            headline: string;
+            layout: components["schemas"]["PlanLayoutEstimate"] | null;
+            /** Layout Error */
+            layout_error?: string | null;
+            /** Min Fold */
+            min_fold: number;
+            /**
+             * N Current
+             * @description The study's own group sizes.
+             */
+            n_current: number[];
+            /** N Equivalent */
+            n_equivalent: number;
+            /**
+             * N Plan
+             * @description The samples per group the numbers are at.
+             */
+            n_plan: number;
+            /** N Plan Reason */
+            n_plan_reason: string;
+            /** Power */
+            power: number;
+            /** Refs */
+            refs: string[];
+            /**
+             * Rules
+             * @description qpilot.qpcr.plan's design rules for this plan.
+             */
+            rules: string[];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Table Reps
+             * @description Simulated studies behind each table probability.
+             */
+            table_reps: number;
+            /**
+             * Target
+             * @description The change in either direction, ≥ 1 (max(fold, 1/fold)).
+             */
+            target: number;
         };
         /**
          * PlateRun
@@ -6690,6 +8293,381 @@ export type components = {
             subject: string | null;
         };
         /**
+         * RelatedStudy
+         * @description Another analysis of the same input file (another design of it).
+         */
+        RelatedStudy: {
+            /**
+             * After
+             * @description What it was made after, in words (the Studio step).
+             */
+            after?: string | null;
+            /** Created At */
+            created_at: string | null;
+            /**
+             * Current
+             * @description The session's analysis of the design confirmed now.
+             */
+            current: boolean;
+            /** Design Hash */
+            design_hash?: string | null;
+            /** N Entries */
+            n_entries: number;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * ReportAudit
+         * @description The robustness audit, when one was run.
+         */
+        ReportAudit: {
+            /** Analyses */
+            analyses?: number | null;
+            /** Chain Head */
+            chain_head?: string | null;
+            /**
+             * Current
+             * @default false
+             */
+            current: boolean;
+            /**
+             * Reasonable
+             * @description The audit's reasonable set.
+             */
+            reasonable?: number | null;
+            /** Reproduces */
+            reproduces?: boolean | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "none" | "ready";
+            /**
+             * Verdict Counts
+             * @default {}
+             */
+            verdict_counts: {
+                [key: string]: number;
+            };
+            /**
+             * Verdict Labels
+             * @default {}
+             */
+            verdict_labels: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ReportDecision
+         * @description One entry of the hash-chained decision log, or a card still open.
+         */
+        ReportDecision: {
+            /** Actor */
+            actor: string | null;
+            /** At */
+            at: string | null;
+            /**
+             * Can Flip
+             * @description Some option of this card changes a conclusion.
+             */
+            can_flip: boolean;
+            /** Card Id */
+            card_id: string;
+            /** Card Title */
+            card_title: string;
+            /** Hash */
+            hash: string | null;
+            /** Option */
+            option: string | null;
+            /** Option Label */
+            option_label: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Seq */
+            seq: number | null;
+            /** Status */
+            status: string;
+        };
+        /**
+         * ReportExportBody
+         * @description Which file to write.
+         */
+        ReportExportBody: {
+            /**
+             * Expected Head
+             * @description The chain head the page showed (warns when it moved since).
+             */
+            expected_head?: string | null;
+            /**
+             * Format
+             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record.
+             * @enum {string}
+             */
+            format: "md" | "html" | "passport";
+        };
+        /**
+         * ReportExported
+         * @description One written report file, ready to download.
+         */
+        ReportExported: {
+            /** Chain Head */
+            chain_head: string;
+            download: components["schemas"]["DownloadLink"];
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "md" | "html" | "passport";
+            /**
+             * Head Moved
+             * @default false
+             */
+            head_moved: boolean;
+            /**
+             * N Facts
+             * @description How many facts the file cites.
+             */
+            n_facts: number;
+            record?: components["schemas"]["ReportRecordRef"] | null;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Title
+             * @description What the file is, in words.
+             */
+            title: string;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+            /** Written At */
+            written_at: string;
+        };
+        /**
+         * ReportExports
+         * @description The report files written for a study since qPilot started, newest first.
+         */
+        ReportExports: {
+            /** Exports */
+            exports: components["schemas"]["ReportExported"][];
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * ReportFact
+         * @description One number (or name) a sentence cites, and where it was read.
+         */
+        ReportFact: {
+            /**
+             * Derived
+             * @description Read by the report from the store, not one of the engine's.
+             */
+            derived: boolean;
+            /**
+             * Id
+             * @description f_… for the engine's own facts; f_rpt_… for one the report read.
+             */
+            id: string;
+            /**
+             * Path
+             * @description Where it comes from: the engine's path, or `<source>:<JSON pointer>[@min|max|len|count=<value>]` for a value the report read (results.json, cards.json, decisions.jsonl, study_design.json, versions, input.rdml, grid.csv, audit:<file>, report).
+             */
+            path: string;
+            /**
+             * Text
+             * @description The value as written (format and unit applied).
+             */
+            text: string;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+            /** Value */
+            value: number | string;
+        };
+        /**
+         * ReportGene
+         * @description One compared gene as the passport's gene table shows it (engine values, unformatted).
+         */
+        ReportGene: {
+            /** Ci Hi */
+            ci_hi: number;
+            /** Ci Lo */
+            ci_lo: number;
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /**
+             * Flips By
+             * @description Choices that alone change the call.
+             */
+            flips_by: string[];
+            /** Gene */
+            gene: string;
+            /** Headline */
+            headline: boolean;
+            /**
+             * Holds
+             * @description Share of qPilot's choice grid with the same call.
+             */
+            holds: number | null;
+            /** Level */
+            level: string | null;
+            /** N Cells */
+            n_cells: number;
+            /** N Hi */
+            n_hi: number;
+            /** N Lo */
+            n_lo: number;
+            /** P */
+            p: number | null;
+            /** Verdict */
+            verdict?: string | null;
+            /** Verdict Label */
+            verdict_label?: string | null;
+        };
+        /**
+         * ReportHeader
+         * @description What the report is about and what binds it to the study.
+         */
+        ReportHeader: {
+            /** Chain Head */
+            chain_head: string;
+            /** Demo */
+            demo: boolean;
+            /** Generated At */
+            generated_at: string;
+            /** Input Sha256 */
+            input_sha256: string;
+            /** N Decisions */
+            n_decisions: number;
+            /**
+             * Research Use
+             * @default Research use only; not for clinical use.
+             */
+            research_use: string;
+            /** Session */
+            session: string | null;
+            /**
+             * Source Name
+             * @description The input file's name (from the study).
+             */
+            source_name: string | null;
+            /** Study Id */
+            study_id: string;
+            /** Title */
+            title: string;
+            /** Versions */
+            versions: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ReportRecordRef
+         * @description The Analysis Record a passport is bound to (written with it, in the same folder).
+         */
+        ReportRecordRef: {
+            /** Chain Head */
+            chain_head: string;
+            download: components["schemas"]["DownloadLink"];
+            /** Input Included */
+            input_included: boolean;
+            /** N Files */
+            n_files: number;
+            /**
+             * Record Id
+             * @description SHA-256 of the record's CHECKSUMS.sha256.
+             */
+            record_id: string;
+            /**
+             * Rerun
+             * @description The command that re-runs it to the same numbers.
+             */
+            rerun: string;
+            /**
+             * Verify
+             * @description The command that checks the record.
+             */
+            verify: string;
+        };
+        /**
+         * ReportSegment
+         * @description A run of prose, one cited fact, a quoted string from the study, or a citation marker.
+         */
+        ReportSegment: {
+            /**
+             * Cite
+             * @description The number of a citation (methods only).
+             */
+            cite?: number | null;
+            /** Fact */
+            fact?: string | null;
+            /**
+             * Quote
+             * @description Data from the study: never markup.
+             * @default false
+             */
+            quote: boolean;
+            /** Text */
+            text: string;
+        };
+        /**
+         * ReportText
+         * @description A sentence or paragraph whose numbers are facts.
+         */
+        ReportText: {
+            /**
+             * Facts
+             * @description Ids of the facts it cites, in order of first use.
+             */
+            facts: string[];
+            /**
+             * Plain
+             * @description As plain text, without citation markers.
+             */
+            plain: string;
+            /** Segments */
+            segments: components["schemas"]["ReportSegment"][];
+        };
+        /**
+         * ReportView
+         * @description The whole report of one study.
+         */
+        ReportView: {
+            audit: components["schemas"]["ReportAudit"];
+            /** Decisions */
+            decisions: components["schemas"]["ReportDecision"][];
+            /**
+             * Facts
+             * @description Every fact the report cites, by id.
+             */
+            facts: {
+                [key: string]: components["schemas"]["ReportFact"];
+            };
+            /** Genes */
+            genes: components["schemas"]["ReportGene"][];
+            header: components["schemas"]["ReportHeader"];
+            /** Key Numbers */
+            key_numbers: components["schemas"]["KeyNumber"][];
+            /** Limitations */
+            limitations: components["schemas"]["Limitation"][];
+            methods: components["schemas"]["MethodsView"];
+            miqe: components["schemas"]["MiqeView"];
+            review: components["schemas"]["ReviewView"];
+            /**
+             * Rule
+             * @description The conclusion rule in words.
+             */
+            rule: string;
+            summary: components["schemas"]["ReportText"];
+        };
+        /**
          * ResultsSummary
          * @description The study in counts, its groups and how they were made.
          */
@@ -6781,6 +8759,63 @@ export type components = {
              * @default []
              */
             withheld: components["schemas"]["WithheldGene"][];
+        };
+        /**
+         * ReviewCheck
+         * @description A question a reviewer asks that the study answers well.
+         */
+        ReviewCheck: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * ReviewFinding
+         * @description Something a careful reviewer would flag, from the study's own numbers.
+         */
+        ReviewFinding: {
+            /**
+             * Genes
+             * @default []
+             */
+            genes: string[];
+            /**
+             * Go To
+             * @description The section that shows it.
+             */
+            go_to?: ("results" | "gene" | "audit" | "record" | "design" | "curves" | "report") | null;
+            /** Id */
+            id: string;
+            /**
+             * Rule
+             * @description The reviewer rule (R1–R8) it answers.
+             */
+            rule?: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "major" | "minor" | "note";
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * ReviewView
+         * @description The reviewer's report: findings by severity, then what checks out.
+         */
+        ReviewView: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Findings */
+            findings: components["schemas"]["ReviewFinding"][];
+            lead: components["schemas"]["ReportText"];
+            /** Passed */
+            passed: components["schemas"]["ReviewCheck"][];
         };
         /**
          * RoundTripRefused
@@ -6986,6 +9021,96 @@ export type components = {
             reason: string;
         };
         /**
+         * StepConclusions
+         * @description The calls at one step, and what changed from the step before.
+         */
+        StepConclusions: {
+            /**
+             * Changed
+             * @description Those genes, by name.
+             */
+            changed: string[];
+            /** Down */
+            down: number;
+            /**
+             * N Changed
+             * @description Genes whose call differs from the step before.
+             */
+            n_changed: number;
+            /**
+             * N Moved
+             * @description Genes whose fold change moved (by more than 1e-9 in log2) from the step before, whether or not their call changed.
+             */
+            n_moved: number;
+            /** None */
+            none: number;
+            /** Up */
+            up: number;
+        };
+        /**
+         * StudioMilestone
+         * @description A run of the Studio session's proposal log on one stage (design, curves, …).
+         */
+        StudioMilestone: {
+            /**
+             * After Seq
+             * @description When not before: placed after this step of the decision chain.
+             */
+            after_seq?: number | null;
+            /** At First */
+            at_first: string;
+            /** At Last */
+            at_last: string;
+            /**
+             * Before
+             * @description Happened before this analysis was made.
+             */
+            before: boolean;
+            /**
+             * Chain Intact
+             * @description The proposal chain verifies up to this run.
+             */
+            chain_intact: boolean;
+            /**
+             * Confirmed
+             * @description The stage was confirmed by a person in this run.
+             */
+            confirmed: boolean;
+            /** First Seq */
+            first_seq: number;
+            /**
+             * Head
+             * @description The proposal chain's hash after this run.
+             */
+            head: string;
+            /** Items */
+            items: components["schemas"]["MilestoneItem"][];
+            /** Last Seq */
+            last_seq: number;
+            /**
+             * Led To
+             * @description The study this run's last acceptance produced, if any.
+             */
+            led_to?: string | null;
+            /** N Accepted */
+            n_accepted: number;
+            /** N Edited */
+            n_edited: number;
+            /** N Proposed */
+            n_proposed: number;
+            /** N Rejected */
+            n_rejected: number;
+            /** N Superseded */
+            n_superseded: number;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "design" | "curves" | "choices" | "prism" | "other";
+            /** Title */
+            title: string;
+        };
+        /**
          * SystemView
          * @description What this install is and what it will use.
          */
@@ -7045,6 +9170,740 @@ export type components = {
             fact?: string | null;
             /** Text */
             text: string;
+        };
+        /**
+         * TraceCall
+         * @description The traced result: one gene's comparison in the analysis in use.
+         */
+        TraceCall: {
+            /**
+             * Ci
+             * @description 95 % CI of the fold change.
+             */
+            ci: [
+                number | null,
+                number | null
+            ];
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /**
+             * Line Log2
+             * @description The rule's line: at least this many log2 units.
+             */
+            line_log2: number;
+            /** Log2Fc */
+            log2fc: number;
+            /**
+             * Margin Log2
+             * @description |log2 fold change| minus the line (negative: inside).
+             */
+            margin_log2: number;
+            /**
+             * Mean A
+             * @description Mean relative value (log2) of the first group.
+             */
+            mean_a: number;
+            /** Mean B */
+            mean_b: number;
+            /** N A */
+            n_a: number;
+            /** N B */
+            n_b: number;
+            /** P */
+            p: number | null;
+            /**
+             * Se
+             * @description Standard error of the log2 fold change.
+             */
+            se: number;
+        };
+        /**
+         * TraceCallChange
+         * @description A conclusion that a what-if changes.
+         */
+        TraceCallChange: {
+            /**
+             * Call After
+             * @enum {string}
+             */
+            call_after: "up" | "down" | "none";
+            /**
+             * Call Before
+             * @enum {string}
+             */
+            call_before: "up" | "down" | "none";
+            /** Gene */
+            gene: string;
+            /** Log2Fc After */
+            log2fc_after: number;
+            /** Log2Fc Before */
+            log2fc_before: number;
+            /** P After */
+            p_after?: number | null;
+            /** P Before */
+            p_before?: number | null;
+        };
+        /**
+         * TraceCell
+         * @description The analysis traced: the options in use on each decision (the planned ones or a person's).
+         */
+        TraceCell: {
+            /**
+             * Amp Call
+             * @description Which curves count as amplified.
+             */
+            amp_call?: string | null;
+            /**
+             * Cut
+             * @description The marker cut-off (marker split only).
+             */
+            cut?: number | null;
+            /**
+             * Planned
+             * @description True when every option is the planned one.
+             */
+            planned: boolean;
+            /**
+             * Refs
+             * @description The control genes the values are normalised to.
+             */
+            refs: string[];
+            /**
+             * Undetermined
+             * @description What empty wells do: drop or cap.
+             */
+            undetermined: string;
+        };
+        /**
+         * TraceFlipSet
+         * @description The fewest samples found whose removal together changes the call.
+         */
+        TraceFlipSet: {
+            /** Call After */
+            call_after?: ("up" | "down" | "none") | null;
+            /**
+             * Exact
+             * @description True when no smaller set exists (one and two are checked exhaustively).
+             */
+            exact: boolean;
+            /**
+             * K
+             * @description How many (None: no set of up to `searched` samples).
+             */
+            k: number | null;
+            /** Log2Fc After */
+            log2fc_after?: number | null;
+            /** P After */
+            p_after?: number | null;
+            /** Searched */
+            searched: number;
+            /** Units */
+            units: string[];
+        };
+        /**
+         * TraceGene
+         * @description One gene's call followed down to its samples, wells and plates.
+         */
+        TraceGene: {
+            call: components["schemas"]["TraceCall"];
+            /** Cannot Show */
+            cannot_show: string[];
+            cell: components["schemas"]["TraceCell"];
+            /** Checked */
+            checked: string[];
+            flip: components["schemas"]["TraceFlipSet"];
+            /** Gene */
+            gene: string;
+            /**
+             * Influential Normal
+             * @description Influential samples with nothing unusual (keep them for that).
+             */
+            influential_normal: string[];
+            /** Labels */
+            labels: [
+                string,
+                string
+            ];
+            look_first: components["schemas"]["TraceLookFirst"];
+            /** Missing */
+            missing: components["schemas"]["TraceMissing"][];
+            /**
+             * N Flip Single
+             * @description Samples that each change the call when set aside alone.
+             */
+            n_flip_single: number;
+            /**
+             * N No Comparison
+             * @description Samples of the study in no comparison at all.
+             */
+            n_no_comparison: number;
+            /** N Used */
+            n_used: number;
+            /** Places */
+            places: components["schemas"]["TracePlace"][];
+            /** References */
+            references: components["schemas"]["TraceReference"][];
+            /** Replicates */
+            replicates: boolean;
+            /** Rule */
+            rule: string;
+            /**
+             * Samples
+             * @description Every sample in the comparison, most influential first.
+             */
+            samples: components["schemas"]["TraceSample"][];
+            /** Thresholds */
+            thresholds: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * TraceGeneRow
+         * @description One gene in the study-wide list, by how little it takes to change its call.
+         */
+        TraceGeneRow: {
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /** Flip Exact */
+            flip_exact: boolean;
+            /** Flip K */
+            flip_k: number | null;
+            /** Flip Units */
+            flip_units: string[];
+            /** Gene */
+            gene: string;
+            /** Log2Fc */
+            log2fc: number;
+            /** Margin Log2 */
+            margin_log2: number;
+            /** N Flip Single */
+            n_flip_single: number;
+            /** P */
+            p: number | null;
+            /** Rank */
+            rank: number;
+            /** Top D Log2Fc */
+            top_d_log2fc: number | null;
+            /**
+             * Top Unit
+             * @description The sample that moves it most when set aside.
+             */
+            top_unit: string | null;
+        };
+        /**
+         * TraceGeneView
+         * @description ``GET /studies/{id}/trace/{gene}``: one gene's call, followed down to its wells.
+         */
+        TraceGeneView: {
+            /**
+             * Head
+             * @description The decision chain head the trace was read at.
+             */
+            head: string;
+            /**
+             * Session
+             * @description The Studio session the study came from, if any.
+             */
+            session: string | null;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Texts
+             * @description The trace's sentences by id: `summary`, `flip`, `look_first`, `place_<rank>`.
+             */
+            texts: {
+                [key: string]: components["schemas"]["FactText"];
+            };
+            trace: components["schemas"]["TraceGene"];
+        };
+        /**
+         * TraceLoaded
+         * @description The result of the ``trace.load`` job: the study is ready to trace.
+         */
+        TraceLoaded: {
+            /** Head */
+            head: string;
+            /** N Genes */
+            n_genes: number;
+            /** Seconds */
+            seconds: number;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * TraceLookFirst
+         * @description The one well to look at first, and why (``kind`` none: nothing behind the result).
+         */
+        TraceLookFirst: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "place" | "influential" | "none";
+            /**
+             * Place
+             * @description Rank of the place, when kind is place.
+             */
+            place?: number | null;
+            /**
+             * Text
+             * @default look_first
+             */
+            text: string;
+            /** Unit */
+            unit?: string | null;
+            well?: components["schemas"]["TraceWell"] | null;
+        };
+        /**
+         * TraceMissing
+         * @description A sample in the comparison groups with no value here, and the well(s) behind it.
+         */
+        TraceMissing: {
+            /** Group */
+            group?: string | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "empty_target" | "excluded" | "empty_reference" | "empty_marker" | "not_in_groups";
+            /** Unit */
+            unit: string;
+            /**
+             * Wells
+             * @default []
+             */
+            wells: components["schemas"]["TraceWell"][];
+        };
+        /**
+         * TraceOption
+         * @description A what-if for one place; nothing is applied (applying one is a person's decision).
+         */
+        TraceOption: {
+            /**
+             * Call After
+             * @enum {string}
+             */
+            call_after: "up" | "down" | "none";
+            /**
+             * Changes
+             * @description Every gene whose call changes.
+             * @default []
+             */
+            changes: components["schemas"]["TraceCallChange"][];
+            /** D Log2Fc */
+            d_log2fc: number;
+            /** Fixed Groups Changes */
+            fixed_groups_changes?: components["schemas"]["TraceCallChange"][] | null;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "set_aside" | "read_from_other_references" | "set_aside_wells";
+            /** Label */
+            label: string;
+            /** Log2Fc After */
+            log2fc_after: number;
+            /** P After */
+            p_after: number | null;
+            /**
+             * Regrouped
+             * @description How the groups change (marker split).
+             */
+            regrouped?: string | null;
+        };
+        /**
+         * TracePlace
+         * @description A place to look: a well (or a whole sample), what is unusual there and what it does.
+         */
+        TracePlace: {
+            /**
+             * Checks
+             * @description Fingerprints found (S1 … S6).
+             */
+            checks: string[];
+            /**
+             * Consequence
+             * @enum {string}
+             */
+            consequence: "changes_call" | "moves_number" | "changes_nothing";
+            /** D Log2Fc */
+            d_log2fc: number;
+            /** Group */
+            group: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "reference_well" | "target_well" | "sample" | "plate_control";
+            /** Options */
+            options: components["schemas"]["TraceOption"][];
+            /** Rank */
+            rank: number;
+            /**
+             * Text
+             * @description Key of its sentence in `texts`.
+             */
+            text: string;
+            /** Unit */
+            unit: string;
+            /** Wells */
+            wells: components["schemas"]["TraceWell"][];
+        };
+        /**
+         * TraceReference
+         * @description What one control gene does to this result.
+         */
+        TraceReference: {
+            /** Call Without */
+            call_without?: ("up" | "down" | "none") | null;
+            /**
+             * Flagged
+             * @description Its wells that disagree with their sample's other control genes.
+             * @default []
+             */
+            flagged: components["schemas"]["TraceWell"][];
+            /** Gene */
+            gene: string;
+            /**
+             * Group Diff Log2
+             * @description Its own difference between the groups (log2).
+             */
+            group_diff_log2: number;
+            /** Log2Fc Without */
+            log2fc_without?: number | null;
+            /**
+             * Share Log2
+             * @description Its exact additive part of the log2 fold change: minus its group difference divided by the number of control genes (the target's own difference is the rest).
+             */
+            share_log2: number;
+            /** @description The result normalised to the other control genes only. */
+            without?: components["schemas"]["TraceCallChange"] | null;
+        };
+        /**
+         * TraceSample
+         * @description One biological sample's pull on the traced result (set aside alone, exact).
+         */
+        TraceSample: {
+            /**
+             * Call Without
+             * @enum {string}
+             */
+            call_without: "up" | "down" | "none";
+            /**
+             * D Log2Fc
+             * @description Change of the log2 fold change when it is set aside.
+             */
+            d_log2fc: number;
+            /**
+             * Flags
+             * @default []
+             */
+            flags: ("reference_pull" | "input_shift" | "low_efficiency" | "far_from_group" | "ntc_window" | "curve_note")[];
+            /**
+             * Flips
+             * @description Setting it aside alone changes the call.
+             */
+            flips: boolean;
+            /** Group */
+            group: string;
+            /** Log2Fc Without */
+            log2fc_without: number;
+            /** P Without */
+            p_without: number | null;
+            /**
+             * Plates
+             * @description Plates of its wells behind this result.
+             * @default []
+             */
+            plates: string[];
+            /**
+             * Rank
+             * @description 1 = moves the result most when set aside.
+             */
+            rank: number;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "a" | "b";
+            /** Unit */
+            unit: string;
+            /**
+             * Value Log2
+             * @description The sample's relative value for this gene (log2).
+             */
+            value_log2: number;
+            /**
+             * Wells
+             * @description Its target and control-gene wells (detailed samples only).
+             * @default []
+             */
+            wells: components["schemas"]["TraceWell"][];
+            /**
+             * Z In Group
+             * @description Robust z of that value within its group.
+             */
+            z_in_group?: number | null;
+        };
+        /**
+         * TraceStudy
+         * @description The study-wide view: genes by fragility, the samples behind the most results.
+         */
+        TraceStudy: {
+            /** Cannot Show */
+            cannot_show: string[];
+            cell: components["schemas"]["TraceCell"];
+            /** Checked */
+            checked: string[];
+            /** Genes */
+            genes: components["schemas"]["TraceGeneRow"][];
+            /** Labels */
+            labels: [
+                string,
+                string
+            ];
+            /**
+             * Left Out
+             * @description Samples in no comparison, and the well behind each.
+             */
+            left_out: components["schemas"]["TraceMissing"][];
+            /** N Compared */
+            n_compared: number;
+            /**
+             * N Fragile
+             * @description Genes that one sample set aside changes.
+             */
+            n_fragile: number;
+            /** N Genes */
+            n_genes: number;
+            /** N Units */
+            n_units: number;
+            /** Rule */
+            rule: string;
+            /** Suspects */
+            suspects: components["schemas"]["TraceSuspect"][];
+            /** Thresholds */
+            thresholds: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * TraceStudyView
+         * @description ``GET /studies/{id}/trace``: genes by fragility, the samples behind the most calls.
+         */
+        TraceStudyView: {
+            /** Head */
+            head: string;
+            /** Session */
+            session: string | null;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Texts
+             * @description The overview's sentences by id: `summary`.
+             */
+            texts: {
+                [key: string]: components["schemas"]["FactText"];
+            };
+            trace: components["schemas"]["TraceStudy"];
+        };
+        /**
+         * TraceSuspect
+         * @description A sample that moves many results, or whose wells show something unusual.
+         */
+        TraceSuspect: {
+            /** Flags */
+            flags: ("reference_pull" | "input_shift" | "low_efficiency" | "far_from_group" | "ntc_window" | "curve_note")[];
+            /** Genes Flipped */
+            genes_flipped: string[];
+            /** Group */
+            group: string | null;
+            /**
+             * Input Shift Log2
+             * @description S2: every gene's typical offset (log2).
+             */
+            input_shift_log2?: number | null;
+            /** Max Abs D Log2Fc */
+            max_abs_d_log2fc: number;
+            /** Max Gene */
+            max_gene: string | null;
+            /**
+             * N Genes Flipped
+             * @description Calls that change when it alone is set aside.
+             */
+            n_genes_flipped: number;
+            /**
+             * N Genes Moved
+             * @description Calls whose fold change it moves by at least its yardstick.
+             */
+            n_genes_moved: number;
+            /** Plates */
+            plates: string[];
+            /** Rank */
+            rank: number;
+            /**
+             * Read As Expected
+             * @description Calls that change if its unusual control-gene well read as its other control genes predict.
+             */
+            read_as_expected?: components["schemas"]["TraceCallChange"][] | null;
+            /** Unit */
+            unit: string;
+            /**
+             * Wells
+             * @description Its unusual wells (with their plates).
+             * @default []
+             */
+            wells: components["schemas"]["TraceWell"][];
+        };
+        /**
+         * TraceWell
+         * @description One well at a physical address, with what is unusual about it.
+         */
+        TraceWell: {
+            /**
+             * Amplified
+             * @description Counts as amplified under the analysis' rule.
+             */
+            amplified: boolean;
+            /** Cq */
+            cq?: number | null;
+            /**
+             * Cq Z
+             * @description Robust z of the Cq against the plate's study wells of this gene.
+             */
+            cq_z?: number | null;
+            /**
+             * Efficiency
+             * @description The well's own efficiency (2.0 = 100 %).
+             */
+            efficiency?: number | null;
+            /**
+             * Efficiency Z
+             * @description Robust z of the efficiency against the same wells.
+             */
+            efficiency_z?: number | null;
+            /**
+             * Excluded
+             * @description A person excluded the well.
+             */
+            excluded: boolean;
+            /**
+             * Flags
+             * @default []
+             */
+            flags: ("no_amplification" | "excluded" | "late_cq" | "efficiency_outlier" | "reference_pull" | "ntc_window" | "curve_note")[];
+            /** Gene */
+            gene: string;
+            /**
+             * Key
+             * @description `plate/well`, as the curve and plate routes take it.
+             */
+            key: string;
+            /**
+             * Lowest Standard
+             * @description The plate's standard with the fewest copies.
+             */
+            lowest_standard?: string | null;
+            /** Lowest Standard Cq */
+            lowest_standard_cq?: number | null;
+            /**
+             * Note
+             * @description LinRegPCR's note on the well.
+             * @default
+             */
+            note: string;
+            /** Ntc Cq */
+            ntc_cq?: number | null;
+            /**
+             * Ntc Well
+             * @description The plate's earliest amplifying no-template control.
+             */
+            ntc_well?: string | null;
+            /** Plate */
+            plate: string;
+            /**
+             * Plate Median Cq
+             * @description Median Cq of the plate's study wells of this gene.
+             */
+            plate_median_cq?: number | null;
+            /**
+             * Pull Log2
+             * @description Reference wells: how far this well moves every value of its sample (log2; + up), against what the sample's other control genes predict.
+             */
+            pull_log2?: number | null;
+            /**
+             * Reference Z
+             * @description Robust z of that disagreement over the study.
+             */
+            reference_z?: number | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "target" | "reference" | "marker" | "candidate_reference" | "ntc" | "standard" | "other";
+            /** Sample */
+            sample: string;
+            /** Sample Type */
+            sample_type: string;
+            /**
+             * Unit
+             * @description The biological sample (unit) the well belongs to.
+             */
+            unit: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * TraceWithout
+         * @description One gene recomputed with some samples set aside together (exact), and what else changes.
+         */
+        TraceWithout: {
+            after: components["schemas"]["TraceCall"];
+            before: components["schemas"]["TraceCall"];
+            /** Changes Call */
+            changes_call: boolean;
+            /** Gene */
+            gene: string;
+            /**
+             * Other Changes
+             * @description Other genes whose call changes too.
+             */
+            other_changes: components["schemas"]["TraceCallChange"][];
+            /** Units */
+            units: string[];
+        };
+        /**
+         * TraceWithoutBody
+         * @description The samples to set aside together (nothing is applied: a what-if).
+         */
+        TraceWithoutBody: {
+            /**
+             * Samples
+             * @description Sample names as the trace lists them (1 to 50).
+             * @default []
+             */
+            samples: string[];
+        };
+        /**
+         * TraceWithoutView
+         * @description ``POST /studies/{id}/trace/{gene}/without``: the call recomputed without some samples.
+         */
+        TraceWithoutView: {
+            /** Head */
+            head: string;
+            result: components["schemas"]["TraceWithout"];
+            /** Study Id */
+            study_id: string;
         };
         /**
          * TurnDownBody
@@ -10167,6 +13026,250 @@ export interface operations {
             };
         };
     };
+    get_history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history_compare: {
+        parameters: {
+            query?: {
+                /** @description Another analysis of the same file. */
+                other?: string | null;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryCompare"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history_diff: {
+        parameters: {
+            query?: {
+                /** @description The earlier step (0: as analysed). */
+                from?: number | null;
+                /** @description The later step. */
+                to?: number | null;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryDiff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_planner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannerView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_planner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlannerBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_layout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanLayoutBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanLayoutView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_layout_csv: {
+        parameters: {
+            query: {
+                calibrator?: boolean;
+                genes: string[];
+                n_per_group: number;
+                nrt?: number;
+                ntc?: number;
+                refs?: string[] | null;
+                replicates?: number;
+                seed?: number;
+                standards?: number;
+                wells_per_plate?: 96 | 384;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The layout as CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_record: {
         parameters: {
             query?: never;
@@ -10233,6 +13336,103 @@ export interface operations {
             };
         };
     };
+    get_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportExportBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportExports"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_results: {
         parameters: {
             query?: never;
@@ -10251,6 +13451,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResultsView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trace_study: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceStudyView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trace_gene: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gene: string;
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceGeneView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_trace_without: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gene: string;
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TraceWithoutBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceWithoutView"];
                 };
             };
             /** @description Validation Error */

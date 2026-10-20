@@ -1,0 +1,1 @@
+import{v as e}from"./sections-D7QOw31V.js";import{t}from"./SectionPending-DfnwoMK-.js";var n=e();function r(e){return(0,n.jsx)(t,{id:`claims`})}export{r as default};
