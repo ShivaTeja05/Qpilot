@@ -399,3 +399,17 @@ def test_errors_on_unknown_routes_never_echo_the_path_as_html(client):
     r = client.get("/api/<script>alert(1)</script>")
     assert r.headers["content-type"].startswith("application/json")
     assert "<script>" not in r.text
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="RT-UI-019 JSON writes share the 200 MB upload cap: a 190 MB JSON body to any write "
+    "route (/api/settings, a decision) is read and parsed in memory (several GB of objects); "
+    "only the upload routes need more than about 1 MB",
+)
+def test_a_large_json_body_is_refused_before_it_is_parsed(client):
+    body = b'{"autonomy": "suggest", "pad": "' + b"x" * (2 * 1024 * 1024) + b'"}'
+    r = client.put(
+        "/api/settings", content=body, headers={**SAME, "content-type": "application/json"}
+    )
+    assert r.status_code == 413, r.status_code
