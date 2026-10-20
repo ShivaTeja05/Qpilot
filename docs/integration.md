@@ -6,6 +6,11 @@ a verified Analysis Record, and adds the Decision Simulator (`qsim`, vendored in
 module: the engine, Studio, the Prism bridge, the record and the MCP server are used as they are.
 Research use only.
 
+The audit is part of the one page: its **Audit** section runs it (a job with stages), shows the
+verdicts, the what-if lab and the checks, and writes to the same place as the command line below
+(`<study store>/simulator_audits/<study id>/`). [user-guide.md](user-guide.md#9-audit) describes the
+section; this document describes what runs behind it.
+
 ```bash
 pip install -e ".[dev,ai,studio,xlsx,parquet,sim]"   # sim: the Decision Simulator stage (qsim)
 qpilot fetch-demo                                    # once
@@ -26,9 +31,9 @@ flowchart TB
     SCI[scientist: one sentence, every decision]
   end
   subgraph laptop["the scientist's computer: 127.0.0.1 only, runs offline"]
-    UI1[Studio page] --> SVC[Studio service: proposals, firewall, checks, Curve Judge]
-    UI2[qPilot app] --> ENG
-    UI3[simulator screen :8765] --> QSIM
+    UI[the one page, qpilot app] --> SVC[Studio service: proposals, firewall, checks, Curve Judge]
+    UI --> ENG
+    UI --> QSIM
     MCP[MCP server, stdio] --> QSIM
     SVC --> ENG[engine: LinRegPCR, geNorm, Welch, grid, cards]
     SVC --> AI[AI layer: Design Interpreter, Prism draft]
@@ -40,9 +45,9 @@ flowchart TB
     QSIM --> OUT[(record, Prism bundle, audit)]
     AI -. quoted names only .-> LLM[local model, optional]
   end
-  RDML --> UI1
-  SHEET --> UI1
-  SCI --> UI1
+  RDML --> UI
+  SHEET --> UI
+  SCI --> UI
   PRISM -. CSV + run.pzc .-> GP[GraphPad Prism, the scientist's licence]
   GP -. CSV back .-> PRISM
   AGENT[AI agent] <-->|stdio| MCP
@@ -57,7 +62,7 @@ flowchart TB
 | 2 | Design, blind | 131 proposals | 121 consistent, 9 contradicted | accepts, rejects with reasons, confirms | `proposals.jsonl` |
 | 3 | Curves, blind | Curve Judge: 166 disagreements, 110 that matter | LinRegPCR contradicts each (`D-CURVE`) | keeps LinRegPCR, confirms | the design's call rule |
 | 4 | Choices | — | 744 analyses; ODC1 3.590× up; the Excel route changes 14 of 58 | decides each card | `results.json`, `decisions.jsonl` |
-| 5 | Simulator | — | 90,396 analyses; baseline = qPilot to 5e-15 | reads verdicts | `simulator_audit/` |
+| 5 | Simulator (the page's Audit section) | — | 90,396 analyses; baseline = qPilot to 5e-15 | reads verdicts | `simulator_audits/<study id>/` |
 | 6 | Prism | the draft | log2 per unit; provenance | accepts, Send to Prism | CSVs, `run.pzc`, `send_back.pzc` |
 | 7 | Round trip | — | ODC1 #1496 missing: 3.590× → 3.319×, 0 of 58 change | gives the reason, decides again | new study, re-audit |
 | 8 | Record | — | export, verify, bind the audit | — | Analysis Record |
@@ -67,8 +72,8 @@ Numbers: the demo run of 18 Oct 2026 (`python -m qpilot.integration demo`), 30 o
 
 Every accept, reject, decision and export goes through a `Person` object with `actor="human"` and
 a reason, and is logged in `workflow.json`. `ScriptedPerson` is the policy of
-`qpilot studio demo --check`, for checks and demos; in real use the person is the scientist on the
-Studio page.
+`qpilot studio demo --check`, for checks and demos; in real use the person is the scientist at the
+one page.
 
 ## The simulator adapter
 
@@ -182,7 +187,6 @@ folder, refuses a file over 4 MB, and returns at most 200 rows per call.
 ## Not yet integrated
 
 * The simulator's validation branches (dPCR truth, null plate, efficiency calibration).
-* A simulator panel on the Studio page (the page is not changed here).
 * Designs with technical replicates (the simulator needs one well per sample and gene).
 * `qpilot workflow` in the frozen CLI registry (it runs as `python -m qpilot.integration`).
 * Prism on a real seat (plan step 0.1).
