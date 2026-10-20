@@ -96,7 +96,7 @@
   padding: 8px 8px 4px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 /* uPlot: legend and axes in the page's type and colours. */

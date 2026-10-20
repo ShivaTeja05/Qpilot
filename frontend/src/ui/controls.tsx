@@ -39,7 +39,7 @@ export function Field({
     <div className={cn("flex flex-col gap-1.5", className)}>
       <label htmlFor={htmlFor} className="text-[13px] font-medium text-fg">
         {label}
-        {optional ? <span className="ml-1 font-normal text-faint">(optional)</span> : null}
+        {optional ? <span className="ml-1 font-normal text-muted">(optional)</span> : null}
       </label>
       {children}
       {error ? (
@@ -90,7 +90,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
           aria-live="polite"
           className={cn(
             "pointer-events-none absolute right-2.5 bottom-1.5 font-mono text-[11px] tabular",
-            near ? "text-warn" : "text-faint",
+            near ? "text-warn" : "text-muted",
           )}
         >
           {count(length)} / {count(maxLength)}
@@ -140,7 +140,7 @@ export function Select<V extends string = string>({
         aria-label={label}
         className={cn(
           FIELD,
-          "inline-flex items-center justify-between gap-2 text-left data-[placeholder]:text-faint",
+          "inline-flex items-center justify-between gap-2 text-left data-[placeholder]:text-muted",
           size === "sm" ? "h-7 px-2.5 text-[13px]" : "h-8",
           className,
         )}

@@ -83,7 +83,7 @@ export function JobCard({
                 <>
                   {duration(elapsed)}
                   {typical ? (
-                    <span className="text-faint"> · usually ~{duration(typical)}</span>
+                    <span className="text-muted"> · usually ~{duration(typical)}</span>
                   ) : null}
                 </>
               ) : job.status === "done" ? (
@@ -100,7 +100,7 @@ export function JobCard({
               </p>
               <ProgressBar className="mt-2" label={job.title} value={job.fraction} />
               {over ? (
-                <p className="mt-1.5 text-xs text-faint">
+                <p className="mt-1.5 text-xs text-muted">
                   Taking longer than usual; it is still working.
                 </p>
               ) : null}

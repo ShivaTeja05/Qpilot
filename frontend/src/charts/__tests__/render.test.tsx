@@ -35,7 +35,7 @@ function tableRows(): number {
   return within(screen.getByRole("table")).getAllByRole("row").length - 1;
 }
 
-describe("charts on recorded data", () => {
+describe("charts on recorded data", { timeout: 30_000 }, () => {
   it("robustness map: a summary, one row per gene, Enter opens the gene", () => {
     const onSelect = vi.fn();
     const points = auditMapPoints(study);

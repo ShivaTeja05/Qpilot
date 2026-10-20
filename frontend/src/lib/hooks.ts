@@ -63,7 +63,7 @@ export function useHotkeys(
         return;
       }
       if (e.altKey || isTyping(e.target)) return;
-      const k = e.key.length === 1 ? e.key : key;
+      const k = e.key === "/" && e.shiftKey ? "?" : e.key.length === 1 ? e.key : key;
       if (pending) {
         const handler = map[`${pending} ${k}`];
         pending = null;
