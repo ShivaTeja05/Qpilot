@@ -4,7 +4,7 @@
  * gene (what changes it, what it leans on, what to do). Without an audit: an invitation to run it.
  */
 import { ShieldCheck } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "wouter";
 import {
   AnalysesStrip,
@@ -19,11 +19,13 @@ import {
   type SamplePoint,
 } from "@/charts";
 import type { JobView, Schemas } from "@/api/client";
+import { useJob } from "@/api/jobs";
 import { sectionPath } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, JobCard, LoadingBlock, SegmentedControl } from "@/ui";
 import { cn } from "@/lib/cn";
 import { count, ofTotal, percent } from "@/lib/format";
-import type { AuditAnalyses, AuditEffects, AuditGeneCard, AuditSamples, AuditStatus } from "./api";
+import { loadingJob, type AuditAnalyses, type AuditEffects, type AuditGeneCard, type AuditSamples, type AuditStatus } from "./api";
+import { chartAnalyses, chartEffects, chartSamples } from "./chart";
 import { Panel, Sentences, Stat } from "./Panel";
 
 type Workspace = Pick<Schemas["WorkspaceView"], "key" | "kind">;
@@ -47,16 +49,39 @@ function Loaded<T>({
   children: (data: T) => ReactNode;
 }) {
   if (query.data) return <>{children(query.data)}</>;
+  const loading = loadingJob(query.error);
+  if (loading) return <LoadJob job={loading} onDone={() => void query.refetch()} />;
   if (query.error) return <ErrorPanel compact error={query.error} onRetry={() => void query.refetch()} />;
   if (warming) return <JobCard id={warming.id} />;
   return <LoadingBlock label={label} lines={4} />;
+}
+
+/** The audit's views are loading (the first read rebuilds the study): follow the job, then ask again. */
+function LoadJob({ job, onDone }: { job: JobView; onDone: () => void }) {
+  const followed = useJob(job.id);
+  const status = followed.data?.status;
+  const done = useRef(onDone);
+  useEffect(() => {
+    done.current = onDone;
+  });
+  // Once per finished job (the callback changes every render; the status does not).
+  useEffect(() => {
+    if (status === "done") done.current();
+  }, [status]);
+  return <JobCard id={job.id} />;
 }
 
 // ---- the source switch ------------------------------------------------------------------------
 
 export type Source = "qpilot" | "audit";
 
-/** qPilot's own grid or the audit's reasonable analyses (shown when both exist). */
+/** What qPilot's choice grid holds (docs/app.md wording, #0254). */
+export const QPILOT_GRID = "Every control-gene set, cut-off, empty-well rule and amplification-call rule";
+/** What the audit's reasonable set holds. */
+export const AUDIT_SET =
+  "No shortcuts such as single or paired control genes; groups and multiplicity as planned";
+
+/** qPilot's choice grid or the audit's reasonable set (shown when both exist). */
 export function SourceSwitch({ value, onChange }: { value: Source; onChange: (v: Source) => void }) {
   return (
     <SegmentedControl
@@ -65,8 +90,8 @@ export function SourceSwitch({ value, onChange }: { value: Source; onChange: (v:
       value={value}
       onValueChange={onChange}
       options={[
-        { value: "audit", label: "The audit", title: "Every reasonable combination of the audit's eight decisions" },
-        { value: "qpilot", label: "qPilot's grid", title: "Every combination of the Decision Cards' options" },
+        { value: "audit", label: "The audit's reasonable set", title: AUDIT_SET },
+        { value: "qpilot", label: "qPilot's choice grid", title: QPILOT_GRID },
       ]}
     />
   );
@@ -115,15 +140,15 @@ export function WhatHolds({
     <Panel
       id="gene-holds"
       title="What holds"
-      hint="How often the same call comes out when the analysis is done another reasonable way."
+      hint="How often the same call comes out when the analysis is done another way. Each share says which analyses it counts."
       actions={analyses && dots.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined}
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-line bg-sunken/40 p-3">
           <Stat
-            label="Same call, qPilot's grid"
+            label="Same call, qPilot's choice grid"
             value={percent(holds)}
-            sub={nCells ? `of ${count(nCells)} analyses over the Decision Cards' options` : "of qPilot's analyses over the Decision Cards' options"}
+            sub={`of the ${nCells ? `${count(nCells)} ` : ""}analyses qPilot checks (${QPILOT_GRID.toLowerCase()})`}
           />
           <HoldsBar share={holds ?? null} />
         </div>
@@ -131,31 +156,37 @@ export function WhatHolds({
           {a ? (
             <>
               <Stat
-                label="Same call, the audit"
-                value={ofTotal(a.n_same, a.n)}
-                sub="reasonable analyses over the audit's eight decisions"
+                label="Same call, the audit's reasonable set"
+                value={percent(a.n ? a.n_same / a.n : null)}
+                sub={`${ofTotal(a.n_same, a.n)} of the audit's reasonable analyses (${AUDIT_SET.charAt(0).toLowerCase()}${AUDIT_SET.slice(1)})`}
               />
               <HoldsBar share={a.n ? a.n_same / a.n : null} />
             </>
           ) : (
             <Stat
-              label="Same call, the audit"
+              label="Same call, the audit's reasonable set"
               value={analyses ? "…" : "—"}
-              sub={analyses ? "Reading the audit…" : "Not audited: the audit tries every reasonable combination of eight decisions."}
+              sub={analyses ? "Reading the audit…" : "Not audited: the audit counts its own reasonable analyses (no shortcuts)."}
             />
           )}
         </div>
       </div>
+      {a ? (
+        <p className="mt-2 text-xs text-muted">
+          The two shares count different analyses: qPilot's choice grid includes shortcuts such as a single control
+          gene or a Cq cut-off, which the audit's reasonable set leaves out, so the audit's share can be higher.
+        </p>
+      ) : null}
       <div className="mt-4">
         {showAudit && analyses ? (
           <Loaded query={analyses} label="Reading every reasonable analysis" warming={warming}>
             {(data) => (
               <AnalysesStrip
-                rows={analysesDots(data)}
+                rows={analysesDots(chartAnalyses(data))}
                 line={data.line_log2}
                 lineLabel={`${data.line} line`}
                 {...sideWords(labels.hi)}
-                summary={`Every reasonable analysis of ${data.gene} in the audit, on the fold axis: ${ofTotal(data.n_same, data.n)} give the planned call (${data.base_call}); the planned analysis is ringed.`}
+                summary={`Each of the audit's ${count(data.n)} reasonable analyses of ${data.gene} on the fold axis: ${ofTotal(data.n_same, data.n)} give the planned call (${data.base_call}); the planned analysis is ringed.`}
                 caption={card?.holds.lines.length ? <Sentences items={card.holds.lines} /> : undefined}
               />
             )}
@@ -165,10 +196,10 @@ export function WhatHolds({
             rows={dots}
             line={line}
             {...sideWords(labels.hi)}
-            summary={`Every analysis of ${gene} in qPilot's grid, on the fold axis: ${ofTotal(sameQ, dots.length)} give the planned call; the planned analysis is ringed.`}
+            summary={`Every analysis of ${gene} in qPilot's choice grid, on the fold axis: ${ofTotal(sameQ, dots.length)} give the planned call; the planned analysis is ringed.`}
           />
         ) : (
-          <p className="text-[13px] text-muted">qPilot's grid for this study is not available.</p>
+          <p className="text-[13px] text-muted">qPilot's choice grid for this study is not available.</p>
         )}
       </div>
       {invite ? <div className="mt-4">{invite}</div> : null}
@@ -223,7 +254,7 @@ export function OneChoice({
             const changing = data.decisions.filter((d) => d.n_change > 0);
             return (
               <ChoiceDotPlot
-                decisions={choiceRows(data)}
+                decisions={choiceRows(chartEffects(data))}
                 line={data.line_log2}
                 lineLabel={`${data.line} line`}
                 {...sideWords(labels.hi)}
@@ -283,6 +314,7 @@ export function YourSamples({
       {samples ? (
         <Loaded query={samples} label="Reading each sample's value" warming={warming}>
           {(data) => {
+            const chart = chartSamples(data);
             const carries = data.points.filter((p) => p.carries).length;
             const late = data.points.filter((p) => p.late).length;
             const flagged = data.points.filter((p) => p.flagged).length;
@@ -290,8 +322,8 @@ export function YourSamples({
             return (
               <>
                 <Beeswarm
-                  groups={sampleGroups(data)}
-                  points={samplePoints(data)}
+                  groups={sampleGroups(chart)}
+                  points={samplePoints(chart)}
                   foldText={data.fold}
                   lateCut={data.late_cut}
                   {...sideWords(labels.hi)}
@@ -408,7 +440,7 @@ export function AuditInvite({
   compact,
 }: {
   workspace: Workspace;
-  status: AuditStatus | null;
+  status: (Pick<AuditStatus, "status"> & Partial<Pick<AuditStatus, "reason" | "job">>) | null;
   /** A job started from here (or the server's running one). */
   job: JobView | null;
   onRun: (() => void) | null;
@@ -457,8 +489,8 @@ export function AuditInvite({
       }
     >
       The robustness audit re-runs your confirmed study under every combination of eight analysis decisions
-      (about 50 s on the demo) and gives each gene a verdict. Here it adds every reasonable analysis, one choice
-      at a time, each sample's value and what to do.
+      (about 50 s on the demo) and gives each gene a verdict. Here it adds its reasonable analyses (no shortcuts),
+      one choice at a time across eight decisions, each sample's value and what to do.
       {error ? <ErrorPanel compact className="mt-3 text-left" error={error} /> : null}
     </EmptyState>
   );
