@@ -216,7 +216,7 @@ export function RobustnessMap(props: RobustnessMapProps) {
                   y={y(v) + 4}
                   textAnchor="end"
                   fontSize={11}
-                  fill="var(--text-faint)"
+                  fill="var(--text-muted)"
                   className="tabular"
                 >
                   {fmtShare(v)}

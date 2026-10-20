@@ -12,7 +12,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
       <div className="text-[12px] text-muted">{label}</div>
       <div className="tabular text-xl font-semibold tracking-tight text-fg">{value}</div>
       {sub && (
-        <div className="truncate text-[12px] text-faint" title={sub}>
+        <div className="truncate text-[12px] text-muted" title={sub}>
           {sub}
         </div>
       )}

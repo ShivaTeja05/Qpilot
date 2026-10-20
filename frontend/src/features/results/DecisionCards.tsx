@@ -557,7 +557,7 @@ function DecisionCardItem({
                       </p>
                       <FactSource text={explanation.text} />
                       {explanation.note && (
-                        <p className="text-[12px] text-faint">{explanation.note}</p>
+                        <p className="text-[12px] text-muted">{explanation.note}</p>
                       )}
                     </div>
                   ) : job.data?.status === "failed" ? (
