@@ -124,7 +124,7 @@ def data(c: Ctx, cite: Cites) -> list[Part]:
         parts += [
             " These are the published neuroblastoma data of Vermeulen et al. ",
             cite("vermeulen2009"),
-            ", as redistributed for the benchmark of Ruijter et al. ",
+            ", as redistributed for the curve-analysis benchmark of Ruijter and colleagues ",
             cite("ruijter2013"),
             ".",
         ]

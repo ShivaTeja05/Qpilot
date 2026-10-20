@@ -65,8 +65,8 @@ STYLE = """
 --info:#7aa7ec;--v-solid:#5cc282;--v-caveats:#a6cf5e;--v-depends:#e0a54a;--v-fragile:#f0786b;
 --v-check:#c49af0;--v-nocall:#8f9491}}
 *{box-sizing:border-box}html{background:var(--bg);color:var(--fg)}
-body{margin:0 auto;max-width:920px;padding:32px 20px 64px;font:14px/1.55 system-ui,-apple-system,
-"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+body{margin:0 auto;max-width:920px;padding:32px 20px 64px;overflow-wrap:anywhere;
+font:14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
 h1{font-size:26px;line-height:1.25;margin:0 0 6px}h2{font-size:19px;margin:36px 0 10px;
 padding-top:10px;border-top:1px solid var(--line)}h3{font-size:15px;margin:20px 0 6px}
 p{margin:6px 0 10px}.muted{color:var(--muted)}.small{font-size:12.5px}
