@@ -4,9 +4,9 @@
  * an answer, so a changed shape shows "could not read the answer" instead of a broken panel.
  */
 
-/** A number the answer cites: its fact id, what it means, and its value as the engine wrote it. */
+/** A number the answer cites: its fact id (when it has one), what it means, and its value as shown. */
 export interface AskFact {
-  id: string;
+  id: string | null;
   meaning: string;
   value: string;
 }
@@ -65,9 +65,10 @@ function readFacts(value: unknown): AskFact[] {
     for (const item of value) {
       if (!isRecord(item)) continue;
       const id = str(item.id);
+      const meaning = str(item.meaning) ?? str(item.label) ?? id;
       const shown = item.value;
-      if (!id || (typeof shown !== "string" && typeof shown !== "number")) continue;
-      out.push({ id, meaning: str(item.meaning) ?? str(item.label) ?? id, value: String(shown) });
+      if (!meaning || (typeof shown !== "string" && typeof shown !== "number")) continue;
+      out.push({ id, meaning, value: String(shown) });
     }
   } else if (isRecord(value)) {
     for (const [id, item] of Object.entries(value)) {

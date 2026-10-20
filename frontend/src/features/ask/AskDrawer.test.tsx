@@ -6,16 +6,15 @@ import type { Schemas } from "@/api/client";
 import frame from "@/test/recorded/shell-session-frame.json";
 import { TooltipProvider } from "@/ui";
 import model from "./__recorded__/model-none.json";
+import request from "./__recorded__/ask-request.json";
+import robustness from "./__recorded__/ask-robustness.json";
 import noRoute from "./__recorded__/no-route.json";
 import AskDrawer from "./AskDrawer";
 import { resetAllTurns } from "./history";
 
 const session = frame as unknown as Schemas["WorkspaceView"];
 
-function renderDrawer(workspace: Schemas["WorkspaceView"] | null) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  // The shell's ["system"] query, as the server answered it (only the model is read here).
-  qc.setQueryData(["system"], { model });
+function renderDrawer(workspace: Schemas["WorkspaceView"] | null, qc = client()) {
   return render(
     <QueryClientProvider client={qc}>
       <TooltipProvider>
@@ -23,6 +22,29 @@ function renderDrawer(workspace: Schemas["WorkspaceView"] | null) {
       </TooltipProvider>
     </QueryClientProvider>,
   );
+}
+
+function client(): QueryClient {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+  });
+  // The shell's ["system"] query, as the server answered it (only the model is read here).
+  qc.setQueryData(["system"], { model });
+  return qc;
+}
+
+/** The server accepts the question with this (recorded, finished) job, and the job reads as recorded. */
+function answerWith(job: { id: string }, qc: QueryClient) {
+  qc.setQueryData(["job", job.id], job);
+  vi.mocked(fetch).mockImplementation((url) =>
+    String(url).endsWith("/ask") ? respond(202, { job }) : respond(404, noRoute),
+  );
+}
+
+function ask(question: string) {
+  const box = screen.getByLabelText<HTMLTextAreaElement>("Your question about this study");
+  fireEvent.change(box, { target: { value: question } });
+  fireEvent.keyDown(box, { key: "Enter" });
 }
 
 function respond(status: number, body: unknown) {
@@ -97,5 +119,27 @@ describe("AskDrawer", () => {
     await waitFor(() => expect(box.value).toBe(""));
     fireEvent.keyDown(box, { key: "ArrowUp" });
     expect(box.value).toBe("What should I check first in this data?");
+  });
+
+  it("answers a question with the recorded job: words, tool, writer and the cited facts", async () => {
+    const qc = client();
+    answerWith(robustness, qc);
+    renderDrawer(session, qc);
+    ask(robustness.result.question);
+    await screen.findByText(robustness.result.answer);
+    for (const f of robustness.result.facts) expect(screen.getByText(f.meaning)).toBeTruthy();
+    expect(screen.getByText(robustness.result.writer_words)).toBeTruthy();
+    expect(screen.getByRole("link", { name: `Open ${robustness.result.args.gene}` })).toBeTruthy();
+  });
+
+  it("re-reads the workspace when Ask wrote to the decision chain (a request for a person)", async () => {
+    const qc = client();
+    const invalidate = vi.spyOn(qc, "invalidateQueries");
+    answerWith(request, qc);
+    renderDrawer(session, qc);
+    ask(request.result.question);
+    await screen.findByText("Waiting for a person");
+    expect(request.result.head_after).not.toBe(request.result.head_before);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["w", session.key] });
   });
 });

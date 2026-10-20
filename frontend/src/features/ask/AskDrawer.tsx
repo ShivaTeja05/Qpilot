@@ -14,6 +14,7 @@ import { addTurn, clearTurns, recallList, updateTurn, useTurns, type Turn } from
 import { ModelLine } from "./ModelLine";
 import { ModelSaw } from "./ModelSaw";
 import { TurnView } from "./TurnView";
+import type { Example } from "./examples";
 import { useExamples } from "./useExamples";
 
 export interface AskDrawerProps {
@@ -144,22 +145,22 @@ function Conversation({
   const run = useCallback(
     async (turn: Turn) => {
       try {
-        const job = await startAsk(studyId, turn.question, source);
+        const job = await startAsk(studyId, turn.question, turn.source);
         updateTurn(studyId, turn.id, { state: "running", jobId: job.id, error: null });
       } catch (error) {
         updateTurn(studyId, turn.id, { state: "failed", error });
       }
     },
-    [studyId, source],
+    [studyId],
   );
 
   const ask = useCallback(
-    (question: string) => {
+    (question: string, from: AskSource = source) => {
       if (sending) return false;
-      void run(addTurn(studyId, question));
+      void run(addTurn(studyId, question, from));
       return true;
     },
-    [run, sending, studyId],
+    [run, sending, studyId, source],
   );
 
   const retry = useCallback(
@@ -185,13 +186,15 @@ function Conversation({
     return () => window.clearTimeout(id);
   }, [open]);
 
-  // Keep the newest exchange in view.
+  // Bring the newest question to the top of the conversation, so its answer reads from the start.
   const last = turns[turns.length - 1];
   useEffect(() => {
     const el = log.current;
     if (!el || !last) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: reduced ? "auto" : "smooth" });
-  }, [last?.id, last?.state, reduced]); // eslint-disable-line react-hooks/exhaustive-deps -- scroll on a new turn or state
+    const turn = el.querySelector<HTMLElement>(`[data-turn="${last.id}"]`);
+    if (!turn) return;
+    el.scrollTo({ top: Math.max(0, turn.offsetTop - 12), behavior: reduced ? "auto" : "smooth" });
+  }, [last?.id, last?.state, reduced]); // eslint-disable-line react-hooks/exhaustive-deps -- on a new turn or state
 
   return (
     <>
@@ -200,10 +203,15 @@ function Conversation({
         role="log"
         aria-label="Questions and answers"
         aria-live="polite"
-        className="qp-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4"
+        className="qp-scroll relative flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4"
       >
         {turns.length === 0 ? (
-          <Intro examples={examples} loading={loading} onPick={(q) => ask(q)} disabled={sending} />
+          <Intro
+            examples={examples}
+            loading={loading}
+            onPick={(e) => ask(e.question, e.source)}
+            disabled={sending}
+          />
         ) : (
           <>
             <div className="flex justify-end">
@@ -242,7 +250,7 @@ function Conversation({
         ) : null}
         <Composer
           ref={box}
-          onSend={ask}
+          onSend={(q) => ask(q)}
           recall={recall}
           disabled={sending}
           disabledReason="Sending your question…"
@@ -258,9 +266,9 @@ function Intro({
   onPick,
   disabled,
 }: {
-  examples: string[];
+  examples: Example[];
   loading: boolean;
-  onPick: (q: string) => void;
+  onPick: (e: Example) => void;
   disabled: boolean;
 }) {
   return (
@@ -290,15 +298,20 @@ function Intro({
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
-            {examples.map((q) => (
-              <li key={q}>
+            {examples.map((e) => (
+              <li key={e.question}>
                 <button
                   type="button"
                   disabled={disabled}
-                  onClick={() => onPick(q)}
+                  onClick={() => onPick(e)}
                   className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-left text-[13px] text-fg transition-colors hover:border-accent/40 hover:bg-accent-soft/40 disabled:opacity-55"
                 >
-                  {q}
+                  {e.question}
+                  {e.source === "audit" ? (
+                    <span className="mt-0.5 block text-xs text-muted">
+                      Answered by the robustness audit
+                    </span>
+                  ) : null}
                 </button>
               </li>
             ))}

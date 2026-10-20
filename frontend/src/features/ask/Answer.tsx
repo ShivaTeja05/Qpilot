@@ -11,6 +11,10 @@ export interface AnswerLinks {
   onOpenCard?: (cardId: string | null) => void;
 }
 
+/** First letter up, except for names that start lower-case (qPilot). */
+const capitalise = (s: string) =>
+  s && !s.startsWith("qPilot") ? s[0]!.toUpperCase() + s.slice(1) : s;
+
 /**
  * One answer: the words, which tool answered and who wrote the words, what happened to a change
  * request, and the facts it cites. Every number shown here comes from the answer or its facts.
@@ -38,7 +42,9 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
               </a>
             ) : null}
           </div>
-          {answer.status === "pending_human" ? (
+          {answer.note ? (
+            <p className="text-[13px] text-muted">{answer.note}</p>
+          ) : answer.status === "pending_human" ? (
             <p className="text-[13px] text-muted">
               The request waits for you on the card, with a button to turn it down.
             </p>
@@ -50,17 +56,17 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
         </div>
       ) : null}
 
-      <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-[13px]">
+      <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1.5 text-[13px]">
         <dt className="flex items-center gap-1.5 text-muted">
           <Wrench className="size-3.5" aria-hidden />
           Answered by
         </dt>
         <dd className="min-w-0 text-fg">
-          {toolWords(answer)}
+          {capitalise(toolWords(answer))}
           {answer.engine === "audit" ? (
             <span className="text-muted"> (the robustness audit)</span>
           ) : null}
-          {router ? <span className="block text-xs text-faint">{router}</span> : null}
+          {router ? <span className="block text-xs text-muted">Picked by {router}</span> : null}
         </dd>
         <dt className="flex items-center gap-1.5 text-muted">
           {answer.writtenBy === "model" ? (
@@ -72,22 +78,19 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
         </dt>
         <dd className="min-w-0 break-words text-fg">
           {answer.writtenBy === "model" ? (
-            <span className="font-mono text-[12px]">{authorWords(answer)}</span>
+            <>
+              <span className="font-mono text-[12px]">{authorWords(answer)}</span>
+              <span className="block text-xs text-muted">
+                A model; qPilot checked every number against the facts.
+              </span>
+            </>
           ) : (
-            authorWords(answer)
+            capitalise(authorWords(answer))
           )}
-          {answer.writtenBy === "model" ? (
-            <span className="text-muted"> (numbers checked against the facts)</span>
-          ) : null}
         </dd>
       </dl>
 
-      {answer.note ? (
-        <p className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-muted">
-          {answer.writtenBy === "template" ? "Template answer; the model was not used: " : "Note: "}
-          {answer.note}
-        </p>
-      ) : null}
+      {answer.note && !status ? <p className="text-xs text-muted">{answer.note}</p> : null}
 
       {!answer.validated ? (
         <p className="flex items-start gap-2 rounded-lg border border-warn/30 bg-warn-soft/60 px-3 py-2 text-[13px] text-fg">
@@ -111,10 +114,10 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
                 </TR>
               </THead>
               <TBody>
-                {answer.facts.map((f) => (
-                  <TR key={f.id}>
+                {answer.facts.map((f, i) => (
+                  <TR key={f.id ?? `${f.meaning}-${i}`}>
                     <TD>
-                      <span title={f.id}>{f.meaning}</span>
+                      <span title={f.id ?? undefined}>{f.meaning}</span>
                     </TD>
                     <TD numeric>
                       <span className="font-mono tabular">{f.value}</span>

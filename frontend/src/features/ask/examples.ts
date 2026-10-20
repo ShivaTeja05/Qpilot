@@ -20,24 +20,32 @@ export interface ExampleInput {
 
 export const MAX_EXAMPLES = 4;
 
+/** A question and the engine to ask it of (`auto`: qPilot picks). */
+export interface Example {
+  question: string;
+  source: "auto" | "study" | "audit";
+}
+
 /** Up to {@link MAX_EXAMPLES} questions worth asking about this study, best first. */
-export function exampleQuestions({ genes, references, hasAudit }: ExampleInput): string[] {
+export function exampleQuestions({ genes, references, hasAudit }: ExampleInput): Example[] {
   const called = genes.filter((g) => g.conclusion !== "none" && g.holds != null);
   const byHolds = [...called].sort(
     (a, b) => (b.holds ?? 0) - (a.holds ?? 0) || a.gene.localeCompare(b.gene),
   );
   const firm = byHolds[0];
   const shaky = byHolds.length > 1 ? byHolds[byHolds.length - 1] : undefined;
-  const out: string[] = [];
-  if (firm) out.push(`Is the ${firm.gene} result robust?`);
-  if (shaky && shaky.gene !== firm?.gene) out.push(`What could change the call for ${shaky.gene}?`);
+  const out: Example[] = [];
+  const ask = (question: string, source: Example["source"] = "auto") =>
+    out.push({ question, source });
+  if (firm) ask(`Is the ${firm.gene} result robust?`);
+  if (shaky && shaky.gene !== firm?.gene) ask(`What could change the call for ${shaky.gene}?`);
   const any = genes[0];
-  if (!firm && any) out.push(`Is the ${any.gene} result robust?`);
+  if (!firm && any) ask(`Is the ${any.gene} result robust?`);
   if (hasAudit) {
-    out.push("What should I check first in this data?");
+    ask("What should I look at first in this data?", "audit");
     const ref = references[0];
-    if (ref) out.push(`What if I normalise to ${ref} alone?`);
+    if (ref) ask(`What if I normalise to ${ref} alone?`, "audit");
   }
-  out.push("How many plates, samples and genes are in this study?");
+  ask("How many plates, samples and genes are in this study?", "study");
   return out.slice(0, MAX_EXAMPLES);
 }

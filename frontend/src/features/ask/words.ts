@@ -26,18 +26,19 @@ export function toolWords(a: Pick<AskView, "tool" | "toolWords">): string {
 }
 
 /** Who wrote the words of an answer: the model's name, or qPilot's template. */
-export function authorWords(a: Pick<AskView, "writtenBy" | "model" | "provider">): string {
-  if (a.writtenBy === "model") return a.model ?? a.provider ?? "the model";
-  return "qPilot's template";
+export function authorWords(
+  a: Pick<AskView, "writtenBy" | "model" | "provider" | "writerWords">,
+): string {
+  if (a.writtenBy === "model") return a.model ?? a.provider ?? a.writerWords ?? "the model";
+  return a.writerWords ?? "qPilot's checked template";
 }
 
-/** Who picked the tool, in one sentence. */
+/** Who picked the tool, as a phrase after "Picked by". */
 export function routerWords(a: Pick<AskView, "routedBy" | "routedWords">): string | null {
   if (a.routedWords) return a.routedWords;
-  if (a.routedBy === "model") return "The model picked the tool; qPilot ran it.";
-  if (a.routedBy === "keywords") return "qPilot's keyword router picked the tool.";
-  if (a.routedBy === "rules")
-    return "A fixed rule picked the tool (a change request always goes to its card).";
+  if (a.routedBy === "model") return "the model (qPilot ran the tool)";
+  if (a.routedBy === "keywords") return "keyword matching";
+  if (a.routedBy === "rules") return "fixed reading rules";
   return null;
 }
 

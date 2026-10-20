@@ -20,7 +20,9 @@ function named(question: string): string[] {
 
 describe("exampleQuestions", () => {
   it("asks about the firmest and the shakiest called gene of the study", () => {
-    const [firm, shaky] = exampleQuestions({ genes, references, hasAudit: false });
+    const [firm, shaky] = exampleQuestions({ genes, references, hasAudit: false }).map(
+      (e) => e.question,
+    );
     const [a] = named(firm!);
     const [b] = named(shaky!);
     expect(a).toBeDefined();
@@ -34,14 +36,19 @@ describe("exampleQuestions", () => {
   it("adds the audit's questions, with a reference gene of the study, only when there is an audit", () => {
     const without = exampleQuestions({ genes, references, hasAudit: false });
     const withAudit = exampleQuestions({ genes, references, hasAudit: true });
-    expect(without.some((q) => q.includes(references[0]!))).toBe(false);
-    expect(withAudit.some((q) => q.includes(`normalise to ${references[0]} alone`))).toBe(true);
+    expect(without.some((e) => e.source === "audit" || e.question.includes(references[0]!))).toBe(
+      false,
+    );
+    const whatIf = withAudit.find((e) =>
+      e.question.includes(`normalise to ${references[0]} alone`),
+    );
+    expect(whatIf?.source).toBe("audit");
     expect(withAudit.length).toBeLessThanOrEqual(MAX_EXAMPLES);
   });
 
   it("falls back to questions about the study when no gene is known yet", () => {
     const qs = exampleQuestions({ genes: [], references: [], hasAudit: false });
     expect(qs).toHaveLength(1);
-    expect(qs[0]).toMatch(/this study/);
+    expect(qs[0]!.question).toMatch(/this study/);
   });
 });

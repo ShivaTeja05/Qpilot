@@ -3,6 +3,7 @@
  * between sections, and is gone on reload (nothing is written to the browser or the store).
  */
 import { useSyncExternalStore } from "react";
+import type { AskSource } from "./askApi";
 import type { AskView } from "./types";
 
 /** Older turns are dropped beyond this many per study. */
@@ -14,6 +15,8 @@ export interface Turn {
   /** Local id (stable React key). */
   id: string;
   question: string;
+  /** Which engine it was asked of. */
+  source: AskSource;
   askedAt: number;
   /** The server's job, once the question was accepted. */
   jobId: string | null;
@@ -47,11 +50,17 @@ export function getTurns(studyId: string): Turn[] {
 }
 
 /** Add a question that is being sent; returns its turn. */
-export function addTurn(studyId: string, question: string, now = Date.now()): Turn {
+export function addTurn(
+  studyId: string,
+  question: string,
+  source: AskSource = "auto",
+  now = Date.now(),
+): Turn {
   counter += 1;
   const turn: Turn = {
     id: `t${now.toString(36)}-${counter}`,
     question,
+    source,
     askedAt: now,
     jobId: null,
     state: "sending",

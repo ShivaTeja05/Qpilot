@@ -3,7 +3,7 @@ import { ChevronRight, Eye } from "lucide-react";
 import { useId, useState } from "react";
 import type { Schemas } from "@/api/client";
 import { cn } from "@/lib/cn";
-import { CopyButton, ErrorPanel, LoadingBlock } from "@/ui";
+import { CopyButton, ErrorPanel, Hash, LoadingBlock } from "@/ui";
 import { getModelSeen } from "./askApi";
 
 /** Longest payload text shown (characters); the copy button copies all of it. */
@@ -31,7 +31,8 @@ export function ModelSaw({
     queryFn: () => getModelSeen(workspaceKey),
     staleTime: 0,
   });
-  const text = seen.data?.payload != null ? JSON.stringify(seen.data.payload, null, 2) : "";
+  const data = seen.data;
+  const text = data?.state === "shown" ? (data.payload_text ?? "") : "";
   return (
     <div className="rounded-lg border border-line">
       <button
@@ -51,33 +52,34 @@ export function ModelSaw({
       </button>
       {open ? (
         <div id={panel} className="border-t border-line px-3 py-2.5 text-[13px]">
-          {model && !model.configured ? (
-            <p className="text-muted">
-              No model is configured, so nothing is sent to one: qPilot's templates write every
-              answer.
-            </p>
-          ) : seen.isPending ? (
+          {seen.isPending ? (
             <LoadingBlock label="Reading the last payload" lines={2} />
           ) : seen.error ? (
             <ErrorPanel compact error={seen.error} onRetry={() => void seen.refetch()} />
-          ) : seen.data?.hidden ? (
+          ) : !data || data.state !== "shown" || !text ? (
             <p className="text-muted">
-              {seen.data.reason ?? "Withheld until the design and the curves are confirmed."}
-            </p>
-          ) : !text ? (
-            <p className="text-muted">
-              No model call yet in this qPilot process. Payloads are kept in memory only.
+              {data?.state === "none" && model && !model.configured
+                ? "No model is configured, so nothing is sent to one: qPilot's templates write every answer."
+                : (data?.message ?? "No model call yet in this qPilot process.")}
+              {data?.state === "none" && model?.configured
+                ? " Payloads are kept in memory only."
+                : null}
             </p>
           ) : (
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-start justify-between gap-2">
                 <p className="text-xs text-muted">
-                  {seen.data?.note ??
-                    "The exact system prompt and messages of the most recent model call."}
+                  {data.message}
+                  {data.sha256 ? (
+                    <>
+                      {" "}
+                      <Hash value={data.sha256} prefix="sha256 " />
+                    </>
+                  ) : null}
                 </p>
                 <CopyButton text={text} label="Copy the payload" />
               </div>
-              <pre className="qp-scroll max-h-72 overflow-auto rounded-md border border-line bg-sunken p-2.5 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-words text-fg">
+              <pre className="qp-scroll max-h-72 overflow-auto rounded-md border border-line bg-sunken p-2.5 font-mono text-[11.5px] leading-relaxed break-words whitespace-pre-wrap text-fg">
                 {text.length > MAX_SHOWN ? `${text.slice(0, MAX_SHOWN)}\n…` : text}
               </pre>
             </div>

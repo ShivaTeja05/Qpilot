@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { ApiError, type Schemas } from "@/api/client";
-import { exampleQuestions, type ExampleInput, type GeneLine } from "./examples";
+import { exampleQuestions, type Example, type ExampleInput, type GeneLine } from "./examples";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -66,7 +66,7 @@ async function fetchResults(studyId: string): Promise<unknown> {
 
 /** Up to four questions worth asking; study-level questions while the results are loading. */
 export function useExamples(workspace: Schemas["WorkspaceView"] | null): {
-  examples: string[];
+  examples: Example[];
   loading: boolean;
 } {
   const studyId = workspace?.study_id ?? null;

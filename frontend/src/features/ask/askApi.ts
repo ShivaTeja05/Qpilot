@@ -2,7 +2,7 @@
  * The two requests the drawer makes: start an answer (a job) and read what the model saw.
  * Same-origin, with this launch's key in its cookie, and errors in the server's own words.
  */
-import { ApiError, type JobView } from "@/api/client";
+import { ApiError, type JobView, type Schemas } from "@/api/client";
 
 /** The longest question the server takes (characters). */
 export const MAX_QUESTION = 500;
@@ -55,23 +55,9 @@ export async function startAsk(
 }
 
 /** The last payload sent to a model in this qPilot process, blind-gated by the server. */
-export interface ModelSeen {
-  payload: unknown;
-  hidden: boolean;
-  reason: string | null;
-  note: string | null;
-}
+export type ModelSeen = Schemas["ModelSeen"];
 
-const text = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
-
-export async function getModelSeen(key: string): Promise<ModelSeen> {
-  const body = await call<Record<string, unknown>>(
-    `/api/model/seen?study=${encodeURIComponent(key)}`,
-  );
-  return {
-    payload: body.payload ?? null,
-    hidden: body.hidden === true,
-    reason: text(body.reason),
-    note: text(body.note),
-  };
+/** What the model saw last, gated by this workspace (a study id or a session id). */
+export function getModelSeen(key: string): Promise<ModelSeen> {
+  return call<ModelSeen>(`/api/model/seen?study=${encodeURIComponent(key)}`);
 }
