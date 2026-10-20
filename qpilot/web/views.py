@@ -376,7 +376,9 @@ def session_summary(studio: Studio, sid: str, ready: bool | None = None) -> Work
         stages=stages,
         decisions=decisions,
         pending_requests=pending,
-        has_audit=audit_dir(store, study_id) is not None,
+        # while the file is read, the audit badge comes from disk (it names no number)
+        has_audit=audit_dir(store, study_id or (None if warm else meta.get("current_study")))
+        is not None,
         is_demo=folder.name == demo_sha(),
         updated_at=last_write(folder),
         warming=present and not warm,
@@ -491,6 +493,7 @@ def session_view(
             next_step=NextStep(title="Reading the file", detail=COLD_MESSAGE, section="design"),
             active_jobs=active_jobs or [],
             is_demo=line.is_demo,
+            has_audit=line.has_audit,
             warming=True,
         )
     try:

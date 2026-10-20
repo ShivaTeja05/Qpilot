@@ -93,8 +93,24 @@ async def _keep(ctx: AppContext, upload: UploadFile, kind: str, limit: int) -> P
         tmp.unlink(missing_ok=True)
 
 
-def _unreadable(name: str, why: str) -> str:
+def _declares_entities(path: Path) -> bool:
+    """True when a plain XML file declares entities (the hardened parser refuses those)."""
+    try:
+        with path.open("rb") as fh:
+            head = fh.read(64 * 1024)
+    except OSError:
+        return False
+    return b"<!ENTITY" in head
+
+
+def _unreadable(name: str, why: str, path: Path | None = None) -> str:
     """Why a dropped file cannot be read, in the person's words (the loader's reason kept)."""
+    if path is not None and "not a valid RDML or XML" in why and _declares_entities(path):
+        return (
+            f"{name} could not be read: it declares XML entities, which qPilot refuses (they "
+            "can make a file pull in other files). Export RDML again from your instrument's "
+            "software."
+        )
     if "too large" in why:
         detail = why.split("input too large", 1)[1].strip(" ()") if "input too large" in why else ""
         if "compression ratio" in detail:
@@ -126,7 +142,7 @@ def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) ->
         try:
             sid = ctx.studio.open(rdml, sheet, actor="human")
         except RdmlLoadError as err:
-            raise JobError("cannot_open", _unreadable(name, str(err))) from err
+            raise JobError("cannot_open", _unreadable(name, str(err), rdml)) from err
         except Exception as err:  # any reader failure is a sentence about the person's file
             text = str(err).replace(str(rdml), name).replace(rdml.name, name).strip()
             raise JobError(

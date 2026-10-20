@@ -218,3 +218,24 @@ def test_reasons_stored_in_older_words_are_shown_in_todays():
     assert reworded(old, None) == old, "without the grid's size the words stay as stored"
     assert shown(Fact(id="f_holds_x", value=0.6452, fmt="{:.0%}")) == f"65{NNBSP}%"
     assert shown(Fact(id="f_fc_x", value=3.59, fmt="{:.2g}", unit="×")) == "3.6×"
+
+
+def test_a_study_stored_in_older_words_is_served_in_todays(walked):
+    import json
+
+    c, study, store = walked["client"], walked["study"], walked["store"]
+    path = store.workspace(study) / "results.json"
+    data = json.loads(path.read_text())
+    new = "of the {} analyses qPilot checks.".format(data["robustness"]["1-Mar"]["n_cells"])
+    old = "of the reasonable analyses."
+    text = path.read_text().replace(new, old)
+    assert old in text, "the walked study holds a robustness reason to age"
+    path.write_text(text)
+    body = c.get(f"/api/studies/{study}/results").json()
+    reasons = [r for g in body["genes"] for r in g["reasons"]]
+    gene = c.get(f"/api/studies/{study}/genes/1-Mar").json()
+    notes = [ch["note"] for ch in gene["confidence"]["checks"]]
+    for words in (reasons, notes):
+        assert not any("reasonable analyses" in r for r in words)
+    assert any(new in n for n in notes)
+    assert path.read_text() == text, "the stored file is never rewritten"

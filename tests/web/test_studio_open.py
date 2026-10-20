@@ -56,3 +56,14 @@ def test_the_workspace_shows_the_name_the_file_had(sclient, mini_rdml):
     )
     frame = sclient.get(f"/api/sessions/{job['result']['key']}").json()
     assert frame["title"] == "Liver KO vs WT.rdml" == frame["facts"]["file_name"]
+
+
+def test_an_unreadable_file_says_why_in_plain_words(sclient, fixtures_dir):
+    cases = {
+        "not xml.rdml": (b"hello, not xml", "not a valid RDML file"),
+        "entities.rdml": ((fixtures_dir / "xxe.rdml").read_bytes(), "XML entities"),
+    }
+    for name, (data, words) in cases.items():
+        job = wait_job(sclient, _open(sclient, name, data).json()["job"])
+        assert job["status"] == "failed" and name in job["error"]["message"], job
+        assert words in job["error"]["message"] and "XML load error" not in job["error"]["message"]
