@@ -39,7 +39,7 @@ export function Field({
     <div className={cn("flex flex-col gap-1.5", className)}>
       <label htmlFor={htmlFor} className="text-[13px] font-medium text-fg">
         {label}
-        {optional ? <span className="ml-1 font-normal text-faint">(optional)</span> : null}
+        {optional ? <span className="ml-1 font-normal text-muted">(optional)</span> : null}
       </label>
       {children}
       {error ? (
@@ -53,12 +53,11 @@ export function Field({
   );
 }
 
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
-  { className, ...rest },
-  ref,
-) {
-  return <input ref={ref} className={cn(FIELD, "h-8", className)} {...rest} />;
-});
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  function Input({ className, ...rest }, ref) {
+    return <input ref={ref} className={cn(FIELD, "h-8", className)} {...rest} />;
+  },
+);
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   /** Shows `n / max` under the box; turns to a warning near the limit. */
@@ -78,7 +77,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         ref={ref}
         maxLength={maxLength}
         value={value}
-        className={cn(FIELD, "min-h-20 resize-y py-2 leading-relaxed", showCount && "pb-6", className)}
+        className={cn(
+          FIELD,
+          "min-h-20 resize-y py-2 leading-relaxed",
+          showCount && "pb-6",
+          className,
+        )}
         {...rest}
       />
       {showCount && maxLength != null ? (
@@ -86,7 +90,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
           aria-live="polite"
           className={cn(
             "pointer-events-none absolute right-2.5 bottom-1.5 font-mono text-[11px] tabular",
-            near ? "text-warn" : "text-faint",
+            near ? "text-warn" : "text-muted",
           )}
         >
           {count(length)} / {count(maxLength)}
@@ -136,7 +140,7 @@ export function Select<V extends string = string>({
         aria-label={label}
         className={cn(
           FIELD,
-          "inline-flex items-center justify-between gap-2 text-left data-[placeholder]:text-faint",
+          "inline-flex items-center justify-between gap-2 text-left data-[placeholder]:text-muted",
           size === "sm" ? "h-7 px-2.5 text-[13px]" : "h-8",
           className,
         )}
@@ -242,7 +246,10 @@ export function SegmentedControl<V extends string>({
       value={value}
       onValueChange={(v) => v && onValueChange(v as V)}
       aria-label={label}
-      className={cn("inline-flex items-center gap-0.5 rounded-lg border border-line bg-sunken p-0.5", className)}
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-lg border border-line bg-sunken p-0.5",
+        className,
+      )}
     >
       {options.map((o) => (
         <TG.Item
@@ -267,15 +274,34 @@ export function SegmentedControl<V extends string>({
 
 export const Tabs = Tb.Root;
 
-export function TabsList({ className, children, label }: { className?: string; children: ReactNode; label?: string }) {
+export function TabsList({
+  className,
+  children,
+  label,
+}: {
+  className?: string;
+  children: ReactNode;
+  label?: string;
+}) {
   return (
-    <Tb.List aria-label={label} className={cn("flex items-center gap-1 overflow-x-auto border-b border-line", className)}>
+    <Tb.List
+      aria-label={label}
+      className={cn("flex items-center gap-1 overflow-x-auto border-b border-line", className)}
+    >
       {children}
     </Tb.List>
   );
 }
 
-export function TabsTrigger({ value, children, count: n }: { value: string; children: ReactNode; count?: number }) {
+export function TabsTrigger({
+  value,
+  children,
+  count: n,
+}: {
+  value: string;
+  children: ReactNode;
+  count?: number;
+}) {
   return (
     <Tb.Trigger
       value={value}
@@ -283,13 +309,23 @@ export function TabsTrigger({ value, children, count: n }: { value: string; chil
     >
       {children}
       {n != null ? (
-        <span className="rounded-full bg-bg-subtle px-1.5 text-xs text-muted tabular">{count(n)}</span>
+        <span className="rounded-full bg-bg-subtle px-1.5 text-xs text-muted tabular">
+          {count(n)}
+        </span>
       ) : null}
     </Tb.Trigger>
   );
 }
 
-export function TabsContent({ value, children, className }: { value: string; children: ReactNode; className?: string }) {
+export function TabsContent({
+  value,
+  children,
+  className,
+}: {
+  value: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <Tb.Content value={value} className={cn("pt-4 outline-none", className)}>
       {children}

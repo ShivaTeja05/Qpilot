@@ -37,7 +37,10 @@ export function isTyping(target: EventTarget | null): boolean {
  * Keyboard shortcuts. Keys are single keys (`?`, `j`, `[`), modified keys (`mod+k`: ⌘ on a Mac,
  * Ctrl elsewhere) or two-key sequences (`g d`). Ignored while typing in a field.
  */
-export function useHotkeys(bindings: Record<string, (e: KeyboardEvent) => void>, enabled = true): void {
+export function useHotkeys(
+  bindings: Record<string, (e: KeyboardEvent) => void>,
+  enabled = true,
+): void {
   const ref = useRef(bindings);
   useEffect(() => {
     ref.current = bindings;
@@ -60,7 +63,7 @@ export function useHotkeys(bindings: Record<string, (e: KeyboardEvent) => void>,
         return;
       }
       if (e.altKey || isTyping(e.target)) return;
-      const k = e.key.length === 1 ? e.key : key;
+      const k = e.key === "/" && e.shiftKey ? "?" : e.key.length === 1 ? e.key : key;
       if (pending) {
         const handler = map[`${pending} ${k}`];
         pending = null;
@@ -103,4 +106,5 @@ export function useNow(intervalMs = 1000, enabled = true): number {
 }
 
 /** The modifier key's symbol on this platform (⌘ on a Mac, Ctrl elsewhere). */
-export const MOD = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl";
+export const MOD =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl";
