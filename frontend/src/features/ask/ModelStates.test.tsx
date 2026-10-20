@@ -11,7 +11,7 @@ import { Answer } from "./Answer";
 import { ModelLine } from "./ModelLine";
 import { ModelSaw } from "./ModelSaw";
 import { TooltipProvider } from "@/ui";
-import { toAskView } from "./types";
+import { toAskAnswer } from "./types";
 
 const notAnsweringModel = notAnswering as Schemas["ModelStatus"];
 const noneModel = none as Schemas["ModelStatus"];
@@ -42,7 +42,7 @@ describe("model states", () => {
   });
 
   it("shows why the template answered when the model was tried and failed", () => {
-    render(<Answer answer={toAskView(modelDown.result)!} links={{}} />);
+    render(<Answer answer={toAskAnswer(modelDown.result)!} links={{}} />);
     expect(screen.getByText(modelDown.result.note)).toBeTruthy();
     expect(screen.getByText(modelDown.result.writer_words)).toBeTruthy();
   });

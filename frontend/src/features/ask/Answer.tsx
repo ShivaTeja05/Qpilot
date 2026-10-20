@@ -1,46 +1,44 @@
 import { ArrowRight, Bot, FileText, ShieldAlert, Wrench } from "lucide-react";
 import { Badge, Table, TBody, TD, TH, THead, TR } from "@/ui";
-import type { AskView } from "./types";
-import { authorWords, routerWords, STATUS_WORDS, toolWords } from "./words";
+import { cardFocus, type AskAnswer } from "./types";
 
-/** Links out of an answer: the gene it is about, and the card a request waits on. */
+/** Links out of an answer: the gene it is about, and the Decision Card a change request names. */
 export interface AnswerLinks {
   gene?: (gene: string) => string;
   results?: string;
   /** Called with the card's focus target (`card:<id>`) when the card link is followed. */
   onOpenCard?: (focus: string) => void;
+  /** Called when any other link out of the answer is followed. */
+  onFollow?: () => void;
 }
+
+/** A number or a short word ("2.6×", "91%", "Moderate") sits in the number column; text wraps. */
+const isShortValue = (v: string) => v.length <= 16 && !/\s\w+\s/.test(v);
 
 /** First letter up, except for names that start lower-case (qPilot). */
 const capitalise = (s: string) =>
   s && !s.startsWith("qPilot") ? s[0]!.toUpperCase() + s.slice(1) : s;
 
 /**
- * One answer: the words, which tool answered and who wrote the words, what happened to a change
- * request, and the facts it cites. Every number shown here comes from the answer or its facts.
+ * One answer: the words, which tool answered and who picked it, who wrote the words, the
+ * Decision Card a change request names, and the facts it cites. Every number shown here comes
+ * from the answer or its facts; every label about how it was made is the server's own words.
  */
-export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks }) {
-  const gene = typeof answer.args.gene === "string" ? answer.args.gene : null;
-  const status = answer.status ? STATUS_WORDS[answer.status] : undefined;
-  // The Decision Card the answer is about (a change request), as a focus target for Results.
-  const focus = answer.focus?.startsWith("card:")
-    ? answer.focus
-    : answer.cardId
-      ? `card:${answer.cardId}`
-      : null;
-  const router = routerWords(answer);
+export function Answer({ answer, links }: { answer: AskAnswer; links: AnswerLinks }) {
+  const gene = typeof answer.args?.gene === "string" ? answer.args.gene : null;
+  const card = cardFocus(answer);
   return (
     <div className="flex flex-col gap-3">
-      <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">{answer.answer}</p>
+      <p className="text-sm leading-relaxed whitespace-pre-wrap text-fg">{answer.answer}</p>
 
-      {status || focus ? (
+      {card ? (
         <div className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={status?.tone ?? "info"}>{status?.label ?? "A choice for a person"}</Badge>
-            {focus && links.results && answer.status !== "applied" ? (
+            <Badge tone="info">A choice for a person</Badge>
+            {links.results ? (
               <a
                 href={links.results}
-                onClick={() => links.onOpenCard?.(focus)}
+                onClick={() => links.onOpenCard?.(card)}
                 className="inline-flex items-center gap-1 text-[13px] font-medium text-accent underline-offset-4 hover:underline"
               >
                 Open the card
@@ -50,11 +48,7 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
           </div>
           <p className="text-[13px] text-muted">
             {answer.note ??
-              (answer.status === "pending_human"
-                ? "The request waits for you on the card, with a button to turn it down."
-                : answer.status === "applied"
-                  ? "Ask applied it as an agent; it is in the decision log, and Undo is on its card."
-                  : "Ask does not change analysis choices: a person decides them on the Decision Card.")}
+              "Ask never changes an analysis choice: a person decides it on its Decision Card."}
           </p>
         </div>
       ) : null}
@@ -65,14 +59,14 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
           Answered by
         </dt>
         <dd className="min-w-0 text-fg">
-          {capitalise(toolWords(answer))}
+          {capitalise(answer.tool_words)}
           {answer.engine === "audit" ? (
             <span className="text-muted"> (the robustness audit)</span>
           ) : null}
-          {router ? <span className="block text-xs text-muted">Picked by {router}</span> : null}
+          <span className="block text-xs text-muted">Picked by {answer.routed_words}</span>
         </dd>
         <dt className="flex items-center gap-1.5 text-muted">
-          {answer.writtenBy === "model" ? (
+          {answer.written_by === "model" ? (
             <Bot className="size-3.5" aria-hidden />
           ) : (
             <FileText className="size-3.5" aria-hidden />
@@ -80,22 +74,20 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
           Words by
         </dt>
         <dd className="min-w-0 break-words text-fg">
-          {answer.writtenBy === "model" ? (
+          {answer.written_by === "model" ? (
             <>
-              <span className="font-mono text-[12px]">{authorWords(answer)}</span>
+              <span className="font-mono text-[12px]">{answer.model ?? answer.writer_words}</span>
               <span className="block text-xs text-muted">
                 A model; qPilot checked every number against the facts.
               </span>
             </>
           ) : (
-            capitalise(authorWords(answer))
+            capitalise(answer.writer_words)
           )}
         </dd>
       </dl>
 
-      {answer.note && !status && !focus ? (
-        <p className="text-xs text-muted">{answer.note}</p>
-      ) : null}
+      {answer.note && !card ? <p className="text-xs text-muted">{answer.note}</p> : null}
 
       {!answer.validated ? (
         <p className="flex items-start gap-2 rounded-lg border border-warn/30 bg-warn-soft/60 px-3 py-2 text-[13px] text-fg">
@@ -121,12 +113,14 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
               <TBody>
                 {answer.facts.map((f, i) => (
                   <TR key={f.id ?? `${f.meaning}-${i}`}>
-                    <TD>
+                    <TD className="py-1.5">
                       <span title={f.id ?? undefined}>{f.meaning}</span>
                     </TD>
-                    <TD numeric>
-                      <span className="font-mono tabular">{f.value}</span>
-                    </TD>
+                    {isShortValue(f.value) ? (
+                      <TD numeric>{f.value}</TD>
+                    ) : (
+                      <TD className="py-1.5 text-[13px]">{f.value}</TD>
+                    )}
                   </TR>
                 ))}
               </TBody>
@@ -140,6 +134,7 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
       {gene && links.gene ? (
         <a
           href={links.gene(gene)}
+          onClick={links.onFollow}
           className="inline-flex w-fit items-center gap-1 text-[13px] font-medium text-accent underline-offset-4 hover:underline"
         >
           Open {gene}
