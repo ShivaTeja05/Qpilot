@@ -1,8 +1,11 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { EyeOff, FolderOpen, Loader2, MessageCircleQuestion, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { api, unwrap, type Schemas } from "@/api/client";
+import type { Schemas } from "@/api/client";
 import { useReducedMotion } from "@/lib/hooks";
+import { focusAction } from "@/shell/actions";
+import { useSystem } from "@/shell/data";
+import { pathOf } from "@/shell/route";
 import { Button, EmptyState, SegmentedControl, Skeleton } from "@/ui";
 import type { AnswerLinks } from "./Answer";
 import { startAsk, type AskSource } from "./askApi";
@@ -30,7 +33,7 @@ const SOURCES: { value: AskSource; label: string }[] = [
  * frame's height: the model line, the conversation (scrolls), and the question box.
  */
 export default function AskDrawer({ workspace, open }: AskDrawerProps) {
-  const system = useQuery({ queryKey: ["system"], queryFn: () => unwrap(api.GET("/api/system")) });
+  const system = useSystem();
   const model = system.data?.model;
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -74,7 +77,7 @@ function Closed({ children }: { children: ReactNode }) {
 
 /** Why Ask is closed on a blind (or not yet analysed) Studio session, and where to go. */
 function BlindNotice({ workspace }: { workspace: Schemas["WorkspaceView"] }) {
-  const base = `#/${workspace.kind === "session" ? "s" : "r"}/${workspace.key}`;
+  const kind = workspace.kind === "session" ? "s" : "r";
   const stage = (name: "design" | "curves") => workspace.stages.find((s) => s.stage === name);
   const design = stage("design");
   const curves = stage("curves");
@@ -93,7 +96,7 @@ function BlindNotice({ workspace }: { workspace: Schemas["WorkspaceView"] }) {
       title="Ask waits until the study is unblinded"
       action={
         <Button asChild size="sm" variant="primary">
-          <a href={`${base}/${next}`}>
+          <a href={`#${pathOf(kind, workspace.key, next)}`}>
             {next === "design" ? "Confirm the design" : "Confirm the curves"}
           </a>
         </Button>
@@ -128,10 +131,14 @@ function Conversation({
   const sending = turns.some((t) => t.state === "sending");
   const answered = turns.filter((t) => t.state === "done").length;
 
-  const base = `#/${workspace.kind === "session" ? "s" : "r"}/${workspace.key}`;
+  const kind = workspace.kind === "session" ? "s" : "r";
   const links: AnswerLinks = useMemo(
-    () => ({ gene: (g) => `${base}/gene/${encodeURIComponent(g)}`, results: `${base}/results` }),
-    [base],
+    () => ({
+      gene: (g) => `#${pathOf(kind, workspace.key, "gene", g)}`,
+      results: `#${pathOf(kind, workspace.key, "results")}`,
+      onOpenCard: (card) => focusAction(card ? `card:${card}` : "Decide"),
+    }),
+    [kind, workspace.key],
   );
 
   const run = useCallback(

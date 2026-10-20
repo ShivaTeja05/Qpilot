@@ -7,6 +7,8 @@ import { authorWords, routerWords, STATUS_WORDS, toolWords } from "./words";
 export interface AnswerLinks {
   gene?: (gene: string) => string;
   results?: string;
+  /** Called when the card link is followed (the shell focuses the card once Results shows it). */
+  onOpenCard?: (cardId: string | null) => void;
 }
 
 /**
@@ -22,15 +24,28 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
       <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">{answer.answer}</p>
 
       {status ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={status.tone}>{status.label}</Badge>
-          {answer.status === "pending_human" && links.results ? (
-            <a
-              href={links.results}
-              className="text-[13px] font-medium text-accent underline-offset-4 hover:underline"
-            >
-              Decide it on its card in Results
-            </a>
+        <div className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={status.tone}>{status.label}</Badge>
+            {answer.status === "pending_human" && links.results ? (
+              <a
+                href={links.results}
+                onClick={() => links.onOpenCard?.(answer.cardId)}
+                className="inline-flex items-center gap-1 text-[13px] font-medium text-accent underline-offset-4 hover:underline"
+              >
+                Open the card
+                <ArrowRight className="size-3.5" aria-hidden />
+              </a>
+            ) : null}
+          </div>
+          {answer.status === "pending_human" ? (
+            <p className="text-[13px] text-muted">
+              The request waits for you on the card, with a button to turn it down.
+            </p>
+          ) : answer.status === "applied" ? (
+            <p className="text-[13px] text-muted">
+              Ask applied it as an agent; it is in the decision log, and Undo is on its card.
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -69,7 +84,7 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
 
       {answer.note ? (
         <p className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-muted">
-          {answer.writtenBy === "template" ? "The model was not used for these words: " : "Note: "}
+          {answer.writtenBy === "template" ? "Template answer; the model was not used: " : "Note: "}
           {answer.note}
         </p>
       ) : null}
