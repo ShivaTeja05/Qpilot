@@ -89,6 +89,7 @@ def next_step(
     results_visible: bool,
     undecided_cards: int = 0,
     has_audit: bool = False,
+    analysed: bool = True,
 ) -> NextStep:
     """The one thing to do next. ``proposals`` counts the inbox per stage (``design`` …)."""
     if not file_present:
@@ -129,6 +130,12 @@ def next_step(
         )
     if not results_visible:
         return NextStep(title="Confirm the design and the curves", section="design")
+    if not analysed:
+        return NextStep(
+            title="Analysing the confirmed design",
+            detail="Every curve, then every reasonable analysis; the results show when it is done.",
+            section="results",
+        )
     if undecided_cards:
         return NextStep(
             title=f"Decide {undecided_cards} analysis choice{'s' * (undecided_cards != 1)}",
@@ -203,6 +210,27 @@ def undecided(store: StudyStore, study_id: str | None) -> int:
         return 0
 
 
+def analysed_study(studio: Studio, sid: str, meta: dict[str, Any] | None = None) -> str | None:
+    """The session's analysed study of the design confirmed now (None while it is analysed).
+
+    Studio analyses on first use; when a person's decision changed the confirmed design (an
+    accepted exclusion, say), the earlier analysis is not shown as if it were this one.
+    """
+    meta = session_meta(studio.store, sid) if meta is None else meta
+    current = meta.get("current_study")
+    try:
+        expected = studio.expected_study(sid)
+    except (StudioError, StudyNotFound, OSError, ValueError):
+        return None
+    if not current or current != expected:
+        return None
+    try:
+        studio.store.workspace(current)
+    except StudyNotFound:
+        return None
+    return current
+
+
 def session_summary(studio: Studio, sid: str) -> WorkspaceSummary:
     """One line of the workspace list for a Studio session."""
     store = studio.store
@@ -211,7 +239,7 @@ def session_summary(studio: Studio, sid: str) -> WorkspaceSummary:
     meta = session_meta(store, sid)
     stages = stage_views(studio, sid)
     visible = bool(stages) and all(s.confirmed for s in stages if s.stage in ("design", "curves"))
-    study_id = meta.get("current_study") if visible else None
+    study_id = analysed_study(studio, sid, meta) if visible else None
     facts: dict[str, Any] = {}
     try:
         summary = studio.summary(sid)
@@ -332,6 +360,7 @@ def session_view(studio: Studio, sid: str, active_jobs: list[Any] | None = None)
         results_visible=line.results_visible,
         undecided_cards=undecided(store, line.study_id),
         has_audit=line.has_audit,
+        analysed=line.study_id is not None,
     )
     return WorkspaceView(
         key=sid,
