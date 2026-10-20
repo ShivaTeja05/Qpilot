@@ -21,12 +21,12 @@
  *                       allDecided · filter/onClearFilter · onFocusProposal · cardExtra · cardProps
  *                       · editOptions · hotkeys): pending first (contradicted first), filters,
  *                       j/k + a/e/x, "Decided in this stage (n)" folded underneath.
- *   BulkActions         "Accept all consistent…" and "Reject contradicted AI calls…" (sid · stage
- *                       · pending): the exact list first, then exactly that list.
+ *   BulkActions         "Accept all consistent…" and "Reject contradicted AI calls…" (sid · stage):
+ *                       the exact list first, then exactly that list; off when nothing qualifies.
  *   ConfirmStage        "Confirm this stage…" (sid · stage · status): what it covers, "Yes, confirm".
  *   DecidedList, ProposalLines, BulkAction
  *   useStageProposals(sid, stage) · useQuotes(sid) → {lookup, sheetCells} ·
- *   useProposalActions(sid, head) · useMattersJobs(sid)
+ *   useProposalActions(sid, head, stage) · useMattersJobs(sid)
  *
  * The words for origins, flags, rule ids and check fields live in `./words`.
  */
