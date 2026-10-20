@@ -1,0 +1,297 @@
+{
+  "genes": [
+    {
+      "gene": "AHCY",
+      "conclusion": "up",
+      "holds": 0.9059139784946236
+    },
+    {
+      "gene": "AKR1C1",
+      "conclusion": "down",
+      "holds": 0.9543010752688172
+    },
+    {
+      "gene": "ARHGEF7",
+      "conclusion": "none",
+      "holds": 0.9946236559139785
+    },
+    {
+      "gene": "BIRC5",
+      "conclusion": "up",
+      "holds": 1.0
+    },
+    {
+      "gene": "CAMTA1",
+      "conclusion": "down",
+      "holds": 0.956989247311828
+    },
+    {
+      "gene": "CAMTA2",
+      "conclusion": "none",
+      "holds": 0.6370967741935484
+    },
+    {
+      "gene": "CD44",
+      "conclusion": "down",
+      "holds": 0.989247311827957
+    },
+    {
+      "gene": "CDCA5",
+      "conclusion": "up",
+      "holds": 0.9448924731182796
+    },
+    {
+      "gene": "CDH5",
+      "conclusion": "down",
+      "holds": 1.0
+    },
+    {
+      "gene": "CDKN3",
+      "conclusion": "up",
+      "holds": 0.8790322580645161
+    },
+    {
+      "gene": "CLSTN1",
+      "conclusion": "down",
+      "holds": 0.42338709677419356
+    },
+    {
+      "gene": "CPSG3",
+      "conclusion": "up",
+      "holds": 1.0
+    },
+    {
+      "gene": "DDC",
+      "conclusion": "down",
+      "holds": 0.9516129032258065
+    },
+    {
+      "gene": "DPYSL3",
+      "conclusion": "down",
+      "holds": 0.543010752688172
+    },
+    {
+      "gene": "ECEL1",
+      "conclusion": "down",
+      "holds": 0.9731182795698925
+    },
+    {
+      "gene": "ELAVL4",
+      "conclusion": "none",
+      "holds": 0.989247311827957
+    },
+    {
+      "gene": "EPB41L3",
+      "conclusion": "down",
+      "holds": 1.0
+    },
+    {
+      "gene": "EPHA5",
+      "conclusion": "down",
+      "holds": 0.9516129032258065
+    },
+    {
+      "gene": "EPN2",
+      "conclusion": "down",
+      "holds": 0.5094086021505376
+    },
+    {
+      "gene": "FYN",
+      "conclusion": "none",
+      "holds": 0.967741935483871
+    },
+    {
+      "gene": "GNB1",
+      "conclusion": "none",
+      "holds": 0.8225806451612904
+    },
+    {
+      "gene": "HIVEP2",
+      "conclusion": "down",
+      "holds": 0.6841397849462365
+    },
+    {
+      "gene": "IGSF4",
+      "conclusion": "none",
+      "holds": 0.5026881720430108
+    },
+    {
+      "gene": "INPP1",
+      "conclusion": "down",
+      "holds": 0.8655913978494624
+    },
+    {
+      "gene": "MAP2K4",
+      "conclusion": "none",
+      "holds": 0.6586021505376344
+    },
+    {
+      "gene": "MAP7",
+      "conclusion": "down",
+      "holds": 0.9771505376344086
+    },
+    {
+      "gene": "MAPT",
+      "conclusion": "down",
+      "holds": 0.9731182795698925
+    },
+    {
+      "gene": "MCM2",
+      "conclusion": "up",
+      "holds": 0.956989247311828
+    },
+    {
+      "gene": "MRPL3",
+      "conclusion": "none",
+      "holds": 0.8440860215053764
+    },
+    {
+      "gene": "MTSS1",
+      "conclusion": "none",
+      "holds": 0.5483870967741935
+    },
+    {
+      "gene": "NHLH2",
+      "conclusion": "up",
+      "holds": 1.0
+    },
+    {
+      "gene": "NM23A",
+      "conclusion": "up",
+      "holds": 0.6505376344086021
+    },
+    {
+      "gene": "NRCAM",
+      "conclusion": "down",
+      "holds": 1.0
+    },
+    {
+      "gene": "NTRK1",
+      "conclusion": "down",
+      "holds": 0.8440860215053764
+    },
+    {
+      "gene": "ODC1",
+      "conclusion": "up",
+      "holds": 0.9946236559139785
+    },
+    {
+      "gene": "PAICS",
+      "conclusion": "none",
+      "holds": 0.5483870967741935
+    },
+    {
+      "gene": "PDE4DIP",
+      "conclusion": "down",
+      "holds": 0.6236559139784946
+    },
+    {
+      "gene": "PIK3R1",
+      "conclusion": "down",
+      "holds": 0.7204301075268817
+    },
+    {
+      "gene": "PLAGL1",
+      "conclusion": "down",
+      "holds": 0.7137096774193549
+    },
+    {
+      "gene": "PLAT",
+      "conclusion": "down",
+      "holds": 0.6653225806451613
+    },
+    {
+      "gene": "PMP22",
+      "conclusion": "down",
+      "holds": 0.9973118279569892
+    },
+    {
+      "gene": "PRAME",
+      "conclusion": "up",
+      "holds": 0.9489247311827957
+    },
+    {
+      "gene": "PRDM2",
+      "conclusion": "none",
+      "holds": 0.7150537634408602
+    },
+    {
+      "gene": "PRKACB_bis",
+      "conclusion": "none",
+      "holds": 0.489247311827957
+    },
+    {
+      "gene": "PRKCZ",
+      "conclusion": "none",
+      "holds": 0.5362903225806451
+    },
+    {
+      "gene": "PTN",
+      "conclusion": "down",
+      "holds": 0.9717741935483871
+    },
+    {
+      "gene": "PTPRF",
+      "conclusion": "down",
+      "holds": 0.625
+    },
+    {
+      "gene": "PTPRH",
+      "conclusion": "down",
+      "holds": 0.9018817204301075
+    },
+    {
+      "gene": "PTPRN2",
+      "conclusion": "down",
+      "holds": 0.7661290322580645
+    },
+    {
+      "gene": "QPCT",
+      "conclusion": "down",
+      "holds": 0.9731182795698925
+    },
+    {
+      "gene": "SCG2",
+      "conclusion": "down",
+      "holds": 1.0
+    },
+    {
+      "gene": "SLC25A5",
+      "conclusion": "none",
+      "holds": 0.6612903225806451
+    },
+    {
+      "gene": "SLC6A8",
+      "conclusion": "none",
+      "holds": 0.918010752688172
+    },
+    {
+      "gene": "SNAPC1",
+      "conclusion": "none",
+      "holds": 0.7352150537634409
+    },
+    {
+      "gene": "TNFRSF",
+      "conclusion": "down",
+      "holds": 0.956989247311828
+    },
+    {
+      "gene": "TYMS",
+      "conclusion": "up",
+      "holds": 0.8413978494623656
+    },
+    {
+      "gene": "ULK2",
+      "conclusion": "none",
+      "holds": 0.9731182795698925
+    },
+    {
+      "gene": "WSB1",
+      "conclusion": "none",
+      "holds": 0.8763440860215054
+    }
+  ],
+  "references": {
+    "used": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"]
+  }
+}
