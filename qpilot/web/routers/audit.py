@@ -51,9 +51,11 @@ from qpilot.web.contract_audit import (
     AuditHow,
     AuditIssues,
     AuditLab,
+    AuditLoadResult,
     AuditManifestView,
     AuditOverview,
     AuditRunRequest,
+    AuditRunResult,
     AuditSamples,
     AuditSamplesRequest,
     AuditStatus,
@@ -66,6 +68,9 @@ from qpilot.web.contract_audit import (
 from qpilot.web.jobs import JobError, Progress
 
 router = APIRouter(tags=["audit"])
+
+#: The result model of each job this module starts (typed in the page's generated schema).
+JOB_RESULTS = {"audit": AuditRunResult, "audit.load": AuditLoadResult, "audit.check": AuditCheck}
 
 M = TypeVar("M", bound=BaseModel)
 

@@ -142,6 +142,22 @@ class AuditStatus(BaseModel):
     typical_s: float = Field(description="How long an audit usually takes on the demo, measured.")
 
 
+class AuditRunResult(BaseModel):
+    """The audit job's result (job kind ``audit``)."""
+
+    study_id: str
+    analyses: int | None
+    verdict_counts: dict[str, int]
+    reproduces_qpilot: bool
+    seconds: float = Field(description="How long this run took, rebuilding included.")
+
+
+class AuditLoadResult(BaseModel):
+    """The result of loading the audit's live views (job kind ``audit.load``)."""
+
+    study_id: str
+
+
 class AuditRunRequest(BaseModel):
     """Start the audit; ``again`` replaces an existing one (the earlier one is kept beside it)."""
 
