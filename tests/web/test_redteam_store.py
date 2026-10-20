@@ -79,12 +79,9 @@ def test_one_damaged_study_does_not_hide_the_workspaces(web_ctx, web_store, cont
     assert r.status_code == 200, r.text
 
 
-@pytest.mark.xfail(
-    strict=False,  # fixed on ui/api-ops b4c522e (verified); plain test once that is merged here
-    reason="RT-UI-011 (agents) GET /api/agents was a 500 on a damaged results.json",
-)
 @pytest.mark.parametrize("content", DAMAGED)
 def test_one_damaged_study_does_not_hide_the_agents_page(web_ctx, web_store, content):
+    # RT-UI-011 for /api/agents: fixed by api-ops (b4c522e)
     r = _get_with_a_damaged_study(web_ctx, web_store, content, "/api/agents")
     assert r.status_code == 200, r.text
 
