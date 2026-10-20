@@ -6,7 +6,7 @@
 import { AlertTriangle, Bot, Check, ChevronDown, CircleCheck, Sparkles, Undo2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ApiError } from "@/api/client";
+import { ApiError, type Schemas } from "@/api/client";
 import { useJob } from "@/api/jobs";
 import { CALLS, Glyph, type CallKey } from "@/charts";
 import { cn } from "@/lib/cn";
@@ -20,7 +20,6 @@ import {
   type CardView,
   type CardsView,
   type DecisionDone,
-  type FactText as Fact,
 } from "./api";
 import { FactSource, FactText } from "./FactText";
 
@@ -151,13 +150,7 @@ const STATUS_BADGE: Record<
   pending_human: { label: "Agent request", tone: "warn" },
 };
 
-interface Explanation {
-  text: Fact;
-  validated?: boolean;
-  fallback?: boolean;
-  provider?: string | null;
-  note?: string;
-}
+type Explanation = Schemas["Explanation"];
 
 function DecisionCardItem({
   ref,
