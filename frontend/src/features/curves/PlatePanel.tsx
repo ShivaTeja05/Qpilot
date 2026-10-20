@@ -95,26 +95,6 @@ export function PlatePanel({
               }${waiting ? ` · ${count(waiting)} with a proposal waiting` : ""}`
             : "Every well of one plate; pick a well to see its curve."
         }
-        actions={
-          <div className="flex items-center gap-1">
-            <IconButton
-              label="Previous plate ([)"
-              size="sm"
-              onClick={() => step(-1)}
-              disabled={runs.length < 2}
-            >
-              <ChevronLeft />
-            </IconButton>
-            <IconButton
-              label="Next plate (])"
-              size="sm"
-              onClick={() => step(1)}
-              disabled={runs.length < 2}
-            >
-              <ChevronRight />
-            </IconButton>
-          </div>
-        }
       />
       <CardBody className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
@@ -160,11 +140,29 @@ export function PlatePanel({
               ]}
             />
           </label>
-          {at >= 0 && shownRuns.length > 1 ? (
-            <span className="pb-1.5 text-[12px] text-faint tabular">
-              {count(at + 1)} of {count(shownRuns.length)}
-            </span>
-          ) : null}
+          <div className="flex items-center gap-1 pb-0.5">
+            <IconButton
+              label="Previous plate ([)"
+              size="sm"
+              onClick={() => step(-1)}
+              disabled={runs.length < 2}
+            >
+              <ChevronLeft />
+            </IconButton>
+            <IconButton
+              label="Next plate (])"
+              size="sm"
+              onClick={() => step(1)}
+              disabled={runs.length < 2}
+            >
+              <ChevronRight />
+            </IconButton>
+            {at >= 0 && shownRuns.length > 1 ? (
+              <span className="ml-1 text-[12px] text-faint tabular">
+                {count(at + 1)} of {count(shownRuns.length)}
+              </span>
+            ) : null}
+          </div>
           <div className="ml-auto max-w-full overflow-x-auto">
             <SegmentedControl<PlateLayer>
               size="sm"
