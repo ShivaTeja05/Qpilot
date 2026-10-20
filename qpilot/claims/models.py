@@ -142,14 +142,13 @@ class ClaimReading(BaseModel):
     significance: Literal["significant", "not_significant"] | None = None
     significance_written: str | None = None
     robust_written: str | None = None
-    normaliser: list[str] = Field(default_factory=list, description="Control genes named.")
-    groups_written: list[str] = Field(default_factory=list)
+    normaliser: list[str] = Field(description="Control genes named.")
+    groups_written: list[str]
     n_written: str | None = None
     efficiency_written: str | None = None
-    efficiency_genes: list[str] = Field(default_factory=list)
+    efficiency_genes: list[str]
     source: Literal["rules", "model"] = "rules"
     words: list[str] = Field(
-        default_factory=list,
         description="The reading in short pieces for the page (each from the text or a name).",
     )
 
@@ -190,7 +189,7 @@ class ClaimView(BaseModel):
     verdict_label: str
     headline: ClaimText = Field(description="One sentence: the verdict's main reason.")
     checks: list[ClaimCheck]
-    choices: list[ClaimChoice] = Field(default_factory=list)
+    choices: list[ClaimChoice]
     grid_holds: int | None = Field(default=None, description="Analyses in qPilot's grid "
                                    "where this reading holds.")  # fmt: skip
     grid_cells: int | None = None
@@ -228,7 +227,7 @@ class ClaimsReport(BaseModel):
     rule: str = Field(description="qPilot's call rule in words.")
     verdicts: dict[str, str] = Field(description="Each verdict's label.")
     verdict_rules: dict[str, str] = Field(description="What each verdict means.")
-    notes: list[str] = Field(default_factory=list)
+    notes: list[str]
 
 
 class ClaimExample(BaseModel):
@@ -254,4 +253,4 @@ class ClaimsAssistResult(BaseModel):
     report: ClaimsReport
     proposed: int = Field(description="Readings the model proposed.")
     accepted: int = Field(description="Proposals whose every value is in the sentence it cites.")
-    rejected: list[str] = Field(default_factory=list, description="Why proposals were dropped.")
+    rejected: list[str] = Field(description="Why proposals were dropped.")

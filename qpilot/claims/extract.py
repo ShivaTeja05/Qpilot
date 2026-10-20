@@ -220,7 +220,8 @@ N_VALUES = re.compile(
 )
 EFFICIENCY_CUE = re.compile(r"\befficienc(?:y|ies)\b", re.I)
 EFFICIENCY_RANGE = re.compile(
-    rf"(?:between\s+)?(?P<lo>{NUM})\s*(?P<lu>%)?\s*(?:-|–|—|to|and)\s*(?P<hi>{NUM})\s*(?P<hu>%)?"
+    rf"(?:between\s+|from\s+)?(?P<lo>{NUM})\s*(?P<lu>%)?\s*(?:\([^()]{{0,60}}\)\s*)?"
+    rf"(?:-|–|—|to|and)\s*(?P<hi>{NUM})\s*(?P<hu>%)?"
     rf"|(?P<op>>|≥|>=|above|over|at\s+least|more\s+than|exceeding|greater\s+than|<|≤|<=|below"
     rf"|under|less\s+than)\s*(?P<v>{NUM})\s*(?P<vu>%)?",
     re.I,
@@ -896,9 +897,9 @@ def _efficiency_claim(text: str, sentence: Span, lexicon: Lexicon) -> Claim | No
             dict.fromkeys(
                 f.gene
                 for f in lexicon.genes(text, sentence.start, sentence.end)
-                if f.status != "absent"
+                if f.status != "absent" and _depth(text, sentence.start, f.start) <= 0
             )
-        )
+        )  # a gene in parentheses is an example ("from 73 % (CLSTN1)"), not the scope
         span = Span(min(cue.start(), match.start()), max(cue.end(), match.end()))
         marks = (
             Mark("efficiency", Span(cue.start(), cue.end()), cue.group(0)),
