@@ -1643,66 +1643,6 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/api/studies/{study_id}/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get History
-         * @description Every step of the decision chain: the choices in force, the calls, what each changed.
-         */
-        get: operations["get_history"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/history/compare": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get History Compare
-         * @description Two analyses of the same input file: the conclusions that differ, and why.
-         */
-        get: operations["get_history_compare"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/history/diff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get History Diff
-         * @description What changed between two steps: calls, the largest fold and holds moves, the choices.
-         */
-        get: operations["get_history_diff"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -1735,6 +1675,66 @@ export type paths = {
          * @description The records of this study in qPilot's export folder, newest first.
          */
         get: operations["list_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Report
+         * @description The study's report: summary, Methods, MIQE 2.0 checklist, reviewer's report, limitations.
+         */
+        get: operations["get_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Report
+         * @description Write the report as Markdown, a printable page or the study passport (a job).
+         */
+        post: operations["export_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Exports
+         * @description The report files written for this study since qPilot started, newest first.
+         */
+        get: operations["list_exports"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2926,24 +2926,6 @@ export type components = {
             verdict: string;
         };
         /**
-         * AuditMark
-         * @description Where the robustness audit sits on the chain.
-         */
-        AuditMark: {
-            /** Chain Head */
-            chain_head: string;
-            /**
-             * Current
-             * @description The audit is of the chain head of now.
-             */
-            current: boolean;
-            /**
-             * Step
-             * @description The step whose hash the audit was run at.
-             */
-            step: number | null;
-        };
-        /**
          * AuditOption
          * @description One option of an analysis choice.
          */
@@ -3842,58 +3824,16 @@ export type components = {
             };
         };
         /**
-         * ChoiceChange
-         * @description A Decision Card whose option in force differs between two points.
+         * Citation
+         * @description A reference the Methods cite (no links: DOIs as text).
          */
-        ChoiceChange: {
-            /** Card Id */
-            card_id: string;
-            /** From Label */
-            from_label: string;
-            /** From Option */
-            from_option: string;
-            /** Title */
-            title: string;
-            /** To Label */
-            to_label: string;
-            /** To Option */
-            to_option: string;
-        };
-        /**
-         * ChoiceInForce
-         * @description A Decision Card's state at one step of the chain.
-         */
-        ChoiceInForce: {
-            /** Card Id */
-            card_id: string;
-            /**
-             * Decided
-             * @description Someone had decided this card by this step.
-             */
-            decided: boolean;
-            /** Decided By */
-            decided_by?: ("human" | "agent" | "system") | null;
-            /** Dimension */
-            dimension: string | null;
-            /**
-             * Option
-             * @description The option in force (the planned one while undecided).
-             */
-            option: string;
-            /** Option Label */
-            option_label: string;
-            /**
-             * Planned
-             * @description The option in force is the planned (recommended) one.
-             */
-            planned: boolean;
-            /**
-             * Status
-             * @description open, decided, auto_decided or pending_human.
-             */
-            status: string;
-            /** Title */
-            title: string;
+        Citation: {
+            /** Id */
+            id: string;
+            /** N */
+            n: number;
+            /** Text */
+            text: string;
         };
         /**
          * CitedFact
@@ -3909,33 +3849,6 @@ export type components = {
             meaning: string;
             /** Value */
             value: string;
-        };
-        /**
-         * CompareSide
-         * @description One of the two analyses compared, at its chain head.
-         */
-        CompareSide: {
-            /** Choices */
-            choices: components["schemas"]["ChoiceInForce"][];
-            /** Counts */
-            counts: {
-                [key: string]: number;
-            };
-            /** Created At */
-            created_at: string | null;
-            /**
-             * Current
-             * @description The session's analysis of the design confirmed now.
-             */
-            current: boolean;
-            /** Design Hash */
-            design_hash: string | null;
-            /** Head */
-            head: string;
-            /** N Entries */
-            n_entries: number;
-            /** Study Id */
-            study_id: string;
         };
         /**
          * ConfirmRequest
@@ -4348,38 +4261,6 @@ export type components = {
             source: string;
         };
         /**
-         * DesignChange
-         * @description One field of the confirmed design that differs between two analyses.
-         */
-        DesignChange: {
-            /**
-             * Added
-             * @description List items only in the later analysis.
-             * @default []
-             */
-            added: string[];
-            /** After */
-            after?: string | null;
-            /**
-             * Before
-             * @description A scalar value before, as text.
-             */
-            before?: string | null;
-            /** Field */
-            field: string;
-            /**
-             * Removed
-             * @description List items only in the earlier one.
-             * @default []
-             */
-            removed: string[];
-            /**
-             * Title
-             * @description The field in words.
-             */
-            title: string;
-        };
-        /**
          * DownloadLink
          * @description A file qPilot wrote into its export folder (beside the store), offered for download.
          */
@@ -4636,54 +4517,6 @@ export type components = {
             moved: string[];
         };
         /**
-         * GeneChange
-         * @description One gene at two points: its call, fold, p and share of analyses with the same call.
-         */
-        GeneChange: {
-            /** Call Changed */
-            call_changed: boolean;
-            /**
-             * Cause
-             * @description (compare only) whether the design, the choices, or both moved this gene.
-             */
-            cause?: ("design" | "choices" | "both" | "unknown") | null;
-            /**
-             * Delta Log2Fc
-             * @description to − from, log2.
-             */
-            delta_log2fc: number | null;
-            /** From Conclusion */
-            from_conclusion: ("up" | "down" | "none") | null;
-            /** From Holds */
-            from_holds: number | null;
-            /** From Log2Fc */
-            from_log2fc: number | null;
-            /** From P */
-            from_p: number | null;
-            /** Gene */
-            gene: string;
-            /**
-             * Headline
-             * @default false
-             */
-            headline: boolean;
-            /** To Conclusion */
-            to_conclusion: ("up" | "down" | "none") | null;
-            /** To Holds */
-            to_holds: number | null;
-            /** To Log2Fc */
-            to_log2fc: number | null;
-            /** To P */
-            to_p: number | null;
-            /**
-             * Verdict
-             * @description The audit's verdict, when audited.
-             */
-            verdict?: string | null;
-            /** Verdict Label */
-            verdict_label?: string | null;
-        };
-        /**
          * GeneGrid
          * @description Every analysis in the grid for one gene (the 'what holds' strip), compactly.
          */
@@ -4920,352 +4753,6 @@ export type components = {
             /** Points */
             points: components["schemas"]["UnitValue"][];
         };
-        /**
-         * HistoryAnalysis
-         * @description One distinct analysis that some step of the chain had in force.
-         */
-        HistoryAnalysis: {
-            /** Choices */
-            choices: components["schemas"]["HistoryChoice"][];
-            /**
-             * Counts
-             * @description Genes called up / down / none.
-             */
-            counts: {
-                [key: string]: number;
-            };
-            /**
-             * Genes
-             * @description Aligned with HistoryView.genes.
-             */
-            genes: components["schemas"]["HistoryGene"][];
-            /** Index */
-            index: number;
-            /**
-             * Planned
-             * @description The analysis as planned (every choice as recommended).
-             */
-            planned: boolean;
-        };
-        /**
-         * HistoryChoice
-         * @description One analysis choice (a grid dimension) and the option an analysis uses.
-         */
-        HistoryChoice: {
-            /** Dimension */
-            dimension: string;
-            /**
-             * Label
-             * @description The option in words (the card's label when a card has it).
-             */
-            label: string;
-            /**
-             * Planned
-             * @description The option of the analysis as planned.
-             */
-            planned: boolean;
-            /**
-             * Title
-             * @description The choice in words.
-             */
-            title: string;
-            /**
-             * Value
-             * @description The option as the grid writes it.
-             */
-            value: string;
-        };
-        /**
-         * HistoryCompare
-         * @description Two analyses of the same input file: which conclusions differ, and why.
-         */
-        HistoryCompare: {
-            /** @description The later analysis. */
-            after: components["schemas"]["CompareSide"];
-            /** @description The earlier analysis. */
-            before: components["schemas"]["CompareSide"];
-            /**
-             * By Choices
-             * @description Calls changed by the choices alone (same design).
-             */
-            by_choices: number;
-            /**
-             * By Design
-             * @description Calls changed by the design alone (same choices).
-             */
-            by_design: number;
-            /** Calls Changed */
-            calls_changed: components["schemas"]["GeneChange"][];
-            /**
-             * Choices
-             * @description Cards whose option in force differs.
-             */
-            choices: components["schemas"]["ChoiceChange"][];
-            /**
-             * Decomposed
-             * @description The later analysis' grid has the earlier one's choices, so each change is split into what the design did and what the choices did.
-             */
-            decomposed: boolean;
-            /** Design */
-            design: components["schemas"]["DesignChange"][];
-            /** Fold Moves */
-            fold_moves: components["schemas"]["GeneChange"][];
-            /** Genes Only After */
-            genes_only_after: string[];
-            /** Genes Only Before */
-            genes_only_before: string[];
-            /** Holds Moves */
-            holds_moves: components["schemas"]["GeneChange"][];
-            /** Input Sha256 */
-            input_sha256: string;
-            /** N Moved */
-            n_moved: number;
-            /** Summary */
-            summary: string;
-        };
-        /**
-         * HistoryDiff
-         * @description What changed between two steps of the chain (or two analyses of the same file).
-         */
-        HistoryDiff: {
-            /**
-             * Audit Note
-             * @description Which step the audit's verdicts are of, when audited.
-             */
-            audit_note?: string | null;
-            /**
-             * Calls Changed
-             * @description Every gene whose call changed.
-             */
-            calls_changed: components["schemas"]["GeneChange"][];
-            /** Choices */
-            choices: components["schemas"]["ChoiceChange"][];
-            /**
-             * Fold Moves
-             * @description The genes whose fold change moved most (up to 12), largest first.
-             */
-            fold_moves: components["schemas"]["GeneChange"][];
-            /** From Counts */
-            from_counts: {
-                [key: string]: number;
-            };
-            /** From Seq */
-            from_seq: number;
-            /**
-             * Holds Moves
-             * @description The genes whose share of same-call analyses moved most (up to 12).
-             */
-            holds_moves: components["schemas"]["GeneChange"][];
-            /**
-             * N Moved
-             * @description Genes whose fold change moved at all.
-             */
-            n_moved: number;
-            /**
-             * Same Analysis
-             * @description Both steps had the same analysis in force.
-             */
-            same_analysis: boolean;
-            /** Study Id */
-            study_id: string;
-            /**
-             * Summary
-             * @description The change in one sentence.
-             */
-            summary: string;
-            /** To Counts */
-            to_counts: {
-                [key: string]: number;
-            };
-            /** To Seq */
-            to_seq: number;
-        };
-        /**
-         * HistoryGene
-         * @description One gene under one analysis (one cell of the study's grid).
-         */
-        HistoryGene: {
-            /** Conclusion */
-            conclusion: ("up" | "down" | "none") | null;
-            /** Fc */
-            fc: number | null;
-            /** Gene */
-            gene: string;
-            /**
-             * Holds
-             * @description Share (0–1) of the grid's analyses that give this same call.
-             */
-            holds: number | null;
-            /**
-             * Log2Fc
-             * @description null where the engine computed none.
-             */
-            log2fc: number | null;
-            /**
-             * P
-             * @description null where the engine computed none.
-             */
-            p: number | null;
-        };
-        /**
-         * HistoryStep
-         * @description One point of the chain: 0 is the study as analysed, then one per decision entry.
-         */
-        HistoryStep: {
-            /** Actor */
-            actor?: ("human" | "agent" | "system") | null;
-            /**
-             * Analysis
-             * @description Index into HistoryView.analyses; null when not replayable.
-             */
-            analysis?: number | null;
-            /** At */
-            at?: string | null;
-            /**
-             * Audited
-             * @description The robustness audit was run at this step.
-             * @default false
-             */
-            audited: boolean;
-            /** Card Id */
-            card_id?: string | null;
-            /** Card Title */
-            card_title?: string | null;
-            /**
-             * Chain Intact
-             * @description Every entry up to this one verifies.
-             */
-            chain_intact: boolean;
-            /** Choices */
-            choices: components["schemas"]["ChoiceInForce"][];
-            conclusions?: components["schemas"]["StepConclusions"] | null;
-            /**
-             * Effect
-             * @description What this step changed, in plain words.
-             */
-            effect: string;
-            /**
-             * Hash
-             * @description The entry's hash (step 0: the input file's sha256).
-             */
-            hash: string;
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "start" | "decision";
-            /**
-             * Link Ok
-             * @description This entry's link and hash re-computed on the server.
-             */
-            link_ok: boolean;
-            /** Option */
-            option?: string | null;
-            /** Option Label */
-            option_label?: string | null;
-            /** Prev Hash */
-            prev_hash?: string | null;
-            /**
-             * Reason
-             * @description Quoted text from whoever decided.
-             */
-            reason?: string | null;
-            /**
-             * Seq
-             * @description 0: as analysed (the chain's root); then the entry's seq.
-             */
-            seq: number;
-            /** Status */
-            status?: ("applied" | "auto" | "pending_human" | "rejected" | "stale") | null;
-            /**
-             * Undo
-             * @description Written by Undo.
-             * @default false
-             */
-            undo: boolean;
-        };
-        /**
-         * HistoryView
-         * @description A study's decision chain replayed: every step, the analysis in force and its calls.
-         */
-        HistoryView: {
-            /** Alpha */
-            alpha: number;
-            /** Analyses */
-            analyses: components["schemas"]["HistoryAnalysis"][];
-            audit?: components["schemas"]["AuditMark"] | null;
-            /**
-             * Broken At
-             * @description The first entry that fails.
-             */
-            broken_at?: number | null;
-            /** Chain Intact */
-            chain_intact: boolean;
-            /**
-             * Created At
-             * @description When this analysis was made.
-             */
-            created_at?: string | null;
-            /** Genes */
-            genes: string[];
-            /**
-             * Groups
-             * @description The compared group, then the reference group.
-             */
-            groups: string[];
-            /** Head */
-            head: string;
-            /** Headline */
-            headline: string[];
-            /** Input Sha256 */
-            input_sha256: string;
-            /**
-             * Min Log2Fc
-             * @description The call rule's minimum |log2 fold|.
-             */
-            min_log2fc: number;
-            /**
-             * N Cells
-             * @description Analyses in the study's grid.
-             */
-            n_cells?: number | null;
-            /**
-             * Note
-             * @description Why a step cannot be replayed, if so.
-             */
-            note?: string | null;
-            /**
-             * Related
-             * @description Other analyses of the same input file.
-             */
-            related: components["schemas"]["RelatedStudy"][];
-            /**
-             * Replayable
-             * @description The study's grid holds the planned analysis, so each step can be replayed.
-             */
-            replayable: boolean;
-            /**
-             * Root
-             * @description The chain's genesis: the input file's sha256.
-             */
-            root: string;
-            /** Session */
-            session?: string | null;
-            /** Steps */
-            steps: components["schemas"]["HistoryStep"][];
-            /**
-             * Studio
-             * @description The session's Studio log, by stage run.
-             */
-            studio: components["schemas"]["StudioMilestone"][];
-            /**
-             * Studio Intact
-             * @default true
-             */
-            studio_intact: boolean;
-            /** Study Id */
-            study_id: string;
-        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -5418,6 +4905,25 @@ export type components = {
             typical_s?: number | null;
         };
         /**
+         * KeyNumber
+         * @description One of the study's key numbers (label + the fact that holds it).
+         */
+        KeyNumber: {
+            /** Fact */
+            fact: string;
+            /** Label */
+            label: string;
+        };
+        /**
+         * Limitation
+         * @description One limitation, in plain words.
+         */
+        Limitation: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+        };
+        /**
          * MadeBy
          * @description Who produced a proposal: a language model, an MCP agent or a deterministic rule.
          */
@@ -5457,44 +4963,93 @@ export type components = {
             proposal_id: string;
         };
         /**
-         * MilestoneItem
-         * @description One kind of action within a Studio milestone (e.g. 53 sample roles accepted).
+         * MethodsParagraph
+         * @description One paragraph of the Methods section.
          */
-        MilestoneItem: {
+        MethodsParagraph: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * MethodsView
+         * @description The Methods section, ready to paste into a paper.
+         */
+        MethodsView: {
+            /** Citations */
+            citations: components["schemas"]["Citation"][];
+            /** Paragraphs */
+            paragraphs: components["schemas"]["MethodsParagraph"][];
             /**
-             * Action
+             * Plain
+             * @description Every paragraph as plain text, without citation markers.
+             */
+            plain: string;
+            /**
+             * With Citations
+             * @description With [n] markers and the numbered reference list.
+             */
+            with_citations: string;
+        };
+        /**
+         * MiqeItem
+         * @description One MIQE 2.0 item: what the data say about it, with the evidence.
+         */
+        MiqeItem: {
+            /**
+             * Attest
+             * @description Only a person can answer this item (never answered here).
+             */
+            attest: boolean;
+            evidence?: components["schemas"]["ReportText"] | null;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Section */
+            section: string;
+            /**
+             * Sources
+             * @default []
+             */
+            sources: string[];
+            /**
+             * Status
              * @enum {string}
              */
-            action: "propose" | "accept" | "edit" | "reject" | "supersede";
-            /**
-             * Actors
-             * @description Who acted: human / agent / system → count.
-             */
-            actors: {
+            status: "met" | "not_met" | "not_applicable" | "cannot_tell";
+        };
+        /**
+         * MiqePack
+         * @description The item list the checklist uses.
+         */
+        MiqePack: {
+            /** Citation */
+            citation: string;
+            /** Name */
+            name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Version */
+            version: string;
+        };
+        /**
+         * MiqeView
+         * @description The MIQE 2.0 checklist: counts by status, never a score.
+         */
+        MiqeView: {
+            /** Counts */
+            counts: {
                 [key: string]: number;
             };
-            /**
-             * Kind
-             * @description The proposal kind (design.well_role, stage.confirm, …).
-             */
-            kind: string;
-            /** N */
-            n: number;
-            /**
-             * Reasons
-             * @description Distinct reasons given (up to three), quoted text.
-             */
-            reasons: string[];
-            /**
-             * Subjects
-             * @description What it was about (up to three), quoted text.
-             */
-            subjects: string[];
-            /**
-             * Title
-             * @description The kind in words.
-             */
-            title: string;
+            headline: components["schemas"]["ReportText"];
+            /** Items */
+            items: components["schemas"]["MiqeItem"][];
+            /** N Items */
+            n_items: number;
+            pack: components["schemas"]["MiqePack"];
         };
         /**
          * ModelSeen
@@ -6848,28 +6403,355 @@ export type components = {
             subject: string | null;
         };
         /**
-         * RelatedStudy
-         * @description Another analysis of the same input file (another design of it).
+         * ReportAudit
+         * @description The robustness audit, when one was run.
          */
-        RelatedStudy: {
-            /**
-             * After
-             * @description What it was made after, in words (the Studio step).
-             */
-            after?: string | null;
-            /** Created At */
-            created_at: string | null;
+        ReportAudit: {
+            /** Analyses */
+            analyses?: number | null;
+            /** Chain Head */
+            chain_head?: string | null;
             /**
              * Current
-             * @description The session's analysis of the design confirmed now.
+             * @default false
              */
             current: boolean;
-            /** Design Hash */
-            design_hash?: string | null;
-            /** N Entries */
-            n_entries: number;
+            /**
+             * Reasonable
+             * @description The audit's reasonable set.
+             */
+            reasonable?: number | null;
+            /** Reproduces */
+            reproduces?: boolean | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "none" | "ready";
+            /**
+             * Verdict Counts
+             * @default {}
+             */
+            verdict_counts: {
+                [key: string]: number;
+            };
+            /**
+             * Verdict Labels
+             * @default {}
+             */
+            verdict_labels: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ReportDecision
+         * @description One entry of the hash-chained decision log, or a card still open.
+         */
+        ReportDecision: {
+            /** Actor */
+            actor: string | null;
+            /** At */
+            at: string | null;
+            /**
+             * Can Flip
+             * @description Some option of this card changes a conclusion.
+             */
+            can_flip: boolean;
+            /** Card Id */
+            card_id: string;
+            /** Card Title */
+            card_title: string;
+            /** Hash */
+            hash: string | null;
+            /** Option */
+            option: string | null;
+            /** Option Label */
+            option_label: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Seq */
+            seq: number | null;
+            /** Status */
+            status: string;
+        };
+        /**
+         * ReportExportBody
+         * @description Which file to write.
+         */
+        ReportExportBody: {
+            /**
+             * Expected Head
+             * @description The chain head the page showed (warns when it moved since).
+             */
+            expected_head?: string | null;
+            /**
+             * Format
+             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record.
+             * @enum {string}
+             */
+            format: "md" | "html" | "passport";
+        };
+        /**
+         * ReportExported
+         * @description One written report file, ready to download.
+         */
+        ReportExported: {
+            /** Chain Head */
+            chain_head: string;
+            download: components["schemas"]["DownloadLink"];
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "md" | "html" | "passport";
+            /**
+             * Head Moved
+             * @default false
+             */
+            head_moved: boolean;
+            /**
+             * N Facts
+             * @description How many facts the file cites.
+             */
+            n_facts: number;
+            record?: components["schemas"]["ReportRecordRef"] | null;
             /** Study Id */
             study_id: string;
+            /**
+             * Title
+             * @description What the file is, in words.
+             */
+            title: string;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+            /** Written At */
+            written_at: string;
+        };
+        /**
+         * ReportExports
+         * @description The report files written for a study since qPilot started, newest first.
+         */
+        ReportExports: {
+            /** Exports */
+            exports: components["schemas"]["ReportExported"][];
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * ReportFact
+         * @description One number (or name) a sentence cites, and where it was read.
+         */
+        ReportFact: {
+            /**
+             * Derived
+             * @description Read by the report from the store, not one of the engine's.
+             */
+            derived: boolean;
+            /**
+             * Id
+             * @description f_… for the engine's own facts; f_rpt_… for one the report read.
+             */
+            id: string;
+            /**
+             * Path
+             * @description Where it comes from: the engine's path, or `<source>:<JSON pointer>[@min|max|len|count=<value>]` for a value the report read (results.json, cards.json, decisions.jsonl, study_design.json, versions, input.rdml, grid.csv, audit:<file>, report).
+             */
+            path: string;
+            /**
+             * Text
+             * @description The value as written (format and unit applied).
+             */
+            text: string;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+            /** Value */
+            value: number | string;
+        };
+        /**
+         * ReportGene
+         * @description One compared gene as the passport's gene table shows it (engine values, unformatted).
+         */
+        ReportGene: {
+            /** Ci Hi */
+            ci_hi: number;
+            /** Ci Lo */
+            ci_lo: number;
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /**
+             * Flips By
+             * @description Choices that alone change the call.
+             */
+            flips_by: string[];
+            /** Gene */
+            gene: string;
+            /** Headline */
+            headline: boolean;
+            /**
+             * Holds
+             * @description Share of qPilot's choice grid with the same call.
+             */
+            holds: number | null;
+            /** Level */
+            level: string | null;
+            /** N Cells */
+            n_cells: number;
+            /** N Hi */
+            n_hi: number;
+            /** N Lo */
+            n_lo: number;
+            /** P */
+            p: number | null;
+            /** Verdict */
+            verdict?: string | null;
+            /** Verdict Label */
+            verdict_label?: string | null;
+        };
+        /**
+         * ReportHeader
+         * @description What the report is about and what binds it to the study.
+         */
+        ReportHeader: {
+            /** Chain Head */
+            chain_head: string;
+            /** Demo */
+            demo: boolean;
+            /** Generated At */
+            generated_at: string;
+            /** Input Sha256 */
+            input_sha256: string;
+            /** N Decisions */
+            n_decisions: number;
+            /**
+             * Research Use
+             * @default Research use only; not for clinical use.
+             */
+            research_use: string;
+            /** Session */
+            session: string | null;
+            /**
+             * Source Name
+             * @description The input file's name (from the study).
+             */
+            source_name: string | null;
+            /** Study Id */
+            study_id: string;
+            /** Title */
+            title: string;
+            /** Versions */
+            versions: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ReportRecordRef
+         * @description The Analysis Record a passport is bound to (written with it, in the same folder).
+         */
+        ReportRecordRef: {
+            /** Chain Head */
+            chain_head: string;
+            download: components["schemas"]["DownloadLink"];
+            /** Input Included */
+            input_included: boolean;
+            /** N Files */
+            n_files: number;
+            /**
+             * Record Id
+             * @description SHA-256 of the record's CHECKSUMS.sha256.
+             */
+            record_id: string;
+            /**
+             * Rerun
+             * @description The command that re-runs it to the same numbers.
+             */
+            rerun: string;
+            /**
+             * Verify
+             * @description The command that checks the record.
+             */
+            verify: string;
+        };
+        /**
+         * ReportSegment
+         * @description A run of prose, one cited fact, a quoted string from the study, or a citation marker.
+         */
+        ReportSegment: {
+            /**
+             * Cite
+             * @description The number of a citation (methods only).
+             */
+            cite?: number | null;
+            /** Fact */
+            fact?: string | null;
+            /**
+             * Quote
+             * @description Data from the study: never markup.
+             * @default false
+             */
+            quote: boolean;
+            /** Text */
+            text: string;
+        };
+        /**
+         * ReportText
+         * @description A sentence or paragraph whose numbers are facts.
+         */
+        ReportText: {
+            /**
+             * Facts
+             * @description Ids of the facts it cites, in order of first use.
+             */
+            facts: string[];
+            /**
+             * Plain
+             * @description As plain text, without citation markers.
+             */
+            plain: string;
+            /** Segments */
+            segments: components["schemas"]["ReportSegment"][];
+        };
+        /**
+         * ReportView
+         * @description The whole report of one study.
+         */
+        ReportView: {
+            audit: components["schemas"]["ReportAudit"];
+            /** Decisions */
+            decisions: components["schemas"]["ReportDecision"][];
+            /**
+             * Facts
+             * @description Every fact the report cites, by id.
+             */
+            facts: {
+                [key: string]: components["schemas"]["ReportFact"];
+            };
+            /** Genes */
+            genes: components["schemas"]["ReportGene"][];
+            header: components["schemas"]["ReportHeader"];
+            /** Key Numbers */
+            key_numbers: components["schemas"]["KeyNumber"][];
+            /** Limitations */
+            limitations: components["schemas"]["Limitation"][];
+            methods: components["schemas"]["MethodsView"];
+            miqe: components["schemas"]["MiqeView"];
+            review: components["schemas"]["ReviewView"];
+            /**
+             * Rule
+             * @description The conclusion rule in words.
+             */
+            rule: string;
+            summary: components["schemas"]["ReportText"];
         };
         /**
          * ResultsSummary
@@ -6963,6 +6845,63 @@ export type components = {
              * @default []
              */
             withheld: components["schemas"]["WithheldGene"][];
+        };
+        /**
+         * ReviewCheck
+         * @description A question a reviewer asks that the study answers well.
+         */
+        ReviewCheck: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * ReviewFinding
+         * @description Something a careful reviewer would flag, from the study's own numbers.
+         */
+        ReviewFinding: {
+            /**
+             * Genes
+             * @default []
+             */
+            genes: string[];
+            /**
+             * Go To
+             * @description The section that shows it.
+             */
+            go_to?: ("results" | "gene" | "audit" | "record" | "design" | "curves" | "report") | null;
+            /** Id */
+            id: string;
+            /**
+             * Rule
+             * @description The reviewer rule (R1–R8) it answers.
+             */
+            rule?: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "major" | "minor" | "note";
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * ReviewView
+         * @description The reviewer's report: findings by severity, then what checks out.
+         */
+        ReviewView: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Findings */
+            findings: components["schemas"]["ReviewFinding"][];
+            lead: components["schemas"]["ReportText"];
+            /** Passed */
+            passed: components["schemas"]["ReviewCheck"][];
         };
         /**
          * RoundTripRefused
@@ -7166,96 +7105,6 @@ export type components = {
              * @default
              */
             reason: string;
-        };
-        /**
-         * StepConclusions
-         * @description The calls at one step, and what changed from the step before.
-         */
-        StepConclusions: {
-            /**
-             * Changed
-             * @description Those genes, by name.
-             */
-            changed: string[];
-            /** Down */
-            down: number;
-            /**
-             * N Changed
-             * @description Genes whose call differs from the step before.
-             */
-            n_changed: number;
-            /**
-             * N Moved
-             * @description Genes whose fold change moved (by more than 1e-9 in log2) from the step before, whether or not their call changed.
-             */
-            n_moved: number;
-            /** None */
-            none: number;
-            /** Up */
-            up: number;
-        };
-        /**
-         * StudioMilestone
-         * @description A run of the Studio session's proposal log on one stage (design, curves, …).
-         */
-        StudioMilestone: {
-            /**
-             * After Seq
-             * @description When not before: placed after this step of the decision chain.
-             */
-            after_seq?: number | null;
-            /** At First */
-            at_first: string;
-            /** At Last */
-            at_last: string;
-            /**
-             * Before
-             * @description Happened before this analysis was made.
-             */
-            before: boolean;
-            /**
-             * Chain Intact
-             * @description The proposal chain verifies up to this run.
-             */
-            chain_intact: boolean;
-            /**
-             * Confirmed
-             * @description The stage was confirmed by a person in this run.
-             */
-            confirmed: boolean;
-            /** First Seq */
-            first_seq: number;
-            /**
-             * Head
-             * @description The proposal chain's hash after this run.
-             */
-            head: string;
-            /** Items */
-            items: components["schemas"]["MilestoneItem"][];
-            /** Last Seq */
-            last_seq: number;
-            /**
-             * Led To
-             * @description The study this run's last acceptance produced, if any.
-             */
-            led_to?: string | null;
-            /** N Accepted */
-            n_accepted: number;
-            /** N Edited */
-            n_edited: number;
-            /** N Proposed */
-            n_proposed: number;
-            /** N Rejected */
-            n_rejected: number;
-            /** N Superseded */
-            n_superseded: number;
-            /**
-             * Stage
-             * @enum {string}
-             */
-            stage: "design" | "curves" | "choices" | "prism" | "other";
-            /** Title */
-            title: string;
         };
         /**
          * SystemView
@@ -10328,107 +10177,6 @@ export interface operations {
             };
         };
     };
-    get_history: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HistoryView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_history_compare: {
-        parameters: {
-            query?: {
-                /** @description Another analysis of the same file. */
-                other?: string | null;
-            };
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HistoryCompare"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_history_diff: {
-        parameters: {
-            query?: {
-                /** @description The earlier step (0: as analysed). */
-                from?: number | null;
-                /** @description The later step. */
-                to?: number | null;
-            };
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HistoryDiff"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     export_record: {
         parameters: {
             query?: never;
@@ -10482,6 +10230,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportExportBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportExports"];
                 };
             };
             /** @description Validation Error */

@@ -1,8 +1,6 @@
-"""``qsim app``: a local results screen for qPCR scientists, in plain lab language.
+"""The audit's results screen, in plain lab language: the views the one page serves.
 
-It serves one page from 127.0.0.1 only. The page loads no web assets and nothing leaves the
-machine (Ask uses the local Ollama model when it is running). It reads the engine's files in
-``results/``:
+:class:`Screen` reads the engine's files of an audit (``results/``):
 
 * ``explain.json``: verdict, call, fold change and the choices that change each gene;
 * ``genes.csv``: per-gene holds, margins and samples that carry the call;
@@ -13,13 +11,13 @@ machine (Ask uses the local Ollama model when it is running). It reads the engin
 ``one_sample_flips.csv`` and ``validation_untergasser.json`` are optional: the screen leaves out
 what they feed when a run has not made them (a quick run of a lab's own plate, for example).
 
-A lab can open its own RDML file from the page or with ``qsim app --rdml``; :mod:`qsim.plates`
-checks it against the two-group design and makes a quick run before the screen switches to it.
+It calls the engine live for the what-if views (:func:`qsim.compare.whatif`, :class:`LabViews`)
+and for Ask (:class:`qsim.ask.Asker`). Every figure is read from those files or returned by the
+engine; the sentences around the figures are fixed wording, and statistics jargon stays out.
 
-It calls the engine live for the what-if panel (:func:`qsim.compare.whatif`) and the Ask box
-(:class:`qsim.ask.Asker`). The page never types a number: every figure is read from those files
-or returned by the engine. The sentences around the figures are fixed wording, and statistics
-jargon stays off the screen.
+qPilot's one page serves these views (``qpilot/web/routers/audit.py``, ``qsim app`` and
+``qpilot app --audit``); the screen's own stdlib server and HTML page were removed with the old
+pages.
 """
 
 from __future__ import annotations
@@ -27,12 +25,7 @@ from __future__ import annotations
 import json
 import math
 import threading
-import time
-import webbrowser
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
 
 import numpy as np
 import pandas as pd
@@ -44,21 +37,10 @@ from qsim.decisions import PLAIN
 from qsim.engine import Engine
 from qsim.issues import HEADLINE
 from qsim.moves import MAX_MOVES
-from qsim.plates import (
-    MAX_BYTES,
-    REQUIRED,
-    PlateProblem,
-    design_words,
-    discard,
-    opened,
-    prepare,
-    save_upload,
-)
+from qsim.plates import REQUIRED
 from qsim.study_space import space_for
 from qsim.verdict import ORDER
 
-HOST = "127.0.0.1"
-PAGE = Path(__file__).with_name("app_page.html")
 RAW_FILES = (
     "explain.json",
     "genes.csv",
@@ -896,303 +878,3 @@ li{{margin:0 0 10px}} code{{font-size:13px}}
 <section><h2>Raw files and provenance</h2><p>{files}</p>
 <p class=muted>Run <code>{run}</code> · locked choices <code>{lock}</code> · input data <code>{input}</code></p></section>
 </main></body></html>"""
-
-
-def _known(screen: Screen, path: str, prefix: str) -> str:
-    gene = path.removeprefix(prefix)
-    if gene not in screen.explain:
-        raise KeyError(gene)
-    return gene
-
-
-class Busy(Exception):
-    """A plate is already being analysed."""
-
-
-class App:
-    """What the server shows: one results screen, and at most one plate being opened."""
-
-    def __init__(self, screen: Screen, results: str | Path | None = None):
-        self.screen = screen
-        self.root = Path(results) if results is not None else screen.dir  # holds plates/
-        self.job: dict = {"state": "idle"}
-        self._job_lock = threading.Lock()
-
-    def current(self) -> str:
-        return "" if self.screen.dir.resolve() == self.root.resolve() else self.screen.dir.name
-
-    def plates(self) -> dict:
-        return {
-            "current": self.current(),
-            "plates": [
-                {k: p[k] for k in ("id", "name", "samples", "genes")} for p in opened(self.root)
-            ],
-            "design": design_words(),
-            "max_bytes": MAX_BYTES,
-            "max_words": f"{MAX_BYTES >> 20} MB",
-            "job": self.status(),
-        }
-
-    def status(self) -> dict:
-        job = dict(self.job)
-        started = job.pop("started", None)
-        if started is not None:
-            job["elapsed"] = f"{time.monotonic() - started:.0f} s"
-        return job
-
-    def upload(self, data: bytes, name: str) -> dict:
-        """Save an uploaded RDML file, then check it, run it and switch to it in the background."""
-        name = "".join(c for c in Path(name.replace("\\", "/")).name if c.isprintable())[:120]
-        with self._job_lock:
-            self._idle()
-            path = save_upload(data, self.root)  # PlateProblem: too large or not RDML
-
-            def work(progress):
-                try:
-                    folder = prepare(path, self.root, name=name or path.name, progress=progress)
-                except PlateProblem:
-                    discard(self.root, path.parent)
-                    raise
-                if folder != path.parent:  # the same bytes already had a run elsewhere
-                    discard(self.root, path.parent)
-                return folder
-
-            return self._begin(name or path.name, work)
-
-    def open(self, plate_id: str) -> dict:
-        """Switch to a file that already has a run under the results folder."""
-        match = next((p for p in opened(self.root) if p["id"] == plate_id), None)
-        if match is None:
-            raise KeyError(plate_id)
-        with self._job_lock:
-            self._idle()
-            return self._begin(match["name"], lambda progress: match["dir"])
-
-    def _idle(self) -> None:
-        if self.job["state"] == "running":
-            raise Busy(f"{self.job['name']} is still being analysed.")
-
-    def _begin(self, name: str, work) -> dict:
-        self.job = {
-            "state": "running",
-            "name": name,
-            "step": "Starting",
-            "started": time.monotonic(),
-        }
-        threading.Thread(target=self._run, args=(name, work), daemon=True).start()
-        return self.status()
-
-    def _run(self, name: str, work) -> None:
-        def progress(step: str) -> None:
-            self.job["step"] = step
-
-        try:
-            folder = work(progress)
-            progress("Loading the results screen")
-            old = self.screen._asker
-            asker = None
-            if old is not None:  # keep the model client (or the no-model choice) already set up
-                from qsim.ask import Asker
-
-                asker = Asker(folder, client=old.client, model_writes=old.model_writes)
-            screen = Screen(folder, asker=asker)
-            screen.reasonable()  # the gene charts' sweep, before the page asks for it
-            self.screen = screen
-            threading.Thread(target=lambda: screen.asker, daemon=True).start()
-            self.job = {"state": "done", "name": name, "id": self.current()}
-        except PlateProblem as err:
-            self.job = {
-                "state": "failed",
-                "name": name,
-                "message": err.message,
-                "detail": err.detail,
-            }
-        except Exception as err:  # keep serving the current screen
-            self.job = {
-                "state": "failed",
-                "name": name,
-                "message": "The screen could not open this file.",
-                "detail": f"{type(err).__name__}: {err}",
-            }
-
-
-def make_handler(target: Screen | App) -> type[BaseHTTPRequestHandler]:
-    app = target if isinstance(target, App) else App(target)
-
-    class Handler(BaseHTTPRequestHandler):
-        server_version = "qsim-app"
-
-        def log_message(self, fmt, *args):  # keep the terminal quiet
-            pass
-
-        def _send(self, status: int, body: bytes, ctype: str) -> None:
-            self.send_response(status)
-            self.send_header("Content-Type", ctype)
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-            self.wfile.write(body)
-
-        def _json(self, obj, status: int = 200) -> None:
-            self._send(status, json.dumps(obj).encode(), "application/json; charset=utf-8")
-
-        def _local(self) -> bool:
-            """Answer only pages this server served: the right Host, and no foreign Origin."""
-            port = self.server.server_address[1]
-            host = self.headers.get("Host", "")
-            ours = host in (f"{HOST}:{port}", f"localhost:{port}")
-            if ours and self.headers.get("Origin") in (None, f"http://{host}"):
-                return True
-            self.close_connection = True
-            self._json({"error": "this screen answers only its own page"}, HTTPStatus.FORBIDDEN)
-            return False
-
-        def do_GET(self) -> None:
-            if not self._local():
-                return
-            path = unquote(urlparse(self.path).path)
-            screen = app.screen
-            try:
-                if path in ("/", "/index.html"):
-                    self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
-                elif path == "/api/model":
-                    self._json(screen.model_status())
-                elif path == "/api/overview":
-                    self._json(screen.overview())
-                elif path == "/api/plates":
-                    self._json(app.plates())
-                elif path == "/api/plate/status":
-                    self._json(app.status())
-                elif path.startswith("/api/gene/"):
-                    self._json(screen.gene_card(path.removeprefix("/api/gene/")))
-                elif path.startswith("/api/analyses/"):
-                    self._json(screen.gene_analyses(_known(screen, path, "/api/analyses/")))
-                elif path.startswith("/api/effects/"):
-                    self._json(screen.gene_effects(_known(screen, path, "/api/effects/")))
-                elif path.startswith("/api/lab/"):
-                    self._json(screen.lab_parameters(_known(screen, path, "/api/lab/")))
-                elif path == "/api/study":
-                    self._json(screen.study_view())
-                elif path == "/api/how":
-                    self._json(screen.how_view())
-                elif path.startswith("/evidence/"):
-                    html = screen.evidence_html(path.removeprefix("/evidence/"))
-                    self._send(200, html.encode(), "text/html; charset=utf-8")
-                elif (
-                    path.startswith("/files/")
-                    and path.removeprefix("/files/") in RAW_FILES
-                    and (screen.dir / path.removeprefix("/files/")).exists()
-                ):
-                    name = path.removeprefix("/files/")
-                    ctype = "application/json" if name.endswith(".json") else "text/plain"
-                    self._send(200, (screen.dir / name).read_bytes(), f"{ctype}; charset=utf-8")
-                else:
-                    self._json({"error": "not found"}, HTTPStatus.NOT_FOUND)
-            except KeyError as err:
-                self._json({"error": f"unknown: {err}"}, HTTPStatus.NOT_FOUND)
-
-        def _upload(self) -> None:
-            """The RDML file as the raw request body; its name in the X-Plate-Name header."""
-            name = unquote(self.headers.get("X-Plate-Name", ""))
-            length = self.headers.get("Content-Length")
-            if not name or self.headers.get("Content-Type") != "application/octet-stream":
-                self._json({"error": "send the file as the page does"}, HTTPStatus.BAD_REQUEST)
-            elif length is None or not length.isdigit():
-                self._json({"error": "the file's size is missing"}, HTTPStatus.LENGTH_REQUIRED)
-            elif int(length) > MAX_BYTES:
-                self.close_connection = True  # do not read a body this large
-                self._json(
-                    {"error": f"This file is larger than {MAX_BYTES >> 20} MB."},
-                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
-                )
-            else:
-                data = self.rfile.read(int(length))
-                try:
-                    self._json(app.upload(data, name), HTTPStatus.ACCEPTED)
-                except PlateProblem as err:
-                    self._json({"error": err.message}, HTTPStatus.BAD_REQUEST)
-                except Busy as err:
-                    self._json({"error": str(err)}, HTTPStatus.CONFLICT)
-
-        def do_POST(self) -> None:
-            if not self._local():
-                return
-            path = urlparse(self.path).path
-            if path == "/api/plate":
-                self._upload()
-                return
-            screen = app.screen
-            length = int(self.headers.get("Content-Length", "0") or 0)
-            try:
-                body = json.loads(self.rfile.read(min(length, 65536)) or b"{}")
-            except json.JSONDecodeError:
-                self._json({"error": "bad JSON"}, HTTPStatus.BAD_REQUEST)
-                return
-            try:
-                if path == "/api/whatif":
-                    self._json(screen.run_whatif(body.get("changes") or {}, body.get("genes")))
-                elif path == "/api/samples":
-                    gene = str(body.get("gene", ""))
-                    if gene not in screen.explain:
-                        raise KeyError(gene)
-                    self._json(screen.gene_samples(gene, body.get("changes") or {}))
-                elif path == "/api/ask":
-                    question = str(body.get("question", "")).strip()[:500]
-                    if not question:
-                        self._json({"error": "empty question"}, HTTPStatus.BAD_REQUEST)
-                    else:
-                        self._json(screen.ask(question))
-                elif path == "/api/plate/open":
-                    self._json(app.open(str(body.get("id", ""))), HTTPStatus.ACCEPTED)
-                else:
-                    self._json({"error": "not found"}, HTTPStatus.NOT_FOUND)
-            except KeyError as err:
-                self._json({"error": str(err)}, HTTPStatus.BAD_REQUEST)
-            except Busy as err:
-                self._json({"error": str(err)}, HTTPStatus.CONFLICT)
-
-    return Handler
-
-
-def serve(
-    results: str | Path = "results",
-    rdml: str | None = None,
-    port: int = 8765,
-    no_model: bool = False,
-    open_browser: bool = False,
-    root: str | Path | None = None,
-) -> None:
-    """Serve the screen for the run in ``results``; files opened on the page go under ``root``."""
-    asker = None
-    if no_model:
-        from qpilot.ai.client import ModelClient
-        from qpilot.ai.config import ModelConfig
-
-        from qsim.ask import Asker
-
-        asker = Asker(results, client=ModelClient(config=ModelConfig()), rdml=rdml)
-    print("loading the study and the engine's results ...", flush=True)
-    screen = Screen(results, rdml=rdml, asker=asker)
-
-    def warm() -> None:  # the page is usable while the local model loads
-        client = screen.asker.client
-        print(
-            "Ask reads questions with "
-            + (f"the local model {client.model}" if client.available else "keyword matching"),
-            flush=True,
-        )
-
-    threading.Thread(target=warm, daemon=True).start()
-    app = App(screen, root if root is not None else results)
-    httpd = ThreadingHTTPServer((HOST, port), make_handler(app))
-    url = f"http://{HOST}:{httpd.server_address[1]}/"
-    print(f"qPilot results screen for {screen.source} on {url}", flush=True)
-    print("(this machine only; Ctrl+C to stop)", flush=True)
-    if open_browser:
-        webbrowser.open(url)
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        httpd.server_close()
