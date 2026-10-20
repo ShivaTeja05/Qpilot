@@ -1,0 +1,208 @@
+@import "tailwindcss";
+
+/*
+ * qPilot design tokens. Components use these (bg-surface, text-muted, border-line, …), never raw
+ * colours, so light and dark stay one system. Theme: the system's by default; data-theme="light"
+ * or "dark" on <html> overrides it (set by the theme toggle).
+ *
+ * Verdict colours follow the Okabe–Ito palette (safe for the common colour-vision deficiencies)
+ * and are always paired with a word or a shape: colour never carries meaning alone.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #f7f8fa;
+  --bg-subtle: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-sunken: #f1f4f8;
+  --line: #e3e7ee;
+  --line-strong: #cdd4de;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-faint: #7b8798;
+  --accent: #0f766e;
+  --accent-strong: #115e59;
+  --accent-soft: #ccfbf1;
+  --accent-fg: #ffffff;
+  --focus: #14b8a6;
+  --danger: #b42318;
+  --danger-soft: #fee4e2;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --ok: #027a48;
+  --ok-soft: #d1fadf;
+  --info: #175cd3;
+  --info-soft: #dbeafe;
+
+  /* Conclusions */
+  --up: #c2410c;
+  --down: #1d4ed8;
+  --none: #64748b;
+
+  /* Verdicts (the audit) */
+  --v-solid: #009e73;
+  --v-caveats: #3a9ad9;
+  --v-depends: #e69f00;
+  --v-fragile: #d55e00;
+  --v-check: #cc79a7;
+  --v-nocall: #8a94a6;
+
+  /* Confidence levels (ordinal, never a probability) */
+  --l-high: #027a48;
+  --l-moderate: #3a9ad9;
+  --l-low: #e69f00;
+  --l-verylow: #d55e00;
+
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-md: 0 4px 16px -4px rgb(15 23 42 / 0.12), 0 2px 4px rgb(15 23 42 / 0.05);
+  --shadow-lg: 0 24px 48px -12px rgb(15 23 42 / 0.25);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0f14;
+    --bg-subtle: #10161d;
+    --surface: #121922;
+    --surface-2: #161e28;
+    --surface-sunken: #0e141b;
+    --line: #233040;
+    --line-strong: #31415a;
+    --text: #e6edf5;
+    --text-muted: #a3b1c2;
+    --text-faint: #6f8096;
+    --accent: #2dd4bf;
+    --accent-strong: #5eead4;
+    --accent-soft: #0f3b38;
+    --accent-fg: #04201d;
+    --focus: #5eead4;
+    --danger: #f97066;
+    --danger-soft: #3d1613;
+    --warn: #fdb022;
+    --warn-soft: #3a2a0a;
+    --ok: #32d583;
+    --ok-soft: #0b2e1f;
+    --info: #84adff;
+    --info-soft: #14254a;
+    --up: #fb923c;
+    --down: #7aa7ff;
+    --none: #94a3b8;
+    --v-nocall: #8391a7;
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 6px 20px -6px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 24px 48px -12px rgb(0 0 0 / 0.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b0f14;
+  --bg-subtle: #10161d;
+  --surface: #121922;
+  --surface-2: #161e28;
+  --surface-sunken: #0e141b;
+  --line: #233040;
+  --line-strong: #31415a;
+  --text: #e6edf5;
+  --text-muted: #a3b1c2;
+  --text-faint: #6f8096;
+  --accent: #2dd4bf;
+  --accent-strong: #5eead4;
+  --accent-soft: #0f3b38;
+  --accent-fg: #04201d;
+  --focus: #5eead4;
+  --danger: #f97066;
+  --danger-soft: #3d1613;
+  --warn: #fdb022;
+  --warn-soft: #3a2a0a;
+  --ok: #32d583;
+  --ok-soft: #0b2e1f;
+  --info: #84adff;
+  --info-soft: #14254a;
+  --up: #fb923c;
+  --down: #7aa7ff;
+  --none: #94a3b8;
+  --v-nocall: #8391a7;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 6px 20px -6px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 24px 48px -12px rgb(0 0 0 / 0.7);
+}
+
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", monospace;
+
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-focus: var(--focus);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-none: var(--none);
+  --color-v-solid: var(--v-solid);
+  --color-v-caveats: var(--v-caveats);
+  --color-v-depends: var(--v-depends);
+  --color-v-fragile: var(--v-fragile);
+  --color-v-check: var(--v-check);
+  --color-v-nocall: var(--v-nocall);
+  --color-l-high: var(--l-high);
+  --color-l-moderate: var(--l-moderate);
+  --color-l-low: var(--l-low);
+  --color-l-verylow: var(--l-verylow);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}

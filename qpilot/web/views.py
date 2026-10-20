@@ -1,0 +1,401 @@
+"""Structured views the routes return: built from the services, never HTML.
+
+Small, pure helpers over :class:`~qpilot.studio_service.Studio` and the store. Anything that is
+only presentation (colours, layout) belongs to the frontend; anything that is a fact or a rule
+(which step comes next, what a stage waits for) is decided here, once, for every client.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from qpilot.core.store import StudyNotFound, StudyStore
+from qpilot.studio_service import Studio, StudioError
+from qpilot.web.contract import (
+    FileFacts,
+    NextStep,
+    StageView,
+    WorkspaceSummary,
+    WorkspaceView,
+)
+
+INPUT_SUFFIXES = {"rdml": (".rdml", ".xml"), "sheet": (".xlsx", ".csv")}
+MAX_SENTENCE = 500
+
+
+def demo_sha() -> str:
+    """The demo study's input sha256."""
+    from qpilot.io.datasets import VERMEULEN_SHA256
+
+    return VERMEULEN_SHA256
+
+
+def inputs_dir(store: StudyStore) -> Path:
+    """Where opened files are kept so a session finds them again after a restart.
+
+    Next to the study store (``~/.cache/qpilot/studio-inputs`` for the default store), named by
+    content, so the same file opened twice is kept once.
+    """
+    path = store.root.parent / "studio-inputs"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def session_meta(store: StudyStore, sid: str) -> dict[str, Any]:
+    """A session's ``studio.json`` (empty when there is none)."""
+    path = store.find_session(sid) / "studio.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def session_source_record(store: StudyStore, sid: str) -> dict[str, Any]:
+    """A session's ``source.json``: the bound file (and sheet) paths with their sha256."""
+    path = store.find_session(sid) / "source.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def last_write(folder: Path) -> float:
+    """The newest mtime among a workspace's own files (not recursive)."""
+    newest = 0.0
+    try:
+        for p in folder.iterdir():
+            if p.is_file():
+                newest = max(newest, p.stat().st_mtime)
+    except OSError:
+        pass
+    return newest
+
+
+def stage_views(studio: Studio, sid: str) -> list[StageView]:
+    """Every stage's status (empty when the session's file is missing)."""
+    try:
+        return [StageView(**s.as_dict()) for s in studio.stages(sid)]
+    except (StudioError, StudyNotFound, OSError):
+        return []
+
+
+def next_step(
+    stages: list[StageView],
+    proposals: dict[str, int],
+    *,
+    file_present: bool,
+    results_visible: bool,
+    undecided_cards: int = 0,
+    has_audit: bool = False,
+) -> NextStep:
+    """The one thing to do next. ``proposals`` counts the inbox per stage (``design`` …)."""
+    if not file_present:
+        return NextStep(
+            title="Open the file again",
+            detail="The input file is missing or has changed since this study was opened.",
+            section="home",
+            action="Open",
+        )
+    by = {s.stage: s for s in stages}
+    for stage, propose_label in (("design", "Propose the design"), ("curves", "Check the curves")):
+        status = by.get(stage)
+        if status is None or status.confirmed:
+            continue
+        if not proposals.get(stage):
+            word = "design" if stage == "design" else "amplification curves"
+            return NextStep(
+                title=f"Ask for proposals on the {word}",
+                detail="The AI proposes; the engine checks each proposal; you decide. "
+                "Results stay hidden until you confirm the design and the curves.",
+                section=stage,
+                action=propose_label,
+            )
+        if status.pending:
+            return NextStep(
+                title=f"Review {status.pending} {stage} proposal{'s' * (status.pending != 1)}",
+                detail="Accept, edit or reject each one; contradicted proposals come first.",
+                section=stage,
+                action="Accept all consistent…",
+            )
+        if status.blockers:
+            return NextStep(title=status.blockers[0], section=stage)
+        return NextStep(
+            title=f"Confirm the {stage}",
+            detail="Confirming shows exactly what it covers before anything is written.",
+            section=stage,
+            action="Confirm this stage…",
+        )
+    if not results_visible:
+        return NextStep(title="Confirm the design and the curves", section="design")
+    if undecided_cards:
+        return NextStep(
+            title=f"Decide {undecided_cards} analysis choice{'s' * (undecided_cards != 1)}",
+            detail="Each card shows what every option would change; you give the reason.",
+            section="results",
+            action="Decide",
+        )
+    if not has_audit:
+        return NextStep(
+            title="Run the robustness audit",
+            detail="Every combination of eight analysis decisions, one verdict per gene.",
+            section="audit",
+            action="Run the audit",
+        )
+    return NextStep(
+        title="Export the Analysis Record",
+        detail="Input, results, every decision with its reason, and the audit, hash-chained.",
+        section="record",
+        action="Export",
+    )
+
+
+def file_facts(studio: Studio, sid: str) -> FileFacts | None:
+    """Counts from the file's inspection (None when the file cannot be read now)."""
+    try:
+        summary = studio.summary(sid)
+    except (StudioError, StudyNotFound, OSError, ValueError):
+        return None
+    record = session_source_record(studio.store, sid)
+    sheet = record.get("sheet") or {}
+    return FileFacts(
+        file_name=Path(record["path"]).name if record.get("path") else None,
+        input_sha256=summary.input_sha256,
+        sheet_name=Path(sheet["path"]).name if sheet.get("path") else None,
+        n_plates=len(summary.runs),
+        n_wells=sum(r.n_wells for r in summary.runs),
+        n_samples=summary.n_samples,
+        n_targets=len(summary.targets),
+        declared_types=dict(summary.declared_types),
+    )
+
+
+def inbox_counts(studio: Studio, sid: str) -> dict[str, int]:
+    """How many proposals each stage has ever had (any status)."""
+    counts: dict[str, int] = {}
+    try:
+        proposals = studio.inbox(sid)
+    except (StudioError, StudyNotFound, OSError):
+        return counts
+    for p in proposals:
+        stage = {"design": "design", "curve": "curves", "prism": "prism"}.get(p.stage)
+        if stage:
+            counts[stage] = counts.get(stage, 0) + 1
+    return counts
+
+
+def audit_dir(store: StudyStore, study_id: str | None) -> Path | None:
+    """The robustness audit of a study, if one was run (``<studies>/simulator_audits/<id>``)."""
+    if not study_id:
+        return None
+    path = store.root / "simulator_audits" / study_id
+    return path if (path / "audit_manifest.json").exists() else None
+
+
+def undecided(store: StudyStore, study_id: str | None) -> int:
+    """Decision Cards still open or waiting for a person."""
+    if not study_id:
+        return 0
+    try:
+        return sum(1 for c in store.cards(study_id) if c.status in ("open", "pending_human"))
+    except (StudyNotFound, OSError, ValueError):
+        return 0
+
+
+def session_summary(studio: Studio, sid: str) -> WorkspaceSummary:
+    """One line of the workspace list for a Studio session."""
+    store = studio.store
+    folder = store.find_session(sid)
+    record = session_source_record(store, sid)
+    meta = session_meta(store, sid)
+    stages = stage_views(studio, sid)
+    visible = bool(stages) and all(s.confirmed for s in stages if s.stage in ("design", "curves"))
+    study_id = meta.get("current_study") if visible else None
+    facts: dict[str, Any] = {}
+    try:
+        summary = studio.summary(sid)
+        facts = {
+            "n_plates": len(summary.runs),
+            "n_samples": summary.n_samples,
+            "n_genes": len(summary.targets),
+        }
+    except (StudioError, StudyNotFound, OSError, ValueError):
+        pass
+    decisions = pending = 0
+    if study_id:
+        try:
+            decisions = len(store.entries(study_id))
+            pending = len(store.pending(study_id))
+        except (StudyNotFound, OSError, ValueError):
+            pass
+    name = Path(record["path"]).name if record.get("path") else None
+    return WorkspaceSummary(
+        key=sid,
+        kind="session",
+        title=_title(name, folder.name),
+        input_sha256=folder.name,
+        file_name=name,
+        file_present=store.session_source(sid) is not None,
+        study_id=study_id,
+        results_visible=visible,
+        stages=stages,
+        decisions=decisions,
+        pending_requests=pending,
+        has_audit=audit_dir(store, study_id) is not None,
+        is_demo=folder.name == demo_sha(),
+        updated_at=last_write(folder),
+        **facts,
+    )
+
+
+def study_summary(store: StudyStore, study_id: str) -> WorkspaceSummary:
+    """One line of the workspace list for a study analysed outside a Studio session."""
+    result = store.get(study_id)
+    workspace = store.workspace(study_id)
+    source = store.source(study_id)
+    return WorkspaceSummary(
+        key=study_id,
+        kind="study",
+        title=_title(source.name if source else None, result.input_sha256),
+        input_sha256=result.input_sha256,
+        file_name=source.name if source else None,
+        file_present=source is not None,
+        study_id=study_id,
+        results_visible=True,
+        n_plates=result.n_plates,
+        n_samples=result.n_samples,
+        n_genes=len(result.contrasts),
+        decisions=len(store.entries(study_id)),
+        pending_requests=len(store.pending(study_id)),
+        has_audit=audit_dir(store, study_id) is not None,
+        is_demo=result.input_sha256 == demo_sha(),
+        updated_at=last_write(workspace),
+    )
+
+
+def _title(file_name: str | None, sha: str) -> str:
+    if sha == demo_sha():
+        return "Vermeulen 2013 neuroblastoma study (demo)"
+    return file_name or f"Study {sha[:12]}"
+
+
+def workspaces(studio: Studio) -> list[WorkspaceSummary]:
+    """Every Studio session and every study not reached through one, newest first."""
+    store = studio.store
+    out: list[WorkspaceSummary] = []
+    session_studies: set[str] = set()
+    sessions = store.root / "sessions"
+    if sessions.is_dir():
+        for folder in sessions.iterdir():
+            if folder.is_dir() and len(folder.name) == 64:
+                try:
+                    item = session_summary(studio, folder.name[:12])
+                except (StudyNotFound, OSError, ValueError):
+                    continue
+                out.append(item)
+                studies = session_meta(store, folder.name[:12]).get("studies") or {}
+                session_studies.update(studies)
+    for study_id in store.list_studies():
+        if study_id in session_studies:
+            continue
+        try:
+            out.append(study_summary(store, study_id))
+        except (StudyNotFound, OSError, ValueError):
+            continue
+    out.sort(key=lambda w: w.updated_at, reverse=True)
+    return out
+
+
+def session_view(studio: Studio, sid: str, active_jobs: list[Any] | None = None) -> WorkspaceView:
+    """Everything the page needs to show a session's frame: file, stages, next step."""
+    store = studio.store
+    line = session_summary(studio, sid)
+    try:
+        summary = studio.summary(sid)
+    except (StudioError, StudyNotFound, OSError, ValueError):
+        summary = None
+    try:
+        proposals_head = studio.head(sid)
+    except (StudioError, StudyNotFound, OSError):
+        proposals_head = None
+    decisions_head = None
+    if line.study_id:
+        try:
+            decisions_head = store.chain_head(line.study_id)
+        except (StudyNotFound, OSError):
+            pass
+    step = next_step(
+        line.stages,
+        inbox_counts(studio, sid),
+        file_present=line.file_present,
+        results_visible=line.results_visible,
+        undecided_cards=undecided(store, line.study_id),
+        has_audit=line.has_audit,
+    )
+    return WorkspaceView(
+        key=sid,
+        kind="session",
+        title=line.title,
+        facts=file_facts(studio, sid),
+        summary=summary,
+        stages=line.stages,
+        results_visible=line.results_visible,
+        study_id=line.study_id,
+        proposals_head=proposals_head,
+        decisions_head=decisions_head,
+        next_step=step,
+        active_jobs=active_jobs or [],
+        has_audit=line.has_audit,
+        is_demo=line.is_demo,
+    )
+
+
+def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None = None):
+    """The frame of a study analysed outside a Studio session (results straight away)."""
+    line = study_summary(store, study_id)
+    step = next_step(
+        [],
+        {},
+        file_present=True,
+        results_visible=True,
+        undecided_cards=undecided(store, study_id),
+        has_audit=line.has_audit,
+    )
+    return WorkspaceView(
+        key=study_id,
+        kind="study",
+        title=line.title,
+        results_visible=True,
+        study_id=study_id,
+        decisions_head=store.chain_head(study_id),
+        next_step=step,
+        active_jobs=active_jobs or [],
+        has_audit=line.has_audit,
+        is_demo=line.is_demo,
+    )
+
+
+def archive_demo(store: StudyStore) -> list[Path]:
+    """Move the demo's session, studies and audits aside (never deleted); return where to."""
+    import shutil
+    import time
+
+    sha = demo_sha()
+    targets: list[Path] = []
+    candidates: list[Path] = [store.root / "sessions" / sha]
+    for study_id in store.list_studies():
+        try:
+            if store.get(study_id).input_sha256 == sha:
+                candidates.append(store.workspace(study_id))
+                candidates.append(store.root / "simulator_audits" / study_id)
+        except (StudyNotFound, OSError, ValueError):
+            continue
+    archive = store.root.parent / "studies-archive" / time.strftime("demo-%Y%m%d-%H%M%S")
+    for path in candidates:
+        if path.exists():
+            archive.mkdir(parents=True, exist_ok=True)
+            target = archive / path.relative_to(store.root).as_posix().replace("/", "__")
+            shutil.move(str(path), str(target))
+            targets.append(target)
+    return targets

@@ -284,16 +284,34 @@ def _app_arguments(parser: argparse.ArgumentParser) -> None:
         "--port", type=int, default=None, help="port (default: first free from 7860)"
     )
     parser.add_argument(
+        "--no-open", action="store_true", help="print the link but do not open a browser"
+    )
+    parser.add_argument(
         "--fresh-demo",
         action="store_true",
-        help="move the demo study's earlier decisions aside (kept, never deleted) and start clean",
+        help="move the demo study's earlier work aside (kept, never deleted) and start clean",
+    )
+    parser.add_argument(
+        "--audit",
+        action="append",
+        default=[],
+        metavar="DIR",
+        help="also show a robustness-audit results folder, read-only (repeatable)",
     )
 
 
 def _app(args: argparse.Namespace) -> int:
-    from qpilot.app import main as app_main  # imports Gradio only here, telemetry already off
+    from pathlib import Path
 
-    app_main(port=args.port, fresh_demo=args.fresh_demo)
+    from qpilot.web.server import main as serve_page
+
+    audits = {Path(d).resolve().name: Path(d).resolve() for d in args.audit}
+    serve_page(
+        port=args.port,
+        open_browser=not args.no_open,
+        fresh_demo=args.fresh_demo,
+        audit_dirs=audits,
+    )
     return 0
 
 
@@ -370,7 +388,7 @@ COMMANDS: list[Command] = [
     ),
     (
         "app",
-        "open the one-page app on 127.0.0.1 (telemetry off, never shared)",
+        "open qPilot (one page: Studio, results, the audit, Prism, the record) on 127.0.0.1",
         _app_arguments,
         _app,
     ),
