@@ -37,28 +37,41 @@ export interface DecisionsView {
   n_pending?: number;
 }
 
-/** The result of `POST /api/studies/{id}/record` (on the job). */
+/** A file this server wrote into its export folder, served at `url` as an attachment. */
+export interface DownloadLink {
+  id: string;
+  url: string;
+  /** The file name the browser saves it under. */
+  name: string;
+  bytes: number;
+}
+
+/** The result of `POST /api/studies/{id}/record` (on the job); also each row of `GET …/records`. */
 export interface RecordExport {
+  study_id: string;
   record_id: string;
   chain_head: string;
   n_files: number;
   input_included: boolean;
-  /** A download id (`/api/downloads/{id}`) or a same-origin URL. */
-  download: string;
-  file_name?: string | null;
-  /** Choices that can change a conclusion and are still open (the record says so). */
-  open_flips?: { count: number; card_ids?: string[] } | null;
-  warnings?: string[];
+  written_at?: string | null;
+  download: DownloadLink;
+  /** Card ids of choices that can change a conclusion and are still open. */
+  open_flips?: string[];
+  /** The chain head moved since the head the page sent. */
+  head_moved?: boolean;
+  /** The old page's warnings, in words. */
+  warnings: string[];
+  commands: { verify: string; rerun: string };
 }
 
-/** How a record's audit is bound to it. */
-export interface AuditBinding {
-  status: string;
-  message?: string | null;
+/** `GET /api/studies/{id}/records`: the records this launch exported, newest first. */
+export interface RecordList {
+  study_id: string;
+  records: RecordExport[];
 }
 
-/** `POST /api/records/verify`: `core.record.VerifyReport` plus the audit binding. */
-export interface VerifyResult {
+/** `core.record.VerifyReport`. */
+export interface VerifyReport {
   ok: boolean;
   changed: string[];
   missing: string[];
@@ -69,7 +82,39 @@ export interface VerifyResult {
   has_proposals: boolean;
   proposal_chain_broken_at: number | null;
   n_proposal_entries: number;
+}
+
+/** What a record says about itself (`record.json`), read from the uploaded zip. */
+export interface RecordFacts {
+  study_id?: string | null;
+  input_sha256?: string | null;
+  chain_head?: string | null;
+  written_at?: string | null;
+  input_included?: boolean | null;
+  shared?: boolean;
+  record_id?: string | null;
+}
+
+/** Whether a robustness audit verifies and belongs to the record. */
+export interface AuditBinding {
+  /** zip: the audit came in the uploaded zip; store: this qPilot's audit of the record's study. */
+  source: "zip" | "store";
+  ok: boolean;
+  problems: string[];
+  study_id?: string | null;
+}
+
+/** `POST /api/records/verify`. */
+export interface VerifyResult {
+  /** The record verifies (and its audit, when one is bound). */
+  ok: boolean;
+  file_name: string;
+  summary: string[];
+  report: VerifyReport;
+  record: RecordFacts;
   audit?: AuditBinding | null;
-  file_name?: string | null;
-  bytes?: number | null;
+  /** Which audit was checked, or why none was. */
+  audit_note: string;
+  known_study: boolean;
+  note: string;
 }

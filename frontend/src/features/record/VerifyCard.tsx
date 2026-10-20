@@ -1,17 +1,16 @@
 /**
  * Verify a record: drop (or pick) a record zip; the server unzips it in a private folder and
  * checks every file's checksum, the decision chain, the proposal chain, the files that must
- * agree with the chain, and the audit's binding when the record carries an audit.
+ * agree with the chain, and the audit's binding when there is an audit to check.
  */
 import { CheckCircle2, FileArchive, MinusCircle, ShieldCheck, Upload, XCircle } from "lucide-react";
 import { useId, useRef, useState, type DragEvent, type ReactNode } from "react";
-import type { JobView } from "@/api/client";
 import { cn } from "@/lib/cn";
-import { bytes, count, plural } from "@/lib/format";
+import { bytes, count, dateTime, plural } from "@/lib/format";
 import { useFocusTarget } from "@/shell/actions";
-import { Badge, Button, Card, CardBody, CardHeader, ErrorPanel, JobCard } from "@/ui";
+import { Button, Card, CardBody, CardHeader, ErrorPanel, Hash, KeyValues } from "@/ui";
 import { useVerifyRecord } from "./api";
-import type { VerifyResult } from "./types";
+import type { VerifyReport, VerifyResult } from "./types";
 
 type CheckState = "pass" | "fail" | "absent";
 
@@ -21,23 +20,14 @@ interface CheckRow {
   detail: ReactNode;
 }
 
-function isJob(answer: VerifyResult | { job: JobView }): answer is { job: JobView } {
-  return "job" in answer && Boolean((answer as { job?: JobView }).job?.id);
-}
-
-function asVerifyResult(value: unknown): VerifyResult | null {
-  const v = value as Partial<VerifyResult> | null | undefined;
-  return v && typeof v.ok === "boolean" ? (v as VerifyResult) : null;
-}
-
 /** Up to `n` file names, then "and k more". */
 function names(list: string[], n = 4): string {
   const shown = list.slice(0, n).join(", ");
   return list.length > n ? `${shown} and ${count(list.length - n)} more` : shown;
 }
 
-/** The verify report as one row per check, in plain words. */
-export function verifyRows(r: VerifyResult): CheckRow[] {
+/** A verify report (and the audit binding) as one row per check, in plain words. */
+export function verifyRows(r: VerifyReport, result?: Pick<VerifyResult, "audit" | "audit_note">): CheckRow[] {
   const fileProblems = r.changed.length + r.missing.length + r.unlisted.length;
   const rows: CheckRow[] = [
     {
@@ -86,12 +76,27 @@ export function verifyRows(r: VerifyResult): CheckRow[] {
       ),
     },
   ];
-  if (r.audit) {
-    const status = r.audit.status.toLowerCase();
+  if (result) {
+    const audit = result.audit;
     rows.push({
-      title: "Audit binding",
-      state: status === "bound" || status === "ok" ? "pass" : status.startsWith("no") || status === "absent" ? "absent" : "fail",
-      detail: r.audit.message || r.audit.status,
+      title: "Robustness audit",
+      state: !audit ? "absent" : audit.ok ? "pass" : "fail",
+      detail: (
+        <>
+          <p>{result.audit_note}</p>
+          {audit && !audit.ok && audit.problems.length ? (
+            <ul className="mt-0.5 flex flex-col gap-0.5">
+              {audit.problems.map((p) => (
+                <li key={p} className="break-words">
+                  {p}
+                </li>
+              ))}
+            </ul>
+          ) : audit?.ok ? (
+            <p>It verifies and belongs to this record.</p>
+          ) : null}
+        </>
+      ),
     });
   }
   return rows;
@@ -102,34 +107,30 @@ const STATE_ICON: Record<CheckState, ReactNode> = {
   fail: <XCircle className="text-danger" aria-hidden />,
   absent: <MinusCircle className="text-faint" aria-hidden />,
 };
-const STATE_WORD: Record<CheckState, string> = { pass: "passed", fail: "failed", absent: "not in this record" };
+const STATE_WORD: Record<CheckState, string> = { pass: "passed", fail: "failed", absent: "not checked" };
 
-export function VerifyReportView({ report, fileName }: { report: VerifyResult; fileName?: string | null }) {
-  const rows = verifyRows(report);
+export function VerifyResultView({ result, size }: { result: VerifyResult; size?: number | null }) {
+  const rows = verifyRows(result.report, result);
+  const facts = result.record;
   return (
     <div className="flex flex-col gap-3" aria-live="polite">
       <div
         className={cn(
           "flex items-start gap-3 rounded-lg border px-3 py-2.5",
-          report.ok ? "border-ok/30 bg-ok-soft/60" : "border-danger/30 bg-danger-soft/60",
+          result.ok ? "border-ok/30 bg-ok-soft/60" : "border-danger/30 bg-danger-soft/60",
         )}
       >
-        <div className="mt-0.5 [&_svg]:size-5">{report.ok ? STATE_ICON.pass : STATE_ICON.fail}</div>
+        <div className="mt-0.5 [&_svg]:size-5">{result.ok ? STATE_ICON.pass : STATE_ICON.fail}</div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-fg">
-            {report.ok ? "This record checks out" : "This record was changed after it was exported"}
+            {result.ok ? "This record checks out" : "This record does not check out"}
           </p>
           <p className="mt-0.5 text-[13px] text-muted">
-            {report.ok
+            {result.ok
               ? "Nothing in it was altered since qPilot wrote it."
-              : "Do not rely on it; ask its author for the original zip."}
-            {fileName ? (
-              <>
-                {" "}
-                <span className="break-all font-mono text-[12px]">{fileName}</span>
-                {report.bytes != null ? <span className="text-faint"> · {bytes(report.bytes)}</span> : null}
-              </>
-            ) : null}
+              : "Something in it changed after it was written. Do not rely on it; ask its author for the original zip."}{" "}
+            <span className="break-all font-mono text-[12px]">{result.file_name}</span>
+            {size != null ? <span className="text-faint"> · {bytes(size)}</span> : null}
           </p>
         </div>
       </div>
@@ -138,7 +139,7 @@ export function VerifyReportView({ report, fileName }: { report: VerifyResult; f
           <li key={row.title} className="flex items-start gap-2.5 px-3 py-2.5">
             <span className="mt-0.5 shrink-0 [&_svg]:size-4">{STATE_ICON[row.state]}</span>
             <div className="min-w-0 flex-1">
-              <p className="flex flex-wrap items-center gap-x-2 text-[13px] font-medium text-fg">
+              <p className="text-[13px] font-medium text-fg">
                 {row.title}
                 <span className="sr-only">: {STATE_WORD[row.state]}</span>
               </p>
@@ -147,6 +148,29 @@ export function VerifyReportView({ report, fileName }: { report: VerifyResult; f
           </li>
         ))}
       </ul>
+      <div>
+        <h3 className="text-[13px] font-medium text-fg">What the record says about itself</h3>
+        <KeyValues
+          className="mt-1.5"
+          rows={[
+            ["Study", facts.study_id ? <span className="font-mono text-[12px]">{facts.study_id}</span> : "not stated"],
+            ["Record", <Hash key="r" value={facts.record_id} length={12} />],
+            ["Chain head", <Hash key="h" value={facts.chain_head} />],
+            ["Input file", <Hash key="i" value={facts.input_sha256} prefix="sha256" />],
+            ["Written", facts.written_at ? dateTime(facts.written_at) : "not stated"],
+            [
+              "Contents",
+              facts.input_included === false
+                ? "without the input file (it can be verified, not re-run)"
+                : facts.input_included
+                  ? "with the input file"
+                  : "not stated",
+            ],
+            ["In this qPilot", result.known_study ? "yes, this study is in this qPilot's store" : "no"],
+          ]}
+        />
+      </div>
+      <p className="text-xs text-faint">{result.note}</p>
     </div>
   );
 }
@@ -156,26 +180,19 @@ export function VerifyCard() {
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [over, setOver] = useState(false);
-  const [jobId, setJobId] = useState<string | null>(null);
   const verify = useVerifyRecord();
   useFocusTarget("Verify a record", input);
 
   const check = (picked: File | null | undefined) => {
     if (!picked) return;
     setFile(picked);
-    setJobId(null);
-    verify.mutate(picked, {
-      onSuccess: (answer) => {
-        if (isJob(answer)) setJobId(answer.job.id);
-      },
-    });
+    verify.mutate(picked);
   };
   const onDrop = (e: DragEvent<HTMLElement>) => {
     e.preventDefault();
     setOver(false);
     check(e.dataTransfer.files?.[0]);
   };
-  const direct = verify.data && !isJob(verify.data) ? verify.data : null;
 
   return (
     <Card as="section" aria-labelledby="verify-title">
@@ -205,9 +222,7 @@ export function VerifyCard() {
           <span className="text-sm font-medium text-fg">
             {file ? <span className="break-all">{file.name}</span> : "Drop a record .zip here"}
           </span>
-          <span className="text-xs text-muted">
-            {file ? `${bytes(file.size)} · drop another to check it` : "or choose a file"}
-          </span>
+          <span className="text-xs text-muted">{file ? `${bytes(file.size)} · drop another to check it` : "or choose a file (up to 200 MB)"}</span>
           <input
             ref={input}
             id={inputId}
@@ -223,10 +238,10 @@ export function VerifyCard() {
 
         {verify.isPending ? (
           <p className="flex items-center gap-2 text-[13px] text-muted" role="status">
-            <ShieldCheck className="size-4 animate-pulse text-accent" aria-hidden /> Checking {file?.name}…
+            <ShieldCheck className="size-4 animate-pulse text-accent motion-reduce:animate-none" aria-hidden /> Checking{" "}
+            {file?.name}…
           </p>
-        ) : null}
-        {verify.error ? (
+        ) : verify.error ? (
           <ErrorPanel compact error={verify.error} title="This file could not be checked">
             {file ? (
               <Button size="sm" variant="secondary" className="mt-3" onClick={() => check(file)}>
@@ -234,19 +249,8 @@ export function VerifyCard() {
               </Button>
             ) : null}
           </ErrorPanel>
-        ) : null}
-        {direct ? <VerifyReportView report={direct} fileName={direct.file_name ?? file?.name} /> : null}
-        {jobId ? (
-          <JobCard id={jobId}>
-            {(result) => {
-              const report = asVerifyResult(result);
-              return report ? (
-                <VerifyReportView report={report} fileName={report.file_name ?? file?.name} />
-              ) : (
-                <Badge tone="warn">The check finished but sent no report.</Badge>
-              );
-            }}
-          </JobCard>
+        ) : verify.data ? (
+          <VerifyResultView result={verify.data} size={file?.size} />
         ) : null}
       </CardBody>
     </Card>

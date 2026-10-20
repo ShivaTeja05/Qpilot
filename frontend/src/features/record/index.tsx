@@ -5,49 +5,25 @@
 import { ArrowRight, BookCheck, Bot } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
-import { useJob } from "@/api/jobs";
 import { plural } from "@/lib/format";
 import { SECTION, sectionPath, type SectionProps } from "@/shell/sections";
 import { Button, Card, CardBody, EmptyState, ErrorPanel, LoadingBlock, PageHeader } from "@/ui";
-import { useDecisions } from "./api";
+import { useDecisions, useRecords } from "./api";
 import { ChainTimeline } from "./ChainTimeline";
 import { CommandsCard } from "./CommandsCard";
-import { asRecordExport, ExportCard } from "./ExportCard";
+import { ExportCard } from "./ExportCard";
 import { VerifyCard } from "./VerifyCard";
-
-/** The export job of this study, kept for the tab's life so it survives leaving the section. */
-function useExportJob(studyId: string | null | undefined, active: string | null) {
-  const storageKey = studyId ? `qpilot.record.job.${studyId}` : null;
-  const [jobId, setJobId] = useState<string | null>(() => {
-    if (!storageKey) return null;
-    try {
-      return sessionStorage.getItem(storageKey);
-    } catch {
-      return null;
-    }
-  });
-  const set = (id: string | null) => {
-    setJobId(id);
-    if (!storageKey) return;
-    try {
-      if (id) sessionStorage.setItem(storageKey, id);
-      else sessionStorage.removeItem(storageKey);
-    } catch {
-      /* storage blocked: the job is still shown until the page is left */
-    }
-  };
-  // An export still running (started in another tab, say) wins over the one remembered here.
-  return [active ?? jobId, set] as const;
-}
 
 export default function RecordSection({ workspace }: SectionProps) {
   const key = workspace?.key ?? "";
   const studyId = workspace?.study_id ?? null;
   const decisions = useDecisions(key, studyId);
-  const activeExport = workspace?.active_jobs.find((j) => j.kind.includes("record") && j.kind !== "record_verify") ?? null;
-  const [jobId, setJobId] = useExportJob(studyId, activeExport?.id ?? null);
-  const job = useJob(jobId);
-  const exported = job.data?.status === "done" ? asRecordExport(job.data.result) : null;
+  const records = useRecords(key, studyId);
+  // An export started here, or one still running (started in another tab, say).
+  const [startedId, setStartedId] = useState<string | null>(null);
+  const running = workspace?.active_jobs.find((j) => j.kind === "record.export")?.id ?? null;
+  const jobId = startedId ?? running;
+  const latest = records.data?.records[0] ?? null;
 
   const head = decisions.data?.head ?? workspace?.decisions_head ?? null;
   const notYet = !studyId
@@ -130,9 +106,17 @@ export default function RecordSection({ workspace }: SectionProps) {
         </div>
 
         <aside className="flex min-w-0 flex-col gap-6" aria-label="Export and verify">
-          <ExportCard workspaceKey={key} studyId={studyId} head={head} jobId={jobId} onJob={setJobId} disabledReason={notYet} />
+          <ExportCard
+            workspaceKey={key}
+            studyId={studyId}
+            head={head}
+            jobId={jobId}
+            onJob={setStartedId}
+            records={records.data?.records ?? []}
+            disabledReason={notYet}
+          />
           <VerifyCard />
-          <CommandsCard fileName={exported?.file_name} />
+          <CommandsCard commands={latest?.commands} />
         </aside>
       </div>
     </div>

@@ -2,13 +2,9 @@
 import { Terminal } from "lucide-react";
 import { Card, CardBody, CardHeader, CommandLine } from "@/ui";
 
-/** A file name as a shell argument (quoted only when it needs to be). */
-export function shellArg(name: string): string {
-  return /^[\w./-]+$/.test(name) ? name : `'${name.replace(/'/g, `'\\''`)}'`;
-}
-
-export function CommandsCard({ fileName }: { fileName?: string | null }) {
-  const file = shellArg(fileName || "record.zip");
+/** The commands for the latest export (named after its zip), or for a record zip in general. */
+export function CommandsCard({ commands }: { commands?: { verify: string; rerun: string } | null }) {
+  const file = "record.zip";
   return (
     <Card as="section" aria-labelledby="commands-title">
       <CardHeader
@@ -19,7 +15,7 @@ export function CommandsCard({ fileName }: { fileName?: string | null }) {
           </span>
         }
         hint={
-          fileName
+          commands
             ? "In a terminal with qPilot installed, in the folder you downloaded the record to."
             : "In a terminal with qPilot installed; use the name of the record zip you have."
         }
@@ -27,11 +23,11 @@ export function CommandsCard({ fileName }: { fileName?: string | null }) {
       <CardBody className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <p className="text-[13px] text-muted">Checksums, the decision chain and the proposal chain:</p>
-          <CommandLine command={`qpilot verify ${file}`} />
+          <CommandLine command={commands?.verify ?? `qpilot verify ${file}`} />
         </div>
         <div className="flex flex-col gap-1.5">
           <p className="text-[13px] text-muted">Re-run the analysis from the record and compare every result, byte for byte:</p>
-          <CommandLine command={`qpilot rerun ${file}`} />
+          <CommandLine command={commands?.rerun ?? `qpilot rerun ${file}`} />
         </div>
       </CardBody>
     </Card>

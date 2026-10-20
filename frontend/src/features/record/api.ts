@@ -5,7 +5,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ApiError, postForm, type JobView } from "@/api/client";
 import { useWrite } from "@/shell/writes";
-import type { DecisionsView, VerifyResult } from "./types";
+import type { DecisionsView, RecordList, VerifyResult } from "./types";
 
 const OFFLINE = "qPilot is not answering. Is `qpilot app` still running?";
 
@@ -62,18 +62,22 @@ export function useExportRecord(workspaceKey: string, studyId: string | null | u
   });
 }
 
-/** Verify a record zip: checksums, both chains and the audit binding. */
+/** The records this launch exported for the study, newest first (with their downloads). */
+export function useRecords(workspaceKey: string, studyId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["w", workspaceKey, "records", studyId],
+    enabled: Boolean(studyId),
+    queryFn: () => requestJson<RecordList>(`${studyPath(studyId!)}/records`),
+  });
+}
+
+/** Verify a record zip: checksums, both chains and the audit binding (answered directly). */
 export function useVerifyRecord() {
   return useMutation({
     mutationFn: (file: File) => {
       const form = new FormData();
-      form.append("file", file, file.name);
-      return postForm<VerifyResult | { job: JobView }>("/api/records/verify", form);
+      form.append("record", file, file.name);
+      return postForm<VerifyResult>("/api/records/verify", form);
     },
   });
-}
-
-/** The URL a record download is served from (an id from the export job, or a URL already). */
-export function downloadUrl(download: string): string {
-  return download.startsWith("/") ? download : `/api/downloads/${encodeURIComponent(download)}`;
 }
