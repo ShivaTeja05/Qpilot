@@ -51,15 +51,10 @@ def _finishes(fn: Callable[[], Any], pipe: Path, seconds: float = 2.0) -> bool:
     return False
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-011 one damaged results.json (half-written, or without study_id) makes "
-    "GET /api/workspaces and GET /api/agents a 500: StudyStore.list_studies raises and neither "
-    "views.workspaces nor ops.agents catches it, so the Open and Agents pages show nothing",
-)
-@pytest.mark.parametrize("route", ["/api/workspaces", "/api/agents"])
-@pytest.mark.parametrize("content", ['{"study_', "{}", "[]", ""])
-def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content, route):
+DAMAGED = ['{"study_', "{}", "[]", ""]
+
+
+def _get_with_a_damaged_study(web_ctx, web_store, content: str, route: str):
     from fastapi.testclient import TestClient
 
     from qpilot.web.server import create_app
@@ -69,7 +64,28 @@ def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content,
     (web_store.root / "damaged").mkdir()
     (web_store.root / "damaged" / "results.json").write_text(content)
     with TestClient(create_app(web_ctx), base_url=BASE, raise_server_exceptions=False) as c:
-        r = c.get(route, headers={"x-qpilot-token": TOKEN})
+        return c.get(route, headers={"x-qpilot-token": TOKEN})
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="RT-UI-011 one damaged results.json (half-written, or without study_id) makes "
+    "GET /api/workspaces a 500: StudyStore.list_studies raises and views.workspaces does not "
+    "catch it, so the Open page lists nothing",
+)
+@pytest.mark.parametrize("content", DAMAGED)
+def test_one_damaged_study_does_not_hide_the_workspaces(web_ctx, web_store, content):
+    r = _get_with_a_damaged_study(web_ctx, web_store, content, "/api/workspaces")
+    assert r.status_code == 200, r.text
+
+
+@pytest.mark.xfail(
+    strict=False,  # fixed on ui/api-ops b4c522e (verified); plain test once that is merged here
+    reason="RT-UI-011 (agents) GET /api/agents was a 500 on a damaged results.json",
+)
+@pytest.mark.parametrize("content", DAMAGED)
+def test_one_damaged_study_does_not_hide_the_agents_page(web_ctx, web_store, content):
+    r = _get_with_a_damaged_study(web_ctx, web_store, content, "/api/agents")
     assert r.status_code == 200, r.text
 
 
