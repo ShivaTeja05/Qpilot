@@ -55,6 +55,9 @@ def test_the_demo_results(demo):
     assert set(body["headline"]) == {"ODC1", "BIRC5", "NTRK1", "NM23A"}
     odc1 = next(g for g in body["genes"] if g["gene"] == "ODC1")
     assert odc1["conclusion"] == "up" and odc1["at_your_choices"] is None
+    nc = body["summary"]["not_compared"]
+    grouped = sum(g["n"] for g in body["summary"]["groups"])
+    assert nc["n"] == body["summary"]["n_samples"] - grouped == 19
     no_html(body)
     frame = c.get(f"/api/studies/{study}").json()
     assert frame["kind"] == "study" and frame["results_visible"]

@@ -627,6 +627,21 @@ class GroupCount(BaseModel):
     n: int
 
 
+class NotComparedReason(BaseModel):
+    """Why some samples are in neither group (computed by the engine's own model)."""
+
+    reason: str
+    n: int
+    samples: list[str]
+
+
+class NotCompared(BaseModel):
+    """Samples of the study that are in neither compared group, by reason."""
+
+    n: int
+    reasons: list[NotComparedReason]
+
+
 class ResultsSummary(BaseModel):
     """The study in counts, its groups and how they were made."""
 
@@ -640,6 +655,10 @@ class ResultsSummary(BaseModel):
     cut: float | None = Field(default=None, description="Marker split: the top fraction.")
     design_line: str
     text: FactText | None = Field(default=None, description="The summary sentence, cited.")
+    not_compared: NotCompared | None = Field(
+        default=None,
+        description="Samples in neither group and why (None when it cannot be rebuilt now).",
+    )
 
 
 class RuleView(BaseModel):

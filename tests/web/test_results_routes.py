@@ -23,6 +23,11 @@ def test_results_say_what_the_study_found(walked):
     assert body["references"]["used"] == ["GAPDH"]
     assert body["rule"]["min_fold"] == 2.0 and "p < 0.05" in body["rule"]["text"]
     assert body["audit"]["status"] == "none"
+    nc = body["summary"]["not_compared"]
+    grouped = sum(g["n"] for g in body["summary"]["groups"])
+    assert nc is not None and nc["n"] == sum(r["n"] for r in nc["reasons"])
+    assert all(len(r["samples"]) == r["n"] and r["reason"] for r in nc["reasons"])
+    assert nc["n"] + grouped <= body["summary"]["n_samples"]
     assert body["head"] == walked["store"].chain_head(study)
     text = body["summary"]["text"]
     assert text and "".join(s["text"] for s in text["segments"]) == text["plain"]

@@ -112,6 +112,20 @@ def facts_warm(store: StudyStore, sid: str) -> bool:
     return cached_facts(folder.name) is not None
 
 
+def _prepare_results(ctx: AppContext, sid: str) -> None:
+    """Rebuild what the results view keeps in memory for the session's current study."""
+    from qpilot.web.results_views import not_compared
+    from qpilot.web.views import session_meta
+
+    study_id = session_meta(ctx.store, sid).get("current_study")
+    if not study_id:
+        return
+    try:
+        not_compared(ctx.store, ctx.store.get(study_id))
+    except Exception:  # the view says only the counts then
+        return
+
+
 def _publish_warm(ctx: AppContext, sid: str) -> None:
     from qpilot.web.views import session_meta
 
@@ -133,6 +147,7 @@ def warm_session(ctx: AppContext, sid: str) -> Any:
         progress(f"Reading {name}: every name quarantined, every curve fitted once")
         ctx.studio.facts(sid)
         _publish_warm(ctx, sid)
+        _prepare_results(ctx, sid)
         return {"key": sid}
 
     return ctx.jobs.submit("warm", work, title=f"Reading {name}", key=sid, typical_s=WARM_S)
@@ -200,6 +215,7 @@ def warm_all(ctx: AppContext) -> Any:
                 continue
             done += 1
             _publish_warm(ctx, sid)
+            _prepare_results(ctx, sid)
         return {"sessions": done}
 
     return ctx.jobs.submit("warm.all", work, title="Getting ready", typical_s=WARM_S * 2)

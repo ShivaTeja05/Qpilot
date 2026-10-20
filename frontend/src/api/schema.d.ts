@@ -4996,6 +4996,28 @@ export type components = {
             title: string;
         };
         /**
+         * NotCompared
+         * @description Samples of the study that are in neither compared group, by reason.
+         */
+        NotCompared: {
+            /** N */
+            n: number;
+            /** Reasons */
+            reasons: components["schemas"]["NotComparedReason"][];
+        };
+        /**
+         * NotComparedReason
+         * @description Why some samples are in neither group (computed by the engine's own model).
+         */
+        NotComparedReason: {
+            /** N */
+            n: number;
+            /** Reason */
+            reason: string;
+            /** Samples */
+            samples: string[];
+        };
+        /**
          * OpenDone
          * @description An opened file: the workspace to go to.
          */
@@ -6232,6 +6254,8 @@ export type components = {
             n_reactions: number;
             /** N Samples */
             n_samples: number;
+            /** @description Samples in neither group and why (None when it cannot be rebuilt now). */
+            not_compared?: components["schemas"]["NotCompared"] | null;
             /** @description The summary sentence, cited. */
             text?: components["schemas"]["FactText"] | null;
         };
