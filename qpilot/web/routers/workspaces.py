@@ -17,7 +17,7 @@ from fastapi import APIRouter, File, Form, UploadFile
 
 from qpilot.core.store import StudyNotFound
 from qpilot.studio_service import StudioError
-from qpilot.web import views
+from qpilot.web import studio_views, views
 from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session, is_study
 from qpilot.web.contract import (
     JobStarted,
@@ -149,6 +149,9 @@ def get_session(sid: str, ctx: Ctx) -> WorkspaceView:
     check_key(sid)
     if not is_session(ctx.store, sid):
         raise api_error(404, "not_found", "There is no Studio session with this id.")
+    from qpilot.web.routers.studio import ensure_analysis
+
+    ensure_analysis(ctx, sid)  # confirmed but not analysed yet (e.g. after a restart)
     return views.session_view(ctx.studio, sid, _jobs(ctx, sid))
 
 
@@ -172,13 +175,23 @@ def list_proposals(
     check_key(sid)
     if stage is not None and stage not in ("design", "curves", "prism", "roundtrip", "stage"):
         raise api_error(400, "bad_stage", f"There is no stage {stage!r}.")
+    if not is_session(ctx.store, sid):
+        raise api_error(404, "not_found", "There is no Studio session with this id.")
     try:
         proposals = ctx.studio.inbox(sid, stage, status)
         head = ctx.studio.head(sid)
+        visible = ctx.studio.results_visible(sid)
     except StudyNotFound as err:
         raise api_error(404, "not_found", "There is no Studio session with this id.") from err
     except StudioError as err:
         raise api_error(409, "studio", str(err)) from err
+    if stage in ("prism", "roundtrip") and not visible:
+        raise api_error(
+            403,
+            "blind",
+            "Results stay hidden until the design and the curves are confirmed.",
+        )
+    proposals = studio_views.visible_proposals(proposals, visible)
     order = {"contradicted": 0, "cannot_check": 1, "consistent": 2}
     proposals = sorted(
         proposals,
@@ -189,4 +202,10 @@ def list_proposals(
         counts[p.status] = counts.get(p.status, 0) + 1
         if p.status == "proposed":
             counts[p.check.status] = counts.get(p.check.status, 0) + 1
-    return ProposalList(stage=stage, head=head, proposals=proposals, counts=counts)
+    return ProposalList(
+        stage=stage,
+        head=head,
+        proposals=proposals,
+        counts=counts,
+        descriptions=studio_views.descriptions(proposals),
+    )
