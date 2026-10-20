@@ -120,9 +120,15 @@ export function CommandLine({ command, className }: { command: string; className
         className,
       )}
     >
-      <code className="min-w-0 flex-1 overflow-x-auto py-1 font-mono text-[12.5px] whitespace-pre text-fg qp-scroll">
-        {command}
-      </code>
+      {/* The scroller takes focus so a long command can be scrolled with the keyboard. */}
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label={`Command: ${command}`}
+        className="qp-scroll min-w-0 flex-1 overflow-x-auto rounded py-1"
+      >
+        <code className="font-mono text-[12.5px] whitespace-pre text-fg">{command}</code>
+      </div>
       <CopyButton text={command} label="Copy command" />
     </div>
   );
