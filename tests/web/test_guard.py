@@ -81,3 +81,23 @@ def test_no_third_party_docs_pages(client):
     assert client.get("/docs").headers["content-type"].startswith("text/html")  # the page itself
     assert "swagger" not in client.get("/docs").text.lower()
     assert client.get("/api/openapi.json").status_code == 200
+
+
+def test_a_chunked_upload_is_capped_as_it_arrives(client, monkeypatch):
+    from qpilot.web import security
+
+    monkeypatch.setattr(security, "MAX_UPLOAD_BYTES", 64 * 1024)
+
+    def body():
+        for _ in range(16):
+            yield b"x" * 8192
+
+    r = client.post(
+        "/api/workspaces",
+        content=body(),
+        headers={
+            "content-type": "multipart/form-data; boundary=b",
+            "origin": "http://127.0.0.1:7860",
+        },
+    )
+    assert r.status_code == 413 and r.json()["error"]["code"] == "too_large"

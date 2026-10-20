@@ -51,12 +51,6 @@ def _finishes(fn: Callable[[], Any], pipe: Path, seconds: float = 2.0) -> bool:
     return False
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-011 one damaged results.json (half-written, or without study_id) makes "
-    "GET /api/workspaces a 500: StudyStore.list_studies raises and views.workspaces does "
-    "not catch it, so the Open page lists nothing",
-)
 @pytest.mark.parametrize("content", ['{"study_', "{}", "[]", ""])
 def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content):
     from fastapi.testclient import TestClient
@@ -73,12 +67,6 @@ def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content)
     assert r.json() == {"workspaces": []}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-008 StoreWatcher opens results.json without checking it is a regular file: "
-    "a named pipe there blocks the watcher thread for ever (no more live events: agent "
-    "requests stop reaching the page)",
-)
 def test_a_pipe_in_the_store_never_stalls_the_watcher(tmp_path):
     workspace = tmp_path / "studies" / "aaaaaaaaaaaa-x"
     workspace.mkdir(parents=True)
@@ -88,12 +76,6 @@ def test_a_pipe_in_the_store_never_stalls_the_watcher(tmp_path):
     assert _finishes(watcher.scan, pipe), "StoreWatcher.scan blocked on a named pipe"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-012 a session whose source.json names a named pipe (or /dev/zero) hangs "
-    "GET /api/workspaces for ever: session_source hashes whatever the path is; every "
-    "listing then holds a worker thread until the pool is gone",
-)
 def test_a_session_bound_to_a_pipe_never_stalls_the_list(web_ctx, web_store, tmp_path):
     from qpilot.web import views
 

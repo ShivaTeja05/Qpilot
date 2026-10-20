@@ -66,6 +66,10 @@ class JobView(BaseModel):
     typical_s: float | None = None
     elapsed_s: float = 0.0
     result: Any = None
+    result_type: str | None = Field(
+        default=None,
+        description="The schema name of ``result`` (components.schemas), from JOB_RESULTS.",
+    )
     error: dict[str, str] | None = None
 
 
@@ -175,6 +179,9 @@ class WorkspaceSummary(BaseModel):
     has_audit: bool = False
     is_demo: bool = False
     updated_at: float = Field(description="Unix time of the last write to this workspace.")
+    warming: bool = Field(
+        default=False, description="The file is being read for the first time since start."
+    )
 
 
 class WorkspaceList(BaseModel):
@@ -213,6 +220,11 @@ class WorkspaceView(BaseModel):
     active_jobs: list[JobView] = []
     has_audit: bool = False
     is_demo: bool = False
+    warming: bool = Field(
+        default=False,
+        description="The file is being read for the first time since start: stages, facts and "
+        "results follow when the 'warm' job in active_jobs is done.",
+    )
 
 
 class Opened(BaseModel):
@@ -242,7 +254,11 @@ class ProposalAction(BaseModel):
 
     reason: Reason = ""
     edits: dict[str, Any] | None = None
-    expected_head: str | None = None
+    expected_head: str = Field(
+        min_length=1,
+        max_length=128,
+        description="The chain head the view showed (409 stale when it moved).",
+    )
 
 
 class ProposeDesign(BaseModel):
@@ -311,6 +327,12 @@ class ProposalView(BaseModel):
     head: str
 
 
+class CheckEdits(BaseModel):
+    """An edited reading of a proposal, to check before accepting it (nothing is written)."""
+
+    edits: dict[str, Any]
+
+
 class ProposalDecided(BaseModel):
     """The answer to accept / edit / reject: the outcome and the session's stages after it."""
 
@@ -354,7 +376,11 @@ class BulkRequest(BaseModel):
     stage: str
     ids: list[str] = Field(max_length=2000)
     reason: Reason = ""
-    expected_head: str | None = None
+    expected_head: str = Field(
+        min_length=1,
+        max_length=128,
+        description="The chain head the view showed (409 stale when it moved).",
+    )
 
 
 class BulkDone(BaseModel):
@@ -389,7 +415,11 @@ class ConfirmRequest(BaseModel):
     """Yes, confirm: accept this confirm step."""
 
     proposal_id: str
-    expected_head: str | None = None
+    expected_head: str = Field(
+        min_length=1,
+        max_length=128,
+        description="The chain head the view showed (409 stale when it moved).",
+    )
 
 
 # ---- Studio: the plate, curves and quarantined text ------------------------------------------
@@ -420,10 +450,23 @@ class PlateWell(BaseModel):
     role: str | None = Field(default=None, description="Its role in the design assembled so far.")
     excluded_by_person: bool = False
     excluded_note: str = Field(default="", description="The file's or LinRegPCR's exclusion note.")
-    amplified: bool | None = Field(default=None, description="LinRegPCR's call (with a person's).")
-    cq: float | None = None
-    efficiency: float | None = None
+    amplified: bool | None = Field(
+        default=None,
+        description="Counts as amplified under the analysis rule: LinRegPCR found a starting "
+        "quantity (or a person's call for this well).",
+    )
+    cq: float | None = Field(default=None, description="LinRegPCR's Cq (a cycle).")
+    efficiency: float | None = Field(
+        default=None,
+        description="The well's own amplification factor per cycle (2.0 = 100 %); the starting "
+        "quantity uses the target's mean (efficiency_target).",
+    )
+    efficiency_target: float | None = Field(
+        default=None, description="The target's mean amplification factor, used for N0."
+    )
     r2: float | None = None
+    baseline: float | None = Field(default=None, description="LinRegPCR's baseline (raw units).")
+    linregpcr_note: str = Field(default="", description="LinRegPCR's own note on this well.")
     judge: bool | None = Field(default=None, description="The Curve Judge's call, when it ran.")
     disagrees: bool = False
     person_call: bool | None = Field(default=None, description="A call a person accepted.")
@@ -470,12 +513,23 @@ class CurveView(BaseModel):
     cycle: list[int]
     fluorescence: list[float | None] = Field(description="Raw fluorescence as in the file.")
     numbers_shown: bool
-    cq: float | None = None
-    baseline: float | None = Field(default=None, description="LinRegPCR's baseline (raw units).")
-    efficiency: float | None = None
+    cq: float | None = Field(default=None, description="LinRegPCR's Cq (a cycle).")
+    baseline: float | None = Field(
+        default=None, description="LinRegPCR's baseline, in the fluorescence's units."
+    )
+    efficiency: float | None = Field(
+        default=None,
+        description="The well's own amplification factor per cycle (2.0 = 100 %).",
+    )
+    efficiency_target: float | None = Field(
+        default=None, description="The target's mean amplification factor, used for N0."
+    )
     r2: float | None = None
-    amplified: bool | None = None
+    amplified: bool | None = Field(
+        default=None, description="Counts as amplified under the analysis rule (see PlateWell)."
+    )
     judge: bool | None = None
+    linregpcr_note: str = ""
     replicates: list[CurveSeries] = Field(
         description="Other wells of the same sample and target on the same plate."
     )
@@ -595,7 +649,7 @@ class AtChoices(BaseModel):
 
     fc: float
     log2fc: float
-    p: float
+    p: float | None
     conclusion: Conclusion
     differs: bool = Field(description="The call differs from the planned analysis.")
 
@@ -635,6 +689,13 @@ class AuditBadge(BaseModel):
     current: bool = Field(default=False, description="Audited at the decision chain head of now.")
 
 
+class WithheldGene(BaseModel):
+    """A gene the engine compared no fold change for, and why (it is not in ``genes``)."""
+
+    gene: str
+    reason: str
+
+
 class ResultsView(BaseModel):
     """Everything the Results section shows about a study (raw numbers; the page formats)."""
 
@@ -645,6 +706,9 @@ class ResultsView(BaseModel):
     rule: RuleView
     references: GenormView
     genes: list[GeneRow]
+    withheld: list[WithheldGene] = Field(
+        default=[], description="Genes with no comparison (e.g. too few values in a group)."
+    )
     headline: list[str]
     counts: dict[str, int] = Field(description="Genes per conclusion (up / down / none).")
     levels: dict[str, int] = Field(description="Genes per confidence level.")
@@ -722,14 +786,22 @@ class DecideBody(BaseModel):
 
     option: str = Field(max_length=200)
     reason: Reason
-    expected_head: str | None = None
+    expected_head: str = Field(
+        min_length=1,
+        max_length=128,
+        description="The chain head the view showed (409 stale when it moved).",
+    )
 
 
 class UndoBody(BaseModel):
     """Undo the last change on a card (a new entry restoring the option before it)."""
 
     reason: Reason
-    expected_head: str | None = None
+    expected_head: str = Field(
+        min_length=1,
+        max_length=128,
+        description="The chain head the view showed (409 stale when it moved).",
+    )
 
 
 class TurnDownBody(BaseModel):
@@ -737,7 +809,11 @@ class TurnDownBody(BaseModel):
 
     reason: Reason
     option: str | None = Field(default=None, max_length=200)
-    expected_head: str | None = None
+    expected_head: str = Field(
+        min_length=1,
+        max_length=128,
+        description="The chain head the view showed (409 stale when it moved).",
+    )
 
 
 class DecisionDone(BaseModel):
@@ -770,13 +846,35 @@ class DecisionEntryView(BaseModel):
     undo: bool = Field(description="Written by Undo.")
 
 
+class StaleAttempt(BaseModel):
+    """A write refused as stale (kept outside the chain, so it never moved the head)."""
+
+    at: str
+    attempted: str = Field(description="applied, pending_human or rejected")
+    card_id: str
+    card_title: str
+    option: str
+    option_label: str
+    reason: str = ""
+    actor: str
+    expected_head: str | None = None
+    head: str | None = None
+
+
 class DecisionsView(BaseModel):
     """The study's hash-chained decision log, requests waiting, and its head."""
 
     study_id: str
     head: str
+    root: str = Field(default="", description="The chain's genesis: the input file's sha256.")
+    chain_intact: bool = Field(
+        default=True, description="Every entry's link and hash re-computed on the server."
+    )
+    broken_at: int | None = Field(default=None, description="The first entry that fails.")
     entries: list[DecisionEntryView]
     pending: list[DecisionEntryView]
+    n_pending: int = 0
+    attempts: list[StaleAttempt] = []
 
 
 class FlipOption(BaseModel):
@@ -786,9 +884,13 @@ class FlipOption(BaseModel):
     label: str
     card_option: str | None = Field(default=None, description="The card's option id, if any.")
     planned: bool
-    chosen: bool = False
-    conclusion: list[Conclusion] = Field(description="Aligned with FlipsView.genes.")
-    log2fc: list[float]
+    chosen: bool = Field(
+        default=False, description="The option in use now (a card's applied option, else planned)."
+    )
+    conclusion: list[Conclusion | None] = Field(
+        description="Aligned with FlipsView.genes; null where the engine computed no call."
+    )
+    log2fc: list[float | None] = Field(description="null where the engine computed none.")
     flips: list[bool]
 
 
@@ -821,9 +923,9 @@ class GeneGrid(BaseModel):
     options: dict[str, list[str]]
     planned: list[int] = Field(description="The planned option's index per dimension.")
     cells: list[list[int]] = Field(description="Option index per dimension, one per analysis.")
-    log2fc: list[float]
-    p: list[float]
-    conclusion: list[Conclusion]
+    log2fc: list[float | None]
+    p: list[float | None] = Field(description="null where a group had too few values.")
+    conclusion: list[Conclusion | None]
 
 
 class GeneView(BaseModel):
@@ -845,3 +947,36 @@ class GeneView(BaseModel):
     next_gene: str | None = None
     audit_verdict: str | None = None
     audit_verdict_label: str | None = None
+
+
+# ---- job results (registered: their models reach the page's types) ---------------------------
+
+
+class OpenDone(BaseModel):
+    """An opened file: the workspace to go to."""
+
+    key: str
+
+
+class DemoFetched(BaseModel):
+    """The demo file, downloaded and verified."""
+
+    path: str
+
+
+class AnalyseDone(BaseModel):
+    """The confirmed design, analysed."""
+
+    study_id: str
+
+
+class WarmDone(BaseModel):
+    """A session's file, read (its stages and results can be shown now)."""
+
+    key: str
+
+
+class WarmAllDone(BaseModel):
+    """Startup: how many sessions' files were read."""
+
+    sessions: int
