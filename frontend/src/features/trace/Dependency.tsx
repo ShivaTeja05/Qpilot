@@ -158,7 +158,7 @@ function pushTone(s: Pick<Sample, "d_log2fc">): string {
 function sampleLabel(s: Sample, gene: string): string {
   const flags = unusualFlags(s).map((f) => SAMPLE_FLAG[f]?.word ?? f);
   return [
-    `Sample ${s.unit}, ${s.group}.`,
+    `${s.unit} ${effectPercent(s.d_log2fc)}: sample ${s.unit}, ${s.group}.`,
     `Set aside, ${gene}'s fold change moves ${effectPercent(s.d_log2fc)}`,
     s.flips ? `and the call becomes ${CALL_WORD[s.call_without]}.` : "; the call stays.",
     flags.length ? `Unusual: ${flags.join(", ")}.` : "",
@@ -167,11 +167,17 @@ function sampleLabel(s: Sample, gene: string): string {
     .replace(" ;", ";");
 }
 
+/** What a well's chip shows: its gene and well, then its Cq. */
+function wellLines(w: Well): [string, string] {
+  const cq = w.cq != null ? `Cq ${fixed(w.cq, 1)}` : w.amplified ? "no Cq" : "no curve";
+  return [`${short(w.gene, 8)} · ${w.well}`, `${cq}${w.role === "target" ? " · target" : ""}`];
+}
+
 function wellLabel(w: Well): string {
   const flags = w.flags.map((f) => WELL_FLAG[f]?.word ?? f);
+  const [top, bottom] = wellLines(w);
   return [
-    `${w.gene} well ${w.well} on plate ${w.plate}`,
-    w.cq != null ? `Cq ${fixed(w.cq, 1)}` : "no Cq",
+    `${top} ${bottom}: the ${w.gene} well ${w.well} on plate ${w.plate}`,
     flags.length ? `flags: ${flags.join(", ")}` : "",
     "Open its curve and plate.",
   ]
@@ -563,15 +569,17 @@ function SampleNode({
           </g>
         )}
         <text
+          aria-hidden="true"
           textAnchor="middle"
           y={r + 15}
           fontSize={11.5}
           fontWeight={active ? 600 : 500}
           fill="var(--text)"
         >
-          {short(s.unit, 10)}
+          {short(s.unit, 10)}{" "}
         </text>
         <text
+          aria-hidden="true"
           textAnchor="middle"
           y={r + 28}
           fontSize={10.5}
@@ -654,18 +662,25 @@ function WellNode({
           stroke={off ? "var(--warn)" : odd ? "var(--line-strong)" : "var(--line)"}
           strokeWidth={off ? 1.75 : 1}
         />
-        <text textAnchor="middle" y={-3} fontSize={11.5} fontWeight={600} fill="var(--text)">
-          {short(w.gene, 8)} · {w.well}
+        <text
+          aria-hidden="true"
+          textAnchor="middle"
+          y={-3}
+          fontSize={11.5}
+          fontWeight={600}
+          fill="var(--text)"
+        >
+          {wellLines(w)[0]}{" "}
         </text>
         <text
+          aria-hidden="true"
           textAnchor="middle"
           y={12}
           fontSize={10.5}
           fill="var(--text-muted)"
           className="tabular"
         >
-          {w.cq != null ? `Cq ${fixed(w.cq, 1)}` : w.amplified ? "no Cq" : "no curve"}
-          {w.role === "target" ? " · target" : ""}
+          {wellLines(w)[1]}
         </text>
         {off && (
           <g transform="translate(46,-15)">
@@ -681,9 +696,8 @@ function WarnShape() {
   return (
     <g aria-hidden="true">
       <path d="M0,-6 L6,5 L-6,5 Z" fill="var(--warn)" stroke="var(--surface)" strokeWidth={1} />
-      <text textAnchor="middle" y={3.6} fontSize={7} fontWeight={700} fill="var(--surface)">
-        !
-      </text>
+      <path d="M0,-2.2 L0,1.4" stroke="var(--surface)" strokeWidth={1.4} strokeLinecap="round" />
+      <circle cx={0} cy={3.2} r={0.75} fill="var(--surface)" />
     </g>
   );
 }

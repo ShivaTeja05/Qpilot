@@ -439,7 +439,12 @@ function LeftOut({ trace }: { trace: Overview }) {
       />
       <CardBody>
         {rows.length ? (
-          <div className="max-h-[420px] overflow-auto">
+          <div
+            className="max-h-[420px] overflow-auto rounded-md focus-visible:outline-2 focus-visible:outline-accent"
+            tabIndex={0}
+            role="region"
+            aria-label="The list of samples in no comparison (scrolls)"
+          >
             <Table>
               <THead>
                 <TR>

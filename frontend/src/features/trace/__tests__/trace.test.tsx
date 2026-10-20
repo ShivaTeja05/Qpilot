@@ -134,18 +134,18 @@ describe("the dependency view", () => {
     const chosen = trace.samples.find((s) => s.unit === look)!;
     const wells = screen
       .getAllByRole("button")
-      .filter((b) => /^\S+ well \S+ on plate /.test(b.getAttribute("aria-label") ?? ""));
+      .filter((b) => / well \S+ on plate /.test(b.getAttribute("aria-label") ?? ""));
     expect(wells).toHaveLength(chosen.wells.length);
     fireEvent.click(wells[0]!);
     expect(onWell).toHaveBeenCalledWith(chosen.wells[0]);
     const other = trace.samples.find((s) => s.unit !== look && s.side === "a")!;
     const button = screen
       .getAllByRole("button")
-      .find((b) => b.getAttribute("aria-label")?.startsWith(`Sample ${other.unit},`))!;
+      .find((b) => b.getAttribute("aria-label")?.includes(`: sample ${other.unit},`))!;
     fireEvent.keyDown(button, { key: "Enter" });
     expect(onSample).toHaveBeenCalledWith(other.unit);
     const pressed = screen.getAllByRole("button", { pressed: true });
-    expect(pressed.some((b) => b.getAttribute("aria-label")?.startsWith(`Sample ${look},`))).toBe(
+    expect(pressed.some((b) => b.getAttribute("aria-label")?.includes(`: sample ${look},`))).toBe(
       true,
     );
   });
