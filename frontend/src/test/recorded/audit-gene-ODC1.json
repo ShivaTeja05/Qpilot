@@ -1,0 +1,72 @@
+{
+ "tiles": [
+  {
+   "label": "Fold change, planned analysis",
+   "value": "3.32× higher",
+   "sub": "likely 2.29× to 4.80× higher"
+  },
+  {
+   "label": "Same answer in",
+   "value": "100 of 100",
+   "sub": "reasonable analyses"
+  },
+  {
+   "label": "p-value, planned analysis",
+   "value": "2.1e-08",
+   "sub": "a call needs below 0.05"
+  },
+  {
+   "label": "Fewest samples that change it",
+   "value": "more than 5",
+   "sub": "of 366 samples"
+  },
+  {
+   "label": "Fewest moves that change it",
+   "value": "none in 4",
+   "sub": "reasonable choices or left-out samples, together"
+  },
+  {
+   "label": "Distance to the 2× line",
+   "value": "66 % beyond",
+   "sub": "the size a call needs"
+  },
+  {
+   "label": "Difference is clear in",
+   "value": "100 of 100",
+   "sub": "reasonable analyses (p below 0.05)"
+  }
+ ],
+ "gene": "ODC1",
+ "verdict": "solid",
+ "label": "Solid",
+ "headline_gene": true,
+ "result": {
+  "headline": "ODC1 is 3.32× higher in MYCN-high samples than in the rest.",
+  "lines": [
+   "With your planned analysis it is called up (higher in MYCN-high).",
+   "Likely range from this data: 2.29× to 4.80× higher.",
+   "MYCN-high means top 15 % by MYCN expression."
+  ],
+  "verdict_sentence": "Same call in 100 of 100 reasonable analyses, and no 5 or fewer samples change it."
+ },
+ "holds": {
+  "n": 100,
+  "lines": [
+   "144 reasonable analyses were run: every combination of choices a careful lab could defend.",
+   "The difference itself is clear (p below 0.05) in 100 of 100 of them.",
+   "Across every option tried, common shortcuts and other group cut-offs included (90,396 analyses), the same answer comes out in 99 of 100."
+  ]
+ },
+ "changes": [],
+ "no_changes": "No reasonable choice changes it.",
+ "shortcut": null,
+ "leans": [
+  "No 5 or fewer of the 366 samples change the call.",
+  "At 3.32× higher it is 66 % beyond the 2× line a call needs."
+ ],
+ "singles": [],
+ "todo": [
+  "Report it as it stands."
+ ],
+ "evidence": "/evidence/ODC1"
+}
