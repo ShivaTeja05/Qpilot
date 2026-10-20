@@ -209,7 +209,7 @@ claude mcp add qpilot -- qpilot serve
 * **Requests waiting for a person** lists every agent request in every study, oldest first, with the agent's reason. Choose **Approve** or **Turn down** and say why (the same as on Results); one that could change a conclusion is marked as such. The agent bell in the top bar counts them, and a request an agent makes reaches the page within about a second.
 * **Recent agent activity**, newest first: the requests and choices agents made on Decision Cards, and the proposals they made in Studio inboxes, for this study or for all; each says what happened ("Waiting for a person", "Answered by a person", "Not applied: the card changed"). For a study whose design and curves are not confirmed yet, requests and entries are counted but not listed.
 
-An agent's autonomy over MCP is a setting of each study: by default every request waits for you, and the autonomy switch for that study is the one described in [section 14](#14-settings). An agent that can run commands as you can still act as you; give agents MCP access, not your shell.
+An agent's autonomy over MCP is a setting of each study: by default every request waits for you ([section 14](#14-settings) says what the page's switch changes). An agent that can run commands as you can still act as you; give agents MCP access, not your shell.
 
 ## 13. Ask
 
