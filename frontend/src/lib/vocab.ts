@@ -1,0 +1,299 @@
+/**
+ * The page's words for the engine's vocabularies: conclusions, audit verdicts, confidence
+ * levels, Studio stages, engine checks, sample roles, and proposals in plain words. They follow
+ * qPilot's own wording (`qpilot/studio_state.py`, `sim/src/qsim/app.py`) so the page, the CLI
+ * and the record say the same thing.
+ */
+import type { Schemas } from "@/api/client";
+
+export type Conclusion = "up" | "down" | "none";
+export type Level = "High" | "Moderate" | "Low" | "Very low";
+export type Verdict =
+  | "solid"
+  | "holds with caveats"
+  | "depends on your choices"
+  | "fragile"
+  | "check data first"
+  | "no call";
+export type StageName = Schemas["StageView"]["stage"];
+export type Proposal = Schemas["Proposal"];
+export type CheckStatus = Schemas["ProposalCheck"]["status"];
+
+export const CONCLUSION: Record<Conclusion, { glyph: string; word: string; long: string }> = {
+  up: { glyph: "▲", word: "up", long: "called up" },
+  down: { glyph: "▼", word: "down", long: "called down" },
+  none: { glyph: "—", word: "no call", long: "no change called" },
+};
+
+/** A conclusion from any spelling the engine or the audit uses ("no call", "none", "ns"). */
+export function asConclusion(value: unknown): Conclusion {
+  const v = String(value ?? "").toLowerCase();
+  if (v === "up") return "up";
+  if (v === "down") return "down";
+  return "none";
+}
+
+export const LEVELS: Level[] = ["High", "Moderate", "Low", "Very low"];
+export const LEVEL: Record<Level, { bars: number; token: string }> = {
+  High: { bars: 4, token: "l-high" },
+  Moderate: { bars: 3, token: "l-moderate" },
+  Low: { bars: 2, token: "l-low" },
+  "Very low": { bars: 1, token: "l-verylow" },
+};
+
+export function asLevel(value: unknown): Level | null {
+  const v = String(value ?? "").toLowerCase().replace(/[_-]/g, " ");
+  return LEVELS.find((l) => l.toLowerCase() === v) ?? null;
+}
+
+/** The audit's six verdicts: glyph shape + word (never colour alone). */
+export const VERDICTS: Verdict[] = [
+  "solid",
+  "holds with caveats",
+  "depends on your choices",
+  "fragile",
+  "check data first",
+  "no call",
+];
+export type VerdictShape = "disc" | "half" | "diamond" | "cross" | "alert" | "ring";
+export const VERDICT: Record<Verdict, { label: string; token: string; shape: VerdictShape }> = {
+  solid: { label: "Solid", token: "v-solid", shape: "disc" },
+  "holds with caveats": { label: "Holds with caveats", token: "v-caveats", shape: "half" },
+  "depends on your choices": { label: "Depends on your choices", token: "v-depends", shape: "diamond" },
+  fragile: { label: "Fragile", token: "v-fragile", shape: "cross" },
+  "check data first": { label: "Check data first", token: "v-check", shape: "alert" },
+  "no call": { label: "No change called", token: "v-nocall", shape: "ring" },
+};
+
+export function asVerdict(value: unknown): Verdict | null {
+  const v = String(value ?? "").toLowerCase().replace(/_/g, " ");
+  if ((VERDICTS as string[]).includes(v)) return v as Verdict;
+  const alias: Record<string, Verdict> = {
+    caveats: "holds with caveats",
+    depends: "depends on your choices",
+    check: "check data first",
+    nocall: "no call",
+    "no change called": "no call",
+  };
+  return alias[v] ?? null;
+}
+
+export const STAGE_LABEL: Record<StageName, string> = {
+  design: "Design",
+  curves: "Curves",
+  choices: "Choices",
+  prism: "Prism draft",
+  roundtrip: "Round trip",
+};
+
+export const CHECK: Record<CheckStatus, { word: string; meaning: string; tone: "ok" | "danger" | "neutral" }> = {
+  consistent: {
+    word: "Consistent",
+    meaning: "The engine found nothing that refutes it (a check can refute, never prove).",
+    tone: "ok",
+  },
+  contradicted: {
+    word: "Contradicted",
+    meaning: "The engine's check refutes it; accepting it anyway needs a reason.",
+    tone: "danger",
+  },
+  cannot_check: {
+    word: "Cannot check",
+    meaning: "No engine check applies; decide it on the evidence.",
+    tone: "neutral",
+  },
+};
+
+export const STATUS_WORDS: Record<Proposal["status"], string> = {
+  proposed: "Waiting for you",
+  accepted: "Accepted",
+  edited: "Edited and accepted",
+  rejected: "Rejected",
+  superseded: "Replaced by a newer proposal",
+};
+
+/** RDML sample types, in words. */
+export const ROLE_WORDS: Record<string, string> = {
+  unkn: "a study sample",
+  std: "a standard of known quantity",
+  ntc: "a no-template control",
+  nrt: "a no-reverse-transcription control",
+  nac: "a no-amplification control",
+  pos: "a positive control",
+  opt: "an optical calibrator",
+  ntp: "a no-target-present control",
+};
+
+/** Short role labels for legends and chips. */
+export const ROLE_SHORT: Record<string, string> = {
+  unkn: "Sample",
+  std: "Standard",
+  ntc: "NTC",
+  nrt: "No-RT",
+  nac: "NAC",
+  pos: "Positive",
+  opt: "Calibrator",
+  ntp: "NTP",
+};
+
+export const PRESET_WORDS: Record<string, string> = {
+  vermeulen_expression_defined:
+    "the published design of the Vermeulen neuroblastoma dataset: tumours compared by MYCN expression (an expression-defined split, not a clinical call), normalised to the original study's five reference genes",
+};
+
+/** An amplification-call rule id in words. */
+export function ruleWords(rule: unknown): string {
+  const r = String(rule);
+  if (r === "linregpcr") return "LinRegPCR's call (it found an exponential phase and a quantity)";
+  if (r === "learned") return "the Curve Judge's call (a model that reads the curve's shape)";
+  const m = /^cq_le_(\d+(?:\.\d+)?)$/.exec(r);
+  if (m) return `a Cq cut-off: a Cq above ${m[1]} counts as not amplified`;
+  return `the rule “${r}”`;
+}
+
+/** Short label of an amplification-call rule: `LinRegPCR`, `Cq ≤ 35`, `Curve Judge`. */
+export function ruleLabel(rule: unknown): string {
+  const r = String(rule);
+  if (r === "linregpcr") return "LinRegPCR";
+  if (r === "learned") return "Curve Judge";
+  const m = /^cq_le_(\d+(?:\.\d+)?)$/.exec(r);
+  return m ? `Cq ≤ ${m[1]}` : r;
+}
+
+type Payload = Record<string, unknown>;
+const str = (v: unknown) => String(v ?? "?");
+
+const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
+  "design.preset": (_s, d) => {
+    const preset = str(d.preset);
+    const known = PRESET_WORDS[preset];
+    return `Use the built-in design “${preset}”${known ? `: ${known}` : ""}`;
+  },
+  "design.well_role": (s, d) => {
+    const role = str(d.role);
+    return `Treat sample ${s} as ${ROLE_WORDS[role] ?? `role “${role}”`}`;
+  },
+  "design.group": (s, d) => `Put sample ${s} in group “${str(d.group)}”`,
+  "design.bio_unit": (s, d) =>
+    `Sample ${s} belongs to biological unit “${str(d.biological_unit)}”: its wells are technical replicates of that unit and are never counted as separate n`,
+  "design.target_role": (s, d) =>
+    d.role === "ref"
+      ? `Use target ${s} as a reference gene (other genes are normalised to it)`
+      : d.role === "toi"
+        ? `Treat target ${s} as a gene of interest`
+        : `Give target ${s} the role “${str(d.role)}”`,
+  "design.gene_symbol": (s, d) => `Target ${s} is the gene with the HGNC symbol ${str(d.symbol)}`,
+  "design.comparison": (_s, d) =>
+    `Compare group “${str(d.group_a)}” with group “${str(d.group_b)}” (fold change = ${str(d.group_a)} relative to ${str(d.group_b)})`,
+  "design.dilution_series": (s, d) => {
+    const samples = d.samples && typeof d.samples === "object" ? (d.samples as Record<string, unknown>) : {};
+    const names = Object.keys(samples);
+    if (!names.length) throw new Error("no samples");
+    const q = Object.values(samples)
+      .map(Number)
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+    const span = names.length > 1 ? `${names[0]} … ${names[names.length - 1]}` : names.join(", ");
+    const quantities = q.length ? `, quantities ${q[0]} to ${q[q.length - 1]}` : "";
+    return `Samples ${span} (${names.length} in all, experiment ${str(d.experiment_id)}) form a dilution series ${s}${quantities}`;
+  },
+  "curve.call_rule": (_s, d) => `Count a well as amplified by ${ruleWords(d.rule)}`,
+  "curve.well_call": (s, d) => {
+    if (typeof d.amplified !== "boolean") throw new Error("amplified must be boolean");
+    return `Count well ${s} as ${d.amplified ? "amplified" : "not amplified (no usable curve)"}`;
+  },
+  "prism.project": (_s, d) => {
+    const genes = Array.isArray(d.genes) && d.genes.length ? d.genes.map(String).join(", ") : "the headline genes";
+    const extras = ["test", "graph"].filter((k) => typeof d[k] === "string").map((k) => `${k}: ${str(d[k])}`);
+    return `Prism project from template ${str(d.template_id ?? "two_groups_log2")}: one table each for ${genes}${extras.length ? ` (${extras.join("; ")})` : ""}`;
+  },
+  "prism.exclusion_reason": (_s, d) => {
+    const sample = d.sample ? str(d.sample) : "an unknown sample";
+    return d.action === "restore"
+      ? `Keep sample ${sample} in ${str(d.gene)} (restore it in the analysis)`
+      : `Exclude sample ${sample} from ${str(d.gene)}, as it is in the table Prism sent back`;
+  },
+  "prism.value_edit": (_s, d) => {
+    const sample = d.sample ? str(d.sample) : "an unknown sample";
+    const what = d.action === "keep" ? "keep the edited value as a manual edit" : "restore qPilot's value";
+    return `The value of sample ${sample} for ${str(d.gene)} was changed in Prism: ${what}`;
+  },
+  "stage.confirm": (s, d) => {
+    const label = STAGE_LABEL[s as StageName] ?? s;
+    const covers = Array.isArray(d.covers) ? d.covers.length : 0;
+    return s === "choices"
+      ? `Confirm the ${label} stage: the Decision Cards of this analysis`
+      : `Confirm the ${label} stage: it covers ${covers} accepted proposal${covers === 1 ? "" : "s"}`;
+  },
+};
+
+/**
+ * A proposal (or another reading of it: an alternative, an edit) in plain words. A payload
+ * that does not have its kind's shape (an agent's, say) is shown as JSON.
+ */
+export function describeProposal(p: Pick<Proposal, "kind" | "subject" | "payload">, payload?: Payload): string {
+  const data = payload ?? (p.payload as Payload);
+  const describer = DESCRIBERS[p.kind];
+  if (describer) {
+    try {
+      return describer(p.subject, data);
+    } catch {
+      /* fall through to JSON */
+    }
+  }
+  const json = JSON.stringify(data);
+  return `${p.kind} for ${p.subject}: ${json.length > 300 ? `${json.slice(0, 300)}…` : json}`;
+}
+
+/** The payload the engine reads once accepted: the proposal's payload with a person's edits. */
+export function effectivePayload(p: Pick<Proposal, "payload" | "edits">): Payload {
+  return { ...(p.payload as Payload), ...((p.edits as Payload | null) ?? {}) };
+}
+
+/** A short title for a kind of proposal (card eyebrow). */
+export const KIND_TITLE: Record<Proposal["kind"], string> = {
+  "design.preset": "Design preset",
+  "design.well_role": "Sample role",
+  "design.group": "Group",
+  "design.bio_unit": "Biological unit",
+  "design.target_role": "Target role",
+  "design.gene_symbol": "Gene symbol",
+  "design.comparison": "Comparison",
+  "design.dilution_series": "Dilution series",
+  "curve.call_rule": "Amplification rule",
+  "curve.well_call": "Well call",
+  "prism.project": "Prism project",
+  "prism.exclusion_reason": "Exclusion in Prism",
+  "prism.value_edit": "Value changed in Prism",
+  "stage.confirm": "Confirm stage",
+};
+
+export const CURVE_JUDGE = "qpilot-curve-judge";
+
+/** Who made a proposal, in words. */
+export function makerText(m: Schemas["MadeBy"]): string {
+  if (m.kind === "rule") return "Made by a fixed rule in qPilot (no model).";
+  if (m.kind === "agent") return `Proposed by an agent over MCP (${m.agent || "unnamed"}).`;
+  if (m.provider === CURVE_JUDGE)
+    return `Made by the Curve Judge, a local curve classifier (model ${m.model ?? "?"}); it reads only the curve's fluorescence values.`;
+  return `Made by the model ${m.provider || "?"} · ${m.model || "?"}${m.prompt_sha256 ? ` · prompt sha256 ${m.prompt_sha256.slice(0, 12)}` : ""}.`;
+}
+
+/** Blind-stage consequence wording (docs/studio.md). */
+export const MATTERS_TEXT = "This matters for at least one conclusion; decide on the evidence.";
+export const NOT_MATTERS_TEXT = "Neither reading changes any conclusion.";
+export const BLIND_TEXT =
+  "Hidden in the blind stages: no gene, direction or number is shown before the design and the curves are confirmed.";
+
+/** A proposal of the design or curves stage (its consequence is never shown in full). */
+export function isBlindKind(p: Pick<Proposal, "kind" | "subject">): boolean {
+  if (p.kind === "stage.confirm") return p.subject === "design" || p.subject === "curves";
+  return p.kind.startsWith("design.") || p.kind.startsWith("curve.");
+}
+
+/** Actor in words. */
+export const ACTOR_WORDS: Record<string, string> = {
+  human: "a person",
+  agent: "an agent",
+  system: "qPilot (automatic)",
+};
