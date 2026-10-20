@@ -23,6 +23,9 @@ git checkout -- ../qpilot/web/static      # before committing
 The report is `frontend/playwright-report/` (`npx playwright show-report`); traces of failures
 are in `frontend/test-results/`. Screenshots of every section at 1440 / 1024 / 768 / 390 px in
 light and dark go to `frontend/e2e/screenshots/<section>/<width>-<theme>.png` (gitignored).
+Every state's axe findings are saved to `frontend/e2e/screenshots/axe/<state>.json` (cleared at
+the start of a run); `node e2e/axe-summary.mjs [--all]` groups them by rule and element, with the
+states each was seen in, ready to post to the owners.
 
 ## What every test checks
 
