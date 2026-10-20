@@ -55,14 +55,14 @@ export function ShortcutSheet() {
       <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
         {GROUPS.map((g) => (
           <section key={g.title}>
-            <h3 className="mb-2 text-xs font-semibold tracking-wider text-faint uppercase">
+            <h3 className="mb-2 text-xs font-semibold tracking-wider text-muted uppercase">
               {g.title}
             </h3>
             <dl className="flex flex-col gap-1.5">
               {g.rows.map(([combos, what]) => (
                 <div key={what} className="flex items-center justify-between gap-4 text-[13px]">
                   <dt className="text-fg">{what}</dt>
-                  <dd className="flex shrink-0 items-center gap-1 text-faint">
+                  <dd className="flex shrink-0 items-center gap-1 text-muted">
                     {combos.map((keys, i) => (
                       <Fragment key={i}>
                         {i > 0 ? <span className="text-xs">/</span> : null}
