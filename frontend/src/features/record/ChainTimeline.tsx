@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
 import { count, dateTime, relativeTime } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { Badge, Card, CardHeader, Hash, SegmentedControl, Tooltip } from "@/ui";
-import type { Actor, ChainEntry } from "./types";
+import type { Actor, ChainEntry, StaleAttempt } from "./types";
 import { ACTOR, ANSWERED, STATUS, cardTitle, optionLabel } from "./words";
 
 type Filter = "all" | Actor;
@@ -33,7 +33,9 @@ export function ChainTimeline({
   root,
   head,
   intact,
+  brokenAt,
   waiting,
+  attempts = [],
   actions,
 }: {
   entries: ChainEntry[];
@@ -42,8 +44,12 @@ export function ChainTimeline({
   head: string;
   /** The server's verdict on the whole chain (hashes re-computed), when it gives one. */
   intact?: boolean | null;
+  /** The first entry that fails, when the server found the chain broken. */
+  brokenAt?: number | null;
   /** Hashes of the agent requests still waiting (others were answered in later entries). */
   waiting?: string[];
+  /** Writes refused as stale: logged beside the chain, they never moved the head. */
+  attempts?: StaleAttempt[];
   /** Extra controls in the header (e.g. a link to the waiting requests). */
   actions?: ReactNode;
 }) {
@@ -102,7 +108,7 @@ export function ChainTimeline({
                   </Badge>
                 ) : (
                   <Badge tone="danger" icon={<Unlink />}>
-                    Broken: a line was changed
+                    {brokenAt != null ? `Broken at entry ${brokenAt}: a line was changed` : "Broken: a line was changed"}
                   </Badge>
                 )}
               </dd>
@@ -141,7 +147,57 @@ export function ChainTimeline({
           </div>
         </li>
       </ol>
+      {attempts.length ? <Attempts attempts={attempts} now={now} /> : null}
     </Card>
+  );
+}
+
+const ATTEMPTED: Record<string, string> = {
+  applied: "set",
+  pending_human: "ask a person to set",
+  rejected: "turn down",
+};
+
+/** Writes that did not change the study: each was based on a view the chain had moved past. */
+function Attempts({ attempts, now }: { attempts: StaleAttempt[]; now: number }) {
+  return (
+    <details className="group border-t border-line px-4 py-3">
+      <summary className="cursor-pointer text-[13px] font-medium text-fg outline-offset-2">
+        {attempts.length === 1 ? "1 attempt" : `${count(attempts.length)} attempts`} did not change the study
+        <span className="ml-1.5 font-normal text-muted">(stale: something was decided first)</span>
+      </summary>
+      <p className="mt-1.5 text-xs text-muted">
+        They are logged beside the chain, not in it, so they never moved the head; the record keeps them.
+      </p>
+      <ol className="mt-2 flex flex-col divide-y divide-line rounded-lg border border-line">
+        {[...attempts].reverse().map((a, i) => (
+          <li key={`${a.at}-${i}`} className="px-3 py-2 text-[13px]">
+            <p className="text-fg">
+              <span className="text-muted">{ACTOR[a.actor as Actor]?.word ?? a.actor} tried to {ATTEMPTED[a.attempted] ?? a.attempted} </span>
+              <span className="font-medium">{a.card_title}</span>
+              <span className="text-muted"> → </span>
+              <span className="font-medium">{a.option_label}</span>
+            </p>
+            {a.reason ? <p className="mt-0.5 text-muted">“{a.reason}”</p> : null}
+            <p className="mt-1 flex flex-wrap items-center gap-x-1 text-xs text-faint">
+              <time dateTime={a.at} title={dateTime(a.at)}>
+                {relativeTime(a.at, now)}
+              </time>
+              {a.expected_head ? (
+                <>
+                  · it read <Hash value={a.expected_head} prefix="chain" />
+                </>
+              ) : null}
+              {a.head ? (
+                <>
+                  · the chain was already at <Hash value={a.head} />
+                </>
+              ) : null}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }
 

@@ -29,6 +29,8 @@ from qpilot.schemas import DecisionCard, DecisionEntry, Fact, StudyResult
 from qpilot.web.contract import (
     AtChoices,
     AuditBadge,
+    AutonomyChange,
+    AutonomyView,
     CardOptionView,
     CardsView,
     CardView,
@@ -785,6 +787,8 @@ def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
     broken = verify_chain(entries, root)
     attempts = []
     for a in store.attempts(study_id):
+        if a.get("status") != "stale":
+            continue
         card = by_id.get(str(a.get("card_id")))
         labels = {o.id: o.label for o in card.options} if card else {}
         option = str(a.get("option") or "")
@@ -895,3 +899,68 @@ def study_exists(store: StudyStore, study_id: str) -> bool:
     except StudyNotFound:
         return False
     return Path(store.workspace(study_id) / "results.json").exists()
+
+
+# ---- autonomy --------------------------------------------------------------------------------
+
+AUTONOMY_STATUS = "autonomy"
+
+
+def autonomy_changes(store: StudyStore, study_id: str) -> list[AutonomyChange]:
+    """Each change of the study's autonomy (kept beside the chain, in ``attempts.jsonl``)."""
+    return [
+        AutonomyChange(
+            at=str(a.get("at") or ""),
+            level=str(a.get("level") or ""),
+            previous=str(a.get("previous") or ""),
+            actor=str(a.get("actor") or "human"),
+        )
+        for a in store.attempts(study_id)
+        if a.get("status") == AUTONOMY_STATUS
+    ]
+
+
+def autonomy_view(store: StudyStore, study_id: str) -> AutonomyView:
+    """The study's autonomy, the policy lines and how it was changed."""
+    from qpilot.ai.profile import autonomy_policy
+
+    level = store.autonomy(study_id)
+    return AutonomyView(
+        study_id=study_id,
+        autonomy=level if level in ("suggest", "decide_and_tell") else "suggest",  # type: ignore[arg-type]
+        policy=list(autonomy_policy()),
+        changes=autonomy_changes(store, study_id),
+    )
+
+
+def set_autonomy(store: StudyStore, study_id: str, level: str) -> bool:
+    """A person sets the study's autonomy; the change is written beside the chain.
+
+    The decision chain has no entry for it (the store offers none), so the change is appended
+    to ``attempts.jsonl`` with status ``autonomy`` — kept with the study and its record, never
+    moving the chain's head. Returns False when the level was already that.
+    """
+    from qpilot.core.store import canonical_json
+
+    previous = store.autonomy(study_id)
+    if previous == level:
+        return False
+    store.set_autonomy(study_id, level)
+    workspace = store.workspace(study_id)
+    line = {
+        "at": _now(),
+        "status": AUTONOMY_STATUS,
+        "level": level,
+        "previous": previous,
+        "actor": "human",
+    }
+    with store._locked(workspace):
+        with open(workspace / "attempts.jsonl", "a", encoding="utf-8") as fh:
+            fh.write(canonical_json(line) + "\n")
+    return True
+
+
+def _now() -> str:
+    import time
+
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())

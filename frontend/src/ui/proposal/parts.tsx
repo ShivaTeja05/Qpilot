@@ -11,6 +11,7 @@ import {
   EyeOff,
   FileText,
   Grid3x3,
+  Loader2,
   ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { Tooltip } from "../overlay";
 import {
   FLAG_WORDS,
   INSTRUCTION_TEXT,
+  RULE_TITLE,
   RULE_WORDS,
   SIGNAL_CLASS,
   detailLabel,
@@ -39,6 +41,22 @@ export type ProposalCheck = Proposal["check"];
 
 const isDict = (v: unknown): v is Dict => typeof v === "object" && v !== null && !Array.isArray(v);
 const isScalar = (v: unknown) => v === null || ["string", "number", "boolean"].includes(typeof v);
+
+// ---------------------------------------------------------------------------------------------
+// The file is being read (503 `warming`): a calm wait, not an error
+
+/** While the server reads the file for the first time: what is happening; it fills in by itself. */
+export function Warming({ message, className }: { message: string; className?: string }) {
+  return (
+    <div role="status" className={cn("flex items-start gap-3 rounded-xl border border-line bg-surface p-4", className)}>
+      <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-accent" aria-hidden />
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-fg">Reading the file</p>
+        <p className="mt-0.5 text-[13px] text-muted">{message}</p>
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------------------------
 // A part of the card: label, one-line summary, optional fold-out
@@ -536,17 +554,22 @@ export function DetailsView({
 
 /** A rule id (`D-NTC`) with what it can refute on hover. */
 export function RuleChip({ rule }: { rule: string }) {
-  const words = rule
-    .split("/")
+  const parts = rule.split("/");
+  const words = parts
     .map((r) => RULE_WORDS[r])
     .filter(Boolean)
     .join(" ");
+  const title = parts
+    .map((r) => RULE_TITLE[r])
+    .filter(Boolean)
+    .join(" · ");
   const chip = (
     <span
       tabIndex={words ? 0 : undefined}
-      className="inline-flex h-5 items-center rounded border border-line bg-surface-2 px-1.5 font-mono text-[11px] text-muted"
+      className="inline-flex h-5 items-center gap-1 rounded border border-line bg-surface-2 px-1.5 text-[11px] text-muted"
     >
-      {rule}
+      {title ? <span className="font-medium text-fg">{title}</span> : null}
+      <span className="font-mono">{rule}</span>
     </span>
   );
   return words ? <Tooltip content={<span className="block max-w-xs">{words}</span>}>{chip}</Tooltip> : chip;

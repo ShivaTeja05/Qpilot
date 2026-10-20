@@ -20,7 +20,7 @@ export function CannotRun({
   title,
 }: {
   workspace: NonNullable<SectionProps["workspace"]>;
-  status: AuditStatus;
+  status: Pick<AuditStatus, "status" | "reason">;
   /** Overrides the heading (an attached folder that cannot be shown). */
   title?: string;
 }) {

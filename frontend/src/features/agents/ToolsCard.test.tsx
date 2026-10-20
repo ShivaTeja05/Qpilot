@@ -7,7 +7,7 @@ import recorded from "./recorded/agents.json";
 import { ConnectCard, RulesCard, ToolsCard } from "./ToolsCard";
 import type { AgentsView } from "./types";
 
-const view = recorded as AgentsView;
+const view = recorded as unknown as AgentsView;
 
 afterEach(cleanup);
 
@@ -46,10 +46,14 @@ describe("Agents parts", () => {
     view.activity.forEach((a, i) => expect(within(items[i]!).getByText(a.summary)).toBeTruthy());
   });
 
-  it("says a request no longer waits once it is not in the waiting list", () => {
-    renderWithProviders(<ActivityList items={view.activity} waiting={new Set()} now={Date.now()} where={() => null} />);
-    const asked = view.activity.filter((a) => a.kind === "decision" && a.status === "pending_human");
-    expect(screen.getAllByText("Answered by a person")).toHaveLength(asked.length);
-    expect(screen.queryByText("Waiting for a person")).toBeNull();
+  it("says what became of each agent request", () => {
+    renderWithProviders(
+      <ActivityList items={view.activity} waiting={new Set(view.pending.map(requestKey))} now={Date.now()} where={() => null} />,
+    );
+    const states = view.activity.map((a) => a.request_state).filter(Boolean);
+    expect(states).toEqual(expect.arrayContaining(["waiting", "approved", "turned_down"]));
+    expect(screen.getAllByText("Waiting for a person")).toHaveLength(states.filter((s) => s === "waiting").length);
+    expect(screen.getAllByText("Approved")).toHaveLength(states.filter((s) => s === "approved").length);
+    expect(screen.getAllByText("Turned down")).toHaveLength(states.filter((s) => s === "turned_down").length);
   });
 });

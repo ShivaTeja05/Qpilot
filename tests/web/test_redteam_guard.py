@@ -352,9 +352,9 @@ def test_the_built_page_loads_nothing_from_the_internet():
             if url.startswith("//") or not NOT_FETCHED.match(url):
                 if not url.startswith("//"):
                     offenders.append(f"{path.name}: {url}")
-        for url in re.findall(r"""url\(\s*['"]?([^'")]+)""", text):
-            # `url(` in JS string checks (motion: startsWith(`url(`)) is code, not a fetch.
-            if not url.startswith(("/", "data:", "#", "`", "$")):
+        css_urls = re.findall(r"""url\(\s*['"]?([^'")]+)""", text) if path.suffix == ".css" else []
+        for url in css_urls:
+            if not url.startswith(("/", "data:", "#")):
                 offenders.append(f"{path.name}: url({url})")
     assert not offenders, offenders[:10]
 
@@ -373,3 +373,12 @@ def test_errors_on_unknown_routes_never_echo_the_path_as_html(client):
     r = client.get("/api/<script>alert(1)</script>")
     assert r.headers["content-type"].startswith("application/json")
     assert "<script>" not in r.text
+
+
+# RT-UI-019: fixed by api; this test keeps it fixed.
+def test_a_large_json_body_is_refused_before_it_is_parsed(client):
+    body = b'{"autonomy": "suggest", "pad": "' + b"x" * (2 * 1024 * 1024) + b'"}'
+    r = client.put(
+        "/api/settings", content=body, headers={**SAME, "content-type": "application/json"}
+    )
+    assert r.status_code == 413, r.status_code

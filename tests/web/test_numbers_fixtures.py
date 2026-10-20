@@ -86,11 +86,6 @@ def test_a_small_study_keeps_its_numbers(variant):
     check_cards(get_json(client, f"/api/studies/{study}/cards"), eng)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bus #0199 bug 1 to api: f_amp_primary is the rule's label, so the planned cell "
-    "ties when cq_le_40 equals linregpcr and every option of the flip matrix is dropped",
-)
 def test_a_late_sample_keeps_the_flip_matrix_and_the_gene_grid(variant):
     if variant["name"] != "late":
         pytest.skip("only the late variant has a gene to show")
@@ -100,10 +95,6 @@ def test_a_late_sample_keeps_the_flip_matrix_and_the_gene_grid(variant):
         check_gene(get_json(client, f"/api/studies/{study}/genes/{gene}"), eng, gene)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="bus #0199 bug 2 to api: the results view does not say which gene was withheld",
-)
 def test_a_withheld_gene_is_named_with_its_reason(variant):
     if variant["name"] != "flat":
         pytest.skip("only the flat variant withholds a gene")

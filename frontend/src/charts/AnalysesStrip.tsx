@@ -2,7 +2,7 @@
  * Every reasonable analysis of one gene as a dot on the fold axis, stacked where they pile up,
  * coloured and shaped by its call; the planned analysis is ringed.
  */
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { ChartFrame, LineSwatch, type LegendItem } from "./core/ChartFrame";
 import { DataTable, type Column } from "./core/DataTable";
 import { FOLD_AXIS_BELOW, FoldAxis } from "./core/FoldAxis";
@@ -10,7 +10,7 @@ import { foldScale } from "./core/fold";
 import { fmtFoldLog2 } from "./core/format";
 import { GlyphMark } from "./core/Glyph";
 import { useTip, usePointNav, useWidth } from "./core/hooks";
-import { dotStack } from "./core/layout";
+import { dotStack, localPoint, nearestIndex } from "./core/layout";
 import { Tooltip } from "./core/Tooltip";
 import { CALLS, CALL_ORDER, type CallKey } from "./core/encodings";
 
@@ -96,6 +96,11 @@ export function AnalysesStrip({
   const nav = usePointNav(order.length);
   const active = nav.active != null ? order[nav.active] : null;
   const cy = (dy: number) => bottom - r - 3 - dy;
+  const spots = useMemo(
+    () => placed.map((p) => ({ x: p.x, y: bottom - r - 3 - p.dy })),
+    [placed, bottom, r],
+  );
+  const [hover, setHover] = useState(-1);
 
   const tipFor = (d: AnalysisDot) => ({
     title: d.planned ? "Your planned analysis" : d.choices.join(" + "),
@@ -175,7 +180,17 @@ export function AnalysesStrip({
           role="img"
           aria-label={summary}
           className="block overflow-visible"
-          onPointerLeave={hide}
+          onPointerLeave={() => {
+            setHover(-1);
+            hide();
+          }}
+          onPointerMove={(e) => {
+            const { x, y } = localPoint(e);
+            const i = nearestIndex(spots, x, y, 10);
+            setHover(i);
+            if (i >= 0) show(spots[i]!.x, spots[i]!.y, tipFor(placed[i]!.item));
+            else hide();
+          }}
         >
           <FoldAxis
             scale={fs}
@@ -189,10 +204,9 @@ export function AnalysesStrip({
           {placed.map((p, i) => {
             const d = p.item;
             const y = cy(p.dy);
-            const on = active === p;
+            const on = active === p || hover === i;
             return (
-              <g key={i} onPointerEnter={() => show(p.x, y, tipFor(d))}>
-                <circle cx={p.x} cy={y} r={Math.max(6, r + 2)} fill="transparent" />
+              <g key={i}>
                 {d.planned ? (
                   <GlyphMark
                     mark={{ shape: "diamond", tone: "var(--accent)" }}

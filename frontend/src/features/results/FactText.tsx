@@ -45,7 +45,7 @@ export function FactSource({
 }) {
   if (!text) return null;
   return (
-    <span className={cn("text-[12px] text-faint", className)}>
+    <span className={cn("text-[12px] text-muted", className)}>
       {text.source === "model"
         ? "Worded by the model; every number in it is a checked fact."
         : "qPilot's own wording; every number is a fact from the result."}

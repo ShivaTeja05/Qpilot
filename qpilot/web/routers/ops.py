@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import math
 import re
 import threading
 from dataclasses import dataclass
@@ -670,9 +671,85 @@ def _model_note(ctx: AppContext) -> str | None:
     return f"A template answered: {status['reason'] or 'no model is configured'}."
 
 
+# ---- numbers as the page writes them (docs/app.md §5; frontend/src/lib/format.ts) -------------
+
+NNBSP = "\u202f"  # narrow no-break space: groups digits, separates units
+MINUS = "\u2212"
+
+
+def _group(text: str) -> str:
+    """Digits grouped by three with narrow no-break spaces; a real minus sign."""
+    negative = text.startswith("-")
+    body = text[1:] if negative else text
+    whole, _, frac = body.partition(".")
+    if len(whole) > 3:
+        whole = re.sub(r"\B(?=(\d{3})+(?!\d))", NNBSP, whole)
+    return (MINUS if negative else "") + whole + (f".{frac}" if frac else "")
+
+
+def _fold(fc: float) -> str:
+    """``3.59×``, ``0.57×``, ``0.034×``: two decimals from 1 up, two significant digits below."""
+    if fc >= 1:
+        return _group(f"{fc:.2f}") + "×"
+    digits = max(2, 1 - math.floor(math.log10(fc)))
+    return f"{fc:.{min(digits, 6)}f}×"
+
+
+def _share(fraction: float) -> str:
+    """A share of analyses, ``64 %``; never rounded to 0 or 100 unless it is."""
+    f = min(1.0, max(0.0, fraction))
+    if 0 < f < 0.005:
+        return f"<{NNBSP}1{NNBSP}%"
+    if 0.995 <= f < 1:
+        return f">{NNBSP}99{NNBSP}%"
+    return f"{math.floor(f * 100 + 0.5)}{NNBSP}%"  # half up, as the page's Math.round
+
+
+def _p_value(p: float) -> str:
+    """``< 0.001``, ``0.003``, ``0.43``; never rounded across 0.05."""
+    if p < 0.001:
+        return f"<{NNBSP}0.001"
+    if p >= 0.995:
+        return "1.00"
+    decimals = 3 if p < 0.1 else 2
+    text = f"{p:.{decimals}f}"
+    while decimals < 6 and (p < 0.05) != (float(text) < 0.05):
+        decimals += 1
+        text = f"{p:.{decimals}f}"
+    return text
+
+
+def _page_value(fid: str, fact: Any) -> str:
+    """One fact as the page writes that kind of number (the record keeps the fact's format)."""
+    from qpilot.core.facts import render_fact
+
+    value = fact.value
+    number = isinstance(value, int | float) and not isinstance(value, bool)
+    if number and math.isfinite(value):
+        if fact.unit == "×" and value > 0:
+            return _fold(float(value))
+        if "%" in fact.fmt and not fact.unit:
+            return _share(float(value))
+        if fid == "f_ans_p" or fact.path.endswith(".p"):
+            return _p_value(float(value))
+        if isinstance(value, int) and fact.fmt in ("{}", "{:,}"):
+            return _group(str(value))
+    return render_fact(fact)
+
+
+def _page_text(tokens: str, facts: dict[str, Any]) -> str:
+    """Token text with every known fact written as the page writes it."""
+    from qpilot.core.validator import TOKEN
+
+    def sub(match: re.Match[str]) -> str:
+        fact = facts.get(match.group(1))
+        return _page_value(match.group(1), fact) if fact is not None else match.group(0)
+
+    return TOKEN.sub(sub, tokens)
+
+
 def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
     from qpilot.ai.ask import _path_words
-    from qpilot.core.validator import render_tokens
 
     out: list[CitedFact] = []
     for fid in dict.fromkeys(re.findall(r"\{\{\s*([A-Za-z0-9_]+)\s*\}\}", text)):
@@ -680,9 +757,7 @@ def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
         if fact is None:
             continue
         meaning = ANSWER_FACTS.get(fid) or _path_words(fact.path)
-        out.append(
-            CitedFact(id=fid, meaning=meaning, value=render_tokens("{{" + fid + "}}", facts))
-        )
+        out.append(CitedFact(id=fid, meaning=meaning, value=_page_value(fid, fact)))
     return out
 
 
@@ -705,7 +780,8 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
     call = answer.tool_calls[-1] if answer.tool_calls else {"tool": "none", "args": {}}
     tool, args = str(call.get("tool")), dict(call.get("args") or {})
     used = client.available and not answer.fallback
-    text, cited, focus, card_id = answer.plain, _cited(answer.answer, facts), None, None
+    text, cited = _page_text(answer.answer, facts), _cited(answer.answer, facts)
+    focus = card_id = None
     note = None
     if answer.fallback:
         note = _model_note(ctx) or (

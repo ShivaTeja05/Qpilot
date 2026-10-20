@@ -27,6 +27,7 @@ from typing import Any
 HEARTBEAT_S = 15.0
 MAX_RESULTS_BYTES = 256 * 1024 * 1024
 WATCH_INTERVAL_S = 1.0
+SETTLE_MAX_S = 3.0  # a change still going on is told at least this often
 QUEUE_SIZE = 256
 WATCHED = {
     "decisions.jsonl": "study.changed",
@@ -123,11 +124,26 @@ class StoreWatcher:
         self._stop.set()
 
     def _run(self) -> None:
+        # A long write (a bulk decision appends one line per proposal) is told once it settles:
+        # a change is published when the next scan sees no further change, or after
+        # SETTLE_MAX_S at the latest, so a page re-reads once, not once a second.
+        pending: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
         while not self._stop.wait(self.interval):
             try:
-                self.scan()
+                fresh = self.scan(publish=False)
             except OSError:  # a workspace moved or removed mid-scan: try again next tick
                 continue
+            now = time.monotonic()
+            seen_now = set()
+            for event in fresh:
+                key = (event["type"], event["key"])
+                seen_now.add(key)
+                first = pending.get(key, (now, event))[0]
+                pending[key] = (first, event)
+            for key, (first, event) in list(pending.items()):
+                if key not in seen_now or now - first >= SETTLE_MAX_S:
+                    self.bus.publish(event)
+                    del pending[key]
 
     def scan(self, publish: bool = True) -> list[dict[str, Any]]:
         """Compare the watched files with the last scan; publish (and return) what changed."""

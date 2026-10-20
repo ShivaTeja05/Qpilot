@@ -10,7 +10,13 @@ import { useRef, useState } from "react";
 import { ApiError, api, unwrap, type Schemas } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { count } from "@/lib/format";
-import { KIND_TITLE, STAGE_LABEL, describeProposal, type Proposal, type StageName } from "@/lib/vocab";
+import {
+  KIND_TITLE,
+  STAGE_LABEL,
+  describeProposal,
+  type Proposal,
+  type StageName,
+} from "@/lib/vocab";
 import { useFocusTarget } from "@/shell/actions";
 import { refreshWorkspace, reportWriteError } from "@/shell/writes";
 import { Badge } from "../Badge";
@@ -23,12 +29,16 @@ import { Textarea } from "../controls";
 import { CheckTag } from "../tags";
 import { toast } from "../Toaster";
 import { MAX_REASON } from "./ProposalCard";
-import type { ConfirmableStage, InboxStage } from "./hooks";
+import { StageSummary } from "./summary";
+import { useStageProposals, type ConfirmableStage, type InboxStage } from "./hooks";
 
 type BulkAction = "accept" | "reject";
 type StageView = Schemas["StageView"];
 
-const BULK: Record<BulkAction, { button: string; title: string; go: (n: number) => string; empty: string }> = {
+const BULK: Record<
+  BulkAction,
+  { button: string; title: string; go: (n: number) => string; empty: string }
+> = {
   accept: {
     button: "Accept all consistent…",
     title: "Accept all consistent proposals",
@@ -67,9 +77,14 @@ export function BulkAction({
   useFocusTarget(BULK[action].button, button);
   const list = useQuery({
     queryKey: ["w", sid, "bulk", action, stage],
-    enabled: open,
+    // Not while its own write runs: every proposal it decides re-reads the session.
+    enabled: open && !busy,
     queryFn: () =>
-      unwrap(api.GET("/api/sessions/{sid}/bulk/{action}", { params: { path: { sid, action }, query: { stage } } })),
+      unwrap(
+        api.GET("/api/sessions/{sid}/bulk/{action}", {
+          params: { path: { sid, action }, query: { stage } },
+        }),
+      ),
     staleTime: 0,
   });
   const words = BULK[action];
@@ -82,7 +97,8 @@ export function BulkAction({
       const done = await unwrap(
         api.POST("/api/sessions/{sid}/bulk/{action}", {
           params: { path: { sid, action } },
-          body: { stage, ids, reason: reason.trim(), expected_head: list.data.head },
+          // The scope of the list shown: the GET above lists the AI's calls (its default).
+          body: { stage, ids, reason: reason.trim(), makers: "ai", expected_head: list.data.head },
         }),
       );
       await refreshWorkspace(qc, sid);
@@ -152,18 +168,26 @@ export function BulkAction({
     >
       <div className="flex flex-col gap-3">
         {changed ? (
-          <p role="status" className="rounded-lg border border-info/30 bg-info-soft px-3 py-2 text-[13px] text-fg">
-            The list changed since it was shown (another tab or an agent decided something). This is the current list;
-            look at it again before you go on.
+          <p
+            role="status"
+            className="rounded-lg border border-info/30 bg-info-soft px-3 py-2 text-[13px] text-fg"
+          >
+            The list changed since it was shown (another tab or an agent decided something). This is
+            the current list; look at it again before you go on.
           </p>
         ) : null}
         {list.isPending ? <LoadingBlock label="Listing the proposals" /> : null}
-        {list.error ? <ErrorPanel error={list.error} compact onRetry={() => void list.refetch()} /> : null}
+        {list.error ? (
+          <ErrorPanel error={list.error} compact onRetry={() => void list.refetch()} />
+        ) : null}
         {list.data ? (
           ids.length ? (
             <>
               <p className="text-[13px] text-muted">{list.data.message}</p>
-              <ProposalLines proposals={list.data.proposals} descriptions={list.data.descriptions} />
+              <ProposalLines
+                proposals={list.data.proposals}
+                descriptions={list.data.descriptions}
+              />
             </>
           ) : (
             <p className="text-[13px] text-muted">{words.empty}</p>
@@ -223,7 +247,10 @@ export function ProposalLines({
       </div>
       <ol className="max-h-[46vh] list-decimal divide-y divide-line overflow-y-auto rounded-lg border border-line pl-9 qp-scroll">
         {proposals.slice(0, max).map((p) => (
-          <li key={p.id} className="py-1.5 pr-3 text-[13px] text-fg marker:text-xs marker:text-faint">
+          <li
+            key={p.id}
+            className="py-1.5 pr-3 text-[13px] text-fg marker:text-xs marker:text-faint"
+          >
             <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <span className="min-w-0">{descriptions?.[p.id] ?? describeProposal(p)}</span>
               <CheckTag status={p.check.status} />
@@ -231,17 +258,40 @@ export function ProposalLines({
           </li>
         ))}
       </ol>
-      {proposals.length > max ? <p className="text-xs text-muted">… and {count(proposals.length - max)} more.</p> : null}
+      {proposals.length > max ? (
+        <p className="text-xs text-muted">… and {count(proposals.length - max)} more.</p>
+      ) : null}
     </div>
   );
 }
 
-/** Both bulk actions of a stage, side by side. */
-export function BulkActions({ sid, stage, pending }: { sid: string; stage: InboxStage; pending: number }) {
+/**
+ * Both bulk actions of a stage, side by side; each is off when the inbox shows nothing it
+ * would cover (the dialog still lists exactly what the server says it covers).
+ */
+export function BulkActions({
+  sid,
+  stage,
+  pending,
+}: {
+  sid: string;
+  stage: InboxStage;
+  /** Optional: how many proposals wait (0 turns both off); the inbox's own list decides otherwise. */
+  pending?: number;
+}) {
+  const list = useStageProposals(sid, stage);
+  const waiting = (list.data?.proposals ?? []).filter(
+    (p) => p.status === "proposed" && p.kind !== "stage.confirm",
+  );
+  const consistent = waiting.filter((p) => p.check.status === "consistent").length;
+  const aiContradicted = waiting.filter(
+    (p) => p.check.status === "contradicted" && p.made_by.kind !== "rule",
+  ).length;
+  const none = pending === 0;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <BulkAction sid={sid} stage={stage} action="accept" disabled={!pending} />
-      <BulkAction sid={sid} stage={stage} action="reject" disabled={!pending} />
+      <BulkAction sid={sid} stage={stage} action="accept" disabled={none || !consistent} />
+      <BulkAction sid={sid} stage={stage} action="reject" disabled={none || !aiContradicted} />
     </div>
   );
 }
@@ -273,7 +323,8 @@ export function ConfirmStage({
   const waiting = useQuery({
     queryKey: ["w", sid, "confirm", stage],
     enabled: Boolean(status?.open && !status.confirmed),
-    queryFn: () => unwrap(api.GET("/api/sessions/{sid}/confirm/{stage}", { params: { path: { sid, stage } } })),
+    queryFn: () =>
+      unwrap(api.GET("/api/sessions/{sid}/confirm/{stage}", { params: { path: { sid, stage } } })),
   });
 
   if (!status) return null;
@@ -292,7 +343,9 @@ export function ConfirmStage({
     );
   }
   const ready = waiting.data?.ready ? waiting.data : null;
-  const blocked = !ready && (status.pending > 0 || status.blockers.length > 0);
+  // The server counts a waiting confirm step as pending; it is not a proposal to decide first.
+  const waitingProposals = Math.max(0, status.pending - (ready ? 1 : 0));
+  const blocked = !ready && (waitingProposals > 0 || status.blockers.length > 0);
 
   const prepare = async () => {
     setError(null);
@@ -303,7 +356,9 @@ export function ConfirmStage({
     }
     setBusy("prepare");
     try {
-      const v = await unwrap(api.POST("/api/sessions/{sid}/confirm/{stage}", { params: { path: { sid, stage } } }));
+      const v = await unwrap(
+        api.POST("/api/sessions/{sid}/confirm/{stage}", { params: { path: { sid, stage } } }),
+      );
       setView(v);
       setOpen(true);
       void qc.invalidateQueries({ queryKey: ["w", sid, "confirm", stage] });
@@ -332,7 +387,11 @@ export function ConfirmStage({
       if (err instanceof ApiError && err.stale) {
         void refreshWorkspace(qc, sid);
         try {
-          setView(await unwrap(api.GET("/api/sessions/{sid}/confirm/{stage}", { params: { path: { sid, stage } } })));
+          setView(
+            await unwrap(
+              api.GET("/api/sessions/{sid}/confirm/{stage}", { params: { path: { sid, stage } } }),
+            ),
+          );
         } catch {
           /* the panel below says what happened */
         }
@@ -361,8 +420,8 @@ export function ConfirmStage({
         </Button>
         {blocked ? (
           <span className="text-xs text-muted">
-            {status.pending
-              ? `Decide the ${count(status.pending)} waiting proposal${status.pending === 1 ? "" : "s"} first.`
+            {waitingProposals
+              ? `Decide the ${count(waitingProposals)} waiting proposal${waitingProposals === 1 ? "" : "s"} first.`
               : `${status.blockers[0]?.replace(/^./, (c) => c.toUpperCase()) ?? ""}.`}
           </span>
         ) : null}
@@ -381,7 +440,13 @@ export function ConfirmStage({
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy === "confirm"}>
               Not now
             </Button>
-            <Button variant="primary" icon={<ShieldCheck />} onClick={() => void confirm()} loading={busy === "confirm"} disabled={!view?.ready}>
+            <Button
+              variant="primary"
+              icon={<ShieldCheck />}
+              onClick={() => void confirm()}
+              loading={busy === "confirm"}
+              disabled={!view?.ready}
+            >
               Yes, confirm
             </Button>
           </>
@@ -399,25 +464,54 @@ export function ConfirmStage({
             ) : null}
             {typeof hash === "string" ? (
               <p className="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
-                It confirms the {stage === "design" ? "design" : "curve calls"} with fingerprint <Hash value={hash} length={12} />
+                It confirms the {stage === "design" ? "design" : "curve calls"} with fingerprint{" "}
+                <Hash value={hash} length={12} />
               </p>
             ) : null}
             {view.warnings.map((w) => (
-              <p key={w} className={cn("rounded-lg border border-warn/30 bg-warn-soft px-3 py-2 text-[13px] text-fg")}>
+              <p
+                key={w}
+                className={cn(
+                  "rounded-lg border border-warn/30 bg-warn-soft px-3 py-2 text-[13px] text-fg",
+                )}
+              >
                 {w}
               </p>
             ))}
+            {stage === "design" || stage === "curves" ? (
+              <section
+                aria-labelledby={`confirm-summary-${sid}`}
+                className="rounded-lg border border-line bg-surface-2 p-3"
+              >
+                <h3
+                  id={`confirm-summary-${sid}`}
+                  className="mb-2 text-[13px] font-semibold text-fg"
+                >
+                  {stage === "design" ? "The design this gives" : "The curve calls this gives"}
+                </h3>
+                <StageSummary stage={stage} proposals={view.covers} />
+              </section>
+            ) : null}
             {view.covers.length ? (
               <>
                 <p className="text-[13px] font-medium text-fg">
-                  It covers {count(view.covers.length)} accepted proposal{view.covers.length === 1 ? "" : "s"}:
+                  It covers {count(view.covers.length)} accepted proposal
+                  {view.covers.length === 1 ? "" : "s"}:
                 </p>
                 <ProposalLines proposals={view.covers} descriptions={view.descriptions} />
               </>
             ) : (
-              <p className="text-[13px] text-muted">It covers no accepted proposal of this stage.</p>
+              <p className="text-[13px] text-muted">
+                It covers no accepted proposal of this stage.
+              </p>
             )}
-            {error ? <ErrorPanel error={error} compact title="Not confirmed" /> : null}
+            {error ? (
+              <ErrorPanel
+                error={error}
+                compact
+                title={error instanceof ApiError && error.stale ? undefined : "Not confirmed"}
+              />
+            ) : null}
           </div>
         ) : null}
       </Dialog>

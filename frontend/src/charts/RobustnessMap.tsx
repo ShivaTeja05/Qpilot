@@ -1,6 +1,7 @@
 /**
  * The robustness map: every gene a point — across, its fold change (log2 axis in ×); up, the share
- * of reasonable analyses that give the same call. Colour and shape come from the caller's encoding
+ * of a named set of analyses that give the same call (the caller names the set and its size).
+ * Colour and shape come from the caller's encoding
  * (conclusion, confidence level or audit verdict). Click or Enter opens the gene.
  */
 import { scaleLinear } from "d3-scale";
@@ -20,7 +21,7 @@ export interface MapPoint {
   gene: string;
   /** Fold change, log2. */
   log2: number;
-  /** Share (0–1) of reasonable analyses giving the same call. */
+  /** Share (0–1) of the named set of analyses giving the same call. */
   holds: number;
   mark: Mark;
   /** Always labelled (the study's headline genes). */
@@ -48,6 +49,13 @@ export interface RobustnessMapProps {
   /** A horizontal reference share (e.g. the robustness check's), with its words. */
   holdsLine?: { share: number; label: string } | null;
   extraColumns?: Column<MapPoint>[];
+  /**
+   * Which analyses the share is of, with its size — never "reasonable" bare (#0254): e.g.
+   * "of the 744 analyses qPilot checks" or "of the audit's 144 reasonable analyses".
+   */
+  setWords?: string;
+  /** The share axis title, e.g. "Same call in qPilot's choice grid (744 analyses)". */
+  yLabel?: string;
   onSelect?: (gene: string) => void;
 }
 
@@ -69,6 +77,8 @@ export function RobustnessMap(props: RobustnessMapProps) {
     holdsLine,
     extraColumns = [],
     onSelect,
+    setWords = "of the analyses",
+    yLabel = "Share of analyses with the same call",
   } = props;
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
@@ -135,7 +145,7 @@ export function RobustnessMap(props: RobustnessMapProps) {
 
   const tipFor = (p: MapPoint) => ({
     title: p.gene,
-    value: `${p.foldText ?? fmtFoldLog2(p.log2)} · same call in ${fmtShare(p.holds)}`,
+    value: `${p.foldText ?? fmtFoldLog2(p.log2)} · same call in ${fmtShare(p.holds)} ${setWords}`,
     lines: [p.mark.label, ...(p.details ?? [])],
   });
 
@@ -151,7 +161,7 @@ export function RobustnessMap(props: RobustnessMapProps) {
     },
     {
       key: "holds",
-      header: "Same call in",
+      header: `Same call (${setWords})`,
       cell: (p) => fmtShare(p.holds),
       sort: (p) => p.holds,
       numeric: true,
@@ -206,7 +216,7 @@ export function RobustnessMap(props: RobustnessMapProps) {
                   y={y(v) + 4}
                   textAnchor="end"
                   fontSize={11}
-                  fill="var(--text-faint)"
+                  fill="var(--text-muted)"
                   className="tabular"
                 >
                   {fmtShare(v)}
@@ -214,7 +224,7 @@ export function RobustnessMap(props: RobustnessMapProps) {
               </g>
             ))}
             <text x={0} y={12} fontSize={11} fill="var(--text-muted)">
-              Share of reasonable analyses with the same call
+              {yLabel}
             </text>
             {holdsLine && holdsLine.share >= yMin && (
               <g>

@@ -84,6 +84,17 @@ def display_name(path: str | Path | None) -> str | None:
     return name[:MAX_NAME] or path.name
 
 
+def study_autonomy(store: StudyStore, study_id: str | None) -> Any:
+    """A study's autonomy (``suggest`` / ``decide_and_tell``), None without a study."""
+    if not study_id:
+        return None
+    try:
+        level = store.autonomy(study_id)
+    except (StudyNotFound, OSError, ValueError):
+        return None
+    return level if level in ("suggest", "decide_and_tell") else "suggest"
+
+
 def session_meta(store: StudyStore, sid: str) -> dict[str, Any]:
     """A session's ``studio.json`` (empty when there is none)."""
     path = store.find_session(sid) / "studio.json"
@@ -115,11 +126,37 @@ def last_write(folder: Path) -> float:
 
 
 def stage_views(studio: Studio, sid: str) -> list[StageView]:
-    """Every stage's status (empty when the session's file is missing)."""
+    """Every stage's status (empty when the session's file is missing).
+
+    ``pending`` counts the proposals waiting for a decision; a waiting confirm step is told
+    apart (``confirm_waiting``), and ``consistent`` counts what "Accept all consistent" would
+    cover.
+    """
+    from qpilot.studio_service import _in_stage
+
     try:
-        return [StageView(**s.as_dict()) for s in studio.stages(sid)]
+        inbox = studio.store.proposals(sid).view()
+        assembly = studio.assemble(sid, inbox.accepted)
+        stages = studio._stages(sid, inbox, assembly)
     except (StudioError, StudyNotFound, OSError):
         return []
+    waiting = [p for p in inbox.proposals if p.status == "proposed"]
+    out = []
+    for s in stages:
+        mine = [p for p in waiting if _in_stage(p, s.stage)]
+        confirms = [p for p in mine if p.kind == "stage.confirm"]
+        others = [p for p in mine if p.kind != "stage.confirm"]
+        out.append(
+            StageView(
+                **{
+                    **s.as_dict(),
+                    "pending": len(others),
+                    "consistent": sum(1 for p in others if p.check.status == "consistent"),
+                    "confirm_waiting": bool(confirms),
+                }
+            )
+        )
+    return out
 
 
 def next_step(
@@ -159,10 +196,17 @@ def next_step(
                 title=f"Review {status.pending} {stage} proposal{'s' * (status.pending != 1)}",
                 detail="Accept, edit or reject each one; contradicted proposals come first.",
                 section=stage,
-                action="Accept all consistent…",
+                action="Accept all consistent…" if status.consistent else None,
             )
         if status.blockers:
             return NextStep(title=status.blockers[0], section=stage)
+        if status.confirm_waiting:
+            return NextStep(
+                title=f"Confirm the {stage}",
+                detail="The confirm step shows what it covers; “Yes, confirm” confirms it.",
+                section=stage,
+                action="Confirm this stage…",
+            )
         return NextStep(
             title=f"Confirm the {stage}",
             detail="Confirming shows exactly what it covers before anything is written.",
@@ -174,7 +218,8 @@ def next_step(
     if not analysed:
         return NextStep(
             title="Analysing the confirmed design",
-            detail="Every curve, then every reasonable analysis; the results show when it is done.",
+            detail="Every curve, then every analysis in qPilot's choice grid; the results show "
+            "when it is done.",
             section="results",
         )
     if undecided_cards:
@@ -302,15 +347,25 @@ def session_summary(studio: Studio, sid: str, ready: bool | None = None) -> Work
     visible = bool(stages) and all(s.confirmed for s in stages if s.stage in ("design", "curves"))
     study_id = analysed_study(studio, sid, meta) if visible else None
     decisions = pending = 0
+    counts_of = "file"
     if study_id:
         try:
             decisions = len(store.entries(study_id))
             pending = len(store.pending(study_id))
+            result = store.get(study_id)
+            facts = {
+                "n_plates": result.n_plates,
+                "n_samples": result.n_samples,
+                "n_genes": len(result.contrasts),
+            }
+            counts_of = "analysis"
         except (StudyNotFound, OSError, ValueError):
             pass
     name = display_name(record.get("path"))
     return WorkspaceSummary(
         key=sid,
+        id=f"session:{sid}",
+        counts_of=counts_of,  # type: ignore[arg-type]
         kind="session",
         title=_title(name, folder.name),
         input_sha256=folder.name,
@@ -336,6 +391,8 @@ def study_summary(store: StudyStore, study_id: str) -> WorkspaceSummary:
     source = store.source(study_id)
     return WorkspaceSummary(
         key=study_id,
+        id=f"study:{study_id}",
+        counts_of="analysis",
         kind="study",
         title=_title(display_name(source), result.input_sha256),
         input_sha256=result.input_sha256,
@@ -460,6 +517,7 @@ def session_view(
         analysed=line.study_id is not None,
     )
     return WorkspaceView(
+        autonomy=study_autonomy(store, line.study_id),
         key=sid,
         kind="session",
         title=line.title,
@@ -489,6 +547,7 @@ def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None =
         has_audit=line.has_audit,
     )
     return WorkspaceView(
+        autonomy=study_autonomy(store, study_id),
         key=study_id,
         kind="study",
         title=line.title,

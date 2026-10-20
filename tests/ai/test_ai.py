@@ -202,6 +202,72 @@ def test_ask_bad_tool_json_uses_routing(store, study):
     assert "did not parse" in out.error
 
 
+def test_ask_which_genes_are_up_lists_the_engines_calls(store, study, fixture_result):
+    out = ask("Which genes are up?", store, study)
+    assert out.tool_calls[0] == {
+        "tool": "qpcr_study",
+        "args": {"about": "calls"},
+        "status": None,
+        "error": None,
+    }
+    calls = {g: c.conclusion for g, c in fixture_result.contrasts.items()}
+    up = sorted(g for g, c in calls.items() if c == "up")
+    down = sorted(g for g, c in calls.items() if c == "down")
+    assert out.facts["f_ans_n_up"].value == len(up) and out.facts["f_ans_n_down"].value == len(down)
+    assert ", ".join(up) in out.plain and ", ".join(down) in out.plain
+    assert out.validated and "This study has" not in out.plain
+
+
+def test_ask_reference_stability_is_genorms_ranking(store, study, fixture_result):
+    out = ask("Which control genes are most stable?", store, study)
+    assert out.tool_calls[0]["args"] == {"about": "references"}
+    genorm = fixture_result.genorm
+    first = genorm.order[0]
+    assert out.facts["f_ans_m_1"].value == genorm.M_initial[first]
+    assert out.plain.index(genorm.order[0]) < out.plain.index(genorm.order[-1])
+    assert out.plain.startswith(f"geNorm's most stable pair is {first} and {genorm.order[1]}")
+    assert out.validated
+
+
+def test_a_confidence_reasons_numbers_reach_the_model_as_tokens():
+    from qpilot.ai.ask import _tokenise_reason
+
+    seen = {}
+
+    def tok(fid, value):
+        seen[fid] = value
+        return "{{" + fid + "}}"
+
+    reason = "The conclusion holds in fewer than 80 % of the 744 analyses qPilot checks; 2 choices."
+    out = _tokenise_reason(reason, tok)
+    assert out == (
+        "The conclusion holds in fewer than 80 % of the {{f_ans_n_cells}} analyses qPilot "
+        "checks; {{f_ans_min_flip}} choices."
+    )
+    assert seen == {"f_ans_n_cells": 744, "f_ans_min_flip": 2}
+
+
+def test_ask_how_many_genes_a_choice_changes_is_the_cards_impact(store, study, fixture_cards):
+    out = ask("How many genes change with the reference genes?", store, study)
+    assert out.tool_calls[0]["args"] == {"about": "cards"}
+    ranked = sorted(fixture_cards, key=lambda c: c.rank)
+    for i, card in enumerate(ranked, 1):
+        assert out.facts[f"f_ans_flips_{i}"].value == card.impact["n_genes_flipped"]
+    assert "Which control genes to normalise to" in out.plain and out.validated
+
+
+def test_ask_says_what_it_can_answer_instead_of_the_summary(store, study):
+    out = ask("Tell me something nice", store, study)
+    assert out.tool_calls[0]["tool"] == "none" and out.plain.startswith("I can answer:")
+    assert "robust?”" in out.plain and "This study has" not in out.plain
+
+
+def test_a_model_picking_the_study_summary_gets_the_questions_topic(store, study):
+    client = mock('{"tool": "qpcr_study", "args": {}}', "{{f_ans_n_up}} genes are up.")
+    out = ask("Which genes are up?", store, study, client=client)
+    assert out.tool_calls[0]["args"] == {"about": "calls"}
+
+
 def test_ask_payload_has_no_sample_names(store, study, fixture_result):
     client = mock('{"tool": "qpcr_study", "args": {}}', "There are {{f_ans_n_plates}} plates.")
     out = ask("How many plates?", store, study, client=client)

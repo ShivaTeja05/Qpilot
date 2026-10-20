@@ -62,7 +62,8 @@ WORDS = {
         "Check the list; only these are accepted, and only when you press the button under it. "
         "Contradicted and cannot-check proposals are never on this list."
     ),
-    "reject_none": "No waiting AI proposal of this stage is contradicted by the engine's check.",
+    "reject_none": "No waiting proposal of this stage (in this list) is contradicted by the "
+    "engine's check.",
     "reject_show": (
         "Check the list and give one reason; only these are rejected, and only when you press "
         "the button."
@@ -126,8 +127,10 @@ def plate_shape(positions: Iterable[tuple[int | None, int | None]]) -> tuple[int
 
 
 def stage_views(studio: Studio, sid: str) -> list[StageView]:
-    """Every stage's status as the contract's model."""
-    return [StageView(**s.as_dict()) for s in studio.stages(sid)]
+    """Every stage's status as the contract's model (the frame's own counting)."""
+    from qpilot.web.views import stage_views as frame_stages
+
+    return frame_stages(studio, sid)
 
 
 def describe(proposal: Proposal, payload: dict[str, Any] | None = None) -> str:

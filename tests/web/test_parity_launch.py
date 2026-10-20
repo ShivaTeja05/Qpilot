@@ -110,8 +110,13 @@ def test_store_files_are_never_served(sclient, web_store, opened):
 # ---- uploads are capped while they stream (P20) ----------------------------------------------
 
 
-def _upload(app, headers: dict[str, str], chunks: list[bytes]) -> tuple[int, int]:
-    """Drive one POST /api/workspaces through the ASGI app; (status, body bytes it pulled)."""
+def _upload(
+    app, headers: dict[str, str], chunks: list[bytes], method: str = "POST"
+) -> tuple[int, int]:
+    """Drive one write through the ASGI app; (status, body bytes it pulled).
+
+    A POST goes to ``/api/workspaces`` (an upload), a PUT to ``/api/settings`` (JSON).
+    """
     pulled = 0
     sent: list[dict] = []
     pending = iter(chunks)
@@ -127,14 +132,15 @@ def _upload(app, headers: dict[str, str], chunks: list[bytes]) -> tuple[int, int
     async def send(message: dict) -> None:
         sent.append(message)
 
+    path = "/api/workspaces" if method == "POST" else "/api/settings"
     scope = {
         "type": "http",
         "asgi": {"version": "3.0"},
         "http_version": "1.1",
-        "method": "POST",
+        "method": method,
         "scheme": "http",
-        "path": "/api/workspaces",
-        "raw_path": b"/api/workspaces",
+        "path": path,
+        "raw_path": path.encode(),
         "query_string": b"",
         "root_path": "",
         "headers": [(k.encode(), v.encode()) for k, v in headers.items()],
@@ -174,16 +180,27 @@ def test_an_upload_over_the_cap_is_refused(web_ctx, small_caps):
     assert status == 413 and pulled == 0, "refused before reading the body"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="PARITY-1 (api): the Guard caps by Content-Length only; a chunked body is read to "
-    "the end before the 413 (old Gradio and qsim refused while it streamed)",
-)
 def test_a_chunked_upload_over_the_cap_is_refused_while_it_streams(web_ctx, small_caps):
     headers, body = _multipart(8 * MB)  # no Content-Length: Transfer-Encoding chunked
     status, pulled = _upload(create_app(web_ctx), headers, body)
     assert status == 413
     assert pulled <= 2 * MB, f"read {pulled // MB} MB of an 8 MB body over a 1 MB cap"
+
+
+def test_a_json_write_over_its_cap_is_refused_while_it_streams(web_ctx):
+    """Old qsim read at most 64 KiB of a JSON body; the one server caps JSON writes at 1 MB."""
+    body = [b'{"autonomy": "suggest", "pad": "'] + [b"x" * (256 * 1024)] * 16 + [b'"}']
+    headers = {
+        "host": "127.0.0.1:7860",
+        "origin": BASE,
+        "x-qpilot-token": TOKEN,
+        "content-type": "application/json",
+    }
+    app = create_app(web_ctx)
+    status, pulled = _upload(app, {**headers, "content-length": str(4 * MB)}, body, "PUT")
+    assert status == 413 and pulled == 0
+    status, pulled = _upload(app, headers, body, "PUT")  # chunked
+    assert status == 413 and pulled <= security.MAX_BODY_BYTES + 512 * 1024
 
 
 # ---- errors are sentences, never a traceback (P21) -------------------------------------------
@@ -206,11 +223,6 @@ def test_an_unexpected_error_leaks_no_traceback(web_ctx, broken_route):
     assert "secret" not in r.text and "Traceback" not in r.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="PARITY-2 (api): an unexpected error is Starlette's plain-text 500, outside the "
-    "error shape and without the security headers",
-)
 def test_an_unexpected_error_is_a_sentence_with_the_security_headers(web_ctx, broken_route):
     with keyed(create_app(web_ctx), raise_server_exceptions=False) as client:
         r = client.get("/api/workspaces")
@@ -340,11 +352,6 @@ def test_a_broken_profile_does_not_stop_the_server(monkeypatch, tmp_path, tmp_st
 # ---- a remote model is reached only on a click (P27) -----------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="PARITY-4 (api): GET /api/model pings a configured REMOTE model in the background; "
-    "docs/app.md §1.5 and the coordinator (#0180): only an explicit click may reach it",
-)
 def test_reading_the_model_status_never_calls_a_remote_model(anthropic_env, tmp_studies_dir):
     from qpilot.ai.client import AnthropicBackend, ModelUnavailable
 

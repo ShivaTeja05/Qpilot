@@ -12,6 +12,11 @@ import type { Payload } from "./edit";
 import type { QuoteLookup } from "./parts";
 
 export type InboxStage = "design" | "curves" | "prism" | "roundtrip";
+
+/** The server is reading the session's file for the first time since it started (503 `warming`). */
+export function isWarming(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.code === "warming";
+}
 export type ConfirmableStage = "design" | "curves" | "choices";
 export type ProposalList = Schemas["ProposalList"];
 export type ProposalDecided = Schemas["ProposalDecided"];
@@ -45,12 +50,22 @@ function path(sid: string, pid: string) {
 }
 
 /**
- * Accept / edit / reject for the card. Each resolves once the inbox is re-read and the toast is
+ * Accept / edit / reject for the card (`stage`: the inbox the head is read from). Each resolves once the inbox is re-read and the toast is
  * shown; a refusal rejects with the server's words (the card shows them). A `stale` answer
  * re-reads the views and says so.
  */
-export function useProposalActions(sid: string, head: string | null | undefined) {
+export function useProposalActions(sid: string, head: string | null | undefined, stage: InboxStage) {
   const qc = useQueryClient();
+  // Every write names the head the view showed; without one (not read yet), read it first.
+  const headNow = useCallback(async () => {
+    if (head) return head;
+    const list = await qc.fetchQuery({
+      queryKey: ["w", sid, "proposals", stage],
+      queryFn: () =>
+        unwrap(api.GET("/api/sessions/{sid}/proposals", { params: { path: { sid }, query: { stage } } })),
+    });
+    return list.head;
+  }, [qc, sid, head, stage]);
   const after = useCallback(
     async (call: Promise<ProposalDecided>) => {
       try {
@@ -65,17 +80,31 @@ export function useProposalActions(sid: string, head: string | null | undefined)
     },
     [qc, sid],
   );
-  const expected_head = head ?? null;
   return {
-    accept: (pid: string, reason: string) =>
-      after(unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/accept", { ...path(sid, pid), body: { reason, expected_head } }))),
-    edit: (pid: string, edits: Payload, reason: string) =>
-      after(
+    accept: async (pid: string, reason: string) => {
+      const expected_head = await headNow();
+      return after(unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/accept", { ...path(sid, pid), body: { reason, expected_head } })));
+    },
+    edit: async (pid: string, edits: Payload, reason: string) => {
+      const expected_head = await headNow();
+      return after(
         unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/edit", { ...path(sid, pid), body: { reason, edits, expected_head } })),
-      ),
-    reject: (pid: string, reason: string) =>
-      after(unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/reject", { ...path(sid, pid), body: { reason, expected_head } }))),
+      );
+    },
+    reject: async (pid: string, reason: string) => {
+      const expected_head = await headNow();
+      return after(unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/reject", { ...path(sid, pid), body: { reason, expected_head } })));
+    },
   };
+}
+
+/** The engine's check of an edited reading, before anyone accepts it (writes nothing). */
+export function useCheckEdit(sid: string) {
+  return useCallback(
+    (pid: string, edits: Payload) =>
+      unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/check", { ...path(sid, pid), body: { edits } })),
+    [sid],
+  );
 }
 
 // ---------------------------------------------------------------------------------------------
