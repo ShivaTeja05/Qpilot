@@ -13,8 +13,10 @@ import { Tooltip } from "./core/Tooltip";
 
 export interface FlipCell {
   flips: boolean;
-  /** Largest |change in log2 fold| this decision alone makes (for the shade). */
+  /** The shade's magnitude (default meaning: the largest |change in log2 fold| this decision alone makes). */
   delta?: number | null;
+  /** A tooltip line for this cell (overrides the default fold-change wording). */
+  note?: string | null;
 }
 
 export interface FlipMatrixProps {
@@ -23,6 +25,8 @@ export interface FlipMatrixProps {
   cell: (decision: string, gene: string) => FlipCell | undefined;
   summary: string;
   caption?: ReactNode;
+  /** What the shade means, for the legend (when `delta` is not a log2 fold change). */
+  shadeLabel?: string;
   onSelectGene?: (gene: string) => void;
 }
 
@@ -33,7 +37,7 @@ export function flipOrder(genes: readonly string[], decisions: readonly { id: st
   return [...genes].sort((a, b) => score(b) - score(a) || move(b) - move(a) || a.localeCompare(b));
 }
 
-export function FlipMatrix({ decisions, genes, cell, summary, caption, onSelectGene }: FlipMatrixProps) {
+export function FlipMatrix({ decisions, genes, cell, summary, caption, shadeLabel, onSelectGene }: FlipMatrixProps) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
   const narrow = width < 560;
@@ -61,7 +65,7 @@ export function FlipMatrix({ decisions, genes, cell, summary, caption, onSelectG
   const tipFor = (f: (typeof flat)[number]) => ({
     title: `${f.g} · ${f.d.label}`,
     value: f.c?.flips ? "This choice alone changes the call" : "The call holds under this choice alone",
-    lines: [f.c?.delta != null ? `Fold change moves by up to ${fmtNum(2 ** f.c.delta, 2)}×` : null],
+    lines: [f.c?.note ?? (f.c?.delta != null && !shadeLabel ? `Fold change moves by up to ${fmtNum(2 ** f.c.delta, 2)}×` : null)],
   });
 
   const legend: LegendItem[] = [
@@ -82,7 +86,7 @@ export function FlipMatrix({ decisions, genes, cell, summary, caption, onSelectG
           ))}
         </svg>
       ),
-      label: "How far the fold change moves (darker: further)",
+      label: shadeLabel ?? "How far the fold change moves (darker: further)",
     },
   ];
 

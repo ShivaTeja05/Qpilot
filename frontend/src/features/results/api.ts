@@ -1,139 +1,46 @@
 /**
- * The Results section's data: `GET /api/studies/{id}/results` (the ResultsView), `/cards` (the
- * Decision Cards with their view fields) and the writes on a card (decide, undo, turn down an
- * agent's request, explain). Every query key starts with `["w", key]` so live events refresh it.
- *
- * The types mirror the API's contract (qpilot/web/contract.py: ResultsView, GeneRow, CardsView);
- * the page formats every number itself and never types one in.
+ * The Results section's data (qpilot/web/routers/results.py): the ResultsView, the flip matrix,
+ * the Decision Cards with their view fields, and the writes on a card (decide, undo, turn down an
+ * agent's request, explain with the model). Every query key starts with `["w", key]` so a live
+ * event refreshes it; every write carries the head the view showed.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "@/api/client";
+import { api, unwrap } from "@/api/client";
 
-// ---- types (the contract's ResultsView / CardsView) ---------------------------------------------
+const path = (study_id: string) => ({ params: { path: { study_id } } });
+const cardPath = (study_id: string, card_id: string) => ({ params: { path: { study_id, card_id } } });
 
-export interface GeneCheck {
-  id: string;
-  passed: boolean;
-  note: string;
+const getResults = (id: string) => unwrap(api.GET("/api/studies/{study_id}/results", path(id)));
+const getFlips = (id: string) => unwrap(api.GET("/api/studies/{study_id}/flips", path(id)));
+const getCards = (id: string) => unwrap(api.GET("/api/studies/{study_id}/cards", path(id)));
+
+// The types are the API's answers as the typed client returns them.
+export type ResultsView = Awaited<ReturnType<typeof getResults>>;
+export type GeneRow = ResultsView["genes"][number];
+export type CardsView = Awaited<ReturnType<typeof getCards>>;
+export type CardView = CardsView["cards"][number];
+export type FlipsView = Awaited<ReturnType<typeof getFlips>>;
+export type FactText = CardView["impact"];
+/** What a write answers (the outcome, a sentence, the new head). */
+export interface DecisionDone {
+  outcome: { status: string };
+  message: string;
+  head: string;
 }
-
-export interface GeneRow {
-  gene: string;
-  headline: boolean;
-  conclusion: "up" | "down" | "none";
-  fc: number;
-  ci: [number, number];
-  p: number;
-  n_hi: number;
-  n_lo: number;
-  holds: number;
-  n_cells: number;
-  level: string | null;
-  reasons: string[];
-  checks: GeneCheck[];
-  /** The decision dimensions whose single change flips this gene's call. */
-  flips_by: string[];
-  efficiency?: number | null;
-  verdict?: string | null;
-  verdict_label?: string | null;
-}
-
-export interface ResultsView {
-  study_id: string;
-  summary: {
-    n_plates: number;
-    n_reactions: number;
-    n_samples: number;
-    groups: { label: string; n: number }[];
-    design_line?: string | null;
-    mode?: string | null;
-  };
-  rule: { alpha: number; min_log2fc: number; text: string };
-  references: {
-    used: string[];
-    candidates?: string[];
-    genorm: {
-      M_initial: Record<string, number>;
-      order: string[];
-      V: Record<string, number>;
-      recommended: string[];
-      cutoff_M: number;
-      cutoff_V: number;
-    };
-  };
-  genes: GeneRow[];
-  headline: string[];
-  audit: { status: string; verdict_counts?: Record<string, number> | null } | null;
-  chain_head: string | null;
-}
-
-
-interface ContrastLike {
-  fc: number;
-  conclusion: "up" | "down" | "none";
-  p?: number;
-  ci?: [number, number];
-}
-
-export interface CardBase {
-  id: string;
-  kind: string;
-  rank: number;
-  impact: Record<string, unknown>;
-  evidence: Record<string, unknown>;
-  options: { id: string; label: string; per_gene: Record<string, ContrastLike> }[];
-  recommended: string;
-  status: "open" | "decided" | "auto_decided" | "pending_human";
-  decision?: string | null;
-  reason?: string | null;
-  decided_by?: string | null;
-  decided_at?: string | null;
-}
-
-export interface CardView extends CardBase {
-  title: string;
-  status_line: string;
-  impact_text: string;
-  explanation_text: string;
-  /** The option an agent asked for while the card waits for a person. */
-  pending_option?: string | null;
-  /** The option Undo would go back to (a new chain entry), when undo is possible. */
-  undo_option?: string | null;
-}
-
-export interface CardsView {
-  head: string | null;
-  cards: CardView[];
-}
-
-// ---- reads --------------------------------------------------------------------------------------
-
-async function call<T>(url: string, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      credentials: "same-origin",
-      ...init,
-      headers: init?.body ? { "content-type": "application/json", ...init.headers } : init?.headers,
-    });
-  } catch {
-    throw new ApiError(0, "offline", "qPilot is not answering. Is `qpilot app` still running?");
-  }
-  const body: unknown = await response.json().catch(() => undefined);
-  if (!response.ok) {
-    const e = (body as { error?: { code?: string; message?: string; details?: Record<string, unknown> } } | undefined)?.error;
-    throw new ApiError(response.status, e?.code ?? `http_${response.status}`, e?.message ?? "The server could not answer this request.", e?.details ?? {});
-  }
-  return body as T;
-}
-
-const studyUrl = (studyId: string, path = "") => `/api/studies/${encodeURIComponent(studyId)}${path}`;
 
 export function useResults(key: string, studyId: string | null | undefined) {
   return useQuery({
     queryKey: ["w", key, "results", studyId],
     enabled: Boolean(studyId),
-    queryFn: () => call<ResultsView>(studyUrl(studyId!, "/results")),
+    queryFn: () => getResults(studyId!),
+  });
+}
+
+export function useFlips(key: string, studyId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["w", key, "flips", studyId],
+    enabled: Boolean(studyId),
+    queryFn: () => getFlips(studyId!),
   });
 }
 
@@ -141,37 +48,52 @@ export function useCards(key: string, studyId: string | null | undefined) {
   return useQuery({
     queryKey: ["w", key, "cards", studyId],
     enabled: Boolean(studyId),
-    queryFn: () => call<CardsView>(studyUrl(studyId!, "/cards")),
+    queryFn: () => getCards(studyId!),
   });
 }
 
-// ---- writes (always as a person; the server sets the actor) -------------------------------------
+export type CardWrite =
+  | { kind: "decide"; card: string; option: string; reason: string; head: string }
+  | { kind: "undo"; card: string; reason: string; head: string }
+  | { kind: "reject"; card: string; reason: string; head: string; option?: string | null };
 
-export interface CardAction {
-  card: string;
-  action: "decide" | "undo" | "reject" | "explain";
-  option?: string;
-  reason?: string;
-  expected_head?: string | null;
-}
-
-export interface DecideOutcome {
-  status: string;
-  chain_head: string;
-  card?: CardView | null;
-  reason?: string | null;
-}
-
-export function useCardAction(key: string, studyId: string) {
+/** Decide / undo / turn down, always as a person (the server sets the actor). */
+export function useCardWrite(key: string, studyId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ card, action, ...body }: CardAction) =>
-      call<DecideOutcome & { text?: string; written_by?: string; facts?: Record<string, unknown> }>(
-        studyUrl(studyId, `/cards/${encodeURIComponent(card)}/${action}`),
-        { method: "POST", body: JSON.stringify(body) },
-      ),
-    onSettled: (_data, _error, vars) => {
-      if (vars.action !== "explain") void qc.invalidateQueries({ queryKey: ["w", key] });
+    mutationFn: (w: CardWrite) => {
+      const at = cardPath(studyId, w.card);
+      if (w.kind === "decide")
+        return unwrap(
+          api.POST("/api/studies/{study_id}/cards/{card_id}/decide", {
+            ...at,
+            body: { option: w.option, reason: w.reason, expected_head: w.head },
+          }),
+        );
+      if (w.kind === "undo")
+        return unwrap(
+          api.POST("/api/studies/{study_id}/cards/{card_id}/undo", { ...at, body: { reason: w.reason, expected_head: w.head } }),
+        );
+      return unwrap(
+        api.POST("/api/studies/{study_id}/cards/{card_id}/reject-request", {
+          ...at,
+          body: { reason: w.reason, option: w.option ?? null, expected_head: w.head },
+        }),
+      );
     },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["w", key] }),
   });
+}
+
+/** Explain a card with the model: a job whose result is the checked explanation. */
+export function useExplain(studyId: string) {
+  return useMutation({
+    mutationFn: (card: string) => unwrap(api.POST("/api/studies/{study_id}/cards/{card_id}/explain", cardPath(studyId, card))),
+  });
+}
+
+/** The model's status: whether "Explain with the model" can be offered. */
+export function useModelAnswers(): boolean {
+  const q = useQuery({ queryKey: ["model"], queryFn: () => unwrap(api.GET("/api/model")), staleTime: 60_000 });
+  return Boolean(q.data?.answers);
 }

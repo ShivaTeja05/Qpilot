@@ -34,7 +34,10 @@ export function MapPanel({
 }) {
   const genes = view.genes;
   const audited = genes.some((g) => g.verdict);
-  const points = useMemo(() => resultsMapPoints(genes, by), [genes, by]);
+  const points = useMemo(
+    () => resultsMapPoints(genes.filter((g): g is GeneRow & { holds: number } => g.holds != null), by),
+    [genes, by],
+  );
   const line = view.rule.min_log2fc;
   const lineFold = fold(2 ** line);
   const legend: LegendItem[] = useMemo(() => {
@@ -48,12 +51,12 @@ export function MapPanel({
     return [...items.filter((i) => i.count), { swatch: <LineSwatch dashed />, label: `${lineFold} line` }];
   }, [genes, by, lineFold]);
 
-  const fragile = genes.filter((g) => g.conclusion !== "none" && g.checks.some((c) => c.id === "robustness" && !c.passed)).length;
+  const oneChoice = genes.filter((g) => g.conclusion !== "none" && g.flips_by.length > 0).length;
   const called = genes.filter((g) => g.conclusion !== "none").length;
   const group = view.summary.groups[0]?.label;
   const summary =
     `Robustness map of ${count(genes.length)} genes: fold change across, share of reasonable analyses with the same call up. ` +
-    `${count(called)} genes are called; ${count(fragile)} of them fail the robustness check.`;
+    `${count(called)} genes are called; a single choice can change the call of ${count(oneChoice)} of them.`;
 
   return (
     <Card as="section" aria-labelledby="map-title">

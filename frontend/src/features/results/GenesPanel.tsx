@@ -43,7 +43,8 @@ export function matches(g: GeneRow, f: GeneFilter): boolean {
   return true;
 }
 
-function HoldsCell({ holds }: { holds: number }) {
+function HoldsCell({ holds }: { holds: number | null | undefined }) {
+  if (holds == null) return <span className="text-faint">—</span>;
   return (
     <span className="inline-flex items-center justify-end gap-2">
       <span className="hidden h-1.5 w-12 overflow-hidden rounded-full bg-sunken sm:inline-block" aria-hidden>
@@ -106,7 +107,7 @@ export function GenesPanel({
       {
         id: "ci",
         header: "95 % CI",
-        accessorFn: (g) => Math.log2(g.ci[0]),
+        accessorFn: (g) => Math.log2(g.ci[0] ?? Number.NaN),
         meta: { numeric: true, width: "8.5rem" },
         cell: ({ row }) => ci(row.original.ci[0], row.original.ci[1]),
       },
@@ -120,7 +121,7 @@ export function GenesPanel({
       {
         id: "holds",
         header: "Same call in",
-        accessorKey: "holds",
+        accessorFn: (g) => g.holds ?? -1,
         meta: { numeric: true, width: "8.5rem" },
         cell: ({ row }) => <HoldsCell holds={row.original.holds} />,
       },
@@ -150,7 +151,8 @@ export function GenesPanel({
         cell: ({ row }) => {
           const g = row.original;
           const flips = g.flips_by.map(dimLabel);
-          const text = [...g.reasons, flips.length ? `Flips with ${flips.join(", ").toLowerCase()} alone.` : null].filter(Boolean).join(" ");
+          const now = g.at_your_choices?.differs ? `With your choices: ${fold(g.at_your_choices.fc)}, ${g.at_your_choices.conclusion === "none" ? "no call" : g.at_your_choices.conclusion}.` : null;
+          const text = [now, ...g.reasons, flips.length ? `A single choice can flip it: ${flips.join(", ").toLowerCase()}.` : null].filter(Boolean).join(" ");
           return (
             <span className="block truncate text-[12px] text-muted" title={text}>
               {text || "—"}

@@ -2,50 +2,47 @@
 import { useCallback, useMemo } from "react";
 import { FlipMatrix, GenormBars } from "@/charts";
 import { count } from "@/lib/format";
-import { Card, CardBody, CardHeader } from "@/ui";
-import type { GeneRow, ResultsView } from "./api";
+import { Card, CardBody, CardHeader, Skeleton } from "@/ui";
+import type { FlipsView, ResultsView } from "./api";
 
-type Impact = Record<string, { flips?: boolean; max_delta_log2fc?: number | null }>;
-
-export function FlipPanel({
-  genes,
-  dims,
-  dimLabel,
-  onOpen,
-}: {
-  genes: GeneRow[];
-  dims: string[];
-  dimLabel: (dim: string) => string;
-  onOpen: (gene: string) => void;
-}) {
-  const byGene = useMemo(() => new Map(genes.map((g) => [g.gene, g])), [genes]);
+export function FlipPanel({ flips, onOpen }: { flips: FlipsView | undefined; onOpen: (gene: string) => void }) {
+  const index = useMemo(() => new Map((flips?.genes ?? []).map((g, i) => [g, i])), [flips]);
+  const rows = useMemo(() => new Map((flips?.rows ?? []).map((r) => [r.dimension, r])), [flips]);
   const cell = useCallback(
     (dim: string, gene: string) => {
-      const g = byGene.get(gene);
-      if (!g) return undefined;
-      const impact = (g as GeneRow & { impact?: Impact }).impact?.[dim];
-      return { flips: g.flips_by.includes(dim), delta: impact?.max_delta_log2fc ?? null };
+      const r = rows.get(dim);
+      const i = index.get(gene);
+      if (!r || i == null) return undefined;
+      // the shade: the share of this decision's other options that change the call
+      const others = r.options.filter((o) => !o.planned);
+      const flipping = others.filter((o) => o.flips[i]).length;
+      return {
+        flips: Boolean(r.flips[i]),
+        delta: others.length ? flipping / others.length : 0,
+        note: `${count(flipping)} of ${count(others.length)} other options change the call`,
+      };
     },
-    [byGene],
+    [rows, index],
   );
-  const decisions = useMemo(() => dims.map((id) => ({ id, label: dimLabel(id) })), [dims, dimLabel]);
-  const names = useMemo(() => genes.map((g) => g.gene), [genes]);
-  const flipping = genes.filter((g) => g.flips_by.length > 0).length;
-  const perDim = dims.map((d) => `${dimLabel(d).toLowerCase()} ${count(genes.filter((g) => g.flips_by.includes(d)).length)}`).join(", ");
+  const decisions = useMemo(() => (flips?.rows ?? []).map((r) => ({ id: r.dimension, label: r.title })), [flips]);
+  if (!flips) return <Skeleton className="h-64 w-full rounded-xl" />;
+  const flipping = flips.genes.filter((_, i) => flips.rows.some((r) => r.flips[i])).length;
+  const perDim = flips.rows.map((r) => `${r.title.toLowerCase()} ${count(r.n_flipped)}`).join(", ");
   return (
     <Card as="section" aria-labelledby="flips-title">
       <CardHeader
         id="flips-title"
         title="What one choice alone can flip"
-        hint={`${count(flipping)} of ${count(genes.length)} genes change their call when a single choice changes and everything else stays as recommended.`}
+        hint={`${count(flipping)} of ${count(flips.genes.length)} genes change their call when a single decision changes and everything else stays as it is.`}
       />
       <CardBody>
         <FlipMatrix
           decisions={decisions}
-          genes={names}
+          genes={flips.genes}
           cell={cell}
           onSelectGene={onOpen}
-          summary={`Decisions by genes: a cross where that decision alone changes the gene's call. Genes flipped per decision: ${perDim}.`}
+          shadeLabel="Share of the decision's other options that change the call (darker: more)"
+          summary={`Decisions by genes: a cross where that decision alone changes the gene's call. Calls changed per decision: ${perDim}.`}
           caption="Each row is a decision on a Decision Card; each column a gene, the genes that flip most first. Decide those cards before you report the genes they flip."
         />
       </CardBody>
@@ -54,16 +51,16 @@ export function FlipPanel({
 }
 
 export function ReferencesPanel({ view }: { view: ResultsView }) {
-  const g = view.references.genorm;
+  const g = view.references;
   return (
     <Card as="section" aria-labelledby="refs-title">
       <CardHeader
         id="refs-title"
         title="Reference genes"
-        hint={`The analysis normalises to ${view.references.used.join(", ")}. geNorm ranks the candidates by how steady they are across samples.`}
+        hint={`The analysis normalises to ${g.used.join(", ")}. geNorm ranks the candidates by how steady they are across samples.`}
       />
       <CardBody>
-        <GenormBars m={g.M_initial} order={g.order} cutoffM={g.cutoff_M} v={g.V} cutoffV={g.cutoff_V} used={view.references.used} />
+        <GenormBars m={g.m} order={g.order} cutoffM={g.cutoff_m} v={g.v} cutoffV={g.cutoff_v} used={g.used} />
       </CardBody>
     </Card>
   );

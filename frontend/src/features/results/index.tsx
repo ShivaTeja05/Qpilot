@@ -8,21 +8,13 @@ import { useLocation } from "wouter";
 import { type MapEncoding } from "@/charts";
 import { sectionPath, type SectionProps } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
-import { useCards, useResults } from "./api";
+import { useCards, useFlips, useResults } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { MapPanel } from "./MapPanel";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
-
-/** Which Decision Card kind decides which robustness dimension. */
-const KIND_DIM: Record<string, string> = {
-  reference_set: "refs",
-  group_cutoff: "cut",
-  amp_call: "amp_call",
-  undetermined: "undetermined",
-};
 
 function ResultsSkeleton() {
   return (
@@ -48,23 +40,16 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
   const studyId = workspace?.results_visible ? workspace.study_id : null;
   const results = useResults(key, studyId);
   const cards = useCards(key, studyId);
+  const flips = useFlips(key, studyId);
   const [by, setBy] = useState<MapEncoding>("conclusion");
   const [filter, setFilter] = useState<GeneFilter>(NO_FILTER);
 
   const view = results.data;
   const openGene = useCallback((gene: string) => navigate(sectionPath(workspace, "gene", gene)), [navigate, workspace]);
   const dimLabel = useCallback(
-    (dim: string) => {
-      const card = cards.data?.cards.find((c) => KIND_DIM[c.kind] === dim);
-      return card?.title ?? dim.replace(/_/g, " ");
-    },
-    [cards.data],
+    (dim: string) => flips.data?.rows.find((r) => r.dimension === dim)?.title ?? dim.replace(/_/g, " "),
+    [flips.data],
   );
-  const dims = useMemo(() => {
-    const fromCards = (cards.data?.cards ?? []).map((c) => KIND_DIM[c.kind]).filter((d): d is string => Boolean(d));
-    const fromGenes = (view?.genes ?? []).flatMap((g) => g.flips_by);
-    return [...new Set([...fromCards, ...fromGenes])];
-  }, [cards.data, view]);
   const highlight = useMemo(
     () => (view && isFiltered(filter) ? new Set(view.genes.filter((g) => matches(g, filter)).map((g) => g.gene)) : null),
     [view, filter],
@@ -115,7 +100,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
             <div className="min-w-0 space-y-6">
               <MapPanel view={view} by={by} onBy={setBy} highlight={highlight} selected={null} onOpen={openGene} />
               <GenesPanel genes={view.genes} filter={filter} onFilter={setFilter} dimLabel={dimLabel} selected={null} onOpen={openGene} />
-              {dims.length > 0 && <FlipPanel genes={view.genes} dims={dims} dimLabel={dimLabel} onOpen={openGene} />}
+              {flips.error ? <ErrorPanel error={flips.error} title="The flip matrix could not be read" compact /> : <FlipPanel flips={flips.data} onOpen={openGene} />}
               <ReferencesPanel view={view} />
             </div>
             <aside className="min-w-0 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:self-start xl:overflow-y-auto xl:pr-1 max-xl:order-first">
@@ -132,7 +117,6 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
                     view={cards.data}
                     workspaceKey={key}
                     studyId={studyId}
-                    headline={view.headline}
                     focusCard={rest[0] === "card" ? (rest[1] ?? null) : null}
                   />
                   <ChoicesConfirm workspace={workspace} autoFocus={rest[0] === "confirm"} />
