@@ -121,7 +121,7 @@ def checks_for(
             if holds_ok
             else f"The conclusion holds in fewer than 80 % of the {robust.n_cells} analyses "
             "qPilot checks.",
-            fact_ids=[f"f_holds_{s}", "f_n_cells"],
+            fact_ids=[f"f_holds_{s}"],
         ),
         Check(
             id="fragility",
