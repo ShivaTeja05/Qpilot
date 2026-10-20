@@ -33,6 +33,7 @@ TOKEN_COOKIE = "qpilot_token"
 TOKEN_HEADER = "x-qpilot-token"
 TOKEN_ENV = "QPILOT_APP_TOKEN"
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # an RDML file; sheets and records are capped lower
+MAX_BODY_BYTES = 1024 * 1024  # any other write (JSON) is small
 CROSS_ORIGIN = "Requests from another site are refused."
 WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
@@ -98,7 +99,23 @@ def same_site(url: str, host: str) -> bool:
     return parts.scheme in ("http", "https") and parts.netloc.lower() == host.strip().lower()
 
 
-def _cookie_token(headers: dict[str, str]) -> str | None:
+def cookie_name(host: str) -> str:
+    """The launch-key cookie's name for this server's port (cookies ignore ports).
+
+    Two launches on two ports keep two cookies, and another server on 127.0.0.1 is never sent
+    this launch's key under a name it would read.
+    """
+    host = host.strip().lower()
+    port = ""
+    if host.startswith("["):
+        rest = host[host.find("]") + 1 :] if "]" in host else ""
+        port = rest[1:] if rest.startswith(":") else ""
+    elif ":" in host:
+        port = host.rsplit(":", 1)[1]
+    return f"{TOKEN_COOKIE}_{port if port.isdigit() else '80'}"
+
+
+def _cookie_token(headers: dict[str, str], name: str = TOKEN_COOKIE) -> str | None:
     raw = headers.get("cookie")
     if not raw:
         return None
@@ -107,7 +124,7 @@ def _cookie_token(headers: dict[str, str]) -> str | None:
         jar.load(raw)
     except Exception:  # a malformed cookie header is no token
         return None
-    morsel = jar.get(TOKEN_COOKIE)
+    morsel = jar.get(name)
     return morsel.value if morsel else None
 
 
@@ -123,7 +140,10 @@ class Guard:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Check one request, then pass it on with the security headers added."""
-        if scope["type"] != "http":
+        if scope["type"] == "websocket":  # the page uses none: refuse, never pass unchecked
+            await send({"type": "websocket.close", "code": 1008})
+            return
+        if scope["type"] != "http":  # lifespan
             await self.app(scope, receive, send)
             return
         headers = _headers(scope)
@@ -146,8 +166,8 @@ class Guard:
                 await _json(send, 403, "cross_origin", CROSS_ORIGIN)
                 return
             length = headers.get("content-length")
-            if length and length.isdigit() and int(length) > MAX_UPLOAD_BYTES:
-                await _json(send, 413, "too_large", "The upload is larger than 200 MB.")
+            if length and length.isdigit() and int(length) > _body_cap(headers):
+                await _json(send, 413, "too_large", _too_large(headers))
                 return
 
         query = parse_qs(scope.get("query_string", b"").decode("latin-1"))
@@ -158,8 +178,10 @@ class Guard:
                 await _plain(send, 403, "This link is from another launch. Use the newest link.")
                 return
             rest = {k: v for k, v in query.items() if k != "token"}
-            location = path + ("?" + urlencode(rest, doseq=True) if rest else "")
-            cookie = f"{TOKEN_COOKIE}={self.token}; Path=/; HttpOnly; SameSite=Strict"
+            # One leading "/" only: "//x" or "/\\x" would send the browser to another site.
+            target = "/" + path.lstrip("/\\")
+            location = target + ("?" + urlencode(rest, doseq=True) if rest else "")
+            cookie = f"{cookie_name(host)}={self.token}; Path=/; HttpOnly; SameSite=Strict"
             await send(
                 {
                     "type": "http.response.start",
@@ -177,7 +199,8 @@ class Guard:
 
         is_api = path.startswith("/api")
         if is_api and not (
-            self._token_ok(_cookie_token(headers)) or self._token_ok(headers.get(TOKEN_HEADER))
+            self._token_ok(_cookie_token(headers, cookie_name(host)))
+            or self._token_ok(headers.get(TOKEN_HEADER))
         ):
             await _json(
                 send,
@@ -187,15 +210,53 @@ class Guard:
             )
             return
 
+        started = False
+
         async def guarded_send(message: Message) -> None:
+            nonlocal started
             if message["type"] == "http.response.start":
+                started = True
                 extra = list(SECURITY_HEADERS)
                 if is_api:
                     extra.append((b"cache-control", b"no-store"))
                 message["headers"] = [*message.get("headers", []), *extra]
             await send(message)
 
-        await self.app(scope, receive, guarded_send)
+        received = 0
+
+        async def counted_receive() -> Message:
+            # A body sent without Content-Length (chunked) is counted as it arrives, so it is
+            # capped before the multipart parser spools it to disk.
+            nonlocal received
+            message = await receive()
+            if message.get("type") == "http.request":
+                received += len(message.get("body") or b"")
+                if received > _body_cap(headers):
+                    raise _TooLarge
+            return message
+
+        try:
+            await self.app(scope, counted_receive if method in WRITE_METHODS else receive,
+                           guarded_send)  # fmt: skip
+        except _TooLarge:
+            if not started:
+                await _json(send, 413, "too_large", _too_large(headers))
+
+
+def _body_cap(headers: dict[str, str]) -> int:
+    """Uploads (multipart) may be large; every other body (JSON) is small."""
+    kind = headers.get("content-type", "").split(";", 1)[0].strip().lower()
+    return MAX_UPLOAD_BYTES if kind == "multipart/form-data" else MAX_BODY_BYTES
+
+
+def _too_large(headers: dict[str, str]) -> str:
+    if _body_cap(headers) == MAX_UPLOAD_BYTES:
+        return f"The upload is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
+    return "This request is larger than qPilot accepts."
+
+
+class _TooLarge(BaseException):  # noqa: N818
+    """A request body passed the upload cap (a BaseException: no handler turns it into a 400)."""
 
 
 async def _plain(send: Send, status: int, text: str) -> None:

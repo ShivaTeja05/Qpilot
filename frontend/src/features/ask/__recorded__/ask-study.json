@@ -1,0 +1,50 @@
+{
+  "id": "e56a9f2cbc8f43a7",
+  "kind": "ask",
+  "title": "Answering “How many plates, samples and genes are in this study?”",
+  "key": "bc1d233e3866",
+  "status": "done",
+  "step": "Looking it up in the study",
+  "fraction": null,
+  "typical_s": 1.5,
+  "elapsed_s": 0.02,
+  "result": {
+    "question": "How many plates, samples and genes are in this study?",
+    "answer": "This study has 64 plates, 366 samples and 58 genes.",
+    "engine": "study",
+    "tool": "qpcr_study",
+    "args": {},
+    "tool_words": "the study summary",
+    "routed_by": "keywords",
+    "routed_words": "keyword matching (no model)",
+    "written_by": "template",
+    "writer_words": "qPilot's checked template",
+    "provider": "none",
+    "model": null,
+    "facts": [
+      {
+        "id": "f_ans_n_plates",
+        "meaning": "plates",
+        "value": "64"
+      },
+      {
+        "id": "f_ans_n_samples",
+        "meaning": "samples",
+        "value": "366"
+      },
+      {
+        "id": "f_ans_n_genes",
+        "meaning": "genes in this study",
+        "value": "58"
+      }
+    ],
+    "validated": true,
+    "note": "No model is used: no model is configured; a template answered.",
+    "status": null,
+    "card_id": null,
+    "autonomy": "suggest",
+    "head_before": "973dd133a2283bc5fdaeb634da8670b7ff2883ff7440aa90a3d5cd489ff0be1a",
+    "head_after": "973dd133a2283bc5fdaeb634da8670b7ff2883ff7440aa90a3d5cd489ff0be1a"
+  },
+  "error": null
+}

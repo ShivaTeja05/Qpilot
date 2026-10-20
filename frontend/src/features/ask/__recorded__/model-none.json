@@ -1,0 +1,13 @@
+{
+  "provider": "none",
+  "model": null,
+  "available": false,
+  "configured": false,
+  "answers": false,
+  "checking": false,
+  "misconfigured": false,
+  "reason": "no model is configured",
+  "local": true,
+  "sample_names": "sent as quoted data",
+  "outbound": "outbound (Studio): none (provider none; no model is called)"
+}

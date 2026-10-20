@@ -33,12 +33,6 @@ def _upload(client, name: str, data: bytes):
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-006 every 'open' job has key=None, so dedupe returns the job of whatever file "
-    "is already opening: a second file dropped meanwhile is never opened and the page is "
-    "told the first file's session",
-)
 def test_a_second_file_opened_meanwhile_is_opened_too(client, web_ctx, smoke_rdml, fixtures_dir):
     gate = threading.Event()
     real_open = web_ctx.studio.open
@@ -75,11 +69,6 @@ def test_reopening_the_same_file_meanwhile_shares_one_job(client, web_ctx, smoke
     assert _wait(client, a["id"])["status"] == "done"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-010 the open job and its errors name the kept copy (sha prefix, e.g. "
-    "'Opening 18f8d2eb4a387bbc1e37ec09.rdml') instead of the file the person dropped",
-)
 def test_the_open_job_names_the_file_the_person_dropped(client):
     job = _upload(client, "my plate 3.rdml", b"not xml at all").json()["job"]
     assert "my plate 3.rdml" in job["title"]
@@ -88,11 +77,6 @@ def test_the_open_job_names_the_file_the_person_dropped(client):
     assert "my plate 3.rdml" in done["error"]["message"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-007 JobRunner keeps MAX_KEPT jobs by insertion order and evicts the oldest "
-    "even while it runs: its id 404s and dedupe no longer sees it (the same work starts twice)",
-)
 def test_a_running_job_is_never_forgotten():
     runner = JobRunner(EventBus(), workers=2)
     gate = threading.Event()
