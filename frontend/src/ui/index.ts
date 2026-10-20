@@ -25,7 +25,7 @@
  * Overlays
  *   Dialog          modal: open · onOpenChange · trigger · title · description · footer · size sm|md|lg|xl
  *   DialogClose     wraps a button that closes the dialog (asChild)
- *   Sheet           drawer: open · onOpenChange · title · side right|left|bottom · width · footer · actions · modal
+ *   Sheet           drawer: open · onOpenChange · title · side right|left|bottom · width · footer · actions · modal · offsetTop
  *   Popover         trigger · children · align · side · label
  *   PopoverClose    closes the popover (asChild)
  *   Tooltip         content · children (one focusable child) · side
@@ -63,7 +63,14 @@
  */
 import "./ui.css";
 
-export { Button, IconButton, type ButtonProps, type ButtonSize, type ButtonVariant, type IconButtonProps } from "./Button";
+export {
+  Button,
+  IconButton,
+  type ButtonProps,
+  type ButtonSize,
+  type ButtonVariant,
+  type IconButtonProps,
+} from "./Button";
 export { Card, CardBody, CardHeader, KeyValues, PageHeader, SectionTitle } from "./Card";
 export { Badge, Dot, Kbd, type Tone } from "./Badge";
 export { CheckTag, ConclusionTag, LevelBars, LevelTag, ShapeGlyph, VerdictTag } from "./tags";
