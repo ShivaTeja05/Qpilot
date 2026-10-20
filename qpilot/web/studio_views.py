@@ -15,6 +15,8 @@ import hashlib
 import json
 import math
 import re
+import threading
+from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from typing import Any
 
@@ -85,8 +87,8 @@ WORDS = {
         "where it ran on this file."
     ),
     "curve_note": (
-        "Raw fluorescence as exported by the instrument, by cycle. The Cq and LinRegPCR's "
-        "baseline are in the same units."
+        "Raw fluorescence as exported by the instrument, by cycle. LinRegPCR's baseline is in "
+        "the same units as the fluorescence; the Cq is a cycle."
     ),
 }
 
@@ -180,20 +182,46 @@ def _judge_cache(studio: Studio, sid: str, experiment: str | None) -> dict[str, 
     return {str(k): v for k, v in data["calls"].items() if isinstance(v, bool)}
 
 
+_designed_lock = threading.Lock()
+_designed: OrderedDict[tuple[str, int, str], pd.DataFrame | None] = OrderedDict()
+MAX_DESIGNED = 4
+
+
 def _designed_table(studio: Studio, sid: str, design: Any) -> pd.DataFrame | None:
-    """The design's per-well table (cached curves, the design's roles and exclusions)."""
+    """The design's per-well table (curves as analysed, the design's roles and exclusions).
+
+    Kept in memory per input file and design, so the plate map and the curve viewer do not
+    re-read the analysis for every plate.
+    """
     from qpilot.qpcr.curves import analyse_study
     from qpilot.qpcr.designs import design_curves
     from qpilot.qpcr.study import StudySettings
 
+    source = studio.source(sid)
+    key = (str(source), source.stat().st_mtime_ns, design.design_hash())
+    with _designed_lock:
+        if key in _designed:
+            _designed.move_to_end(key)
+            return _designed[key]
     settings = StudySettings.from_design(design)
     try:
-        curves = analyse_study(
-            studio.source(sid), settings.experiment_id, settings.candidates, settings.curves
-        )
-        return design_curves(curves, design)
+        curves = analyse_study(source, settings.experiment_id, settings.candidates, settings.curves)
+        table: pd.DataFrame | None = design_curves(curves, design)
     except Exception:  # an unanalysable design: the plate falls back to the file's own facts
-        return None
+        table = None
+    with _designed_lock:
+        _designed[key] = table
+        while len(_designed) > MAX_DESIGNED:
+            _designed.popitem(last=False)
+    return table
+
+
+def read_session(studio: Studio, sid: str) -> tuple[Any, Any, dict[str, Any]]:
+    """One read of the inbox: the inbox view, the design assembled from it, every stage."""
+    inbox = studio.store.proposals(sid).view()
+    assembly = studio.assemble(sid, inbox.accepted)
+    stages = {s.stage: s for s in studio._stages(sid, inbox, assembly)}
+    return inbox, assembly, stages
 
 
 def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView:
@@ -206,11 +234,11 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
 
     facts = studio.facts(sid)
     summary = facts.summary
-    stages = {s.stage: s for s in studio.stages(sid)}
-    design = studio.assemble(sid).design
+    inbox, assembly, stages = read_session(studio, sid)
+    design = assembly.design
     experiment = design.experiment_id if design is not None else None
     curves_shown = bool(stages.get("curves") and stages["curves"].open)
-    visible = studio.results_visible(sid)
+    visible = all(stages[b].confirmed for b in BLIND_STAGES if b in stages)
     runs = [
         PlateRun(
             experiment_id=r.experiment_id,
@@ -242,8 +270,8 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
     excluded = set(design.excluded_wells) if design is not None else set()
     judge = _judge_cache(studio, sid, experiment) if curves_shown and run.in_design else None
     pending: dict[str, str] = {}
-    for p in studio.inbox(sid, "curves", status="proposed"):
-        if p.kind == "curve.well_call":
+    for p in inbox.proposals:
+        if p.kind == "curve.well_call" and p.status == "proposed":
             pending[p.subject] = p.id
     calls = None
     if curves_shown and not rows.empty:
@@ -285,6 +313,9 @@ def plate_view(studio: Studio, sid: str, run_id: str | None = None) -> PlateView
                     "amplified": ours,
                     "cq": finite(row.get("cq")),
                     "efficiency": finite(row.get("eff_indiv")),
+                    "efficiency_target": finite(row.get("eff_target")),
+                    "baseline": finite(row.get("baseline")),
+                    "linregpcr_note": str(row.get("note") or ""),
                     "r2": finite(row.get("r2")),
                     "judge": theirs,
                     "disagrees": bool(
@@ -370,19 +401,16 @@ def curve_view(studio: Studio, sid: str, key: str, target: str | None = None) ->
     if shown:
         plate = plate_view(studio, sid, run_id)
         match = next((w for w in plate.wells if w.well == well and w.target == raw.target), None)
-        table = facts.wells
-        line = table[
-            (table["run_id"] == run_id) & (table["well"] == well) & (table["target"] == raw.target)
-        ]
-        baseline = finite(line.iloc[0]["baseline"]) if not line.empty else None
         if match is not None:
             numbers = {
                 "cq": match.cq,
                 "efficiency": match.efficiency,
+                "efficiency_target": match.efficiency_target,
                 "r2": match.r2,
                 "amplified": match.amplified,
                 "judge": match.judge,
-                "baseline": baseline,
+                "baseline": match.baseline,
+                "linregpcr_note": match.linregpcr_note,
             }
     replicates = [
         CurveSeries(

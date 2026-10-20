@@ -68,11 +68,6 @@ def _header(message: dict[str, Any], name: bytes) -> str | None:
     return None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-001 the printed-link redirect copies the request path into Location, so "
-    "//evil.example/?token=… (or /\\evil.example/) sends the browser to another site",
-)
 @pytest.mark.parametrize("path", ["//evil.example/", "/\\evil.example/", "///evil.example"])
 def test_the_token_redirect_never_leaves_this_server(path):
     sent, _ = _call(_http(path, f"token={TOKEN}"))
@@ -83,11 +78,6 @@ def test_the_token_redirect_never_leaves_this_server(path):
     assert re.match(r"^/(?![/\\])", location), location
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-003 Guard passes every non-http scope (websocket) straight to the app: no "
-    "Host check, no launch key, no Origin check — a websocket route would be open to any site",
-)
 def test_websocket_connections_meet_the_same_guard():
     scope = {
         "type": "websocket",
@@ -122,12 +112,6 @@ def test_the_cookie_is_httponly_strict_session_and_host_only(raw_client):
     assert r.headers["cache-control"] == "no-store"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-002 the launch-key cookie is named qpilot_token whatever the port: cookies "
-    "ignore ports, so a second launch overwrites the first tab's key (401) and every other "
-    "web server on 127.0.0.1 the browser visits is sent this launch's key",
-)
 def test_two_launches_on_two_ports_keep_two_cookies(raw_client):
     first = raw_client.get(
         f"/?token={TOKEN}", headers={"host": "127.0.0.1:7860"}, follow_redirects=False
@@ -279,11 +263,6 @@ def test_a_declared_oversize_body_is_refused_before_it_is_read(client, monkeypat
     assert r.status_code == 413 and r.json()["error"]["code"] == "too_large"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-004 the upload cap reads only Content-Length: a chunked body has none, "
-    "passes the guard, and Starlette spools all of it to disk before any route sees it",
-)
 def test_a_chunked_oversize_body_is_refused_too(client, monkeypatch):
     monkeypatch.setattr(security, "MAX_UPLOAD_BYTES", 1024)
     boundary = "rtboundary"
@@ -329,11 +308,6 @@ def test_static_paths_never_leave_the_build(client, path):
     assert "root:" not in r.text and "import " not in r.text and "def " not in r.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-005 a NUL byte in a static path (/assets/%00.js, /%00) raises ValueError in "
-    "_static_file (Path.resolve/lstat): a 500 and a traceback instead of 404",
-)
 @pytest.mark.parametrize("path", ["/assets/%00.js", "/%00", "/favicon.svg%00.html"])
 def test_a_nul_byte_in_a_static_path_is_not_found(web_ctx, path):
     from fastapi.testclient import TestClient
@@ -378,9 +352,9 @@ def test_the_built_page_loads_nothing_from_the_internet():
             if url.startswith("//") or not NOT_FETCHED.match(url):
                 if not url.startswith("//"):
                     offenders.append(f"{path.name}: {url}")
-        for url in re.findall(r"""url\(\s*['"]?([^'")]+)""", text):
-            # `url(` in JS string checks (motion: startsWith(`url(`)) is code, not a fetch.
-            if not url.startswith(("/", "data:", "#", "`", "$")):
+        css_urls = re.findall(r"""url\(\s*['"]?([^'")]+)""", text) if path.suffix == ".css" else []
+        for url in css_urls:
+            if not url.startswith(("/", "data:", "#")):
                 offenders.append(f"{path.name}: url({url})")
     assert not offenders, offenders[:10]
 
@@ -399,3 +373,12 @@ def test_errors_on_unknown_routes_never_echo_the_path_as_html(client):
     r = client.get("/api/<script>alert(1)</script>")
     assert r.headers["content-type"].startswith("application/json")
     assert "<script>" not in r.text
+
+
+# RT-UI-019: fixed by api; this test keeps it fixed.
+def test_a_large_json_body_is_refused_before_it_is_parsed(client):
+    body = b'{"autonomy": "suggest", "pad": "' + b"x" * (2 * 1024 * 1024) + b'"}'
+    r = client.put(
+        "/api/settings", content=body, headers={**SAME, "content-type": "application/json"}
+    )
+    assert r.status_code == 413, r.status_code

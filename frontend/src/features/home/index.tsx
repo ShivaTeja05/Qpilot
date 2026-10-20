@@ -41,7 +41,7 @@ const STEPS = [
 /** How qPilot works, as a short vertical path (the hero's right column on wide screens). */
 function HowItWorks() {
   return (
-    <ol className="relative flex flex-col gap-4 rounded-2xl border border-line bg-surface/80 p-5 shadow-sm backdrop-blur-sm sm:p-6">
+    <ol className="relative flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-6">
       {STEPS.map((s, i) => (
         <li key={s.title} className="relative flex gap-3">
           {i < STEPS.length - 1 ? (

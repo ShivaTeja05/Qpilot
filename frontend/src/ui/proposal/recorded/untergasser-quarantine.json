@@ -1,0 +1,312 @@
+{
+ "entries": [
+  {
+   "text_id": "t_064a9bd2e034",
+   "origin": "rdml:sample.id",
+   "value": "Dil BSG - 10e3",
+   "flags": []
+  },
+  {
+   "text_id": "t_068f5f4494a1",
+   "origin": "rdml:sample.id",
+   "value": "Dil BSG - 10e9",
+   "flags": []
+  },
+  {
+   "text_id": "t_0d751c8a4440",
+   "origin": "rdml:sample.id",
+   "value": "genomic DNA 2ng",
+   "flags": []
+  },
+  {
+   "text_id": "t_125668f6549e",
+   "origin": "rdml:sample.id",
+   "value": "Freeze 10e3",
+   "flags": []
+  },
+  {
+   "text_id": "t_174f1df37f44",
+   "origin": "rdml:sample.id",
+   "value": "genomic DNA 0.2ng",
+   "flags": []
+  },
+  {
+   "text_id": "t_17c28abeef18",
+   "origin": "rdml:sample.id",
+   "value": "Dil BSG - 10e4",
+   "flags": []
+  },
+  {
+   "text_id": "t_1d0cd0f55b6f",
+   "origin": "rdml:target.id",
+   "value": "FSTL_1_F_109 APS",
+   "flags": []
+  },
+  {
+   "text_id": "t_1fae9dd15e96",
+   "origin": "rdml:sample.id",
+   "value": "genomic DNA 20ng",
+   "flags": []
+  },
+  {
+   "text_id": "t_2049617b63bc",
+   "origin": "rdml:sample.id",
+   "value": "genomic DNA 4ng",
+   "flags": []
+  },
+  {
+   "text_id": "t_20d7abd98519",
+   "origin": "rdml:sample.id",
+   "value": "Freeze 10e8",
+   "flags": []
+  },
+  {
+   "text_id": "t_22624cdd46fd",
+   "origin": "rdml:sample.id",
+   "value": "Buccal Swap 6",
+   "flags": []
+  },
+  {
+   "text_id": "t_23d5c22c2a11",
+   "origin": "rdml:sample.id",
+   "value": "genomic DNA 20ng - EMBL",
+   "flags": []
+  },
+  {
+   "text_id": "t_332f4a14a953",
+   "origin": "rdml:target.id",
+   "value": "FSTL_1_K_219",
+   "flags": []
+  },
+  {
+   "text_id": "t_3c45a09298ee",
+   "origin": "rdml:sample.id",
+   "value": "Blood 8",
+   "flags": []
+  },
+  {
+   "text_id": "t_3d9706b4261b",
+   "origin": "rdml:sample.id",
+   "value": "Blood 7",
+   "flags": []
+  },
+  {
+   "text_id": "t_3e3e1e475944",
+   "origin": "rdml:sample.id",
+   "value": "genomic DNA 7ng",
+   "flags": []
+  },
+  {
+   "text_id": "t_45a2cc43b6a1",
+   "origin": "rdml:run.id",
+   "value": "p11 - dPCR",
+   "flags": []
+  },
+  {
+   "text_id": "t_52d57a6e025d",
+   "origin": "rdml:target.id",
+   "value": "FSTL_1_F_109",
+   "flags": []
+  },
+  {
+   "text_id": "t_5731790734c4",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e9",
+   "flags": []
+  },
+  {
+   "text_id": "t_59aff4dd68e8",
+   "origin": "rdml:sample.id",
+   "value": "Freeze 10e7",
+   "flags": []
+  },
+  {
+   "text_id": "t_656d22143944",
+   "origin": "rdml:sample.id",
+   "value": "Buccal Swap 1",
+   "flags": []
+  },
+  {
+   "text_id": "t_65c20786cb70",
+   "origin": "rdml:run.id",
+   "value": "P10 - DNA Dilutions",
+   "flags": []
+  },
+  {
+   "text_id": "t_6876d3ab7953",
+   "origin": "rdml:experiment.id",
+   "value": "dPCR - DKFZ",
+   "flags": []
+  },
+  {
+   "text_id": "t_6999d6f91a37",
+   "origin": "rdml:target.id",
+   "value": "FSTL_1_H_201",
+   "flags": []
+  },
+  {
+   "text_id": "t_6b257ebd0384",
+   "origin": "rdml:target.id",
+   "value": "FSTL_1_H_201 APS",
+   "flags": []
+  },
+  {
+   "text_id": "t_6e0db0c5054c",
+   "origin": "rdml:target.id",
+   "value": "FSTL_1_L_412",
+   "flags": []
+  },
+  {
+   "text_id": "t_71b89728e962",
+   "origin": "rdml:sample.id",
+   "value": "Dil BSG - 10e2",
+   "flags": []
+  },
+  {
+   "text_id": "t_75f6b4c0c47a",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e6",
+   "flags": []
+  },
+  {
+   "text_id": "t_7b8d48f541da",
+   "origin": "rdml:sample.id",
+   "value": "Buccal Swap 3",
+   "flags": []
+  },
+  {
+   "text_id": "t_82d5678070c5",
+   "origin": "rdml:experiment.id",
+   "value": "DNA Dilutions - EMBL",
+   "flags": []
+  },
+  {
+   "text_id": "t_8371bf4e41f1",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e7",
+   "flags": []
+  },
+  {
+   "text_id": "t_860ba7ef9b45",
+   "origin": "rdml:sample.id",
+   "value": "EMBL DNA 20ng",
+   "flags": []
+  },
+  {
+   "text_id": "t_89fbe7484284",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e3",
+   "flags": []
+  },
+  {
+   "text_id": "t_9053d78edac2",
+   "origin": "rdml:sample.id",
+   "value": "Dil BSG - 10e7",
+   "flags": []
+  },
+  {
+   "text_id": "t_9538a91d53b4",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e5",
+   "flags": []
+  },
+  {
+   "text_id": "t_956c96f4f228",
+   "origin": "rdml:sample.id",
+   "value": "Dil BSG - 10e8",
+   "flags": []
+  },
+  {
+   "text_id": "t_998db7b7dab5",
+   "origin": "rdml:sample.id",
+   "value": "Freeze 10e6",
+   "flags": []
+  },
+  {
+   "text_id": "t_9b89f547c256",
+   "origin": "rdml:sample.id",
+   "value": "Freeze 10e4",
+   "flags": []
+  },
+  {
+   "text_id": "t_9c6520979f80",
+   "origin": "rdml:sample.id",
+   "value": "genomic DNA 0ng",
+   "flags": []
+  },
+  {
+   "text_id": "t_a3376d7e4d23",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e1",
+   "flags": []
+  },
+  {
+   "text_id": "t_a423e956c407",
+   "origin": "rdml:sample.id",
+   "value": "Buccal Swap 4",
+   "flags": []
+  },
+  {
+   "text_id": "t_a9b2c7779b1d",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e4",
+   "flags": []
+  },
+  {
+   "text_id": "t_c5b557a9d999",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e2",
+   "flags": []
+  },
+  {
+   "text_id": "t_ce35aba0ad46",
+   "origin": "rdml:sample.id",
+   "value": "Freeze 10e2",
+   "flags": []
+  },
+  {
+   "text_id": "t_e20bd8ffb7ca",
+   "origin": "rdml:sample.id",
+   "value": "Dil BSG - 10e5",
+   "flags": []
+  },
+  {
+   "text_id": "t_e87b0334bb63",
+   "origin": "rdml:sample.id",
+   "value": "Dil BSG - 10e6",
+   "flags": []
+  },
+  {
+   "text_id": "t_eb5a0e13c020",
+   "origin": "rdml:sample.id",
+   "value": "Buccal Swap 2",
+   "flags": []
+  },
+  {
+   "text_id": "t_ef63ff77be13",
+   "origin": "rdml:sample.id",
+   "value": "genomic DNA 0.7ng",
+   "flags": []
+  },
+  {
+   "text_id": "t_f05816c98fdc",
+   "origin": "rdml:sample.id",
+   "value": "Buccal Swap 5",
+   "flags": []
+  },
+  {
+   "text_id": "t_f2111e5a5c74",
+   "origin": "rdml:sample.id",
+   "value": "Dil 1:10 - 10e8",
+   "flags": []
+  },
+  {
+   "text_id": "t_fe470fdb71c5",
+   "origin": "rdml:sample.id",
+   "value": "Freeze 10e5",
+   "flags": []
+  }
+ ],
+ "sheet_cells": {},
+ "n_flagged": 0
+}

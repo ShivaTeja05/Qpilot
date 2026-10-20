@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import stat
 import threading
 import time
 from collections.abc import AsyncIterator
@@ -24,7 +25,9 @@ from pathlib import Path
 from typing import Any
 
 HEARTBEAT_S = 15.0
+MAX_RESULTS_BYTES = 256 * 1024 * 1024
 WATCH_INTERVAL_S = 1.0
+SETTLE_MAX_S = 3.0  # a change still going on is told at least this often
 QUEUE_SIZE = 256
 WATCHED = {
     "decisions.jsonl": "study.changed",
@@ -121,11 +124,26 @@ class StoreWatcher:
         self._stop.set()
 
     def _run(self) -> None:
+        # A long write (a bulk decision appends one line per proposal) is told once it settles:
+        # a change is published when the next scan sees no further change, or after
+        # SETTLE_MAX_S at the latest, so a page re-reads once, not once a second.
+        pending: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
         while not self._stop.wait(self.interval):
             try:
-                self.scan()
+                fresh = self.scan(publish=False)
             except OSError:  # a workspace moved or removed mid-scan: try again next tick
                 continue
+            now = time.monotonic()
+            seen_now = set()
+            for event in fresh:
+                key = (event["type"], event["key"])
+                seen_now.add(key)
+                first = pending.get(key, (now, event))[0]
+                pending[key] = (first, event)
+            for key, (first, event) in list(pending.items()):
+                if key not in seen_now or now - first >= SETTLE_MAX_S:
+                    self.bus.publish(event)
+                    del pending[key]
 
     def scan(self, publish: bool = True) -> list[dict[str, Any]]:
         """Compare the watched files with the last scan; publish (and return) what changed."""
@@ -173,7 +191,10 @@ def _study_id(workspace: Path) -> str | None:
     """A workspace's study id (read once per change of results.json)."""
     path = workspace / "results.json"
     try:
-        mtime = path.stat().st_mtime_ns
+        st = path.stat()
+        if not stat.S_ISREG(st.st_mode) or st.st_size > MAX_RESULTS_BYTES:
+            return None  # a pipe or a device is never opened; a huge file is not read
+        mtime = st.st_mtime_ns
         cached = _ID_CACHE.get(path)
         if cached and cached[0] == mtime:
             return cached[1]
@@ -186,5 +207,5 @@ def _study_id(workspace: Path) -> str | None:
             study_id = head[start:].split(":", 1)[1].split('"')[1]
         _ID_CACHE[path] = (mtime, study_id)
         return study_id
-    except (OSError, ValueError, KeyError, IndexError):
+    except (OSError, ValueError, KeyError, IndexError, TypeError):
         return None

@@ -1,0 +1,55 @@
+{
+ "key": "bc1d233e3866",
+ "kind": "session",
+ "title": "Vermeulen 2013 neuroblastoma study (demo)",
+ "stages": [
+  {
+   "stage": "design",
+   "open": true,
+   "confirmed": true,
+   "pending": 0,
+   "blockers": []
+  },
+  {
+   "stage": "curves",
+   "open": true,
+   "confirmed": false,
+   "pending": 111,
+   "blockers": []
+  },
+  {
+   "stage": "choices",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": []
+  },
+  {
+   "stage": "prism",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": []
+  },
+  {
+   "stage": "roundtrip",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": []
+  }
+ ],
+ "results_visible": false,
+ "study_id": null,
+ "proposals_head": "0050233b2a0a54c8c705c1c8c9dfa58b816446e7450919b20ed61aeb19ed8d5d",
+ "decisions_head": null,
+ "next_step": {
+  "title": "Review 111 curves proposals",
+  "detail": "Accept, edit or reject each one; contradicted proposals come first.",
+  "section": "curves",
+  "action": "Accept all consistent\u2026"
+ },
+ "active_jobs": [],
+ "has_audit": false,
+ "is_demo": true
+}

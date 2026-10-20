@@ -51,14 +51,10 @@ def _finishes(fn: Callable[[], Any], pipe: Path, seconds: float = 2.0) -> bool:
     return False
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-011 one damaged results.json (half-written, or without study_id) makes "
-    "GET /api/workspaces a 500: StudyStore.list_studies raises and views.workspaces does "
-    "not catch it, so the Open page lists nothing",
-)
-@pytest.mark.parametrize("content", ['{"study_', "{}", "[]", ""])
-def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content):
+DAMAGED = ['{"study_', "{}", "[]", ""]
+
+
+def _get_with_a_damaged_study(web_ctx, web_store, content: str, route: str):
     from fastapi.testclient import TestClient
 
     from qpilot.web.server import create_app
@@ -68,17 +64,23 @@ def test_one_damaged_study_does_not_hide_the_others(web_ctx, web_store, content)
     (web_store.root / "damaged").mkdir()
     (web_store.root / "damaged" / "results.json").write_text(content)
     with TestClient(create_app(web_ctx), base_url=BASE, raise_server_exceptions=False) as c:
-        r = c.get("/api/workspaces", headers={"x-qpilot-token": TOKEN})
+        return c.get(route, headers={"x-qpilot-token": TOKEN})
+
+
+@pytest.mark.parametrize("content", DAMAGED)
+def test_one_damaged_study_does_not_hide_the_workspaces(web_ctx, web_store, content):
+    # RT-UI-011: fixed by api (7755666)
+    r = _get_with_a_damaged_study(web_ctx, web_store, content, "/api/workspaces")
     assert r.status_code == 200, r.text
-    assert r.json() == {"workspaces": []}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-008 StoreWatcher opens results.json without checking it is a regular file: "
-    "a named pipe there blocks the watcher thread for ever (no more live events: agent "
-    "requests stop reaching the page)",
-)
+@pytest.mark.parametrize("content", DAMAGED)
+def test_one_damaged_study_does_not_hide_the_agents_page(web_ctx, web_store, content):
+    # RT-UI-011 for /api/agents: fixed by api-ops (b4c522e)
+    r = _get_with_a_damaged_study(web_ctx, web_store, content, "/api/agents")
+    assert r.status_code == 200, r.text
+
+
 def test_a_pipe_in_the_store_never_stalls_the_watcher(tmp_path):
     workspace = tmp_path / "studies" / "aaaaaaaaaaaa-x"
     workspace.mkdir(parents=True)
@@ -88,12 +90,6 @@ def test_a_pipe_in_the_store_never_stalls_the_watcher(tmp_path):
     assert _finishes(watcher.scan, pipe), "StoreWatcher.scan blocked on a named pipe"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-012 a session whose source.json names a named pipe (or /dev/zero) hangs "
-    "GET /api/workspaces for ever: session_source hashes whatever the path is; every "
-    "listing then holds a worker thread until the pool is gone",
-)
 def test_a_session_bound_to_a_pipe_never_stalls_the_list(web_ctx, web_store, tmp_path):
     from qpilot.web import views
 

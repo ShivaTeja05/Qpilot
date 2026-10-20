@@ -7,7 +7,7 @@
  *   `noSideScroll()`. It records console errors, uncaught errors and every request that leaves
  *   this server; a test fails on any of them (docs/app.md §1.5: nothing leaves the machine).
  */
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import {
@@ -29,7 +29,8 @@ export interface AxeFinding {
   id: string;
   impact: string;
   help: string;
-  targets: string[];
+  /** Up to eight offending elements: selector, markup and axe's reason (colours, ratio, …). */
+  nodes: { target: string; html: string; why: string }[];
 }
 
 export class App {
@@ -120,16 +121,24 @@ export class App {
       id: v.id,
       impact: v.impact ?? "unknown",
       help: v.help,
-      targets: v.nodes.slice(0, 8).map((n) => n.target.join(" ")),
+      nodes: v.nodes.slice(0, 8).map((n) => ({
+        target: n.target.join(" "),
+        html: n.html.slice(0, 200),
+        why: [...n.any, ...n.all, ...n.none].map((c) => c.message).join(" / "),
+      })),
     }));
     if (findings.length) {
-      await this.info.attach(`axe-${slug(state)}.json`, {
-        body: JSON.stringify(findings, null, 2),
-        contentType: "application/json",
-      });
+      const body = JSON.stringify({ state, url: this.page.url(), findings }, null, 2);
+      await this.info.attach(`axe-${slug(state)}.json`, { body, contentType: "application/json" });
+      // One file per state, for the owners (gitignored with the screenshots).
+      const path = join(E2E.screenshotDir, "axe", `${slug(state)}.json`);
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, body);
     }
     const failing = findings.filter((f) => FAILING_IMPACTS.has(f.impact));
-    expect.soft(failing, `axe (serious/critical) on ${state}:\n${formatAxe(failing)}`).toEqual([]);
+    expect
+      .soft(failing.length, `axe (serious/critical) on ${state}:\n${formatAxe(failing)}`)
+      .toBe(0);
     return findings;
   }
 
@@ -162,7 +171,11 @@ export function slug(text: string): string {
 
 export function formatAxe(findings: AxeFinding[]): string {
   return findings
-    .map((f) => `  [${f.impact}] ${f.id}: ${f.help}\n      ${f.targets.join("\n      ")}`)
+    .map(
+      (f) =>
+        `  [${f.impact}] ${f.id}: ${f.help}\n` +
+        f.nodes.map((n) => `      ${n.target}\n        ${n.why}`).join("\n"),
+    )
     .join("\n");
 }
 

@@ -1,0 +1,14 @@
+{
+ "ok": false,
+ "changed": [
+  "decisions.jsonl"
+ ],
+ "missing": [],
+ "unlisted": [],
+ "chain_broken_at": 1,
+ "inconsistent": [],
+ "n_entries": 3,
+ "has_proposals": true,
+ "proposal_chain_broken_at": null,
+ "n_proposal_entries": 494
+}

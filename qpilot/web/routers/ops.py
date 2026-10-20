@@ -4,10 +4,10 @@
   ``qpilot serve`` gives it (each marked read / open / propose / request), the requests waiting
   for a person in every study, and what agents did recently, newest first.
 * ``POST /api/studies/{id}/ask``: a question, answered as a job by qPilot's own tools
-  (:func:`qpilot.ai.ask.ask`, the MCP tool code) under this launch's autonomy (in *Suggest* the
-  model may only ask), or, for verdict and what-if questions about an audited study, by the
-  audit's Ask engine. The answer says which tool answered, who wrote the words and every fact
-  it cites.
+  (:func:`qpilot.ai.ask.ask`, the MCP tool code), or, for verdict and what-if questions about an
+  audited study, by the audit's Ask engine. The answer says which tool answered, who wrote the
+  words and every fact it cites. Ask never writes (docs/app.md §1.1: every write from the page
+  is a person's): asked to change a choice, it names the Decision Card to decide it on.
 * ``POST /api/model/test``: the harness scorecard of the page's model on one study (a job), saved
   with the study's scorecards; ``GET /api/model/seen``: the last payload a model was sent.
 * ``POST /api/demo/fresh``: moves the demo's earlier work aside (kept, never deleted).
@@ -29,9 +29,10 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Query
 
+from qpilot.core.decisions import DecisionError
 from qpilot.core.store import StudyNotFound, StudyStore
 from qpilot.web import views
-from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session, is_study
+from qpilot.web.context import KEY, AppContext, Ctx, api_error, check_key, is_session, is_study
 from qpilot.web.contract import JobStarted, JobView, ModelSeen
 from qpilot.web.contract_ops import (
     AgentActivity,
@@ -50,6 +51,9 @@ from qpilot.web.contract_ops import (
 from qpilot.web.jobs import JobError, Progress
 
 router = APIRouter(tags=["ops"])
+
+#: The model of each job's result, so the page's types carry them (``routers.job_results``).
+JOB_RESULTS = {"ask": AskAnswer, "model.test": ModelTestResult}
 
 CONNECT = "claude mcp add qpilot -- qpilot serve"
 CONNECT_NOTE = (
@@ -115,11 +119,11 @@ AUDIT_WORDS = re.compile(
     r"lean[s]?\s+on|survives?)\b",
     re.I,
 )
-#: Questions only the audit answers: what-if and what to check first (the study's own tools
-#: would answer them with something else).
+#: Questions only the audit answers: what-if, what to check first, verdicts and the audit itself
+#: (the study's own tools would answer them with something else).
 AUDIT_ONLY_WORDS = re.compile(
     r"\b(what[\s-]+if|suppose|hypothetically|would\s+(it|the|this|that|my|our)|instead|"
-    r"look\s+at\s+first|check\s+(the\s+)?data|issues?)\b",
+    r"look\s+at\s+first|check\s+(the\s+)?data|issues?|verdicts?|audit(ed|s)?)\b",
     re.I,
 )
 NEEDS_AUDIT = (
@@ -315,16 +319,20 @@ def tool_catalogue(store: StudyStore) -> tuple[list[AgentTool], bool]:
 
 
 def _connect(store: StudyStore) -> tuple[str, str | None]:
-    """The connect command; it names this store when ``qpilot serve`` would use another."""
-    from qpilot.core.store import default_studies_dir
+    """The connect command; it names this store unless it is the built-in default.
 
-    if store.root.resolve() == default_studies_dir().resolve():
+    Claude Code starts ``qpilot serve`` with its own environment, which need not carry this
+    shell's ``QPILOT_STUDIES_DIR``: any other store is named in the command.
+    """
+    builtin = Path.home() / ".cache" / "qpilot" / "studies"
+    if store.root.resolve() == builtin.resolve():
         return CONNECT, None
     root = str(store.root)
     quoted = f'"{root}"' if re.search(r"[\s\"'$`\\]", root) else root
     return (
         f"claude mcp add qpilot -e QPILOT_STUDIES_DIR={quoted} -- qpilot serve",
-        "This page uses a study store other than the default one, so the command names it.",
+        "This page uses a study store other than the default one (~/.cache/qpilot/studies), "
+        "so the command names it for the agent.",
     )
 
 
@@ -359,7 +367,8 @@ def _study_entries(
 
     store = places.ctx.store
     head, card_list, pending = store.snapshot(study_id)
-    rows = [e.model_dump() for e in store.entries(study_id) if e.actor == "agent"]
+    log = store.entries(study_id)
+    rows = [e.model_dump() for e in log if e.actor == "agent"]
     rows += [a for a in store.attempts(study_id) if a.get("actor") == "agent"]
     if not pending and not rows:
         return None, [], []
@@ -389,8 +398,10 @@ def _study_entries(
                 expected_head=head,
             )
         )
+    waiting = {e.hash for e in pending}
     activity = []
     for row in rows:
+        settled = _settled(log, row, waiting) if row["status"] == "pending_human" else {}
         card_title, label = _card_words(cards, row["card_id"], row["option"])
         status = str(row["status"])
         words = DECISION_WORDS.get(status, "{title}: {label}")
@@ -406,9 +417,35 @@ def _study_entries(
                 reason=row.get("reason"),
                 card_id=row["card_id"],
                 option=row["option"],
+                seq=row.get("seq"),
+                hash=row.get("hash") or None,
+                **settled,
             )
         )
     return place, requests, activity
+
+
+def _settled(log: list[Any], request: dict[str, Any], waiting: set[str]) -> dict[str, Any]:
+    """What became of an agent's request: still waiting, or the later entry that settled it.
+
+    The same replay as the store's pending list (``core.store.pending_after``): an applied
+    decision on the card settles every request on it; a person's rejection settles the
+    requests for the option it names.
+    """
+    if request.get("hash") in waiting:
+        return {"request_state": "waiting"}
+    later = [e for e in log if e.seq > request["seq"] and e.card_id == request["card_id"]]
+    for entry in later:
+        if entry.status == "applied":
+            state = "approved" if entry.option == request["option"] else "decided_otherwise"
+        elif entry.status == "rejected" and entry.actor == "human":
+            if entry.option != request["option"]:
+                continue
+            state = "turned_down"
+        else:
+            continue
+        return {"request_state": state, "settled_by": entry.actor, "settled_at": entry.at}
+    return {"request_state": "closed"}
 
 
 PROPOSAL_WORDS = {
@@ -459,7 +496,7 @@ def agents(ctx: Ctx) -> AgentsView:
     pending: list[AgentRequest] = []
     activity: list[AgentActivity] = []
     hidden = 0
-    for study_id in ctx.store.list_studies():
+    for study_id in _study_ids(ctx.store):
         try:
             place, requests, entries = _study_entries(places, study_id)
         except (StudyNotFound, OSError, ValueError):
@@ -488,6 +525,26 @@ def agents(ctx: Ctx) -> AgentsView:
         activity_total=len(activity),
         hidden_blind=hidden,
     )
+
+
+def _study_ids(store: StudyStore) -> list[str]:
+    """Study ids of every readable workspace; a damaged or half-written one is skipped.
+
+    The store is shared with agents, scripts and other qPilot processes (and may sit in a synced
+    folder), so one unreadable ``results.json`` must not hide every other study.
+    """
+    out = []
+    for folder in sorted(store.root.iterdir()):
+        path = folder / "results.json"
+        if not folder.is_dir() or not path.is_file():  # never open a pipe or a device
+            continue
+        try:
+            study_id = json.loads(path.read_text(encoding="utf-8"))["study_id"]
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if isinstance(study_id, str) and KEY.match(study_id):
+            out.append(study_id)
+    return out
 
 
 def _session_ids(store: StudyStore) -> set[str]:
@@ -557,9 +614,40 @@ def _no_engine(question: str, audit: bool, autonomy: Autonomy, head: str) -> Ask
     )
 
 
-def _autonomy(ctx: AppContext) -> Literal["suggest", "decide_and_tell"]:
-    """This launch's autonomy mode (anything unexpected counts as Suggest)."""
-    return "decide_and_tell" if ctx.settings.get("autonomy") == "decide_and_tell" else "suggest"
+def _autonomy(ctx: AppContext, study_id: str) -> Literal["suggest", "decide_and_tell"]:
+    """What the study lets agents do (``StudyStore.autonomy``; Ask itself never decides)."""
+    try:
+        level = ctx.store.autonomy(study_id)
+    except (StudyNotFound, OSError, ValueError):
+        level = "suggest"
+    return "decide_and_tell" if level == "decide_and_tell" else "suggest"
+
+
+class _AskStore(StudyStore):
+    """The store as Ask sees it: it reads; it never decides, requests or turns down.
+
+    A change Ask is asked for reaches ``apply_decision`` like an agent's; here it is refused
+    before anything is written, and the answer names the card a person decides it on.
+    """
+
+    def append_decision(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: Ask never writes to the decision log."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def request_human(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: Ask never files a request."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def reject_pending(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: only a person turns a request down, on the card."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def set_autonomy(self, *args: Any, **kwargs: Any) -> None:
+        """Refused: autonomy is a person's setting."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+
+ASK_NEVER_DECIDES = "Ask never changes a choice; a person decides it on its Decision Card"
 
 
 def _client(ctx: AppContext) -> Any:
@@ -599,16 +687,16 @@ def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
 
 
 def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy) -> AskAnswer:
-    """Ask with qPilot's own tools (the MCP tool code), acting through the autonomy's store."""
+    """Ask with qPilot's own tools (the MCP tool code), through a store that never writes."""
     from qpilot.ai.ask import ask
-    from qpilot.ai.suggest_only import acting_store, load_profile_or_default
+    from qpilot.ai.suggest_only import load_profile_or_default
 
     store = ctx.store
     client = _client(ctx)
     before = store.chain_head(study_id)
     answer = ask(
         question,
-        acting_store(store, autonomy),
+        _AskStore(store.root),
         study_id,
         client=client,
         profile=load_profile_or_default(),
@@ -617,6 +705,7 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
     call = answer.tool_calls[-1] if answer.tool_calls else {"tool": "none", "args": {}}
     tool, args = str(call.get("tool")), dict(call.get("args") or {})
     used = client.available and not answer.fallback
+    text, cited, focus, card_id = answer.plain, _cited(answer.answer, facts), None, None
     note = None
     if answer.fallback:
         note = _model_note(ctx) or (
@@ -624,11 +713,25 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
             if answer.error
             else None
         )
-    if answer.status == "pending_human":
-        note = "The request waits for a person on the Decision Card, with Approve and Turn down."
+    if tool == "qpcr_decide":
+        cards = {c.id: c for c in store.cards(study_id)}
+        card_id = str(args.get("card_id") or "")
+        if card_id in cards:
+            option = str(args.get("option") or "")
+            title, label = _card_words(cards, card_id, option)
+            asked = option in {o.id for o in cards[card_id].options}
+            text = (
+                f"Ask never changes a choice. Decide “{title}” on its Decision Card"
+                + (f" (you asked for “{label}”)" if asked else "")
+                + ", with your reason."
+            )
+            cited, focus = [], f"card:{card_id}"
+            note = "Nothing was written: every choice is a person's, made on its card."
+        else:
+            card_id = None
     return AskAnswer(
         question=answer.question,
-        answer=answer.plain,
+        answer=text,
         engine="study",
         tool=tool,
         args=args,
@@ -641,11 +744,11 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
         else "qPilot's checked template",
         provider=answer.provider,
         model=client.model if client.available else None,
-        facts=_cited(answer.answer, facts),
-        validated=answer.validated,
+        facts=cited,
+        validated=answer.validated or focus is not None,  # the card's words are qPilot's own
         note=note,
-        status=answer.status if tool == "qpcr_decide" else None,
-        card_id=args.get("card_id") if tool == "qpcr_decide" else None,
+        card_id=card_id,
+        focus=focus,
         autonomy=autonomy,
         head_before=before,
         head_after=store.chain_head(study_id),
@@ -709,6 +812,10 @@ def _ask_audit(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
     )
 
 
+_asking: dict[tuple[int, str, str, str], str] = {}  # (runner, study, engine, question) -> job
+_asking_lock = threading.Lock()
+
+
 @router.post("/studies/{study_id}/ask", response_model=JobStarted, status_code=202)
 def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
     """Answer a question about a study (a job); every number in the answer is a cited fact."""
@@ -716,7 +823,7 @@ def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
     if not question:
         raise api_error(422, "bad_request", "Type a question first.")
     study_id, place, _ = resolve_study(ctx, study_id)
-    autonomy = _autonomy(ctx)
+    autonomy = _autonomy(ctx, study_id)
     audit = views.audit_dir(ctx.store, study_id) is not None
     engine = _pick_engine(question, body.source, audit, _audit_engine() is not None)
 
@@ -733,14 +840,25 @@ def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
                 ctx.bus.publish({"type": "study.changed", "key": key, "source": "page"})
         return answer.model_dump(mode="json")
 
-    job = ctx.jobs.submit(
-        "ask",
-        work,
-        title=f"Answering “{question[:60]}{'…' if len(question) > 60 else ''}”",
-        key=place.key,
-        typical_s=_typical(ctx, AUDIT_ASK_TYPICAL_S if engine == "audit" else ASK_TYPICAL_S),
-        dedupe=False,
-    )
+    # The same question asked again while it runs gets the running job (a model call is not
+    # repeated, a request is not filed twice); different questions run side by side.
+    asking = (id(ctx.jobs), study_id, engine, " ".join(question.lower().split()))
+    with _asking_lock:
+        job = ctx.jobs.get(_asking.get(asking, ""))
+        if job is None or job.status not in ("queued", "running"):
+            job = ctx.jobs.submit(
+                "ask",
+                work,
+                title=f"Answering “{question[:60]}{'…' if len(question) > 60 else ''}”",
+                key=place.key,
+                typical_s=_typical(
+                    ctx, AUDIT_ASK_TYPICAL_S if engine == "audit" else ASK_TYPICAL_S
+                ),
+                dedupe=False,
+            )
+            _asking[asking] = job.id
+            while len(_asking) > 200:  # the last few hundred questions are enough
+                _asking.pop(next(iter(_asking)))
     return JobStarted(job=JobView(**job.view()))
 
 
@@ -799,6 +917,37 @@ def _row(saved: dict[str, Any]) -> ScorecardRow | None:
     )
 
 
+FALLBACKS = (
+    "Fallbacks count answers where the model was not usable and a template answered instead."
+)
+
+
+def _rows(saved: dict[str, Any]) -> dict[str, ScorecardRow]:
+    """Saved scorecards by profile, as rows of the Ask table (Studio-only ones left out)."""
+    rows = {}
+    for profile, report in saved.items():
+        if profile == "history" or not isinstance(report, dict):  # the CLI keeps earlier runs
+            continue
+        row = _row(report)
+        if row is not None:
+            rows[profile] = row
+    return rows
+
+
+def _scorecards(
+    study_id: str, title: str, rows: dict[str, ScorecardRow], profile: str, note: str
+) -> ModelTestResult:
+    current = rows.get(profile)
+    return ModelTestResult(
+        study_id=study_id,
+        title=title,
+        current=current,
+        saved=list(rows.values()),
+        n_questions=current.n_items if current else 0,
+        note=note,
+    )
+
+
 @router.post("/model/test", response_model=JobStarted, status_code=202)
 def test_model(ctx: Ctx, body: ModelTestBody | None = None) -> JobStarted:
     """Score the page's model on questions about one study (a job); saved with the study."""
@@ -815,22 +964,11 @@ def test_model(ctx: Ctx, body: ModelTestBody | None = None) -> JobStarted:
             + (f" to {client.model or client.provider}" if client.available else " (templates)")
         )
         profile, saved, n = run_scorecard(ctx.store, study_id, client)
-        rows = {k: _row(v) for k, v in saved.items() if k != "history" and isinstance(v, dict)}
-        current = rows.get(profile)
-        if current is None:
+        rows = _rows(saved)
+        if profile not in rows:
             raise JobError("failed", "The model test produced no scorecard.")
-        note = (
-            f"Computed now on {n} questions about {title}. Fallbacks count answers where "
-            "the model was not usable and a template answered instead."
-        )
-        return ModelTestResult(
-            study_id=study_id,
-            title=title,
-            current=current,
-            saved=[r for r in rows.values() if r is not None],
-            n_questions=n,
-            note=note,
-        ).model_dump(mode="json")
+        note = f"Computed now on {n} questions about {title}. {FALLBACKS}"
+        return _scorecards(study_id, title, rows, profile, note).model_dump(mode="json")
 
     job = ctx.jobs.submit(
         "model.test",
@@ -840,6 +978,25 @@ def test_model(ctx: Ctx, body: ModelTestBody | None = None) -> JobStarted:
         typical_s=_typical(ctx, MODEL_TEST_TYPICAL_S),
     )
     return JobStarted(job=JobView(**job.view()))
+
+
+@router.get("/model/scorecards", response_model=ModelTestResult)
+def model_scorecards(
+    ctx: Ctx, study: str | None = Query(default=None, max_length=12)
+) -> ModelTestResult:
+    """A study's saved scorecards (default: the demo study, else the latest visible one)."""
+    from qpilot.ai.suggest_only import SCORECARD_KEYS
+
+    study_id, place, places = resolve_study(ctx, study or _default_study(ctx))
+    title = places.title(place)
+    provider = ctx.studio.client.provider
+    profile = SCORECARD_KEYS.get(provider, provider)
+    rows = _rows(ctx.store.scorecard(study_id))
+    if profile in rows:
+        note = f"The last test of this model on {title}. {FALLBACKS}"
+    else:
+        note = f"This model has not been tested on {title} yet: Test this model scores it."
+    return _scorecards(study_id, title, rows, profile, note)
 
 
 @router.get("/model/seen", response_model=ModelSeen)
@@ -907,7 +1064,15 @@ def fresh_demo(ctx: Ctx) -> FreshDemo:
             "Work on the demo study is still running; start a fresh demo once it has finished.",
         )
     with ctx.lock:
-        moved = views.archive_demo(ctx.store)
+        try:
+            moved = views.archive_demo(ctx.store)
+        except (OSError, ValueError, KeyError, TypeError) as err:  # nothing was moved yet
+            raise api_error(
+                409,
+                "damaged",
+                "A study folder in the store could not be read, so nothing was moved: "
+                f"{str(err)[:200]}",
+            ) from err
     for key in sorted(demo_keys):
         ctx.bus.publish({"type": "study.changed", "key": key, "source": "page"})
     ctx.bus.publish({"type": "study.changed", "key": None, "source": "page"})
@@ -925,7 +1090,7 @@ def _demo_keys(store: StudyStore) -> set[str]:
     """The demo's session id and its studies' ids."""
     sha = views.demo_sha()
     keys = {sha[:12]}
-    for study_id in store.list_studies():
+    for study_id in _study_ids(store):
         try:
             if store.get(study_id).input_sha256 == sha:
                 keys.add(study_id)

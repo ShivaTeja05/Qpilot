@@ -61,6 +61,7 @@ class LabViews:
 
     _reasonable_cache = None
     _single_cache: dict | None = None
+    _genorm_cache: dict | None = None
 
     # ---- cached engine sweeps -------------------------------------------------------------
     def reasonable(self):
@@ -86,6 +87,32 @@ class LabViews:
                 r = self.engine.evaluate(self.space.to_index({decision: option}))
                 self._single_cache[key] = (r["log2fc"].copy(), r["call"].copy())
         return self._single_cache[key]
+
+    def genorm_m(self) -> dict[str, float]:
+        """Each control-gene candidate's geNorm M, unrounded.
+
+        The run's summary keeps M to three decimals; wording that to two would round twice
+        (1.6349 -> 1.635 -> 1.64 where qPilot's results say 1.63). This is the run's own
+        computation (:func:`qsim.study_space.reference_tiers`) on the study's table.
+        """
+        if self._genorm_cache is None:
+            from qpilot.qpcr.quant import log2_matrix
+            from qpilot.qpcr.refgenes import genorm
+
+            s = self.engine.study
+            m_values = genorm(log2_matrix(s.curves), list(s.candidates)).M_initial
+            self._genorm_cache = {str(g): float(v) for g, v in m_values.items()}
+        return self._genorm_cache
+
+    def _with_value(self, gene: str):
+        """Which samples have a value for ``gene`` in the planned analysis (the p-value's n)."""
+        e = self.engine
+        cell = self.space.baseline_index()
+        v, ids = e.values_of(cell), e.ids_of(cell)
+        with self._engine_lock:
+            matrix = e.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
+            _, valid = e.relative(matrix, ids["refs"])
+        return valid[:, e.items.index(gene)]
 
     def _base(self):
         return self._single(self.space.names[0], self.space.baseline[self.space.names[0]])
@@ -240,13 +267,19 @@ class LabViews:
         high, rest = s.group_masks(dict(self.engine.values_of(self.space.baseline_index()))["cut"])
         refs = self.space.decision("refs")
         planned_refs = refs.options[refs.index(self.space.baseline["refs"])]
-        m_values = self.summary["space_rules"]["geNorm_M"]
+        m_values = self.genorm_m()
         implicated = set(self.summary["space_rules"]["implicated_genes"])
+        ok = self._with_value(gene) if gene in self.engine.items else high | rest
+        n_high, n_rest = int(high.sum()), int(rest.sum())
+        v_high, v_rest = int((ok & high).sum()), int((ok & rest).sum())
+        in_groups = f"{n_high} {self.group}"
+        if v_high != n_high:
+            in_groups += f" ({v_high} with a value for {gene})"
+        in_groups += f" · {n_rest} {self.rest_short}"
+        if v_rest != n_rest:
+            in_groups += f" ({v_rest} with a value)"
         rows = [
-            (
-                "Samples in each group",
-                f"{int(high.sum())} {self.group} · {int(rest.sum())} {self.rest_short}",
-            ),
+            ("Samples in each group", in_groups),
             ("Plates for this assay", f"{len(set(s.run[:, col]))}"),
             (
                 "Cq, median (lowest to highest)",
@@ -274,13 +307,33 @@ class LabViews:
             {
                 "gene": g,
                 "m": f"{m_values[g]:.2f}" if g in m_values else "",
+                "m_value": float(m_values[g]) if g in m_values else None,
                 "differs": g in implicated or g.split("(")[0] in implicated,
             }
             for g in planned_refs.value
         ]
+        # the same parameters as numbers, for charts and tables that format them themselves
+        numbers = {
+            "n_high": n_high,
+            "n_rest": n_rest,
+            "n_high_value": v_high,
+            "n_rest_value": v_rest,
+            "n_plates": len(set(s.run[:, col])),
+            "cq_median": float(np.median(found)) if found.size else None,
+            "cq_min": float(found.min()) if found.size else None,
+            "cq_max": float(found.max()) if found.size else None,
+            "n_cq_above": {f"{cut:g}": int((found > cut).sum()) for cut in lates},
+            "n_nondetect": int(np.isnan(cq).sum()),
+            "eff_assay": float(eff),
+            "eff_std_curve": float(np.nanmedian(std)) if np.isfinite(std).any() else None,
+            "n_flag_eff": int(s.flag_eff[:, col].sum()),
+            "n_flag_low": int(s.flag_low[:, col].sum()),
+            "p": float(e["p"]),
+        }
         return {
             "gene": gene,
             "rows": [{"label": a, "value": b} for a, b in rows],
+            "numbers": numbers,
             "references": references,
             "refs_label": planned_refs.label,
             "stable_below": f"{self.summary['space_rules']['stable_below_M']:g}",
@@ -320,9 +373,10 @@ class LabViews:
                 {
                     "gene": g,
                     "m": f"{m:.2f}",
+                    "m_value": float(m),
                     "differs": g in implicated or g.split("(")[0] in implicated,
                 }
-                for g, m in sorted(rules["geNorm_M"].items(), key=lambda kv: kv[1])
+                for g, m in sorted(self.genorm_m().items(), key=lambda kv: kv[1])
             ],
             "stable_below": f"{rules['stable_below_M']:g}",
             "reference_note": "; ".join(rules.get("notes", [])),

@@ -19,7 +19,12 @@ export interface LegendItem {
 export function Legend({ items, className }: { items: LegendItem[]; className?: string }) {
   if (!items.length) return null;
   return (
-    <ul className={cn("flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted", className)}>
+    <ul
+      className={cn(
+        "flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted",
+        className,
+      )}
+    >
       {items.map((it) => (
         <li key={it.label} className="inline-flex items-center gap-1.5">
           {it.mark ? <Glyph mark={it.mark} size={12} /> : it.swatch}
@@ -32,10 +37,26 @@ export function Legend({ items, className }: { items: LegendItem[]; className?: 
 }
 
 /** A line swatch for legends (call lines, group means). */
-export function LineSwatch({ dashed, tone = "var(--text-faint)", width = 2 }: { dashed?: boolean; tone?: string; width?: number }) {
+export function LineSwatch({
+  dashed,
+  tone = "var(--text-faint)",
+  width = 2,
+}: {
+  dashed?: boolean;
+  tone?: string;
+  width?: number;
+}) {
   return (
     <svg width="14" height="12" aria-hidden="true">
-      <line x1="7" x2="7" y1="0" y2="12" stroke={tone} strokeWidth={width} strokeDasharray={dashed ? "3 2" : undefined} />
+      <line
+        x1="7"
+        x2="7"
+        y1="0"
+        y2="12"
+        stroke={tone}
+        strokeWidth={width}
+        strokeDasharray={dashed ? "3 2" : undefined}
+      />
     </svg>
   );
 }
@@ -55,11 +76,24 @@ export interface ChartFrameProps {
   children: ReactNode;
 }
 
-export function ChartFrame({ summary, legend, controls, table, caption, live, className, children }: ChartFrameProps) {
+export function ChartFrame({
+  summary,
+  legend,
+  controls,
+  table,
+  caption,
+  live,
+  className,
+  children,
+}: ChartFrameProps) {
   const [asTable, setAsTable] = useState(false);
   const captionId = useId();
   return (
-    <figure className={cn("m-0 min-w-0 [contain:inline-size]", className)} aria-label={summary} aria-describedby={caption ? captionId : undefined}>
+    <figure
+      className={cn("m-0 min-w-0 [contain:inline-size]", className)}
+      aria-label={summary}
+      aria-describedby={caption ? captionId : undefined}
+    >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">{legend && !asTable && <Legend items={legend} />}</div>
         <div className="flex items-center gap-2">

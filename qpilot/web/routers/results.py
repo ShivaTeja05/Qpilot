@@ -18,6 +18,8 @@ from qpilot.schemas import DecisionOutcome
 from qpilot.web import results_views as rv
 from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_study
 from qpilot.web.contract import (
+    AutonomyBody,
+    AutonomyView,
     CardsView,
     CardView,
     DecideBody,
@@ -35,6 +37,7 @@ from qpilot.web.contract import (
 from qpilot.web.jobs import JobError, Progress
 
 router = APIRouter(tags=["results"])
+JOB_RESULTS = {"card.explain": Explanation}
 
 CARD_ID = re.compile(r"^[a-z][a-z0-9_]{0,63}\Z")
 HUMAN = "human"
@@ -58,6 +61,12 @@ def study(ctx: AppContext, study_id: str) -> str | None:
     if not is_study(ctx.store, study_id):
         raise api_error(404, "not_found", "There is no analysed study with this id.")
     sid = rv.session_of_study(ctx.store, study_id)
+    if sid is not None:
+        from qpilot.web.routers.studio import file_or_409
+        from qpilot.web.warm import require
+
+        file_or_409(ctx, sid)  # without its file, a session cannot show it is confirmed
+        require(ctx, sid)
     if sid is not None and not ctx.studio.results_visible(sid):
         raise api_error(
             403,
@@ -157,6 +166,8 @@ def get_gene(study_id: str, gene: str, ctx: Ctx) -> GeneView:
         raise api_error(404, "not_found", "There is no compared gene with this name.")
     try:
         return rv.gene_view(ctx.store, study_id, gene)
+    except rv.GeneWithheld as err:
+        raise api_error(404, "withheld", str(err), gene=gene) from err
     except KeyError as err:
         raise api_error(404, "not_found", "There is no compared gene with this name.") from err
 
@@ -325,6 +336,30 @@ def explain(study_id: str, card_id: str, ctx: Ctx) -> JobStarted:
         ).model_dump(mode="json")
 
     job = ctx.jobs.submit(
-        "card.explain", work, title="Explaining the card", key=study_id, typical_s=EXPLAIN_S
+        "card.explain",
+        work,
+        title="Explaining the card",
+        key=study_id,
+        typical_s=EXPLAIN_S,
+        tag=card_id,  # one job per card: another card's explanation is never this one's
     )
     return JobStarted(job=JobView(**job.view()))
+
+
+# ---- autonomy: what agents may do in this study ----------------------------------------------
+
+
+@router.get("/studies/{study_id}/autonomy", response_model=AutonomyView)
+def get_autonomy(study_id: str, ctx: Ctx) -> AutonomyView:
+    """What agents (``qpilot serve``) may do in this study, and the policy in words."""
+    study(ctx, study_id)
+    return rv.autonomy_view(ctx.store, study_id)
+
+
+@router.put("/studies/{study_id}/autonomy", response_model=AutonomyView)
+def put_autonomy(study_id: str, body: AutonomyBody, ctx: Ctx) -> AutonomyView:
+    """A person sets the study's autonomy (Suggest · Decide and tell me); agents obey it."""
+    sid = writable(ctx, study_id)
+    if rv.set_autonomy(ctx.store, study_id, body.autonomy):
+        changed(ctx, study_id, sid)
+    return rv.autonomy_view(ctx.store, study_id)

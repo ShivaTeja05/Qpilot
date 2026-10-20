@@ -62,7 +62,6 @@ export function JobCard({
             : "border-line",
         className,
       )}
-      aria-live="polite"
       aria-busy={running}
     >
       <div className="flex items-start gap-2.5">
@@ -78,7 +77,7 @@ export function JobCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3">
             <p className="text-sm font-medium text-fg">{job.title}</p>
-            <p className="text-xs text-muted tabular">
+            <p className="text-xs text-muted tabular" role={running ? "timer" : undefined}>
               {running ? (
                 <>
                   {duration(elapsed)}
@@ -95,7 +94,7 @@ export function JobCard({
           </div>
           {running ? (
             <>
-              <p className="mt-0.5 truncate text-[13px] text-muted">
+              <p className="mt-0.5 truncate text-[13px] text-muted" aria-live="polite">
                 {job.step || (job.status === "queued" ? "Waiting to start" : "Working")}
               </p>
               <ProgressBar className="mt-2" label={job.title} value={job.fraction} />
@@ -106,7 +105,7 @@ export function JobCard({
               ) : null}
             </>
           ) : job.status === "failed" ? (
-            <p className="mt-0.5 text-[13px] text-danger">
+            <p className="mt-0.5 text-[13px] text-danger" role="alert">
               {job.error?.message ?? "It stopped before finishing."}
             </p>
           ) : null}

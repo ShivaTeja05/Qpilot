@@ -4,6 +4,8 @@ import { useTheme } from "@/lib/theme";
 /**
  * The toast layer (mount once, in the shell), themed with the page's tokens. Use `toast` from
  * here for every write: `toast.success("Accepted 12 proposals", { action: { label: "Undo", onClick } })`.
+ * Toasts stay 6 s; give one with an action `duration: 10_000` and an error `duration: Infinity`
+ * (it stays until closed) — `useWrite` in `@/shell/writes` does both.
  */
 export function Toaster() {
   const { theme } = useTheme();
@@ -15,6 +17,8 @@ export function Toaster() {
       offset={16}
       mobileOffset={{ bottom: 72 }}
       toastOptions={{
+        // Long enough to read and to reach Undo; errors are given Infinity by their callers.
+        duration: 6000,
         classNames: {
           toast:
             "!rounded-xl !border !border-line !bg-surface !text-fg !shadow-lg !font-sans !text-sm !gap-2",

@@ -3,7 +3,7 @@
  * and what qPilot never does, with this install's version. Everything is read from the API.
  */
 import { Monitor, Moon, ShieldCheck, Sun } from "lucide-react";
-import { useSystem } from "@/shell/data";
+import { useSystem, useWorkspaces } from "@/shell/data";
 import type { SectionProps } from "@/shell/sections";
 import {
   Card,
@@ -18,7 +18,9 @@ import {
 } from "@/ui";
 import { useTheme, type ThemeChoice } from "@/lib/theme";
 import { AutonomyCard } from "./AutonomyCard";
+import { FreshDemoCard } from "./FreshDemoCard";
 import { ModelCard } from "./ModelCard";
+import { useModelTest } from "./ModelTest";
 
 function AppearanceCard() {
   const { choice, setTheme } = useTheme();
@@ -71,7 +73,10 @@ function AppearanceCard() {
 
 export default function Section(_: SectionProps) {
   const system = useSystem();
+  const workspaces = useWorkspaces();
+  const test = useModelTest();
   const s = system.data;
+  const demo = workspaces.data?.find((w) => w.is_demo && w.kind === "session");
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 pb-4">
@@ -88,7 +93,7 @@ export default function Section(_: SectionProps) {
         />
       ) : null}
 
-      <ModelCard initial={s?.model} />
+      <ModelCard initial={s?.model} actions={test.button} below={test.panel} />
 
       {s ? (
         <AutonomyCard system={s} />
@@ -99,6 +104,8 @@ export default function Section(_: SectionProps) {
       ) : null}
 
       <AppearanceCard />
+
+      <FreshDemoCard demo={demo} />
 
       {s ? (
         <Card as="section" aria-labelledby="settings-never">
@@ -113,7 +120,7 @@ export default function Section(_: SectionProps) {
               ))}
             </ul>
             <div className="border-t border-line pt-4">
-              <h3 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">
+              <h3 className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">
                 This install
               </h3>
               <KeyValues

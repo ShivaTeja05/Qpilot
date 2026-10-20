@@ -89,6 +89,12 @@ def test_decide_then_undo_writes_new_entries_as_a_person(walked):
     assert r.status_code == 409 and "Nothing to undo" in r.json()["error"]["message"]
     chain = c.get(f"/api/studies/{study}/decisions").json()
     assert chain["head"] == store.chain_head(study)
+    from qpilot.core.record import verify_chain
+
+    broken = verify_chain(store.entries(study), store.get(study).input_sha256)
+    assert chain["chain_intact"] == (broken is None) and chain["broken_at"] == broken
+    assert chain["root"] == store.get(study).input_sha256
+    assert [a["attempted"] for a in chain["attempts"]] == ["applied"], "the stale try is kept"
     assert [e["undo"] for e in chain["entries"]][-1] is True
     assert chain["entries"][-1]["option_label"]
 
@@ -97,22 +103,25 @@ def test_decide_refuses_bad_requests(walked):
     c, study = walked["client"], walked["study"]
     head = walked["store"].chain_head(study)
     url = f"/api/studies/{study}/cards"
-    r = c.post(f"{url}/card_undetermined/decide", json={"option": "cap", "reason": " "})
+    h = {"expected_head": head}
+    r = c.post(f"{url}/card_undetermined/decide", json={"option": "cap", "reason": " ", **h})
     assert r.status_code == 422 and "reason" in r.json()["error"]["message"]
-    r = c.post(f"{url}/card_undetermined/decide", json={"option": "nope", "reason": "x"})
+    r = c.post(f"{url}/card_undetermined/decide", json={"option": "nope", "reason": "x", **h})
     assert r.status_code == 422 and "Unknown option" in r.json()["error"]["message"]
-    r = c.post(f"{url}/card_nothing/decide", json={"option": "cap", "reason": "x"})
+    r = c.post(f"{url}/card_nothing/decide", json={"option": "cap", "reason": "x", **h})
     assert r.status_code == 404
-    r = c.post(f"{url}/Card-Bad!/decide", json={"option": "cap", "reason": "x"})
+    r = c.post(f"{url}/Card-Bad!/decide", json={"option": "cap", "reason": "x", **h})
     assert r.status_code == 404
-    r = c.post(f"{url}/card_undetermined/decide", json={"option": "cap", "reason": "x" * 501})
+    r = c.post(f"{url}/card_undetermined/decide", json={"option": "cap", "reason": "x" * 501, **h})
     assert r.status_code == 422
     r = c.post(
         f"{url}/card_undetermined/decide",
-        json={"option": "cap", "reason": "x"},
+        json={"option": "cap", "reason": "x", **h},
         headers={"origin": "https://evil.example"},
     )
     assert r.status_code == 403 and r.json()["error"]["code"] == "cross_origin"
+    r = c.post(f"{url}/card_undetermined/decide", json={"option": "cap", "reason": "x"})
+    assert r.status_code == 422, "a write without the head it was read at is refused"
     assert walked["store"].chain_head(study) == head, "no refusal writes anything"
 
 
@@ -133,7 +142,7 @@ def test_an_agents_request_waits_and_can_be_turned_down(walked):
     assert r.json()["outcome"]["status"] == "rejected" and not r.json()["card"]["pending"]
     r = c.post(
         f"/api/studies/{study}/cards/card_undetermined/reject-request",
-        json={"reason": "again"},
+        json={"reason": "again", "expected_head": store.chain_head(study)},
     )
     assert r.status_code == 409 and "no request" in r.json()["error"]["message"]
     chain = c.get(f"/api/studies/{study}/decisions").json()
@@ -163,7 +172,7 @@ def test_results_are_blind_again_when_the_design_changes(walked):
         assert r.status_code == 403 and r.json()["error"]["code"] == "blind", path
     r = c.post(
         f"/api/studies/{study}/cards/card_undetermined/decide",
-        json={"option": "cap", "reason": "x"},
+        json={"option": "cap", "reason": "x", "expected_head": store.chain_head(study)},
     )
     assert r.status_code == 403
     frame = c.get(f"/api/sessions/{sid}").json()
@@ -175,3 +184,23 @@ def test_ids_are_checked(walked):
     for key in ("../etc", "ABCDEF123456", "0" * 12):
         r = c.get(f"/api/studies/{key}/results")
         assert r.status_code == 404 and r.json()["error"]["code"] == "not_found"
+
+
+def test_autonomy_is_per_study_and_agents_obey_it(walked):
+    c, study, store, sid = walked["client"], walked["study"], walked["store"], walked["sid"]
+    view = c.get(f"/api/studies/{study}/autonomy").json()
+    assert view["autonomy"] == "suggest" and view["policy"] and view["changes"] == []
+    assert c.get(f"/api/sessions/{sid}").json()["autonomy"] == "suggest"
+    r = c.put(f"/api/studies/{study}/autonomy", json={"autonomy": "decide_and_tell"})
+    assert r.status_code == 200 and r.json()["autonomy"] == "decide_and_tell"
+    assert store.autonomy(study) == "decide_and_tell"
+    assert [ch["level"] for ch in r.json()["changes"]] == ["decide_and_tell"]
+    assert c.get(f"/api/studies/{study}").json()["autonomy"] == "decide_and_tell"
+    # an agent may now apply a choice that cannot change a conclusion
+    out = QpilotTools(store).qpcr_decide(study, "card_undetermined", "cap", "the agent prefers cap")
+    assert out["status"] == "applied", out
+    chain = c.get(f"/api/studies/{study}/decisions").json()
+    assert chain["attempts"] == [], "an autonomy change is not a stale attempt"
+    assert (
+        c.put(f"/api/studies/{study}/autonomy", json={"autonomy": "automatic"}).status_code == 422
+    )

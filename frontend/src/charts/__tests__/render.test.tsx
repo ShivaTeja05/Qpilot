@@ -39,27 +39,58 @@ describe("charts on recorded data", { timeout: 30_000 }, () => {
   it("robustness map: a summary, one row per gene, Enter opens the gene", () => {
     const onSelect = vi.fn();
     const points = auditMapPoints(study);
-    render(<RobustnessMap points={points} line={study.line_log2} lineLabel="2× line" legend={[]} summary="Map of all genes." onSelect={onSelect} />);
+    render(
+      <RobustnessMap
+        points={points}
+        line={study.line_log2}
+        lineLabel="2× line"
+        legend={[]}
+        summary="Map of all genes."
+        onSelect={onSelect}
+      />,
+    );
     expect(screen.getByRole("img", { name: "Map of all genes." })).toBeTruthy();
     const group = screen.getByRole("group");
     fireEvent.keyDown(group, { key: "Home" });
     fireEvent.keyDown(group, { key: "Enter" });
-    const leftmost = [...points].sort((a, b) => a.log2 - b.log2 || a.gene.localeCompare(b.gene))[0]!;
+    const leftmost = [...points].sort(
+      (a, b) => a.log2 - b.log2 || a.gene.localeCompare(b.gene),
+    )[0]!;
     expect(onSelect).toHaveBeenCalledWith(leftmost.gene);
     expect(tableRows()).toBe(points.length);
   });
   it("analyses strip: every analysis in the table", () => {
-    render(<AnalysesStrip rows={analysesDots(analyses)} line={analyses.line_log2} summary="Every reasonable analysis." />);
+    render(
+      <AnalysesStrip
+        rows={analysesDots(analyses)}
+        line={analyses.line_log2}
+        summary="Every reasonable analysis."
+      />,
+    );
     expect(screen.getByRole("img", { name: "Every reasonable analysis." })).toBeTruthy();
     expect(tableRows()).toBe(analyses.n);
   });
   it("choice dot plot: every option of every decision", () => {
-    render(<ChoiceDotPlot decisions={choiceRows(effects)} line={effects.line_log2} summary="One choice at a time." />);
+    render(
+      <ChoiceDotPlot
+        decisions={choiceRows(effects)}
+        line={effects.line_log2}
+        summary="One choice at a time."
+      />,
+    );
     expect(tableRows()).toBe(effects.decisions.reduce((n, d) => n + d.options.length, 0));
   });
   it("beeswarm: every sample, click opens it", () => {
     const onSelectSample = vi.fn();
-    render(<Beeswarm groups={sampleGroups(samples)} points={samplePoints(samples)} foldText={samples.fold} summary="Your samples." onSelectSample={onSelectSample} />);
+    render(
+      <Beeswarm
+        groups={sampleGroups(samples)}
+        points={samplePoints(samples)}
+        foldText={samples.fold}
+        summary="Your samples."
+        onSelectSample={onSelectSample}
+      />,
+    );
     const group = screen.getByRole("group");
     fireEvent.keyDown(group, { key: "ArrowRight" });
     fireEvent.keyDown(group, { key: "Enter" });
@@ -73,21 +104,35 @@ describe("charts on recorded data", { timeout: 30_000 }, () => {
     expect(whatif.changed_genes).toContain(first.querySelector("td")!.textContent);
   });
   it("flip matrix, geNorm bars, spread bars", () => {
-    const rob = results.robustness as Record<string, { impact: Record<string, { flips: boolean; max_delta_log2fc: number }> }>;
+    const rob = results.robustness as Record<
+      string,
+      { impact: Record<string, { flips: boolean; max_delta_log2fc: number }> }
+    >;
     const genes = Object.keys(rob);
     const dims = Object.keys(rob[genes[0]!]!.impact).map((id) => ({ id, label: id }));
     render(
       <FlipMatrix
         decisions={dims}
         genes={genes}
-        cell={(d, g) => ({ flips: rob[g]!.impact[d]!.flips, delta: rob[g]!.impact[d]!.max_delta_log2fc })}
+        cell={(d, g) => ({
+          flips: rob[g]!.impact[d]!.flips,
+          delta: rob[g]!.impact[d]!.max_delta_log2fc,
+        })}
         summary="Flips."
       />,
     );
     expect(tableRows()).toBe(genes.length);
     cleanup();
     const g = results.genorm;
-    render(<GenormBars m={g.M_initial} order={g.order} cutoffM={g.cutoff_M} v={g.V} cutoffV={g.cutoff_V} />);
+    render(
+      <GenormBars
+        m={g.M_initial}
+        order={g.order}
+        cutoffM={g.cutoff_M}
+        v={g.V}
+        cutoffV={g.cutoff_V}
+      />,
+    );
     expect(screen.getAllByRole("img")).toHaveLength(2);
     cleanup();
     render(<HBars rows={choicesAloneBars(study)} summary="Calls changed by one choice." />);
@@ -95,7 +140,12 @@ describe("charts on recorded data", { timeout: 30_000 }, () => {
   });
   it("verdict strip: counts as the audit gave them, tiles filter", () => {
     const onSelect = vi.fn();
-    const counts = overview.verdicts.map((v) => ({ verdict: v.key, count: v.count, rule: v.rule, label: v.label }));
+    const counts = overview.verdicts.map((v) => ({
+      verdict: v.key,
+      count: v.count,
+      rule: v.rule,
+      label: v.label,
+    }));
     render(<VerdictStrip counts={counts} onSelect={onSelect} />);
     const total = counts.reduce((n, c) => n + c.count, 0);
     expect(screen.getByRole("img").getAttribute("aria-label")).toContain(String(total));

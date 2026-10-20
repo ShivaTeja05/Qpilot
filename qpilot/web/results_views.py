@@ -20,8 +20,8 @@ from collections import OrderedDict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from qpilot.core.store import StudyNotFound, StudyStore
@@ -29,6 +29,8 @@ from qpilot.schemas import DecisionCard, DecisionEntry, Fact, StudyResult
 from qpilot.web.contract import (
     AtChoices,
     AuditBadge,
+    AutonomyChange,
+    AutonomyView,
     CardOptionView,
     CardsView,
     CardView,
@@ -49,7 +51,9 @@ from qpilot.web.contract import (
     ResultsSummary,
     ResultsView,
     RuleView,
+    StaleAttempt,
     TextSegment,
+    WithheldGene,
 )
 
 KIND_DIMENSION = {
@@ -212,8 +216,13 @@ def _expected_values(result: StudyResult) -> dict[str, str]:
     if "f_group_a" not in result.facts:
         out["cut"] = str(result.design.cut)
     amp = result.facts.get("f_amp_primary")
-    if amp is not None:
-        out["amp_call"] = str(amp.value)
+    if amp is not None:  # the fact holds the rule's label; the grid holds its id
+        from qpilot.qpcr.amp_call import RULES
+
+        value = str(amp.value)
+        out["amp_call"] = next(
+            (rid for rid, rule in RULES.items() if value in (rid, rule.label)), value
+        )
     return out
 
 
@@ -276,10 +285,9 @@ def card_options(grid: Grid, cards: Sequence[DecisionCard]) -> dict[str, dict[in
     return out
 
 
-def chosen(grid: Grid, cards: Sequence[DecisionCard], mapped: Mapping) -> dict[str, int] | None:
-    """The grid cell of the options applied on the cards now (None when it is the planned)."""
-    if grid.planned is None:
-        return None
+def current_cell(grid: Grid, cards: Sequence[DecisionCard], mapped: Mapping) -> dict[str, int]:
+    """The grid cell in use now: each card's applied option, the planned one elsewhere."""
+    assert grid.planned is not None
     choice = dict(grid.planned)
     for card in cards:
         dim = KIND_DIMENSION.get(card.kind)
@@ -288,7 +296,32 @@ def chosen(grid: Grid, cards: Sequence[DecisionCard], mapped: Mapping) -> dict[s
         for idx, (card_id, option_id, _) in mapped.get(dim, {}).items():
             if card_id == card.id and option_id == card.decision:
                 choice[dim] = idx
-    return None if choice == grid.planned else choice
+    return choice
+
+
+def at_choices(grid: Grid | None, cards: Sequence[DecisionCard]) -> pd.DataFrame | None:
+    """Every gene's row at the options in use now, when they are not the planned ones."""
+    if grid is None or grid.planned is None:
+        return None
+    choice = current_cell(grid, cards, card_options(grid, cards))
+    return None if choice == grid.planned else grid.cell(choice)
+
+
+def _number(value: Any) -> float | None:
+    """A finite number from the grid, or None where the engine computed none."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _text(value: Any) -> str | None:
+    """A conclusion from the grid, or None where there is none."""
+    if value is None or (isinstance(value, float) and not math.isfinite(value)):
+        return None
+    text = str(value)
+    return text if text in CONCLUSIONS else None
 
 
 def option_label(dimension: str, value: str) -> str:
@@ -347,14 +380,37 @@ def audit_badge(store: StudyStore, study_id: str) -> AuditBadge:
     )
 
 
-def headline_genes(result: StudyResult, cards: Sequence[DecisionCard]) -> list[str]:
-    """The genes the cards show consequences for (the design's headline genes)."""
-    for card in cards:
-        if card.options:
-            return [g for g in card.options[0].per_gene if g in result.contrasts]
+def withheld(result: StudyResult) -> list[WithheldGene]:
+    """Genes the engine withheld (``f_withheld_*`` facts), with the reason in words."""
+    out = []
+    for fid, fact in result.facts.items():
+        if fid.startswith("f_withheld_") and fact.path.startswith("withheld."):
+            out.append(WithheldGene(gene=fact.path[len("withheld.") :], reason=str(fact.value)))
+    return sorted(out, key=lambda w: w.gene)
+
+
+def headline_genes(
+    result: StudyResult, cards: Sequence[DecisionCard], store: StudyStore | None = None
+) -> list[str]:
+    """The design's headline genes, lead gene first (else the genes the cards show)."""
     from qpilot.qpcr.designs import HEADLINE_GENES
 
-    return [g for g in HEADLINE_GENES if g in result.contrasts]
+    order: tuple[str, ...] = ()
+    if store is not None:
+        try:
+            design = store.design(result.study_id)
+        except (StudyNotFound, OSError, ValueError):
+            design = None
+        if design is not None and design.headline:
+            order = tuple(design.headline)
+        elif design is None:
+            order = HEADLINE_GENES  # a study analysed without a design: the demo's
+    shown = list(cards[0].options[0].per_gene) if cards and cards[0].options else []
+    if order:
+        ranked = [g for g in order if g in result.contrasts and (not shown or g in shown)]
+        if ranked:
+            return ranked + [g for g in shown if g not in ranked and g in result.contrasts]
+    return [g for g in shown if g in result.contrasts]
 
 
 def groups(result: StudyResult) -> list[GroupCount]:
@@ -390,7 +446,7 @@ def _row(
         yours = AtChoices(
             fc=float(r["fc"]),
             log2fc=float(r["log2fc"]),
-            p=float(r["p"]),
+            p=_number(r["p"]),
             conclusion=str(r["conclusion"]),  # type: ignore[arg-type]
             differs=str(r["conclusion"]) != contrast.conclusion,
         )
@@ -426,13 +482,10 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
 
     result = store.get(study_id)
     head, cards, pending = store.snapshot(study_id)
-    headline = headline_genes(result, cards)
+    headline = headline_genes(result, cards, store)
     grid = load_grid(store, result)
     at = None
-    if grid is not None:
-        choice = chosen(grid, cards, card_options(grid, cards))
-        if choice is not None:
-            at = grid.cell(choice)
+    at = at_choices(grid, cards)
     verdicts, labels = _verdicts(store, study_id)
     rows = [_row(g, result, set(headline), at, verdicts, labels) for g in result.contrasts]
     try:
@@ -481,6 +534,7 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
             stable=[g for g, m in genorm.M_initial.items() if m < genorm.cutoff_M],
         ),
         genes=rows,
+        withheld=withheld(result),
         headline=headline,
         counts=counts,
         levels=levels,
@@ -503,7 +557,7 @@ def _flip_rows(
 ) -> list[FlipRow]:
     by_dim = {KIND_DIMENSION.get(c.kind): c for c in cards}
     mapped = card_options(grid, cards) if grid is not None else {}
-    choice = chosen(grid, cards, mapped) if grid is not None else None
+    choice = current_cell(grid, cards, mapped) if grid is not None and grid.planned else None
     dims: list[str] = []
     for gene in genes:
         for dim in result.robustness[gene].impact:
@@ -519,10 +573,11 @@ def _flip_rows(
             sub = grid.one_at_a_time(dim)
             for idx, value in enumerate(grid.options[dim]):
                 part = sub[sub[dim + IDX] == idx].set_index("item")
-                conclusion = [str(part.loc[g, "conclusion"]) if g in part.index else "none"
+                conclusion = [_text(part.loc[g, "conclusion"]) if g in part.index else None
                               for g in genes]  # fmt: skip
-                log2fc = [float(part.loc[g, "log2fc"]) if g in part.index else float("nan")
+                log2fc = [_number(part.loc[g, "log2fc"]) if g in part.index else None
                           for g in genes]  # fmt: skip
+
                 card_option = mapped.get(dim, {}).get(idx)
                 options.append(
                     FlipOption(
@@ -532,8 +587,11 @@ def _flip_rows(
                         planned=idx == grid.planned[dim],
                         chosen=choice is not None and choice.get(dim) == idx,
                         conclusion=conclusion,  # type: ignore[arg-type]
-                        log2fc=[x if math.isfinite(x) else 0.0 for x in log2fc],
-                        flips=[c != p for c, p in zip(conclusion, planned, strict=True)],
+                        log2fc=log2fc,
+                        flips=[
+                            c is not None and c != p
+                            for c, p in zip(conclusion, planned, strict=True)
+                        ],
                     )
                 )
         flips = [bool(i.get("flips")) for i in impacts]
@@ -722,12 +780,47 @@ def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
             undo=entry.reason.startswith(UNDO_PREFIX),
         )
 
+    from qpilot.core.record import verify_chain
+
+    entries = store.entries(study_id)
+    root = store.get(study_id).input_sha256
+    broken = verify_chain(entries, root)
+    attempts = []
+    for a in store.attempts(study_id):
+        if a.get("status") != "stale":
+            continue
+        card = by_id.get(str(a.get("card_id")))
+        labels = {o.id: o.label for o in card.options} if card else {}
+        option = str(a.get("option") or "")
+        attempts.append(
+            StaleAttempt(
+                at=str(a.get("at") or ""),
+                attempted=str(a.get("attempted") or ""),
+                card_id=str(a.get("card_id") or ""),
+                card_title=KIND_TITLE.get(card.kind, card.kind) if card else str(a.get("card_id")),
+                option=option,
+                option_label=labels.get(option, option),
+                reason=str(a.get("reason") or ""),
+                actor=str(a.get("actor") or ""),
+                expected_head=a.get("expected_head"),
+                head=a.get("head"),
+            )
+        )
     return DecisionsView(
         study_id=study_id,
         head=head,
-        entries=[view(e) for e in store.entries(study_id)],
+        root=root,
+        chain_intact=broken is None,
+        broken_at=broken,
+        entries=[view(e) for e in entries],
         pending=[view(p) for p in pending],
+        n_pending=len(pending),
+        attempts=attempts,
     )
+
+
+class GeneWithheld(LookupError):
+    """A gene the engine withheld (the message says why)."""
 
 
 # ---- one gene --------------------------------------------------------------------------------
@@ -739,16 +832,16 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
 
     result = store.get(study_id)
     if gene not in result.contrasts:
+        held = next((w for w in withheld(result) if w.gene == gene), None)
+        if held is not None:
+            raise GeneWithheld(f"{gene} has no comparison: {held.reason}.")
         raise KeyError(gene)
     head, cards, pending = store.snapshot(study_id)
     entries = store.entries(study_id)
-    headline = headline_genes(result, cards)
+    headline = headline_genes(result, cards, store)
     grid = load_grid(store, result)
     at = None
-    if grid is not None:
-        choice = chosen(grid, cards, card_options(grid, cards))
-        if choice is not None:
-            at = grid.cell(choice)
+    at = at_choices(grid, cards)
     verdicts, labels = _verdicts(store, study_id)
     row = _row(gene, result, set(headline), at, verdicts, labels)
     try:
@@ -764,9 +857,9 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
             options=grid.options,
             planned=[grid.planned[d] for d in grid.dimensions],
             cells=rows[[d + IDX for d in grid.dimensions]].astype(int).to_numpy().tolist(),
-            log2fc=[float(x) for x in rows["log2fc"]],
-            p=[float(x) if np.isfinite(x) else 1.0 for x in rows["p"]],
-            conclusion=[str(x) for x in rows["conclusion"]],  # type: ignore[misc]
+            log2fc=[_number(x) for x in rows["log2fc"]],
+            p=[_number(x) for x in rows["p"]],
+            conclusion=[_text(x) for x in rows["conclusion"]],  # type: ignore[misc]
         )
     effects = _flip_rows(result, grid, cards, [gene]) if gene in result.robustness else []
     affecting = [
@@ -806,3 +899,68 @@ def study_exists(store: StudyStore, study_id: str) -> bool:
     except StudyNotFound:
         return False
     return Path(store.workspace(study_id) / "results.json").exists()
+
+
+# ---- autonomy --------------------------------------------------------------------------------
+
+AUTONOMY_STATUS = "autonomy"
+
+
+def autonomy_changes(store: StudyStore, study_id: str) -> list[AutonomyChange]:
+    """Each change of the study's autonomy (kept beside the chain, in ``attempts.jsonl``)."""
+    return [
+        AutonomyChange(
+            at=str(a.get("at") or ""),
+            level=str(a.get("level") or ""),
+            previous=str(a.get("previous") or ""),
+            actor=str(a.get("actor") or "human"),
+        )
+        for a in store.attempts(study_id)
+        if a.get("status") == AUTONOMY_STATUS
+    ]
+
+
+def autonomy_view(store: StudyStore, study_id: str) -> AutonomyView:
+    """The study's autonomy, the policy lines and how it was changed."""
+    from qpilot.ai.profile import autonomy_policy
+
+    level = store.autonomy(study_id)
+    return AutonomyView(
+        study_id=study_id,
+        autonomy=level if level in ("suggest", "decide_and_tell") else "suggest",  # type: ignore[arg-type]
+        policy=list(autonomy_policy()),
+        changes=autonomy_changes(store, study_id),
+    )
+
+
+def set_autonomy(store: StudyStore, study_id: str, level: str) -> bool:
+    """A person sets the study's autonomy; the change is written beside the chain.
+
+    The decision chain has no entry for it (the store offers none), so the change is appended
+    to ``attempts.jsonl`` with status ``autonomy`` — kept with the study and its record, never
+    moving the chain's head. Returns False when the level was already that.
+    """
+    from qpilot.core.store import canonical_json
+
+    previous = store.autonomy(study_id)
+    if previous == level:
+        return False
+    store.set_autonomy(study_id, level)
+    workspace = store.workspace(study_id)
+    line = {
+        "at": _now(),
+        "status": AUTONOMY_STATUS,
+        "level": level,
+        "previous": previous,
+        "actor": "human",
+    }
+    with store._locked(workspace):
+        with open(workspace / "attempts.jsonl", "a", encoding="utf-8") as fh:
+            fh.write(canonical_json(line) + "\n")
+    return True
+
+
+def _now() -> str:
+    import time
+
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())

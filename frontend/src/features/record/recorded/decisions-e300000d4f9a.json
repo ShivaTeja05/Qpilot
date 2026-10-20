@@ -1,0 +1,138 @@
+{
+ "study_id": "e300000d4f9a",
+ "head": "de016897d02be18dd2131d54fd8bb94075ff5fa657f2ac9c06672847c49fd9fa",
+ "root": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+ "chain_intact": true,
+ "broken_at": null,
+ "entries": [
+  {
+   "entry": {
+    "seq": 1,
+    "prev_hash": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+    "card_id": "card_undetermined",
+    "option": "drop",
+    "reason": "Decided automatically: at the recommended settings no option on this card changes any conclusion. At other settings it can, so an agent must ask a person to change it.",
+    "actor": "system",
+    "status": "auto",
+    "at": "2026-10-20T19:19:52Z",
+    "hash": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62"
+   },
+   "card_title": "What to do with wells that never amplified",
+   "option_label": "Drop empty wells",
+   "undo": false
+  },
+  {
+   "entry": {
+    "seq": 2,
+    "prev_hash": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+    "card_id": "card_amp_call",
+    "option": "cq_le_35",
+    "reason": "Our lab SOP treats a Cq above 35 as not detected; please count those wells as not amplified.",
+    "actor": "agent",
+    "status": "pending_human",
+    "at": "2026-10-20T19:44:09Z",
+    "hash": "087c8038e0c07c72528a30b11fd36f7e09e2ed6298b8c74631f0605c68c1bbbc"
+   },
+   "card_title": "Which curves count as amplified",
+   "option_label": "Cq ≤ 35 (common, not recommended)",
+   "undo": false
+  },
+  {
+   "entry": {
+    "seq": 3,
+    "prev_hash": "087c8038e0c07c72528a30b11fd36f7e09e2ed6298b8c74631f0605c68c1bbbc",
+    "card_id": "card_refset",
+    "option": "top3",
+    "reason": "geNorm ranks ALUsq, HPRT1 and HMBS as the three most stable; normalising to those three is what the original paper's supplement suggests.",
+    "actor": "agent",
+    "status": "pending_human",
+    "at": "2026-10-20T19:44:09Z",
+    "hash": "4b0dcd0bbd8930fdb92c5b7f00a2a7cad9ebda0e173d6b93b6ed998470779899"
+   },
+   "card_title": "Which control genes to normalise to",
+   "option_label": "Top three by stability (ALUsq(Eurogentec), HPRT1, HMBS)",
+   "undo": false
+  },
+  {
+   "entry": {
+    "seq": 4,
+    "prev_hash": "4b0dcd0bbd8930fdb92c5b7f00a2a7cad9ebda0e173d6b93b6ed998470779899",
+    "card_id": "card_amp_call",
+    "option": "cq_le_35",
+    "reason": "Our analysis keeps LinRegPCR's call; a Cq cut-off of 35 drops real late amplification in this panel.",
+    "actor": "human",
+    "status": "rejected",
+    "at": "2026-10-20T20:19:53Z",
+    "hash": "83bcc14ad913e00af31b72a806b27a382bd38734d18e084589be15862f9acf61"
+   },
+   "card_title": "Which curves count as amplified",
+   "option_label": "Cq ≤ 35 (common, not recommended)",
+   "undo": false
+  },
+  {
+   "entry": {
+    "seq": 5,
+    "prev_hash": "83bcc14ad913e00af31b72a806b27a382bd38734d18e084589be15862f9acf61",
+    "card_id": "card_refset",
+    "option": "top3",
+    "reason": "The three most stable reference genes by geNorm; checked against the original supplement.",
+    "actor": "human",
+    "status": "applied",
+    "at": "2026-10-20T20:22:01Z",
+    "hash": "f499c9915f8a699d5788c439b73adb910d101359b9d0ded83e399cf2591e85ca"
+   },
+   "card_title": "Which control genes to normalise to",
+   "option_label": "Top three by stability (ALUsq(Eurogentec), HPRT1, HMBS)",
+   "undo": false
+  },
+  {
+   "entry": {
+    "seq": 6,
+    "prev_hash": "f499c9915f8a699d5788c439b73adb910d101359b9d0ded83e399cf2591e85ca",
+    "card_id": "card_cutoff",
+    "option": "cut_20",
+    "reason": "A 20 % cut gives larger groups at the extremes; the original study used a stricter split.",
+    "actor": "agent",
+    "status": "pending_human",
+    "at": "2026-10-20T20:55:14Z",
+    "hash": "de016897d02be18dd2131d54fd8bb94075ff5fa657f2ac9c06672847c49fd9fa"
+   },
+   "card_title": "Where to cut the comparison groups",
+   "option_label": "Top 20 % by MYCN expression",
+   "undo": false
+  }
+ ],
+ "pending": [
+  {
+   "entry": {
+    "seq": 6,
+    "prev_hash": "f499c9915f8a699d5788c439b73adb910d101359b9d0ded83e399cf2591e85ca",
+    "card_id": "card_cutoff",
+    "option": "cut_20",
+    "reason": "A 20 % cut gives larger groups at the extremes; the original study used a stricter split.",
+    "actor": "agent",
+    "status": "pending_human",
+    "at": "2026-10-20T20:55:14Z",
+    "hash": "de016897d02be18dd2131d54fd8bb94075ff5fa657f2ac9c06672847c49fd9fa"
+   },
+   "card_title": "Where to cut the comparison groups",
+   "option_label": "Top 20 % by MYCN expression",
+   "undo": false
+  }
+ ],
+ "n_pending": 1,
+ "attempts": [
+  {
+   "at": "2026-10-20T20:55:14Z",
+   "attempted": "pending_human",
+   "card_id": "card_amp_call",
+   "card_title": "Which curves count as amplified",
+   "option": "cq_le_38",
+   "option_label": "Cq ≤ 38 (a later Cq counts as not detected)",
+   "reason": "Cq 38 is our instrument's validated limit.",
+   "actor": "agent",
+   "expected_head": "4b0dcd0bbd8930fdb92c5b7f00a2a7cad9ebda0e173d6b93b6ed998470779899",
+   "head": "de016897d02be18dd2131d54fd8bb94075ff5fa657f2ac9c06672847c49fd9fa"
+  }
+ ]
+}
