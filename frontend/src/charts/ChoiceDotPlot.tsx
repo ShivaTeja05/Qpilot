@@ -60,7 +60,7 @@ export function ChoiceDotPlot({ decisions, line, lineLabel, lower, higher, summa
   const labelW = narrow ? 0 : Math.min(230, Math.round(width * 0.32));
   const rowH = narrow ? 58 : 44;
   const fs = useMemo(
-    () => foldScale(decisions.flatMap((d) => d.options.map((o) => o.log2)), line, labelW + 14, width - 14),
+    () => foldScale(decisions.flatMap((d) => d.options.map((o) => o.log2)), line, labelW + 14, width - 14, 44, false),
     [decisions, line, labelW, width],
   );
   const bottom = TOP + rowH * decisions.length;
@@ -102,7 +102,7 @@ export function ChoiceDotPlot({ decisions, line, lineLabel, lower, higher, summa
     {
       swatch: (
         <svg width="14" height="14" aria-hidden="true">
-          <circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--warn)" strokeWidth="2" />
+          <circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--text)" strokeWidth="1.6" />
         </svg>
       ),
       label: "Changes the call",
@@ -193,7 +193,7 @@ export function ChoiceDotPlot({ decisions, line, lineLabel, lower, higher, summa
                   ) : (
                     <GlyphMark mark={CALLS[f.o.call]} x={f.x} y={f.y} r={on ? r + 1 : r} />
                   )}
-                  {f.o.changesCall && <circle cx={f.x} cy={f.y} r={r + 3.5} fill="none" stroke="var(--warn)" strokeWidth={2} />}
+                  {f.o.changesCall && <circle cx={f.x} cy={f.y} r={r + 3} fill="none" stroke="var(--text)" strokeWidth={1.6} />}
                   {on && <circle cx={f.x} cy={f.y} r={r + 6} fill="none" stroke="var(--accent)" strokeWidth={1.5} />}
                 </g>
               );

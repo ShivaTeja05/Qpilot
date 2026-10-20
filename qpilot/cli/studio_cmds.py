@@ -1,7 +1,8 @@
-"""CLI for qPilot Studio: ``qpilot studio`` serves the dashboard; ``studio demo --check`` checks it.
+"""CLI for qPilot Studio: ``qpilot studio`` opens the one page; ``studio demo --check`` checks it.
 
-``qpilot studio [--port N]`` launches the dashboard with the same hardening as ``qpilot app``
-(127.0.0.1 only, telemetry off, foreign hosts refused; see :mod:`qpilot.studio`).
+Studio is now part of ``qpilot app``: ``qpilot studio [--port N] [--no-open]`` serves the same one
+page (Studio, the results, the audit, Prism and the record) on 127.0.0.1 with the same launch key
+and hardening (see :mod:`qpilot.web.server`), and says so.
 
 ``qpilot studio demo --check [--studies DIR]`` walks the cached demo through every stage with no
 browser and no model (the rules propose alone, so every number is deterministic): the design and
@@ -417,6 +418,9 @@ def _arguments(parser: argparse.ArgumentParser) -> None:
         "--port", type=int, default=None, help="port (default: first free from 7860)"
     )
     parser.add_argument(
+        "--no-open", action="store_true", help="print the link but do not open a browser"
+    )
+    parser.add_argument(
         "--check",
         action="store_true",
         help="(with demo) run the check: no browser, no model; exits 1 if a number differs",
@@ -437,16 +441,23 @@ def _run(args: argparse.Namespace) -> int:
     if args.check or args.studies:
         print("qpilot studio: --check and --studies go with `qpilot studio demo`", file=sys.stderr)
         return 2
-    from qpilot.studio import main as studio_main  # imports Gradio only here, telemetry off first
+    from qpilot.web.server import main as serve_page
 
-    studio_main(port=args.port)
+    print(MOVED, flush=True)
+    serve_page(port=args.port, open_browser=not args.no_open)
     return 0
 
+
+MOVED = (
+    "qPilot Studio is now part of `qpilot app`: one page for Studio, the results, the robustness "
+    "audit, Prism and the Analysis Record. Opening it."
+)
 
 COMMANDS: list[Command] = [
     (
         "studio",
-        "qPilot Studio: the AI proposes, the engine checks, you decide (`studio demo --check`)",
+        "open qPilot's one page (Studio is now part of `qpilot app`); `studio demo --check` "
+        "checks Studio end to end",
         _arguments,
         _run,
     ),

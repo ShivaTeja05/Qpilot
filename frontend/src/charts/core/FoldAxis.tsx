@@ -26,6 +26,12 @@ export function FoldAxis({
   const x0 = x(lo);
   const x1 = x(hi);
   const lines = line ? [-line, line].filter((v) => v > lo && v < hi) : [];
+  // two line labels that would touch: name only the right-hand one
+  const crowded = lines.length === 2 && x(lines[1]!) - x(lines[0]!) < 70;
+  // direction words that would touch: drop the group name
+  const short = x1 - x0 < 150 + 6 * (lower.length + higher.length);
+  const lowerText = short ? lower.split(" ")[0] : lower;
+  const higherText = short ? higher.split(" ")[0] : higher;
   return (
     <g aria-hidden="true" className="select-none">
       {ticks.map((t) => (
@@ -47,7 +53,7 @@ export function FoldAxis({
       {lines.map((v) => (
         <g key={v}>
           <line x1={x(v)} x2={x(v)} y1={top - 4} y2={bottom} stroke="var(--text-faint)" strokeWidth={1.25} strokeDasharray="4 3" />
-          {lineLabel && (
+          {lineLabel && !(crowded && v < 0) && (
             <text x={x(v)} y={top - 8} textAnchor="middle" fontSize={11} fill="var(--text-muted)">
               {lineLabel}
             </text>
@@ -57,10 +63,10 @@ export function FoldAxis({
       {labels && (
         <>
           <text x={x0} y={bottom + 31} fontSize={11} fill="var(--text-muted)">
-            ← {lower}
+            ← {lowerText}
           </text>
           <text x={x1} y={bottom + 31} fontSize={11} fill="var(--text-muted)" textAnchor="end">
-            {higher} →
+            {higherText} →
           </text>
         </>
       )}

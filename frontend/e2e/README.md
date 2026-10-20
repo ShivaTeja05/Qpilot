@@ -1,0 +1,54 @@
+# End-to-end tests (Playwright + axe)
+
+The whole page, in a real browser, against a real `qpilot app` over a real study store. The tests
+start nothing: you start the server, they open the link it printed.
+
+## Run
+
+```bash
+source "…/agent-bus/ui-env.sh" e2e        # venv, store, ports, launch key
+frontend/e2e/reset-store.sh               # fresh copy of the seeded demo store (server stopped)
+(cd frontend && npm run build)            # the page the server serves; do not commit qpilot/web/static
+qpilot app --no-open --port $APP_PORT &   # the server under test
+cd frontend && npx playwright install chromium   # once per machine (browsers are not committed)
+npm run e2e                               # all specs; or: npx playwright test e2e/screens.spec.ts
+git checkout -- ../qpilot/web/static      # before committing
+```
+
+- `E2E_URL` — the link qPilot printed (default `http://127.0.0.1:$APP_PORT/?token=qpilot-dev`).
+- `E2E_READONLY=1` — skip the tests that write (decide + undo, export).
+- `E2E_WORKERS` — parallel browsers (default 3; one server, one store).
+
+The report is `frontend/playwright-report/` (`npx playwright show-report`); traces of failures
+are in `frontend/test-results/`. Screenshots of every section at 1440 / 1024 / 768 / 390 px in
+light and dark go to `frontend/e2e/screenshots/<section>/<width>-<theme>.png` (gitignored).
+
+## What every test checks
+
+- **Real data only.** What the page must show (workspace titles, proposal subjects and counts,
+  genes, cards, chain entries) is read from the API of the server under test (`support/data.ts`).
+  No test carries its own numbers, genes or names.
+- **axe** (`app.axe(state)`, WCAG 2.2 A + AA): serious and critical violations fail the test;
+  all findings are attached to the report as `axe-<state>.json`.
+- **Nothing leaves the machine.** Any request to another origin fails the test.
+- **No console errors**, no uncaught exceptions; no `NaN` / `undefined` / stack traces on screen.
+- **No sideways page scroll** at any width.
+
+## Sections that have not landed
+
+`support/sections.ts` has one flag per feature (`LANDED`) with its owner. A test of a feature
+that has not been merged into `ui/one-page` yet is `test.fixme` with the owner's name; the
+screens spec also marks a section `fixme` while it still shows the development placeholder.
+Flip the flag when the coordinator announces the merge.
+
+| Spec               | Covers                                                                             | Owners              |
+| ------------------ | ---------------------------------------------------------------------------------- | ------------------- |
+| `screens.spec.ts`  | every section × width × theme: renders, axe, no side scroll, screenshot            | all                 |
+| `shell.spec.ts`    | printed link, needs-key screen, CSP, rail reaches every section, next step, theme  | shell, home         |
+| `home.spec.ts`     | Open (Recent, system strip, keyboard), Settings                                    | home                |
+| `studio.spec.ts`   | Design and Curves inboxes (real proposals), plate map, heatmap → curve, j/k, blind | design, curves      |
+| `results.spec.ts`  | all genes, robustness map + table, Decision Cards, decide + Undo, gene prev/next   | insight, gene       |
+| `audit.spec.ts`    | seeded audit, tabs, gene rows → Gene                                               | audit, gene         |
+| `prism.spec.ts`    | routes table                                                                       | prism               |
+| `record.spec.ts`   | timeline = chain, Export → zip download, commands; Agents                          | record              |
+| `keyboard.spec.ts` | ⌘K, `?`, g then a letter, ⌘J Ask, focus rings                                      | shell, ask, insight |

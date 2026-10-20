@@ -106,10 +106,11 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
 
 def cmd_app(args: argparse.Namespace) -> int:
+    """Serve qPilot's one page with this run attached as a read-only robustness audit."""
+    import os
     from pathlib import Path
 
-    from qsim.app import serve
-    from qsim.plates import PlateProblem, prepare
+    from qsim.plates import REQUIRED, PlateProblem, prepare
 
     results = args.results
     if args.rdml:  # reuse the run for this file, or make a quick one under results/plates/
@@ -122,14 +123,25 @@ def cmd_app(args: argparse.Namespace) -> int:
             if err.detail:
                 print(f"\n(details: {err.detail})", file=sys.stderr)
             return 2
-    serve(
-        results,
-        args.rdml,
-        args.port,
-        no_model=args.no_model,
-        open_browser=args.open,
-        root=args.results,
+    folder = Path(results).resolve()
+    missing = [f for f in REQUIRED if not (folder / f).exists()]
+    if missing:
+        print(
+            f"qsim app: {folder} has no complete run ({', '.join(missing)} missing): run "
+            f"`qsim run --out {results}` first, or open a file with `qsim app --rdml`.",
+            file=sys.stderr,
+        )
+        return 2
+    if args.no_model:
+        os.environ["QPILOT_MODEL_PROVIDER"] = "none"  # Ask reads questions by keywords alone
+    from qpilot.web.server import main as serve_page
+
+    print(
+        "The results screen is now part of qPilot's one page (`qpilot app --audit DIR`); "
+        f"opening it with {folder.name} attached, read-only.",
+        flush=True,
     )
+    serve_page(port=args.port, open_browser=args.open, audit_dirs={folder.name: folder})
     return 0
 
 
@@ -194,16 +206,18 @@ def main(argv: list[str] | None = None) -> int:
     dm.add_argument("--gene", default="NM23A")
     dm.add_argument("--well", default="A1")
     dm.set_defaults(func=cmd_demo)
-    ap = sub.add_parser(
-        "app", help="results screen in plain lab language, served on 127.0.0.1 (offline)"
+    app_help = (
+        "qPilot's one page on 127.0.0.1 with this run attached as a read-only audit "
+        "(same as `qpilot app --audit DIR`)"
     )
-    ap.add_argument("--results", default="results")
+    ap = sub.add_parser("app", help=app_help, description=app_help + ".")
+    ap.add_argument("--results", default="results", help="a `qsim run --out` folder")
     ap.add_argument(
         "--rdml",
         default=argparse.SUPPRESS,
         help="your own RDML file: a quick run goes to <results>/plates/ the first time",
     )
-    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--port", type=int, default=None, help="port (default: first free from 7860)")
     ap.add_argument("--no-model", action="store_true", help="Ask without a model (keyword routing)")
     ap.add_argument("--open", action="store_true", help="open the page in the default browser")
     ap.set_defaults(func=cmd_app)
