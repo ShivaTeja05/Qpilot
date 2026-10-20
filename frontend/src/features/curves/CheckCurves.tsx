@@ -5,7 +5,7 @@
  */
 import { ScanLine } from "lucide-react";
 import { useRef, useState } from "react";
-import { api, unwrap, type JobView } from "@/api/client";
+import { api, unwrap, type JobView, type Schemas } from "@/api/client";
 import { count } from "@/lib/format";
 import { useFocusTarget } from "@/shell/actions";
 import { useWrite } from "@/shell/writes";
@@ -14,13 +14,7 @@ import { Button, Card, CardBody, JobCard } from "@/ui";
 
 type Workspace = NonNullable<SectionProps["workspace"]>;
 
-/** What the job answers (routers/studio.py `_report`). */
-interface Report {
-  message?: string;
-  notes?: string[];
-  disagreements?: number | null;
-  targets_that_matter?: number | null;
-}
+type Report = Schemas["ProposeReport"];
 
 export interface CheckCurvesState {
   start: () => void;
@@ -91,7 +85,7 @@ export function CheckCurvesJob({
   if (!state.jobId) return null;
   return (
     <JobCard id={state.jobId} onDismiss={state.dismiss} className={className}>
-      {(result) => <ReportText report={(result ?? {}) as Report} />}
+      {(result) => (result ? <ReportText report={result as Report} /> : null)}
     </JobCard>
   );
 }
@@ -109,7 +103,7 @@ export function CheckCurvesPanel({ state }: { state: CheckCurvesState }) {
               classifier that reads only the curve’s shape, for its own call on each study well.
               Where the two disagree in a way that could change a conclusion, each well is listed
               here for you to decide; the others change nothing and are not listed. The
-              amplification rule is proposed too. Usually about 15 s.
+              amplification rule is proposed too.
             </p>
           </div>
           <CheckCurvesButton state={state} primary />
