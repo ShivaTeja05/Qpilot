@@ -314,13 +314,19 @@ def answer_facts(ctx: _Context, tool: str, out: dict[str, Any]) -> tuple[dict, d
 
 
 def _tokenise_reason(reason: str, tok: Any) -> str:
-    """A confidence reason as the model sees it, with its one data number as a token.
+    """A confidence reason as the model sees it, with its data numbers as tokens.
 
-    That number is how many choices flip the gene at once; the method thresholds the reasons
-    quote (95 % confidence interval, 80 % of the reasonable analyses, M 1.5) stay as written.
+    Those are how many choices flip the gene at once and how many analyses qPilot checks (the
+    grid's size); the method thresholds the reasons quote (95 % confidence interval, 80 % of
+    the analyses, M 1.5) stay as written.
     """
-    return re.sub(
+    reason = re.sub(
         r"\b(\d+)(?=\s+choices?\b)", lambda m: tok("f_ans_min_flip", int(m.group(1))), reason
+    )
+    return re.sub(
+        r"\b(\d+)(?=\s+analyses\s+qPilot\s+checks\b)",
+        lambda m: tok("f_ans_n_cells", int(m.group(1))),
+        reason,
     )
 
 
@@ -365,15 +371,20 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
                 "{{f_ans_n_no_call}} genes."
             )
         if about == "references":
-            ranked = ", ".join(
-                f"{row['gene']} ({row['M_all_candidates']})" for row in view["most_stable_first"]
+            rows = view["most_stable_first"]
+            if len(rows) < 2:
+                return "geNorm needs at least two control genes to rank them."
+            (a, b), rest = rows[:2], rows[2:]
+            text = (
+                f"geNorm's most stable pair is {a['gene']} and {b['gene']} (M "
+                f"{a['M_all_candidates']} and {b['M_all_candidates']} among all candidates; "
+                "geNorm sets genes aside one at a time and cannot split the last pair)"
             )
+            if rest:
+                text += ", then " + _and([f"{r['gene']} ({r['M_all_candidates']})" for r in rest])
             return (
-                f"geNorm ranks the control genes most stable first: {ranked}, each with its "
-                "stability M among all candidates (lower is steadier; geNorm's cut-off is "
-                "{{f_ans_m_cutoff}}). It recommends normalising to "
-                + _and(out["recommended"])
-                + "."
+                text + ". Lower M is steadier; geNorm's cut-off is {{f_ans_m_cutoff}}. It "
+                "recommends normalising to " + _and(out["recommended"]) + "."
             )
         if about == "cards":
             parts = [
