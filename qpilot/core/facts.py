@@ -13,11 +13,13 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Iterable, Mapping
+from decimal import Decimal
 from pathlib import Path
 
 from qpilot.schemas import Fact
 
 FACT_ID = re.compile(r"^f_[a-z0-9_]+$")
+LARGE_EXPONENT = re.compile(r"-?\d+(\.\d+)?e\+\d+")
 
 
 def slug(name: str) -> str:
@@ -86,9 +88,15 @@ class FactRegistry:
 
 
 def render_fact(fact: Fact) -> str:
-    """Format one fact: ``fmt`` applied to the value, then the unit (``3.6×``, ``1.4%``)."""
+    """Format one fact: ``fmt`` applied to the value, then the unit (``3.6×``, ``1.4%``).
+
+    A large number never reads in exponent form: ``{:.2g}`` of 123.4 is ``120``, not
+    ``1.2e+02`` (small ones such as a p-value of ``3.2e-07`` keep it).
+    """
     try:
         text = fact.fmt.format(fact.value)
     except (ValueError, TypeError):
         text = str(fact.value)
+    if LARGE_EXPONENT.fullmatch(text):
+        text = format(Decimal(text), "f")
     return f"{text}{fact.unit}"

@@ -10,7 +10,6 @@ import pytest
 
 from qpilot.ai.explain import KIND_TITLE
 from qpilot.core.store import StudyStore
-from qpilot.core.validator import render_tokens
 from tests.web.conftest import wait_job
 
 CAP = "Please switch to: Count empty wells as very low (cap)"
@@ -61,13 +60,45 @@ def test_a_gene_question_is_answered_from_the_robustness_grid(client, no_model, 
     assert answer["tool"] == "qpcr_robustness" and answer["args"] == {"gene": "ODC1"}
     contrast = web_store.get(study).contrasts["ODC1"]
     facts = {f["id"]: f for f in answer["facts"]}
-    from qpilot.schemas import Fact
-
-    expected = Fact(id="x", value=contrast.fc, fmt="{:.2g}", unit="×")
-    assert facts["f_ans_fc"]["value"] == render_tokens("{{x}}", {"x": expected})
+    # the page's formats (docs/app.md §5): 3.59×, the CI ends alike, shares as "64 %"
+    assert facts["f_ans_fc"]["value"] == f"{contrast.fc:.2f}×"
+    assert facts["f_ans_ci_lo"]["value"] == f"{contrast.ci[0]:.2f}×"
+    assert facts["f_ans_ci_hi"]["value"] == f"{contrast.ci[1]:.2f}×"
+    assert facts["f_ans_holds"]["value"].endswith("\u202f%")
     assert facts["f_ans_fc"]["meaning"].startswith("fold change")
     assert {"f_ans_holds", "f_ans_n_cells", "f_ans_level"} <= set(facts)
+    for fact in facts.values():
+        assert fact["value"] in answer["answer"]
+    assert "analyses qPilot checks" in answer["answer"]  # the named set (#0254)
     assert answer["status"] is None and answer["head_after"] == answer["head_before"]
+
+
+def test_page_formats():
+    from qpilot.web.routers.ops import _fold, _group, _p_value, _share
+
+    assert (_fold(3.589883), _fold(0.5712), _fold(0.0342), _fold(21.19)) == (
+        "3.59×",
+        "0.57×",
+        "0.034×",
+        "21.19×",
+    )
+    assert _fold(1.8e14).startswith("180\u202f000") and "e" not in _fold(1.8e14)
+    assert (_share(0.645), _share(1.0), _share(0.996), _share(0.003)) == (
+        "65\u202f%",
+        "100\u202f%",
+        ">\u202f99\u202f%",
+        "<\u202f1\u202f%",
+    )
+    assert (_p_value(0.0003), _p_value(0.0496), _p_value(0.43)) == (
+        "<\u202f0.001",
+        "0.0496",
+        "0.43",
+    )
+    assert (_group("24576"), _group("744"), _group("-1571")) == (
+        "24\u202f576",
+        "744",
+        "\u22121\u202f571",
+    )
 
 
 @pytest.mark.parametrize("autonomy", ["suggest", "decide_and_tell"])

@@ -23,6 +23,7 @@ import { Textarea } from "../controls";
 import { CheckTag } from "../tags";
 import { toast } from "../Toaster";
 import { MAX_REASON } from "./ProposalCard";
+import { StageSummary } from "./summary";
 import { useStageProposals, type ConfirmableStage, type InboxStage } from "./hooks";
 
 type BulkAction = "accept" | "reject";
@@ -241,15 +242,25 @@ export function ProposalLines({
  * Both bulk actions of a stage, side by side; each is off when the inbox shows nothing it
  * would cover (the dialog still lists exactly what the server says it covers).
  */
-export function BulkActions({ sid, stage }: { sid: string; stage: InboxStage }) {
+export function BulkActions({
+  sid,
+  stage,
+  pending,
+}: {
+  sid: string;
+  stage: InboxStage;
+  /** Optional: how many proposals wait (0 turns both off); the inbox's own list decides otherwise. */
+  pending?: number;
+}) {
   const list = useStageProposals(sid, stage);
   const waiting = (list.data?.proposals ?? []).filter((p) => p.status === "proposed" && p.kind !== "stage.confirm");
   const consistent = waiting.filter((p) => p.check.status === "consistent").length;
   const aiContradicted = waiting.filter((p) => p.check.status === "contradicted" && p.made_by.kind !== "rule").length;
+  const none = pending === 0;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <BulkAction sid={sid} stage={stage} action="accept" disabled={!consistent} />
-      <BulkAction sid={sid} stage={stage} action="reject" disabled={!aiContradicted} />
+      <BulkAction sid={sid} stage={stage} action="accept" disabled={none || !consistent} />
+      <BulkAction sid={sid} stage={stage} action="reject" disabled={none || !aiContradicted} />
     </div>
   );
 }
@@ -417,6 +428,14 @@ export function ConfirmStage({
                 {w}
               </p>
             ))}
+            {stage === "design" || stage === "curves" ? (
+              <section aria-labelledby={`confirm-summary-${sid}`} className="rounded-lg border border-line bg-surface-2 p-3">
+                <h3 id={`confirm-summary-${sid}`} className="mb-2 text-[13px] font-semibold text-fg">
+                  {stage === "design" ? "The design this gives" : "The curve calls this gives"}
+                </h3>
+                <StageSummary stage={stage} proposals={view.covers} />
+              </section>
+            ) : null}
             {view.covers.length ? (
               <>
                 <p className="text-[13px] font-medium text-fg">

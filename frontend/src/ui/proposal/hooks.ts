@@ -12,6 +12,11 @@ import type { Payload } from "./edit";
 import type { QuoteLookup } from "./parts";
 
 export type InboxStage = "design" | "curves" | "prism" | "roundtrip";
+
+/** The server is reading the session's file for the first time since it started (503 `warming`). */
+export function isWarming(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.code === "warming";
+}
 export type ConfirmableStage = "design" | "curves" | "choices";
 export type ProposalList = Schemas["ProposalList"];
 export type ProposalDecided = Schemas["ProposalDecided"];
@@ -91,6 +96,15 @@ export function useProposalActions(sid: string, head: string | null | undefined,
       return after(unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/reject", { ...path(sid, pid), body: { reason, expected_head } })));
     },
   };
+}
+
+/** The engine's check of an edited reading, before anyone accepts it (writes nothing). */
+export function useCheckEdit(sid: string) {
+  return useCallback(
+    (pid: string, edits: Payload) =>
+      unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/check", { ...path(sid, pid), body: { edits } })),
+    [sid],
+  );
 }
 
 // ---------------------------------------------------------------------------------------------

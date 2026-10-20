@@ -34,6 +34,9 @@ from qpilot.schemas import DecisionCard, Fact, StudyResult
 
 TOOLS = ("qpcr_study", "qpcr_robustness", "qpcr_decide", "qpcr_plan", "explain_number", "none")
 NOT_IN_STUDY = "not in this study"
+NOT_UNDERSTOOD = "not understood"
+#: What ``qpcr_study`` can be asked about (``args.about``); without it, the study's size.
+STUDY_TOPICS = ("overview", "calls", "references", "cards")
 PENDING_TEXT = (
     "Not applied: this choice can change a conclusion, so a person must decide it in qPilot. "
     "The request is waiting for their review."
@@ -73,6 +76,30 @@ CLAIMS_DONE = re.compile(
     re.I,
 )
 GENE_LIKE = re.compile(r"\b[A-Z][A-Z0-9]{2,}[A-Z0-9_()\-]*\b")
+# What a question about the whole study asks for (keyword routing; see study_topic).
+ASKS_WHICH = re.compile(r"\b(which|what|how\s+many|list|name|show)\b", re.I)
+GENES_WORD = re.compile(r"\b(genes?|targets?|transcripts?)\b", re.I)
+CALL_WORDS = re.compile(
+    r"\b(up|down|higher|lower|increased|decreased|elevated|reduced|(up|down)[\s-]?regulated|"
+    r"changed?|differ(ent|s)?|significant(ly)?|called|calls?)\b",
+    re.I,
+)
+REFERENCE_WORDS = re.compile(
+    r"\b(reference|control|housekeeping|normali[sz]\w*)\s+(genes?|set)\b|\bgenorm\b", re.I
+)
+STABLE_WORDS = re.compile(r"\b(stable|stability|steadi\w*|best|rank\w*|genorm)\b", re.I)
+CHOICE_TOPICS = re.compile(
+    r"\b(reference|control|housekeeping|normali[sz]\w*|cut(-?off)?|threshold|empty\s+wells?|"
+    r"undetermined|never\s+amplif\w*|non-?detects?|curves?|amplification|choices?|decisions?|"
+    r"cards?)\b",
+    re.I,
+)
+CHANGE_WORDS = re.compile(r"\b(change|flip|depend|matter|affect|switch)\w*\b", re.I)
+OVERVIEW_WORDS = re.compile(
+    r"\b(study|samples?|plates?|reactions?|wells?|size|overview|summary|summari[sz]e|design|"
+    r"groups?|panel)\b|\bhow\s+many\s+genes\b",
+    re.I,
+)
 CONCLUSION_WORDS = {"up": "higher", "down": "lower", "none": "not clearly different (no call)"}
 
 
@@ -131,7 +158,7 @@ def run_tool(ctx: _Context, tool: str, args: dict[str, Any]) -> dict[str, Any]:
     """Execute one tool call in-process; unknown tools come back as an error."""
     if tool == "qpcr_study":
         r = ctx.result
-        return {
+        out: dict[str, Any] = {
             "n_plates": r.n_plates,
             "n_samples": r.n_samples,
             "n_reactions": r.n_reactions,
@@ -139,6 +166,33 @@ def run_tool(ctx: _Context, tool: str, args: dict[str, Any]) -> dict[str, Any]:
             "group": r.design.group_var,
             "open_cards": [c.id for c in ctx.cards if c.status in ("open", "pending_human")],
         }
+        about = args.get("about")
+        if about == "calls":
+            calls = {g: c.conclusion for g, c in r.contrasts.items()}
+            out |= {
+                "about": "calls",
+                "up": sorted(g for g, c in calls.items() if c == "up"),
+                "down": sorted(g for g, c in calls.items() if c == "down"),
+                "n_no_call": sum(c == "none" for c in calls.values()),
+            }
+        elif about == "references":
+            genorm = r.genorm
+            out |= {
+                "about": "references",
+                "order": list(genorm.order),
+                "M": {g: genorm.M_initial[g] for g in genorm.order if g in genorm.M_initial},
+                "recommended": list(genorm.recommended),
+                "cutoff_M": genorm.cutoff_M,
+            }
+        elif about == "cards":
+            out |= {
+                "about": "cards",
+                "cards": [
+                    {"card_id": c.id, "kind": c.kind, "n_flipped": c.impact.get("n_genes_flipped")}
+                    for c in sorted(ctx.cards, key=lambda c: c.rank)
+                ],
+            }
+        return out
     if tool == "qpcr_robustness":
         return ctx.tools.qpcr_robustness(ctx.study_id, str(args.get("gene", "")))
     if tool == "qpcr_decide":
@@ -162,7 +216,7 @@ def run_tool(ctx: _Context, tool: str, args: dict[str, Any]) -> dict[str, Any]:
             return {"error": "unknown fact id"}
         return {"fact_id": fid, "path": fact.path}
     if tool == "none":
-        return {"error": NOT_IN_STUDY}
+        return {"error": NOT_UNDERSTOOD if args.get("reason") == NOT_UNDERSTOOD else NOT_IN_STUDY}
     return {"error": f"unknown tool {tool!r}"}
 
 
@@ -204,6 +258,33 @@ def answer_facts(ctx: _Context, tool: str, out: dict[str, Any]) -> tuple[dict, d
             "group": out["group"],
             "open_cards": out["open_cards"],
         }
+        if out.get("about") == "calls":
+            view |= {
+                "genes_up": out["up"],
+                "n_up": tok("f_ans_n_up", len(out["up"])),
+                "genes_down": out["down"],
+                "n_down": tok("f_ans_n_down", len(out["down"])),
+                "n_no_call": tok("f_ans_n_no_call", out["n_no_call"]),
+            }
+        elif out.get("about") == "references":
+            view |= {
+                "most_stable_first": [
+                    {"gene": g, "M_all_candidates": tok(f"f_ans_m_{i}", out["M"][g], "{:.2f}")}
+                    for i, g in enumerate(out["order"], 1)
+                    if g in out["M"]
+                ],
+                "recommended": out["recommended"],
+                "M_cutoff": tok("f_ans_m_cutoff", out["cutoff_M"], "{:g}"),
+            }
+        elif out.get("about") == "cards":
+            view["choices"] = [
+                {
+                    "choice": KIND_TITLE.get(c["kind"], c["kind"]),
+                    "genes_whose_call_it_can_change": tok(f"f_ans_flips_{i}", c["n_flipped"]),
+                }
+                for i, c in enumerate(out["cards"], 1)
+                if c["n_flipped"] is not None
+            ]
         return view, facts
     if tool == "qpcr_decide":
         card = out.get("card") or {}
@@ -246,6 +327,8 @@ def _tokenise_reason(reason: str, tok: Any) -> str:
 def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -> str:
     """A deterministic answer in tokens for any tool result."""
     if "error" in out:
+        if out["error"] == NOT_UNDERSTOOD:
+            return can_answer(ctx)
         if out["error"] in (NOT_IN_STUDY, "gene not in this study"):
             return (
                 "That is not in this study; qPilot can answer about the "
@@ -260,8 +343,8 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
         text = (
             f"{out['gene']} is {CONCLUSION_WORDS[out['conclusion']]} in the {group} group under "
             "the recommended choices: {{f_ans_fc}} (confidence interval {{f_ans_ci_lo}} to "
-            "{{f_ans_ci_hi}}). It holds in {{f_ans_holds}} of the {{f_ans_n_cells}} reasonable "
-            "analyses; confidence {{f_ans_level}}."
+            "{{f_ans_ci_hi}}). It holds in {{f_ans_holds}} of the {{f_ans_n_cells}} analyses "
+            "qPilot checks; confidence {{f_ans_level}}."
         )
         if flip:
             text += " It can change with: " + "; ".join(flip) + "."
@@ -271,6 +354,36 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
             text += " No single choice flips it."
         return text
     if tool == "qpcr_study":
+        about = out.get("about")
+        if about == "calls":
+            group = ctx.result.design.group_var.replace("_", " ")
+            up = ", ".join(out["up"]) or "none"
+            down = ", ".join(out["down"]) or "none"
+            return (
+                f"Higher in the {group} group ({{{{f_ans_n_up}}}} genes): {up}. Lower "
+                f"({{{{f_ans_n_down}}}} genes): {down}. No call (not clearly different): "
+                "{{f_ans_n_no_call}} genes."
+            )
+        if about == "references":
+            ranked = ", ".join(
+                f"{row['gene']} ({row['M_all_candidates']})" for row in view["most_stable_first"]
+            )
+            return (
+                f"geNorm ranks the control genes most stable first: {ranked}, each with its "
+                "stability M among all candidates (lower is steadier; geNorm's cut-off is "
+                "{{f_ans_m_cutoff}}). It recommends normalising to "
+                + _and(out["recommended"])
+                + "."
+            )
+        if about == "cards":
+            parts = [
+                f"{row['choice']}: {row['genes_whose_call_it_can_change']}"
+                for row in view["choices"]
+            ]
+            return (
+                "How many genes' calls each choice can change (under at least one of its "
+                "options): " + "; ".join(parts) + "."
+            )
         return (
             "This study has {{f_ans_n_plates}} plates, {{f_ans_n_samples}} samples and "
             "{{f_ans_n_genes}} genes."
@@ -312,6 +425,22 @@ def template_answer(ctx: _Context, tool: str, out: dict[str, Any], view: dict) -
     return "qPilot could not answer that."
 
 
+def can_answer(ctx: _Context) -> str:
+    """What Ask can answer without a model, with an example gene from this study."""
+    called = sorted(g for g, c in ctx.result.contrasts.items() if c.conclusion != "none")
+    example = (called or sorted(ctx.result.contrasts) or ["a gene"])[0]
+    return (
+        f"I can answer: how one gene came out and how robust it is (try “Is {example} "
+        "robust?”), which genes are up or down, which control genes are most stable, how many "
+        "genes each analysis choice can change, and the study's size. Name a gene or ask one "
+        "of those."
+    )
+
+
+def _and(items: list[str]) -> str:
+    return items[0] if len(items) == 1 else f"{', '.join(items[:-1])} and {items[-1]}"
+
+
 def _kind(ctx: _Context, card_id: str) -> str:
     return next((c.kind for c in ctx.cards if c.id == card_id), card_id)
 
@@ -339,7 +468,32 @@ def route(ctx: _Context, question: str) -> tuple[str, dict[str, Any]]:
     known = {n.lower() for n in ctx.names}
     if any(w.lower() not in known for w in GENE_LIKE.findall(question)):
         return "none", {"reason": NOT_IN_STUDY}
-    return "qpcr_study", {}
+    topic = study_topic(question)
+    if topic is None and _names_group(ctx, lowered):
+        topic = "overview"  # "What does MYCN high mean?": the study and its groups
+    if topic is None:
+        return "none", {"reason": NOT_UNDERSTOOD}
+    return "qpcr_study", {} if topic == "overview" else {"about": topic}
+
+
+def _names_group(ctx: _Context, lowered: str) -> bool:
+    """Whether the question names the comparison group (every word of it)."""
+    parts = [p.lower() for p in ctx.result.design.group_var.split("_") if p]
+    return bool(parts) and all(re.search(rf"\b{re.escape(p)}\b", lowered) for p in parts)
+
+
+def study_topic(question: str) -> str | None:
+    """What a question about the whole study asks for (one of STUDY_TOPICS), or None."""
+    if CHANGE_WORDS.search(question) and CHOICE_TOPICS.search(question):
+        if GENES_WORD.search(question) and ASKS_WHICH.search(question):
+            return "cards"  # "How many genes change with the reference genes?"
+    if REFERENCE_WORDS.search(question) and STABLE_WORDS.search(question):
+        return "references"
+    if GENES_WORD.search(question) and CALL_WORDS.search(question) and ASKS_WHICH.search(question):
+        return "calls"
+    if OVERVIEW_WORDS.search(question):
+        return "overview"
+    return None
 
 
 def _requested_option(ctx: _Context, lowered: str) -> tuple[str, str] | None:
@@ -436,6 +590,9 @@ def ask(
             else:
                 tool, args = parsed
                 tool_from_model = True
+                if tool == "qpcr_study" and args.get("about") not in STUDY_TOPICS:
+                    topic = study_topic(question)
+                    args = {} if topic in (None, "overview") else {"about": topic}
         except ModelUnavailable as err:
             model_used, error = False, str(err)
 

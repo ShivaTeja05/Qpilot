@@ -14,8 +14,18 @@ import type { Proposal } from "@/lib/vocab";
 import { useGo } from "@/shell/route";
 import type { SectionProps } from "@/shell/sections";
 import { refreshWorkspace, reportWriteError } from "@/shell/writes";
-import { Button, EmptyState, JobCard, PageHeader, toast } from "@/ui";
-import { BulkActions, ConfirmStage, StageInbox, useStageProposals, useQuotes, type InboxFilter } from "@/ui/proposal";
+import { Button, Card, CardBody, CardHeader, EmptyState, JobCard, PageHeader, toast } from "@/ui";
+import {
+  BulkActions,
+  ConfirmStage,
+  StageInbox,
+  StageSummary,
+  Warming,
+  isWarming,
+  useQuotes,
+  useStageProposals,
+  type InboxFilter,
+} from "@/ui/proposal";
 import { DesignNeeds } from "./DesignNeeds";
 import { comparisonState, concerns } from "./logic";
 import { DesignPlate, type PlateWell } from "./DesignPlate";
@@ -60,6 +70,18 @@ export default function DesignSection({ workspace }: SectionProps) {
         This study was analysed outside Studio (by <code className="font-mono">qpilot run</code> or an agent), so its design
         was given, not proposed here. Open its file from Open to review a design proposal by proposal.
       </EmptyState>
+    );
+  }
+
+  if (workspace.warming) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader eyebrow="Blind stage 1 of 2" title="Design" />
+        <Warming message="qPilot is reading this file for the first time since it started (every name quarantined, every curve fitted once). The design appears here by itself when that is done." />
+        {workspace.active_jobs.map((j) => (
+          <JobCard key={j.id} id={j.id} />
+        ))}
+      </div>
     );
   }
 
@@ -113,7 +135,7 @@ export default function DesignSection({ workspace }: SectionProps) {
                 <span className="font-semibold text-danger">{count(list.data?.counts.contradicted ?? 0)}</span> contradicted
               </>
             ) : confirmed ? (
-              "The design is confirmed. A later decision on a design proposal re-opens this stage."
+              "The design is confirmed; it is summarised below. A later decision on a design proposal re-opens this stage."
             ) : (
               "Every design proposal is decided: confirm the stage to open the curves."
             )}
@@ -131,9 +153,17 @@ export default function DesignSection({ workspace }: SectionProps) {
       ) : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-col gap-4">
+          {confirmed && all.length ? (
+            <Card as="section" aria-labelledby="confirmed-design">
+              <CardHeader id="confirmed-design" title="The confirmed design" hint="What the accepted proposals add up to. The engine runs from this and from nothing else." level={2} />
+              <CardBody>
+                <StageSummary stage="design" proposals={all} />
+              </CardBody>
+            </Card>
+          ) : null}
           {proposeJob && all.length ? (
-            <JobCard id={proposeJob.id} className="mb-4">
+            <JobCard id={proposeJob.id}>
               {(result) => <ProposeReportView result={result} />}
             </JobCard>
           ) : null}
@@ -158,9 +188,10 @@ export default function DesignSection({ workspace }: SectionProps) {
             onOpenWell={setWell}
             editOptions={editOptions}
             label="Design proposals waiting for you"
+            arriving={Boolean(proposeJob)}
           />
           {confirmed && all.length ? (
-            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
               <p className="text-[13px] text-muted">The curves stage is open: check which wells amplified.</p>
               <Button className="ml-auto" variant="primary" onClick={() => go("curves")}>
                 Go to Curves
@@ -170,7 +201,7 @@ export default function DesignSection({ workspace }: SectionProps) {
         </div>
         <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:self-start xl:overflow-y-auto xl:pb-2 qp-scroll" aria-label="Plate and file">
           <DesignPlate sid={sid} runs={summary?.runs ?? []} quotes={quotes.lookup} highlight={highlight} onShowProposals={showWell} />
-          <FileFacts facts={workspace.facts} summary={summary} analysed={workspace.results_visible} />
+          <FileFacts facts={workspace.facts} summary={summary} analysed={workspace.results_visible} warming={isWarming(list.error)} />
         </aside>
       </div>
       <WellCurveDialog sid={sid} well={well} onClose={() => setWell(null)} />

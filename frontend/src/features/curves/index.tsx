@@ -16,7 +16,7 @@ import { cn } from "@/lib/cn";
 import { useMediaQuery } from "@/lib/hooks";
 import { pathOf, useGo } from "@/shell/route";
 import type { SectionProps } from "@/shell/sections";
-import { Button, EmptyState, PageHeader } from "@/ui";
+import { Button, EmptyState, JobCard, LoadingBlock, PageHeader } from "@/ui";
 import type { Proposal } from "@/lib/vocab";
 import { ConfirmStage, StageInbox, useStageProposals, type InboxFilter } from "@/ui/proposal";
 import { usePlate } from "./api";
@@ -36,6 +36,23 @@ export default function CurvesSection({ workspace, rest }: SectionProps) {
           This study was analysed outside Studio (by <code>qpilot run</code> or an agent), so there
           is no curves stage to decide here. Open the file in Studio to check its curves.
         </EmptyState>
+      </>
+    );
+  }
+  if (workspace.warming) {
+    // Stages come with the file's facts; until the first read is done nothing is known yet.
+    const job = workspace.active_jobs.find((j) => j.kind === "warm");
+    return (
+      <>
+        <PageHeader eyebrow="Studio · blind" title="Curves" />
+        {job ? (
+          <JobCard job={job} />
+        ) : (
+          <LoadingBlock
+            label="Reading the file for the first time since qPilot started"
+            lines={4}
+          />
+        )}
       </>
     );
   }
@@ -151,6 +168,19 @@ function CurvesStage({
     [],
   );
 
+  /** One plate with its waiting proposals: the plate on the call layer, the inbox filtered to it. */
+  const showPlate = useCallback(
+    (runId: string) => {
+      setPlace(runId, []);
+      setLayer("call");
+      setFilter({
+        label: `plate ${runId}`,
+        match: (p) => p.kind === "curve.well_call" && p.subject.startsWith(`${runId}/`),
+      });
+    },
+    [setPlace],
+  );
+
   const reviewing = waiting > 0 && wide;
   const workbench = (
     <div
@@ -200,7 +230,7 @@ function CurvesStage({
         }
       />
       <div className="flex min-w-0 flex-col gap-6">
-        <StageBar workspace={workspace} check={check} />
+        <StageBar workspace={workspace} check={check} onShowPlate={showPlate} />
         {proposals?.length ? <CheckCurvesJob state={check} /> : null}
         <div
           className={cn(
