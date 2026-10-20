@@ -1,0 +1,152 @@
+/**
+ * The audit has not run on this study (or is running now): what it is, in plain words, what it
+ * checks before it runs, its scale, and **Run the audit** with the job's progress.
+ */
+import { Play } from "lucide-react";
+import { useEffect } from "react";
+import type { SectionProps } from "@/shell/sections";
+import { useJob } from "@/api/jobs";
+import { count } from "@/lib/format";
+import type { Verdict } from "@/lib/vocab";
+import { Button, Card, CardBody, CardHeader, ErrorPanel, JobCard } from "@/ui";
+import { useInvalidateAudit, useRunAudit, type AuditTarget } from "./api";
+import type { AuditStatus } from "./types";
+import { DECISION_WORDS } from "./words";
+import { VerdictMark } from "./VerdictMark";
+
+/** What each verdict means, without the audit's thresholds (they come with the audit). */
+const VERDICT_MEANING: Record<Verdict, string> = {
+  solid: "The same call in nearly every reasonable analysis, and no handful of samples changes it.",
+  "holds with caveats":
+    "The same call nearly everywhere, but it rests on a few samples or the difference is not always clear.",
+  "depends on your choices":
+    "Most reasonable analyses agree; the rest turn on named choices you should fix and report.",
+  fragile:
+    "Changes with reasonable choices, with one or two samples, or sits close to the line a call needs.",
+  "check data first": "A problem found in the data changes this call when it is fixed.",
+  "no call": "Not called a change; the audit says whether some reasonable analyses would call it.",
+};
+
+export function NotRun({
+  workspace,
+  target,
+  status,
+}: {
+  workspace: NonNullable<SectionProps["workspace"]>;
+  target: AuditTarget;
+  status: AuditStatus;
+}) {
+  const run = useRunAudit(target);
+  const jobId = run.data?.job.id ?? status.job?.id ?? null;
+  const job = useJob(jobId);
+  const invalidate = useInvalidateAudit(target);
+  const finished = job.data?.status === "done";
+  useEffect(() => {
+    if (finished) void invalidate();
+  }, [finished, invalidate]);
+
+  const scope = status.scope;
+  const decisions = DECISION_WORDS.join(", ").replace(/, ([^,]*)$/, " and $1");
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <Card as="section" aria-labelledby="audit-what">
+        <CardHeader id="audit-what" title="What the audit does" />
+        <CardBody className="space-y-4 text-sm leading-relaxed text-fg">
+          <p>
+            It re-runs your confirmed study under every combination of eight analysis decisions (
+            {decisions}) and gives each gene a verdict: does its call hold whichever reasonable
+            analysis you had picked?
+          </p>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {(Object.keys(VERDICT_MEANING) as Verdict[]).map((v) => (
+              <li key={v} className="rounded-lg border border-line p-2.5">
+                <VerdictMark verdict={v} />
+                <p className="mt-1 text-[13px] text-muted">{VERDICT_MEANING[v]}</p>
+              </li>
+            ))}
+          </ul>
+          <div className="space-y-1.5 text-[13px] text-muted">
+            <p>
+              <span className="font-medium text-fg">It checks before it runs.</span> With every
+              choice as planned it must reproduce qPilot's own numbers for every gene; if one
+              differs, it refuses rather than describe other numbers.
+            </p>
+            <p>
+              <span className="font-medium text-fg">It changes nothing.</span> It writes its own
+              folder beside the Analysis Record, with a checksum for every file and the decision
+              chain it describes. Your results and Decision Cards stay as they are.
+            </p>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card as="section" aria-labelledby="audit-run" className="self-start">
+        <CardHeader
+          id="audit-run"
+          title={status.status === "running" || jobId ? "The audit is running" : "Run the audit"}
+        />
+        <CardBody className="space-y-4">
+          {scope?.analyses_in_full_grid ? (
+            <dl className="grid grid-cols-2 gap-3">
+              <Stat label="analyses" value={count(scope.analyses_in_full_grid)} />
+              <Stat label="genes compared" value={count(scope.n_genes_compared)} />
+              <Stat label="samples" value={count(scope.n_samples)} />
+              <Stat label="sets of reference genes" value={count(scope.reference_sets)} />
+            </dl>
+          ) : (
+            // The scale of this study is known once the audit has prepared it; until then, the
+            // demo's (docs/app.md §4).
+            <p className="text-[13px] text-muted">
+              Every combination of the decisions' options is one analysis: on the demo study that is
+              90 396 analyses, about 50 s on a laptop.
+            </p>
+          )}
+          {scope?.groups?.length === 2 ? (
+            <p className="text-[13px] text-muted">
+              Comparing <span className="font-medium text-fg">{scope.groups[0]}</span> with{" "}
+              <span className="font-medium text-fg">{scope.groups[1]}</span>
+              {workspace.is_demo ? " (the demo's design)" : ""}.
+            </p>
+          ) : null}
+          {jobId ? (
+            <JobCard id={jobId}>
+              {() => <p className="text-[13px] text-muted">Opening the verdicts…</p>}
+            </JobCard>
+          ) : (
+            <Button
+              variant="primary"
+              icon={<Play />}
+              loading={run.isPending}
+              onClick={() => run.mutate()}
+              className="w-full"
+            >
+              Run the audit
+            </Button>
+          )}
+          {run.isError ? (
+            <ErrorPanel compact error={run.error} title="The audit did not start" />
+          ) : null}
+          {job.data?.status === "failed" && !run.isPending ? (
+            <Button
+              variant="secondary"
+              icon={<Play />}
+              onClick={() => run.mutate()}
+              className="w-full"
+            >
+              Try again
+            </Button>
+          ) : null}
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-sunken px-3 py-2">
+      <dd className="font-mono text-lg font-semibold text-fg tabular">{value}</dd>
+      <dt className="text-xs text-muted">{label}</dt>
+    </div>
+  );
+}
