@@ -4,10 +4,10 @@
   ``qpilot serve`` gives it (each marked read / open / propose / request), the requests waiting
   for a person in every study, and what agents did recently, newest first.
 * ``POST /api/studies/{id}/ask``: a question, answered as a job by qPilot's own tools
-  (:func:`qpilot.ai.ask.ask`, the MCP tool code) under this launch's autonomy (in *Suggest* the
-  model may only ask), or, for verdict and what-if questions about an audited study, by the
-  audit's Ask engine. The answer says which tool answered, who wrote the words and every fact
-  it cites.
+  (:func:`qpilot.ai.ask.ask`, the MCP tool code), or, for verdict and what-if questions about an
+  audited study, by the audit's Ask engine. The answer says which tool answered, who wrote the
+  words and every fact it cites. Ask never writes (docs/app.md §1.1: every write from the page
+  is a person's): asked to change a choice, it names the Decision Card to decide it on.
 * ``POST /api/model/test``: the harness scorecard of the page's model on one study (a job), saved
   with the study's scorecards; ``GET /api/model/seen``: the last payload a model was sent.
 * ``POST /api/demo/fresh``: moves the demo's earlier work aside (kept, never deleted).
@@ -29,6 +29,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Query
 
+from qpilot.core.decisions import DecisionError
 from qpilot.core.store import StudyNotFound, StudyStore
 from qpilot.web import views
 from qpilot.web.context import KEY, AppContext, Ctx, api_error, check_key, is_session, is_study
@@ -50,6 +51,9 @@ from qpilot.web.contract_ops import (
 from qpilot.web.jobs import JobError, Progress
 
 router = APIRouter(tags=["ops"])
+
+#: The model of each job's result, so the page's types carry them (``routers.job_results``).
+JOB_RESULTS = {"ask": AskAnswer, "model.test": ModelTestResult}
 
 CONNECT = "claude mcp add qpilot -- qpilot serve"
 CONNECT_NOTE = (
@@ -610,9 +614,40 @@ def _no_engine(question: str, audit: bool, autonomy: Autonomy, head: str) -> Ask
     )
 
 
-def _autonomy(ctx: AppContext) -> Literal["suggest", "decide_and_tell"]:
-    """This launch's autonomy mode (anything unexpected counts as Suggest)."""
-    return "decide_and_tell" if ctx.settings.get("autonomy") == "decide_and_tell" else "suggest"
+def _autonomy(ctx: AppContext, study_id: str) -> Literal["suggest", "decide_and_tell"]:
+    """What the study lets agents do (``StudyStore.autonomy``; Ask itself never decides)."""
+    try:
+        level = ctx.store.autonomy(study_id)
+    except (StudyNotFound, OSError, ValueError):
+        level = "suggest"
+    return "decide_and_tell" if level == "decide_and_tell" else "suggest"
+
+
+class _AskStore(StudyStore):
+    """The store as Ask sees it: it reads; it never decides, requests or turns down.
+
+    A change Ask is asked for reaches ``apply_decision`` like an agent's; here it is refused
+    before anything is written, and the answer names the card a person decides it on.
+    """
+
+    def append_decision(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: Ask never writes to the decision log."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def request_human(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: Ask never files a request."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def reject_pending(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: only a person turns a request down, on the card."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def set_autonomy(self, *args: Any, **kwargs: Any) -> None:
+        """Refused: autonomy is a person's setting."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+
+ASK_NEVER_DECIDES = "Ask never changes a choice; a person decides it on its Decision Card"
 
 
 def _client(ctx: AppContext) -> Any:
@@ -652,16 +687,16 @@ def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
 
 
 def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy) -> AskAnswer:
-    """Ask with qPilot's own tools (the MCP tool code), acting through the autonomy's store."""
+    """Ask with qPilot's own tools (the MCP tool code), through a store that never writes."""
     from qpilot.ai.ask import ask
-    from qpilot.ai.suggest_only import acting_store, load_profile_or_default
+    from qpilot.ai.suggest_only import load_profile_or_default
 
     store = ctx.store
     client = _client(ctx)
     before = store.chain_head(study_id)
     answer = ask(
         question,
-        acting_store(store, autonomy),
+        _AskStore(store.root),
         study_id,
         client=client,
         profile=load_profile_or_default(),
@@ -670,6 +705,7 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
     call = answer.tool_calls[-1] if answer.tool_calls else {"tool": "none", "args": {}}
     tool, args = str(call.get("tool")), dict(call.get("args") or {})
     used = client.available and not answer.fallback
+    text, cited, focus, card_id = answer.plain, _cited(answer.answer, facts), None, None
     note = None
     if answer.fallback:
         note = _model_note(ctx) or (
@@ -677,11 +713,25 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
             if answer.error
             else None
         )
-    if answer.status == "pending_human":
-        note = "The request waits for a person on the Decision Card, with Approve and Turn down."
+    if tool == "qpcr_decide":
+        cards = {c.id: c for c in store.cards(study_id)}
+        card_id = str(args.get("card_id") or "")
+        if card_id in cards:
+            option = str(args.get("option") or "")
+            title, label = _card_words(cards, card_id, option)
+            asked = option in {o.id for o in cards[card_id].options}
+            text = (
+                f"Ask never changes a choice. Decide “{title}” on its Decision Card"
+                + (f" (you asked for “{label}”)" if asked else "")
+                + ", with your reason."
+            )
+            cited, focus = [], f"card:{card_id}"
+            note = "Nothing was written: every choice is a person's, made on its card."
+        else:
+            card_id = None
     return AskAnswer(
         question=answer.question,
-        answer=answer.plain,
+        answer=text,
         engine="study",
         tool=tool,
         args=args,
@@ -694,11 +744,11 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
         else "qPilot's checked template",
         provider=answer.provider,
         model=client.model if client.available else None,
-        facts=_cited(answer.answer, facts),
-        validated=answer.validated,
+        facts=cited,
+        validated=answer.validated or focus is not None,  # the card's words are qPilot's own
         note=note,
-        status=answer.status if tool == "qpcr_decide" else None,
-        card_id=args.get("card_id") if tool == "qpcr_decide" else None,
+        card_id=card_id,
+        focus=focus,
         autonomy=autonomy,
         head_before=before,
         head_after=store.chain_head(study_id),
@@ -773,7 +823,7 @@ def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
     if not question:
         raise api_error(422, "bad_request", "Type a question first.")
     study_id, place, _ = resolve_study(ctx, study_id)
-    autonomy = _autonomy(ctx)
+    autonomy = _autonomy(ctx, study_id)
     audit = views.audit_dir(ctx.store, study_id) is not None
     engine = _pick_engine(question, body.source, audit, _audit_engine() is not None)
 

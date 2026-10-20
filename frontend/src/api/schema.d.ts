@@ -140,6 +140,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/model/scorecards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Model Scorecards
+         * @description A study's saved scorecards (default: the demo study, else the latest visible one).
+         */
+        get: operations["model_scorecards"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/model/seen": {
         parameters: {
             query?: never;
@@ -902,6 +922,11 @@ export type components = {
              * @description The engine's check of a proposal.
              */
             check?: string | null;
+            /**
+             * Hash
+             * @description The decision entry's hash.
+             */
+            hash?: string | null;
             /** Key */
             key: string;
             /**
@@ -917,6 +942,23 @@ export type components = {
             proposal_kind?: string | null;
             /** Reason */
             reason?: string | null;
+            /**
+             * Request State
+             * @description For a request (status pending_human): still waiting, approved (the card was set to this option), turned down by a person, decided otherwise (set to another option), or closed under an earlier qPilot's rules.
+             */
+            request_state?: ("waiting" | "approved" | "turned_down" | "decided_otherwise" | "closed") | null;
+            /**
+             * Seq
+             * @description The decision entry's place in the chain.
+             */
+            seq?: number | null;
+            /** Settled At */
+            settled_at?: string | null;
+            /**
+             * Settled By
+             * @description Who settled the request.
+             */
+            settled_by?: string | null;
             /**
              * Status
              * @description decision: applied / pending_human / rejected / stale / auto; proposal: proposed / accepted / edited / rejected / superseded.
@@ -1073,6 +1115,116 @@ export type components = {
              * @description The first sentence of the tool's description.
              */
             summary: string;
+        };
+        /**
+         * AskAnswer
+         * @description An answer and how it was made (the result of an ``ask`` job).
+         */
+        AskAnswer: {
+            /**
+             * Answer
+             * @description The answer as text; every number in it is a cited fact.
+             */
+            answer: string;
+            /**
+             * Args
+             * @description The tool's arguments.
+             */
+            args?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Autonomy
+             * @description What the study lets agents do (Ask itself never decides).
+             * @enum {string}
+             */
+            autonomy: "suggest" | "decide_and_tell";
+            /**
+             * Card Id
+             * @description The Decision Card a change request names (decide it there).
+             * @default null
+             */
+            card_id: string | null;
+            /**
+             * Engine
+             * @description study: qPilot's own tools (the MCP tool code); audit: the robustness audit's Ask engine; none: only the audit answers this and it has not been run.
+             * @enum {string}
+             */
+            engine: "study" | "audit" | "none";
+            /**
+             * Facts
+             * @description The numbers the answer cites, nothing else.
+             */
+            facts: components["schemas"]["CitedFact"][];
+            /**
+             * Focus
+             * @description What the page should focus: 'card:<card_id>' for a change.
+             * @default null
+             */
+            focus: string | null;
+            /**
+             * Head After
+             * @description The chain head after the answer (moved when Ask wrote).
+             * @default null
+             */
+            head_after: string | null;
+            /**
+             * Head Before
+             * @default null
+             */
+            head_before: string | null;
+            /**
+             * Model
+             * @description The model's name, when one was used.
+             * @default null
+             */
+            model: string | null;
+            /**
+             * Note
+             * @description Why a template answered, or what happened to a request.
+             * @default null
+             */
+            note: string | null;
+            /** Provider */
+            provider: string;
+            /** Question */
+            question: string;
+            /**
+             * Routed By
+             * @description Who picked the tool: the model, keyword matching, or fixed reading rules.
+             * @enum {string}
+             */
+            routed_by: "model" | "keywords" | "rules";
+            /** Routed Words */
+            routed_words: string;
+            /**
+             * Status
+             * @description Always null: Ask never writes (a change is decided on its card).
+             * @default null
+             */
+            status: string | null;
+            /** Tool */
+            tool: string;
+            /**
+             * Tool Words
+             * @description Which tool answered, in plain words.
+             */
+            tool_words: string;
+            /**
+             * Validated
+             * @description Every number in the text is a cited fact.
+             */
+            validated: boolean;
+            /**
+             * Writer Words
+             * @description Who wrote the words, in plain words.
+             */
+            writer_words: string;
+            /**
+             * Written By
+             * @enum {string}
+             */
+            written_by: "template" | "model";
         };
         /**
          * AskBody
@@ -1338,6 +1490,21 @@ export type components = {
             note: string;
             /** Passed */
             passed: boolean;
+        };
+        /**
+         * CitedFact
+         * @description A number the answer cites: what it is and its value as shown.
+         */
+        CitedFact: {
+            /**
+             * Id
+             * @default null
+             */
+            id: string | null;
+            /** Meaning */
+            meaning: string;
+            /** Value */
+            value: string;
         };
         /**
          * ConfirmRequest
@@ -2350,6 +2517,29 @@ export type components = {
             study?: string | null;
         };
         /**
+         * ModelTestResult
+         * @description A study's saved scorecards; ``current`` is the page's model's row.
+         *
+         *     The result of a ``model.test`` job (``current`` is the run just made) and of
+         *     ``GET /api/model/scorecards`` (``current`` is the last saved run of the page's model, or null).
+         */
+        ModelTestResult: {
+            current?: components["schemas"]["ScorecardRow"] | null;
+            /**
+             * N Questions
+             * @description Questions in ``current`` (0 when there is none).
+             */
+            n_questions: number;
+            /** Note */
+            note: string;
+            /** Saved */
+            saved: components["schemas"]["ScorecardRow"][];
+            /** Study Id */
+            study_id: string;
+            /** Title */
+            title: string;
+        };
+        /**
          * NextStep
          * @description The one thing to do next, in the page's own words, and where to do it.
          */
@@ -2951,6 +3141,68 @@ export type components = {
             text: string;
         };
         /**
+         * ScorecardRow
+         * @description One model's "Ask your data" scorecard on one study (``qpilot harness``'s first table).
+         */
+        ScorecardRow: {
+            /**
+             * Correct
+             * @description Final answers that were right, template answers included.
+             */
+            correct: number;
+            /**
+             * Correct By Model
+             * @description Right with the model choosing the tool and writing the words.
+             */
+            correct_by_model?: number | null;
+            /** Endpoint */
+            endpoint?: string | null;
+            /**
+             * Fallbacks
+             * @description Answers a template replaced (none without a model).
+             */
+            fallbacks?: number | null;
+            /**
+             * Invented Numbers Caught
+             * @description Model drafts with a number that was not a fact token; the validator caught every one, so none reached the reader.
+             */
+            invented_numbers_caught: number;
+            /** Median Latency S */
+            median_latency_s: number;
+            /** Model */
+            model?: string | null;
+            /**
+             * Model Eligible
+             * @description Questions the model may answer itself (safety items excluded).
+             */
+            model_eligible?: number | null;
+            /**
+             * N Items
+             * @description Ask questions scored.
+             */
+            n_items: number;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /**
+             * Numbers Shown
+             * @description Text that reached the reader with an untokened number.
+             */
+            numbers_shown: number;
+            /** Profile */
+            profile: string;
+            /** Provider */
+            provider: string;
+            /** Run At */
+            run_at?: string | null;
+            /** Safety Held */
+            safety_held: number;
+            /** Safety Items */
+            safety_items: number;
+        };
+        /**
          * Settings
          * @description Settings a person can change from the page (this launch only).
          */
@@ -3399,6 +3651,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelStatus"];
+                };
+            };
+        };
+    };
+    model_scorecards: {
+        parameters: {
+            query?: {
+                study?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelTestResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

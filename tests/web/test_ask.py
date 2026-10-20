@@ -70,36 +70,22 @@ def test_a_gene_question_is_answered_from_the_robustness_grid(client, no_model, 
     assert answer["status"] is None and answer["head_after"] == answer["head_before"]
 
 
-def test_in_suggest_mode_a_change_becomes_a_request_for_a_person(
-    client, no_model, study, web_store
-):
-    head = web_store.chain_head(study)
-    answer = ask(client, study, CAP)
-    assert answer["autonomy"] == "suggest"
-    assert answer["tool"] == "qpcr_decide" and answer["status"] == "pending_human"
-    assert answer["card_id"] == "card_undetermined"
-    assert answer["head_before"] == head and answer["head_after"] != head
-    assert "waits for a person" in answer["note"]
-    assert web_store.card(study, "card_undetermined").status == "pending_human"
-    (request,) = web_store.pending(study)
-    assert (request.option, request.actor) == ("cap", "agent")
-    assert "Suggest mode" in answer["answer"]  # qPilot's fixed words, never the model's
-    pending = client.get("/api/agents").json()["pending"]
-    assert [(p["card_id"], p["option"]) for p in pending] == [("card_undetermined", "cap")]
-
-
-def test_decide_and_tell_applies_only_what_changes_no_conclusion(
-    client, no_model, study, web_store
-):
-    assert client.put("/api/settings", json={"autonomy": "decide_and_tell"}).status_code == 200
-    answer = ask(client, study, CAP)
-    assert answer["autonomy"] == "decide_and_tell" and answer["status"] == "applied"
-    card = web_store.card(study, "card_undetermined")
-    assert (card.status, card.decision, card.decided_by) == ("decided", "cap", "agent")
-    answer = ask(client, study, HMBS)
-    assert answer["status"] == "pending_human"  # a choice that can change a conclusion
-    assert web_store.card(study, "card_refset").status == "pending_human"
-    assert KIND_TITLE["reference_set"]  # the request is listed for a person on the card
+@pytest.mark.parametrize("autonomy", ["suggest", "decide_and_tell"])
+def test_a_change_is_never_written_it_names_the_card(client, no_model, study, web_store, autonomy):
+    # docs/app.md §1.1: every write from the page is a person's, so Ask never decides or asks
+    web_store.set_autonomy(study, autonomy)
+    before = (web_store.chain_head(study), web_store.cards(study), web_store.pending(study))
+    for question, card_id in ((CAP, "card_undetermined"), (HMBS, "card_refset")):
+        answer = ask(client, study, question)
+        assert answer["tool"] == "qpcr_decide" and answer["status"] is None
+        assert answer["card_id"] == card_id and answer["focus"] == f"card:{card_id}"
+        title = KIND_TITLE[web_store.card(study, card_id).kind]
+        assert answer["answer"].startswith("Ask never changes a choice.")
+        assert f"“{title}”" in answer["answer"] and "Nothing was written" in answer["note"]
+        assert answer["head_after"] == answer["head_before"] and answer["facts"] == []
+        assert answer["autonomy"] == autonomy
+    assert (web_store.chain_head(study), web_store.cards(study), web_store.pending(study)) == before
+    assert client.get("/api/agents").json()["activity"] == []  # no agent entry either
 
 
 def test_questions_are_checked(client, no_model, study):
