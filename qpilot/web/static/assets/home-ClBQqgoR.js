@@ -1,0 +1,1 @@
+import{n as e}from"./index-DRhZfnyF.js";import{t}from"./SectionPending-r4DQ91W-.js";var n=e();function r(e){return(0,n.jsx)(t,{id:`home`})}export{r as default};
