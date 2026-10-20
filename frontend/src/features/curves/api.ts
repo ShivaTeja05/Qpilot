@@ -9,8 +9,6 @@ import { api, unwrap, type Schemas } from "@/api/client";
 export type PlateView = Schemas["PlateView"];
 export type CurveView = Schemas["CurveView"];
 export type CurveCallsView = Schemas["CurveCallsView"];
-export type ProposalList = Schemas["ProposalList"];
-export type Proposal = Schemas["Proposal"];
 
 /** One plate's wells (the design's first plate when `run` is not given). */
 export function usePlate(sid: string, run: string | null) {
@@ -63,18 +61,5 @@ export function useCurveCalls(sid: string, gene: string | null) {
         }),
       ),
     staleTime: 60_000,
-  });
-}
-
-/** The curves stage's inbox: waiting proposals first (contradicted, then cannot-check, then the rest). */
-export function useCurveProposals(sid: string) {
-  return useQuery({
-    queryKey: ["w", sid, "proposals", "curves"],
-    queryFn: () =>
-      unwrap(
-        api.GET("/api/sessions/{sid}/proposals", {
-          params: { path: { sid }, query: { stage: "curves" } },
-        }),
-      ),
   });
 }

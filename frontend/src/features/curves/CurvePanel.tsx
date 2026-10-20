@@ -10,6 +10,7 @@ import { count, fixed } from "@/lib/format";
 import { ruleLabel, ruleWords } from "@/lib/vocab";
 import {
   Badge,
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -35,11 +36,17 @@ export function CurvePanel({
   run,
   wells,
   onClear,
+  waitingProposal,
+  onShowProposal,
 }: {
   sid: string;
   run: string | null;
   wells: readonly string[];
   onClear: () => void;
+  /** Whether a proposal about this well (`run_id/well`) waits in the inbox. */
+  waitingProposal?: (key: string) => boolean;
+  /** Show that proposal in the inbox. */
+  onShowProposal?: (key: string) => void;
 }) {
   const [scale, setScale] = useState<CurveScale>("linear");
   const joined = wells.slice(0, MAX_CURVES).join(",");
@@ -106,7 +113,19 @@ export function CurvePanel({
               onScaleChange={setScale}
               caption={views[0]?.note}
             />
-            {one ? <OneWell view={one} calls={calls.data} /> : <ManyWells views={views} />}
+            {one ? (
+              <OneWell
+                view={one}
+                calls={calls.data}
+                onShowProposal={
+                  onShowProposal && waitingProposal?.(one.key)
+                    ? () => onShowProposal(one.key)
+                    : undefined
+                }
+              />
+            ) : (
+              <ManyWells views={views} />
+            )}
           </div>
         )}
       </CardBody>
@@ -118,7 +137,15 @@ function yesNo(v: boolean | null | undefined): string {
   return v === true ? "amplified" : v === false ? "not amplified" : "no call";
 }
 
-function OneWell({ view, calls }: { view: CurveView; calls: CurveCallsView | undefined }) {
+function OneWell({
+  view,
+  calls,
+  onShowProposal,
+}: {
+  view: CurveView;
+  calls: CurveCallsView | undefined;
+  onShowProposal?: () => void;
+}) {
   const row = calls?.wells.find((w) => w.run_id === view.run_id && w.well === view.well);
   const facts: [string, string][] = [
     ["Cq", fixed(view.cq, 2)],
@@ -184,6 +211,14 @@ function OneWell({ view, calls }: { view: CurveView; calls: CurveCallsView | und
           </div>
         </>
       )}
+      {onShowProposal ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-warn/30 bg-warn-soft/60 px-3 py-2 text-[13px] text-fg">
+          <span>A proposal about this well’s call is waiting for you.</span>
+          <Button size="sm" variant="secondary" className="ml-auto" onClick={onShowProposal}>
+            Show its proposal
+          </Button>
+        </div>
+      ) : null}
       {view.replicates.length === 0 ? (
         <p className="text-[12px] text-muted">
           This sample has no other well for {view.target} on this plate.

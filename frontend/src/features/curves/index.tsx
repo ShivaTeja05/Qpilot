@@ -9,7 +9,7 @@
  * from elsewhere (a proposal's evidence, a sample in Gene) opens the well's curve.
  */
 import { CheckCircle2, Lock } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import type { PlateLayer } from "@/charts/plate";
 import { cn } from "@/lib/cn";
@@ -17,11 +17,13 @@ import { useMediaQuery } from "@/lib/hooks";
 import { pathOf, useGo } from "@/shell/route";
 import type { SectionProps } from "@/shell/sections";
 import { Button, EmptyState, PageHeader } from "@/ui";
+import type { Proposal } from "@/lib/vocab";
+import { ConfirmStage, StageInbox, useStageProposals, type InboxFilter } from "@/ui/proposal";
 import { usePlate } from "./api";
-import { CheckCurves } from "./CheckCurves";
+import { CheckCurvesJob, CheckCurvesPanel, useCheckCurves } from "./CheckCurves";
 import { CurvePanel } from "./CurvePanel";
 import { ALL_GENES, PlatePanel } from "./PlatePanel";
-import { StageSummary } from "./StageSummary";
+import { StageBar } from "./StageBar";
 
 export default function CurvesSection({ workspace, rest }: SectionProps) {
   const go = useGo();
@@ -74,13 +76,18 @@ function CurvesStage({
   const sid = workspace.key;
   const [, navigate] = useLocation();
   const curves = workspace.stages.find((s) => s.stage === "curves");
+  const confirmed = Boolean(curves?.confirmed);
   const waiting = curves?.pending ?? 0;
+  const check = useCheckCurves(workspace);
+  const inbox = useStageProposals(sid, "curves");
+  const proposals = inbox.data?.proposals;
 
   // The plate and the chosen wells live in the address, so links and reloads keep them.
   const runParam = rest[0] ?? null;
   const wells = (rest[1] ?? "").split(",").filter(Boolean);
   const plate = usePlate(sid, runParam);
-  const run = plate.data?.run.run_id ?? runParam;
+  // The address wins: while another plate loads, the one still on screen is not the one chosen.
+  const run = runParam ?? plate.data?.run.run_id ?? null;
   const setPlace = useCallback(
     (nextRun: string | null, nextWells: readonly string[]) => {
       const parts = nextRun ? [nextRun, ...(nextWells.length ? [nextWells.join(",")] : [])] : [];
@@ -91,6 +98,7 @@ function CurvesStage({
 
   const [gene, setGene] = useState<string>(ALL_GENES);
   const [layer, setLayer] = useState<PlateLayer>("call");
+  const [filter, setFilter] = useState<InboxFilter | null>(null);
   const curveRef = useRef<HTMLDivElement>(null);
   const wide = useMediaQuery("(min-width: 1440px)");
 
@@ -99,17 +107,47 @@ function CurvesStage({
   const shownGene =
     gene !== ALL_GENES && targets.length && !targets.includes(gene) ? targets[0]! : gene;
 
-  /** Show one well (from a proposal's evidence): its plate, selected, its curve in view. */
-  const openWell = useCallback(
-    (key: string) => {
+  /** Show one well: its plate, the well chosen, its curve (scrolled into view when asked). */
+  const showWell = useCallback(
+    (key: string, scroll: boolean) => {
       const at = key.lastIndexOf("/");
       if (at < 0) return;
       setPlace(key.slice(0, at), [key.slice(at + 1)]);
-      requestAnimationFrame(() =>
-        curveRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }),
-      );
+      if (scroll)
+        requestAnimationFrame(() =>
+          curveRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }),
+        );
     },
     [setPlace],
+  );
+  const openWell = useCallback((key: string) => showWell(key, true), [showWell]);
+
+  // Moving through the inbox (j / k, or a click on a card) shows that card's well and curve.
+  const lastFocus = useRef<string | null>(null);
+  const focusProposal = useCallback(
+    (p: Proposal | null) => {
+      const id = p?.id ?? null;
+      if (id === lastFocus.current) return;
+      lastFocus.current = id;
+      if (p?.kind === "curve.well_call") showWell(p.subject, false);
+    },
+    [showWell],
+  );
+
+  // The chosen well's waiting proposal, so the curve panel can show it in the inbox.
+  const waitingFor = useMemo(() => {
+    const m = new Map<string, Proposal>();
+    for (const p of proposals ?? [])
+      if (p.status === "proposed" && p.kind === "curve.well_call") m.set(p.subject, p);
+    return m;
+  }, [proposals]);
+  const showProposalOf = useCallback(
+    (key: string) =>
+      setFilter({
+        label: `well ${key.slice(key.lastIndexOf("/") + 1)}`,
+        match: (p) => p.kind === "curve.well_call" && p.subject === key,
+      }),
+    [],
   );
 
   const reviewing = waiting > 0 && wide;
@@ -131,14 +169,21 @@ function CurvesStage({
         onRunChange={(r) => setPlace(r, [])}
         layer={layer}
         onLayerChange={setLayer}
-        selected={wells}
+        selected={plate.isPlaceholderData ? [] : wells}
         onSelectedChange={(w) => setPlace(run, w)}
         onActivate={() =>
           curveRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" })
         }
       />
       <div ref={curveRef} className={cn("min-w-0 scroll-mt-20", reviewing && "order-first")}>
-        <CurvePanel sid={sid} run={run} wells={wells} onClear={() => setPlace(run, [])} />
+        <CurvePanel
+          sid={sid}
+          run={run}
+          wells={wells}
+          onClear={() => setPlace(run, [])}
+          waitingProposal={(key) => waitingFor.has(key)}
+          onShowProposal={showProposalOf}
+        />
       </div>
     </div>
   );
@@ -150,22 +195,52 @@ function CurvesStage({
         title="Curves"
         hint="Which wells amplified, and where the Curve Judge reads a curve differently from LinRegPCR. No group, fold change or p-value is shown until the design and the curves are confirmed."
         actions={
-          curves?.confirmed ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-ok">
-              <CheckCircle2 className="size-4" aria-hidden /> Curves confirmed
-            </span>
-          ) : null
+          proposals?.length ? <ConfirmStage sid={sid} stage="curves" status={curves} /> : null
         }
       />
       <div className="flex min-w-0 flex-col gap-6">
-        <CheckCurves workspace={workspace} />
+        <StageBar workspace={workspace} check={check} />
+        {proposals?.length ? <CheckCurvesJob state={check} /> : null}
         <div
           className={cn(
             "grid grid-cols-[minmax(0,1fr)] gap-6",
-            reviewing && "grid-cols-[minmax(0,5fr)_minmax(560px,7fr)] items-start",
+            reviewing && "grid-cols-[minmax(0,1fr)_600px] items-start",
           )}
         >
-          <StageSummary workspace={workspace} onOpenWell={openWell} />
+          <section aria-label="Curves proposals" className="min-w-0">
+            <StageInbox
+              sid={sid}
+              stage="curves"
+              resultsVisible={workspace.results_visible}
+              onOpenWell={openWell}
+              onFocusProposal={focusProposal}
+              filter={filter}
+              onClearFilter={() => setFilter(null)}
+              label="Curves proposals waiting for you"
+              empty={
+                confirmed ? (
+                  <EmptyState compact icon={<CheckCircle2 />} title="No curves proposals">
+                    The curves stage was confirmed with LinRegPCR’s calls; nothing was proposed.
+                  </EmptyState>
+                ) : (
+                  <CheckCurvesPanel state={check} />
+                )
+              }
+              allDecided={
+                confirmed ? null : (
+                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
+                    <p className="text-[13px] text-muted">
+                      Next: confirm the curves. It shows exactly what it covers first; then the
+                      results are shown.
+                    </p>
+                    <div className="ml-auto">
+                      <ConfirmStage sid={sid} stage="curves" status={curves} size="sm" />
+                    </div>
+                  </div>
+                )
+              }
+            />
+          </section>
           {/* One tree in both layouts, so switching never remounts the plate or the curve. */}
           <div
             className={cn(

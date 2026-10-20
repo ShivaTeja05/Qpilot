@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import type { Schemas } from "@/api/client";
+import { pathOf } from "@/shell/route";
+import { TooltipProvider } from "@/ui";
 import plate from "@/charts/plate/__tests__/recorded/plate-CDH5_20080305.json";
 import curveE1 from "@/charts/curves/__tests__/recorded/curve-CDH5_20080305-E1.json";
 import confirmedFrame from "@/test/recorded/shell-session-frame.json";
@@ -63,13 +65,18 @@ type Frame = Schemas["WorkspaceView"];
 
 function show(workspace: Frame, path: string, rest: string[] = []) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const { hook } = memoryLocation({ path });
+  const { hook, history } = memoryLocation({ path, record: true });
   const wrap = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={qc}>
-      <Router hook={hook}>{children}</Router>
+      <TooltipProvider>
+        <Router hook={hook}>{children}</Router>
+      </TooltipProvider>
     </QueryClientProvider>
   );
-  return render(<CurvesSection workspace={workspace} rest={rest} />, { wrapper: wrap });
+  return {
+    history,
+    ...render(<CurvesSection workspace={workspace} rest={rest} />, { wrapper: wrap }),
+  };
 }
 
 const waiting = waitingFrame as unknown as Frame;
@@ -91,24 +98,29 @@ describe("Curves section", { timeout: 30_000 }, () => {
     expect(screen.getByText("Curves belong to a Studio session")).toBeTruthy();
   });
 
-  it("lists what waits, with each well's curve one click away", async () => {
+  it("shows the inbox with its bulk actions, and moving to a card opens its well", async () => {
     routes.set("/api/sessions/{sid}/proposals", waitingInbox);
     routes.set("/api/sessions/{sid}/plate", plate);
-    show(waiting, "/s/bc1d233e3866/curves");
-    const n = (waitingInbox as Schemas["ProposalList"]).proposals.filter(
+    const { history } = show(waiting, "/s/bc1d233e3866/curves");
+    expect(await screen.findByText(/contradicted first/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Accept all consistent…" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reject contradicted AI calls…" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Check the curves again" })).toBeTruthy();
+    // j focuses the first waiting card (the inbox keeps the server's order: contradicted first).
+    const first = (waitingInbox as Schemas["ProposalList"]).proposals.find(
       (p) => p.status === "proposed",
-    ).length;
-    expect(await screen.findByText(`${n} proposals waiting for you.`)).toBeTruthy();
-    const wellCalls = (waitingInbox as Schemas["ProposalList"]).proposals.filter(
-      (p) => p.kind === "curve.well_call",
+    )!;
+    expect(first.kind).toBe("curve.well_call");
+    fireEvent.keyDown(document.body, { key: "j" });
+    const at = first.subject.lastIndexOf("/");
+    const want = pathOf(
+      "s",
+      "bc1d233e3866",
+      "curves",
+      first.subject.slice(0, at),
+      first.subject.slice(at + 1),
     );
-    const first = wellCalls[0]!.subject;
-    expect(
-      screen.getByRole("button", {
-        name: `Open the curve of well ${first.slice(first.lastIndexOf("/") + 1)}`,
-      }),
-    ).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Check the curves/ })).toBeTruthy();
+    await waitFor(() => expect(history.at(-1)).toBe(want));
   });
 
   it("opens the plate and the well named in the address, with its curve", async () => {
@@ -127,6 +139,6 @@ describe("Curves section", { timeout: 30_000 }, () => {
     expect(screen.getByRole("gridcell", { name: /^E1,/ }).getAttribute("aria-selected")).toBe(
       "true",
     );
-    expect(screen.getByText("Curves confirmed")).toBeTruthy();
+    expect(await screen.findByText("Curves confirmed")).toBeTruthy();
   });
 });
