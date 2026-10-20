@@ -45,3 +45,14 @@ json.dump(
     ensure_ascii=False,
 )
 ```
+
+`untergasser-design-proposals.json` and `untergasser-quarantine.json`: the real API's answers for a
+Studio session of `sim/data/untergasser/large_DNA_dilutions.rdml` (Untergasser et al., CC BY 4.0),
+opened through `POST /api/workspaces`, proposed with "Propose the design" (rules only, no model),
+then one proposal rejected and 21 accepted in the page. Re-record with the design agent's server
+running (`qpilot app --port 7881`; the key is in `$QPILOT_APP_TOKEN`):
+
+```bash
+curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" 'http://127.0.0.1:7881/api/sessions/2529de8272eb/proposals?stage=design' > untergasser-design-proposals.json
+curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" 'http://127.0.0.1:7881/api/sessions/2529de8272eb/quarantine' > untergasser-quarantine.json
+```

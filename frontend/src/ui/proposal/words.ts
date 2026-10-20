@@ -137,6 +137,7 @@ const DETAIL_LABEL: Record<string, string> = {
   non_gene: "not a gene",
   over_tolerance: "replicate sets wider than the tolerance",
   r2: "R²",
+  r2_max: "best R² of a plate",
   r2_min_required: "smallest R² accepted",
   range: "Cq range",
   run_id: "plate",

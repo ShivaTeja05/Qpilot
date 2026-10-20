@@ -324,6 +324,27 @@ export function WhySummary({ evidence, quotes }: { evidence: Evidence[]; quotes?
 
 const TABLE_ROWS = 8;
 const TABLE_COLUMNS = 9;
+const COLUMN_ORDER = [
+  "run_id",
+  "well",
+  "sample",
+  "target",
+  "class",
+  "status",
+  "cq",
+  "gap_cycles",
+  "unknown_median_cq",
+  "r2",
+  "efficiency",
+  "slope",
+  "intercept",
+  "n_wells",
+  "n_wells_used",
+  "copies",
+  "n",
+  "range",
+  "tolerance",
+];
 
 /** A list of records (wells with a signal, replicate sets, fits) as a small table. */
 function DetailTable({ rows, label, onOpenWell }: { rows: Dict[]; label: string; onOpenWell?: (well: string) => void }) {
@@ -332,7 +353,12 @@ function DetailTable({ rows, label, onOpenWell }: { rows: Dict[]; label: string;
   for (const r of rows.slice(0, 50)) {
     for (const [k, v] of Object.entries(r)) if (!columns.includes(k) && isScalar(v)) columns.push(k);
   }
-  const cols = columns.slice(0, TABLE_COLUMNS);
+  // Where a row is (plate, well, sample, target) first, then what was found, then the rest.
+  const rank = (k: string) => {
+    const i = COLUMN_ORDER.indexOf(k);
+    return i >= 0 ? i : COLUMN_ORDER.length + columns.indexOf(k);
+  };
+  const cols = [...columns].sort((a, b) => rank(a) - rank(b)).slice(0, TABLE_COLUMNS);
   const wells = Boolean(onOpenWell) && cols.includes("run_id") && cols.includes("well");
   const shown = all ? rows : rows.slice(0, TABLE_ROWS);
   return (
@@ -359,7 +385,12 @@ function DetailTable({ rows, label, onOpenWell }: { rows: Dict[]; label: string;
                 {cols.map((c) => {
                   const v = r[c];
                   const numeric = typeof v === "number";
-                  const text = c === "class" && typeof v === "string" ? (SIGNAL_CLASS[v] ?? detailValue(v)) : detailValue(v);
+                  const text =
+                    c === "class" && typeof v === "string"
+                      ? (SIGNAL_CLASS[v] ?? detailValue(v))
+                      : c === "status" && (v === "consistent" || v === "contradicted" || v === "cannot_check")
+                        ? CHECK[v].word.toLowerCase()
+                        : detailValue(v);
                   return (
                     <td
                       key={c}
@@ -452,7 +483,11 @@ export function DetailsView({
             <div key={k} className="contents">
               <dt className="text-muted">{detailLabel(k)}</dt>
               <dd className={cn("min-w-0 break-words text-fg", typeof v === "number" && "font-mono tabular")}>
-                {Array.isArray(v) && v.length === 0 ? "none" : detailValue(v)}
+                {Array.isArray(v) && v.length === 0
+                  ? "none"
+                  : k.endsWith("_range") && Array.isArray(v) && v.length === 2
+                    ? `${detailValue(v[0])} to ${detailValue(v[1])}`
+                    : detailValue(v)}
               </dd>
             </div>
           ))}
@@ -561,8 +596,7 @@ export const MATTERS_TEXT = "This matters for at least one conclusion; decide on
 export const NOT_MATTERS_TEXT = "Neither reading changes any conclusion.";
 export const CANNOT_TELL_TEXT =
   "This cannot be answered yet: the rest of the design does not run. Settle the other proposals, then ask again.";
-export const BLIND_TEXT =
-  "Hidden in the blind stages: no gene, direction or number is shown until the design and the curves are confirmed.";
+export const BLIND_TEXT = "Hidden until the design and the curves are confirmed (blind): no gene, direction or number.";
 export const HIDDEN_TEXT = "Hidden: the design or the curves are not confirmed (again) yet, so no result is shown.";
 
 /** The blind answer, as one line with an icon. */

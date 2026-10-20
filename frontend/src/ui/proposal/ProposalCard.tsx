@@ -117,6 +117,15 @@ export interface ProposalCardProps {
   focused?: boolean;
   /** Called when the card is clicked or receives focus (the inbox moves its cursor here). */
   onFocusCard?: () => void;
+  /**
+   * Replace part 4 for a kind this card does not describe well enough (return null to keep
+   * the default). Called only when results may be shown or the kind is not blind.
+   */
+  renderConsequence?: (p: Proposal) => { summary: ReactNode; details?: ReactNode; tone?: "warn" } | null;
+  /** Actions that need a reason for this proposal (on top of the chain's own rules). */
+  requireReason?: ProposalAction[];
+  /** The reason box's question, per action. */
+  reasonLabels?: Partial<Record<ProposalAction, string>>;
   /** Hide Accept / Edit / Reject (a read-only list). */
   readOnly?: boolean;
   /** Heading level of the proposal sentence (default 3). */
@@ -217,6 +226,9 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
     onOpenWell,
     editOptions,
     renderEditor,
+    renderConsequence,
+    requireReason,
+    reasonLabels,
     focused,
     onFocusCard,
     readOnly,
@@ -239,6 +251,15 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
 
   const pending = p.status === "proposed";
   const contradicted = p.check.status === "contradicted";
+  // The server refuses an exclusion accepted without a reason; ask for it here.
+  const needs = new Set<ProposalAction>(requireReason ?? (p.kind === "prism.exclusion_reason" ? ["accept", "edit"] : []));
+  const acceptNeedsReason = needs.has("accept");
+  const labels: Partial<Record<ProposalAction, string>> = {
+    ...(p.kind === "prism.exclusion_reason"
+      ? { accept: "Say why this value was excluded in Prism (kept in the record).", edit: "Say why (kept in the record)." }
+      : {}),
+    ...reasonLabels,
+  };
   const blind = isBlindKind(p);
   const editable = Boolean(onEdit) && p.kind !== "stage.confirm" && Object.keys(p.payload).length > 0;
   const canAct = pending && !readOnly;
@@ -276,13 +297,13 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
 
   const startAccept = useCallback(() => {
     if (!canAct || !onAccept || busy) return;
-    if (contradicted) {
+    if (contradicted || acceptNeedsReason) {
       setError(null);
       setMode("accept");
       return;
     }
     void run("accept", () => onAccept(""));
-  }, [canAct, onAccept, busy, contradicted, run]);
+  }, [canAct, onAccept, busy, contradicted, acceptNeedsReason, run]);
 
   const startEdit = useCallback(() => {
     if (!canAct || !editable || busy) return;
@@ -308,10 +329,6 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
     [startAccept, startEdit, startReject],
   );
 
-  useEffect(() => {
-    if (focused) rootRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [focused]);
-
   // The engine's re-check of an edit, a moment after the fields stop changing.
   const edits = mode === "edit" ? diffPayload(p.payload as Payload, draft) : {};
   const editKey = JSON.stringify(edits);
@@ -335,7 +352,9 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
 
   const editContradicted = recheckNow?.check?.status === "contradicted";
   const reasonRequired =
-    mode === "reject" || (mode === "accept" && contradicted) || (mode === "edit" && (contradicted || editContradicted));
+    mode === "reject" ||
+    (mode === "accept" && (contradicted || needs.has("accept"))) ||
+    (mode === "edit" && (contradicted || editContradicted || needs.has("edit")));
   const changed = editKey !== "{}";
   const canSubmit = !busy && (!reasonRequired || reason.trim().length > 0) && (mode !== "edit" || changed);
 
@@ -380,6 +399,11 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
         </Button>
       );
     }
+  } else if (!stale && renderConsequence && renderConsequence(p)) {
+    const custom = renderConsequence(p)!;
+    consequenceSummary = custom.summary;
+    consequenceFold = custom.details ?? null;
+    consequenceTone = custom.tone;
   } else if (stale) {
     consequenceSummary = (
       <span className="text-warn">
@@ -544,7 +568,11 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
               {mode === "accept" ? (
                 <ReasonBox
                   id={`${uid}-reason`}
-                  label="The engine's check contradicts this proposal. Say why you accept it anyway."
+                  label={
+                    contradicted
+                      ? "The engine's check contradicts this proposal. Say why you accept it anyway."
+                      : (labels.accept ?? "Why you accept it")
+                  }
                   value={reason}
                   onChange={setReason}
                   required
@@ -554,7 +582,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
               {mode === "reject" ? (
                 <ReasonBox
                   id={`${uid}-reason`}
-                  label="Why do you reject it?"
+                  label={labels.reject ?? "Why do you reject it?"}
                   value={reason}
                   onChange={setReason}
                   required
@@ -597,7 +625,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                         ? "The engine's check contradicts the edit. Say why you accept it anyway."
                         : contradicted
                           ? "The engine's check contradicted the proposal. Say why you accept your edit."
-                          : "Why you changed it"
+                          : (labels.edit ?? "Why you changed it")
                     }
                     value={reason}
                     onChange={setReason}
@@ -614,7 +642,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   loading={busy === mode}
                   icon={mode === "reject" ? <X /> : <Check />}
                 >
-                  {mode === "accept" ? "Accept anyway" : mode === "reject" ? "Reject" : "Accept the edit"}
+                  {mode === "accept" ? (contradicted ? "Accept anyway" : "Accept") : mode === "reject" ? "Reject" : "Accept the edit"}
                 </Button>
                 <Button variant="ghost" onClick={close} disabled={Boolean(busy)}>
                   Cancel
@@ -636,7 +664,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   disabled={Boolean(busy)}
                   aria-keyshortcuts="a"
                 >
-                  {contradicted ? "Accept anyway…" : "Accept"}
+                  {contradicted ? "Accept anyway…" : needs.has("accept") ? "Accept…" : "Accept"}
                 </Button>
               ) : null}
               {editable ? (
