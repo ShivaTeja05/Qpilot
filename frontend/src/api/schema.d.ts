@@ -1583,6 +1583,66 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Claims
+         * @description Every claim in the text, read by rules and checked against the study's record.
+         */
+        post: operations["check_claims"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/claims/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Claim Examples
+         * @description Example sentences about this study, written from its facts and verified.
+         */
+        get: operations["claim_examples"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/claims/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read Claims
+         * @description The same check, with the page's model proposing readings the rules missed (a job).
+         */
+        post: operations["read_claims"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/decisions": {
         parameters: {
             query?: never;
@@ -3777,6 +3837,413 @@ export type components = {
             meaning: string;
             /** Value */
             value: string;
+        };
+        /**
+         * ClaimCheck
+         * @description One check behind a verdict: what was compared, and how it came out.
+         */
+        ClaimCheck: {
+            /**
+             * Check
+             * @enum {string}
+             */
+            check: "gene" | "direction" | "fold" | "p" | "significance" | "robust" | "normaliser" | "efficiency" | "n" | "grid" | "audit" | "choices" | "reading";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "stronger" | "weaker" | "opposite" | "unknown" | "note";
+            text: components["schemas"]["ClaimText"];
+        };
+        /**
+         * ClaimChoice
+         * @description One choice qPilot checks under which the claim would hold (or that changes it).
+         */
+        ClaimChoice: {
+            /** Call */
+            call?: ("up" | "down" | "none") | null;
+            /** Card Id */
+            card_id?: string | null;
+            /** Dimension */
+            dimension: string;
+            /** Fc */
+            fc?: number | null;
+            /** Holds */
+            holds: boolean;
+            label: components["schemas"]["ClaimText"];
+            /**
+             * Option
+             * @description The option's value in qPilot's grid.
+             */
+            option: string;
+            /** Option Id */
+            option_id?: string | null;
+            /**
+             * Planned
+             * @default false
+             */
+            planned: boolean;
+            /**
+             * Title
+             * @description The decision in words.
+             */
+            title: string;
+        };
+        /**
+         * ClaimExample
+         * @description One example sentence the server wrote from the study's facts, and what it shows.
+         */
+        ClaimExample: {
+            /**
+             * Intent
+             * @enum {string}
+             */
+            intent: "supported" | "choices" | "overstated" | "contradicted" | "unchecked";
+            /** Text */
+            text: string;
+            /**
+             * What
+             * @description What the sentence was written to show, in words.
+             */
+            what: string;
+        };
+        /**
+         * ClaimExamples
+         * @description Example sentences about this study, written from its facts (none is hand-written).
+         */
+        ClaimExamples: {
+            /** Examples */
+            examples: components["schemas"]["ClaimExample"][];
+            /** Note */
+            note: string;
+            /** Paragraph */
+            paragraph: string;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * ClaimFact
+         * @description A number (or a label with digits) a sentence cites, and where it comes from.
+         */
+        ClaimFact: {
+            /** Id */
+            id: string;
+            /**
+             * Origin
+             * @default result
+             * @enum {string}
+             */
+            origin: "result" | "grid" | "audit" | "text";
+            /**
+             * Path
+             * @description Where it comes from (a result path, a grid cell, an audit file, or characters of the text).
+             * @default
+             */
+            path: string;
+            /**
+             * Text
+             * @description The value as written (format and unit applied).
+             */
+            text: string;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+            /** Value */
+            value: number | string;
+        };
+        /**
+         * ClaimReading
+         * @description How the rules (or a model's proposal, checked) read one claim. Values are as written.
+         */
+        ClaimReading: {
+            /**
+             * Direction
+             * @description The direction the words state, read for the first group against the second (a sentence about the second group is turned around).
+             */
+            direction?: ("up" | "down" | "none") | null;
+            /** Direction Written */
+            direction_written?: string | null;
+            /** Efficiency Genes */
+            efficiency_genes?: string[];
+            /** Efficiency Written */
+            efficiency_written?: string | null;
+            /** Fold Comparator */
+            fold_comparator?: ("about" | "exact" | "at_least" | "at_most" | "range") | null;
+            /** Fold Kind */
+            fold_kind?: ("fold" | "percent" | "log2") | null;
+            /** Fold Written */
+            fold_written?: string | null;
+            /**
+             * Gene
+             * @description The study's name for the gene.
+             */
+            gene?: string | null;
+            /** Gene Status */
+            gene_status?: ("compared" | "reference" | "marker" | "withheld" | "measured" | "absent") | null;
+            /**
+             * Gene Via
+             * @description Found by its name, its name without assay suffix, or an HGNC alias or previous symbol.
+             */
+            gene_via?: ("name" | "assay" | "alias") | null;
+            /** Gene Written */
+            gene_written?: string | null;
+            /** Groups Written */
+            groups_written?: string[];
+            /**
+             * Hedged
+             * @default false
+             */
+            hedged: boolean;
+            /**
+             * Inverted
+             * @description The words compare the second group with the first.
+             * @default false
+             */
+            inverted: boolean;
+            /** N Written */
+            n_written?: string | null;
+            /**
+             * Negated
+             * @default false
+             */
+            negated: boolean;
+            /**
+             * Normaliser
+             * @description Control genes named.
+             */
+            normaliser?: string[];
+            /**
+             * P Adjusted
+             * @default false
+             */
+            p_adjusted: boolean;
+            /** P Written */
+            p_written?: string | null;
+            /** Robust Written */
+            robust_written?: string | null;
+            /** Significance */
+            significance?: ("significant" | "not_significant") | null;
+            /** Significance Written */
+            significance_written?: string | null;
+            /**
+             * Source
+             * @default rules
+             * @enum {string}
+             */
+            source: "rules" | "model";
+            /**
+             * Words
+             * @description The reading in short pieces for the page (each from the text or a name).
+             */
+            words?: string[];
+        };
+        /**
+         * ClaimsAssistResult
+         * @description What the ``claims.read`` job answers: the report, with the model's part said.
+         */
+        ClaimsAssistResult: {
+            /**
+             * Accepted
+             * @description Proposals whose every value is in the sentence it cites.
+             */
+            accepted: number;
+            /**
+             * Proposed
+             * @description Readings the model proposed.
+             */
+            proposed: number;
+            /**
+             * Rejected
+             * @description Why proposals were dropped.
+             */
+            rejected?: string[];
+            report: components["schemas"]["ClaimsReport"];
+        };
+        /**
+         * ClaimsBody
+         * @description The text to check (a results paragraph, a figure legend, an abstract).
+         */
+        ClaimsBody: {
+            /**
+             * Text
+             * @description At most 5000 characters are checked; longer is refused (413). The text is not stored.
+             * @default
+             */
+            text: string;
+        };
+        /**
+         * ClaimSegment
+         * @description A run of plain text, or one cited value (``fact`` names it).
+         */
+        ClaimSegment: {
+            /** Fact */
+            fact?: string | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * ClaimSpan
+         * @description One piece of the text the reading rests on (underlined on the page).
+         */
+        ClaimSpan: {
+            /** End */
+            end: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "gene" | "direction" | "negation" | "hedge" | "fold" | "p" | "significance" | "robust" | "normaliser" | "group" | "n" | "efficiency";
+            /** Start */
+            start: number;
+            /** Written */
+            written: string;
+        };
+        /**
+         * ClaimsReport
+         * @description Every claim in a text, checked against one study.
+         */
+        ClaimsReport: {
+            /**
+             * Audit
+             * @default none
+             * @enum {string}
+             */
+            audit: "none" | "current" | "older";
+            /** Claims */
+            claims: components["schemas"]["ClaimView"][];
+            /**
+             * Groups
+             * @description The compared group, then the reference group.
+             */
+            groups: string[];
+            /**
+             * Head
+             * @description The decision chain's head the claims were checked at.
+             */
+            head: string;
+            /**
+             * Length
+             * @description The length of the text that was checked (characters).
+             */
+            length: number;
+            /** Model Note */
+            model_note?: string | null;
+            /** Notes */
+            notes?: string[];
+            /**
+             * Reader
+             * @default rules
+             * @enum {string}
+             */
+            reader: "rules" | "rules+model";
+            /**
+             * Rule
+             * @description qPilot's call rule in words.
+             */
+            rule: string;
+            /** Study Id */
+            study_id: string;
+            summary: components["schemas"]["ClaimsSummary"];
+            /** Text Sha256 */
+            text_sha256: string;
+            /**
+             * Verdict Rules
+             * @description What each verdict means.
+             */
+            verdict_rules: {
+                [key: string]: string;
+            };
+            /**
+             * Verdicts
+             * @description Each verdict's label.
+             */
+            verdicts: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ClaimsSummary
+         * @description How many claims came out which way.
+         */
+        ClaimsSummary: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** N */
+            n: number;
+            /** Sentence */
+            sentence: string;
+            /** Supported */
+            supported: number;
+        };
+        /**
+         * ClaimText
+         * @description A sentence whose numbers are facts: plain text, its segments, the facts it cites.
+         */
+        ClaimText: {
+            /** Facts */
+            facts: components["schemas"]["ClaimFact"][];
+            /** Plain */
+            plain: string;
+            /** Segments */
+            segments: components["schemas"]["ClaimSegment"][];
+        };
+        /**
+         * ClaimView
+         * @description One claim: where it is, how it was read, the verdict and why.
+         */
+        ClaimView: {
+            /** Audit Label */
+            audit_label?: string | null;
+            /** Audit Verdict */
+            audit_verdict?: string | null;
+            /** Checks */
+            checks: components["schemas"]["ClaimCheck"][];
+            /** Choices */
+            choices?: components["schemas"]["ClaimChoice"][];
+            clause: components["schemas"]["TextRange"];
+            /**
+             * Gene
+             * @description The compared gene to open, if any.
+             */
+            gene?: string | null;
+            /** Grid Cells */
+            grid_cells?: number | null;
+            /**
+             * Grid Holds
+             * @description Analyses in qPilot's grid where this reading holds.
+             */
+            grid_holds?: number | null;
+            /** @description One sentence: the verdict's main reason. */
+            headline: components["schemas"]["ClaimText"];
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "gene" | "normaliser" | "efficiency" | "n";
+            reading: components["schemas"]["ClaimReading"];
+            sentence: components["schemas"]["TextRange"];
+            /**
+             * Severity
+             * @description Sort key: contradicted 4 … supported 0.
+             */
+            severity: number;
+            /** Spans */
+            spans: components["schemas"]["ClaimSpan"][];
+            /** @description A sentence the record supports, built from facts. */
+            suggestion?: components["schemas"]["ClaimText"] | null;
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "supported" | "choices" | "overstated" | "contradicted" | "unchecked";
+            /** Verdict Label */
+            verdict_label: string;
         };
         /**
          * ConfirmRequest
@@ -6558,6 +7025,16 @@ export type components = {
             studies_dir: string;
             /** Version */
             version: string;
+        };
+        /**
+         * TextRange
+         * @description Characters ``start`` (inclusive) to ``end`` (exclusive) of the text that was checked.
+         */
+        TextRange: {
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
         };
         /**
          * TextSegment
@@ -9482,6 +9959,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DecisionDone"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_claims: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimsReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_examples: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimExamples"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_claims: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
                 };
             };
             /** @description Validation Error */
