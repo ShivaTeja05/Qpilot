@@ -52,6 +52,8 @@ export default async function globalSetup(): Promise<void> {
     kind: string;
     study_id?: string | null;
     results_visible: boolean;
+    /** The session is still reading its file (the cold start). */
+    warming?: boolean;
     stages: { stage: string; confirmed: boolean }[];
   }
   const list = (await (await fetch(`${E2E.origin}/api/workspaces`, { headers })).json()) as {
@@ -65,8 +67,8 @@ export default async function globalSetup(): Promise<void> {
       const confirmed = ["design", "curves"].every(
         (s) => frame.stages?.find((x) => x.stage === s)?.confirmed,
       );
-      // No stages yet = still reading the file ("Reading the file" is its next step).
-      const loading = w.kind === "session" && !frame.stages?.length;
+      // Still reading the file: `warming` (older servers: no stages yet).
+      const loading = Boolean(frame.warming) || (w.kind === "session" && !frame.stages?.length);
       if (!loading && (w.kind !== "session" || !confirmed || frame.study_id)) break;
       await new Promise((r) => setTimeout(r, 2000));
     }
