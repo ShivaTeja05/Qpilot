@@ -123,20 +123,23 @@ There is no group, fold change or p-value anywhere on this screen.
 
 Opens once the design and the curves are confirmed; qPilot then analyses your confirmed design (about 30 seconds on the demo).
 
-**The summary strip:** plates, reactions, samples, the groups and how many biological units each has, the conclusion rule, and the reference genes with their geNorm stability (M, V).
+**The summary strip:** plates, reactions, samples, the groups and how many biological units each has, genes compared, calls under the rule (how many up, down, no call), the reference genes with their geNorm stability, and whether the robustness audit has run ("Audited at the current decisions", or "Decisions changed since the audit: run it again to bring it up to date").
 
-**The robustness map.** One point per gene. Left–right: fold change (log scale, labelled in ×). Up–down: the share of reasonable analyses that give the same call. Colour and shape: the call and the level. The 2× lines mark the rule. A gene far from the lines and high on the map is a result that does not depend on your choices; a gene near a line, or low, does. Click a point to open the gene; **View as table** gives the same numbers as text.
+**The robustness map.** One point per gene. Left–right: fold change (log scale, labelled in ×). Up–down: the share of reasonable analyses that give the same call. The 2× lines mark the rule. A gene far from the lines and high on the map is a result that does not depend on your choices; a gene near a line, or low, does. **Colour the genes by** the call, the confidence level or, after an audit, the audit verdict. Hover or use the arrow keys to read a gene; click it, or press Enter, to open it. The chart has a table version for reading the same numbers as text.
 
-**All genes** is a table you can sort and filter by call, level, or "flips" (genes whose call at least one choice changes): gene, call, fold change [95 % CI], p, holds, level, reasons.
+**All genes** is a table you can sort and filter: find a gene by name, and filter by call, by confidence, by audit verdict, or to **only genes one choice can flip**. Each row gives the gene, its call, the fold change with its 95 % confidence interval, p, the share of reasonable analyses with the same call ("Same call in"), the confidence level and why ("Why this level").
 
-**The flip matrix** has the decisions as rows and the genes as columns; a mark means that choice alone flips that gene's call.
+**What one choice alone can flip** is the flip matrix: each row is a decision on a Decision Card, each column a gene (the genes that flip most first); a darker cell means more of that decision's other options change the gene's call. Decide those cards before you report the genes they flip.
 
-**Decision Cards (right column).** One card per choice that could change a conclusion, ranked by how many conclusions it can change: *which control genes*, *where to cut the groups*, *what to do with empty wells*, *which curves count as amplified*. Each card shows the question, the evidence, each option and what it changes for the headline genes, and the recommended option. Choose an option, write a reason (required), press **Decide**. It goes into the record with your name as the actor, and the analysis updates.
+**Decision Cards** (the right-hand column). One card per choice that could change a conclusion, ranked by how many conclusions it can change: *which control genes*, *where to cut the groups*, *what to do with empty wells*, *which curves count as amplified*. A counter says how many are decided. Each card shows the question, the evidence and each option with what it changes for the headline genes; one option is marked **Recommended**, and an option that is not advisable (for example a single control gene) is marked **Not recommended (MIQE)**. Choose an option, write a reason (required, at most 500 characters; it goes into the Analysis Record), and press **Decide: <option>**. The analysis updates.
 
-* A card where **no option changes any conclusion** is decided automatically, using the recommended option, and logged as the system; you can reopen it.
-* A choice that **can** flip a conclusion is yours alone: an agent, a model or the system can only ask, and the request waits at the top as **Approve** / **Turn down**.
-* A decided card folds up showing who decided and why. **Undo** adds a new entry to the record (nothing is erased).
-* **Explain with the model** (only when a model is answering) writes a plain explanation whose every number is a fact qPilot computed; the numbers are cited, and if the model writes a number of its own, qPilot discards the text and shows its own.
+* A card where **no option changes any conclusion** is decided automatically, with the recommended option, and shows **Decided automatically**; you can reopen it.
+* A choice that **can** flip a conclusion is yours alone: an agent, a model or the system can only ask. An agent's request waits on the card as **Agent request**, with the option it asked for marked **Agent asked**; give a reason and press **Approve: <option>** or **Turn down**.
+* A decided card shows who decided and why. **Undo: back to <option>** needs a reason and adds a new entry to the record (nothing is erased).
+* **Explain with the model** (shown only when a model is configured) writes a plain explanation whose every number is a fact qPilot computed and cites; if the model writes a number of its own, qPilot discards the text and shows its own.
+* `j` and `k` move between cards, `Enter` puts the cursor in the reason, and ⌘Enter (Ctrl Enter) decides.
+
+**Confirm the analysis choices…** appears when every card is decided. It shows exactly what the confirmation covers ("This confirms exactly these:"); **Yes, confirm** fixes the option in use on every card for the Prism export and the record, and opens Prism. Until then Prism is locked ("Decide the analysis choices first").
 
 *On the demo:* ODC1 is called up at 3.59× under the recommended choices; the usual Excel route (2^-ΔΔCq with a t-test on the linear scale) would change 14 of the 58 conclusions.
 
