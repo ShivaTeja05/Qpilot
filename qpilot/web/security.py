@@ -187,15 +187,41 @@ class Guard:
             )
             return
 
+        started = False
+
         async def guarded_send(message: Message) -> None:
+            nonlocal started
             if message["type"] == "http.response.start":
+                started = True
                 extra = list(SECURITY_HEADERS)
                 if is_api:
                     extra.append((b"cache-control", b"no-store"))
                 message["headers"] = [*message.get("headers", []), *extra]
             await send(message)
 
-        await self.app(scope, receive, guarded_send)
+        received = 0
+
+        async def counted_receive() -> Message:
+            # A body sent without Content-Length (chunked) is counted as it arrives, so it is
+            # capped before the multipart parser spools it to disk.
+            nonlocal received
+            message = await receive()
+            if message.get("type") == "http.request":
+                received += len(message.get("body") or b"")
+                if received > MAX_UPLOAD_BYTES:
+                    raise _TooLarge
+            return message
+
+        try:
+            await self.app(scope, counted_receive if method in WRITE_METHODS else receive,
+                           guarded_send)  # fmt: skip
+        except _TooLarge:
+            if not started:
+                await _json(send, 413, "too_large", "The upload is larger than 200 MB.")
+
+
+class _TooLarge(BaseException):  # noqa: N818
+    """A request body passed the upload cap (a BaseException: no handler turns it into a 400)."""
 
 
 async def _plain(send: Send, status: int, text: str) -> None:

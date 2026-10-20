@@ -420,10 +420,23 @@ class PlateWell(BaseModel):
     role: str | None = Field(default=None, description="Its role in the design assembled so far.")
     excluded_by_person: bool = False
     excluded_note: str = Field(default="", description="The file's or LinRegPCR's exclusion note.")
-    amplified: bool | None = Field(default=None, description="LinRegPCR's call (with a person's).")
-    cq: float | None = None
-    efficiency: float | None = None
+    amplified: bool | None = Field(
+        default=None,
+        description="Counts as amplified under the analysis rule: LinRegPCR found a starting "
+        "quantity (or a person's call for this well).",
+    )
+    cq: float | None = Field(default=None, description="LinRegPCR's Cq (a cycle).")
+    efficiency: float | None = Field(
+        default=None,
+        description="The well's own amplification factor per cycle (2.0 = 100 %); the starting "
+        "quantity uses the target's mean (efficiency_target).",
+    )
+    efficiency_target: float | None = Field(
+        default=None, description="The target's mean amplification factor, used for N0."
+    )
     r2: float | None = None
+    baseline: float | None = Field(default=None, description="LinRegPCR's baseline (raw units).")
+    linregpcr_note: str = Field(default="", description="LinRegPCR's own note on this well.")
     judge: bool | None = Field(default=None, description="The Curve Judge's call, when it ran.")
     disagrees: bool = False
     person_call: bool | None = Field(default=None, description="A call a person accepted.")
@@ -470,12 +483,23 @@ class CurveView(BaseModel):
     cycle: list[int]
     fluorescence: list[float | None] = Field(description="Raw fluorescence as in the file.")
     numbers_shown: bool
-    cq: float | None = None
-    baseline: float | None = Field(default=None, description="LinRegPCR's baseline (raw units).")
-    efficiency: float | None = None
+    cq: float | None = Field(default=None, description="LinRegPCR's Cq (a cycle).")
+    baseline: float | None = Field(
+        default=None, description="LinRegPCR's baseline, in the fluorescence's units."
+    )
+    efficiency: float | None = Field(
+        default=None,
+        description="The well's own amplification factor per cycle (2.0 = 100 %).",
+    )
+    efficiency_target: float | None = Field(
+        default=None, description="The target's mean amplification factor, used for N0."
+    )
     r2: float | None = None
-    amplified: bool | None = None
+    amplified: bool | None = Field(
+        default=None, description="Counts as amplified under the analysis rule (see PlateWell)."
+    )
     judge: bool | None = None
+    linregpcr_note: str = ""
     replicates: list[CurveSeries] = Field(
         description="Other wells of the same sample and target on the same plate."
     )
@@ -770,13 +794,35 @@ class DecisionEntryView(BaseModel):
     undo: bool = Field(description="Written by Undo.")
 
 
+class StaleAttempt(BaseModel):
+    """A write refused as stale (kept outside the chain, so it never moved the head)."""
+
+    at: str
+    attempted: str = Field(description="applied, pending_human or rejected")
+    card_id: str
+    card_title: str
+    option: str
+    option_label: str
+    reason: str = ""
+    actor: str
+    expected_head: str | None = None
+    head: str | None = None
+
+
 class DecisionsView(BaseModel):
     """The study's hash-chained decision log, requests waiting, and its head."""
 
     study_id: str
     head: str
+    root: str = Field(default="", description="The chain's genesis: the input file's sha256.")
+    chain_intact: bool = Field(
+        default=True, description="Every entry's link and hash re-computed on the server."
+    )
+    broken_at: int | None = Field(default=None, description="The first entry that fails.")
     entries: list[DecisionEntryView]
     pending: list[DecisionEntryView]
+    n_pending: int = 0
+    attempts: list[StaleAttempt] = []
 
 
 class FlipOption(BaseModel):

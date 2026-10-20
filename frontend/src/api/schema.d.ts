@@ -1151,21 +1151,35 @@ export type components = {
          * @description One well's raw amplification curve, with LinRegPCR's numbers once they may be shown.
          */
         CurveView: {
-            /** Amplified */
+            /**
+             * Amplified
+             * @description Counts as amplified under the analysis rule (see PlateWell).
+             */
             amplified?: boolean | null;
             /**
              * Baseline
-             * @description LinRegPCR's baseline (raw units).
+             * @description LinRegPCR's baseline, in the fluorescence's units.
              */
             baseline?: number | null;
-            /** Cq */
+            /**
+             * Cq
+             * @description LinRegPCR's Cq (a cycle).
+             */
             cq?: number | null;
             /** Cycle */
             cycle: number[];
             /** Declared Type */
             declared_type: string;
-            /** Efficiency */
+            /**
+             * Efficiency
+             * @description The well's own amplification factor per cycle (2.0 = 100 %).
+             */
             efficiency?: number | null;
+            /**
+             * Efficiency Target
+             * @description The target's mean amplification factor, used for N0.
+             */
+            efficiency_target?: number | null;
             /**
              * Fluorescence
              * @description Raw fluorescence as in the file.
@@ -1175,6 +1189,11 @@ export type components = {
             judge?: boolean | null;
             /** Key */
             key: string;
+            /**
+             * Linregpcr Note
+             * @default
+             */
+            linregpcr_note: string;
             /** Note */
             note: string;
             /** Numbers Shown */
@@ -1351,12 +1370,39 @@ export type components = {
          * @description The study's hash-chained decision log, requests waiting, and its head.
          */
         DecisionsView: {
+            /**
+             * Attempts
+             * @default []
+             */
+            attempts: components["schemas"]["StaleAttempt"][];
+            /**
+             * Broken At
+             * @description The first entry that fails.
+             */
+            broken_at?: number | null;
+            /**
+             * Chain Intact
+             * @description Every entry's link and hash re-computed on the server.
+             * @default true
+             */
+            chain_intact: boolean;
             /** Entries */
             entries: components["schemas"]["DecisionEntryView"][];
             /** Head */
             head: string;
+            /**
+             * N Pending
+             * @default 0
+             */
+            n_pending: number;
             /** Pending */
             pending: components["schemas"]["DecisionEntryView"][];
+            /**
+             * Root
+             * @description The chain's genesis: the input file's sha256.
+             * @default
+             */
+            root: string;
             /** Study Id */
             study_id: string;
         };
@@ -2146,15 +2192,23 @@ export type components = {
         PlateWell: {
             /**
              * Amplified
-             * @description LinRegPCR's call (with a person's).
+             * @description Counts as amplified under the analysis rule: LinRegPCR found a starting quantity (or a person's call for this well).
              */
             amplified?: boolean | null;
+            /**
+             * Baseline
+             * @description LinRegPCR's baseline (raw units).
+             */
+            baseline?: number | null;
             /**
              * Col
              * @description 1-based column.
              */
             col?: number | null;
-            /** Cq */
+            /**
+             * Cq
+             * @description LinRegPCR's Cq (a cycle).
+             */
             cq?: number | null;
             /**
              * Declared Type
@@ -2166,8 +2220,16 @@ export type components = {
              * @default false
              */
             disagrees: boolean;
-            /** Efficiency */
+            /**
+             * Efficiency
+             * @description The well's own amplification factor per cycle (2.0 = 100 %); the starting quantity uses the target's mean (efficiency_target).
+             */
             efficiency?: number | null;
+            /**
+             * Efficiency Target
+             * @description The target's mean amplification factor, used for N0.
+             */
+            efficiency_target?: number | null;
             /**
              * Excluded By Person
              * @default false
@@ -2194,6 +2256,12 @@ export type components = {
              * @description `run_id/well`: what the curve routes take.
              */
             key: string;
+            /**
+             * Linregpcr Note
+             * @description LinRegPCR's own note on this well.
+             * @default
+             */
+            linregpcr_note: string;
             /**
              * Person Call
              * @description A call a person accepted.
@@ -2665,6 +2733,38 @@ export type components = {
              * @enum {string}
              */
             stage: "design" | "curves" | "choices" | "prism" | "roundtrip";
+        };
+        /**
+         * StaleAttempt
+         * @description A write refused as stale (kept outside the chain, so it never moved the head).
+         */
+        StaleAttempt: {
+            /** Actor */
+            actor: string;
+            /** At */
+            at: string;
+            /**
+             * Attempted
+             * @description applied, pending_human or rejected
+             */
+            attempted: string;
+            /** Card Id */
+            card_id: string;
+            /** Card Title */
+            card_title: string;
+            /** Expected Head */
+            expected_head?: string | null;
+            /** Head */
+            head?: string | null;
+            /** Option */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
         };
         /**
          * SystemView

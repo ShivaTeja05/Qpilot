@@ -49,6 +49,7 @@ from qpilot.web.contract import (
     ResultsSummary,
     ResultsView,
     RuleView,
+    StaleAttempt,
     TextSegment,
 )
 
@@ -722,11 +723,40 @@ def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
             undo=entry.reason.startswith(UNDO_PREFIX),
         )
 
+    from qpilot.core.record import verify_chain
+
+    entries = store.entries(study_id)
+    root = store.get(study_id).input_sha256
+    broken = verify_chain(entries, root)
+    attempts = []
+    for a in store.attempts(study_id):
+        card = by_id.get(str(a.get("card_id")))
+        labels = {o.id: o.label for o in card.options} if card else {}
+        option = str(a.get("option") or "")
+        attempts.append(
+            StaleAttempt(
+                at=str(a.get("at") or ""),
+                attempted=str(a.get("attempted") or ""),
+                card_id=str(a.get("card_id") or ""),
+                card_title=KIND_TITLE.get(card.kind, card.kind) if card else str(a.get("card_id")),
+                option=option,
+                option_label=labels.get(option, option),
+                reason=str(a.get("reason") or ""),
+                actor=str(a.get("actor") or ""),
+                expected_head=a.get("expected_head"),
+                head=a.get("head"),
+            )
+        )
     return DecisionsView(
         study_id=study_id,
         head=head,
-        entries=[view(e) for e in store.entries(study_id)],
+        root=root,
+        chain_intact=broken is None,
+        broken_at=broken,
+        entries=[view(e) for e in entries],
         pending=[view(p) for p in pending],
+        n_pending=len(pending),
+        attempts=attempts,
     )
 
 

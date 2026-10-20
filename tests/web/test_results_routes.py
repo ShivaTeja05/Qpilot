@@ -89,6 +89,12 @@ def test_decide_then_undo_writes_new_entries_as_a_person(walked):
     assert r.status_code == 409 and "Nothing to undo" in r.json()["error"]["message"]
     chain = c.get(f"/api/studies/{study}/decisions").json()
     assert chain["head"] == store.chain_head(study)
+    from qpilot.core.record import verify_chain
+
+    broken = verify_chain(store.entries(study), store.get(study).input_sha256)
+    assert chain["chain_intact"] == (broken is None) and chain["broken_at"] == broken
+    assert chain["root"] == store.get(study).input_sha256
+    assert [a["attempted"] for a in chain["attempts"]] == ["applied"], "the stale try is kept"
     assert [e["undo"] for e in chain["entries"]][-1] is True
     assert chain["entries"][-1]["option_label"]
 
