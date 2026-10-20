@@ -337,3 +337,16 @@ def test_records_outlive_the_server(study, exported):
         mine = next(x for x in listed if x["record_id"] == body["record_id"])
         again = client.get(mine["download"]["url"])
         assert again.status_code == 200 and again.content == r.content
+
+
+def test_a_zip_bomb_is_refused_before_it_is_unpacked(study):
+    client, ctx, _ = study
+    bomb = io.BytesIO()
+    with zipfile.ZipFile(bomb, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("CHECKSUMS.sha256", "")
+        zf.writestr("results.json", b"\0" * (50 * 1024 * 1024))  # ~50 KB inflating to 50 MB
+    assert len(bomb.getvalue()) < 1024 * 1024
+    resp = verify(client, bomb.getvalue())
+    assert resp.status_code == 400 and resp.json()["error"]["code"] == "bad_record"
+    assert "unpacks to far more" in resp.json()["error"]["message"]
+    assert list((ctx.private / "verify").iterdir()) == []

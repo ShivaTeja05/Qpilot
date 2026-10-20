@@ -82,6 +82,11 @@ JOB_RESULTS = {
 
 MAX_RECORD_BYTES = 200 * 1024 * 1024  # the old pages' upload cap (Gradio max_file_size 200mb)
 MAX_JSON_BYTES = 1024 * 1024  # record.json / audit_manifest.json read from an upload
+# A record's files compress at most ~10:1 (the demo record: results.json 10.3, input.rdml 1.0);
+# a zip bomb compresses far more. Members under 1 MB are not ratio-checked (harmless either way).
+MAX_RATIO = 100
+RATIO_FLOOR = 1024 * 1024
+TOTAL_FLOOR = 64 * 1024 * 1024
 PROJECT_KIND = "prism.project"
 EXPORT_FILE = "export.json"  # beside each exported record zip: what the export job answered
 # Typical times on the demo, measured on this laptop on 20 Oct while twenty build sessions shared
@@ -750,6 +755,7 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
             "not_zip",
             f"{name} is not a zip file: verify the record's .zip (or zip its folder).",
         )
+    _refuse_bombs(upload, name)
     try:
         unpacked = unzip_record(upload, target)
     except RecordError as err:
@@ -805,6 +811,26 @@ def _verify_upload(ctx: AppContext, upload: Path, target: Path, name: str) -> Re
         known_study=known,
         note=TAMPER_NOTE,
     )
+
+
+def _refuse_bombs(upload: Path, name: str) -> None:
+    """400 ``bad_record`` before unpacking a zip that inflates far beyond what it holds."""
+    bomb = api_error(
+        400, "bad_record", f"{name} unpacks to far more than it holds: it is not a record zip."
+    )
+    try:
+        with zipfile.ZipFile(upload) as zf:
+            members = zf.infolist()
+    except (zipfile.BadZipFile, OSError, ValueError) as err:
+        raise api_error(400, "bad_record", f"{name}: {_sentence(err)}.") from err
+    for member in members:
+        if member.file_size > RATIO_FLOOR and member.file_size > MAX_RATIO * max(
+            member.compress_size, 1
+        ):
+            raise bomb
+    total = sum(m.file_size for m in members)
+    if total > max(TOTAL_FLOOR, MAX_RATIO * upload.stat().st_size):
+        raise bomb
 
 
 def _known_study(ctx: AppContext, study_id: str) -> bool:
