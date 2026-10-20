@@ -5,7 +5,6 @@ import { CALLS, CALL_ORDER, VERDICTS, VERDICT_ORDER, Glyph } from "@/charts";
 import { count, fixed } from "@/lib/format";
 import { Card } from "@/ui";
 import type { ResultsView } from "./api";
-import { FactText } from "./FactText";
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -34,12 +33,11 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
         <Stat label="Reactions" value={count(s.n_reactions)} />
         <Stat label="Samples" value={count(s.n_samples)} />
         {s.groups.slice(0, 2).map((grp, i) => (
-          <Stat key={grp.label} label={i === 0 ? "Compared group" : "Against"} value={count(grp.n)} sub={grp.label} />
+          <Stat key={grp.label} label={grp.label} value={count(grp.n)} sub={i === 0 ? "the compared group" : "the comparison group"} />
         ))}
         <Stat label="Genes compared" value={count(s.n_genes)} />
       </div>
-      <p className="mt-3 text-[13px] text-muted">{s.text ? <FactText text={s.text} /> : s.design_line}</p>
-      {s.text && s.design_line && <p className="mt-1 text-[12px] text-faint">{s.design_line}</p>}
+      {s.design_line && <p className="mt-3 text-[13px] text-muted">{s.design_line}</p>}
       <div className="mt-4 grid gap-4 border-t border-line pt-4 lg:grid-cols-3">
         <div className="min-w-0">
           <div className="text-[12px] text-muted">Calls under the rule</div>

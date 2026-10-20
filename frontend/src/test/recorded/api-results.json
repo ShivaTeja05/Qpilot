@@ -1,0 +1,1855 @@
+{
+ "study_id": "e300000d4f9a",
+ "session": "bc1d233e3866",
+ "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+ "summary": {
+  "n_plates": 64,
+  "n_reactions": 24576,
+  "n_samples": 366,
+  "n_genes": 58,
+  "mode": "marker_split",
+  "group_var": "MYCN_high",
+  "groups": [
+   {
+    "label": "MYCN-high",
+    "n": 53
+   },
+   {
+    "label": "rest",
+    "n": 294
+   }
+  ],
+  "cut": 0.15,
+  "design_line": "Groups by MYCN expression, top 15 %: MYCN-high 53 vs rest 294. Expression-defined, not a clinical call.",
+  "text": {
+   "plain": "64 plates · 366 samples · 24,576 reactions. High group 53 samples, rest 294.",
+   "segments": [
+    {
+     "text": "64",
+     "fact": "f_n_plates"
+    },
+    {
+     "text": " plates · ",
+     "fact": null
+    },
+    {
+     "text": "366",
+     "fact": "f_n_samples"
+    },
+    {
+     "text": " samples · ",
+     "fact": null
+    },
+    {
+     "text": "24,576",
+     "fact": "f_n_reactions"
+    },
+    {
+     "text": " reactions. High group ",
+     "fact": null
+    },
+    {
+     "text": "53",
+     "fact": "f_n_hi"
+    },
+    {
+     "text": " samples, rest ",
+     "fact": null
+    },
+    {
+     "text": "294",
+     "fact": "f_n_lo"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_n_plates",
+     "text": "64",
+     "value": 64,
+     "unit": "",
+     "path": "study"
+    },
+    {
+     "id": "f_n_samples",
+     "text": "366",
+     "value": 366,
+     "unit": "",
+     "path": "study"
+    },
+    {
+     "id": "f_n_reactions",
+     "text": "24,576",
+     "value": 24576,
+     "unit": "",
+     "path": "study"
+    },
+    {
+     "id": "f_n_hi",
+     "text": "53",
+     "value": 53,
+     "unit": "",
+     "path": "study"
+    },
+    {
+     "id": "f_n_lo",
+     "text": "294",
+     "value": 294,
+     "unit": "",
+     "path": "study"
+    }
+   ],
+   "source": "template"
+  }
+ },
+ "rule": {
+  "alpha": 0.05,
+  "min_log2fc": 1.0,
+  "min_fold": 2.0,
+  "text": "up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call"
+ },
+ "references": {
+  "used": [
+   "ALUsq(Eurogentec)",
+   "HMBS",
+   "HPRT1",
+   "SDHA(1)",
+   "UBC(2)"
+  ],
+  "candidates": [
+   "ALUsq(Eurogentec)",
+   "HMBS",
+   "HPRT1",
+   "SDHA(1)",
+   "UBC(2)"
+  ],
+  "m": {
+   "ALUsq(Eurogentec)": 1.6815868417246653,
+   "HMBS": 1.9577268390849065,
+   "HPRT1": 1.6348541505971745,
+   "SDHA(1)": 1.9886431897382821,
+   "UBC(2)": 2.027457232121438
+  },
+  "order": [
+   "ALUsq(Eurogentec)",
+   "HPRT1",
+   "HMBS",
+   "SDHA(1)",
+   "UBC(2)"
+  ],
+  "v": {
+   "V2/3": 0.556137574945685,
+   "V3/4": 0.3874296046199954,
+   "V4/5": 0.32702994817071
+  },
+  "recommended": [
+   "ALUsq(Eurogentec)",
+   "HPRT1",
+   "HMBS",
+   "SDHA(1)",
+   "UBC(2)"
+  ],
+  "cutoff_m": 1.5,
+  "cutoff_v": 0.15,
+  "stable": []
+ },
+ "genes": [
+  {
+   "gene": "AHCY",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.614162762583152,
+   "log2fc": 1.3863489687773178,
+   "ci": [
+    2.118827876629596,
+    3.2252959405777344
+   ],
+   "p": 3.4236708518096045e-13,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9059139784946236,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.909489,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "AKR1C1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.29441754496147543,
+   "log2fc": -1.764064447695223,
+   "ci": [
+    0.18522385606844702,
+    0.4679834046274814
+   ],
+   "p": 1.99122253227859e-06,
+   "n_hi": 52,
+   "n_lo": 294,
+   "holds": 0.9543010752688172,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.846829,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "ARHGEF7",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.8983852933629127,
+   "log2fc": -0.1545937839855095,
+   "ci": [
+    0.6646011100404159,
+    1.214406842145788
+   ],
+   "p": 0.4806758149773522,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9946236559139785,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.912051,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "BIRC5",
+   "headline": true,
+   "conclusion": "up",
+   "fc": 4.01142868409124,
+   "log2fc": 2.004116148990932,
+   "ci": [
+    2.933476511654864,
+    5.485491369580537
+   ],
+   "p": 5.043719769792568e-14,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.86517,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CAMTA1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.35902992696506975,
+   "log2fc": -1.477823989879155,
+   "ci": [
+    0.25943610672182876,
+    0.49685639398973275
+   ],
+   "p": 3.450060869749911e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.956989247311828,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.885243,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CAMTA2",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5052860358240974,
+   "log2fc": -0.9848277849605926,
+   "ci": [
+    0.3729941314882647,
+    0.6844986460781991
+   ],
+   "p": 2.9281255987049988e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6370967741935484,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.867626,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "CD44",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2867377358149505,
+   "log2fc": -1.8021963134669554,
+   "ci": [
+    0.18799269988205036,
+    0.4373495842757169
+   ],
+   "p": 1.8895090302137064e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.989247311827957,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.889815,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CDCA5",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.4688648233346555,
+   "log2fc": 1.3038478473986674,
+   "ci": [
+    1.7478711705167052,
+    3.4872670358750586
+   ],
+   "p": 1.1866626750995467e-06,
+   "n_hi": 53,
+   "n_lo": 291,
+   "holds": 0.9448924731182796,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.906257,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CDH5",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.10000855498728381,
+   "log2fc": -3.3218046777891534,
+   "ci": [
+    0.04428513625465048,
+    0.22584803653154095
+   ],
+   "p": 5.762468404506528e-07,
+   "n_hi": 49,
+   "n_lo": 292,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.893497,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CDKN3",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.3799262029722064,
+   "log2fc": 1.2509168389715897,
+   "ci": [
+    1.776316334808264,
+    3.188648677379349
+   ],
+   "p": 8.421267801514294e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8790322580645161,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.877002,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "CLSTN1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.45265275320143966,
+   "log2fc": -1.1435233654590808,
+   "ci": [
+    0.2717398232627009,
+    0.7540098927007999
+   ],
+   "p": 0.002866714132671344,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.42338709677419356,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call",
+    "refs"
+   ],
+   "efficiency": 1.726005,
+   "at_your_choices": null,
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "CPSG3",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 21.192506885141203,
+   "log2fc": 4.405482350688189,
+   "ci": [
+    11.036389134849989,
+    40.69468216362073
+   ],
+   "p": 5.196245183671858e-15,
+   "n_hi": 50,
+   "n_lo": 229,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.92072,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "DDC",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.27065052237833925,
+   "log2fc": -1.8854969223089908,
+   "ci": [
+    0.15972141635637435,
+    0.4586216860250408
+   ],
+   "p": 6.636317354816448e-06,
+   "n_hi": 49,
+   "n_lo": 293,
+   "holds": 0.9516129032258065,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.918818,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "DPYSL3",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.492509681830066,
+   "log2fc": -1.0217760093215358,
+   "ci": [
+    0.3787158364629058,
+    0.6404954938294785
+   ],
+   "p": 1.1174235683245727e-06,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.543010752688172,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.906734,
+   "at_your_choices": null,
+   "verdict": "check data first",
+   "verdict_label": "Check data first"
+  },
+  {
+   "gene": "ECEL1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.10955294796571945,
+   "log2fc": -3.190299788484363,
+   "ci": [
+    0.054947490418949106,
+    0.2184239592467483
+   ],
+   "p": 2.9507999637065108e-08,
+   "n_hi": 52,
+   "n_lo": 291,
+   "holds": 0.9731182795698925,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.866979,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "ELAVL4",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.8401224289185042,
+   "log2fc": -0.2513285113730884,
+   "ci": [
+    0.6473208195082375,
+    1.0903491349283652
+   ],
+   "p": 0.18732783934944833,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.989247311827957,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.877557,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "EPB41L3",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2326851116799643,
+   "log2fc": -2.1035491918047926,
+   "ci": [
+    0.14078993805520887,
+    0.3845612971026826
+   ],
+   "p": 2.4486787522165165e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.929642,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "EPHA5",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.13480994236757224,
+   "log2fc": -2.8910011942470923,
+   "ci": [
+    0.06376530834604668,
+    0.28500952998645507
+   ],
+   "p": 1.4988470486403196e-06,
+   "n_hi": 52,
+   "n_lo": 290,
+   "holds": 0.9516129032258065,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.902946,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "EPN2",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.4169309307175766,
+   "log2fc": -1.262119690029187,
+   "ci": [
+    0.24680838066686464,
+    0.7043172542169776
+   ],
+   "p": 0.0014331518213457838,
+   "n_hi": 53,
+   "n_lo": 292,
+   "holds": 0.5094086021505376,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call",
+    "refs"
+   ],
+   "efficiency": 1.898039,
+   "at_your_choices": null,
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "FYN",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.6612568977752792,
+   "log2fc": -0.596717228383897,
+   "ci": [
+    0.5278443064213526,
+    0.8283895071633907
+   ],
+   "p": 0.00047971805726823325,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.967741935483871,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.881396,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "GNB1",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5854419792973072,
+   "log2fc": -0.7724018965396785,
+   "ci": [
+    0.45977555257538105,
+    0.7454557102997672
+   ],
+   "p": 3.8876339822804274e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8225806451612904,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.910029,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "HIVEP2",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.41840580759135987,
+   "log2fc": -1.257025218146902,
+   "ci": [
+    0.2958278069721716,
+    0.5917747273928384
+   ],
+   "p": 4.381504200226157e-06,
+   "n_hi": 53,
+   "n_lo": 291,
+   "holds": 0.6841397849462365,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.903135,
+   "at_your_choices": null,
+   "verdict": "depends on your choices",
+   "verdict_label": "Depends on your choices"
+  },
+  {
+   "gene": "IGSF4",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5149866336369241,
+   "log2fc": -0.9573931069332009,
+   "ci": [
+    0.3912336355009731,
+    0.6778845394647359
+   ],
+   "p": 8.141417850125559e-06,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.5026881720430108,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.916818,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "INPP1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.42230347301164417,
+   "log2fc": -1.243647983016741,
+   "ci": [
+    0.30360133769063347,
+    0.587415802164295
+   ],
+   "p": 2.1410174987499563e-06,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8655913978494624,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.917516,
+   "at_your_choices": null,
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "MAP2K4",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5439324966237257,
+   "log2fc": -0.8785004743472542,
+   "ci": [
+    0.4191576636665613,
+    0.7058502957938927
+   ],
+   "p": 1.7098607113484104e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6586021505376344,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.88888,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "MAP7",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.3502710330094385,
+   "log2fc": -1.513456410948352,
+   "ci": [
+    0.20579011766604116,
+    0.5961889616322672
+   ],
+   "p": 0.0001994065514041904,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9771505376344086,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.910075,
+   "at_your_choices": null,
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "MAPT",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.36827162102418615,
+   "log2fc": -1.44115786730796,
+   "ci": [
+    0.2542248132597999,
+    0.5334805250232738
+   ],
+   "p": 7.239595450189097e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9731182795698925,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.925306,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "MCM2",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.667344479006346,
+   "log2fc": 1.415404156370352,
+   "ci": [
+    2.0805971711514535,
+    3.419559859224538
+   ],
+   "p": 1.0936015460338844e-11,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.956989247311828,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.879137,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "MRPL3",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.775650542531332,
+   "log2fc": 0.8283476795683489,
+   "ci": [
+    1.4931386099734336,
+    2.111615645146241
+   ],
+   "p": 6.655210806036502e-09,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8440860215053764,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call",
+    "refs"
+   ],
+   "efficiency": 1.866415,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "MTSS1",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5315585500141006,
+   "log2fc": -0.9116994846686433,
+   "ci": [
+    0.4057117032805626,
+    0.6964415613559406
+   ],
+   "p": 1.538488151078706e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.5483870967741935,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.907824,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "NHLH2",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 14.956615437827042,
+   "log2fc": 3.9027118367238485,
+   "ci": [
+    6.49761643122277,
+    34.42806261694776
+   ],
+   "p": 6.192153321840656e-09,
+   "n_hi": 49,
+   "n_lo": 211,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.886813,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "NM23A",
+   "headline": true,
+   "conclusion": "up",
+   "fc": 2.1878561042496822,
+   "log2fc": 1.1295178548982436,
+   "ci": [
+    1.754371668359274,
+    2.7284494039847518
+   ],
+   "p": 1.2380920536773977e-09,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6505376344086021,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.912765,
+   "at_your_choices": null,
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "NRCAM",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2850459501718257,
+   "log2fc": -1.8107335905520783,
+   "ci": [
+    0.20509063516512274,
+    0.3961721296730196
+   ],
+   "p": 2.001432741169379e-10,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.90433,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "NTRK1",
+   "headline": true,
+   "conclusion": "down",
+   "fc": 0.0664778367884075,
+   "log2fc": -3.9109827526937413,
+   "ci": [
+    0.031684262938106326,
+    0.13947942524965912
+   ],
+   "p": 1.348097591946546e-09,
+   "n_hi": 49,
+   "n_lo": 293,
+   "holds": 0.8440860215053764,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call"
+   ],
+   "efficiency": 1.734152,
+   "at_your_choices": null,
+   "verdict": "depends on your choices",
+   "verdict_label": "Depends on your choices"
+  },
+  {
+   "gene": "ODC1",
+   "headline": true,
+   "conclusion": "up",
+   "fc": 3.3186076821812986,
+   "log2fc": 1.730578087558588,
+   "ci": [
+    2.292871356518271,
+    4.80321624539644
+   ],
+   "p": 2.065427855257047e-08,
+   "n_hi": 52,
+   "n_lo": 294,
+   "holds": 0.9946236559139785,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 3,
+   "flips_by": [],
+   "efficiency": 1.91344,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "PAICS",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.9431226046145078,
+   "log2fc": 0.9583769330843063,
+   "ci": [
+    1.5656099291641246,
+    2.411664225060018
+   ],
+   "p": 5.0286315078556e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.5483870967741935,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call",
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.891347,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "PDE4DIP",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.4682536760365976,
+   "log2fc": -1.0946377744629237,
+   "ci": [
+    0.3483342014584725,
+    0.629457297628946
+   ],
+   "p": 2.956480800265039e-06,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6236559139784946,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.885499,
+   "at_your_choices": null,
+   "verdict": "check data first",
+   "verdict_label": "Check data first"
+  },
+  {
+   "gene": "PIK3R1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.4464072514039836,
+   "log2fc": -1.1635676325061093,
+   "ci": [
+    0.3399113806855774,
+    0.5862687907187065
+   ],
+   "p": 1.2515643771323066e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.7204301075268817,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.90888,
+   "at_your_choices": null,
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "PLAGL1",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.44039399666922174,
+   "log2fc": -1.1831332922761213,
+   "ci": [
+    0.27145194806339434,
+    0.7144795743259743
+   ],
+   "p": 0.0012126577940036558,
+   "n_hi": 49,
+   "n_lo": 292,
+   "holds": 0.7137096774193549,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call",
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.896729,
+   "at_your_choices": null,
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "PLAT",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.29429341653985097,
+   "log2fc": -1.7646728259068603,
+   "ci": [
+    0.13779976852996356,
+    0.6285105986942628
+   ],
+   "p": 0.002068187100858995,
+   "n_hi": 51,
+   "n_lo": 293,
+   "holds": 0.6653225806451613,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call"
+   ],
+   "efficiency": 1.916108,
+   "at_your_choices": null,
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "PMP22",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2798306291549031,
+   "log2fc": -1.8373742120435734,
+   "ci": [
+    0.18398305879455282,
+    0.4256108226826984
+   ],
+   "p": 1.026739755092622e-07,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9973118279569892,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 3,
+   "flips_by": [],
+   "efficiency": 1.831175,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "PRAME",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 4.242697905168655,
+   "log2fc": 2.0849819573863626,
+   "ci": [
+    2.3051405732875234,
+    7.80884503232301
+   ],
+   "p": 1.055223667113932e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9489247311827957,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.841905,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "PRDM2",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5684374556765188,
+   "log2fc": -0.8149264746162899,
+   "ci": [
+    0.4466449668555884,
+    0.723440685542232
+   ],
+   "p": 1.6228997132393396e-05,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.7150537634408602,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.911305,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "PRKACB_bis",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.521035776584316,
+   "log2fc": -0.9405456572613389,
+   "ci": [
+    0.3613219105804224,
+    0.7513474066511006
+   ],
+   "p": 0.0007318234961211441,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.489247311827957,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call",
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.883991,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "PRKCZ",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.535666450590877,
+   "log2fc": -0.9005931536587402,
+   "ci": [
+    0.39338777254036567,
+    0.7294038257358026
+   ],
+   "p": 0.0001476490606814073,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.5362903225806451,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.913607,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "PTN",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.3599115617685497,
+   "log2fc": -1.474285646866921,
+   "ci": [
+    0.20822999747298565,
+    0.6220829557061379
+   ],
+   "p": 0.00042552294714856835,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9717741935483871,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.935544,
+   "at_your_choices": null,
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "PTPRF",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.4070567756595782,
+   "log2fc": -1.2966980614525658,
+   "ci": [
+    0.2965185060646894,
+    0.5588022845839632
+   ],
+   "p": 3.567628327633765e-07,
+   "n_hi": 53,
+   "n_lo": 293,
+   "holds": 0.625,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call",
+    "refs"
+   ],
+   "efficiency": 1.860012,
+   "at_your_choices": null,
+   "verdict": "fragile",
+   "verdict_label": "Fragile"
+  },
+  {
+   "gene": "PTPRH",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.087399034772291,
+   "log2fc": -3.5162388429655396,
+   "ci": [
+    0.038677382052249666,
+    0.1974950442304776
+   ],
+   "p": 1.6370175456028043e-07,
+   "n_hi": 51,
+   "n_lo": 291,
+   "holds": 0.9018817204301075,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call"
+   ],
+   "efficiency": 1.912932,
+   "at_your_choices": null,
+   "verdict": "depends on your choices",
+   "verdict_label": "Depends on your choices"
+  },
+  {
+   "gene": "PTPRN2",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.40538437091030494,
+   "log2fc": -1.3026376263214412,
+   "ci": [
+    0.27215941335289806,
+    0.603824376874502
+   ],
+   "p": 2.3574163320478413e-05,
+   "n_hi": 53,
+   "n_lo": 293,
+   "holds": 0.7661290322580645,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.901305,
+   "at_your_choices": null,
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "QPCT",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.2807548196924883,
+   "log2fc": -1.8326173054341757,
+   "ci": [
+    0.18281527857790644,
+    0.43116346398242184
+   ],
+   "p": 1.6674784613007443e-07,
+   "n_hi": 52,
+   "n_lo": 293,
+   "holds": 0.9731182795698925,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.895834,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "SCG2",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.25213009455013036,
+   "log2fc": -1.9877597646045955,
+   "ci": [
+    0.16571446648509264,
+    0.3836091436445368
+   ],
+   "p": 1.0451199143928834e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 1.0,
+   "n_cells": 744,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.903678,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "SLC25A5",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.824123431287931,
+   "log2fc": 0.8672033543283552,
+   "ci": [
+    1.5120438503571938,
+    2.200614943665562
+   ],
+   "p": 1.4841903400360044e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.6612903225806451,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "amp_call",
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.913223,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "SLC6A8",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.5356418750136271,
+   "log2fc": 0.6188418063047925,
+   "ci": [
+    1.1484308986995966,
+    2.0534069319848727
+   ],
+   "p": 0.004408845611003432,
+   "n_hi": 53,
+   "n_lo": 293,
+   "holds": 0.918010752688172,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.918253,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "SNAPC1",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 1.7109675394508148,
+   "log2fc": 0.7748123892150716,
+   "ci": [
+    1.2785435316886136,
+    2.2896443089333465
+   ],
+   "p": 0.0004405978733133076,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.7352150537634409,
+   "n_cells": 744,
+   "level": "Very low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "cut",
+    "refs"
+   ],
+   "efficiency": 1.887777,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "TNFRSF",
+   "headline": false,
+   "conclusion": "down",
+   "fc": 0.37804054974085244,
+   "log2fc": -1.4033871044292812,
+   "ci": [
+    0.22807651729601147,
+    0.6266083810061106
+   ],
+   "p": 0.00028924703252839,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.956989247311828,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 2,
+   "flips_by": [],
+   "efficiency": 1.928563,
+   "at_your_choices": null,
+   "verdict": "holds with caveats",
+   "verdict_label": "Holds with caveats"
+  },
+  {
+   "gene": "TYMS",
+   "headline": false,
+   "conclusion": "up",
+   "fc": 2.308879422758717,
+   "log2fc": 1.2071928328217532,
+   "ci": [
+    1.7409606111621418,
+    3.0620590464020196
+   ],
+   "p": 7.7289761156205e-08,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.8413978494623656,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.852996,
+   "at_your_choices": null,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  },
+  {
+   "gene": "ULK2",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.6505530811812227,
+   "log2fc": -0.6202613179864134,
+   "ci": [
+    0.49574725506856854,
+    0.853699757502128
+   ],
+   "p": 0.002407178719607032,
+   "n_hi": 53,
+   "n_lo": 294,
+   "holds": 0.9731182795698925,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.917706,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  },
+  {
+   "gene": "WSB1",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.5927740136012587,
+   "log2fc": -0.7544458916267928,
+   "ci": [
+    0.44130147774603906,
+    0.796238057020871
+   ],
+   "p": 0.0007444279712865687,
+   "n_hi": 53,
+   "n_lo": 292,
+   "holds": 0.8763440860215054,
+   "n_cells": 744,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 1,
+   "flips_by": [
+    "refs"
+   ],
+   "efficiency": 1.893443,
+   "at_your_choices": null,
+   "verdict": "no call",
+   "verdict_label": "No change called"
+  }
+ ],
+ "headline": [
+  "BIRC5",
+  "NM23A",
+  "NTRK1",
+  "ODC1"
+ ],
+ "counts": {
+  "up": 11,
+  "down": 29,
+  "none": 18
+ },
+ "levels": {
+  "Moderate": 21,
+  "Low": 16,
+  "Very low": 21
+ },
+ "choices": {
+  "card_undetermined": "drop"
+ },
+ "cards_waiting": 3,
+ "pending_requests": 0,
+ "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+ "audit": {
+  "status": "ready",
+  "verdict_counts": {
+   "check data first": 2,
+   "fragile": 5,
+   "depends on your choices": 3,
+   "holds with caveats": 7,
+   "solid": 23,
+   "no call": 18
+  },
+  "chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "current": true
+ }
+}
