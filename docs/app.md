@@ -232,7 +232,7 @@ lines. Theme. Fresh demo. The never-does lines and the version.
 
 ## 7. Who builds what
 
-Twenty agents, each owning paths nobody else edits (the coordinator merges into `ui/one-page`).
+Twenty-five agents, each owning paths nobody else edits (the coordinator merges into `ui/one-page`).
 API modules each define their own response models in `qpilot/web/contract_<area>.py`;
 `contract.py` is the shared core (owner: **api**). Routers are discovered (one module per area).
 
@@ -257,6 +257,11 @@ API modules each define their own response models in `qpilot/web/contract_<area>
 | **ask** | `features/ask/**` (the Ask drawer's content; keep `AskDrawer` props) |
 | **e2e** | `frontend/e2e/**`, `frontend/playwright.config.ts` (Playwright + axe on the real seeded store) |
 | **docs** | `README.md`, `docs/{studio,integration,agents}.md`, `THREAT_MODEL.md`, `THIRD_PARTY_NOTICES.md`, `CONTRIBUTING.md`, `demo/README.md`, `docs/user-guide.md` |
+| **trace** | `qpilot/web/routers/trace.py`, `qpilot/web/contract_trace.py`, `qpilot/trace/**` (may port from branch `agents/trace`: `qpilot/qpcr/trace.py`, `schemas_trace.py`, influence), `tests/web/test_trace*.py`, `frontend/src/features/trace/**` |
+| **claims** | `qpilot/web/routers/claims.py`, `qpilot/web/contract_claims.py`, `qpilot/claims/**`, `tests/web/test_claims*.py`, `frontend/src/features/claims/**` |
+| **report** | `qpilot/web/routers/report.py`, `qpilot/web/contract_report.py`, `qpilot/report/**` (may port from branch `agents/report`), `tests/web/test_report*.py`, `frontend/src/features/report/**` |
+| **history** | `qpilot/web/routers/history.py`, `qpilot/web/contract_history.py`, `qpilot/history/**`, `tests/web/test_history*.py`, `frontend/src/features/history/**` |
+| **planner** | `qpilot/web/routers/planner.py`, `qpilot/web/contract_planner.py`, `qpilot/qpcr/layout.py` (new), additive changes to `qpilot/qpcr/plan.py`, `tests/web/test_planner*.py`, `frontend/src/features/planner/**` |
 | **ux-review** | nothing in the repo: reviews merged builds in a browser and files issues to owners |
 | **coordinator** | `docs/app.md`, `frontend/src/shell/sections.ts`, `frontend/src/api/{client,live,jobs}.ts`, `qpilot/web/routers/__init__.py`, `qpilot/web/static/` (built on merge), CI, merges |
 
