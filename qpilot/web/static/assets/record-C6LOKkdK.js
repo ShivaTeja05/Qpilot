@@ -1,0 +1,1 @@
+import{n as e}from"./index-i6oam03_.js";import{t}from"./SectionPending-CTi0i2FB.js";var n=e();function r(e){return(0,n.jsx)(t,{id:`record`})}export{r as default};
