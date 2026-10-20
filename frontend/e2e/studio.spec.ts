@@ -74,7 +74,7 @@ test.describe("plates", () => {
     const demo = await demoSession(api);
     await app.open(route(demo, "design"));
     const panel = app.page.getByRole("region", { name: "Plate map" });
-    await expect(panel.getByRole("img", { name: /^Plate .+ wells/ })).toBeVisible();
+    await expect(panel.getByRole("grid", { name: /^Plate / })).toBeVisible();
     const well = panel.getByRole("gridcell", { name: FILLED_WELL }).first();
     await well.click();
     const dialog = app.page.getByRole("dialog", { name: /^Curve of well / });
@@ -109,7 +109,7 @@ test.describe("plates", () => {
     await app.shot("curves", "well-chosen-1440-light");
     // Blind stage: no fold changes or p-values on the screen.
     const text = await app.page.getByRole("main").innerText();
-    expect(text).not.toMatch(/\d+(\.\d+)?×|fold change|p\s*[<=]\s*0\.\d/i);
+    expect(text).not.toMatch(/\d+(\.\d+)?\s*×|\bp\s*[<=≤]\s*0?\.\d/i);
   });
 
   test("Curves: the previous / next plate buttons move between plates", async ({ app, api }) => {

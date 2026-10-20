@@ -75,7 +75,7 @@ test.describe("keyboard", () => {
     test.fixme(!LANDED.askDrawer, notLanded("askDrawer"));
     test.setTimeout(240_000);
     const demo = await demoSession(api);
-    await app.open(route(demo, "results"));
+    await app.open(route(demo, "record"));
     await app.page.keyboard.press(`${MOD}+j`);
     const drawer = app.page.getByRole("dialog", { name: "Ask your data" });
     const box = drawer.getByRole("textbox", { name: "Your question about this study" });

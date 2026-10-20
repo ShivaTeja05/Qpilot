@@ -33,7 +33,8 @@ test.describe("Audit", () => {
 
   test("the seeded audit shows the server's verdict counts", async ({ app, api }) => {
     const demo = await demoSession(api);
-    expect(demo.has_audit, "the seed has an audit").toBe(true);
+    const status = await getJson<{ status: string }>(api, `/api/studies/${demo.study_id}/audit`);
+    expect(status.status, "the seed has an audit").toBe("ready");
     const o = await overview(api, demo);
     await app.open(route(demo, "audit"));
     const tabs = app.page.getByRole("tablist", { name: "Audit views" });

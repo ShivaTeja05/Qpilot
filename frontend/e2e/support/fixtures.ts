@@ -38,6 +38,8 @@ export class App {
   readonly outbound: string[] = [];
   /** Responses with a 4xx/5xx status, as "404 GET http://…". */
   readonly failedResponses: string[] = [];
+  /** 409 "loading" answers seen (the browser logs each as a failed load). */
+  private expectedFailures = 0;
   private allowedConsole: RegExp[] = [];
   private inflight = new Set<Request>();
   private keyed = false;
@@ -52,8 +54,20 @@ export class App {
     page.on("pageerror", (error) => this.consoleErrors.push(`uncaught: ${error.message}`));
     // A failed load shows in the console without its address: record which request it was.
     page.on("response", (res) => {
-      if (res.status() >= 400)
-        this.failedResponses.push(`${res.status()} ${res.request().method()} ${res.url()}`);
+      if (res.status() < 400) return;
+      const what = `${res.status()} ${res.request().method()} ${res.url()}`;
+      if (res.status() === 409) {
+        // 409 "loading" is the API's "a job is preparing this view, ask again": expected.
+        void res
+          .json()
+          .then((b: { error?: { code?: string } }) => {
+            if (b?.error?.code === "loading") this.expectedFailures += 1;
+            else this.failedResponses.push(what);
+          })
+          .catch(() => this.failedResponses.push(what));
+        return;
+      }
+      this.failedResponses.push(what);
     });
     page.on("request", (req) => {
       const url = req.url();
@@ -74,7 +88,15 @@ export class App {
 
   /** Console errors not allowed by {@link allowConsole}. */
   unexpectedConsole(): string[] {
-    return this.consoleErrors.filter((t) => !this.allowedConsole.some((p) => p.test(t)));
+    let loading = this.expectedFailures;
+    return this.consoleErrors.filter((t) => {
+      if (this.allowedConsole.some((p) => p.test(t))) return false;
+      if (loading > 0 && /status of 409/.test(t)) {
+        loading -= 1;
+        return false;
+      }
+      return true;
+    });
   }
 
   /**
