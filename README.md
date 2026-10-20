@@ -6,14 +6,17 @@ qPilot reads a qPCR instrument's raw amplification curves, analyses every plate 
 
 Built at the *Reinvent the Wheel: A Tools for Science Hack* (London, 16–18 Oct 2026). Licence: Apache-2.0.
 
-## One product, one study
+## One product, one page
 
-From the instrument's raw curves to a record anyone can re-run, on the same study throughout:
+From the instrument's raw curves to a record anyone can re-run, on the same study throughout, in **one page** (`qpilot app`) on your computer:
 
-1. **qPilot Studio** (`qpilot studio`): the AI (fixed rules, a language model when one is configured, the Curve Judge) proposes the design and the curve calls, the deterministic engine checks every proposal and computes every number, and the scientist decides. [`docs/studio.md`](docs/studio.md)
-2. **The robustness audit**: the Decision Simulator (`qsim`, in [`sim/`](sim/README.md)) re-runs the study the scientist confirmed under every combination of eight analysis decisions (90,396 analyses on the demo), gives each gene a verdict, and reproduces qPilot at the baseline. [`docs/integration.md`](docs/integration.md)
-3. **The Analysis Record**: the input, the results, every decision with its reason and who made it, and the audit bound to it, hash-chained and checksummed so anyone can verify and re-run it (tamper-evident, not signed; see below).
-4. **One MCP server for agents**: `qpilot serve`, 16 tools (qPilot's 11 `qpcr_*` and the audit's 5 read-only `sim_*`). An agent can ask and propose; a choice that can change a conclusion always waits for a person.
+1. **Studio** (the page's Design and Curves sections): the AI (fixed rules, a language model when one is configured, the Curve Judge) proposes the design and the curve calls, the deterministic engine checks every proposal and computes every number, and the scientist decides. Nothing that pairs a group with a number is shown until the design and the curves are confirmed. [`docs/studio.md`](docs/studio.md)
+2. **Results and Decision Cards**: every gene's call with its fold change, confidence level and how often the call holds across every reasonable analysis, and the choices that could change a conclusion, ranked, for you to decide.
+3. **The robustness audit** (the Audit section): the Decision Simulator (`qsim`, in [`sim/`](sim/README.md)) re-runs the study the scientist confirmed under every combination of eight analysis decisions (90,396 analyses on the demo), gives each gene a verdict, and reproduces qPilot at the baseline. [`docs/integration.md`](docs/integration.md)
+4. **Prism and the Analysis Record**: send the study to GraphPad Prism and read its changes back as proposals; export the input, the results, every decision with its reason and who made it, and the audit as one hash-chained, checksummed record anyone can verify and re-run (tamper-evident, not signed; see below).
+5. **One MCP server for agents**: `qpilot serve`, 16 tools (qPilot's 11 `qpcr_*` and the audit's 5 read-only `sim_*`). An agent can ask and propose; a choice that can change a conclusion always waits for a person, and the page shows what an agent is waiting to ask you.
+
+[`docs/user-guide.md`](docs/user-guide.md) walks through the page section by section.
 
 ## Quickstart
 
@@ -24,27 +27,51 @@ git clone https://github.com/ShivaTeja05/Qpilot && cd Qpilot
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e '.[studio,sim]'                          # about 30 s
 qpilot fetch-demo                                       # the 64-plate demo study, SHA-256 pinned (7 MB, once)
+qpilot app                                              # the page, on 127.0.0.1 (Ctrl-C to stop)
+```
+
+`qpilot app` prints a link and opens it. **Use that link**: it carries the key of this launch, without which the page's API answers nothing. On the page, choose **Open the demo study**, or drop your own RDML export. Installing needs no Node; the page is already built into the package.
+
+Without a browser, the same walk-through can be scripted and checked:
+
+```bash
 QPILOT_MODEL_PROVIDER=none qpilot studio demo --check   # Studio end to end, no browser: 28 checks, about 90 s
 QPILOT_MODEL_PROVIDER=none python -m qpilot.integration demo --out demo-run   # all 9 stages, audit and record included: 30 checks, 3–6 min
 qpilot serve --list-tools                               # the 16 MCP tools this install serves
-qsim app --results demo-run/run/simulator_audit --no-model   # the audit's results screen on 127.0.0.1:8765 (Ctrl-C to stop)
-qpilot studio                                           # the Studio page on 127.0.0.1 (Ctrl-C to stop)
 ```
 
 On macOS the first `qpilot` command after installing can take about 70 s (the first load of native libraries); later calls start in seconds. `--out` must be a new or empty folder.
 
 **The model is optional.** With `QPILOT_MODEL_PROVIDER=none` the fixed rules propose alone, and the demo numbers above come from the rules. Typing the demo's 427 samples twice (854 items), the rules got 839/854 right; qwen2.5:7b 834/854; qwen2.5:14b and qwen2.5:32b 839/854. Safety held for every model: no control missed, nothing accepted without a person ([`docs/studio-measured.md`](docs/studio-measured.md)).
 
-## The engine and the one-page app
+## The page
+
+<!-- screenshots: the coordinator adds them here (docs/images/), one per section below -->
+
+One hash-routed page, one study at a time. The rail lists the workflow in order, each step with its state (confirmed, proposals waiting, or locked with the reason); the top bar shows the study, the head of the decision chain, the model in use and whether anything is waiting for you; **Ask** (a drawer) answers questions about the open study.
+
+| Section | What it is for |
+|---|---|
+| **Open** | Drop an RDML export (and optionally a sample sheet and one sentence about the experiment), open the demo study, or return to a recent workspace |
+| **Design** (blind) | Proposals for what each sample and gene is, the groups and the comparison, each checked by the engine; you accept, edit or reject |
+| **Curves** (blind) | Every well's curve and call, the Curve Judge's disagreements as proposals, the call rule |
+| **Results** | The robustness map of every gene, the table, the flip matrix and the Decision Cards |
+| **Gene** | One gene: what holds, one choice at a time, your samples, its wells |
+| **Audit** | The robustness audit: a verdict per gene, a what-if lab, and how it works |
+| **Prism** | The Prism project and bundle, and the round trip back |
+| **Record** | The decision chain, export of the Analysis Record, verification of a record |
+| **Agents** | How to connect an agent, and what agents are asking or have done |
+| **Settings** | The model's status and a test of it, autonomy, theme |
+
+What the page never does: it never makes a choice that can change a conclusion; it never shows a group difference before the design and the curves are confirmed (the server refuses, the page does not merely hide it); it never shows a number the engine did not compute; it never loads anything from the internet; and it never records a decision as anyone but the person at the page.
+
+## The engine and the command line
 
 ```bash
 qpilot run --out results # numbers, robustness, confidence and Decision Cards (186 analyses of the demo)
-qpilot app               # the one-page app on 127.0.0.1 (or: python -m qpilot.app)
 ```
 
 `qpilot doctor` shows what qPilot will use and whether anything can leave the machine (`outbound: none` without a model). `qpilot validate` reproduces the published benchmark below. For a clean demo run, `qpilot app --fresh-demo` moves earlier decisions aside (they are kept, never deleted).
-
-In the app: **Analyse** opens the study; the left column shows the study summary and, for the four headline genes, how often each conclusion holds across every reasonable analysis and a confidence verdict with its reasons (every gene is in the *All genes* table below); the centre shows one **Decision Card** at a time, ranked by how many conclusions the choice can change. Pick an option, type a reason, **Decide**; the next card appears. **Export** writes the Analysis Record as one zip.
 
 ## Use from an AI agent
 
@@ -92,8 +119,8 @@ Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671 and Ruijter JM *et al
 
 ## Limitations
 
-- The one-page app (`qpilot app`) is set up for the demo study's design: the study must contain the marker gene `MYCN(4)` and the demo's candidate control genes. Your own design goes through Studio, or `qpilot run --design study.yaml --samples sheet.csv` (see the table below); `qpilot plan` sizes a design before the first plate.
-- One gene per plate in the demo, so plate effects cannot be separated from gene effects; no mixed model.
+- Your own design goes through the page's Design section, or `qpilot run --design study.yaml --samples sheet.csv` (see the table below); `qpilot plan` sizes a design before the first plate. `qpilot run` without a design analyses the demo's.
+- One gene per plate in the demo, so plate effects cannot be separated from gene effects; there is no plate-effect model.
 - Technical replicates are averaged per biological unit in a confirmed design (see the table below); the robustness audit needs one well per sample and gene, so it does not run on such a design yet. In the demo each tumour has one well per gene; only standards and controls are in triplicate. No melt-curve analysis; no kinetic outlier test.
 - Curve analysis (N0, Cq, dilution bias) is validated against published results on the standards of one study from one instrument platform (LightCycler 480, SYBR Green I). The later steps (geNorm, the contrast, robustness) are tested against reproduced numbers, not a published benchmark.
 - No correction for testing many genes: the robustness check measures sensitivity to analysis choices, not significance.
@@ -103,7 +130,7 @@ Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671 and Ruijter JM *et al
 
 **Borrowed, credited, unchanged:** LinRegPCR (rdmlpython, MIT, vendored at `fce7a44`); the RDML format and schemas; the geNorm method (Vandesompele *et al.* 2002, reimplemented from the paper); SciPy's t distribution; the demo data and the published benchmark tables.
 
-**Built here:** the hardened RDML loader and pinned downloads; the per-plate curve table; quantities, groups, geNorm, the contrast and its rule; the reference-gene group check; the decision space and robustness grid; Decision Cards and the escalation rule; the on-disk study store; the Analysis Record and its hash chain; confidence grades; templated explanations whose numbers are all facts; the one-page app; qPilot Studio and the Prism bridge; the Decision Simulator (`sim/`) and the integrated workflow (`qpilot/integration/`); the MCP server; the model layer and its test harness; `qpilot plan`; the validation script.
+**Built here:** the hardened RDML loader and pinned downloads; the per-plate curve table; quantities, groups, geNorm, the contrast and its rule; the reference-gene group check; the decision space and robustness grid; Decision Cards and the escalation rule; the on-disk study store; the Analysis Record and its hash chain; confidence grades; templated explanations whose numbers are all facts; the one page and its local server (`qpilot/web/`, `frontend/`); qPilot Studio's service and the Prism bridge; the Decision Simulator (`sim/`) and the integrated workflow (`qpilot/integration/`); the MCP server; the model layer and its test harness; `qpilot plan`; the validation script.
 
 ## Related tools
 
@@ -125,20 +152,20 @@ For the analysis-and-statistics step: Clarida's Lab plan is listed at €4,800�
 | Offline on a laptop, no account | ✔ (macOS: full analysis tested with the network off; Linux: unit tests in CI, without the demo study; Windows untested) |
 | Reproduces my lab's numbers | ◐ reproduces the published benchmark above; your own instrument is untested |
 | Results as CSV | ◐ the robustness grid (`grid.csv`); a per-gene CSV is on the roadmap |
-| Prism export | ◐ `qpilot export prism` / Studio's Send to Prism write log2 tables per biological unit, a Prism script (`run.pzc`) and provenance (Mode S: Prism itself reads and writes its files). **Not yet run in a real Prism**: the script commands follow GraphPad's documentation, the templates must be made once by hand, see [docs/prism.md](docs/prism.md). Not affiliated with GraphPad Software or Dotmatics |
+| Prism export | ◐ `qpilot export prism` / the page's Send to Prism write log2 tables per biological unit, a Prism script (`run.pzc`) and provenance (Mode S: Prism itself reads and writes its files). **Not yet run in a real Prism**: the script commands follow GraphPad's documentation, the templates must be made once by hand, see [docs/prism.md](docs/prism.md). Not affiliated with GraphPad Software or Dotmatics |
 | Results written back into RDML | ✘ roadmap |
 | Hash-chained record of every decision | ✔ (tamper-evident; not Part 11) |
-| My own study design | ✔ `qpilot run --design study.yaml --samples sheet.csv`, or in qPilot Studio, where the AI proposes the design from your file, sheet and one sentence and you confirm each item; the demo is one preset (tested on synthetic designs and on the demo re-entered as two named groups, which reproduces it exactly) |
+| My own study design | ✔ `qpilot run --design study.yaml --samples sheet.csv`, or in the page's Design section, where the AI proposes the design from your file, sheet and one sentence and you confirm each item; the demo is one preset (tested on synthetic designs and on the demo re-entered as two named groups, which reproduces it exactly) |
 | Technical replicates | ✔ averaged per biological unit (mean of log2 quantities); never counted as n; a group with fewer than two biological units gets no p-value |
 | Which curves count as amplified | ✔ LinRegPCR by default; "Cq ≤ 40 / 38 / 35" are shown as choices with their consequences (on the demo, "Cq > 35 = not detected" changes 10 of 58 conclusions); the learned Curve Judge is a second opinion whose disagreements a person resolves (validated on the demo's LightCycler 480 SYBR only) |
 
 ## Security
 
-The app binds to `127.0.0.1` only, is never shared, refuses requests for any other host name, turns telemetry off before the UI library loads, and serves files only from a private export folder and Gradio's own upload folder; the study store and the dataset cache are blocked. The whole analysis runs with the network switched off (`tests/core/test_offline.py`). RDML files are parsed without external entities or network access and with size caps. Threats and mitigations: [`THREAT_MODEL.md`](THREAT_MODEL.md); reporting a vulnerability: [`SECURITY.md`](SECURITY.md).
+The page's server binds to `127.0.0.1` only and is never shared. Every request to its API must carry the key of the launch (the link `qpilot app` prints; the key is kept in an `HttpOnly`, `SameSite=Strict` cookie and removed from the address bar on the first load), requests for any other host name are refused, and so are writes from another site. A strict Content-Security-Policy means the page loads nothing from the internet (its code and fonts are bundled), the server serves only the page's own files, and telemetry is switched off. The whole analysis runs with the network switched off (`tests/core/test_offline.py`). RDML files are parsed without external entities or network access and with size caps. Threats and mitigations: [`THREAT_MODEL.md`](THREAT_MODEL.md); reporting a vulnerability: [`SECURITY.md`](SECURITY.md).
 
 ## Roadmap (not built)
 
-QuantStudio TXT and other native importers · results written back into RDML and a per-gene CSV · the Prism export run in a real Prism · the robustness audit on designs with technical replicates · a simulator panel on the Studio page · replicate-outlier and melt-peak cards on data that has them · a mixed model with plate as a random effect once a gene spans two or more plates · NormFinder, reimplemented from the paper.
+QuantStudio TXT and other native importers · results written back into RDML and a per-gene CSV · the Prism export run in a real Prism · the robustness audit on designs with technical replicates · replicate-outlier and melt-peak cards on data that has them · a plate effect (plate as a random effect) once a gene spans two or more plates · NormFinder, reimplemented from the paper.
 
 ## Licence and citation
 
