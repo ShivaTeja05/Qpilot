@@ -84,6 +84,9 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   const status = useAuditStatus(scope);
   const statusMissing = isNotFound(status.error);
   const audited = status.data ? status.data.status === "ready" : statusMissing && scope.hasAudit;
+  // The first read of an audit loads its live views (~15 s); the views wait for that job.
+  const warming = audited && status.data && !status.data.views_ready ? (status.data.loading ?? null) : null;
+  const auditOutdated = status.data?.current === false ? (status.data.decisions_since ?? 0) : 0;
   const card = useAuditView(scope, "gene", geneName, audited);
   const notCovered = audited && isNotFound(card.error);
   const covered = audited && !notCovered;
@@ -99,7 +102,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
     const s = job.data?.status;
     if (s === "done" || s === "failed") void qc.invalidateQueries({ queryKey: ["w", scope.key] });
   }, [job.data?.status, qc, scope.key]);
-  const startAudit = () => run.mutate(undefined, { onSuccess: (r) => setJobId(r.job.id) });
+  const startAudit = () => run.mutate(false, { onSuccess: (r) => setJobId(r.job.id) });
 
   const cards = useCards(scope, Boolean(gene.data && !gene.data.cards));
   const geneCards = useMemo(() => (gene.data ? cardsForGene(gene.data, cards.data?.cards) : []), [gene.data, cards.data]);
@@ -205,6 +208,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
           alpha={rule?.alpha}
           minLog2fc={rule?.min_log2fc}
           ruleText={rule?.text}
+          auditOutdated={auditOutdated}
           summary={geneSummary({ gene: g, labels, audit: auditCard, studyId: scope.studyId, chainHead: results.data?.chain_head ?? workspace.decisions_head })}
         />
         <JumpList hasAudit={Boolean(auditCard)} />
@@ -214,6 +218,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
               holds={g.holds}
               nCells={g.n_cells}
               analyses={covered ? analyses : null}
+              warming={warming}
               card={auditCard}
               audited={covered}
               labels={labels}
@@ -221,6 +226,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
             />
             <OneChoice
               effects={covered ? effects : null}
+              warming={warming}
               labels={labels}
               fallback={
                 g.impact && Object.keys(g.impact).length ? (
@@ -238,6 +244,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
             />
             <YourSamples
               samples={covered ? samples : null}
+              warming={warming}
               labels={labels}
               selected={selectedSample}
               onSelect={(p: SamplePoint) => selectSample(p.sample)}
@@ -251,7 +258,14 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
                   />
                 ) : null
               }
-              invite={notCoveredNote ?? invite}
+              invite={
+                notCoveredNote ?? (
+                  <EmptyState compact title="Each sample's value comes from the audit">
+                    The audit's engine computes every sample's value under any set of choices. Run it from “What
+                    holds” above; then click a sample to open its well.
+                  </EmptyState>
+                )
+              }
             />
             {auditCard ? (
               <AuditReading

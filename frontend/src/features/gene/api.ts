@@ -222,13 +222,23 @@ export function useCards(s: GeneScope, enabled = true) {
 
 // ---- the robustness audit's views (qsim Screen dicts, as the API returns them) ------------------
 
-export type AuditStatusName = "none" | "running" | "ready" | "refused" | "not_applicable" | "unavailable";
+export type AuditStatusName = "none" | "running" | "ready" | "refused" | "not_applicable" | "unavailable" | "failed";
 
 export interface AuditStatus {
   status: AuditStatusName | string;
+  /** Why not, in plain words (refused, not applicable, unavailable, failed). */
   reason?: string | null;
+  /** The running (or failed) audit job. */
   job?: JobView | null;
-  manifest?: Record<string, unknown> | null;
+  manifest?: { analyses?: number | null; chain_head?: string | null } | null;
+  /** Ready: no decision was made on the study since it was audited. */
+  current?: boolean | null;
+  decisions_since?: number;
+  /** Ready: the live views are loaded (the first load takes ~15 s; the views wait for it). */
+  views_ready?: boolean;
+  /** The job loading the live views. */
+  loading?: JobView | null;
+  typical_s?: number;
 }
 
 interface AuditScale {
@@ -321,7 +331,11 @@ export function useAuditStatus(s: GeneScope) {
     queryKey: wkey(s, "audit", "status"),
     enabled: Boolean(s.studyId),
     queryFn: () => requestJson<AuditStatus>(studyUrl(s, "/audit")),
-    refetchInterval: (q) => ((q.state.data as AuditStatus | undefined)?.status === "running" ? 5000 : false),
+    // Events re-read it when the job ends; poll slowly only while something is under way.
+    refetchInterval: (q) => {
+      const d = q.state.data as AuditStatus | undefined;
+      return d?.status === "running" || (d?.status === "ready" && !d.views_ready && d.loading) ? 5000 : false;
+    },
   });
 }
 
@@ -362,7 +376,8 @@ export function useAuditSamples(s: GeneScope, gene: string | null, changes: Reco
 export function useRunAudit(s: GeneScope) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => requestJson<{ job: JobView }>(studyUrl(s, "/audit"), { method: "POST", body: "{}" }),
+    mutationFn: (again: boolean = false) =>
+      requestJson<{ job: JobView }>(studyUrl(s, "/audit"), { method: "POST", body: JSON.stringify({ again }) }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: wkey(s, "audit", "status") }),
   });
 }

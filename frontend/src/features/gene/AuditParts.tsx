@@ -31,18 +31,22 @@ export function sideWords(hi: string) {
   return { lower: `lower in ${hi}`, higher: `higher in ${hi}` };
 }
 
-/** A query's three states in one place: loading, error, data. */
+/** A query's three states in one place: loading (or the audit's views warming up), error, data. */
 function Loaded<T>({
   query,
   label,
+  warming,
   children,
 }: {
   query: { data?: T; error: unknown; isPending: boolean; refetch: () => unknown };
   label: string;
+  /** The job loading the audit's live views (the first time, ~15 s): shown while waiting. */
+  warming?: JobView | null;
   children: (data: T) => ReactNode;
 }) {
   if (query.data) return <>{children(query.data)}</>;
   if (query.error) return <ErrorPanel compact error={query.error} onRetry={() => void query.refetch()} />;
+  if (warming) return <JobCard id={warming.id} />;
   return <LoadingBlock label={label} lines={4} />;
 }
 
@@ -56,6 +60,7 @@ export function WhatHolds({
   audited,
   labels,
   invite,
+  warming,
 }: {
   /** qPilot's robustness fraction: share of its analyses with the planned call. */
   holds: number;
@@ -65,6 +70,7 @@ export function WhatHolds({
   audited: boolean;
   labels: { hi: string; lo: string };
   invite?: ReactNode;
+  warming?: JobView | null;
 }) {
   const a = analyses?.data;
   return (
@@ -103,7 +109,7 @@ export function WhatHolds({
       </div>
       {audited && analyses ? (
         <div className="mt-4">
-          <Loaded query={analyses} label="Reading every reasonable analysis">
+          <Loaded query={analyses} label="Reading every reasonable analysis" warming={warming}>
             {(data) => (
               <AnalysesStrip
                 rows={analysesDots(data)}
@@ -139,9 +145,11 @@ export function OneChoice({
   effects,
   labels,
   fallback,
+  warming,
 }: {
   effects: { data?: AuditEffects; error: unknown; isPending: boolean; refetch: () => unknown } | null;
   labels: { hi: string; lo: string };
+  warming?: JobView | null;
   /** What to show without an audit (qPilot's own grid, one decision at a time). */
   fallback: ReactNode;
 }) {
@@ -152,7 +160,7 @@ export function OneChoice({
       hint="Each option of each decision, with every other choice as planned."
     >
       {effects ? (
-        <Loaded query={effects} label="Reading one choice at a time">
+        <Loaded query={effects} label="Reading one choice at a time" warming={warming}>
           {(data) => {
             const changing = data.decisions.filter((d) => d.n_change > 0);
             return (
@@ -186,6 +194,7 @@ export function YourSamples({
   onSelect,
   detail,
   invite,
+  warming,
 }: {
   samples: { data?: AuditSamples; error: unknown; isPending: boolean; refetch: () => unknown } | null;
   labels: { hi: string; lo: string };
@@ -194,6 +203,7 @@ export function YourSamples({
   /** The selected sample's well and curve. */
   detail?: ReactNode;
   invite?: ReactNode;
+  warming?: JobView | null;
 }) {
   return (
     <Panel
@@ -202,7 +212,7 @@ export function YourSamples({
       hint="Each sample's normalised value, relative to the mean of the rest. Click a sample to open its well."
     >
       {samples ? (
-        <Loaded query={samples} label="Reading each sample's value">
+        <Loaded query={samples} label="Reading each sample's value" warming={warming}>
           {(data) => {
             const carries = data.points.filter((p) => p.carries).length;
             const late = data.points.filter((p) => p.late).length;
@@ -340,6 +350,17 @@ export function AuditInvite({
   const auditPath = sectionPath(workspace, "audit");
   if (job || status?.status === "running") {
     return <JobCard id={job?.id ?? status?.job?.id ?? null} />;
+  }
+  if (status?.status === "failed") {
+    return (
+      <ErrorPanel title="The audit stopped before finishing" error={new Error(status.reason ?? status.job?.error?.message ?? "It stopped before finishing.")}>
+        {onRun ? (
+          <Button size="sm" className="mt-3" loading={running} onClick={onRun}>
+            Run the audit again
+          </Button>
+        ) : null}
+      </ErrorPanel>
+    );
   }
   if (status && ["refused", "not_applicable", "unavailable"].includes(status.status)) {
     return (

@@ -109,6 +109,7 @@ export function GeneHeader({
   minLog2fc,
   ruleText,
   summary,
+  auditOutdated = 0,
 }: {
   gene: GeneView;
   labels: { hi: string; lo: string };
@@ -122,6 +123,8 @@ export function GeneHeader({
   ruleText?: string | null;
   /** The gene in plain text, for "Copy summary". */
   summary?: string;
+  /** Decisions made on the study since it was audited (0: the audit is current). */
+  auditOutdated?: number;
 }) {
   const conclusion = asConclusion(gene.conclusion);
   const [lo, hi] = gene.ci ?? [];
@@ -181,6 +184,12 @@ export function GeneHeader({
               <VerdictTag verdict={verdict} className="text-base" />
               {audit?.result.verdict_sentence ? (
                 <p className="mt-1 text-[13px] text-muted">{audit.result.verdict_sentence}</p>
+              ) : null}
+              {auditOutdated > 0 ? (
+                <p className="mt-1 text-xs text-warn">
+                  Audited before the last {auditOutdated === 1 ? "decision" : `${count(auditOutdated)} decisions`}: run it
+                  again in Audit to bring this verdict up to date.
+                </p>
               ) : null}
             </>
           ) : auditPending ? (
