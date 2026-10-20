@@ -135,3 +135,13 @@ def test_an_agents_proposal_in_a_blind_session_is_listed_without_results(
 
 def test_agents_needs_the_launch_key(raw_client):
     assert raw_client.get("/api/agents").status_code == 401
+
+
+@pytest.mark.parametrize("content", ['{"study_', "{}", "[]", ""])
+def test_a_damaged_study_does_not_hide_the_others(client, web_store, study, content):
+    QpilotTools(web_store).qpcr_decide(study, "card_undetermined", "cap", CAP_REASON)
+    (web_store.root / "damaged").mkdir()
+    (web_store.root / "damaged" / "results.json").write_text(content)
+    r = client.get("/api/agents")
+    assert r.status_code == 200, r.text
+    assert [p["card_id"] for p in r.json()["pending"]] == ["card_undetermined"]

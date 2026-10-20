@@ -31,7 +31,7 @@ from fastapi import APIRouter, Query
 
 from qpilot.core.store import StudyNotFound, StudyStore
 from qpilot.web import views
-from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session, is_study
+from qpilot.web.context import KEY, AppContext, Ctx, api_error, check_key, is_session, is_study
 from qpilot.web.contract import JobStarted, JobView, ModelSeen
 from qpilot.web.contract_ops import (
     AgentActivity,
@@ -459,7 +459,7 @@ def agents(ctx: Ctx) -> AgentsView:
     pending: list[AgentRequest] = []
     activity: list[AgentActivity] = []
     hidden = 0
-    for study_id in ctx.store.list_studies():
+    for study_id in _study_ids(ctx.store):
         try:
             place, requests, entries = _study_entries(places, study_id)
         except (StudyNotFound, OSError, ValueError):
@@ -488,6 +488,26 @@ def agents(ctx: Ctx) -> AgentsView:
         activity_total=len(activity),
         hidden_blind=hidden,
     )
+
+
+def _study_ids(store: StudyStore) -> list[str]:
+    """Study ids of every readable workspace; a damaged or half-written one is skipped.
+
+    The store is shared with agents, scripts and other qPilot processes (and may sit in a synced
+    folder), so one unreadable ``results.json`` must not hide every other study.
+    """
+    out = []
+    for folder in sorted(store.root.iterdir()):
+        path = folder / "results.json"
+        if not folder.is_dir() or not path.is_file():  # never open a pipe or a device
+            continue
+        try:
+            study_id = json.loads(path.read_text(encoding="utf-8"))["study_id"]
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if isinstance(study_id, str) and KEY.match(study_id):
+            out.append(study_id)
+    return out
 
 
 def _session_ids(store: StudyStore) -> set[str]:
@@ -709,6 +729,10 @@ def _ask_audit(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
     )
 
 
+_asking: dict[tuple[int, str, str, str], str] = {}  # (runner, study, engine, question) -> job
+_asking_lock = threading.Lock()
+
+
 @router.post("/studies/{study_id}/ask", response_model=JobStarted, status_code=202)
 def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
     """Answer a question about a study (a job); every number in the answer is a cited fact."""
@@ -733,14 +757,25 @@ def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
                 ctx.bus.publish({"type": "study.changed", "key": key, "source": "page"})
         return answer.model_dump(mode="json")
 
-    job = ctx.jobs.submit(
-        "ask",
-        work,
-        title=f"Answering “{question[:60]}{'…' if len(question) > 60 else ''}”",
-        key=place.key,
-        typical_s=_typical(ctx, AUDIT_ASK_TYPICAL_S if engine == "audit" else ASK_TYPICAL_S),
-        dedupe=False,
-    )
+    # The same question asked again while it runs gets the running job (a model call is not
+    # repeated, a request is not filed twice); different questions run side by side.
+    asking = (id(ctx.jobs), study_id, engine, " ".join(question.lower().split()))
+    with _asking_lock:
+        job = ctx.jobs.get(_asking.get(asking, ""))
+        if job is None or job.status not in ("queued", "running"):
+            job = ctx.jobs.submit(
+                "ask",
+                work,
+                title=f"Answering “{question[:60]}{'…' if len(question) > 60 else ''}”",
+                key=place.key,
+                typical_s=_typical(
+                    ctx, AUDIT_ASK_TYPICAL_S if engine == "audit" else ASK_TYPICAL_S
+                ),
+                dedupe=False,
+            )
+            _asking[asking] = job.id
+            while len(_asking) > 200:  # the last few hundred questions are enough
+                _asking.pop(next(iter(_asking)))
     return JobStarted(job=JobView(**job.view()))
 
 
@@ -946,7 +981,15 @@ def fresh_demo(ctx: Ctx) -> FreshDemo:
             "Work on the demo study is still running; start a fresh demo once it has finished.",
         )
     with ctx.lock:
-        moved = views.archive_demo(ctx.store)
+        try:
+            moved = views.archive_demo(ctx.store)
+        except (OSError, ValueError, KeyError, TypeError) as err:  # nothing was moved yet
+            raise api_error(
+                409,
+                "damaged",
+                "A study folder in the store could not be read, so nothing was moved: "
+                f"{str(err)[:200]}",
+            ) from err
     for key in sorted(demo_keys):
         ctx.bus.publish({"type": "study.changed", "key": key, "source": "page"})
     ctx.bus.publish({"type": "study.changed", "key": None, "source": "page"})
@@ -964,7 +1007,7 @@ def _demo_keys(store: StudyStore) -> set[str]:
     """The demo's session id and its studies' ids."""
     sha = views.demo_sha()
     keys = {sha[:12]}
-    for study_id in store.list_studies():
+    for study_id in _study_ids(store):
         try:
             if store.get(study_id).input_sha256 == sha:
                 keys.add(study_id)

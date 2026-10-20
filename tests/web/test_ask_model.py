@@ -168,3 +168,16 @@ def test_other_studies_are_not_moved(client, web_store, study, fixture_result, f
     web_store.put(other, fixture_cards)
     client.post("/api/demo/fresh")
     assert web_store.list_studies() == ["f" * 12]
+
+
+@pytest.mark.parametrize("content", ['{"study_', "{}", "[]", ""])
+def test_a_damaged_study_folder_stops_a_fresh_demo_before_anything_moves(
+    client, web_store, study, content
+):
+    (web_store.root / "damaged").mkdir()
+    (web_store.root / "damaged" / "results.json").write_text(content)
+    r = client.post("/api/demo/fresh")
+    assert r.status_code in (200, 409), r.text
+    if r.status_code == 409:
+        assert r.json()["error"]["code"] == "damaged"
+        assert web_store.workspace(study).is_dir()  # nothing moved
