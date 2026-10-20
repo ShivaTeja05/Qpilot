@@ -9,13 +9,33 @@ import { type MapEncoding } from "@/charts";
 import { useMediaQuery } from "@/lib/hooks";
 import { sectionPath, type SectionProps } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
-import { useCards, useFlips, useResults } from "./api";
+import { isWarming, useCards, useFlips, useResults } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { MapPanel } from "./MapPanel";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
+
+/** Genes the analysis could not give a result for, and why (never a made-up number). */
+function Withheld({ view }: { view: object }) {
+  const list = (view as { withheld?: { gene: string; reason: string }[] }).withheld ?? [];
+  if (!list.length) return null;
+  return (
+    <details className="rounded-xl border border-line bg-surface px-4 py-3 text-[13px]">
+      <summary className="cursor-pointer font-medium text-fg">
+        {list.length === 1 ? "1 gene has" : `${list.length} genes have`} no result, and why
+      </summary>
+      <ul className="mt-2 space-y-1 text-muted">
+        {list.map((w) => (
+          <li key={w.gene}>
+            <span className="font-medium text-fg">{w.gene}</span>: {w.reason}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
 
 function ResultsSkeleton() {
   return (
@@ -162,10 +182,19 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
       {results.error ? (
         <ErrorPanel error={results.error} onRetry={() => void results.refetch()} />
       ) : !view ? (
-        <ResultsSkeleton />
+        <>
+          {isWarming(results) && (
+            <p className="mb-4 text-[13px] text-muted" role="status">
+              qPilot is reading this study for the first time; the results appear here when it is
+              done.
+            </p>
+          )}
+          <ResultsSkeleton />
+        </>
       ) : (
         <div className="space-y-6">
           <Summary view={view} auditHref={sectionPath(workspace, "audit")} />
+          <Withheld view={view} />
           {wide ? (
             <div className="grid grid-cols-[minmax(0,1fr)_420px] gap-6">
               <div className="min-w-0 space-y-6">

@@ -5,7 +5,7 @@
  * event refreshes it; every write carries the head the view showed.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, unwrap } from "@/api/client";
+import { ApiError, api, unwrap } from "@/api/client";
 
 const path = (study_id: string) => ({ params: { path: { study_id } } });
 const cardPath = (study_id: string, card_id: string) => ({
@@ -30,10 +30,29 @@ export interface DecisionDone {
   head: string;
 }
 
+/**
+ * While the server reads a study's file for the first time it answers 503 `warming`; keep asking
+ * (the live event that follows refetches too) instead of showing an error.
+ */
+const warmingRetry = {
+  retry: (count: number, e: Error) =>
+    e instanceof ApiError && e.code === "warming"
+      ? count < 90
+      : !(e instanceof ApiError && e.status >= 400 && e.status < 500) && count < 2,
+  retryDelay: (count: number, e: Error) =>
+    e instanceof ApiError && e.code === "warming" ? 2000 : Math.min(1000 * 2 ** count, 8000),
+};
+
+/** True while a query waits for the server to finish reading the study. */
+export function isWarming(q: { failureReason: Error | null; isFetching: boolean }): boolean {
+  return q.failureReason instanceof ApiError && q.failureReason.code === "warming";
+}
+
 export function useResults(key: string, studyId: string | null | undefined) {
   return useQuery({
     queryKey: ["w", key, "results", studyId],
     enabled: Boolean(studyId),
+    ...warmingRetry,
     queryFn: () => getResults(studyId!),
   });
 }
@@ -42,6 +61,7 @@ export function useFlips(key: string, studyId: string | null | undefined) {
   return useQuery({
     queryKey: ["w", key, "flips", studyId],
     enabled: Boolean(studyId),
+    ...warmingRetry,
     queryFn: () => getFlips(studyId!),
   });
 }
@@ -50,6 +70,7 @@ export function useCards(key: string, studyId: string | null | undefined) {
   return useQuery({
     queryKey: ["w", key, "cards", studyId],
     enabled: Boolean(studyId),
+    ...warmingRetry,
     queryFn: () => getCards(studyId!),
   });
 }

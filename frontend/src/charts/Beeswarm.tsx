@@ -39,7 +39,7 @@ export interface SampleGroup {
   label: string;
   n: number;
   missing?: number;
-  /** The group's mean, log2, on the same scale as the points. */
+  /** The group's mean, log2, on the same scale as the points (NaN: no mean line). */
   mean: number;
 }
 
@@ -144,12 +144,10 @@ export function Beeswarm({
 
   const has = (f: (p: SamplePoint) => boolean | undefined) => points.some((p) => f(p));
   const legend: LegendItem[] = [
-    ...groups
-      .slice(0, 4)
-      .map((g, gi) => ({
-        mark: { shape: "circle" as const, tone: GROUP_TONES[gi]! },
-        label: g.label,
-      })),
+    ...groups.slice(0, 4).map((g, gi) => ({
+      mark: { shape: "circle" as const, tone: GROUP_TONES[gi]! },
+      label: g.label,
+    })),
     ...(has((p) => p.late)
       ? [
           {
@@ -304,15 +302,17 @@ export function Beeswarm({
                     </text>
                   </>
                 )}
-                <line
-                  x1={meanX}
-                  x2={meanX}
-                  y1={centre - half - 2}
-                  y2={centre + half + 2}
-                  stroke="var(--text)"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                />
+                {Number.isFinite(g.mean) && (
+                  <line
+                    x1={meanX}
+                    x2={meanX}
+                    y1={centre - half - 2}
+                    y2={centre + half + 2}
+                    stroke="var(--text)"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                  />
+                )}
               </g>
             );
           })}
@@ -362,7 +362,7 @@ export function Beeswarm({
                 </g>
               );
             })}
-          {g0 && g1 && foldText && (
+          {g0 && g1 && foldText && Number.isFinite(g0.mean) && Number.isFinite(g1.mean) && (
             <g aria-hidden="true">
               {(() => {
                 const yb = TOP + rowH;
