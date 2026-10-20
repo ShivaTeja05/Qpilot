@@ -60,7 +60,7 @@ HTTP), **G** a test of Gradio wiring only.
 | P24 | One slow job at a time per kind (Analyse ≤ 2, Check model 1, Open/Propose/Send 1) | A, S Gradio `concurrency_limit` (G); Q `_job_lock` → 409 | `qpilot.web.jobs.JobRunner` | built (redteam: job flooding) |
 | P25 | Bounded JSON bodies (Q: 64 KiB) | Q `do_POST` | Only the 200 MB upload cap applies to every write | **MISSING (api)**: a JSON write can be up to 200 MB (PARITY-3, low) |
 | P26 | The page's own action never makes its next write stale | A `test_decide_right_after_ask_is_not_stale` (B) | Live events invalidate `["w", key]` queries (`src/api/live.ts`) · `test_parity_decisions.py` | planned (api-ops, shell) |
-| P27 | A model status check reaches out only when a person asks (A pinged on "Check connection" only; S pinged in the background) | A `on_connect` | `GET /api/model` pings a configured model in the background, at most once a minute (a probe with `QPILOT_MODEL_PROVIDER=anthropic` reached api.anthropic.com on page load) | question to coordinator (docs/app.md §1.5 says "on an explicit action") |
+| P27 | A model status check reaches out only when a person asks (A pinged on "Check connection" only; S pinged in the background) | A `on_connect` | Coordinator (#0180): `GET /api/model` never contacts a REMOTE model (configuration + last known answer); a click sends `POST /api/model/check`; a LOCAL endpoint may keep the background ping · `test_parity_launch.py::test_reading_the_model_status_never_calls_a_remote_model` (xfail strict: PARITY-4) | **MISSING (api)**: today `GET /api/model` pings a configured remote model (PARITY-4) |
 
 ## 2. A: `qpilot app` (Gradio results page)
 
@@ -91,7 +91,7 @@ HTTP), **G** a test of Gradio wiring only.
 | A20 | Check this model (harness scorecard, saved by profile) | `test_check_model_with_no_model_scores_templates` (B) | `POST /api/model/test` (api-ops, via `run_scorecard`) · Settings | planned |
 | A21 | Autonomy: Suggest / Decide and tell me, with the policy lines | `test_policy_and_footer` (B) | `GET/PUT /api/settings`, `/api/system` policy · Settings, top bar | built (home, shell) |
 | A22 | Export the Analysis Record (one zip that verifies) | `test_export_writes_one_zip_that_verifies_and_warns_about_open_choices` (B) | `POST /api/studies/{id}/record` (api-files) · Record | planned |
-| A22a | The export says how many conclusion-changing choices are still open, and when something was decided after the view was loaded | same | The planned result is `{record_id, chain_head, n_files, input_included, download}` | **MISSING (api-files, record)** |
+| A22a | The export says how many conclusion-changing choices are still open, and when something was decided after the view was loaded | same | Export result `open_flips`, `head_moved` (with `expected_head`), `warnings` in the old words (api-files #0169) · Record | planned (api-files, record) |
 | A23 | Never-does lines and the version (footer) | `test_policy_and_footer` (B) | `GET /api/system` `never` · Settings · `test_workspaces.py::test_system_says_what_this_install_is` | covered |
 | A24 | Start a fresh demo (moves earlier work aside, never deletes) | `test_fresh_demo_moves_earlier_decisions_aside` (B) | `POST /api/demo/fresh` (api-ops) → `web.views.archive_demo` · Settings | planned |
 | A25 | `qpilot doctor` (outbound line, key set or not) | `test_doctor_*` (B) | CLI, unchanged | covered (the tests stay; they move out of `tests/app/` at removal) |
@@ -154,12 +154,12 @@ and `app_page.html` go.
 | Q9 | How it works (stages, verdict rules, known answers, limits) | `test_http_endpoints` (B) | `GET …/audit/how` · Audit How it works | planned |
 | Q10 | Ask (the audit's Asker: tool, who wrote the words, facts) | `test_http_endpoints` (B) | `POST /api/studies/{id}/ask` (api-ops) · Ask drawer | planned |
 | Q11 | Gene search, verdict filter chips, gene list, `#gene=` links | none | Results table filters; `…/gene/<GENE>` routes | planned (insight, gene, shell) |
-| Q12 | Unknown gene → 404; unknown decision or option → 400 (LabViews raises `ValueError` for an unknown gene: the API must check first) | `test_http_endpoints`, `test_whatif_matches_the_engine` (B) | api-audit routes | planned (api-audit; told on the bus) |
+| Q12 | Unknown gene → 404; unknown decision or option → 400 (LabViews raises `ValueError` for an unknown gene: the API must check first) | `test_http_endpoints`, `test_whatif_matches_the_engine` (B) | api-audit routes | built (api-audit #0160: membership checked, 404 / 422 in words; not merged yet) |
 | Q13 | No statistics jargon in any view; no hand-typed numbers in the page markup | `test_no_statistics_jargon_on_any_screen` (B), `test_page_markup_types_no_numbers` (B) | The Screen views keep their test; the page: §1.3 "no mock data" (redteam, e2e) | covered (views) · planned (page) |
 | Q14 | Provenance: run hash, lock sha, input sha, version | none | Audit Verify tab (`POST …/audit/verify`) | planned |
-| Q15 | Download the audit's raw files (`summary.json`, `explain.json`, `genes.csv`, …; a whitelist) | `test_http_endpoints` (B) | — | **MISSING (api-audit, audit)**, low |
+| Q15 | Download the audit's raw files (`summary.json`, `explain.json`, `genes.csv`, …; a whitelist) | `test_http_endpoints` (B) | `GET /api/studies/{id}/audit/files`, `…/audit/files/{name}` (only files in the audit's `AUDIT.sha256`; api-audit #0160) · Audit Verify tab | planned (api-audit, audit) |
 | Q16 | Evidence page per gene (`/evidence/{g}`, server-rendered, printable) | `test_http_endpoints` (B) | Gene section | dropped: replaced by the Gene section (no server-rendered HTML) |
-| Q17 | Copy a gene's summary to the clipboard | none | Gene header | **MISSING (gene)**, low |
+| Q17 | Copy a gene's summary to the clipboard | none | Gene header "Copy summary" (gene 518b8f8, #0154) | built (gene; not merged yet) |
 | Q18 | Open your own plate (upload, progress, reopen, failure kept the screen) | `test_plates.py::test_open_your_own_plate_endpoints` | Open (upload → session) + Run the audit (job) | dropped: replaced by Open and the audit job; the safety rows (P14, P15, P20) carry |
 | Q19 | `qsim app --results DIR` | none | `qpilot app --audit DIR`; `qsim app` serves the one page with that audit attached (api-ops) | planned (api-ops) |
 
