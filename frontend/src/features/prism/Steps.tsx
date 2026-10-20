@@ -13,7 +13,7 @@ export const STEP_ANCHOR: Record<Flow["steps"][number]["id"], string> = {
 export function Steps({ flow }: { flow: Flow }) {
   return (
     <nav aria-label="Steps to Prism and back">
-      <ol className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <ol className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 md:grid-cols-[repeat(4,minmax(0,1fr))]">
         {flow.steps.map((step, i) => {
           const current = step.state === "current";
           return (

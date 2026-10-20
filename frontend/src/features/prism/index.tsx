@@ -39,9 +39,9 @@ function PrismWorkspace({ workspace }: { workspace: Workspace }) {
       <PageHeader eyebrow="Studio · GraphPad Prism" title="Prism" hint={HINT} />
       <div className="flex flex-col gap-6">
         <Steps flow={flow} />
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           <RoutesCard workspace={workspace} />
-          <div className="flex flex-col gap-6">
+          <div className="flex min-w-0 flex-col gap-6">
             <ProjectCard workspace={workspace} flow={flow} inbox={prismInbox} />
             <SendCard workspace={workspace} flow={flow} />
           </div>

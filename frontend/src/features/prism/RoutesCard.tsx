@@ -120,7 +120,7 @@ function RouteItem({
   const genes = all ? row.genes : row.genes.slice(0, SHOWN);
   const listId = `prism-route-genes-${row.route}`;
   return (
-    <li className="grid gap-3 p-3 md:grid-cols-[minmax(0,1fr)_9.5rem]">
+    <li className="grid grid-cols-[minmax(0,1fr)] gap-3 p-3 md:grid-cols-[minmax(0,1fr)_9.5rem]">
       <div className="min-w-0">
         <p className="text-[13px] font-medium text-fg">{words?.title ?? row.label}</p>
         {words ? <p className="mt-0.5 text-[12px] text-muted">{words.why}</p> : null}

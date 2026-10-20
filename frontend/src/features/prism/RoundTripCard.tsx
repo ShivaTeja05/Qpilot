@@ -118,7 +118,7 @@ export function RoundTripCard({
             )}
           </EmptyState>
         ) : (
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
             <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-fg marker:text-muted">
               <li>In Prism, make your edits and save the projects.</li>
               <li>

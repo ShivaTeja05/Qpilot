@@ -111,7 +111,7 @@ export function PreviewBody({
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <div>
           {figure && figure.groups.some((g) => g.n > 0) ? (
             <PrismFigure figure={figure} caption={figure.note} />
@@ -126,7 +126,7 @@ export function PreviewBody({
         <TableHead gene={gene} preview={preview} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2">
         <section aria-labelledby="prism-test-title">
           <h3 id="prism-test-title" className="mb-2 text-[13px] font-semibold text-fg">
             The test and the graph
