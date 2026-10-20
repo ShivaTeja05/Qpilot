@@ -1,11 +1,12 @@
 /**
- * The shapes the Record section reads. They mirror the Python models (`qpilot/schemas.py`
- * `DecisionEntry`, `qpilot/core/record.py` `RecordInfo` / `VerifyReport`) and are replaced by the
- * generated contract types (`Schemas[...]`) as each route lands.
+ * The shapes the Record section reads: the chain from the generated contract (api's
+ * `DecisionsView`), and the record export / verify answers of api-files' routes (mirrored from
+ * `qpilot/web/contract_files.py` until those are merged and `schema.d.ts` regenerated).
  */
+import type { Schemas } from "@/api/client";
 
-export type Actor = "human" | "agent" | "system";
-export type EntryStatus = "applied" | "auto" | "pending_human" | "rejected" | "stale";
+export type Actor = Schemas["DecisionEntry"]["actor"];
+export type EntryStatus = Schemas["DecisionEntry"]["status"];
 
 /** One line of the study's decision chain (`decisions.jsonl`), with its card and option in words. */
 export interface ChainEntry {
@@ -27,24 +28,11 @@ export interface ChainEntry {
   undo?: boolean;
 }
 
-/** `GET /api/studies/{id}/decisions` as the server sends it (`qpilot/web/contract.py`). */
-export interface DecisionsApi {
-  study_id: string;
-  head: string;
-  entries: DecisionEntryApi[];
-  pending: DecisionEntryApi[];
-  /** The chain's genesis (the input file's SHA-256), when the server sends it. */
-  root?: string | null;
-  /** The server re-computed every hash and link, when it sends it. */
-  chain_intact?: boolean | null;
-}
-
-export interface DecisionEntryApi {
-  entry: Omit<ChainEntry, "card_title" | "option_label" | "undo" | "card_kind">;
-  card_title: string;
-  option_label: string;
-  undo: boolean;
-}
+/**
+ * `GET /api/studies/{id}/decisions` as the server sends it, plus two fields the page shows when
+ * the server adds them (requested from api): the chain's root and its re-computed check.
+ */
+export type DecisionsApi = Schemas["DecisionsView"] & { root?: string | null; chain_intact?: boolean | null };
 
 /** The chain as the Record section reads it. */
 export interface DecisionsView {

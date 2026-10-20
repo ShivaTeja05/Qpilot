@@ -3,7 +3,7 @@
  * verifying a record zip. Query keys start with `["w", key]` so live events refresh them.
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ApiError, postForm, type JobView } from "@/api/client";
+import { api, ApiError, postForm, unwrap, type JobView } from "@/api/client";
 import { useWrite } from "@/shell/writes";
 import { fromApi, type DecisionsApi, type RecordList, type VerifyResult } from "./types";
 
@@ -45,7 +45,12 @@ export function useDecisions(workspaceKey: string, studyId: string | null | unde
   return useQuery({
     queryKey: ["w", workspaceKey, "decisions", studyId],
     enabled: Boolean(studyId),
-    queryFn: async () => fromApi(await requestJson<DecisionsApi>(`${studyPath(studyId!)}/decisions`)),
+    queryFn: async () => {
+      const view: DecisionsApi = await unwrap(
+        api.GET("/api/studies/{study_id}/decisions", { params: { path: { study_id: studyId! } } }),
+      );
+      return fromApi(view);
+    },
   });
 }
 

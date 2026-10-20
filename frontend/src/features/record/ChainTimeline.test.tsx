@@ -1,14 +1,14 @@
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChainTimeline } from "./ChainTimeline";
-// Recorded from the real seeded store: see recorded/record_chain.py.
+// Recorded from the real API on the seeded store: see recorded/README.md.
 import agentChain from "./recorded/decisions-e300000d4f9a.json";
 import humanChain from "./recorded/decisions-cf49ccd72052.json";
 import { renderWithProviders } from "./test-utils";
-import type { DecisionsView } from "./types";
+import { fromApi, type DecisionsApi } from "./types";
 
-const withAgents = agentChain as DecisionsView;
-const decided = humanChain as DecisionsView;
+const withAgents = fromApi(agentChain as DecisionsApi);
+const decided = fromApi(humanChain as DecisionsApi);
 
 afterEach(cleanup);
 
@@ -27,7 +27,8 @@ describe("ChainTimeline", () => {
     expect(within(shown[shown.length - 1]!).getByText(/links to the input file/)).toBeTruthy();
     expect(within(shown[0]!).getByText(`links to #${decided.entries.length - 1}`)).toBeTruthy();
     expect(screen.queryByText(/does not link/)).toBeNull();
-    expect(screen.getByText(/Intact: every hash checks out/)).toBeTruthy();
+    // the server's own check of every hash shows only when it sends one
+    expect(Boolean(screen.queryByText(/Intact: every hash checks out/))).toBe(decided.chain_intact === true);
   });
 
   it("says who decided, the card's question and the option in words", () => {
