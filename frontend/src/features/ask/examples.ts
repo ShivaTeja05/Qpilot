@@ -43,7 +43,8 @@ export function exampleQuestions({ genes, references, hasAudit }: ExampleInput):
   if (!firm && any) ask(`Is the ${any.gene} result robust?`);
   if (hasAudit) {
     ask("What should I look at first in this data?", "audit");
-    const ref = references[0];
+    // A reference named by a plain gene symbol reads best in a question (HMBS, not "SDHA(1)").
+    const ref = references.find((r) => /^[A-Za-z][A-Za-z0-9-]*$/.test(r)) ?? references[0];
     if (ref) ask(`What if I normalise to ${ref} alone?`, "audit");
   }
   ask("How many plates, samples and genes are in this study?", "study");

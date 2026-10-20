@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Eye } from "lucide-react";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Schemas } from "@/api/client";
 import { cn } from "@/lib/cn";
+import { useReducedMotion } from "@/lib/hooks";
 import { CopyButton, ErrorPanel, Hash, LoadingBlock } from "@/ui";
 import { getModelSeen } from "./askApi";
 
@@ -33,8 +34,15 @@ export function ModelSaw({
   });
   const data = seen.data;
   const text = data?.state === "shown" ? (data.payload_text ?? "") : "";
+  // Opening it (or the payload arriving) brings the panel into view in the conversation.
+  const box = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (open)
+      box.current?.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+  }, [open, data, reduced]);
   return (
-    <div className="rounded-lg border border-line">
+    <div ref={box} className="rounded-lg border border-line">
       <button
         type="button"
         aria-expanded={open}

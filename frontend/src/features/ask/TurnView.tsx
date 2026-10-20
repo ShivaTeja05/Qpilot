@@ -97,5 +97,7 @@ export function TurnView({
 function errorTitle(error: unknown): string | undefined {
   if (!(error instanceof ApiError)) return "No answer";
   if (error.code === "blind") return "Not answered while the study is blind";
+  if (error.code === "no_audit") return "The audit cannot answer this yet";
+  if (error.code === "no_results") return "No results to ask about yet";
   return error.needsKey || error.stale || error.code === "offline" ? undefined : "No answer";
 }

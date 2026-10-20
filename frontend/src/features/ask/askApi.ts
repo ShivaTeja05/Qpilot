@@ -32,7 +32,7 @@ async function call<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 /** Which engine answers: qPilot picks (`auto`), the study's own tools, or the robustness audit. */
-export type AskSource = "auto" | "study" | "audit";
+export type AskSource = NonNullable<Schemas["AskBody"]["source"]>;
 
 /** Ask a question about a study (a study id or a session id); the answer arrives on the job. */
 export async function startAsk(
@@ -40,18 +40,18 @@ export async function startAsk(
   question: string,
   source: AskSource = "auto",
 ): Promise<JobView> {
-  const body = await call<{ job?: JobView }>(`/api/studies/${encodeURIComponent(key)}/ask`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ question, source }),
-  });
-  if (!body.job?.id)
+  const body: Schemas["AskBody"] = { question, source };
+  const started = await call<Partial<Schemas["JobStarted"]>>(
+    `/api/studies/${encodeURIComponent(key)}/ask`,
+    { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) },
+  );
+  if (!started.job?.id)
     throw new ApiError(
       500,
       "bad_response",
       "qPilot accepted the question but did not say where its answer will be.",
     );
-  return body.job;
+  return started.job;
 }
 
 /** The last payload sent to a model in this qPilot process, blind-gated by the server. */
