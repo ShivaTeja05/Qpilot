@@ -17,32 +17,11 @@ import { refreshWorkspace, reportWriteError } from "@/shell/writes";
 import { Button, EmptyState, JobCard, PageHeader, toast } from "@/ui";
 import { BulkActions, ConfirmStage, StageInbox, useStageProposals, useQuotes, type InboxFilter } from "@/ui/proposal";
 import { DesignNeeds } from "./DesignNeeds";
+import { comparisonState, concerns } from "./logic";
 import { DesignPlate, type PlateWell } from "./DesignPlate";
 import { FileFacts } from "./FileFacts";
 import { ProposeAgain, ProposeDesignPanel } from "./ProposeDesign";
 import { WellCurveDialog } from "./WellCurve";
-
-/** Does this proposal concern this well (its sample, its target, the well itself)? */
-function concerns(p: Proposal, w: Pick<PlateWell, "sample" | "target" | "key">): boolean {
-  if (p.subject === w.sample || p.subject === w.target || p.subject === w.key) return true;
-  if (p.kind === "design.dilution_series") {
-    const samples = p.payload.samples;
-    return Boolean(samples && typeof samples === "object" && w.sample in (samples as object));
-  }
-  return false;
-}
-
-/** Groups that a person accepted, and whether a comparison is still to be proposed. */
-function comparisonState(all: Proposal[]) {
-  const settled = all.filter((p) => p.status === "accepted" || p.status === "edited");
-  const groups = new Set(
-    settled.filter((p) => p.kind === "design.group").map((p) => String({ ...p.payload, ...(p.edits ?? {}) }.group)),
-  );
-  const has = all.some(
-    (p) => (p.kind === "design.comparison" || p.kind === "design.preset") && p.status !== "rejected" && p.status !== "superseded",
-  );
-  return { groups: [...groups], ready: groups.size === 2 && !has };
-}
 
 export default function DesignSection({ workspace }: SectionProps) {
   const qc = useQueryClient();
@@ -183,7 +162,7 @@ export default function DesignSection({ workspace }: SectionProps) {
         </div>
         <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:self-start xl:overflow-y-auto xl:pb-2 qp-scroll" aria-label="Plate and file">
           <DesignPlate sid={sid} runs={summary?.runs ?? []} quotes={quotes.lookup} highlight={highlight} onShowProposals={showWell} />
-          <FileFacts facts={workspace.facts} summary={summary} />
+          <FileFacts facts={workspace.facts} summary={summary} analysed={workspace.results_visible} />
         </aside>
       </div>
       <WellCurveDialog sid={sid} well={well} onClose={() => setWell(null)} />

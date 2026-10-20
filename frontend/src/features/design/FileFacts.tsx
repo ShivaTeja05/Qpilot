@@ -5,7 +5,16 @@ import { count, plural } from "@/lib/format";
 import { ROLE_SHORT, ROLE_WORDS } from "@/lib/vocab";
 import { Badge, Card, CardBody, CardHeader, Hash, KeyValues, Tooltip } from "@/ui";
 
-export function FileFacts({ facts, summary }: { facts: Schemas["FileFacts"] | null | undefined; summary: Schemas["InspectSummary"] | null | undefined }) {
+export function FileFacts({
+  facts,
+  summary,
+  analysed,
+}: {
+  facts: Schemas["FileFacts"] | null | undefined;
+  summary: Schemas["InspectSummary"] | null | undefined;
+  /** Results exist (both blind stages confirmed). */
+  analysed?: boolean;
+}) {
   if (!facts) {
     return (
       <Card as="section">
@@ -35,7 +44,7 @@ export function FileFacts({ facts, summary }: { facts: Schemas["FileFacts"] | nu
   }
   return (
     <Card as="section" aria-labelledby="file-facts">
-      <CardHeader id="file-facts" title="The file" hint="What it declares. Nothing is analysed yet." />
+      <CardHeader id="file-facts" title="The file" hint={analysed ? "What it declares." : "What it declares. Nothing is analysed yet."} />
       <CardBody className="flex flex-col gap-3">
         <KeyValues rows={rows} />
         {types.length ? (

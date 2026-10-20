@@ -244,7 +244,11 @@ export function StageInbox({
             ) : null}
             <p className="text-xs text-faint" aria-live="polite">
               {filtered ? `${count(pending.length)} of ${count(pendingAll.length)} waiting` : `${count(pendingAll.length)} waiting`}
-              {" · "}contradicted first · <Kbd>j</Kbd> <Kbd>k</Kbd> move · <Kbd>a</Kbd> <Kbd>e</Kbd> <Kbd>x</Kbd> accept, edit, reject
+              {" · "}contradicted first
+              <span className="hidden sm:inline">
+                {" · "}
+                <Kbd>j</Kbd> <Kbd>k</Kbd> move · <Kbd>a</Kbd> <Kbd>e</Kbd> <Kbd>x</Kbd> accept, edit, reject
+              </span>
             </p>
           </div>
         ) : null}

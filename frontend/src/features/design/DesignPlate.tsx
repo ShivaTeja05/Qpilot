@@ -19,7 +19,7 @@ type PlateView = Schemas["PlateView"];
 
 /** Fill and letter per sample type: colour reinforces, the letter and the legend carry it. */
 const ROLE_STYLE: Record<string, { fill: string; stroke: string; letter: string }> = {
-  unkn: { fill: "var(--surface-2)", stroke: "var(--line-strong)", letter: "" },
+  unkn: { fill: "var(--bg-subtle)", stroke: "var(--line-strong)", letter: "" },
   std: { fill: "var(--info-soft)", stroke: "var(--info)", letter: "S" },
   ntc: { fill: "var(--warn-soft)", stroke: "var(--warn)", letter: "N" },
   nrt: { fill: "var(--warn-soft)", stroke: "var(--warn)", letter: "R" },
@@ -48,7 +48,6 @@ function WellDetail({ well, quotes, onShowProposals, onClose }: {
 }) {
   const sampleQuote = well.sample_text_id ? quotes(well.sample_text_id) : null;
   const targetQuote = well.target_text_id ? quotes(well.target_text_id) : null;
-  const role = roleOf(well);
   return (
     <div className="flex flex-col gap-2.5 rounded-lg border border-line bg-surface-2 p-3 text-[13px]" aria-live="polite">
       <div className="flex items-center justify-between gap-2">
@@ -79,7 +78,6 @@ function WellDetail({ well, quotes, onShowProposals, onClose }: {
           </>
         ) : null}
       </dl>
-      <p className="text-xs text-faint">{role === "unkn" ? "A study sample." : ROLE_WORDS[role]}</p>
       {onShowProposals ? (
         <Button size="sm" variant="secondary" onClick={() => onShowProposals(well)} className="self-start">
           Show proposals about this sample
