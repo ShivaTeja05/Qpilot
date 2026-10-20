@@ -86,22 +86,24 @@ At the bottom: the qPilot version, the model chip (click for Settings), the vend
 
 ## 5. Design (blind)
 
-*Blind* means that until you have confirmed the design **and** the curves, the page shows nothing that pairs a group with a number: no fold change, no p-value, no direction of change. The server refuses to send it. This keeps your choices of groups and controls from being steered by the result you hope for.
+*Blind* means that until you have confirmed the design **and** the curves, the page shows nothing that pairs a group with a number: no fold change, no p-value, no direction of change. The server refuses to send it. This keeps your choices of groups and controls from being steered by the result you hope for. The header of this screen says "Blind stage 1 of 2".
 
-**What to do.** Press **Propose the design** (about 9 seconds on the demo). qPilot's rules, and a language model when one is configured, read your file, your sheet and your sentence and propose how to read the plates: which samples are standards, controls or study samples (and what each control is), which are groups, which samples are the same biological unit, which genes are references, which two groups to compare. Each proposal is a card in the inbox on the left, the ones the engine **contradicts** first. On the right, the **plate map** shows each plate's wells coloured by their declared type; hover for the original text of a name, and a name that reads like an instruction is marked and never obeyed.
+**What to do.** Press **Propose the design** (about 9 seconds on the demo). qPilot's rules, and a language model when one is configured, read your file, your sheet and your sentence and propose how to read the plates: which samples are standards, controls or study samples (and what each control is), which are in which group, which samples are the same biological unit, which genes are references, which gene each target is, which two groups to compare. You may type one sentence about the experiment here (leave it empty to use the one given when the file was opened). **Propose the design again** reads the file again: new proposals join the inbox, what you already decided stays decided, and a repeat of a decided proposal is refused.
 
-**A proposal card has six parts:**
+**The inbox** lists one card per proposal, the ones the engine **contradicts** first. Filter it by engine check (all waiting, consistent, contradicted, cannot check) or by kind of proposal, or find a sample or target by name. **The plate map** shows each plate's wells coloured by their declared type (**View as table** gives the same as text); click a well for the names in it, quoted from your file, and the proposals about it. A name that reads like an instruction is marked and never obeyed. **The file** card lists what the file declares (the sample sheet, the sample types and how many of each); nothing is analysed yet.
 
-1. *The proposal*, in words, and the other readings that were considered.
-2. *Why*: each piece of evidence folds out: the text from your file with where it came from, a cell of your sheet, or a well (which opens its curve).
-3. *Engine check*: **Consistent** (the engine found nothing that refutes it; a check can refute, never prove), **Contradicted** (it refutes it, with the rule and numbers; accepting it anyway needs a reason), or **Cannot check** (decide it on the evidence).
-4. *Consequence*: hidden in the blind stages, except "this matters for at least one conclusion", or press **Does this matter?** to have the engine run the design both ways and answer only yes or no.
-5. *Level*, with reasons (never a percentage).
-6. **Accept**, **Edit** (change the fields, then it is checked again) or **Reject** (a reason is required). The footer says who made it: a fixed rule, a model (with its name and prompt hash) or an agent.
+**A proposal card** shows the proposal in words and, below it, the other readings that were considered, then four parts you can open:
 
-**Many at once.** **Accept all consistent…** shows the exact list first; a second click accepts exactly that list, one record entry each. A contradicted or cannot-check proposal is never on it. **Reject contradicted AI calls…** does the same for model and agent proposals the engine contradicts, with one reason you type.
+1. **Why**: each piece of evidence: the text from your file with where it came from, a cell of your sheet, or a well (which opens its curve).
+2. **Engine check**: **Consistent** (the engine found nothing that refutes it; a check can refute, never prove), **Contradicted** (it refutes it, with the rule and the numbers), or **Cannot check** (decide it on the evidence).
+3. **Consequence**: hidden in the blind stages, except "This matters for at least one conclusion; decide on the evidence." Press **Does this matter?** to have the engine run the design both ways: it answers only "this matters" or "neither reading changes any conclusion".
+4. **Level**: an ordinal level with its reasons (never a percentage).
 
-**Confirm this stage…** shows what the confirmation covers; **Yes, confirm** confirms. When every proposal is settled and you have confirmed, the Curves section opens.
+Then **Accept**, **Edit** (change the fields; the engine checks the edit, then you accept it) or **Reject** (a reason is required). If the engine contradicts a proposal the button reads **Accept anyway…** and asks you to say why. The footer says who made the proposal: a fixed rule, a model (with its name and prompt hash) or an agent.
+
+**Many at once.** **Accept all consistent…** shows the exact list first; **Accept these N** accepts exactly that list, one record entry each. A contradicted or cannot-check proposal is never on it. **Reject contradicted AI calls…** does the same for model and agent proposals the engine contradicts, with one reason you type.
+
+**Confirm this stage…** is offered when every proposal is decided (until then it says how many are waiting). It shows exactly what the confirmation covers: "Confirming freezes this design. The curves stage opens next; results stay hidden until the curves are confirmed too." **Yes, confirm** confirms. A later decision on a design proposal re-opens the stage.
 
 *On the demo:* the rules make 131 proposals; 121 are consistent and 9 are contradicted (seven competimer standards that never amplified, one competimer series, and one standard series whose R² is only 0.694). Reject those nine with a reason, accept the rest, confirm.
 
