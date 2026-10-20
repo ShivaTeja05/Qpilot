@@ -10,7 +10,8 @@ describe("well labels", () => {
     expect(rowLetters(25)).toBe("Z");
     expect(rowLetters(26)).toBe("AA");
     expect(wellLabel(26, 2)).toBe("AA3");
-    for (let r = 0; r < 40; r += 1) expect(parseWell(wellLabel(r, 5))).toEqual({ row: r, column: 5 });
+    for (let r = 0; r < 40; r += 1)
+      expect(parseWell(wellLabel(r, 5))).toEqual({ row: r, column: 5 });
   });
 
   it("refuses what is not a plate label", () => {
@@ -24,7 +25,12 @@ describe("well labels", () => {
   });
 
   it("selects a rectangle in either direction", () => {
-    expect(rectangle({ row: 1, column: 2 }, { row: 0, column: 1 })).toEqual(["A2", "A3", "B2", "B3"]);
+    expect(rectangle({ row: 1, column: 2 }, { row: 0, column: 1 })).toEqual([
+      "A2",
+      "A3",
+      "B2",
+      "B3",
+    ]);
   });
 });
 

@@ -74,7 +74,9 @@ describe("CurveViewer", () => {
     const series = curveSeries(n14);
     const summary = curvesSummary(series, "Fluorescence (raw)");
     expect(summary).toContain(`Cq ${fixed(n14.cq, 1)}`);
-    expect(summary).toContain(n14.replicates.length === 2 ? "2 other wells of the same sample" : "same sample");
+    expect(summary).toContain(
+      n14.replicates.length === 2 ? "2 other wells of the same sample" : "same sample",
+    );
     render(<CurveViewer series={series} yLabel="Fluorescence (raw)" label="Well N14" />);
     expect(screen.getByRole("img", { name: summary })).toBeTruthy();
     expect(made).toHaveLength(1);

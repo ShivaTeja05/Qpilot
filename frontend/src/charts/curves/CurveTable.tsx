@@ -4,7 +4,15 @@ import { fixed } from "@/lib/format";
 import { NumberCell, Table, TBody, TD, TH, THead, TR } from "@/ui";
 import { align, type CurveSeries } from "./data";
 
-export function CurveTable({ series, label, decimals }: { series: readonly CurveSeries[]; label: string; decimals: number }) {
+export function CurveTable({
+  series,
+  label,
+  decimals,
+}: {
+  series: readonly CurveSeries[];
+  label: string;
+  decimals: number;
+}) {
   const { x, ys } = useMemo(() => align(series, "linear"), [series]);
   if (!series.length) return <p className="text-[13px] text-muted">No curve to show.</p>;
   return (
@@ -16,7 +24,9 @@ export function CurveTable({ series, label, decimals }: { series: readonly Curve
             {series.map((s) => (
               <TH key={s.id} numeric>
                 {s.label}
-                {s.role === "context" ? <span className="ml-1 font-normal text-faint">(same sample)</span> : null}
+                {s.role === "context" ? (
+                  <span className="ml-1 font-normal text-faint">(same sample)</span>
+                ) : null}
               </TH>
             ))}
           </TR>

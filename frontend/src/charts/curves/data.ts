@@ -54,12 +54,9 @@ export function align(series: readonly CurveSeries[], scale: CurveScale): Aligne
 /** Decimals that suit a set of values: raw counts in whole numbers, ratios to three places. */
 export function decimalsFor(series: readonly CurveSeries[]): number {
   let max = 0;
-  for (const s of series) for (const v of s.values) if (v != null && Number.isFinite(v)) max = Math.max(max, Math.abs(v));
+  for (const s of series)
+    for (const v of s.values) if (v != null && Number.isFinite(v)) max = Math.max(max, Math.abs(v));
   return max >= 1000 ? 0 : max >= 100 ? 1 : max >= 10 ? 2 : 3;
-}
-
-export function valueText(v: number | null | undefined, decimals: number): string {
-  return fixed(v, decimals);
 }
 
 /** One sentence about the curves on show (the chart's accessible summary). */
@@ -69,11 +66,26 @@ export function curvesSummary(series: readonly CurveSeries[], yLabel: string): s
   const context = series.length - focus.length;
   const cycles = series.flatMap((s) => s.cycles).filter(Number.isFinite);
   const span = cycles.length ? ` over cycles ${Math.min(...cycles)} to ${Math.max(...cycles)}` : "";
-  const parts = focus.map((s) => (s.cq != null && Number.isFinite(s.cq) ? `${s.label} (Cq ${fixed(s.cq, 1)})` : `${s.label} (no Cq)`));
+  const parts = focus.map((s) =>
+    s.cq != null && Number.isFinite(s.cq)
+      ? `${s.label} (Cq ${fixed(s.cq, 1)})`
+      : `${s.label} (no Cq)`,
+  );
   const head = `${yLabel} by cycle for ${focus.length === 1 ? "one well" : `${count(focus.length)} wells`}${span}: ${parts.join("; ")}`;
-  const tail = context ? `; ${context === 1 ? "one other well" : `${count(context)} other wells`} of the same sample shown faint` : "";
+  const tail = context
+    ? `; ${context === 1 ? "one other well" : `${count(context)} other wells`} of the same sample shown faint`
+    : "";
   return `${head}${tail}.`;
 }
 
 /** The palette for focus series: tokens, in order (context series are always faint). */
-export const SERIES_TOKENS = ["--accent", "--info", "--v-depends", "--v-check", "--down", "--up", "--v-solid", "--v-fragile"] as const;
+export const SERIES_TOKENS = [
+  "--accent",
+  "--info",
+  "--v-depends",
+  "--v-check",
+  "--down",
+  "--up",
+  "--v-solid",
+  "--v-fragile",
+] as const;

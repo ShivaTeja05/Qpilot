@@ -57,7 +57,10 @@ export const PLATE_FORMATS: readonly PlateShape[] = [
  * The plate a set of well positions sits on: the smallest standard format that holds them all
  * (96, then 384), else exactly as large as the wells need.
  */
-export function plateShape(positions: readonly WellPosition[], declared?: Partial<PlateShape>): PlateShape {
+export function plateShape(
+  positions: readonly WellPosition[],
+  declared?: Partial<PlateShape>,
+): PlateShape {
   if (declared?.rows && declared.columns) return { rows: declared.rows, columns: declared.columns };
   let rows = 0;
   let columns = 0;

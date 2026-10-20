@@ -14,12 +14,16 @@ export interface PlateWellOptions {
  * carried only when the view shows them (`curves_shown`); before that the map has sample types
  * only. The role is the design's when one is assembled, else what the file declares.
  */
-export function plateWells(view: Pick<Schemas["PlateView"], "wells" | "curves_shown">, options: PlateWellOptions = {}): PlateWell[] {
+export function plateWells(
+  view: Pick<Schemas["PlateView"], "wells" | "curves_shown">,
+  options: PlateWellOptions = {},
+): PlateWell[] {
   return view.wells.map((w) => {
     const notes: string[] = [];
     if (w.excluded_by_person) notes.push("Excluded from the analysis by a person.");
     if (w.excluded_note) notes.push(`Note from the file or LinRegPCR: ${w.excluded_note}`);
-    if (w.role && w.role !== w.declared_type) notes.push(`The file declares it “${w.declared_type}”.`);
+    if (w.role && w.role !== w.declared_type)
+      notes.push(`The file declares it “${w.declared_type}”.`);
     if (w.proposal_id) notes.push("A proposal about this well’s call is waiting for you.");
     const base: PlateWell = {
       well: w.well,

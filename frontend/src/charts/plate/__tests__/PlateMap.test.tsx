@@ -11,7 +11,13 @@ const view = recorded as unknown as Schemas["PlateView"];
 
 afterEach(cleanup);
 
-function Harness({ layer = "call", onActivate }: { layer?: PlateLayer; onActivate?: (w: string) => void }) {
+function Harness({
+  layer = "call",
+  onActivate,
+}: {
+  layer?: PlateLayer;
+  onActivate?: (w: string) => void;
+}) {
   const [selected, setSelected] = useState<string[]>([]);
   const wells = useMemo(() => plateWells(view), []);
   return (
@@ -43,7 +49,9 @@ describe("PlateMap on a recorded 384-well plate", { timeout: 30_000 }, () => {
     const disagree = view.wells.filter((w) => w.disagrees).length;
     const notAmplified = view.wells.filter((w) => w.amplified === false).length;
     expect(screen.getByText(`${notAmplified} not amplified`, { exact: false })).toBeTruthy();
-    expect(screen.getByText("Curve Judge disagrees").parentElement!.textContent).toBe(`Curve Judge disagrees${disagree}`);
+    expect(screen.getByText("Curve Judge disagrees").parentElement!.textContent).toBe(
+      `Curve Judge disagrees${disagree}`,
+    );
   });
 
   it("says each well in words, including the Curve Judge's disagreement", () => {
@@ -92,7 +100,9 @@ describe("PlateMap on a recorded 384-well plate", { timeout: 30_000 }, () => {
   it("does not select faded wells (a gene filter)", () => {
     const wells = plateWells(view, { keep: (w) => w.well !== "A1" });
     const onChange = vi.fn();
-    render(<PlateMap wells={wells} layer="cq" label="Plate" selected={[]} onSelectedChange={onChange} />);
+    render(
+      <PlateMap wells={wells} layer="cq" label="Plate" selected={[]} onSelectedChange={onChange} />,
+    );
     fireEvent.click(cell("A1"));
     expect(onChange).not.toHaveBeenCalled();
     expect(cell("A1").getAttribute("aria-disabled")).toBe("true");
@@ -107,8 +117,13 @@ describe("PlateMap on a recorded 384-well plate", { timeout: 30_000 }, () => {
   });
 
   it("never shows a group label, even when the API sends one", () => {
-    const leaked = { ...view, wells: view.wells.map((w) => ({ ...w, group: "GROUP-LABEL-SENTINEL" })) };
-    const { container } = render(<PlateMap wells={plateWells(leaked)} layer="role" label="Plate" />);
+    const leaked = {
+      ...view,
+      wells: view.wells.map((w) => ({ ...w, group: "GROUP-LABEL-SENTINEL" })),
+    };
+    const { container } = render(
+      <PlateMap wells={plateWells(leaked)} layer="role" label="Plate" />,
+    );
     fireEvent.mouseOver(cell("A1"));
     expect(container.textContent).not.toContain("GROUP-LABEL-SENTINEL");
     fireEvent.click(screen.getByRole("button", { name: "View as table" }));
@@ -117,6 +132,10 @@ describe("PlateMap on a recorded 384-well plate", { timeout: 30_000 }, () => {
 
   it("shows sample types only before the curves are shown", () => {
     const blind = plateWells({ ...view, curves_shown: false });
-    expect(blind.every((w) => w.cq === undefined && w.amplified === undefined && w.disagree === undefined)).toBe(true);
+    expect(
+      blind.every(
+        (w) => w.cq === undefined && w.amplified === undefined && w.disagree === undefined,
+      ),
+    ).toBe(true);
   });
 });

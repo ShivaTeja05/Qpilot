@@ -11,7 +11,10 @@ export function seriesLabel(well: string, sample: string): string {
  * A well's curve (focus, with its Cq and baseline when the view shows them) and the other wells
  * of the same sample and target on its plate (context, faint).
  */
-export function curveSeries(view: Schemas["CurveView"], options: { replicates?: boolean } = {}): CurveSeries[] {
+export function curveSeries(
+  view: Schemas["CurveView"],
+  options: { replicates?: boolean } = {},
+): CurveSeries[] {
   const shown = view.numbers_shown;
   const focus: CurveSeries = {
     id: view.key,

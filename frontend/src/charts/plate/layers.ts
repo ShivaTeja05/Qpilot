@@ -47,7 +47,9 @@ export const PLATE_LAYER_LABEL: Record<PlateLayer, string> = {
 };
 
 /** Layer options for a SegmentedControl / Select. */
-export function layerOptions(layers: readonly PlateLayer[]): { value: PlateLayer; label: string }[] {
+export function layerOptions(
+  layers: readonly PlateLayer[],
+): { value: PlateLayer; label: string }[] {
   return layers.map((value) => ({ value, label: PLATE_LAYER_LABEL[value] }));
 }
 
@@ -98,7 +100,11 @@ export function callKey(amplified: boolean | null | undefined): CallKey {
 
 export const CALL_STYLE: Record<CallKey, { label: string; color: string; words: string }> = {
   amplified: { label: "Amplified", color: "var(--accent)", words: "amplified" },
-  not_amplified: { label: "Not amplified", color: "var(--danger)", words: "not amplified (no usable curve)" },
+  not_amplified: {
+    label: "Not amplified",
+    color: "var(--danger)",
+    words: "not amplified (no usable curve)",
+  },
   no_call: { label: "No call", color: "var(--text-faint)", words: "no call" },
 };
 
@@ -109,8 +115,15 @@ export const DISAGREE_COLOR = "var(--v-depends)";
 
 export type NumericLayer = "cq" | "efficiency" | "r2";
 
-export const NUMERIC: Record<NumericLayer, { decimals: number; words: string; get: (w: PlateWell) => number | null | undefined }> = {
-  cq: { decimals: 1, words: "Cq (cycle where the curve crosses LinRegPCR's threshold)", get: (w) => w.cq },
+export const NUMERIC: Record<
+  NumericLayer,
+  { decimals: number; words: string; get: (w: PlateWell) => number | null | undefined }
+> = {
+  cq: {
+    decimals: 1,
+    words: "Cq (cycle where the curve crosses LinRegPCR's threshold)",
+    get: (w) => w.cq,
+  },
   efficiency: {
     decimals: 2,
     words: "the well's own efficiency (fold per cycle; 2.00 is a perfect doubling)",
@@ -152,7 +165,9 @@ function quantile(sorted: readonly number[], q: number): number {
  * value.
  */
 export function numericDomain(values: readonly (number | null | undefined)[]): Domain | null {
-  const v = values.filter((x): x is number => typeof x === "number" && Number.isFinite(x)).sort((a, b) => a - b);
+  const v = values
+    .filter((x): x is number => typeof x === "number" && Number.isFinite(x))
+    .sort((a, b) => a - b);
   if (!v.length) return null;
   const min = v[0]!;
   const max = v[v.length - 1]!;
@@ -210,7 +225,8 @@ export function plateSummary(wells: readonly PlateWell[], layer: PlateLayer): st
   const head = `${count(shown.length)} wells`;
   if (layer === "role") {
     const by = new Map<string, number>();
-    for (const w of shown) by.set(roleStyle(w.role).label, (by.get(roleStyle(w.role).label) ?? 0) + 1);
+    for (const w of shown)
+      by.set(roleStyle(w.role).label, (by.get(roleStyle(w.role).label) ?? 0) + 1);
     return `${head} by sample type: ${[...by].map(([k, n]) => `${count(n)} ${k}`).join(", ")}.`;
   }
   if (layer === "call") {

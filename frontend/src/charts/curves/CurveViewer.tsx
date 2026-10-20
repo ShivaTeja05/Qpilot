@@ -13,7 +13,14 @@ import { count, fixed } from "@/lib/format";
 import { useTheme } from "@/lib/theme";
 import { SegmentedControl } from "@/ui";
 import { CurveTable } from "./CurveTable";
-import { SERIES_TOKENS, align, curvesSummary, decimalsFor, type CurveScale, type CurveSeries } from "./data";
+import {
+  SERIES_TOKENS,
+  align,
+  curvesSummary,
+  decimalsFor,
+  type CurveScale,
+  type CurveSeries,
+} from "./data";
 
 export interface CurveViewerProps {
   series: readonly CurveSeries[];
@@ -77,9 +84,15 @@ export function CurveViewer({
   const hidden = aligned.hidden.reduce((a, b) => a + b, 0);
 
   return (
-    <figure className={cn("m-0 min-w-0", className)} aria-label={summary} aria-describedby={caption ? captionId : undefined}>
+    <figure
+      className={cn("m-0 min-w-0", className)}
+      aria-label={summary}
+      aria-describedby={caption ? captionId : undefined}
+    >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0 flex-1">{!asTable ? <SeriesLegend series={series} /> : null}</div>
+        <div className="min-w-[14rem] flex-1">
+          {!asTable ? <SeriesLegend series={series} /> : null}
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           {controls}
           <SegmentedControl<CurveScale>
@@ -106,7 +119,15 @@ export function CurveViewer({
       {asTable ? (
         <CurveTable series={series} label={label} decimals={decimals} />
       ) : series.length ? (
-        <Plot series={series} aligned={aligned} scale={scale} yLabel={yLabel} height={height} decimals={decimals} summary={summary} />
+        <Plot
+          series={series}
+          aligned={aligned}
+          scale={scale}
+          yLabel={yLabel}
+          height={height}
+          decimals={decimals}
+          summary={summary}
+        />
       ) : (
         <div
           className="flex items-center justify-center rounded-lg border border-dashed border-line-strong text-[13px] text-muted"
@@ -117,8 +138,8 @@ export function CurveViewer({
       )}
       {scale === "log" && hidden > 0 && !asTable ? (
         <p className="mt-1.5 text-[12px] text-muted">
-          {hidden === 1 ? "One value" : `${count(hidden)} values`} at or below zero cannot be drawn on a log scale; the
-          table lists {hidden === 1 ? "it" : "them"}.
+          {hidden === 1 ? "One value" : `${count(hidden)} values`} at or below zero cannot be drawn
+          on a log scale; the table lists {hidden === 1 ? "it" : "them"}.
         </p>
       ) : null}
       {caption ? (
@@ -152,29 +173,55 @@ function SeriesLegend({ series }: { series: readonly CurveSeries[] }) {
       {focus.map((s) => {
         const i = idx[series.indexOf(s)]!;
         return (
-          <li key={s.id} className="inline-flex items-center gap-1.5">
+          <li key={s.id} className="inline-flex items-center gap-1.5 whitespace-nowrap">
             <svg width="16" height="10" aria-hidden="true">
-              <line x1="1" x2="15" y1="5" y2="5" strokeWidth="2.5" strokeLinecap="round" style={{ stroke: `var(${seriesColorVar(s, i)})` }} />
+              <line
+                x1="1"
+                x2="15"
+                y1="5"
+                y2="5"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                style={{ stroke: `var(${seriesColorVar(s, i)})` }}
+              />
             </svg>
             <span className="text-fg">{s.label}</span>
-            <span className="font-mono text-faint tabular">{s.cq != null && Number.isFinite(s.cq) ? `Cq ${fixed(s.cq, 1)}` : "no Cq"}</span>
+            <span className="font-mono text-faint tabular">
+              {s.cq != null && Number.isFinite(s.cq) ? `Cq ${fixed(s.cq, 1)}` : "no Cq"}
+            </span>
           </li>
         );
       })}
       {context.length ? (
         <li className="inline-flex items-center gap-1.5">
           <svg width="16" height="10" aria-hidden="true">
-            <line x1="1" x2="15" y1="5" y2="5" strokeWidth="1.5" style={{ stroke: "var(--text-faint)" }} />
+            <line
+              x1="1"
+              x2="15"
+              y1="5"
+              y2="5"
+              strokeWidth="1.5"
+              style={{ stroke: "var(--text-faint)" }}
+            />
           </svg>
           <span>
-            {context.length === 1 ? "Another well" : `${count(context.length)} other wells`} of the same sample
+            {context.length === 1 ? "Another well" : `${count(context.length)} other wells`} of the
+            same sample
           </span>
         </li>
       ) : null}
       {focus.some((s) => s.baseline != null) ? (
         <li className="inline-flex items-center gap-1.5">
           <svg width="16" height="10" aria-hidden="true">
-            <line x1="1" x2="15" y1="5" y2="5" strokeWidth="1.5" strokeDasharray="3 2" style={{ stroke: "var(--text-muted)" }} />
+            <line
+              x1="1"
+              x2="15"
+              y1="5"
+              y2="5"
+              strokeWidth="1.5"
+              strokeDasharray="3 2"
+              style={{ stroke: "var(--text-muted)" }}
+            />
           </svg>
           <span>Baseline</span>
         </li>
@@ -237,7 +284,11 @@ function Plot({
       series.forEach((s, i) => {
         if (s.role === "context") return;
         const color = colors[i]!;
-        if (s.baseline != null && Number.isFinite(s.baseline) && (scale === "linear" || s.baseline > 0)) {
+        if (
+          s.baseline != null &&
+          Number.isFinite(s.baseline) &&
+          (scale === "linear" || s.baseline > 0)
+        ) {
           const y = u.valToPos(s.baseline, "y", true);
           if (y >= top && y <= top + h) {
             ctx.strokeStyle = withAlpha(color, 0.85);
@@ -284,8 +335,20 @@ function Plot({
         y: scale === "log" ? { distr: 3, log: 10 } : { distr: 1 },
       },
       axes: [
-        { ...axis, label: "Cycle", size: 40, labelSize: 18, values: (_u, splits) => splits.map((v) => String(v)) },
-        { ...axis, label: yLabel, size: 64, labelSize: 18, values: (_u, splits) => splits.map(tick) },
+        {
+          ...axis,
+          label: "Cycle",
+          size: 40,
+          labelSize: 18,
+          values: (_u, splits) => splits.map((v) => String(v)),
+        },
+        {
+          ...axis,
+          label: yLabel,
+          size: 64,
+          labelSize: 18,
+          values: (_u, splits) => splits.map(tick),
+        },
       ],
       cursor: {
         points: { size: 6 },
@@ -332,7 +395,13 @@ function Plot({
   const x = cursor != null ? aligned.x[cursor] : undefined;
   return (
     <div>
-      <div ref={host} role="img" aria-label={summary} className="qp-curve w-full" style={{ minHeight: height }} />
+      <div
+        ref={host}
+        role="img"
+        aria-label={summary}
+        className="qp-curve w-full"
+        style={{ minHeight: height }}
+      />
       <p className="mt-1 min-h-5 font-mono text-[12px] text-muted tabular" aria-hidden="true">
         {x !== undefined ? (
           <>
@@ -344,7 +413,10 @@ function Plot({
             ))}
           </>
         ) : (
-          <span className="font-sans">Point at the plot for the values at a cycle; drag across it to zoom, double-click to reset.</span>
+          <span className="font-sans">
+            Point at the plot for the values at a cycle; drag across it to zoom, double-click to
+            reset.
+          </span>
         )}
       </p>
     </div>

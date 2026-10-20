@@ -8,4 +8,5 @@
  */
 export { CurveViewer, type CurveViewerProps } from "./CurveViewer";
 export { CurveTable } from "./CurveTable";
+export { curveSeries, curvesOf, seriesLabel } from "./adapters";
 export { align, curvesSummary, type CurveScale, type CurveSeries } from "./data";

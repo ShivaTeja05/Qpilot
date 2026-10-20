@@ -26,7 +26,15 @@ import {
 import { cn } from "@/lib/cn";
 import { fixed } from "@/lib/format";
 import { NumberCell, Table, TBody, TD, TH, THead, TR } from "@/ui";
-import { compareWells, parseWell, plateShape, rectangle, rowLetters, wellLabel, type WellPosition } from "./geometry";
+import {
+  compareWells,
+  parseWell,
+  plateShape,
+  rectangle,
+  rowLetters,
+  wellLabel,
+  type WellPosition,
+} from "./geometry";
 import {
   CALL_STYLE,
   NUMERIC,
@@ -104,12 +112,16 @@ export function PlateMap({
     }
     const shape = plateShape(located, { rows, columns });
     const grid = new Map<string, Located>();
-    for (const w of located) if (w.row < shape.rows && w.column < shape.columns) grid.set(`${w.row}:${w.column}`, w);
+    for (const w of located)
+      if (w.row < shape.rows && w.column < shape.columns) grid.set(`${w.row}:${w.column}`, w);
     return { grid, located, unplaced, shape };
   }, [wells, rows, columns]);
 
   const domain = useMemo<Domain | null>(
-    () => (isNumericLayer(layer) ? numericDomain(wells.filter((w) => !w.dimmed).map(NUMERIC[layer].get)) : null),
+    () =>
+      isNumericLayer(layer)
+        ? numericDomain(wells.filter((w) => !w.dimmed).map(NUMERIC[layer].get))
+        : null,
     [wells, layer],
   );
 
@@ -118,10 +130,16 @@ export function PlateMap({
   const summary = `${label}. ${plateSummary(wells, layer)}`;
 
   return (
-    <figure className={cn("m-0 min-w-0", className)} aria-label={summary} aria-describedby={caption ? captionId : undefined}>
+    <figure
+      className={cn("m-0 min-w-0", className)}
+      aria-label={summary}
+      aria-describedby={caption ? captionId : undefined}
+    >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0 flex-1">
-          {!hideLegend && !asTable ? <PlateLegend wells={wells} layer={layer} domain={domain} /> : null}
+        <div className="min-w-[14rem] flex-1">
+          {!hideLegend && !asTable ? (
+            <PlateLegend wells={wells} layer={layer} domain={domain} />
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {controls}
@@ -169,8 +187,8 @@ export function PlateMap({
       )}
       {unplaced.length && !asTable ? (
         <p className="mt-2 text-[12px] text-muted">
-          {unplaced.length === 1 ? "One well has" : `${unplaced.length} wells have`} a position that is not a plate
-          label; “View as table” lists {unplaced.length === 1 ? "it" : "them"}.
+          {unplaced.length === 1 ? "One well has" : `${unplaced.length} wells have`} a position that
+          is not a plate label; “View as table” lists {unplaced.length === 1 ? "it" : "them"}.
         </p>
       ) : null}
       {caption ? (
@@ -216,8 +234,15 @@ function PlateGrid({
 }: GridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [cursor, setCursor] = useState<WellPosition>(() => firstWell(grid) ?? { row: 0, column: 0 });
-  const [hover, setHover] = useState<{ pos: WellPosition; x: number; y: number; flip: boolean } | null>(null);
+  const [cursor, setCursor] = useState<WellPosition>(
+    () => firstWell(grid) ?? { row: 0, column: 0 },
+  );
+  const [hover, setHover] = useState<{
+    pos: WellPosition;
+    x: number;
+    y: number;
+    flip: boolean;
+  } | null>(null);
   const [keyboard, setKeyboard] = useState(false);
   const anchor = useRef<WellPosition | null>(null);
   const live = useRef<HTMLParagraphElement>(null);
@@ -225,10 +250,13 @@ function PlateGrid({
 
   const selectable = Boolean(onSelectedChange);
   const at = useCallback((p: WellPosition) => grid.get(`${p.row}:${p.column}`) ?? null, [grid]);
-  const pickable = useCallback((p: WellPosition) => {
-    const w = at(p);
-    return w != null && !w.dimmed;
-  }, [at]);
+  const pickable = useCallback(
+    (p: WellPosition) => {
+      const w = at(p);
+      return w != null && !w.dimmed;
+    },
+    [at],
+  );
 
   const cellMin = columns > 12 ? 22 : 30;
   const cellMax = columns > 12 ? 40 : 56;
@@ -247,27 +275,27 @@ function PlateGrid({
     [onSelectedChange, pickable, multiple],
   );
 
-  const place = useCallback(
-    (cell: HTMLElement, pos: WellPosition) => {
-      const wrap = wrapRef.current;
-      if (!wrap) return;
-      const a = cell.getBoundingClientRect();
-      const b = wrap.getBoundingClientRect();
-      const x = a.left - b.left + a.width / 2;
-      const y = a.bottom - b.top + 6;
-      setHover({ pos, x, y, flip: x > b.width - 240 });
-    },
-    [],
-  );
+  const place = useCallback((cell: HTMLElement, pos: WellPosition) => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const a = cell.getBoundingClientRect();
+    const b = wrap.getBoundingClientRect();
+    const x = a.left - b.left + a.width / 2;
+    const y = a.bottom - b.top + 6;
+    setHover({ pos, x, y, flip: x > b.width - 240 });
+  }, []);
 
-  const focusCell = useCallback((p: WellPosition) => {
-    setCursor(p);
-    const el = gridRef.current?.querySelector<HTMLElement>(`[data-pos="${p.row}:${p.column}"]`);
-    if (el) {
-      el.focus({ preventScroll: false });
-      place(el, p);
-    }
-  }, [place]);
+  const focusCell = useCallback(
+    (p: WellPosition) => {
+      setCursor(p);
+      const el = gridRef.current?.querySelector<HTMLElement>(`[data-pos="${p.row}:${p.column}"]`);
+      if (el) {
+        el.focus({ preventScroll: false });
+        place(el, p);
+      }
+    },
+    [place],
+  );
 
   const announce = (text: string) => {
     if (live.current) live.current.textContent = text;
@@ -344,7 +372,11 @@ function PlateGrid({
         else set.add(l);
         select([...set]);
         anchor.current = cursor;
-        announce(set.has(l) ? `${l} selected; ${set.size} selected` : `${l} not selected; ${set.size} selected`);
+        announce(
+          set.has(l)
+            ? `${l} selected; ${set.size} selected`
+            : `${l} not selected; ${set.size} selected`,
+        );
         return;
       }
       case "Enter": {
@@ -419,7 +451,10 @@ function PlateGrid({
           aria-rowcount={rows + 1}
           aria-colcount={columns + 1}
           className="select-none"
-          style={{ minWidth: `calc(${ROW_HEAD} + ${columns * cellMin}px)`, maxWidth: `calc(${ROW_HEAD} + ${columns * cellMax}px)` }}
+          style={{
+            minWidth: `calc(${ROW_HEAD} + ${columns * cellMin}px)`,
+            maxWidth: `calc(${ROW_HEAD} + ${columns * cellMax}px)`,
+          }}
           onClick={onClick}
           onDoubleClick={onDoubleClick}
           onKeyDown={onKeyDown}
@@ -431,8 +466,8 @@ function PlateGrid({
           }}
         >
           <div role="row" aria-rowindex={1} className="grid" style={style}>
-            <div role="columnheader" aria-colindex={1} className="sr-only">
-              Row
+            <div role="columnheader" aria-colindex={1} className="sticky left-0 z-[1] bg-surface">
+              <span className="sr-only">Row</span>
             </div>
             {Array.from({ length: columns }, (_, c) => (
               <div
@@ -468,7 +503,7 @@ function PlateGrid({
                   )
                 }
                 className={cn(
-                  "flex items-center justify-center font-mono text-[10px] text-faint",
+                  "sticky left-0 z-[1] flex items-center justify-center bg-surface font-mono text-[10px] text-faint",
                   selectable && multiple && "cursor-pointer hover:text-fg",
                 )}
               >
@@ -566,7 +601,9 @@ const Cell = memo(function Cell({
         "relative m-px aspect-square rounded-md p-[6%] transition-[background-color,box-shadow,opacity] duration-150 ease-out outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus",
         well && !well.dimmed && selectable && "cursor-pointer hover:bg-bg-subtle",
         well?.dimmed && "opacity-20",
-        selected && well && "bg-accent-soft shadow-[inset_0_0_0_2px_var(--accent-strong)] hover:bg-accent-soft",
+        selected &&
+          well &&
+          "bg-accent-soft shadow-[inset_0_0_0_2px_var(--accent-strong)] hover:bg-accent-soft",
       )}
     >
       <WellGlyph well={well} layer={layer} domain={domain} />
@@ -599,16 +636,22 @@ function HoverCard({
     if (well.sample) rows.push(["Sample", well.sample]);
     if (well.target) rows.push(["Target", well.target]);
     rows.push(["Type", roleStyle(well.role).label]);
-    if (well.amplified !== undefined) rows.push(["Call", CALL_STYLE[callKey(well.amplified)].label]);
+    if (well.amplified !== undefined)
+      rows.push(["Call", CALL_STYLE[callKey(well.amplified)].label]);
     if (well.cq !== undefined) rows.push(["Cq", numberText("cq", well.cq)]);
-    if (well.efficiency !== undefined) rows.push(["Efficiency", numberText("efficiency", well.efficiency)]);
+    if (well.efficiency !== undefined)
+      rows.push(["Efficiency", numberText("efficiency", well.efficiency)]);
     if (well.r2 !== undefined) rows.push(["R²", numberText("r2", well.r2)]);
   }
   return (
     <div
       aria-hidden="true"
       className="pointer-events-none absolute z-20 w-max max-w-[260px] rounded-lg border border-line bg-surface px-3 py-2 text-[12px] text-fg shadow-md"
-      style={{ left: x, top: y, transform: flip ? "translateX(-100%) translateX(12px)" : "translateX(-12px)" }}
+      style={{
+        left: x,
+        top: y,
+        transform: flip ? "translateX(-100%) translateX(12px)" : "translateX(-12px)",
+      }}
     >
       <div className="mb-1 flex items-baseline gap-2">
         <span className="font-mono text-[13px] font-semibold">{label}</span>
@@ -628,10 +671,16 @@ function HoverCard({
           ))}
         </dl>
       ) : null}
-      {well?.disagree ? <p className="mt-1.5 text-[12px] text-fg">The Curve Judge reads this curve differently.</p> : null}
-      {well?.personCall ? <p className="mt-1 text-[12px] text-muted">A person set this well’s call.</p> : null}
+      {well?.disagree ? (
+        <p className="mt-1.5 text-[12px] text-fg">The Curve Judge reads this curve differently.</p>
+      ) : null}
+      {well?.personCall ? (
+        <p className="mt-1 text-[12px] text-muted">A person set this well’s call.</p>
+      ) : null}
       {well?.flagged ? (
-        <p className="mt-1 text-[12px] text-danger">Its names read like instructions; qPilot never acts on them.</p>
+        <p className="mt-1 text-[12px] text-danger">
+          Its names read like instructions; qPilot never acts on them.
+        </p>
       ) : null}
       {well?.notes?.map((n, i) => (
         <p key={i} className="mt-1 text-[12px] text-muted">

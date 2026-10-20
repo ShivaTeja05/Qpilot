@@ -9,6 +9,7 @@
  */
 export { PlateMap, type PlateMapProps } from "./PlateMap";
 export { PlateLegend } from "./PlateLegend";
+export { plateWells, type PlateWellOptions } from "./adapters";
 export { WellGlyph } from "./WellGlyph";
 export {
   PLATE_LAYER_LABEL,
@@ -20,4 +21,12 @@ export {
   type PlateLayer,
   type PlateWell,
 } from "./layers";
-export { compareWells, parseWell, plateShape, rowLetters, wellLabel, type PlateShape, type WellPosition } from "./geometry";
+export {
+  compareWells,
+  parseWell,
+  plateShape,
+  rowLetters,
+  wellLabel,
+  type PlateShape,
+  type WellPosition,
+} from "./geometry";
