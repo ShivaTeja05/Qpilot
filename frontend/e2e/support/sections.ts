@@ -38,12 +38,12 @@ export const PENDING_TEXT = "This section is being built.";
  */
 export const LANDED = {
   /** shell: rail with live stage states, top bar, theme toggle, live dot. */
-  shellFrame: false,
+  shellFrame: true,
   /** shell: the needs-key screen (401 no_token). */
-  needsKey: false,
+  needsKey: true,
   /** shell: ⌘K palette, `?` shortcut sheet, g-then-x section keys. */
-  shellKeys: false,
-  /** shell: the Ask drawer frame (⌘J); ask: its content. */
+  shellKeys: true,
+  /** ask: the Ask drawer's content (the frame, ⌘J, is shell's and tested always). */
   askDrawer: false,
   /** home: Open (hero, demo, Recent cards, system strip). */
   home: false,
@@ -76,7 +76,7 @@ export const OWNER: Record<Feature, string> = {
   shellFrame: "shell",
   needsKey: "shell",
   shellKeys: "shell",
-  askDrawer: "shell + ask",
+  askDrawer: "ask",
   home: "home",
   settings: "home",
   design: "design",

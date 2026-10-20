@@ -15,7 +15,7 @@ test.describe("keyboard", () => {
     const demo = await demoSession(api);
     await app.open(route(demo, "record"));
     await app.page.keyboard.press(`${MOD}+k`);
-    const palette = app.page.getByRole("dialog");
+    const palette = app.page.getByRole("dialog", { name: "Search and commands" });
     await expect(palette).toBeVisible();
     await expect(
       palette.getByRole("combobox").or(palette.getByRole("textbox")).first(),
@@ -31,17 +31,13 @@ test.describe("keyboard", () => {
   test("? shows the shortcut sheet; Escape closes it and focus returns", async ({ app }) => {
     await app.open("/");
     await app.page.locator("body").press("?");
-    const sheet = app.page.getByRole("dialog", { name: /shortcut|keyboard/i });
+    const sheet = app.page.getByRole("dialog", { name: "Keyboard shortcuts" });
     await expect(sheet).toBeVisible();
-    await expect(
-      sheet
-        .getByText("⌘K")
-        .or(sheet.getByText(/ctrl\s*k/i))
-        .first(),
-    ).toBeVisible();
+    await expect(sheet.getByText(/^Search, go to a section/)).toBeVisible();
     await app.axe("shortcut sheet");
     await app.page.keyboard.press("Escape");
     await expect(sheet).toBeHidden();
+    await expect(app.page.getByRole("dialog")).toHaveCount(0);
   });
 
   test("g then r / e / a goes to Results / Record / Audit", async ({ app, api }) => {
@@ -59,17 +55,26 @@ test.describe("keyboard", () => {
     }
   });
 
-  test("⌘J opens the Ask drawer with its question box focused", async ({ app, api }) => {
+  test("⌘J opens the Ask drawer and Escape closes it", async ({ app, api }) => {
+    const demo = await demoSession(api);
+    await app.open(route(demo, "record"));
+    await app.page.keyboard.press(`${MOD}+j`);
+    const drawer = app.page.getByRole("dialog", { name: "Ask your data" });
+    await expect(drawer).toBeVisible();
+    await app.settle();
+    await app.axe("Ask drawer");
+    await app.shot("ask", "drawer-1440-light");
+    await app.page.keyboard.press("Escape");
+    await expect(drawer).toBeHidden();
+  });
+
+  test("the Ask drawer's question box is focused when it opens", async ({ app, api }) => {
     test.fixme(!LANDED.askDrawer, notLanded("askDrawer"));
     const demo = await demoSession(api);
     await app.open(route(demo, "results"));
     await app.page.keyboard.press(`${MOD}+j`);
-    const drawer = app.page.getByRole("dialog", { name: /ask/i });
-    await expect(drawer).toBeVisible();
+    const drawer = app.page.getByRole("dialog", { name: "Ask your data" });
     await expect(drawer.getByRole("textbox").first()).toBeFocused();
-    await app.axe("Ask drawer");
-    await app.page.keyboard.press("Escape");
-    await expect(drawer).toBeHidden();
   });
 
   test("every Tab stop on Results shows a focus ring", async ({ app, api }) => {
