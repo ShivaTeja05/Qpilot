@@ -18,18 +18,18 @@ export function Steps({ flow }: { flow: Flow }) {
           const current = step.state === "current";
           return (
             <li key={step.id}>
-              <a
-                href={`#${STEP_ANCHOR[step.id]}`}
-                onClick={(e) => {
+              <button
+                type="button"
+                onClick={() => {
                   // the page is hash-routed: scroll to the card without touching the route
-                  e.preventDefault();
                   const el = document.getElementById(STEP_ANCHOR[step.id]);
-                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+                  el?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
                   el?.focus({ preventScroll: true });
                 }}
                 aria-current={current ? "step" : undefined}
                 className={cn(
-                  "flex h-full items-start gap-2.5 rounded-xl border p-3 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+                  "flex h-full w-full items-start gap-2.5 rounded-xl border p-3 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
                   current
                     ? "border-accent/50 bg-accent-soft"
                     : "border-line bg-surface hover:border-line-strong",
@@ -57,7 +57,7 @@ export function Steps({ flow }: { flow: Flow }) {
                     {step.detail}
                   </span>
                 </span>
-              </a>
+              </button>
             </li>
           );
         })}
