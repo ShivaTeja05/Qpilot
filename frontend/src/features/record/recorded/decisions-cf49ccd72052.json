@@ -1,0 +1,71 @@
+{
+ "study_id": "cf49ccd72052",
+ "head": "46729c6c7838577e9f6c66bbf2a17ce7323c5c8bedd8c9f47ee50a8c9b14c20d",
+ "entries": [
+  {
+   "entry": {
+    "seq": 1,
+    "prev_hash": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+    "card_id": "card_undetermined",
+    "option": "drop",
+    "reason": "Decided automatically: at the recommended settings no option on this card changes any conclusion. At other settings it can, so an agent must ask a person to change it.",
+    "actor": "system",
+    "status": "auto",
+    "at": "2026-10-20T19:19:50Z",
+    "hash": "bcbdae4f047395e4050e2925fd62957418d012d81fd715f978c8d5abcc7ee7cb"
+   },
+   "card_title": "What to do with wells that never amplified",
+   "option_label": "Drop empty wells",
+   "undo": false
+  },
+  {
+   "entry": {
+    "seq": 2,
+    "prev_hash": "bcbdae4f047395e4050e2925fd62957418d012d81fd715f978c8d5abcc7ee7cb",
+    "card_id": "card_refset",
+    "option": "recommended",
+    "reason": "the recommended option, as pre-registered for the demo",
+    "actor": "human",
+    "status": "applied",
+    "at": "2026-10-20T19:19:50Z",
+    "hash": "250298420ee1d812ba147ff0c1ceccb9457caaab271462c2c9f26df66f0a5334"
+   },
+   "card_title": "Which control genes to normalise to",
+   "option_label": "Recommended set (all five)",
+   "undo": false
+  },
+  {
+   "entry": {
+    "seq": 3,
+    "prev_hash": "250298420ee1d812ba147ff0c1ceccb9457caaab271462c2c9f26df66f0a5334",
+    "card_id": "card_cutoff",
+    "option": "cut_15",
+    "reason": "the recommended option, as pre-registered for the demo",
+    "actor": "human",
+    "status": "applied",
+    "at": "2026-10-20T19:19:50Z",
+    "hash": "3a937c14023736acb1b02c821ce8d24100c5b7218b3057da6deff0caa4039ae3"
+   },
+   "card_title": "Where to cut the comparison groups",
+   "option_label": "Top 15 % by MYCN expression",
+   "undo": false
+  },
+  {
+   "entry": {
+    "seq": 4,
+    "prev_hash": "3a937c14023736acb1b02c821ce8d24100c5b7218b3057da6deff0caa4039ae3",
+    "card_id": "card_amp_call",
+    "option": "linregpcr",
+    "reason": "the recommended option, as pre-registered for the demo",
+    "actor": "human",
+    "status": "applied",
+    "at": "2026-10-20T19:19:50Z",
+    "hash": "46729c6c7838577e9f6c66bbf2a17ce7323c5c8bedd8c9f47ee50a8c9b14c20d"
+   },
+   "card_title": "Which curves count as amplified",
+   "option_label": "LinRegPCR's own call (a starting quantity was found)",
+   "undo": false
+  }
+ ],
+ "pending": []
+}
