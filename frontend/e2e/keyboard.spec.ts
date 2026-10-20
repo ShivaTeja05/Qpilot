@@ -68,13 +68,33 @@ test.describe("keyboard", () => {
     await expect(drawer).toBeHidden();
   });
 
-  test("the Ask drawer's question box is focused when it opens", async ({ app, api }) => {
+  test("Ask: an example question is answered, saying who answered and wrote it", async ({
+    app,
+    api,
+  }) => {
     test.fixme(!LANDED.askDrawer, notLanded("askDrawer"));
+    test.setTimeout(240_000);
     const demo = await demoSession(api);
-    await app.open(route(demo, "results"));
+    await app.open(route(demo, "record"));
     await app.page.keyboard.press(`${MOD}+j`);
     const drawer = app.page.getByRole("dialog", { name: "Ask your data" });
-    await expect(drawer.getByRole("textbox").first()).toBeFocused();
+    const box = drawer.getByRole("textbox", { name: "Your question about this study" });
+    await expect(box).toBeFocused();
+    // The examples come from this study's results; pick the first.
+    const example = drawer.getByRole("listitem").getByRole("button").first();
+    await expect(example).toBeVisible({ timeout: 60_000 });
+    const question = (await example.innerText()).split("\n")[0]!.trim();
+    await example.click();
+    if (await drawer.getByRole("button", { name: "Ask", exact: true }).isEnabled()) {
+      await drawer.getByRole("button", { name: "Ask", exact: true }).click();
+    }
+    const log = drawer.getByRole("log", { name: "Questions and answers" });
+    const turn = log.getByRole("article", { name: `Question: ${question}` });
+    await expect(turn).toBeVisible();
+    await expect(turn.getByRole("status")).toHaveCount(0, { timeout: 180_000 });
+    await expect(turn).toContainText(/template|model|audit/i);
+    await app.axe("Ask, answered");
+    await app.shot("ask", "answered-1440-light");
   });
 
   test("every Tab stop on Results shows a focus ring", async ({ app, api }) => {

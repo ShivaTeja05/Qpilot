@@ -1,57 +1,94 @@
 /**
- * Record and Agents on the seeded demo session: the timeline is the server's chain, Export
- * downloads an Analysis Record (a zip), and Agents shows how to connect and what agents asked.
+ * Record and Agents on the seeded demo session: the timeline is the server's chain (/decisions),
+ * Export downloads an Analysis Record (a zip) that Verify then checks, a changed copy does not
+ * check out, and Agents shows how to connect, the rules and the tools from /api/agents.
  */
-import { readFileSync } from "node:fs";
-import { demoSession, maybeJson, route, workspaceView } from "./support/data";
+import { readFileSync, writeFileSync } from "node:fs";
+import type { APIRequestContext } from "@playwright/test";
+import type { components } from "../src/api/schema";
+import { demoSession, route, type Workspace } from "./support/data";
 import { E2E } from "./support/env";
 import { expect, test } from "./support/fixtures";
 import { LANDED, notLanded } from "./support/sections";
 
+type DecisionsView = components["schemas"]["DecisionsView"];
+
+interface AgentsView {
+  connect: string;
+  rules: string[];
+  tools: { name: string; summary: string }[];
+  pending: unknown[];
+}
+
+async function getJson<T>(api: APIRequestContext, path: string): Promise<T> {
+  const res = await api.get(path, { timeout: 110_000 });
+  expect(res.status(), `GET ${path}`).toBe(200);
+  return (await res.json()) as T;
+}
+
+const decisions = (api: APIRequestContext, w: Workspace) =>
+  getJson<DecisionsView>(api, `/api/studies/${w.study_id}/decisions`);
+
 test.describe("Record", () => {
   test.beforeEach(() => test.fixme(!LANDED.record, notLanded("record")));
 
-  test("the timeline shows every chain entry and the chain head", async ({ app, api }) => {
+  test("the timeline shows every chain entry, and the chain is intact", async ({ app, api }) => {
     const demo = await demoSession(api);
-    const view = await workspaceView(api, demo);
-    const chain = await maybeJson<{ entries?: unknown[] } | unknown[]>(
-      api,
-      `/api/studies/${demo.study_id}/decisions`,
-    );
-    test.fixme(!chain, "GET /api/studies/{id}/decisions is not served yet (owner: api)");
-    const entries = Array.isArray(chain) ? chain : (chain!.entries ?? []);
+    const chain = await decisions(api, demo);
     await app.open(route(demo, "record"));
-    const timeline = app.page.getByRole("list", { name: /chain|timeline|decisions/i }).first();
-    await expect(timeline.getByRole("listitem")).toHaveCount(entries.length);
-    if (view.decisions_head)
-      await expect(app.page.getByText(view.decisions_head.slice(0, 8)).first()).toBeVisible();
+    const timeline = app.page.getByRole("list", { name: "Decision chain entries, newest first" });
+    await expect(timeline).toBeVisible();
+    await expect(timeline.getByRole("article")).toHaveCount(chain.entries.length);
+    for (const e of chain.entries) {
+      await expect(timeline.getByRole("article", { name: `Entry ${e.entry.seq}` })).toBeVisible();
+    }
+    await expect(app.page.getByText("Intact: every hash checks out")).toBeVisible();
     await app.axe("Record");
   });
 
-  test("Export the Analysis Record downloads a zip", async ({ app, api }) => {
+  test("Export downloads a record zip, and Verify says it checks out", async ({ app, api }) => {
     test.skip(E2E.readOnly, "E2E_READONLY=1: no writes");
-    test.setTimeout(180_000);
+    test.setTimeout(300_000);
     const demo = await demoSession(api);
     await app.open(route(demo, "record"));
-    await app.page.getByRole("button", { name: /export the analysis record/i }).click();
-    // A job: its card says what it does; then a download link or an automatic download.
-    const download = app.page.waitForEvent("download", { timeout: 150_000 });
-    const link = app.page.getByRole("link", { name: /download/i }).first();
-    const got = await Promise.race([
-      download,
-      link.waitFor({ timeout: 150_000 }).then(async () => {
-        const [d] = await Promise.all([app.page.waitForEvent("download"), link.click()]);
-        return d;
-      }),
-    ]);
-    expect(got.suggestedFilename()).toMatch(/\.zip$/);
-    const path = await got.path();
-    const bytes = readFileSync(path);
-    expect(bytes.subarray(0, 2).toString("latin1"), "a zip file").toBe("PK");
-    await app.axe("Record, after export");
+    const exportCard = app.page.getByRole("region", { name: "Export the Analysis Record" });
+    await exportCard
+      .getByRole("button", { name: /^(Export the Analysis Record|Export again)$/ })
+      .click();
+    // A job card while it runs, then the download link with the record's file name.
+    const link = exportCard.getByRole("link", { name: /^Download .+\.zip/ });
+    await expect(link).toBeVisible({ timeout: 240_000 });
+    await app.axe("Record, exported");
+    const [download] = await Promise.all([app.page.waitForEvent("download"), link.click()]);
+    expect(download.suggestedFilename()).toMatch(/\.zip$/);
+    const zip = await download.path();
+    expect(readFileSync(zip).subarray(0, 2).toString("latin1"), "a zip file").toBe("PK");
+
+    // Verify the same file in the page.
+    const verifyCard = app.page.getByRole("region", { name: "Verify a record" });
+    await verifyCard.locator('input[type="file"]').setInputFiles({
+      name: download.suggestedFilename(),
+      mimeType: "application/zip",
+      buffer: readFileSync(zip),
+    });
+    await expect(verifyCard.getByText("This record checks out")).toBeVisible({ timeout: 120_000 });
+    await app.axe("Record, verified");
+
+    // A copy with one byte changed in the middle must not check out.
+    const bytes = Buffer.from(readFileSync(zip));
+    const at = Math.floor(bytes.length / 2);
+    bytes[at] = bytes[at]! ^ 0xff;
+    const changed = test.info().outputPath("changed.zip");
+    writeFileSync(changed, bytes);
+    await verifyCard.locator('input[type="file"]').setInputFiles(changed);
+    await expect(
+      verifyCard.getByText(/This record does not check out|This file could not be checked/),
+    ).toBeVisible({ timeout: 120_000 });
+    await expect(verifyCard.getByText("This record checks out")).toHaveCount(0);
+    app.allowConsole(/status of 4\d\d/);
   });
 
-  test("the qpilot verify / rerun commands are copyable", async ({ app, api }) => {
+  test("the qpilot verify / rerun commands are shown with a copy button", async ({ app, api }) => {
     const demo = await demoSession(api);
     await app.open(route(demo, "record"));
     await expect(app.page.getByText(/qpilot verify/).first()).toBeVisible();
@@ -63,22 +100,25 @@ test.describe("Record", () => {
 test.describe("Agents", () => {
   test.beforeEach(() => test.fixme(!LANDED.agents, notLanded("agents")));
 
-  test("shows the MCP command, the tools and the waiting requests from /api/agents", async ({
+  test("shows the connect command, the rules and the tools from /api/agents", async ({
     app,
     api,
   }) => {
     const demo = await demoSession(api);
-    const agents = await maybeJson<{
-      command?: string;
-      tools?: { name: string }[];
-      pending?: unknown[];
-    }>(api, "/api/agents");
-    test.fixme(!agents, "GET /api/agents is not served yet (owner: api-ops)");
+    const agents = await getJson<AgentsView>(api, "/api/agents");
     await app.open(route(demo, "agents"));
-    if (agents!.command) await expect(app.page.getByText(agents!.command).first()).toBeVisible();
-    for (const t of (agents!.tools ?? []).slice(0, 5))
-      await expect(app.page.getByText(t.name).first()).toBeVisible();
+    await expect(
+      app.page.getByRole("region", { name: "Connect an agent" }).getByText(agents.connect),
+    ).toBeVisible();
+    const rules = app.page.getByRole("region", { name: "What an agent can never do" });
+    for (const r of agents.rules) await expect(rules).toContainText(r);
+    const tools = app.page.getByRole("region", { name: "The tools" });
+    await expect(tools).toContainText(`${agents.tools.length} tools`);
+    for (const t of agents.tools)
+      await expect(tools.getByText(t.name, { exact: true })).toBeAttached();
     await expect(app.page.getByRole("button", { name: /copy/i }).first()).toBeVisible();
+    if (agents.pending.length === 0)
+      await expect(app.page.getByText("No requests waiting")).toBeVisible();
     await app.axe("Agents");
   });
 });

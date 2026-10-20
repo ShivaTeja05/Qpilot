@@ -44,29 +44,29 @@ export const LANDED = {
   /** shell: ⌘K palette, `?` shortcut sheet, g-then-x section keys. */
   shellKeys: true,
   /** ask: the Ask drawer's content (the frame, ⌘J, is shell's and tested always). */
-  askDrawer: false,
+  askDrawer: true,
   /** home: Open (hero, demo, Recent cards, system strip). */
   home: true,
   /** home: Settings. */
-  settings: false,
+  settings: true,
   /** design: the Design inbox + plate map. */
-  design: false,
+  design: true,
   /** curves: the Curves inbox, plate heatmap, curve viewer. */
-  curves: false,
+  curves: true,
   /** insight: Results (summary, robustness map, all-genes table, flips, Decision Cards). */
   results: true,
   /** insight: deciding a card, then Undo (writes to the store). */
   decide: true,
   /** gene: the Gene section. */
-  gene: false,
+  gene: true,
   /** audit: the Audit section (seeded audit, gene rows). */
-  audit: false,
+  audit: true,
   /** prism: the Prism section. */
-  prism: false,
+  prism: true,
   /** record: the Record section (timeline, export, verify). */
-  record: false,
+  record: true,
   /** record: the Agents section. */
-  agents: false,
+  agents: true,
 };
 
 export type Feature = keyof typeof LANDED;

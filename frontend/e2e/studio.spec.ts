@@ -1,126 +1,132 @@
 /**
- * Design and Curves (blind stages) on the seeded demo session: the inboxes render the session's
- * real proposals (subjects and counts read from /proposals), the plate map and heatmap render,
- * a well opens its curve, and j/k move between cards.
+ * Design and Curves (blind stages) on the seeded demo session, whose two stages are confirmed:
+ * the inbox says nothing waits and lists every decided proposal the server has (/proposals), a
+ * decided proposal opens as a read-only card, the plate map renders, and a well opens its curve.
  */
 import { demoSession, literal, proposals, route } from "./support/data";
 import { expect, test, type App } from "./support/fixtures";
 import { LANDED, notLanded } from "./support/sections";
 
-/** Show decided proposals too (the seeded stages are confirmed: nothing waits). */
-async function showAll(app: App): Promise<void> {
-  const all = app.page
-    .getByRole("tab", { name: /^(all|decided)/i })
-    .or(app.page.getByRole("radio", { name: /^(all|decided)/i }));
-  if (await all.count()) {
-    await all.first().click();
-    await app.settle();
-  }
+/** A well with a reaction in it (empty cells are labelled "…, empty"). */
+const FILLED_WELL = /^(?!.*empty$).+/;
+
+async function openDecided(app: App): Promise<void> {
+  const toggle = app.page.getByRole("button", { name: /^Decided in this stage/ });
+  await expect(toggle).toBeVisible();
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
 }
 
 for (const stage of ["design", "curves"] as const) {
-  test.describe(stage === "design" ? "Design" : "Curves", () => {
+  const title = stage === "design" ? "Design" : "Curves";
+  test.describe(title, () => {
     test.beforeEach(() => test.fixme(!LANDED[stage], notLanded(stage)));
 
-    test("the inbox renders the session's real proposals", async ({ app, api }) => {
+    test("the inbox lists every proposal the server has decided", async ({ app, api }) => {
       const demo = await demoSession(api);
       const list = await proposals(api, demo.key, stage);
-      expect(list.proposals.length, "the seeded stage has proposals").toBeGreaterThan(0);
+      const waiting = list.proposals.filter((p) => p.status === "proposed");
+      const decided = list.proposals.filter((p) => p.status !== "proposed");
+      expect(decided.length, "the seeded stage has decided proposals").toBeGreaterThan(0);
       await app.open(route(demo, stage));
-      await showAll(app);
-      // The first proposal the server lists (contradicted first) is on the page, as text.
-      const first = list.proposals.find((p) => p.kind !== "stage.confirm")!;
-      await expect(app.page.getByText(literal(first.subject)).first()).toBeVisible();
-      // Each status count the server reports is shown with its number.
-      for (const [status, n] of Object.entries(list.counts)) {
+      await expect(app.page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText(title);
+      if (!waiting.length) {
+        await expect(app.page.getByText("Nothing is waiting in this stage")).toBeVisible();
         await expect(
-          app.page.getByText(new RegExp(`${n}\\s*${status}|${status}\\D{0,3}${n}`, "i")).first(),
+          app.page.getByText(`Every proposal is decided (${decided.length})`),
         ).toBeVisible();
       }
+      const toggle = app.page.getByRole("button", { name: /^Decided in this stage/ });
+      await expect(toggle).toContainText(`(${decided.length})`);
+      for (const n of Object.values(list.counts)) await expect(toggle).toContainText(String(n));
       await app.axe(`${stage} inbox`);
     });
 
-    test("a proposal card folds out its evidence and engine check", async ({ app, api }) => {
+    test("a decided proposal opens as a read-only card with its parts", async ({ app, api }) => {
       const demo = await demoSession(api);
       const list = await proposals(api, demo.key, stage);
-      const first = list.proposals.find((p) => p.kind !== "stage.confirm")!;
+      const first = list.proposals.find(
+        (p) => p.status !== "proposed" && p.kind !== "stage.confirm",
+      );
+      test.skip(!first, "no decided proposal");
       await app.open(route(demo, stage));
-      await showAll(app);
+      await openDecided(app);
+      const row = app.page.getByRole("button", { name: literal(first!.subject) }).first();
+      await row.click();
+      await expect(row).toHaveAttribute("aria-expanded", "true");
       const card = app.page
         .getByRole("article")
-        .filter({ hasText: literal(first.subject) })
+        .filter({ hasText: literal(first!.subject) })
         .first();
       await expect(card).toBeVisible();
-      await expect(card.getByText(new RegExp(first.check.status, "i")).first()).toBeVisible();
-      for (const rule of first.check.rule_ids.slice(0, 3))
-        await expect(card.getByText(rule).first()).toBeVisible();
-      const why = card.getByRole("button", { name: /why/i }).first();
-      if (await why.count()) {
-        await why.click();
-        await app.axe(`${stage} card, evidence open`);
+      for (const part of ["Why", "Engine check", "Consequence", "Level"]) {
+        await expect(card.getByText(part, { exact: true }).first()).toBeVisible();
       }
-    });
-
-    test("j / k move between proposal cards", async ({ app, api }) => {
-      const demo = await demoSession(api);
-      await app.open(route(demo, stage));
-      await showAll(app);
-      await app.page.locator("body").press("j");
-      const firstFocus = await app.page.evaluate(() => document.activeElement?.textContent ?? "");
-      await app.page.locator("body").press("j");
-      const secondFocus = await app.page.evaluate(() => document.activeElement?.textContent ?? "");
-      expect(firstFocus).not.toBe("");
-      expect(secondFocus).not.toBe(firstFocus);
-      await app.page.locator("body").press("k");
-      expect(await app.page.evaluate(() => document.activeElement?.textContent ?? "")).toBe(
-        firstFocus,
-      );
+      // Read only: a decided proposal cannot be accepted or rejected again.
+      await expect(card.getByRole("button", { name: /^(Accept|Reject)$/ })).toHaveCount(0);
+      await app.axe(`${stage}, decided card open`);
     });
   });
 }
 
-test.describe("plate views", () => {
-  test("Design: the plate map renders as an image with a summary and a table view", async ({
+test.describe("plates", () => {
+  test("Design: the plate map renders; a well shows its sample, Escape clears it", async ({
     app,
     api,
   }) => {
     test.fixme(!LANDED.design, notLanded("design"));
     const demo = await demoSession(api);
     await app.open(route(demo, "design"));
-    const map = app.page.getByRole("img", { name: /plate/i }).first();
-    await expect(map).toBeVisible();
-    await app.page
-      .getByRole("button", { name: /view as table/i })
-      .first()
-      .click();
-    await expect(app.page.getByRole("table").first()).toBeVisible();
-    await app.axe("design plate map as table");
+    const panel = app.page.getByRole("region", { name: "Plate map" });
+    const grid = panel.getByRole("grid", { name: /^Plate / });
+    await expect(grid).toBeVisible();
+    const well = grid.getByRole("gridcell", { name: FILLED_WELL }).first();
+    // "A1, sample 1495, AHCY, Sample": the well and its sample, as the plate API names them.
+    const [wellId, sample] = (await well.getAttribute("aria-label"))!.split(", ");
+    await well.click();
+    await expect(panel.getByText(`Well ${wellId}`)).toBeVisible();
+    await expect(panel.getByRole("blockquote").first()).toHaveText(sample!.replace(/^sample /, ""));
+    await app.axe("design, a well chosen");
+    await app.page.keyboard.press("Escape");
+    await expect(panel.getByText(`Well ${wellId}`)).toHaveCount(0);
   });
 
-  test("Curves: the heatmap renders, a well opens its curve, Escape closes it", async ({
+  test("Curves: the plate renders, a well shows its curve, no group labels", async ({
     app,
     api,
   }) => {
     test.fixme(!LANDED.curves, notLanded("curves"));
     const demo = await demoSession(api);
     await app.open(route(demo, "curves"));
-    const heatmap = app.page.getByRole("img", { name: /plate|heatmap|wells/i }).first();
-    await expect(heatmap).toBeVisible();
-    // Wells are buttons (keyboard reachable); open the first one.
-    const well = app.page.getByRole("button", { name: /^[A-P]\d{1,2}\b/ }).first();
-    await well.click();
-    const viewer = app.page.getByRole("img", { name: /fluorescence|curve/i }).first();
-    await expect(viewer).toBeVisible();
-    await app.axe("curves, curve viewer open");
-    await app.page.keyboard.press("Escape");
-    await app.shot("curves", "curve-viewer-closed");
+    const plate = app.page.getByRole("region", { name: "The plate" });
+    await expect(plate.getByRole("grid")).toBeVisible();
+    const curve = app.page.getByRole("region", { name: /curve/i }).filter({
+      hasText: "Pick a well on the plate",
+    });
+    await expect(curve).toBeVisible();
+    await plate.getByRole("gridcell", { name: FILLED_WELL }).first().click();
+    await expect(app.page.getByText("Pick a well on the plate")).toHaveCount(0, {
+      timeout: 60_000,
+    });
+    await app.settle(60_000);
+    await app.axe("curves, a well chosen");
+    await app.shot("curves", "well-chosen-1440-light");
+    // Blind stage: no fold changes or p-values on the screen.
+    const text = await app.page.getByRole("main").innerText();
+    expect(text).not.toMatch(/\d+(\.\d+)?\s*×|\bp\s*[<=≤]\s*0?\.\d/i);
   });
 
-  test("Curves: no group labels or fold changes are shown (blind stage)", async ({ app, api }) => {
+  test("Curves: the previous / next plate buttons move between plates", async ({ app, api }) => {
     test.fixme(!LANDED.curves, notLanded("curves"));
     const demo = await demoSession(api);
     await app.open(route(demo, "curves"));
-    const text = await app.page.locator("main").innerText();
-    expect(text).not.toMatch(/\d+(\.\d+)?×|fold change|p\s*[<=]\s*0\.\d/i);
+    const plate = app.page.getByRole("region", { name: "The plate" });
+    const picker = plate.getByRole("combobox", { name: "Plate" });
+    const before = await picker.innerText();
+    await plate.getByRole("button", { name: "Next plate (])" }).click();
+    await app.settle();
+    await expect(picker).not.toHaveText(before);
+    await plate.getByRole("button", { name: "Previous plate ([)" }).click();
+    await app.settle();
+    await expect(picker).toHaveText(before);
   });
 });
