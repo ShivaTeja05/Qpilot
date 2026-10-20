@@ -53,7 +53,7 @@ export function GenormBars({ m, order, cutoffM, v, cutoffV, used, differs, only 
   }));
   const nVOk = cutoffV != null ? vRows.filter((r) => r.value <= cutoffV).length : 0;
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className={only ? "min-w-0" : "grid gap-6 lg:grid-cols-2"}>
       {only !== "v" && (
         <div className="min-w-0">
           <p className="mb-1 text-[13px] font-semibold text-fg">Stability of each candidate (geNorm M)</p>
