@@ -14,14 +14,14 @@ import labODC1 from "@/test/recorded/audit-lab-ODC1.json";
 import samplesODC1 from "@/test/recorded/audit-samples-ODC1.json";
 import results from "@/test/recorded/results.json";
 import { TooltipProvider } from "@/ui";
-import { ci, fold, ofTotal, pValue } from "@/lib/format";
+import { ci, fold, ofTotal, percent, pValue } from "@/lib/format";
 import type { AuditGeneCard, AuditLab, AuditSamples, CardLike, GeneView } from "../api";
 import { AuditInvite, AuditReading, OneChoice, WhatHolds, YourSamples } from "../AuditParts";
 import { cardsForGene } from "../cards";
 import { GeneHeader } from "../GeneHeader";
 import { neighbours, resolveGene } from "../nav";
 import { AssayWells, GeneCards, ImpactTable, ReferenceStability } from "../StudyParts";
-import { KIND_DIMENSION } from "../words";
+import { KIND_DIMENSION, geneSummary } from "../words";
 
 afterEach(cleanup);
 
@@ -210,5 +210,20 @@ describe("without an audit", () => {
     render(<AuditInvite workspace={WS} status={{ status: "not_applicable", reason }} job={null} onRun={vi.fn()} />);
     expect(screen.getByText(reason)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Run the audit" })).toBeNull();
+  });
+});
+
+describe("copy summary", () => {
+  it("says the result, the confidence, what holds and the audit's verdict in plain text", () => {
+    const view = geneView("ODC1");
+    const card = geneODC1 as unknown as AuditGeneCard;
+    const text = geneSummary({ gene: view, labels: LABELS, audit: card, studyId: results.study_id, chainHead: null });
+    expect(text).toContain("ODC1: called up with the planned analysis");
+    expect(text).toContain(`Fold ${fold(view.fc)} (95 % CI ${ci(view.ci[0], view.ci[1])})`);
+    expect(text).toContain(`Confidence: ${view.level}`);
+    expect(text).toContain(`Same call in ${percent(view.holds)}`);
+    expect(text).toContain(`Audit verdict: ${card.label}. ${card.result.verdict_sentence}`);
+    expect(text).toContain(`qPilot study ${results.study_id}`);
+    expect(text).not.toContain("undefined");
   });
 });

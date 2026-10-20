@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { Link } from "wouter";
 import type { Schemas } from "@/api/client";
 import { sectionPath } from "@/shell/sections";
-import { Badge, Button, ConclusionTag, Kbd, LevelTag, Select, Tooltip, VerdictTag } from "@/ui";
+import { Badge, Button, ConclusionTag, CopyButton, Kbd, LevelTag, Select, Tooltip, VerdictTag } from "@/ui";
 import { cn } from "@/lib/cn";
 import { ci, count, fold, pValue } from "@/lib/format";
 import { asConclusion, asLevel } from "@/lib/vocab";
@@ -108,6 +108,7 @@ export function GeneHeader({
   alpha,
   minLog2fc,
   ruleText,
+  summary,
 }: {
   gene: GeneView;
   labels: { hi: string; lo: string };
@@ -119,6 +120,8 @@ export function GeneHeader({
   minLog2fc?: number | null;
   /** The conclusion rule in the server's words (preferred over the one built here). */
   ruleText?: string | null;
+  /** The gene in plain text, for "Copy summary". */
+  summary?: string;
 }) {
   const conclusion = asConclusion(gene.conclusion);
   const [lo, hi] = gene.ci ?? [];
@@ -141,6 +144,7 @@ export function GeneHeader({
             </span>
           </Tooltip>
         ) : null}
+        {summary ? <CopyButton text={summary} label="Copy summary" showLabel className="ml-auto" /> : null}
       </div>
       <p className="mt-1 text-sm text-muted">
         {callSentence(gene)}

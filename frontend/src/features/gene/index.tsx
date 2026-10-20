@@ -11,7 +11,7 @@ import { useLocation } from "wouter";
 import type { SamplePoint } from "@/charts";
 import { useJob } from "@/api/jobs";
 import { sectionPath, type SectionProps } from "@/shell/sections";
-import { ConclusionTag, EmptyState, ErrorPanel, LoadingBlock, Skeleton, TooltipProvider } from "@/ui";
+import { ConclusionTag, EmptyState, ErrorPanel, LoadingBlock, Skeleton } from "@/ui";
 import { cn } from "@/lib/cn";
 import { fold } from "@/lib/format";
 import { useHotkeys } from "@/lib/hooks";
@@ -35,18 +35,13 @@ import { neighbours, resolveGene } from "./nav";
 import { SampleDetail } from "./SampleDetail";
 import { WellCurve } from "./WellCurve";
 import { AssayWells, GeneCards, ImpactTable, ReferenceStability } from "./StudyParts";
-import { groupLabels } from "./words";
+import { geneSummary, groupLabels } from "./words";
 
 const NO_CHANGES: Record<string, string> = {};
 
 export default function GeneSection({ workspace, rest }: SectionProps) {
   if (!workspace) return null;
-  return (
-    // The shell mounts one too; this keeps the section's tooltips working on their own.
-    <TooltipProvider>
-      <GenePage workspace={workspace} wanted={decoded(rest[0])} />
-    </TooltipProvider>
-  );
+  return <GenePage workspace={workspace} wanted={decoded(rest[0])} />;
 }
 
 /** A path segment as text (the router may hand it over encoded or not). */
@@ -210,6 +205,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
           alpha={rule?.alpha}
           minLog2fc={rule?.min_log2fc}
           ruleText={rule?.text}
+          summary={geneSummary({ gene: g, labels, audit: auditCard, studyId: scope.studyId, chainHead: results.data?.chain_head ?? workspace.decisions_head })}
         />
         <JumpList hasAudit={Boolean(auditCard)} />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
