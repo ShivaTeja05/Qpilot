@@ -81,13 +81,22 @@ def served(seeded):
     root, study_id = seeded
     ctx, client = _client(StudyStore(root))
     with client:
+        _loaded(client, f"/api/studies/{study_id}/audit")
         yield {"client": client, "ctx": ctx, "study": study_id, "root": root}
     _close(ctx)
 
 
+def _loaded(client, url: str) -> dict:
+    """Open an audit (its status, or an attached folder) and wait for its live views."""
+    body = client.get(url).json()
+    if body.get("loading"):
+        assert _job(client, body["loading"]["id"])["status"] == "done"
+    return body
+
+
 @pytest.fixture(scope="module")
 def screen(served):
-    """The server's own cached screen (built by the first view request)."""
+    """The server's own cached screen (loaded when the module's server opened the audit)."""
     client, study = served["client"], served["study"]
     assert client.get(f"/api/studies/{study}/audit/overview").status_code == 200
     return audit_router.screens(served["ctx"])._entries[study].screen
@@ -477,7 +486,11 @@ def test_an_attached_audit_has_the_same_views(served, seeded, tmp_path):
         listed = client.get("/api/audits").json()["audits"]
         assert [a["name"] for a in listed] == ["mine"]
         assert listed[0]["qpilot_audit"] and listed[0]["available"]
-        assert listed[0]["study_id"] == study
+        assert listed[0]["study_id"] == study and not listed[0]["views_ready"]
+        r = client.get("/api/audits/mine/overview")
+        assert r.status_code == 409 and r.json()["error"]["code"] == "loading"
+        _loaded(client, "/api/audits/mine")
+        assert client.get("/api/audits").json()["audits"][0]["views_ready"]
         ours = client.get("/api/audits/mine/overview").json()
         theirs = served["client"].get(f"/api/studies/{study}/audit/overview").json()
         assert ours == theirs
@@ -512,7 +525,7 @@ def test_a_plain_simulator_run_can_be_attached(tmp_path):
         pytest.skip("the simulator's results folder is not in this checkout")
     ctx, client = _client(StudyStore(tmp_path / "studies"), audit_dirs={"results": results})
     with client:
-        info = client.get("/api/audits").json()["audits"][0]
+        info = _loaded(client, "/api/audits/results")
         assert info["available"] and not info["qpilot_audit"] and info["study_id"] is None
         overview = client.get("/api/audits/results/overview").json()
         expected = Screen(results).overview()
@@ -650,3 +663,57 @@ def test_no_audit_screen_without_an_audit(seeded, tmp_path):
         assert audit_router.audit_screen(ctx, seeded[1]) is None
     finally:
         _close(ctx)
+
+
+def test_views_never_wait_for_a_build(seeded, monkeypatch):
+    """While the screen loads, views answer at once with the one job loading it."""
+    root, study = seeded
+    built: list[int] = []
+    real = audit_router._build_for_study
+
+    def counting(ctx, study_id, folder):
+        build = real(ctx, study_id, folder)
+
+        def wrapped():
+            built.append(1)
+            return build()
+
+        return wrapped
+
+    monkeypatch.setattr(audit_router, "_build_for_study", counting)
+    ctx, client = _client(StudyStore(root))  # a new server: nothing loaded
+    url = f"/api/studies/{study}/audit"
+    with client:
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            answers = list(pool.map(lambda _: client.get(f"{url}/overview"), range(8)))
+        jobs = set()
+        for r in answers:
+            assert r.status_code == 409 and r.json()["error"]["code"] == "loading", r.text
+            if r.json()["error"]["details"]["job"]:
+                jobs.add(r.json()["error"]["details"]["job"]["id"])
+        assert len(jobs) == 1
+        assert _job(client, jobs.pop())["status"] == "done"
+        assert client.get(f"{url}/overview").status_code == 200
+        assert client.get(url).json()["views_ready"] is True
+    _close(ctx)
+    assert built == [1]
+
+
+def test_the_audits_set_is_always_named_with_its_size(served, screen):
+    """Never "N of 100" and never "reasonable analyses" bare (qPilot's grid is another set)."""
+    import re
+
+    client, study = served["client"], served["study"]
+    url = f"/api/studies/{study}/audit"
+    texts = [client.get(f"{url}/overview").text, client.get(f"{url}/how").text]
+    texts += [client.get(f"{url}/gene/{g}").text for g in _genes(screen)]
+    n = screen.explain[_genes(screen)[0]]["analyses_defensible"]
+    for text in texts:
+        assert " of 100" not in text
+        bare = re.findall(r"(?<!audit's )(?<!ran \d{3} )(?<!ran \d{2} )reasonable analyses", text)
+        assert not bare, text[:300]
+    card = client.get(f"{url}/gene/{_genes(screen)[0]}").json()
+    holds = card["holds"]
+    assert holds["of"] == n and 0 <= holds["same"] <= n
+    assert holds["n"] == round(100 * holds["same"] / n)
+    assert f"{holds['same']} of {n}" in " ".join(card["holds"]["lines"])

@@ -49,7 +49,7 @@ export type paths = {
         };
         /**
          * Attached Audit
-         * @description One attached folder: what it describes and whether its views can be shown.
+         * @description One attached folder: what it describes; opening it starts loading its live views.
          */
         get: operations["attached_audit"];
         put?: never;
@@ -1749,6 +1749,8 @@ export type components = {
              * @description Whether its views can be shown.
              */
             available: boolean;
+            /** @description The job loading its live views (started by opening it). */
+            loading?: components["schemas"]["JobView"] | null;
             /** Name */
             name: string;
             /**
@@ -1775,6 +1777,12 @@ export type components = {
             verdict_counts: {
                 [key: string]: number;
             };
+            /**
+             * Views Ready
+             * @description Its live views are loaded.
+             * @default false
+             */
+            views_ready: boolean;
         };
         /**
          * AttachedAuditList
@@ -2095,9 +2103,19 @@ export type components = {
             lines: string[];
             /**
              * N
-             * @description Reasonable analyses with the same call, of 100.
+             * @description Percent (0–100) of the audit's reasonable analyses with the same call.
              */
             n: number;
+            /**
+             * Of
+             * @description How many reasonable analyses the audit ran (144 on the demo).
+             */
+            of: number;
+            /**
+             * Same
+             * @description How many of the audit's reasonable analyses have the same call.
+             */
+            same: number;
         };
         /**
          * AuditHow
@@ -2409,7 +2427,7 @@ export type components = {
             headline: boolean;
             /**
              * Holds
-             * @description Reasonable analyses with the same call, of 100.
+             * @description Percent (0–100) of the audit's reasonable analyses with the same call.
              */
             holds: number;
             /** Log2 */
