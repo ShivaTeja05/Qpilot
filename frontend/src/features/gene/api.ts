@@ -10,7 +10,7 @@
  * API owners posted on the bus (#0076, #0085, #0086); the generated schema types fit them.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, type JobView, type Schemas } from "@/api/client";
+import { api, ApiError, unwrap, type JobView, type Schemas } from "@/api/client";
 
 // ---- the frame ----------------------------------------------------------------------------------
 
@@ -364,5 +364,25 @@ export function useRunAudit(s: GeneScope) {
   return useMutation({
     mutationFn: () => requestJson<{ job: JobView }>(studyUrl(s, "/audit"), { method: "POST", body: "{}" }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: wkey(s, "audit", "status") }),
+  });
+}
+
+// ---- one well's curve (Studio sessions only) ------------------------------------------------------
+
+export type WellCurve = Schemas["CurveView"];
+
+/** One well's raw curve and LinRegPCR's numbers (`plate/well`, as the audit's samples name it). */
+export function useWellCurve(s: GeneScope, well: string | null, target: string | null) {
+  const sid = s.kind === "session" ? s.key : null;
+  return useQuery({
+    queryKey: ["w", s.key, "curve", well, target],
+    enabled: Boolean(sid && well),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/sessions/{sid}/curve", {
+          params: { path: { sid: sid! }, query: { well: well!, target: target ?? undefined } },
+        }),
+      ),
+    staleTime: Infinity,
   });
 }

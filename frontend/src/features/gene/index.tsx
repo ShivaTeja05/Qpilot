@@ -33,6 +33,7 @@ import { cardsForGene } from "./cards";
 import { GeneHeader, GeneNav } from "./GeneHeader";
 import { neighbours, resolveGene } from "./nav";
 import { SampleDetail } from "./SampleDetail";
+import { WellCurve } from "./WellCurve";
 import { AssayWells, GeneCards, ImpactTable, ReferenceStability } from "./StudyParts";
 import { groupLabels } from "./words";
 
@@ -246,7 +247,12 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
               onSelect={(p: SamplePoint) => selectSample(p.sample)}
               detail={
                 point && samples.data ? (
-                  <SampleDetail point={point} samples={samples.data} onClose={() => setSelected(null)} />
+                  <SampleDetail
+                    point={point}
+                    samples={samples.data}
+                    onClose={() => setSelected(null)}
+                    curve={<WellCurve scope={scope} plate={point.plate} well={point.well} gene={g.gene} />}
+                  />
                 ) : null
               }
               invite={notCoveredNote ?? invite}
