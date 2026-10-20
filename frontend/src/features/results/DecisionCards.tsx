@@ -35,8 +35,9 @@ export function cardOrder(cards: readonly CardView[]): CardView[] {
 
 function doneToast(title: string, done: DecisionDone) {
   const s = done.outcome.status;
-  if (s === "applied") toast.success(title, { description: done.message });
-  else if (s === "pending_human") toast.info(title, { description: done.message });
+  if (s === "applied") toast.success(title, { description: done.message, duration: 10_000 });
+  else if (s === "pending_human")
+    toast.info(title, { description: done.message, duration: 10_000 });
   else if (s === "stale")
     toast.warning("Something was decided since you loaded this", {
       description: "Here is the current state; decide again if you still want to.",
@@ -318,10 +319,6 @@ function DecisionCardItem({
             className="overflow-hidden"
           >
             <div className="space-y-3 px-4 pb-4" data-card-body>
-              <p className="text-[13px] leading-relaxed text-muted">
-                <FactText text={view.explanation} />
-              </p>
-
               {request && (
                 <div className="flex items-start gap-2 rounded-lg border border-warn/40 bg-warn-soft p-3 text-[13px] text-fg">
                   <Bot className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
@@ -424,6 +421,15 @@ function DecisionCardItem({
                   </button>
                 )}
               </fieldset>
+
+              <details className="group rounded-lg bg-sunken/60 px-3 py-2 text-[13px]">
+                <summary className="cursor-pointer font-medium text-muted select-none hover:text-fg">
+                  How this was worked out
+                </summary>
+                <p className="mt-1.5 leading-relaxed text-muted">
+                  <FactText text={view.explanation} />
+                </p>
+              </details>
 
               {(!done || undoing || changing || pending) && (
                 <div className="space-y-2">
@@ -544,6 +550,12 @@ function DecisionCardItem({
                     >
                       Undo{view.undo_label ? `: back to ${view.undo_label}` : ""}
                     </Button>
+                  )}
+                  {!view.undo_option && (
+                    <p className="w-full text-[12px] text-muted">
+                      Nothing to undo here: to change it, decide another option (a new entry in the
+                      record).
+                    </p>
                   )}
                 </div>
               )}
