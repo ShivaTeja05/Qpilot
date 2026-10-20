@@ -78,18 +78,26 @@ CONCLUSIONS = ("up", "down", "none")
 # ---- facts in sentences ----------------------------------------------------------------------
 
 
-def fact_ref(fact: Fact) -> FactRef:
-    """A fact as the page cites it."""
+NNBSP = "\u202f"  # the page writes percentages as "65 %" with a narrow no-break space
+
+
+def shown(fact: Fact) -> str:
+    """A fact as the page writes it: the engine's rendering, a percent sign set apart."""
     from qpilot.core.facts import render_fact
 
-    return FactRef(
-        id=fact.id, text=render_fact(fact), value=fact.value, unit=fact.unit, path=fact.path
-    )
+    text = render_fact(fact)
+    if fact.fmt.endswith("%}") and text.endswith("%") and not text.endswith(" %"):
+        text = text[:-1].rstrip() + NNBSP + "%"
+    return text
+
+
+def fact_ref(fact: Fact) -> FactRef:
+    """A fact as the page cites it."""
+    return FactRef(id=fact.id, text=shown(fact), value=fact.value, unit=fact.unit, path=fact.path)
 
 
 def fact_text(tokens: str, facts: Mapping[str, Fact], source: str = "template") -> FactText:
     """Split ``{{fact}}`` tokens into plain text and cited numbers."""
-    from qpilot.core.facts import render_fact
     from qpilot.core.validator import TOKEN
 
     segments: list[TextSegment] = []
@@ -103,7 +111,7 @@ def fact_text(tokens: str, facts: Mapping[str, Fact], source: str = "template") 
         if fact is None:  # validated texts never cite an unknown fact; shown as its id if so
             segments.append(TextSegment(text=fid))
         else:
-            segments.append(TextSegment(text=render_fact(fact), fact=fid))
+            segments.append(TextSegment(text=shown(fact), fact=fid))
             cited.setdefault(fid, fact_ref(fact))
         last = match.end()
     if last < len(tokens):
@@ -114,6 +122,44 @@ def fact_text(tokens: str, facts: Mapping[str, Fact], source: str = "template") 
         segments=segments,
         facts=list(cited.values()),
         source="model" if source == "model" else "template",
+    )
+
+
+OLD_WORDS = (
+    (
+        "holds in at least 80 % of the reasonable analyses.",
+        "holds in at least 80 % of the {n} analyses qPilot checks.",
+    ),
+    (
+        "holds in fewer than 80 % of the reasonable analyses.",
+        "holds in fewer than 80 % of the {n} analyses qPilot checks.",
+    ),
+    (
+        "No combination of the reasonable choices flips this conclusion.",
+        "No combination of the choices qPilot checks flips this conclusion.",
+    ),
+)
+
+
+def reworded(text: str, n_cells: int | None) -> str:
+    """A confidence reason stored before the wording named qPilot's grid, in today's words."""
+    for old, new in OLD_WORDS:
+        if old in text and (n_cells or "{n}" not in new):
+            text = text.replace(old, new.format(n=n_cells))
+    return text
+
+
+def grade_now(grade: Any, n_cells: int | None) -> Any:
+    """A stored Grade with its reasons and notes in today's words (numbers unchanged)."""
+    if grade is None:
+        return None
+    return grade.model_copy(
+        update={
+            "reasons": [reworded(r, n_cells) for r in grade.reasons],
+            "checks": [
+                c.model_copy(update={"note": reworded(c.note, n_cells)}) for c in grade.checks
+            ],
+        }
     )
 
 
@@ -464,7 +510,9 @@ def _row(
         holds=robust.holds if robust else None,
         n_cells=robust.n_cells if robust else 0,
         level=grade.level if grade else None,
-        reasons=list(grade.reasons) if grade else [],
+        reasons=[reworded(r, robust.n_cells if robust else None) for r in grade.reasons]
+        if grade
+        else [],
         min_flip_changes=grade.min_flip_changes if grade else None,
         flips_by=sorted(d for d, v in (robust.impact if robust else {}).items() if v.get("flips")),
         efficiency=result.efficiency.get(gene),
@@ -878,7 +926,7 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
         row=row,
         contrast=result.contrasts[gene],
         robustness=result.robustness[gene],
-        confidence=result.confidence.get(gene),
+        confidence=grade_now(result.confidence.get(gene), result.robustness[gene].n_cells),
         confidence_text=confidence_text,
         grid=gene_grid,
         effects=effects,

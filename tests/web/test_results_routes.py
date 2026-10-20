@@ -204,3 +204,17 @@ def test_autonomy_is_per_study_and_agents_obey_it(walked):
     assert (
         c.put(f"/api/studies/{study}/autonomy", json={"autonomy": "automatic"}).status_code == 422
     )
+
+
+def test_reasons_stored_in_older_words_are_shown_in_todays():
+    from qpilot.schemas import Fact
+    from qpilot.web.results_views import NNBSP, reworded, shown
+
+    old = "The conclusion holds in fewer than 80 % of the reasonable analyses."
+    assert (
+        reworded(old, 744) == "The conclusion holds in fewer than 80 % of the 744 analyses "
+        "qPilot checks."
+    )
+    assert reworded(old, None) == old, "without the grid's size the words stay as stored"
+    assert shown(Fact(id="f_holds_x", value=0.6452, fmt="{:.0%}")) == f"65{NNBSP}%"
+    assert shown(Fact(id="f_fc_x", value=3.59, fmt="{:.2g}", unit="×")) == "3.6×"
