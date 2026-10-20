@@ -5,6 +5,7 @@
   "plates": 64,
   "group": "MYCN-high",
   "group_def": "top 15 % by MYCN expression",
+  "rest": "the rest",
   "analyses": 90396,
   "reasonable": 144
  },
@@ -51,6 +52,7 @@
    "gene": "DPYSL3",
    "fold": "2.03× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "check data first",
    "label": "Check data first",
    "headline": false
@@ -59,6 +61,7 @@
    "gene": "PDE4DIP",
    "fold": "2.14× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "check data first",
    "label": "Check data first",
    "headline": false
@@ -67,6 +70,7 @@
    "gene": "CLSTN1",
    "fold": "2.21× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "fragile",
    "label": "Fragile",
    "headline": false
@@ -75,6 +79,7 @@
    "gene": "EPN2",
    "fold": "2.40× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "fragile",
    "label": "Fragile",
    "headline": false
@@ -83,6 +88,7 @@
    "gene": "PLAGL1",
    "fold": "2.27× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "fragile",
    "label": "Fragile",
    "headline": false
@@ -91,6 +97,7 @@
    "gene": "PLAT",
    "fold": "3.40× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "fragile",
    "label": "Fragile",
    "headline": false
@@ -99,6 +106,7 @@
    "gene": "PTPRF",
    "fold": "2.46× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "fragile",
    "label": "Fragile",
    "headline": false
@@ -107,6 +115,7 @@
    "gene": "HIVEP2",
    "fold": "2.39× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "depends on your choices",
    "label": "Depends on your choices",
    "headline": false
@@ -115,6 +124,7 @@
    "gene": "NTRK1",
    "fold": "15.04× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "depends on your choices",
    "label": "Depends on your choices",
    "headline": true
@@ -123,6 +133,7 @@
    "gene": "PTPRH",
    "fold": "11.44× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "depends on your choices",
    "label": "Depends on your choices",
    "headline": false
@@ -131,6 +142,7 @@
    "gene": "INPP1",
    "fold": "2.37× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "holds with caveats",
    "label": "Holds with caveats",
    "headline": false
@@ -139,6 +151,7 @@
    "gene": "MAP7",
    "fold": "2.85× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "holds with caveats",
    "label": "Holds with caveats",
    "headline": false
@@ -147,6 +160,7 @@
    "gene": "NM23A",
    "fold": "2.19× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "holds with caveats",
    "label": "Holds with caveats",
    "headline": true
@@ -155,6 +169,7 @@
    "gene": "PIK3R1",
    "fold": "2.24× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "holds with caveats",
    "label": "Holds with caveats",
    "headline": false
@@ -163,6 +178,7 @@
    "gene": "PTN",
    "fold": "2.78× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "holds with caveats",
    "label": "Holds with caveats",
    "headline": false
@@ -171,6 +187,7 @@
    "gene": "PTPRN2",
    "fold": "2.47× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "holds with caveats",
    "label": "Holds with caveats",
    "headline": false
@@ -179,6 +196,7 @@
    "gene": "TNFRSF",
    "fold": "2.65× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "holds with caveats",
    "label": "Holds with caveats",
    "headline": false
@@ -187,6 +205,7 @@
    "gene": "AHCY",
    "fold": "2.61× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -195,6 +214,7 @@
    "gene": "AKR1C1",
    "fold": "3.40× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -203,6 +223,7 @@
    "gene": "BIRC5",
    "fold": "4.01× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": true
@@ -211,6 +232,7 @@
    "gene": "CAMTA1",
    "fold": "2.79× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -219,6 +241,7 @@
    "gene": "CD44",
    "fold": "3.49× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -227,6 +250,7 @@
    "gene": "CDCA5",
    "fold": "2.47× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -235,6 +259,7 @@
    "gene": "CDH5",
    "fold": "10.00× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -243,6 +268,7 @@
    "gene": "CDKN3",
    "fold": "2.38× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -251,6 +277,7 @@
    "gene": "CPSG3",
    "fold": "21.19× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -259,6 +286,7 @@
    "gene": "DDC",
    "fold": "3.69× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -267,6 +295,7 @@
    "gene": "ECEL1",
    "fold": "9.13× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -275,6 +304,7 @@
    "gene": "EPB41L3",
    "fold": "4.30× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -283,6 +313,7 @@
    "gene": "EPHA5",
    "fold": "7.42× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -291,6 +322,7 @@
    "gene": "MAPT",
    "fold": "2.72× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -299,6 +331,7 @@
    "gene": "MCM2",
    "fold": "2.67× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -307,6 +340,7 @@
    "gene": "NHLH2",
    "fold": "14.96× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -315,6 +349,7 @@
    "gene": "NRCAM",
    "fold": "3.51× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -323,6 +358,7 @@
    "gene": "ODC1",
    "fold": "3.32× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": true
@@ -331,6 +367,7 @@
    "gene": "PMP22",
    "fold": "3.57× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -339,6 +376,7 @@
    "gene": "PRAME",
    "fold": "4.24× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -347,6 +385,7 @@
    "gene": "QPCT",
    "fold": "3.56× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -355,6 +394,7 @@
    "gene": "SCG2",
    "fold": "3.97× lower",
    "call": "down",
+   "call_key": "down",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -363,6 +403,7 @@
    "gene": "TYMS",
    "fold": "2.31× higher",
    "call": "up",
+   "call_key": "up",
    "verdict": "solid",
    "label": "Solid",
    "headline": false
@@ -371,6 +412,7 @@
    "gene": "ARHGEF7",
    "fold": "1.11× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -379,6 +421,7 @@
    "gene": "CAMTA2",
    "fold": "1.98× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -387,6 +430,7 @@
    "gene": "ELAVL4",
    "fold": "1.19× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -395,6 +439,7 @@
    "gene": "FYN",
    "fold": "1.51× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -403,6 +448,7 @@
    "gene": "GNB1",
    "fold": "1.71× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -411,6 +457,7 @@
    "gene": "IGSF4",
    "fold": "1.94× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -419,6 +466,7 @@
    "gene": "MAP2K4",
    "fold": "1.84× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -427,6 +475,7 @@
    "gene": "MRPL3",
    "fold": "1.78× higher",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -435,6 +484,7 @@
    "gene": "MTSS1",
    "fold": "1.88× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -443,6 +493,7 @@
    "gene": "PAICS",
    "fold": "1.94× higher",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -451,6 +502,7 @@
    "gene": "PRDM2",
    "fold": "1.76× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -459,6 +511,7 @@
    "gene": "PRKACB_bis",
    "fold": "1.92× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -467,6 +520,7 @@
    "gene": "PRKCZ",
    "fold": "1.87× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -475,6 +529,7 @@
    "gene": "SLC25A5",
    "fold": "1.82× higher",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -483,6 +538,7 @@
    "gene": "SLC6A8",
    "fold": "1.54× higher",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -491,6 +547,7 @@
    "gene": "SNAPC1",
    "fold": "1.71× higher",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -499,6 +556,7 @@
    "gene": "ULK2",
    "fold": "1.54× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false
@@ -507,6 +565,7 @@
    "gene": "WSB1",
    "fold": "1.69× lower",
    "call": "none",
+   "call_key": "none",
    "verdict": "no call",
    "label": "No change called",
    "headline": false

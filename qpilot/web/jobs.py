@@ -22,6 +22,9 @@ from typing import Any, Literal
 from qpilot.web.events import EventBus
 
 JobStatus = Literal["queued", "running", "done", "failed"]
+#: Job kind -> the name of its result's model in the API schema (filled by the server from
+#: every ``JOB_RESULTS`` registry; see :func:`qpilot.web.openapi.job_results`).
+RESULT_TYPES: dict[str, str] = {}
 MAX_KEPT = 200
 WORKERS = 3
 
@@ -45,6 +48,7 @@ class Job:
     title: str
     key: str | None
     typical_s: float | None
+    tag: str | None = None
     status: JobStatus = "queued"
     step: str = ""
     fraction: float | None = None
@@ -68,6 +72,7 @@ class Job:
             "typical_s": self.typical_s,
             "elapsed_s": round(end - self.started, 2) if self.started else 0.0,
             "result": self.result if self.status == "done" else None,
+            "result_type": RESULT_TYPES.get(self.kind),
             "error": self.error,
         }
 
@@ -105,22 +110,46 @@ class JobRunner:
         key: str | None = None,
         typical_s: float | None = None,
         dedupe: bool = True,
+        tag: str | None = None,
     ) -> Job:
-        """Run ``fn(progress)`` on the pool; its return value (JSON-ready) is the job's result."""
+        """Run ``fn(progress)`` on the pool; its return value (JSON-ready) is the job's result.
+
+        The same ``kind`` for the same ``key`` (and ``tag``, e.g. one proposal) while one runs
+        returns the running job instead of starting it twice.
+        """
         with self._lock:
             if dedupe:
                 for job in self._jobs.values():
-                    if job.kind == kind and job.key == key and job.status in ("queued", "running"):
+                    if (
+                        job.kind == kind
+                        and job.key == key
+                        and job.tag == tag
+                        and job.status in ("queued", "running")
+                    ):
                         return job
             job = Job(
-                id=uuid.uuid4().hex[:16], kind=kind, title=title, key=key, typical_s=typical_s
+                id=uuid.uuid4().hex[:16],
+                kind=kind,
+                title=title,
+                key=key,
+                typical_s=typical_s,
+                tag=tag,
             )
             self._jobs[job.id] = job
-            while len(self._jobs) > MAX_KEPT:
-                self._jobs.popitem(last=False)
+            self._forget_finished()
         self._publish(job)
         self._pool.submit(self._run, job, fn)
         return job
+
+    def _forget_finished(self) -> None:
+        """Keep at most MAX_KEPT jobs, forgetting finished ones first (never a running one)."""
+        excess = len(self._jobs) - MAX_KEPT
+        if excess <= 0:
+            return
+        for job_id in [j.id for j in self._jobs.values() if j.status in ("done", "failed")][
+            :excess
+        ]:
+            del self._jobs[job_id]
 
     def get(self, job_id: str) -> Job | None:
         """The job with this id, if it is still kept."""

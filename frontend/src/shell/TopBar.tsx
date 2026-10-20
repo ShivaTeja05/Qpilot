@@ -3,7 +3,6 @@
  * autonomy switch, the agent bell, ⌘K, the theme toggle and the live dot. On narrow screens the
  * secondary controls move into one menu.
  */
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   Bot,
@@ -18,7 +17,7 @@ import {
   Sun,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { api, unwrap, type JobView } from "@/api/client";
+import type { JobView } from "@/api/client";
 import { useLiveState } from "@/api/live";
 import { cn } from "@/lib/cn";
 import { count, duration, shortHash } from "@/lib/format";
@@ -38,9 +37,7 @@ import {
   MenuTrigger,
   Popover,
   ProgressBar,
-  SegmentedControl,
   Tooltip,
-  type Tone,
 } from "@/ui";
 import { openPalette, openShortcuts, toggleAsk, useAskOpen } from "./actions";
 import { Mark } from "./Brand";
@@ -48,129 +45,8 @@ import { useJobs, useWorkspaces, type SystemView, type WorkspaceView } from "./d
 import { workspacePath } from "./Rail";
 import { pathOf, type Route } from "./route";
 import { SECTION } from "./sections";
-import { useWrite } from "./writes";
-
-// ---------------------------------------------------------------------------------------------
-// Model chip
-
-/** The model in words and its status dot: `no model`, `local qwen2.5:7b`, `REMOTE — names pseudonymised`. */
-export function modelChip(model: SystemView["model"] | undefined): {
-  label: string;
-  tone: Tone;
-  status: string;
-  pulse: boolean;
-} {
-  if (!model)
-    return {
-      label: "model …",
-      tone: "neutral",
-      status: "Reading the model's status",
-      pulse: false,
-    };
-  if (!model.configured || model.provider === "none")
-    return {
-      label: "no model",
-      tone: "neutral",
-      status: "No model is configured: qPilot's templates answer.",
-      pulse: false,
-    };
-  const label = model.local
-    ? `local ${model.model ?? model.provider}`
-    : "REMOTE — names pseudonymised";
-  if (model.checking)
-    return { label, tone: "warn", status: "Checking whether the model answers", pulse: true };
-  if (model.misconfigured)
-    return {
-      label,
-      tone: "danger",
-      status: `Not answering: ${model.reason ?? "the model is misconfigured"}`,
-      pulse: false,
-    };
-  if (model.answers) return { label, tone: "ok", status: "Answering", pulse: false };
-  return {
-    label,
-    tone: "danger",
-    status: `Not answering${model.reason ? `: ${model.reason}` : ""}`,
-    pulse: false,
-  };
-}
-
-function ModelChip({ system }: { system: SystemView | undefined }) {
-  const chip = modelChip(system?.model);
-  const remote = system?.model && system.model.configured && !system.model.local;
-  return (
-    <Tooltip
-      content={
-        <span className="flex flex-col gap-0.5">
-          <span>{chip.status}</span>
-          {system?.model.outbound ? (
-            <span className="opacity-80">{system.model.outbound}</span>
-          ) : null}
-        </span>
-      }
-    >
-      <Link
-        href="/settings"
-        aria-label={`Model: ${chip.label}. ${chip.status}. Open settings`}
-        className={cn(
-          "inline-flex h-7 max-w-52 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors hover:bg-bg-subtle",
-          remote ? "border-warn/40 bg-warn-soft text-warn" : "border-line text-muted",
-        )}
-      >
-        <Dot tone={chip.tone} pulse={chip.pulse} />
-        <span className="truncate">{chip.label}</span>
-      </Link>
-    </Tooltip>
-  );
-}
-
-// ---------------------------------------------------------------------------------------------
-// Autonomy
-
-function Autonomy({ system, size = "sm" }: { system: SystemView | undefined; size?: "sm" | "md" }) {
-  const qc = useQueryClient();
-  const write = useWrite<"suggest" | "decide_and_tell", unknown>({
-    mutationFn: (autonomy) => unwrap(api.PUT("/api/settings", { body: { autonomy } })),
-    success: (_r, a) =>
-      a === "suggest"
-        ? { title: "Agents now only suggest", description: "Every agent request waits for you." }
-        : {
-            title: "Agents may now decide and tell you",
-            description:
-              "Only choices that cannot change any conclusion; the rest still wait for you.",
-          },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["system"] }),
-  });
-  const value =
-    write.isPending && write.variables ? write.variables : (system?.autonomy ?? "suggest");
-  return (
-    <Tooltip
-      content={
-        <span className="flex max-w-xs flex-col gap-1">
-          <span className="font-medium">What agents may do on their own</span>
-          {(system?.policy ?? []).map((line) => (
-            <span key={line} className="opacity-85">
-              {line}
-            </span>
-          ))}
-        </span>
-      }
-    >
-      <span>
-        <SegmentedControl
-          size={size}
-          label="Autonomy for agents"
-          value={value}
-          onValueChange={(v) => write.mutate(v)}
-          options={[
-            { value: "suggest", label: "Suggest" },
-            { value: "decide_and_tell", label: "Decide and tell me" },
-          ]}
-        />
-      </span>
-    </Tooltip>
-  );
-}
+import { AutonomyChip, AutonomySwitch } from "./Autonomy";
+import { modelChip, ModelChip } from "./ModelChip";
 
 // ---------------------------------------------------------------------------------------------
 // The agent bell
@@ -375,10 +251,15 @@ export function TopBar({
             {title}
           </p>
         ) : (
-          <span className="qp-skeleton h-4 w-48 rounded" aria-hidden />
+          <p className="truncate text-sm font-medium text-muted">Opening the study…</p>
         )}
         {sha ? (
-          <Hash value={sha} prefix="sha" length={8} className="hidden shrink-0 xl:inline-flex" />
+          <Hash
+            value={sha}
+            prefix="sha"
+            length={8}
+            className="hidden shrink-0 min-[1600px]:inline-flex"
+          />
         ) : null}
         {frame ? (
           <Tooltip
@@ -401,10 +282,13 @@ export function TopBar({
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
         <div className="hidden lg:block">
-          <ModelChip system={system} />
+          <ModelChip model={system?.model} />
         </div>
         <div className="hidden min-[1440px]:block">
-          <Autonomy system={system} />
+          <AutonomySwitch system={system} />
+        </div>
+        <div className="hidden lg:block min-[1440px]:hidden">
+          <AutonomyChip system={system} />
         </div>
         <AgentBell route={route} />
         {frame ? (
@@ -430,7 +314,7 @@ export function TopBar({
           type="button"
           onClick={openPalette}
           aria-keyshortcuts="Meta+K Control+K"
-          className="hidden h-8 w-52 items-center gap-2 rounded-lg border border-line bg-surface-2 pr-1.5 pl-2.5 text-[13px] text-muted transition-colors hover:border-line-strong hover:text-muted xl:inline-flex"
+          className="hidden h-8 w-44 items-center gap-2 rounded-lg border border-line bg-surface-2 pr-1.5 pl-2.5 text-[13px] text-muted transition-colors hover:border-line-strong hover:text-muted xl:inline-flex"
         >
           <Search className="size-4" aria-hidden />
           <span className="flex-1 text-left">
@@ -463,7 +347,7 @@ export function TopBar({
             <MenuSeparator />
             <div className="px-2 py-1.5">
               <p className="mb-1.5 text-xs font-medium text-muted">Agents may</p>
-              <Autonomy system={system} />
+              <AutonomySwitch system={system} withTooltip={false} />
             </div>
             <MenuSeparator />
             <MenuLabel>Theme</MenuLabel>

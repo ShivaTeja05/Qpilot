@@ -10,6 +10,8 @@
 import { describe, expect, it } from "vitest";
 import type { Schemas } from "@/api/client";
 import recorded from "@/test/recorded/shell-session-frame.json";
+import system from "@/test/recorded/shell-system.json";
+import { modelChip } from "./ModelChip";
 import { sectionStates } from "./nav";
 import { paletteFilter } from "./Palette";
 import { parseRoute, pathOf } from "./route";
@@ -55,8 +57,8 @@ describe("sectionStates (recorded demo session)", () => {
     expect(blind.audit.reachable).toBe(false);
   });
   it("locks a stage that is not open, with the server's reason", () => {
-    const prism = frame.stages.find((s) => s.stage === "prism")!;
-    expect(states.prism.reachable).toBe(prism.open);
+    // Prism opens with the results, whatever its own stage says (docs/app.md §2).
+    expect(states.prism.reachable).toBe(frame.results_visible);
     const closed = sectionStates({
       ...frame,
       stages: frame.stages.map((s) =>
@@ -80,5 +82,25 @@ describe("paletteFilter", () => {
     expect(paletteFilter("go Audit", "odc")).toBe(0);
     expect(paletteFilter("Run the audit", "audit")).toBe(0.8);
     expect(paletteFilter("Settings", "model", ["model", "autonomy"])).toBe(0.4);
+  });
+});
+
+/*
+ * The model chip on the system view recorded from the same store (no model configured):
+ *
+ *   curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" -H "origin: $QPILOT_API" $QPILOT_API/api/system \
+ *     | python3 -c "import json,sys; d=json.load(sys.stdin); d.pop('studies_dir',None); \
+ *       d['demo'].pop('path',None); print(json.dumps(d,indent=1))" > src/test/recorded/shell-system.json
+ */
+describe("modelChip", () => {
+  const model = (system as unknown as Schemas["SystemView"]).model;
+  it("says 'no model' when none is configured", () => {
+    expect(modelChip(model)).toMatchObject({ label: "no model", tone: "neutral" });
+  });
+  it("says what is wrong with a wrong configuration instead of 'no model is configured'", () => {
+    const wrong = { ...model, misconfigured: true, reason: "the endpoint is not on this machine" };
+    const chip = modelChip(wrong);
+    expect(chip.tone).toBe("warn");
+    expect(chip.status).toContain("the endpoint is not on this machine");
   });
 });

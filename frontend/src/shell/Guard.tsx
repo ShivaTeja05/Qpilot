@@ -28,6 +28,7 @@ export function LockedSection({
   if (state.absent) {
     return (
       <EmptyState
+        headingLevel={1}
         className="mx-auto mt-10 max-w-xl"
         icon={<Lock />}
         title={`${s.label} is for files opened in Studio`}
@@ -48,6 +49,7 @@ export function LockedSection({
   }
   return (
     <EmptyState
+      headingLevel={1}
       className="mx-auto mt-10 max-w-xl"
       icon={blind ? <EyeOff /> : <Lock />}
       title={
