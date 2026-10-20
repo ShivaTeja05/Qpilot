@@ -37,6 +37,7 @@
   }
  ],
  "gene": "NM23A",
+ "call_key": "up",
  "verdict": "holds with caveats",
  "label": "Holds with caveats",
  "headline_gene": true,

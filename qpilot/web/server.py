@@ -65,6 +65,7 @@ def create_app(ctx: AppContext) -> FastAPI:
     app.state.ctx = ctx
     for router in ROUTERS:
         app.include_router(router, prefix="/api")
+    _type_job_results(app)
 
     @app.exception_handler(HTTPException)
     async def http_error(_: Request, exc: HTTPException) -> JSONResponse:
@@ -123,6 +124,35 @@ def create_app(ctx: AppContext) -> FastAPI:
 
     app.add_middleware(Guard, token=ctx.token)
     return app
+
+
+def _type_job_results(app: FastAPI) -> None:
+    """Add every registered job-result model to the schema; ``x-job-results`` maps the kinds."""
+    from qpilot.web.routers import job_results
+
+    plain = app.openapi
+    done = False
+
+    def openapi() -> dict[str, Any]:
+        nonlocal done
+        schema = plain()
+        if done:
+            return schema
+        components = schema.setdefault("components", {}).setdefault("schemas", {})
+        mapping: dict[str, str] = {}
+        for kind, model in sorted(job_results().items()):
+            body = model.model_json_schema(
+                ref_template="#/components/schemas/{model}", mode="serialization"
+            )
+            for name, sub in body.pop("$defs", {}).items():
+                components.setdefault(name, sub)
+            components.setdefault(model.__name__, body)
+            mapping[kind] = model.__name__
+        schema["x-job-results"] = mapping
+        done = True
+        return schema
+
+    app.openapi = openapi  # type: ignore[method-assign]
 
 
 def _static_file(relative: Path) -> Path | None:

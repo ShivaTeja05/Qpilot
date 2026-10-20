@@ -22,12 +22,22 @@ export interface GenormBarsProps {
   only?: "m" | "v";
 }
 
-export function genormRows(m: Record<string, number>, cutoff: number, order?: string[], used?: readonly string[], differs?: ReadonlySet<string>): BarRow[] {
+export function genormRows(
+  m: Record<string, number>,
+  cutoff: number,
+  order?: string[],
+  used?: readonly string[],
+  differs?: ReadonlySet<string>,
+): BarRow[] {
   const genes = order?.filter((g) => g in m) ?? Object.keys(m).sort((a, b) => m[a]! - m[b]!);
   return genes.map((g) => {
     const value = m[g]!;
     const above = value > cutoff;
-    const notes = [used?.includes(g) ? "used" : null, above ? `above ${fmtNum(cutoff, 1)}` : null, differs?.has(g) ? "differs between groups" : null].filter(Boolean);
+    const notes = [
+      used?.includes(g) ? "used" : null,
+      above ? `above ${fmtNum(cutoff, 1)}` : null,
+      differs?.has(g) ? "differs between groups" : null,
+    ].filter(Boolean);
     return {
       key: g,
       label: g,
@@ -40,7 +50,16 @@ export function genormRows(m: Record<string, number>, cutoff: number, order?: st
   });
 }
 
-export function GenormBars({ m, order, cutoffM, v, cutoffV, used, differs, only }: GenormBarsProps) {
+export function GenormBars({
+  m,
+  order,
+  cutoffM,
+  v,
+  cutoffV,
+  used,
+  differs,
+  only,
+}: GenormBarsProps) {
   const mRows = genormRows(m, cutoffM, order, used, differs);
   const nStable = mRows.filter((r) => r.value <= cutoffM).length;
   const vRows: BarRow[] = Object.entries(v ?? {}).map(([pair, value]) => ({
@@ -53,10 +72,12 @@ export function GenormBars({ m, order, cutoffM, v, cutoffV, used, differs, only 
   }));
   const nVOk = cutoffV != null ? vRows.filter((r) => r.value <= cutoffV).length : 0;
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className={only ? "min-w-0" : "grid gap-6 lg:grid-cols-2"}>
       {only !== "v" && (
         <div className="min-w-0">
-          <h4 className="mb-1 text-[13px] font-semibold text-fg">Stability of each candidate (geNorm M)</h4>
+          <p className="mb-1 text-[13px] font-semibold text-fg">
+            Stability of each candidate (geNorm M)
+          </p>
           <HBars
             rows={mRows}
             valueHeader="geNorm M"
@@ -68,7 +89,9 @@ export function GenormBars({ m, order, cutoffM, v, cutoffV, used, differs, only 
       )}
       {only !== "m" && vRows.length > 0 && cutoffV != null && (
         <div className="min-w-0">
-          <h4 className="mb-1 text-[13px] font-semibold text-fg">Adding one more reference gene (geNorm V)</h4>
+          <p className="mb-1 text-[13px] font-semibold text-fg">
+            Adding one more reference gene (geNorm V)
+          </p>
           <HBars
             rows={vRows}
             valueHeader="geNorm V"

@@ -99,7 +99,7 @@ export function Hash({
         onClick={() => copy(value)}
         aria-label={`${prefix ? `${String(prefix)} ` : ""}${shortHash(value, length)}, copy the full value`}
         className={cn(
-          "inline-flex items-center gap-1 rounded px-1 font-mono text-[12px] text-muted transition-colors hover:bg-bg-subtle hover:text-fg",
+          "-mx-1 inline-flex items-center gap-1 rounded px-1 font-mono text-[12px] text-muted transition-colors hover:bg-bg-subtle hover:text-fg",
           className,
         )}
       >

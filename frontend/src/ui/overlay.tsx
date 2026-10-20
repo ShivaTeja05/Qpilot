@@ -5,11 +5,46 @@
  */
 import { Dialog as D, DropdownMenu as M, Popover as P, Tooltip as T } from "radix-ui";
 import { X } from "lucide-react";
-import type { ComponentProps, ReactNode } from "react";
+import { useLayoutEffect, useRef, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { IconButton } from "./Button";
 
 const LAYER = "z-50 rounded-xl border border-line bg-surface text-fg shadow-lg";
+
+const FIRST_FIELD =
+  "input:not([disabled]):not([type=hidden]), textarea:not([disabled]), select:not([disabled]), [role=combobox]:not([disabled])";
+
+/**
+ * Focus for a dialog or sheet opened without a trigger: on open, the element marked
+ * `data-autofocus`, else the first field, else the layer itself (never the Close button); on
+ * close, back to whatever had focus before it opened (Radix alone returns only to its Trigger).
+ */
+function useLayerFocus(open: boolean | undefined) {
+  const before = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    if (open) before.current = document.activeElement as HTMLElement | null;
+  }, [open]);
+  return {
+    onOpenAutoFocus: (e: Event) => {
+      const root = e.currentTarget as HTMLElement | null;
+      if (!root) return;
+      e.preventDefault();
+      const target =
+        root.querySelector<HTMLElement>("[data-autofocus]") ??
+        root.querySelector<HTMLElement>(FIRST_FIELD) ??
+        root;
+      target.focus({ preventScroll: target === root });
+    },
+    onCloseAutoFocus: (e: Event) => {
+      const el = before.current;
+      before.current = null;
+      if (el && el.isConnected && el !== document.body) {
+        e.preventDefault();
+        el.focus();
+      }
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------------------------
 // Dialog
@@ -43,6 +78,7 @@ export function Dialog({
   size = "md",
   hideClose,
 }: DialogProps) {
+  const focus = useLayerFocus(open);
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       {trigger ? <D.Trigger asChild>{trigger}</D.Trigger> : null}
@@ -54,6 +90,7 @@ export function Dialog({
             "qp-pop fixed top-1/2 left-1/2 flex max-h-[min(88dvh,820px)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col outline-none",
             DIALOG_SIZE[size],
           )}
+          {...(trigger ? {} : focus)}
           {...(description ? {} : { "aria-describedby": undefined })}
         >
           <div className="flex items-start justify-between gap-4 border-b border-line px-5 pt-4 pb-3">
@@ -122,6 +159,7 @@ export function Sheet({
   modal = true,
   offsetTop,
 }: SheetProps) {
+  const focus = useLayerFocus(open);
   const place =
     side === "bottom"
       ? "inset-x-0 bottom-0 max-h-[88dvh] rounded-t-2xl border-t qp-slide-up"
@@ -141,6 +179,7 @@ export function Sheet({
             side === "bottom" ? undefined : { width: `min(${width}px, 100vw)`, top: offsetTop }
           }
           onInteractOutside={modal ? undefined : (e) => e.preventDefault()}
+          {...focus}
           {...(description ? {} : { "aria-describedby": undefined })}
         >
           <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">

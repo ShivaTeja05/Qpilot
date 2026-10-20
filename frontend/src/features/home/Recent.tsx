@@ -88,7 +88,7 @@ function WorkspaceCard({ w, now }: { w: WorkspaceSummary; now: number }) {
     w.has_audit && "audited",
     w.pending_requests > 0 && `${plural(w.pending_requests, "agent request")} waiting`,
     !w.file_present && "file missing or changed",
-    counts,
+    counts && `in the file: ${counts}`,
     ...(w.kind === "session" ? w.stages.map((s) => stageChip(s).words) : []),
     decisions,
     updated,
@@ -150,7 +150,11 @@ function WorkspaceCard({ w, now }: { w: WorkspaceSummary; now: number }) {
         ) : null}
       </div>
 
-      {counts ? <p className="mt-3 text-[13px] text-fg tabular">{counts}</p> : null}
+      {counts ? (
+        <p className="mt-3 text-[13px] text-fg tabular">
+          <span className="text-muted">In the file:</span> {counts}
+        </p>
+      ) : null}
 
       {w.kind === "session" && w.stages.length ? (
         <ul className="mt-2.5 flex flex-wrap gap-1.5" aria-hidden>
