@@ -119,11 +119,7 @@ def test_running_the_audit_twice_is_one_job(audited):
     assert first.json()["job"]["id"] == second.json()["job"]["id"]
 
 
-@pytest.mark.xfail(
-    strict=False,  # fixed on ui/api-audit faa5025 (verified): plain once merged
-    reason="RT-UI-021 a NUL in an audit file name (…/audit/files/AUDIT.sha256%00.txt) is a 500: "
-    "_download resolves the path before checking the name against the audit's list",
-)
+# RT-UI-021: fixed by api-audit (faa5025); this test keeps it fixed.
 def test_a_nul_in_an_audit_file_name_is_not_found(audited):
     from fastapi.testclient import TestClient
 
@@ -136,11 +132,7 @@ def test_a_nul_in_an_audit_file_name_is_not_found(audited):
     assert r.status_code == 404, r.status_code
 
 
-@pytest.mark.xfail(
-    strict=False,  # fixed on ui/api-audit faa5025 (verified): plain once merged
-    reason="RT-UI-022 a damaged audit_manifest.json (not JSON) makes POST …/audit/verify a 500 "
-    "(json.loads unguarded); status already says 'The audit's manifest cannot be read.'",
-)
+# RT-UI-022: fixed by api-audit (faa5025); this test keeps it fixed.
 def test_verifying_a_damaged_audit_says_so(audited):
     from fastapi.testclient import TestClient
 

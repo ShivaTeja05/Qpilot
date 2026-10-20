@@ -20,6 +20,7 @@ import {
   ConfirmStage,
   StageInbox,
   StageSummary,
+  Warming,
   isWarming,
   useQuotes,
   useStageProposals,
@@ -69,6 +70,18 @@ export default function DesignSection({ workspace }: SectionProps) {
         This study was analysed outside Studio (by <code className="font-mono">qpilot run</code> or an agent), so its design
         was given, not proposed here. Open its file from Open to review a design proposal by proposal.
       </EmptyState>
+    );
+  }
+
+  if (workspace.warming) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader eyebrow="Blind stage 1 of 2" title="Design" />
+        <Warming message="qPilot is reading this file for the first time since it started (every name quarantined, every curve fitted once). The design appears here by itself when that is done." />
+        {workspace.active_jobs.map((j) => (
+          <JobCard key={j.id} id={j.id} />
+        ))}
+      </div>
     );
   }
 

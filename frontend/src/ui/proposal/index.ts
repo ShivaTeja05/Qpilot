@@ -27,7 +27,7 @@
  *   StageSummary        "The design this gives" / "The curve calls this gives" from accepted proposals
  *   DecidedList, ProposalLines, BulkAction
  *   useStageProposals(sid, stage) · useQuotes(sid) → {lookup, sheetCells} ·
- *   useProposalActions(sid, head, stage) · useMattersJobs(sid)
+ *   useProposalActions(sid, head, stage) · useMattersJobs(sid) · useCheckEdit(sid) (POST …/check)
  *
  * The words for origins, flags, rule ids and check fields live in `./words`.
  */
@@ -67,6 +67,7 @@ export { BulkAction, BulkActions, ConfirmStage, ProposalLines } from "./StageAct
 export { StageSummary } from "./summary";
 export {
   isWarming,
+  useCheckEdit,
   useMattersJobs,
   useProposalActions,
   useQuotes,

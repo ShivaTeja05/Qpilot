@@ -1,0 +1,37 @@
+{
+ "ok": true,
+ "file_name": "qpilot-record-e300000d4f9a.zip",
+ "summary": [
+  "OK; decision chain: 6 entries, intact; proposal chain: 494 entries, intact"
+ ],
+ "report": {
+  "ok": true,
+  "changed": [],
+  "missing": [],
+  "unlisted": [],
+  "chain_broken_at": null,
+  "inconsistent": [],
+  "n_entries": 6,
+  "has_proposals": true,
+  "proposal_chain_broken_at": null,
+  "n_proposal_entries": 494
+ },
+ "record": {
+  "study_id": "e300000d4f9a",
+  "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+  "chain_head": "de016897d02be18dd2131d54fd8bb94075ff5fa657f2ac9c06672847c49fd9fa",
+  "written_at": "2026-10-20T21:06:43Z",
+  "input_included": true,
+  "shared": false,
+  "record_id": "0a4b024294f2e14e684e62005d7e496bd8d0ebf66a7eba9a0ed52f9446c7f47a"
+ },
+ "audit": {
+  "source": "store",
+  "ok": true,
+  "problems": [],
+  "study_id": "e300000d4f9a"
+ },
+ "audit_note": "This qPilot's audit of the record's study was checked against this record.",
+ "known_study": true,
+ "note": "Tamper-evident, not tamper-proof. Research use only."
+}

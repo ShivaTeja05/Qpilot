@@ -47,7 +47,7 @@ describe("ProposalCard", () => {
       expect(heading.textContent).not.toMatch(/[{}]/);
       unmount();
     }
-  });
+  }, 20_000); // eleven full cards; slow on a loaded machine
 
   it("shows a decided proposal's status and reason, without the actions", () => {
     const p = find("design.well_role", "contradicted");

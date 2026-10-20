@@ -1,7 +1,6 @@
 /**
- * The shapes the Record section reads: the chain from the generated contract (api's
- * `DecisionsView`), and the record export / verify answers of api-files' routes (mirrored from
- * `qpilot/web/contract_files.py` until those are merged and `schema.d.ts` regenerated).
+ * The shapes the Record section reads, from the generated contract: api's chain view
+ * (`qpilot/web/contract.py`) and api-files' record export / verify (`contract_files.py`).
  */
 import type { Schemas } from "@/api/client";
 
@@ -63,86 +62,17 @@ export function fromApi(view: DecisionsApi): DecisionsView {
   };
 }
 
-/** A file this server wrote into its export folder, served at `url` as an attachment. */
-export interface DownloadLink {
-  id: string;
-  url: string;
-  /** The file name the browser saves it under. */
-  name: string;
-  bytes: number;
-  /** Where the file is kept on this computer (beside the study store). */
-  path?: string | null;
-}
-
+/** A file qPilot wrote into its export folder (beside the store), served at `url` as an attachment. */
+export type DownloadLink = Schemas["DownloadLink"];
 /** The result of `POST /api/studies/{id}/record` (on the job); also each row of `GET …/records`. */
-export interface RecordExport {
-  study_id: string;
-  record_id: string;
-  chain_head: string;
-  n_files: number;
-  input_included: boolean;
-  written_at?: string | null;
-  download: DownloadLink;
-  /** Card ids of choices that can change a conclusion and are still open. */
-  open_flips?: string[];
-  /** The chain head moved since the head the page sent. */
-  head_moved?: boolean;
-  /** The old page's warnings, in words. */
-  warnings: string[];
-  commands: { verify: string; rerun: string };
-}
-
-/** `GET /api/studies/{id}/records`: the records this launch exported, newest first. */
-export interface RecordList {
-  study_id: string;
-  records: RecordExport[];
-}
-
+export type RecordExport = Schemas["RecordExported"];
+/** `GET /api/studies/{id}/records`: the records exported for the study, newest first. */
+export type RecordList = Schemas["RecordList"];
 /** `core.record.VerifyReport`. */
-export interface VerifyReport {
-  ok: boolean;
-  changed: string[];
-  missing: string[];
-  unlisted: string[];
-  chain_broken_at: number | null;
-  inconsistent: string[];
-  n_entries: number;
-  has_proposals: boolean;
-  proposal_chain_broken_at: number | null;
-  n_proposal_entries: number;
-}
-
+export type VerifyReport = Schemas["VerifyReport"];
 /** What a record says about itself (`record.json`), read from the uploaded zip. */
-export interface RecordFacts {
-  study_id?: string | null;
-  input_sha256?: string | null;
-  chain_head?: string | null;
-  written_at?: string | null;
-  input_included?: boolean | null;
-  shared?: boolean;
-  record_id?: string | null;
-}
-
+export type RecordFacts = Schemas["RecordFacts"];
 /** Whether a robustness audit verifies and belongs to the record. */
-export interface AuditBinding {
-  /** zip: the audit came in the uploaded zip; store: this qPilot's audit of the record's study. */
-  source: "zip" | "store";
-  ok: boolean;
-  problems: string[];
-  study_id?: string | null;
-}
-
+export type AuditBinding = Schemas["AuditBinding"];
 /** `POST /api/records/verify`. */
-export interface VerifyResult {
-  /** The record verifies (and its audit, when one is bound). */
-  ok: boolean;
-  file_name: string;
-  summary: string[];
-  report: VerifyReport;
-  record: RecordFacts;
-  audit?: AuditBinding | null;
-  /** Which audit was checked, or why none was. */
-  audit_note: string;
-  known_study: boolean;
-  note: string;
-}
+export type VerifyResult = Schemas["RecordVerified"];
