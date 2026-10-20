@@ -8,7 +8,7 @@ import { Link } from "wouter";
 import { useJob } from "@/api/jobs";
 import { plural } from "@/lib/format";
 import { SECTION, sectionPath, type SectionProps } from "@/shell/sections";
-import { Badge, Button, Card, CardBody, EmptyState, ErrorPanel, LoadingBlock, PageHeader } from "@/ui";
+import { Button, Card, CardBody, EmptyState, ErrorPanel, LoadingBlock, PageHeader } from "@/ui";
 import { useDecisions } from "./api";
 import { ChainTimeline } from "./ChainTimeline";
 import { CommandsCard } from "./CommandsCard";
@@ -118,11 +118,9 @@ export default function RecordSection({ workspace }: SectionProps) {
                 pending ? (
                   <Button asChild size="sm" variant="secondary">
                     <Link href={sectionPath(workspace, "agents")}>
-                      <Bot aria-hidden />
-                      {plural(pending, "request")} waiting
-                      <Badge tone="warn" className="ml-0.5">
-                        decide
-                      </Badge>
+                      <Bot aria-hidden className="text-warn" />
+                      {plural(pending, "agent request")} waiting for you
+                      <ArrowRight aria-hidden />
                     </Link>
                   </Button>
                 ) : null

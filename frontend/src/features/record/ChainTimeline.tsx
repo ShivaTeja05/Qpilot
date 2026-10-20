@@ -142,7 +142,7 @@ export function ChainTimeline({
 
 /** The vertical line behind the nodes. */
 function Rail() {
-  return <span aria-hidden className="absolute top-0 bottom-0 left-[17px] w-px bg-line" />;
+  return <span aria-hidden className="absolute top-0 bottom-0 left-[17px] w-px bg-line-strong" />;
 }
 
 function TimelineEntry({
