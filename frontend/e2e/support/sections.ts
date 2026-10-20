@@ -75,15 +75,15 @@ export const LANDED = {
   /** record: the Agents section. */
   agents: true,
   /** trace: from a result to the wells to look at. */
-  trace: false,
+  trace: true,
   /** claims: the Claims section. */
-  claims: false,
+  claims: true,
   /** report: the Reviewer's Report / study report. */
-  report: false,
+  report: true,
   /** history: the History section. */
-  history: false,
+  history: true,
   /** planner: Plan next. */
-  planner: false,
+  planner: true,
 };
 
 export type Feature = keyof typeof LANDED;
