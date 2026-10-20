@@ -1683,6 +1683,66 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Report
+         * @description The study's report: summary, Methods, MIQE 2.0 checklist, reviewer's report, limitations.
+         */
+        get: operations["get_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Report
+         * @description Write the report as Markdown, a printable page or the study passport (a job).
+         */
+        post: operations["export_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/report/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Exports
+         * @description The report files written for this study since qPilot started, newest first.
+         */
+        get: operations["list_exports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/results": {
         parameters: {
             query?: never;
@@ -3764,6 +3824,18 @@ export type components = {
             };
         };
         /**
+         * Citation
+         * @description A reference the Methods cite (no links: DOIs as text).
+         */
+        Citation: {
+            /** Id */
+            id: string;
+            /** N */
+            n: number;
+            /** Text */
+            text: string;
+        };
+        /**
          * CitedFact
          * @description A number the answer cites: what it is and its value as shown.
          */
@@ -4833,6 +4905,25 @@ export type components = {
             typical_s?: number | null;
         };
         /**
+         * KeyNumber
+         * @description One of the study's key numbers (label + the fact that holds it).
+         */
+        KeyNumber: {
+            /** Fact */
+            fact: string;
+            /** Label */
+            label: string;
+        };
+        /**
+         * Limitation
+         * @description One limitation, in plain words.
+         */
+        Limitation: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+        };
+        /**
          * MadeBy
          * @description Who produced a proposal: a language model, an MCP agent or a deterministic rule.
          */
@@ -4870,6 +4961,95 @@ export type components = {
             message: string;
             /** Proposal Id */
             proposal_id: string;
+        };
+        /**
+         * MethodsParagraph
+         * @description One paragraph of the Methods section.
+         */
+        MethodsParagraph: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * MethodsView
+         * @description The Methods section, ready to paste into a paper.
+         */
+        MethodsView: {
+            /** Citations */
+            citations: components["schemas"]["Citation"][];
+            /** Paragraphs */
+            paragraphs: components["schemas"]["MethodsParagraph"][];
+            /**
+             * Plain
+             * @description Every paragraph as plain text, without citation markers.
+             */
+            plain: string;
+            /**
+             * With Citations
+             * @description With [n] markers and the numbered reference list.
+             */
+            with_citations: string;
+        };
+        /**
+         * MiqeItem
+         * @description One MIQE 2.0 item: what the data say about it, with the evidence.
+         */
+        MiqeItem: {
+            /**
+             * Attest
+             * @description Only a person can answer this item (never answered here).
+             */
+            attest: boolean;
+            evidence?: components["schemas"]["ReportText"] | null;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Section */
+            section: string;
+            /**
+             * Sources
+             * @default []
+             */
+            sources: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "met" | "not_met" | "not_applicable" | "cannot_tell";
+        };
+        /**
+         * MiqePack
+         * @description The item list the checklist uses.
+         */
+        MiqePack: {
+            /** Citation */
+            citation: string;
+            /** Name */
+            name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Version */
+            version: string;
+        };
+        /**
+         * MiqeView
+         * @description The MIQE 2.0 checklist: counts by status, never a score.
+         */
+        MiqeView: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            headline: components["schemas"]["ReportText"];
+            /** Items */
+            items: components["schemas"]["MiqeItem"][];
+            /** N Items */
+            n_items: number;
+            pack: components["schemas"]["MiqePack"];
         };
         /**
          * ModelSeen
@@ -6223,6 +6403,357 @@ export type components = {
             subject: string | null;
         };
         /**
+         * ReportAudit
+         * @description The robustness audit, when one was run.
+         */
+        ReportAudit: {
+            /** Analyses */
+            analyses?: number | null;
+            /** Chain Head */
+            chain_head?: string | null;
+            /**
+             * Current
+             * @default false
+             */
+            current: boolean;
+            /**
+             * Reasonable
+             * @description The audit's reasonable set.
+             */
+            reasonable?: number | null;
+            /** Reproduces */
+            reproduces?: boolean | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "none" | "ready";
+            /**
+             * Verdict Counts
+             * @default {}
+             */
+            verdict_counts: {
+                [key: string]: number;
+            };
+            /**
+             * Verdict Labels
+             * @default {}
+             */
+            verdict_labels: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ReportDecision
+         * @description One entry of the hash-chained decision log, or a card still open.
+         */
+        ReportDecision: {
+            /** Actor */
+            actor: string | null;
+            /** At */
+            at: string | null;
+            /**
+             * Can Flip
+             * @description Some option of this card changes a conclusion.
+             */
+            can_flip: boolean;
+            /** Card Id */
+            card_id: string;
+            /** Card Title */
+            card_title: string;
+            /** Hash */
+            hash: string | null;
+            /** Option */
+            option: string | null;
+            /** Option Label */
+            option_label: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Seq */
+            seq: number | null;
+            /** Status */
+            status: string;
+        };
+        /**
+         * ReportExportBody
+         * @description Which file to write.
+         */
+        ReportExportBody: {
+            /**
+             * Expected Head
+             * @description The chain head the page showed (warns when it moved since).
+             */
+            expected_head?: string | null;
+            /**
+             * Format
+             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record.
+             * @enum {string}
+             */
+            format: "md" | "html" | "passport";
+        };
+        /**
+         * ReportExported
+         * @description One written report file, ready to download.
+         */
+        ReportExported: {
+            /** Chain Head */
+            chain_head: string;
+            download: components["schemas"]["DownloadLink"];
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "md" | "html" | "passport";
+            /**
+             * Head Moved
+             * @default false
+             */
+            head_moved: boolean;
+            /**
+             * N Facts
+             * @description How many facts the file cites.
+             */
+            n_facts: number;
+            record?: components["schemas"]["ReportRecordRef"] | null;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Title
+             * @description What the file is, in words.
+             */
+            title: string;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+            /** Written At */
+            written_at: string;
+        };
+        /**
+         * ReportExports
+         * @description The report files written for a study since qPilot started, newest first.
+         */
+        ReportExports: {
+            /** Exports */
+            exports: components["schemas"]["ReportExported"][];
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * ReportFact
+         * @description One number (or name) a sentence cites, and where it was read.
+         */
+        ReportFact: {
+            /**
+             * Derived
+             * @description Read by the report from the store, not one of the engine's.
+             */
+            derived: boolean;
+            /**
+             * Id
+             * @description f_… for the engine's own facts; f_rpt_… for one the report read.
+             */
+            id: string;
+            /**
+             * Path
+             * @description Where it comes from: the engine's path, or `<source>:<JSON pointer>[@min|max|len|count=<value>]` for a value the report read (results.json, cards.json, decisions.jsonl, study_design.json, versions, input.rdml, grid.csv, audit:<file>, report).
+             */
+            path: string;
+            /**
+             * Text
+             * @description The value as written (format and unit applied).
+             */
+            text: string;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+            /** Value */
+            value: number | string;
+        };
+        /**
+         * ReportGene
+         * @description One compared gene as the passport's gene table shows it (engine values, unformatted).
+         */
+        ReportGene: {
+            /** Ci Hi */
+            ci_hi: number;
+            /** Ci Lo */
+            ci_lo: number;
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /**
+             * Flips By
+             * @description Choices that alone change the call.
+             */
+            flips_by: string[];
+            /** Gene */
+            gene: string;
+            /** Headline */
+            headline: boolean;
+            /**
+             * Holds
+             * @description Share of qPilot's choice grid with the same call.
+             */
+            holds: number | null;
+            /** Level */
+            level: string | null;
+            /** N Cells */
+            n_cells: number;
+            /** N Hi */
+            n_hi: number;
+            /** N Lo */
+            n_lo: number;
+            /** P */
+            p: number | null;
+            /** Verdict */
+            verdict?: string | null;
+            /** Verdict Label */
+            verdict_label?: string | null;
+        };
+        /**
+         * ReportHeader
+         * @description What the report is about and what binds it to the study.
+         */
+        ReportHeader: {
+            /** Chain Head */
+            chain_head: string;
+            /** Demo */
+            demo: boolean;
+            /** Generated At */
+            generated_at: string;
+            /** Input Sha256 */
+            input_sha256: string;
+            /** N Decisions */
+            n_decisions: number;
+            /**
+             * Research Use
+             * @default Research use only; not for clinical use.
+             */
+            research_use: string;
+            /** Session */
+            session: string | null;
+            /**
+             * Source Name
+             * @description The input file's name (from the study).
+             */
+            source_name: string | null;
+            /** Study Id */
+            study_id: string;
+            /** Title */
+            title: string;
+            /** Versions */
+            versions: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ReportRecordRef
+         * @description The Analysis Record a passport is bound to (written with it, in the same folder).
+         */
+        ReportRecordRef: {
+            /** Chain Head */
+            chain_head: string;
+            download: components["schemas"]["DownloadLink"];
+            /** Input Included */
+            input_included: boolean;
+            /** N Files */
+            n_files: number;
+            /**
+             * Record Id
+             * @description SHA-256 of the record's CHECKSUMS.sha256.
+             */
+            record_id: string;
+            /**
+             * Rerun
+             * @description The command that re-runs it to the same numbers.
+             */
+            rerun: string;
+            /**
+             * Verify
+             * @description The command that checks the record.
+             */
+            verify: string;
+        };
+        /**
+         * ReportSegment
+         * @description A run of prose, one cited fact, a quoted string from the study, or a citation marker.
+         */
+        ReportSegment: {
+            /**
+             * Cite
+             * @description The number of a citation (methods only).
+             */
+            cite?: number | null;
+            /** Fact */
+            fact?: string | null;
+            /**
+             * Quote
+             * @description Data from the study: never markup.
+             * @default false
+             */
+            quote: boolean;
+            /** Text */
+            text: string;
+        };
+        /**
+         * ReportText
+         * @description A sentence or paragraph whose numbers are facts.
+         */
+        ReportText: {
+            /**
+             * Facts
+             * @description Ids of the facts it cites, in order of first use.
+             */
+            facts: string[];
+            /**
+             * Plain
+             * @description As plain text, without citation markers.
+             */
+            plain: string;
+            /** Segments */
+            segments: components["schemas"]["ReportSegment"][];
+        };
+        /**
+         * ReportView
+         * @description The whole report of one study.
+         */
+        ReportView: {
+            audit: components["schemas"]["ReportAudit"];
+            /** Decisions */
+            decisions: components["schemas"]["ReportDecision"][];
+            /**
+             * Facts
+             * @description Every fact the report cites, by id.
+             */
+            facts: {
+                [key: string]: components["schemas"]["ReportFact"];
+            };
+            /** Genes */
+            genes: components["schemas"]["ReportGene"][];
+            header: components["schemas"]["ReportHeader"];
+            /** Key Numbers */
+            key_numbers: components["schemas"]["KeyNumber"][];
+            /** Limitations */
+            limitations: components["schemas"]["Limitation"][];
+            methods: components["schemas"]["MethodsView"];
+            miqe: components["schemas"]["MiqeView"];
+            review: components["schemas"]["ReviewView"];
+            /**
+             * Rule
+             * @description The conclusion rule in words.
+             */
+            rule: string;
+            summary: components["schemas"]["ReportText"];
+        };
+        /**
          * ResultsSummary
          * @description The study in counts, its groups and how they were made.
          */
@@ -6314,6 +6845,63 @@ export type components = {
              * @default []
              */
             withheld: components["schemas"]["WithheldGene"][];
+        };
+        /**
+         * ReviewCheck
+         * @description A question a reviewer asks that the study answers well.
+         */
+        ReviewCheck: {
+            /** Id */
+            id: string;
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * ReviewFinding
+         * @description Something a careful reviewer would flag, from the study's own numbers.
+         */
+        ReviewFinding: {
+            /**
+             * Genes
+             * @default []
+             */
+            genes: string[];
+            /**
+             * Go To
+             * @description The section that shows it.
+             */
+            go_to?: ("results" | "gene" | "audit" | "record" | "design" | "curves" | "report") | null;
+            /** Id */
+            id: string;
+            /**
+             * Rule
+             * @description The reviewer rule (R1–R8) it answers.
+             */
+            rule?: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "major" | "minor" | "note";
+            text: components["schemas"]["ReportText"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * ReviewView
+         * @description The reviewer's report: findings by severity, then what checks out.
+         */
+        ReviewView: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Findings */
+            findings: components["schemas"]["ReviewFinding"][];
+            lead: components["schemas"]["ReportText"];
+            /** Passed */
+            passed: components["schemas"]["ReviewCheck"][];
         };
         /**
          * RoundTripRefused
@@ -9642,6 +10230,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportExportBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportExports"];
                 };
             };
             /** @description Validation Error */
