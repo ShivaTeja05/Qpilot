@@ -62,7 +62,7 @@ export const LANDED = {
   /** audit: the Audit section (seeded audit, gene rows). */
   audit: true,
   /** prism: the Prism section. */
-  prism: false,
+  prism: true,
   /** record: the Record section (timeline, export, verify). */
   record: true,
   /** record: the Agents section. */
