@@ -283,3 +283,25 @@ def test_the_model_test_never_writes_to_the_studys_chain(visible):
     assert job["status"] == "done", job
     assert job["result"]["n_questions"] > 0
     assert [e.hash for e in store.entries(study_id)] == before
+
+
+@pytest.mark.parametrize("value", ["", "decide", "DECIDE_AND_TELL", "agent", None, 1])
+def test_the_study_autonomy_takes_only_its_two_words(visible, value):
+    c, study_id = visible["client"], visible["study_id"]
+    before = c.get(f"/api/studies/{study_id}/autonomy").json()
+    r = c.put(f"/api/studies/{study_id}/autonomy", json={"autonomy": value})
+    assert r.status_code == 422
+    assert c.get(f"/api/studies/{study_id}/autonomy").json() == before
+
+
+def test_the_study_autonomy_is_never_set_from_another_site(visible):
+    c, study_id = visible["client"], visible["study_id"]
+    before = c.get(f"/api/studies/{study_id}/autonomy").json()
+    for headers in ({"origin": "http://evil.example"}, {"origin": "null"}):
+        r = c.put(
+            f"/api/studies/{study_id}/autonomy",
+            json={"autonomy": "decide_and_tell"},
+            headers=headers,
+        )
+        assert r.status_code == 403
+    assert c.get(f"/api/studies/{study_id}/autonomy").json() == before

@@ -237,11 +237,15 @@ def _study_routes(app, method: str) -> list[str]:
     ]
 
 
+# Valid bodies, so a route's gate (not its body validation) answers.
 BODIES = {
-    "decide": {"option": "x", "reason": "r"},
-    "undo": {"reason": "r"},
-    "reject-request": {"reason": "r"},
+    "decide": {"option": "x", "reason": "r", "expected_head": "0" * 64},
+    "undo": {"reason": "r", "expected_head": "0" * 64},
+    "reject-request": {"reason": "r", "expected_head": "0" * 64},
     "ask": {"question": "Which genes changed?"},
+    "samples": {"gene": "1-Mar"},
+    "autonomy": {"autonomy": "decide_and_tell"},
+    "verify": {"bind_to_record": True},
 }
 
 
@@ -254,6 +258,7 @@ def test_every_study_route_of_a_blind_session_is_blind(reblinded):
     c, app = reblinded["client"], reblinded["app"]
     open_routes: dict[str, int] = {}
     checked: list[str] = []
+    bodiless: list[str] = []  # refused for their body before the gate could answer
     for method in ("GET", "POST", "PUT"):
         for route in _study_routes(app, method):
             url = _fill(route, reblinded, c)
@@ -264,12 +269,16 @@ def test_every_study_route_of_a_blind_session_is_blind(reblinded):
             checked.append(f"{method} {route}")
             body = BODIES.get(url.rsplit("/", 1)[-1], {})
             r = c.request(method, url, json=body, params={"gene": "1-Mar"})
-            if r.status_code not in (403, 422) or (
+            if r.status_code == 422:
+                bodiless.append(f"{method} {route}")
+                continue
+            if r.status_code != 403 or (
                 r.status_code == 403 and r.json()["error"]["code"] != "blind"
             ):
                 open_routes[f"{method} {route}"] = r.status_code
     assert len(checked) >= 8, checked  # the results routes at least
     assert not open_routes, open_routes
+    assert len(bodiless) <= 1, bodiless  # give the rest a valid body in BODIES
 
 
 # RT-UI-023: fixed by api-files (0f65176); this test keeps it fixed.
@@ -281,6 +290,29 @@ def test_a_blind_sessions_record_cannot_be_exported(reblinded):
     listed = c.get(f"/api/studies/{study_id}/records")
     assert r.status_code == 403 and r.json()["error"]["code"] == "blind", r.text[:200]
     assert listed.status_code == 403, listed.text[:200]
+
+
+def test_prism_writes_of_a_blind_session_are_blind(reblinded):
+    c, app, sid = reblinded["client"], reblinded["app"], reblinded["sid"]
+    posts = [p for p in _paths(app, "post") if p.startswith("/api/sessions/{sid}/prism")]
+    if not posts:
+        pytest.skip("the files router is not merged in this checkout")
+    bodies = {"roundtrip": {"bundle": "x", "folder": "/tmp"}}
+    for route in posts:
+        url = route.replace("{sid}", sid)
+        r = c.post(url, json=bodies.get(url.rsplit("/", 1)[-1], {}))
+        assert r.status_code == 403 and r.json()["error"]["code"] == "blind", (route, r.text[:200])
+
+
+def test_model_pages_of_a_blind_session_show_no_results(reblinded):
+    c, sid, study_id = reblinded["client"], reblinded["sid"], reblinded["study_id"]
+    for key in (sid, study_id):
+        r = c.get("/api/model/scorecards", params={"study": key})
+        assert r.status_code in (403, 404, 409), (key, r.status_code, r.text[:200])
+        r = c.post("/api/model/test", json={"study": key})
+        assert r.status_code in (403, 409), (key, r.status_code, r.text[:200])
+        seen = c.get("/api/model/seen", params={"study": key})
+        assert seen.status_code == 200 and seen.json()["state"] in ("none", "hidden")
 
 
 def test_the_plate_of_a_blind_session_pairs_no_group_with_a_number(reblinded):
@@ -546,3 +578,24 @@ def test_a_name_that_is_an_instruction_is_flagged_quoted_and_not_obeyed(sclient,
     plate = sclient.get(f"/api/sessions/{sid}/plate").json()
     names = {w["sample"] for w in plate["wells"]}
     assert INJECTION in names  # shown as the text it is, never acted on
+
+
+@pytest.mark.parametrize(
+    "edits",
+    [
+        {"group": "KO", "made_by": {"kind": "rule"}},
+        {"status": "accepted"},
+        {"group": "x" * 100_000},
+        {"group": {"$gt": ""}},
+    ],
+)
+def test_checking_an_edit_writes_nothing_and_adds_no_field(sclient, web_store, opened, edits):
+    sid = opened
+    _agent_proposal(web_store, sid)
+    target = _pending(sclient, sid)[0]
+    head = sclient.get(f"/api/sessions/{sid}/proposals").json()["head"]
+    r = sclient.post(f"/api/sessions/{sid}/proposals/{target['id']}/check", json={"edits": edits})
+    assert r.status_code in (200, 409, 413, 422), r.text[:200]
+    if set(edits) - {"group"}:
+        assert r.status_code == 422
+    assert sclient.get(f"/api/sessions/{sid}/proposals").json()["head"] == head
