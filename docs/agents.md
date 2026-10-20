@@ -24,6 +24,17 @@ Rules the server enforces:
 - **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (the page's Ask never writes at all). People decide on the page (`qpilot app`); the command line has no decide command. **An agent that can run commands as you can still act as you,** for example by importing qPilot's library, or by reading the launch key `qpilot app` printed and calling the page's API on 127.0.0.1. Give agents MCP access, not your shell.
 - **Output:** tools return engine output as JSON, never model-written prose.
 
+### On the page: the Agents section
+The page's **Agents** section (`GET /api/agents`) is where a person sees what agents are doing, with the same facts the server enforces:
+
+* **Connect an agent:** the command above with a copy button (it names the study store when `qpilot serve` would otherwise use another one), and the rules the code enforces.
+* **The tools**, grouped by what they can change: *Read*, *Open*, *Propose*, *Request a decision*; every tool `qpilot serve` registers is listed (a test fails if one is missing), with what it can change.
+* **Requests waiting for a person**, in every study: **Approve** (the person decides that option, as `human`) or **Turn down**, each with a reason. A request that could change a conclusion is marked. The agent bell in the top bar counts them.
+* **Recent agent activity**, newest first: requests and choices on Decision Cards, and proposals in Studio inboxes, with what happened to each. For a Studio session whose design and curves are not both confirmed, the requests and entries are counted but not listed (the page is blind there, as for any result).
+* **What an agent may do on its own** is a setting of each study, changed with the autonomy switch in the study's top bar (`PUT /api/studies/{id}/autonomy`): *Suggest* (the default; every request waits) or *Decide and tell me* (a choice that cannot change any conclusion is applied and the person is told). Each change is kept beside the decision chain, recorded as a person's.
+
+[`user-guide.md`](user-guide.md#12-agents) describes the section for scientists.
+
 ### The Decision Simulator's tools (when it is installed)
 With the simulator installed (`pip install -e '.[sim]'` from a clone), the same server also serves five read-only `sim_*` tools
 (`sim_audit`, `sim_gene`, `sim_decisions`, `sim_whatif`, `sim_findings`) over the audit a person
@@ -46,7 +57,7 @@ Choose with environment variables; the page shows the result in Settings (the mo
 | `QPILOT_API_KEY` | only if the endpoint needs one; never logged |
 | `QPILOT_PROFILE` | optional `qpilot_profile.yaml` with lab conventions |
 
-- **What the model sees:** the facts table and the card structure, never raw curves or sample names. Tool results reach it with every data number replaced by a `{{fact_id}}` token; method thresholds appear only in their method wording ("95 % confidence interval", "p < 0.05", "at least 2-fold", "80 % of the reasonable analyses", "M 1.5"). An answer may quote those phrasings; a bare "2x", "95%" or a spelled-out amount ("seven-fold", "half of") counts as an invented number.
+- **What the model sees:** the facts table and the card structure, never raw curves or sample names. Tool results reach it with every data number replaced by a `{{fact_id}}` token; method thresholds appear only in their method wording ("95 % confidence interval", "p < 0.05", "at least 2-fold", "at least 80 % of the", "fewer than 80 % of the", "analyses qPilot checks", "M 1.5"). An answer may quote those phrasings; a bare "2x", "95%" or a spelled-out amount ("seven-fold", "half of") counts as an invented number.
 - **What it may write:** only numbers as tokens. The validator rejects any other digit. An explanation of a Decision Card must also cite the counts the card is about: how many genes change their conclusion with the choice (on the amplification-call card, under each rule other than the one in use); the facts it must cite are listed to it as `must_cite`. A rejected answer gets one retry, then the template answers instead.
 - **What happens when a model asks to change a flipping choice:** it gets `pending_human`, and the user is shown qPilot's own fixed "Not applied …" text, never the model's words. Change requests are also caught in the indirect wordings the tests cover ("make HMBS the only control gene", "make HMBS the reference gene", "from now on normalise to HMBS"), and an answer that claims an unmade change in a recognised wording is replaced. Recognising wording is best effort; what holds whatever the model writes is the gate: no choice that can change a conclusion is applied without a person.
 - **Customising:** few-shot examples come only from decisions a person made in the lab's own log.
@@ -111,7 +122,7 @@ The one rule: **AI proposes, the engine checks, the scientist decides.** `qpilot
 | Environment | What Studio does |
 |---|---|
 | `QPILOT_MODEL_PROVIDER` set (to anything, `none` included) | honoured exactly; a remote provider is used only because you named it |
-| `QPILOT_MODEL_PROVIDER` unset | the local OpenAI-compatible endpoint `http://127.0.0.1:11434/v1` (Ollama), model `QPILOT_STUDIO_MODEL` or `qwen2.5:7b`; no API key is sent |
+| `QPILOT_MODEL_PROVIDER` unset | the local OpenAI-compatible endpoint `http://127.0.0.1:11434/v1` (Ollama), model `QPILOT_STUDIO_MODEL` or `qwen2.5:7b`; no key is sent |
 | provider unset, `QPILOT_MODEL_ENDPOINT` not on this machine | refused (a remote model needs the provider named) |
 
 - **No server running:** the first call is refused, the model is not asked again, and qPilot's rules answer alone, with a note asking you to type your controls (`tests/ai/test_interpret.py`, network blocked).
