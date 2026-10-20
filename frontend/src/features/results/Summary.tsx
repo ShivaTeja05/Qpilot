@@ -37,7 +37,7 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
             key={grp.label}
             label={grp.label}
             value={count(grp.n)}
-            sub={i === 0 ? "the compared group" : "the comparison group"}
+            sub={i === 0 ? "compared" : "against"}
           />
         ))}
         <Stat label="Genes compared" value={count(s.n_genes)} />
