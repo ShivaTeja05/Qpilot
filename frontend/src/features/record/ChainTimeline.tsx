@@ -190,7 +190,7 @@ function Attempts({ attempts, now }: { attempts: StaleAttempt[]; now: number }) 
               ) : null}
               {a.head ? (
                 <>
-                  , the chain was at <Hash value={a.head} />
+                  · the chain was already at <Hash value={a.head} />
                 </>
               ) : null}
             </p>
