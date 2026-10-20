@@ -17,7 +17,16 @@ import { Input, Select } from "../controls";
 import { EmptyState, LoadingBlock } from "../feedback";
 import { CheckTag } from "../tags";
 import type { EditOptions } from "./edit";
-import { useMattersJobs, useProposalActions, useQuotes, useStageProposals, type InboxStage } from "./hooks";
+import {
+  isWarming,
+  useCheckEdit,
+  useMattersJobs,
+  useProposalActions,
+  useQuotes,
+  useStageProposals,
+  type InboxStage,
+} from "./hooks";
+import { Warming } from "./parts";
 import { ProposalCard, type ProposalCardHandle, type ProposalCardProps } from "./ProposalCard";
 
 const PAGE = 20;
@@ -56,6 +65,11 @@ export interface StageInboxProps {
   hotkeys?: boolean;
   /** Accessible name of the list. */
   label?: string;
+  /**
+   * Proposals are still arriving (a propose job runs): keep them in arrival order, so cards
+   * do not jump while the person reads; the usual order (contradicted first) returns after.
+   */
+  arriving?: boolean;
 }
 
 const searchable = (p: Proposal) => `${p.subject} ${describeProposal(p)} ${KIND_TITLE[p.kind] ?? ""}`.toLowerCase();
@@ -76,11 +90,13 @@ export function StageInbox({
   editOptions,
   hotkeys = true,
   label = "Proposals waiting for you",
+  arriving = false,
 }: StageInboxProps) {
   const list = useStageProposals(sid, stage);
   const { lookup, sheetCells } = useQuotes(sid);
-  const actions = useProposalActions(sid, list.data?.head);
+  const actions = useProposalActions(sid, list.data?.head, stage);
   const matters = useMattersJobs(sid);
+  const checkEdit = useCheckEdit(sid);
   const [check, setCheck] = useState<CheckFilter>("all");
   const [kind, setKind] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -90,7 +106,11 @@ export function StageInbox({
   const refs = useRef(new Map<string, ProposalCardHandle>());
 
   const all = useMemo(() => list.data?.proposals ?? [], [list.data]);
-  const pendingAll = useMemo(() => all.filter((p) => p.status === "proposed"), [all]);
+  // A waiting confirm step is the confirm dialog's (ConfirmStage), not a card of the inbox.
+  const pendingAll = useMemo(() => {
+    const waiting = all.filter((p) => p.status === "proposed" && p.kind !== "stage.confirm");
+    return arriving ? [...waiting].sort((a, b) => a.created_at.localeCompare(b.created_at)) : waiting;
+  }, [all, arriving]);
   const decided = useMemo(() => all.filter((p) => p.status !== "proposed"), [all]);
 
   const byCheck = useMemo(() => {
@@ -104,16 +124,19 @@ export function StageInbox({
     return [...n].sort((a, b) => b[1] - a[1]);
   }, [pendingAll]);
 
+  // A filter whose last proposal was just decided falls back to everything waiting.
+  const checkNow: CheckFilter = check !== "all" && byCheck[check] === 0 ? "all" : check;
+  const kindNow = kind !== "all" && !kinds.some(([k]) => k === kind) ? "all" : kind;
   const pending = useMemo(() => {
     const q = query.trim().toLowerCase();
     return pendingAll.filter(
       (p) =>
-        (check === "all" || p.check.status === check) &&
-        (kind === "all" || p.kind === kind) &&
+        (checkNow === "all" || p.check.status === checkNow) &&
+        (kindNow === "all" || p.kind === kindNow) &&
         (!filter || filter.match(p)) &&
         (!q || searchable(p).includes(q)),
     );
-  }, [pendingAll, check, kind, filter, query]);
+  }, [pendingAll, checkNow, kindNow, filter, query]);
   const visible = pending.slice(0, shown);
 
   const focusIndex = visible.findIndex((p) => p.id === focusAt.id);
@@ -147,6 +170,7 @@ export function StageInbox({
   );
 
   if (list.isPending) return <LoadingBlock label="Reading the proposals" lines={6} />;
+  if (isWarming(list.error)) return <Warming message={list.error.message} />;
   if (list.error) return <ErrorPanel error={list.error} onRetry={() => void list.refetch()} />;
   if (!all.length) {
     return (
@@ -160,7 +184,7 @@ export function StageInbox({
     );
   }
 
-  const filtered = check !== "all" || kind !== "all" || Boolean(query.trim()) || Boolean(filter);
+  const filtered = checkNow !== "all" || kindNow !== "all" || Boolean(query.trim()) || Boolean(filter);
   const checkOptions: { value: CheckFilter; label: string; n: number }[] = [
     { value: "all", label: "All waiting", n: pendingAll.length },
     { value: "contradicted", label: CHECK.contradicted.word, n: byCheck.contradicted },
@@ -179,7 +203,7 @@ export function StageInbox({
                   <button
                     key={o.value}
                     type="button"
-                    aria-pressed={check === o.value}
+                    aria-pressed={checkNow === o.value}
                     disabled={o.value !== "all" && o.n === 0}
                     onClick={() => {
                       setCheck(o.value);
@@ -187,7 +211,7 @@ export function StageInbox({
                     }}
                     className={cn(
                       "inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors disabled:opacity-40",
-                      check === o.value
+                      checkNow === o.value
                         ? "border-accent/40 bg-accent-soft text-accent-strong"
                         : "border-line bg-surface text-muted hover:border-line-strong hover:text-fg",
                     )}
@@ -203,7 +227,7 @@ export function StageInbox({
                     size="sm"
                     label="Kind of proposal"
                     className="w-48"
-                    value={kind}
+                    value={kindNow}
                     onValueChange={(v) => {
                       setKind(v);
                       setShown(PAGE);
@@ -242,9 +266,16 @@ export function StageInbox({
                 ) : null}
               </div>
             ) : null}
-            <p className="text-xs text-faint" aria-live="polite">
+            {arriving ? (
+              <p className="rounded-lg border border-info/25 bg-info-soft/50 px-3 py-1.5 text-[13px] text-fg" aria-live="polite">
+                Proposals are still arriving ({count(pendingAll.length)} so far). They stay in arrival order until the job
+                ends; then the contradicted ones come first.
+              </p>
+            ) : null}
+            <p className="text-xs text-faint" aria-live={arriving ? undefined : "polite"}>
               {filtered ? `${count(pending.length)} of ${count(pendingAll.length)} waiting` : `${count(pendingAll.length)} waiting`}
-              {" · "}contradicted first
+              {" · "}
+              {arriving ? "in arrival order" : "contradicted first"}
               <span className="hidden sm:inline">
                 {" · "}
                 <Kbd>j</Kbd> <Kbd>k</Kbd> move · <Kbd>a</Kbd> <Kbd>e</Kbd> <Kbd>x</Kbd> accept, edit, reject
@@ -285,6 +316,7 @@ export function StageInbox({
                     onAccept={(reason) => actions.accept(p.id, reason)}
                     onEdit={(edits, reason) => actions.edit(p.id, edits, reason)}
                     onReject={(reason) => actions.reject(p.id, reason)}
+                    onCheckEdit={(edits) => checkEdit(p.id, edits)}
                     onAskMatters={() => void matters.ask(p.id)}
                     mattersJob={matters.jobOf(p.id)}
                     onOpenWell={onOpenWell}
@@ -350,9 +382,19 @@ export function DecidedList({
   const [open, setOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [shown, setShown] = useState(50);
+  const [kind, setKind] = useState<string>("all");
+  const [status, setStatus] = useState<string>("all");
   if (!proposals.length) return null;
   const byStatus = new Map<string, number>();
   for (const p of proposals) byStatus.set(p.status, (byStatus.get(p.status) ?? 0) + 1);
+  const byKind = new Map<string, number>();
+  for (const p of proposals) byKind.set(p.kind, (byKind.get(p.kind) ?? 0) + 1);
+  const listed = proposals.filter((p) => (kind === "all" || p.kind === kind) && (status === "all" || p.status === status));
+  const chip = (active: boolean) =>
+    cn(
+      "inline-flex h-6 items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-colors",
+      active ? "border-accent/40 bg-accent-soft text-accent-strong" : "border-line bg-surface text-muted hover:border-line-strong hover:text-fg",
+    );
   return (
     <section className="rounded-xl border border-line bg-surface">
       <button
@@ -373,8 +415,34 @@ export function DecidedList({
       </button>
       {open ? (
         <div className="border-t border-line">
+          <div className="flex flex-col gap-2 border-b border-line px-4 py-2.5">
+            {byKind.size > 1 ? (
+              <div role="group" aria-label="Show by kind" className="flex flex-wrap gap-1.5">
+                <button type="button" aria-pressed={kind === "all"} className={chip(kind === "all")} onClick={() => setKind("all")}>
+                  Every kind <span className="font-mono tabular">{count(proposals.length)}</span>
+                </button>
+                {[...byKind].map(([k, n]) => (
+                  <button key={k} type="button" aria-pressed={kind === k} className={chip(kind === k)} onClick={() => setKind(k)}>
+                    {KIND_TITLE[k as Proposal["kind"]] ?? k} <span className="font-mono tabular">{count(n)}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {byStatus.size > 1 ? (
+              <div role="group" aria-label="Show by decision" className="flex flex-wrap gap-1.5">
+                <button type="button" aria-pressed={status === "all"} className={chip(status === "all")} onClick={() => setStatus("all")}>
+                  Every decision
+                </button>
+                {[...byStatus].map(([st, n]) => (
+                  <button key={st} type="button" aria-pressed={status === st} className={chip(status === st)} onClick={() => setStatus(st)}>
+                    {STATUS_WORDS[st as Proposal["status"]]} <span className="font-mono tabular">{count(n)}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <ol className="divide-y divide-line">
-            {proposals.slice(0, shown).map((p) => (
+            {listed.slice(0, shown).map((p) => (
               <li key={p.id}>
                 <button
                   type="button"
@@ -396,10 +464,10 @@ export function DecidedList({
               </li>
             ))}
           </ol>
-          {proposals.length > shown ? (
+          {listed.length > shown ? (
             <div className="border-t border-line p-2 text-center">
               <Button size="sm" variant="ghost" onClick={() => setShown((s) => s + 100)}>
-                Show more ({count(proposals.length - shown)} not shown)
+                Show more ({count(listed.length - shown)} not shown)
               </Button>
             </div>
           ) : null}

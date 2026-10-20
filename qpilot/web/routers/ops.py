@@ -4,10 +4,10 @@
   ``qpilot serve`` gives it (each marked read / open / propose / request), the requests waiting
   for a person in every study, and what agents did recently, newest first.
 * ``POST /api/studies/{id}/ask``: a question, answered as a job by qPilot's own tools
-  (:func:`qpilot.ai.ask.ask`, the MCP tool code) under this launch's autonomy (in *Suggest* the
-  model may only ask), or, for verdict and what-if questions about an audited study, by the
-  audit's Ask engine. The answer says which tool answered, who wrote the words and every fact
-  it cites.
+  (:func:`qpilot.ai.ask.ask`, the MCP tool code), or, for verdict and what-if questions about an
+  audited study, by the audit's Ask engine. The answer says which tool answered, who wrote the
+  words and every fact it cites. Ask never writes (docs/app.md §1.1: every write from the page
+  is a person's): asked to change a choice, it names the Decision Card to decide it on.
 * ``POST /api/model/test``: the harness scorecard of the page's model on one study (a job), saved
   with the study's scorecards; ``GET /api/model/seen``: the last payload a model was sent.
 * ``POST /api/demo/fresh``: moves the demo's earlier work aside (kept, never deleted).
@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import math
 import re
 import threading
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Query
 
+from qpilot.core.decisions import DecisionError
 from qpilot.core.store import StudyNotFound, StudyStore
 from qpilot.web import views
 from qpilot.web.context import KEY, AppContext, Ctx, api_error, check_key, is_session, is_study
@@ -50,6 +52,9 @@ from qpilot.web.contract_ops import (
 from qpilot.web.jobs import JobError, Progress
 
 router = APIRouter(tags=["ops"])
+
+#: The model of each job's result, so the page's types carry them (``routers.job_results``).
+JOB_RESULTS = {"ask": AskAnswer, "model.test": ModelTestResult}
 
 CONNECT = "claude mcp add qpilot -- qpilot serve"
 CONNECT_NOTE = (
@@ -115,11 +120,11 @@ AUDIT_WORDS = re.compile(
     r"lean[s]?\s+on|survives?)\b",
     re.I,
 )
-#: Questions only the audit answers: what-if and what to check first (the study's own tools
-#: would answer them with something else).
+#: Questions only the audit answers: what-if, what to check first, verdicts and the audit itself
+#: (the study's own tools would answer them with something else).
 AUDIT_ONLY_WORDS = re.compile(
     r"\b(what[\s-]+if|suppose|hypothetically|would\s+(it|the|this|that|my|our)|instead|"
-    r"look\s+at\s+first|check\s+(the\s+)?data|issues?)\b",
+    r"look\s+at\s+first|check\s+(the\s+)?data|issues?|verdicts?|audit(ed|s)?)\b",
     re.I,
 )
 NEEDS_AUDIT = (
@@ -610,9 +615,40 @@ def _no_engine(question: str, audit: bool, autonomy: Autonomy, head: str) -> Ask
     )
 
 
-def _autonomy(ctx: AppContext) -> Literal["suggest", "decide_and_tell"]:
-    """This launch's autonomy mode (anything unexpected counts as Suggest)."""
-    return "decide_and_tell" if ctx.settings.get("autonomy") == "decide_and_tell" else "suggest"
+def _autonomy(ctx: AppContext, study_id: str) -> Literal["suggest", "decide_and_tell"]:
+    """What the study lets agents do (``StudyStore.autonomy``; Ask itself never decides)."""
+    try:
+        level = ctx.store.autonomy(study_id)
+    except (StudyNotFound, OSError, ValueError):
+        level = "suggest"
+    return "decide_and_tell" if level == "decide_and_tell" else "suggest"
+
+
+class _AskStore(StudyStore):
+    """The store as Ask sees it: it reads; it never decides, requests or turns down.
+
+    A change Ask is asked for reaches ``apply_decision`` like an agent's; here it is refused
+    before anything is written, and the answer names the card a person decides it on.
+    """
+
+    def append_decision(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: Ask never writes to the decision log."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def request_human(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: Ask never files a request."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def reject_pending(self, *args: Any, **kwargs: Any) -> Any:
+        """Refused: only a person turns a request down, on the card."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+    def set_autonomy(self, *args: Any, **kwargs: Any) -> None:
+        """Refused: autonomy is a person's setting."""
+        raise DecisionError(ASK_NEVER_DECIDES)
+
+
+ASK_NEVER_DECIDES = "Ask never changes a choice; a person decides it on its Decision Card"
 
 
 def _client(ctx: AppContext) -> Any:
@@ -635,9 +671,85 @@ def _model_note(ctx: AppContext) -> str | None:
     return f"A template answered: {status['reason'] or 'no model is configured'}."
 
 
+# ---- numbers as the page writes them (docs/app.md §5; frontend/src/lib/format.ts) -------------
+
+NNBSP = "\u202f"  # narrow no-break space: groups digits, separates units
+MINUS = "\u2212"
+
+
+def _group(text: str) -> str:
+    """Digits grouped by three with narrow no-break spaces; a real minus sign."""
+    negative = text.startswith("-")
+    body = text[1:] if negative else text
+    whole, _, frac = body.partition(".")
+    if len(whole) > 3:
+        whole = re.sub(r"\B(?=(\d{3})+(?!\d))", NNBSP, whole)
+    return (MINUS if negative else "") + whole + (f".{frac}" if frac else "")
+
+
+def _fold(fc: float) -> str:
+    """``3.59×``, ``0.57×``, ``0.034×``: two decimals from 1 up, two significant digits below."""
+    if fc >= 1:
+        return _group(f"{fc:.2f}") + "×"
+    digits = max(2, 1 - math.floor(math.log10(fc)))
+    return f"{fc:.{min(digits, 6)}f}×"
+
+
+def _share(fraction: float) -> str:
+    """A share of analyses, ``64 %``; never rounded to 0 or 100 unless it is."""
+    f = min(1.0, max(0.0, fraction))
+    if 0 < f < 0.005:
+        return f"<{NNBSP}1{NNBSP}%"
+    if 0.995 <= f < 1:
+        return f">{NNBSP}99{NNBSP}%"
+    return f"{math.floor(f * 100 + 0.5)}{NNBSP}%"  # half up, as the page's Math.round
+
+
+def _p_value(p: float) -> str:
+    """``< 0.001``, ``0.003``, ``0.43``; never rounded across 0.05."""
+    if p < 0.001:
+        return f"<{NNBSP}0.001"
+    if p >= 0.995:
+        return "1.00"
+    decimals = 3 if p < 0.1 else 2
+    text = f"{p:.{decimals}f}"
+    while decimals < 6 and (p < 0.05) != (float(text) < 0.05):
+        decimals += 1
+        text = f"{p:.{decimals}f}"
+    return text
+
+
+def _page_value(fid: str, fact: Any) -> str:
+    """One fact as the page writes that kind of number (the record keeps the fact's format)."""
+    from qpilot.core.facts import render_fact
+
+    value = fact.value
+    number = isinstance(value, int | float) and not isinstance(value, bool)
+    if number and math.isfinite(value):
+        if fact.unit == "×" and value > 0:
+            return _fold(float(value))
+        if "%" in fact.fmt and not fact.unit:
+            return _share(float(value))
+        if fid == "f_ans_p" or fact.path.endswith(".p"):
+            return _p_value(float(value))
+        if isinstance(value, int) and fact.fmt in ("{}", "{:,}"):
+            return _group(str(value))
+    return render_fact(fact)
+
+
+def _page_text(tokens: str, facts: dict[str, Any]) -> str:
+    """Token text with every known fact written as the page writes it."""
+    from qpilot.core.validator import TOKEN
+
+    def sub(match: re.Match[str]) -> str:
+        fact = facts.get(match.group(1))
+        return _page_value(match.group(1), fact) if fact is not None else match.group(0)
+
+    return TOKEN.sub(sub, tokens)
+
+
 def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
     from qpilot.ai.ask import _path_words
-    from qpilot.core.validator import render_tokens
 
     out: list[CitedFact] = []
     for fid in dict.fromkeys(re.findall(r"\{\{\s*([A-Za-z0-9_]+)\s*\}\}", text)):
@@ -645,23 +757,21 @@ def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
         if fact is None:
             continue
         meaning = ANSWER_FACTS.get(fid) or _path_words(fact.path)
-        out.append(
-            CitedFact(id=fid, meaning=meaning, value=render_tokens("{{" + fid + "}}", facts))
-        )
+        out.append(CitedFact(id=fid, meaning=meaning, value=_page_value(fid, fact)))
     return out
 
 
 def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy) -> AskAnswer:
-    """Ask with qPilot's own tools (the MCP tool code), acting through the autonomy's store."""
+    """Ask with qPilot's own tools (the MCP tool code), through a store that never writes."""
     from qpilot.ai.ask import ask
-    from qpilot.ai.suggest_only import acting_store, load_profile_or_default
+    from qpilot.ai.suggest_only import load_profile_or_default
 
     store = ctx.store
     client = _client(ctx)
     before = store.chain_head(study_id)
     answer = ask(
         question,
-        acting_store(store, autonomy),
+        _AskStore(store.root),
         study_id,
         client=client,
         profile=load_profile_or_default(),
@@ -670,6 +780,8 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
     call = answer.tool_calls[-1] if answer.tool_calls else {"tool": "none", "args": {}}
     tool, args = str(call.get("tool")), dict(call.get("args") or {})
     used = client.available and not answer.fallback
+    text, cited = _page_text(answer.answer, facts), _cited(answer.answer, facts)
+    focus = card_id = None
     note = None
     if answer.fallback:
         note = _model_note(ctx) or (
@@ -677,11 +789,25 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
             if answer.error
             else None
         )
-    if answer.status == "pending_human":
-        note = "The request waits for a person on the Decision Card, with Approve and Turn down."
+    if tool == "qpcr_decide":
+        cards = {c.id: c for c in store.cards(study_id)}
+        card_id = str(args.get("card_id") or "")
+        if card_id in cards:
+            option = str(args.get("option") or "")
+            title, label = _card_words(cards, card_id, option)
+            asked = option in {o.id for o in cards[card_id].options}
+            text = (
+                f"Ask never changes a choice. Decide “{title}” on its Decision Card"
+                + (f" (you asked for “{label}”)" if asked else "")
+                + ", with your reason."
+            )
+            cited, focus = [], f"card:{card_id}"
+            note = "Nothing was written: every choice is a person's, made on its card."
+        else:
+            card_id = None
     return AskAnswer(
         question=answer.question,
-        answer=answer.plain,
+        answer=text,
         engine="study",
         tool=tool,
         args=args,
@@ -694,11 +820,11 @@ def _ask_study(ctx: AppContext, study_id: str, question: str, autonomy: Autonomy
         else "qPilot's checked template",
         provider=answer.provider,
         model=client.model if client.available else None,
-        facts=_cited(answer.answer, facts),
-        validated=answer.validated,
+        facts=cited,
+        validated=answer.validated or focus is not None,  # the card's words are qPilot's own
         note=note,
-        status=answer.status if tool == "qpcr_decide" else None,
-        card_id=args.get("card_id") if tool == "qpcr_decide" else None,
+        card_id=card_id,
+        focus=focus,
         autonomy=autonomy,
         head_before=before,
         head_after=store.chain_head(study_id),
@@ -773,7 +899,7 @@ def ask_question(study_id: str, body: AskBody, ctx: Ctx) -> JobStarted:
     if not question:
         raise api_error(422, "bad_request", "Type a question first.")
     study_id, place, _ = resolve_study(ctx, study_id)
-    autonomy = _autonomy(ctx)
+    autonomy = _autonomy(ctx, study_id)
     audit = views.audit_dir(ctx.store, study_id) is not None
     engine = _pick_engine(question, body.source, audit, _audit_engine() is not None)
 

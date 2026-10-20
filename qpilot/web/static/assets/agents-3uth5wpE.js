@@ -1,1 +1,0 @@
-import{m as e}from"./sections-hAjAk99j.js";import{t}from"./SectionPending-BTIY4sJC.js";var n=e();function r(e){return(0,n.jsx)(t,{id:`agents`})}export{r as default};

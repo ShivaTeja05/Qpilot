@@ -25,6 +25,11 @@ const net = vi.hoisted(() => {
 
 const SID = "2529de8272eb";
 let posts: { url: string; body: unknown }[] = [];
+let reads = 0;
+let answer: { status: number; body: unknown } = {
+  status: 403,
+  body: { error: { code: "refused", message: "Not done: recorded data only" } },
+};
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -32,13 +37,18 @@ function json(body: unknown, status = 200) {
 
 beforeEach(() => {
   posts = [];
+  reads = 0;
+  answer = { status: 403, body: { error: { code: "refused", message: "Not done: recorded data only" } } };
   net.handle = async (req) => {
     const url = new URL(req.url);
-    if (req.method === "GET" && url.pathname === `/api/sessions/${SID}/proposals`) return json(proposals);
+    if (req.method === "GET" && url.pathname === `/api/sessions/${SID}/proposals`) {
+      reads += 1;
+      return json(proposals);
+    }
     if (req.method === "GET" && url.pathname === `/api/sessions/${SID}/quarantine`) return json(quarantine);
     if (req.method === "POST") {
       posts.push({ url: url.pathname, body: await req.json() });
-      return json({ error: { code: "refused", message: "Not done: recorded data only" } }, 403);
+      return json(answer.body, answer.status);
     }
     return json({ error: { code: "not_found", message: "not recorded" } }, 404);
   };
@@ -80,6 +90,20 @@ describe("StageInbox", () => {
     expect(posts[0]!.body).toEqual({ reason: "no well amplified", expected_head: proposals.head });
     // The refusal is shown on the card, in the server's words.
     expect(await screen.findByText("Not done: recorded data only")).toBeTruthy();
+  });
+
+  it("re-reads the inbox and says so when someone decided first (stale)", async () => {
+    // The server's answer when the head the view showed is out of date (core.proposals STALE).
+    answer = { status: 409, body: { error: { code: "stale", message: "stale", details: { head: proposals.head } } } };
+    wrap();
+    await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(pending.length));
+    const before = reads;
+    fireEvent.keyDown(window, { key: "j" });
+    fireEvent.keyDown(window, { key: "x" });
+    fireEvent.change(screen.getByLabelText("Why do you reject it?"), { target: { value: "no well amplified" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Reject" })));
+    expect(await screen.findByText("Something was decided since you loaded this")).toBeTruthy();
+    await waitFor(() => expect(reads).toBeGreaterThan(before));
   });
 
   it("opens a decided proposal read-only", async () => {

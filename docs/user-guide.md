@@ -40,7 +40,7 @@ qPilot prints a link that starts with `http://127.0.0.1:` and opens it in your b
 ## 2. How the page is laid out
 
 * **The rail (left).** The workflow in order: **Design → Curves → Results → Audit → Prism → Record**. Each step shows where it stands: a check when it is confirmed (for the Audit: when it has been run), a count of the proposals or requests waiting for you, or a lock with the reason in words, for example "Confirm the design first", "Blind until the design and the curves are confirmed" or "Decide the analysis choices first". Below the workflow: **Agents** and **Settings**. At the top, the workspace switcher lists your recent studies (⌘O opens a file). On a narrow window the rail shrinks to icons, and on a phone it becomes a bar at the bottom.
-* **The top bar.** The study's title and, on a wide window, the start of its input file's SHA-256 (click to copy). The **chain pill** (`chain 3f2a…`, or `chain empty` before any decision) shows the head of the decision chain; click it to open the Record. The **model chip** says `no model`, `local <name>` or `REMOTE — names pseudonymised`, with a dot for whether the model is answering, being checked, or not answering (hover for the reason; click for Settings). The **autonomy switch** (Suggest · Decide and tell me; on a narrow window it is in the menu at the right). The **agent bell** (requests waiting for you and work that is running). **Ask your data** (⌘J). **Go to…** (⌘K, the command palette). The theme toggle (system, light, dark). The **live dot**: green means the page is connected to qPilot and changes made by an agent or another tab appear within a second; otherwise it says it is reconnecting.
+* **The top bar.** The study's title and, on a wide window, the start of its input file's SHA-256 (click to copy). The **chain pill** (`chain 3f2a…`, or `chain empty` before any decision) shows the head of the decision chain; click it to open the Record. The **model chip** says `no model`, `local <name>` or `REMOTE — names pseudonymised`, with a dot for whether the model is answering, being checked, or not answering (hover for the reason; click for Settings). The **autonomy switch** (Suggest · Decide and tell me; on a narrow window it is in the menu at the right) sets what agents that connect over MCP may do on their own in *this study*: see [Agents](#12-agents). The **agent bell** (requests waiting for you and work that is running). **Ask your data** (⌘J). **Go to…** (⌘K, the command palette). The theme toggle (system, light, dark). The **live dot**: green means the page is connected to qPilot and changes made by an agent or another tab appear within a second; otherwise it says it is reconnecting.
 * **⌘K** opens the palette: go to a section, a gene or a study, or run an action: **Propose the design**, **Confirm this stage**, **Check the curves**, **Run the audit**, **Send to Prism**, **Export the Analysis Record**, **Verify a record**, **Ask your data**. Actions that are not reachable yet are not offered.
 * **The next-step banner** under the top bar says what to do next in this workspace ("Next: Decide 3 analysis choices"), with a button that goes there and puts the cursor on the action.
 * **Ask** (the right-hand drawer, ⌘J): ask a question of the open study in plain words.
@@ -56,60 +56,73 @@ A *workspace* is one study at a time. Opening a file creates a **Studio session*
 **A level** says how far to trust one gene's result: **High**, **Moderate**, **Low**, **Very low** (four bars, three, two, one). It is never a percentage. A gene starts at High and moves down one level for each of three checks it fails:
 
 * *precision*: its 95 % confidence interval crosses the 2-fold line;
-* *robustness*: its call holds in fewer than 80 % of the reasonable analyses;
+* *robustness*: its call holds in fewer than 80 % of the analyses qPilot checks (qPilot's choice grid, below);
 * *normalisation*: fewer than two control genes are stable by geNorm (M below 1.5), or no V(n/n+1) is below 0.15.
 
-It moves up one level only when the change is at least 4-fold (or at most a quarter), the call holds in every reasonable analysis, and the precision and normalisation checks pass. The reasons are always listed beside the level, in words. Three more facts are reported but do not change the level: how few choices at once flip the call, the assay's efficiency and undetermined wells, and the smallest change your design could detect.
+It moves up one level only when the change is at least 4-fold (or at most a quarter), the call holds in every analysis qPilot checks, and the precision and normalisation checks pass. The reasons are always listed beside the level, in words. Three more facts are reported but do not change the level: how few choices at once flip the call, the assay's efficiency and undetermined wells, and the smallest change your design could detect.
 
 **A verdict** (only after the audit has run) is the audit's reading of one gene, in six words:
 
 | Verdict | In plain words |
 |---|---|
-| **Solid** | The same call in at least 95 of 100 reasonable analyses, no 5 or fewer samples change it, and the difference is clear in at least 95 of 100. |
-| **Holds with caveats** | The same call in at least 95 of 100, but 5 or fewer samples change it, or the difference is not always clear. |
-| **Depends on your choices** | The same call in 80 to 95 of 100; the rest depend on the choices made. |
-| **Fragile** | The same call in fewer than 80 of 100, or 2 or fewer samples change it, or it sits very close to the fold-change line. |
+| **Solid** | The same call in at least 95 % of the audit's reasonable analyses, no 5 or fewer samples change it, and the difference is clear in at least 95 % of them. |
+| **Holds with caveats** | The same call in at least 95 %, but 5 or fewer samples change it, or the difference is not always clear. |
+| **Depends on your choices** | The same call in 80 to 95 %; the rest depend on the choices made. |
+| **Fragile** | The same call in fewer than 80 %, or 2 or fewer samples change it, or it sits very close to the fold-change line. |
 | **Check data first** | A problem found in the data changes this call when it is fixed. |
 | **No change called** | Not called a change (see the rule above). |
 
-Every one of these has a shape and a word as well as a colour, so none depends on colour alone. **Holds** (for example "holds 64 %") is a robustness fraction: the share of reasonable analyses that give the gene the same call. It is not a probability that the call is right. Two sets of analyses are in play and the page says which: on **Results** and **Gene**, the reasonable analyses qPilot itself runs (744 on the demo: 31 sets of control genes × 3 group cut-offs × 2 ways of treating empty wells × 4 rules for which curves count as amplified); in the **Audit**, the audit's own *defensible* analyses (144 on the demo, out of the 90,396 it runs in all).
+Every one of these has a shape and a word as well as a colour, so none depends on colour alone.
+
+**Two sets of analyses, never confused.** "Holds" is a robustness fraction: the share of a set of analyses that give the gene the same call. It is not a probability that the call is right, and the page always says which set and how many:
+
+* **qPilot's choice grid** (Results, Gene, Ask, the Decision Cards): "holds in 65 % of the 744 analyses qPilot checks". It is every combination of the choices on the Decision Cards: every control-gene set (single genes included), group cut-off, rule for empty wells and rule for which curves count as amplified (31 × 3 × 2 × 4 = 744 on the demo).
+* **The audit's reasonable set** (Audit, verdicts, the gene card): "same call in 144 of 144 of the audit's reasonable analyses". It leaves out shortcuts such as single or paired control genes, and holds the group cut-off and the correction for many genes as planned; the audit also runs the full grid of 90,396 so you can see how far a choice would take a result.
+
+The two answer different questions, so they differ: on the demo NM23A's call holds in 65 % of qPilot's 744 analyses and in all 144 of the audit's reasonable set. On the Gene page both appear, each labelled.
 
 ## 4. Open
 
-The first screen. It says what qPilot does and offers three things:
+The first screen. It says what qPilot does in four steps (the AI proposes; the engine checks; you decide; the record keeps it) and offers three things:
 
-* **Drop a file.** An RDML export from your instrument (`.rdml`; RDML is the instrument-neutral format most qPCR software can write). You may add a **sample sheet** (`.xlsx` or `.csv`) and **one sentence about the experiment** (at most 500 characters), for example "LPS versus PBS, three mice each". Opening reads the file and quarantines every name in it; it analyses nothing and proposes nothing yet.
-* **Open the demo study.** The public 64-plate dataset. If it is not on your computer yet, the page asks first: it downloads 7 MB from the RDML consortium's repository, checked against a pinned SHA-256. That is the only thing on this screen that goes to the internet, and only when you press the button.
-* **Recent.** Your earlier workspaces: title, file, plates · samples · genes, the stages done, decisions made, requests waiting from agents, whether an audit exists, and when it was last changed. The demo has a badge.
+* **Open your RDML file.** Drop the instrument's RDML export on the box, or press **Choose a file…** (⌘O does the same anywhere). RDML (`.rdml` or `.xml`) is the instrument-neutral format most qPCR software can write. You may add a **sample sheet** (`.xlsx` or `.csv`) and **one sentence about the experiment**, for example "LPS versus PBS, three mice each" (at most 500 characters; the AI reads it when it proposes the design, and it is never obeyed as an instruction). Then press **Open this file**. Opening reads the file and quarantines every name in it; it analyses nothing and proposes nothing yet, and the file stays on this computer.
+* **Open the demo study.** A public neuroblastoma study (Vermeulen et al. 2009, Ruijter et al. 2013), to see every step on real data before you open your own. The card shows the study, its licence and its SHA-256. If the file is not on your computer yet, the button reads **Download 7.0 MB and open**, and the card says where it comes from (the RDML consortium's repository, at a pinned commit, checked against its SHA-256 before it is used). That is the only thing this screen downloads, and only when you click. Once the demo has been opened the card says **Continue the demo study** and your work on it is kept; to start again from a clean study, use **Start a fresh demo** in Settings.
+* **Recent.** Your earlier workspaces, the most recently changed first, with a filter box. Each card shows the title, the file, plates · samples · genes, a chip for each stage (confirmed, or how many proposals wait), the number of decisions recorded, when it was last changed, and badges: **Demo**, **Audited**, **Analysed outside Studio** (results are shown straight away, with no blind stages), the number of agent requests waiting for you, and **File missing or changed** when the original file is no longer where it was.
 
-Below: the version, the vendored curve method's commit, the line that says what can leave the machine (the same as `qpilot doctor`), whether the Decision Simulator is installed (it is needed for the audit), and the model chip.
+At the bottom: the qPilot version, the model chip (click for Settings), the vendored curve method and its commit, the line that says what can leave this machine (the same as `qpilot doctor`), and whether the robustness audit is installed.
 
 ## 5. Design (blind)
 
-*Blind* means that until you have confirmed the design **and** the curves, the page shows nothing that pairs a group with a number: no fold change, no p-value, no direction of change. The server refuses to send it. This keeps your choices of groups and controls from being steered by the result you hope for.
+*Blind* means that until you have confirmed the design **and** the curves, the page shows nothing that pairs a group with a number: no fold change, no p-value, no direction of change. The server refuses to send it. This keeps your choices of groups and controls from being steered by the result you hope for. The header of this screen says "Blind stage 1 of 2".
 
-**What to do.** Press **Propose the design** (about 9 seconds on the demo). qPilot's rules, and a language model when one is configured, read your file, your sheet and your sentence and propose how to read the plates: which samples are standards, controls or study samples (and what each control is), which are groups, which samples are the same biological unit, which genes are references, which two groups to compare. Each proposal is a card in the inbox on the left, the ones the engine **contradicts** first. On the right, the **plate map** shows each plate's wells coloured by their declared type; hover for the original text of a name, and a name that reads like an instruction is marked and never obeyed.
+**What to do.** Press **Propose the design** (about 9 seconds on the demo). qPilot's rules, and a language model when one is configured, read your file, your sheet and your sentence and propose how to read the plates: which samples are standards, controls or study samples (and what each control is), which are in which group, which samples are the same biological unit, which genes are references, which gene each target is, which two groups to compare. You may type one sentence about the experiment here (leave it empty to use the one given when the file was opened). **Propose the design again** reads the file again: new proposals join the inbox, what you already decided stays decided, and a repeat of a decided proposal is refused.
 
-**A proposal card has six parts:**
+**The inbox** lists one card per proposal, the ones the engine **contradicts** first. Filter it by engine check (all waiting, consistent, contradicted, cannot check) or by kind of proposal, or find a sample or target by name. **The plate map** shows each plate's wells coloured by their declared type (**View as table** gives the same as text); click a well for the names in it, quoted from your file, and the proposals about it. A name that reads like an instruction is marked and never obeyed. **The file** card lists what the file declares (the sample sheet, the sample types and how many of each); nothing is analysed yet.
 
-1. *The proposal*, in words, and the other readings that were considered.
-2. *Why*: each piece of evidence folds out: the text from your file with where it came from, a cell of your sheet, or a well (which opens its curve).
-3. *Engine check*: **Consistent** (the engine found nothing that refutes it; a check can refute, never prove), **Contradicted** (it refutes it, with the rule and numbers; accepting it anyway needs a reason), or **Cannot check** (decide it on the evidence).
-4. *Consequence*: hidden in the blind stages, except "this matters for at least one conclusion", or press **Does this matter?** to have the engine run the design both ways and answer only yes or no.
-5. *Level*, with reasons (never a percentage).
-6. **Accept**, **Edit** (change the fields, then it is checked again) or **Reject** (a reason is required). The footer says who made it: a fixed rule, a model (with its name and prompt hash) or an agent.
+**A proposal card** shows the proposal in words and, below it, the other readings that were considered, then four parts you can open:
 
-**Many at once.** **Accept all consistent…** shows the exact list first; a second click accepts exactly that list, one record entry each. A contradicted or cannot-check proposal is never on it. **Reject contradicted AI calls…** does the same for model and agent proposals the engine contradicts, with one reason you type.
+1. **Why**: each piece of evidence: the text from your file with where it came from, a cell of your sheet, or a well (which opens its curve).
+2. **Engine check**: **Consistent** (the engine found nothing that refutes it; a check can refute, never prove), **Contradicted** (it refutes it, with the rule and the numbers), or **Cannot check** (decide it on the evidence).
+3. **Consequence**: hidden in the blind stages, except "This matters for at least one conclusion; decide on the evidence." On a design proposal that has another reading, press **Does this matter?** to have the engine run the design both ways: it answers only "this matters" or "neither reading changes any conclusion".
+4. **Level**: an ordinal level with its reasons (never a percentage).
 
-**Confirm this stage…** shows what the confirmation covers; **Yes, confirm** confirms. When every proposal is settled and you have confirmed, the Curves section opens.
+Then **Accept**, **Edit** (change the fields; the engine checks the edit, then you accept it) or **Reject** (a reason is required). If the engine contradicts a proposal the button reads **Accept anyway…** and asks you to say why. The footer says who made the proposal: a fixed rule, a model (with its name and prompt hash) or an agent.
+
+**Many at once.** **Accept all consistent…** shows the exact list first; **Accept these N** accepts exactly that list, one record entry each. A contradicted or cannot-check proposal is never on it. **Reject contradicted AI calls…** does the same for model and agent proposals the engine contradicts, with one reason you type.
+
+**Confirm this stage…** is offered when every proposal is decided (until then it says how many are waiting). It shows exactly what the confirmation covers: "Confirming freezes this design. The curves stage opens next; results stay hidden until the curves are confirmed too." **Yes, confirm** confirms. A later decision on a design proposal re-opens the stage.
 
 *On the demo:* the rules make 131 proposals; 121 are consistent and 9 are contradicted (seven competimer standards that never amplified, one competimer series, and one standard series whose R² is only 0.694). Reject those nine with a reason, accept the rest, confirm.
 
 ## 6. Curves (blind)
 
-Opens when the design is confirmed. Press **Check the curves** (about 15 seconds on the demo). qPilot fits every curve with LinRegPCR and a second, learned reader (the *Curve Judge*) classifies each as amplified or not. Wherever the two disagree **and it could change a conclusion**, you get a proposal card (a well call), and a card for the call rule you want to use. Reject or accept them as in Design, then confirm.
+Opens when the design is confirmed (until then it is locked: "Confirm the design first"). Press **Check the curves** (about 15 seconds on the demo; afterwards it reads **Check the curves again**). qPilot fits every curve with LinRegPCR and a second, learned reader (the *Curve Judge*) classifies each as amplified or not. Wherever the two disagree **and it could change a conclusion**, you get a proposal card (a well call), and a card for the call rule you want to use. Accept, edit or reject them exactly as in Design, then confirm the stage.
 
-The **plate heatmap** shows each well's call (by shape and colour), Cq, efficiency or R² (switch between them), disagreements outlined; filter by gene. Click a well for the **curve viewer**: the raw fluorescence by cycle, with a linear/log switch, the Cq marker and baseline when known, and the neighbouring wells of the same sample. There are still no group labels here.
+* **The curves stage** card says which rule is in use ("LinRegPCR's call (the engine's default), until you accept a rule"), how many proposals you have accepted, rejected and have waiting, and lists the waiting ones with their engine check and level; **Open the curve** takes you to the well a proposal is about.
+* **The plate** shows every well of one plate. Choose the **Gene** and the **Plate** (`[` and `]` step through the plates), and **Colour the wells by** *Sample type*, *Amplification call*, *Cq*, *Efficiency* or *R²*. The number and call layers are available once the design is confirmed; a well where the Curve Judge reads the curve differently is outlined, and a corner mark shows a call a person set. Pick one well, or several, on the plate.
+* **The curve** shows the raw fluorescence by cycle of the wells you picked, with a linear/log switch. For one well it also gives its Cq, efficiency, R² and baseline, and how the well is called under each amplification rule; for several wells, a table with each one's LinRegPCR call, Curve Judge call, Cq and efficiency. The first curve can take a few seconds, because it is read from your file.
+
+There is no group, fold change or p-value anywhere on this screen.
 
 *On the demo:* the Curve Judge disagrees with LinRegPCR on 166 study wells; only 110 early curves of one reference gene (ALUsq) could change a conclusion, and LinRegPCR contradicts each of them with a complete fit. Reject them with one reason, keep LinRegPCR's call rule, confirm. The learned reader is validated only on the demo's instrument (LightCycler 480, SYBR Green I); on another file it is a second opinion at most.
 
@@ -117,46 +130,51 @@ The **plate heatmap** shows each well's call (by shape and colour), Cq, efficien
 
 Opens once the design and the curves are confirmed; qPilot then analyses your confirmed design (about 30 seconds on the demo).
 
-**The summary strip:** plates, reactions, samples, the groups and how many biological units each has, the conclusion rule, and the reference genes with their geNorm stability (M, V).
+**The summary strip:** plates, reactions, samples, the groups and how many biological units each has, genes compared, calls under the rule (how many up, down, no call), the reference genes with their geNorm stability, and whether the robustness audit has run ("Audited at the current decisions", or "Decisions changed since the audit: run it again to bring it up to date").
 
-**The robustness map.** One point per gene. Left–right: fold change (log scale, labelled in ×). Up–down: the share of reasonable analyses that give the same call. Colour and shape: the call and the level. The 2× lines mark the rule. A gene far from the lines and high on the map is a result that does not depend on your choices; a gene near a line, or low, does. Click a point to open the gene; **View as table** gives the same numbers as text.
+**The robustness map.** One point per gene. Left–right: fold change (log scale, labelled in ×). Up–down: the share of the analyses qPilot checks (qPilot's choice grid) that give the same call. The 2× lines mark the rule. A gene far from the lines and high on the map is a result that does not depend on your choices; a gene near a line, or low, does. **Colour the genes by** the call, the confidence level or, after an audit, the audit verdict. Hover or use the arrow keys to read a gene; click it, or press Enter, to open it. The chart has a table version for reading the same numbers as text.
 
-**All genes** is a table you can sort and filter by call, level, or "flips" (genes whose call at least one choice changes): gene, call, fold change [95 % CI], p, holds, level, reasons.
+**All genes** is a table you can sort and filter: find a gene by name, and filter by call, by confidence, by audit verdict, or to **only genes one choice can flip**. Each row gives the gene, its call, the fold change with its 95 % confidence interval, p, the share of the analyses qPilot checks with the same call ("Same call in"), the confidence level and why ("Why this level").
 
-**The flip matrix** has the decisions as rows and the genes as columns; a mark means that choice alone flips that gene's call.
+**What one choice alone can flip** is the flip matrix: each row is a decision on a Decision Card, each column a gene (the genes that flip most first); a darker cell means more of that decision's other options change the gene's call. Decide those cards before you report the genes they flip.
 
-**Decision Cards (right column).** One card per choice that could change a conclusion, ranked by how many conclusions it can change: *which control genes*, *where to cut the groups*, *what to do with empty wells*, *which curves count as amplified*. Each card shows the question, the evidence, each option and what it changes for the headline genes, and the recommended option. Choose an option, write a reason (required), press **Decide**. It goes into the record with your name as the actor, and the analysis updates.
+**Decision Cards** (the right-hand column). One card per choice that could change a conclusion, ranked by how many conclusions it can change: *which control genes*, *where to cut the groups*, *what to do with empty wells*, *which curves count as amplified*. A counter says how many are decided. Each card shows the question, the evidence and each option with what it changes for the headline genes; one option is marked **Recommended**, and an option that is not advisable (for example a single control gene) is marked **Not recommended (MIQE)**. Choose an option, write a reason (required, at most 500 characters; it goes into the Analysis Record), and press **Decide: <option>**. The analysis updates.
 
-* A card where **no option changes any conclusion** is decided automatically, using the recommended option, and logged as the system; you can reopen it.
-* A choice that **can** flip a conclusion is yours alone: an agent, a model or the system can only ask, and the request waits at the top as **Approve** / **Turn down**.
-* A decided card folds up showing who decided and why. **Undo** adds a new entry to the record (nothing is erased).
-* **Explain with the model** (only when a model is answering) writes a plain explanation whose every number is a fact qPilot computed; the numbers are cited, and if the model writes a number of its own, qPilot discards the text and shows its own.
+* A card where **no option changes any conclusion** is decided automatically, with the recommended option, and shows **Decided automatically**; you can reopen it.
+* A choice that **can** flip a conclusion is yours alone: an agent, a model or the system can only ask. An agent's request waits on the card as **Agent request**, with the option it asked for marked **Agent asked**; give a reason and press **Approve: <option>** or **Turn down**.
+* A decided card shows who decided and why. **Undo: back to <option>** needs a reason and adds a new entry to the record (nothing is erased).
+* **Explain with the model** (shown only when a model is configured) writes a plain explanation whose every number is a fact qPilot computed and cites; if the model writes a number of its own, qPilot discards the text and shows its own.
+* `j` and `k` move between cards, `Enter` puts the cursor in the reason, and ⌘Enter (Ctrl Enter) decides.
+
+**Confirm the analysis choices…** appears when every card is decided. It shows exactly what the confirmation covers ("This confirms exactly these:"); **Yes, confirm** fixes the option in use on every card for the Prism export and the record, and opens Prism. Until then Prism is locked ("Decide the analysis choices first").
 
 *On the demo:* ODC1 is called up at 3.59× under the recommended choices; the usual Excel route (2^-ΔΔCq with a t-test on the linear scale) would change 14 of the 58 conclusions.
 
 ## 8. Gene
 
-Open a gene from the Results map or table. `[` and `]` go to the previous and next gene.
+Open a gene from the Results map or table, or from **Go to a gene** (or ⌘K). `[` and `]` go to the previous and next gene. Without a gene in the address, the page lists every compared gene to choose from.
 
-The header gives the call, the fold change with its 95 % confidence interval, p, the number of samples per group, the level with its reasons, and (after an audit) the verdict. Then, top to bottom:
+The header gives the gene's name (with a **Headline gene** badge for the study's headline genes), the fold change with its 95 % confidence interval, the p-value, the number of samples per group, the **confidence** level with its reasons, and the **audit verdict** ("Not audited yet" before the audit has run). **Copy summary** puts a plain-text summary of the gene on your clipboard. A row of links under the header jumps to each part below.
 
-* **What holds.** The share of reasonable analyses with the same call, and a strip with every reasonable analysis as a dot on the fold-change axis, coloured by call. A strip spread across the 2× line is a gene whose call depends on your choices.
-* **One choice at a time.** For each decision, a dot per option: change only that choice and see where the fold change lands.
-* **Your samples.** Each sample as a dot, by group. Click one to open its well and its curve: an outlier is a place to look, not yet a reason to remove it.
-* **What changes it, what it leans on, what to do** (after an audit): the choices that flip it, the control genes and samples it depends on, and what to check or fix.
-* **The Decision Cards that affect this gene**, **the assay and its wells** (efficiency, Cq range, undetermined wells), the **reference-gene stability** bars, and the Prism figure for this gene when it exists.
+* **What holds.** How often the same call comes out when the analysis is done another way, and a strip with every analysis as a dot on the fold-change axis, coloured by call. A switch, **Which analyses**, chooses between *qPilot's grid* (the analyses qPilot checks: every combination of the Decision Cards' options) and *The audit* (the audit's reasonable analyses; shown once the audit has run), each with its own count. A strip spread across the 2× line is a gene whose call depends on your choices.
+* **One choice at a time.** For each decision, a dot per option, with every other choice as planned. A ringed dot changes the call on its own.
+* **Your samples.** Each sample's normalised value, relative to the mean of the rest, by group. Click a sample to open its well, its plate, its Cq, and badges such as "Leaving it out changes the call", "No Cq: never amplified" and "Flagged by LinRegPCR". An outlier is a place to look, not yet a reason to remove it.
+* **What changes it, what it leans on, what to do** (after an audit): the choices that flip it, the samples that change the call on their own, and what to check or fix.
+* **Decision Cards that affect this gene**, each marked "Can change the call alone" or "Does not change the call alone".
+* **Assay and wells** (efficiency, and after an audit the wells' Cq range and undetermined wells) and **Reference genes** (geNorm stability).
 
 ## 9. Audit
 
-The audit re-runs your **confirmed** study under every combination of eight analysis decisions (efficiency model, flagged wells, late Cq, empty wells, which control genes, where to cut the groups, which test, correction for many genes): 90,396 analyses on the demo, about 50 seconds. It first checks that its own baseline reproduces qPilot's results gene by gene; if it does not, it refuses and writes nothing. It then gives each gene one of the six verdicts of [section 3](#3-three-scales-you-will-see-everywhere). A verdict counts only the options the audit marks *defensible* (144 analyses on the demo); the other options are there so that you can see how far a choice would take a result. Two of the decisions, where to cut the groups and the correction for many genes, change the claim rather than the analysis, and are reported separately.
+The audit re-runs your **confirmed** study under every combination of eight analysis decisions (efficiency model, flagged wells, late Cq, empty wells, which control genes, where to cut the groups, which test, correction for many genes): 90,396 analyses on the demo, about 50 seconds. It first checks that its own baseline reproduces qPilot's results gene by gene; if it does not, it refuses and writes nothing. It then gives each gene one of the six verdicts of [section 3](#3-three-scales-you-will-see-everywhere). A verdict counts only the audit's reasonable set (144 analyses on the demo: no shortcuts such as single or paired control genes, and the group cut-off and the correction for many genes as planned); the rest of the 90,396 are there so that you can see how far a choice would take a result. Those two decisions change the claim rather than the analysis, and are reported separately. The audit changes nothing: it writes its own folder beside the Analysis Record, with a checksum for every file and the decision chain it describes.
 
-* **Not run yet:** the page says what the audit is and offers **Run the audit** (a job with stages).
-* **Not applicable:** a design with technical replicates, today, because the audit needs one well per sample and gene. The page says so in words.
-* **Done:** four tabs.
-  * **Study:** the verdict counts, the map, the calls that one choice changes, how much of the spread each decision explains, reference-gene stability, "fix these first", and the queue of data issues it found (wells, samples, plates).
-  * **What-if lab:** one menu per decision, grouped by how defensible the options are; the dumbbell shows every gene from the planned analysis to your chosen one, changed genes first. Nothing is stored and nothing is decided here.
-  * **How it works:** the stages, the verdict rules, the known-answer tests and the audit's limits.
-  * **Verify:** the audit's checksums and whether it is bound to the current decision record. If a decision changed after the audit, it is stale and the page says to run it again.
+* **Not run yet:** the page explains what the audit does and shows what it will cover (analyses, genes compared, samples, sets of reference genes), with **Run the audit** (a job with stages). Running it again keeps the earlier audit.
+* **Cannot run:** a design with technical replicates, today, because the audit needs one well per sample and gene, or an install without the Decision Simulator. The page says which, in words.
+* **Done:** four tabs, **Study**, **What-if lab**, **How it works** and **Verify**.
+  * **Study:** the verdict counts, the map, the calls that one choice changes, how much of the spread each decision explains, reference-gene stability, "fix these first", and the queue of data issues it found (wells, samples, plates); an issue about a choice offers **Try this choice in the What-if lab**.
+  * **What-if lab:** one menu per decision, with the options grouped by how defensible they are; every gene is shown from the planned analysis to your chosen one, changed genes first. Nothing is stored and nothing is decided here.
+  * **How it works:** the stages with this audit's own numbers, what is varied at each stage, the verdict rules, the known-answer tests and the audit's limits.
+  * **Verify:** "Is this audit intact, and is it this study's?": the audit's checksums, whether it reproduces qPilot's result, whether it belongs to this study's record, and whether decisions were made since it ran (then it is not current and the page says to run it again). It lists the audit's files with their SHA-256 (click a name to save one) and the command to check it from a terminal.
+* **Audit shown:** if you started `qpilot app --audit DIR` (or `qsim app --results DIR`), a menu switches between this study's audit and the attached results folder, which is shown read-only.
 
 ## 10. Prism
 
@@ -170,32 +188,41 @@ For people who finish their figures in GraphPad Prism. qPilot does not replace P
 
 ## 11. Record
 
-The decision chain as a timeline: every entry has its sequence number, the card and the option, who decided (a person, an agent or the system), the reason, the time, its hash and the previous entry's hash, and its status (applied, waiting, turned down, out of date).
+**The decision chain**, newest first: every entry has its sequence number, the card and the option, who decided (a person, an agent or the system), the reason, the time, its hash and the previous entry's hash, and its status (applied, waiting, turned down, out of date). Each entry's hash covers the entry before it, so changing any line breaks every later link. A filter ("Show entries by") narrows the list; the chain starts with the input file. Before the study is analysed the section says the record starts when the design and the curves are confirmed.
 
-* **Export the Analysis Record** writes one zip: your input file (when it is still on disk), the results, the cards, the grid of analyses, the facts every sentence cites, the design, every decision with its reason and actor, the versions, and a list of checksums. The page then shows the record's id and chain head and the file to download.
-* **Verify a record** takes a zip (yours, or one you received) and checks its checksums, the decision chain, and, if there is one, the audit bound to it.
-* The page also gives the two commands to repeat the checks outside it: `qpilot verify <record.zip>` and `qpilot rerun <unzipped folder>` (re-analyses the input and compares the results byte for byte).
+* **Export the Analysis Record** (**Export again** once you have one) writes one zip: your input file (when it is still on disk), the design, every decision with its reason and actor, the results, and their checksums. The page then shows the record's id and chain head and the file to download, and lists the records exported since qPilot started. If decisions were made after an export, it warns: "Decisions were made after this record was exported; export again to include them."
+* **Verify a record** takes a zip (yours, or one you received; it is read on this computer only) and checks that every file matches its checksum, that the files agree with the chain, that the decisions, the cards and the record's summary say the same thing, and, if there is one, that the audit bound to it verifies and belongs to it. The answer is "This record checks out" or "This record does not check out", with what it says about itself.
+* The page also gives the commands that repeat the checks outside it: `qpilot verify <record.zip>` (checksums, the decision chain and the proposal chain) and `qpilot rerun <unzipped folder>` (re-analyses the input and compares every result byte for byte).
 
 The chain is **tamper-evident, not tamper-proof**: nothing is signed, so someone who rewrites every hash consistently is not detected unless you compare the record's id with a copy kept elsewhere. qPilot is not a 21 CFR Part 11 system.
 
 ## 12. Agents
 
-For agents that work with qPilot over MCP (Claude Code, for example):
+For agents that work with qPilot over MCP (Claude Code, for example). The section opens with "AI agents work on your studies through qPilot's MCP server. They read, open and propose; a choice that can change a conclusion always waits for a person."
 
 ```bash
 claude mcp add qpilot -- qpilot serve
 ```
 
-The page shows this command (with a copy button), the tools an agent has (read, ask, propose; **none can decide a choice that changes a conclusion**), a live list of requests waiting for you (the same **Approve** and **Turn down** as on Results), and the recent entries agents made in the record and in the proposal inbox. The agent bell in the top bar counts the waiting requests. An agent that can run commands as you can still act as you; give agents MCP access, not your shell.
+* **Connect an agent** shows this command with a copy button (it names the study store when `qpilot serve` would otherwise use another one), and the rules qPilot's code enforces whatever an agent or its model says.
+* **The tools** are grouped by what they can change: **Read** (studies, genes, the audit and the inbox; they change nothing), **Open** (open a file as a study or a Studio session; they decide nothing), **Propose** (add a proposal to a Studio inbox; only a person accepts, edits or rejects it) and **Request a decision** (ask for a choice on a Decision Card; one that can change a conclusion always waits for a person). Each tool says what it can change.
+* **Requests waiting for a person** lists every agent request in every study, oldest first, with the agent's reason. Choose **Approve** or **Turn down** and say why (the same as on Results); one that could change a conclusion is marked as such. The agent bell in the top bar counts them, and a request an agent makes reaches the page within about a second.
+* **Recent agent activity**, newest first: the requests and choices agents made on Decision Cards, and the proposals they made in Studio inboxes, for this study or for all; each says what happened ("Waiting for a person", "Answered by a person", "Not applied: the card changed"). For a study whose design and curves are not confirmed yet, requests and entries are counted but not listed.
+
+**What agents may do on their own** is a setting of each study, with the autonomy switch in that study's top bar; a new study starts at **Suggest**. In *Suggest* every request from an agent waits for you. In *Decide and tell me* an agent may apply a choice that cannot change any conclusion, and you are told (the entry is in the record, marked as the agent's, with Undo on its card); everything else still waits for you, at either setting. A choice that can change a conclusion is always yours. Each change of the setting is kept beside the decision chain, with who made it. An agent that can run commands as you can still act as you; give agents MCP access, not your shell.
 
 ## 13. Ask
 
-Press ⌘J (or the Ask button) and ask the open study a question in plain words, for example "Is ODC1 up, and does it depend on the reference genes?". Every answer says which tool answered it, who wrote the words (a template or the model) and the facts it cites. Numbers in an answer are facts qPilot computed; text that contains a number the engine did not produce is discarded. Asking to *change* a choice does not change it: it goes to the person (you).
+Press ⌘J (or the Ask button in the top bar) and ask the open study a question in plain words; the box says "Ask about a gene, a choice or the study", and **Try one of these** offers questions written from your own study. Until the design and the curves are confirmed the drawer says it waits until the study is unblinded. **Answer from** chooses between the study's own engine and, once the audit has run, the audit's (verdicts, what-if and what-to-check-first questions go to the audit by default).
+
+Every answer says which tool answered it (the study summary, one gene's robustness, the sample-size planner, where a number comes from, a change request on a Decision Card, or an audit look-up), how the question was routed (the model, keyword matching, or fixed reading rules), who wrote the words (the model, with every number checked, or qPilot's checked template), and a table of **the numbers in this answer, from the study's facts**. Text that contains a number the engine did not produce is discarded. **What the model saw** shows the exact last payload this qPilot process sent to a model (kept in memory only; withheld while a design or curves stage is unconfirmed unless it came from the Design Interpreter).
+
+Ask never changes a choice, at either autonomy setting: it only reads. If you ask it to change one, it writes nothing, says "Ask never changes a choice" and names the Decision Card where a person decides it.
 
 ## 14. Settings
 
 * **Model.** The provider (none, a local OpenAI-compatible server, or Anthropic) comes from the environment (`QPILOT_MODEL_PROVIDER` and the other variables in [agents.md](agents.md)); the page shows its status and reason, **Check connection**, and **Test this model**, which scores the model on your study (correct answers, invented numbers caught, safety, fallbacks, latency). The page has no field for an endpoint or a key, on purpose.
-* **Autonomy.** *Suggest* (the default): the in-page model only suggests. *Decide and tell me*: the in-page model may also apply choices that cannot change any conclusion, and tells you. A choice that can change a conclusion always waits for you, at either setting.
+* **What agents may do on their own** explains the two levels and shows the policy lines; it sets nothing. The setting belongs to each study and is changed with the autonomy switch in that study's top bar ([section 12](#12-agents)); a new study starts at *Suggest*.
 * **Theme**, **Start a fresh demo** (moves earlier work aside), the "what qPilot never does" lines and the version.
 
 ## 15. Keyboard
@@ -221,7 +248,7 @@ Everything can also be done with the Tab key, and every control shows where the 
 | "Open the link qPilot printed in your terminal" | This tab does not carry this launch's key (the page was restarted, or opened by typing the address) | Open the link from the terminal where `qpilot app` runs |
 | "Something was decided since you loaded this" | Another tab or an agent changed the record while you were reading | Read the current state shown and decide again |
 | A section is locked | The step before it is not confirmed | The lock says which one |
-| "The demo study is not downloaded yet" | The demo is not on this computer | Press **Download** on Open, or run `qpilot fetch-demo` |
+| "The demo study is not downloaded yet" | The demo is not on this computer | Click **Download 7.0 MB and open** on Open, or run `qpilot fetch-demo` |
 | The audit is refused | Its baseline does not reproduce qPilot, or the design has technical replicates | The page gives the reason in words |
 | The model chip says "not answering" | The model is configured but does not answer; hover for the reason | Rules answer alone meanwhile; check the endpoint and name |
 | The live dot is not green | The page lost its connection to qPilot | It reconnects by itself; if not, is `qpilot app` still running? |

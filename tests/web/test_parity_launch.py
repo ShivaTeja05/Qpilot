@@ -110,8 +110,13 @@ def test_store_files_are_never_served(sclient, web_store, opened):
 # ---- uploads are capped while they stream (P20) ----------------------------------------------
 
 
-def _upload(app, headers: dict[str, str], chunks: list[bytes]) -> tuple[int, int]:
-    """Drive one POST /api/workspaces through the ASGI app; (status, body bytes it pulled)."""
+def _upload(
+    app, headers: dict[str, str], chunks: list[bytes], method: str = "POST"
+) -> tuple[int, int]:
+    """Drive one write through the ASGI app; (status, body bytes it pulled).
+
+    A POST goes to ``/api/workspaces`` (an upload), a PUT to ``/api/settings`` (JSON).
+    """
     pulled = 0
     sent: list[dict] = []
     pending = iter(chunks)
@@ -127,14 +132,15 @@ def _upload(app, headers: dict[str, str], chunks: list[bytes]) -> tuple[int, int
     async def send(message: dict) -> None:
         sent.append(message)
 
+    path = "/api/workspaces" if method == "POST" else "/api/settings"
     scope = {
         "type": "http",
         "asgi": {"version": "3.0"},
         "http_version": "1.1",
-        "method": "POST",
+        "method": method,
         "scheme": "http",
-        "path": "/api/workspaces",
-        "raw_path": b"/api/workspaces",
+        "path": path,
+        "raw_path": path.encode(),
         "query_string": b"",
         "root_path": "",
         "headers": [(k.encode(), v.encode()) for k, v in headers.items()],
@@ -179,6 +185,22 @@ def test_a_chunked_upload_over_the_cap_is_refused_while_it_streams(web_ctx, smal
     status, pulled = _upload(create_app(web_ctx), headers, body)
     assert status == 413
     assert pulled <= 2 * MB, f"read {pulled // MB} MB of an 8 MB body over a 1 MB cap"
+
+
+def test_a_json_write_over_its_cap_is_refused_while_it_streams(web_ctx):
+    """Old qsim read at most 64 KiB of a JSON body; the one server caps JSON writes at 1 MB."""
+    body = [b'{"autonomy": "suggest", "pad": "'] + [b"x" * (256 * 1024)] * 16 + [b'"}']
+    headers = {
+        "host": "127.0.0.1:7860",
+        "origin": BASE,
+        "x-qpilot-token": TOKEN,
+        "content-type": "application/json",
+    }
+    app = create_app(web_ctx)
+    status, pulled = _upload(app, {**headers, "content-length": str(4 * MB)}, body, "PUT")
+    assert status == 413 and pulled == 0
+    status, pulled = _upload(app, headers, body, "PUT")  # chunked
+    assert status == 413 and pulled <= security.MAX_BODY_BYTES + 512 * 1024
 
 
 # ---- errors are sentences, never a traceback (P21) -------------------------------------------

@@ -11,7 +11,7 @@ Built at the *Reinvent the Wheel: A Tools for Science Hack* (London, 16–18 Oct
 From the instrument's raw curves to a record anyone can re-run, on the same study throughout, in **one page** (`qpilot app`) on your computer:
 
 1. **Studio** (the page's Design and Curves sections): the AI (fixed rules, a language model when one is configured, the Curve Judge) proposes the design and the curve calls, the deterministic engine checks every proposal and computes every number, and the scientist decides. Nothing that pairs a group with a number is shown until the design and the curves are confirmed. [`docs/studio.md`](docs/studio.md)
-2. **Results and Decision Cards**: every gene's call with its fold change, confidence level and how often the call holds across every reasonable analysis, and the choices that could change a conclusion, ranked, for you to decide.
+2. **Results and Decision Cards**: every gene's call with its fold change, confidence level and how often the call holds across the analyses qPilot checks (every control-gene set, cut-off, empty-well rule and amplification-call rule), and the choices that could change a conclusion, ranked, for you to decide.
 3. **The robustness audit** (the Audit section): the Decision Simulator (`qsim`, in [`sim/`](sim/README.md)) re-runs the study the scientist confirmed under every combination of eight analysis decisions (90,396 analyses on the demo), gives each gene a verdict, and reproduces qPilot at the baseline. [`docs/integration.md`](docs/integration.md)
 4. **Prism and the Analysis Record**: send the study to GraphPad Prism and read its changes back as proposals; export the input, the results, every decision with its reason and who made it, and the audit as one hash-chained, checksummed record anyone can verify and re-run (tamper-evident, not signed; see below).
 5. **One MCP server for agents**: `qpilot serve`, 16 tools (qPilot's 11 `qpcr_*` and the audit's 5 read-only `sim_*`). An agent can ask and propose; a choice that can change a conclusion always waits for a person, and the page shows what an agent is waiting to ask you.
@@ -61,9 +61,9 @@ One hash-routed page, one study at a time. The rail lists the workflow in order,
 | **Prism** | The Prism project and bundle, and the round trip back |
 | **Record** | The decision chain, export of the Analysis Record, verification of a record |
 | **Agents** | How to connect an agent, and what agents are asking or have done |
-| **Settings** | The model's status and a test of it, autonomy, theme |
+| **Settings** | The model's status and a test of it, what agents may do on their own (explained here; set for each study in its top bar), theme |
 
-What the page never does: it never makes a choice that can change a conclusion; it never shows a group difference before the design and the curves are confirmed (the server refuses, the page does not merely hide it); it never shows a number the engine did not compute; it never loads anything from the internet on its own (the demo download happens only when you press **Download**); and it never records a decision as anyone but the person at the page.
+What the page never does: it never makes a choice that can change a conclusion; it never shows a group difference before the design and the curves are confirmed (the server refuses, the page does not merely hide it); it never shows a number the engine did not compute; it never loads anything from the internet on its own (the demo download happens only when you click **Download 7.0 MB and open**); and it never records a decision as anyone but the person at the page.
 
 ## The engine and the command line
 
@@ -88,7 +88,7 @@ All maths is ordinary, deterministic Python; no language model is involved. Step
 1. **Curves**: LinRegPCR, vendored unchanged from the RDML consortium's rdmlpython, on every plate ([method card](methods/linregpcr.md)).
 2. **Control genes**: geNorm stability and the pairwise ratio check between the groups ([method card](methods/genorm.md)).
 3. **Comparison**: Welch's t-test on log2 relative quantities, with a stated rule: *up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call* ([method card](methods/contrast.md)).
-4. **Robustness**: every reasonable analysis of the same plates (31 control-gene sets × 3 group cut-offs × 2 rules for empty wells on the demo: 186 analyses in `qpilot run` and the app; Studio adds four amplification-call rules, 744), and which choices flip which conclusions. The Decision Simulator's audit varies eight decisions (90,396 analyses on the demo).
+4. **Robustness**: every combination of the reasonable choices on the same plates (31 control-gene sets × 3 group cut-offs × 2 rules for empty wells on the demo: 186 analyses in `qpilot run`; Studio adds four amplification-call rules, 744), and which choices flip which conclusions. The Decision Simulator's audit varies eight decisions (90,396 analyses on the demo) and gives its verdicts from its own reasonable set (144 on the demo).
 
 ### Validation
 

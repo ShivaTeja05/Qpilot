@@ -1,0 +1,24 @@
+{
+  "study_id": "cf49ccd72052",
+  "status": "running",
+  "reason": null,
+  "job": {
+    "id": "c6d1f0bcd93e4c87",
+    "kind": "audit",
+    "title": "Auditing the study's robustness",
+    "key": "cf49ccd72052",
+    "status": "running",
+    "step": "Running every combination of the analysis choices",
+    "fraction": 0.17,
+    "typical_s": 55.0,
+    "elapsed_s": 47.34,
+    "result": null,
+    "error": null
+  },
+  "manifest": null,
+  "current": null,
+  "decisions_since": 0,
+  "views_ready": false,
+  "loading": null,
+  "typical_s": 55.0
+}

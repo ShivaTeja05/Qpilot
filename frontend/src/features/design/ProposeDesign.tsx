@@ -5,7 +5,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 import { useRef, useState } from "react";
-import { api, unwrap, type JobView } from "@/api/client";
+import { api, unwrap, type JobView, type Schemas } from "@/api/client";
 import { count } from "@/lib/format";
 import { useFocusTarget } from "@/shell/actions";
 import { refreshWorkspace, reportWriteError } from "@/shell/writes";
@@ -14,18 +14,10 @@ import { Button, Dialog, Field, JobCard, Textarea } from "@/ui";
 const MAX_SENTENCE = 500;
 export const PROPOSE_LABEL = "Propose the design";
 
-interface Report {
-  message?: string;
-  proposed?: string[];
-  refused?: { subject?: string | null; reason?: string | null }[];
-  notes?: string[];
-  fallback?: boolean | null;
-  model_error?: string | null;
-}
-
-/** The report of a finished propose job, in words. */
+/** The report of a finished propose job (`JobView.result` of kind `propose.design`), in words. */
 export function ProposeReportView({ result }: { result: unknown }) {
-  const r = (result ?? {}) as Report;
+  // The job's result type is the contract's ProposeReport (JOB_RESULTS); fields may be absent.
+  const r = (result ?? {}) as Partial<Schemas["ProposeReport"]>;
   return (
     <div className="flex flex-col gap-1.5 text-[13px]">
       {r.message ? <p className="text-fg">{r.message}</p> : null}

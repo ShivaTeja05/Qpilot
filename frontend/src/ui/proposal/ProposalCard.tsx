@@ -26,7 +26,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import type { JobView } from "@/api/client";
+import { ApiError, type JobView } from "@/api/client";
 import { useJob } from "@/api/jobs";
 import { cn } from "@/lib/cn";
 import { relativeTime } from "@/lib/format";
@@ -144,6 +144,11 @@ const STATUS_TONE: Record<Proposal["status"], Tone> = {
   rejected: "neutral",
   superseded: "neutral",
 };
+
+/** "Not done" for a refusal; the panel's own heading for a stale view, a lost key or no server. */
+function errorTitle(error: unknown): string | undefined {
+  return error instanceof ApiError && (error.stale || error.needsKey || error.code === "offline") ? undefined : "Not done";
+}
 
 /** A `{matters: bool|null}` job result (or a bare boolean) → the answer. */
 function readMatters(result: unknown): boolean | null | undefined {
@@ -333,11 +338,17 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
   const edits = mode === "edit" ? diffPayload(p.payload as Payload, draft) : {};
   const editKey = JSON.stringify(edits);
   const checking = mode === "edit" && Boolean(onCheckEdit) && editKey !== "{}";
+  // The latest onCheckEdit, so a parent that re-renders does not restart the check.
+  const checkRef = useRef(onCheckEdit);
   useEffect(() => {
-    if (!checking || !onCheckEdit) return;
+    checkRef.current = onCheckEdit;
+  });
+  useEffect(() => {
+    const check = checkRef.current;
+    if (!checking || !check) return;
     let live = true;
     const timer = setTimeout(() => {
-      onCheckEdit(JSON.parse(editKey) as Payload).then(
+      check(JSON.parse(editKey) as Payload).then(
         (check) => live && setRecheck({ key: editKey, check }),
         () => live && setRecheck({ key: editKey, failed: true }),
       );
@@ -346,7 +357,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
       live = false;
       clearTimeout(timer);
     };
-  }, [checking, editKey, onCheckEdit]);
+  }, [checking, editKey]);
   const recheckNow = checking && recheck?.key === editKey ? recheck : null;
   const recheckStatus = !checking ? "idle" : !recheckNow ? "checking" : recheckNow.failed ? "failed" : "done";
 
@@ -517,7 +528,17 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
 
         {/* 2–5 */}
         <div className="mt-2 divide-y divide-line border-t border-line">
-          <Part label="Why" summary={<WhySummary evidence={p.evidence} quotes={quotes} />}>
+          <Part
+            label="Why"
+            summary={
+              !p.evidence.length && p.reasons.length ? (
+                // Nothing cited: the proposer's own reasons are the why.
+                <span className="text-fg">{p.reasons.join("; ")}</span>
+              ) : (
+                <WhySummary evidence={p.evidence} quotes={quotes} />
+              )
+            }
+          >
             {p.evidence.length ? (
               <EvidenceList evidence={p.evidence} quotes={quotes} sheetCells={sheetCells} onOpenWell={onOpenWell} />
             ) : null}
@@ -542,11 +563,11 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
             summary={
               <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <LevelTag level={p.level} />
-                {p.reasons.length === 1 ? <span className="text-muted">{p.reasons[0]}</span> : null}
+                {p.reasons.length === 1 && p.evidence.length ? <span className="text-muted">{p.reasons[0]}</span> : null}
               </span>
             }
           >
-            {p.reasons.length > 1 ? (
+            {p.reasons.length > 1 && p.evidence.length ? (
               <ul className="list-disc space-y-1 pl-5 text-[13px] text-muted">
                 {p.reasons.map((r, i) => (
                   <li key={i}>{r}</li>
@@ -633,7 +654,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   />
                 </>
               ) : null}
-              {error ? <ErrorPanel error={error} compact title="Not done" /> : null}
+              {error ? <ErrorPanel error={error} compact title={errorTitle(error)} /> : null}
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant={mode === "reject" ? "danger" : "primary"}
@@ -682,7 +703,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   <Kbd>a</Kbd> accept <Kbd>e</Kbd> edit <Kbd>x</Kbd> reject
                 </span>
               ) : null}
-              {error && !mode ? <ErrorPanel error={error} compact title="Not done" className="w-full" /> : null}
+              {error && !mode ? <ErrorPanel error={error} compact title={errorTitle(error)} className="w-full" /> : null}
             </div>
           )
         ) : null}

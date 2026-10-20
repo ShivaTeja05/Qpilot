@@ -12,7 +12,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
       <div className="text-[12px] text-muted">{label}</div>
       <div className="tabular text-xl font-semibold tracking-tight text-fg">{value}</div>
       {sub && (
-        <div className="truncate text-[12px] text-faint" title={sub}>
+        <div className="truncate text-[12px] text-muted" title={sub}>
           {sub}
         </div>
       )}
@@ -37,7 +37,7 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
             key={grp.label}
             label={grp.label}
             value={count(grp.n)}
-            sub={i === 0 ? "the compared group" : "the comparison group"}
+            sub={i === 0 ? "compared" : "against"}
           />
         ))}
         <Stat label="Genes compared" value={count(s.n_genes)} />
@@ -98,7 +98,7 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
                 className="inline-flex items-center gap-1 font-medium text-accent hover:underline"
               >
                 <ShieldCheck size={13} aria-hidden />
-                Test every reasonable analysis
+                Run the robustness audit
               </Link>
             </p>
           )}

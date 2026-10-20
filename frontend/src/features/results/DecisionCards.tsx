@@ -6,7 +6,7 @@
 import { AlertTriangle, Bot, Check, ChevronDown, CircleCheck, Sparkles, Undo2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ApiError } from "@/api/client";
+import { ApiError, type Schemas } from "@/api/client";
 import { useJob } from "@/api/jobs";
 import { CALLS, Glyph, type CallKey } from "@/charts";
 import { cn } from "@/lib/cn";
@@ -20,7 +20,6 @@ import {
   type CardView,
   type CardsView,
   type DecisionDone,
-  type FactText as Fact,
 } from "./api";
 import { FactSource, FactText } from "./FactText";
 
@@ -35,8 +34,9 @@ export function cardOrder(cards: readonly CardView[]): CardView[] {
 
 function doneToast(title: string, done: DecisionDone) {
   const s = done.outcome.status;
-  if (s === "applied") toast.success(title, { description: done.message });
-  else if (s === "pending_human") toast.info(title, { description: done.message });
+  if (s === "applied") toast.success(title, { description: done.message, duration: 10_000 });
+  else if (s === "pending_human")
+    toast.info(title, { description: done.message, duration: 10_000 });
   else if (s === "stale")
     toast.warning("Something was decided since you loaded this", {
       description: "Here is the current state; decide again if you still want to.",
@@ -72,7 +72,7 @@ export function DecisionCards({
   const ordered = useMemo(() => cardOrder(view.cards), [view.cards]);
   const firstOpen = ordered.findIndex((c) => c.card.status === "open" || c.pending.length > 0);
   const refs = useRef<(HTMLElement | null)[]>([]);
-  const [focus, setFocus] = useState(0);
+  const [focus, setFocus] = useState(-1);
   const modelAnswers = useModelAnswers();
   useEffect(() => {
     if (!focusCard) return;
@@ -150,13 +150,7 @@ const STATUS_BADGE: Record<
   pending_human: { label: "Agent request", tone: "warn" },
 };
 
-interface Explanation {
-  text: Fact;
-  validated?: boolean;
-  fallback?: boolean;
-  provider?: string | null;
-  note?: string;
-}
+type Explanation = Schemas["Explanation"];
 
 function DecisionCardItem({
   ref,
@@ -187,6 +181,8 @@ function DecisionCardItem({
   const pending = Boolean(request) || card.status === "pending_human";
   const [open, setOpen] = useState(!done || expanded || pending);
   const [undoing, setUndoing] = useState(false);
+  /** A decided card reopened to choose another option (a new chain entry). */
+  const [changing, setChanging] = useState(false);
   const chosen = view.options.find((o) => o.chosen)?.id ?? card.decision ?? card.recommended;
   const [option, setOption] = useState(request?.option ?? chosen);
   const [reason, setReason] = useState("");
@@ -244,7 +240,13 @@ function DecisionCardItem({
         if (e.key === "Enter" && e.target === e.currentTarget) {
           e.preventDefault();
           setOpen(true);
-          requestAnimationFrame(() => reasonRef.current?.focus());
+          const el = e.currentTarget;
+          // the reason box when there is one, else the card's first action (Change, Undo)
+          requestAnimationFrame(() => {
+            const target =
+              reasonRef.current ?? el.querySelector<HTMLElement>("[data-card-body] button");
+            target?.focus();
+          });
         }
       }}
       className={cn(
@@ -309,11 +311,7 @@ function DecisionCardItem({
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 px-4 pb-4">
-              <p className="text-[13px] leading-relaxed text-muted">
-                <FactText text={view.explanation} />
-              </p>
-
+            <div className="space-y-3 px-4 pb-4" data-card-body>
               {request && (
                 <div className="flex items-start gap-2 rounded-lg border border-warn/40 bg-warn-soft p-3 text-[13px] text-fg">
                   <Bot className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
@@ -337,7 +335,7 @@ function DecisionCardItem({
                 >
                   {visible.map((o) => {
                     const selected = o.id === option;
-                    const locked = (done && !undoing) || pending;
+                    const locked = (done && !changing) || pending;
                     return (
                       <label
                         key={o.id}
@@ -417,7 +415,16 @@ function DecisionCardItem({
                 )}
               </fieldset>
 
-              {(!done || undoing || pending) && (
+              <details className="group rounded-lg bg-sunken/60 px-3 py-2 text-[13px]">
+                <summary className="cursor-pointer font-medium text-muted select-none hover:text-fg">
+                  How this was worked out
+                </summary>
+                <p className="mt-1.5 leading-relaxed text-muted">
+                  <FactText text={view.explanation} />
+                </p>
+              </details>
+
+              {(!done || undoing || changing || pending) && (
                 <div className="space-y-2">
                   <label
                     htmlFor={`reason-${card.id}`}
@@ -481,14 +488,28 @@ function DecisionCardItem({
                         </Button>
                       </>
                     ) : (
-                      <Button
-                        size="sm"
-                        disabled={!canSubmit}
-                        loading={write.isPending}
-                        onClick={() => run("decide", option)}
-                      >
-                        Decide: {labels.get(option)}
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          disabled={!canSubmit}
+                          loading={write.isPending}
+                          onClick={() => run("decide", option)}
+                        >
+                          Decide: {labels.get(option)}
+                        </Button>
+                        {changing && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setChanging(false);
+                              setOption(chosen);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </>
                     )}
                     <span className="text-[12px] text-faint">
                       <Kbd>{MOD}</Kbd>
@@ -498,18 +519,38 @@ function DecisionCardItem({
                 </div>
               )}
 
-              {done && !undoing && !pending && view.undo_option && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  icon={<Undo2 className="size-4" aria-hidden />}
-                  onClick={() => {
-                    setUndoing(true);
-                    requestAnimationFrame(() => reasonRef.current?.focus());
-                  }}
-                >
-                  Undo{view.undo_label ? `: back to ${view.undo_label}` : ""}
-                </Button>
+              {done && !undoing && !changing && !pending && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setChanging(true);
+                      requestAnimationFrame(() => reasonRef.current?.focus());
+                    }}
+                  >
+                    Change the decision
+                  </Button>
+                  {view.undo_option && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon={<Undo2 className="size-4" aria-hidden />}
+                      onClick={() => {
+                        setUndoing(true);
+                        requestAnimationFrame(() => reasonRef.current?.focus());
+                      }}
+                    >
+                      Undo{view.undo_label ? `: back to ${view.undo_label}` : ""}
+                    </Button>
+                  )}
+                  {!view.undo_option && (
+                    <p className="w-full text-[12px] text-muted">
+                      Nothing to undo here: to change it, decide another option (a new entry in the
+                      record).
+                    </p>
+                  )}
+                </div>
               )}
 
               {modelAnswers && (
@@ -521,7 +562,7 @@ function DecisionCardItem({
                       </p>
                       <FactSource text={explanation.text} />
                       {explanation.note && (
-                        <p className="text-[12px] text-faint">{explanation.note}</p>
+                        <p className="text-[12px] text-muted">{explanation.note}</p>
                       )}
                     </div>
                   ) : job.data?.status === "failed" ? (

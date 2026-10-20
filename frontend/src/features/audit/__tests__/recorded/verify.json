@@ -1,0 +1,86 @@
+{
+  "ok": true,
+  "summary": "audit OK",
+  "problems": [],
+  "files_checked": 13,
+  "files": [
+    {
+      "name": "REPORT.md",
+      "bytes": 6549,
+      "sha256": "be51457f6ff82f3971b98689407e75ef1d56168ede5b18031d9e4f9709dba35a"
+    },
+    {
+      "name": "audit_manifest.json",
+      "bytes": 2251,
+      "sha256": "63ff2d773ebd5dbd1396153e8fedd56268146e64a046489c90ff954ccb175d18"
+    },
+    {
+      "name": "decisions.csv",
+      "bytes": 725,
+      "sha256": "eb16bd1298e67b289bef0bf8c70ac9da4d5df4ffbc18847f2e5d9c6d2d052c47"
+    },
+    {
+      "name": "explain.json",
+      "bytes": 36967,
+      "sha256": "fbcb577feb2de7266dde5ef04a6daceea5c2403dd473b9b7f37bc2011b8163c3"
+    },
+    {
+      "name": "genes.csv",
+      "bytes": 14529,
+      "sha256": "6869dd4d93d119258573c49a04e942e83a67f61f60d59236457c87acdeaee3ea"
+    },
+    {
+      "name": "grid.parquet",
+      "bytes": 98994073,
+      "sha256": "46629debd25f4761642f5432a785dce42593d7edc90ca23abd80c00e3f170ea2"
+    },
+    {
+      "name": "issues.csv",
+      "bytes": 25276,
+      "sha256": "a65ad676ea45a676c0377c9573eecc526d198072b83bdf227c430db93565ae52"
+    },
+    {
+      "name": "issues.json",
+      "bytes": 123948,
+      "sha256": "6357b9352bb0a7790c651c5ed05bf9598f470e71725c0f356a51e024d89696dc"
+    },
+    {
+      "name": "lock.json",
+      "bytes": 2657,
+      "sha256": "094fd471833392078c90d453c55ccd2b4bcdc89acdf60cda4e7ce71c52df98bd"
+    },
+    {
+      "name": "one_sample_flips.csv",
+      "bytes": 2671,
+      "sha256": "3e535e2b9e72327e6aa31d42b46850a2fbb2121d2bcbf0d25ae45e7e84c11561"
+    },
+    {
+      "name": "reference_wells_top50.csv",
+      "bytes": 4546,
+      "sha256": "867995447b00e8afdb6ede960d5a2cc5c179228bf17e78f5a1730e9bf8fc84a8"
+    },
+    {
+      "name": "summary.json",
+      "bytes": 15098,
+      "sha256": "8b29ee6e1905646bf1279a6fadf7cea0b0de09625741ff5acbfb6c50e2ef08a3"
+    },
+    {
+      "name": "your_choices.csv",
+      "bytes": 7445,
+      "sha256": "14fd94bddb5e7dcce03273757819d9bf99a0f5e390e1334979df53f957e1f8f3"
+    },
+    {
+      "name": "AUDIT.sha256",
+      "bytes": 1048,
+      "sha256": null
+    }
+  ],
+  "checksums_sha256": "e1d49bbe5c76a8a43cff0f6075ab113548c77844144b0ab059281d7cf783837e",
+  "lock_sha256": "5f5983a21a42e33ac5409641af1bc8442f4f27606211a8a2d3b9657252e2ea2a",
+  "bound_to_record": true,
+  "audit_chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "record_chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "decisions_since": 0,
+  "head_in_chain": true,
+  "is_current": true
+}

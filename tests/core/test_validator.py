@@ -121,6 +121,15 @@ def test_render_fact_unknown_format():
     assert render_fact(Fact(id="f_x", value="label", fmt="{:.2f}")) == "label"
 
 
+def test_render_fact_never_writes_a_large_number_in_exponent_form():
+    fold = Fact(id="f_x", value=123.4, fmt="{:.2g}", unit="×")
+    assert render_fact(fold) == "120×"  # not 1.2e+02×
+    assert render_fact(fold.model_copy(update={"value": 1.8e14})) == "180000000000000×"
+    assert render_fact(fold.model_copy(update={"value": 99.6})) == "100×"
+    assert render_fact(fold.model_copy(update={"value": 3.589883})) == "3.6×"
+    assert render_fact(Fact(id="f_p", value=3.2e-07, fmt="{:.2g}")) == "3.2e-07"
+
+
 def test_fixture_card_facts_render(fixture_cards, fixture_facts):
     for card in fixture_cards:
         prose = " ".join("{{" + fid + "}}" for fid in card.facts)

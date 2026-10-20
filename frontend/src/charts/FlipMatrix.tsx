@@ -4,11 +4,12 @@
  * Genes that flip most come first. Click a column to open the gene.
  */
 import { scaleLinear } from "d3-scale";
-import { useMemo, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChartFrame, type LegendItem } from "./core/ChartFrame";
 import { DataTable, type Column } from "./core/DataTable";
 import { fmtNum } from "./core/format";
 import { useTip, usePointNav, useWidth } from "./core/hooks";
+import { textWidth } from "./core/layout";
 import { Tooltip } from "./core/Tooltip";
 
 export interface FlipCell {
@@ -53,15 +54,31 @@ export function FlipMatrix({
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
   const narrow = width < 560;
-  const labelW = narrow ? 104 : 168;
+  // the row labels sit in their own column that never scrolls, as wide as the longest needs
+  const longest = Math.max(0, ...decisions.map((d) => textWidth(d.label, 12)));
+  const labelW = Math.round(Math.min(narrow ? 150 : 300, Math.max(80, longest + 14)));
+  const fit = (label: string) => {
+    if (textWidth(label, 12) <= labelW - 10) return label;
+    let t = label;
+    while (t.length > 4 && textWidth(`${t}…`, 12) > labelW - 10) t = t.slice(0, -1);
+    return `${t.trimEnd()}…`;
+  };
   const ordered = useMemo(() => flipOrder(genes, decisions, cell), [genes, decisions, cell]);
   const cw = Math.max(
     13,
-    Math.min(26, Math.floor((width - labelW - 8) / Math.max(1, ordered.length))),
+    Math.min(26, Math.floor((width - labelW - 40) / Math.max(1, ordered.length))),
   );
   const ch = 26;
   const headH = 72;
-  const innerW = labelW + cw * ordered.length + 8;
+  const innerW = cw * ordered.length + 40;
+  const scroller = useRef<HTMLDivElement>(null);
+  const [scroll, setScroll] = useState({ left: 0, more: false });
+  const measure = useCallback(() => {
+    const el = scroller.current;
+    if (!el) return;
+    setScroll({ left: el.scrollLeft, more: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+  }, []);
+  useLayoutEffect(measure, [measure, width, innerW]);
   const height = headH + ch * decisions.length + 4;
   const maxDelta = useMemo(
     () => Math.max(0.01, ...decisions.flatMap((d) => genes.map((g) => cell(d.id, g)?.delta ?? 0))),
@@ -160,117 +177,146 @@ export function FlipMatrix({
         />
       )}
     >
-      <div ref={ref} className="relative">
-        <div
-          className="overflow-x-auto rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          tabIndex={flat.length ? 0 : -1}
-          role="group"
-          aria-label={`${summary} Use the arrow keys to move between cells${onSelectGene ? " and Enter to open the gene" : ""}.`}
-          onKeyDown={nav.onKeyDown}
-          onBlur={() => {
-            nav.onBlur();
-            hide();
-          }}
-        >
-          <svg
-            width={innerW}
-            height={height}
-            role="img"
-            aria-label={summary}
-            className="block"
-            onPointerLeave={hide}
+      <div ref={ref} className="relative flex">
+        <svg width={labelW} height={height} aria-hidden="true" className="block shrink-0">
+          {decisions.map((d, ri) => (
+            <text
+              key={d.id}
+              x={labelW - 8}
+              y={headH + ri * ch + ch / 2 + 4}
+              textAnchor="end"
+              fontSize={12}
+              fill="var(--text)"
+              fontWeight={active?.ri === ri ? 600 : 400}
+            >
+              <title>{d.label}</title>
+              {fit(d.label)}
+            </text>
+          ))}
+        </svg>
+        <div className="relative min-w-0 flex-1">
+          <div
+            ref={scroller}
+            onScroll={measure}
+            className="overflow-x-auto rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            tabIndex={flat.length ? 0 : -1}
+            role="group"
+            aria-label={`${summary} Use the arrow keys to move between cells${onSelectGene ? " and Enter to open the gene" : ""}.`}
+            onKeyDown={(e) => {
+              nav.onKeyDown(e);
+              // keep the cell the keyboard is on in view
+              requestAnimationFrame(() => {
+                const el = scroller.current;
+                const i = el?.dataset.active ? Number(el.dataset.active) : -1;
+                if (!el || i < 0) return;
+                const x = (flat[i]?.ci ?? 0) * cw;
+                if (x < el.scrollLeft) el.scrollLeft = x - cw;
+                else if (x + cw > el.scrollLeft + el.clientWidth)
+                  el.scrollLeft = x + 2 * cw - el.clientWidth;
+              });
+            }}
+            data-active={nav.active ?? -1}
+            onBlur={() => {
+              nav.onBlur();
+              hide();
+            }}
           >
-            {ordered.map((g, ci) => {
-              const x = labelW + ci * cw + cw / 2;
-              const n = flipsPer(g);
-              return (
-                <g
-                  key={g}
-                  className={onSelectGene ? "cursor-pointer" : undefined}
-                  onClick={onSelectGene ? () => onSelectGene(g) : undefined}
-                >
-                  <text
-                    transform={`translate(${x + 3},${headH - 6}) rotate(-60)`}
-                    fontSize={11}
-                    fill={n ? "var(--text)" : "var(--text-faint)"}
-                    fontWeight={n ? 600 : 400}
+            <svg
+              width={innerW}
+              height={height}
+              role="img"
+              aria-label={summary}
+              className="block"
+              onPointerLeave={hide}
+            >
+              {ordered.map((g, ci) => {
+                const x = ci * cw + cw / 2;
+                const n = flipsPer(g);
+                return (
+                  <g
+                    key={g}
+                    className={onSelectGene ? "cursor-pointer" : undefined}
+                    onClick={onSelectGene ? () => onSelectGene(g) : undefined}
                   >
-                    {g}
-                  </text>
-                </g>
-              );
-            })}
-            {decisions.map((d, ri) => (
-              <text
-                key={d.id}
-                x={labelW - 8}
-                y={headH + ri * ch + ch / 2 + 4}
-                textAnchor="end"
-                fontSize={12}
-                fill="var(--text)"
-              >
-                {d.label}
-              </text>
-            ))}
-            {flat.map((f, i) => {
-              const x = labelW + f.ci * cw;
-              const y = headH + f.ri * ch;
-              const on = nav.active === i;
-              const delta = f.c?.delta ?? 0;
-              return (
-                <g
-                  key={`${f.d.id}:${f.g}`}
-                  onPointerEnter={() => show(x + cw / 2, y + ch / 2, tipFor(f))}
-                  onClick={onSelectGene ? () => onSelectGene(f.g) : undefined}
-                  className={onSelectGene ? "cursor-pointer" : undefined}
-                >
-                  <rect
-                    x={x + 1}
-                    y={y + 1}
-                    width={cw - 2}
-                    height={ch - 2}
-                    rx={2}
-                    fill="var(--surface-sunken)"
-                  />
-                  <rect
-                    x={x + 1}
-                    y={y + 1}
-                    width={cw - 2}
-                    height={ch - 2}
-                    rx={2}
-                    fill="var(--accent)"
-                    fillOpacity={f.c ? shade(delta) : 0}
-                  />
-                  {f.c?.flips && (
-                    <path
-                      d={`M${x + cw / 2 - 3.5} ${y + ch / 2 - 3.5} L${x + cw / 2 + 3.5} ${y + ch / 2 + 3.5} M${x + cw / 2 + 3.5} ${y + ch / 2 - 3.5} L${x + cw / 2 - 3.5} ${y + ch / 2 + 3.5}`}
-                      stroke={delta / maxDelta > 0.5 ? "var(--surface)" : "var(--text)"}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                    />
-                  )}
-                  {on && (
+                    <text
+                      transform={`translate(${x + 3},${headH - 6}) rotate(-60)`}
+                      fontSize={11}
+                      fill={n ? "var(--text)" : "var(--text-muted)"}
+                      fontWeight={n ? 600 : 400}
+                    >
+                      {g}
+                    </text>
+                  </g>
+                );
+              })}
+              {flat.map((f, i) => {
+                const x = f.ci * cw;
+                const y = headH + f.ri * ch;
+                const on = nav.active === i;
+                const delta = f.c?.delta ?? 0;
+                return (
+                  <g
+                    key={`${f.d.id}:${f.g}`}
+                    onPointerEnter={() =>
+                      show(labelW + x + cw / 2 - scroll.left, y + ch / 2, tipFor(f))
+                    }
+                    onClick={onSelectGene ? () => onSelectGene(f.g) : undefined}
+                    className={onSelectGene ? "cursor-pointer" : undefined}
+                  >
                     <rect
-                      x={x}
-                      y={y}
-                      width={cw}
-                      height={ch}
-                      rx={3}
-                      fill="none"
-                      stroke="var(--focus)"
-                      strokeWidth={2}
+                      x={x + 1}
+                      y={y + 1}
+                      width={cw - 2}
+                      height={ch - 2}
+                      rx={2}
+                      fill="var(--surface-sunken)"
                     />
-                  )}
-                </g>
-              );
-            })}
-          </svg>
+                    <rect
+                      x={x + 1}
+                      y={y + 1}
+                      width={cw - 2}
+                      height={ch - 2}
+                      rx={2}
+                      fill="var(--accent)"
+                      fillOpacity={f.c ? shade(delta) : 0}
+                    />
+                    {f.c?.flips && (
+                      <path
+                        d={`M${x + cw / 2 - 3.5} ${y + ch / 2 - 3.5} L${x + cw / 2 + 3.5} ${y + ch / 2 + 3.5} M${x + cw / 2 + 3.5} ${y + ch / 2 - 3.5} L${x + cw / 2 - 3.5} ${y + ch / 2 + 3.5}`}
+                        stroke={delta / maxDelta > 0.5 ? "var(--surface)" : "var(--text)"}
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                      />
+                    )}
+                    {on && (
+                      <rect
+                        x={x}
+                        y={y}
+                        width={cw}
+                        height={ch}
+                        rx={3}
+                        fill="none"
+                        stroke="var(--focus)"
+                        strokeWidth={2}
+                      />
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+          {scroll.more && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-surface to-transparent"
+            />
+          )}
         </div>
         <Tooltip
           tip={
             active
               ? {
-                  x: Math.min(width - 20, labelW + active.ci * cw + cw / 2),
+                  x: Math.min(width - 20, labelW + active.ci * cw + cw / 2 - scroll.left),
                   y: headH + active.ri * ch + ch / 2,
                   content: tipFor(active),
                 }

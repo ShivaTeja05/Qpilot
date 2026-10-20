@@ -94,8 +94,8 @@ differs); see also [studio-measured.md](studio-measured.md).
    could change a conclusion, so those 110 wells are listed, one card each, each contradicted by
    LinRegPCR's complete fit (`D-CURVE`) and each saying only that it matters. Reject them with
    one reason, accept LinRegPCR's call rule, confirm.
-3. **Choices.** Results appear: ODC1 3.590× up, every conclusion recomputed under 744 reasonable
-   analyses; the usual route (2^-ΔΔCq per sample, Welch on the linear scale) would change 14 of
+3. **Choices.** Results appear: ODC1 3.590× up, every conclusion recomputed under the 744 analyses
+   qPilot checks; the usual route (2^-ΔΔCq per sample, Welch on the linear scale) would change 14 of
    58 conclusions (21 with Student's t test, 4 with ΔΔCq at an assumed efficiency of 2.0).
    Decide the cards, confirm.
 4. **Prism draft.** Draft the project, accept it, press Send to Prism: the bundle (one CSV per
