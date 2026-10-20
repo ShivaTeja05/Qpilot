@@ -24,6 +24,17 @@ Rules the server enforces:
 - **What this does not cover:** the gate binds agents whose only access to qPilot is MCP (the page's Ask never writes at all). People decide on the page (`qpilot app`); the command line has no decide command. **An agent that can run commands as you can still act as you,** for example by importing qPilot's library, or by reading the launch key `qpilot app` printed and calling the page's API on 127.0.0.1. Give agents MCP access, not your shell.
 - **Output:** tools return engine output as JSON, never model-written prose.
 
+### On the page: the Agents section
+The page's **Agents** section (`GET /api/agents`) is where a person sees what agents are doing, with the same facts the server enforces:
+
+* **Connect an agent:** the command above with a copy button (it names the study store when `qpilot serve` would otherwise use another one), and the rules the code enforces.
+* **The tools**, grouped by what they can change: *Read*, *Open*, *Propose*, *Request a decision*; every tool `qpilot serve` registers is listed (a test fails if one is missing), with what it can change.
+* **Requests waiting for a person**, in every study: **Approve** (the person decides that option, as `human`) or **Turn down**, each with a reason. A request that could change a conclusion is marked. The agent bell in the top bar counts them.
+* **Recent agent activity**, newest first: requests and choices on Decision Cards, and proposals in Studio inboxes, with what happened to each. For a Studio session whose design and curves are not both confirmed, the requests and entries are counted but not listed (the page is blind there, as for any result).
+* **What an agent may do on its own** is a setting of each study, changed with the autonomy switch in the study's top bar (`PUT /api/studies/{id}/autonomy`): *Suggest* (the default; every request waits) or *Decide and tell me* (a choice that cannot change any conclusion is applied and the person is told). Each change is kept beside the decision chain, recorded as a person's.
+
+[`user-guide.md`](user-guide.md#12-agents) describes the section for scientists.
+
 ### The Decision Simulator's tools (when it is installed)
 With the simulator installed (`pip install -e '.[sim]'` from a clone), the same server also serves five read-only `sim_*` tools
 (`sim_audit`, `sim_gene`, `sim_decisions`, `sim_whatif`, `sim_findings`) over the audit a person
