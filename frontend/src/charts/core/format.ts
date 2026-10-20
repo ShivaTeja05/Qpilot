@@ -28,7 +28,8 @@ export const fmtP = (p: number | null | undefined): string => pValue(p);
 export const fmtShare = (share: number | null | undefined): string => percent(share);
 
 /** A percentage already in 0–100: `64 %`. */
-export const fmtPct = (pct: number | null | undefined): string => percent(pct == null ? pct : pct / 100);
+export const fmtPct = (pct: number | null | undefined): string =>
+  percent(pct == null ? pct : pct / 100);
 
 /** A count with narrow spaces between thousands: `24 576`. */
 export const fmtCount = (n: number | null | undefined): string => count(n);

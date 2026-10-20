@@ -41,19 +41,48 @@ export interface AnalysesStripProps {
 const TOP = 26;
 const MAX_STACK_PX = 190;
 
-export function AnalysesStrip({ rows, line, lineLabel, lower, higher, summary, caption }: AnalysesStripProps) {
+export function AnalysesStrip({
+  rows,
+  line,
+  lineLabel,
+  lower,
+  higher,
+  summary,
+  caption,
+}: AnalysesStripProps) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
-  const fs = useMemo(() => foldScale(rows.map((d) => d.log2), line, 14, width - 14, 44, false), [rows, line, width]);
+  const fs = useMemo(
+    () =>
+      foldScale(
+        rows.map((d) => d.log2),
+        line,
+        14,
+        width - 14,
+        44,
+        false,
+      ),
+    [rows, line, width],
+  );
 
   const { placed, r, step } = useMemo(() => {
     // shrink the dots until the tallest pile fits, then squeeze if it still does not
     let r = width < 520 ? 4 : 4.5;
-    let placed = dotStack(rows, (d) => fs.x(d.log2), r, (d) => CALL_ORDER.indexOf(d.call) * 2 + Number(d.planned));
+    let placed = dotStack(
+      rows,
+      (d) => fs.x(d.log2),
+      r,
+      (d) => CALL_ORDER.indexOf(d.call) * 2 + Number(d.planned),
+    );
     let tallest = Math.max(0, ...placed.map((p) => p.dy));
     while (tallest > MAX_STACK_PX && r > 2.5) {
       r -= 0.5;
-      placed = dotStack(rows, (d) => fs.x(d.log2), r, (d) => CALL_ORDER.indexOf(d.call) * 2 + Number(d.planned));
+      placed = dotStack(
+        rows,
+        (d) => fs.x(d.log2),
+        r,
+        (d) => CALL_ORDER.indexOf(d.call) * 2 + Number(d.planned),
+      );
       tallest = Math.max(0, ...placed.map((p) => p.dy));
     }
     const k = tallest > MAX_STACK_PX ? MAX_STACK_PX / tallest : 1;
@@ -71,28 +100,47 @@ export function AnalysesStrip({ rows, line, lineLabel, lower, higher, summary, c
   const tipFor = (d: AnalysisDot) => ({
     title: d.planned ? "Your planned analysis" : d.choices.join(" + "),
     value: d.foldText ?? fmtFoldLog2(d.log2),
-    lines: [d.callText ?? CALLS[d.call].label, d.planned ? null : d.same ? "Same call as planned" : "A different call from planned"],
+    lines: [
+      d.callText ?? CALLS[d.call].label,
+      d.planned ? null : d.same ? "Same call as planned" : "A different call from planned",
+    ],
   });
 
-  const counts = CALL_ORDER.map((c) => ({ c, n: rows.filter((d) => d.call === c).length })).filter((x) => x.n);
+  const counts = CALL_ORDER.map((c) => ({ c, n: rows.filter((d) => d.call === c).length })).filter(
+    (x) => x.n,
+  );
   const legend: LegendItem[] = [
     ...counts.map(({ c, n }) => ({ mark: CALLS[c], label: CALLS[c].label, count: n })),
-    {
-      swatch: (
-        <svg width="14" height="14" aria-hidden="true">
-          <circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--accent)" strokeWidth="2" />
-        </svg>
-      ),
-      label: "Your planned analysis",
-    },
+    { mark: { shape: "diamond", tone: "var(--accent)" }, label: "Your planned analysis" },
     ...(line ? [{ swatch: <LineSwatch dashed />, label: lineLabel ?? "Call line" }] : []),
   ];
 
   const columns: Column<AnalysisDot>[] = [
-    { key: "choices", header: "Choices that differ from planned", cell: (d) => (d.planned ? "None (your planned analysis)" : d.choices.join(" + ")), sort: (d) => d.choices.join(" ") },
-    { key: "fold", header: "Fold change", cell: (d) => d.foldText ?? fmtFoldLog2(d.log2), sort: (d) => d.log2, numeric: true },
-    { key: "call", header: "Call", cell: (d) => d.callText ?? CALLS[d.call].label, sort: (d) => d.call },
-    { key: "same", header: "Same as planned", cell: (d) => (d.same ? "yes" : "no"), sort: (d) => Number(d.same) },
+    {
+      key: "choices",
+      header: "Choices that differ from planned",
+      cell: (d) => (d.planned ? "None (your planned analysis)" : d.choices.join(" + ")),
+      sort: (d) => d.choices.join(" "),
+    },
+    {
+      key: "fold",
+      header: "Fold change",
+      cell: (d) => d.foldText ?? fmtFoldLog2(d.log2),
+      sort: (d) => d.log2,
+      numeric: true,
+    },
+    {
+      key: "call",
+      header: "Call",
+      cell: (d) => d.callText ?? CALLS[d.call].label,
+      sort: (d) => d.call,
+    },
+    {
+      key: "same",
+      header: "Same as planned",
+      cell: (d) => (d.same ? "yes" : "no"),
+      sort: (d) => Number(d.same),
+    },
   ];
 
   return (
@@ -100,8 +148,14 @@ export function AnalysesStrip({ rows, line, lineLabel, lower, higher, summary, c
       summary={summary}
       legend={legend}
       caption={caption}
-      live={active ? `${tipFor(active.item).title}: ${tipFor(active.item).value}, ${tipFor(active.item).lines[0]}` : undefined}
-      table={() => <DataTable columns={columns} rows={rows} rowKey={(_d, i) => String(i)} caption={summary} />}
+      live={
+        active
+          ? `${tipFor(active.item).title}: ${tipFor(active.item).value}, ${tipFor(active.item).lines[0]}`
+          : undefined
+      }
+      table={() => (
+        <DataTable columns={columns} rows={rows} rowKey={(_d, i) => String(i)} caption={summary} />
+      )}
     >
       <div
         ref={ref}
@@ -115,8 +169,23 @@ export function AnalysesStrip({ rows, line, lineLabel, lower, higher, summary, c
           hide();
         }}
       >
-        <svg width={width} height={height} role="img" aria-label={summary} className="block overflow-visible" onPointerLeave={hide}>
-          <FoldAxis scale={fs} top={TOP} bottom={bottom} line={line} lineLabel={lineLabel} lower={lower} higher={higher} />
+        <svg
+          width={width}
+          height={height}
+          role="img"
+          aria-label={summary}
+          className="block overflow-visible"
+          onPointerLeave={hide}
+        >
+          <FoldAxis
+            scale={fs}
+            top={TOP}
+            bottom={bottom}
+            line={line}
+            lineLabel={lineLabel}
+            lower={lower}
+            higher={higher}
+          />
           {placed.map((p, i) => {
             const d = p.item;
             const y = cy(p.dy);
@@ -124,13 +193,34 @@ export function AnalysesStrip({ rows, line, lineLabel, lower, higher, summary, c
             return (
               <g key={i} onPointerEnter={() => show(p.x, y, tipFor(d))}>
                 <circle cx={p.x} cy={y} r={Math.max(6, r + 2)} fill="transparent" />
-                <GlyphMark mark={CALLS[d.call]} x={p.x} y={y} r={on ? r + 1.5 : r} />
-                {(d.planned || on) && <circle cx={p.x} cy={y} r={r + 3.5} fill="none" stroke="var(--accent)" strokeWidth={2} />}
+                {d.planned ? (
+                  <GlyphMark
+                    mark={{ shape: "diamond", tone: "var(--accent)" }}
+                    x={p.x}
+                    y={y}
+                    r={r + 2}
+                  />
+                ) : (
+                  <GlyphMark mark={CALLS[d.call]} x={p.x} y={y} r={on ? r + 1.5 : r} />
+                )}
+                {on && (
+                  <circle
+                    cx={p.x}
+                    cy={y}
+                    r={r + 4}
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth={1.5}
+                  />
+                )}
               </g>
             );
           })}
         </svg>
-        <Tooltip tip={active ? { x: active.x, y: cy(active.dy), content: tipFor(active.item) } : tip} width={width} />
+        <Tooltip
+          tip={active ? { x: active.x, y: cy(active.dy), content: tipFor(active.item) } : tip}
+          width={width}
+        />
       </div>
     </ChartFrame>
   );

@@ -11,13 +11,14 @@ frontend/e2e/reset-store.sh               # fresh copy of the seeded demo store 
 (cd frontend && npm run build)            # the page the server serves; do not commit qpilot/web/static
 qpilot app --no-open --port $APP_PORT &   # the server under test
 cd frontend && npx playwright install chromium   # once per machine (browsers are not committed)
-npm run e2e                               # all specs; or: npx playwright test e2e/screens.spec.ts
+nice -n 10 npm run e2e                    # all specs; or: npx playwright test e2e/screens.spec.ts
 git checkout -- ../qpilot/web/static      # before committing
 ```
 
 - `E2E_URL` — the link qPilot printed (default `http://127.0.0.1:$APP_PORT/?token=qpilot-dev`).
 - `E2E_READONLY=1` — skip the tests that write (decide + undo, export).
-- `E2E_WORKERS` — parallel browsers (default 3; one server, one store).
+- `E2E_WORKERS` — parallel browsers (default 1: one server, one store, a shared machine). Run the
+  suite under `nice -n 10`.
 
 The report is `frontend/playwright-report/` (`npx playwright show-report`); traces of failures
 are in `frontend/test-results/`. Screenshots of every section at 1440 / 1024 / 768 / 390 px in
