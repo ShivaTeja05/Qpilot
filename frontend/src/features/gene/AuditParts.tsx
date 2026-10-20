@@ -4,7 +4,7 @@
  * gene (what changes it, what it leans on, what to do). Without an audit: an invitation to run it.
  */
 import { ShieldCheck } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "wouter";
 import {
   AnalysesStrip,
@@ -19,11 +19,13 @@ import {
   type SamplePoint,
 } from "@/charts";
 import type { JobView, Schemas } from "@/api/client";
+import { useJob } from "@/api/jobs";
 import { sectionPath } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, JobCard, LoadingBlock, SegmentedControl } from "@/ui";
 import { cn } from "@/lib/cn";
 import { count, ofTotal, percent } from "@/lib/format";
-import type { AuditAnalyses, AuditEffects, AuditGeneCard, AuditSamples, AuditStatus } from "./api";
+import { loadingJob, type AuditAnalyses, type AuditEffects, type AuditGeneCard, type AuditSamples, type AuditStatus } from "./api";
+import { chartAnalyses, chartEffects, chartSamples } from "./chart";
 import { Panel, Sentences, Stat } from "./Panel";
 
 type Workspace = Pick<Schemas["WorkspaceView"], "key" | "kind">;
@@ -47,9 +49,26 @@ function Loaded<T>({
   children: (data: T) => ReactNode;
 }) {
   if (query.data) return <>{children(query.data)}</>;
+  const loading = loadingJob(query.error);
+  if (loading) return <LoadJob job={loading} onDone={() => void query.refetch()} />;
   if (query.error) return <ErrorPanel compact error={query.error} onRetry={() => void query.refetch()} />;
   if (warming) return <JobCard id={warming.id} />;
   return <LoadingBlock label={label} lines={4} />;
+}
+
+/** The audit's views are loading (the first read rebuilds the study): follow the job, then ask again. */
+function LoadJob({ job, onDone }: { job: JobView; onDone: () => void }) {
+  const followed = useJob(job.id);
+  const status = followed.data?.status;
+  const done = useRef(onDone);
+  useEffect(() => {
+    done.current = onDone;
+  });
+  // Once per finished job (the callback changes every render; the status does not).
+  useEffect(() => {
+    if (status === "done") done.current();
+  }, [status]);
+  return <JobCard id={job.id} />;
 }
 
 // ---- the source switch ------------------------------------------------------------------------
@@ -163,7 +182,7 @@ export function WhatHolds({
           <Loaded query={analyses} label="Reading every reasonable analysis" warming={warming}>
             {(data) => (
               <AnalysesStrip
-                rows={analysesDots(data)}
+                rows={analysesDots(chartAnalyses(data))}
                 line={data.line_log2}
                 lineLabel={`${data.line} line`}
                 {...sideWords(labels.hi)}
@@ -235,7 +254,7 @@ export function OneChoice({
             const changing = data.decisions.filter((d) => d.n_change > 0);
             return (
               <ChoiceDotPlot
-                decisions={choiceRows(data)}
+                decisions={choiceRows(chartEffects(data))}
                 line={data.line_log2}
                 lineLabel={`${data.line} line`}
                 {...sideWords(labels.hi)}
@@ -295,6 +314,7 @@ export function YourSamples({
       {samples ? (
         <Loaded query={samples} label="Reading each sample's value" warming={warming}>
           {(data) => {
+            const chart = chartSamples(data);
             const carries = data.points.filter((p) => p.carries).length;
             const late = data.points.filter((p) => p.late).length;
             const flagged = data.points.filter((p) => p.flagged).length;
@@ -302,8 +322,8 @@ export function YourSamples({
             return (
               <>
                 <Beeswarm
-                  groups={sampleGroups(data)}
-                  points={samplePoints(data)}
+                  groups={sampleGroups(chart)}
+                  points={samplePoints(chart)}
                   foldText={data.fold}
                   lateCut={data.late_cut}
                   {...sideWords(labels.hi)}
@@ -420,7 +440,7 @@ export function AuditInvite({
   compact,
 }: {
   workspace: Workspace;
-  status: AuditStatus | null;
+  status: (Pick<AuditStatus, "status"> & Partial<Pick<AuditStatus, "reason" | "job">>) | null;
   /** A job started from here (or the server's running one). */
   job: JobView | null;
   onRun: (() => void) | null;
