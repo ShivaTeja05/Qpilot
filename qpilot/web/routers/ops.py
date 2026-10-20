@@ -538,7 +538,7 @@ def _model_note(ctx: AppContext) -> str | None:
     status = ctx.studio.model_status()
     if status["configured"]:
         return None
-    return f"No model is used: {status['reason'] or 'none is configured'}; a template answered."
+    return f"A template answered: {status['reason'] or 'no model is configured'}."
 
 
 def _cited(text: str, facts: dict[str, Any]) -> list[CitedFact]:
