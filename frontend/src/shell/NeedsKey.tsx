@@ -37,7 +37,7 @@ export function NeedsKey({ onRetry, retrying }: { onRetry: () => void; retrying?
         <Button className="mt-6" icon={<RefreshCw />} onClick={onRetry} loading={retrying}>
           I opened the link — try again
         </Button>
-        <p className="mt-6 text-[11px] text-faint">
+        <p className="mt-6 text-[11px] text-muted">
           Research use only. Not for clinical or diagnostic use.
         </p>
       </main>

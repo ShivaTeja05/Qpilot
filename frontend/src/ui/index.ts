@@ -20,7 +20,10 @@
  *   LevelTag        High/Moderate/Low/Very low with 4/3/2/1 bars: level · hideWord
  *   LevelBars       the bars alone: level
  *   VerdictTag      the six audit verdicts, glyph + word: verdict · compact
- *   ShapeGlyph      a verdict's SVG shape (disc|half|diamond|cross|alert|ring) for charts/legends
+ *   Glyph           a Mark ({shape, tone}) as an inline icon: mark · size  (VERDICT[v], LEVEL[l], CONCLUSION[c])
+ *   GlyphMark       a Mark inside a chart's SVG at (x, y): mark · x · y · r · ring
+ *   ShapeBody       the raw shape centred on (0, 0) inside an <svg>: shape · tone · r · ring
+ *   ShapeGlyph      a bare Shape inline in currentColor: shape · size · tone
  *   CheckTag        engine check consistent|contradicted|cannot_check
  * Overlays
  *   Dialog          modal: open · onOpenChange · trigger · title · description · footer · size sm|md|lg|xl
@@ -73,7 +76,8 @@ export {
 } from "./Button";
 export { Card, CardBody, CardHeader, KeyValues, PageHeader, SectionTitle } from "./Card";
 export { Badge, Dot, Kbd, type Tone } from "./Badge";
-export { CheckTag, ConclusionTag, LevelBars, LevelTag, ShapeGlyph, VerdictTag } from "./tags";
+export { CheckTag, ConclusionTag, LevelBars, LevelTag, VerdictTag } from "./tags";
+export { Glyph, GlyphMark, ShapeBody, ShapeGlyph, type ShapeBodyProps } from "./Glyph";
 export {
   Dialog,
   DialogClose,

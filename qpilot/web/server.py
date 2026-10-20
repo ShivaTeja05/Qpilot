@@ -134,6 +134,31 @@ def _static_file(relative: Path) -> Path | None:
     return path
 
 
+WARM = (
+    "qpilot.qpcr.curves",
+    "qpilot.qpcr.study",
+    "qpilot.explain.templates",
+    "qpilot.app_state",
+    "qpilot.studio_state",
+    "qsim.app",
+)
+
+
+def _warm_imports() -> None:
+    """Import the analysis modules in the background, so the first page view is not the wait."""
+    import importlib
+    import threading
+
+    def run() -> None:
+        for name in WARM:
+            try:
+                importlib.import_module(name)
+            except Exception:  # an optional part (the simulator) may be missing
+                continue
+
+    threading.Thread(target=run, name="qpilot-warm-imports", daemon=True).start()
+
+
 def free_port(start: int = DEFAULT_PORT, tries: int = 50) -> int:
     """The first port from ``start`` that 127.0.0.1 can bind."""
     for port in range(start, start + tries):
@@ -166,6 +191,7 @@ def main(
             print(f"Earlier demo work moved to {moved} (kept, never deleted)")
     token = launch_token()
     ctx = make_context(store, Studio(store), token=token, audit_dirs=audit_dirs)
+    _warm_imports()
     app = create_app(ctx)
     port = port or free_port()
     url = f"http://{HOST}:{port}/?token={token}" + (f"#/{section}" if section else "")
