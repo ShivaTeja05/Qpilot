@@ -42,7 +42,9 @@ export const LEVEL: Record<Level, { bars: number; token: string }> = {
 };
 
 export function asLevel(value: unknown): Level | null {
-  const v = String(value ?? "").toLowerCase().replace(/[_-]/g, " ");
+  const v = String(value ?? "")
+    .toLowerCase()
+    .replace(/[_-]/g, " ");
   return LEVELS.find((l) => l.toLowerCase() === v) ?? null;
 }
 
@@ -59,14 +61,20 @@ export type VerdictShape = "disc" | "half" | "diamond" | "cross" | "alert" | "ri
 export const VERDICT: Record<Verdict, { label: string; token: string; shape: VerdictShape }> = {
   solid: { label: "Solid", token: "v-solid", shape: "disc" },
   "holds with caveats": { label: "Holds with caveats", token: "v-caveats", shape: "half" },
-  "depends on your choices": { label: "Depends on your choices", token: "v-depends", shape: "diamond" },
+  "depends on your choices": {
+    label: "Depends on your choices",
+    token: "v-depends",
+    shape: "diamond",
+  },
   fragile: { label: "Fragile", token: "v-fragile", shape: "cross" },
   "check data first": { label: "Check data first", token: "v-check", shape: "alert" },
   "no call": { label: "No change called", token: "v-nocall", shape: "ring" },
 };
 
 export function asVerdict(value: unknown): Verdict | null {
-  const v = String(value ?? "").toLowerCase().replace(/_/g, " ");
+  const v = String(value ?? "")
+    .toLowerCase()
+    .replace(/_/g, " ");
   if ((VERDICTS as string[]).includes(v)) return v as Verdict;
   const alias: Record<string, Verdict> = {
     caveats: "holds with caveats",
@@ -86,7 +94,10 @@ export const STAGE_LABEL: Record<StageName, string> = {
   roundtrip: "Round trip",
 };
 
-export const CHECK: Record<CheckStatus, { word: string; meaning: string; tone: "ok" | "danger" | "neutral" }> = {
+export const CHECK: Record<
+  CheckStatus,
+  { word: string; meaning: string; tone: "ok" | "danger" | "neutral" }
+> = {
   consistent: {
     word: "Consistent",
     meaning: "The engine found nothing that refutes it (a check can refute, never prove).",
@@ -186,7 +197,8 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
   "design.comparison": (_s, d) =>
     `Compare group “${str(d.group_a)}” with group “${str(d.group_b)}” (fold change = ${str(d.group_a)} relative to ${str(d.group_b)})`,
   "design.dilution_series": (s, d) => {
-    const samples = d.samples && typeof d.samples === "object" ? (d.samples as Record<string, unknown>) : {};
+    const samples =
+      d.samples && typeof d.samples === "object" ? (d.samples as Record<string, unknown>) : {};
     const names = Object.keys(samples);
     if (!names.length) throw new Error("no samples");
     const q = Object.values(samples)
@@ -203,8 +215,13 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     return `Count well ${s} as ${d.amplified ? "amplified" : "not amplified (no usable curve)"}`;
   },
   "prism.project": (_s, d) => {
-    const genes = Array.isArray(d.genes) && d.genes.length ? d.genes.map(String).join(", ") : "the headline genes";
-    const extras = ["test", "graph"].filter((k) => typeof d[k] === "string").map((k) => `${k}: ${str(d[k])}`);
+    const genes =
+      Array.isArray(d.genes) && d.genes.length
+        ? d.genes.map(String).join(", ")
+        : "the headline genes";
+    const extras = ["test", "graph"]
+      .filter((k) => typeof d[k] === "string")
+      .map((k) => `${k}: ${str(d[k])}`);
     return `Prism project from template ${str(d.template_id ?? "two_groups_log2")}: one table each for ${genes}${extras.length ? ` (${extras.join("; ")})` : ""}`;
   },
   "prism.exclusion_reason": (_s, d) => {
@@ -215,7 +232,8 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
   },
   "prism.value_edit": (_s, d) => {
     const sample = d.sample ? str(d.sample) : "an unknown sample";
-    const what = d.action === "keep" ? "keep the edited value as a manual edit" : "restore qPilot's value";
+    const what =
+      d.action === "keep" ? "keep the edited value as a manual edit" : "restore qPilot's value";
     return `The value of sample ${sample} for ${str(d.gene)} was changed in Prism: ${what}`;
   },
   "stage.confirm": (s, d) => {
@@ -231,7 +249,10 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
  * A proposal (or another reading of it: an alternative, an edit) in plain words. A payload
  * that does not have its kind's shape (an agent's, say) is shown as JSON.
  */
-export function describeProposal(p: Pick<Proposal, "kind" | "subject" | "payload">, payload?: Payload): string {
+export function describeProposal(
+  p: Pick<Proposal, "kind" | "subject" | "payload">,
+  payload?: Payload,
+): string {
   const data = payload ?? (p.payload as Payload);
   const describer = DESCRIBERS[p.kind];
   if (describer) {
