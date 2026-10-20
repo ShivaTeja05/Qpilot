@@ -83,7 +83,7 @@ export const LANDED = {
   /** history: the History section. */
   history: false,
   /** planner: Plan next. */
-  planner: false,
+  planner: true,
 };
 
 export type Feature = keyof typeof LANDED;
