@@ -95,7 +95,7 @@ function stateWords(state: SectionState): string {
   const parts: string[] = [];
   if (!state.reachable && state.lockReason) parts.push(`locked: ${state.lockReason}`);
   else {
-    if (state.done) parts.push(state.section.id === "audit" ? "run" : "confirmed");
+    if (state.done) parts.push(state.section.id === "audit" ? "done" : "confirmed");
     if (state.count > 0)
       parts.push(
         state.section.id === "agents"
@@ -210,7 +210,7 @@ function WorkspaceSwitcher({
           <span className="sr-only">Switch study. Open: </span>
           <span className="sr-only lg:hidden">{frame?.title ?? "none"}</span>
           <span className="hidden min-w-0 flex-1 lg:block">
-            <span className="block truncate text-[13px] font-semibold text-fg">
+            <span className="block truncate text-[13px] font-semibold text-fg" title={frame?.title}>
               {frame?.title ?? "No study open"}
             </span>
             <span className="block truncate text-xs text-muted">

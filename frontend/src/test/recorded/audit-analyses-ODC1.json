@@ -5,6 +5,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
@@ -15,6 +16,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
@@ -26,6 +28,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
@@ -37,6 +40,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [],
    "planned": true
@@ -45,6 +49,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Student t-test (equal variances)"
@@ -55,6 +60,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Mann-Whitney U (rank test)"
@@ -65,6 +71,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "set to the lowest amount detected",
@@ -76,6 +83,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "set to the lowest amount detected",
@@ -88,6 +96,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "set to the lowest amount detected",
@@ -100,6 +109,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "set to the lowest amount detected"
@@ -110,6 +120,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "set to the lowest amount detected",
@@ -121,6 +132,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "set to the lowest amount detected",
@@ -132,6 +144,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -143,6 +156,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -155,6 +169,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -167,6 +182,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected"
@@ -177,6 +193,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -188,6 +205,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -199,6 +217,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -211,6 +230,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -224,6 +244,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -237,6 +258,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -248,6 +270,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -260,6 +283,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 35 counts as not detected",
@@ -272,6 +296,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -283,6 +308,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -295,6 +321,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -307,6 +334,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected"
@@ -317,6 +345,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -328,6 +357,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -339,6 +369,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -351,6 +382,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -364,6 +396,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -377,6 +410,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -388,6 +422,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -400,6 +435,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "Cq above 38 counts as not detected",
@@ -412,6 +448,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -423,6 +460,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -435,6 +473,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -447,6 +486,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells"
@@ -457,6 +497,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -468,6 +509,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -479,6 +521,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -491,6 +534,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -504,6 +548,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -517,6 +562,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -528,6 +574,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -540,6 +587,7 @@
    "log2": 1.7305780875585897,
    "fold": "3.32× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -552,6 +600,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -564,6 +613,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -577,6 +627,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -590,6 +641,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -601,6 +653,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -613,6 +666,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -625,6 +679,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -638,6 +693,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -652,6 +708,7 @@
    "log2": 1.8287218822749989,
    "fold": "3.55× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -666,6 +723,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -678,6 +736,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -691,6 +750,7 @@
    "log2": 1.982888832877883,
    "fold": "3.95× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -704,6 +764,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -716,6 +777,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -729,6 +791,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -742,6 +805,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -753,6 +817,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -765,6 +830,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -777,6 +843,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -790,6 +857,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -804,6 +872,7 @@
    "log2": 1.7558998006358661,
    "fold": "3.38× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -818,6 +887,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -830,6 +900,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -843,6 +914,7 @@
    "log2": 1.800087832941884,
    "fold": "3.48× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "drop efficiency-outlier wells",
@@ -856,6 +928,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -867,6 +940,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -879,6 +953,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -891,6 +966,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series"
@@ -901,6 +977,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -912,6 +989,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -923,6 +1001,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -935,6 +1014,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -948,6 +1028,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -961,6 +1042,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -972,6 +1054,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -984,6 +1067,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -996,6 +1080,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1008,6 +1093,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1021,6 +1107,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1034,6 +1121,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1045,6 +1133,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1057,6 +1146,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1069,6 +1159,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1082,6 +1173,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1096,6 +1188,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1110,6 +1203,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1122,6 +1216,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1135,6 +1230,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1148,6 +1244,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1160,6 +1257,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1173,6 +1271,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1186,6 +1285,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1197,6 +1297,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1209,6 +1310,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1221,6 +1323,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1234,6 +1337,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1248,6 +1352,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1262,6 +1367,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1274,6 +1380,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1287,6 +1394,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1300,6 +1408,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1312,6 +1421,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1325,6 +1435,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1338,6 +1449,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1349,6 +1461,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1361,6 +1474,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1373,6 +1487,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1386,6 +1501,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1400,6 +1516,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1414,6 +1531,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1426,6 +1544,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1439,6 +1558,7 @@
    "log2": 1.7511398376366027,
    "fold": "3.37× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1452,6 +1572,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1465,6 +1586,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1479,6 +1601,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1493,6 +1616,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1505,6 +1629,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1518,6 +1643,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1531,6 +1657,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1545,6 +1672,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1560,6 +1688,7 @@
    "log2": 1.8545112529583123,
    "fold": "3.62× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1575,6 +1704,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1588,6 +1718,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1602,6 +1733,7 @@
    "log2": 2.0108531748724534,
    "fold": "4.03× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1616,6 +1748,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1629,6 +1762,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1643,6 +1777,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1657,6 +1792,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1669,6 +1805,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1682,6 +1819,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1695,6 +1833,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1709,6 +1848,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1724,6 +1864,7 @@
    "log2": 1.778657061452858,
    "fold": "3.43× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1739,6 +1880,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1752,6 +1894,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1766,6 +1909,7 @@
    "log2": 1.8240416364094105,
    "fold": "3.54× higher",
    "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
    "same": true,
    "choices": [
     "standard-curve slope of the plate's dilution series",
@@ -1781,6 +1925,7 @@
  "n_same": 144,
  "n_other": 0,
  "base_call": "called up (higher in MYCN-high)",
+ "base_call_key": "up",
  "line_log2": 1.0,
  "line": "2×"
 }

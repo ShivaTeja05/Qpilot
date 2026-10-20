@@ -1,1 +1,0 @@
-import{f as e}from"./sections-2k9nt3bT.js";import{t}from"./SectionPending-B94XZpFg.js";var n=e();function r(e){return(0,n.jsx)(t,{id:`gene`})}export{r as default};

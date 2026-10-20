@@ -66,19 +66,43 @@ def dicts(value) -> Iterator[dict]:
             yield from dicts(v)
 
 
-def get_routes(client, prefix: str) -> list[tuple[str, list[str], dict[str, bool]]]:
-    """``(path, path params, {query param: required})`` of every GET route under ``prefix``."""
+def routes(client, prefix: str, method: str = "get") -> list[tuple[str, list[str], dict]]:
+    """``(path, path params, {query param: required})`` of every route under ``prefix``."""
     spec = client.get("/api/openapi.json").json()
-    routes = []
+    found = []
     for path, operations in spec["paths"].items():
-        if not path.startswith(prefix) or "get" not in operations:
+        if not path.startswith(prefix) or method not in operations:
             continue
-        params = operations["get"].get("parameters", [])
+        params = operations[method].get("parameters", [])
         in_path = [p["name"] for p in params if p["in"] == "path"]
         query = {p["name"]: bool(p.get("required")) for p in params if p["in"] == "query"}
-        routes.append((path, in_path, query))
-    assert routes, f"no GET route under {prefix}"
-    return routes
+        found.append((path, in_path, query))
+    assert found, f"no {method.upper()} route under {prefix}"
+    return found
+
+
+def call_all(
+    client, prefix: str, values: dict[str, list], method: str = "get", body: dict | None = None
+) -> Iterator[tuple[str, object]]:
+    """Call every route under ``prefix`` with plausible values; yield (url, response)."""
+    for path, in_path, query in routes(client, prefix, method):
+        options = [[(name, v) for v in values.get(name, [])] or [(name, None)] for name in in_path]
+        for combo in itertools.product(*options):
+            if any(v is None for _, v in combo):
+                continue  # a path parameter this sweep cannot fill
+            url = path.format(**dict(combo))
+            params_sets: list[dict] = [{}]
+            for name in query:
+                filled = [{**p, name: v} for p in params_sets for v in values.get(name, [])[:2]]
+                params_sets = filled if filled and query[name] else params_sets + filled
+            for params in params_sets[:6]:
+                if method == "get":
+                    yield f"{url}?{params}", client.get(url, params=params)
+                else:
+                    yield (
+                        f"{method.upper()} {url}",
+                        client.request(method.upper(), url, params=params, json=body or {}),
+                    )
 
 
 def candidates(client, sid: str) -> dict[str, list[str]]:
@@ -104,19 +128,7 @@ def candidates(client, sid: str) -> dict[str, list[str]]:
 
 def sweep(client, sid: str) -> Iterator[tuple[str, object]]:
     """Call every GET route of a session with plausible values; yield (url, response)."""
-    values = candidates(client, sid)
-    for path, in_path, query in get_routes(client, "/api/sessions/{sid}"):
-        options = [[(name, v) for v in values.get(name, [])] or [(name, None)] for name in in_path]
-        for combo in itertools.product(*options):
-            if any(v is None for _, v in combo):
-                continue  # a path parameter this sweep cannot fill
-            url = path.format(**dict(combo))
-            params_sets = [{}]
-            for name in query:
-                filled = [{**p, name: v} for p in params_sets for v in values.get(name, [])[:2]]
-                params_sets = filled if filled and query[name] else params_sets + filled
-            for params in params_sets[:6]:
-                yield f"{url}?{params}", client.get(url, params=params)
+    return call_all(client, "/api/sessions/{sid}", candidates(client, sid))
 
 
 def reveals(body) -> list[str]:
@@ -154,9 +166,8 @@ def _constants(tree: ast.Module) -> dict[str, object]:
     return found
 
 
-def test_the_web_code_writes_only_as_a_person():
-    """Every ``actor`` the server passes is ``"human"``; no write goes around the core rules."""
-    modules = {path: ast.parse(path.read_text(encoding="utf-8")) for path in WEB.rglob("*.py")}
+def actor_problems(modules: dict[str, ast.Module]) -> list[str]:
+    """Writes in ``modules`` that are not a person's, or that go around the core's rules."""
     constants: dict[str, object] = {}
     for tree in modules.values():
         constants.update({k: v for k, v in _constants(tree).items() if k == "HUMAN"})
@@ -168,27 +179,51 @@ def test_the_web_code_writes_only_as_a_person():
         return isinstance(node, ast.Name) and constants.get(node.id) == "human"
 
     problems = []
-    for path, tree in modules.items():
-        where = path.relative_to(WEB)
+    for where, tree in modules.items():
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
             name = node.func.attr if isinstance(node.func, ast.Attribute) else ""
             name = name or (node.func.id if isinstance(node.func, ast.Name) else "")
+            if name[:1].isupper():
+                continue  # a view model showing a stored entry's actor, not a write
             for keyword in node.keywords:
                 if keyword.arg == "actor" and not is_human(keyword.value):
-                    problems.append(f"{where}:{node.lineno} {name}(actor={ast.unparse(keyword)})")
+                    problems.append(f"{where}:{node.lineno} {name}({ast.unparse(keyword)})")
             if name == "apply_decision" and len(node.args) > 5 and not is_human(node.args[5]):
-                problems.append(
-                    f"{where}:{node.lineno} apply_decision as {ast.unparse(node.args[5])}"
-                )
+                actor = ast.unparse(node.args[5])
+                problems.append(f"{where}:{node.lineno} apply_decision as {actor}")
             if name in ("append_decision", "request_human"):
                 problems.append(f"{where}:{node.lineno} {name}: writes around core.decisions")
             if name in ("run", "Popen", "call", "check_output") and "subprocess" in ast.unparse(
                 node.func
             ):
                 problems.append(f"{where}:{node.lineno} starts a process")
-    assert not problems, problems
+    return problems
+
+
+def test_the_web_code_writes_only_as_a_person():
+    """Every ``actor`` the server passes is ``"human"``; no write goes around the core rules."""
+    modules = {
+        str(path.relative_to(WEB)): ast.parse(path.read_text(encoding="utf-8"))
+        for path in WEB.rglob("*.py")
+    }
+    assert len(modules) >= 10 and actor_problems(modules) == []
+
+
+def test_the_actor_scan_catches_a_write_as_an_agent():
+    source = (
+        'HUMAN = "human"\n'
+        "def handler(ctx, store):\n"
+        '    ctx.studio.accept(sid, pid, actor="agent")\n'
+        "    ctx.studio.reject(sid, pid, actor=body.actor)\n"
+        '    apply_decision(store, s, c, o, r, "system", h)\n'
+        "    store.append_decision(s, c, o, r, HUMAN, h)\n"
+        "    ctx.studio.edit(sid, pid, actor=HUMAN)\n"
+        "    View(actor=entry.actor)\n"
+    )
+    problems = actor_problems({"fake.py": ast.parse(source)})
+    assert [p.split()[0] for p in problems] == ["fake.py:3", "fake.py:4", "fake.py:5", "fake.py:6"]
 
 
 def test_no_request_body_carries_an_actor(client):

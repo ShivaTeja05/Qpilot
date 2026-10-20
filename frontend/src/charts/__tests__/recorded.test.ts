@@ -99,12 +99,19 @@ describe("results → chart props", () => {
       expect(pts).toHaveLength(Object.keys(results.contrasts).length);
     }
     const lv = resultsMapPoints(rows, "level");
-    expect(new Set(lv.map((p) => p.mark.label))).toEqual(new Set(rows.map((r) => r.level)));
+    expect(new Set(lv.map((p) => p.mark.label))).toEqual(
+      new Set(rows.map((r) => `Confidence: ${r.level}`)),
+    );
   });
   it("flip matrix ranks the genes that flip most first", () => {
     const dims = Object.keys(Object.values(results.robustness)[0]!.impact).map((id) => ({ id }));
     const cell = (d: string, g: string) => {
-      const imp = (results.robustness as Record<string, { impact: Record<string, { flips: boolean; max_delta_log2fc: number }> }>)[g]!.impact[d];
+      const imp = (
+        results.robustness as Record<
+          string,
+          { impact: Record<string, { flips: boolean; max_delta_log2fc: number }> }
+        >
+      )[g]!.impact[d];
       return imp ? { flips: imp.flips, delta: imp.max_delta_log2fc } : undefined;
     };
     const order = flipOrder(Object.keys(results.robustness), dims, cell);
@@ -144,12 +151,18 @@ describe("layouts", { timeout: 30_000 }, () => {
     expect(Math.min(...placed.map((p) => p.dy))).toBe(0);
   });
   it("direct labels never overlap each other or the marks", () => {
-    const pts = auditMapPoints(study).map((p) => ({ item: p, x: 60 + (p.log2 + 4) * 90, y: 400 - p.holds * 360, text: p.gene }));
+    const pts = auditMapPoints(study).map((p) => ({
+      item: p,
+      x: 60 + (p.log2 + 4) * 90,
+      y: 400 - p.holds * 360,
+      text: p.gene,
+    }));
     const marks = pts.map((p) => ({ x0: p.x - 6, x1: p.x + 6, y0: p.y - 6, y1: p.y + 6 }));
     const placed = placeLabels(pts, marks, { x0: 0, y0: 0, x1: 900, y1: 420 });
     const boxes = placed.map(({ text, spot }) => {
       const w = text.length * 6.6 + 2;
-      const x0 = spot.anchor === "start" ? spot.x : spot.anchor === "end" ? spot.x - w : spot.x - w / 2;
+      const x0 =
+        spot.anchor === "start" ? spot.x : spot.anchor === "end" ? spot.x - w : spot.x - w / 2;
       return { x0, x1: x0 + w, y0: spot.y - 10, y1: spot.y + 2 };
     });
     let overlaps = 0;
