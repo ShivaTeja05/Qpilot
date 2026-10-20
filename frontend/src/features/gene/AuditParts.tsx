@@ -56,7 +56,13 @@ function Loaded<T>({
 
 export type Source = "qpilot" | "audit";
 
-/** qPilot's own grid or the audit's reasonable analyses (shown when both exist). */
+/** What qPilot's choice grid holds (docs/app.md wording, #0254). */
+export const QPILOT_GRID = "Every control-gene set, cut-off, empty-well rule and amplification-call rule";
+/** What the audit's reasonable set holds. */
+export const AUDIT_SET =
+  "No shortcuts such as single or paired control genes; groups and multiplicity as planned";
+
+/** qPilot's choice grid or the audit's reasonable set (shown when both exist). */
 export function SourceSwitch({ value, onChange }: { value: Source; onChange: (v: Source) => void }) {
   return (
     <SegmentedControl
@@ -65,8 +71,8 @@ export function SourceSwitch({ value, onChange }: { value: Source; onChange: (v:
       value={value}
       onValueChange={onChange}
       options={[
-        { value: "audit", label: "The audit", title: "The audit's reasonable analyses: no shortcuts; groups and multiplicity as planned" },
-        { value: "qpilot", label: "qPilot's grid", title: "Every analysis qPilot checks: every control-gene set, cut-off and rule" },
+        { value: "audit", label: "The audit's reasonable set", title: AUDIT_SET },
+        { value: "qpilot", label: "qPilot's choice grid", title: QPILOT_GRID },
       ]}
     />
   );
@@ -121,9 +127,9 @@ export function WhatHolds({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-line bg-sunken/40 p-3">
           <Stat
-            label="Same call, qPilot's grid"
+            label="Same call, qPilot's choice grid"
             value={percent(holds)}
-            sub={`of the ${nCells ? `${count(nCells)} ` : ""}analyses qPilot checks (every control-gene set, cut-off and rule, shortcuts included)`}
+            sub={`of the ${nCells ? `${count(nCells)} ` : ""}analyses qPilot checks (${QPILOT_GRID.toLowerCase()})`}
           />
           <HoldsBar share={holds ?? null} />
         </div>
@@ -131,15 +137,15 @@ export function WhatHolds({
           {a ? (
             <>
               <Stat
-                label="Same call, the audit"
+                label="Same call, the audit's reasonable set"
                 value={percent(a.n ? a.n_same / a.n : null)}
-                sub={`${ofTotal(a.n_same, a.n)} of the audit's reasonable analyses (no shortcuts; groups and multiplicity as planned)`}
+                sub={`${ofTotal(a.n_same, a.n)} of the audit's reasonable analyses (${AUDIT_SET.charAt(0).toLowerCase()}${AUDIT_SET.slice(1)})`}
               />
               <HoldsBar share={a.n ? a.n_same / a.n : null} />
             </>
           ) : (
             <Stat
-              label="Same call, the audit"
+              label="Same call, the audit's reasonable set"
               value={analyses ? "…" : "—"}
               sub={analyses ? "Reading the audit…" : "Not audited: the audit counts its own reasonable analyses (no shortcuts)."}
             />
@@ -148,8 +154,8 @@ export function WhatHolds({
       </div>
       {a ? (
         <p className="mt-2 text-xs text-muted">
-          The two shares count different analyses: qPilot's grid includes shortcuts such as a single control gene or
-          a Cq cut-off, which the audit leaves out, so the audit's share can be higher.
+          The two shares count different analyses: qPilot's choice grid includes shortcuts such as a single control
+          gene or a Cq cut-off, which the audit's reasonable set leaves out, so the audit's share can be higher.
         </p>
       ) : null}
       <div className="mt-4">
@@ -171,10 +177,10 @@ export function WhatHolds({
             rows={dots}
             line={line}
             {...sideWords(labels.hi)}
-            summary={`Every analysis of ${gene} in qPilot's grid, on the fold axis: ${ofTotal(sameQ, dots.length)} give the planned call; the planned analysis is ringed.`}
+            summary={`Every analysis of ${gene} in qPilot's choice grid, on the fold axis: ${ofTotal(sameQ, dots.length)} give the planned call; the planned analysis is ringed.`}
           />
         ) : (
-          <p className="text-[13px] text-muted">qPilot's grid for this study is not available.</p>
+          <p className="text-[13px] text-muted">qPilot's choice grid for this study is not available.</p>
         )}
       </div>
       {invite ? <div className="mt-4">{invite}</div> : null}

@@ -145,7 +145,7 @@ describe("what holds and one choice at a time", () => {
     const props = { gene: "NM23A", holds: NM23A.row.holds, nCells: NM23A.row.n_cells, dots, line: results.rule.min_log2fc, labels: LABELS, onSource };
     render(<WhatHolds {...props} card={null} analyses={null} source="qpilot" />);
     expect(screen.getByText(text(percent(NM23A.row.holds)))).toBeTruthy();
-    expect(screen.getByRole("img", { name: new RegExp(`qPilot's grid, on the fold axis: ${text(ofTotal(same, dots.length))}`) })).toBeTruthy();
+    expect(screen.getByRole("img", { name: new RegExp(`qPilot's choice grid, on the fold axis: ${text(ofTotal(same, dots.length))}`) })).toBeTruthy();
     cleanup();
 
     const a = analysesNM23A as unknown as AuditAnalyses;
@@ -153,7 +153,7 @@ describe("what holds and one choice at a time", () => {
     expect(screen.getByText(text(percent(a.n_same / a.n)))).toBeTruthy();
     expect(screen.getByText(new RegExp(`^${text(ofTotal(a.n_same, a.n))} of the audit's reasonable analyses`))).toBeTruthy();
     expect(screen.getByRole("img", { name: /reasonable analyses of NM23A on the fold axis/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("radio", { name: "qPilot's grid" }));
+    fireEvent.click(screen.getByRole("radio", { name: "qPilot's choice grid" }));
     expect(onSource).toHaveBeenCalledWith("qpilot");
   }, 20_000); // 744 + 144 dots laid out in jsdom
 
