@@ -238,8 +238,12 @@ def _study_routes(app, method: str) -> list[str]:
 
 
 # Valid bodies, so a route's gate (not its body validation) answers.
+# GET routes whose query parameters are validated before the gate (planner's CSV).
+QUERY = {"layout.csv": {"n_per_group": 3, "genes": "ODC1"}}
+
 BODIES = {
     "decide": {"option": "x", "reason": "r", "expected_head": "0" * 64},
+    "layout": {"n_per_group": 3, "genes": ["ODC1"]},
     "undo": {"reason": "r", "expected_head": "0" * 64},
     "reject-request": {"reason": "r", "expected_head": "0" * 64},
     "ask": {"question": "Which genes changed?"},
@@ -267,8 +271,10 @@ def test_every_study_route_of_a_blind_session_is_blind(reblinded):
             if f"{method} {route}" in KNOWN_OPEN:
                 continue
             checked.append(f"{method} {route}")
-            body = BODIES.get(url.rsplit("/", 1)[-1], {})
-            r = c.request(method, url, json=body, params={"gene": "1-Mar"})
+            last = url.rsplit("/", 1)[-1]
+            body = BODIES.get(last, {})
+            params = {"gene": "1-Mar", **QUERY.get(last, {})}
+            r = c.request(method, url, json=body, params=params)
             if r.status_code == 422:
                 bodiless.append(f"{method} {route}")
                 continue

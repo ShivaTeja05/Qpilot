@@ -3,7 +3,10 @@
 ``BEFORE`` holds the sha256 of the four output files of ``run_study(demo)`` with
 ``StudySettings()``, captured at commit 603d06b before the design work began (Python 3.11, the
 project's pinned environment). A mismatch means the default analysis changed: report it, never
-update these values to make the test pass.
+update these values to make the test pass. ``results.json`` was re-pinned once, on the
+coordinator's decision (#0395), after a JSON diff proved that only the confidence reasons' words
+changed (#0286: "of the 186 analyses qPilot checks"); every number and every other file is as
+captured.
 """
 
 import hashlib
@@ -21,7 +24,7 @@ BEFORE = {
     "cards.json": "c0d8310cce7acccceb55d5d50282a18cedc7f8f7074d69988c5eb8e9b74c0ddc",
     "facts.json": "c09e000bb9764aaef135f6fdf84a9779122ac46d95c04288a31a42a8f56bf31b",
     "grid.csv": "2ef579ff8aa85d4b25da03fdc5491791bcede93be7ff099729731fd2f4e116b1",
-    "results.json": "860a1d7e08c5ce99510f123e2f8b7e88512b7bab596c7fcd85e9bec4c0578341",
+    "results.json": "2ba286ac6234db3687ef189054fd7eb76f091ec34135d97e82bfad275c4f3fc5",
 }
 
 

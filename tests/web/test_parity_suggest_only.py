@@ -1,7 +1,7 @@
-"""Suggest mode, Undo and the scorecard helpers, out of the Gradio app (qpilot/ai/suggest_only.py).
+"""Suggest mode and Undo, ported from the old page's tests (``tests/app/test_app.py``).
 
-Ported from the old page's tests (``tests/app/test_app.py``) so they outlive it: the rules are
-the same, only their home changed.
+The rules are the same; only their home changed: ``qpilot/ai/suggest_only.py`` (Suggest mode)
+and ``qpilot/web/results_views.py`` (the option Undo restores).
 """
 
 import subprocess
@@ -9,16 +9,10 @@ import sys
 
 import pytest
 
-from qpilot.ai.suggest_only import (
-    SUGGEST_ONLY_REASON,
-    UNDO_PREFIX,
-    SuggestOnlyStore,
-    acting_store,
-    snapshot,
-    undo_target,
-)
+from qpilot.ai.suggest_only import SUGGEST_ONLY_REASON, SuggestOnlyStore
 from qpilot.core.store import StudyStore
 from qpilot.schemas import DecisionEntry
+from qpilot.web.results_views import UNDO_PREFIX, undo_target
 
 
 def test_the_helpers_load_without_gradio():
@@ -27,13 +21,6 @@ def test_the_helpers_load_without_gradio():
         "sys.exit(1 if 'gradio' in sys.modules else 0)"
     )
     assert subprocess.run([sys.executable, "-c", code], check=False).returncode == 0
-
-
-def test_the_old_import_path_still_works():
-    pytest.importorskip("gradio")
-    from qpilot import app
-
-    assert app.SuggestOnlyStore is SuggestOnlyStore and app.undo_target is undo_target
 
 
 @pytest.fixture
@@ -69,16 +56,9 @@ def test_undo_steps_back_through_the_cards_own_history(history, expected):
     assert undo_target(entries, "card_x") == expected
 
 
-def test_acting_store_is_suggest_only_unless_decide_and_tell(tmp_studies_dir):
-    store = StudyStore(tmp_studies_dir)
-    assert acting_store(store, "decide_and_tell") is store
-    assert isinstance(acting_store(store, "suggest"), SuggestOnlyStore)
-    assert isinstance(acting_store(store, "anything else"), SuggestOnlyStore)
-
-
 def test_suggest_mode_turns_an_agents_choice_into_a_request(analysed_study):
     store, study_id = analysed_study
-    head, cards, _ = snapshot(store, study_id)
+    head, cards = store.chain_head(study_id), store.cards(study_id)
     card = next(c for c in cards if c.id == "card_undetermined")
     other = next(o.id for o in card.options if o.id != card.decision)
     suggest = SuggestOnlyStore(store.root)
@@ -90,7 +70,7 @@ def test_suggest_mode_turns_an_agents_choice_into_a_request(analysed_study):
 
 def test_a_persons_choice_passes_through_suggest_mode(analysed_study):
     store, study_id = analysed_study
-    head, cards, _ = snapshot(store, study_id)
+    head, cards = store.chain_head(study_id), store.cards(study_id)
     card = next(c for c in cards if c.id == "card_undetermined")
     other = next(o.id for o in card.options if o.id != card.decision)
     outcome = SuggestOnlyStore(store.root).append_decision(
