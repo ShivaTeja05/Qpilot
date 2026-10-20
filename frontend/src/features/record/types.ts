@@ -7,34 +7,67 @@
 export type Actor = "human" | "agent" | "system";
 export type EntryStatus = "applied" | "auto" | "pending_human" | "rejected" | "stale";
 
-/** One line of the study's decision chain (`decisions.jsonl`). */
+/** One line of the study's decision chain (`decisions.jsonl`), with its card and option in words. */
 export interface ChainEntry {
   seq: number;
   prev_hash: string;
   hash: string;
   card_id: string;
-  /** The card's question in words ("Which control genes to normalise to"), when the server gives it. */
+  /** The card's question in words ("Which control genes to normalise to"). */
   card_title?: string | null;
   card_kind?: string | null;
   option: string;
-  /** The option's label in words, when the server gives it. */
+  /** The option's label in words. */
   option_label?: string | null;
   reason: string;
   actor: Actor;
   status: EntryStatus;
   at: string;
+  /** Written by Undo (a new entry restoring the option before). */
+  undo?: boolean;
 }
 
-/** `GET /api/studies/{id}/decisions`. */
+/** `GET /api/studies/{id}/decisions` as the server sends it (`qpilot/web/contract.py`). */
+export interface DecisionsApi {
+  study_id: string;
+  head: string;
+  entries: DecisionEntryApi[];
+  pending: DecisionEntryApi[];
+  /** The chain's genesis (the input file's SHA-256), when the server sends it. */
+  root?: string | null;
+  /** The server re-computed every hash and link, when it sends it. */
+  chain_intact?: boolean | null;
+}
+
+export interface DecisionEntryApi {
+  entry: Omit<ChainEntry, "card_title" | "option_label" | "undo" | "card_kind">;
+  card_title: string;
+  option_label: string;
+  undo: boolean;
+}
+
+/** The chain as the Record section reads it. */
 export interface DecisionsView {
   study_id: string;
-  /** The chain's first `prev_hash`: the input file's SHA-256. */
-  root: string;
+  /** The chain's first `prev_hash`: the input file's SHA-256 (null for an empty chain). */
+  root: string | null;
   head: string;
   entries: ChainEntry[];
-  /** True when every link and every hash checks out (the server re-computes them). */
   chain_intact?: boolean | null;
-  n_pending?: number;
+  n_pending: number;
+}
+
+/** The server's chain view in the Record section's shape. */
+export function fromApi(view: DecisionsApi): DecisionsView {
+  const entries = view.entries.map((e) => ({ ...e.entry, card_title: e.card_title, option_label: e.option_label, undo: e.undo }));
+  return {
+    study_id: view.study_id,
+    root: view.root ?? entries[0]?.prev_hash ?? null,
+    head: view.head,
+    entries,
+    chain_intact: view.chain_intact,
+    n_pending: view.pending.length,
+  };
 }
 
 /** A file this server wrote into its export folder, served at `url` as an attachment. */

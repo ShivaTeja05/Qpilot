@@ -18,10 +18,11 @@ export function useAgents(workspaceKey: string, studyId: string | null | undefin
   });
 }
 
+/** `DecisionDone` (`qpilot/web/contract.py`): the answer to decide / turn down. */
 interface Outcome {
-  status: string;
-  chain_head?: string;
-  reason?: string | null;
+  outcome: { status: string; chain_head: string; reason?: string | null };
+  message: string;
+  head: string;
 }
 
 export type Verdict = "approve" | "turn_down";
@@ -37,19 +38,21 @@ export function useAnswerRequest(workspaceKey: string | null | undefined, onDone
   return useWrite<{ request: PendingRequest; verdict: Verdict; reason: string }, Outcome>({
     workspaceKey,
     mutationFn: ({ request, verdict, reason }) =>
-      requestJson<Outcome>(`${cardPath(request)}/${verdict === "approve" ? "decide" : "turn-down"}`, {
+      requestJson<Outcome>(`${cardPath(request)}/${verdict === "approve" ? "decide" : "reject-request"}`, {
         method: "POST",
         body: JSON.stringify({ option: request.option, reason, expected_head: request.expected_head }),
       }),
-    success: (outcome, { request, verdict }) => {
-      const what = `${cardTitle(request)} → ${optionLabel(request)}`;
-      const chain = outcome.chain_head ? `Added to the record (chain ${shortHash(outcome.chain_head)}).` : undefined;
-      if (outcome.status === "stale")
+    success: (done, { request, verdict }) => {
+      if (done.outcome.status === "stale")
         return { title: "Something was decided on this card first", description: "Here is the current state; look again." };
-      return { title: verdict === "approve" ? `Approved: ${what}` : `Turned down: ${what}`, description: chain };
+      const what = `${cardTitle(request)} → ${optionLabel(request)}`;
+      return {
+        title: verdict === "approve" ? `Approved: ${what}` : `Turned down: ${what}`,
+        description: `${done.message} Added to the record (chain ${shortHash(done.head)}).`,
+      };
     },
-    onSuccess: (outcome) => {
-      if (outcome.status !== "stale") onDone?.();
+    onSuccess: (done) => {
+      if (done.outcome.status !== "stale") onDone?.();
     },
   });
 }

@@ -21,11 +21,11 @@ const ACTOR_ICON: Record<Actor, ReactNode> = {
   system: <Cog aria-hidden />,
 };
 
-/** What an entry links to: the entry before it, or the chain's root for the first one. */
-function linkOf(entry: ChainEntry, previous: ChainEntry | undefined, root: string) {
+/** What an entry links to: the entry before it, or the chain's root (the input file) for the first. */
+function linkOf(entry: ChainEntry, previous: ChainEntry | undefined, root: string | null) {
   const target = previous ? previous.hash : root;
   const label = previous ? `#${previous.seq}` : "the input file";
-  return { ok: entry.prev_hash === target, label };
+  return { ok: target == null || entry.prev_hash === target, label };
 }
 
 export function ChainTimeline({
@@ -36,7 +36,8 @@ export function ChainTimeline({
   actions,
 }: {
   entries: ChainEntry[];
-  root: string;
+  /** The chain's genesis: the input file's SHA-256. */
+  root: string | null;
   head: string;
   /** The server's verdict on the whole chain (hashes re-computed), when it gives one. */
   intact?: boolean | null;
@@ -131,7 +132,7 @@ export function ChainTimeline({
           <div className="min-w-0 pt-1.5 text-[13px]">
             <p className="font-medium text-fg">Start of the chain: the input file</p>
             <p className="mt-0.5 flex flex-wrap items-center gap-1 text-muted">
-              The first entry links to the file's SHA-256 <Hash value={root} prefix="sha256" />
+              The first entry links to the file's SHA-256 <Hash value={root ?? ordered[0]?.prev_hash} prefix="sha256" />
             </p>
           </div>
         </li>
@@ -186,6 +187,7 @@ function TimelineEntry({
           </h3>
           <div className="flex shrink-0 items-center gap-1.5">
             {isHead ? <Badge tone="accent">Head</Badge> : null}
+            {entry.undo ? <Badge tone="info">Undo</Badge> : null}
             <Tooltip content={status.meaning}>
               <Badge tone={status.tone} tabIndex={0}>
                 {status.word}
@@ -195,7 +197,13 @@ function TimelineEntry({
         </header>
 
         <p className="mt-1 text-[13px] text-muted">
-          {entry.status === "pending_human" ? "Asked for " : entry.status === "rejected" ? "Turned down " : "Chose "}
+          {entry.status === "pending_human"
+            ? "Asked for "
+            : entry.status === "rejected"
+              ? "Turned down "
+              : entry.undo
+                ? "Back to "
+                : "Chose "}
           <span className="font-medium text-fg">{optionLabel(entry)}</span>
           {entry.option_label && entry.option_label !== entry.option ? (
             <span className="ml-1.5 font-mono text-[11.5px] text-faint">{entry.option}</span>

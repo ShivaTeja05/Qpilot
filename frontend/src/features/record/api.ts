@@ -5,7 +5,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ApiError, postForm, type JobView } from "@/api/client";
 import { useWrite } from "@/shell/writes";
-import type { DecisionsView, RecordList, VerifyResult } from "./types";
+import { fromApi, type DecisionsApi, type RecordList, type VerifyResult } from "./types";
 
 const OFFLINE = "qPilot is not answering. Is `qpilot app` still running?";
 
@@ -45,7 +45,7 @@ export function useDecisions(workspaceKey: string, studyId: string | null | unde
   return useQuery({
     queryKey: ["w", workspaceKey, "decisions", studyId],
     enabled: Boolean(studyId),
-    queryFn: () => requestJson<DecisionsView>(`${studyPath(studyId!)}/decisions`),
+    queryFn: async () => fromApi(await requestJson<DecisionsApi>(`${studyPath(studyId!)}/decisions`)),
   });
 }
 
