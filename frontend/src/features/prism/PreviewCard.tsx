@@ -31,7 +31,7 @@ import { cardWords } from "./words";
 
 export function PreviewCard({ workspace }: { workspace: Workspace }) {
   const [gene, setGene] = useState<string | null>(null);
-  const preview = usePrismPreview(workspace.key, gene);
+  const preview = usePrismPreview(workspace.key);
   return (
     <Card as="section" aria-labelledby="prism-preview-title">
       <CardHeader
@@ -41,12 +41,15 @@ export function PreviewCard({ workspace }: { workspace: Workspace }) {
       />
       <CardBody>
         {preview.isPending ? (
-          <LoadingBlock label="Building the preview" lines={6} />
-        ) : preview.error && !preview.data ? (
+          <div className="flex flex-col gap-2">
+            <LoadingBlock label="Building the preview" lines={6} />
+            <p className="text-[12px] text-muted">The first preview after qPilot starts rebuilds the analysis's tables; it can take half a minute.</p>
+          </div>
+        ) : preview.error ? (
           <ErrorPanel error={preview.error} title="No Prism preview" onRetry={() => void preview.refetch()} compact />
-        ) : preview.data ? (
-          <PreviewBody preview={preview.data} gene={gene} onGene={setGene} loading={preview.isPlaceholderData} />
-        ) : null}
+        ) : (
+          <PreviewBody preview={preview.data} gene={gene} onGene={setGene} />
+        )}
       </CardBody>
     </Card>
   );
@@ -56,16 +59,13 @@ export function PreviewBody({
   preview,
   gene: asked,
   onGene,
-  loading,
 }: {
   preview: PrismPreview;
   gene: string | null;
   onGene: (gene: string) => void;
-  /** The answer for the newly picked gene is still on its way. */
-  loading?: boolean;
 }) {
   const genes = preview.genes;
-  const gene = asked && genes.includes(asked) ? asked : (preview.figure?.gene ?? genes[0] ?? null);
+  const gene = asked && genes.includes(asked) ? asked : (genes[0] ?? null);
 
   if (!gene) {
     return (
@@ -78,7 +78,7 @@ export function PreviewBody({
 
   const info = preview.bundle.info ?? {};
   const template = preview.template;
-  const figure = preview.figure && preview.figure.gene === gene ? preview.figure : null;
+  const figure = preview.figures?.[gene] ?? null;
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -93,12 +93,10 @@ export function PreviewBody({
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" aria-busy={loading || undefined}>
-        <div className={loading ? "opacity-60 transition-opacity" : undefined}>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        <div>
           {figure && figure.groups.some((g) => g.n > 0) ? (
             <PrismFigure figure={figure} caption={figure.note} />
-          ) : loading ? (
-            <LoadingBlock label={`Drawing ${gene}`} lines={6} />
           ) : (
             <EmptyState icon={<FileText />} title="No graph for this layout" compact>
               {template.layout === "nested"

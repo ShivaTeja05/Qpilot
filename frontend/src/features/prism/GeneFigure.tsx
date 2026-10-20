@@ -12,12 +12,10 @@ import { usePrismPreview } from "./api";
 import { PrismFigure } from "./PrismFigure";
 
 export function GenePrismFigure({ sid, gene }: { sid: string; gene: string }) {
-  const listed = usePrismPreview(sid);
-  const has = Boolean(listed.data?.genes.includes(gene));
-  const preview = usePrismPreview(sid, gene, has);
-  if (listed.isPending || (has && preview.isPending)) return <LoadingBlock label="Reading the Prism preview" lines={3} />;
-  const figure = preview.data?.figure;
-  if (!has || !figure || figure.gene !== gene || !figure.groups.some((g) => g.n > 0)) return null;
+  const preview = usePrismPreview(sid);
+  if (preview.isPending) return <LoadingBlock label="Reading the Prism preview" lines={3} />;
+  const figure = preview.data?.figures?.[gene];
+  if (!figure || !figure.groups.some((g) => g.n > 0)) return null;
   return <PrismFigure figure={figure} caption={figure.note} />;
 }
 

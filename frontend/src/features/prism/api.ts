@@ -3,7 +3,7 @@
  * Studio inbox of the two Prism stages. Every query key starts with ["w", sid] so a live event
  * about the session refreshes it; slow work answers 202 {job} and is followed with `useJob`.
  */
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, unwrap, type JobView, type Schemas } from "@/api/client";
 
 export type Proposal = Schemas["Proposal"];
@@ -41,6 +41,8 @@ export interface PrismRoute {
   /** `ddcq` | `linear_welch` | `linear_student`. */
   route: string;
   label: string;
+  /** The method in the engine's words (`qpcr.routes.ROUTE_LABELS`). */
+  method?: string | null;
   /** How many conclusions this route draws differently from the engine. */
   n_differ: number;
   n_genes: number;
@@ -53,9 +55,12 @@ export interface PrismRoute {
 
 /** `GET …/prism/routes`: why the bridge matters, on this study's own plates. */
 export interface PrismRoutes {
-  session_id: string;
   study_id: string;
   n_genes: number | null;
+  /** The engine's call rule in words. */
+  rule?: string | null;
+  /** The engine's call for every gene any route changes (a listed gene: that route's call differs). */
+  engine?: Record<string, string> | null;
   routes: PrismRoute[];
   note: string;
 }
@@ -87,21 +92,20 @@ export interface PrismChoice {
 }
 
 /** Every biological unit of one group (log2 relative quantity), and the mean with its 95 % CI. */
-export interface GroupPoints {
-  group: string;
-  units: string[];
-  values: number[];
+export interface FigureGroup {
+  name: string;
   n: number;
   mean?: number | null;
   ci_lo?: number | null;
   ci_hi?: number | null;
+  points: { unit: string; value: number }[];
 }
 
 /** An approximation of the template's graph for one gene (Prism draws the real one). */
 export interface PrismFigureData {
   gene: string;
   scale: string;
-  groups: GroupPoints[];
+  groups: FigureGroup[];
   note: string;
 }
 
@@ -115,11 +119,10 @@ export interface PrismTemplate {
   graph: string;
 }
 
-/** `GET …/prism/preview?gene=`: what Send to Prism would write (nothing is written). */
+/** `GET …/prism/preview`: what Send to Prism would write (nothing is written). */
 export interface PrismPreview {
-  session_id: string;
-  study_id: string;
-  writes_nothing: boolean;
+  study_id?: string;
+  writes_nothing?: boolean;
   bundle: {
     study_id: string;
     template_id: string;
@@ -134,8 +137,9 @@ export interface PrismPreview {
   tables: PreviewTable[];
   choices: PrismChoice[];
   caption?: string | null;
-  /** For the gene asked for (or the first); column layout only. */
-  figure?: PrismFigureData | null;
+  /** Every gene's figure (column layout only; empty otherwise). */
+  figures?: Record<string, PrismFigureData> | null;
+  choices_confirmed?: boolean;
   not_affiliated: string;
 }
 
@@ -161,6 +165,7 @@ export interface PrismBundleView {
 export interface PrismSent {
   bundle: PrismBundleView;
   n_files: number;
+  files?: string[];
   notes: string[];
   launched: boolean;
   /** Prism finished run.pzc (when launched). */
@@ -246,7 +251,7 @@ export const prismKeys = {
   all: (sid: string) => ["w", sid, "prism"] as const,
   status: (sid: string) => ["w", sid, "prism", "status"] as const,
   routes: (sid: string) => ["w", sid, "prism", "routes"] as const,
-  preview: (sid: string, gene: string | null) => ["w", sid, "prism", "preview", gene ?? ""] as const,
+  preview: (sid: string) => ["w", sid, "prism", "preview"] as const,
   bundles: (sid: string) => ["w", sid, "prism", "bundles"] as const,
   inbox: (sid: string, stage: "prism" | "roundtrip") => ["w", sid, "proposals", stage] as const,
 };
@@ -271,16 +276,14 @@ export function usePrismStatus(sid: string, enabled = true) {
 }
 
 /**
- * What Send to Prism would write (nothing is written), with the figure of `gene` (the first
- * gene when null). Switching genes keeps the previous answer on screen until the next arrives.
+ * What Send to Prism would write (nothing is written), with every gene's figure. The first call
+ * after a server start is slow (the engine rebuilds the export inputs), then it is quick.
  */
-export function usePrismPreview(sid: string, gene: string | null = null, enabled = true) {
+export function usePrismPreview(sid: string, enabled = true) {
   return useQuery({
-    queryKey: prismKeys.preview(sid, gene),
+    queryKey: prismKeys.preview(sid),
     enabled,
-    queryFn: () =>
-      request<PrismPreview>(`${base(sid)}/preview?rows=${PREVIEW_ROWS}${gene ? `&gene=${encodeURIComponent(gene)}` : ""}`),
-    placeholderData: keepPreviousData,
+    queryFn: () => request<PrismPreview>(`${base(sid)}/preview?rows=${PREVIEW_ROWS}`),
   });
 }
 

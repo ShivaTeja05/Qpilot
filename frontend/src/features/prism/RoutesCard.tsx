@@ -6,9 +6,10 @@
 import { AlertTriangle, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { sectionPath } from "@/shell/sections";
-import { Card, CardBody, CardHeader, ErrorPanel, LoadingBlock } from "@/ui";
+import { Card, CardBody, CardHeader, ConclusionTag, ErrorPanel, LoadingBlock } from "@/ui";
 import { cn } from "@/lib/cn";
 import { count, ofTotal } from "@/lib/format";
+import { asConclusion, CONCLUSION } from "@/lib/vocab";
 import { usePrismRoutes, type PrismRoute, type PrismRoutes, type Workspace } from "./api";
 import { ROUTE_ORDER, ROUTE_WORDS } from "./words";
 
@@ -70,13 +71,13 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
 
       <ol className="flex flex-col divide-y divide-line rounded-lg border border-line" aria-label="Routes into Prism">
         {rows.map((row) => (
-          <RouteItem key={row.route} row={row} workspace={workspace} />
+          <RouteItem key={row.route} row={row} workspace={workspace} engine={data.engine ?? null} />
         ))}
       </ol>
 
       <p className="text-[12px] leading-relaxed text-muted">
-        Computed by qPilot's engine on this study, with the engine's call rule (up or down only if p &lt; 0.05 and at
-        least two-fold); never used for a conclusion. What Send to Prism writes is the engine's own analysis — log2
+        Computed by qPilot's engine on this study, with the engine's call rule
+        {data.rule ? ` (${data.rule})` : " (up or down only if p < 0.05 and at least two-fold)"}; never used for a conclusion. What Send to Prism writes is the engine's own analysis — log2
         values, one per biological unit, and Welch's t test — so Prism starts from the engine's conclusions.
       </p>
     </div>
@@ -88,7 +89,7 @@ function rank(id: string): number {
   return i < 0 ? ROUTE_ORDER.length : i;
 }
 
-function RouteItem({ row, workspace }: { row: PrismRoute; workspace: Workspace }) {
+function RouteItem({ row, workspace, engine }: { row: PrismRoute; workspace: Workspace; engine: Record<string, string> | null }) {
   const [all, setAll] = useState(false);
   const nGenes = row.n_genes;
   const words = ROUTE_WORDS[row.route];
@@ -105,7 +106,7 @@ function RouteItem({ row, workspace }: { row: PrismRoute; workspace: Workspace }
             <ul id={listId} className="flex flex-wrap gap-1.5" aria-label={`Genes this route concludes differently (${count(row.genes.length)})`}>
               {genes.map((g) => (
                 <li key={g}>
-                  <GeneChip gene={g} workspace={workspace} />
+                  <GeneChip gene={g} workspace={workspace} engine={engine?.[g]} />
                 </li>
               ))}
             </ul>
@@ -143,14 +144,16 @@ function RouteItem({ row, workspace }: { row: PrismRoute; workspace: Workspace }
   );
 }
 
-function GeneChip({ gene, workspace }: { gene: string; workspace: Workspace }) {
+/** A gene this route concludes differently: the engine's call, and a link to the gene. */
+function GeneChip({ gene, workspace, engine }: { gene: string; workspace: Workspace; engine?: string }) {
   return (
     <a
       href={`#${sectionPath(workspace, "gene", gene)}`}
-      className="inline-flex items-center rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-fg hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      title={`Open ${gene}`}
+      className="inline-flex items-center gap-1 rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-fg hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      title={engine ? `The engine calls ${gene} ${CONCLUSION[asConclusion(engine)].word}; this route does not. Open ${gene}.` : `Open ${gene}`}
     >
       {gene}
+      {engine ? <ConclusionTag conclusion={engine} compact className="font-sans text-[11px]" /> : null}
     </a>
   );
 }
