@@ -62,10 +62,17 @@ export function DataTable<R>({
                   <button
                     type="button"
                     className="inline-flex items-center gap-1 hover:text-fg"
-                    onClick={() => setSort(on ? { key: c.key, desc: !sort!.desc } : { key: c.key, desc: false })}
+                    onClick={() =>
+                      setSort(on ? { key: c.key, desc: !sort!.desc } : { key: c.key, desc: false })
+                    }
                   >
                     {c.header}
-                    {on && (sort!.desc ? <ArrowDown size={12} aria-hidden /> : <ArrowUp size={12} aria-hidden />)}
+                    {on &&
+                      (sort!.desc ? (
+                        <ArrowDown size={12} aria-hidden />
+                      ) : (
+                        <ArrowUp size={12} aria-hidden />
+                      ))}
                   </button>
                 ) : (
                   c.header
@@ -79,13 +86,22 @@ export function DataTable<R>({
         {sorted.map((r, i) => (
           <tr
             key={rowKey(r, i)}
-            className={cn("border-b border-line last:border-b-0", onRowClick && "cursor-pointer hover:bg-sunken")}
+            className={cn(
+              "border-b border-line last:border-b-0",
+              onRowClick && "cursor-pointer hover:bg-sunken",
+            )}
             onClick={onRowClick ? () => onRowClick(r) : undefined}
           >
             {columns.map((c, j) => {
               const content = c.cell(r);
               return (
-                <td key={c.key} className={cn("px-3 py-1.5 align-top", c.numeric && "tabular text-right font-mono text-[12px]")}>
+                <td
+                  key={c.key}
+                  className={cn(
+                    "px-3 py-1.5 align-top",
+                    c.numeric && "tabular text-right font-mono text-[12px]",
+                  )}
+                >
                   {j === 0 && onRowClick ? (
                     <button
                       type="button"

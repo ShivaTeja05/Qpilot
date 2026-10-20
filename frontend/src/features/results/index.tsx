@@ -8,20 +8,13 @@ import { useLocation } from "wouter";
 import { type MapEncoding } from "@/charts";
 import { sectionPath, type SectionProps } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
-import { useCards, useResults } from "./api";
+import { useCards, useFlips, useResults } from "./api";
+import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { MapPanel } from "./MapPanel";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
-
-/** Which Decision Card kind decides which robustness dimension. */
-const KIND_DIM: Record<string, string> = {
-  reference_set: "refs",
-  group_cutoff: "cut",
-  amp_call: "amp_call",
-  undetermined: "undetermined",
-};
 
 function ResultsSkeleton() {
   return (
@@ -41,31 +34,31 @@ function ResultsSkeleton() {
   );
 }
 
-export default function ResultsSection({ workspace }: SectionProps) {
+export default function ResultsSection({ workspace, rest }: SectionProps) {
   const [, navigate] = useLocation();
   const key = workspace?.key ?? "";
   const studyId = workspace?.results_visible ? workspace.study_id : null;
   const results = useResults(key, studyId);
   const cards = useCards(key, studyId);
+  const flips = useFlips(key, studyId);
   const [by, setBy] = useState<MapEncoding>("conclusion");
   const [filter, setFilter] = useState<GeneFilter>(NO_FILTER);
 
   const view = results.data;
-  const openGene = useCallback((gene: string) => navigate(sectionPath(workspace, "gene", gene)), [navigate, workspace]);
-  const dimLabel = useCallback(
-    (dim: string) => {
-      const card = cards.data?.cards.find((c) => KIND_DIM[c.kind] === dim);
-      return card?.title ?? dim.replace(/_/g, " ");
-    },
-    [cards.data],
+  const openGene = useCallback(
+    (gene: string) => navigate(sectionPath(workspace, "gene", gene)),
+    [navigate, workspace],
   );
-  const dims = useMemo(() => {
-    const fromCards = (cards.data?.cards ?? []).map((c) => KIND_DIM[c.kind]).filter((d): d is string => Boolean(d));
-    const fromGenes = (view?.genes ?? []).flatMap((g) => g.flips_by);
-    return [...new Set([...fromCards, ...fromGenes])];
-  }, [cards.data, view]);
+  const dimLabel = useCallback(
+    (dim: string) =>
+      flips.data?.rows.find((r) => r.dimension === dim)?.title ?? dim.replace(/_/g, " "),
+    [flips.data],
+  );
   const highlight = useMemo(
-    () => (view && isFiltered(filter) ? new Set(view.genes.filter((g) => matches(g, filter)).map((g) => g.gene)) : null),
+    () =>
+      view && isFiltered(filter)
+        ? new Set(view.genes.filter((g) => matches(g, filter)).map((g) => g.gene))
+        : null,
     [view, filter],
   );
 
@@ -78,10 +71,17 @@ export default function ResultsSection({ workspace }: SectionProps) {
           icon={<Lock className="size-5" aria-hidden />}
           title="Results stay hidden until the design and the curves are confirmed"
           action={
-            <Button onClick={() => navigate(sectionPath(workspace, (step.section as "design") ?? "design"))}>{step.action ?? step.title}</Button>
+            <Button
+              onClick={() =>
+                navigate(sectionPath(workspace, (step.section as "design") ?? "design"))
+              }
+            >
+              {step.action ?? step.title}
+            </Button>
           }
         >
-          Nothing that shows a difference between groups is shown before then, so the choices are made blind. Next: {step.title}
+          Nothing that shows a difference between groups is shown before then, so the choices are
+          made blind. Next: {step.title}
           {step.detail ? `. ${step.detail}` : ""}
         </EmptyState>
       </div>
@@ -112,21 +112,55 @@ export default function ResultsSection({ workspace }: SectionProps) {
           <Summary view={view} auditHref={sectionPath(workspace, "audit")} />
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div className="min-w-0 space-y-6">
-              <MapPanel view={view} by={by} onBy={setBy} highlight={highlight} selected={null} onOpen={openGene} />
-              <GenesPanel genes={view.genes} filter={filter} onFilter={setFilter} dimLabel={dimLabel} selected={null} onOpen={openGene} />
-              {dims.length > 0 && <FlipPanel genes={view.genes} dims={dims} dimLabel={dimLabel} onOpen={openGene} />}
+              <MapPanel
+                view={view}
+                by={by}
+                onBy={setBy}
+                highlight={highlight}
+                selected={null}
+                onOpen={openGene}
+              />
+              <GenesPanel
+                genes={view.genes}
+                filter={filter}
+                onFilter={setFilter}
+                dimLabel={dimLabel}
+                selected={null}
+                onOpen={openGene}
+              />
+              {flips.error ? (
+                <ErrorPanel error={flips.error} title="The flip matrix could not be read" compact />
+              ) : (
+                <FlipPanel flips={flips.data} onOpen={openGene} />
+              )}
               <ReferencesPanel view={view} />
             </div>
             <aside className="min-w-0 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:self-start xl:overflow-y-auto xl:pr-1 max-xl:order-first">
               {cards.error ? (
-                <ErrorPanel error={cards.error} title="The Decision Cards could not be read" onRetry={() => void cards.refetch()} compact />
+                <ErrorPanel
+                  error={cards.error}
+                  title="The Decision Cards could not be read"
+                  onRetry={() => void cards.refetch()}
+                  compact
+                />
               ) : !cards.data ? (
                 <div className="space-y-3">
                   <Skeleton className="h-40 w-full rounded-xl" />
                   <Skeleton className="h-40 w-full rounded-xl" />
                 </div>
               ) : (
-                <DecisionCards view={cards.data} workspaceKey={key} studyId={studyId} headline={view.headline} />
+                <div className="space-y-3">
+                  <DecisionCards
+                    view={cards.data}
+                    workspaceKey={key}
+                    studyId={studyId}
+                    focusCard={rest[0] === "card" ? (rest[1] ?? null) : null}
+                    nextAction={
+                      workspace.next_step.section === "results" ? workspace.next_step.action : null
+                    }
+                  />
+                  <ChoicesConfirm workspace={workspace} autoFocus={rest[0] === "confirm"} />
+                </div>
               )}
             </aside>
           </div>
