@@ -35,6 +35,7 @@ from qpilot.trace.schema import (
     Traced,
     TraceGeneRow,
     TraceMissing,
+    TracePlate,
     TraceStudy,
     TraceSuspect,
     TraceWithout,
@@ -46,7 +47,7 @@ MAX_SUSPECTS = 40
 
 def trace_study(ctx: TraceContext) -> Traced[TraceStudy]:
     """Genes by fragility and the samples behind the most calls (see the module)."""
-    facts = Facts("study")
+    facts = Facts("study", float(2**ctx.rule.min_log2fc))
     genes = _genes(ctx)
     suspects = _suspects(ctx)
     left_out = _left_out(ctx)
@@ -149,9 +150,13 @@ def _suspects(ctx: TraceContext) -> list[TraceSuspect]:
         if not (flipped or moved or flags):
             continue
         j_max = int(np.argmax(np.where(used, d[i], -1.0)))
-        read = None
+        read = regrouped = held = None
         if "reference_pull" in flags:
-            read = changes(ctx, read_as_expected(ctx, i).after)
+            what = read_as_expected(ctx, i)
+            read = changes(ctx, what.after)
+            if what.regrouped:
+                regrouped = _regrouped_words(ctx, what.left, what.joined)
+                held = changes(ctx, what.fixed) if what.fixed is not None else None
         out.append(
             TraceSuspect(
                 unit=unit,
@@ -169,6 +174,8 @@ def _suspects(ctx: TraceContext) -> list[TraceSuspect]:
                 wells=[well_model(r) for r in unusual],
                 plates=sample_plates(ctx, unit, [r["gene"] for r in unusual]) if unusual else [],
                 read_as_expected=read,
+                read_regrouped=regrouped,
+                read_groups_held=held,
             )
         )
     out.sort(
@@ -182,6 +189,18 @@ def _suspects(ctx: TraceContext) -> list[TraceSuspect]:
         )
     )
     return [s.model_copy(update={"rank": n}) for n, s in enumerate(out[:MAX_SUSPECTS], start=1)]
+
+
+def _regrouped_words(ctx: TraceContext, left: tuple[str, ...], joined: tuple[str, ...]) -> str:
+    """'2016 leaves MYCN-high; 1907 joins MYCN-high'."""
+    parts = []
+    if left:
+        parts.append(f"{', '.join(left)} {'leaves' if len(left) == 1 else 'leave'} {ctx.labels[0]}")
+    if joined:
+        parts.append(
+            f"{', '.join(joined)} {'joins' if len(joined) == 1 else 'join'} {ctx.labels[0]}"
+        )
+    return "; ".join(parts)
 
 
 def _left_out(ctx: TraceContext) -> list[TraceMissing]:
@@ -253,6 +272,18 @@ def _summary(
             "are in no comparison (see why)."
         )
     facts.say("summary", text)
+
+
+def plate_wells(ctx: TraceContext, run: str) -> TracePlate:
+    """Every well of one plate, with Trace's flags (``TraceError`` for an unknown plate)."""
+    rows = [r for r in ctx.records if r["plate"] == run]
+    if not rows:
+        raise TraceError(f"There is no plate {run!r} in this study.")
+    return TracePlate(
+        run=run,
+        genes=sorted({str(r["gene"]) for r in rows}),
+        wells=[well_model(r) for r in rows],
+    )
 
 
 def without_samples(ctx: TraceContext, gene: str, units: list[str]) -> TraceWithout:

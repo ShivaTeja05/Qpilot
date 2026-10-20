@@ -19,6 +19,7 @@ import {
   VerdictTag,
   type ColumnDef,
 } from "@/ui";
+import { TraceLink } from "@/features/trace/TraceLink";
 import type { GeneRow } from "./api";
 import { gridSize } from "./MapPanel";
 
@@ -199,6 +200,7 @@ export function GenesPanel({
                 headline
               </Badge>
             )}
+            <TraceLink gene={row.original.gene} compact className="ml-auto" />
           </span>
         ),
       },

@@ -1,7 +1,52 @@
+/**
+ * Trace (docs/app.md §7, owner: trace): follow any number down to the samples, wells and plates
+ * that drive it. `…/trace` is the study's overview (which calls hang on few samples, which
+ * samples sit behind the most calls); `…/trace/<GENE>` follows one gene's call down to its
+ * wells, with the "what if I set this sample aside?" recomputed by the engine.
+ */
+import { Route } from "lucide-react";
+import { useMemo, type ReactNode } from "react";
 import type { SectionProps } from "@/shell/sections";
-import { SectionPending } from "@/shell/SectionPending";
+import { EmptyState } from "@/ui";
+import { scopeOf } from "./api";
+import { GeneTracePage } from "./GeneTrace";
+import { OverviewPage } from "./Overview";
 
-/** The "trace" section (owner: agent trace, see docs/app.md §7). */
-export default function Section(_: SectionProps) {
-  return <SectionPending id="trace" />;
+function Page({ children }: { children: ReactNode }) {
+  return <div className="mx-auto w-full max-w-[1400px]">{children}</div>;
+}
+
+/** A path segment as text (the router may hand it over encoded or not). */
+function decoded(segment: string | undefined): string | undefined {
+  if (!segment) return undefined;
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+export default function TraceSection({ workspace, rest }: SectionProps) {
+  const scope = useMemo(() => (workspace ? scopeOf(workspace) : null), [workspace]);
+  if (!workspace || !scope) return null;
+  const gene = decoded(rest[0]);
+  if (!scope.studyId) {
+    return (
+      <Page>
+        <EmptyState icon={<Route />} title="Nothing to trace yet" headingLevel={1}>
+          Confirm the design and the curves first; then every result can be followed down to its
+          samples, wells and plates here.
+        </EmptyState>
+      </Page>
+    );
+  }
+  return (
+    <Page>
+      {gene ? (
+        <GeneTracePage key={gene} workspace={workspace} scope={scope} gene={gene} />
+      ) : (
+        <OverviewPage workspace={workspace} scope={scope} />
+      )}
+    </Page>
+  );
 }

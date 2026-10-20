@@ -252,7 +252,7 @@ def trace_gene(ctx: TraceContext, gene: str, detail: int = DETAIL) -> Traced[Tra
         TraceError: The gene is not a compared gene of the study (the message says why).
     """
     j = ctx.gene_index(gene)
-    facts = Facts(f"g_{gene}")
+    facts = Facts(f"g_{gene}", float(2**ctx.rule.min_log2fc))
     base = ctx.base
     used = ctx.comparison.used[:, j]
     half = float(base.half_width()[j])
@@ -791,22 +791,32 @@ def _look_first(
     target = [w for w in top_sample.wells if w.gene == gene]
     u = t.name("lf_unit", top_sample.unit)
     unusual = [p for p in places if p.consequence == "changes_nothing"]
-    text = "Nothing unusual sits behind this result"
     if unusual:
-        noun = "unusual place changes" if len(unusual) == 1 else "unusual places change"
-        text += f" ({t.count('lf_n_unusual', len(unusual))} {noun} nothing here)"
+        noun = "place behind it changes" if len(unusual) == 1 else "places behind it change"
+        text = (
+            f"Nothing unusual changes this result: the {t.count('lf_n_unusual', len(unusual))} "
+            f"unusual {noun} nothing here"
+        )
+    else:
+        text = "Nothing unusual sits behind this result"
     text += (
         f". The sample that moves it most is {u}: set aside, {g}'s fold change moves by "
         f"{t.pct('lf_d', top_sample.d_log2fc)}"
     )
     if top_sample.flips:
         text += f" and the call becomes {t.name('lf_after', call_word(top_sample.call_without))}"
-    if "far_from_group" in top_sample.flags and not ctx.replicates:
+    odd = [f for f in top_sample.flags if f != "far_from_group"]
+    if odd:
+        text += (
+            ". Its wells show something unusual (see the places to look), but that changes "
+            "nothing for this result"
+        )
+    elif "far_from_group" in top_sample.flags and not ctx.replicates:
         text += (
             ". Its value is far from its group; with one well per sample and gene this cannot be "
             "told apart from biology"
         )
-    elif top_sample.unit in influential or top_sample.rank == 1:
+    else:
         text += ". Its wells look normal: keep it, its value is what its wells say"
     facts.say("look_first", text + ".")
     return TraceLookFirst(
@@ -895,12 +905,12 @@ def _summary(
     t = facts
     rule = ctx.rule
     g = t.name("gene", gene)
-    line = t.tok("rule_fold", float(2**rule.min_log2fc), "{:g}", "-fold")
+    line = t.tok("rule_fold", float(2**rule.min_log2fc), "{:g}")
     alpha = t.tok("rule_alpha", float(rule.alpha), "{:g}")
     text = (
         f"{g}: {t.name('call', call_word(call.conclusion))}, {t.change('fc', call.log2fc)} in "
         f"{t.name('group_a', ctx.labels[0])} than {t.name('group_b', ctx.labels[1])} "
-        f"(p {t.p('p', call.p, rule.alpha)}; the rule: at least {line} and p below {alpha})."
+        f"(p {t.p('p', call.p, rule.alpha)}; the rule: at least {line}-fold and p below {alpha})."
     )
     if n_flips:
         noun = "sample changes" if n_flips == 1 else "samples each change"

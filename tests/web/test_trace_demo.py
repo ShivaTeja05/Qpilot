@@ -123,7 +123,29 @@ def test_the_study_overview_names_the_fragile_genes_and_the_missing_tumours(ctx)
     assert sum(1 for m in study.left_out if m.reason == "empty_reference") >= 14
     flagged = {s.unit for s in study.suspects if "reference_pull" in s.flags}
     assert {"2016", "1924", "1772"} <= flagged
+    k22 = next(s for s in study.suspects if s.unit == "2016")
+    assert k22.read_regrouped and "2016 leaves MYCN-high" in k22.read_regrouped
+    assert {"CAMTA2", "IGSF4"} <= {c.gene for c in k22.read_groups_held or []}
     assert "4 change their call when a single sample is set aside" in out.plain("summary")
+
+
+def test_nothing_to_look_at_never_calls_unusual_wells_normal(ctx):
+    """When no unusual place changes a call, the words about the top sample match its wells."""
+    seen_odd = 0
+    for gene in ctx.items:
+        out = trace_gene(ctx, gene)
+        look = out.data.look_first
+        if look.kind != "influential":
+            continue
+        top = out.data.samples[0]
+        words = out.plain("look_first")
+        odd = [f for f in top.flags if f != "far_from_group"]
+        if odd:
+            seen_odd += 1
+            assert "look normal" not in words and "something unusual" in words, (gene, words)
+        if any(p.consequence == "changes_nothing" for p in out.data.places):
+            assert words.startswith("Nothing unusual changes this result"), (gene, words)
+    assert seen_odd  # DPYSL3: tumour 2016 (HMBS K22) moves it most and changes nothing
 
 
 def test_speed_after_the_model_is_kept(ctx):

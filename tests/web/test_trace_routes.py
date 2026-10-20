@@ -162,7 +162,24 @@ def test_trace_is_blind_until_the_session_is_confirmed_again(walked):
         ("GET", f"/api/studies/{study}/trace/{GENE}", None),
         ("POST", f"/api/studies/{study}/trace/{GENE}/without", {"samples": ["WT_1"]}),
         ("POST", f"/api/studies/{study}/trace/{GENE}/without", {}),
+        ("GET", f"/api/studies/{study}/trace/plate", None),
     ):
         r = c.request(method, url, json=body)
         assert r.status_code == 403 and r.json()["error"]["code"] == "blind", (url, r.text)
         assert "log2fc" not in r.text and "samples" not in r.json()["error"]["details"]
+
+
+def test_a_plate_as_trace_reads_it(walked):
+    c, study = walked["client"], walked["study"]
+    trace = ready(c, f"/api/studies/{study}/trace/{GENE}").json()["trace"]
+    well = trace["samples"][0]["wells"][0]
+    r = c.get(f"/api/studies/{study}/trace/plate", params={"run": well["plate"]})
+    assert r.status_code == 200, r.text
+    plate = r.json()["plate"]
+    assert plate["run"] == well["plate"] and well["gene"] in plate["genes"]
+    listed = {w["key"]: w for w in plate["wells"]}
+    assert listed[well["key"]] == well
+    assert {w["sample_type"] for w in plate["wells"]} >= {"unkn"}
+    r = c.get(f"/api/studies/{study}/trace/plate", params={"run": "no such plate"})
+    assert r.status_code == 404
+    assert c.get(f"/api/studies/{study}/trace/plate").status_code == 422
