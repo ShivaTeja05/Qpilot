@@ -35,6 +35,7 @@ from qpilot.trace.schema import (
     Traced,
     TraceGeneRow,
     TraceMissing,
+    TracePlate,
     TraceStudy,
     TraceSuspect,
     TraceWithout,
@@ -253,6 +254,18 @@ def _summary(
             "are in no comparison (see why)."
         )
     facts.say("summary", text)
+
+
+def plate_wells(ctx: TraceContext, run: str) -> TracePlate:
+    """Every well of one plate, with Trace's flags (``TraceError`` for an unknown plate)."""
+    rows = [r for r in ctx.records if r["plate"] == run]
+    if not rows:
+        raise TraceError(f"There is no plate {run!r} in this study.")
+    return TracePlate(
+        run=run,
+        genes=sorted({str(r["gene"]) for r in rows}),
+        wells=[well_model(r) for r in rows],
+    )
 
 
 def without_samples(ctx: TraceContext, gene: str, units: list[str]) -> TraceWithout:

@@ -1763,6 +1763,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/trace/plate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Trace Plate
+         * @description Every well of one plate with Trace's flags (the plate map next to a traced well).
+         */
+        get: operations["get_trace_plate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/system": {
         parameters: {
             query?: never;
@@ -7018,6 +7038,27 @@ export type components = {
             wells: components["schemas"]["TraceWell"][];
         };
         /**
+         * TracePlate
+         * @description Every well of one plate, as Trace reads it (for the plate map next to a trace).
+         */
+        TracePlate: {
+            /** Genes */
+            genes: string[];
+            /** Run */
+            run: string;
+            /** Wells */
+            wells: components["schemas"]["TraceWell"][];
+        };
+        /**
+         * TracePlateView
+         * @description ``GET /studies/{id}/trace/plate?run=``: one plate's wells with Trace's flags.
+         */
+        TracePlateView: {
+            plate: components["schemas"]["TracePlate"];
+            /** Study Id */
+            study_id: string;
+        };
+        /**
          * TraceReference
          * @description What one control gene does to this result.
          */
@@ -10566,6 +10607,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TraceWithoutView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trace_plate: {
+        parameters: {
+            query?: {
+                /** @description The plate (run id). */
+                run?: string | null;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TracePlateView"];
                 };
             };
             /** @description Validation Error */

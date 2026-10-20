@@ -330,6 +330,14 @@ class TraceStudy(BaseModel):
     thresholds: dict[str, float]
 
 
+class TracePlate(BaseModel):
+    """Every well of one plate, as Trace reads it (for the plate map next to a trace)."""
+
+    run: str
+    genes: list[str]
+    wells: list[TraceWell]
+
+
 class TraceWithout(BaseModel):
     """One gene recomputed with some samples set aside together (exact), and what else changes."""
 
