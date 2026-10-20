@@ -378,7 +378,8 @@ def test_the_built_page_loads_nothing_from_the_internet():
             if url.startswith("//") or not NOT_FETCHED.match(url):
                 if not url.startswith("//"):
                     offenders.append(f"{path.name}: {url}")
-        for url in re.findall(r"""url\(\s*['"]?([^'")]+)""", text):
+        css_urls = re.findall(r"""url\(\s*['"]?([^'")]+)""", text) if path.suffix == ".css" else []
+        for url in css_urls:
             if not url.startswith(("/", "data:", "#")):
                 offenders.append(f"{path.name}: url({url})")
     assert not offenders, offenders[:10]

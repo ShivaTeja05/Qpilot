@@ -190,3 +190,46 @@ def test_a_sheet_of_the_wrong_kind_is_refused(client, smoke_rdml):
         headers=SAME,
     )
     assert r.status_code == 400 and r.json()["error"]["code"] == "bad_file"
+
+
+# ---- hostile file contents through the upload ------------------------------------------------
+
+CANARY = "qpilot-redteam-canary-3f9a1c"
+
+
+def _rdml_with_entity(target: str) -> bytes:
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<!DOCTYPE rdml [ <!ENTITY xxe SYSTEM "{target}"> <!ENTITY a "aaaaaaaaaa">'
+        ' <!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;"> <!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;"> ]>\n'
+        '<rdml xmlns="http://www.rdml.org" version="1.3"><dateMade>2026-10-17T00:00:00</dateMade>'
+        "<id><publisher>&xxe;&c;</publisher><serialNumber>xxe</serialNumber></id>"
+        '<sample id="&xxe;"><type>unkn</type></sample></rdml>'
+    ).encode()
+
+
+@pytest.mark.parametrize("scheme", ["file://", ""])
+def test_an_external_entity_in_an_upload_reads_nothing(client, tmp_path, scheme):
+    secret = tmp_path / "secret.txt"
+    secret.write_text(CANARY)
+    job = _upload(client, "xxe.rdml", _rdml_with_entity(f"{scheme}{secret}")).json()["job"]
+    done = _wait(client, job["id"])
+    seen = [str(done), client.get("/api/workspaces").text]
+    for w in client.get("/api/workspaces").json()["workspaces"]:
+        seen.append(client.get(f"/api/sessions/{w['key']}").text)
+        seen.append(client.get(f"/api/sessions/{w['key']}/quarantine").text)
+        seen.append(client.get(f"/api/sessions/{w['key']}/plate").text)
+    assert not any(CANARY in s for s in seen)
+
+
+def test_a_zip_bomb_rdml_is_refused_before_it_inflates(client):
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("rdml_data.xml", b"<" + b"a" * (64 * 1024 * 1024) + b">")
+    job = _upload(client, "bomb.rdml", buf.getvalue()).json()["job"]
+    done = _wait(client, job["id"])
+    assert done["status"] == "failed"
+    assert "too large" in done["error"]["message"] or "compression" in done["error"]["message"]
