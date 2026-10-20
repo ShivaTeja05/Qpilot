@@ -48,14 +48,19 @@ that has not been merged into `ui/one-page` yet is `test.fixme` with the owner's
 screens spec also marks a section `fixme` while it still shows the development placeholder.
 Flip the flag when the coordinator announces the merge.
 
-| Spec               | Covers                                                                             | Owners              |
-| ------------------ | ---------------------------------------------------------------------------------- | ------------------- |
-| `screens.spec.ts`  | every section × width × theme: renders, axe, no side scroll, screenshot            | all                 |
-| `shell.spec.ts`    | printed link, needs-key screen, CSP, rail reaches every section, next step, theme  | shell, home         |
-| `home.spec.ts`     | Open (Recent, system strip, keyboard), Settings                                    | home                |
-| `studio.spec.ts`   | Design and Curves inboxes (real proposals), plate map, heatmap → curve, j/k, blind | design, curves      |
-| `results.spec.ts`  | all genes, robustness map + table, Decision Cards, decide + Undo, gene prev/next   | insight, gene       |
-| `audit.spec.ts`    | seeded audit, tabs, gene rows → Gene                                               | audit, gene         |
-| `prism.spec.ts`    | routes table                                                                       | prism               |
-| `record.spec.ts`   | timeline = chain, Export → zip download, commands; Agents                          | record              |
-| `keyboard.spec.ts` | ⌘K, `?`, g then a letter, ⌘J Ask, focus rings                                      | shell, ask, insight |
+| Spec                     | Covers                                                                                                                                   | Owners               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `screens.spec.ts`        | every section × 1440/1024/768/390 × light/dark: renders, heading, axe, no side scroll, no bug text, screenshot                           | all                  |
+| `shell.spec.ts`          | printed link, other-launch 403, CSP, needs-key screen, rail and bottom bar reach every section, next step, top bar, unknown study, theme | shell                |
+| `home.spec.ts`           | Open (Recent = /api/workspaces, system strip, mouse and keyboard), Settings (model, never-does, autonomy, theme)                         | home                 |
+| `studio.spec.ts`         | Design and Curves inboxes = /proposals, a decided card read-only, plate map and well, Curves plate, blind                                | design, curves       |
+| `results.spec.ts`        | all genes, Call counts, map summary + table, Decision Cards = /cards, j/k/Enter, decide + Undo vs /decisions, gene row → Gene            | insight, gene        |
+| `audit.spec.ts`          | verdict strip = /audit/overview, every tab, gene → Gene; Gene header = /results numbers, panels, prev/next                               | audit, gene          |
+| `prism.spec.ts`          | routes into Prism = /prism/routes, gene links                                                                                            | prism                |
+| `record.spec.ts`         | timeline = /decisions, Intact, Export → download → Verify, a changed copy fails; Agents = /api/agents                                    | record               |
+| `keyboard.spec.ts`       | ⌘K, `?`, g then a letter, ⌘J Ask + an answered example, focus rings                                                                      | shell, ask           |
+| `planner.spec.ts`        | Plan next = /planner: groups, rule, every gene, explorer defaults, plates                                                                | planner              |
+| `history-report.spec.ts` | History = /history (timeline, Studio log, Intact); Report = /report (summary, findings, methods, MIQE), passport download                | history, report      |
+| `claims.spec.ts`         | a pasted paragraph's verdicts and counts = POST /claims; Try an example                                                                  | claims               |
+| `trace.spec.ts`          | overview = /trace, a gene's trace = /trace/{gene}, the link from Gene                                                                    | trace                |
+| `walk.spec.ts`           | `E2E_WALK=1` only: fresh demo → design → curves → results equal the seeded walk's (moves the demo aside; reset after)                    | design, curves, home |

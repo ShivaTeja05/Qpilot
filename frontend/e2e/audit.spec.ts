@@ -18,7 +18,12 @@ interface AuditOverview {
 }
 
 async function getJson<T>(api: APIRequestContext, path: string): Promise<T> {
-  const res = await api.get(path, { timeout: 110_000 });
+  let res = await api.get(path, { timeout: 110_000 });
+  // 409 "loading": the audit's views are being prepared (a job, ~15 s on a cold server).
+  for (let i = 0; i < 40 && res.status() === 409; i++) {
+    await new Promise((r) => setTimeout(r, 3000));
+    res = await api.get(path, { timeout: 110_000 });
+  }
   expect(res.status(), `GET ${path}`).toBe(200);
   return (await res.json()) as T;
 }
