@@ -16,6 +16,7 @@ is a citation marker.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -190,8 +191,12 @@ def tok(fid: str) -> str:
     return "{{" + fid + "}}"
 
 
+_SPACE_BEFORE = re.compile(r"\s+([,.;:)])")
+
+
 def _tidy(text: str) -> str:
-    return " ".join(text.split())
+    """One space between words, none before punctuation (where a citation marker was left out)."""
+    return _SPACE_BEFORE.sub(r"\1", " ".join(text.split()))
 
 
 def with_cites(text: ReportText) -> str:

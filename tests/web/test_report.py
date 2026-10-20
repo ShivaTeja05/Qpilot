@@ -94,6 +94,8 @@ def test_the_report_of_a_walked_study(walked):
     groups = next(p for p in view["methods"]["paragraphs"] if p["id"] == "comparison")
     assert "confirmed design" in groups["text"]["plain"]
     assert sum(view["miqe"]["counts"].values()) == view["miqe"]["n_items"] == 53
+    for copy in (view["methods"]["plain"], view["methods"]["with_citations"]):
+        assert not re.search(r"\s[,.;:]|\.\.", copy), "no space before punctuation"
     for text in texts(view):
         for seg in text["segments"]:
             assert seg["fact"] is None or seg["fact"] in view["facts"], seg
