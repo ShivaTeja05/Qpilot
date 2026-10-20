@@ -172,3 +172,18 @@ def test_a_plain_folder_in_home_is_allowed(roots):
         store_root=roots["store"],
     )
     assert got == (roots["home"] / "Documents" / "sent_back").resolve()
+
+
+@pytest.mark.parametrize(
+    "members",
+    [
+        {"CHECKSUMS.sha256": b""},
+        {"CHECKSUMS.sha256": b"", "results.json": b'{"study_id": "forged"}'},
+        {"CHECKSUMS.sha256": b"0" * 64 + b"  results.json\n", "results.json": b"{}"},
+    ],
+)
+def test_a_forged_record_never_verifies(client, members):
+    r = _verify(client, _zip(members))
+    assert r.status_code in (200, 400), r.text[:200]
+    if r.status_code == 200:
+        assert r.json()["ok"] is False and r.json()["summary"]
