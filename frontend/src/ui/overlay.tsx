@@ -5,11 +5,46 @@
  */
 import { Dialog as D, DropdownMenu as M, Popover as P, Tooltip as T } from "radix-ui";
 import { X } from "lucide-react";
-import type { ComponentProps, ReactNode } from "react";
+import { useLayoutEffect, useRef, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { IconButton } from "./Button";
 
 const LAYER = "z-50 rounded-xl border border-line bg-surface text-fg shadow-lg";
+
+const FIRST_FIELD =
+  "input:not([disabled]):not([type=hidden]), textarea:not([disabled]), select:not([disabled]), [role=combobox]:not([disabled])";
+
+/**
+ * Focus for a dialog or sheet opened without a trigger: on open, the element marked
+ * `data-autofocus`, else the first field, else the layer itself (never the Close button); on
+ * close, back to whatever had focus before it opened (Radix alone returns only to its Trigger).
+ */
+function useLayerFocus(open: boolean | undefined) {
+  const before = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    if (open) before.current = document.activeElement as HTMLElement | null;
+  }, [open]);
+  return {
+    onOpenAutoFocus: (e: Event) => {
+      const root = e.currentTarget as HTMLElement | null;
+      if (!root) return;
+      e.preventDefault();
+      const target =
+        root.querySelector<HTMLElement>("[data-autofocus]") ??
+        root.querySelector<HTMLElement>(FIRST_FIELD) ??
+        root;
+      target.focus({ preventScroll: target === root });
+    },
+    onCloseAutoFocus: (e: Event) => {
+      const el = before.current;
+      before.current = null;
+      if (el && el.isConnected && el !== document.body) {
+        e.preventDefault();
+        el.focus();
+      }
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------------------------
 // Dialog
@@ -32,7 +67,18 @@ export interface DialogProps {
 const DIALOG_SIZE = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
 
 /** A modal dialog with a title, an optional description, a body and a footer. */
-export function Dialog({ open, onOpenChange, trigger, title, description, children, footer, size = "md", hideClose }: DialogProps) {
+export function Dialog({
+  open,
+  onOpenChange,
+  trigger,
+  title,
+  description,
+  children,
+  footer,
+  size = "md",
+  hideClose,
+}: DialogProps) {
+  const focus = useLayerFocus(open);
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       {trigger ? <D.Trigger asChild>{trigger}</D.Trigger> : null}
@@ -44,12 +90,15 @@ export function Dialog({ open, onOpenChange, trigger, title, description, childr
             "qp-pop fixed top-1/2 left-1/2 flex max-h-[min(88dvh,820px)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col outline-none",
             DIALOG_SIZE[size],
           )}
+          {...(trigger ? {} : focus)}
           {...(description ? {} : { "aria-describedby": undefined })}
         >
           <div className="flex items-start justify-between gap-4 border-b border-line px-5 pt-4 pb-3">
             <div className="min-w-0">
               <D.Title className="text-base font-semibold tracking-tight">{title}</D.Title>
-              {description ? <D.Description className="mt-1 text-[13px] text-muted">{description}</D.Description> : null}
+              {description ? (
+                <D.Description className="mt-1 text-[13px] text-muted">{description}</D.Description>
+              ) : null}
             </div>
             {hideClose ? null : (
               <D.Close asChild>
@@ -59,7 +108,9 @@ export function Dialog({ open, onOpenChange, trigger, title, description, childr
               </D.Close>
             )}
           </div>
-          {children ? <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-sm">{children}</div> : null}
+          {children ? (
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-sm">{children}</div>
+          ) : null}
           {footer ? (
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2 px-5 py-3 rounded-b-xl">
               {footer}
@@ -90,6 +141,8 @@ export interface SheetProps {
   actions?: ReactNode;
   /** Keep the page behind usable (no overlay, no focus trap): e.g. the Ask drawer on wide screens. */
   modal?: boolean;
+  /** Start a side sheet this many px below the top (e.g. under a top bar). */
+  offsetTop?: number;
 }
 
 /** A drawer from the side (Ask, details) or the bottom (phones). */
@@ -104,7 +157,9 @@ export function Sheet({
   footer,
   actions,
   modal = true,
+  offsetTop,
 }: SheetProps) {
+  const focus = useLayerFocus(open);
   const place =
     side === "bottom"
       ? "inset-x-0 bottom-0 max-h-[88dvh] rounded-t-2xl border-t qp-slide-up"
@@ -116,15 +171,25 @@ export function Sheet({
       <D.Portal>
         {modal ? <D.Overlay className="qp-fade fixed inset-0 z-40 bg-black/30" /> : null}
         <D.Content
-          className={cn("fixed z-40 flex flex-col border-line bg-surface text-fg shadow-lg outline-none", place)}
-          style={side === "bottom" ? undefined : { width: `min(${width}px, 100vw)` }}
+          className={cn(
+            "fixed z-40 flex flex-col border-line bg-surface text-fg shadow-lg outline-none",
+            place,
+          )}
+          style={
+            side === "bottom" ? undefined : { width: `min(${width}px, 100vw)`, top: offsetTop }
+          }
           onInteractOutside={modal ? undefined : (e) => e.preventDefault()}
+          {...focus}
           {...(description ? {} : { "aria-describedby": undefined })}
         >
           <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
             <div className="min-w-0">
               <D.Title className="text-[15px] font-semibold tracking-tight">{title}</D.Title>
-              {description ? <D.Description className="mt-0.5 text-[13px] text-muted">{description}</D.Description> : null}
+              {description ? (
+                <D.Description className="mt-0.5 text-[13px] text-muted">
+                  {description}
+                </D.Description>
+              ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-1">
               {actions}
@@ -176,7 +241,11 @@ export function Popover({
           sideOffset={6}
           collisionPadding={12}
           aria-label={label}
-          className={cn(LAYER, "qp-pop w-80 max-w-[calc(100vw-24px)] p-3 text-sm outline-none", className)}
+          className={cn(
+            LAYER,
+            "qp-pop w-80 max-w-[calc(100vw-24px)] p-3 text-sm outline-none",
+            className,
+          )}
         >
           {children}
         </P.Content>
@@ -241,7 +310,11 @@ export function Tooltip({
 export const Menu = M.Root;
 export const MenuTrigger = M.Trigger;
 
-export function MenuContent({ className, align = "end", ...rest }: ComponentProps<typeof M.Content>) {
+export function MenuContent({
+  className,
+  align = "end",
+  ...rest
+}: ComponentProps<typeof M.Content>) {
   return (
     <M.Portal>
       <M.Content
@@ -274,13 +347,13 @@ export function MenuItem({
     >
       {icon}
       <span className="min-w-0 flex-1">{children}</span>
-      {shortcut ? <span className="ml-4 text-xs text-faint">{shortcut}</span> : null}
+      {shortcut ? <span className="ml-4 text-xs text-muted">{shortcut}</span> : null}
     </M.Item>
   );
 }
 
 export function MenuLabel({ children }: { children: ReactNode }) {
-  return <M.Label className="px-2 pt-1.5 pb-1 text-xs font-medium text-faint">{children}</M.Label>;
+  return <M.Label className="px-2 pt-1.5 pb-1 text-xs font-medium text-muted">{children}</M.Label>;
 }
 
 export function MenuSeparator() {

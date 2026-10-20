@@ -1,0 +1,1931 @@
+{
+ "gene": "NM23A",
+ "rows": [
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [],
+   "planned": true
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1889716569594835,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.3693001806169716,
+   "fold": "2.58× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1487411844275983,
+   "fold": "2.22× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1249487766329485,
+   "fold": "2.18× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1966921040925778,
+   "fold": "2.29× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.2574445721690644,
+   "fold": "2.39× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.4458371558014496,
+   "fold": "2.72× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 35 counts as not detected",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.217996971405379,
+   "fold": "2.33× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "Student t-test (equal variances)"
+   ],
+   "planned": false
+  },
+  {
+   "log2": 1.1873019400600584,
+   "fold": "2.28× higher",
+   "call": "called up (higher in MYCN-high)",
+   "call_key": "up",
+   "same": true,
+   "choices": [
+    "standard-curve slope of the plate's dilution series",
+    "drop efficiency-outlier wells",
+    "Cq above 38 counts as not detected",
+    "set to the lowest amount detected",
+    "Mann-Whitney U (rank test)"
+   ],
+   "planned": false
+  }
+ ],
+ "n": 144,
+ "n_same": 144,
+ "n_other": 0,
+ "base_call": "called up (higher in MYCN-high)",
+ "base_call_key": "up",
+ "line_log2": 1.0,
+ "line": "2×"
+}

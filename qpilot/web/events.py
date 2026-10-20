@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import stat
 import threading
 import time
 from collections.abc import AsyncIterator
@@ -24,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 HEARTBEAT_S = 15.0
+MAX_RESULTS_BYTES = 256 * 1024 * 1024
 WATCH_INTERVAL_S = 1.0
 QUEUE_SIZE = 256
 WATCHED = {
@@ -173,7 +175,10 @@ def _study_id(workspace: Path) -> str | None:
     """A workspace's study id (read once per change of results.json)."""
     path = workspace / "results.json"
     try:
-        mtime = path.stat().st_mtime_ns
+        st = path.stat()
+        if not stat.S_ISREG(st.st_mode) or st.st_size > MAX_RESULTS_BYTES:
+            return None  # a pipe or a device is never opened; a huge file is not read
+        mtime = st.st_mtime_ns
         cached = _ID_CACHE.get(path)
         if cached and cached[0] == mtime:
             return cached[1]
@@ -186,5 +191,5 @@ def _study_id(workspace: Path) -> str | None:
             study_id = head[start:].split(":", 1)[1].split('"')[1]
         _ID_CACHE[path] = (mtime, study_id)
         return study_id
-    except (OSError, ValueError, KeyError, IndexError):
+    except (OSError, ValueError, KeyError, IndexError, TypeError):
         return None

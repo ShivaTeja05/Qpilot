@@ -1,0 +1,595 @@
+{
+ "gene": "ODC1",
+ "planned_log2": 1.7305780875585897,
+ "planned": "3.32× higher",
+ "decisions": [
+  {
+   "id": "efficiency",
+   "name": "The efficiency model",
+   "options": [
+    {
+     "label": "LinRegPCR mean efficiency per assay",
+     "tier": "prespecified",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": true
+    },
+    {
+     "label": "standard-curve slope of the plate's dilution series",
+     "tier": "defensible",
+     "log2": 1.7511398376366027,
+     "fold": "3.37× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "each well's own efficiency",
+     "tier": "common_practice",
+     "log2": 1.6860590101347526,
+     "fold": "3.22× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "assume 100 % (the ddCq shortcut)",
+     "tier": "common_practice",
+     "log2": 1.8524767802764703,
+     "fold": "3.61× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    }
+   ],
+   "n_change": 0
+  },
+  {
+   "id": "flagged",
+   "name": "How flagged wells are handled",
+   "options": [
+    {
+     "label": "keep every quantified well",
+     "tier": "prespecified",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": true
+    },
+    {
+     "label": "drop efficiency-outlier wells",
+     "tier": "defensible",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "also drop wells below 10 copies",
+     "tier": "common_practice",
+     "log2": 1.8016933797283678,
+     "fold": "3.49× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    }
+   ],
+   "n_change": 0
+  },
+  {
+   "id": "late_cq",
+   "name": "The late-Cq cut-off",
+   "options": [
+    {
+     "label": "keep every Cq",
+     "tier": "prespecified",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": true
+    },
+    {
+     "label": "Cq above 35 counts as not detected",
+     "tier": "defensible",
+     "log2": 1.982888832877883,
+     "fold": "3.95× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "Cq above 38 counts as not detected",
+     "tier": "defensible",
+     "log2": 1.800087832941884,
+     "fold": "3.48× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    }
+   ],
+   "n_change": 0
+  },
+  {
+   "id": "nondetect",
+   "name": "How non-detects are handled",
+   "options": [
+    {
+     "label": "leave them out",
+     "tier": "prespecified",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": true
+    },
+    {
+     "label": "set to the lowest amount detected",
+     "tier": "defensible",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "substitute Cq = 40",
+     "tier": "common_practice",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    }
+   ],
+   "n_change": 0
+  },
+  {
+   "id": "refs",
+   "name": "The reference genes",
+   "options": [
+    {
+     "label": "normalise to 1 reference gene: ALUsq",
+     "tier": "common_practice",
+     "log2": 1.6951914159992825,
+     "fold": "3.24× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 1 reference gene: HMBS",
+     "tier": "common_practice",
+     "log2": 1.3332637746688203,
+     "fold": "2.52× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 1 reference gene: HPRT1",
+     "tier": "common_practice",
+     "log2": 2.020444590787652,
+     "fold": "4.06× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 1 reference gene: SDHA",
+     "tier": "common_practice",
+     "log2": 1.5520633951206637,
+     "fold": "2.93× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 1 reference gene: UBC",
+     "tier": "common_practice",
+     "log2": 2.051927261216529,
+     "fold": "4.15× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: ALUsq+HMBS",
+     "tier": "common_practice",
+     "log2": 1.5142275953340512,
+     "fold": "2.86× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: ALUsq+HPRT1",
+     "tier": "common_practice",
+     "log2": 1.8578180033934664,
+     "fold": "3.62× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: ALUsq+SDHA",
+     "tier": "common_practice",
+     "log2": 1.6236274055599735,
+     "fold": "3.08× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: ALUsq+UBC",
+     "tier": "common_practice",
+     "log2": 1.8735593386079064,
+     "fold": "3.66× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: HMBS+HPRT1",
+     "tier": "common_practice",
+     "log2": 1.6768541827282357,
+     "fold": "3.20× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: HMBS+SDHA",
+     "tier": "common_practice",
+     "log2": 1.4426635848947438,
+     "fold": "2.72× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: HMBS+UBC",
+     "tier": "common_practice",
+     "log2": 1.6925955179426753,
+     "fold": "3.23× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: HPRT1+SDHA",
+     "tier": "common_practice",
+     "log2": 1.7862539929541588,
+     "fold": "3.45× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: HPRT1+UBC",
+     "tier": "common_practice",
+     "log2": 2.036185926002091,
+     "fold": "4.10× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 2 reference genes: SDHA+UBC",
+     "tier": "common_practice",
+     "log2": 1.801995328168597,
+     "fold": "3.49× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: ALUsq+HMBS+HPRT1",
+     "tier": "common_practice",
+     "log2": 1.682966593818585,
+     "fold": "3.21× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: ALUsq+HMBS+SDHA",
+     "tier": "common_practice",
+     "log2": 1.5268395285962555,
+     "fold": "2.88× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: ALUsq+HMBS+UBC",
+     "tier": "common_practice",
+     "log2": 1.693460817294877,
+     "fold": "3.23× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: ALUsq+HPRT1+SDHA",
+     "tier": "defensible",
+     "log2": 1.7558998006358661,
+     "fold": "3.38× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: ALUsq+HPRT1+UBC",
+     "tier": "common_practice",
+     "log2": 1.9225210893344873,
+     "fold": "3.79× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: ALUsq+SDHA+UBC",
+     "tier": "common_practice",
+     "log2": 1.7663940241121583,
+     "fold": "3.40× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: HMBS+HPRT1+SDHA",
+     "tier": "common_practice",
+     "log2": 1.6352572535257135,
+     "fold": "3.11× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: HMBS+HPRT1+UBC",
+     "tier": "common_practice",
+     "log2": 1.8018785422243355,
+     "fold": "3.49× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: HMBS+SDHA+UBC",
+     "tier": "common_practice",
+     "log2": 1.6457514770020065,
+     "fold": "3.13× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 3 reference genes: HPRT1+SDHA+UBC",
+     "tier": "common_practice",
+     "log2": 1.8748117490416147,
+     "fold": "3.67× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 4 reference genes: ALUsq+HMBS+HPRT1+SDHA",
+     "tier": "common_practice",
+     "log2": 1.6502407941441046,
+     "fold": "3.14× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 4 reference genes: ALUsq+HMBS+HPRT1+UBC",
+     "tier": "common_practice",
+     "log2": 1.775206760668071,
+     "fold": "3.42× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 4 reference genes: ALUsq+HMBS+SDHA+UBC",
+     "tier": "common_practice",
+     "log2": 1.6581114617513242,
+     "fold": "3.16× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 4 reference genes: ALUsq+HPRT1+SDHA+UBC",
+     "tier": "common_practice",
+     "log2": 1.829906665781032,
+     "fold": "3.56× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 4 reference genes: HMBS+HPRT1+SDHA+UBC",
+     "tier": "common_practice",
+     "log2": 1.7394247554484172,
+     "fold": "3.34× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "normalise to 5 reference genes: ALUsq+HMBS+HPRT1+SDHA+UBC",
+     "tier": "prespecified",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": true
+    }
+   ],
+   "n_change": 0
+  },
+  {
+   "id": "cut",
+   "name": "The group cut-off",
+   "options": [
+    {
+     "label": "top 10 % by MYCN expression",
+     "tier": "defensible",
+     "log2": 2.312124780700721,
+     "fold": "4.97× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "top 15 % by MYCN expression",
+     "tier": "prespecified",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": true
+    },
+    {
+     "label": "top 20 % by MYCN expression",
+     "tier": "defensible",
+     "log2": 1.43928183363911,
+     "fold": "2.71× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    }
+   ],
+   "n_change": 0
+  },
+  {
+   "id": "test",
+   "name": "The statistical test",
+   "options": [
+    {
+     "label": "Welch t-test",
+     "tier": "prespecified",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": true
+    },
+    {
+     "label": "Student t-test (equal variances)",
+     "tier": "defensible",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "Mann-Whitney U (rank test)",
+     "tier": "defensible",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    }
+   ],
+   "n_change": 0
+  },
+  {
+   "id": "multiplicity",
+   "name": "The multiple-testing correction",
+   "options": [
+    {
+     "label": "no correction",
+     "tier": "prespecified",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": true
+    },
+    {
+     "label": "Benjamini-Hochberg false discovery rate",
+     "tier": "defensible",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    },
+    {
+     "label": "Holm family-wise error rate",
+     "tier": "defensible",
+     "log2": 1.7305780875585897,
+     "fold": "3.32× higher",
+     "call": "called up (higher in MYCN-high)",
+     "call_key": "up",
+     "changes_call": false,
+     "planned": false
+    }
+   ],
+   "n_change": 0
+  }
+ ],
+ "line_log2": 1.0,
+ "line": "2×"
+}

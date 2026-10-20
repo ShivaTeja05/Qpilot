@@ -1,0 +1,67 @@
+{
+  "id": "51c01941a0fc47d3",
+  "kind": "ask",
+  "title": "Answering “Is the AHCY result robust?”",
+  "key": "bc1d233e3866",
+  "status": "done",
+  "step": "Looking it up in the study",
+  "fraction": null,
+  "typical_s": 1.5,
+  "elapsed_s": 0.04,
+  "result": {
+    "question": "Is the AHCY result robust?",
+    "answer": "AHCY is higher in the MYCN high group under the recommended choices: 2.6× (confidence interval 2.1× to 3.2×). It holds in 91% of the 744 reasonable analyses; confidence Moderate. It can change with: which control genes to normalise to.",
+    "engine": "study",
+    "tool": "qpcr_robustness",
+    "args": {
+      "gene": "AHCY"
+    },
+    "tool_words": "the robustness of one gene across every reasonable analysis",
+    "routed_by": "keywords",
+    "routed_words": "keyword matching (no model)",
+    "written_by": "template",
+    "writer_words": "qPilot's checked template",
+    "provider": "none",
+    "model": null,
+    "facts": [
+      {
+        "id": "f_ans_fc",
+        "meaning": "fold change under the recommended choices",
+        "value": "2.6×"
+      },
+      {
+        "id": "f_ans_ci_lo",
+        "meaning": "lower end of the 95 % confidence interval",
+        "value": "2.1×"
+      },
+      {
+        "id": "f_ans_ci_hi",
+        "meaning": "upper end of the 95 % confidence interval",
+        "value": "3.2×"
+      },
+      {
+        "id": "f_ans_holds",
+        "meaning": "share of reasonable analyses with the same call",
+        "value": "91%"
+      },
+      {
+        "id": "f_ans_n_cells",
+        "meaning": "reasonable analyses",
+        "value": "744"
+      },
+      {
+        "id": "f_ans_level",
+        "meaning": "confidence level",
+        "value": "Moderate"
+      }
+    ],
+    "validated": true,
+    "note": "No model is used: no model is configured; a template answered.",
+    "status": null,
+    "card_id": null,
+    "autonomy": "suggest",
+    "head_before": "973dd133a2283bc5fdaeb634da8670b7ff2883ff7440aa90a3d5cd489ff0be1a",
+    "head_after": "973dd133a2283bc5fdaeb634da8670b7ff2883ff7440aa90a3d5cd489ff0be1a"
+  },
+  "error": null
+}

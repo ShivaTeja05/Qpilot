@@ -8,7 +8,15 @@ export function Skeleton({ className }: { className?: string }) {
 }
 
 /** A few skeleton lines with a screen-reader "Loading …" message. */
-export function LoadingBlock({ label = "Loading", lines = 3, className }: { label?: string; lines?: number; className?: string }) {
+export function LoadingBlock({
+  label = "Loading",
+  lines = 3,
+  className,
+}: {
+  label?: string;
+  lines?: number;
+  className?: string;
+}) {
   return (
     <div role="status" className={cn("flex flex-col gap-2", className)}>
       <span className="sr-only">{label}…</span>
@@ -27,6 +35,7 @@ export function EmptyState({
   action,
   className,
   compact,
+  headingLevel = 2,
 }: {
   icon?: ReactNode;
   title: ReactNode;
@@ -34,7 +43,10 @@ export function EmptyState({
   action?: ReactNode;
   className?: string;
   compact?: boolean;
+  /** The title's heading level (1 when the empty state is the whole page section). */
+  headingLevel?: 1 | 2 | 3;
 }) {
+  const H = `h${headingLevel}` as "h1" | "h2" | "h3";
   return (
     <div
       className={cn(
@@ -44,21 +56,34 @@ export function EmptyState({
       )}
     >
       {icon ? (
-        <div className="flex size-10 items-center justify-center rounded-full bg-bg-subtle text-muted [&_svg]:size-5" aria-hidden>
+        <div
+          className="flex size-10 items-center justify-center rounded-full bg-bg-subtle text-muted [&_svg]:size-5"
+          aria-hidden
+        >
           {icon}
         </div>
       ) : null}
       <div className="max-w-md">
-        <p className="text-sm font-semibold text-fg">{title}</p>
+        <H className="text-sm font-semibold text-fg">{title}</H>
         {children ? <div className="mt-1 text-[13px] text-muted">{children}</div> : null}
       </div>
-      {action ? <div className="mt-1 flex flex-wrap items-center justify-center gap-2">{action}</div> : null}
+      {action ? (
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">{action}</div>
+      ) : null}
     </div>
   );
 }
 
 /** A thin progress bar: determinate with `value` (0–1), indeterminate without. */
-export function ProgressBar({ value, label, className }: { value?: number | null; label: string; className?: string }) {
+export function ProgressBar({
+  value,
+  label,
+  className,
+}: {
+  value?: number | null;
+  label: string;
+  className?: string;
+}) {
   const known = value != null && Number.isFinite(value);
   const pct = known ? Math.round(Math.min(1, Math.max(0, value)) * 100) : undefined;
   return (
@@ -71,7 +96,10 @@ export function ProgressBar({ value, label, className }: { value?: number | null
       className={cn("relative h-1.5 w-full overflow-hidden rounded-full bg-bg-subtle", className)}
     >
       {known ? (
-        <div className="h-full rounded-full bg-accent transition-[width] duration-300 ease-out" style={{ width: `${pct}%` }} />
+        <div
+          className="h-full rounded-full bg-accent transition-[width] duration-300 ease-out"
+          style={{ width: `${pct}%` }}
+        />
       ) : (
         <div className="qp-indeterminate absolute inset-y-0 w-2/5 rounded-full bg-accent/70" />
       )}

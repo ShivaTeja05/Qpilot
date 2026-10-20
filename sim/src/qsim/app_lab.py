@@ -56,7 +56,8 @@ def _pct(share: float) -> int:
 
 
 class LabViews:
-    """Mixed into :class:`qsim.app.Screen`; needs ``engine``, ``space``, ``explain``, ``summary``."""
+    """Mixed into :class:`qsim.app.Screen`; needs ``engine``, ``space``, ``explain``, ``summary``,
+    the group words (``group``, ``rest``, ``rest_short``) and ``stage_text``."""
 
     _reasonable_cache = None
     _single_cache: dict | None = None
@@ -108,6 +109,7 @@ class LabViews:
                     "log2": float(lfc[k, i]),
                     "fold": _fold(2 ** float(lfc[k, i])),
                     "call": self.call_words(CALL_NAMES[int(call[k, i])]),
+                    "call_key": CALL_NAMES[int(call[k, i])],
                     "same": bool(call[k, i] == base_call),
                     "choices": changed,
                     "planned": not changed,
@@ -121,6 +123,7 @@ class LabViews:
             "n_same": same,
             "n_other": len(rows) - same,
             "base_call": self.call_words(CALL_NAMES[int(base_call)]),
+            "base_call_key": CALL_NAMES[int(base_call)],
             **self._scale(),
         }
 
@@ -139,6 +142,7 @@ class LabViews:
                         "log2": float(lfc[i]),
                         "fold": _fold(2 ** float(lfc[i])),
                         "call": self.call_words(CALL_NAMES[int(call[i])]),
+                        "call_key": CALL_NAMES[int(call[i])],
                         "changes_call": bool(call[i] != base_call[i]),
                         "planned": o.id == self.space.baseline[d.id],
                     }
@@ -208,7 +212,7 @@ class LabViews:
                     "mean": high_mean - rest_mean,
                 },
                 "rest": {
-                    "label": "the rest",
+                    "label": self.rest,
                     "n": int((ok & rest).sum()),
                     "missing": int((~ok & rest).sum()),
                     "mean": 0.0,
@@ -239,7 +243,10 @@ class LabViews:
         m_values = self.summary["space_rules"]["geNorm_M"]
         implicated = set(self.summary["space_rules"]["implicated_genes"])
         rows = [
-            ("Samples in each group", f"{int(high.sum())} {self.group} · {int(rest.sum())} rest"),
+            (
+                "Samples in each group",
+                f"{int(high.sum())} {self.group} · {int(rest.sum())} {self.rest_short}",
+            ),
             ("Plates for this assay", f"{len(set(s.run[:, col]))}"),
             (
                 "Cq, median (lowest to highest)",
@@ -267,13 +274,31 @@ class LabViews:
             {
                 "gene": g,
                 "m": f"{m_values[g]:.2f}" if g in m_values else "",
+                "m_value": float(m_values[g]) if g in m_values else None,
                 "differs": g in implicated or g.split("(")[0] in implicated,
             }
             for g in planned_refs.value
         ]
+        # the same parameters as numbers, for charts and tables that format them themselves
+        numbers = {
+            "n_high": int(high.sum()),
+            "n_rest": int(rest.sum()),
+            "n_plates": len(set(s.run[:, col])),
+            "cq_median": float(np.median(found)) if found.size else None,
+            "cq_min": float(found.min()) if found.size else None,
+            "cq_max": float(found.max()) if found.size else None,
+            "n_cq_above": {f"{cut:g}": int((found > cut).sum()) for cut in lates},
+            "n_nondetect": int(np.isnan(cq).sum()),
+            "eff_assay": float(eff),
+            "eff_std_curve": float(np.nanmedian(std)) if np.isfinite(std).any() else None,
+            "n_flag_eff": int(s.flag_eff[:, col].sum()),
+            "n_flag_low": int(s.flag_low[:, col].sum()),
+            "p": float(e["p"]),
+        }
         return {
             "gene": gene,
             "rows": [{"label": a, "value": b} for a, b in rows],
+            "numbers": numbers,
             "references": references,
             "refs_label": planned_refs.label,
             "stable_below": f"{self.summary['space_rules']['stable_below_M']:g}",
@@ -313,6 +338,7 @@ class LabViews:
                 {
                     "gene": g,
                     "m": f"{m:.2f}",
+                    "m_value": float(m),
                     "differs": g in implicated or g.split("(")[0] in implicated,
                 }
                 for g, m in sorted(rules["geNorm_M"].items(), key=lambda kv: kv[1])
@@ -354,6 +380,7 @@ class LabViews:
                         "more": max(0, len(dec.options) - 8),
                     }
                 )
+            text = self.stage_text.get(title, text)
             stages.append({"title": title, "text": text, "decisions": items})
         out = {
             "stages": stages,

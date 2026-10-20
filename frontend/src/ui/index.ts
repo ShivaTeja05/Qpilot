@@ -20,12 +20,15 @@
  *   LevelTag        High/Moderate/Low/Very low with 4/3/2/1 bars: level · hideWord
  *   LevelBars       the bars alone: level
  *   VerdictTag      the six audit verdicts, glyph + word: verdict · compact
- *   ShapeGlyph      a verdict's SVG shape (disc|half|diamond|cross|alert|ring) for charts/legends
+ *   Glyph           a Mark ({shape, tone}) as an inline icon: mark · size  (VERDICT[v], LEVEL[l], CONCLUSION[c])
+ *   GlyphMark       a Mark inside a chart's SVG at (x, y): mark · x · y · r · ring
+ *   ShapeBody       the raw shape centred on (0, 0) inside an <svg>: shape · tone · r · ring
+ *   ShapeGlyph      a bare Shape inline in currentColor: shape · size · tone
  *   CheckTag        engine check consistent|contradicted|cannot_check
  * Overlays
  *   Dialog          modal: open · onOpenChange · trigger · title · description · footer · size sm|md|lg|xl
  *   DialogClose     wraps a button that closes the dialog (asChild)
- *   Sheet           drawer: open · onOpenChange · title · side right|left|bottom · width · footer · actions · modal
+ *   Sheet           drawer: open · onOpenChange · title · side right|left|bottom · width · footer · actions · modal · offsetTop
  *   Popover         trigger · children · align · side · label
  *   PopoverClose    closes the popover (asChild)
  *   Tooltip         content · children (one focusable child) · side
@@ -48,10 +51,11 @@
  * States
  *   Skeleton        shimmer block (className sets size)
  *   LoadingBlock    a few skeleton lines + "Loading…" for screen readers: label · lines
- *   EmptyState      icon · title · children (what to do) · action · compact
+ *   EmptyState      icon · title · children (what to do) · action · compact · headingLevel (default 2)
  *   ProgressBar     value 0–1 (indeterminate when null) · label
  *   ErrorPanel      error (ApiError aware: needsKey / stale / offline) · title · onRetry · compact
- *   errorMessage    an error's plain words
+ *   errorMessage    an error's plain words; errorHeading: a heading from its code
+ *   TickText        text with `backticks` shown as code (server messages): text
  *   JobCard         id (followed with useJob) or job · children(result, job) once done · onDismiss
  * Copy
  *   CopyButton      text · label · showLabel · size
@@ -63,10 +67,18 @@
  */
 import "./ui.css";
 
-export { Button, IconButton, type ButtonProps, type ButtonSize, type ButtonVariant, type IconButtonProps } from "./Button";
+export {
+  Button,
+  IconButton,
+  type ButtonProps,
+  type ButtonSize,
+  type ButtonVariant,
+  type IconButtonProps,
+} from "./Button";
 export { Card, CardBody, CardHeader, KeyValues, PageHeader, SectionTitle } from "./Card";
 export { Badge, Dot, Kbd, type Tone } from "./Badge";
-export { CheckTag, ConclusionTag, LevelBars, LevelTag, ShapeGlyph, VerdictTag } from "./tags";
+export { CheckTag, ConclusionTag, LevelBars, LevelTag, VerdictTag } from "./tags";
+export { Glyph, GlyphMark, ShapeBody, ShapeGlyph, type ShapeBodyProps } from "./Glyph";
 export {
   Dialog,
   DialogClose,
@@ -113,7 +125,7 @@ export {
   type SortingState,
 } from "./Table";
 export { EmptyState, LoadingBlock, ProgressBar, Skeleton } from "./feedback";
-export { ErrorPanel, errorMessage } from "./ErrorPanel";
+export { ErrorPanel, TickText, errorHeading, errorMessage } from "./ErrorPanel";
 export { JobCard } from "./JobCard";
 export { CommandLine, CopyButton, Hash } from "./Copy";
 export { Toaster, toast } from "./Toaster";

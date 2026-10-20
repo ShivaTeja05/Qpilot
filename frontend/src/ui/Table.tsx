@@ -15,14 +15,26 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
-import { useRef, useState, type HTMLAttributes, type ReactNode, type TdHTMLAttributes, type ThHTMLAttributes } from "react";
+import {
+  useRef,
+  useState,
+  type HTMLAttributes,
+  type ReactNode,
+  type TdHTMLAttributes,
+  type ThHTMLAttributes,
+} from "react";
 import { cn } from "@/lib/cn";
 
 // ---------------------------------------------------------------------------------------------
 // Primitives
 
 /** A table in a scrollable box; `caption` names it for screen readers. */
-export function Table({ className, children, caption, ...rest }: HTMLAttributes<HTMLTableElement> & { caption?: string }) {
+export function Table({
+  className,
+  children,
+  caption,
+  ...rest
+}: HTMLAttributes<HTMLTableElement> & { caption?: string }) {
   return (
     <table className={cn("w-full border-collapse text-[13px]", className)} {...rest}>
       {caption ? <caption className="sr-only">{caption}</caption> : null}
@@ -44,7 +56,11 @@ export function TR({ className, ...rest }: HTMLAttributes<HTMLTableRowElement>) 
 }
 
 /** A header cell; `numeric` right-aligns it. */
-export function TH({ className, numeric, ...rest }: ThHTMLAttributes<HTMLTableCellElement> & { numeric?: boolean }) {
+export function TH({
+  className,
+  numeric,
+  ...rest
+}: ThHTMLAttributes<HTMLTableCellElement> & { numeric?: boolean }) {
   return (
     <th
       scope="col"
@@ -59,7 +75,11 @@ export function TH({ className, numeric, ...rest }: ThHTMLAttributes<HTMLTableCe
 }
 
 /** A body cell; `numeric` right-aligns it in mono tabular figures. */
-export function TD({ className, numeric, ...rest }: TdHTMLAttributes<HTMLTableCellElement> & { numeric?: boolean }) {
+export function TD({
+  className,
+  numeric,
+  ...rest
+}: TdHTMLAttributes<HTMLTableCellElement> & { numeric?: boolean }) {
   return (
     <td
       className={cn(
@@ -73,8 +93,26 @@ export function TD({ className, numeric, ...rest }: TdHTMLAttributes<HTMLTableCe
 }
 
 /** A number cell's content: mono, tabular, right-aligned; `muted` for secondary values. */
-export function NumberCell({ children, muted, className }: { children: ReactNode; muted?: boolean; className?: string }) {
-  return <span className={cn("font-mono text-[12.5px] tabular whitespace-nowrap", muted ? "text-muted" : "text-fg", className)}>{children}</span>;
+export function NumberCell({
+  children,
+  muted,
+  className,
+}: {
+  children: ReactNode;
+  muted?: boolean;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "font-mono text-[12.5px] tabular whitespace-nowrap",
+        muted ? "text-muted" : "text-fg",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -167,17 +205,56 @@ export function DataTable<T>({
 
   const activate = (row: Row<T>) => onRowClick?.(row.original);
 
+  // Roving focus: one row is the Tab stop; arrows, Home/End and PageUp/PageDown move it.
+  const [cursor, setCursor] = useState(0);
+  const active = Math.min(cursor, Math.max(0, model.length - 1));
+  const moveTo = (index: number) => {
+    const next = Math.max(0, Math.min(model.length - 1, index));
+    setCursor(next);
+    virtualizer.scrollToIndex(next, { align: "auto" });
+    requestAnimationFrame(() =>
+      scrollRef.current?.querySelector<HTMLElement>(`tr[data-index="${next}"]`)?.focus(),
+    );
+  };
+  const page = Math.max(1, Math.floor(height / rowHeight) - 1);
+  const onRowKey = (e: React.KeyboardEvent, index: number, row: Row<T>) => {
+    const step: Record<string, number> = {
+      ArrowDown: index + 1,
+      ArrowUp: index - 1,
+      PageDown: index + page,
+      PageUp: index - page,
+      Home: 0,
+      End: model.length - 1,
+    };
+    if (e.key in step) {
+      e.preventDefault();
+      moveTo(step[e.key]!);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      activate(row);
+    }
+  };
+
   return (
     <div
       ref={scrollRef}
-      className={cn("qp-scroll relative overflow-auto rounded-xl border border-line bg-surface", className)}
+      className={cn(
+        "qp-scroll relative overflow-auto rounded-xl border border-line bg-surface",
+        className,
+      )}
       style={{ maxHeight: height }}
-      tabIndex={-1}
+      // Without row actions the scroller itself takes focus, so the keyboard can scroll it.
+      tabIndex={onRowClick ? -1 : 0}
+      role={onRowClick ? undefined : "region"}
+      aria-label={onRowClick ? undefined : label}
     >
       <Table caption={label} aria-rowcount={model.length + 1} className="table-fixed">
         <colgroup>
           {table.getVisibleLeafColumns().map((c) => (
-            <col key={c.id} style={{ width: (c.columnDef.meta as ColumnMeta | undefined)?.width }} />
+            <col
+              key={c.id}
+              style={{ width: (c.columnDef.meta as ColumnMeta | undefined)?.width }}
+            />
           ))}
         </colgroup>
         <THead>
@@ -191,7 +268,15 @@ export function DataTable<T>({
                   <TH
                     key={h.id}
                     numeric={meta?.numeric}
-                    aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : canSort ? "none" : undefined}
+                    aria-sort={
+                      sorted === "asc"
+                        ? "ascending"
+                        : sorted === "desc"
+                          ? "descending"
+                          : canSort
+                            ? "none"
+                            : undefined
+                    }
                   >
                     {h.isPlaceholder ? null : canSort ? (
                       <button
@@ -240,31 +325,39 @@ export function DataTable<T>({
             return (
               <tr
                 key={row.id}
+                data-index={v.index}
                 aria-rowindex={v.index + 2}
                 aria-selected={onRowClick ? selected : undefined}
-                tabIndex={onRowClick ? 0 : undefined}
-                onClick={onRowClick ? () => activate(row) : undefined}
-                onKeyDown={
+                tabIndex={onRowClick ? (v.index === active ? 0 : -1) : undefined}
+                onClick={
                   onRowClick
-                    ? (e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          activate(row);
-                        }
+                    ? () => {
+                        setCursor(v.index);
+                        activate(row);
                       }
                     : undefined
                 }
+                onFocus={onRowClick ? () => setCursor(v.index) : undefined}
+                onKeyDown={onRowClick ? (e) => onRowKey(e, v.index, row) : undefined}
                 style={{ height: rowHeight }}
                 className={cn(
                   "border-b border-line last:border-b-0",
-                  onRowClick && "cursor-pointer hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-offset-[-2px]",
+                  onRowClick &&
+                    "cursor-pointer hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-offset-[-2px]",
                   selected && "bg-accent-soft/60 hover:bg-accent-soft/60",
                 )}
               >
                 {row.getVisibleCells().map((cell) => {
                   const meta = cell.column.columnDef.meta as ColumnMeta | undefined;
+                  const value = cell.getValue();
                   return (
-                    <TD key={cell.id} numeric={meta?.numeric} className={cn("truncate", meta?.className)}>
+                    <TD
+                      key={cell.id}
+                      numeric={meta?.numeric}
+                      className={cn("truncate", meta?.className)}
+                      // The full text of a cell the column cuts short.
+                      title={typeof value === "string" ? value : undefined}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TD>
                   );
