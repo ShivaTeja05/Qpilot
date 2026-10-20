@@ -228,6 +228,7 @@ function TimelineEntry({
       <Rail />
       <Tooltip content={`${actor.word}: ${actor.long}`}>
         <span
+          role="img"
           tabIndex={0}
           aria-label={actor.word}
           className={cn(

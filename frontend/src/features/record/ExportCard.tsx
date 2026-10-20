@@ -22,8 +22,8 @@ function DownloadButton({ record, primary }: { record: RecordExport; primary?: b
     <Button asChild variant={primary ? "secondary" : "ghost"} size={primary ? "md" : "sm"}>
       <a href={record.download.url} download={record.download.name}>
         <Download aria-hidden />
-        {primary ? `Download ${record.download.name}` : "Download"}
-        <span className="font-normal text-faint">{bytes(record.download.bytes)}</span>
+        {primary ? "Download the record" : "Download"}
+        <span className="font-normal text-muted">{bytes(record.download.bytes)}</span>
       </a>
     </Button>
   );
@@ -131,6 +131,7 @@ function LatestRecord({ record, head, now }: { record: RecordExport; head: strin
       <KeyValues
         rows={[
           ["Record", <Hash key="r" value={record.record_id} length={12} />],
+          ["File", <span key="n" className="font-mono text-[12px] [overflow-wrap:anywhere]">{record.download.name}</span>],
           [
             "Chain head",
             <span key="h" className="inline-flex flex-wrap items-center gap-1.5">
