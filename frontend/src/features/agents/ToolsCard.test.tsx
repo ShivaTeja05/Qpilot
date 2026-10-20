@@ -1,7 +1,7 @@
 import { cleanup, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderWithProviders } from "@/features/record/test-utils";
-import { ActivityList } from "./ActivityList";
+import { ActivityList, requestKey } from "./ActivityList";
 // Recorded from the real API on the seeded store: see recorded/README.md.
 import recorded from "./recorded/agents.json";
 import { ConnectCard, RulesCard, ToolsCard } from "./ToolsCard";
@@ -32,10 +32,24 @@ describe("Agents parts", () => {
   });
 
   it("lists recent agent activity in the server's words, newest first", () => {
-    renderWithProviders(<ActivityList items={view.activity} now={Date.parse(view.activity[0]!.at)} where={() => null} />);
+    renderWithProviders(
+      <ActivityList
+        items={view.activity}
+        waiting={new Set(view.pending.map(requestKey))}
+        now={Date.parse(view.activity[0]!.at)}
+        where={() => null}
+      />,
+    );
     const list = screen.getByRole("list", { name: /recent agent activity/i });
     const items = within(list).getAllByRole("listitem");
     expect(items).toHaveLength(view.activity.length);
     view.activity.forEach((a, i) => expect(within(items[i]!).getByText(a.summary)).toBeTruthy());
+  });
+
+  it("says a request no longer waits once it is not in the waiting list", () => {
+    renderWithProviders(<ActivityList items={view.activity} waiting={new Set()} now={Date.now()} where={() => null} />);
+    const asked = view.activity.filter((a) => a.kind === "decision" && a.status === "pending_human");
+    expect(screen.getAllByText("Answered by a person")).toHaveLength(asked.length);
+    expect(screen.queryByText("Waiting for a person")).toBeNull();
   });
 });

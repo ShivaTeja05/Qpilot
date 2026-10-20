@@ -7,8 +7,15 @@ import { STATUS as ENTRY_STATUS } from "@/features/record/words";
 import { Badge, CheckTag, type Tone } from "@/ui";
 import type { AgentActivity } from "./types";
 
+/** Identifies an agent's request across the activity list and the waiting list. */
+export const requestKey = (r: { key: string; card_id?: string | null; option?: string | null; at: string }) =>
+  `${r.key}|${r.card_id ?? ""}|${r.option ?? ""}|${r.at}`;
+
 /** A status word and tone for a chain entry's or a proposal's status. */
-function statusOf(a: AgentActivity): { word: string; tone: Tone } {
+function statusOf(a: AgentActivity, waiting: Set<string>): { word: string; tone: Tone } {
+  // The log keeps a request as it was written; once a person answered it, it no longer waits.
+  if (a.kind === "decision" && a.status === "pending_human" && !waiting.has(requestKey(a)))
+    return { word: "Answered by a person", tone: "neutral" };
   if (a.kind === "decision") {
     const s = ENTRY_STATUS[a.status as keyof typeof ENTRY_STATUS];
     if (s) return { word: s.word, tone: s.tone };
@@ -25,10 +32,13 @@ function statusOf(a: AgentActivity): { word: string; tone: Tone } {
 
 export function ActivityList({
   items,
+  waiting,
   now,
   where,
 }: {
   items: AgentActivity[];
+  /** The requests still waiting ({@link requestKey}). */
+  waiting: Set<string>;
   now: number;
   /** Which workspace an item is about, when it is not the open one (a link). */
   where: (item: AgentActivity) => ReactNode;
@@ -36,7 +46,7 @@ export function ActivityList({
   return (
     <ol className="flex flex-col divide-y divide-line" aria-label="Recent agent activity, newest first">
       {items.map((a, i) => {
-        const s = statusOf(a);
+        const s = statusOf(a, waiting);
         const place = where(a);
         const check = a.check && a.check in CHECK ? (a.check as CheckStatus) : null;
         return (

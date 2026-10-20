@@ -10,7 +10,7 @@ import { count, plural } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { sectionPath, type SectionProps } from "@/shell/sections";
 import { Badge, Button, Card, CardBody, CardHeader, EmptyState, ErrorPanel, LoadingBlock, PageHeader, SegmentedControl } from "@/ui";
-import { ActivityList } from "./ActivityList";
+import { ActivityList, requestKey } from "./ActivityList";
 import { useAgents } from "./api";
 import { RequestItem } from "./RequestItem";
 import { ConnectCard, RulesCard, ToolsCard } from "./ToolsCard";
@@ -38,6 +38,7 @@ export default function AgentsSection({ workspace }: SectionProps) {
   const data = agents.data;
   const pending = data ? [...data.pending.filter(isHere), ...data.pending.filter((r) => !isHere(r))] : [];
   const activity = (data?.activity ?? []).filter((a) => scope === "all" || isHere(a));
+  const waiting = new Set((data?.pending ?? []).map(requestKey));
 
   return (
     <div className="mx-auto w-full max-w-[1280px]">
@@ -125,6 +126,7 @@ export default function AgentsSection({ workspace }: SectionProps) {
                   <>
                     <ActivityList
                       items={activity}
+                      waiting={waiting}
                       now={now}
                       where={(a) => (isHere(a) ? null : elsewhere(a.title, a.key, a.workspace_kind))}
                     />
