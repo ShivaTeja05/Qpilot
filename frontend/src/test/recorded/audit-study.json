@@ -1,0 +1,570 @@
+{
+ "map": [
+  {
+   "gene": "AHCY",
+   "log2": 1.3863489687773194,
+   "fold": "2.61× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "AKR1C1",
+   "log2": -1.764064447695221,
+   "fold": "3.40× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "ARHGEF7",
+   "log2": -0.15459378398550905,
+   "fold": "1.11× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "BIRC5",
+   "log2": 2.004116148990932,
+   "fold": "4.01× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": true
+  },
+  {
+   "gene": "CAMTA1",
+   "log2": -1.4778239898791545,
+   "fold": "2.79× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "CAMTA2",
+   "log2": -0.9848277849605953,
+   "fold": "1.98× lower",
+   "holds": 71,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "CD44",
+   "log2": -1.802196313466955,
+   "fold": "3.49× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "CDCA5",
+   "log2": 1.3038478473986714,
+   "fold": "2.47× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "CDH5",
+   "log2": -3.321804677789153,
+   "fold": "10.00× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "CDKN3",
+   "log2": 1.250916838971588,
+   "fold": "2.38× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "CLSTN1",
+   "log2": -1.1435233654590804,
+   "fold": "2.21× lower",
+   "holds": 42,
+   "verdict": "fragile",
+   "headline": false
+  },
+  {
+   "gene": "CPSG3",
+   "log2": 4.405482350688189,
+   "fold": "21.19× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "DDC",
+   "log2": -1.8854969223089881,
+   "fold": "3.69× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "DPYSL3",
+   "log2": -1.0217760093215362,
+   "fold": "2.03× lower",
+   "holds": 92,
+   "verdict": "check data first",
+   "headline": false
+  },
+  {
+   "gene": "ECEL1",
+   "log2": -3.190299788484364,
+   "fold": "9.13× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "ELAVL4",
+   "log2": -0.2513285113730884,
+   "fold": "1.19× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "EPB41L3",
+   "log2": -2.1035491918047935,
+   "fold": "4.30× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "EPHA5",
+   "log2": -2.8910011942470977,
+   "fold": "7.42× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "EPN2",
+   "log2": -1.2621196900291851,
+   "fold": "2.40× lower",
+   "holds": 50,
+   "verdict": "fragile",
+   "headline": false
+  },
+  {
+   "gene": "FYN",
+   "log2": -0.5967172283838971,
+   "fold": "1.51× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "GNB1",
+   "log2": -0.7724018965396777,
+   "fold": "1.71× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "HIVEP2",
+   "log2": -1.257025218146902,
+   "fold": "2.39× lower",
+   "holds": 92,
+   "verdict": "depends on your choices",
+   "headline": false
+  },
+  {
+   "gene": "IGSF4",
+   "log2": -0.9573931069332018,
+   "fold": "1.94× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "INPP1",
+   "log2": -1.2436479830167397,
+   "fold": "2.37× lower",
+   "holds": 100,
+   "verdict": "holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "MAP2K4",
+   "log2": -0.8785004743472545,
+   "fold": "1.84× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "MAP7",
+   "log2": -1.5134564109483506,
+   "fold": "2.85× lower",
+   "holds": 100,
+   "verdict": "holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "MAPT",
+   "log2": -1.4411578673079597,
+   "fold": "2.72× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "MCM2",
+   "log2": 1.4154041563703519,
+   "fold": "2.67× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "MRPL3",
+   "log2": 0.8283476795683489,
+   "fold": "1.78× higher",
+   "holds": 83,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "MTSS1",
+   "log2": -0.9116994846686431,
+   "fold": "1.88× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "NHLH2",
+   "log2": 3.9027118367238467,
+   "fold": "14.96× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "NM23A",
+   "log2": 1.1295178548982427,
+   "fold": "2.19× higher",
+   "holds": 100,
+   "verdict": "holds with caveats",
+   "headline": true
+  },
+  {
+   "gene": "NRCAM",
+   "log2": -1.8107335905520785,
+   "fold": "3.51× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "NTRK1",
+   "log2": -3.9109827526937417,
+   "fold": "15.04× lower",
+   "holds": 83,
+   "verdict": "depends on your choices",
+   "headline": true
+  },
+  {
+   "gene": "ODC1",
+   "log2": 1.7305780875585897,
+   "fold": "3.32× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": true
+  },
+  {
+   "gene": "PAICS",
+   "log2": 0.9583769330843058,
+   "fold": "1.94× higher",
+   "holds": 50,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "PDE4DIP",
+   "log2": -1.094637774462924,
+   "fold": "2.14× lower",
+   "holds": 100,
+   "verdict": "check data first",
+   "headline": false
+  },
+  {
+   "gene": "PIK3R1",
+   "log2": -1.1635676325061093,
+   "fold": "2.24× lower",
+   "holds": 100,
+   "verdict": "holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "PLAGL1",
+   "log2": -1.1831332922761195,
+   "fold": "2.27× lower",
+   "holds": 83,
+   "verdict": "fragile",
+   "headline": false
+  },
+  {
+   "gene": "PLAT",
+   "log2": -1.7646728259068638,
+   "fold": "3.40× lower",
+   "holds": 75,
+   "verdict": "fragile",
+   "headline": false
+  },
+  {
+   "gene": "PMP22",
+   "log2": -1.8373742120435734,
+   "fold": "3.57× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "PRAME",
+   "log2": 2.084981957386364,
+   "fold": "4.24× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "PRDM2",
+   "log2": -0.8149264746162901,
+   "fold": "1.76× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "PRKACB_bis",
+   "log2": -0.9405456572613387,
+   "fold": "1.92× lower",
+   "holds": 75,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "PRKCZ",
+   "log2": -0.9005931536587375,
+   "fold": "1.87× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "PTN",
+   "log2": -1.474285646866921,
+   "fold": "2.78× lower",
+   "holds": 100,
+   "verdict": "holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "PTPRF",
+   "log2": -1.296698061452564,
+   "fold": "2.46× lower",
+   "holds": 67,
+   "verdict": "fragile",
+   "headline": false
+  },
+  {
+   "gene": "PTPRH",
+   "log2": -3.516238842965545,
+   "fold": "11.44× lower",
+   "holds": 83,
+   "verdict": "depends on your choices",
+   "headline": false
+  },
+  {
+   "gene": "PTPRN2",
+   "log2": -1.3026376263214416,
+   "fold": "2.47× lower",
+   "holds": 100,
+   "verdict": "holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "QPCT",
+   "log2": -1.8326173054341757,
+   "fold": "3.56× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "SCG2",
+   "log2": -1.987759764604596,
+   "fold": "3.97× lower",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "SLC25A5",
+   "log2": 0.867203354328355,
+   "fold": "1.82× higher",
+   "holds": 83,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "SLC6A8",
+   "log2": 0.6188418063047978,
+   "fold": "1.54× higher",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "SNAPC1",
+   "log2": 0.7748123892150698,
+   "fold": "1.71× higher",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "TNFRSF",
+   "log2": -1.4033871044292825,
+   "fold": "2.65× lower",
+   "holds": 100,
+   "verdict": "holds with caveats",
+   "headline": false
+  },
+  {
+   "gene": "TYMS",
+   "log2": 1.207192832821753,
+   "fold": "2.31× higher",
+   "holds": 100,
+   "verdict": "solid",
+   "headline": false
+  },
+  {
+   "gene": "ULK2",
+   "log2": -0.6202613179864143,
+   "fold": "1.54× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  },
+  {
+   "gene": "WSB1",
+   "log2": -0.754445891626793,
+   "fold": "1.69× lower",
+   "holds": 100,
+   "verdict": "no call",
+   "headline": false
+  }
+ ],
+ "choices": [
+  {
+   "id": "efficiency",
+   "name": "The efficiency model",
+   "alone": 6,
+   "spread": 10,
+   "question": false
+  },
+  {
+   "id": "flagged",
+   "name": "How flagged wells are handled",
+   "alone": 4,
+   "spread": 0,
+   "question": false
+  },
+  {
+   "id": "late_cq",
+   "name": "The late-Cq cut-off",
+   "alone": 11,
+   "spread": 48,
+   "question": false
+  },
+  {
+   "id": "nondetect",
+   "name": "How non-detects are handled",
+   "alone": 0,
+   "spread": 8,
+   "question": false
+  },
+  {
+   "id": "refs",
+   "name": "The reference genes",
+   "alone": 31,
+   "spread": 13,
+   "question": false
+  },
+  {
+   "id": "cut",
+   "name": "The group cut-off",
+   "alone": 17,
+   "spread": 0,
+   "question": true
+  },
+  {
+   "id": "test",
+   "name": "The statistical test",
+   "alone": 0,
+   "spread": 0,
+   "question": false
+  },
+  {
+   "id": "multiplicity",
+   "name": "The multiple-testing correction",
+   "alone": 0,
+   "spread": 0,
+   "question": true
+  }
+ ],
+ "references": [
+  {
+   "gene": "HPRT1",
+   "m": "1.64",
+   "differs": false
+  },
+  {
+   "gene": "ALUsq(Eurogentec)",
+   "m": "1.68",
+   "differs": false
+  },
+  {
+   "gene": "HMBS",
+   "m": "1.96",
+   "differs": true
+  },
+  {
+   "gene": "SDHA(1)",
+   "m": "1.99",
+   "differs": false
+  },
+  {
+   "gene": "UBC(2)",
+   "m": "2.03",
+   "differs": true
+  }
+ ],
+ "stable_below": "1",
+ "reference_note": "no reference candidate is below geNorm M 1.0; reference choice is a known weakness of this study",
+ "lock_headline": [
+  "the late-Cq cut-off",
+  "the reference genes",
+  "the group cut-off"
+ ],
+ "lock_called": [
+  "the late-Cq cut-off"
+ ],
+ "influence": {
+  "one_sample_genes": 4,
+  "ref_removals": "1,745",
+  "ref_removals_flip": 148
+ },
+ "line_log2": 1.0,
+ "line": "2×"
+}
