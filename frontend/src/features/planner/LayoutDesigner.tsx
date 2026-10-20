@@ -29,6 +29,7 @@ import {
   type PlannerScope,
 } from "./api";
 import { CategoryPlate } from "./CategoryPlate";
+import { NumberField } from "./NumberField";
 import { useDebounced } from "./hooks";
 import { GROUP_TONES, TYPE_WORDS } from "./words";
 
@@ -141,17 +142,7 @@ export function LayoutDesigner({
           <label className="flex flex-col gap-1">
             <span className="font-medium text-fg">Samples per group</span>
             <span className="flex items-center gap-2">
-              <input
-                type="number"
-                min={2}
-                max={1000}
-                value={n}
-                onChange={(e) => {
-                  const v = Math.round(Number(e.target.value));
-                  if (Number.isFinite(v)) setNOwn(Math.max(2, Math.min(1000, v)));
-                }}
-                className="h-8 w-24 rounded-lg border border-line bg-surface px-2 font-mono tabular text-fg focus-visible:outline-2 focus-visible:outline-focus"
-              />
+              <NumberField value={n} min={2} max={1000} onCommit={(v) => v != null && setNOwn(v)} />
               {nOwn != null && nOwn !== nPlan ? (
                 <Button variant="link" size="sm" onClick={() => setNOwn(null)}>
                   Use the plan’s {count(nPlan)}

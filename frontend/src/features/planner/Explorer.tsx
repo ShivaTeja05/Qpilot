@@ -26,6 +26,7 @@ import {
   TR,
 } from "@/ui";
 import type { PlannerView, PlanView } from "./api";
+import { NumberField } from "./NumberField";
 import { PowerChart } from "./PowerChart";
 import { StopSlider } from "./StopSlider";
 import { FOLD_STOPS, N_STOPS, POWER_STOPS, changeWords, nearestStop } from "./words";
@@ -195,23 +196,20 @@ export function Explorer({
             ) : null}
           </fieldset>
 
-          <label className="flex flex-col gap-1 text-[13px]">
-            <span className="font-medium text-fg">Plates you have (optional)</span>
-            <input
-              type="number"
+          <div className="flex flex-col gap-1 text-[13px]">
+            <label htmlFor="planner-plates" className="font-medium text-fg">
+              Plates you have (optional)
+            </label>
+            <NumberField
+              id="planner-plates"
+              value={state.plates}
               min={1}
               max={64}
+              allowEmpty
               placeholder="any"
-              value={state.plates ?? ""}
-              onChange={(e) => {
-                const v = e.target.value === "" ? null : Math.round(Number(e.target.value));
-                onChange({
-                  plates: v == null || !Number.isFinite(v) ? null : Math.max(1, Math.min(64, v)),
-                });
-              }}
-              className="h-8 w-24 rounded-lg border border-line bg-surface px-2 font-mono tabular text-fg focus-visible:outline-2 focus-visible:outline-focus"
+              onCommit={(v) => onChange({ plates: v })}
             />
-          </label>
+          </div>
         </div>
 
         {/* the answer */}
@@ -239,6 +237,12 @@ export function Explorer({
                 <p className="flex gap-2 rounded-lg border border-warn/40 bg-warn-soft px-3 py-2 text-[13px] leading-snug text-fg">
                   <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warn" aria-hidden />
                   <span>{plan.ceiling}</span>
+                </p>
+              ) : null}
+              {plan.focus.length > plan.curves.length ? (
+                <p className="text-[12px] text-muted">
+                  The chart draws the first {count(plan.curves.length)} chosen genes; the tables
+                  below have all {count(plan.focus.length)}.
                 </p>
               ) : null}
               {plan.curves.length ? (
