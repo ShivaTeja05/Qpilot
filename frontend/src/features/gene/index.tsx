@@ -1,6 +1,6 @@
 /**
  * Gene (docs/app.md §4): one gene, everything about it. qPilot's result (call, fold [CI], p, n,
- * confidence and its reasons), what holds across reasonable analyses, one choice at a time,
+ * confidence and its reasons), what holds across other analyses, one choice at a time,
  * each sample's value and well, the audit's reading, the Decision Cards that move it, the assay
  * and the reference genes. Deep-linkable at `…/gene/<GENE>`; `[` and `]` move between genes.
  */

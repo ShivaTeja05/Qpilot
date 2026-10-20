@@ -65,8 +65,8 @@ export function SourceSwitch({ value, onChange }: { value: Source; onChange: (v:
       value={value}
       onValueChange={onChange}
       options={[
-        { value: "audit", label: "The audit", title: "Every reasonable combination of the audit's eight decisions" },
-        { value: "qpilot", label: "qPilot's grid", title: "Every combination of the Decision Cards' options" },
+        { value: "audit", label: "The audit", title: "The audit's reasonable analyses: no shortcuts; groups and multiplicity as planned" },
+        { value: "qpilot", label: "qPilot's grid", title: "Every analysis qPilot checks: every control-gene set, cut-off and rule" },
       ]}
     />
   );
@@ -115,7 +115,7 @@ export function WhatHolds({
     <Panel
       id="gene-holds"
       title="What holds"
-      hint="How often the same call comes out when the analysis is done another reasonable way."
+      hint="How often the same call comes out when the analysis is done another way. Each share says which analyses it counts."
       actions={analyses && dots.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined}
     >
       <div className="grid gap-3 sm:grid-cols-2">
@@ -123,7 +123,7 @@ export function WhatHolds({
           <Stat
             label="Same call, qPilot's grid"
             value={percent(holds)}
-            sub={nCells ? `of ${count(nCells)} analyses over the Decision Cards' options` : "of qPilot's analyses over the Decision Cards' options"}
+            sub={`of the ${nCells ? `${count(nCells)} ` : ""}analyses qPilot checks (every control-gene set, cut-off and rule, shortcuts included)`}
           />
           <HoldsBar share={holds ?? null} />
         </div>
@@ -133,7 +133,7 @@ export function WhatHolds({
               <Stat
                 label="Same call, the audit"
                 value={ofTotal(a.n_same, a.n)}
-                sub="reasonable analyses over the audit's eight decisions"
+                sub={`of the audit's ${count(a.n)} reasonable analyses (no shortcuts; groups and multiplicity as planned)`}
               />
               <HoldsBar share={a.n ? a.n_same / a.n : null} />
             </>
@@ -141,11 +141,17 @@ export function WhatHolds({
             <Stat
               label="Same call, the audit"
               value={analyses ? "…" : "—"}
-              sub={analyses ? "Reading the audit…" : "Not audited: the audit tries every reasonable combination of eight decisions."}
+              sub={analyses ? "Reading the audit…" : "Not audited: the audit counts its own reasonable analyses (no shortcuts)."}
             />
           )}
         </div>
       </div>
+      {a ? (
+        <p className="mt-2 text-xs text-muted">
+          The two shares count different analyses: qPilot's grid includes shortcuts such as a single control gene or
+          a Cq cut-off, which the audit leaves out, so the audit's share can be higher.
+        </p>
+      ) : null}
       <div className="mt-4">
         {showAudit && analyses ? (
           <Loaded query={analyses} label="Reading every reasonable analysis" warming={warming}>
@@ -155,7 +161,7 @@ export function WhatHolds({
                 line={data.line_log2}
                 lineLabel={`${data.line} line`}
                 {...sideWords(labels.hi)}
-                summary={`Every reasonable analysis of ${data.gene} in the audit, on the fold axis: ${ofTotal(data.n_same, data.n)} give the planned call (${data.base_call}); the planned analysis is ringed.`}
+                summary={`Each of the audit's ${count(data.n)} reasonable analyses of ${data.gene} on the fold axis: ${ofTotal(data.n_same, data.n)} give the planned call (${data.base_call}); the planned analysis is ringed.`}
                 caption={card?.holds.lines.length ? <Sentences items={card.holds.lines} /> : undefined}
               />
             )}
@@ -457,8 +463,8 @@ export function AuditInvite({
       }
     >
       The robustness audit re-runs your confirmed study under every combination of eight analysis decisions
-      (about 50 s on the demo) and gives each gene a verdict. Here it adds every reasonable analysis, one choice
-      at a time, each sample's value and what to do.
+      (about 50 s on the demo) and gives each gene a verdict. Here it adds its reasonable analyses (no shortcuts),
+      one choice at a time across eight decisions, each sample's value and what to do.
       {error ? <ErrorPanel compact className="mt-3 text-left" error={error} /> : null}
     </EmptyState>
   );

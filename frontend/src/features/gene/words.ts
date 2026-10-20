@@ -82,7 +82,7 @@ export function geneSummary({
     lines.push(`Confidence: ${gene.level}${reasons}`);
   }
   lines.push(
-    `Same call in ${percent(gene.holds)} of ${gene.n_cells ? `${count(gene.n_cells)} ` : ""}analyses over the Decision Cards' options (a robustness share, not a confidence).`,
+    `Same call in ${percent(gene.holds)} of the ${gene.n_cells ? `${count(gene.n_cells)} ` : ""}analyses qPilot checks (every control-gene set, cut-off and rule; a robustness share, not a confidence).`,
   );
   if (audit) {
     lines.push(`Audit verdict: ${audit.label}. ${audit.result.verdict_sentence}`);

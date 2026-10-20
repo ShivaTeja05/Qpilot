@@ -151,7 +151,7 @@ describe("what holds and one choice at a time", () => {
     const a = analysesNM23A as unknown as AuditAnalyses;
     render(<WhatHolds {...props} card={auditGeneNM23A as unknown as AuditGeneCard} analyses={q(a)} source="audit" />);
     expect(screen.getByText(text(ofTotal(a.n_same, a.n)))).toBeTruthy();
-    expect(screen.getByRole("img", { name: /Every reasonable analysis of NM23A in the audit/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /reasonable analyses of NM23A on the fold axis/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: "qPilot's grid" }));
     expect(onSource).toHaveBeenCalledWith("qpilot");
   }, 20_000); // 744 + 144 dots laid out in jsdom
