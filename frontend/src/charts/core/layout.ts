@@ -135,3 +135,32 @@ export function placeLabels<T>(
   }
   return out;
 }
+
+/** The index of the point nearest (x, y) within `max` pixels, or -1 (a dense chart's hover layer). */
+export function nearestIndex(
+  points: readonly { x: number; y: number }[],
+  x: number,
+  y: number,
+  max = 14,
+): number {
+  let best = -1;
+  let bestD = max * max;
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i]!;
+    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+    if (d <= bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  return best;
+}
+
+/** The pointer's position in an element's own pixels. */
+export function localPoint(e: { clientX: number; clientY: number; currentTarget: Element }): {
+  x: number;
+  y: number;
+} {
+  const r = e.currentTarget.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}

@@ -103,6 +103,10 @@ def test_the_demo_walk_over_http(demo_client):  # noqa: PLR0915
     # the rules made these, so "Reject contradicted AI calls" does not list them
     ai = c.get(f"/api/sessions/{sid}/bulk/reject", params={"stage": "design"}).json()
     assert ai["ids"] == []
+    every = c.get(
+        f"/api/sessions/{sid}/bulk/reject", params={"stage": "design", "makers": "all"}
+    ).json()
+    assert sorted(every["ids"]) == sorted(p["id"] for p in left)
     for p in left:
         r = c.post(
             f"/api/sessions/{sid}/proposals/{p['id']}/reject",

@@ -29,7 +29,7 @@ export function Legend({ items, className }: { items: LegendItem[]; className?: 
         <li key={it.label} className="inline-flex items-center gap-1.5">
           {it.mark ? <Glyph mark={it.mark} size={12} /> : it.swatch}
           <span>{it.label}</span>
-          {it.count != null && <span className="tabular text-faint">{it.count}</span>}
+          {it.count != null && <span className="tabular text-muted">{it.count}</span>}
         </li>
       ))}
     </ul>

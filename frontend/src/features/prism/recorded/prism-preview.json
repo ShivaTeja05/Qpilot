@@ -1,0 +1,5839 @@
+{
+  "session_id": "bc1d233e3866",
+  "study_id": "6f6513925b05",
+  "writes_nothing": true,
+  "bundle": {
+    "study_id": "6f6513925b05",
+    "record_ref": "6f6513925b05",
+    "chain_head": "4d408afefc69482b2706ab4de6407b470049ac63c0891fe40597118cd737e682",
+    "design_hash": "44260b7dccc0a4484fa15c945b9b49d0eb38185f5a6ada5858653ff6af14e684",
+    "template_id": "two_groups_log2",
+    "scale": "log2_rq",
+    "test": "Welch's unpaired t test (two-sided) on log2 relative quantities, one value per biological unit",
+    "tables": [
+      {
+        "name": "ODC1",
+        "gene": "ODC1",
+        "layout": "column",
+        "title": "ODC1 log2 RQ - qPilot 6f6513925b05 - chain 4d408afefc69",
+        "columns": ["Sample", "MYCN-high", "rest"],
+        "n_rows": 345,
+        "csv": "ODC1.csv",
+        "csv_sha256": "ce0189e6c716dc6d9ed0de66917d99bb31b0e1c8eb2f31ce1c30f124833108cf"
+      },
+      {
+        "name": "BIRC5",
+        "gene": "BIRC5",
+        "layout": "column",
+        "title": "BIRC5 log2 RQ - qPilot 6f6513925b05 - chain 4d408afefc69",
+        "columns": ["Sample", "MYCN-high", "rest"],
+        "n_rows": 347,
+        "csv": "BIRC5.csv",
+        "csv_sha256": "811c56adca9f1a7b97dc11eb68ce92a3f6d7fe9c07a331f37af3440b08b7b635"
+      },
+      {
+        "name": "NTRK1",
+        "gene": "NTRK1",
+        "layout": "column",
+        "title": "NTRK1 log2 RQ - qPilot 6f6513925b05 - chain 4d408afefc69",
+        "columns": ["Sample", "MYCN-high", "rest"],
+        "n_rows": 342,
+        "csv": "NTRK1.csv",
+        "csv_sha256": "04af8cbd709eab428db40b7676e47a817269589a7beaf49a2ffbf73b0e235228"
+      },
+      {
+        "name": "NM23A",
+        "gene": "NM23A",
+        "layout": "column",
+        "title": "NM23A log2 RQ - qPilot 6f6513925b05 - chain 4d408afefc69",
+        "columns": ["Sample", "MYCN-high", "rest"],
+        "n_rows": 347,
+        "csv": "NM23A.csv",
+        "csv_sha256": "1aa3bd7910e3648dd762ef0541b4a2c67c5910b03c7d4d5f56017ae470eb7cf2"
+      }
+    ],
+    "info": {
+      "note": "Values computed by qPilot from raw curves (record id in the table titles); edits are detected when the tables are sent back.",
+      "scale": "log2 relative quantity: log2 of the target minus the mean log2 of the reference genes, per biological unit",
+      "layout": "column",
+      "template_file": "two_groups_log2.pzt",
+      "graph": "scatter of every unit with mean and 95 % confidence interval",
+      "groups": "MYCN-high vs rest",
+      "contrast": "MYCN-high minus rest (log2)",
+      "refs": "ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2)",
+      "undetermined": "drop",
+      "technical_replicates": "averaged per biological unit by qPilot; never written as n",
+      "row_titles": "biological unit ids",
+      "design_note": "expression-defined (top fraction by MYCN expression), not a clinical call",
+      "mode": "S: plain CSV tables and a Prism script; Prism reads and writes Prism files",
+      "not_affiliated": "Works with GraphPad Prism. Not affiliated with or endorsed by GraphPad Software or Dotmatics.",
+      "caption_tokens": "log2 relative quantities per biological unit, MYCN-high versus rest, normalised to ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2); Welch's t test on the log2 scale. ODC1: {{f_fc_odc1_recommended}} in MYCN-high versus rest (95 % confidence interval {{f_ci_lo_odc1_recommended}} to {{f_ci_hi_odc1_recommended}}; p = {{f_p_odc1_recommended}}); the conclusion holds in {{f_holds_odc1}} of {{f_n_cells}} reasonable analyses. BIRC5: {{f_fc_birc5_recommended}} in MYCN-high versus rest (95 % confidence interval {{f_ci_lo_birc5_recommended}} to {{f_ci_hi_birc5_recommended}}; p = {{f_p_birc5_recommended}}); the conclusion holds in {{f_holds_birc5}} of {{f_n_cells}} reasonable analyses. NTRK1: {{f_fc_ntrk1_recommended}} in MYCN-high versus rest (95 % confidence interval {{f_ci_lo_ntrk1_recommended}} to {{f_ci_hi_ntrk1_recommended}}; p = {{f_p_ntrk1_recommended}}); the conclusion holds in {{f_holds_ntrk1}} of {{f_n_cells}} reasonable analyses. NM23A: {{f_fc_nm23a_recommended}} in MYCN-high versus rest (95 % confidence interval {{f_ci_lo_nm23a_recommended}} to {{f_ci_hi_nm23a_recommended}}; p = {{f_p_nm23a_recommended}}); the conclusion holds in {{f_holds_nm23a}} of {{f_n_cells}} reasonable analyses.",
+      "caption": "log2 relative quantities per biological unit, MYCN-high versus rest, normalised to ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2); Welch's t test on the log2 scale. ODC1: 3.3× in MYCN-high versus rest (95 % confidence interval 2.3× to 4.8×; p = 3.8e-08); the conclusion holds in 99% of 744 reasonable analyses. BIRC5: 4× in MYCN-high versus rest (95 % confidence interval 2.9× to 5.5×; p = 5e-14); the conclusion holds in 100% of 744 reasonable analyses. NTRK1: 0.066× in MYCN-high versus rest (95 % confidence interval 0.032× to 0.14×; p = 1.3e-09); the conclusion holds in 84% of 744 reasonable analyses. NM23A: 2.2× in MYCN-high versus rest (95 % confidence interval 1.8× to 2.7×; p = 1.2e-09); the conclusion holds in 65% of 744 reasonable analyses."
+    },
+    "files": {
+      "ODC1.csv": "ce0189e6c716dc6d9ed0de66917d99bb31b0e1c8eb2f31ce1c30f124833108cf",
+      "BIRC5.csv": "811c56adca9f1a7b97dc11eb68ce92a3f6d7fe9c07a331f37af3440b08b7b635",
+      "NTRK1.csv": "04af8cbd709eab428db40b7676e47a817269589a7beaf49a2ffbf73b0e235228",
+      "NM23A.csv": "1aa3bd7910e3648dd762ef0541b4a2c67c5910b03c7d4d5f56017ae470eb7cf2"
+    },
+    "mode": "script",
+    "bundle_sha256": ""
+  },
+  "would_write": [
+    "ODC1.csv",
+    "BIRC5.csv",
+    "NTRK1.csv",
+    "NM23A.csv",
+    "run.pzc",
+    "send_back.pzc",
+    "README.txt",
+    "qpilot_provenance.json",
+    "qpilot_bundle.json",
+    "sent_back/"
+  ],
+  "template": {
+    "id": "two_groups_log2",
+    "file": "two_groups_log2.pzt",
+    "available": false,
+    "layout": "column",
+    "test": "Welch's unpaired t test (two-sided) on log2 relative quantities, one value per biological unit",
+    "graph": "scatter of every unit with mean and 95 % confidence interval"
+  },
+  "genes": ["ODC1", "BIRC5", "NTRK1", "NM23A"],
+  "tables": [
+    {
+      "gene": "ODC1",
+      "columns": ["Sample", "MYCN-high", "rest"],
+      "n_rows": 345,
+      "rows": [
+        ["1136", "2.966099117247861", ""],
+        ["1231", "4.106285758671669", ""],
+        ["127", "2.077396366881393", ""],
+        ["1498", "2.685009377375888", ""],
+        ["1499", "1.5630228075403192", ""]
+      ]
+    },
+    {
+      "gene": "BIRC5",
+      "columns": ["Sample", "MYCN-high", "rest"],
+      "n_rows": 347,
+      "rows": [
+        ["111", "1.5563229036983888", ""],
+        ["1136", "1.8778308257643133", ""],
+        ["1231", "1.1572812133792016", ""],
+        ["127", "2.201048840337558", ""],
+        ["1496", "2.6773123073104923", ""]
+      ]
+    },
+    {
+      "gene": "NTRK1",
+      "columns": ["Sample", "MYCN-high", "rest"],
+      "n_rows": 342,
+      "rows": [
+        ["111", "-5.479219253277081", ""],
+        ["1231", "-9.47232843119541", ""],
+        ["127", "-12.19194374787604", ""],
+        ["1496", "-13.438175544664954", ""],
+        ["1498", "-4.041988105675486", ""]
+      ]
+    },
+    {
+      "gene": "NM23A",
+      "columns": ["Sample", "MYCN-high", "rest"],
+      "n_rows": 347,
+      "rows": [
+        ["111", "4.537632184906004", ""],
+        ["1136", "5.188010032340173", ""],
+        ["1231", "4.199786031943216", ""],
+        ["127", "4.230087919606918", ""],
+        ["1496", "4.838450225236681", ""]
+      ]
+    }
+  ],
+  "choices": [
+    {
+      "card_id": "card_refset",
+      "dimension": "refs",
+      "option": "recommended",
+      "recommended": "recommended",
+      "value": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+      "actor": null,
+      "status": "open",
+      "title": "Which control genes to normalise to",
+      "option_label": "Recommended set (all five)",
+      "decided_by": "not decided yet: exported at the recommended option"
+    },
+    {
+      "card_id": "card_cutoff",
+      "dimension": "cut",
+      "option": "cut_15",
+      "recommended": "cut_15",
+      "value": 0.15,
+      "actor": null,
+      "status": "open",
+      "title": "Where to cut the comparison groups",
+      "option_label": "Top 15 % by MYCN expression",
+      "decided_by": "not decided yet: exported at the recommended option"
+    },
+    {
+      "card_id": "card_amp_call",
+      "dimension": "amp_call",
+      "option": "linregpcr",
+      "recommended": "linregpcr",
+      "value": "linregpcr",
+      "actor": null,
+      "status": "open",
+      "title": "Which curves count as amplified",
+      "option_label": "LinRegPCR's own call (a starting quantity was found)",
+      "decided_by": "not decided yet: exported at the recommended option"
+    },
+    {
+      "card_id": "card_undetermined",
+      "dimension": "undetermined",
+      "option": "drop",
+      "recommended": "drop",
+      "value": "drop",
+      "actor": "system",
+      "status": "auto_decided",
+      "title": "What to do with wells that never amplified",
+      "option_label": "Drop empty wells",
+      "decided_by": "the system (it changes no conclusion)"
+    }
+  ],
+  "caption": "log2 relative quantities per biological unit, MYCN-high versus rest, normalised to ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2); Welch's t test on the log2 scale. ODC1: 3.3× in MYCN-high versus rest (95 % confidence interval 2.3× to 4.8×; p = 3.8e-08); the conclusion holds in 99% of 744 reasonable analyses. BIRC5: 4× in MYCN-high versus rest (95 % confidence interval 2.9× to 5.5×; p = 5e-14); the conclusion holds in 100% of 744 reasonable analyses. NTRK1: 0.066× in MYCN-high versus rest (95 % confidence interval 0.032× to 0.14×; p = 1.3e-09); the conclusion holds in 84% of 744 reasonable analyses. NM23A: 2.2× in MYCN-high versus rest (95 % confidence interval 1.8× to 2.7×; p = 1.2e-09); the conclusion holds in 65% of 744 reasonable analyses.",
+  "figures": {
+    "ODC1": {
+      "gene": "ODC1",
+      "scale": "log2 relative quantity: log2 of the target minus the mean log2 of the reference genes, per biological unit",
+      "groups": [
+        {
+          "name": "MYCN-high",
+          "n": 51,
+          "mean": 2.6394227219887028,
+          "ci_lo": 2.110972249864188,
+          "ci_hi": 3.1678731941132177,
+          "points": [
+            {
+              "unit": "1136",
+              "value": 2.966099117247861
+            },
+            {
+              "unit": "1231",
+              "value": 4.106285758671669
+            },
+            {
+              "unit": "127",
+              "value": 2.077396366881393
+            },
+            {
+              "unit": "1498",
+              "value": 2.685009377375888
+            },
+            {
+              "unit": "1499",
+              "value": 1.5630228075403192
+            },
+            {
+              "unit": "1536",
+              "value": 3.177443230833452
+            },
+            {
+              "unit": "1540",
+              "value": 2.422536566890379
+            },
+            {
+              "unit": "1686",
+              "value": 2.186723857807495
+            },
+            {
+              "unit": "1687",
+              "value": 2.307989524016323
+            },
+            {
+              "unit": "1751",
+              "value": 1.6224503188879673
+            },
+            {
+              "unit": "1758",
+              "value": 2.2608874629900484
+            },
+            {
+              "unit": "1759",
+              "value": 2.5892971759455126
+            },
+            {
+              "unit": "1772",
+              "value": 1.1096026709043603
+            },
+            {
+              "unit": "1776",
+              "value": 4.734793181511803
+            },
+            {
+              "unit": "1784",
+              "value": 8.086116244547407
+            },
+            {
+              "unit": "1788",
+              "value": 2.627747615333538
+            },
+            {
+              "unit": "1796",
+              "value": 5.136664502209721
+            },
+            {
+              "unit": "1805",
+              "value": 0.4913118563778305
+            },
+            {
+              "unit": "1820",
+              "value": 1.6750008732301236
+            },
+            {
+              "unit": "1821",
+              "value": 2.81860765666533
+            },
+            {
+              "unit": "1822",
+              "value": 3.4418981804446194
+            },
+            {
+              "unit": "1823",
+              "value": 2.812374498049106
+            },
+            {
+              "unit": "1824",
+              "value": 4.670104504062213
+            },
+            {
+              "unit": "1827",
+              "value": 2.46374678250743
+            },
+            {
+              "unit": "1828",
+              "value": 0.5681259865199522
+            },
+            {
+              "unit": "1834",
+              "value": 3.4077569371244696
+            },
+            {
+              "unit": "1837",
+              "value": 0.204307560007992
+            },
+            {
+              "unit": "1850",
+              "value": 1.3128529302396927
+            },
+            {
+              "unit": "1885",
+              "value": 1.0117250860014728
+            },
+            {
+              "unit": "1908",
+              "value": 2.925150148797128
+            },
+            {
+              "unit": "1909",
+              "value": 4.0154052284838375
+            },
+            {
+              "unit": "1924",
+              "value": 5.3254054134326925
+            },
+            {
+              "unit": "1936",
+              "value": 3.671219185969637
+            },
+            {
+              "unit": "1938",
+              "value": 1.5038616609445068
+            },
+            {
+              "unit": "1955",
+              "value": 0.5617827399365893
+            },
+            {
+              "unit": "2015",
+              "value": 1.034395927179876
+            },
+            {
+              "unit": "2016",
+              "value": 1.831523613419412
+            },
+            {
+              "unit": "2090",
+              "value": 2.531647751506064
+            },
+            {
+              "unit": "2091",
+              "value": 0.2748792901913042
+            },
+            {
+              "unit": "2112",
+              "value": -0.7649776925340124
+            },
+            {
+              "unit": "2166",
+              "value": 1.2732500846574837
+            },
+            {
+              "unit": "2530",
+              "value": 4.524474997679594
+            },
+            {
+              "unit": "2659",
+              "value": 6.707783206619231
+            },
+            {
+              "unit": "2660",
+              "value": -0.4818691506815398
+            },
+            {
+              "unit": "2755",
+              "value": 1.529470722271478
+            },
+            {
+              "unit": "2768",
+              "value": 7.518574010647061
+            },
+            {
+              "unit": "2784",
+              "value": 4.703368186747541
+            },
+            {
+              "unit": "2785",
+              "value": 2.514074603590185
+            },
+            {
+              "unit": "334",
+              "value": 0.5924332820881375
+            },
+            {
+              "unit": "772",
+              "value": 2.55381925658439
+            },
+            {
+              "unit": "939",
+              "value": 3.7270077230678673
+            }
+          ]
+        },
+        {
+          "name": "rest",
+          "n": 294,
+          "mean": 0.913439659951778,
+          "ci_lo": 0.7824266490449256,
+          "ci_hi": 1.0444526708586304,
+          "points": [
+            {
+              "unit": "116",
+              "value": 0.0835558765464004
+            },
+            {
+              "unit": "1178",
+              "value": 1.1469011542762964
+            },
+            {
+              "unit": "1179",
+              "value": 0.17127698355971255
+            },
+            {
+              "unit": "126",
+              "value": 1.1269042820344488
+            },
+            {
+              "unit": "130",
+              "value": 1.1784043298961784
+            },
+            {
+              "unit": "1495",
+              "value": 1.5807415118021488
+            },
+            {
+              "unit": "1497",
+              "value": 1.6490623725623443
+            },
+            {
+              "unit": "1500",
+              "value": 2.275207873136285
+            },
+            {
+              "unit": "1501",
+              "value": 1.8869974003307934
+            },
+            {
+              "unit": "1503",
+              "value": 1.9342437861274657
+            },
+            {
+              "unit": "1507",
+              "value": 1.027155533746214
+            },
+            {
+              "unit": "1508",
+              "value": 0.5799596875411854
+            },
+            {
+              "unit": "1510",
+              "value": 0.6536561213771783
+            },
+            {
+              "unit": "1511",
+              "value": 1.0770198489886589
+            },
+            {
+              "unit": "1512",
+              "value": 0.24628927279034407
+            },
+            {
+              "unit": "1513",
+              "value": 0.6715498965606397
+            },
+            {
+              "unit": "1514",
+              "value": 0.5294751118675531
+            },
+            {
+              "unit": "1515",
+              "value": 5.5420373730411345
+            },
+            {
+              "unit": "1516",
+              "value": 0.019566398177309097
+            },
+            {
+              "unit": "1517",
+              "value": 0.9459990428615708
+            },
+            {
+              "unit": "1535",
+              "value": 1.5573919859643226
+            },
+            {
+              "unit": "1538",
+              "value": -0.4288940534913497
+            },
+            {
+              "unit": "1539",
+              "value": 1.0106145928474355
+            },
+            {
+              "unit": "1541",
+              "value": 1.3980542553853894
+            },
+            {
+              "unit": "1672",
+              "value": 0.6823317647991711
+            },
+            {
+              "unit": "1677",
+              "value": 1.825829011470292
+            },
+            {
+              "unit": "1693",
+              "value": -0.028775275237988396
+            },
+            {
+              "unit": "1694",
+              "value": 0.07941553842247906
+            },
+            {
+              "unit": "1695",
+              "value": 1.0811574172653877
+            },
+            {
+              "unit": "1696",
+              "value": -0.47429296314128955
+            },
+            {
+              "unit": "1697",
+              "value": 0.5510112876361557
+            },
+            {
+              "unit": "1698",
+              "value": -0.4325369522909739
+            },
+            {
+              "unit": "1699",
+              "value": 0.13079462313542223
+            },
+            {
+              "unit": "1700",
+              "value": -0.24177632200610155
+            },
+            {
+              "unit": "1701",
+              "value": -0.646537284359006
+            },
+            {
+              "unit": "1702",
+              "value": 1.1860215002977395
+            },
+            {
+              "unit": "1716",
+              "value": 1.3255491543767324
+            },
+            {
+              "unit": "1717",
+              "value": 0.7636173807244511
+            },
+            {
+              "unit": "1720",
+              "value": 0.7378648789097504
+            },
+            {
+              "unit": "1722",
+              "value": 1.0705937552967608
+            },
+            {
+              "unit": "1752",
+              "value": -1.650321525929833
+            },
+            {
+              "unit": "1753",
+              "value": 0.9854779655335459
+            },
+            {
+              "unit": "1754",
+              "value": 1.2866495810174925
+            },
+            {
+              "unit": "1755",
+              "value": 1.0626215629495306
+            },
+            {
+              "unit": "1756",
+              "value": 0.03588674507839329
+            },
+            {
+              "unit": "1757",
+              "value": 0.3123920804233933
+            },
+            {
+              "unit": "1760",
+              "value": -0.3420269660089854
+            },
+            {
+              "unit": "1761",
+              "value": 0.2750696046942487
+            },
+            {
+              "unit": "1762",
+              "value": 1.0259888977846412
+            },
+            {
+              "unit": "1763",
+              "value": 1.1388277374840765
+            },
+            {
+              "unit": "1764",
+              "value": 0.1144022127276596
+            },
+            {
+              "unit": "1765",
+              "value": 0.4216158593020296
+            },
+            {
+              "unit": "1766",
+              "value": -0.27857255528853386
+            },
+            {
+              "unit": "1767",
+              "value": -0.25613743230365493
+            },
+            {
+              "unit": "1769",
+              "value": -0.7690078951006978
+            },
+            {
+              "unit": "1770",
+              "value": 0.727384430753375
+            },
+            {
+              "unit": "1771",
+              "value": 1.4502980607895246
+            },
+            {
+              "unit": "1773",
+              "value": 1.699390590714108
+            },
+            {
+              "unit": "1774",
+              "value": 0.209193502099847
+            },
+            {
+              "unit": "1775",
+              "value": 0.7630063210544247
+            },
+            {
+              "unit": "1777",
+              "value": 1.7707834708876558
+            },
+            {
+              "unit": "1779",
+              "value": 0.24990329157633262
+            },
+            {
+              "unit": "1780",
+              "value": 2.369901688513462
+            },
+            {
+              "unit": "1781",
+              "value": 2.805752228046975
+            },
+            {
+              "unit": "1785",
+              "value": 0.7200117076237156
+            },
+            {
+              "unit": "1786",
+              "value": 1.3187026274074451
+            },
+            {
+              "unit": "1787",
+              "value": 0.9408537794930538
+            },
+            {
+              "unit": "1789",
+              "value": 0.5959662683907183
+            },
+            {
+              "unit": "1790",
+              "value": 0.3278240987240455
+            },
+            {
+              "unit": "1791",
+              "value": 0.5381876335952498
+            },
+            {
+              "unit": "1792",
+              "value": 2.5869716252346286
+            },
+            {
+              "unit": "1793",
+              "value": 1.1783238293319283
+            },
+            {
+              "unit": "1794",
+              "value": 2.558114531408412
+            },
+            {
+              "unit": "1795",
+              "value": 1.6183771763792762
+            },
+            {
+              "unit": "1797",
+              "value": 2.159375474698937
+            },
+            {
+              "unit": "1798",
+              "value": 0.3980981858994195
+            },
+            {
+              "unit": "1799",
+              "value": 2.2123397313664004
+            },
+            {
+              "unit": "1800",
+              "value": 2.404348547338321
+            },
+            {
+              "unit": "1801",
+              "value": 0.4674527307909422
+            },
+            {
+              "unit": "1802",
+              "value": 2.0316339373592296
+            },
+            {
+              "unit": "1804",
+              "value": 2.1652592455014634
+            },
+            {
+              "unit": "1806",
+              "value": 1.5756447726665268
+            },
+            {
+              "unit": "1810",
+              "value": 1.2852843688999105
+            },
+            {
+              "unit": "1811",
+              "value": 1.8315820337494237
+            },
+            {
+              "unit": "1812",
+              "value": 2.3734782572365045
+            },
+            {
+              "unit": "1813",
+              "value": 1.4609697802185746
+            },
+            {
+              "unit": "1815",
+              "value": 2.7212139982444423
+            },
+            {
+              "unit": "1816",
+              "value": 2.932098901451056
+            },
+            {
+              "unit": "1818",
+              "value": 0.25790799837526635
+            },
+            {
+              "unit": "1819",
+              "value": 2.2298688281222034
+            },
+            {
+              "unit": "1825",
+              "value": 1.5430310450893696
+            },
+            {
+              "unit": "1826",
+              "value": 1.335491760561041
+            },
+            {
+              "unit": "1829",
+              "value": 2.7923809137605122
+            },
+            {
+              "unit": "1830",
+              "value": 3.275397570100809
+            },
+            {
+              "unit": "1831",
+              "value": 1.8663930747626019
+            },
+            {
+              "unit": "1832",
+              "value": 1.3953380322036129
+            },
+            {
+              "unit": "1835",
+              "value": 1.4375955793317257
+            },
+            {
+              "unit": "1836",
+              "value": 0.20683162359820884
+            },
+            {
+              "unit": "1839",
+              "value": 0.12332231921149805
+            },
+            {
+              "unit": "1840",
+              "value": -0.6222499125654419
+            },
+            {
+              "unit": "1841",
+              "value": 0.5115073505541563
+            },
+            {
+              "unit": "1842",
+              "value": 1.1768155632319033
+            },
+            {
+              "unit": "1844",
+              "value": 1.6553802118474632
+            },
+            {
+              "unit": "1848",
+              "value": 0.27651217263571937
+            },
+            {
+              "unit": "1849",
+              "value": -1.3322624694666558
+            },
+            {
+              "unit": "1852",
+              "value": 2.7815027000980255
+            },
+            {
+              "unit": "1855",
+              "value": 2.9406163894201356
+            },
+            {
+              "unit": "1856",
+              "value": 1.4458427176540027
+            },
+            {
+              "unit": "1857",
+              "value": 0.13529868774758214
+            },
+            {
+              "unit": "1858",
+              "value": 1.9737839514605753
+            },
+            {
+              "unit": "1859",
+              "value": 4.543762890014765
+            },
+            {
+              "unit": "1860",
+              "value": 0.9251480161593317
+            },
+            {
+              "unit": "1861",
+              "value": 0.9238921561796065
+            },
+            {
+              "unit": "1879",
+              "value": 0.3466302079909056
+            },
+            {
+              "unit": "1880",
+              "value": -0.5235325985016175
+            },
+            {
+              "unit": "1881",
+              "value": 1.5007355357633454
+            },
+            {
+              "unit": "1882",
+              "value": -0.3068038841419405
+            },
+            {
+              "unit": "1883",
+              "value": -0.04688189845295376
+            },
+            {
+              "unit": "1884",
+              "value": 1.1809966618424195
+            },
+            {
+              "unit": "1886",
+              "value": 1.1825187944412576
+            },
+            {
+              "unit": "1887",
+              "value": 0.691190727749996
+            },
+            {
+              "unit": "1888",
+              "value": -0.12965526815892403
+            },
+            {
+              "unit": "1889",
+              "value": 2.0405988556491117
+            },
+            {
+              "unit": "1890",
+              "value": 0.9942234839150945
+            },
+            {
+              "unit": "1891",
+              "value": 0.09233615188068178
+            },
+            {
+              "unit": "1893",
+              "value": 0.31877287215799477
+            },
+            {
+              "unit": "1894",
+              "value": -0.31182375079074376
+            },
+            {
+              "unit": "1895",
+              "value": 0.4905255146605043
+            },
+            {
+              "unit": "1896",
+              "value": -0.05800864462073463
+            },
+            {
+              "unit": "1897",
+              "value": -0.7192353548359325
+            },
+            {
+              "unit": "1898",
+              "value": 2.033208913042591
+            },
+            {
+              "unit": "1899",
+              "value": 0.772613465662138
+            },
+            {
+              "unit": "1901",
+              "value": 1.466828060805513
+            },
+            {
+              "unit": "1902",
+              "value": 0.32407947457141084
+            },
+            {
+              "unit": "1905",
+              "value": 0.9239697132024371
+            },
+            {
+              "unit": "1906",
+              "value": 1.1272988173593355
+            },
+            {
+              "unit": "1907",
+              "value": -0.500036549022024
+            },
+            {
+              "unit": "1910",
+              "value": -0.5982164934042871
+            },
+            {
+              "unit": "1912",
+              "value": -0.14873391323469498
+            },
+            {
+              "unit": "1914",
+              "value": -0.13852778288025647
+            },
+            {
+              "unit": "1915",
+              "value": -0.7754455703446528
+            },
+            {
+              "unit": "1916",
+              "value": -2.1133499068793213
+            },
+            {
+              "unit": "1917",
+              "value": 1.2378972056740327
+            },
+            {
+              "unit": "1918",
+              "value": -1.7128761965117842
+            },
+            {
+              "unit": "1919",
+              "value": 0.06960430225358394
+            },
+            {
+              "unit": "192",
+              "value": 0.40731035364057
+            },
+            {
+              "unit": "1920",
+              "value": 0.9808170508693976
+            },
+            {
+              "unit": "1921",
+              "value": 0.08040368689339594
+            },
+            {
+              "unit": "1922",
+              "value": -0.41137699805919326
+            },
+            {
+              "unit": "1928",
+              "value": 1.924723098296898
+            },
+            {
+              "unit": "1929",
+              "value": 0.19157594652095256
+            },
+            {
+              "unit": "193",
+              "value": 1.0636438190435928
+            },
+            {
+              "unit": "1932",
+              "value": 1.8563509129732392
+            },
+            {
+              "unit": "1933",
+              "value": 0.8431141478368449
+            },
+            {
+              "unit": "1934",
+              "value": 0.10893752559756109
+            },
+            {
+              "unit": "1935",
+              "value": 2.086112980863165
+            },
+            {
+              "unit": "1937",
+              "value": -1.77160912597129
+            },
+            {
+              "unit": "1939",
+              "value": 1.394247440283042
+            },
+            {
+              "unit": "194",
+              "value": 1.3600585281408915
+            },
+            {
+              "unit": "1940",
+              "value": -0.46411382153687697
+            },
+            {
+              "unit": "1941",
+              "value": -0.8969669293932103
+            },
+            {
+              "unit": "1942",
+              "value": -0.40041729829621353
+            },
+            {
+              "unit": "1943",
+              "value": 1.6416423939193052
+            },
+            {
+              "unit": "1944",
+              "value": -0.6295153055320686
+            },
+            {
+              "unit": "1945",
+              "value": -0.3201874420584172
+            },
+            {
+              "unit": "1946",
+              "value": -0.24757587388067215
+            },
+            {
+              "unit": "1947",
+              "value": 1.1713815700029517
+            },
+            {
+              "unit": "1948",
+              "value": -0.38182499296742556
+            },
+            {
+              "unit": "1949",
+              "value": 1.5911509945263518
+            },
+            {
+              "unit": "1950",
+              "value": 0.9652729318391948
+            },
+            {
+              "unit": "1951",
+              "value": 0.29154231611938997
+            },
+            {
+              "unit": "1952",
+              "value": -0.5542011424889814
+            },
+            {
+              "unit": "1953",
+              "value": 0.9060970980661036
+            },
+            {
+              "unit": "1954",
+              "value": 0.628922122569378
+            },
+            {
+              "unit": "1956",
+              "value": 0.31991712136031225
+            },
+            {
+              "unit": "1957",
+              "value": 0.8329823475534681
+            },
+            {
+              "unit": "1958",
+              "value": 1.0795805306282595
+            },
+            {
+              "unit": "1959",
+              "value": -0.6073467991771277
+            },
+            {
+              "unit": "1960",
+              "value": 0.21224740840634482
+            },
+            {
+              "unit": "1961",
+              "value": 2.0899695510916505
+            },
+            {
+              "unit": "1962",
+              "value": 0.3306046067897679
+            },
+            {
+              "unit": "1963",
+              "value": 1.140821591003041
+            },
+            {
+              "unit": "1964",
+              "value": 1.352664239011757
+            },
+            {
+              "unit": "1965",
+              "value": 0.544766290171637
+            },
+            {
+              "unit": "1966",
+              "value": -0.5994594457513411
+            },
+            {
+              "unit": "1967",
+              "value": 0.5470223752277228
+            },
+            {
+              "unit": "1968",
+              "value": -0.43280743419213685
+            },
+            {
+              "unit": "2017",
+              "value": 0.21693348071689833
+            },
+            {
+              "unit": "2021",
+              "value": 0.6987358593478099
+            },
+            {
+              "unit": "2022",
+              "value": 0.6170853845970381
+            },
+            {
+              "unit": "2025",
+              "value": 1.243488582747009
+            },
+            {
+              "unit": "2067",
+              "value": 0.3308414858958031
+            },
+            {
+              "unit": "2068",
+              "value": 1.9095896935006174
+            },
+            {
+              "unit": "2071",
+              "value": 0.42256085217775663
+            },
+            {
+              "unit": "2084",
+              "value": 0.42047271276871
+            },
+            {
+              "unit": "2085",
+              "value": -0.3792570418472163
+            },
+            {
+              "unit": "2086",
+              "value": 0.18942998420449264
+            },
+            {
+              "unit": "2087",
+              "value": -0.2740155597645213
+            },
+            {
+              "unit": "2088",
+              "value": 0.02626211050026761
+            },
+            {
+              "unit": "2089",
+              "value": -0.04991676756087493
+            },
+            {
+              "unit": "2092",
+              "value": 1.6523904257067734
+            },
+            {
+              "unit": "2093",
+              "value": 1.343062521897302
+            },
+            {
+              "unit": "2098",
+              "value": -0.09786389110824167
+            },
+            {
+              "unit": "2099",
+              "value": 1.3500756407486492
+            },
+            {
+              "unit": "2100",
+              "value": -0.889824872394799
+            },
+            {
+              "unit": "2101",
+              "value": 1.0414262640888587
+            },
+            {
+              "unit": "2102",
+              "value": 0.1410741863943965
+            },
+            {
+              "unit": "2103",
+              "value": 1.3675835897729307
+            },
+            {
+              "unit": "2104",
+              "value": 1.6127225712603686
+            },
+            {
+              "unit": "2105",
+              "value": 2.4031254279786634
+            },
+            {
+              "unit": "2106",
+              "value": 1.1783910730710403
+            },
+            {
+              "unit": "2107",
+              "value": -0.2500856417443664
+            },
+            {
+              "unit": "2108",
+              "value": 0.42129011828950524
+            },
+            {
+              "unit": "2110",
+              "value": -0.12008327383298933
+            },
+            {
+              "unit": "2114",
+              "value": 1.1323506802003003
+            },
+            {
+              "unit": "2115",
+              "value": 0.18030913467027965
+            },
+            {
+              "unit": "2116",
+              "value": 0.9875005872090892
+            },
+            {
+              "unit": "2118",
+              "value": 1.3528092947127526
+            },
+            {
+              "unit": "2119",
+              "value": 1.5663942931904096
+            },
+            {
+              "unit": "2121",
+              "value": 1.4045152517960595
+            },
+            {
+              "unit": "2122",
+              "value": 1.2583355638836782
+            },
+            {
+              "unit": "2159",
+              "value": 1.7628448456393855
+            },
+            {
+              "unit": "2160",
+              "value": 1.2201600069128204
+            },
+            {
+              "unit": "2161",
+              "value": 1.6281934830495288
+            },
+            {
+              "unit": "2162",
+              "value": 2.145585089365653
+            },
+            {
+              "unit": "2163",
+              "value": 2.031618401424147
+            },
+            {
+              "unit": "2164",
+              "value": 0.14575683464487987
+            },
+            {
+              "unit": "2165",
+              "value": 0.23233240808911226
+            },
+            {
+              "unit": "2167",
+              "value": 1.7681242821812901
+            },
+            {
+              "unit": "2168",
+              "value": 1.990727927216108
+            },
+            {
+              "unit": "2169",
+              "value": -0.11089663744327716
+            },
+            {
+              "unit": "2170",
+              "value": 0.40603280915813045
+            },
+            {
+              "unit": "2171",
+              "value": 0.7939053012734529
+            },
+            {
+              "unit": "2172",
+              "value": 1.4751398417437258
+            },
+            {
+              "unit": "2253",
+              "value": -0.05042100560344309
+            },
+            {
+              "unit": "2257",
+              "value": 2.4013482444674636
+            },
+            {
+              "unit": "266",
+              "value": 0.48278149992108865
+            },
+            {
+              "unit": "2666",
+              "value": 1.6645075312617923
+            },
+            {
+              "unit": "267",
+              "value": -0.35922648646002386
+            },
+            {
+              "unit": "2704",
+              "value": 1.7093207259783103
+            },
+            {
+              "unit": "2705",
+              "value": -0.2958413008824703
+            },
+            {
+              "unit": "2706",
+              "value": 0.2529175346536192
+            },
+            {
+              "unit": "2710",
+              "value": 4.62719622755478
+            },
+            {
+              "unit": "2711",
+              "value": 0.81644410800466
+            },
+            {
+              "unit": "2712",
+              "value": 1.5947239392433499
+            },
+            {
+              "unit": "2714",
+              "value": 3.0586415171884536
+            },
+            {
+              "unit": "2719",
+              "value": 2.793191300809312
+            },
+            {
+              "unit": "2738",
+              "value": 1.9534600250037926
+            },
+            {
+              "unit": "2742",
+              "value": 1.0912467962767938
+            },
+            {
+              "unit": "2743",
+              "value": 2.2962748780841906
+            },
+            {
+              "unit": "2745",
+              "value": -1.154879761638469
+            },
+            {
+              "unit": "2748",
+              "value": 2.9222733728030104
+            },
+            {
+              "unit": "2752",
+              "value": 2.6716730130778483
+            },
+            {
+              "unit": "2753",
+              "value": 1.2255639613318454
+            },
+            {
+              "unit": "2754",
+              "value": 0.3847315205234292
+            },
+            {
+              "unit": "2756",
+              "value": 1.0608650016669081
+            },
+            {
+              "unit": "2757",
+              "value": 1.8192548085582398
+            },
+            {
+              "unit": "2758",
+              "value": 0.16727350662318408
+            },
+            {
+              "unit": "2759",
+              "value": 2.8440060138097234
+            },
+            {
+              "unit": "2760",
+              "value": 1.4132570883657127
+            },
+            {
+              "unit": "2761",
+              "value": -2.3403220694981925
+            },
+            {
+              "unit": "2762",
+              "value": -1.5994710037841813
+            },
+            {
+              "unit": "2763",
+              "value": 2.6703600971937558
+            },
+            {
+              "unit": "2765",
+              "value": 1.3959991946331378
+            },
+            {
+              "unit": "2769",
+              "value": 3.94048879770161
+            },
+            {
+              "unit": "2771",
+              "value": 2.1368188052628287
+            },
+            {
+              "unit": "2774",
+              "value": 2.179134839629592
+            },
+            {
+              "unit": "2775",
+              "value": 0.7348090102528015
+            },
+            {
+              "unit": "2776",
+              "value": 2.0129582226253504
+            },
+            {
+              "unit": "2777",
+              "value": 2.8701004617854657
+            },
+            {
+              "unit": "2778",
+              "value": -0.670343396363652
+            },
+            {
+              "unit": "2780",
+              "value": 1.42617953281421
+            },
+            {
+              "unit": "2781",
+              "value": 2.4190351578074214
+            },
+            {
+              "unit": "2782",
+              "value": 2.342085137164588
+            },
+            {
+              "unit": "2783",
+              "value": 0.6794316452939171
+            },
+            {
+              "unit": "2788",
+              "value": 3.152282385468313
+            },
+            {
+              "unit": "2793",
+              "value": 4.93658678221013
+            },
+            {
+              "unit": "2794",
+              "value": 0.6570127079259223
+            },
+            {
+              "unit": "2795",
+              "value": 2.5958576741877177
+            },
+            {
+              "unit": "2796",
+              "value": 0.6416433698835284
+            },
+            {
+              "unit": "315",
+              "value": -0.041272551343229935
+            },
+            {
+              "unit": "318",
+              "value": 0.43266245095114897
+            },
+            {
+              "unit": "320",
+              "value": 0.20943477069202743
+            },
+            {
+              "unit": "321",
+              "value": 0.7862958160176756
+            },
+            {
+              "unit": "323",
+              "value": 0.9902256531554681
+            },
+            {
+              "unit": "330",
+              "value": 0.47189877666544433
+            },
+            {
+              "unit": "332",
+              "value": -0.6845601029755812
+            },
+            {
+              "unit": "338",
+              "value": 0.6776475259041828
+            },
+            {
+              "unit": "346",
+              "value": -0.029805880109883276
+            },
+            {
+              "unit": "520",
+              "value": 2.3319855055803362
+            },
+            {
+              "unit": "764",
+              "value": 0.3892198161052569
+            },
+            {
+              "unit": "769",
+              "value": 0.8426588377270683
+            },
+            {
+              "unit": "824",
+              "value": 0.13609973254510344
+            },
+            {
+              "unit": "827",
+              "value": 0.5497846058519293
+            }
+          ]
+        }
+      ],
+      "note": "An approximation of the template's graph: every biological unit, the group mean and its 95 % confidence interval. Prism draws the real one."
+    },
+    "BIRC5": {
+      "gene": "BIRC5",
+      "scale": "log2 relative quantity: log2 of the target minus the mean log2 of the reference genes, per biological unit",
+      "groups": [
+        {
+          "name": "MYCN-high",
+          "n": 53,
+          "mean": 2.0215704704132103,
+          "ci_lo": 1.6332381194562535,
+          "ci_hi": 2.409902821370167,
+          "points": [
+            {
+              "unit": "111",
+              "value": 1.5563229036983888
+            },
+            {
+              "unit": "1136",
+              "value": 1.8778308257643133
+            },
+            {
+              "unit": "1231",
+              "value": 1.1572812133792016
+            },
+            {
+              "unit": "127",
+              "value": 2.201048840337558
+            },
+            {
+              "unit": "1496",
+              "value": 2.6773123073104923
+            },
+            {
+              "unit": "1498",
+              "value": 1.9536079483474147
+            },
+            {
+              "unit": "1499",
+              "value": 0.6250264588650865
+            },
+            {
+              "unit": "1536",
+              "value": 2.8900171114457667
+            },
+            {
+              "unit": "1540",
+              "value": 2.1796957726134387
+            },
+            {
+              "unit": "1686",
+              "value": 2.937019712187121
+            },
+            {
+              "unit": "1687",
+              "value": 1.2674301083953896
+            },
+            {
+              "unit": "1751",
+              "value": 1.5439827070886256
+            },
+            {
+              "unit": "1758",
+              "value": 2.158007722955743
+            },
+            {
+              "unit": "1759",
+              "value": 3.102542061077102
+            },
+            {
+              "unit": "1772",
+              "value": 0.8189815406685277
+            },
+            {
+              "unit": "1776",
+              "value": 3.1048519978864633
+            },
+            {
+              "unit": "1784",
+              "value": 4.036292562334781
+            },
+            {
+              "unit": "1788",
+              "value": 3.3575689989102813
+            },
+            {
+              "unit": "1796",
+              "value": 1.1654976132960453
+            },
+            {
+              "unit": "1805",
+              "value": -0.5304607495687286
+            },
+            {
+              "unit": "1820",
+              "value": 1.5990301368835862
+            },
+            {
+              "unit": "1821",
+              "value": 2.4007213799921416
+            },
+            {
+              "unit": "1822",
+              "value": 2.7458234197525435
+            },
+            {
+              "unit": "1823",
+              "value": 3.0893948886808626
+            },
+            {
+              "unit": "1824",
+              "value": 4.287538669911026
+            },
+            {
+              "unit": "1827",
+              "value": 2.460608331746867
+            },
+            {
+              "unit": "1828",
+              "value": 1.7479528303502665
+            },
+            {
+              "unit": "1834",
+              "value": -0.04344194846681937
+            },
+            {
+              "unit": "1837",
+              "value": 2.5668200913051376
+            },
+            {
+              "unit": "1850",
+              "value": 2.51248094047887
+            },
+            {
+              "unit": "1885",
+              "value": 1.2724074096393085
+            },
+            {
+              "unit": "1908",
+              "value": 2.8478789183392017
+            },
+            {
+              "unit": "1909",
+              "value": 2.635512903194792
+            },
+            {
+              "unit": "1924",
+              "value": 4.398478338898217
+            },
+            {
+              "unit": "1936",
+              "value": 3.6020018489809402
+            },
+            {
+              "unit": "1938",
+              "value": 1.9535344470328972
+            },
+            {
+              "unit": "1955",
+              "value": 1.327708060692892
+            },
+            {
+              "unit": "2015",
+              "value": 1.7169580935843936
+            },
+            {
+              "unit": "2016",
+              "value": 0.5227035946473784
+            },
+            {
+              "unit": "2090",
+              "value": 2.80113241662424
+            },
+            {
+              "unit": "2091",
+              "value": 0.19877472830983578
+            },
+            {
+              "unit": "2112",
+              "value": -0.052647872809162166
+            },
+            {
+              "unit": "2166",
+              "value": 1.920028635663435
+            },
+            {
+              "unit": "2530",
+              "value": 2.8015502793510336
+            },
+            {
+              "unit": "2659",
+              "value": 2.763888052740908
+            },
+            {
+              "unit": "2660",
+              "value": 3.8111391837600976
+            },
+            {
+              "unit": "2755",
+              "value": -3.4025858110256024
+            },
+            {
+              "unit": "2768",
+              "value": 2.474775369140449
+            },
+            {
+              "unit": "2784",
+              "value": 3.503106517848675
+            },
+            {
+              "unit": "2785",
+              "value": 2.358440121733251
+            },
+            {
+              "unit": "334",
+              "value": -1.1576672034013367
+            },
+            {
+              "unit": "772",
+              "value": 2.4255234918633946
+            },
+            {
+              "unit": "939",
+              "value": 2.9738070094634033
+            }
+          ]
+        },
+        {
+          "name": "rest",
+          "n": 294,
+          "mean": 0.017454321422278606,
+          "ci_lo": -0.2178753770956706,
+          "ci_hi": 0.2527840199402278,
+          "points": [
+            {
+              "unit": "116",
+              "value": 0.7585563615511806
+            },
+            {
+              "unit": "1178",
+              "value": 1.5056495985564808
+            },
+            {
+              "unit": "1179",
+              "value": -0.09449080195095227
+            },
+            {
+              "unit": "126",
+              "value": -1.6456819651369106
+            },
+            {
+              "unit": "130",
+              "value": -0.5525532878510084
+            },
+            {
+              "unit": "1495",
+              "value": 1.2666606804299558
+            },
+            {
+              "unit": "1497",
+              "value": 1.311432855465771
+            },
+            {
+              "unit": "1500",
+              "value": 2.787442566687446
+            },
+            {
+              "unit": "1501",
+              "value": 2.3143722473778165
+            },
+            {
+              "unit": "1503",
+              "value": 2.1894218092091506
+            },
+            {
+              "unit": "1507",
+              "value": 1.9854903825866863
+            },
+            {
+              "unit": "1508",
+              "value": 1.5067825303932203
+            },
+            {
+              "unit": "1510",
+              "value": -0.2668191006796423
+            },
+            {
+              "unit": "1511",
+              "value": 0.7989955271669498
+            },
+            {
+              "unit": "1512",
+              "value": -1.3205383923086558
+            },
+            {
+              "unit": "1513",
+              "value": 1.0292331849425551
+            },
+            {
+              "unit": "1514",
+              "value": 1.9010008898429351
+            },
+            {
+              "unit": "1515",
+              "value": 0.20625892343100283
+            },
+            {
+              "unit": "1516",
+              "value": -3.700142487004106
+            },
+            {
+              "unit": "1517",
+              "value": 1.7020049754192286
+            },
+            {
+              "unit": "1535",
+              "value": 1.4216109583502234
+            },
+            {
+              "unit": "1538",
+              "value": -0.6969486846244628
+            },
+            {
+              "unit": "1539",
+              "value": 1.2563221484383291
+            },
+            {
+              "unit": "1541",
+              "value": 0.9340106698795889
+            },
+            {
+              "unit": "1672",
+              "value": 0.3462745974939878
+            },
+            {
+              "unit": "1677",
+              "value": 2.0845004105375757
+            },
+            {
+              "unit": "1693",
+              "value": -2.502118325427853
+            },
+            {
+              "unit": "1694",
+              "value": -0.16723165574887133
+            },
+            {
+              "unit": "1695",
+              "value": -0.28051344042788706
+            },
+            {
+              "unit": "1696",
+              "value": -3.091263055285639
+            },
+            {
+              "unit": "1697",
+              "value": -0.2684472512646021
+            },
+            {
+              "unit": "1698",
+              "value": -0.9480502914513735
+            },
+            {
+              "unit": "1699",
+              "value": 0.7259016776660765
+            },
+            {
+              "unit": "1700",
+              "value": -0.8878218434587843
+            },
+            {
+              "unit": "1701",
+              "value": -2.5443037802016892
+            },
+            {
+              "unit": "1702",
+              "value": 0.8050931322419199
+            },
+            {
+              "unit": "1716",
+              "value": -1.7492310931242354
+            },
+            {
+              "unit": "1717",
+              "value": -1.493602444431236
+            },
+            {
+              "unit": "1720",
+              "value": -0.9850249970888854
+            },
+            {
+              "unit": "1722",
+              "value": 0.9493472495740267
+            },
+            {
+              "unit": "1752",
+              "value": -4.679777793203362
+            },
+            {
+              "unit": "1753",
+              "value": -6.265607286424288
+            },
+            {
+              "unit": "1754",
+              "value": -0.16799878192988515
+            },
+            {
+              "unit": "1755",
+              "value": 1.827877639046653
+            },
+            {
+              "unit": "1756",
+              "value": -4.7366044322036664
+            },
+            {
+              "unit": "1757",
+              "value": -1.070358190528136
+            },
+            {
+              "unit": "1760",
+              "value": -5.818390556376763
+            },
+            {
+              "unit": "1761",
+              "value": 0.9427788511901714
+            },
+            {
+              "unit": "1762",
+              "value": -3.198534265153665
+            },
+            {
+              "unit": "1763",
+              "value": -1.962880275140714
+            },
+            {
+              "unit": "1764",
+              "value": -1.569108124064707
+            },
+            {
+              "unit": "1765",
+              "value": -4.0245388387542675
+            },
+            {
+              "unit": "1766",
+              "value": -3.4295604906711237
+            },
+            {
+              "unit": "1767",
+              "value": -0.016014369388358318
+            },
+            {
+              "unit": "1769",
+              "value": 0.6068177001481132
+            },
+            {
+              "unit": "1770",
+              "value": 1.0313003761836708
+            },
+            {
+              "unit": "1771",
+              "value": 2.003694812390904
+            },
+            {
+              "unit": "1773",
+              "value": 1.6047620489630745
+            },
+            {
+              "unit": "1774",
+              "value": 0.22091107557874423
+            },
+            {
+              "unit": "1775",
+              "value": 0.5297652765645129
+            },
+            {
+              "unit": "1777",
+              "value": 2.45914765056599
+            },
+            {
+              "unit": "1779",
+              "value": -0.6414143587643402
+            },
+            {
+              "unit": "1780",
+              "value": -0.1381371771572315
+            },
+            {
+              "unit": "1781",
+              "value": 3.0144236692804114
+            },
+            {
+              "unit": "1785",
+              "value": 0.6861363785181407
+            },
+            {
+              "unit": "1786",
+              "value": 1.16985814068995
+            },
+            {
+              "unit": "1787",
+              "value": -2.4774128998266285
+            },
+            {
+              "unit": "1789",
+              "value": 0.8041129830162248
+            },
+            {
+              "unit": "1790",
+              "value": 0.7269814360437028
+            },
+            {
+              "unit": "1791",
+              "value": 0.518763452124448
+            },
+            {
+              "unit": "1792",
+              "value": 1.4996460167996908
+            },
+            {
+              "unit": "1793",
+              "value": -6.213529376891102
+            },
+            {
+              "unit": "1794",
+              "value": 0.5914765743696169
+            },
+            {
+              "unit": "1795",
+              "value": -0.2623942469836713
+            },
+            {
+              "unit": "1797",
+              "value": 0.8632661739293308
+            },
+            {
+              "unit": "1798",
+              "value": -0.8658414777118963
+            },
+            {
+              "unit": "1799",
+              "value": 2.3887852951289297
+            },
+            {
+              "unit": "1800",
+              "value": 2.3688007903309085
+            },
+            {
+              "unit": "1801",
+              "value": 1.0186082268422698
+            },
+            {
+              "unit": "1802",
+              "value": 2.5998941497779544
+            },
+            {
+              "unit": "1804",
+              "value": 2.5241053724781413
+            },
+            {
+              "unit": "1806",
+              "value": 2.2410535875583992
+            },
+            {
+              "unit": "1810",
+              "value": 1.1791291923969158
+            },
+            {
+              "unit": "1811",
+              "value": 0.6002307866491421
+            },
+            {
+              "unit": "1812",
+              "value": 3.103087510041046
+            },
+            {
+              "unit": "1813",
+              "value": 0.45342544219535874
+            },
+            {
+              "unit": "1815",
+              "value": 2.7722857995785883
+            },
+            {
+              "unit": "1816",
+              "value": 3.552960889572967
+            },
+            {
+              "unit": "1818",
+              "value": 0.8990617942793993
+            },
+            {
+              "unit": "1819",
+              "value": 0.007597735133844097
+            },
+            {
+              "unit": "1825",
+              "value": 2.934423006238262
+            },
+            {
+              "unit": "1826",
+              "value": 1.2153823249119817
+            },
+            {
+              "unit": "1829",
+              "value": 0.5863143941372755
+            },
+            {
+              "unit": "1830",
+              "value": 2.2490110755446207
+            },
+            {
+              "unit": "1831",
+              "value": 1.535527666812019
+            },
+            {
+              "unit": "1832",
+              "value": 2.81490754995656
+            },
+            {
+              "unit": "1835",
+              "value": -0.715863253168532
+            },
+            {
+              "unit": "1836",
+              "value": 1.4305364502003979
+            },
+            {
+              "unit": "1839",
+              "value": -2.285506582917792
+            },
+            {
+              "unit": "1840",
+              "value": 2.233678972358751
+            },
+            {
+              "unit": "1841",
+              "value": 0.21615540864950056
+            },
+            {
+              "unit": "1842",
+              "value": 2.81563678316971
+            },
+            {
+              "unit": "1844",
+              "value": 1.6258632982909873
+            },
+            {
+              "unit": "1848",
+              "value": 1.6279745313090288
+            },
+            {
+              "unit": "1849",
+              "value": 0.053071501763625406
+            },
+            {
+              "unit": "1852",
+              "value": 4.27203008653774
+            },
+            {
+              "unit": "1855",
+              "value": 4.330995456108999
+            },
+            {
+              "unit": "1856",
+              "value": 0.7693907181408708
+            },
+            {
+              "unit": "1857",
+              "value": 0.24683664374166092
+            },
+            {
+              "unit": "1858",
+              "value": 0.9291614458921629
+            },
+            {
+              "unit": "1859",
+              "value": 3.734470964324384
+            },
+            {
+              "unit": "1860",
+              "value": -1.1632650887938993
+            },
+            {
+              "unit": "1861",
+              "value": 1.5923033936910596
+            },
+            {
+              "unit": "1879",
+              "value": -1.0589467447778187
+            },
+            {
+              "unit": "1880",
+              "value": 1.0124357968465745
+            },
+            {
+              "unit": "1881",
+              "value": 1.9424674644982431
+            },
+            {
+              "unit": "1882",
+              "value": -3.8782976676380176
+            },
+            {
+              "unit": "1883",
+              "value": 0.16735473279349478
+            },
+            {
+              "unit": "1884",
+              "value": -1.9176247576813736
+            },
+            {
+              "unit": "1886",
+              "value": 2.178091446658682
+            },
+            {
+              "unit": "1887",
+              "value": -0.9584173638192102
+            },
+            {
+              "unit": "1888",
+              "value": -0.09179664877920324
+            },
+            {
+              "unit": "1889",
+              "value": 1.073593788040018
+            },
+            {
+              "unit": "1890",
+              "value": 0.5222076805942422
+            },
+            {
+              "unit": "1891",
+              "value": 0.011121690337839496
+            },
+            {
+              "unit": "1893",
+              "value": -3.9774068126471303
+            },
+            {
+              "unit": "1894",
+              "value": 0.7541272341163747
+            },
+            {
+              "unit": "1895",
+              "value": -0.7807142848997888
+            },
+            {
+              "unit": "1896",
+              "value": 0.310585075190291
+            },
+            {
+              "unit": "1897",
+              "value": -5.08375856891534
+            },
+            {
+              "unit": "1898",
+              "value": -2.420148040406927
+            },
+            {
+              "unit": "1899",
+              "value": 0.5340518891436368
+            },
+            {
+              "unit": "1901",
+              "value": -0.9062152109198998
+            },
+            {
+              "unit": "1902",
+              "value": 0.05027963920670331
+            },
+            {
+              "unit": "1905",
+              "value": 1.582560635063345
+            },
+            {
+              "unit": "1906",
+              "value": 0.3306497283671881
+            },
+            {
+              "unit": "1907",
+              "value": 1.0509226256507667
+            },
+            {
+              "unit": "1910",
+              "value": -3.3096522256256566
+            },
+            {
+              "unit": "1912",
+              "value": 0.2713107095800691
+            },
+            {
+              "unit": "1914",
+              "value": -5.880435632835496
+            },
+            {
+              "unit": "1915",
+              "value": -2.20151659735901
+            },
+            {
+              "unit": "1916",
+              "value": -0.623483893427558
+            },
+            {
+              "unit": "1917",
+              "value": 0.9002622387778381
+            },
+            {
+              "unit": "1918",
+              "value": -4.541611846360846
+            },
+            {
+              "unit": "1919",
+              "value": -2.793420820053406
+            },
+            {
+              "unit": "192",
+              "value": -0.4059921627221659
+            },
+            {
+              "unit": "1920",
+              "value": -2.020204469303522
+            },
+            {
+              "unit": "1921",
+              "value": -1.1210902221242556
+            },
+            {
+              "unit": "1922",
+              "value": -0.792809067367088
+            },
+            {
+              "unit": "1928",
+              "value": 1.8460633515182625
+            },
+            {
+              "unit": "1929",
+              "value": -3.8131157610586293
+            },
+            {
+              "unit": "193",
+              "value": 0.8951590905630376
+            },
+            {
+              "unit": "1932",
+              "value": 1.8581717687894255
+            },
+            {
+              "unit": "1933",
+              "value": 0.34930484773653525
+            },
+            {
+              "unit": "1934",
+              "value": 0.8608456969630875
+            },
+            {
+              "unit": "1935",
+              "value": 2.8651579262691325
+            },
+            {
+              "unit": "1937",
+              "value": 1.1347631755425294
+            },
+            {
+              "unit": "1939",
+              "value": 0.22167099912657307
+            },
+            {
+              "unit": "194",
+              "value": 0.7425327665989716
+            },
+            {
+              "unit": "1940",
+              "value": -1.2622138634176743
+            },
+            {
+              "unit": "1941",
+              "value": -2.126745469332109
+            },
+            {
+              "unit": "1942",
+              "value": -0.3136187792571583
+            },
+            {
+              "unit": "1943",
+              "value": -0.11633396549735231
+            },
+            {
+              "unit": "1944",
+              "value": -1.4227044982201065
+            },
+            {
+              "unit": "1945",
+              "value": -0.2842516665517518
+            },
+            {
+              "unit": "1946",
+              "value": -1.1377230884497873
+            },
+            {
+              "unit": "1947",
+              "value": 1.2220998769412574
+            },
+            {
+              "unit": "1948",
+              "value": -0.5836189587550322
+            },
+            {
+              "unit": "1949",
+              "value": 1.9451743853307608
+            },
+            {
+              "unit": "1950",
+              "value": 0.7230857898061327
+            },
+            {
+              "unit": "1951",
+              "value": -3.238712626492193
+            },
+            {
+              "unit": "1952",
+              "value": 0.24952888911963278
+            },
+            {
+              "unit": "1953",
+              "value": -4.01231116469028
+            },
+            {
+              "unit": "1954",
+              "value": -0.8246919564940427
+            },
+            {
+              "unit": "1956",
+              "value": 0.25437446539000774
+            },
+            {
+              "unit": "1957",
+              "value": 1.0828275369582325
+            },
+            {
+              "unit": "1958",
+              "value": 0.02267988480402927
+            },
+            {
+              "unit": "1959",
+              "value": -1.4457659846331747
+            },
+            {
+              "unit": "1960",
+              "value": 0.7749111009140037
+            },
+            {
+              "unit": "1961",
+              "value": 2.1253010568246395
+            },
+            {
+              "unit": "1962",
+              "value": -0.15561981021867943
+            },
+            {
+              "unit": "1963",
+              "value": 1.6219757704281665
+            },
+            {
+              "unit": "1964",
+              "value": 0.5138936532414871
+            },
+            {
+              "unit": "1965",
+              "value": -0.842506155326527
+            },
+            {
+              "unit": "1966",
+              "value": -0.6392121021233663
+            },
+            {
+              "unit": "1967",
+              "value": 0.7308646724493286
+            },
+            {
+              "unit": "1968",
+              "value": 1.685063921378994
+            },
+            {
+              "unit": "2017",
+              "value": -0.9758378347172627
+            },
+            {
+              "unit": "2021",
+              "value": -2.4852423102148773
+            },
+            {
+              "unit": "2022",
+              "value": -1.4551180731194684
+            },
+            {
+              "unit": "2025",
+              "value": -0.14851931142072416
+            },
+            {
+              "unit": "2067",
+              "value": -4.237792200360495
+            },
+            {
+              "unit": "2068",
+              "value": -1.7447885352145356
+            },
+            {
+              "unit": "2071",
+              "value": 1.6394092392019513
+            },
+            {
+              "unit": "2084",
+              "value": 1.78083981468445
+            },
+            {
+              "unit": "2085",
+              "value": -0.05382274411218546
+            },
+            {
+              "unit": "2086",
+              "value": 1.3446543267386648
+            },
+            {
+              "unit": "2087",
+              "value": -1.237608114242338
+            },
+            {
+              "unit": "2088",
+              "value": -1.4112026496412664
+            },
+            {
+              "unit": "2089",
+              "value": 0.8455530186537192
+            },
+            {
+              "unit": "2092",
+              "value": 1.2526840679887474
+            },
+            {
+              "unit": "2093",
+              "value": 2.280604994919745
+            },
+            {
+              "unit": "2098",
+              "value": -5.213039126624
+            },
+            {
+              "unit": "2099",
+              "value": -2.765253525824585
+            },
+            {
+              "unit": "2100",
+              "value": -0.7416753015331832
+            },
+            {
+              "unit": "2101",
+              "value": -2.029374097606988
+            },
+            {
+              "unit": "2102",
+              "value": -3.5370658431268467
+            },
+            {
+              "unit": "2103",
+              "value": 0.9127272233619905
+            },
+            {
+              "unit": "2104",
+              "value": 0.9729924639778407
+            },
+            {
+              "unit": "2105",
+              "value": -0.8185177977074982
+            },
+            {
+              "unit": "2106",
+              "value": 0.8124111557541216
+            },
+            {
+              "unit": "2107",
+              "value": -0.9424473660387669
+            },
+            {
+              "unit": "2108",
+              "value": -3.3960653518420916
+            },
+            {
+              "unit": "2110",
+              "value": -4.174106953350407
+            },
+            {
+              "unit": "2114",
+              "value": 1.416008633795828
+            },
+            {
+              "unit": "2115",
+              "value": -0.6196087055637278
+            },
+            {
+              "unit": "2116",
+              "value": -0.5240511910583585
+            },
+            {
+              "unit": "2118",
+              "value": 2.260491397968135
+            },
+            {
+              "unit": "2119",
+              "value": 1.6115047601674384
+            },
+            {
+              "unit": "2121",
+              "value": 2.3094285244640513
+            },
+            {
+              "unit": "2122",
+              "value": 0.07469491065043243
+            },
+            {
+              "unit": "2159",
+              "value": 2.4337083456556776
+            },
+            {
+              "unit": "2160",
+              "value": 0.8102862388930703
+            },
+            {
+              "unit": "2161",
+              "value": 0.7716667099510826
+            },
+            {
+              "unit": "2162",
+              "value": 1.7496057647520349
+            },
+            {
+              "unit": "2163",
+              "value": 1.2720130970399595
+            },
+            {
+              "unit": "2164",
+              "value": -2.696147927374902
+            },
+            {
+              "unit": "2165",
+              "value": 1.1510299047292616
+            },
+            {
+              "unit": "2167",
+              "value": -0.7531741998192878
+            },
+            {
+              "unit": "2168",
+              "value": 2.5106513467503575
+            },
+            {
+              "unit": "2169",
+              "value": -0.6005329955375824
+            },
+            {
+              "unit": "2170",
+              "value": -1.5234892410018936
+            },
+            {
+              "unit": "2171",
+              "value": 2.3935570573077687
+            },
+            {
+              "unit": "2172",
+              "value": 0.4086626715249775
+            },
+            {
+              "unit": "2253",
+              "value": -2.641250841740254
+            },
+            {
+              "unit": "2257",
+              "value": 0.5863702402057438
+            },
+            {
+              "unit": "266",
+              "value": 0.39414624289667444
+            },
+            {
+              "unit": "2666",
+              "value": 0.8599856173079363
+            },
+            {
+              "unit": "267",
+              "value": 0.09838477251168598
+            },
+            {
+              "unit": "2704",
+              "value": -1.9093848885990248
+            },
+            {
+              "unit": "2705",
+              "value": -2.0850220258782297
+            },
+            {
+              "unit": "2706",
+              "value": -5.251338233998474
+            },
+            {
+              "unit": "2710",
+              "value": 3.5405435177551254
+            },
+            {
+              "unit": "2711",
+              "value": -0.01144685146332769
+            },
+            {
+              "unit": "2712",
+              "value": 0.16191549465400712
+            },
+            {
+              "unit": "2714",
+              "value": -1.2874803901814182
+            },
+            {
+              "unit": "2719",
+              "value": -2.6570880913255905
+            },
+            {
+              "unit": "2738",
+              "value": 0.9998777908048417
+            },
+            {
+              "unit": "2742",
+              "value": 0.7300425678185771
+            },
+            {
+              "unit": "2743",
+              "value": 2.527851049248193
+            },
+            {
+              "unit": "2745",
+              "value": 0.15620026583461133
+            },
+            {
+              "unit": "2748",
+              "value": -1.2700254113703098
+            },
+            {
+              "unit": "2752",
+              "value": 3.7442239362919025
+            },
+            {
+              "unit": "2753",
+              "value": 0.8328070110983425
+            },
+            {
+              "unit": "2754",
+              "value": -1.279473709867185
+            },
+            {
+              "unit": "2756",
+              "value": -1.205761870556918
+            },
+            {
+              "unit": "2757",
+              "value": 1.0658627596334647
+            },
+            {
+              "unit": "2758",
+              "value": -0.053728185129628514
+            },
+            {
+              "unit": "2759",
+              "value": 3.0614732895425405
+            },
+            {
+              "unit": "2760",
+              "value": 0.06059507174358636
+            },
+            {
+              "unit": "2761",
+              "value": -3.7524273911544475
+            },
+            {
+              "unit": "2762",
+              "value": 0.5085475129767616
+            },
+            {
+              "unit": "2763",
+              "value": 0.8313161927750112
+            },
+            {
+              "unit": "2765",
+              "value": 1.661805358431554
+            },
+            {
+              "unit": "2769",
+              "value": 2.3080888937481685
+            },
+            {
+              "unit": "2771",
+              "value": 2.5590464283709746
+            },
+            {
+              "unit": "2774",
+              "value": 0.9377497326768847
+            },
+            {
+              "unit": "2775",
+              "value": 1.1705800062516492
+            },
+            {
+              "unit": "2776",
+              "value": 1.647689628523736
+            },
+            {
+              "unit": "2777",
+              "value": 1.4444173330448287
+            },
+            {
+              "unit": "2778",
+              "value": 1.673875671753322
+            },
+            {
+              "unit": "2780",
+              "value": 2.59500231412661
+            },
+            {
+              "unit": "2781",
+              "value": 2.7980995878157717
+            },
+            {
+              "unit": "2782",
+              "value": -5.8352103324833475
+            },
+            {
+              "unit": "2783",
+              "value": -5.438095696271942
+            },
+            {
+              "unit": "2788",
+              "value": 1.9045640141599147
+            },
+            {
+              "unit": "2793",
+              "value": 3.0688337793941134
+            },
+            {
+              "unit": "2794",
+              "value": 0.08872114527556363
+            },
+            {
+              "unit": "2795",
+              "value": -0.6408709566868342
+            },
+            {
+              "unit": "2796",
+              "value": -0.8586748112641924
+            },
+            {
+              "unit": "315",
+              "value": -1.025800233626482
+            },
+            {
+              "unit": "318",
+              "value": 0.6784961972702703
+            },
+            {
+              "unit": "320",
+              "value": 0.36374731366177393
+            },
+            {
+              "unit": "321",
+              "value": 2.163792928258374
+            },
+            {
+              "unit": "323",
+              "value": -1.9532522377765549
+            },
+            {
+              "unit": "330",
+              "value": 0.9822935848058183
+            },
+            {
+              "unit": "332",
+              "value": -1.6674354677744496
+            },
+            {
+              "unit": "338",
+              "value": 0.48349931088083586
+            },
+            {
+              "unit": "346",
+              "value": 1.4520629038982253
+            },
+            {
+              "unit": "520",
+              "value": 3.147962383171082
+            },
+            {
+              "unit": "764",
+              "value": -1.8953893153684316
+            },
+            {
+              "unit": "769",
+              "value": -0.0439249258145189
+            },
+            {
+              "unit": "824",
+              "value": -1.8217447934529822
+            },
+            {
+              "unit": "827",
+              "value": -0.8528241868081103
+            }
+          ]
+        }
+      ],
+      "note": "An approximation of the template's graph: every biological unit, the group mean and its 95 % confidence interval. Prism draws the real one."
+    },
+    "NTRK1": {
+      "gene": "NTRK1",
+      "scale": "log2 relative quantity: log2 of the target minus the mean log2 of the reference genes, per biological unit",
+      "groups": [
+        {
+          "name": "MYCN-high",
+          "n": 49,
+          "mean": -5.639450445044395,
+          "ci_lo": -6.6869251079529874,
+          "ci_hi": -4.591975782135803,
+          "points": [
+            {
+              "unit": "111",
+              "value": -5.479219253277081
+            },
+            {
+              "unit": "1231",
+              "value": -9.47232843119541
+            },
+            {
+              "unit": "127",
+              "value": -12.19194374787604
+            },
+            {
+              "unit": "1496",
+              "value": -13.438175544664954
+            },
+            {
+              "unit": "1498",
+              "value": -4.041988105675486
+            },
+            {
+              "unit": "1499",
+              "value": -4.29198563116211
+            },
+            {
+              "unit": "1536",
+              "value": -9.429866571294271
+            },
+            {
+              "unit": "1540",
+              "value": -9.154333184655004
+            },
+            {
+              "unit": "1686",
+              "value": -7.570320626931082
+            },
+            {
+              "unit": "1687",
+              "value": -5.600142255539279
+            },
+            {
+              "unit": "1751",
+              "value": -7.711427221736641
+            },
+            {
+              "unit": "1758",
+              "value": -5.805417540412656
+            },
+            {
+              "unit": "1759",
+              "value": -10.026694921742848
+            },
+            {
+              "unit": "1772",
+              "value": -1.9746687587470095
+            },
+            {
+              "unit": "1776",
+              "value": -3.4586867523452245
+            },
+            {
+              "unit": "1784",
+              "value": -7.309914903779494
+            },
+            {
+              "unit": "1788",
+              "value": -4.371625792021779
+            },
+            {
+              "unit": "1796",
+              "value": -0.9593753204704658
+            },
+            {
+              "unit": "1805",
+              "value": -3.85708043167826
+            },
+            {
+              "unit": "1820",
+              "value": -2.3097381357223092
+            },
+            {
+              "unit": "1821",
+              "value": -8.761122600500677
+            },
+            {
+              "unit": "1822",
+              "value": -11.177846207281513
+            },
+            {
+              "unit": "1824",
+              "value": -10.596226875753747
+            },
+            {
+              "unit": "1827",
+              "value": -5.5811643065926235
+            },
+            {
+              "unit": "1828",
+              "value": -2.7741104997982404
+            },
+            {
+              "unit": "1834",
+              "value": -1.152683765125932
+            },
+            {
+              "unit": "1837",
+              "value": -1.747157214554651
+            },
+            {
+              "unit": "1850",
+              "value": -2.1634633255728275
+            },
+            {
+              "unit": "1885",
+              "value": -0.3260529157408829
+            },
+            {
+              "unit": "1908",
+              "value": -8.162688521686036
+            },
+            {
+              "unit": "1909",
+              "value": -2.6467889646399385
+            },
+            {
+              "unit": "1924",
+              "value": -8.048844572033639
+            },
+            {
+              "unit": "1936",
+              "value": -6.630358853248805
+            },
+            {
+              "unit": "1938",
+              "value": -6.528485206412377
+            },
+            {
+              "unit": "1955",
+              "value": -2.8539190148404714
+            },
+            {
+              "unit": "2015",
+              "value": -9.763297744290767
+            },
+            {
+              "unit": "2016",
+              "value": -0.09976765779538432
+            },
+            {
+              "unit": "2090",
+              "value": -2.142974819545051
+            },
+            {
+              "unit": "2091",
+              "value": -3.569297350601886
+            },
+            {
+              "unit": "2112",
+              "value": -0.956338244969615
+            },
+            {
+              "unit": "2166",
+              "value": 0.8803561849028636
+            },
+            {
+              "unit": "2530",
+              "value": -8.085261568520906
+            },
+            {
+              "unit": "2660",
+              "value": -5.307105404580613
+            },
+            {
+              "unit": "2755",
+              "value": -1.1051423778382699
+            },
+            {
+              "unit": "2768",
+              "value": -8.866612716687706
+            },
+            {
+              "unit": "2784",
+              "value": -6.468415831595045
+            },
+            {
+              "unit": "334",
+              "value": -2.530777337376735
+            },
+            {
+              "unit": "772",
+              "value": -9.189799103242597
+            },
+            {
+              "unit": "939",
+              "value": -11.522791860323897
+            }
+          ]
+        },
+        {
+          "name": "rest",
+          "n": 293,
+          "mean": -1.7284676923506541,
+          "ci_lo": -1.9492929847732476,
+          "ci_hi": -1.5076423999280606,
+          "points": [
+            {
+              "unit": "116",
+              "value": -2.1307641156788666
+            },
+            {
+              "unit": "1178",
+              "value": -1.1561156387827882
+            },
+            {
+              "unit": "1179",
+              "value": -1.2530195729468563
+            },
+            {
+              "unit": "126",
+              "value": -3.1302044724180664
+            },
+            {
+              "unit": "130",
+              "value": -0.5943635822556068
+            },
+            {
+              "unit": "1495",
+              "value": -0.8015963428300061
+            },
+            {
+              "unit": "1497",
+              "value": -0.282351236576984
+            },
+            {
+              "unit": "1500",
+              "value": -3.2425987894480954
+            },
+            {
+              "unit": "1501",
+              "value": -4.543364627016043
+            },
+            {
+              "unit": "1503",
+              "value": -2.446352659380226
+            },
+            {
+              "unit": "1507",
+              "value": -1.0412850999192358
+            },
+            {
+              "unit": "1508",
+              "value": -2.2218704503974855
+            },
+            {
+              "unit": "1510",
+              "value": 0.020246903678799555
+            },
+            {
+              "unit": "1511",
+              "value": -1.618455135567448
+            },
+            {
+              "unit": "1512",
+              "value": -0.7453072453725014
+            },
+            {
+              "unit": "1513",
+              "value": -0.6512112829900847
+            },
+            {
+              "unit": "1514",
+              "value": -1.5468969607085459
+            },
+            {
+              "unit": "1515",
+              "value": -6.365977801877606
+            },
+            {
+              "unit": "1516",
+              "value": -2.778775435549422
+            },
+            {
+              "unit": "1517",
+              "value": -1.5121087157215793
+            },
+            {
+              "unit": "1535",
+              "value": -2.3504794941604494
+            },
+            {
+              "unit": "1538",
+              "value": -1.4877401249928894
+            },
+            {
+              "unit": "1539",
+              "value": -0.7473796102099222
+            },
+            {
+              "unit": "1541",
+              "value": -0.15497258002448788
+            },
+            {
+              "unit": "1672",
+              "value": -4.250982607372377
+            },
+            {
+              "unit": "1677",
+              "value": -4.737459294943422
+            },
+            {
+              "unit": "1693",
+              "value": -0.815498584930074
+            },
+            {
+              "unit": "1694",
+              "value": -1.1380595539204705
+            },
+            {
+              "unit": "1695",
+              "value": -0.7677133018231217
+            },
+            {
+              "unit": "1696",
+              "value": -2.6013856763224865
+            },
+            {
+              "unit": "1697",
+              "value": -1.198547093466244
+            },
+            {
+              "unit": "1698",
+              "value": -2.5128298068476003
+            },
+            {
+              "unit": "1699",
+              "value": -0.541514851424731
+            },
+            {
+              "unit": "1700",
+              "value": -1.3433103118843857
+            },
+            {
+              "unit": "1701",
+              "value": -3.388234239990666
+            },
+            {
+              "unit": "1702",
+              "value": -2.0418883551036444
+            },
+            {
+              "unit": "1716",
+              "value": -9.203577602618338
+            },
+            {
+              "unit": "1717",
+              "value": 0.5645739587098451
+            },
+            {
+              "unit": "1720",
+              "value": -0.44710961066626176
+            },
+            {
+              "unit": "1722",
+              "value": -5.080282639833683
+            },
+            {
+              "unit": "1752",
+              "value": -1.2559383660310743
+            },
+            {
+              "unit": "1753",
+              "value": -2.7152497058049274
+            },
+            {
+              "unit": "1754",
+              "value": -1.0019548502626758
+            },
+            {
+              "unit": "1755",
+              "value": -2.4807754263461774
+            },
+            {
+              "unit": "1756",
+              "value": -5.653441197543053
+            },
+            {
+              "unit": "1757",
+              "value": -3.730394545583735
+            },
+            {
+              "unit": "1760",
+              "value": -2.402601713346721
+            },
+            {
+              "unit": "1761",
+              "value": -1.242597560913735
+            },
+            {
+              "unit": "1762",
+              "value": -2.9271550982886314
+            },
+            {
+              "unit": "1763",
+              "value": -7.717089697844545
+            },
+            {
+              "unit": "1764",
+              "value": -0.6623021673747278
+            },
+            {
+              "unit": "1765",
+              "value": -0.5353665238521206
+            },
+            {
+              "unit": "1766",
+              "value": -3.264715081022807
+            },
+            {
+              "unit": "1767",
+              "value": 0.14328908586029776
+            },
+            {
+              "unit": "1769",
+              "value": -2.2996133028125634
+            },
+            {
+              "unit": "1770",
+              "value": -1.4923088347564821
+            },
+            {
+              "unit": "1771",
+              "value": -2.884869309110055
+            },
+            {
+              "unit": "1773",
+              "value": -2.5634090612554257
+            },
+            {
+              "unit": "1774",
+              "value": -0.25251051439640726
+            },
+            {
+              "unit": "1775",
+              "value": -0.19735303347851385
+            },
+            {
+              "unit": "1777",
+              "value": -1.6807621413598
+            },
+            {
+              "unit": "1779",
+              "value": -1.6203289933628788
+            },
+            {
+              "unit": "1780",
+              "value": -0.10034631443153685
+            },
+            {
+              "unit": "1781",
+              "value": -1.4780026987559385
+            },
+            {
+              "unit": "1785",
+              "value": -2.8026418960696073
+            },
+            {
+              "unit": "1786",
+              "value": -1.2893485543707186
+            },
+            {
+              "unit": "1787",
+              "value": -2.209858897817279
+            },
+            {
+              "unit": "1789",
+              "value": -0.5776493076042915
+            },
+            {
+              "unit": "1790",
+              "value": -1.303082838084853
+            },
+            {
+              "unit": "1791",
+              "value": -1.4500733304220859
+            },
+            {
+              "unit": "1792",
+              "value": -0.5753733214049621
+            },
+            {
+              "unit": "1793",
+              "value": -3.015353956187136
+            },
+            {
+              "unit": "1794",
+              "value": -3.052764870211221
+            },
+            {
+              "unit": "1795",
+              "value": -1.3813906668058547
+            },
+            {
+              "unit": "1797",
+              "value": -0.8713551154745769
+            },
+            {
+              "unit": "1798",
+              "value": -1.86684170055144
+            },
+            {
+              "unit": "1799",
+              "value": -0.9574019240153806
+            },
+            {
+              "unit": "1800",
+              "value": -4.013860316582546
+            },
+            {
+              "unit": "1801",
+              "value": -0.9489649838102157
+            },
+            {
+              "unit": "1802",
+              "value": -1.1253645024756675
+            },
+            {
+              "unit": "1804",
+              "value": -0.11027562404254887
+            },
+            {
+              "unit": "1806",
+              "value": -1.7022687497216804
+            },
+            {
+              "unit": "1810",
+              "value": -0.4109962175732669
+            },
+            {
+              "unit": "1811",
+              "value": -1.6434306283540359
+            },
+            {
+              "unit": "1812",
+              "value": -1.0300044418053265
+            },
+            {
+              "unit": "1813",
+              "value": -1.3532360352597141
+            },
+            {
+              "unit": "1815",
+              "value": -1.7972028188228233
+            },
+            {
+              "unit": "1816",
+              "value": -1.4755774768514627
+            },
+            {
+              "unit": "1818",
+              "value": -2.7777556788298714
+            },
+            {
+              "unit": "1819",
+              "value": -3.961340102352631
+            },
+            {
+              "unit": "1825",
+              "value": -2.2156312433502094
+            },
+            {
+              "unit": "1826",
+              "value": -3.712154640530006
+            },
+            {
+              "unit": "1829",
+              "value": -1.5761665919884624
+            },
+            {
+              "unit": "1830",
+              "value": -1.3989017654815257
+            },
+            {
+              "unit": "1831",
+              "value": -1.8394917845329193
+            },
+            {
+              "unit": "1832",
+              "value": -0.7421275295380916
+            },
+            {
+              "unit": "1835",
+              "value": 0.5300693472779265
+            },
+            {
+              "unit": "1836",
+              "value": -2.2612213408233757
+            },
+            {
+              "unit": "1839",
+              "value": -1.234772714100922
+            },
+            {
+              "unit": "1840",
+              "value": -1.231777175231107
+            },
+            {
+              "unit": "1841",
+              "value": -1.5438889338090416
+            },
+            {
+              "unit": "1842",
+              "value": -0.6568876266970864
+            },
+            {
+              "unit": "1844",
+              "value": -0.5617343935573
+            },
+            {
+              "unit": "1848",
+              "value": -0.3955608696142878
+            },
+            {
+              "unit": "1849",
+              "value": -2.554781440098786
+            },
+            {
+              "unit": "1852",
+              "value": -0.696153837243294
+            },
+            {
+              "unit": "1855",
+              "value": -0.7091673954581346
+            },
+            {
+              "unit": "1856",
+              "value": -1.6403599105927533
+            },
+            {
+              "unit": "1857",
+              "value": 0.38112277642875725
+            },
+            {
+              "unit": "1858",
+              "value": -0.8337595100764084
+            },
+            {
+              "unit": "1859",
+              "value": -4.636026536174182
+            },
+            {
+              "unit": "1860",
+              "value": -0.9750009095242511
+            },
+            {
+              "unit": "1861",
+              "value": -0.5776135483606151
+            },
+            {
+              "unit": "1879",
+              "value": -1.7671611163027272
+            },
+            {
+              "unit": "1880",
+              "value": 0.12778587996780466
+            },
+            {
+              "unit": "1881",
+              "value": -2.4978890999196395
+            },
+            {
+              "unit": "1882",
+              "value": -1.8027105177453482
+            },
+            {
+              "unit": "1883",
+              "value": 0.11848840091815838
+            },
+            {
+              "unit": "1884",
+              "value": -2.5740128158771203
+            },
+            {
+              "unit": "1886",
+              "value": 2.197007458292653
+            },
+            {
+              "unit": "1887",
+              "value": -2.2532273898413706
+            },
+            {
+              "unit": "1888",
+              "value": 0.5918469857553088
+            },
+            {
+              "unit": "1889",
+              "value": -2.7212592839059795
+            },
+            {
+              "unit": "1890",
+              "value": -4.471686236889633
+            },
+            {
+              "unit": "1891",
+              "value": -1.5072623908984415
+            },
+            {
+              "unit": "1893",
+              "value": -1.3879345780306291
+            },
+            {
+              "unit": "1894",
+              "value": -3.368386719968898
+            },
+            {
+              "unit": "1895",
+              "value": 0.5355635562482792
+            },
+            {
+              "unit": "1896",
+              "value": -3.3274386566574687
+            },
+            {
+              "unit": "1897",
+              "value": -3.130263065677557
+            },
+            {
+              "unit": "1898",
+              "value": -3.086130190126669
+            },
+            {
+              "unit": "1899",
+              "value": -1.9625567981206977
+            },
+            {
+              "unit": "1901",
+              "value": -1.0663368752283606
+            },
+            {
+              "unit": "1902",
+              "value": -0.21392465907868363
+            },
+            {
+              "unit": "1905",
+              "value": -1.241118622495117
+            },
+            {
+              "unit": "1906",
+              "value": 0.3671469932271627
+            },
+            {
+              "unit": "1907",
+              "value": -2.381517940958675
+            },
+            {
+              "unit": "1910",
+              "value": -3.1773540677213656
+            },
+            {
+              "unit": "1912",
+              "value": 1.4751423533830508
+            },
+            {
+              "unit": "1914",
+              "value": -5.612547446144355
+            },
+            {
+              "unit": "1915",
+              "value": -2.0432257253539916
+            },
+            {
+              "unit": "1916",
+              "value": 0.024199941632526034
+            },
+            {
+              "unit": "1917",
+              "value": -0.9099221010249838
+            },
+            {
+              "unit": "1918",
+              "value": -2.446911707405272
+            },
+            {
+              "unit": "1919",
+              "value": -2.283400641870596
+            },
+            {
+              "unit": "192",
+              "value": -0.8430534875174605
+            },
+            {
+              "unit": "1920",
+              "value": -7.6153743684986495
+            },
+            {
+              "unit": "1921",
+              "value": -0.7900691150422823
+            },
+            {
+              "unit": "1922",
+              "value": -5.495711933568662
+            },
+            {
+              "unit": "1928",
+              "value": 0.6292104285641429
+            },
+            {
+              "unit": "1929",
+              "value": 0.7290310829928668
+            },
+            {
+              "unit": "193",
+              "value": -1.4565433795016265
+            },
+            {
+              "unit": "1932",
+              "value": -4.220074590069453
+            },
+            {
+              "unit": "1933",
+              "value": -1.5924166318718118
+            },
+            {
+              "unit": "1934",
+              "value": -3.826665373379555
+            },
+            {
+              "unit": "1935",
+              "value": -4.051825910593459
+            },
+            {
+              "unit": "1937",
+              "value": -0.975894718851352
+            },
+            {
+              "unit": "1939",
+              "value": -0.9294867708498238
+            },
+            {
+              "unit": "194",
+              "value": -9.261614457521276
+            },
+            {
+              "unit": "1940",
+              "value": -1.6613031077330103
+            },
+            {
+              "unit": "1941",
+              "value": -0.6516721881641008
+            },
+            {
+              "unit": "1942",
+              "value": -1.5522672856830653
+            },
+            {
+              "unit": "1943",
+              "value": -2.3304648006883486
+            },
+            {
+              "unit": "1944",
+              "value": -0.04401537393668953
+            },
+            {
+              "unit": "1945",
+              "value": -0.8236587385840597
+            },
+            {
+              "unit": "1946",
+              "value": 0.08745632494596123
+            },
+            {
+              "unit": "1947",
+              "value": -3.7840667054474313
+            },
+            {
+              "unit": "1948",
+              "value": 0.25876399728112354
+            },
+            {
+              "unit": "1949",
+              "value": 0.800480723278465
+            },
+            {
+              "unit": "1950",
+              "value": -0.6436715615053039
+            },
+            {
+              "unit": "1951",
+              "value": -0.8667117918460097
+            },
+            {
+              "unit": "1952",
+              "value": 0.12983978632488835
+            },
+            {
+              "unit": "1953",
+              "value": 0.3344169136836239
+            },
+            {
+              "unit": "1954",
+              "value": -2.0349095448931056
+            },
+            {
+              "unit": "1956",
+              "value": -1.2210452580649669
+            },
+            {
+              "unit": "1957",
+              "value": -5.10310115542959
+            },
+            {
+              "unit": "1958",
+              "value": -4.345306972927691
+            },
+            {
+              "unit": "1959",
+              "value": -1.5549829955637051
+            },
+            {
+              "unit": "1960",
+              "value": -0.5314549418835917
+            },
+            {
+              "unit": "1961",
+              "value": 0.010774567215566577
+            },
+            {
+              "unit": "1962",
+              "value": -0.2784920224929657
+            },
+            {
+              "unit": "1963",
+              "value": -0.309089589098301
+            },
+            {
+              "unit": "1964",
+              "value": -0.776754979691411
+            },
+            {
+              "unit": "1965",
+              "value": -0.3880290723009274
+            },
+            {
+              "unit": "1966",
+              "value": 0.6370026620609988
+            },
+            {
+              "unit": "1967",
+              "value": -1.2141037703426623
+            },
+            {
+              "unit": "1968",
+              "value": -1.2426704729304898
+            },
+            {
+              "unit": "2017",
+              "value": 0.0786930952595597
+            },
+            {
+              "unit": "2021",
+              "value": 0.6087285038361205
+            },
+            {
+              "unit": "2022",
+              "value": 0.20634801696725624
+            },
+            {
+              "unit": "2025",
+              "value": -2.304806274640937
+            },
+            {
+              "unit": "2067",
+              "value": -2.1148316832820875
+            },
+            {
+              "unit": "2068",
+              "value": -1.178542941204137
+            },
+            {
+              "unit": "2071",
+              "value": -1.2313292921129548
+            },
+            {
+              "unit": "2084",
+              "value": -2.580103122128458
+            },
+            {
+              "unit": "2085",
+              "value": -1.1687326459571992
+            },
+            {
+              "unit": "2086",
+              "value": -0.22381198250805845
+            },
+            {
+              "unit": "2087",
+              "value": -0.6693539494186656
+            },
+            {
+              "unit": "2088",
+              "value": -0.4833947736494899
+            },
+            {
+              "unit": "2089",
+              "value": -0.2763487903966375
+            },
+            {
+              "unit": "2092",
+              "value": -4.273058662950707
+            },
+            {
+              "unit": "2093",
+              "value": -0.4108741235461899
+            },
+            {
+              "unit": "2098",
+              "value": -4.284287437296144
+            },
+            {
+              "unit": "2099",
+              "value": -0.9144242810442247
+            },
+            {
+              "unit": "2100",
+              "value": -0.6677441555124997
+            },
+            {
+              "unit": "2101",
+              "value": -3.4222183020497745
+            },
+            {
+              "unit": "2102",
+              "value": -1.7618220686218162
+            },
+            {
+              "unit": "2103",
+              "value": -0.8370197010522489
+            },
+            {
+              "unit": "2104",
+              "value": 0.2071426348332981
+            },
+            {
+              "unit": "2105",
+              "value": -3.7072917074907306
+            },
+            {
+              "unit": "2106",
+              "value": -1.5629866242905113
+            },
+            {
+              "unit": "2107",
+              "value": 0.42279620505105875
+            },
+            {
+              "unit": "2108",
+              "value": -3.135127910185739
+            },
+            {
+              "unit": "2110",
+              "value": -4.243091992219485
+            },
+            {
+              "unit": "2114",
+              "value": -2.798665304278858
+            },
+            {
+              "unit": "2115",
+              "value": -0.5683297999008481
+            },
+            {
+              "unit": "2116",
+              "value": -2.484320697835722
+            },
+            {
+              "unit": "2118",
+              "value": -0.8325847393876611
+            },
+            {
+              "unit": "2119",
+              "value": -1.8820877528666404
+            },
+            {
+              "unit": "2121",
+              "value": -2.021687762021294
+            },
+            {
+              "unit": "2122",
+              "value": -0.42296740195100035
+            },
+            {
+              "unit": "2159",
+              "value": -3.9234115750747485
+            },
+            {
+              "unit": "2160",
+              "value": 0.2698053441898889
+            },
+            {
+              "unit": "2161",
+              "value": -1.8764403231225728
+            },
+            {
+              "unit": "2162",
+              "value": -0.7846939282046392
+            },
+            {
+              "unit": "2163",
+              "value": -1.188111953493447
+            },
+            {
+              "unit": "2164",
+              "value": 0.24064131925039156
+            },
+            {
+              "unit": "2165",
+              "value": 0.537706981561195
+            },
+            {
+              "unit": "2167",
+              "value": 0.5410759100761595
+            },
+            {
+              "unit": "2168",
+              "value": -1.1788798196135417
+            },
+            {
+              "unit": "2169",
+              "value": -0.6648293692427121
+            },
+            {
+              "unit": "2170",
+              "value": -0.8336715109579753
+            },
+            {
+              "unit": "2171",
+              "value": -2.0022790109193274
+            },
+            {
+              "unit": "2172",
+              "value": 0.34146022734568326
+            },
+            {
+              "unit": "2253",
+              "value": -0.8290713417594731
+            },
+            {
+              "unit": "2257",
+              "value": 0.9272417422702279
+            },
+            {
+              "unit": "266",
+              "value": -0.8204820783421916
+            },
+            {
+              "unit": "2666",
+              "value": -2.540946545427582
+            },
+            {
+              "unit": "267",
+              "value": -0.48342755493995426
+            },
+            {
+              "unit": "2704",
+              "value": -1.4226580033581264
+            },
+            {
+              "unit": "2705",
+              "value": 0.27766345733557074
+            },
+            {
+              "unit": "2706",
+              "value": -4.68377024383439
+            },
+            {
+              "unit": "2710",
+              "value": -3.381705077048373
+            },
+            {
+              "unit": "2711",
+              "value": -5.772523059297925
+            },
+            {
+              "unit": "2712",
+              "value": -5.2905885574052816
+            },
+            {
+              "unit": "2714",
+              "value": -10.134082488553481
+            },
+            {
+              "unit": "2719",
+              "value": -3.5503789235774352
+            },
+            {
+              "unit": "2738",
+              "value": -5.846433484853184
+            },
+            {
+              "unit": "2742",
+              "value": 0.3106704299988703
+            },
+            {
+              "unit": "2743",
+              "value": 0.15957042736175708
+            },
+            {
+              "unit": "2745",
+              "value": 1.910165178520085
+            },
+            {
+              "unit": "2748",
+              "value": -4.518870281889209
+            },
+            {
+              "unit": "2752",
+              "value": -7.789660309943251
+            },
+            {
+              "unit": "2753",
+              "value": 0.937026777613795
+            },
+            {
+              "unit": "2754",
+              "value": -2.0070553467130328
+            },
+            {
+              "unit": "2756",
+              "value": 0.08309976790277851
+            },
+            {
+              "unit": "2757",
+              "value": -1.183788826957315
+            },
+            {
+              "unit": "2758",
+              "value": -4.846500865592549
+            },
+            {
+              "unit": "2760",
+              "value": -1.849532320281611
+            },
+            {
+              "unit": "2761",
+              "value": 0.21394297106186677
+            },
+            {
+              "unit": "2762",
+              "value": -1.8029906780135123
+            },
+            {
+              "unit": "2763",
+              "value": -0.751587801761918
+            },
+            {
+              "unit": "2765",
+              "value": 1.0923122821075228
+            },
+            {
+              "unit": "2769",
+              "value": -3.013867594625177
+            },
+            {
+              "unit": "2771",
+              "value": -1.1377113992998957
+            },
+            {
+              "unit": "2774",
+              "value": -5.709758487656301
+            },
+            {
+              "unit": "2775",
+              "value": -1.0228976993132353
+            },
+            {
+              "unit": "2776",
+              "value": -0.20463164331592054
+            },
+            {
+              "unit": "2777",
+              "value": -7.084925075055052
+            },
+            {
+              "unit": "2778",
+              "value": -1.0467570282611387
+            },
+            {
+              "unit": "2780",
+              "value": 0.6615898106556575
+            },
+            {
+              "unit": "2781",
+              "value": -3.0404633649495736
+            },
+            {
+              "unit": "2782",
+              "value": -5.251433761861397
+            },
+            {
+              "unit": "2783",
+              "value": -8.034174089252398
+            },
+            {
+              "unit": "2788",
+              "value": -2.272764390606678
+            },
+            {
+              "unit": "2793",
+              "value": 0.12818763452111526
+            },
+            {
+              "unit": "2794",
+              "value": 0.19727395969937156
+            },
+            {
+              "unit": "2795",
+              "value": 0.22449514070340904
+            },
+            {
+              "unit": "2796",
+              "value": -0.6277512347169001
+            },
+            {
+              "unit": "315",
+              "value": 0.5950143161465302
+            },
+            {
+              "unit": "318",
+              "value": -4.093028672427362
+            },
+            {
+              "unit": "320",
+              "value": -0.9202215570872774
+            },
+            {
+              "unit": "321",
+              "value": -2.3795096617980303
+            },
+            {
+              "unit": "323",
+              "value": -0.07263723234058084
+            },
+            {
+              "unit": "330",
+              "value": -1.1833300569315597
+            },
+            {
+              "unit": "332",
+              "value": -1.057645297008797
+            },
+            {
+              "unit": "338",
+              "value": -1.0959964354712053
+            },
+            {
+              "unit": "346",
+              "value": -0.9199180259548871
+            },
+            {
+              "unit": "520",
+              "value": -3.760949583303802
+            },
+            {
+              "unit": "764",
+              "value": -0.4514761093745676
+            },
+            {
+              "unit": "769",
+              "value": -0.6240809621826617
+            },
+            {
+              "unit": "824",
+              "value": -0.5648946566461817
+            },
+            {
+              "unit": "827",
+              "value": 0.06184106858863636
+            }
+          ]
+        }
+      ],
+      "note": "An approximation of the template's graph: every biological unit, the group mean and its 95 % confidence interval. Prism draws the real one."
+    },
+    "NM23A": {
+      "gene": "NM23A",
+      "scale": "log2 relative quantity: log2 of the target minus the mean log2 of the reference genes, per biological unit",
+      "groups": [
+        {
+          "name": "MYCN-high",
+          "n": 53,
+          "mean": 4.112081321985339,
+          "ci_lo": 3.809680215872869,
+          "ci_hi": 4.414482428097808,
+          "points": [
+            {
+              "unit": "111",
+              "value": 4.537632184906004
+            },
+            {
+              "unit": "1136",
+              "value": 5.188010032340173
+            },
+            {
+              "unit": "1231",
+              "value": 4.199786031943216
+            },
+            {
+              "unit": "127",
+              "value": 4.230087919606918
+            },
+            {
+              "unit": "1496",
+              "value": 4.838450225236681
+            },
+            {
+              "unit": "1498",
+              "value": 4.779232394223943
+            },
+            {
+              "unit": "1499",
+              "value": 2.2610171391026306
+            },
+            {
+              "unit": "1536",
+              "value": 4.850327715770371
+            },
+            {
+              "unit": "1540",
+              "value": 4.430780597811442
+            },
+            {
+              "unit": "1686",
+              "value": 4.216511916018048
+            },
+            {
+              "unit": "1687",
+              "value": 4.491275618331288
+            },
+            {
+              "unit": "1751",
+              "value": 3.6399396936279373
+            },
+            {
+              "unit": "1758",
+              "value": 3.7709104646835137
+            },
+            {
+              "unit": "1759",
+              "value": 3.9028051135741215
+            },
+            {
+              "unit": "1772",
+              "value": 3.2132228419034234
+            },
+            {
+              "unit": "1776",
+              "value": 3.9310584535550532
+            },
+            {
+              "unit": "1784",
+              "value": 5.557461725292596
+            },
+            {
+              "unit": "1788",
+              "value": 4.348373618759933
+            },
+            {
+              "unit": "1796",
+              "value": 2.5727991974598243
+            },
+            {
+              "unit": "1805",
+              "value": 2.5677426445048734
+            },
+            {
+              "unit": "1820",
+              "value": 3.7440146337261258
+            },
+            {
+              "unit": "1821",
+              "value": 3.1192296634128347
+            },
+            {
+              "unit": "1822",
+              "value": 3.943167668800081
+            },
+            {
+              "unit": "1823",
+              "value": 4.345786701253807
+            },
+            {
+              "unit": "1824",
+              "value": 6.022373634579367
+            },
+            {
+              "unit": "1827",
+              "value": 4.696580734725778
+            },
+            {
+              "unit": "1828",
+              "value": 3.068825856612751
+            },
+            {
+              "unit": "1834",
+              "value": 4.5487388085169655
+            },
+            {
+              "unit": "1837",
+              "value": 3.8254740535522735
+            },
+            {
+              "unit": "1850",
+              "value": 4.5638396763469125
+            },
+            {
+              "unit": "1885",
+              "value": 3.6598838428946294
+            },
+            {
+              "unit": "1908",
+              "value": 4.240534998590386
+            },
+            {
+              "unit": "1909",
+              "value": 3.809156527339491
+            },
+            {
+              "unit": "1924",
+              "value": 5.468611136682197
+            },
+            {
+              "unit": "1936",
+              "value": 6.4522751280550334
+            },
+            {
+              "unit": "1938",
+              "value": 5.363074394094147
+            },
+            {
+              "unit": "1955",
+              "value": 2.402874781455152
+            },
+            {
+              "unit": "2015",
+              "value": 3.4876341053060695
+            },
+            {
+              "unit": "2016",
+              "value": 5.700991325714417
+            },
+            {
+              "unit": "2090",
+              "value": 4.0487044481462995
+            },
+            {
+              "unit": "2091",
+              "value": 2.240296580826012
+            },
+            {
+              "unit": "2112",
+              "value": 1.976594546521449
+            },
+            {
+              "unit": "2166",
+              "value": 2.9307179709099476
+            },
+            {
+              "unit": "2530",
+              "value": 5.950978209587266
+            },
+            {
+              "unit": "2659",
+              "value": 5.499652572424397
+            },
+            {
+              "unit": "2660",
+              "value": 5.2505467147802545
+            },
+            {
+              "unit": "2755",
+              "value": 2.9442517795682335
+            },
+            {
+              "unit": "2768",
+              "value": 3.6520077801280326
+            },
+            {
+              "unit": "2784",
+              "value": 6.08561896854269
+            },
+            {
+              "unit": "2785",
+              "value": 3.944003179774093
+            },
+            {
+              "unit": "334",
+              "value": 3.01458926492675
+            },
+            {
+              "unit": "772",
+              "value": 4.128765575394716
+            },
+            {
+              "unit": "939",
+              "value": 2.2830892733823998
+            }
+          ]
+        },
+        {
+          "name": "rest",
+          "n": 294,
+          "mean": 2.982563467087096,
+          "ci_lo": 2.8796441732977267,
+          "ci_hi": 3.0854827608764652,
+          "points": [
+            {
+              "unit": "116",
+              "value": 2.8558262181362934
+            },
+            {
+              "unit": "1178",
+              "value": 2.7518817614958664
+            },
+            {
+              "unit": "1179",
+              "value": 2.8059654413528765
+            },
+            {
+              "unit": "126",
+              "value": 3.2520137207704884
+            },
+            {
+              "unit": "130",
+              "value": 3.7537155459523905
+            },
+            {
+              "unit": "1495",
+              "value": 3.5304008112054337
+            },
+            {
+              "unit": "1497",
+              "value": 3.556486879955317
+            },
+            {
+              "unit": "1500",
+              "value": 4.183709525651032
+            },
+            {
+              "unit": "1501",
+              "value": 4.051606057812487
+            },
+            {
+              "unit": "1503",
+              "value": 3.687760542976294
+            },
+            {
+              "unit": "1507",
+              "value": 2.906793310685323
+            },
+            {
+              "unit": "1508",
+              "value": 1.5537306182907074
+            },
+            {
+              "unit": "1510",
+              "value": 2.8858453573157448
+            },
+            {
+              "unit": "1511",
+              "value": 2.9783906753753158
+            },
+            {
+              "unit": "1512",
+              "value": 2.1198611582480495
+            },
+            {
+              "unit": "1513",
+              "value": 3.438576891994561
+            },
+            {
+              "unit": "1514",
+              "value": 3.0725161815580666
+            },
+            {
+              "unit": "1515",
+              "value": 3.7114429987948423
+            },
+            {
+              "unit": "1516",
+              "value": 3.055112404908744
+            },
+            {
+              "unit": "1517",
+              "value": 4.069426308099935
+            },
+            {
+              "unit": "1535",
+              "value": 2.7866890011230883
+            },
+            {
+              "unit": "1538",
+              "value": 2.87706420416092
+            },
+            {
+              "unit": "1539",
+              "value": 3.0922218280262346
+            },
+            {
+              "unit": "1541",
+              "value": 2.2038220715218593
+            },
+            {
+              "unit": "1672",
+              "value": 3.448068224071081
+            },
+            {
+              "unit": "1677",
+              "value": 3.8644694447785675
+            },
+            {
+              "unit": "1693",
+              "value": 2.4178745460690685
+            },
+            {
+              "unit": "1694",
+              "value": 3.0379258181307875
+            },
+            {
+              "unit": "1695",
+              "value": 2.443835063755511
+            },
+            {
+              "unit": "1696",
+              "value": 3.029019388868342
+            },
+            {
+              "unit": "1697",
+              "value": 2.64882395536638
+            },
+            {
+              "unit": "1698",
+              "value": 2.1444884731613385
+            },
+            {
+              "unit": "1699",
+              "value": 2.795098885536058
+            },
+            {
+              "unit": "1700",
+              "value": 2.499749127038543
+            },
+            {
+              "unit": "1701",
+              "value": 2.7178646024163786
+            },
+            {
+              "unit": "1702",
+              "value": 2.843017632423324
+            },
+            {
+              "unit": "1716",
+              "value": 1.3896810869717005
+            },
+            {
+              "unit": "1717",
+              "value": 2.528203513278788
+            },
+            {
+              "unit": "1720",
+              "value": 2.8248818437880914
+            },
+            {
+              "unit": "1722",
+              "value": 2.902367527183509
+            },
+            {
+              "unit": "1752",
+              "value": 1.880026541471084
+            },
+            {
+              "unit": "1753",
+              "value": 3.639209123458908
+            },
+            {
+              "unit": "1754",
+              "value": 3.668831986434123
+            },
+            {
+              "unit": "1755",
+              "value": 4.4988457764391985
+            },
+            {
+              "unit": "1756",
+              "value": 2.197450794518293
+            },
+            {
+              "unit": "1757",
+              "value": 2.340780087216608
+            },
+            {
+              "unit": "1760",
+              "value": 4.251163898470823
+            },
+            {
+              "unit": "1761",
+              "value": 2.939827022533402
+            },
+            {
+              "unit": "1762",
+              "value": 2.4145479839370214
+            },
+            {
+              "unit": "1763",
+              "value": 2.695916564203614
+            },
+            {
+              "unit": "1764",
+              "value": 2.892382793452832
+            },
+            {
+              "unit": "1765",
+              "value": 2.237341051322584
+            },
+            {
+              "unit": "1766",
+              "value": 3.455116965097597
+            },
+            {
+              "unit": "1767",
+              "value": 3.1740045525973226
+            },
+            {
+              "unit": "1769",
+              "value": 3.2943153468847868
+            },
+            {
+              "unit": "1770",
+              "value": 3.239119453077313
+            },
+            {
+              "unit": "1771",
+              "value": 4.254585714872183
+            },
+            {
+              "unit": "1773",
+              "value": 2.101390264100811
+            },
+            {
+              "unit": "1774",
+              "value": 2.697004424273233
+            },
+            {
+              "unit": "1775",
+              "value": 3.150222938412943
+            },
+            {
+              "unit": "1777",
+              "value": 3.611984669064741
+            },
+            {
+              "unit": "1779",
+              "value": 2.0461729314480106
+            },
+            {
+              "unit": "1780",
+              "value": 3.425098720729295
+            },
+            {
+              "unit": "1781",
+              "value": 3.2910044920187715
+            },
+            {
+              "unit": "1785",
+              "value": 3.3706225085375863
+            },
+            {
+              "unit": "1786",
+              "value": 2.6071592468803892
+            },
+            {
+              "unit": "1787",
+              "value": 3.0133602299166515
+            },
+            {
+              "unit": "1789",
+              "value": 2.5497260640926473
+            },
+            {
+              "unit": "1790",
+              "value": 2.107752791352702
+            },
+            {
+              "unit": "1791",
+              "value": 2.309685365022313
+            },
+            {
+              "unit": "1792",
+              "value": 3.505718239959867
+            },
+            {
+              "unit": "1793",
+              "value": 3.180413751995756
+            },
+            {
+              "unit": "1794",
+              "value": 3.7998430591614625
+            },
+            {
+              "unit": "1795",
+              "value": 2.865413961290413
+            },
+            {
+              "unit": "1797",
+              "value": 2.925200862070236
+            },
+            {
+              "unit": "1798",
+              "value": 3.093547029249354
+            },
+            {
+              "unit": "1799",
+              "value": 5.250042583495089
+            },
+            {
+              "unit": "1800",
+              "value": 3.207165467471633
+            },
+            {
+              "unit": "1801",
+              "value": 2.864587537084594
+            },
+            {
+              "unit": "1802",
+              "value": 2.8047502327964136
+            },
+            {
+              "unit": "1804",
+              "value": 4.204786096789633
+            },
+            {
+              "unit": "1806",
+              "value": 3.425099585246569
+            },
+            {
+              "unit": "1810",
+              "value": 2.7367865383562133
+            },
+            {
+              "unit": "1811",
+              "value": 3.475853537238871
+            },
+            {
+              "unit": "1812",
+              "value": 3.601427339991158
+            },
+            {
+              "unit": "1813",
+              "value": 2.4517623315567185
+            },
+            {
+              "unit": "1815",
+              "value": 3.813190784959003
+            },
+            {
+              "unit": "1816",
+              "value": 3.8034556908997708
+            },
+            {
+              "unit": "1818",
+              "value": 2.638164679477441
+            },
+            {
+              "unit": "1819",
+              "value": 2.048345395985054
+            },
+            {
+              "unit": "1825",
+              "value": 3.399551515473064
+            },
+            {
+              "unit": "1826",
+              "value": 3.2496191094623974
+            },
+            {
+              "unit": "1829",
+              "value": 4.353155557089433
+            },
+            {
+              "unit": "1830",
+              "value": 4.002668674639864
+            },
+            {
+              "unit": "1831",
+              "value": 3.831885873727881
+            },
+            {
+              "unit": "1832",
+              "value": 4.295135665791221
+            },
+            {
+              "unit": "1835",
+              "value": 3.9346698537766773
+            },
+            {
+              "unit": "1836",
+              "value": 2.466953790482142
+            },
+            {
+              "unit": "1839",
+              "value": 3.300492035854404
+            },
+            {
+              "unit": "1840",
+              "value": 3.2343784937505653
+            },
+            {
+              "unit": "1841",
+              "value": 3.559847616084321
+            },
+            {
+              "unit": "1842",
+              "value": 3.7372660020351347
+            },
+            {
+              "unit": "1844",
+              "value": 1.9620240042997619
+            },
+            {
+              "unit": "1848",
+              "value": 3.4665052570076273
+            },
+            {
+              "unit": "1849",
+              "value": 3.2640809550558814
+            },
+            {
+              "unit": "1852",
+              "value": 5.879881308013573
+            },
+            {
+              "unit": "1855",
+              "value": 4.406851105164893
+            },
+            {
+              "unit": "1856",
+              "value": 3.357809985119397
+            },
+            {
+              "unit": "1857",
+              "value": 2.9443356999484305
+            },
+            {
+              "unit": "1858",
+              "value": 2.951824794512646
+            },
+            {
+              "unit": "1859",
+              "value": 4.2229987676646665
+            },
+            {
+              "unit": "1860",
+              "value": 1.8077202369755447
+            },
+            {
+              "unit": "1861",
+              "value": 3.2707092480146596
+            },
+            {
+              "unit": "1879",
+              "value": 2.837145399702777
+            },
+            {
+              "unit": "1880",
+              "value": 2.9303611077112404
+            },
+            {
+              "unit": "1881",
+              "value": 5.051767725179985
+            },
+            {
+              "unit": "1882",
+              "value": 2.3048082002137544
+            },
+            {
+              "unit": "1883",
+              "value": 3.239232760369852
+            },
+            {
+              "unit": "1884",
+              "value": 2.697388705201064
+            },
+            {
+              "unit": "1886",
+              "value": 4.1868994262319585
+            },
+            {
+              "unit": "1887",
+              "value": 1.804440976649163
+            },
+            {
+              "unit": "1888",
+              "value": 3.5074559991484726
+            },
+            {
+              "unit": "1889",
+              "value": 2.6304814220863335
+            },
+            {
+              "unit": "1890",
+              "value": 3.4883688438292584
+            },
+            {
+              "unit": "1891",
+              "value": 3.083450778161213
+            },
+            {
+              "unit": "1893",
+              "value": 2.3447494976350143
+            },
+            {
+              "unit": "1894",
+              "value": 2.8001724772059475
+            },
+            {
+              "unit": "1895",
+              "value": 2.7394091367766578
+            },
+            {
+              "unit": "1896",
+              "value": 2.308517356171116
+            },
+            {
+              "unit": "1897",
+              "value": 4.334937122185368
+            },
+            {
+              "unit": "1898",
+              "value": 1.3586053674668168
+            },
+            {
+              "unit": "1899",
+              "value": 2.5599216677558285
+            },
+            {
+              "unit": "1901",
+              "value": 4.8310128043925396
+            },
+            {
+              "unit": "1902",
+              "value": 2.4807858026664977
+            },
+            {
+              "unit": "1905",
+              "value": 2.5381346749280826
+            },
+            {
+              "unit": "1906",
+              "value": 2.5459626725361577
+            },
+            {
+              "unit": "1907",
+              "value": 2.761135788494414
+            },
+            {
+              "unit": "1910",
+              "value": 1.4602975393862572
+            },
+            {
+              "unit": "1912",
+              "value": 2.4617211395231156
+            },
+            {
+              "unit": "1914",
+              "value": 2.7832106951754962
+            },
+            {
+              "unit": "1915",
+              "value": 2.742626696293856
+            },
+            {
+              "unit": "1916",
+              "value": 2.4465573194181616
+            },
+            {
+              "unit": "1917",
+              "value": 2.4136989213956284
+            },
+            {
+              "unit": "1918",
+              "value": 1.9468977244577967
+            },
+            {
+              "unit": "1919",
+              "value": 1.5851270462845122
+            },
+            {
+              "unit": "192",
+              "value": 1.544543000837045
+            },
+            {
+              "unit": "1920",
+              "value": 2.1000267896013725
+            },
+            {
+              "unit": "1921",
+              "value": 2.185561004061789
+            },
+            {
+              "unit": "1922",
+              "value": 2.098122368609948
+            },
+            {
+              "unit": "1928",
+              "value": 2.645177382717021
+            },
+            {
+              "unit": "1929",
+              "value": 2.557312988833843
+            },
+            {
+              "unit": "193",
+              "value": 2.9297087239029693
+            },
+            {
+              "unit": "1932",
+              "value": 4.45441874424913
+            },
+            {
+              "unit": "1933",
+              "value": 4.250561886595683
+            },
+            {
+              "unit": "1934",
+              "value": 4.247365681179756
+            },
+            {
+              "unit": "1935",
+              "value": 4.0901236338751
+            },
+            {
+              "unit": "1937",
+              "value": 3.246618830321772
+            },
+            {
+              "unit": "1939",
+              "value": 2.427726205874295
+            },
+            {
+              "unit": "194",
+              "value": 1.835443387656234
+            },
+            {
+              "unit": "1940",
+              "value": 1.9669549063233003
+            },
+            {
+              "unit": "1941",
+              "value": 1.56091397104759
+            },
+            {
+              "unit": "1942",
+              "value": 1.9733412565174575
+            },
+            {
+              "unit": "1943",
+              "value": 3.0757722413221185
+            },
+            {
+              "unit": "1944",
+              "value": 1.9410124194825151
+            },
+            {
+              "unit": "1945",
+              "value": 1.7356540704290033
+            },
+            {
+              "unit": "1946",
+              "value": 2.6034271941142766
+            },
+            {
+              "unit": "1947",
+              "value": 1.6480917241497544
+            },
+            {
+              "unit": "1948",
+              "value": 2.7671605016047884
+            },
+            {
+              "unit": "1949",
+              "value": 4.431283516037244
+            },
+            {
+              "unit": "1950",
+              "value": 3.6346766238100088
+            },
+            {
+              "unit": "1951",
+              "value": 2.211885021644587
+            },
+            {
+              "unit": "1952",
+              "value": 1.4646910182431103
+            },
+            {
+              "unit": "1953",
+              "value": 2.3101598375316517
+            },
+            {
+              "unit": "1954",
+              "value": 2.4803598244829868
+            },
+            {
+              "unit": "1956",
+              "value": 1.9333237717951928
+            },
+            {
+              "unit": "1957",
+              "value": 1.5404185859762816
+            },
+            {
+              "unit": "1958",
+              "value": 2.5261682391276175
+            },
+            {
+              "unit": "1959",
+              "value": 2.1677619676713533
+            },
+            {
+              "unit": "1960",
+              "value": 2.676216884687115
+            },
+            {
+              "unit": "1961",
+              "value": 3.728642912266448
+            },
+            {
+              "unit": "1962",
+              "value": 2.951064594443654
+            },
+            {
+              "unit": "1963",
+              "value": 2.9919049673803517
+            },
+            {
+              "unit": "1964",
+              "value": 2.4381779877094
+            },
+            {
+              "unit": "1965",
+              "value": 2.220003899782771
+            },
+            {
+              "unit": "1966",
+              "value": 1.228037285798413
+            },
+            {
+              "unit": "1967",
+              "value": 3.008303962483714
+            },
+            {
+              "unit": "1968",
+              "value": 1.9559006527259655
+            },
+            {
+              "unit": "2017",
+              "value": 3.748680037437609
+            },
+            {
+              "unit": "2021",
+              "value": 2.687476896473658
+            },
+            {
+              "unit": "2022",
+              "value": 2.338756676475274
+            },
+            {
+              "unit": "2025",
+              "value": 3.631001661825806
+            },
+            {
+              "unit": "2067",
+              "value": 2.426834939511645
+            },
+            {
+              "unit": "2068",
+              "value": 4.721591119395299
+            },
+            {
+              "unit": "2071",
+              "value": 4.755565364133938
+            },
+            {
+              "unit": "2084",
+              "value": 4.571441061129505
+            },
+            {
+              "unit": "2085",
+              "value": 2.381721844004888
+            },
+            {
+              "unit": "2086",
+              "value": 2.7644184599933013
+            },
+            {
+              "unit": "2087",
+              "value": 2.9342361694187336
+            },
+            {
+              "unit": "2088",
+              "value": 2.38703281951374
+            },
+            {
+              "unit": "2089",
+              "value": 2.553148257276783
+            },
+            {
+              "unit": "2092",
+              "value": 3.703201251709306
+            },
+            {
+              "unit": "2093",
+              "value": 3.2852587713860952
+            },
+            {
+              "unit": "2098",
+              "value": 1.759041337913473
+            },
+            {
+              "unit": "2099",
+              "value": 2.8031949357390182
+            },
+            {
+              "unit": "2100",
+              "value": 2.304159408937455
+            },
+            {
+              "unit": "2101",
+              "value": 1.2959732397711203
+            },
+            {
+              "unit": "2102",
+              "value": 4.222685623973655
+            },
+            {
+              "unit": "2103",
+              "value": 2.9503368324602697
+            },
+            {
+              "unit": "2104",
+              "value": 3.4779716197376374
+            },
+            {
+              "unit": "2105",
+              "value": 4.428144188165383
+            },
+            {
+              "unit": "2106",
+              "value": 4.404120316645535
+            },
+            {
+              "unit": "2107",
+              "value": 1.63105792433932
+            },
+            {
+              "unit": "2108",
+              "value": 2.5275795815937663
+            },
+            {
+              "unit": "2110",
+              "value": 0.9109504321456932
+            },
+            {
+              "unit": "2114",
+              "value": 3.0796019755072646
+            },
+            {
+              "unit": "2115",
+              "value": 3.4317599853038026
+            },
+            {
+              "unit": "2116",
+              "value": 0.6657082459754164
+            },
+            {
+              "unit": "2118",
+              "value": 4.252645969437523
+            },
+            {
+              "unit": "2119",
+              "value": 2.3497260693654773
+            },
+            {
+              "unit": "2121",
+              "value": 3.4898109645966287
+            },
+            {
+              "unit": "2122",
+              "value": 2.3700540107888397
+            },
+            {
+              "unit": "2159",
+              "value": 3.631874067106514
+            },
+            {
+              "unit": "2160",
+              "value": 1.7081136489322244
+            },
+            {
+              "unit": "2161",
+              "value": 3.937353491201087
+            },
+            {
+              "unit": "2162",
+              "value": 3.192639064481325
+            },
+            {
+              "unit": "2163",
+              "value": 2.139418232602061
+            },
+            {
+              "unit": "2164",
+              "value": 4.092702184943988
+            },
+            {
+              "unit": "2165",
+              "value": 2.2627079867108506
+            },
+            {
+              "unit": "2167",
+              "value": 3.942723960158954
+            },
+            {
+              "unit": "2168",
+              "value": 3.384563296644089
+            },
+            {
+              "unit": "2169",
+              "value": 3.78091715167068
+            },
+            {
+              "unit": "2170",
+              "value": 2.0789273451553534
+            },
+            {
+              "unit": "2171",
+              "value": 4.482130791872999
+            },
+            {
+              "unit": "2172",
+              "value": 3.72738761034738
+            },
+            {
+              "unit": "2253",
+              "value": 1.8243480319703007
+            },
+            {
+              "unit": "2257",
+              "value": 1.9277121681318459
+            },
+            {
+              "unit": "266",
+              "value": 2.3686813083350753
+            },
+            {
+              "unit": "2666",
+              "value": 3.722758648802534
+            },
+            {
+              "unit": "267",
+              "value": 2.945624780648103
+            },
+            {
+              "unit": "2704",
+              "value": 2.8833569384999063
+            },
+            {
+              "unit": "2705",
+              "value": 2.797580798430886
+            },
+            {
+              "unit": "2706",
+              "value": 2.07624823028317
+            },
+            {
+              "unit": "2710",
+              "value": 6.122868659249795
+            },
+            {
+              "unit": "2711",
+              "value": 5.139672961565161
+            },
+            {
+              "unit": "2712",
+              "value": 1.888825800415301
+            },
+            {
+              "unit": "2714",
+              "value": 1.9878540971750631
+            },
+            {
+              "unit": "2719",
+              "value": 3.349435161053533
+            },
+            {
+              "unit": "2738",
+              "value": 3.9114280477888776
+            },
+            {
+              "unit": "2742",
+              "value": 3.6220854638820192
+            },
+            {
+              "unit": "2743",
+              "value": 4.663027606301997
+            },
+            {
+              "unit": "2745",
+              "value": 4.6486933938556625
+            },
+            {
+              "unit": "2748",
+              "value": 2.742099141684573
+            },
+            {
+              "unit": "2752",
+              "value": 4.61012720003208
+            },
+            {
+              "unit": "2753",
+              "value": 3.0642325223920928
+            },
+            {
+              "unit": "2754",
+              "value": 0.4658612525153156
+            },
+            {
+              "unit": "2756",
+              "value": 1.6015503739548826
+            },
+            {
+              "unit": "2757",
+              "value": 3.3893801170754454
+            },
+            {
+              "unit": "2758",
+              "value": 2.5382797059156523
+            },
+            {
+              "unit": "2759",
+              "value": 3.236050467117277
+            },
+            {
+              "unit": "2760",
+              "value": 3.728157220073692
+            },
+            {
+              "unit": "2761",
+              "value": 3.683708488175254
+            },
+            {
+              "unit": "2762",
+              "value": 2.0683585043321067
+            },
+            {
+              "unit": "2763",
+              "value": 3.9266520529067037
+            },
+            {
+              "unit": "2765",
+              "value": 3.2594841320584003
+            },
+            {
+              "unit": "2769",
+              "value": 4.0860839155776
+            },
+            {
+              "unit": "2771",
+              "value": 3.910145820885731
+            },
+            {
+              "unit": "2774",
+              "value": 1.9544669291726056
+            },
+            {
+              "unit": "2775",
+              "value": 2.8659159548170727
+            },
+            {
+              "unit": "2776",
+              "value": 2.7379607620414532
+            },
+            {
+              "unit": "2777",
+              "value": 0.9961447435543089
+            },
+            {
+              "unit": "2778",
+              "value": 2.817284359400178
+            },
+            {
+              "unit": "2780",
+              "value": 2.98104897213101
+            },
+            {
+              "unit": "2781",
+              "value": 3.6068450959742933
+            },
+            {
+              "unit": "2782",
+              "value": 3.9729397768579062
+            },
+            {
+              "unit": "2783",
+              "value": 1.6326603753175153
+            },
+            {
+              "unit": "2788",
+              "value": 3.075495359627597
+            },
+            {
+              "unit": "2793",
+              "value": 4.026312702141805
+            },
+            {
+              "unit": "2794",
+              "value": 3.439436762007798
+            },
+            {
+              "unit": "2795",
+              "value": 3.3207026562891606
+            },
+            {
+              "unit": "2796",
+              "value": 4.19681644741741
+            },
+            {
+              "unit": "315",
+              "value": 2.640930439563631
+            },
+            {
+              "unit": "318",
+              "value": 2.0260638750170763
+            },
+            {
+              "unit": "320",
+              "value": 2.941543053569946
+            },
+            {
+              "unit": "321",
+              "value": 2.217906997058872
+            },
+            {
+              "unit": "323",
+              "value": 2.286497775640214
+            },
+            {
+              "unit": "330",
+              "value": 2.9216020640662954
+            },
+            {
+              "unit": "332",
+              "value": 1.9645782771003155
+            },
+            {
+              "unit": "338",
+              "value": 2.947488859279149
+            },
+            {
+              "unit": "346",
+              "value": 3.0599903720807795
+            },
+            {
+              "unit": "520",
+              "value": 3.9307830332582387
+            },
+            {
+              "unit": "764",
+              "value": 3.3204671598076043
+            },
+            {
+              "unit": "769",
+              "value": 2.8017427419929533
+            },
+            {
+              "unit": "824",
+              "value": 1.5039147131914952
+            },
+            {
+              "unit": "827",
+              "value": 3.2332967635876475
+            }
+          ]
+        }
+      ],
+      "note": "An approximation of the template's graph: every biological unit, the group mean and its 95 % confidence interval. Prism draws the real one."
+    }
+  },
+  "project": {
+    "status": "none",
+    "proposal_id": null,
+    "template_id": null,
+    "genes": [],
+    "made_by": null
+  },
+  "choices_confirmed": false,
+  "not_affiliated": "Works with GraphPad Prism. Not affiliated with or endorsed by GraphPad Software or Dotmatics."
+}

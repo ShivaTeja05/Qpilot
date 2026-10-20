@@ -49,7 +49,7 @@ export type paths = {
         };
         /**
          * Attached Audit
-         * @description One attached folder: what it describes and whether its views can be shown.
+         * @description One attached folder: what it describes; opening it starts loading its live views.
          */
         get: operations["attached_audit"];
         put?: never;
@@ -592,7 +592,7 @@ export type paths = {
         };
         /**
          * Bulk List
-         * @description Exactly what “Accept all consistent…” or “Reject contradicted AI calls…” would cover.
+         * @description Exactly what “Accept all consistent…” or “Reject contradicted …” would cover.
          */
         get: operations["bulk_list"];
         put?: never;
@@ -1439,6 +1439,30 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/autonomy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Autonomy
+         * @description What agents (``qpilot serve``) may do in this study, and the policy in words.
+         */
+        get: operations["get_autonomy"];
+        /**
+         * Put Autonomy
+         * @description A person sets the study's autonomy (Suggest · Decide and tell me); agents obey it.
+         */
+        put: operations["put_autonomy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/cards": {
         parameters: {
             query?: never;
@@ -2127,6 +2151,8 @@ export type components = {
              * @description Whether its views can be shown.
              */
             available: boolean;
+            /** @description The job loading its live views (started by opening it). */
+            loading?: components["schemas"]["JobView"] | null;
             /** Name */
             name: string;
             /**
@@ -2153,6 +2179,12 @@ export type components = {
             verdict_counts: {
                 [key: string]: number;
             };
+            /**
+             * Views Ready
+             * @description Its live views are loaded.
+             * @default false
+             */
+            views_ready: boolean;
         };
         /**
          * AttachedAuditList
@@ -2491,9 +2523,19 @@ export type components = {
             lines: string[];
             /**
              * N
-             * @description Reasonable analyses with the same call, of 100.
+             * @description Percent (0–100) of the audit's reasonable analyses with the same call.
              */
             n: number;
+            /**
+             * Of
+             * @description How many reasonable analyses the audit ran (144 on the demo).
+             */
+            of: number;
+            /**
+             * Same
+             * @description How many of the audit's reasonable analyses have the same call.
+             */
+            same: number;
         };
         /**
          * AuditHow
@@ -2708,12 +2750,22 @@ export type components = {
             n_flag_low: number;
             /** N High */
             n_high: number;
+            /**
+             * N High Value
+             * @description Samples of the first group with a value (the p's n).
+             */
+            n_high_value: number;
             /** N Nondetect */
             n_nondetect: number;
             /** N Plates */
             n_plates: number;
             /** N Rest */
             n_rest: number;
+            /**
+             * N Rest Value
+             * @description Samples of the second group with a value.
+             */
+            n_rest_value: number;
             /** P */
             p: number | null;
         };
@@ -2805,7 +2857,7 @@ export type components = {
             headline: boolean;
             /**
              * Holds
-             * @description Reasonable analyses with the same call, of 100.
+             * @description Percent (0–100) of the audit's reasonable analyses with the same call.
              */
             holds: number;
             /** Log2 */
@@ -3433,6 +3485,54 @@ export type components = {
              */
             no_simulator_counterpart: string[];
         };
+        /**
+         * AutonomyBody
+         * @description Set what agents may do in this study (a person's switch).
+         */
+        AutonomyBody: {
+            /**
+             * Autonomy
+             * @enum {string}
+             */
+            autonomy: "suggest" | "decide_and_tell";
+        };
+        /**
+         * AutonomyChange
+         * @description One change of a study's autonomy, as written beside the decision chain.
+         */
+        AutonomyChange: {
+            /**
+             * Actor
+             * @default human
+             */
+            actor: string;
+            /** At */
+            at: string;
+            /** Level */
+            level: string;
+            /** Previous */
+            previous: string;
+        };
+        /**
+         * AutonomyView
+         * @description A study's autonomy, what each level allows, and how it was changed.
+         */
+        AutonomyView: {
+            /**
+             * Autonomy
+             * @enum {string}
+             */
+            autonomy: "suggest" | "decide_and_tell";
+            /**
+             * Changes
+             * @default []
+             */
+            changes: components["schemas"]["AutonomyChange"][];
+            /** Policy */
+            policy: string[];
+            /** Study Id */
+            study_id: string;
+        };
         /** Body_open_file */
         Body_open_file: {
             /**
@@ -3528,6 +3628,13 @@ export type components = {
             expected_head: string;
             /** Ids */
             ids: string[];
+            /**
+             * Makers
+             * @description Reject: the list's scope, as it was shown (ai or all).
+             * @default ai
+             * @enum {string}
+             */
+            makers: "ai" | "all";
             /**
              * Reason
              * @description Kept in the record (≤ 500 chars).
@@ -4424,7 +4531,7 @@ export type components = {
             headline: boolean;
             /**
              * Holds
-             * @description Share of reasonable analyses with the same call (0–1).
+             * @description Share of the analyses in qPilot's choice grid (every control-gene set, cut-off, empty-well rule and amplification-call rule; n_cells of them) with the same call, 0–1. Not the audit's reasonable set.
              */
             holds?: number | null;
             /** Level */
@@ -6328,11 +6435,26 @@ export type components = {
              * @default []
              */
             blockers: string[];
+            /**
+             * Confirm Waiting
+             * @description A confirm step waits for “Yes, confirm”.
+             * @default false
+             */
+            confirm_waiting: boolean;
             /** Confirmed */
             confirmed: boolean;
+            /**
+             * Consistent
+             * @description Waiting proposals the engine finds consistent.
+             * @default 0
+             */
+            consistent: number;
             /** Open */
             open: boolean;
-            /** Pending */
+            /**
+             * Pending
+             * @description Proposals waiting for a decision (not the confirm step).
+             */
             pending: number;
             /**
              * Stage
@@ -6591,6 +6713,13 @@ export type components = {
          */
         WorkspaceSummary: {
             /**
+             * Counts Of
+             * @description file: plates, declared samples and targets in the file; analysis: the analysed study's plates, samples and compared genes.
+             * @default file
+             * @enum {string}
+             */
+            counts_of: "file" | "analysis";
+            /**
              * Decisions
              * @default 0
              */
@@ -6604,6 +6733,12 @@ export type components = {
              * @default false
              */
             has_audit: boolean;
+            /**
+             * Id
+             * @description Unique in the list: kind:key (a session and the demo's qpilot-run study can share a key).
+             * @default
+             */
+            id: string;
             /** Input Sha256 */
             input_sha256: string;
             /**
@@ -6665,6 +6800,11 @@ export type components = {
              * @default []
              */
             active_jobs: components["schemas"]["JobView"][];
+            /**
+             * Autonomy
+             * @description What agents may do in this study (None: no study yet).
+             */
+            autonomy?: ("suggest" | "decide_and_tell") | null;
             /** Decisions Head */
             decisions_head?: string | null;
             facts?: components["schemas"]["FileFacts"] | null;
@@ -7560,6 +7700,8 @@ export interface operations {
     bulk_list: {
         parameters: {
             query: {
+                /** @description Reject: contradicted proposals of a model or an agent (ai), or every contradicted proposal, the rules' too (all). */
+                makers?: "ai" | "all";
                 stage: string;
             };
             header?: never;
@@ -9047,6 +9189,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditWhatIf"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_autonomy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutonomyView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_autonomy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutonomyBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutonomyView"];
                 };
             };
             /** @description Validation Error */
