@@ -128,8 +128,10 @@ def create_app(ctx: AppContext) -> FastAPI:
 
 def _type_job_results(app: FastAPI) -> None:
     """Add every registered job-result model to the schema; ``x-job-results`` maps the kinds."""
+    from qpilot.web.jobs import RESULT_TYPES
     from qpilot.web.routers import job_results
 
+    RESULT_TYPES.update({kind: model.__name__ for kind, model in job_results().items()})
     plain = app.openapi
     done = False
 

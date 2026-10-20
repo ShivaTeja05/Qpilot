@@ -84,6 +84,17 @@ def display_name(path: str | Path | None) -> str | None:
     return name[:MAX_NAME] or path.name
 
 
+def study_autonomy(store: StudyStore, study_id: str | None) -> Any:
+    """A study's autonomy (``suggest`` / ``decide_and_tell``), None without a study."""
+    if not study_id:
+        return None
+    try:
+        level = store.autonomy(study_id)
+    except (StudyNotFound, OSError, ValueError):
+        return None
+    return level if level in ("suggest", "decide_and_tell") else "suggest"
+
+
 def session_meta(store: StudyStore, sid: str) -> dict[str, Any]:
     """A session's ``studio.json`` (empty when there is none)."""
     path = store.find_session(sid) / "studio.json"
@@ -174,7 +185,8 @@ def next_step(
     if not analysed:
         return NextStep(
             title="Analysing the confirmed design",
-            detail="Every curve, then every reasonable analysis; the results show when it is done.",
+            detail="Every curve, then every analysis in qPilot's choice grid; the results show "
+            "when it is done.",
             section="results",
         )
     if undecided_cards:
@@ -460,6 +472,7 @@ def session_view(
         analysed=line.study_id is not None,
     )
     return WorkspaceView(
+        autonomy=study_autonomy(store, line.study_id),
         key=sid,
         kind="session",
         title=line.title,
@@ -489,6 +502,7 @@ def study_view(store: StudyStore, study_id: str, active_jobs: list[Any] | None =
         has_audit=line.has_audit,
     )
     return WorkspaceView(
+        autonomy=study_autonomy(store, study_id),
         key=study_id,
         kind="study",
         title=line.title,

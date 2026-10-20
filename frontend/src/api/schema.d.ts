@@ -20,306 +20,6 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/api/audits": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Attached Audits
-         * @description Results folders attached read-only with ``qpilot app --audit DIR``.
-         */
-        get: operations["list_attached_audits"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Audit
-         * @description One attached folder: what it describes and whether its views can be shown.
-         */
-        get: operations["attached_audit"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/analyses/{gene}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Analyses
-         * @description Every reasonable analysis of one gene in an attached folder.
-         */
-        get: operations["attached_analyses"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/effects/{gene}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Effects
-         * @description One choice at a time for one gene in an attached folder.
-         */
-        get: operations["attached_effects"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Files
-         * @description An attached folder's downloadable files.
-         */
-        get: operations["attached_files"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/files/{file}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached File
-         * @description Download one file of an attached folder (its listed files, or a run's result files).
-         */
-        get: operations["attached_file"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/gene/{gene}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Gene
-         * @description One gene's card in an attached folder.
-         */
-        get: operations["attached_gene"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/how": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached How
-         * @description An attached folder's How it works.
-         */
-        get: operations["attached_how"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/issues": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Issues
-         * @description An attached folder's whole investigation queue.
-         */
-        get: operations["attached_issues"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/lab/{gene}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Lab
-         * @description Lab parameters for one gene in an attached folder.
-         */
-        get: operations["attached_lab"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Overview
-         * @description An attached folder's first screen.
-         */
-        get: operations["attached_overview"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/samples": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attached Samples
-         * @description One gene's samples under a set of choices, in an attached folder.
-         */
-        post: operations["attached_samples"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/study": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Attached Study
-         * @description An attached folder's Study tab.
-         */
-        get: operations["attached_study"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attached Verify
-         * @description Check an attached audit's checksums (and its binding, when its study is here).
-         */
-        post: operations["attached_verify"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audits/{name}/whatif": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attached Whatif
-         * @description Every gene under other choices, in an attached folder.
-         */
-        post: operations["attached_whatif"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/demo/fetch": {
         parameters: {
             query?: never;
@@ -434,6 +134,26 @@ export type paths = {
         get: operations["get_model"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/model/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Model
+         * @description “Check connection”: ask the model one short question now (the only remote contact).
+         */
+        post: operations["check_model"];
         delete?: never;
         options?: never;
         head?: never;
@@ -731,6 +451,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{sid}/proposals/{pid}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Edit
+         * @description The engine's check of an edited reading, before a person accepts it (writes nothing).
+         */
+        post: operations["check_edit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{sid}/proposals/{pid}/edit": {
         parameters: {
             query?: never;
@@ -935,7 +675,7 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
-    "/api/studies/{study_id}/audit": {
+    "/api/studies/{study_id}/autonomy": {
         parameters: {
             query?: never;
             header?: never;
@@ -943,276 +683,16 @@ export type paths = {
             cookie?: never;
         };
         /**
-         * Audit Status
-         * @description Whether the study has an audit (and its manifest), one is running, or why not.
+         * Get Autonomy
+         * @description What agents (``qpilot serve``) may do in this study, and the policy in words.
          */
-        get: operations["audit_status"];
-        put?: never;
+        get: operations["get_autonomy"];
         /**
-         * Run Audit
-         * @description Run the robustness audit (a job, about a minute on the demo).
+         * Put Autonomy
+         * @description A person sets the study's autonomy (Suggest · Decide and tell me); agents obey it.
          */
-        post: operations["run_audit"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/analyses/{gene}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit Analyses
-         * @description Every reasonable analysis of one gene.
-         */
-        get: operations["audit_analyses"];
-        put?: never;
+        put: operations["put_autonomy"];
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/effects/{gene}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit Effects
-         * @description One choice at a time for one gene.
-         */
-        get: operations["audit_effects"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit Files
-         * @description The audit's files (name, size, sha256 from its AUDIT.sha256), for download.
-         */
-        get: operations["audit_files"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/files/{name}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit File
-         * @description Download one of the audit's files (only those its AUDIT.sha256 lists).
-         */
-        get: operations["audit_file"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/gene/{gene}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit Gene
-         * @description One gene's card: result, verdict, what changes it, what it leans on, what to do.
-         */
-        get: operations["audit_gene"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/how": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit How
-         * @description How it works: stages, the call rule, the verdict rules, checks made and not made.
-         */
-        get: operations["audit_how"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/issues": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit Issues
-         * @description The whole investigation queue, in its order.
-         */
-        get: operations["audit_issues"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/lab/{gene}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit Lab
-         * @description The assay's lab parameters and the planned control genes' stability.
-         */
-        get: operations["audit_lab"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit Overview
-         * @description The audit's first screen: verdict counts, genes, choices, the top issues.
-         */
-        get: operations["audit_overview"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/samples": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Audit Samples
-         * @description One gene's samples under a set of choices (a live engine run; nothing is written).
-         */
-        post: operations["audit_samples"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/study": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Audit Study
-         * @description The Study tab: the map, which choices matter, reference stability, influence.
-         */
-        get: operations["audit_study"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Verify Study Audit
-         * @description Check the audit's checksums and manifest, and that it belongs to the study's record.
-         */
-        post: operations["verify_study_audit"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/studies/{study_id}/audit/whatif": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Audit Whatif
-         * @description Every gene under other choices (a live engine run; nothing is written).
-         */
-        post: operations["audit_whatif"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1701,114 +1181,12 @@ export type components = {
             summary: string;
         };
         /**
-         * AskAnswer
-         * @description An answer and how it was made (the result of an ``ask`` job).
+         * AnalyseDone
+         * @description The confirmed design, analysed.
          */
-        AskAnswer: {
-            /**
-             * Answer
-             * @description The answer as text; every number in it is a cited fact.
-             */
-            answer: string;
-            /**
-             * Args
-             * @description The tool's arguments.
-             */
-            args?: {
-                [key: string]: unknown;
-            };
-            /**
-             * Autonomy
-             * @description What the study lets agents do (Ask itself never decides).
-             * @enum {string}
-             */
-            autonomy: "suggest" | "decide_and_tell";
-            /**
-             * Card Id
-             * @description The Decision Card a change request names (decide it there).
-             * @default null
-             */
-            card_id: string | null;
-            /**
-             * Engine
-             * @description study: qPilot's own tools (the MCP tool code); audit: the robustness audit's Ask engine; none: only the audit answers this and it has not been run.
-             * @enum {string}
-             */
-            engine: "study" | "audit" | "none";
-            /**
-             * Facts
-             * @description The numbers the answer cites, nothing else.
-             */
-            facts: components["schemas"]["CitedFact"][];
-            /**
-             * Focus
-             * @description What the page should focus: 'card:<card_id>' for a change.
-             * @default null
-             */
-            focus: string | null;
-            /**
-             * Head After
-             * @description The chain head after the answer (moved when Ask wrote).
-             * @default null
-             */
-            head_after: string | null;
-            /**
-             * Head Before
-             * @default null
-             */
-            head_before: string | null;
-            /**
-             * Model
-             * @description The model's name, when one was used.
-             * @default null
-             */
-            model: string | null;
-            /**
-             * Note
-             * @description Why a template answered, or what happened to a request.
-             * @default null
-             */
-            note: string | null;
-            /** Provider */
-            provider: string;
-            /** Question */
-            question: string;
-            /**
-             * Routed By
-             * @description Who picked the tool: the model, keyword matching, or fixed reading rules.
-             * @enum {string}
-             */
-            routed_by: "model" | "keywords" | "rules";
-            /** Routed Words */
-            routed_words: string;
-            /**
-             * Status
-             * @description Always null: Ask never writes (a change is decided on its card).
-             * @default null
-             */
-            status: string | null;
-            /** Tool */
-            tool: string;
-            /**
-             * Tool Words
-             * @description Which tool answered, in plain words.
-             */
-            tool_words: string;
-            /**
-             * Validated
-             * @description Every number in the text is a cited fact.
-             */
-            validated: boolean;
-            /**
-             * Writer Words
-             * @description Who wrote the words, in plain words.
-             */
-            writer_words: string;
-            /**
-             * Written By
-             * @enum {string}
-             */
-            written_by: "template" | "model";
+        AnalyseDone: {
+            /** Study Id */
+            study_id: string;
         };
         /**
          * AskBody
@@ -1845,107 +1223,7 @@ export type components = {
             /** Log2Fc */
             log2fc: number;
             /** P */
-            p: number;
-        };
-        /**
-         * AttachedAudit
-         * @description A results folder attached read-only when the server started.
-         */
-        AttachedAudit: {
-            /** Analyses */
-            analyses?: number | null;
-            /**
-             * Available
-             * @description Whether its views can be shown.
-             */
-            available: boolean;
-            /** Name */
-            name: string;
-            /**
-             * Qpilot Audit
-             * @description A qPilot audit (bound to a study), not a plain run.
-             */
-            qpilot_audit: boolean;
-            /**
-             * Reason
-             * @description Why not, in plain words.
-             */
-            reason?: string | null;
-            /**
-             * Source
-             * @description The file the run describes.
-             */
-            source: string;
-            /** Study Id */
-            study_id?: string | null;
-            /**
-             * Verdict Counts
-             * @default {}
-             */
-            verdict_counts: {
-                [key: string]: number;
-            };
-        };
-        /**
-         * AttachedAuditList
-         * @description Every attached results folder.
-         */
-        AttachedAuditList: {
-            /** Audits */
-            audits: components["schemas"]["AttachedAudit"][];
-        };
-        /**
-         * AuditAnalyses
-         * @description Every reasonable analysis of one gene (the analyses strip).
-         */
-        AuditAnalyses: {
-            /** Base Call */
-            base_call: string;
-            /**
-             * Base Call Key
-             * @enum {string}
-             */
-            base_call_key: "up" | "down" | "none";
-            /** Gene */
-            gene: string;
-            /** Line */
-            line: string;
-            /** Line Log2 */
-            line_log2: number;
-            /** N */
-            n: number;
-            /** N Other */
-            n_other: number;
-            /** N Same */
-            n_same: number;
-            /** Rows */
-            rows: components["schemas"]["AuditAnalysisRow"][];
-        };
-        /**
-         * AuditAnalysisRow
-         * @description One reasonable analysis of one gene.
-         */
-        AuditAnalysisRow: {
-            /** Call */
-            call: string;
-            /**
-             * Call Key
-             * @enum {string}
-             */
-            call_key: "up" | "down" | "none";
-            /**
-             * Choices
-             * @description What differs from the planned analysis.
-             */
-            choices: string[];
-            /** Fold */
-            fold: string;
-            /** Log2 */
-            log2: number | null;
-            /** Planned */
-            planned: boolean;
-            /** Same */
-            same: boolean;
+            p: number | null;
         };
         /**
          * AuditBadge
@@ -1974,1178 +1252,52 @@ export type components = {
             };
         };
         /**
-         * AuditChange
-         * @description A choice (or two together) that changes the call.
+         * AutonomyBody
+         * @description Set what agents may do in this study (a person's switch).
          */
-        AuditChange: {
-            /** Call */
-            call: string;
+        AutonomyBody: {
             /**
-             * Call Key
+             * Autonomy
              * @enum {string}
              */
-            call_key: "up" | "down" | "none";
-            /** Choice */
-            choice: string;
-            /** Fold */
-            fold: string;
-            /** Same Call */
-            same_call: boolean;
+            autonomy: "suggest" | "decide_and_tell";
         };
         /**
-         * AuditCheck
-         * @description Whether the audit applies to a study, found before it runs (its first step, alone).
+         * AutonomyChange
+         * @description One change of a study's autonomy, as written beside the decision chain.
          */
-        AuditCheck: {
-            /** Applicable */
-            applicable: boolean;
-            /** Code */
-            code?: ("not_applicable" | "refused") | null;
+        AutonomyChange: {
             /**
-             * Reason
-             * @description Why not, in plain words.
+             * Actor
+             * @default human
              */
-            reason?: string | null;
-            /** @description What a run would cover (analyses, choices) for THIS study. */
-            scope?: components["schemas"]["AuditScope"] | null;
+            actor: string;
+            /** At */
+            at: string;
+            /** Level */
+            level: string;
+            /** Previous */
+            previous: string;
         };
         /**
-         * AuditChoiceSpread
-         * @description How much one choice matters across genes.
+         * AutonomyView
+         * @description A study's autonomy, what each level allows, and how it was changed.
          */
-        AuditChoiceSpread: {
+        AutonomyView: {
             /**
-             * Alone
-             * @description Genes whose call this choice changes on its own.
-             */
-            alone: number;
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Question */
-            question: boolean;
-            /**
-             * Spread
-             * @description Share of the spread it explains, of 100.
-             */
-            spread: number;
-        };
-        /**
-         * AuditDecision
-         * @description One analysis choice the audit varies (the what-if lab's selects).
-         */
-        AuditDecision: {
-            /**
-             * Baseline
-             * @description The planned option's id.
-             */
-            baseline: string;
-            /** Changes Claim */
-            changes_claim: boolean;
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Options */
-            options: components["schemas"]["AuditOption"][];
-            /** Question */
-            question: string;
-        };
-        /**
-         * AuditEffectDecision
-         * @description One choice, each option at a time.
-         */
-        AuditEffectDecision: {
-            /** Id */
-            id: string;
-            /** N Change */
-            n_change: number;
-            /** Name */
-            name: string;
-            /** Options */
-            options: components["schemas"]["AuditEffectOption"][];
-        };
-        /**
-         * AuditEffectOption
-         * @description One option with every other choice as planned.
-         */
-        AuditEffectOption: {
-            /** Call */
-            call: string;
-            /**
-             * Call Key
+             * Autonomy
              * @enum {string}
              */
-            call_key: "up" | "down" | "none";
-            /** Changes Call */
-            changes_call: boolean;
-            /** Fold */
-            fold: string;
-            /** Label */
-            label: string;
-            /** Log2 */
-            log2: number | null;
-            /** Planned */
-            planned: boolean;
-            /**
-             * Tier
-             * @description prespecified / defensible / common_practice
-             */
-            tier: string;
-        };
-        /**
-         * AuditEffects
-         * @description One choice at a time for one gene.
-         */
-        AuditEffects: {
-            /** Decisions */
-            decisions: components["schemas"]["AuditEffectDecision"][];
-            /** Gene */
-            gene: string;
-            /** Line */
-            line: string;
-            /** Line Log2 */
-            line_log2: number;
-            /** Planned */
-            planned: string;
-            /** Planned Log2 */
-            planned_log2: number | null;
-        };
-        /**
-         * AuditFile
-         * @description One file of the audit, for download.
-         */
-        AuditFile: {
-            /** Bytes */
-            bytes: number;
-            /** Name */
-            name: string;
-            /**
-             * Sha256
-             * @description As listed in AUDIT.sha256 (null for that file).
-             */
-            sha256: string | null;
-        };
-        /**
-         * AuditFiles
-         * @description The audit's files (those its AUDIT.sha256 lists, and that list itself).
-         */
-        AuditFiles: {
-            /** Files */
-            files: components["schemas"]["AuditFile"][];
-        };
-        /**
-         * AuditGeneCard
-         * @description One gene: result, verdict, what changes it, what it leans on, what to do.
-         */
-        AuditGeneCard: {
-            /**
-             * Call Key
-             * @enum {string}
-             */
-            call_key: "up" | "down" | "none";
-            /** Changes */
-            changes: components["schemas"]["AuditChange"][];
-            /** Gene */
-            gene: string;
-            /** Headline Gene */
-            headline_gene: boolean;
-            holds: components["schemas"]["AuditHolds"];
-            /** Label */
-            label: string;
-            /** Leans */
-            leans: string[];
-            /** No Changes */
-            no_changes: string | null;
-            result: components["schemas"]["AuditGeneResult"];
-            /** Shortcut */
-            shortcut: string | null;
-            /** Singles */
-            singles: components["schemas"]["AuditSingleSample"][];
-            /** Tiles */
-            tiles: components["schemas"]["AuditTile"][];
-            /** Todo */
-            todo: string[];
-            /** Verdict */
-            verdict: string;
-        };
-        /**
-         * AuditGeneResult
-         * @description The result in sentences and the verdict's reason.
-         */
-        AuditGeneResult: {
-            /** Headline */
-            headline: string;
-            /** Lines */
-            lines: string[];
-            /** Verdict Sentence */
-            verdict_sentence: string;
-        };
-        /**
-         * AuditGroupStats
-         * @description One group's label, count, missing count and mean (log2, relative to the second).
-         */
-        AuditGroupStats: {
-            /** Label */
-            label: string;
-            /** Mean */
-            mean: number | null;
-            /** Missing */
-            missing: number;
-            /** N */
-            n: number;
-        };
-        /**
-         * AuditHolds
-         * @description How often the same answer comes out.
-         */
-        AuditHolds: {
-            /** Lines */
-            lines: string[];
-            /**
-             * N
-             * @description Reasonable analyses with the same call, of 100.
-             */
-            n: number;
-        };
-        /**
-         * AuditHow
-         * @description How it works: stages, the call rule, verdict rules, checks made and not made.
-         */
-        AuditHow: {
-            /** Call Rule */
-            call_rule: string;
-            faults?: components["schemas"]["AuditPlantedFaults"] | null;
-            known?: components["schemas"]["AuditKnownAnswers"] | null;
-            /**
-             * Not Run
-             * @default []
-             */
-            not_run: string[];
-            /** Reasonable */
-            reasonable: number;
-            /**
-             * Rules
-             * @description Each verdict's rule, keyed by the verdict words.
-             */
-            rules: {
-                [key: string]: string;
-            };
-            /** Seconds */
-            seconds: string;
-            /**
-             * Small
-             * @default []
-             */
-            small: components["schemas"]["AuditSmallDesign"][];
-            /** Stages */
-            stages: components["schemas"]["AuditHowStage"][];
-            /** Total */
-            total: string;
-        };
-        /**
-         * AuditHowDecision
-         * @description One choice at one stage of the pipeline.
-         */
-        AuditHowDecision: {
-            /** Alone */
-            alone: number | null;
-            /** Changes Question */
-            changes_question: boolean;
-            /** More */
-            more: number;
-            /** N Options */
-            n_options: number;
-            /** N Reasonable */
-            n_reasonable: number;
-            /** N Shortcut */
-            n_shortcut: number;
-            /** Name */
-            name: string;
-            /** Options */
-            options: components["schemas"]["AuditHowOption"][];
-            /** Planned */
-            planned: string;
-            /** Question */
-            question: string;
-        };
-        /**
-         * AuditHowOption
-         * @description An option as the how-it-works page lists it.
-         */
-        AuditHowOption: {
-            /** Label */
-            label: string;
-            /**
-             * Tier
-             * @description prespecified / defensible / common_practice
-             */
-            tier: string;
-        };
-        /**
-         * AuditHowStage
-         * @description One stage of the pipeline, in lab order.
-         */
-        AuditHowStage: {
-            /** Decisions */
-            decisions: components["schemas"]["AuditHowDecision"][];
-            /** Text */
-            text: string;
-            /** Title */
-            title: string;
-        };
-        /**
-         * AuditInfluence
-         * @description Single samples and reference wells that change calls.
-         */
-        AuditInfluence: {
-            /** One Sample Genes */
-            one_sample_genes: number | null;
-            /** Ref Removals */
-            ref_removals: string;
-            /** Ref Removals Flip */
-            ref_removals_flip: number | null;
-        };
-        /**
-         * AuditIssue
-         * @description One item of the investigation queue.
-         */
-        AuditIssue: {
-            /** About */
-            about: string;
-            /** Action */
-            action: string;
-            /** Causes */
-            causes: string[];
+            autonomy: "suggest" | "decide_and_tell";
             /**
              * Changes
-             * @description Genes whose call changes when it is fixed.
+             * @default []
              */
-            changes: string[];
-            /** Headline */
-            headline: string[];
-            /** Id */
-            id: string;
-            /** Plate */
-            plate: string;
-            /** Samples */
-            samples: string[];
-            /** Title */
-            title: string;
-            /** Wells */
-            wells: string[];
-        };
-        /**
-         * AuditIssues
-         * @description The whole investigation queue, in its order.
-         */
-        AuditIssues: {
-            /** Issues */
-            issues: components["schemas"]["AuditIssue"][];
-            /** N Issues */
-            n_issues: number;
-        };
-        /**
-         * AuditKnownAnswers
-         * @description The known-answer test, when the run made it.
-         */
-        AuditKnownAnswers: {
-            /** Cases */
-            cases: number;
-            /** Dataset */
-            dataset: string;
-            /** Efficiency */
-            efficiency: components["schemas"]["AuditKnownEfficiency"][];
-            /** Inside Ci */
-            inside_ci: number;
-            /** Inside Range */
-            inside_range: number;
-            spread_warns: components["schemas"]["AuditSpreadWarns"];
-        };
-        /**
-         * AuditKnownEfficiency
-         * @description One efficiency option's error on a dilution series with a known answer.
-         */
-        AuditKnownEfficiency: {
-            /** Error */
-            error: number;
-            /** Error Text */
-            error_text: string;
-            /** Label */
-            label: string;
-            /** Planned */
-            planned: boolean;
-        };
-        /**
-         * AuditLab
-         * @description The assay's lab parameters and the planned control genes' stability.
-         */
-        AuditLab: {
-            /** Gene */
-            gene: string;
-            numbers: components["schemas"]["AuditLabNumbers"];
-            /** References */
-            references: components["schemas"]["AuditReference"][];
-            /** Refs Label */
-            refs_label: string;
-            /** Rows */
-            rows: components["schemas"]["AuditLabRow"][];
-            /** Stable Below */
-            stable_below: string;
-        };
-        /**
-         * AuditLabNumbers
-         * @description The lab parameters as numbers (``null`` when the data has none).
-         */
-        AuditLabNumbers: {
-            /** Cq Max */
-            cq_max: number | null;
-            /** Cq Median */
-            cq_median: number | null;
-            /** Cq Min */
-            cq_min: number | null;
-            /** Eff Assay */
-            eff_assay: number | null;
-            /** Eff Std Curve */
-            eff_std_curve: number | null;
-            /**
-             * N Cq Above
-             * @description Wells with Cq above each late-Cq line.
-             */
-            n_cq_above: {
-                [key: string]: number;
-            };
-            /** N Flag Eff */
-            n_flag_eff: number;
-            /** N Flag Low */
-            n_flag_low: number;
-            /** N High */
-            n_high: number;
-            /** N Nondetect */
-            n_nondetect: number;
-            /** N Plates */
-            n_plates: number;
-            /** N Rest */
-            n_rest: number;
-            /** P */
-            p: number | null;
-        };
-        /**
-         * AuditLabRow
-         * @description One lab parameter, worded.
-         */
-        AuditLabRow: {
-            /** Label */
-            label: string;
-            /** Value */
-            value: string;
-        };
-        /**
-         * AuditLoadResult
-         * @description The result of loading the audit's live views (job kind ``audit.load``).
-         */
-        AuditLoadResult: {
+            changes: components["schemas"]["AutonomyChange"][];
+            /** Policy */
+            policy: string[];
             /** Study Id */
             study_id: string;
-        };
-        /**
-         * AuditManifestView
-         * @description A finished audit: what it audited, how it is bound to the study, and what it found.
-         */
-        AuditManifestView: {
-            /**
-             * Analyses
-             * @description Analyses run (every combination of choices).
-             */
-            analyses: number | null;
-            /**
-             * Chain Head
-             * @description The decision chain's head when audited.
-             */
-            chain_head: string | null;
-            /**
-             * Checksums Sha256
-             * @description SHA-256 of the audit's AUDIT.sha256 file.
-             */
-            checksums_sha256: string;
-            /**
-             * Created At
-             * @description Unix time the audit was sealed (its AUDIT.sha256 written).
-             */
-            created_at?: number | null;
-            /** Design Hash */
-            design_hash: string | null;
-            /** Grid Hash */
-            grid_hash: string | null;
-            /** Input Sha256 */
-            input_sha256: string;
-            /** Lock Sha256 */
-            lock_sha256: string | null;
-            reproduces_qpilot: components["schemas"]["AuditReproduction"];
-            scope: components["schemas"]["AuditScope"];
-            /**
-             * Seconds
-             * @description The simulator's own measured run time (summary.json timings); rebuilding the study first adds a few seconds.
-             */
-            seconds: number | null;
-            /** Source File */
-            source_file: string;
-            /** Study Id */
-            study_id: string;
-            /**
-             * Verdict Counts
-             * @description Genes per verdict (verdict words).
-             */
-            verdict_counts: {
-                [key: string]: number;
-            };
-            /** Versions */
-            versions: {
-                [key: string]: string;
-            };
-            your_choices: components["schemas"]["AuditYourChoices"];
-        };
-        /**
-         * AuditMapPoint
-         * @description One gene on the robustness map.
-         */
-        AuditMapPoint: {
-            /** Fold */
-            fold: string;
-            /** Gene */
-            gene: string;
-            /** Headline */
-            headline: boolean;
-            /**
-             * Holds
-             * @description Reasonable analyses with the same call, of 100.
-             */
-            holds: number;
-            /** Log2 */
-            log2: number | null;
-            /** Verdict */
-            verdict: string;
-        };
-        /**
-         * AuditOption
-         * @description One option of an analysis choice.
-         */
-        AuditOption: {
-            /** Id */
-            id: string;
-            /** Label */
-            label: string;
-            /**
-             * Tier
-             * @description In words: your planned analysis / reasonable / shortcut.
-             */
-            tier: string;
-        };
-        /**
-         * AuditOverview
-         * @description The audit's first screen: the study, verdict counts, genes, choices, top issues.
-         */
-        AuditOverview: {
-            /** Decisions */
-            decisions: components["schemas"]["AuditDecision"][];
-            /** Genes */
-            genes: components["schemas"]["AuditOverviewGene"][];
-            /** Headline */
-            headline: string[];
-            /** Issues */
-            issues: components["schemas"]["AuditIssue"][];
-            /** N Issues */
-            n_issues: number;
-            provenance: components["schemas"]["AuditProvenance"];
-            source: components["schemas"]["AuditSource"];
-            study: components["schemas"]["AuditStudyFacts"];
-            /** Verdicts */
-            verdicts: components["schemas"]["AuditVerdictCount"][];
-        };
-        /**
-         * AuditOverviewGene
-         * @description One gene's line in the overview.
-         */
-        AuditOverviewGene: {
-            /**
-             * Call
-             * @enum {string}
-             */
-            call: "up" | "down" | "none";
-            /**
-             * Call Key
-             * @enum {string}
-             */
-            call_key: "up" | "down" | "none";
-            /** Fold */
-            fold: string;
-            /** Gene */
-            gene: string;
-            /** Headline */
-            headline: boolean;
-            /** Label */
-            label: string;
-            /** Verdict */
-            verdict: string;
-        };
-        /**
-         * AuditPlantedFaults
-         * @description The planted-fault check, when the run made it.
-         */
-        AuditPlantedFaults: {
-            /** Caught */
-            caught: number;
-            /** Changed */
-            changed: number;
-            /** Trials */
-            trials: number;
-        };
-        /**
-         * AuditProvenance
-         * @description Short hashes and the files the run wrote.
-         */
-        AuditProvenance: {
-            /** Files */
-            files: string[];
-            /** Input */
-            input: string;
-            /** Lock */
-            lock: string;
-            /** Qsim */
-            qsim: string;
-            /** Run */
-            run: string;
-        };
-        /**
-         * AuditReference
-         * @description One control gene's geNorm M (as worded) and whether it differs between the groups.
-         */
-        AuditReference: {
-            /** Differs */
-            differs: boolean;
-            /** Gene */
-            gene: string;
-            /** M */
-            m: string;
-            /** M Value */
-            m_value?: number | null;
-        };
-        /**
-         * AuditReproduction
-         * @description The audit's contract: its planned analysis reproduces qPilot's stored result.
-         */
-        AuditReproduction: {
-            /** Genes */
-            genes: number;
-            /**
-             * Genes Only In Qpilot
-             * @default []
-             */
-            genes_only_in_qpilot: string[];
-            /**
-             * Genes Only In Simulator
-             * @default []
-             */
-            genes_only_in_simulator: string[];
-            /** Max Abs Diff Log2Fc */
-            max_abs_diff_log2fc: number;
-            /** Max Abs Diff P */
-            max_abs_diff_p: number;
-            /**
-             * Mismatched
-             * @default []
-             */
-            mismatched: string[];
-            /** Ok */
-            ok: boolean;
-            /** Tolerance */
-            tolerance: number;
-        };
-        /**
-         * AuditRunRequest
-         * @description Start the audit; ``again`` replaces an existing one (the earlier one is kept beside it).
-         */
-        AuditRunRequest: {
-            /**
-             * Again
-             * @default false
-             */
-            again: boolean;
-        };
-        /**
-         * AuditRunResult
-         * @description The audit job's result (job kind ``audit``).
-         */
-        AuditRunResult: {
-            /** Analyses */
-            analyses: number | null;
-            /** Reproduces Qpilot */
-            reproduces_qpilot: boolean;
-            /**
-             * Seconds
-             * @description How long this run took, rebuilding included.
-             */
-            seconds: number;
-            /** Study Id */
-            study_id: string;
-            /** Verdict Counts */
-            verdict_counts: {
-                [key: string]: number;
-            };
-        };
-        /**
-         * AuditSampleGroups
-         * @description The two groups (``high`` is the first group, ``rest`` the second).
-         */
-        AuditSampleGroups: {
-            high: components["schemas"]["AuditGroupStats"];
-            rest: components["schemas"]["AuditGroupStats"];
-        };
-        /**
-         * AuditSamplePoint
-         * @description One sample's value relative to the second group's mean.
-         */
-        AuditSamplePoint: {
-            /** Carries */
-            carries: boolean;
-            /** Cq */
-            cq: string | null;
-            /** Flagged */
-            flagged: boolean;
-            /**
-             * Group
-             * @enum {string}
-             */
-            group: "high" | "rest";
-            /** Late */
-            late: boolean;
-            /** Nondetect */
-            nondetect: boolean;
-            /** Plate */
-            plate: string;
-            /** Sample */
-            sample: string;
-            /** Value */
-            value: string;
-            /** Well */
-            well: string;
-            /** X */
-            x: number | null;
-        };
-        /**
-         * AuditSamples
-         * @description One gene's samples (the beeswarm).
-         */
-        AuditSamples: {
-            /** Changes */
-            changes: string[];
-            /** Fold */
-            fold: string;
-            /** Fold Log2 */
-            fold_log2: number | null;
-            /** Gene */
-            gene: string;
-            groups: components["schemas"]["AuditSampleGroups"];
-            /** Late Cut */
-            late_cut: string;
-            /** Line */
-            line: string;
-            /** Line Log2 */
-            line_log2: number;
-            /** Points */
-            points: components["schemas"]["AuditSamplePoint"][];
-        };
-        /**
-         * AuditSamplesRequest
-         * @description One gene's samples under a set of choices (decision id → option id).
-         */
-        AuditSamplesRequest: {
-            /** Changes */
-            changes?: {
-                [key: string]: string;
-            };
-            /** Gene */
-            gene: string;
-        };
-        /**
-         * AuditScope
-         * @description What was audited: the comparison, the samples and the choices varied.
-         */
-        AuditScope: {
-            /** Amplification Rule */
-            amplification_rule: string;
-            /** Analyses In Full Grid */
-            analyses_in_full_grid: number;
-            /** Control Gene Candidates */
-            control_gene_candidates: string[];
-            /**
-             * Decisions
-             * @description Each choice varied and its options.
-             */
-            decisions: {
-                [key: string]: string[];
-            };
-            /**
-             * Groups
-             * @description The two groups compared: [first, second].
-             */
-            groups: string[];
-            /**
-             * Mode
-             * @enum {string}
-             */
-            mode: "groups" | "marker_split";
-            /** N Genes Compared */
-            n_genes_compared: number;
-            /** N In Groups */
-            n_in_groups: number[];
-            /** N Samples */
-            n_samples: number;
-            /** Prespecified Control Genes */
-            prespecified_control_genes: string[];
-            /** Reference Sets */
-            reference_sets: number;
-            /** Undetermined Aligned */
-            undetermined_aligned: number;
-            /** Wells Excluded By A Person */
-            wells_excluded_by_a_person: number;
-        };
-        /**
-         * AuditSingleSample
-         * @description A single sample whose removal changes the call.
-         */
-        AuditSingleSample: {
-            /** Call */
-            call: string;
-            /**
-             * Call Key
-             * @enum {string}
-             */
-            call_key: "up" | "down" | "none";
-            /** Plate */
-            plate: string;
-            /** Sample */
-            sample: string;
-            /** Well */
-            well: string;
-        };
-        /**
-         * AuditSmallDesign
-         * @description False-call rates in small experiments drawn from the data (percent, worded).
-         */
-        AuditSmallDesign: {
-            /** Filtered */
-            filtered: string;
-            /** Single */
-            single: string;
-            /** Size */
-            size: string;
-        };
-        /**
-         * AuditSource
-         * @description Which file the audit describes.
-         */
-        AuditSource: {
-            /** Benchmark */
-            benchmark: boolean;
-            /** Name */
-            name: string;
-        };
-        /**
-         * AuditSpreadWarns
-         * @description Error when the spread is in the top quarter vs otherwise (percent, worded).
-         */
-        AuditSpreadWarns: {
-            /** Other */
-            other: string;
-            /** Top */
-            top: string;
-        };
-        /**
-         * AuditStatus
-         * @description Whether a study has an audit, one is running, or why it cannot have one.
-         */
-        AuditStatus: {
-            /** @description Not run yet: whether it applies and what it would cover, once checked. */
-            check?: components["schemas"]["AuditCheck"] | null;
-            /** @description Not run yet: the job checking it applies (~9 s on the demo). */
-            checking?: components["schemas"]["JobView"] | null;
-            /**
-             * Current
-             * @description Ready: true when no decision was made on the study since it was audited.
-             */
-            current?: boolean | null;
-            /**
-             * Decisions Since
-             * @description Decisions made after the audit.
-             * @default 0
-             */
-            decisions_since: number;
-            /** @description The running (or failed) audit job. */
-            job?: components["schemas"]["JobView"] | null;
-            /** @description The job loading the live views. */
-            loading?: components["schemas"]["JobView"] | null;
-            manifest?: components["schemas"]["AuditManifestView"] | null;
-            /**
-             * Reason
-             * @description Why not, in plain words (refused, not applicable, unavailable, failed).
-             */
-            reason?: string | null;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "none" | "running" | "ready" | "refused" | "not_applicable" | "unavailable" | "failed";
-            /** Study Id */
-            study_id: string;
-            /**
-             * Typical S
-             * @description How long an audit usually takes on the demo, measured.
-             */
-            typical_s: number;
-            /**
-             * Views Ready
-             * @description Ready: the live views are loaded (the first load rebuilds the study, ~15 s on the demo; the audit views wait for it).
-             * @default false
-             */
-            views_ready: boolean;
-        };
-        /**
-         * AuditStudyFacts
-         * @description The audited study in counts and the group words.
-         */
-        AuditStudyFacts: {
-            /** Analyses */
-            analyses: number;
-            /** Genes */
-            genes: number;
-            /**
-             * Group
-             * @description The first group (calls are higher / lower in it).
-             */
-            group: string;
-            /** Group Def */
-            group_def: string;
-            /** Plates */
-            plates: number;
-            /** Reasonable */
-            reasonable: number;
-            /**
-             * Rest
-             * @description The second group, as a sentence says it ('the rest').
-             */
-            rest: string;
-            /** Samples */
-            samples: number;
-        };
-        /**
-         * AuditStudyView
-         * @description The Study tab: map, choices, reference stability, fix-these-first, influence.
-         */
-        AuditStudyView: {
-            /** Choices */
-            choices: components["schemas"]["AuditChoiceSpread"][];
-            influence: components["schemas"]["AuditInfluence"];
-            /** Line */
-            line: string;
-            /** Line Log2 */
-            line_log2: number;
-            /** Lock Called */
-            lock_called: string[];
-            /** Lock Headline */
-            lock_headline: string[];
-            /** Map */
-            map: components["schemas"]["AuditMapPoint"][];
-            /** Reference Note */
-            reference_note: string;
-            /** References */
-            references: components["schemas"]["AuditReference"][];
-            /** Stable Below */
-            stable_below: string;
-        };
-        /**
-         * AuditTile
-         * @description One number tile of the gene card (worded).
-         */
-        AuditTile: {
-            /** Label */
-            label: string;
-            /** Sub */
-            sub: string;
-            /** Value */
-            value: string;
-        };
-        /**
-         * AuditVerdictCount
-         * @description One verdict, its rule in words and how many genes got it.
-         */
-        AuditVerdictCount: {
-            /** Count */
-            count: number;
-            /**
-             * Key
-             * @description The verdict, as words ('holds with caveats').
-             */
-            key: string;
-            /** Label */
-            label: string;
-            /** Rule */
-            rule: string;
-        };
-        /**
-         * AuditVerifyRequest
-         * @description Verify the audit; ``bind_to_record`` also checks it belongs to the study's record now.
-         */
-        AuditVerifyRequest: {
-            /**
-             * Bind To Record
-             * @default true
-             */
-            bind_to_record: boolean;
-        };
-        /**
-         * AuditVerifyView
-         * @description The audit's checksums and manifest, and (when asked) its binding to the record.
-         */
-        AuditVerifyView: {
-            /** Audit Chain Head */
-            audit_chain_head?: string | null;
-            /**
-             * Bound To Record
-             * @description Whether the record binding was checked.
-             */
-            bound_to_record: boolean;
-            /** Checksums Sha256 */
-            checksums_sha256: string | null;
-            /**
-             * Decisions Since
-             * @description Decisions in the record after the audited head.
-             */
-            decisions_since?: number | null;
-            /**
-             * Files
-             * @default []
-             */
-            files: components["schemas"]["AuditFile"][];
-            /** Files Checked */
-            files_checked: number;
-            /**
-             * Head In Chain
-             * @description The audited head is in the study's decision chain.
-             */
-            head_in_chain?: boolean | null;
-            /**
-             * Is Current
-             * @description No decision was made after the audit.
-             */
-            is_current?: boolean | null;
-            /** Lock Sha256 */
-            lock_sha256: string | null;
-            /** Ok */
-            ok: boolean;
-            /** Problems */
-            problems: string[];
-            /** Record Chain Head */
-            record_chain_head?: string | null;
-            /** Summary */
-            summary: string;
-        };
-        /**
-         * AuditWhatIf
-         * @description Every gene under the chosen options, changed calls counted.
-         */
-        AuditWhatIf: {
-            /** Changed Genes */
-            changed_genes: string[];
-            /**
-             * Changes
-             * @description The options chosen, as labels.
-             */
-            changes: string[];
-            /** Line */
-            line: string;
-            /** Line Log2 */
-            line_log2: number;
-            /** N Changed */
-            n_changed: number;
-            /** N Genes */
-            n_genes: number;
-            /** Rows */
-            rows: components["schemas"]["AuditWhatIfRow"][];
-        };
-        /**
-         * AuditWhatIfRequest
-         * @description Choices to change (decision id → option id) and genes to mark as picked.
-         */
-        AuditWhatIfRequest: {
-            /** Changes */
-            changes?: {
-                [key: string]: string;
-            };
-            /** Genes */
-            genes?: string[];
-        };
-        /**
-         * AuditWhatIfRow
-         * @description One gene, planned → chosen.
-         */
-        AuditWhatIfRow: {
-            /** Base */
-            base: string;
-            /** Base Call */
-            base_call: string;
-            /**
-             * Base Call Key
-             * @enum {string}
-             */
-            base_call_key: "up" | "down" | "none";
-            /** Base Log2 */
-            base_log2: number | null;
-            /** Changed */
-            changed: boolean;
-            /** Gene */
-            gene: string;
-            /** Headline */
-            headline: boolean;
-            /** New */
-            new: string;
-            /** New Call */
-            new_call: string;
-            /**
-             * New Call Key
-             * @enum {string}
-             */
-            new_call_key: "up" | "down" | "none";
-            /** New Log2 */
-            new_log2: number | null;
-            /** Picked */
-            picked: boolean;
-            /** Verdict */
-            verdict: string;
-        };
-        /**
-         * AuditYourChoices
-         * @description The analysis chosen on the Decision Cards against the prespecified one.
-         */
-        AuditYourChoices: {
-            /**
-             * Calls That Differ
-             * @default []
-             */
-            calls_that_differ: string[];
-            /**
-             * Changes From Prespecified
-             * @default {}
-             */
-            changes_from_prespecified: {
-                [key: string]: string;
-            };
-            /**
-             * No Simulator Counterpart
-             * @default []
-             */
-            no_simulator_counterpart: string[];
         };
         /** Body_open_file */
         Body_open_file: {
@@ -3227,8 +1379,11 @@ export type components = {
          * @description Act on exactly the listed proposals (the list the person was shown).
          */
         BulkRequest: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /** Ids */
             ids: string[];
             /**
@@ -3350,27 +1505,25 @@ export type components = {
             passed: boolean;
         };
         /**
-         * CitedFact
-         * @description A number the answer cites: what it is and its value as shown.
+         * CheckEdits
+         * @description An edited reading of a proposal, to check before accepting it (nothing is written).
          */
-        CitedFact: {
-            /**
-             * Id
-             * @default null
-             */
-            id: string | null;
-            /** Meaning */
-            meaning: string;
-            /** Value */
-            value: string;
+        CheckEdits: {
+            /** Edits */
+            edits: {
+                [key: string]: unknown;
+            };
         };
         /**
          * ConfirmRequest
          * @description Yes, confirm: accept this confirm step.
          */
         ConfirmRequest: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /** Proposal Id */
             proposal_id: string;
         };
@@ -3553,8 +1706,11 @@ export type components = {
          * @description Decide a card (always as a person; the reason is kept in the record).
          */
         DecideBody: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /** Option */
             option: string;
             /**
@@ -3741,6 +1897,14 @@ export type components = {
             study_id: string;
         };
         /**
+         * DemoFetched
+         * @description The demo file, downloaded and verified.
+         */
+        DemoFetched: {
+            /** Path */
+            path: string;
+        };
+        /**
          * DemoInfo
          * @description The public demo study (Vermeulen 2009 / Ruijter 2013), SHA-256 pinned.
          */
@@ -3813,6 +1977,26 @@ export type components = {
              * @description `run_id/well` when it points at a well.
              */
             well?: string | null;
+        };
+        /**
+         * Explanation
+         * @description A card explained by the model (or why the template's words stand).
+         */
+        Explanation: {
+            /** Card Id */
+            card_id: string;
+            /** Fallback */
+            fallback: boolean;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Provider */
+            provider: string;
+            text: components["schemas"]["FactText"];
+            /** Validated */
+            validated: boolean;
         };
         /**
          * FactRef
@@ -3894,20 +2078,24 @@ export type components = {
             card_option?: string | null;
             /**
              * Chosen
+             * @description The option in use now (a card's applied option, else planned).
              * @default false
              */
             chosen: boolean;
             /**
              * Conclusion
-             * @description Aligned with FlipsView.genes.
+             * @description Aligned with FlipsView.genes; null where the engine computed no call.
              */
-            conclusion: ("up" | "down" | "none")[];
+            conclusion: (("up" | "down" | "none") | null)[];
             /** Flips */
             flips: boolean[];
             /** Label */
             label: string;
-            /** Log2Fc */
-            log2fc: number[];
+            /**
+             * Log2Fc
+             * @description null where the engine computed none.
+             */
+            log2fc: (number | null)[];
             /** Planned */
             planned: boolean;
             /** Value */
@@ -3975,17 +2163,20 @@ export type components = {
              */
             cells: number[][];
             /** Conclusion */
-            conclusion: ("up" | "down" | "none")[];
+            conclusion: (("up" | "down" | "none") | null)[];
             /** Dimensions */
             dimensions: string[];
             /** Log2Fc */
-            log2fc: number[];
+            log2fc: (number | null)[];
             /** Options */
             options: {
                 [key: string]: string[];
             };
-            /** P */
-            p: number[];
+            /**
+             * P
+             * @description null where a group had too few values.
+             */
+            p: (number | null)[];
             /**
              * Planned
              * @description The planned option's index per dimension.
@@ -4048,7 +2239,7 @@ export type components = {
             headline: boolean;
             /**
              * Holds
-             * @description Share of reasonable analyses with the same call (0–1).
+             * @description Share of the analyses in qPilot's choice grid (every control-gene set, cut-off, empty-well rule and amplification-call rule; n_cells of them) with the same call, 0–1. Not the audit's reasonable set.
              */
             holds?: number | null;
             /** Level */
@@ -4309,6 +2500,11 @@ export type components = {
             /** Result */
             result?: unknown;
             /**
+             * Result Type
+             * @description The schema name of ``result`` (components.schemas), from JOB_RESULTS.
+             */
+            result_type?: string | null;
+            /**
              * Status
              * @enum {string}
              */
@@ -4341,6 +2537,26 @@ export type components = {
             prompt_sha256?: string | null;
             /** Provider */
             provider?: string | null;
+        };
+        /**
+         * MattersAnswer
+         * @description Does this proposal (or its first alternative) change a conclusion? Only yes / no.
+         */
+        MattersAnswer: {
+            /**
+             * Head
+             * @description The proposal chain head this answer holds for.
+             */
+            head: string;
+            /**
+             * Matters
+             * @description None: the rest of the design does not run yet.
+             */
+            matters: boolean | null;
+            /** Message */
+            message: string;
+            /** Proposal Id */
+            proposal_id: string;
         };
         /**
          * ModelSeen
@@ -4465,6 +2681,14 @@ export type components = {
             section: string;
             /** Title */
             title: string;
+        };
+        /**
+         * OpenDone
+         * @description An opened file: the workspace to go to.
+         */
+        OpenDone: {
+            /** Key */
+            key: string;
         };
         /**
          * OptionEffect
@@ -4773,8 +2997,11 @@ export type components = {
             edits?: {
                 [key: string]: unknown;
             } | null;
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /**
              * Reason
              * @description Kept in the record (≤ 500 chars).
@@ -4931,6 +3158,62 @@ export type components = {
             outcome?: components["schemas"]["ProposalOutcome"] | null;
         };
         /**
+         * ProposeReport
+         * @description What one round of proposing added to the inbox (the result of a propose job).
+         */
+        ProposeReport: {
+            /**
+             * Disagreements
+             * @description Curves: study wells where the Curve Judge disagrees.
+             * @default null
+             */
+            disagreements: number | null;
+            /**
+             * Fallback
+             * @description True when the model was not used at all (rules alone).
+             * @default null
+             */
+            fallback: boolean | null;
+            /**
+             * Fields By Model
+             * @description Fields the model made.
+             * @default null
+             */
+            fields_by_model: number | null;
+            /**
+             * Message
+             * @description What happened, in one or two sentences.
+             */
+            message: string;
+            /**
+             * Model Error
+             * @default null
+             */
+            model_error: string | null;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /**
+             * Proposed
+             * @description Ids of the proposals added.
+             */
+            proposed: string[];
+            /**
+             * Refused
+             * @default []
+             */
+            refused: components["schemas"]["RefusedProposal"][];
+            /** Stage */
+            stage: string;
+            /**
+             * Targets That Matter
+             * @default null
+             */
+            targets_that_matter: number | null;
+        };
+        /**
          * QuarantineEntry
          * @description One piece of free text from a file, stored once and cited by ``text_id`` everywhere else.
          *
@@ -4966,6 +3249,22 @@ export type components = {
             sheet_cells: {
                 [key: string]: string;
             };
+        };
+        /**
+         * RefusedProposal
+         * @description A proposal the inbox refused to take (with why).
+         */
+        RefusedProposal: {
+            /**
+             * Reason
+             * @default null
+             */
+            reason: string | null;
+            /**
+             * Subject
+             * @default null
+             */
+            subject: string | null;
         };
         /**
          * ResultsSummary
@@ -5051,6 +3350,12 @@ export type components = {
             /** Study Id */
             study_id: string;
             summary: components["schemas"]["ResultsSummary"];
+            /**
+             * Withheld
+             * @description Genes with no comparison (e.g. too few values in a group).
+             * @default []
+             */
+            withheld: components["schemas"]["WithheldGene"][];
         };
         /**
          * RuleView
@@ -5264,8 +3569,11 @@ export type components = {
          * @description Turn down an agent's request on a card (one option, or every request on it).
          */
         TurnDownBody: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /** Option */
             option?: string | null;
             /**
@@ -5279,8 +3587,11 @@ export type components = {
          * @description Undo the last change on a card (a new entry restoring the option before it).
          */
         UndoBody: {
-            /** Expected Head */
-            expected_head?: string | null;
+            /**
+             * Expected Head
+             * @description The chain head the view showed (409 stale when it moved).
+             */
+            expected_head: string;
             /**
              * Reason
              * @description Kept in the record (≤ 500 chars).
@@ -5299,6 +3610,22 @@ export type components = {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * WarmAllDone
+         * @description Startup: how many sessions' files were read.
+         */
+        WarmAllDone: {
+            /** Sessions */
+            sessions: number;
+        };
+        /**
+         * WarmDone
+         * @description A session's file, read (its stages and results can be shown now).
+         */
+        WarmDone: {
+            /** Key */
+            key: string;
         };
         /**
          * WellCall
@@ -5323,6 +3650,16 @@ export type components = {
             target: string;
             /** Well */
             well: string;
+        };
+        /**
+         * WithheldGene
+         * @description A gene the engine compared no fold change for, and why (it is not in ``genes``).
+         */
+        WithheldGene: {
+            /** Gene */
+            gene: string;
+            /** Reason */
+            reason: string;
         };
         /**
          * WorkspaceList
@@ -5395,6 +3732,12 @@ export type components = {
              * @description Unix time of the last write to this workspace.
              */
             updated_at: number;
+            /**
+             * Warming
+             * @description The file is being read for the first time since start.
+             * @default false
+             */
+            warming: boolean;
         };
         /**
          * WorkspaceView
@@ -5406,6 +3749,11 @@ export type components = {
              * @default []
              */
             active_jobs: components["schemas"]["JobView"][];
+            /**
+             * Autonomy
+             * @description What agents may do in this study (None: no study yet).
+             */
+            autonomy?: ("suggest" | "decide_and_tell") | null;
             /** Decisions Head */
             decisions_head?: string | null;
             facts?: components["schemas"]["FileFacts"] | null;
@@ -5441,6 +3789,12 @@ export type components = {
             summary?: components["schemas"]["InspectSummary"] | null;
             /** Title */
             title: string;
+            /**
+             * Warming
+             * @description The file is being read for the first time since start: stages, facts and results follow when the 'warm' job in active_jobs is done.
+             * @default false
+             */
+            warming: boolean;
         };
     };
     responses: never;
@@ -5467,475 +3821,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentsView"];
-                };
-            };
-        };
-    };
-    list_attached_audits: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachedAuditList"];
-                };
-            };
-        };
-    };
-    attached_audit: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachedAudit"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_analyses: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                gene: string;
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditAnalyses"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_effects: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                gene: string;
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditEffects"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_files: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditFiles"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_file: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                file: string;
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_gene: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                gene: string;
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditGeneCard"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_how: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditHow"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_issues: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditIssues"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_lab: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                gene: string;
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditLab"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_overview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditOverview"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_samples: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuditSamplesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditSamples"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_study: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditStudyView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_verify: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["AuditVerifyRequest"] | null;
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditVerifyView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attached_whatif: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuditWhatIfRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditWhatIf"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -6063,6 +3948,26 @@ export interface operations {
         };
     };
     get_model: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelStatus"];
+                };
+            };
+        };
+    };
+    check_model: {
         parameters: {
             query?: never;
             header?: never;
@@ -6516,7 +4421,7 @@ export interface operations {
         parameters: {
             query?: {
                 stage?: string | null;
-                status?: string | null;
+                status?: ("proposed" | "accepted" | "edited" | "rejected" | "superseded") | null;
             };
             header?: never;
             path: {
@@ -6601,6 +4506,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProposalDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckEdits"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalCheck"];
                 };
             };
             /** @description Validation Error */
@@ -6968,7 +4909,7 @@ export interface operations {
             };
         };
     };
-    audit_status: {
+    get_autonomy: {
         parameters: {
             query?: never;
             header?: never;
@@ -6985,7 +4926,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuditStatus"];
+                    "application/json": components["schemas"]["AutonomyView"];
                 };
             };
             /** @description Validation Error */
@@ -6999,324 +4940,7 @@ export interface operations {
             };
         };
     };
-    run_audit: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["AuditRunRequest"] | null;
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JobStarted"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_analyses: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                gene: string;
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditAnalyses"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_effects: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                gene: string;
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditEffects"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_files: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditFiles"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_file: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_gene: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                gene: string;
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditGeneCard"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_how: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditHow"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_issues: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditIssues"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_lab: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                gene: string;
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditLab"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_overview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditOverview"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_samples: {
+    put_autonomy: {
         parameters: {
             query?: never;
             header?: never;
@@ -7327,7 +4951,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuditSamplesRequest"];
+                "application/json": components["schemas"]["AutonomyBody"];
             };
         };
         responses: {
@@ -7337,108 +4961,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuditSamples"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_study: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditStudyView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    verify_study_audit: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["AuditVerifyRequest"] | null;
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditVerifyView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_whatif: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                study_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuditWhatIfRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditWhatIf"];
+                    "application/json": components["schemas"]["AutonomyView"];
                 };
             };
             /** @description Validation Error */
