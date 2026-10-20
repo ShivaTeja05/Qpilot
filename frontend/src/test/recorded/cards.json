@@ -1,0 +1,1553 @@
+[
+ {
+  "id": "card_refset",
+  "kind": "reference_set",
+  "rank": 1,
+  "impact": {
+   "flips": true,
+   "flips_anywhere": true,
+   "max_delta_log2fc": 0.5613286745490336,
+   "n_genes_flipped": 31,
+   "n_genes_flipped_anywhere": 51,
+   "n_genes_flipped_min3": 17,
+   "n_genes_flipped_single_only": 5
+  },
+  "evidence": {
+   "cutoff_M": 1.5,
+   "cutoff_V": 0.15,
+   "genorm_M": {
+    "ALUsq(Eurogentec)": 1.6815868417246653,
+    "HMBS": 1.9577268390849065,
+    "HPRT1": 1.6348541505971745,
+    "SDHA(1)": 1.9886431897382821,
+    "UBC(2)": 2.027457232121438
+   },
+   "genorm_V": {
+    "V2/3": 0.556137574945685,
+    "V3/4": 0.3874296046199954,
+    "V4/5": 0.32702994817071
+   },
+   "genorm_note": "geNorm M ranks stability across all samples; it cannot show whether a control gene differs between the groups. The pairwise ratios below check that.",
+   "genorm_order": [
+    "ALUsq(Eurogentec)",
+    "HPRT1",
+    "HMBS",
+    "SDHA(1)",
+    "UBC(2)"
+   ],
+   "genorm_validated": false,
+   "not_recommended": [
+    "alusq_eurogentec_alone",
+    "hmbs_alone",
+    "hprt1_alone",
+    "sdha_1_alone",
+    "ubc_2_alone"
+   ],
+   "not_recommended_note": "MIQE recommends normalising to more than one validated reference gene; a single gene is what a ΔΔCt spreadsheet does",
+   "ref_group_effect": {
+    "flag_fold": 1.4142135623730951,
+    "flag_log2": 0.5,
+    "flagged": [
+     "HMBS:UBC(2)",
+     "HMBS:HPRT1",
+     "SDHA(1):UBC(2)"
+    ],
+    "note": "10 pairs, no multiple-testing correction",
+    "pairs": [
+     {
+      "diff": 0.8121081699847252,
+      "fold": 1.7557752343077617,
+      "genes": [
+       "HMBS",
+       "UBC(2)"
+      ],
+      "label": "HMBS:UBC(2)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.05827911320778609
+     },
+     {
+      "diff": 0.7051718944458072,
+      "fold": 1.6303389050985089,
+      "genes": [
+       "HMBS",
+       "HPRT1"
+      ],
+      "label": "HMBS:HPRT1",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.04457062930054571
+     },
+     {
+      "diff": 0.5405342519702785,
+      "fold": 1.4545110452184498,
+      "genes": [
+       "SDHA(1)",
+       "UBC(2)"
+      ],
+      "label": "SDHA(1):UBC(2)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.1277752464286493
+     },
+     {
+      "diff": -0.43359797643135956,
+      "fold": 0.740412944839475,
+      "genes": [
+       "HPRT1",
+       "SDHA(1)"
+      ],
+      "label": "HPRT1:SDHA(1)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.15367903524384205
+     },
+     {
+      "diff": 0.4265167559977243,
+      "fold": 1.343984738671558,
+      "genes": [
+       "ALUsq(Eurogentec)",
+       "UBC(2)"
+      ],
+      "label": "ALUsq(Eurogentec):UBC(2)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.15068366629857258
+     },
+     {
+      "diff": -0.38559141398699737,
+      "fold": 0.7654651417847602,
+      "genes": [
+       "ALUsq(Eurogentec)",
+       "HMBS"
+      ],
+      "label": "ALUsq(Eurogentec):HMBS",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.2583403480840867
+     },
+     {
+      "diff": 0.3195804804588036,
+      "fold": 1.2479676011484355,
+      "genes": [
+       "ALUsq(Eurogentec)",
+       "HPRT1"
+      ],
+      "label": "ALUsq(Eurogentec):HPRT1",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.14214954115359332
+     },
+     {
+      "diff": 0.27157391801444586,
+      "fold": 1.207124029810351,
+      "genes": [
+       "HMBS",
+       "SDHA(1)"
+      ],
+      "label": "HMBS:SDHA(1)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.5175480782888241
+     },
+     {
+      "diff": -0.11401749597255417,
+      "fold": 0.9240113666305696,
+      "genes": [
+       "ALUsq(Eurogentec)",
+       "SDHA(1)"
+      ],
+      "label": "ALUsq(Eurogentec):SDHA(1)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.6294846143192222
+     },
+     {
+      "diff": 0.10693627553891716,
+      "fold": 1.0769388062917338,
+      "genes": [
+       "HPRT1",
+       "UBC(2)"
+      ],
+      "label": "HPRT1:UBC(2)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.745934517091589
+     }
+    ],
+    "raw": {
+     "ALUsq(Eurogentec)": {
+      "diff": -0.38521307813600814,
+      "fold": 0.7656659055456486,
+      "genes": [
+       "ALUsq(Eurogentec)"
+      ],
+      "label": "ALUsq(Eurogentec)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.022280403792892187
+     },
+     "HMBS": {
+      "diff": 0.0003783358509990009,
+      "fold": 1.0002622768169762,
+      "genes": [
+       "HMBS"
+      ],
+      "label": "HMBS",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.9991122625910315
+     },
+     "HPRT1": {
+      "diff": -0.7047935585948082,
+      "fold": 0.613530275017597,
+      "genes": [
+       "HPRT1"
+      ],
+      "label": "HPRT1",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.0071423014142437315
+     },
+     "SDHA(1)": {
+      "diff": -0.27119558216344863,
+      "fold": 0.828632561456112,
+      "genes": [
+       "SDHA(1)"
+      ],
+      "label": "SDHA(1)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.35176844945051605
+     },
+     "UBC(2)": {
+      "diff": -0.8117298341337253,
+      "fold": 0.569698363020449,
+      "genes": [
+       "UBC(2)"
+      ],
+      "label": "UBC(2)",
+      "n_hi": 53,
+      "n_lo": 294,
+      "p": 0.0009724114095198904
+     }
+    }
+   }
+  },
+  "options": [
+   {
+    "id": "recommended",
+    "label": "Recommended set (all five)",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.004116148990932,
+      "fc": 4.01142868409124,
+      "ci": [
+       2.933476511654864,
+       5.485491369580537
+      ],
+      "p": 5.043719769792568e-14,
+      "t": 8.809942372903476,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.1295178548982436,
+      "fc": 2.1878561042496822,
+      "ci": [
+       1.754371668359274,
+       2.7284494039847518
+      ],
+      "p": 1.2380920536773977e-09,
+      "t": 7.080947644062899,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.9109827526937413,
+      "fc": 0.0664778367884075,
+      "ci": [
+       0.031684262938106326,
+       0.13947942524965912
+      ],
+      "p": 1.348097591946546e-09,
+      "t": -7.338881992025331,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.730578087558588,
+      "fc": 3.3186076821812986,
+      "ci": [
+       2.292871356518271,
+       4.80321624539644
+      ],
+      "p": 2.065427855257047e-08,
+      "t": 6.494224390029188,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "top3",
+    "label": "Top three by stability (ALUsq(Eurogentec), HPRT1, HMBS)",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 1.9328148391821374,
+      "fc": 3.8179940096389324,
+      "ci": [
+       2.8087405194032375,
+       5.189898517480679
+      ],
+      "p": 1.1530565260052496e-13,
+      "t": 8.66338323798441,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.0582165450894498,
+      "fc": 2.0823557285475274,
+      "ci": [
+       1.6268776609345161,
+       2.665354306803799
+      ],
+      "p": 1.4099925130221552e-07,
+      "t": 5.940300446960948,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -4.030519968500385,
+      "fc": 0.06119171023245465,
+      "ci": [
+       0.02819128438434902,
+       0.13282209317328914
+      ],
+      "p": 2.040408290841923e-09,
+      "t": -7.232596122485437,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.6829665938185847,
+      "fc": 3.2108752049018148,
+      "ci": [
+       2.1542026402670853,
+       4.785863404277992
+      ],
+      "p": 2.487457729369707e-07,
+      "t": 5.852407145611438,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "top2",
+    "label": "Top two by stability (ALUsq(Eurogentec), HPRT1)",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.114608723920939,
+      "fc": 4.330725478480963,
+      "ci": [
+       3.0040151561648267,
+       6.243371685883427
+      ],
+      "p": 9.05442198230603e-12,
+      "t": 7.974303496064112,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.2400104298282495,
+      "fc": 2.3620023986717555,
+      "ci": [
+       1.8240153587259023,
+       3.058666860803282
+      ],
+      "p": 9.118658937344123e-09,
+      "t": 6.648996994799738,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.8376017004822085,
+      "fc": 0.06994662702722579,
+      "ci": [
+       0.034021483983993794,
+       0.14380709068386432
+      ],
+      "p": 1.02897725406616e-09,
+      "t": -7.403047676290467,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.8578180033934673,
+      "fc": 3.6245904805626865,
+      "ci": [
+       2.377116793131083,
+       5.526718834239956
+      ],
+      "p": 9.572064519509019e-08,
+      "t": 6.113574941063064,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "alusq_eurogentec_alone",
+    "label": "ALUsq(Eurogentec) alone",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 1.9548184836915379,
+      "fc": 3.876671483873009,
+      "ci": [
+       2.66630315315564,
+       5.6364865248302465
+      ],
+      "p": 2.49238671800787e-10,
+      "t": 7.200545424753117,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.080220189598844,
+      "fc": 2.1143587579654675,
+      "ci": [
+       1.6027476728801893,
+       2.789280579239038
+      ],
+      "p": 9.153234162728334e-07,
+      "t": 5.391612347249769,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.9814023470824083,
+      "fc": 0.0633108972908331,
+      "ci": [
+       0.030501347552055712,
+       0.1314128731174787
+      ],
+      "p": 5.284867313820111e-10,
+      "t": -7.57963270042866,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.6951914159992807,
+      "fc": 3.238198480114944,
+      "ci": [
+       2.1462256432163604,
+       4.885753475997234
+      ],
+      "p": 3.7528101228515605e-07,
+      "t": 5.7157259498448925,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "hmbs_alone",
+    "label": "HMBS alone",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 1.5692270697045405,
+      "fc": 2.9674568870557896,
+      "ci": [
+       2.0173695924935413,
+       4.364991129687125
+      ],
+      "p": 2.5480932089393243e-07,
+      "t": 5.604220362774201,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 0.694628775611843,
+      "fc": 1.618467926449882,
+      "ci": [
+       1.0549388722934288,
+       2.4830238962114857
+      ],
+      "p": 0.02809934659807537,
+      "t": 2.2493876271269877,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "none"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -4.416356504536745,
+      "fc": 0.04683216342361133,
+      "ci": [
+       0.01797520254904288,
+       0.12201540010199342
+      ],
+      "p": 4.2159390309113675e-08,
+      "t": -6.4146426961171725,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.3332637746688238,
+      "fc": 2.519720610063295,
+      "ci": [
+       1.5125910583488527,
+       4.197427928542902
+      ],
+      "p": 0.0006071345037605324,
+      "t": 3.6239281148482063,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "hprt1_alone",
+    "label": "HPRT1 alone",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.274398964150344,
+      "fc": 4.837960412169554,
+      "ci": [
+       3.1962378497260557,
+       7.322940923099911
+      ],
+      "p": 8.2713444415353e-11,
+      "t": 7.578550256279871,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.3998006700576555,
+      "fc": 2.6386512271453646,
+      "ci": [
+       1.919635447145068,
+       3.6269804815651434
+      ],
+      "p": 9.394102310605416e-08,
+      "t": 6.106299809826331,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.6938010538819968,
+      "fc": 0.07727785960781625,
+      "ci": [
+       0.036740549904494095,
+       0.16254159507925275
+      ],
+      "p": 6.253883197381585e-09,
+      "t": -6.906099664165205,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 2.020444590787649,
+      "fc": 4.057087986564451,
+      "ci": [
+       2.5046288740552853,
+       6.571817126772555
+      ],
+      "p": 3.025969379326146e-07,
+      "t": 5.816727452571448,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "sdha_1_alone",
+    "label": "SDHA(1) alone",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 1.840800987718989,
+      "fc": 3.5820885157912707,
+      "ci": [
+       2.218838801440795,
+       5.782915877724741
+      ],
+      "p": 1.0317751901920787e-06,
+      "t": 5.303628250936161,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 0.9662026936262924,
+      "fc": 1.953691525494989,
+      "ci": [
+       1.3094502370181555,
+       2.914895479711166
+      ],
+      "p": 0.001368552884079157,
+      "t": 3.341066992127011,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "none"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.9987443822939905,
+      "fc": 0.06255441916987395,
+      "ci": [
+       0.02992243542102295,
+       0.13077329109819227
+      ],
+      "p": 5.250422961749262e-10,
+      "t": -7.533666176108493,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.5520633951206655,
+      "fc": 2.932362365851836,
+      "ci": [
+       1.762199884925275,
+       4.879553743149178
+      ],
+      "p": 8.016872332730374e-05,
+      "t": 4.22271433362703,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "ubc_2_alone",
+    "label": "UBC(2) alone",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.3813352396892595,
+      "fc": 5.2101873111685375,
+      "ci": [
+       3.2658294248465882,
+       8.31214625324065
+      ],
+      "p": 7.152295138685866e-10,
+      "t": 7.036843923213141,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.5067369455965685,
+      "fc": 2.841665902782139,
+      "ci": [
+       1.9501286410341436,
+       4.140785860543263
+      ],
+      "p": 5.921911144345357e-07,
+      "t": 5.540442756867274,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.4646094756735586,
+      "fc": 0.09058340143794265,
+      "ci": [
+       0.04019849231200228,
+       0.20412090464441504
+      ],
+      "p": 2.2967652942860805e-07,
+      "t": -5.927538199776488,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 2.051927261216529,
+      "fc": 4.146595332934086,
+      "ci": [
+       2.6945463147207147,
+       6.381130938880486
+      ],
+      "p": 1.1958276075482045e-08,
+      "t": 6.599952917379744,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   }
+  ],
+  "recommended": "recommended",
+  "rationale_template": "refset_v1",
+  "facts": [
+   "f_order_1",
+   "f_m_1",
+   "f_worst_ref",
+   "f_fc_odc1_recommended",
+   "f_fc_odc1_worst",
+   "f_n_flipped_refset",
+   "f_n_genes",
+   "f_fc_birc5_recommended",
+   "f_fc_ntrk1_recommended",
+   "f_fc_nm23a_recommended",
+   "f_fc_odc1_top3",
+   "f_fc_birc5_top3",
+   "f_fc_ntrk1_top3",
+   "f_fc_nm23a_top3",
+   "f_fc_odc1_top2",
+   "f_fc_birc5_top2",
+   "f_fc_ntrk1_top2",
+   "f_fc_nm23a_top2",
+   "f_fc_odc1_alusq_eurogentec",
+   "f_fc_birc5_alusq_eurogentec",
+   "f_fc_ntrk1_alusq_eurogentec",
+   "f_fc_nm23a_alusq_eurogentec",
+   "f_fc_odc1_hmbs",
+   "f_fc_birc5_hmbs",
+   "f_fc_ntrk1_hmbs",
+   "f_fc_nm23a_hmbs",
+   "f_fc_odc1_hprt1",
+   "f_fc_birc5_hprt1",
+   "f_fc_ntrk1_hprt1",
+   "f_fc_nm23a_hprt1",
+   "f_fc_odc1_sdha_1",
+   "f_fc_birc5_sdha_1",
+   "f_fc_ntrk1_sdha_1",
+   "f_fc_nm23a_sdha_1",
+   "f_fc_odc1_ubc_2",
+   "f_fc_birc5_ubc_2",
+   "f_fc_ntrk1_ubc_2",
+   "f_fc_nm23a_ubc_2",
+   "f_n_flipped_refset_min3",
+   "f_n_flipped_refset_single_only",
+   "f_ref_pair_top",
+   "f_ref_ratio_top",
+   "f_ref_ratio_top_p",
+   "f_n_ref_pairs_flagged",
+   "f_n_ref_pairs",
+   "f_ref_flag_fold"
+  ],
+  "autonomy": "suggest",
+  "effective_autonomy": "suggest",
+  "status": "open",
+  "decision": null,
+  "reason": null,
+  "decided_by": null,
+  "decided_at": null
+ },
+ {
+  "id": "card_cutoff",
+  "kind": "group_cutoff",
+  "rank": 2,
+  "impact": {
+   "flips": true,
+   "flips_anywhere": true,
+   "max_delta_log2fc": 1.4444306021618858,
+   "n_genes_flipped": 17,
+   "n_genes_flipped_anywhere": 51
+  },
+  "evidence": {
+   "cuts": [
+    0.1,
+    0.15,
+    0.2
+   ],
+   "n_hi_by_cut": {
+    "cut_10": 35,
+    "cut_15": 53,
+    "cut_20": 70
+   }
+  },
+  "options": [
+   {
+    "id": "cut_10",
+    "label": "Top 10 % by MYCN expression",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.2073823902617566,
+      "fc": 4.6183656182784025,
+      "ci": [
+       3.4605564172824033,
+       6.163546670580243
+      ],
+      "p": 3.426783142014602e-16,
+      "t": 10.571863029925417,
+      "n_hi": 35,
+      "n_lo": 312,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.2722082659449834,
+      "fc": 2.4153098294043795,
+      "ci": [
+       1.8633701918852625,
+       3.1307367679393607
+      ],
+      "p": 2.803370884097675e-08,
+      "t": 6.86872241546658,
+      "n_hi": 35,
+      "n_lo": 312,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -5.210798007399138,
+      "fc": 0.027001848636689658,
+      "ci": [
+       0.011570547407175615,
+       0.06301342573874585
+      ],
+      "p": 4.717339849988406e-10,
+      "t": -8.668158808706286,
+      "n_hi": 32,
+      "n_lo": 310,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 2.3121247807007217,
+      "fc": 4.966139475840371,
+      "ci": [
+       3.2523441589870687,
+       7.58300477683184
+      ],
+      "p": 4.001707758052094e-09,
+      "t": 7.675708939130895,
+      "n_hi": 34,
+      "n_lo": 312,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "cut_15",
+    "label": "Top 15 % by MYCN expression",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.004116148990932,
+      "fc": 4.01142868409124,
+      "ci": [
+       2.933476511654864,
+       5.485491369580537
+      ],
+      "p": 5.043719769792568e-14,
+      "t": 8.809942372903476,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.1295178548982436,
+      "fc": 2.1878561042496822,
+      "ci": [
+       1.754371668359274,
+       2.7284494039847518
+      ],
+      "p": 1.2380920536773977e-09,
+      "t": 7.080947644062899,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.9109827526937413,
+      "fc": 0.0664778367884075,
+      "ci": [
+       0.031684262938106326,
+       0.13947942524965912
+      ],
+      "p": 1.348097591946546e-09,
+      "t": -7.338881992025331,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.730578087558588,
+      "fc": 3.3186076821812986,
+      "ci": [
+       2.292871356518271,
+       4.80321624539644
+      ],
+      "p": 2.065427855257047e-08,
+      "t": 6.494224390029188,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "cut_20",
+    "label": "Top 20 % by MYCN expression",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 1.7772023527379823,
+      "fc": 3.4276085425221767,
+      "ci": [
+       2.51606156657512,
+       4.669400970487038
+      ],
+      "p": 9.810882560878851e-13,
+      "t": 7.880191296463659,
+      "n_hi": 70,
+      "n_lo": 277,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 0.8713673570306373,
+      "fc": 1.8293959433422509,
+      "ci": [
+       1.4904469724504636,
+       2.2454267608157488
+      ],
+      "p": 7.532224760390074e-08,
+      "t": 5.855301428735615,
+      "n_hi": 70,
+      "n_lo": 277,
+      "conclusion": "none"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -2.917227082346936,
+      "fc": 0.13238145315772687,
+      "ci": [
+       0.06917397913109989,
+       0.25334452868379875
+      ],
+      "p": 2.876878088560197e-08,
+      "t": -6.208101104712229,
+      "n_hi": 66,
+      "n_lo": 276,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.43928183363911,
+      "fc": 2.7118583693355065,
+      "ci": [
+       1.9527770502204227,
+       3.7660089330243407
+      ],
+      "p": 4.549666635208124e-08,
+      "t": 6.0463816641856285,
+      "n_hi": 69,
+      "n_lo": 277,
+      "conclusion": "up"
+     }
+    }
+   }
+  ],
+  "recommended": "cut_15",
+  "rationale_template": "cutoff_v1",
+  "facts": [
+   "f_n_flipped_cutoff",
+   "f_n_genes",
+   "f_fc_odc1_cut_10",
+   "f_fc_birc5_cut_10",
+   "f_fc_ntrk1_cut_10",
+   "f_fc_nm23a_cut_10",
+   "f_fc_odc1_cut_15",
+   "f_fc_birc5_cut_15",
+   "f_fc_ntrk1_cut_15",
+   "f_fc_nm23a_cut_15",
+   "f_fc_odc1_cut_20",
+   "f_fc_birc5_cut_20",
+   "f_fc_ntrk1_cut_20",
+   "f_fc_nm23a_cut_20"
+  ],
+  "autonomy": "suggest",
+  "effective_autonomy": "suggest",
+  "status": "open",
+  "decision": null,
+  "reason": null,
+  "decided_by": null,
+  "decided_at": null
+ },
+ {
+  "id": "card_amp_call",
+  "kind": "amp_call",
+  "rank": 3,
+  "impact": {
+   "flips": true,
+   "flips_anywhere": true,
+   "max_delta_log2fc": 3.548397709871961,
+   "n_genes_flipped": 11,
+   "n_genes_flipped_anywhere": 48
+  },
+  "evidence": {
+   "method_card": "methods/amp_call.md",
+   "n_flipped_by_rule": {
+    "cq_le_35": 10,
+    "cq_le_38": 3,
+    "cq_le_40": 1,
+    "linregpcr": 0
+   },
+   "n_not_amplified_by_rule": {
+    "cq_le_35": 1642,
+    "cq_le_38": 663,
+    "cq_le_40": 460,
+    "linregpcr": 323
+   },
+   "recommended_rule": "linregpcr",
+   "rules": {
+    "cq_le_35": {
+     "cq_max": 35.0,
+     "id": "cq_le_35",
+     "kind": "cq_max",
+     "label": "Cq ≤ 35 (common, not recommended)",
+     "method_card": "methods/amp_call.md",
+     "note": "A common lab rule; it calls late but real wells, such as a few-copy standard, not detected.",
+     "recommended": false
+    },
+    "cq_le_38": {
+     "cq_max": 38.0,
+     "id": "cq_le_38",
+     "kind": "cq_max",
+     "label": "Cq ≤ 38 (a later Cq counts as not detected)",
+     "method_card": "methods/amp_call.md",
+     "note": "A well with Cq above the line is undetermined for every gene, controls included.",
+     "recommended": false
+    },
+    "cq_le_40": {
+     "cq_max": 40.0,
+     "id": "cq_le_40",
+     "kind": "cq_max",
+     "label": "Cq ≤ 40 (a later Cq counts as not detected)",
+     "method_card": "methods/amp_call.md",
+     "note": "A well with Cq above the line is undetermined for every gene, controls included.",
+     "recommended": false
+    },
+    "linregpcr": {
+     "id": "linregpcr",
+     "kind": "linregpcr",
+     "label": "LinRegPCR's own call (a starting quantity was found)",
+     "method_card": "methods/amp_call.md",
+     "note": "Every well with a LinRegPCR starting quantity counts; the engine's default.",
+     "recommended": true
+    }
+   },
+   "title": "Which curves count as amplified"
+  },
+  "options": [
+   {
+    "id": "linregpcr",
+    "label": "LinRegPCR's own call (a starting quantity was found)",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.004116148990932,
+      "fc": 4.01142868409124,
+      "ci": [
+       2.933476511654864,
+       5.485491369580537
+      ],
+      "p": 5.043719769792568e-14,
+      "t": 8.809942372903476,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.1295178548982436,
+      "fc": 2.1878561042496822,
+      "ci": [
+       1.754371668359274,
+       2.7284494039847518
+      ],
+      "p": 1.2380920536773977e-09,
+      "t": 7.080947644062899,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.9109827526937413,
+      "fc": 0.0664778367884075,
+      "ci": [
+       0.031684262938106326,
+       0.13947942524965912
+      ],
+      "p": 1.348097591946546e-09,
+      "t": -7.338881992025331,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.730578087558588,
+      "fc": 3.3186076821812986,
+      "ci": [
+       2.292871356518271,
+       4.80321624539644
+      ],
+      "p": 2.065427855257047e-08,
+      "t": 6.494224390029188,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "cq_le_40",
+    "label": "Cq ≤ 40 (a later Cq counts as not detected)",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.035723285671329,
+      "fc": 4.100282426554459,
+      "ci": [
+       2.991887423438099,
+       5.619300995687736
+      ],
+      "p": 4.06161442627708e-14,
+      "t": 8.88935843728269,
+      "n_hi": 52,
+      "n_lo": 293,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.0992406272652189,
+      "fc": 2.1424189508781053,
+      "ci": [
+       1.7182678002146854,
+       2.6712710093898973
+      ],
+      "p": 2.7926612219943405e-09,
+      "t": 6.89941809005133,
+      "n_hi": 52,
+      "n_lo": 293,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -2.0590444927083325,
+      "fc": 0.2399749143203667,
+      "ci": [
+       0.12824724487970876,
+       0.44903857043543305
+      ],
+      "p": 5.321884029349564e-05,
+      "t": -4.632541333743473,
+      "n_hi": 31,
+      "n_lo": 286,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.7475746157429581,
+      "fc": 3.357935725355451,
+      "ci": [
+       2.3051091747979062,
+       4.891626157623103
+      ],
+      "p": 2.687534386692757e-08,
+      "t": 6.448667056564162,
+      "n_hi": 51,
+      "n_lo": 293,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "cq_le_38",
+    "label": "Cq ≤ 38 (a later Cq counts as not detected)",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.050161360401384,
+      "fc": 4.1415228843313985,
+      "ci": [
+       3.0185530507675766,
+       5.682262830225592
+      ],
+      "p": 3.204630345640795e-14,
+      "t": 8.918870502021555,
+      "n_hi": 52,
+      "n_lo": 279,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.124948776632949,
+      "fc": 2.1809380290260485,
+      "ci": [
+       1.7487119471909034,
+       2.7199966776076296
+      ],
+      "p": 1.4756027195468079e-09,
+      "t": 7.0519238670161215,
+      "n_hi": 52,
+      "n_lo": 279,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -1.5296168918356947,
+      "fc": 0.34636933331194203,
+      "ci": [
+       0.19728431566077184,
+       0.6081158284536373
+      ],
+      "p": 0.0006160116111337166,
+      "t": -3.859522014925871,
+      "n_hi": 26,
+      "n_lo": 267,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.8000878329418841,
+      "fc": 3.48241426013674,
+      "ci": [
+       2.3908397230721,
+       5.072363890466446
+      ],
+      "p": 1.2814219901073143e-08,
+      "t": 6.644715968624424,
+      "n_hi": 51,
+      "n_lo": 279,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "cq_le_35",
+    "label": "Cq ≤ 35 (common, not recommended)",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.5926192350215658,
+      "fc": 6.031928112952599,
+      "ci": [
+       4.521680706032914,
+       8.046600174860524
+      ],
+      "p": 1.612540567966635e-22,
+      "t": 12.358156605642442,
+      "n_hi": 36,
+      "n_lo": 192,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.3693001806169711,
+      "fc": 2.5834521818979232,
+      "ci": [
+       2.016811212817394,
+       3.309295948840719
+      ],
+      "p": 1.0530712627975548e-09,
+      "t": 7.727063579759725,
+      "n_hi": 36,
+      "n_lo": 192,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -0.3625850428217803,
+      "fc": 0.7777697108141097,
+      "ci": [
+       0.3852509984541399,
+       1.5702119539915325
+      ],
+      "p": 0.44289778803670327,
+      "t": -0.799713003750718,
+      "n_hi": 10,
+      "n_lo": 174,
+      "conclusion": "none"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.982888832877883,
+      "fc": 3.952838007634257,
+      "ci": [
+       2.6498352052121086,
+       5.896566052056527
+      ],
+      "p": 2.776269363200845e-08,
+      "t": 6.956467681656509,
+      "n_hi": 35,
+      "n_lo": 192,
+      "conclusion": "up"
+     }
+    }
+   }
+  ],
+  "recommended": "linregpcr",
+  "rationale_template": "ampcall_v1",
+  "facts": [
+   "f_n_flipped_amp_call",
+   "f_n_genes",
+   "f_amp_primary",
+   "f_amp_label_linregpcr",
+   "f_amp_label_cq_le_40",
+   "f_amp_label_cq_le_38",
+   "f_amp_label_cq_le_35",
+   "f_n_flipped_amp_linregpcr",
+   "f_n_flipped_amp_cq_le_40",
+   "f_n_flipped_amp_cq_le_38",
+   "f_n_flipped_amp_cq_le_35",
+   "f_n_undetermined_amp_linregpcr",
+   "f_n_undetermined_amp_cq_le_40",
+   "f_n_undetermined_amp_cq_le_38",
+   "f_n_undetermined_amp_cq_le_35",
+   "f_fc_odc1_linregpcr",
+   "f_fc_birc5_linregpcr",
+   "f_fc_ntrk1_linregpcr",
+   "f_fc_nm23a_linregpcr",
+   "f_fc_odc1_cq_le_40",
+   "f_fc_birc5_cq_le_40",
+   "f_fc_ntrk1_cq_le_40",
+   "f_fc_nm23a_cq_le_40",
+   "f_fc_odc1_cq_le_38",
+   "f_fc_birc5_cq_le_38",
+   "f_fc_ntrk1_cq_le_38",
+   "f_fc_nm23a_cq_le_38",
+   "f_fc_odc1_cq_le_35",
+   "f_fc_birc5_cq_le_35",
+   "f_fc_ntrk1_cq_le_35",
+   "f_fc_nm23a_cq_le_35"
+  ],
+  "autonomy": "suggest",
+  "effective_autonomy": "suggest",
+  "status": "open",
+  "decision": null,
+  "reason": null,
+  "decided_by": null,
+  "decided_at": null
+ },
+ {
+  "id": "card_undetermined",
+  "kind": "undetermined",
+  "rank": 4,
+  "impact": {
+   "flips": false,
+   "flips_anywhere": true,
+   "max_delta_log2fc": 2.306021353648834,
+   "n_genes_flipped": 0,
+   "n_genes_flipped_anywhere": 28
+  },
+  "evidence": {
+   "n_undetermined": 323,
+   "n_unknown_wells": 23423
+  },
+  "options": [
+   {
+    "id": "drop",
+    "label": "Drop empty wells",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.004116148990932,
+      "fc": 4.01142868409124,
+      "ci": [
+       2.933476511654864,
+       5.485491369580537
+      ],
+      "p": 5.043719769792568e-14,
+      "t": 8.809942372903476,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.1295178548982436,
+      "fc": 2.1878561042496822,
+      "ci": [
+       1.754371668359274,
+       2.7284494039847518
+      ],
+      "p": 1.2380920536773977e-09,
+      "t": 7.080947644062899,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -3.9109827526937413,
+      "fc": 0.0664778367884075,
+      "ci": [
+       0.031684262938106326,
+       0.13947942524965912
+      ],
+      "p": 1.348097591946546e-09,
+      "t": -7.338881992025331,
+      "n_hi": 49,
+      "n_lo": 293,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.730578087558588,
+      "fc": 3.3186076821812986,
+      "ci": [
+       2.292871356518271,
+       4.80321624539644
+      ],
+      "p": 2.065427855257047e-08,
+      "t": 6.494224390029188,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   },
+   {
+    "id": "cap",
+    "label": "Count empty wells as very low (cap)",
+    "per_gene": {
+     "BIRC5": {
+      "target": "BIRC5",
+      "log2fc": 2.004116148990932,
+      "fc": 4.01142868409124,
+      "ci": [
+       2.933476511654864,
+       5.485491369580537
+      ],
+      "p": 5.043719769792568e-14,
+      "t": 8.809942372903476,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NM23A": {
+      "target": "NM23A",
+      "log2fc": 1.1295178548982436,
+      "fc": 2.1878561042496822,
+      "ci": [
+       1.754371668359274,
+       2.7284494039847518
+      ],
+      "p": 1.2380920536773977e-09,
+      "t": 7.080947644062899,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "up"
+     },
+     "NTRK1": {
+      "target": "NTRK1",
+      "log2fc": -4.387478793862561,
+      "fc": 0.04777902440696303,
+      "ci": [
+       0.022087240805171313,
+       0.1033553803038488
+      ],
+      "p": 1.032536132734826e-10,
+      "t": -7.892500876632122,
+      "n_hi": 53,
+      "n_lo": 294,
+      "conclusion": "down"
+     },
+     "ODC1": {
+      "target": "ODC1",
+      "log2fc": 1.730578087558588,
+      "fc": 3.3186076821812986,
+      "ci": [
+       2.292871356518271,
+       4.80321624539644
+      ],
+      "p": 2.065427855257047e-08,
+      "t": 6.494224390029188,
+      "n_hi": 52,
+      "n_lo": 294,
+      "conclusion": "up"
+     }
+    }
+   }
+  ],
+  "recommended": "drop",
+  "rationale_template": "undetermined_auto_v1",
+  "facts": [
+   "f_n_flipped_undetermined",
+   "f_n_undetermined",
+   "f_n_unknown_wells",
+   "f_pct_undetermined",
+   "f_fc_odc1_drop",
+   "f_fc_birc5_drop",
+   "f_fc_ntrk1_drop",
+   "f_fc_nm23a_drop",
+   "f_fc_odc1_cap",
+   "f_fc_birc5_cap",
+   "f_fc_ntrk1_cap",
+   "f_fc_nm23a_cap"
+  ],
+  "autonomy": "suggest",
+  "effective_autonomy": "suggest",
+  "status": "auto_decided",
+  "decision": "drop",
+  "reason": "Decided automatically: at the recommended settings no option on this card changes any conclusion. At other settings it can, so an agent must ask a person to change it.",
+  "decided_by": "system",
+  "decided_at": "2026-10-20T19:19:52Z"
+ }
+]

@@ -55,7 +55,19 @@ from qpilot.ai.client import (  # noqa: E402
 )
 from qpilot.ai.config import ModelConfig  # noqa: E402
 from qpilot.ai.explain import explain_card, log_line  # noqa: E402
-from qpilot.ai.profile import Profile, build_fewshots, load_profile  # noqa: E402
+from qpilot.ai.profile import build_fewshots  # noqa: E402
+from qpilot.ai.suggest_only import (  # noqa: E402, F401  (re-exported for older imports)
+    HARNESS_ITEMS_PER_TYPE,
+    SCORECARD_KEYS,
+    SUGGEST_ONLY_REASON,
+    UNDO_PREFIX,
+    SuggestOnlyStore,
+    acting_store,
+    load_profile_or_default,
+    run_scorecard,
+    snapshot,
+    undo_target,
+)
 from qpilot.app_state import (  # noqa: E402
     card_view,
     cards_in_order,
@@ -73,17 +85,13 @@ from qpilot.core.decisions import (  # noqa: E402
     MAX_REASON,
     DecisionError,
     apply_decision,
-    check_request,
-    needs_human,
     reject_request,
 )
 from qpilot.core.record import RecordError, write_record, zip_record  # noqa: E402
 from qpilot.core.store import StudyStore  # noqa: E402
 from qpilot.core.validator import names_from_result  # noqa: E402
 from qpilot.explain.templates import to_html  # noqa: E402
-from qpilot.harness.make_evalset import build_items  # noqa: E402
 from qpilot.harness.report import Report, markdown  # noqa: E402
-from qpilot.harness.run import run as run_harness  # noqa: E402
 from qpilot.io.datasets import (  # noqa: E402
     VERMEULEN_COMMIT,
     VERMEULEN_FILENAME,
@@ -91,25 +99,18 @@ from qpilot.io.datasets import (  # noqa: E402
     default_cache_dir,
 )
 from qpilot.qpcr.study import HEADLINE_GENES  # noqa: E402
-from qpilot.schemas import DecisionCard, DecisionEntry, DecisionOutcome  # noqa: E402
+from qpilot.schemas import DecisionCard, DecisionOutcome  # noqa: E402
 
 PROVIDERS = {"None": "none", "Anthropic": "anthropic", "Local": "openai_compatible"}
 PROVIDER_LABELS = {value: label for label, value in PROVIDERS.items()}
-SCORECARD_KEYS = {"none": "none", "anthropic": "anthropic", "openai_compatible": "local"}
 AUTONOMY_CHOICES = [("Suggest", "suggest"), ("Decide and tell me", "decide_and_tell")]
 MODEL_TIMEOUT_S = 15.0
-HARNESS_ITEMS_PER_TYPE = 3
-UNDO_PREFIX = "Undo:"
 DEMO_STUDY_ID = VERMEULEN_SHA256[:12]
 LOCAL_HOSTS = ["127.0.0.1", "localhost"]
 STALE_NOTICE = "This card changed since you read it. Please re-read it, then decide again."
 MOVED_NOTICE = (
     "Something was decided since this page last showed the study (another tab or an agent); "
     "the card below is current."
-)
-SUGGEST_ONLY_REASON = (
-    "Suggest mode: the assistant may only ask. This choice changes no conclusion, but a person "
-    "confirms it."
 )
 
 #: Everything passed to ``launch`` apart from per-launch paths; tests assert on it. Gradio falls
@@ -234,13 +235,6 @@ def build_client(provider_label: str, endpoint: str, model: str) -> tuple[ModelC
         return ModelClient(NoneBackend()), str(err)
 
 
-def _load_profile() -> Profile:
-    try:
-        return load_profile()
-    except Exception:  # a broken profile must not stop the app; the default is shown instead
-        return Profile()
-
-
 # ---------- small helpers ----------
 
 
@@ -278,55 +272,6 @@ def _genorm_figure(card: DecisionCard) -> go.Figure | None:
     return figure
 
 
-def undo_target(entries: list[DecisionEntry], card_id: str) -> str | None:
-    """The option Undo restores: one step back through the card's history, or ``None``.
-
-    Replays the card's applied entries as a stack: an entry whose reason starts with ``Undo:``
-    pops the step it undid, a repeated choice is not a new step.
-    """
-    stack: list[str] = []
-    for entry in entries:
-        if entry.card_id != card_id or entry.status not in ("applied", "auto"):
-            continue
-        if entry.reason.startswith(UNDO_PREFIX):
-            if stack:
-                stack.pop()
-            continue
-        if not stack or stack[-1] != entry.option:
-            stack.append(entry.option)
-    return stack[-2] if len(stack) >= 2 else None
-
-
-def _snapshot(store: StudyStore, study_id: str):
-    """Head, cards and pending requests read together under the workspace lock.
-
-    The store writes the log line before it replaces ``cards.json``; reading both under its lock
-    means the page never pairs a new head with an old card. (A ``snapshot`` method in the core
-    would replace this use of the store's lock.)
-    """
-    with store._locked(store.workspace(study_id)):
-        return store.chain_head(study_id), store.cards(study_id), store.pending(study_id)
-
-
-class SuggestOnlyStore(StudyStore):
-    """The store as the model sees it in *Suggest* mode: it may ask, never apply.
-
-    Every decision by an actor other than a person becomes a request for a person, on any card.
-    (The core already does this for choices that can change a conclusion.)
-    """
-
-    def append_decision(self, study_id, card_id, option, reason, actor, expected_head):
-        """Turn an agent's decision into a request; a person's decision passes through."""
-        if actor == "human":
-            return super().append_decision(study_id, card_id, option, reason, actor, expected_head)
-        card = self.card(study_id, card_id)
-        cleaned = check_request(card, option, reason)
-        outcome = self.request_human(study_id, card_id, option, cleaned, actor, expected_head)
-        if outcome.status == "pending_human" and not needs_human(card):
-            outcome = outcome.model_copy(update={"reason": SUGGEST_ONLY_REASON})
-        return outcome
-
-
 # ---------- the page ----------
 
 
@@ -340,7 +285,7 @@ def build_app(
         default_rdml: Analysed when Analyse is pressed with no file uploaded (the demo study).
         export_root: Folder for exported records; a private temporary folder by default.
     """
-    profile = _load_profile()
+    profile = load_profile_or_default()
     exports = Path(export_root) if export_root else Path(tempfile.mkdtemp(prefix="qpilot-exports-"))
     exports.mkdir(parents=True, exist_ok=True)
 
@@ -371,7 +316,7 @@ def build_app(
                 gr.update(choices=[], value=None),
                 hide_download,
             )
-        head, cards, pending = _snapshot(store, sid)
+        head, cards, pending = snapshot(store, sid)
         cards = cards_in_order(cards)
         if not cards:
             return card_outputs(new_session(), "This study has no decision cards.")
@@ -592,9 +537,7 @@ def build_app(
         if not sid:
             return (_notice("Analyse a study first."), *card_outputs(session))
         client, error = build_client(settings["provider"], settings["endpoint"], settings["model"])
-        acting = (
-            store if settings.get("autonomy") == "decide_and_tell" else SuggestOnlyStore(store.root)
-        )
+        acting = acting_store(store, settings.get("autonomy", "suggest"))
         before = store.chain_head(sid)
         try:
             answer = ask(question or "", acting, sid, client=client, profile=profile)
@@ -628,16 +571,10 @@ def build_app(
         client, error = build_client(settings["provider"], settings["endpoint"], settings["model"])
         if error:
             return f"Model not available: {error}"
-        result, cards = store.get(sid), store.cards(sid)
-        items = build_items(result, cards, n_per_type=HARNESS_ITEMS_PER_TYPE)
-        key = SCORECARD_KEYS.get(client.provider, client.provider)
-        report = run_harness(items, client, store, sid, profile=profile, profile_name=key)
-        saved = store.scorecard(sid)
-        saved[report.profile] = report.model_dump()
-        store.put_scorecard(sid, saved)
+        key, saved, n_items = run_scorecard(store, sid, client, profile)
         table = markdown([Report.model_validate(r) for r in saved.values()])
         return (
-            f"{table}\nComputed now on {len(items)} questions for {key}. *Fallbacks* counts "
+            f"{table}\nComputed now on {n_items} questions for {key}. *Fallbacks* counts "
             "answers where the model was not usable and a template answered instead."
         )
 

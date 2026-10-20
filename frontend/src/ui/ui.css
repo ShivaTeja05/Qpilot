@@ -1,0 +1,125 @@
+/*
+ * The UI kit's motion (plain CSS on the design tokens; imported once by the shell).
+ * 120–200 ms ease-out; nothing moves under prefers-reduced-motion (styles.css also caps it).
+ */
+
+@keyframes qp-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes qp-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes qp-slide-right-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@keyframes qp-slide-left-in {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+}
+@keyframes qp-slide-up-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@keyframes qp-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@keyframes qp-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.qp-fade[data-state="open"],
+.qp-fade[data-state="delayed-open"],
+.qp-fade[data-state="instant-open"] {
+  animation: qp-fade-in 140ms ease-out;
+}
+.qp-pop[data-state="open"] {
+  animation: qp-pop-in 160ms ease-out;
+}
+.qp-slide-right[data-state="open"] {
+  animation: qp-slide-right-in 200ms ease-out;
+}
+.qp-slide-left[data-state="open"] {
+  animation: qp-slide-left-in 200ms ease-out;
+}
+.qp-slide-up[data-state="open"] {
+  animation: qp-slide-up-in 200ms ease-out;
+}
+
+.qp-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-sunken) 0%,
+    var(--bg-subtle) 40%,
+    var(--surface-sunken) 80%
+  );
+  background-size: 200% 100%;
+  animation: qp-shimmer 1.4s ease-in-out infinite;
+}
+
+.qp-indeterminate {
+  animation: qp-indeterminate 1.3s ease-in-out infinite;
+}
+
+/* Thin, quiet scrollbars inside panes. */
+.qp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* The command palette (cmdk) items. */
+[cmdk-item][data-selected="true"] {
+  background: var(--bg-subtle);
+}
+[cmdk-group-heading] {
+  padding: 8px 8px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* uPlot: legend and axes in the page's type and colours. */
+.uplot,
+.uplot * {
+  font-family: var(--font-sans, "Inter Variable", system-ui, sans-serif);
+}
+.u-legend {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.u-select {
+  background: color-mix(in oklab, var(--accent) 15%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qp-fade,
+  .qp-pop,
+  .qp-slide-right,
+  .qp-slide-left,
+  .qp-slide-up,
+  .qp-skeleton,
+  .qp-indeterminate {
+    animation: none !important;
+  }
+}
