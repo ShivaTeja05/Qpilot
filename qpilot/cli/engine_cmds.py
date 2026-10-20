@@ -296,7 +296,8 @@ def _app_arguments(parser: argparse.ArgumentParser) -> None:
         action="append",
         default=[],
         metavar="DIR",
-        help="also show a robustness-audit results folder, read-only (repeatable)",
+        help="also show a robustness-audit results folder (`qsim run --out DIR`), read-only "
+        "(repeatable)",
     )
 
 
@@ -356,7 +357,7 @@ def _doctor(args: argparse.Namespace) -> int:
     described = config.describe()
     print(f"provider: {described['provider']}")
     print(f"QPILOT_API_KEY: {described['api_key']}")
-    print("app: 127.0.0.1 only, never shared, Gradio telemetry forced off")
+    print("app: 127.0.0.1 only, this launch's key required, telemetry off")
     if config.provider == "none":
         print("outbound: none")
     else:
@@ -366,7 +367,10 @@ def _doctor(args: argparse.Namespace) -> int:
         print(studio_outbound_line())  # Studio's own default: a local model unless one is named
     except ValueError as err:
         print(f"outbound (Studio): INVALID ({err})")
-    print("(in the app you can pick a model; the API key is only sent where it was configured)")
+    print(
+        "(the model is set in the environment: QPILOT_MODEL_PROVIDER, _ENDPOINT, _NAME; the page "
+        "shows its status in Settings; the API key is only sent where it was configured)"
+    )
     if not cached:
         print("(`qpilot fetch-demo` downloads the pinned demo study once; nothing else does)")
     print("OK")

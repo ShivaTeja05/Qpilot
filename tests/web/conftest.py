@@ -106,3 +106,84 @@ def opened(sclient, mini_rdml) -> str:
     job = wait_job(sclient, r.json()["job"])
     assert job["status"] == "done", job
     return job["result"]["key"]
+
+
+# ---- an analysed study (the mini file walked through Studio once per module) -----------------
+
+MINI_GROUPS = {"WT_1": "WT", "WT_2": "WT", "KO_1": "KO", "KO_2": "KO"}
+
+
+def walk_mini(studio, rdml) -> tuple[str, str]:
+    """Open, propose, decide and confirm the mini file as a person would; analyse it."""
+    from qpilot.mcp_server import QpilotTools
+
+    tools = QpilotTools(studio.store)
+    sid = studio.open(rdml)
+    studio.propose_design(sid)
+    for sample, group in MINI_GROUPS.items():
+        tools.qpcr_propose(sid, "design.group", sample, {"group": group})
+    for p in studio.inbox(sid, "design", "proposed"):
+        studio.accept(sid, p.id, "human", "checked")
+    comparison = studio.propose_comparison(sid)
+    studio.accept(sid, comparison.proposal.id, "human", "WT is the reference")
+    for stage in ("design", "curves"):
+        if stage == "curves":
+            studio.propose_curves(sid)
+            for p in studio.inbox(sid, "curves", "proposed"):
+                studio.accept(sid, p.id, "human", "checked")
+        confirm = studio.propose_confirm(sid, stage)
+        studio.accept(sid, confirm.proposal.id, "human")
+    return sid, studio.study(sid)
+
+
+@pytest.fixture(scope="module")
+def mini_walked(tmp_path_factory):
+    """A store holding the walked mini session and its analysed study (built once)."""
+    from qpilot.ai.client import ModelClient, NoneBackend
+    from qpilot.qpcr import design_checks
+    from qpilot.qpcr import inspect as qinspect
+    from qpilot.studio_service import Studio
+    from tests.fixtures.studio.studio_mini import write_studio_mini
+
+    base = tmp_path_factory.mktemp("walked")
+    root = base / "data"
+    root.mkdir()
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("QPILOT_DATA_ROOTS", str(root))
+        mp.setenv("QPILOT_STUDIES_DIR", str(base / "studies"))
+        qinspect.clear_cache()
+        rdml = write_studio_mini(root / "mini.rdml")
+        studio = Studio(StudyStore(base / "studies"), client=ModelClient(backend=NoneBackend()))
+        sid, study_id = walk_mini(studio, rdml)
+        design_checks._DECLARED.clear()
+        design_checks.set_input_resolver(None)
+        qinspect.clear_cache()
+    return {"base": base, "root": root, "sid": sid, "study": study_id}
+
+
+@pytest.fixture
+def walked(mini_walked, tmp_path, monkeypatch):
+    """A private copy of the walked store, its server context and a keyed client."""
+    import shutil
+
+    from qpilot.ai.client import ModelClient, NoneBackend
+    from qpilot.qpcr import design_checks
+    from qpilot.qpcr import inspect as qinspect
+    from qpilot.studio_service import Studio
+
+    shutil.copytree(mini_walked["base"], tmp_path / "w", symlinks=False)
+    # the session is bound to the file by path: the copy keeps the original data root
+    monkeypatch.setenv("QPILOT_DATA_ROOTS", str(mini_walked["root"]))
+    monkeypatch.setenv("QPILOT_STUDIES_DIR", str(tmp_path / "w" / "studies"))
+    qinspect.clear_cache()
+    store = StudyStore(tmp_path / "w" / "studies")
+    studio = Studio(store, client=ModelClient(backend=NoneBackend()))
+    ctx = make_context(store, studio, token=TOKEN, watch=False)
+    with TestClient(create_app(ctx), base_url=BASE) as c:
+        c.headers["x-qpilot-token"] = TOKEN
+        c.headers["origin"] = BASE
+        yield {"client": c, "store": store, "studio": studio, "ctx": ctx, **mini_walked}
+    ctx.close()
+    design_checks._DECLARED.clear()
+    design_checks.set_input_resolver(None)
+    qinspect.clear_cache()
