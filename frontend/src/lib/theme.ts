@@ -22,7 +22,10 @@ function readChoice(): ThemeChoice {
 
 let choice: ThemeChoice = typeof window === "undefined" ? "system" : readChoice();
 
-const media = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+const media =
+  typeof window !== "undefined" && window.matchMedia
+    ? window.matchMedia("(prefers-color-scheme: dark)")
+    : null;
 media?.addEventListener?.("change", () => listeners.forEach((l) => l()));
 
 function systemTheme(): Theme {
@@ -50,7 +53,10 @@ function subscribe(cb: () => void) {
 
 /** The saved choice and the theme in effect. */
 export function useTheme(): { choice: ThemeChoice; theme: Theme; setTheme: typeof setTheme } {
-  const snapshot = useSyncExternalStore(subscribe, () => `${choice}:${choice === "system" ? systemTheme() : choice}`);
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    () => `${choice}:${choice === "system" ? systemTheme() : choice}`,
+  );
   const [c, t] = snapshot.split(":") as [ThemeChoice, Theme];
   return { choice: c, theme: t, setTheme };
 }

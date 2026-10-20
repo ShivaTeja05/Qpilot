@@ -2,19 +2,20 @@ import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 /** A surface with a 1 px line and a 12 px radius; no shadow (only floating layers have one). */
-export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & { as?: "div" | "section" | "article" | "li" }>(
-  function Card({ className, as: As = "div", ...rest }, ref) {
-    // One element type for the props; the tag only changes semantics.
-    const Comp = As as "div";
-    return (
-      <Comp
-        ref={ref}
-        className={cn("rounded-xl border border-line bg-surface", className)}
-        {...rest}
-      />
-    );
-  },
-);
+export const Card = forwardRef<
+  HTMLDivElement,
+  HTMLAttributes<HTMLDivElement> & { as?: "div" | "section" | "article" | "li" }
+>(function Card({ className, as: As = "div", ...rest }, ref) {
+  // One element type for the props; the tag only changes semantics.
+  const Comp = As as "div";
+  return (
+    <Comp
+      ref={ref}
+      className={cn("rounded-xl border border-line bg-surface", className)}
+      {...rest}
+    />
+  );
+});
 
 /** A card's header row: a title (and a hint) on the left, actions on the right. */
 export function CardHeader({
@@ -34,7 +35,12 @@ export function CardHeader({
 }) {
   const H = level === 2 ? "h2" : "h3";
   return (
-    <div className={cn("flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 pt-4 pb-3", className)}>
+    <div
+      className={cn(
+        "flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 pt-4 pb-3",
+        className,
+      )}
+    >
       <div className="min-w-0">
         <H id={id} className="text-[15px] font-semibold tracking-tight text-fg">
           {title}
@@ -92,7 +98,11 @@ export function PageHeader({
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0 max-w-3xl">
-        {eyebrow ? <div className="mb-1 text-xs font-medium uppercase tracking-wider text-faint">{eyebrow}</div> : null}
+        {eyebrow ? (
+          <div className="mb-1 text-xs font-medium uppercase tracking-wider text-faint">
+            {eyebrow}
+          </div>
+        ) : null}
         <h1 className="text-2xl font-semibold tracking-tight text-fg">{title}</h1>
         {hint ? <p className="mt-1 text-sm text-muted">{hint}</p> : null}
       </div>
@@ -102,9 +112,20 @@ export function PageHeader({
 }
 
 /** Label / value pairs (file facts, a check's numbers). */
-export function KeyValues({ rows, className }: { rows: [ReactNode, ReactNode][]; className?: string }) {
+export function KeyValues({
+  rows,
+  className,
+}: {
+  rows: [ReactNode, ReactNode][];
+  className?: string;
+}) {
   return (
-    <dl className={cn("grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]", className)}>
+    <dl
+      className={cn(
+        "grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]",
+        className,
+      )}
+    >
       {rows.map(([k, v], i) => (
         <div key={i} className="contents">
           <dt className="text-muted">{k}</dt>

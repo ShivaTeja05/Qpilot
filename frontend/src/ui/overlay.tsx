@@ -32,7 +32,17 @@ export interface DialogProps {
 const DIALOG_SIZE = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
 
 /** A modal dialog with a title, an optional description, a body and a footer. */
-export function Dialog({ open, onOpenChange, trigger, title, description, children, footer, size = "md", hideClose }: DialogProps) {
+export function Dialog({
+  open,
+  onOpenChange,
+  trigger,
+  title,
+  description,
+  children,
+  footer,
+  size = "md",
+  hideClose,
+}: DialogProps) {
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       {trigger ? <D.Trigger asChild>{trigger}</D.Trigger> : null}
@@ -49,7 +59,9 @@ export function Dialog({ open, onOpenChange, trigger, title, description, childr
           <div className="flex items-start justify-between gap-4 border-b border-line px-5 pt-4 pb-3">
             <div className="min-w-0">
               <D.Title className="text-base font-semibold tracking-tight">{title}</D.Title>
-              {description ? <D.Description className="mt-1 text-[13px] text-muted">{description}</D.Description> : null}
+              {description ? (
+                <D.Description className="mt-1 text-[13px] text-muted">{description}</D.Description>
+              ) : null}
             </div>
             {hideClose ? null : (
               <D.Close asChild>
@@ -59,7 +71,9 @@ export function Dialog({ open, onOpenChange, trigger, title, description, childr
               </D.Close>
             )}
           </div>
-          {children ? <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-sm">{children}</div> : null}
+          {children ? (
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-sm">{children}</div>
+          ) : null}
           {footer ? (
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2 px-5 py-3 rounded-b-xl">
               {footer}
@@ -90,6 +104,8 @@ export interface SheetProps {
   actions?: ReactNode;
   /** Keep the page behind usable (no overlay, no focus trap): e.g. the Ask drawer on wide screens. */
   modal?: boolean;
+  /** Start a side sheet this many px below the top (e.g. under a top bar). */
+  offsetTop?: number;
 }
 
 /** A drawer from the side (Ask, details) or the bottom (phones). */
@@ -104,6 +120,7 @@ export function Sheet({
   footer,
   actions,
   modal = true,
+  offsetTop,
 }: SheetProps) {
   const place =
     side === "bottom"
@@ -116,15 +133,24 @@ export function Sheet({
       <D.Portal>
         {modal ? <D.Overlay className="qp-fade fixed inset-0 z-40 bg-black/30" /> : null}
         <D.Content
-          className={cn("fixed z-40 flex flex-col border-line bg-surface text-fg shadow-lg outline-none", place)}
-          style={side === "bottom" ? undefined : { width: `min(${width}px, 100vw)` }}
+          className={cn(
+            "fixed z-40 flex flex-col border-line bg-surface text-fg shadow-lg outline-none",
+            place,
+          )}
+          style={
+            side === "bottom" ? undefined : { width: `min(${width}px, 100vw)`, top: offsetTop }
+          }
           onInteractOutside={modal ? undefined : (e) => e.preventDefault()}
           {...(description ? {} : { "aria-describedby": undefined })}
         >
           <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
             <div className="min-w-0">
               <D.Title className="text-[15px] font-semibold tracking-tight">{title}</D.Title>
-              {description ? <D.Description className="mt-0.5 text-[13px] text-muted">{description}</D.Description> : null}
+              {description ? (
+                <D.Description className="mt-0.5 text-[13px] text-muted">
+                  {description}
+                </D.Description>
+              ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-1">
               {actions}
@@ -176,7 +202,11 @@ export function Popover({
           sideOffset={6}
           collisionPadding={12}
           aria-label={label}
-          className={cn(LAYER, "qp-pop w-80 max-w-[calc(100vw-24px)] p-3 text-sm outline-none", className)}
+          className={cn(
+            LAYER,
+            "qp-pop w-80 max-w-[calc(100vw-24px)] p-3 text-sm outline-none",
+            className,
+          )}
         >
           {children}
         </P.Content>
@@ -241,7 +271,11 @@ export function Tooltip({
 export const Menu = M.Root;
 export const MenuTrigger = M.Trigger;
 
-export function MenuContent({ className, align = "end", ...rest }: ComponentProps<typeof M.Content>) {
+export function MenuContent({
+  className,
+  align = "end",
+  ...rest
+}: ComponentProps<typeof M.Content>) {
   return (
     <M.Portal>
       <M.Content
