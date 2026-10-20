@@ -1,0 +1,282 @@
+{
+ "stages": [
+  {
+   "title": "Curves to quantities",
+   "text": "Each well's curve gives a Cq and an amplification efficiency.",
+   "decisions": [
+    {
+     "name": "The efficiency model",
+     "question": "Which amplification efficiency turns Cq into quantity?",
+     "planned": "LinRegPCR mean efficiency per assay",
+     "n_options": 4,
+     "n_reasonable": 1,
+     "n_shortcut": 2,
+     "alone": 6,
+     "changes_question": false,
+     "options": [
+      {
+       "label": "LinRegPCR mean efficiency per assay",
+       "tier": "prespecified"
+      },
+      {
+       "label": "standard-curve slope of the plate's dilution series",
+       "tier": "defensible"
+      },
+      {
+       "label": "each well's own efficiency",
+       "tier": "common_practice"
+      },
+      {
+       "label": "assume 100 % (the ddCq shortcut)",
+       "tier": "common_practice"
+      }
+     ],
+     "more": 0
+    }
+   ]
+  },
+  {
+   "title": "Which wells count",
+   "text": "Wells that were flagged, amplified very late or never amplified.",
+   "decisions": [
+    {
+     "name": "How flagged wells are handled",
+     "question": "What happens to wells LinRegPCR flagged?",
+     "planned": "keep every quantified well",
+     "n_options": 3,
+     "n_reasonable": 1,
+     "n_shortcut": 1,
+     "alone": 4,
+     "changes_question": false,
+     "options": [
+      {
+       "label": "keep every quantified well",
+       "tier": "prespecified"
+      },
+      {
+       "label": "drop efficiency-outlier wells",
+       "tier": "defensible"
+      },
+      {
+       "label": "also drop wells below 10 copies",
+       "tier": "common_practice"
+      }
+     ],
+     "more": 0
+    },
+    {
+     "name": "The late-Cq cut-off",
+     "question": "Are very late Cq values treated as not detected?",
+     "planned": "keep every Cq",
+     "n_options": 3,
+     "n_reasonable": 2,
+     "n_shortcut": 0,
+     "alone": 11,
+     "changes_question": false,
+     "options": [
+      {
+       "label": "keep every Cq",
+       "tier": "prespecified"
+      },
+      {
+       "label": "Cq above 35 counts as not detected",
+       "tier": "defensible"
+      },
+      {
+       "label": "Cq above 38 counts as not detected",
+       "tier": "defensible"
+      }
+     ],
+     "more": 0
+    },
+    {
+     "name": "How non-detects are handled",
+     "question": "What happens to wells that never amplified?",
+     "planned": "leave them out",
+     "n_options": 3,
+     "n_reasonable": 1,
+     "n_shortcut": 1,
+     "alone": 0,
+     "changes_question": false,
+     "options": [
+      {
+       "label": "leave them out",
+       "tier": "prespecified"
+      },
+      {
+       "label": "set to the lowest amount detected",
+       "tier": "defensible"
+      },
+      {
+       "label": "substitute Cq = 40",
+       "tier": "common_practice"
+      }
+     ],
+     "more": 0
+    }
+   ]
+  },
+  {
+   "title": "Normalise",
+   "text": "Each sample is divided by the average of its reference genes.",
+   "decisions": [
+    {
+     "name": "The reference genes",
+     "question": "Which reference genes is each sample divided by?",
+     "planned": "normalise to 5 reference genes: ALUsq+HMBS+HPRT1+SDHA+UBC",
+     "n_options": 31,
+     "n_reasonable": 1,
+     "n_shortcut": 29,
+     "alone": 31,
+     "changes_question": false,
+     "options": [
+      {
+       "label": "normalise to 1 reference gene: ALUsq",
+       "tier": "common_practice"
+      },
+      {
+       "label": "normalise to 1 reference gene: HMBS",
+       "tier": "common_practice"
+      },
+      {
+       "label": "normalise to 1 reference gene: HPRT1",
+       "tier": "common_practice"
+      },
+      {
+       "label": "normalise to 1 reference gene: SDHA",
+       "tier": "common_practice"
+      },
+      {
+       "label": "normalise to 1 reference gene: UBC",
+       "tier": "common_practice"
+      },
+      {
+       "label": "normalise to 2 reference genes: ALUsq+HMBS",
+       "tier": "common_practice"
+      },
+      {
+       "label": "normalise to 2 reference genes: ALUsq+HPRT1",
+       "tier": "common_practice"
+      },
+      {
+       "label": "normalise to 2 reference genes: ALUsq+SDHA",
+       "tier": "common_practice"
+      }
+     ],
+     "more": 23
+    }
+   ]
+  },
+  {
+   "title": "Define the groups",
+   "text": "Samples are split into the high group and the rest.",
+   "decisions": [
+    {
+     "name": "The group cut-off",
+     "question": "Where is the MYCN-high group cut?",
+     "planned": "top 15 % by MYCN expression",
+     "n_options": 3,
+     "n_reasonable": 2,
+     "n_shortcut": 0,
+     "alone": 17,
+     "changes_question": true,
+     "options": [
+      {
+       "label": "top 10 % by MYCN expression",
+       "tier": "defensible"
+      },
+      {
+       "label": "top 15 % by MYCN expression",
+       "tier": "prespecified"
+      },
+      {
+       "label": "top 20 % by MYCN expression",
+       "tier": "defensible"
+      }
+     ],
+     "more": 0
+    }
+   ]
+  },
+  {
+   "title": "Compare the groups",
+   "text": "A two-group test gives a p-value for each gene.",
+   "decisions": [
+    {
+     "name": "The statistical test",
+     "question": "Which two-group test gives the p-value?",
+     "planned": "Welch t-test",
+     "n_options": 3,
+     "n_reasonable": 2,
+     "n_shortcut": 0,
+     "alone": 0,
+     "changes_question": false,
+     "options": [
+      {
+       "label": "Welch t-test",
+       "tier": "prespecified"
+      },
+      {
+       "label": "Student t-test (equal variances)",
+       "tier": "defensible"
+      },
+      {
+       "label": "Mann-Whitney U (rank test)",
+       "tier": "defensible"
+      }
+     ],
+     "more": 0
+    }
+   ]
+  },
+  {
+   "title": "Many genes at once",
+   "text": "The p-values may be corrected for testing many genes.",
+   "decisions": [
+    {
+     "name": "The multiple-testing correction",
+     "question": "Is the p-value corrected for testing many genes?",
+     "planned": "no correction",
+     "n_options": 3,
+     "n_reasonable": 2,
+     "n_shortcut": 0,
+     "alone": 0,
+     "changes_question": true,
+     "options": [
+      {
+       "label": "no correction",
+       "tier": "prespecified"
+      },
+      {
+       "label": "Benjamini-Hochberg false discovery rate",
+       "tier": "defensible"
+      },
+      {
+       "label": "Holm family-wise error rate",
+       "tier": "defensible"
+      }
+     ],
+     "more": 0
+    }
+   ]
+  }
+ ],
+ "call_rule": "A change is called when it is at least 2× and the p-value is below 0.05.",
+ "total": "90,396",
+ "reasonable": 144,
+ "seconds": "39",
+ "rules": {
+  "solid": "Same call in at least 95 of 100 reasonable analyses, no 5 or fewer samples change it, and the difference is clear in at least 95 of 100.",
+  "holds with caveats": "Same call in at least 95 of 100 reasonable analyses, but 5 or fewer samples change it, or the difference is not always clear.",
+  "depends on your choices": "Same call in 80 to 95 of 100 reasonable analyses: the rest depend on the choices made.",
+  "fragile": "Same call in fewer than 80 of 100 reasonable analyses, or 2 or fewer samples change it, or it sits within 7 % of the 2× line.",
+  "check data first": "A problem found in the data changes this call when it is fixed.",
+  "no call": "Not called a change: a call needs at least 2× and a p-value below 0.05."
+ },
+ "small": [],
+ "not_run": [
+  "planted faults",
+  "small experiments drawn from the data",
+  "known answers"
+ ]
+}

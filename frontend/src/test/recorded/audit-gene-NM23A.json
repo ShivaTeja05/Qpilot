@@ -1,0 +1,74 @@
+{
+ "tiles": [
+  {
+   "label": "Fold change, planned analysis",
+   "value": "2.19× higher",
+   "sub": "likely 1.75× to 2.73× higher"
+  },
+  {
+   "label": "Same answer in",
+   "value": "100 of 100",
+   "sub": "reasonable analyses"
+  },
+  {
+   "label": "p-value, planned analysis",
+   "value": "1.2e-09",
+   "sub": "a call needs below 0.05"
+  },
+  {
+   "label": "Fewest samples that change it",
+   "value": "4",
+   "sub": "of 366 samples"
+  },
+  {
+   "label": "Fewest moves that change it",
+   "value": "at most 4",
+   "sub": "reasonable choices or left-out samples, together"
+  },
+  {
+   "label": "Distance to the 2× line",
+   "value": "9 % beyond",
+   "sub": "the size a call needs"
+  },
+  {
+   "label": "Difference is clear in",
+   "value": "100 of 100",
+   "sub": "reasonable analyses (p below 0.05)"
+  }
+ ],
+ "gene": "NM23A",
+ "call_key": "up",
+ "verdict": "holds with caveats",
+ "label": "Holds with caveats",
+ "headline_gene": true,
+ "result": {
+  "headline": "NM23A is 2.19× higher in MYCN-high samples than in the rest.",
+  "lines": [
+   "With your planned analysis it is called up (higher in MYCN-high).",
+   "Likely range from this data: 1.75× to 2.73× higher.",
+   "MYCN-high means top 15 % by MYCN expression."
+  ],
+  "verdict_sentence": "Same call in 100 of 100 reasonable analyses, but removing 4 samples changes it."
+ },
+ "holds": {
+  "n": 100,
+  "lines": [
+   "144 reasonable analyses were run: every combination of choices a careful lab could defend.",
+   "The difference itself is clear (p below 0.05) in 100 of 100 of them.",
+   "Across every option tried, common shortcuts and other group cut-offs included (90,396 analyses), the same answer comes out in 72 of 100."
+  ]
+ },
+ "changes": [],
+ "no_changes": "No reasonable choice changes it.",
+ "shortcut": "Across every option tried (common shortcuts and other group cut-offs included), changing the reference genes or the group cut-off on its own also changes it.",
+ "leans": [
+  "Removing 4 of the 366 samples would change the call.",
+  "The quickest way to lose the call takes at most 4 moves: normalise to 3 reference genes: ALUsq+HPRT1+SDHA; leave out sample 2530; leave out sample 1924; leave out sample 1784.",
+  "At 2.19× higher it is 9 % beyond the 2× line a call needs."
+ ],
+ "singles": [],
+ "todo": [
+  "Report it, and say that it rests on a few samples. Before writing it up, check those samples' curves, RNA quality and labels."
+ ],
+ "evidence": "/evidence/NM23A"
+}

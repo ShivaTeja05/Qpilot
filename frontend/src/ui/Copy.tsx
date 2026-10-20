@@ -51,14 +51,25 @@ export function CopyButton({
   const icon = copied ? <Check className="text-ok" /> : <Copy />;
   if (showLabel) {
     return (
-      <Button size={size} variant="secondary" icon={icon} onClick={() => copy(text)} className={className}>
+      <Button
+        size={size}
+        variant="secondary"
+        icon={icon}
+        onClick={() => copy(text)}
+        className={className}
+      >
         {copied ? "Copied" : label}
       </Button>
     );
   }
   return (
     <Tooltip content={copied ? "Copied" : label}>
-      <IconButton label={copied ? "Copied" : label} size={size} onClick={() => copy(text)} className={className}>
+      <IconButton
+        label={copied ? "Copied" : label}
+        size={size}
+        onClick={() => copy(text)}
+        className={className}
+      >
         {icon}
       </IconButton>
     </Tooltip>
@@ -80,19 +91,19 @@ export function Hash({
   className?: string;
 }) {
   const [copied, copy] = useCopied();
-  if (!value) return <span className={cn("font-mono text-faint", className)}>—</span>;
+  if (!value) return <span className={cn("font-mono text-muted", className)}>—</span>;
   return (
     <Tooltip content={copied ? "Copied" : <span className="font-mono break-all">{value}</span>}>
       <button
         type="button"
         onClick={() => copy(value)}
-        aria-label={`${prefix ? `${String(prefix)} ` : ""}${value} (copy)`}
+        aria-label={`${prefix ? `${String(prefix)} ` : ""}${shortHash(value, length)}, copy the full value`}
         className={cn(
-          "inline-flex items-center gap-1 rounded px-1 font-mono text-[12px] text-muted transition-colors hover:bg-bg-subtle hover:text-fg",
+          "-mx-1 inline-flex items-center gap-1 rounded px-1 font-mono text-[12px] text-muted transition-colors hover:bg-bg-subtle hover:text-fg",
           className,
         )}
       >
-        {prefix ? <span className="font-sans text-faint">{prefix}</span> : null}
+        {prefix ? <span className="font-sans text-muted">{prefix}</span> : null}{" "}
         {shortHash(value, length)}
         {copied ? <Check className="size-3 text-ok" aria-hidden /> : null}
       </button>
@@ -103,8 +114,15 @@ export function Hash({
 /** A command line in mono with a copy button (`qpilot verify record.zip`). */
 export function CommandLine({ command, className }: { command: string; className?: string }) {
   return (
-    <div className={cn("flex items-center gap-2 rounded-lg border border-line bg-sunken py-1 pr-1 pl-3", className)}>
-      <code className="min-w-0 flex-1 overflow-x-auto py-1 font-mono text-[12.5px] whitespace-pre text-fg qp-scroll">{command}</code>
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-lg border border-line bg-sunken py-1 pr-1 pl-3",
+        className,
+      )}
+    >
+      <code className="min-w-0 flex-1 overflow-x-auto py-1 font-mono text-[12.5px] whitespace-pre text-fg qp-scroll">
+        {command}
+      </code>
       <CopyButton text={command} label="Copy command" />
     </div>
   );

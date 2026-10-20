@@ -68,7 +68,11 @@ export function ci(lo: number | null | undefined, hi: number | null | undefined)
 }
 
 /** A plain numeric range: `[24.1–31.8]`. */
-export function range(lo: number | null | undefined, hi: number | null | undefined, decimals = 1): string {
+export function range(
+  lo: number | null | undefined,
+  hi: number | null | undefined,
+  decimals = 1,
+): string {
   if (!finite(lo) || !finite(hi)) return MISSING;
   return `[${fixed(lo, decimals)}${EN_DASH}${fixed(hi, decimals)}]`;
 }
@@ -83,7 +87,7 @@ export function pValue(p: number | null | undefined): string {
   if (p >= 0.995) return "1.00";
   let decimals = p < 0.1 ? 3 : 2;
   let text = p.toFixed(decimals);
-  while (decimals < 6 && (p < 0.05) !== (Number(text) < 0.05)) {
+  while (decimals < 6 && p < 0.05 !== Number(text) < 0.05) {
     decimals += 1;
     text = p.toFixed(decimals);
   }
@@ -107,13 +111,13 @@ export function ofTotal(part: number | null | undefined, total: number | null | 
   return `${count(part)} of ${count(total)}`;
 }
 
-/** Bytes as the page says them: `7.0 MB`, `640 KB`, `12 B`. */
+/** Bytes in decimal units, as the server and the CLI say them: `7.0 MB`, `640 KB`, `12 B`. */
 export function bytes(n: number | null | undefined): string {
   if (!finite(n) || n < 0) return MISSING;
-  if (n < 1024) return `${n}${NNBSP}B`;
-  if (n < 1024 * 1024) return `${Math.round(n / 1024)}${NNBSP}KB`;
-  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)}${NNBSP}MB`;
-  return `${(n / 1024 ** 3).toFixed(1)}${NNBSP}GB`;
+  if (n < 1000) return `${Math.round(n)}${NNBSP}B`;
+  if (n < 1e6) return `${Math.round(n / 1000)}${NNBSP}KB`;
+  if (n < 1e9) return `${(n / 1e6).toFixed(1)}${NNBSP}MB`;
+  return `${(n / 1e9).toFixed(1)}${NNBSP}GB`;
 }
 
 /** Seconds as the page shows them: `8 s`, `1 min 12 s`, `2 h 5 min`. */
@@ -143,7 +147,10 @@ export function toMillis(t: number | string | Date | null | undefined): number |
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** A calendar date: `18 Oct 2026` (`18 Oct` in the current year). */
-export function date(t: number | string | Date | null | undefined, now: number = Date.now()): string {
+export function date(
+  t: number | string | Date | null | undefined,
+  now: number = Date.now(),
+): string {
   const ms = toMillis(t);
   if (ms == null) return MISSING;
   const d = new Date(ms);
@@ -162,7 +169,10 @@ export function dateTime(t: number | string | Date | null | undefined): string {
 }
 
 /** Relative time: `just now`, `5 min ago`, `2 h ago`, `yesterday`, `3 d ago`, then the date. */
-export function relativeTime(t: number | string | Date | null | undefined, now: number = Date.now()): string {
+export function relativeTime(
+  t: number | string | Date | null | undefined,
+  now: number = Date.now(),
+): string {
   const ms = toMillis(t);
   if (ms == null) return MISSING;
   const s = Math.round((now - ms) / 1000);
