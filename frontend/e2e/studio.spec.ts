@@ -69,22 +69,25 @@ for (const stage of ["design", "curves"] as const) {
 }
 
 test.describe("plates", () => {
-  test("Design: the plate map renders, and a well opens its curve", async ({ app, api }) => {
+  test("Design: the plate map renders; a well shows its sample, Escape clears it", async ({
+    app,
+    api,
+  }) => {
     test.fixme(!LANDED.design, notLanded("design"));
     const demo = await demoSession(api);
     await app.open(route(demo, "design"));
     const panel = app.page.getByRole("region", { name: "Plate map" });
-    await expect(panel.getByRole("grid", { name: /^Plate / })).toBeVisible();
-    const well = panel.getByRole("gridcell", { name: FILLED_WELL }).first();
+    const grid = panel.getByRole("grid", { name: /^Plate / });
+    await expect(grid).toBeVisible();
+    const well = grid.getByRole("gridcell", { name: FILLED_WELL }).first();
+    // "A1, sample 1495, AHCY, Sample": the well and its sample, as the plate API names them.
+    const [wellId, sample] = (await well.getAttribute("aria-label"))!.split(", ");
     await well.click();
-    const dialog = app.page.getByRole("dialog", { name: /^Curve of well / });
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("img", { name: /^Raw fluorescence of well/ })).toBeVisible({
-      timeout: 60_000,
-    });
-    await app.axe("design, well curve open");
+    await expect(panel.getByText(`Well ${wellId}`)).toBeVisible();
+    await expect(panel.getByRole("blockquote").first()).toHaveText(sample!.replace(/^sample /, ""));
+    await app.axe("design, a well chosen");
     await app.page.keyboard.press("Escape");
-    await expect(dialog).toBeHidden();
+    await expect(panel.getByText(`Well ${wellId}`)).toHaveCount(0);
   });
 
   test("Curves: the plate renders, a well shows its curve, no group labels", async ({

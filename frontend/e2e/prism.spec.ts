@@ -44,6 +44,9 @@ test.describe("Prism", () => {
     const genes = list.getByRole("list", {
       name: `Genes this route concludes differently (${worst.n_differ})`,
     });
+    // Long lists show the first genes and a "Show all N" button.
+    const all = list.getByRole("button", { name: `Show all ${worst.n_differ}` });
+    if (await all.count()) await all.first().click();
     for (const g of worst.genes) {
       const link = genes.first().getByRole("link", { name: new RegExp(`^${literal(g).source} `) });
       await expect(link).toHaveAttribute("href", `#${route(demo, "gene", g)}`);
