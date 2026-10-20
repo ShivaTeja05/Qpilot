@@ -93,6 +93,44 @@ async def _keep(ctx: AppContext, upload: UploadFile, kind: str, limit: int) -> P
         tmp.unlink(missing_ok=True)
 
 
+def _declares_entities(path: Path) -> bool:
+    """True when a plain XML file declares entities (the hardened parser refuses those)."""
+    try:
+        with path.open("rb") as fh:
+            head = fh.read(64 * 1024)
+    except OSError:
+        return False
+    return b"<!ENTITY" in head
+
+
+def _unreadable(name: str, why: str, path: Path | None = None) -> str:
+    """Why a dropped file cannot be read, in the person's words (the loader's reason kept)."""
+    if path is not None and "not a valid RDML or XML" in why and _declares_entities(path):
+        return (
+            f"{name} could not be read: it declares XML entities, which qPilot refuses (they "
+            "can make a file pull in other files). Export RDML again from your instrument's "
+            "software."
+        )
+    if "too large" in why:
+        detail = why.split("input too large", 1)[1].strip(" ()") if "input too large" in why else ""
+        if "compression ratio" in detail:
+            return (
+                f"{name} could not be read: it is too large when unpacked (its {detail}); qPilot "
+                "refuses it before unpacking. Export the RDML file again."
+            )
+        return f"{name} could not be read: it is too large ({detail or 'over the limit'})."
+    if "no rdml_data.xml" in why or "fails the RDML schema" in why or "unsupported RDML" in why:
+        reason = why.split(": ", 1)[1] if ": " in why else why
+        return (
+            f"{name} could not be read: {reason}. Export RDML again from your instrument's "
+            "software."
+        )
+    return (
+        f"{name} could not be read: it is not a valid RDML file. Export RDML again from your "
+        "instrument's software, then open that file."
+    )
+
+
 def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) -> JobView:
     """Open as a job, named by the file the person dropped; one job per file (and sheet)."""
     name = views.display_name(rdml) or rdml.name
@@ -104,11 +142,7 @@ def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) ->
         try:
             sid = ctx.studio.open(rdml, sheet, actor="human")
         except RdmlLoadError as err:
-            raise JobError(
-                "cannot_open",
-                f"{name} could not be read: it is not a valid RDML file. Export RDML again from "
-                "your instrument's software, then open that file.",
-            ) from err
+            raise JobError("cannot_open", _unreadable(name, str(err), rdml)) from err
         except Exception as err:  # any reader failure is a sentence about the person's file
             text = str(err).replace(str(rdml), name).replace(rdml.name, name).strip()
             raise JobError(

@@ -206,11 +206,6 @@ def test_an_external_entity_in_an_upload_reads_nothing(client, tmp_path, scheme)
     assert not any(CANARY in s for s in seen)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-025 (api, 91206d8): the plain open error says 'not a valid RDML file' for a "
-    "zip bomb; it must name the real reason (too large when unpacked / compression ratio)",
-)
 def test_a_zip_bomb_rdml_is_refused_before_it_inflates(client):
     import io
     import zipfile
