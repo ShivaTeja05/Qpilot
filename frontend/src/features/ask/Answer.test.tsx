@@ -67,6 +67,6 @@ describe("Answer", () => {
     const open = screen.getByRole("link", { name: "Open the card" });
     expect(open.getAttribute("href")).toBe(links.results);
     fireEvent.click(open);
-    expect(onOpenCard).toHaveBeenCalledWith(request.result.card_id);
+    expect(onOpenCard).toHaveBeenCalledWith(`card:${request.result.card_id}`);
   });
 });

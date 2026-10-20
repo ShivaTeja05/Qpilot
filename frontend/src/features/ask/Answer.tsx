@@ -7,8 +7,8 @@ import { authorWords, routerWords, STATUS_WORDS, toolWords } from "./words";
 export interface AnswerLinks {
   gene?: (gene: string) => string;
   results?: string;
-  /** Called when the card link is followed (the shell focuses the card once Results shows it). */
-  onOpenCard?: (cardId: string | null) => void;
+  /** Called with the card's focus target (`card:<id>`) when the card link is followed. */
+  onOpenCard?: (focus: string) => void;
 }
 
 /** First letter up, except for names that start lower-case (qPilot). */
@@ -22,19 +22,25 @@ const capitalise = (s: string) =>
 export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks }) {
   const gene = typeof answer.args.gene === "string" ? answer.args.gene : null;
   const status = answer.status ? STATUS_WORDS[answer.status] : undefined;
+  // The Decision Card the answer is about (a change request), as a focus target for Results.
+  const focus = answer.focus?.startsWith("card:")
+    ? answer.focus
+    : answer.cardId
+      ? `card:${answer.cardId}`
+      : null;
   const router = routerWords(answer);
   return (
     <div className="flex flex-col gap-3">
       <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">{answer.answer}</p>
 
-      {status ? (
+      {status || focus ? (
         <div className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={status.tone}>{status.label}</Badge>
-            {answer.status === "pending_human" && links.results ? (
+            <Badge tone={status?.tone ?? "info"}>{status?.label ?? "A choice for a person"}</Badge>
+            {focus && links.results && answer.status !== "applied" ? (
               <a
                 href={links.results}
-                onClick={() => links.onOpenCard?.(answer.cardId)}
+                onClick={() => links.onOpenCard?.(focus)}
                 className="inline-flex items-center gap-1 text-[13px] font-medium text-accent underline-offset-4 hover:underline"
               >
                 Open the card
@@ -42,17 +48,14 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
               </a>
             ) : null}
           </div>
-          {answer.note ? (
-            <p className="text-[13px] text-muted">{answer.note}</p>
-          ) : answer.status === "pending_human" ? (
-            <p className="text-[13px] text-muted">
-              The request waits for you on the card, with a button to turn it down.
-            </p>
-          ) : answer.status === "applied" ? (
-            <p className="text-[13px] text-muted">
-              Ask applied it as an agent; it is in the decision log, and Undo is on its card.
-            </p>
-          ) : null}
+          <p className="text-[13px] text-muted">
+            {answer.note ??
+              (answer.status === "pending_human"
+                ? "The request waits for you on the card, with a button to turn it down."
+                : answer.status === "applied"
+                  ? "Ask applied it as an agent; it is in the decision log, and Undo is on its card."
+                  : "Ask does not change analysis choices: a person decides them on the Decision Card.")}
+          </p>
         </div>
       ) : null}
 
@@ -90,7 +93,9 @@ export function Answer({ answer, links }: { answer: AskView; links: AnswerLinks 
         </dd>
       </dl>
 
-      {answer.note && !status ? <p className="text-xs text-muted">{answer.note}</p> : null}
+      {answer.note && !status && !focus ? (
+        <p className="text-xs text-muted">{answer.note}</p>
+      ) : null}
 
       {!answer.validated ? (
         <p className="flex items-start gap-2 rounded-lg border border-warn/30 bg-warn-soft/60 px-3 py-2 text-[13px] text-fg">

@@ -137,7 +137,7 @@ function Conversation({
     () => ({
       gene: (g) => `#${pathOf(kind, workspace.key, "gene", g)}`,
       results: `#${pathOf(kind, workspace.key, "results")}`,
-      onOpenCard: (card) => focusAction(card ? `card:${card}` : "Decide"),
+      onOpenCard: (focus) => focusAction(focus),
     }),
     [kind, workspace.key],
   );

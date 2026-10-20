@@ -31,6 +31,8 @@ export interface AskView {
   /** What happened to a change request (`pending_human`, `applied`, `stale`, …). */
   status: string | null;
   cardId: string | null;
+  /** The page element to focus for this answer (`card:<id>`: the Decision Card it is about). */
+  focus: string | null;
   /** Why the model was not used or its draft was replaced, in words. */
   note: string | null;
   /** True when every number in the answer was traced to a fact. */
@@ -110,6 +112,7 @@ export function toAskView(result: unknown): AskView | null {
     facts: readFacts(result.facts),
     status: str(result.status),
     cardId: str(result.card_id),
+    focus: str(result.focus),
     note: str(result.note) ?? str(result.error) ?? (notes.length ? notes.join("; ") : null),
     validated: result.validated !== false,
     toolWords: str(result.tool_words),

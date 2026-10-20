@@ -121,6 +121,23 @@ describe("AskDrawer", () => {
     expect(box.value).toBe("What should I check first in this data?");
   });
 
+  it("Try again sends the same question once more, in the same place", async () => {
+    const qc = client();
+    renderDrawer(session, qc);
+    ask(robustness.result.question);
+    const retry = await screen.findByRole("button", { name: "Try again" });
+    // This time the server answers.
+    answerWith(robustness, qc);
+    fireEvent.click(retry);
+    await screen.findByText(robustness.result.answer);
+    const asks = vi.mocked(fetch).mock.calls.filter(([u]) => String(u).endsWith("/ask"));
+    expect(asks.map(([, init]) => JSON.parse(String(init?.body)).question)).toEqual([
+      robustness.result.question,
+      robustness.result.question,
+    ]);
+    expect(screen.getAllByRole("article")).toHaveLength(1);
+  });
+
   it("answers a question with the recorded job: words, tool, writer and the cited facts", async () => {
     const qc = client();
     answerWith(robustness, qc);
