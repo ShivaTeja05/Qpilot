@@ -44,6 +44,12 @@
     opacity: 0;
   }
 }
+@keyframes qp-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
 @keyframes qp-shimmer {
   from {
     background-position: 150% 0;
@@ -77,6 +83,11 @@
 }
 .qp-slide-up[data-state="open"] {
   animation: qp-slide-up-in 200ms ease-out;
+}
+
+/* A section entering (the shell's route change). */
+.qp-section-in {
+  animation: qp-section-in 180ms ease-out;
 }
 
 .qp-skeleton {
@@ -130,6 +141,7 @@
   .qp-slide-right,
   .qp-slide-left,
   .qp-slide-up,
+  .qp-section-in,
   .qp-skeleton,
   .qp-indeterminate {
     animation: none !important;

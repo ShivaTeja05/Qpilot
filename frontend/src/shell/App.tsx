@@ -6,7 +6,7 @@
  */
 import { useQueryClient } from "@tanstack/react-query";
 import { FolderX } from "lucide-react";
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { MotionConfig } from "motion/react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, Router, useLocation } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
@@ -327,23 +327,20 @@ function Shell() {
             aria-label={SECTION[route.section].label}
             className="mx-auto w-full max-w-[1600px] flex-1 px-4 pt-6 pb-24 outline-none sm:px-6 md:pb-10 lg:px-8"
           >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={sectionKey}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, transition: { duration: 0.08 } }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                <SectionView
-                  route={route}
-                  frame={frame}
-                  frameError={route.key ? frameQuery.error : null}
-                  state={states[route.section]}
-                  fileName={summary?.file_name}
-                />
-              </motion.div>
-            </AnimatePresence>
+            {/*
+              Keyed on the workspace and the section, so another study or section swaps at once.
+              The entrance is a CSS animation (time-based, no exit to wait for): a tab that is not
+              painting can never hold the previous section on screen, as an exit animation could.
+            */}
+            <div key={sectionKey} className="qp-section-in">
+              <SectionView
+                route={route}
+                frame={frame}
+                frameError={route.key ? frameQuery.error : null}
+                state={states[route.section]}
+                fileName={summary?.file_name}
+              />
+            </div>
           </main>
         </div>
       </div>
