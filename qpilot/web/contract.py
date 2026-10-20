@@ -16,6 +16,14 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
+from qpilot.schemas import (
+    ContrastResult,
+    DecisionCard,
+    DecisionEntry,
+    DecisionOutcome,
+    GeneRobustness,
+    Grade,
+)
 from qpilot.schemas_studio import (
     InspectSummary,
     Proposal,
@@ -504,3 +512,336 @@ class ModelSeen(BaseModel):
     same_as_proposal: bool | None = Field(
         default=None, description="With ?proposal=: the payload is the one behind that card."
     )
+
+
+# ---- results ---------------------------------------------------------------------------------
+
+Conclusion = Literal["up", "down", "none"]
+
+
+class FactRef(BaseModel):
+    """A number the engine computed, as cited in a text (its id says where it comes from)."""
+
+    id: str
+    text: str = Field(description="The value as written (format and unit applied).")
+    value: float | int | str
+    unit: str = ""
+    path: str = Field(default="", description="Where in the result it comes from.")
+
+
+class TextSegment(BaseModel):
+    """A run of plain text, or one cited number (``fact`` names it)."""
+
+    text: str
+    fact: str | None = None
+
+
+class FactText(BaseModel):
+    """A sentence whose numbers are facts: plain text, segments, and the facts it cites."""
+
+    plain: str
+    segments: list[TextSegment]
+    facts: list[FactRef]
+    source: Literal["template", "model"] = "template"
+
+
+class GroupCount(BaseModel):
+    """One comparison group and how many biological units it holds."""
+
+    label: str
+    n: int
+
+
+class ResultsSummary(BaseModel):
+    """The study in counts, its groups and how they were made."""
+
+    n_plates: int
+    n_reactions: int
+    n_samples: int
+    n_genes: int
+    mode: Literal["marker_split", "groups"]
+    group_var: str
+    groups: list[GroupCount] = Field(description="The compared group first, the reference second.")
+    cut: float | None = Field(default=None, description="Marker split: the top fraction.")
+    design_line: str
+    text: FactText | None = Field(default=None, description="The summary sentence, cited.")
+
+
+class RuleView(BaseModel):
+    """The rule every conclusion is drawn with."""
+
+    alpha: float
+    min_log2fc: float
+    min_fold: float
+    text: str
+
+
+class GenormView(BaseModel):
+    """Reference genes: which were used, and geNorm's stability (M) and pairwise V."""
+
+    used: list[str]
+    candidates: list[str]
+    m: dict[str, float] = Field(description="geNorm M per candidate (lower is more stable).")
+    order: list[str]
+    v: dict[str, float]
+    recommended: list[str]
+    cutoff_m: float
+    cutoff_v: float
+    stable: list[str] = Field(description="Candidates below the M cut-off.")
+
+
+class AtChoices(BaseModel):
+    """A gene's result at the options a person chose on the Decision Cards (from the grid)."""
+
+    fc: float
+    log2fc: float
+    p: float
+    conclusion: Conclusion
+    differs: bool = Field(description="The call differs from the planned analysis.")
+
+
+class GeneRow(BaseModel):
+    """One compared gene: the contrast, how robust it is, and how confident."""
+
+    gene: str
+    headline: bool
+    conclusion: Conclusion
+    fc: float
+    log2fc: float
+    ci: tuple[float, float]
+    p: float
+    n_hi: int
+    n_lo: int
+    holds: float | None = Field(
+        default=None, description="Share of reasonable analyses with the same call (0–1)."
+    )
+    n_cells: int
+    level: str | None = None
+    reasons: list[str] = []
+    min_flip_changes: int | None = None
+    flips_by: list[str] = Field(description="Decisions that alone can change this call.")
+    efficiency: float | None = None
+    at_your_choices: AtChoices | None = None
+    verdict: str | None = Field(default=None, description="The robustness audit's verdict.")
+    verdict_label: str | None = None
+
+
+class AuditBadge(BaseModel):
+    """Whether the robustness audit ran on this study (details: the Audit section)."""
+
+    status: Literal["none", "ready"]
+    verdict_counts: dict[str, int] = {}
+    chain_head: str | None = None
+    current: bool = Field(default=False, description="Audited at the decision chain head of now.")
+
+
+class ResultsView(BaseModel):
+    """Everything the Results section shows about a study (raw numbers; the page formats)."""
+
+    study_id: str
+    session: str | None = Field(default=None, description="The Studio session it belongs to.")
+    input_sha256: str
+    summary: ResultsSummary
+    rule: RuleView
+    references: GenormView
+    genes: list[GeneRow]
+    headline: list[str]
+    counts: dict[str, int] = Field(description="Genes per conclusion (up / down / none).")
+    levels: dict[str, int] = Field(description="Genes per confidence level.")
+    choices: dict[str, str] = Field(description="Card id -> the option applied now.")
+    cards_waiting: int
+    pending_requests: int
+    head: str
+    audit: AuditBadge
+
+
+class OptionEffect(BaseModel):
+    """One option's consequence for one gene (the other choices as planned)."""
+
+    gene: str
+    fc: float
+    log2fc: float
+    ci: tuple[float, float]
+    p: float
+    conclusion: Conclusion
+    changes_call: bool = Field(description="A different call than the recommended option's.")
+
+
+class CardOptionView(BaseModel):
+    """One option of a Decision Card."""
+
+    id: str
+    label: str
+    recommended: bool
+    chosen: bool
+    requested: bool = Field(description="An agent asked for this option; it waits for a person.")
+    not_recommended: bool = Field(description="E.g. a single control gene (MIQE).")
+    effects: list[OptionEffect]
+
+
+class PendingRequest(BaseModel):
+    """An agent's request on a card, waiting for a person."""
+
+    seq: int
+    option: str
+    option_label: str
+    reason: str
+    actor: str
+    at: str
+
+
+class CardView(BaseModel):
+    """One Decision Card with its words, options and what each option changes."""
+
+    card: DecisionCard
+    title: str
+    status_line: str
+    impact: FactText
+    explanation: FactText
+    needs_human: bool = Field(description="Can change a conclusion: only a person decides it.")
+    genes: list[str] = Field(description="The genes whose consequences each option shows.")
+    options: list[CardOptionView]
+    pending: list[PendingRequest]
+    undo_option: str | None = Field(default=None, description="What Undo would restore.")
+    undo_label: str | None = None
+
+
+class CardsView(BaseModel):
+    """The study's Decision Cards, most impact first."""
+
+    study_id: str
+    head: str
+    cards: list[CardView]
+    next_card: str | None
+    counter: str
+    pending_requests: int
+
+
+class DecideBody(BaseModel):
+    """Decide a card (always as a person; the reason is kept in the record)."""
+
+    option: str = Field(max_length=200)
+    reason: Reason
+    expected_head: str | None = None
+
+
+class UndoBody(BaseModel):
+    """Undo the last change on a card (a new entry restoring the option before it)."""
+
+    reason: Reason
+    expected_head: str | None = None
+
+
+class TurnDownBody(BaseModel):
+    """Turn down an agent's request on a card (one option, or every request on it)."""
+
+    reason: Reason
+    option: str | None = Field(default=None, max_length=200)
+    expected_head: str | None = None
+
+
+class DecisionDone(BaseModel):
+    """The answer to decide / undo / turn down."""
+
+    outcome: DecisionOutcome
+    message: str
+    head: str
+    card: CardView | None = None
+    next_card: str | None = None
+
+
+class Explanation(BaseModel):
+    """A card explained by the model (or why the template's words stand)."""
+
+    card_id: str
+    text: FactText
+    validated: bool
+    fallback: bool
+    provider: str
+    note: str = ""
+
+
+class DecisionEntryView(BaseModel):
+    """One entry of the decision chain, with its card and option in words."""
+
+    entry: DecisionEntry
+    card_title: str
+    option_label: str
+    undo: bool = Field(description="Written by Undo.")
+
+
+class DecisionsView(BaseModel):
+    """The study's hash-chained decision log, requests waiting, and its head."""
+
+    study_id: str
+    head: str
+    entries: list[DecisionEntryView]
+    pending: list[DecisionEntryView]
+
+
+class FlipOption(BaseModel):
+    """One option of a decision, the other choices as planned: each gene's call under it."""
+
+    value: str
+    label: str
+    card_option: str | None = Field(default=None, description="The card's option id, if any.")
+    planned: bool
+    chosen: bool = False
+    conclusion: list[Conclusion] = Field(description="Aligned with FlipsView.genes.")
+    log2fc: list[float]
+    flips: list[bool]
+
+
+class FlipRow(BaseModel):
+    """One decision: which genes changing it alone can flip, and by how much it moves them."""
+
+    dimension: str
+    title: str
+    card_id: str | None = None
+    status: str | None = None
+    flips: list[bool] = Field(description="Aligned with FlipsView.genes.")
+    max_delta_log2fc: list[float]
+    n_flipped: int
+    options: list[FlipOption]
+
+
+class FlipsView(BaseModel):
+    """Decisions (rows) × genes (columns): where one decision alone flips a gene's call."""
+
+    study_id: str
+    genes: list[str]
+    planned: list[Conclusion]
+    rows: list[FlipRow]
+
+
+class GeneGrid(BaseModel):
+    """Every analysis in the grid for one gene (the 'what holds' strip), compactly."""
+
+    dimensions: list[str]
+    options: dict[str, list[str]]
+    planned: list[int] = Field(description="The planned option's index per dimension.")
+    cells: list[list[int]] = Field(description="Option index per dimension, one per analysis.")
+    log2fc: list[float]
+    p: list[float]
+    conclusion: list[Conclusion]
+
+
+class GeneView(BaseModel):
+    """Everything about one gene."""
+
+    study_id: str
+    gene: str
+    row: GeneRow
+    contrast: ContrastResult
+    robustness: GeneRobustness
+    confidence: Grade | None = None
+    confidence_text: FactText | None = None
+    grid: GeneGrid | None = None
+    effects: list[FlipRow] = Field(description="One decision at a time (this gene only).")
+    cards: list[CardView] = Field(description="Decision Cards that can change this gene.")
+    is_reference: bool
+    reference_m: float | None = None
+    prev_gene: str | None = None
+    next_gene: str | None = None
+    audit_verdict: str | None = None
+    audit_verdict_label: str | None = None
