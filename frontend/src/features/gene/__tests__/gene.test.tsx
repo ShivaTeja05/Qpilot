@@ -150,7 +150,8 @@ describe("what holds and one choice at a time", () => {
 
     const a = analysesNM23A as unknown as AuditAnalyses;
     render(<WhatHolds {...props} card={auditGeneNM23A as unknown as AuditGeneCard} analyses={q(a)} source="audit" />);
-    expect(screen.getByText(text(ofTotal(a.n_same, a.n)))).toBeTruthy();
+    expect(screen.getByText(text(percent(a.n_same / a.n)))).toBeTruthy();
+    expect(screen.getByText(new RegExp(`^${text(ofTotal(a.n_same, a.n))} of the audit's reasonable analyses`))).toBeTruthy();
     expect(screen.getByRole("img", { name: /reasonable analyses of NM23A on the fold axis/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: "qPilot's grid" }));
     expect(onSource).toHaveBeenCalledWith("qpilot");

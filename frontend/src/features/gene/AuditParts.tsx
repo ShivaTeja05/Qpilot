@@ -132,8 +132,8 @@ export function WhatHolds({
             <>
               <Stat
                 label="Same call, the audit"
-                value={ofTotal(a.n_same, a.n)}
-                sub={`of the audit's ${count(a.n)} reasonable analyses (no shortcuts; groups and multiplicity as planned)`}
+                value={percent(a.n ? a.n_same / a.n : null)}
+                sub={`${ofTotal(a.n_same, a.n)} of the audit's reasonable analyses (no shortcuts; groups and multiplicity as planned)`}
               />
               <HoldsBar share={a.n ? a.n_same / a.n : null} />
             </>
