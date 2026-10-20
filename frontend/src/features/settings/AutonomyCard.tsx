@@ -92,7 +92,7 @@ export function AutonomyCard({ system }: { system: SystemView }) {
         </fieldset>
         {system.policy.length ? (
           <div>
-            <h3 className="text-xs font-medium tracking-wide text-faint uppercase">
+            <h3 className="text-xs font-medium tracking-wide text-muted uppercase">
               The policy, whatever the setting
             </h3>
             <ul className="mt-2 flex flex-col gap-1.5 text-[13px]">

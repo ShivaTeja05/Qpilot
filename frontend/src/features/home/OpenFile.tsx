@@ -185,7 +185,7 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
             {intake.notice}
           </p>
         ) : null}
-        <p className="max-w-sm text-xs text-faint">
+        <p className="max-w-sm text-xs text-muted">
           Opening reads the file and quarantines every name in it; nothing is analysed yet. The file
           stays on this computer.
         </p>
