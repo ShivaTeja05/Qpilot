@@ -3,7 +3,7 @@
  * `["w", sid, …]` so live events (an agent's proposal, another tab's decision, a finished job)
  * re-read exactly what is on screen.
  */
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
 import { api, unwrap, type Schemas } from "@/api/client";
 
 export type PlateView = Schemas["PlateView"];
@@ -17,7 +17,11 @@ export function usePlate(sid: string, run: string | null) {
   return useQuery({
     queryKey: ["w", sid, "plate", run ?? ""],
     queryFn: () =>
-      unwrap(api.GET("/api/sessions/{sid}/plate", { params: { path: { sid }, query: run ? { run } : {} } })),
+      unwrap(
+        api.GET("/api/sessions/{sid}/plate", {
+          params: { path: { sid }, query: run ? { run } : {} },
+        }),
+      ),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
@@ -26,7 +30,10 @@ export function usePlate(sid: string, run: string | null) {
 function curveQuery(sid: string, key: string) {
   return {
     queryKey: ["w", sid, "curve", key],
-    queryFn: () => unwrap(api.GET("/api/sessions/{sid}/curve", { params: { path: { sid }, query: { well: key } } })),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/sessions/{sid}/curve", { params: { path: { sid }, query: { well: key } } }),
+      ),
     staleTime: 60_000,
   };
 }
@@ -50,7 +57,11 @@ export function useCurveCalls(sid: string, gene: string | null) {
     queryKey: ["w", sid, "curve-calls", gene ?? ""],
     enabled: Boolean(gene),
     queryFn: () =>
-      unwrap(api.GET("/api/sessions/{sid}/curve-calls", { params: { path: { sid }, query: { gene: gene! } } })),
+      unwrap(
+        api.GET("/api/sessions/{sid}/curve-calls", {
+          params: { path: { sid }, query: { gene: gene! } },
+        }),
+      ),
     staleTime: 60_000,
   });
 }
@@ -60,15 +71,10 @@ export function useCurveProposals(sid: string) {
   return useQuery({
     queryKey: ["w", sid, "proposals", "curves"],
     queryFn: () =>
-      unwrap(api.GET("/api/sessions/{sid}/proposals", { params: { path: { sid }, query: { stage: "curves" } } })),
-  });
-}
-
-/** Check the curves: a job (about 15 s on the demo). Returns the job to follow. */
-export function useProposeCurves(sid: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => unwrap(api.POST("/api/sessions/{sid}/propose/curves", { params: { path: { sid } } })),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["w", sid] }),
+      unwrap(
+        api.GET("/api/sessions/{sid}/proposals", {
+          params: { path: { sid }, query: { stage: "curves" } },
+        }),
+      ),
   });
 }
