@@ -389,7 +389,7 @@ function PlateGrid({
     const hit = posOf(e.target);
     if (!hit) return;
     setCursor(hit.pos);
-    if (keyboard || e.target.matches(":focus-visible")) place(hit.el, hit.pos);
+    if (keyboard || focusVisible(e.target)) place(hit.el, hit.pos);
   };
 
   const onMouseOver = (e: MouseEvent) => {
@@ -513,6 +513,14 @@ function PlateGrid({
       </p>
     </div>
   );
+}
+
+function focusVisible(el: Element): boolean {
+  try {
+    return el.matches(":focus-visible");
+  } catch {
+    return false; // an engine without :focus-visible
+  }
 }
 
 function firstWell(grid: Map<string, Located>): WellPosition | null {
