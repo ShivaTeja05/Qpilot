@@ -15,8 +15,8 @@ export interface AskView {
   question: string;
   /** The answer in words, numbers already rendered from facts (never tokens). */
   answer: string;
-  /** Which engine answered: qPilot's study tools, or the robustness audit. */
-  engine: "study" | "audit" | null;
+  /** Which engine answered: qPilot's study tools, the robustness audit, or none (a fixed reply). */
+  engine: "study" | "audit" | "none" | null;
   /** The tool that answered (e.g. `qpcr_robustness`, `whatif`). */
   tool: string;
   args: Record<string, unknown>;
@@ -100,7 +100,7 @@ export function toAskView(result: unknown): AskView | null {
   return {
     question: typeof result.question === "string" ? result.question : "",
     answer,
-    engine: oneOf(result.engine, ["study", "audit"] as const),
+    engine: oneOf(result.engine, ["study", "audit", "none"] as const),
     tool: str(result.tool) ?? "",
     args: isRecord(result.args) ? result.args : {},
     routedBy: oneOf(result.routed_by, ["model", "keywords", "rules"] as const),
