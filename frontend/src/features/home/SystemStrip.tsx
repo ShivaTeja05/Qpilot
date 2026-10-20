@@ -6,7 +6,7 @@ import { Cpu, Network, ShieldCheck, ShieldOff } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "wouter";
 import { ErrorPanel, Skeleton } from "@/ui";
-import { ModelChip } from "@/features/settings/ModelChip";
+import { ModelChip } from "@/shell/ModelChip";
 import type { SystemView } from "@/shell/data";
 
 function Item({ label, icon, children }: { label: string; icon?: ReactNode; children: ReactNode }) {

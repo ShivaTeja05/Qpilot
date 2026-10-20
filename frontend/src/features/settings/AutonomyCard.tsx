@@ -1,95 +1,59 @@
 /**
- * Settings → Autonomy: what agents may do on their own (`PUT /api/settings`), with the policy
- * lines the server serves. The same setting as the top bar's switch; both read `["system"]`.
+ * Settings → what agents may do on their own. Autonomy is set per study, with the switch in that
+ * study's top bar (coordinator decision #0234), so Settings explains the two levels and shows the
+ * policy lines the server serves; it does not set anything.
  */
-import { useQueryClient } from "@tanstack/react-query";
-import { useId } from "react";
-import { api, unwrap } from "@/api/client";
+import { Bot, UserCheck } from "lucide-react";
+import type { ReactNode } from "react";
 import { Card, CardBody, CardHeader } from "@/ui";
-import { cn } from "@/lib/cn";
+import { AUTONOMY_WORDS } from "@/shell/Autonomy";
 import type { SystemView } from "@/shell/data";
-import { useWrite } from "@/shell/writes";
 import { policyParts, type Autonomy } from "./system";
 
-const OPTIONS: { value: Autonomy; title: string; detail: string }[] = [
+const LEVELS: { value: Autonomy; icon: ReactNode; detail: string }[] = [
   {
     value: "suggest",
-    title: "Suggest",
+    icon: <UserCheck />,
     detail: "Agents only suggest. Every request from an agent waits for you.",
   },
   {
     value: "decide_and_tell",
-    title: "Decide and tell me",
+    icon: <Bot />,
     detail:
       "Agents may apply choices that cannot change any conclusion, and tell you. Everything else still waits for you.",
   },
 ];
 
 export function AutonomyCard({ system }: { system: SystemView }) {
-  const qc = useQueryClient();
-  const name = useId();
-  const write = useWrite<Autonomy, unknown>({
-    mutationFn: (autonomy) => unwrap(api.PUT("/api/settings", { body: { autonomy } })),
-    success: (_r, a) =>
-      a === "suggest"
-        ? { title: "Agents now only suggest", description: "Every agent request waits for you." }
-        : {
-            title: "Agents may now decide and tell you",
-            description:
-              "Only choices that cannot change any conclusion; the rest still wait for you.",
-          },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["system"] }),
-  });
-  const value = write.isPending && write.variables ? write.variables : system.autonomy;
-
   return (
     <Card as="section" aria-labelledby="settings-autonomy">
       <CardHeader
         id="settings-autonomy"
         title="What agents may do on their own"
-        hint="For this launch of qpilot app. A choice that can change a conclusion always waits for a person."
+        hint="Set for each study, with the switch in that study's top bar. A new study starts at Suggest."
       />
       <CardBody className="flex flex-col gap-4">
-        <fieldset className="grid gap-2 sm:grid-cols-2">
-          <legend className="sr-only">Autonomy for agents</legend>
-          {OPTIONS.map((o) => {
-            const checked = value === o.value;
-            return (
-              <label
-                key={o.value}
-                className={cn(
-                  "relative flex cursor-pointer gap-3 rounded-xl border p-3.5 transition-colors duration-150 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus",
-                  checked
-                    ? "border-accent bg-accent-soft/50"
-                    : "border-line bg-surface hover:border-line-strong",
-                )}
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {LEVELS.map((l) => (
+            <li
+              key={l.value}
+              className="flex gap-3 rounded-xl border border-line bg-surface-2 p-3.5"
+            >
+              <span
+                className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-strong [&_svg]:size-4"
+                aria-hidden
               >
-                <input
-                  type="radio"
-                  name={name}
-                  value={o.value}
-                  checked={checked}
-                  aria-labelledby={`${name}-${o.value}`}
-                  aria-describedby={`${name}-${o.value}-detail`}
-                  // Never disabled while saving: that would drop keyboard focus.
-                  onChange={() => !write.isPending && write.mutate(o.value)}
-                  className="mt-0.5 size-4 shrink-0 accent-accent"
-                />
-                <span className="min-w-0">
-                  <span id={`${name}-${o.value}`} className="block text-sm font-semibold text-fg">
-                    {o.title}
-                  </span>
-                  <span
-                    id={`${name}-${o.value}-detail`}
-                    className="mt-0.5 block text-[13px] text-muted"
-                  >
-                    {o.detail}
-                  </span>
+                {l.icon}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-fg">
+                  {AUTONOMY_WORDS[l.value]}
                 </span>
-              </label>
-            );
-          })}
-        </fieldset>
+                <span className="mt-0.5 block text-[13px] text-muted">{l.detail}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
         {system.policy.length ? (
           <div>
             <h3 className="text-xs font-medium tracking-wide text-muted uppercase">
