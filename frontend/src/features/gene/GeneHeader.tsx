@@ -107,6 +107,7 @@ export function GeneHeader({
   auditPending,
   alpha,
   minLog2fc,
+  ruleText,
 }: {
   gene: GeneView;
   labels: { hi: string; lo: string };
@@ -116,6 +117,8 @@ export function GeneHeader({
   auditPending?: boolean;
   alpha?: number | null;
   minLog2fc?: number | null;
+  /** The conclusion rule in the server's words (preferred over the one built here). */
+  ruleText?: string | null;
 }) {
   const conclusion = asConclusion(gene.conclusion);
   const [lo, hi] = gene.ci ?? [];
@@ -124,9 +127,8 @@ export function GeneHeader({
   const reasons = gene.reasons?.length ? gene.reasons : failed.map((c) => c.note);
   const verdict = audit?.verdict ?? gene.verdict ?? null;
   const ruleWords =
-    alpha != null && minLog2fc != null
-      ? `A call needs p below ${alpha} and at least ${fold(2 ** minLog2fc)}.`
-      : undefined;
+    ruleText ??
+    (alpha != null && minLog2fc != null ? `A call needs p below ${alpha} and at least ${fold(2 ** minLog2fc)}.` : undefined);
   return (
     <header className="mb-6">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
