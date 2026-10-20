@@ -63,7 +63,7 @@ export const AUDIT_STEPS = [
   },
   {
     title: "Verdicts",
-    text: "Each gene gets a verdict from how often reasonable analyses agree, how few samples change the call and how close it is to the line a call needs.",
+    text: "Each gene gets a verdict from how often the audit's reasonable set gives the same call, how few samples change the call and how close it is to the line a call needs.",
   },
   {
     title: "Bind",
@@ -85,7 +85,7 @@ export const NOT_RUN_WORDS: Record<string, string> = {
   "planted faults":
     "Planted faults: faults put into real data on purpose, to see whether the audit catches the ones that change a call.",
   "small experiments drawn from the data":
-    "Small experiments drawn from the data: how often small studies with no real difference get a call, with one analysis against requiring the call to hold across reasonable analyses.",
+    "Small experiments drawn from the data: how often small studies with no real difference get a call, with one analysis against requiring the call to hold across the audit's reasonable set.",
   "known answers":
     "Known answers: a dilution series with known ratios, to measure each efficiency choice's error against the truth.",
 };
@@ -93,7 +93,7 @@ export const NOT_RUN_WORDS: Record<string, string> = {
 export const STATUS_WORDS = {
   not_applicable: {
     title: "The audit does not apply to this study",
-    todo: "Your results and Decision Cards are unaffected. The Results section still shows how often each gene's call holds across reasonable analyses.",
+    todo: "Your results and Decision Cards are unaffected. The Results section still shows how often each gene's call holds across qPilot's choice grid.",
   },
   refused: {
     title: "The audit refused this study",

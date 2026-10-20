@@ -98,7 +98,7 @@ export function StudyTab({
           <CardHeader
             id="audit-map"
             title="Every gene"
-            hint={`Fold change against how often reasonable analyses give the same call.${openGene ? " Click a gene to open it." : ""}`}
+            hint={`Fold change against the share of the audit's reasonable set${overview ? ` (${count(overview.study.reasonable)} analyses)` : ""} with the same call.${openGene ? " Click a gene to open it." : ""}`}
           />
           <CardBody>
             {study.data && overview ? (
@@ -147,7 +147,7 @@ export function StudyTab({
             <CardHeader
               id="audit-spread"
               title="Share of the spread in fold change"
-              hint="Across reasonable analyses, how much of the fold changes' spread each choice makes."
+              hint={`Across the audit's reasonable set${overview ? ` (${count(overview.study.reasonable)} analyses)` : ""}, how much of the fold changes' spread each choice makes.`}
             />
             <CardBody>
               {study.data ? (
@@ -206,9 +206,9 @@ function StudyMap({
     label: label.get(v) ?? VERDICTS[v].label,
     count: overview.verdicts.find((x) => x.key === v)?.count,
   })).filter((l) => (l.count ?? 0) > 0);
-  const summary = `Map of ${plural(points.length, "gene")}: fold change (${overview.study.group} against the rest) against the share of ${count(
+  const summary = `Map of ${plural(points.length, "gene")}: fold change (${overview.study.group} against ${overview.study.rest ?? "the rest"}) against the share of ${count(
     overview.study.reasonable,
-  )} reasonable analyses with the same call; ${overview.verdicts
+  )} analyses of the audit's reasonable set with the same call; ${overview.verdicts
     .filter((v) => v.count)
     .map((v) => `${count(v.count)} ${v.label.toLowerCase()}`)
     .join(", ")}.`;
@@ -389,7 +389,7 @@ function FixFirst({ study }: { study: AuditStudyView }) {
         )}
         {study.lock_called.length ? (
           <p className="text-[13px] text-muted">
-            Among reasonable analyses, fixing <Names names={study.lock_called} /> protects every
+            In the audit's reasonable set, fixing <Names names={study.lock_called} /> protects every
             called gene.
           </p>
         ) : null}
@@ -428,12 +428,12 @@ function Names({ names }: { names: string[] }) {
   );
 }
 
-/** The spread bars, with a note on the choices fixed in reasonable analyses (they change the question). */
+/** The spread bars, with a note on the choices fixed in the audit's reasonable set (they change the question). */
 function spreadRows(s: AuditStudyView): BarRow[] {
   const question = new Set(s.choices.filter((c) => c.question).map((c) => c.id));
   return choicesSpreadBars(s).map((r) =>
     question.has(r.key)
-      ? { ...r, note: "fixed in reasonable analyses: it changes the question" }
+      ? { ...r, note: "fixed in the audit's reasonable set: it changes the question" }
       : r,
   );
 }
@@ -447,6 +447,6 @@ function aloneSummary(s: AuditStudyView): string {
 
 function spreadSummary(s: AuditStudyView): string {
   const top = [...s.choices].sort((a, b) => b.spread - a.spread).filter((c) => c.spread > 0);
-  if (!top.length) return "No choice moves the fold changes across reasonable analyses.";
+  if (!top.length) return "No choice moves the fold changes across the audit's reasonable set.";
   return `Share of the spread in fold change: ${top.map((c) => `${c.name.toLowerCase()} ${c.spread} %`).join(", ")}.`;
 }

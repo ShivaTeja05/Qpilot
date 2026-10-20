@@ -128,8 +128,8 @@ export function AuditReady({
       {loading ? (
         <div className="mb-5 space-y-2">
           <p className="text-[13px] text-muted">
-            The first look at an audit rebuilds the study it describes and runs every reasonable
-            analysis once; the views open when that is done.
+            The first look at an audit rebuilds the study it describes and runs the audit's
+            reasonable set once; the views open when that is done.
           </p>
           <LoadingViews job={loading} onDone={invalidate} />
         </div>

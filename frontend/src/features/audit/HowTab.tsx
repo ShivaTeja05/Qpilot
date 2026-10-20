@@ -70,7 +70,7 @@ function Steps({ how, manifest }: { how: AuditHow; manifest: AuditManifest }) {
       : null,
     "Lock the plan": manifest.lock_sha256 ? `lock ${shortHash(manifest.lock_sha256, 12)}` : null,
     "Every combination": `${how.total.replace(/,/g, " ")} analyses${how.seconds && how.seconds !== "0" ? `, ${how.seconds} s` : ""}.`,
-    Verdicts: `${count(how.reasonable)} reasonable analyses per gene decide the verdict; shortcuts are shown, never counted.`,
+    Verdicts: `The audit's reasonable set, ${count(how.reasonable)} analyses per gene, decides the verdict; shortcuts are shown, never counted.`,
     Bind: manifest.chain_head ? `chain ${shortHash(manifest.chain_head, 12)}` : null,
   };
   return (
@@ -223,12 +223,12 @@ function Rules({ how }: { how: AuditHow }) {
 function Reading() {
   const terms: [string, string][] = [
     [
-      "Reasonable analyses",
+      "The audit's reasonable set",
       "Every combination of choices a careful lab could defend, with your question fixed. Common shortcuts are shown but kept out of verdicts.",
     ],
     [
-      "Same call in N of 100",
-      "How often reasonable analyses give the same call as your planned analysis, per hundred.",
+      "Same call in k of n",
+      "How many analyses of the audit's reasonable set give the same call as your planned analysis. qPilot's own robustness check (Results) uses a different set, qPilot's choice grid, so its share can differ.",
     ],
     [
       "Fewest samples that change it",
@@ -271,8 +271,8 @@ function Tested({ how }: { how: AuditHow }) {
           {known ? (
             <TestCard label="Known answers" value={known.efficiency[0]?.error_text ?? "—"}>
               median error against true dilution ratios with the best efficiency choice (
-              {known.efficiency[0]?.label}), over {plural(known.cases, "comparison")}. When
-              reasonable analyses disagree most, the planned answer is off by{" "}
+              {known.efficiency[0]?.label}), over {plural(known.cases, "comparison")}. When the
+              audit's reasonable set disagrees most, the planned answer is off by{" "}
               {known.spread_warns.top} %, against {known.spread_warns.other} % otherwise.
             </TestCard>
           ) : null}
@@ -291,8 +291,8 @@ function Tested({ how }: { how: AuditHow }) {
               value={`${how.small[0]!.single} % → ${how.small[0]!.filtered} %`}
             >
               false calls in {how.small[0]!.size} vs {how.small[0]!.size} experiments drawn from
-              real data: one analysis, against requiring the call to hold across reasonable
-              analyses.
+              real data: one analysis, against requiring the call to hold across the audit's
+              reasonable set.
             </TestCard>
           ) : null}
         </div>
@@ -361,7 +361,7 @@ function Limits({ how }: { how: AuditHow }) {
   const lines = [
     ...(how.known
       ? [
-          `The true dilution ratio fell inside the range of reasonable analyses in ${how.known.inside_range} of 100 cases, and inside the planned analysis's likely range in ${how.known.inside_ci} of 100.`,
+          `The true dilution ratio fell inside the range of the audit's reasonable set in ${how.known.inside_range} % of the cases, and inside the planned analysis's likely range in ${how.known.inside_ci} %.`,
           "The truth used is the nominal amount of DNA pipetted, not a digital-PCR count.",
         ]
       : []),

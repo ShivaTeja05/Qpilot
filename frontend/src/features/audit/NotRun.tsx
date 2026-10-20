@@ -15,15 +15,17 @@ import { DECISION_WORDS } from "./words";
 
 /** What each verdict means, without the audit's thresholds (they come with the audit). */
 const VERDICT_MEANING: Record<Verdict, string> = {
-  solid: "The same call in nearly every reasonable analysis, and no handful of samples changes it.",
+  solid:
+    "The same call in nearly all of the audit's reasonable set, and no handful of samples changes it.",
   "holds with caveats":
     "The same call nearly everywhere, but it rests on a few samples or the difference is not always clear.",
   "depends on your choices":
-    "Most reasonable analyses agree; the rest turn on named choices you should fix and report.",
+    "Most of the audit's reasonable set agrees; the rest turn on named choices you should fix and report.",
   fragile:
     "Changes with reasonable choices, with one or two samples, or sits close to the line a call needs.",
   "check data first": "A problem found in the data changes this call when it is fixed.",
-  "no call": "Not called a change; the audit says whether some reasonable analyses would call it.",
+  "no call":
+    "Not called a change; the audit says whether some analyses in its reasonable set would call it.",
 };
 
 export function NotRun({
@@ -58,8 +60,8 @@ export function NotRun({
         <CardBody className="@container space-y-4 text-sm leading-relaxed text-fg">
           <p>
             It re-runs your confirmed study under every combination of eight analysis decisions (
-            {decisions}) and gives each gene a verdict: does its call hold whichever reasonable
-            analysis you had picked?
+            {decisions}) and gives each gene a verdict: does its call hold whichever analysis in its
+            reasonable set you had picked?
           </p>
           <ul className="grid gap-2 @lg:grid-cols-2 @3xl:grid-cols-3">
             {(Object.keys(VERDICT_MEANING) as Verdict[]).map((v) => (
