@@ -223,7 +223,9 @@ Ask never changes a choice, at either autonomy setting: it only reads. If you as
 
 * **Model.** The provider (none, a local OpenAI-compatible server, or Anthropic) comes from the environment (`QPILOT_MODEL_PROVIDER` and the other variables in [agents.md](agents.md)); the page shows its status and reason, **Check connection**, and **Test this model**, which scores the model on your study (correct answers, invented numbers caught, safety, fallbacks, latency). The page has no field for an endpoint or a key, on purpose.
 * **What agents may do on their own** explains the two levels and shows the policy lines; it sets nothing. The setting belongs to each study and is changed with the autonomy switch in that study's top bar ([section 12](#12-agents)); a new study starts at *Suggest*.
-* **Theme**, **Start a fresh demo** (moves earlier work aside), the "what qPilot never does" lines and the version.
+* **Theme** (system, light or dark; saved in this browser).
+* **Start a fresh demo…** asks first, then moves the demo's earlier work aside to a kept folder (`studies-archive/`, next to the studies folder; never deleted) so you can walk it again from the start. Your own studies are not touched.
+* **What qPilot never does**, and **This install**: the version, the curve method and its commit, whether the audit is installed, the Python version and the studies folder (with a copy button).
 
 ## 15. Keyboard
 
