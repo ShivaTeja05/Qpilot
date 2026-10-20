@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Replace the e2e study store with a fresh copy of the shared seed (a real Studio walk of the
-# demo study), so writing tests (decide + undo, exports) start from the same state every run.
+# demo study), and drop the exports/ folder beside it, so writing tests (decide + undo, exports)
+# start from the same state every run.
 #
 #   e2e/reset-store.sh [STORE]     STORE defaults to $QPILOT_STUDIES_DIR
 #
@@ -27,4 +28,8 @@ mkdir -p "$store"
 # Keep the store folder (the server may be pointed at it), replace what is in it.
 find "$store" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 cp -R "$seed"/. "$store"/
+# Records and Prism bundles are written to exports/ beside the store (kept across launches):
+# a fresh run starts without the previous run's exports.
+exports="$(dirname "$abs")/exports"
+[[ -d "$exports" ]] && rm -rf "$exports"
 echo "e2e store reset from the seed: $store"

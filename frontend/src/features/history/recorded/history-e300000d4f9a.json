@@ -1,0 +1,1201 @@
+{
+ "alpha": 0.05,
+ "analyses": [
+  {
+   "choices": [
+    {
+     "dimension": "refs",
+     "label": "Recommended set (all five)",
+     "planned": true,
+     "title": "Which control genes to normalise to",
+     "value": "ALUsq(Eurogentec)|HMBS|HPRT1|SDHA(1)|UBC(2)"
+    },
+    {
+     "dimension": "cut",
+     "label": "Top 15 % by MYCN expression",
+     "planned": true,
+     "title": "Where to cut the comparison groups",
+     "value": "0.15"
+    },
+    {
+     "dimension": "undetermined",
+     "label": "Drop empty wells",
+     "planned": true,
+     "title": "What to do with wells that never amplified",
+     "value": "drop"
+    },
+    {
+     "dimension": "amp_call",
+     "label": "LinRegPCR's own call (a starting quantity was found)",
+     "planned": true,
+     "title": "Which curves count as amplified",
+     "value": "linregpcr"
+    }
+   ],
+   "counts": {
+    "down": 29,
+    "none": 18,
+    "up": 11
+   },
+   "genes": [
+    {
+     "conclusion": "up",
+     "fc": 2.614162762583152,
+     "gene": "AHCY",
+     "holds": 0.9059139784946236,
+     "log2fc": 1.3863489687773178,
+     "p": 3.4236708518096045e-13
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.29441754496147543,
+     "gene": "AKR1C1",
+     "holds": 0.9543010752688172,
+     "log2fc": -1.764064447695223,
+     "p": 1.99122253227859e-06
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.8983852933629127,
+     "gene": "ARHGEF7",
+     "holds": 0.9946236559139785,
+     "log2fc": -0.1545937839855095,
+     "p": 0.4806758149773522
+    },
+    {
+     "conclusion": "up",
+     "fc": 4.01142868409124,
+     "gene": "BIRC5",
+     "holds": 1.0,
+     "log2fc": 2.004116148990932,
+     "p": 5.043719769792568e-14
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.35902992696506975,
+     "gene": "CAMTA1",
+     "holds": 0.956989247311828,
+     "log2fc": -1.477823989879155,
+     "p": 3.450060869749911e-08
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.5052860358240974,
+     "gene": "CAMTA2",
+     "holds": 0.6370967741935484,
+     "log2fc": -0.9848277849605926,
+     "p": 2.9281255987049988e-05
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.2867377358149505,
+     "gene": "CD44",
+     "holds": 0.989247311827957,
+     "log2fc": -1.8021963134669554,
+     "p": 1.8895090302137064e-07
+    },
+    {
+     "conclusion": "up",
+     "fc": 2.4688648233346555,
+     "gene": "CDCA5",
+     "holds": 0.9448924731182796,
+     "log2fc": 1.3038478473986674,
+     "p": 1.1866626750995467e-06
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.10000855498728381,
+     "gene": "CDH5",
+     "holds": 1.0,
+     "log2fc": -3.3218046777891534,
+     "p": 5.762468404506528e-07
+    },
+    {
+     "conclusion": "up",
+     "fc": 2.3799262029722064,
+     "gene": "CDKN3",
+     "holds": 0.8790322580645161,
+     "log2fc": 1.2509168389715897,
+     "p": 8.421267801514294e-08
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.45265275320143966,
+     "gene": "CLSTN1",
+     "holds": 0.42338709677419356,
+     "log2fc": -1.1435233654590808,
+     "p": 0.002866714132671344
+    },
+    {
+     "conclusion": "up",
+     "fc": 21.192506885141203,
+     "gene": "CPSG3",
+     "holds": 1.0,
+     "log2fc": 4.405482350688189,
+     "p": 5.196245183671858e-15
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.27065052237833925,
+     "gene": "DDC",
+     "holds": 0.9516129032258065,
+     "log2fc": -1.8854969223089908,
+     "p": 6.636317354816448e-06
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.492509681830066,
+     "gene": "DPYSL3",
+     "holds": 0.543010752688172,
+     "log2fc": -1.0217760093215358,
+     "p": 1.1174235683245727e-06
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.10955294796571945,
+     "gene": "ECEL1",
+     "holds": 0.9731182795698925,
+     "log2fc": -3.190299788484363,
+     "p": 2.9507999637065108e-08
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.8401224289185042,
+     "gene": "ELAVL4",
+     "holds": 0.989247311827957,
+     "log2fc": -0.2513285113730884,
+     "p": 0.18732783934944833
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.2326851116799643,
+     "gene": "EPB41L3",
+     "holds": 1.0,
+     "log2fc": -2.1035491918047926,
+     "p": 2.4486787522165165e-07
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.13480994236757224,
+     "gene": "EPHA5",
+     "holds": 0.9516129032258065,
+     "log2fc": -2.8910011942470923,
+     "p": 1.4988470486403196e-06
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.4169309307175766,
+     "gene": "EPN2",
+     "holds": 0.5094086021505376,
+     "log2fc": -1.262119690029187,
+     "p": 0.0014331518213457838
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.6612568977752792,
+     "gene": "FYN",
+     "holds": 0.967741935483871,
+     "log2fc": -0.596717228383897,
+     "p": 0.00047971805726823325
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.5854419792973072,
+     "gene": "GNB1",
+     "holds": 0.8225806451612904,
+     "log2fc": -0.7724018965396785,
+     "p": 3.8876339822804274e-05
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.41840580759135987,
+     "gene": "HIVEP2",
+     "holds": 0.6841397849462365,
+     "log2fc": -1.257025218146902,
+     "p": 4.381504200226157e-06
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.5149866336369241,
+     "gene": "IGSF4",
+     "holds": 0.5026881720430108,
+     "log2fc": -0.9573931069332009,
+     "p": 8.141417850125559e-06
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.42230347301164417,
+     "gene": "INPP1",
+     "holds": 0.8655913978494624,
+     "log2fc": -1.243647983016741,
+     "p": 2.1410174987499563e-06
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.5439324966237257,
+     "gene": "MAP2K4",
+     "holds": 0.6586021505376344,
+     "log2fc": -0.8785004743472542,
+     "p": 1.7098607113484104e-05
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.3502710330094385,
+     "gene": "MAP7",
+     "holds": 0.9771505376344086,
+     "log2fc": -1.513456410948352,
+     "p": 0.0001994065514041904
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.36827162102418615,
+     "gene": "MAPT",
+     "holds": 0.9731182795698925,
+     "log2fc": -1.44115786730796,
+     "p": 7.239595450189097e-07
+    },
+    {
+     "conclusion": "up",
+     "fc": 2.667344479006346,
+     "gene": "MCM2",
+     "holds": 0.956989247311828,
+     "log2fc": 1.415404156370352,
+     "p": 1.0936015460338844e-11
+    },
+    {
+     "conclusion": "none",
+     "fc": 1.775650542531332,
+     "gene": "MRPL3",
+     "holds": 0.8440860215053764,
+     "log2fc": 0.8283476795683489,
+     "p": 6.655210806036502e-09
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.5315585500141006,
+     "gene": "MTSS1",
+     "holds": 0.5483870967741935,
+     "log2fc": -0.9116994846686433,
+     "p": 1.538488151078706e-05
+    },
+    {
+     "conclusion": "up",
+     "fc": 14.956615437827042,
+     "gene": "NHLH2",
+     "holds": 1.0,
+     "log2fc": 3.9027118367238485,
+     "p": 6.192153321840656e-09
+    },
+    {
+     "conclusion": "up",
+     "fc": 2.1878561042496822,
+     "gene": "NM23A",
+     "holds": 0.6505376344086021,
+     "log2fc": 1.1295178548982436,
+     "p": 1.2380920536773977e-09
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.2850459501718257,
+     "gene": "NRCAM",
+     "holds": 1.0,
+     "log2fc": -1.8107335905520783,
+     "p": 2.001432741169379e-10
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.0664778367884075,
+     "gene": "NTRK1",
+     "holds": 0.8440860215053764,
+     "log2fc": -3.9109827526937413,
+     "p": 1.348097591946546e-09
+    },
+    {
+     "conclusion": "up",
+     "fc": 3.3186076821812986,
+     "gene": "ODC1",
+     "holds": 0.9946236559139785,
+     "log2fc": 1.730578087558588,
+     "p": 2.065427855257047e-08
+    },
+    {
+     "conclusion": "none",
+     "fc": 1.9431226046145078,
+     "gene": "PAICS",
+     "holds": 0.5483870967741935,
+     "log2fc": 0.9583769330843063,
+     "p": 5.0286315078556e-08
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.4682536760365976,
+     "gene": "PDE4DIP",
+     "holds": 0.6236559139784946,
+     "log2fc": -1.0946377744629237,
+     "p": 2.956480800265039e-06
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.4464072514039836,
+     "gene": "PIK3R1",
+     "holds": 0.7204301075268817,
+     "log2fc": -1.1635676325061093,
+     "p": 1.2515643771323066e-07
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.44039399666922174,
+     "gene": "PLAGL1",
+     "holds": 0.7137096774193549,
+     "log2fc": -1.1831332922761213,
+     "p": 0.0012126577940036558
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.29429341653985097,
+     "gene": "PLAT",
+     "holds": 0.6653225806451613,
+     "log2fc": -1.7646728259068603,
+     "p": 0.002068187100858995
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.2798306291549031,
+     "gene": "PMP22",
+     "holds": 0.9973118279569892,
+     "log2fc": -1.8373742120435734,
+     "p": 1.026739755092622e-07
+    },
+    {
+     "conclusion": "up",
+     "fc": 4.242697905168655,
+     "gene": "PRAME",
+     "holds": 0.9489247311827957,
+     "log2fc": 2.0849819573863626,
+     "p": 1.055223667113932e-05
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.5684374556765188,
+     "gene": "PRDM2",
+     "holds": 0.7150537634408602,
+     "log2fc": -0.8149264746162899,
+     "p": 1.6228997132393396e-05
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.521035776584316,
+     "gene": "PRKACB_bis",
+     "holds": 0.489247311827957,
+     "log2fc": -0.9405456572613389,
+     "p": 0.0007318234961211441
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.535666450590877,
+     "gene": "PRKCZ",
+     "holds": 0.5362903225806451,
+     "log2fc": -0.9005931536587402,
+     "p": 0.0001476490606814073
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.3599115617685497,
+     "gene": "PTN",
+     "holds": 0.9717741935483871,
+     "log2fc": -1.474285646866921,
+     "p": 0.00042552294714856835
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.4070567756595782,
+     "gene": "PTPRF",
+     "holds": 0.625,
+     "log2fc": -1.2966980614525658,
+     "p": 3.567628327633765e-07
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.087399034772291,
+     "gene": "PTPRH",
+     "holds": 0.9018817204301075,
+     "log2fc": -3.5162388429655396,
+     "p": 1.6370175456028043e-07
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.40538437091030494,
+     "gene": "PTPRN2",
+     "holds": 0.7661290322580645,
+     "log2fc": -1.3026376263214412,
+     "p": 2.3574163320478413e-05
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.2807548196924883,
+     "gene": "QPCT",
+     "holds": 0.9731182795698925,
+     "log2fc": -1.8326173054341757,
+     "p": 1.6674784613007443e-07
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.25213009455013036,
+     "gene": "SCG2",
+     "holds": 1.0,
+     "log2fc": -1.9877597646045955,
+     "p": 1.0451199143928834e-08
+    },
+    {
+     "conclusion": "none",
+     "fc": 1.824123431287931,
+     "gene": "SLC25A5",
+     "holds": 0.6612903225806451,
+     "log2fc": 0.8672033543283552,
+     "p": 1.4841903400360044e-08
+    },
+    {
+     "conclusion": "none",
+     "fc": 1.5356418750136271,
+     "gene": "SLC6A8",
+     "holds": 0.918010752688172,
+     "log2fc": 0.6188418063047925,
+     "p": 0.004408845611003432
+    },
+    {
+     "conclusion": "none",
+     "fc": 1.7109675394508148,
+     "gene": "SNAPC1",
+     "holds": 0.7352150537634409,
+     "log2fc": 0.7748123892150716,
+     "p": 0.0004405978733133076
+    },
+    {
+     "conclusion": "down",
+     "fc": 0.37804054974085244,
+     "gene": "TNFRSF",
+     "holds": 0.956989247311828,
+     "log2fc": -1.4033871044292812,
+     "p": 0.00028924703252839
+    },
+    {
+     "conclusion": "up",
+     "fc": 2.308879422758717,
+     "gene": "TYMS",
+     "holds": 0.8413978494623656,
+     "log2fc": 1.2071928328217532,
+     "p": 7.7289761156205e-08
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.6505530811812227,
+     "gene": "ULK2",
+     "holds": 0.9731182795698925,
+     "log2fc": -0.6202613179864134,
+     "p": 0.002407178719607032
+    },
+    {
+     "conclusion": "none",
+     "fc": 0.5927740136012587,
+     "gene": "WSB1",
+     "holds": 0.8763440860215054,
+     "log2fc": -0.7544458916267928,
+     "p": 0.0007444279712865687
+    }
+   ],
+   "index": 0,
+   "planned": true
+  }
+ ],
+ "audit": {
+  "chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "current": true,
+  "step": 1
+ },
+ "broken_at": null,
+ "chain_intact": true,
+ "created_at": "2026-10-20T19:19:52Z",
+ "genes": [
+  "AHCY",
+  "AKR1C1",
+  "ARHGEF7",
+  "BIRC5",
+  "CAMTA1",
+  "CAMTA2",
+  "CD44",
+  "CDCA5",
+  "CDH5",
+  "CDKN3",
+  "CLSTN1",
+  "CPSG3",
+  "DDC",
+  "DPYSL3",
+  "ECEL1",
+  "ELAVL4",
+  "EPB41L3",
+  "EPHA5",
+  "EPN2",
+  "FYN",
+  "GNB1",
+  "HIVEP2",
+  "IGSF4",
+  "INPP1",
+  "MAP2K4",
+  "MAP7",
+  "MAPT",
+  "MCM2",
+  "MRPL3",
+  "MTSS1",
+  "NHLH2",
+  "NM23A",
+  "NRCAM",
+  "NTRK1",
+  "ODC1",
+  "PAICS",
+  "PDE4DIP",
+  "PIK3R1",
+  "PLAGL1",
+  "PLAT",
+  "PMP22",
+  "PRAME",
+  "PRDM2",
+  "PRKACB_bis",
+  "PRKCZ",
+  "PTN",
+  "PTPRF",
+  "PTPRH",
+  "PTPRN2",
+  "QPCT",
+  "SCG2",
+  "SLC25A5",
+  "SLC6A8",
+  "SNAPC1",
+  "TNFRSF",
+  "TYMS",
+  "ULK2",
+  "WSB1"
+ ],
+ "groups": [
+  "MYCN-high",
+  "rest"
+ ],
+ "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+ "headline": [
+  "ODC1",
+  "BIRC5",
+  "NTRK1",
+  "NM23A"
+ ],
+ "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+ "min_log2fc": 1.0,
+ "n_cells": 744,
+ "note": null,
+ "related": [
+  {
+   "after": "Curves confirmed",
+   "created_at": "2026-10-20T19:19:50Z",
+   "current": false,
+   "design_hash": "2000023796a66143d52b9131d191dca0c4ac1d6181790f5b5e42a4252c07186a",
+   "n_entries": 4,
+   "study_id": "cf49ccd72052"
+  }
+ ],
+ "replayable": true,
+ "root": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+ "session": "bc1d233e3866",
+ "steps": [
+  {
+   "actor": null,
+   "analysis": 0,
+   "at": null,
+   "audited": false,
+   "card_id": null,
+   "card_title": null,
+   "chain_intact": true,
+   "choices": [
+    {
+     "card_id": "card_refset",
+     "decided": false,
+     "decided_by": null,
+     "dimension": "refs",
+     "option": "recommended",
+     "option_label": "Recommended set (all five)",
+     "planned": true,
+     "status": "open",
+     "title": "Which control genes to normalise to"
+    },
+    {
+     "card_id": "card_cutoff",
+     "decided": false,
+     "decided_by": null,
+     "dimension": "cut",
+     "option": "cut_15",
+     "option_label": "Top 15 % by MYCN expression",
+     "planned": true,
+     "status": "open",
+     "title": "Where to cut the comparison groups"
+    },
+    {
+     "card_id": "card_amp_call",
+     "decided": false,
+     "decided_by": null,
+     "dimension": "amp_call",
+     "option": "linregpcr",
+     "option_label": "LinRegPCR's own call (a starting quantity was found)",
+     "planned": true,
+     "status": "open",
+     "title": "Which curves count as amplified"
+    },
+    {
+     "card_id": "card_undetermined",
+     "decided": false,
+     "decided_by": null,
+     "dimension": "undetermined",
+     "option": "drop",
+     "option_label": "Drop empty wells",
+     "planned": true,
+     "status": "open",
+     "title": "What to do with wells that never amplified"
+    }
+   ],
+   "conclusions": {
+    "changed": [],
+    "down": 29,
+    "n_changed": 0,
+    "n_moved": 0,
+    "none": 18,
+    "up": 11
+   },
+   "effect": "The study as analysed: every choice as planned, nothing decided yet.",
+   "hash": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+   "kind": "start",
+   "link_ok": true,
+   "option": null,
+   "option_label": null,
+   "prev_hash": null,
+   "reason": null,
+   "seq": 0,
+   "status": null,
+   "undo": false
+  },
+  {
+   "actor": "system",
+   "analysis": 0,
+   "at": "2026-10-20T19:19:52Z",
+   "audited": true,
+   "card_id": "card_undetermined",
+   "card_title": "What to do with wells that never amplified",
+   "chain_intact": true,
+   "choices": [
+    {
+     "card_id": "card_refset",
+     "decided": false,
+     "decided_by": null,
+     "dimension": "refs",
+     "option": "recommended",
+     "option_label": "Recommended set (all five)",
+     "planned": true,
+     "status": "open",
+     "title": "Which control genes to normalise to"
+    },
+    {
+     "card_id": "card_cutoff",
+     "decided": false,
+     "decided_by": null,
+     "dimension": "cut",
+     "option": "cut_15",
+     "option_label": "Top 15 % by MYCN expression",
+     "planned": true,
+     "status": "open",
+     "title": "Where to cut the comparison groups"
+    },
+    {
+     "card_id": "card_amp_call",
+     "decided": false,
+     "decided_by": null,
+     "dimension": "amp_call",
+     "option": "linregpcr",
+     "option_label": "LinRegPCR's own call (a starting quantity was found)",
+     "planned": true,
+     "status": "open",
+     "title": "Which curves count as amplified"
+    },
+    {
+     "card_id": "card_undetermined",
+     "decided": true,
+     "decided_by": "system",
+     "dimension": "undetermined",
+     "option": "drop",
+     "option_label": "Drop empty wells",
+     "planned": true,
+     "status": "auto_decided",
+     "title": "What to do with wells that never amplified"
+    }
+   ],
+   "conclusions": {
+    "changed": [],
+    "down": 29,
+    "n_changed": 0,
+    "n_moved": 0,
+    "none": 18,
+    "up": 11
+   },
+   "effect": "The analysis in force stayed the same: no number changed.",
+   "hash": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+   "kind": "decision",
+   "link_ok": true,
+   "option": "drop",
+   "option_label": "Drop empty wells",
+   "prev_hash": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+   "reason": "Decided automatically: at the recommended settings no option on this card changes any conclusion. At other settings it can, so an agent must ask a person to change it.",
+   "seq": 1,
+   "status": "auto",
+   "undo": false
+  }
+ ],
+ "studio": [
+  {
+   "after_seq": null,
+   "at_first": "2026-10-20T19:19:27Z",
+   "at_last": "2026-10-20T19:19:33Z",
+   "before": true,
+   "chain_intact": true,
+   "confirmed": true,
+   "first_seq": 1,
+   "head": "f0f67b9bd07bce25b855e6606b3f6945c9bb6d9a986dd935d01bb0f48f893f5f",
+   "items": [
+    {
+     "action": "propose",
+     "actors": {
+      "system": 1
+     },
+     "kind": "design.preset",
+     "n": 1,
+     "reasons": [],
+     "subjects": [
+      "design"
+     ],
+     "title": "Design preset"
+    },
+    {
+     "action": "propose",
+     "actors": {
+      "system": 60
+     },
+     "kind": "design.well_role",
+     "n": 60,
+     "reasons": [],
+     "subjects": [
+      "comp_50_NTC",
+      "comp_50_conc_0.0625",
+      "comp_50_conc_0.25"
+     ],
+     "title": "Sample role"
+    },
+    {
+     "action": "propose",
+     "actors": {
+      "system": 9
+     },
+     "kind": "design.dilution_series",
+     "n": 9,
+     "reasons": [],
+     "subjects": [
+      "STD",
+      "STDA",
+      "comp_00"
+     ],
+     "title": "Dilution series"
+    },
+    {
+     "action": "propose",
+     "actors": {
+      "system": 61
+     },
+     "kind": "design.gene_symbol",
+     "n": 61,
+     "reasons": [],
+     "subjects": [
+      "MYCN",
+      "WSB1",
+      "ULK2"
+     ],
+     "title": "Gene symbol"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 1
+     },
+     "kind": "design.preset",
+     "n": 1,
+     "reasons": [
+      "the file is the pinned Vermeulen dataset; the preset is its published design"
+     ],
+     "subjects": [
+      "design"
+     ],
+     "title": "Design preset"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 53
+     },
+     "kind": "design.well_role",
+     "n": 53,
+     "reasons": [
+      "checked the listed proposals; the engine finds nothing against them"
+     ],
+     "subjects": [
+      "comp_50_NTC",
+      "comp_50_conc_0.0625",
+      "comp_50_conc_0.25"
+     ],
+     "title": "Sample role"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 7
+     },
+     "kind": "design.dilution_series",
+     "n": 7,
+     "reasons": [
+      "checked the listed proposals; the engine finds nothing against them"
+     ],
+     "subjects": [
+      "STDA",
+      "comp_00",
+      "comp_05"
+     ],
+     "title": "Dilution series"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 61
+     },
+     "kind": "design.gene_symbol",
+     "n": 61,
+     "reasons": [
+      "checked the listed proposals; the engine finds nothing against them"
+     ],
+     "subjects": [
+      "MYCN",
+      "WSB1",
+      "ULK2"
+     ],
+     "title": "Gene symbol"
+    },
+    {
+     "action": "reject",
+     "actors": {
+      "human": 7
+     },
+     "kind": "design.well_role",
+     "n": 7,
+     "reasons": [
+      "contradicted by the engine check"
+     ],
+     "subjects": [
+      "comp_50_conc_64.0",
+      "comp_40_conc_64.0",
+      "comp_30_conc_64.0"
+     ],
+     "title": "Sample role"
+    },
+    {
+     "action": "reject",
+     "actors": {
+      "human": 2
+     },
+     "kind": "design.dilution_series",
+     "n": 2,
+     "reasons": [
+      "contradicted by the engine check"
+     ],
+     "subjects": [
+      "STD",
+      "comp_50"
+     ],
+     "title": "Dilution series"
+    },
+    {
+     "action": "propose",
+     "actors": {
+      "system": 1
+     },
+     "kind": "stage.confirm",
+     "n": 1,
+     "reasons": [],
+     "subjects": [
+      "design"
+     ],
+     "title": "Confirm stage"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 1
+     },
+     "kind": "stage.confirm",
+     "n": 1,
+     "reasons": [
+      "checked"
+     ],
+     "subjects": [
+      "design"
+     ],
+     "title": "Confirm stage"
+    }
+   ],
+   "last_seq": 264,
+   "led_to": null,
+   "n_accepted": 123,
+   "n_edited": 0,
+   "n_proposed": 132,
+   "n_rejected": 9,
+   "n_superseded": 0,
+   "stage": "design",
+   "title": "Design: 132 proposed, 123 accepted, 9 turned down · confirmed"
+  },
+  {
+   "after_seq": null,
+   "at_first": "2026-10-20T19:19:33Z",
+   "at_last": "2026-10-20T19:19:49Z",
+   "before": true,
+   "chain_intact": true,
+   "confirmed": true,
+   "first_seq": 265,
+   "head": "56cc7c62b1b85386dc1b2bd418e41bf6ab0e5cd183551b9b0fde53d505fde3ca",
+   "items": [
+    {
+     "action": "propose",
+     "actors": {
+      "system": 1
+     },
+     "kind": "curve.call_rule",
+     "n": 1,
+     "reasons": [],
+     "subjects": [
+      "amp_call"
+     ],
+     "title": "Amplification rule"
+    },
+    {
+     "action": "propose",
+     "actors": {
+      "system": 110
+     },
+     "kind": "curve.well_call",
+     "n": 110,
+     "reasons": [],
+     "subjects": [
+      "ALUsq(Eurogentec)_20080228/A5",
+      "ALUsq(Eurogentec)_20080228/A15",
+      "ALUsq(Eurogentec)_20080228/B3"
+     ],
+     "title": "Well call"
+    },
+    {
+     "action": "reject",
+     "actors": {
+      "human": 110
+     },
+     "kind": "curve.well_call",
+     "n": 110,
+     "reasons": [
+      "LinRegPCR fitted a complete early curve in each of these wells"
+     ],
+     "subjects": [
+      "ALUsq(Eurogentec)_20080228/A5",
+      "ALUsq(Eurogentec)_20080228/A15",
+      "ALUsq(Eurogentec)_20080228/B3"
+     ],
+     "title": "Well call"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 1
+     },
+     "kind": "curve.call_rule",
+     "n": 1,
+     "reasons": [
+      "LinRegPCR's call is the engine's default; the cut-offs stay as choices"
+     ],
+     "subjects": [
+      "amp_call"
+     ],
+     "title": "Amplification rule"
+    },
+    {
+     "action": "propose",
+     "actors": {
+      "system": 1
+     },
+     "kind": "stage.confirm",
+     "n": 1,
+     "reasons": [],
+     "subjects": [
+      "curves"
+     ],
+     "title": "Confirm stage"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 1
+     },
+     "kind": "stage.confirm",
+     "n": 1,
+     "reasons": [
+      "checked"
+     ],
+     "subjects": [
+      "curves"
+     ],
+     "title": "Confirm stage"
+    }
+   ],
+   "last_seq": 488,
+   "led_to": "cf49ccd72052",
+   "n_accepted": 2,
+   "n_edited": 0,
+   "n_proposed": 112,
+   "n_rejected": 110,
+   "n_superseded": 0,
+   "stage": "curves",
+   "title": "Curves: 112 proposed, 2 accepted, 110 turned down · confirmed"
+  },
+  {
+   "after_seq": null,
+   "at_first": "2026-10-20T19:19:50Z",
+   "at_last": "2026-10-20T19:19:50Z",
+   "before": true,
+   "chain_intact": true,
+   "confirmed": true,
+   "first_seq": 489,
+   "head": "8d17d3be2109bea384ca37473efb6b0e3a14c14049cacbd48a5e25a7e92ab4e2",
+   "items": [
+    {
+     "action": "propose",
+     "actors": {
+      "system": 1
+     },
+     "kind": "stage.confirm",
+     "n": 1,
+     "reasons": [],
+     "subjects": [
+      "choices"
+     ],
+     "title": "Confirm stage"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 1
+     },
+     "kind": "stage.confirm",
+     "n": 1,
+     "reasons": [
+      "checked"
+     ],
+     "subjects": [
+      "choices"
+     ],
+     "title": "Confirm stage"
+    }
+   ],
+   "last_seq": 490,
+   "led_to": null,
+   "n_accepted": 1,
+   "n_edited": 0,
+   "n_proposed": 1,
+   "n_rejected": 0,
+   "n_superseded": 0,
+   "stage": "choices",
+   "title": "Choices: 1 proposed, 1 accepted · confirmed"
+  },
+  {
+   "after_seq": null,
+   "at_first": "2026-10-20T19:19:50Z",
+   "at_last": "2026-10-20T19:19:51Z",
+   "before": true,
+   "chain_intact": true,
+   "confirmed": false,
+   "first_seq": 491,
+   "head": "b27a0111f1164a55ee837e0525bb86597563954bd1f9aed5427ab899f574d95a",
+   "items": [
+    {
+     "action": "propose",
+     "actors": {
+      "system": 1
+     },
+     "kind": "prism.project",
+     "n": 1,
+     "reasons": [],
+     "subjects": [
+      "prism"
+     ],
+     "title": "Prism project"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 1
+     },
+     "kind": "prism.project",
+     "n": 1,
+     "reasons": [
+      "the default template and the headline genes"
+     ],
+     "subjects": [
+      "prism"
+     ],
+     "title": "Prism project"
+    },
+    {
+     "action": "propose",
+     "actors": {
+      "system": 1
+     },
+     "kind": "prism.exclusion_reason",
+     "n": 1,
+     "reasons": [],
+     "subjects": [
+      "ODC1/1496"
+     ],
+     "title": "Exclusion in Prism"
+    },
+    {
+     "action": "accept",
+     "actors": {
+      "human": 1
+     },
+     "kind": "prism.exclusion_reason",
+     "n": 1,
+     "reasons": [
+      "failed RNA extraction"
+     ],
+     "subjects": [
+      "ODC1/1496"
+     ],
+     "title": "Exclusion in Prism"
+    }
+   ],
+   "last_seq": 494,
+   "led_to": "e300000d4f9a",
+   "n_accepted": 2,
+   "n_edited": 0,
+   "n_proposed": 2,
+   "n_rejected": 0,
+   "n_superseded": 0,
+   "stage": "prism",
+   "title": "Prism: 2 proposed, 2 accepted"
+  }
+ ],
+ "studio_intact": true,
+ "study_id": "e300000d4f9a"
+}

@@ -1643,6 +1643,130 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History
+         * @description Every step of the decision chain: the choices in force, the calls, what each changed.
+         */
+        get: operations["get_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/history/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History Compare
+         * @description Two analyses of the same input file: the conclusions that differ, and why.
+         */
+        get: operations["get_history_compare"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/history/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History Diff
+         * @description What changed between two steps: calls, the largest fold and holds moves, the choices.
+         */
+        get: operations["get_history_diff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/planner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Planner
+         * @description The study's noise per gene, its group sizes and efficiencies, and the planner's defaults.
+         */
+        get: operations["get_planner"];
+        put?: never;
+        /**
+         * Post Planner
+         * @description The plan: samples needed, what a size detects, the right call's chance, curves, rules.
+         */
+        post: operations["post_planner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/planner/layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Layout
+         * @description Every plate of the next experiment: balanced, randomised (seeded), controls on each.
+         */
+        post: operations["post_layout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/planner/layout.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Layout Csv
+         * @description The same plates as CSV (plate, well, sample, group, target, type) to import.
+         */
+        get: operations["get_layout_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/record": {
         parameters: {
             query?: never;
@@ -2926,6 +3050,24 @@ export type components = {
             verdict: string;
         };
         /**
+         * AuditMark
+         * @description Where the robustness audit sits on the chain.
+         */
+        AuditMark: {
+            /** Chain Head */
+            chain_head: string;
+            /**
+             * Current
+             * @description The audit is of the chain head of now.
+             */
+            current: boolean;
+            /**
+             * Step
+             * @description The step whose hash the audit was run at.
+             */
+            step: number | null;
+        };
+        /**
          * AuditOption
          * @description One option of an analysis choice.
          */
@@ -3824,6 +3966,60 @@ export type components = {
             };
         };
         /**
+         * ChoiceChange
+         * @description A Decision Card whose option in force differs between two points.
+         */
+        ChoiceChange: {
+            /** Card Id */
+            card_id: string;
+            /** From Label */
+            from_label: string;
+            /** From Option */
+            from_option: string;
+            /** Title */
+            title: string;
+            /** To Label */
+            to_label: string;
+            /** To Option */
+            to_option: string;
+        };
+        /**
+         * ChoiceInForce
+         * @description A Decision Card's state at one step of the chain.
+         */
+        ChoiceInForce: {
+            /** Card Id */
+            card_id: string;
+            /**
+             * Decided
+             * @description Someone had decided this card by this step.
+             */
+            decided: boolean;
+            /** Decided By */
+            decided_by?: ("human" | "agent" | "system") | null;
+            /** Dimension */
+            dimension: string | null;
+            /**
+             * Option
+             * @description The option in force (the planned one while undecided).
+             */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /**
+             * Planned
+             * @description The option in force is the planned (recommended) one.
+             */
+            planned: boolean;
+            /**
+             * Status
+             * @description open, decided, auto_decided or pending_human.
+             */
+            status: string;
+            /** Title */
+            title: string;
+        };
+        /**
          * Citation
          * @description A reference the Methods cite (no links: DOIs as text).
          */
@@ -3849,6 +4045,33 @@ export type components = {
             meaning: string;
             /** Value */
             value: string;
+        };
+        /**
+         * CompareSide
+         * @description One of the two analyses compared, at its chain head.
+         */
+        CompareSide: {
+            /** Choices */
+            choices: components["schemas"]["ChoiceInForce"][];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Created At */
+            created_at: string | null;
+            /**
+             * Current
+             * @description The session's analysis of the design confirmed now.
+             */
+            current: boolean;
+            /** Design Hash */
+            design_hash: string | null;
+            /** Head */
+            head: string;
+            /** N Entries */
+            n_entries: number;
+            /** Study Id */
+            study_id: string;
         };
         /**
          * ConfirmRequest
@@ -4261,6 +4484,38 @@ export type components = {
             source: string;
         };
         /**
+         * DesignChange
+         * @description One field of the confirmed design that differs between two analyses.
+         */
+        DesignChange: {
+            /**
+             * Added
+             * @description List items only in the later analysis.
+             * @default []
+             */
+            added: string[];
+            /** After */
+            after?: string | null;
+            /**
+             * Before
+             * @description A scalar value before, as text.
+             */
+            before?: string | null;
+            /** Field */
+            field: string;
+            /**
+             * Removed
+             * @description List items only in the earlier one.
+             * @default []
+             */
+            removed: string[];
+            /**
+             * Title
+             * @description The field in words.
+             */
+            title: string;
+        };
+        /**
          * DownloadLink
          * @description A file qPilot wrote into its export folder (beside the store), offered for download.
          */
@@ -4517,6 +4772,54 @@ export type components = {
             moved: string[];
         };
         /**
+         * GeneChange
+         * @description One gene at two points: its call, fold, p and share of analyses with the same call.
+         */
+        GeneChange: {
+            /** Call Changed */
+            call_changed: boolean;
+            /**
+             * Cause
+             * @description (compare only) whether the design, the choices, or both moved this gene.
+             */
+            cause?: ("design" | "choices" | "both" | "unknown") | null;
+            /**
+             * Delta Log2Fc
+             * @description to − from, log2.
+             */
+            delta_log2fc: number | null;
+            /** From Conclusion */
+            from_conclusion: ("up" | "down" | "none") | null;
+            /** From Holds */
+            from_holds: number | null;
+            /** From Log2Fc */
+            from_log2fc: number | null;
+            /** From P */
+            from_p: number | null;
+            /** Gene */
+            gene: string;
+            /**
+             * Headline
+             * @default false
+             */
+            headline: boolean;
+            /** To Conclusion */
+            to_conclusion: ("up" | "down" | "none") | null;
+            /** To Holds */
+            to_holds: number | null;
+            /** To Log2Fc */
+            to_log2fc: number | null;
+            /** To P */
+            to_p: number | null;
+            /**
+             * Verdict
+             * @description The audit's verdict, when audited.
+             */
+            verdict?: string | null;
+            /** Verdict Label */
+            verdict_label?: string | null;
+        };
+        /**
          * GeneGrid
          * @description Every analysis in the grid for one gene (the 'what holds' strip), compactly.
          */
@@ -4752,6 +5055,352 @@ export type components = {
             name: string;
             /** Points */
             points: components["schemas"]["UnitValue"][];
+        };
+        /**
+         * HistoryAnalysis
+         * @description One distinct analysis that some step of the chain had in force.
+         */
+        HistoryAnalysis: {
+            /** Choices */
+            choices: components["schemas"]["HistoryChoice"][];
+            /**
+             * Counts
+             * @description Genes called up / down / none.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Genes
+             * @description Aligned with HistoryView.genes.
+             */
+            genes: components["schemas"]["HistoryGene"][];
+            /** Index */
+            index: number;
+            /**
+             * Planned
+             * @description The analysis as planned (every choice as recommended).
+             */
+            planned: boolean;
+        };
+        /**
+         * HistoryChoice
+         * @description One analysis choice (a grid dimension) and the option an analysis uses.
+         */
+        HistoryChoice: {
+            /** Dimension */
+            dimension: string;
+            /**
+             * Label
+             * @description The option in words (the card's label when a card has it).
+             */
+            label: string;
+            /**
+             * Planned
+             * @description The option of the analysis as planned.
+             */
+            planned: boolean;
+            /**
+             * Title
+             * @description The choice in words.
+             */
+            title: string;
+            /**
+             * Value
+             * @description The option as the grid writes it.
+             */
+            value: string;
+        };
+        /**
+         * HistoryCompare
+         * @description Two analyses of the same input file: which conclusions differ, and why.
+         */
+        HistoryCompare: {
+            /** @description The later analysis. */
+            after: components["schemas"]["CompareSide"];
+            /** @description The earlier analysis. */
+            before: components["schemas"]["CompareSide"];
+            /**
+             * By Choices
+             * @description Calls changed by the choices alone (same design).
+             */
+            by_choices: number;
+            /**
+             * By Design
+             * @description Calls changed by the design alone (same choices).
+             */
+            by_design: number;
+            /** Calls Changed */
+            calls_changed: components["schemas"]["GeneChange"][];
+            /**
+             * Choices
+             * @description Cards whose option in force differs.
+             */
+            choices: components["schemas"]["ChoiceChange"][];
+            /**
+             * Decomposed
+             * @description The later analysis' grid has the earlier one's choices, so each change is split into what the design did and what the choices did.
+             */
+            decomposed: boolean;
+            /** Design */
+            design: components["schemas"]["DesignChange"][];
+            /** Fold Moves */
+            fold_moves: components["schemas"]["GeneChange"][];
+            /** Genes Only After */
+            genes_only_after: string[];
+            /** Genes Only Before */
+            genes_only_before: string[];
+            /** Holds Moves */
+            holds_moves: components["schemas"]["GeneChange"][];
+            /** Input Sha256 */
+            input_sha256: string;
+            /** N Moved */
+            n_moved: number;
+            /** Summary */
+            summary: string;
+        };
+        /**
+         * HistoryDiff
+         * @description What changed between two steps of the chain (or two analyses of the same file).
+         */
+        HistoryDiff: {
+            /**
+             * Audit Note
+             * @description Which step the audit's verdicts are of, when audited.
+             */
+            audit_note?: string | null;
+            /**
+             * Calls Changed
+             * @description Every gene whose call changed.
+             */
+            calls_changed: components["schemas"]["GeneChange"][];
+            /** Choices */
+            choices: components["schemas"]["ChoiceChange"][];
+            /**
+             * Fold Moves
+             * @description The genes whose fold change moved most (up to 12), largest first.
+             */
+            fold_moves: components["schemas"]["GeneChange"][];
+            /** From Counts */
+            from_counts: {
+                [key: string]: number;
+            };
+            /** From Seq */
+            from_seq: number;
+            /**
+             * Holds Moves
+             * @description The genes whose share of same-call analyses moved most (up to 12).
+             */
+            holds_moves: components["schemas"]["GeneChange"][];
+            /**
+             * N Moved
+             * @description Genes whose fold change moved at all.
+             */
+            n_moved: number;
+            /**
+             * Same Analysis
+             * @description Both steps had the same analysis in force.
+             */
+            same_analysis: boolean;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Summary
+             * @description The change in one sentence.
+             */
+            summary: string;
+            /** To Counts */
+            to_counts: {
+                [key: string]: number;
+            };
+            /** To Seq */
+            to_seq: number;
+        };
+        /**
+         * HistoryGene
+         * @description One gene under one analysis (one cell of the study's grid).
+         */
+        HistoryGene: {
+            /** Conclusion */
+            conclusion: ("up" | "down" | "none") | null;
+            /** Fc */
+            fc: number | null;
+            /** Gene */
+            gene: string;
+            /**
+             * Holds
+             * @description Share (0–1) of the grid's analyses that give this same call.
+             */
+            holds: number | null;
+            /**
+             * Log2Fc
+             * @description null where the engine computed none.
+             */
+            log2fc: number | null;
+            /**
+             * P
+             * @description null where the engine computed none.
+             */
+            p: number | null;
+        };
+        /**
+         * HistoryStep
+         * @description One point of the chain: 0 is the study as analysed, then one per decision entry.
+         */
+        HistoryStep: {
+            /** Actor */
+            actor?: ("human" | "agent" | "system") | null;
+            /**
+             * Analysis
+             * @description Index into HistoryView.analyses; null when not replayable.
+             */
+            analysis?: number | null;
+            /** At */
+            at?: string | null;
+            /**
+             * Audited
+             * @description The robustness audit was run at this step.
+             * @default false
+             */
+            audited: boolean;
+            /** Card Id */
+            card_id?: string | null;
+            /** Card Title */
+            card_title?: string | null;
+            /**
+             * Chain Intact
+             * @description Every entry up to this one verifies.
+             */
+            chain_intact: boolean;
+            /** Choices */
+            choices: components["schemas"]["ChoiceInForce"][];
+            conclusions?: components["schemas"]["StepConclusions"] | null;
+            /**
+             * Effect
+             * @description What this step changed, in plain words.
+             */
+            effect: string;
+            /**
+             * Hash
+             * @description The entry's hash (step 0: the input file's sha256).
+             */
+            hash: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "start" | "decision";
+            /**
+             * Link Ok
+             * @description This entry's link and hash re-computed on the server.
+             */
+            link_ok: boolean;
+            /** Option */
+            option?: string | null;
+            /** Option Label */
+            option_label?: string | null;
+            /** Prev Hash */
+            prev_hash?: string | null;
+            /**
+             * Reason
+             * @description Quoted text from whoever decided.
+             */
+            reason?: string | null;
+            /**
+             * Seq
+             * @description 0: as analysed (the chain's root); then the entry's seq.
+             */
+            seq: number;
+            /** Status */
+            status?: ("applied" | "auto" | "pending_human" | "rejected" | "stale") | null;
+            /**
+             * Undo
+             * @description Written by Undo.
+             * @default false
+             */
+            undo: boolean;
+        };
+        /**
+         * HistoryView
+         * @description A study's decision chain replayed: every step, the analysis in force and its calls.
+         */
+        HistoryView: {
+            /** Alpha */
+            alpha: number;
+            /** Analyses */
+            analyses: components["schemas"]["HistoryAnalysis"][];
+            audit?: components["schemas"]["AuditMark"] | null;
+            /**
+             * Broken At
+             * @description The first entry that fails.
+             */
+            broken_at?: number | null;
+            /** Chain Intact */
+            chain_intact: boolean;
+            /**
+             * Created At
+             * @description When this analysis was made.
+             */
+            created_at?: string | null;
+            /** Genes */
+            genes: string[];
+            /**
+             * Groups
+             * @description The compared group, then the reference group.
+             */
+            groups: string[];
+            /** Head */
+            head: string;
+            /** Headline */
+            headline: string[];
+            /** Input Sha256 */
+            input_sha256: string;
+            /**
+             * Min Log2Fc
+             * @description The call rule's minimum |log2 fold|.
+             */
+            min_log2fc: number;
+            /**
+             * N Cells
+             * @description Analyses in the study's grid.
+             */
+            n_cells?: number | null;
+            /**
+             * Note
+             * @description Why a step cannot be replayed, if so.
+             */
+            note?: string | null;
+            /**
+             * Related
+             * @description Other analyses of the same input file.
+             */
+            related: components["schemas"]["RelatedStudy"][];
+            /**
+             * Replayable
+             * @description The study's grid holds the planned analysis, so each step can be replayed.
+             */
+            replayable: boolean;
+            /**
+             * Root
+             * @description The chain's genesis: the input file's sha256.
+             */
+            root: string;
+            /** Session */
+            session?: string | null;
+            /** Steps */
+            steps: components["schemas"]["HistoryStep"][];
+            /**
+             * Studio
+             * @description The session's Studio log, by stage run.
+             */
+            studio: components["schemas"]["StudioMilestone"][];
+            /**
+             * Studio Intact
+             * @default true
+             */
+            studio_intact: boolean;
+            /** Study Id */
+            study_id: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -4992,6 +5641,46 @@ export type components = {
              * @description With [n] markers and the numbered reference list.
              */
             with_citations: string;
+        };
+        /**
+         * MilestoneItem
+         * @description One kind of action within a Studio milestone (e.g. 53 sample roles accepted).
+         */
+        MilestoneItem: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "propose" | "accept" | "edit" | "reject" | "supersede";
+            /**
+             * Actors
+             * @description Who acted: human / agent / system → count.
+             */
+            actors: {
+                [key: string]: number;
+            };
+            /**
+             * Kind
+             * @description The proposal kind (design.well_role, stage.confirm, …).
+             */
+            kind: string;
+            /** N */
+            n: number;
+            /**
+             * Reasons
+             * @description Distinct reasons given (up to three), quoted text.
+             */
+            reasons: string[];
+            /**
+             * Subjects
+             * @description What it was about (up to three), quoted text.
+             */
+            subjects: string[];
+            /**
+             * Title
+             * @description The kind in words.
+             */
+            title: string;
         };
         /**
          * MiqeItem
@@ -5251,6 +5940,680 @@ export type components = {
             reason: string;
             /** Seq */
             seq: number;
+        };
+        /**
+         * PlanBudget
+         * @description What fits in the plates available.
+         */
+        PlanBudget: {
+            /**
+             * N Fit
+             * @description The most samples per group whose layout fits; None: not even two.
+             */
+            n_fit: number | null;
+            /** Plates */
+            plates: number;
+            /** Text */
+            text: string;
+        };
+        /**
+         * PlanControls
+         * @description Controls on every plate, per assay.
+         */
+        PlanControls: {
+            /**
+             * Calibrator
+             * @description An inter-run calibrator on every plate when a gene's samples span plates.
+             * @default true
+             */
+            calibrator: boolean;
+            /**
+             * Nrt
+             * @description NRT wells per assay.
+             * @default 0
+             */
+            nrt: number;
+            /**
+             * Ntc
+             * @description NTC wells per assay.
+             * @default 1
+             */
+            ntc: number;
+            /**
+             * Standards
+             * @description Standard dilution points per assay, each in the technical replicates.
+             * @default 0
+             */
+            standards: number;
+        };
+        /**
+         * PlanCurvePoint
+         * @description One group size on a power curve.
+         */
+        PlanCurvePoint: {
+            /** N */
+            n: number;
+            /** P Called */
+            p_called: number;
+            /** P Significant */
+            p_significant: number;
+        };
+        /**
+         * PlanEfficiency
+         * @description The genes' efficiencies and which fall outside the engine's usual range.
+         */
+        PlanEfficiency: {
+            /** Outside */
+            outside: string[];
+            /**
+             * Range
+             * @description The usual range as E - 1 (0.90–1.10).
+             */
+            range: [
+                number,
+                number
+            ];
+            spread: components["schemas"]["PlanSpread"] | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * PlanGene
+         * @description One gene under the plan: samples needed, what the plan's size detects, the right call.
+         */
+        PlanGene: {
+            /**
+             * Call Reachable
+             * @description Whether any size reaches the power for a call; None: not asked.
+             */
+            call_reachable?: boolean | null;
+            /**
+             * Cannot Detect
+             * @description qpilot.qpcr.plan.plan's lines, as text.
+             */
+            cannot_detect: string[];
+            /**
+             * Current Mde Fold
+             * @description mde_fold_groups at the study's own group sizes.
+             */
+            current_mde_fold: number;
+            /**
+             * Current P Called
+             * @description Simulated P(called) at the study's own (unbalanced) group sizes.
+             */
+            current_p_called: number;
+            /**
+             * Detectable
+             * @description mde_fold at the plan's size ≤ the target change.
+             */
+            detectable: boolean;
+            /**
+             * Focus
+             * @description One of the next experiment's genes.
+             */
+            focus: boolean;
+            /** Gene */
+            gene: string;
+            /**
+             * Mde Fold
+             * @description The smallest change the plan's size detects (mde_fold).
+             */
+            mde_fold: number;
+            /**
+             * N For Call
+             * @description Per group for qPilot's rule to call the change with the chosen power (qpilot.qpcr.plan.n_for_call); None: no size reaches it, or not computed (not focus).
+             */
+            n_for_call?: number | null;
+            /**
+             * N Needed
+             * @description Per group for p < alpha with the chosen power (qpilot.qpcr.plan.n_needed).
+             */
+            n_needed: number;
+            /**
+             * P Called
+             * @description Simulated P(qPilot calls it, right way) at that size.
+             */
+            p_called: number;
+            /**
+             * P Significant
+             * @description Simulated P(p < alpha) at the plan's size.
+             */
+            p_significant: number;
+            /** Sigma */
+            sigma: number;
+        };
+        /**
+         * PlanLayoutBalance
+         * @description The checks every layout passes (or says why not).
+         */
+        PlanLayoutBalance: {
+            /** Controls On Every Plate */
+            controls_on_every_plate: boolean;
+            /**
+             * Each Reaction Once
+             * @description Every planned gene reaction on exactly one plate; a reference gene's once per gene panel (each plate normalises its own samples).
+             */
+            each_reaction_once: boolean;
+            /** Every Plate Every Group */
+            every_plate_every_group: boolean;
+            /**
+             * Group Plate Association
+             * @description Cramér's V of plate × group over samples: 0 means plate says nothing of group.
+             */
+            group_plate_association: number;
+            /**
+             * Max Share Gap
+             * @description Largest gap between a group's share on a plate and its share overall.
+             */
+            max_share_gap: number;
+            /** Plates With One Group */
+            plates_with_one_group: number[];
+            /** Refs On Every Plate */
+            refs_on_every_plate: boolean;
+            /** Wells Controls */
+            wells_controls: number;
+            /** Wells Free */
+            wells_free: number;
+            /** Wells Samples */
+            wells_samples: number;
+            /** Wells Total */
+            wells_total: number;
+        };
+        /**
+         * PlanLayoutBody
+         * @description The next experiment to lay out on plates.
+         */
+        PlanLayoutBody: {
+            /**
+             * Calibrator
+             * @default true
+             */
+            calibrator: boolean;
+            /** Genes */
+            genes: string[];
+            /** N Per Group */
+            n_per_group: number;
+            /**
+             * Nrt
+             * @default 0
+             */
+            nrt: number;
+            /**
+             * Ntc
+             * @default 1
+             */
+            ntc: number;
+            /** Refs */
+            refs?: string[] | null;
+            /**
+             * Replicates
+             * @default 2
+             */
+            replicates: number;
+            /**
+             * Seed
+             * @default 1
+             */
+            seed: number;
+            /**
+             * Standards
+             * @default 0
+             */
+            standards: number;
+            /**
+             * Wells Per Plate
+             * @default 96
+             * @enum {integer}
+             */
+            wells_per_plate: 96 | 384;
+        };
+        /**
+         * PlanLayoutEstimate
+         * @description How the plan would be laid out (no well assigned yet).
+         */
+        PlanLayoutEstimate: {
+            /** Batches */
+            batches: number;
+            /** Calibrated */
+            calibrated: boolean;
+            /** Panels */
+            panels: number;
+            /** Plates */
+            plates: number;
+            /** Samples Per Plate */
+            samples_per_plate: number;
+            /**
+             * Wells
+             * @description Wells the plates hold in all.
+             */
+            wells: number;
+        };
+        /**
+         * PlanLayoutPlate
+         * @description One plate of the layout with its balance.
+         */
+        PlanLayoutPlate: {
+            /** Batch */
+            batch: number;
+            /**
+             * Controls
+             * @description Control type → wells.
+             */
+            controls: {
+                [key: string]: number;
+            };
+            /**
+             * Edge Share
+             * @description Group → share of its wells on the plate's outer rows and columns.
+             */
+            edge_share: {
+                [key: string]: number | null;
+            };
+            /** Genes */
+            genes: string[];
+            /** Groups Present */
+            groups_present: number;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+            /** Panel */
+            panel: number;
+            /** Refs */
+            refs: string[];
+            /** Refs Present */
+            refs_present: boolean;
+            /**
+             * Samples
+             * @description Group → samples on this plate.
+             */
+            samples: {
+                [key: string]: number;
+            };
+            /** Wells */
+            wells: components["schemas"]["PlanLayoutWell"][];
+            /** Wells Free */
+            wells_free: number;
+            /** Wells Used */
+            wells_used: number;
+        };
+        /**
+         * PlanLayoutView
+         * @description Every plate of the next experiment, its balance, and the CSV to import.
+         */
+        PlanLayoutView: {
+            balance: components["schemas"]["PlanLayoutBalance"];
+            /** Batches */
+            batches: number;
+            /** Calibrated */
+            calibrated: boolean;
+            /** Csv Name */
+            csv_name: string;
+            /**
+             * Csv Url
+             * @description GET this for the CSV (same inputs, same plates).
+             */
+            csv_url: string;
+            /** Genes */
+            genes: string[];
+            /** Groups */
+            groups: components["schemas"]["PlannerGroup"][];
+            /** Notes */
+            notes: string[];
+            /** Panels */
+            panels: string[][];
+            /** Plates */
+            plates: components["schemas"]["PlanLayoutPlate"][];
+            /** Refs */
+            refs: string[];
+            /** Replicates */
+            replicates: number;
+            /** Rules */
+            rules: string[];
+            /** Samples Per Plate */
+            samples_per_plate: number;
+            /** Seed */
+            seed: number;
+            /** Study Id */
+            study_id: string;
+            /** Warnings */
+            warnings: string[];
+            /** Wells Per Plate */
+            wells_per_plate: number;
+        };
+        /**
+         * PlanLayoutWell
+         * @description One well: position, sample (and group), assay, RDML sample type, replicate.
+         */
+        PlanLayoutWell: {
+            /** Group */
+            group: string | null;
+            /** Replicate */
+            replicate: number;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "unkn" | "std" | "ntc" | "nrt" | "pos";
+            /** Well */
+            well: string;
+        };
+        /**
+         * PlannerBody
+         * @description What to plan: the change worth finding, the power, and the next experiment's shape.
+         */
+        PlannerBody: {
+            /**
+             * Alpha
+             * @description Two-sided; default the study's rule.
+             */
+            alpha?: number | null;
+            controls?: components["schemas"]["PlanControls"];
+            /**
+             * Fold
+             * @description The smallest fold change worth detecting (e.g. 2, or 0.5).
+             * @default 2
+             */
+            fold: number;
+            /**
+             * Genes
+             * @description The next experiment's genes (default: the study's headline genes).
+             */
+            genes?: string[] | null;
+            /**
+             * N Per Group
+             * @description Planned samples per group; none: the size the chosen genes need.
+             */
+            n_per_group?: number | null;
+            /**
+             * Plates
+             * @description Plates available (a budget).
+             */
+            plates?: number | null;
+            /**
+             * Power
+             * @default 0.8
+             */
+            power: number;
+            /**
+             * Refs
+             * @description Reference genes on every plate (default: the study's control genes).
+             */
+            refs?: string[] | null;
+            /**
+             * Replicates
+             * @default 2
+             */
+            replicates: number;
+            /**
+             * Wells Per Plate
+             * @default 96
+             * @enum {integer}
+             */
+            wells_per_plate: 96 | 384;
+        };
+        /**
+         * PlannerGene
+         * @description One compared gene: its noise in this study, and what the study found.
+         */
+        PlannerGene: {
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /**
+             * Df
+             * @description Degrees of freedom of sigma: units with a value minus groups.
+             */
+            df: number;
+            /**
+             * Efficiency
+             * @description The gene's PCR efficiency (fold per cycle; 2 is doubling).
+             */
+            efficiency?: number | null;
+            /**
+             * Efficiency Outside
+             * @description Efficiency outside the engine's 90–110 % range (a warning only).
+             */
+            efficiency_outside: boolean;
+            /**
+             * Fc
+             * @description The fold change this study found (group 1 / group 2).
+             */
+            fc: number;
+            /** Gene */
+            gene: string;
+            /** Headline */
+            headline: boolean;
+            /**
+             * N
+             * @description Units with a value in each group, in the groups' order.
+             */
+            n: number[];
+            /**
+             * Sigma
+             * @description Pooled SD of log2 relative quantity between biological units of one group (qpilot.qpcr.plan.pooled_sd over the engine's per-unit values).
+             */
+            sigma: number;
+            /**
+             * Sigma Ci
+             * @description 95 % chi-square interval of sigma (qpilot.qpcr.plan.sigma_interval).
+             */
+            sigma_ci: [
+                number,
+                number
+            ];
+        };
+        /**
+         * PlannerGroup
+         * @description One group of the study's comparison and how many biological units it holds.
+         */
+        PlannerGroup: {
+            /** Label */
+            label: string;
+            /** N */
+            n: number;
+        };
+        /**
+         * PlannerView
+         * @description What the study measured that a plan needs: noise per gene, group sizes, efficiencies.
+         */
+        PlannerView: {
+            /** Alpha */
+            alpha: number;
+            /**
+             * Candidates
+             * @description The reference candidates the study tested.
+             */
+            candidates: string[];
+            defaults: components["schemas"]["PlannerBody"];
+            efficiency: components["schemas"]["PlanEfficiency"];
+            /** Genes */
+            genes: components["schemas"]["PlannerGene"][];
+            /** Groups */
+            groups: components["schemas"]["PlannerGroup"][];
+            /** Head */
+            head: string;
+            /** Headline */
+            headline: string[];
+            /**
+             * Min Fold
+             * @description The rule's fold threshold for a call (2 = two-fold).
+             */
+            min_fold: number;
+            /**
+             * N Equivalent
+             * @description The balanced group size as precise as the study's groups (harmonic mean).
+             */
+            n_equivalent: number;
+            plates: components["schemas"]["PlanStudyPlates"] | null;
+            /**
+             * Refs
+             * @description The control genes this study normalises by.
+             */
+            refs: string[];
+            /** Rule Text */
+            rule_text: string;
+            sigma: components["schemas"]["PlanSpread"];
+            /**
+             * Sigma Source
+             * @description How sigma was measured, in words.
+             */
+            sigma_source: string;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * PlanPowerCurve
+         * @description P(significant) and P(called) against samples per group, at the gene's sigma.
+         */
+        PlanPowerCurve: {
+            /** Gene */
+            gene: string;
+            /** N For Call */
+            n_for_call: number | null;
+            /** N Needed */
+            n_needed: number;
+            /** Points */
+            points: components["schemas"]["PlanCurvePoint"][];
+            /** Sigma */
+            sigma: number;
+        };
+        /**
+         * PlanSpread
+         * @description Five numbers that describe a spread (min, quartiles, median, max) over genes.
+         */
+        PlanSpread: {
+            /** Max */
+            max: number;
+            /** Median */
+            median: number;
+            /** Min */
+            min: number;
+            /** N */
+            n: number;
+            /** Q1 */
+            q1: number;
+            /** Q3 */
+            q3: number;
+        };
+        /**
+         * PlanStudyPlates
+         * @description How this study laid out its plates (from its per-well table).
+         */
+        PlanStudyPlates: {
+            /**
+             * Controls Per Plate
+             * @description Median wells per plate by control type (std, ntc, nrt, …).
+             */
+            controls_per_plate: {
+                [key: string]: number;
+            };
+            /** N Plates */
+            n_plates: number;
+            /**
+             * Sample Maximisation
+             * @description Every plate held one target for every sample (Hellemans 2007).
+             */
+            sample_maximisation: boolean;
+            /**
+             * Samples Per Plate
+             * @description Median number of study samples per plate.
+             */
+            samples_per_plate: number;
+            /**
+             * Targets Per Plate
+             * @description Median number of targets per plate.
+             */
+            targets_per_plate: number;
+            /** Text */
+            text: string;
+            /**
+             * Wells Per Plate
+             * @description The most wells any plate used.
+             */
+            wells_per_plate: number;
+        };
+        /**
+         * PlanView
+         * @description The plan: per gene numbers, power curves, the rules, what it cannot detect, plates.
+         */
+        PlanView: {
+            /** Alpha */
+            alpha: number;
+            budget?: components["schemas"]["PlanBudget"] | null;
+            /** Cannot Detect */
+            cannot_detect: string[];
+            /**
+             * Ceiling
+             * @description When the target is at or below the rule's threshold: why no size calls it.
+             */
+            ceiling?: string | null;
+            /**
+             * Curve Reps
+             * @description Simulated studies behind each curve point.
+             */
+            curve_reps: number;
+            /** Curves */
+            curves: components["schemas"]["PlanPowerCurve"][];
+            /** Focus */
+            focus: string[];
+            /** Fold */
+            fold: number;
+            /** Genes */
+            genes: components["schemas"]["PlanGene"][];
+            /** Head */
+            head: string;
+            /**
+             * Headline
+             * @description One sentence: what this plan detects.
+             */
+            headline: string;
+            layout: components["schemas"]["PlanLayoutEstimate"] | null;
+            /** Layout Error */
+            layout_error?: string | null;
+            /** Min Fold */
+            min_fold: number;
+            /**
+             * N Current
+             * @description The study's own group sizes.
+             */
+            n_current: number[];
+            /** N Equivalent */
+            n_equivalent: number;
+            /**
+             * N Plan
+             * @description The samples per group the numbers are at.
+             */
+            n_plan: number;
+            /** N Plan Reason */
+            n_plan_reason: string;
+            /** Power */
+            power: number;
+            /** Refs */
+            refs: string[];
+            /**
+             * Rules
+             * @description qpilot.qpcr.plan's design rules for this plan.
+             */
+            rules: string[];
+            /** Study Id */
+            study_id: string;
+            /**
+             * Table Reps
+             * @description Simulated studies behind each table probability.
+             */
+            table_reps: number;
+            /**
+             * Target
+             * @description The change in either direction, ≥ 1 (max(fold, 1/fold)).
+             */
+            target: number;
         };
         /**
          * PlateRun
@@ -6403,6 +7766,30 @@ export type components = {
             subject: string | null;
         };
         /**
+         * RelatedStudy
+         * @description Another analysis of the same input file (another design of it).
+         */
+        RelatedStudy: {
+            /**
+             * After
+             * @description What it was made after, in words (the Studio step).
+             */
+            after?: string | null;
+            /** Created At */
+            created_at: string | null;
+            /**
+             * Current
+             * @description The session's analysis of the design confirmed now.
+             */
+            current: boolean;
+            /** Design Hash */
+            design_hash?: string | null;
+            /** N Entries */
+            n_entries: number;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
          * ReportAudit
          * @description The robustness audit, when one was run.
          */
@@ -7105,6 +8492,96 @@ export type components = {
              * @default
              */
             reason: string;
+        };
+        /**
+         * StepConclusions
+         * @description The calls at one step, and what changed from the step before.
+         */
+        StepConclusions: {
+            /**
+             * Changed
+             * @description Those genes, by name.
+             */
+            changed: string[];
+            /** Down */
+            down: number;
+            /**
+             * N Changed
+             * @description Genes whose call differs from the step before.
+             */
+            n_changed: number;
+            /**
+             * N Moved
+             * @description Genes whose fold change moved (by more than 1e-9 in log2) from the step before, whether or not their call changed.
+             */
+            n_moved: number;
+            /** None */
+            none: number;
+            /** Up */
+            up: number;
+        };
+        /**
+         * StudioMilestone
+         * @description A run of the Studio session's proposal log on one stage (design, curves, …).
+         */
+        StudioMilestone: {
+            /**
+             * After Seq
+             * @description When not before: placed after this step of the decision chain.
+             */
+            after_seq?: number | null;
+            /** At First */
+            at_first: string;
+            /** At Last */
+            at_last: string;
+            /**
+             * Before
+             * @description Happened before this analysis was made.
+             */
+            before: boolean;
+            /**
+             * Chain Intact
+             * @description The proposal chain verifies up to this run.
+             */
+            chain_intact: boolean;
+            /**
+             * Confirmed
+             * @description The stage was confirmed by a person in this run.
+             */
+            confirmed: boolean;
+            /** First Seq */
+            first_seq: number;
+            /**
+             * Head
+             * @description The proposal chain's hash after this run.
+             */
+            head: string;
+            /** Items */
+            items: components["schemas"]["MilestoneItem"][];
+            /** Last Seq */
+            last_seq: number;
+            /**
+             * Led To
+             * @description The study this run's last acceptance produced, if any.
+             */
+            led_to?: string | null;
+            /** N Accepted */
+            n_accepted: number;
+            /** N Edited */
+            n_edited: number;
+            /** N Proposed */
+            n_proposed: number;
+            /** N Rejected */
+            n_rejected: number;
+            /** N Superseded */
+            n_superseded: number;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "design" | "curves" | "choices" | "prism" | "other";
+            /** Title */
+            title: string;
         };
         /**
          * SystemView
@@ -10164,6 +11641,250 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeneView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history_compare: {
+        parameters: {
+            query?: {
+                /** @description Another analysis of the same file. */
+                other?: string | null;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryCompare"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history_diff: {
+        parameters: {
+            query?: {
+                /** @description The earlier step (0: as analysed). */
+                from?: number | null;
+                /** @description The later step. */
+                to?: number | null;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryDiff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_planner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannerView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_planner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlannerBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_layout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanLayoutBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanLayoutView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_layout_csv: {
+        parameters: {
+            query: {
+                calibrator?: boolean;
+                genes: string[];
+                n_per_group: number;
+                nrt?: number;
+                ntc?: number;
+                refs?: string[] | null;
+                replicates?: number;
+                seed?: number;
+                standards?: number;
+                wells_per_plate?: 96 | 384;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The layout as CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
                 };
             };
             /** @description Validation Error */

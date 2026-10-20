@@ -1,0 +1,23 @@
+{
+ "audit_note": "The audit's verdicts shown are of step 1 (chain 63011ae0).",
+ "calls_changed": [],
+ "choices": [],
+ "fold_moves": [],
+ "from_counts": {
+  "down": 29,
+  "none": 18,
+  "up": 11
+ },
+ "from_seq": 0,
+ "holds_moves": [],
+ "n_moved": 0,
+ "same_analysis": true,
+ "study_id": "e300000d4f9a",
+ "summary": "The same analysis was in force at both points: no number changed.",
+ "to_counts": {
+  "down": 29,
+  "none": 18,
+  "up": 11
+ },
+ "to_seq": 1
+}

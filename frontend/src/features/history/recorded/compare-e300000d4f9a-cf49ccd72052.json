@@ -1,0 +1,180 @@
+{
+ "after": {
+  "choices": [
+   {
+    "card_id": "card_refset",
+    "decided": false,
+    "decided_by": null,
+    "dimension": "refs",
+    "option": "recommended",
+    "option_label": "Recommended set (all five)",
+    "planned": true,
+    "status": "open",
+    "title": "Which control genes to normalise to"
+   },
+   {
+    "card_id": "card_cutoff",
+    "decided": false,
+    "decided_by": null,
+    "dimension": "cut",
+    "option": "cut_15",
+    "option_label": "Top 15 % by MYCN expression",
+    "planned": true,
+    "status": "open",
+    "title": "Where to cut the comparison groups"
+   },
+   {
+    "card_id": "card_amp_call",
+    "decided": false,
+    "decided_by": null,
+    "dimension": "amp_call",
+    "option": "linregpcr",
+    "option_label": "LinRegPCR's own call (a starting quantity was found)",
+    "planned": true,
+    "status": "open",
+    "title": "Which curves count as amplified"
+   },
+   {
+    "card_id": "card_undetermined",
+    "decided": true,
+    "decided_by": "system",
+    "dimension": "undetermined",
+    "option": "drop",
+    "option_label": "Drop empty wells",
+    "planned": true,
+    "status": "auto_decided",
+    "title": "What to do with wells that never amplified"
+   }
+  ],
+  "counts": {
+   "down": 29,
+   "none": 18,
+   "up": 11
+  },
+  "created_at": "2026-10-20T19:19:52Z",
+  "current": true,
+  "design_hash": "dd3c72a96838866e96194641b1795135ee66ed5a1e29c646130683e40cb85048",
+  "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "n_entries": 1,
+  "study_id": "e300000d4f9a"
+ },
+ "before": {
+  "choices": [
+   {
+    "card_id": "card_refset",
+    "decided": true,
+    "decided_by": "human",
+    "dimension": "refs",
+    "option": "recommended",
+    "option_label": "Recommended set (all five)",
+    "planned": true,
+    "status": "decided",
+    "title": "Which control genes to normalise to"
+   },
+   {
+    "card_id": "card_cutoff",
+    "decided": true,
+    "decided_by": "human",
+    "dimension": "cut",
+    "option": "cut_15",
+    "option_label": "Top 15 % by MYCN expression",
+    "planned": true,
+    "status": "decided",
+    "title": "Where to cut the comparison groups"
+   },
+   {
+    "card_id": "card_amp_call",
+    "decided": true,
+    "decided_by": "human",
+    "dimension": "amp_call",
+    "option": "linregpcr",
+    "option_label": "LinRegPCR's own call (a starting quantity was found)",
+    "planned": true,
+    "status": "decided",
+    "title": "Which curves count as amplified"
+   },
+   {
+    "card_id": "card_undetermined",
+    "decided": true,
+    "decided_by": "system",
+    "dimension": "undetermined",
+    "option": "drop",
+    "option_label": "Drop empty wells",
+    "planned": true,
+    "status": "auto_decided",
+    "title": "What to do with wells that never amplified"
+   }
+  ],
+  "counts": {
+   "down": 29,
+   "none": 18,
+   "up": 11
+  },
+  "created_at": "2026-10-20T19:19:50Z",
+  "current": false,
+  "design_hash": "2000023796a66143d52b9131d191dca0c4ac1d6181790f5b5e42a4252c07186a",
+  "head": "46729c6c7838577e9f6c66bbf2a17ce7323c5c8bedd8c9f47ee50a8c9b14c20d",
+  "n_entries": 4,
+  "study_id": "cf49ccd72052"
+ },
+ "by_choices": 0,
+ "by_design": 0,
+ "calls_changed": [],
+ "choices": [],
+ "decomposed": true,
+ "design": [
+  {
+   "added": [
+    "ODC1_20080226/A3"
+   ],
+   "after": null,
+   "before": null,
+   "field": "excluded_wells",
+   "removed": [],
+   "title": "Wells left out"
+  }
+ ],
+ "fold_moves": [
+  {
+   "call_changed": false,
+   "cause": null,
+   "delta_log2fc": -0.11335875916728888,
+   "from_conclusion": "up",
+   "from_holds": 1.0,
+   "from_log2fc": 1.843936846725877,
+   "from_p": 2.286597012225778e-08,
+   "gene": "ODC1",
+   "headline": true,
+   "to_conclusion": "up",
+   "to_holds": 0.9946236559139785,
+   "to_log2fc": 1.730578087558588,
+   "to_p": 2.065427855257047e-08,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  }
+ ],
+ "genes_only_after": [],
+ "genes_only_before": [],
+ "holds_moves": [
+  {
+   "call_changed": false,
+   "cause": null,
+   "delta_log2fc": -0.11335875916728888,
+   "from_conclusion": "up",
+   "from_holds": 1.0,
+   "from_log2fc": 1.843936846725877,
+   "from_p": 2.286597012225778e-08,
+   "gene": "ODC1",
+   "headline": true,
+   "to_conclusion": "up",
+   "to_holds": 0.9946236559139785,
+   "to_log2fc": 1.730578087558588,
+   "to_p": 2.065427855257047e-08,
+   "verdict": "solid",
+   "verdict_label": "Solid"
+  }
+ ],
+ "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+ "n_moved": 1,
+ "summary": "No call changed; 1 fold change moved. The design differs in: Wells left out. The same choices are in force."
+}
