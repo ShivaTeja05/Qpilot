@@ -1,0 +1,1477 @@
+{
+  "study_id": "e300000d4f9a",
+  "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "fold": 3.0,
+  "target": 3.0,
+  "power": 0.8,
+  "alpha": 0.05,
+  "min_fold": 2.0,
+  "n_plan": 33,
+  "n_plan_reason": "the size at which qPilot's rule calls a 3.00× change with 80 % power in every chosen gene",
+  "genes": [
+    {
+      "gene": "AHCY",
+      "sigma": 0.8494225008517677,
+      "focus": false,
+      "n_needed": 6,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.5009219013852686,
+      "p_significant": 1.0,
+      "p_called": 0.997,
+      "current_mde_fold": 1.279096031300973,
+      "current_p_called": 1.0,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "AKR1C1",
+      "sigma": 1.6204992319296478,
+      "focus": false,
+      "n_needed": 18,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.1699511104587383,
+      "p_significant": 0.9733,
+      "p_called": 0.93225,
+      "current_mde_fold": 1.6054654590766113,
+      "current_p_called": 0.99075,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "ARHGEF7",
+      "sigma": 1.4201742722994146,
+      "focus": false,
+      "n_needed": 14,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.9717790427746293,
+      "p_significant": 0.9929,
+      "p_called": 0.95335,
+      "current_mde_fold": 1.5091572666242685,
+      "current_p_called": 0.99615,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "BIRC5",
+      "sigma": 1.967000319041519,
+      "focus": true,
+      "n_needed": 26,
+      "n_for_call": 26,
+      "call_reachable": true,
+      "mde_fold": 2.5608899210855154,
+      "p_significant": 0.89955,
+      "p_called": 0.88055,
+      "current_mde_fold": 1.768294925860335,
+      "current_p_called": 0.97735,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "CAMTA1",
+      "sigma": 1.2415441835440424,
+      "focus": false,
+      "n_needed": 11,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.8103846475249379,
+      "p_significant": 0.99905,
+      "p_called": 0.971,
+      "current_mde_fold": 1.4330231367080661,
+      "current_p_called": 0.999,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "CAMTA2",
+      "sigma": 1.3098715726870331,
+      "focus": false,
+      "n_needed": 12,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.8704972353548097,
+      "p_significant": 0.99765,
+      "p_called": 0.96445,
+      "current_mde_fold": 1.4616805636366759,
+      "current_p_called": 0.998,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "CD44",
+      "sigma": 1.3354763090401813,
+      "focus": false,
+      "n_needed": 13,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.8935342107927862,
+      "p_significant": 0.99665,
+      "p_called": 0.9624,
+      "current_mde_fold": 1.4725665413445728,
+      "current_p_called": 0.99775,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "CDCA5",
+      "sigma": 2.111828610533769,
+      "focus": false,
+      "n_needed": 29,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.7444816441658513,
+      "p_significant": 0.8544,
+      "p_called": 0.8462,
+      "current_mde_fold": 1.8449775197538443,
+      "current_p_called": 0.96985,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "CDH5",
+      "sigma": 2.705062792485137,
+      "focus": false,
+      "n_needed": 47,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 3.6444190354539856,
+      "p_significant": 0.65035,
+      "p_called": 0.65025,
+      "current_mde_fold": 2.2500457524356436,
+      "current_p_called": 0.9227,
+      "detectable": false,
+      "cannot_detect": []
+    },
+    {
+      "gene": "CDKN3",
+      "sigma": 1.5822260085691717,
+      "focus": false,
+      "n_needed": 17,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.130608315658764,
+      "p_significant": 0.9792,
+      "p_called": 0.9364,
+      "current_mde_fold": 1.5817190507578653,
+      "current_p_called": 0.9925,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "CLSTN1",
+      "sigma": 1.9682993345469868,
+      "focus": false,
+      "n_needed": 26,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.5624807644859486,
+      "p_significant": 0.899,
+      "p_called": 0.88035,
+      "current_mde_fold": 1.7689607096503586,
+      "current_p_called": 0.97735,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "CPSG3",
+      "sigma": 3.739467892294935,
+      "focus": false,
+      "n_needed": 89,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 5.97575392157619,
+      "p_significant": 0.3968,
+      "p_called": 0.39665,
+      "current_mde_fold": 3.10664764166821,
+      "current_p_called": 0.76455,
+      "detectable": false,
+      "cannot_detect": []
+    },
+    {
+      "gene": "DDC",
+      "sigma": 1.9849007609859548,
+      "focus": false,
+      "n_needed": 26,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.5828989849729593,
+      "p_significant": 0.89475,
+      "p_called": 0.8775,
+      "current_mde_fold": 1.8128628880258606,
+      "current_p_called": 0.97275,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "DPYSL3",
+      "sigma": 1.0605298012350224,
+      "focus": false,
+      "n_needed": 9,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.6603071566442504,
+      "p_significant": 0.99985,
+      "p_called": 0.98675,
+      "current_mde_fold": 1.359789967772092,
+      "current_p_called": 0.99985,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "ECEL1",
+      "sigma": 2.270831171356679,
+      "focus": false,
+      "n_needed": 34,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.9612333266380704,
+      "p_significant": 0.79795,
+      "p_called": 0.796,
+      "current_mde_fold": 1.9423835509283398,
+      "current_p_called": 0.9588,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "ELAVL4",
+      "sigma": 1.3955587896177184,
+      "focus": false,
+      "n_needed": 14,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.9487115131495556,
+      "p_significant": 0.99415,
+      "p_called": 0.9556,
+      "current_mde_fold": 1.4984302924651243,
+      "current_p_called": 0.997,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "EPB41L3",
+      "sigma": 1.9061264372475635,
+      "focus": false,
+      "n_needed": 24,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.487437653843981,
+      "p_significant": 0.91635,
+      "p_called": 0.89185,
+      "current_mde_fold": 1.7373746645208574,
+      "current_p_called": 0.98025,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "EPHA5",
+      "sigma": 2.6140147484095446,
+      "focus": false,
+      "n_needed": 44,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 3.489191491639549,
+      "p_significant": 0.6813,
+      "p_called": 0.6811,
+      "current_mde_fold": 2.14781513137513,
+      "current_p_called": 0.93525,
+      "detectable": false,
+      "cannot_detect": []
+    },
+    {
+      "gene": "EPN2",
+      "sigma": 2.1076292244791928,
+      "focus": false,
+      "n_needed": 29,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.7389774012698727,
+      "p_significant": 0.85595,
+      "p_called": 0.84765,
+      "current_mde_fold": 1.8424347267628365,
+      "current_p_called": 0.97005,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "FYN",
+      "sigma": 1.0877988264157916,
+      "focus": false,
+      "n_needed": 9,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.682093245363462,
+      "p_significant": 0.99985,
+      "p_called": 0.9845,
+      "current_mde_fold": 1.3705779685293622,
+      "current_p_called": 0.99985,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "GNB1",
+      "sigma": 0.9471072205601822,
+      "focus": false,
+      "n_needed": 7,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.5726769110116632,
+      "p_significant": 1.0,
+      "p_called": 0.99325,
+      "current_mde_fold": 1.315822039343663,
+      "current_p_called": 1.0,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "HIVEP2",
+      "sigma": 1.4089034297802578,
+      "focus": false,
+      "n_needed": 14,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.9611832746218079,
+      "p_significant": 0.9937,
+      "p_called": 0.95435,
+      "current_mde_fold": 1.5047195615546813,
+      "current_p_called": 0.99655,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "IGSF4",
+      "sigma": 1.295989859437825,
+      "focus": false,
+      "n_needed": 12,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.8581250278847268,
+      "p_significant": 0.99785,
+      "p_called": 0.96575,
+      "current_mde_fold": 1.455812365952266,
+      "current_p_called": 0.99835,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "INPP1",
+      "sigma": 1.3065628824734945,
+      "focus": false,
+      "n_needed": 12,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.8675408770267798,
+      "p_significant": 0.99765,
+      "p_called": 0.96475,
+      "current_mde_fold": 1.4602797420503422,
+      "current_p_called": 0.99815,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "MAP2K4",
+      "sigma": 0.94193890104757,
+      "focus": false,
+      "n_needed": 7,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.56879594556831,
+      "p_significant": 1.0,
+      "p_called": 0.9936,
+      "current_mde_fold": 1.3138527761650518,
+      "current_p_called": 1.0,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "MAP7",
+      "sigma": 2.325128383677476,
+      "focus": false,
+      "n_needed": 35,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 3.039106219033844,
+      "p_significant": 0.7805,
+      "p_called": 0.7791,
+      "current_mde_fold": 1.9616725794871634,
+      "current_p_called": 0.95665,
+      "detectable": false,
+      "cannot_detect": []
+    },
+    {
+      "gene": "MAPT",
+      "sigma": 2.0850383320761527,
+      "focus": false,
+      "n_needed": 29,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.7095558139764675,
+      "p_significant": 0.86315,
+      "p_called": 0.8534,
+      "current_mde_fold": 1.829827909352001,
+      "current_p_called": 0.9712,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "MCM2",
+      "sigma": 1.4257370537703868,
+      "focus": false,
+      "n_needed": 14,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.9770297182328014,
+      "p_significant": 0.9926,
+      "p_called": 0.95265,
+      "current_mde_fold": 1.511592042725666,
+      "current_p_called": 0.99615,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "MRPL3",
+      "sigma": 0.7988377776588445,
+      "focus": false,
+      "n_needed": 5,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.4650607564142635,
+      "p_significant": 1.0,
+      "p_called": 0.9982,
+      "current_mde_fold": 1.2604826312931448,
+      "current_p_called": 1.0,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "MTSS1",
+      "sigma": 1.1476756309673488,
+      "focus": false,
+      "n_needed": 10,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.7309389840576987,
+      "p_significant": 0.9996,
+      "p_called": 0.9794,
+      "current_mde_fold": 1.3945672981009676,
+      "current_p_called": 0.9997,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "NHLH2",
+      "sigma": 4.378158929798233,
+      "focus": false,
+      "n_needed": 121,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 8.109582320375877,
+      "p_significant": 0.307,
+      "p_called": 0.3067,
+      "current_mde_fold": 3.8506546205148315,
+      "current_p_called": 0.6127,
+      "detectable": false,
+      "cannot_detect": []
+    },
+    {
+      "gene": "NM23A",
+      "sigma": 0.9296381081894266,
+      "focus": true,
+      "n_needed": 7,
+      "n_for_call": 7,
+      "call_reachable": true,
+      "mde_fold": 1.5595975821756438,
+      "p_significant": 1.0,
+      "p_called": 0.99405,
+      "current_mde_fold": 1.3091777028879896,
+      "current_p_called": 1.0,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "NRCAM",
+      "sigma": 1.2145265707822246,
+      "focus": false,
+      "n_needed": 11,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.7871517454636308,
+      "p_significant": 0.99935,
+      "p_called": 0.97345,
+      "current_mde_fold": 1.4218472090020036,
+      "current_p_called": 0.9992,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "NTRK1",
+      "sigma": 2.2461861295606087,
+      "focus": true,
+      "n_needed": 33,
+      "n_for_call": 33,
+      "call_reachable": true,
+      "mde_fold": 2.926548972698251,
+      "p_significant": 0.80515,
+      "p_called": 0.80235,
+      "current_mde_fold": 1.960537775165582,
+      "current_p_called": 0.9565,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "ODC1",
+      "sigma": 1.273952716209503,
+      "focus": true,
+      "n_needed": 12,
+      "n_for_call": 12,
+      "call_reachable": true,
+      "mde_fold": 1.8386520722985775,
+      "p_significant": 0.99855,
+      "p_called": 0.96775,
+      "current_mde_fold": 1.4508845302259965,
+      "current_p_called": 0.9986,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PAICS",
+      "sigma": 0.958482065019709,
+      "focus": false,
+      "n_needed": 7,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.5812522968212341,
+      "p_significant": 1.0,
+      "p_called": 0.99285,
+      "current_mde_fold": 1.3201665517311114,
+      "current_p_called": 1.0,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PDE4DIP",
+      "sigma": 1.220301815204283,
+      "focus": false,
+      "n_needed": 11,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.792092790297995,
+      "p_significant": 0.9993,
+      "p_called": 0.9732,
+      "current_mde_fold": 1.4242288110996175,
+      "current_p_called": 0.99915,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PIK3R1",
+      "sigma": 1.2223116469516149,
+      "focus": false,
+      "n_needed": 11,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.7938155161836093,
+      "p_significant": 0.9993,
+      "p_called": 0.973,
+      "current_mde_fold": 1.4250585632441106,
+      "current_p_called": 0.99915,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PLAGL1",
+      "sigma": 2.251323956407404,
+      "focus": false,
+      "n_needed": 33,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.933746048153609,
+      "p_significant": 0.8036,
+      "p_called": 0.8011,
+      "current_mde_fold": 1.9638841518114847,
+      "current_p_called": 0.9563,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PLAT",
+      "sigma": 2.6233407835812224,
+      "focus": false,
+      "n_needed": 45,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 3.504782624804102,
+      "p_significant": 0.6775,
+      "p_called": 0.6773,
+      "current_mde_fold": 2.1661197183114154,
+      "current_p_called": 0.93335,
+      "detectable": false,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PMP22",
+      "sigma": 1.355057565783561,
+      "focus": false,
+      "n_needed": 13,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.9113430401058638,
+      "p_significant": 0.9959,
+      "p_called": 0.96015,
+      "current_mde_fold": 1.4809462843113859,
+      "current_p_called": 0.99745,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PRAME",
+      "sigma": 3.159899664122742,
+      "focus": false,
+      "n_needed": 64,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 4.529623139057509,
+      "p_significant": 0.5168,
+      "p_called": 0.51675,
+      "current_mde_fold": 2.4985368519610036,
+      "current_p_called": 0.8922,
+      "detectable": false,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PRDM2",
+      "sigma": 0.8915080179124636,
+      "focus": false,
+      "n_needed": 6,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.531425728834541,
+      "p_significant": 1.0,
+      "p_called": 0.9953,
+      "current_mde_fold": 1.294791318233224,
+      "current_p_called": 1.0,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PRKACB_bis",
+      "sigma": 1.2592519045794284,
+      "focus": false,
+      "n_needed": 11,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.825775419417587,
+      "p_significant": 0.9988,
+      "p_called": 0.96955,
+      "current_mde_fold": 1.4403956078139162,
+      "current_p_called": 0.99885,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PRKCZ",
+      "sigma": 1.2185816907333225,
+      "focus": false,
+      "n_needed": 11,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.7906197007832547,
+      "p_significant": 0.9993,
+      "p_called": 0.9732,
+      "current_mde_fold": 1.4235190473094477,
+      "current_p_called": 0.99915,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PTN",
+      "sigma": 1.8178307390211288,
+      "focus": false,
+      "n_needed": 22,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.3846253030397775,
+      "p_significant": 0.9397,
+      "p_called": 0.907,
+      "current_mde_fold": 1.6934841034813088,
+      "current_p_called": 0.9841,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PTPRF",
+      "sigma": 1.3412041209135381,
+      "focus": false,
+      "n_needed": 13,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.8987263218204113,
+      "p_significant": 0.99645,
+      "p_called": 0.9619,
+      "current_mde_fold": 1.4751622363843746,
+      "current_p_called": 0.9977,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PTPRH",
+      "sigma": 2.5840354239577863,
+      "focus": false,
+      "n_needed": 43,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 3.439540775255724,
+      "p_significant": 0.69165,
+      "p_called": 0.69145,
+      "current_mde_fold": 2.1420093407183662,
+      "current_p_called": 0.93585,
+      "detectable": false,
+      "cannot_detect": []
+    },
+    {
+      "gene": "PTPRN2",
+      "sigma": 1.9734776685070512,
+      "focus": false,
+      "n_needed": 26,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.5688322552726626,
+      "p_significant": 0.89835,
+      "p_called": 0.87975,
+      "current_mde_fold": 1.77188131491802,
+      "current_p_called": 0.97715,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "QPCT",
+      "sigma": 1.5874422076033798,
+      "focus": false,
+      "n_needed": 17,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.1359280103455167,
+      "p_significant": 0.9785,
+      "p_called": 0.9361,
+      "current_mde_fold": 1.590224723287127,
+      "current_p_called": 0.99175,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "SCG2",
+      "sigma": 1.7623014501490806,
+      "focus": false,
+      "n_needed": 21,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.3221543962092195,
+      "p_significant": 0.9508,
+      "p_called": 0.9149,
+      "current_mde_fold": 1.66645098995316,
+      "current_p_called": 0.9861,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "SLC25A5",
+      "sigma": 0.9049145375344583,
+      "focus": false,
+      "n_needed": 7,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.5412724535287134,
+      "p_significant": 1.0,
+      "p_called": 0.995,
+      "current_mde_fold": 1.2998314532111686,
+      "current_p_called": 1.0,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "SLC6A8",
+      "sigma": 1.295196697660877,
+      "focus": false,
+      "n_needed": 12,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.8574205916284126,
+      "p_significant": 0.998,
+      "p_called": 0.9658,
+      "current_mde_fold": 1.4556201622885225,
+      "current_p_called": 0.99835,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "SNAPC1",
+      "sigma": 1.5535790100675217,
+      "focus": false,
+      "n_needed": 17,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.101628234221726,
+      "p_significant": 0.98215,
+      "p_called": 0.93995,
+      "current_mde_fold": 1.5686426119728127,
+      "current_p_called": 0.99345,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "TNFRSF",
+      "sigma": 1.7989689793621437,
+      "focus": false,
+      "n_needed": 22,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.363219422283148,
+      "p_significant": 0.9435,
+      "p_called": 0.9098,
+      "current_mde_fold": 1.6842528772555325,
+      "current_p_called": 0.9846,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "TYMS",
+      "sigma": 1.5863554727302023,
+      "focus": false,
+      "n_needed": 17,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 2.1348186191078837,
+      "p_significant": 0.97865,
+      "p_called": 0.9361,
+      "current_mde_fold": 1.5836129870360736,
+      "current_p_called": 0.9924,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "ULK2",
+      "sigma": 1.1072166161839383,
+      "focus": false,
+      "n_needed": 9,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.6977807735579091,
+      "p_significant": 0.9998,
+      "p_called": 0.9831,
+      "current_mde_fold": 1.3783120448317288,
+      "current_p_called": 0.9998,
+      "detectable": true,
+      "cannot_detect": []
+    },
+    {
+      "gene": "WSB1",
+      "sigma": 1.2559585353617437,
+      "focus": false,
+      "n_needed": 11,
+      "n_for_call": null,
+      "call_reachable": null,
+      "mde_fold": 1.82290309650723,
+      "p_significant": 0.9988,
+      "p_called": 0.9697,
+      "current_mde_fold": 1.4392954893527048,
+      "current_p_called": 0.99885,
+      "detectable": true,
+      "cannot_detect": []
+    }
+  ],
+  "focus": ["ODC1", "BIRC5", "NTRK1", "NM23A"],
+  "refs": ["ALUsq(Eurogentec)", "HMBS", "HPRT1", "SDHA(1)", "UBC(2)"],
+  "curves": [
+    {
+      "gene": "ODC1",
+      "sigma": 1.273952716209503,
+      "points": [
+        {
+          "n": 2,
+          "p_significant": 0.05425,
+          "p_called": 0.05125
+        },
+        {
+          "n": 3,
+          "p_significant": 0.159,
+          "p_called": 0.158
+        },
+        {
+          "n": 4,
+          "p_significant": 0.27175,
+          "p_called": 0.27125
+        },
+        {
+          "n": 5,
+          "p_significant": 0.36725,
+          "p_called": 0.36675
+        },
+        {
+          "n": 6,
+          "p_significant": 0.46025,
+          "p_called": 0.45875
+        },
+        {
+          "n": 7,
+          "p_significant": 0.54275,
+          "p_called": 0.541
+        },
+        {
+          "n": 8,
+          "p_significant": 0.61175,
+          "p_called": 0.6085
+        },
+        {
+          "n": 10,
+          "p_significant": 0.732,
+          "p_called": 0.7275
+        },
+        {
+          "n": 12,
+          "p_significant": 0.82075,
+          "p_called": 0.8075
+        },
+        {
+          "n": 14,
+          "p_significant": 0.8835,
+          "p_called": 0.86575
+        },
+        {
+          "n": 17,
+          "p_significant": 0.9395,
+          "p_called": 0.90425
+        },
+        {
+          "n": 21,
+          "p_significant": 0.976,
+          "p_called": 0.931
+        },
+        {
+          "n": 25,
+          "p_significant": 0.99175,
+          "p_called": 0.9485
+        },
+        {
+          "n": 26,
+          "p_significant": 0.993,
+          "p_called": 0.952
+        },
+        {
+          "n": 30,
+          "p_significant": 0.997,
+          "p_called": 0.96525
+        },
+        {
+          "n": 33,
+          "p_significant": 0.998,
+          "p_called": 0.96975
+        },
+        {
+          "n": 36,
+          "p_significant": 0.9995,
+          "p_called": 0.974
+        },
+        {
+          "n": 43,
+          "p_significant": 1.0,
+          "p_called": 0.984
+        },
+        {
+          "n": 51,
+          "p_significant": 1.0,
+          "p_called": 0.99075
+        },
+        {
+          "n": 61,
+          "p_significant": 1.0,
+          "p_called": 0.9945
+        },
+        {
+          "n": 73,
+          "p_significant": 1.0,
+          "p_called": 0.99625
+        },
+        {
+          "n": 88,
+          "p_significant": 1.0,
+          "p_called": 0.9975
+        },
+        {
+          "n": 90,
+          "p_significant": 1.0,
+          "p_called": 0.99825
+        },
+        {
+          "n": 105,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 126,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 150,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 180,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        }
+      ],
+      "n_needed": 12,
+      "n_for_call": 12
+    },
+    {
+      "gene": "BIRC5",
+      "sigma": 1.967000319041519,
+      "points": [
+        {
+          "n": 2,
+          "p_significant": 0.03875,
+          "p_called": 0.03525
+        },
+        {
+          "n": 3,
+          "p_significant": 0.08775,
+          "p_called": 0.08675
+        },
+        {
+          "n": 4,
+          "p_significant": 0.13425,
+          "p_called": 0.13225
+        },
+        {
+          "n": 5,
+          "p_significant": 0.175,
+          "p_called": 0.1745
+        },
+        {
+          "n": 6,
+          "p_significant": 0.22525,
+          "p_called": 0.225
+        },
+        {
+          "n": 7,
+          "p_significant": 0.26325,
+          "p_called": 0.2625
+        },
+        {
+          "n": 8,
+          "p_significant": 0.303,
+          "p_called": 0.303
+        },
+        {
+          "n": 10,
+          "p_significant": 0.38275,
+          "p_called": 0.3825
+        },
+        {
+          "n": 12,
+          "p_significant": 0.45075,
+          "p_called": 0.4505
+        },
+        {
+          "n": 14,
+          "p_significant": 0.51875,
+          "p_called": 0.51875
+        },
+        {
+          "n": 17,
+          "p_significant": 0.608,
+          "p_called": 0.608
+        },
+        {
+          "n": 21,
+          "p_significant": 0.716,
+          "p_called": 0.71525
+        },
+        {
+          "n": 25,
+          "p_significant": 0.78925,
+          "p_called": 0.78625
+        },
+        {
+          "n": 26,
+          "p_significant": 0.801,
+          "p_called": 0.79625
+        },
+        {
+          "n": 30,
+          "p_significant": 0.85575,
+          "p_called": 0.847
+        },
+        {
+          "n": 33,
+          "p_significant": 0.896,
+          "p_called": 0.87625
+        },
+        {
+          "n": 36,
+          "p_significant": 0.91925,
+          "p_called": 0.892
+        },
+        {
+          "n": 43,
+          "p_significant": 0.9595,
+          "p_called": 0.91225
+        },
+        {
+          "n": 51,
+          "p_significant": 0.982,
+          "p_called": 0.93375
+        },
+        {
+          "n": 61,
+          "p_significant": 0.99375,
+          "p_called": 0.95025
+        },
+        {
+          "n": 73,
+          "p_significant": 0.997,
+          "p_called": 0.9665
+        },
+        {
+          "n": 88,
+          "p_significant": 1.0,
+          "p_called": 0.97525
+        },
+        {
+          "n": 90,
+          "p_significant": 1.0,
+          "p_called": 0.97675
+        },
+        {
+          "n": 105,
+          "p_significant": 1.0,
+          "p_called": 0.98525
+        },
+        {
+          "n": 126,
+          "p_significant": 1.0,
+          "p_called": 0.99125
+        },
+        {
+          "n": 150,
+          "p_significant": 1.0,
+          "p_called": 0.9945
+        },
+        {
+          "n": 180,
+          "p_significant": 1.0,
+          "p_called": 0.99675
+        }
+      ],
+      "n_needed": 26,
+      "n_for_call": 26
+    },
+    {
+      "gene": "NTRK1",
+      "sigma": 2.2461861295606087,
+      "points": [
+        {
+          "n": 2,
+          "p_significant": 0.03575,
+          "p_called": 0.03225
+        },
+        {
+          "n": 3,
+          "p_significant": 0.07575,
+          "p_called": 0.074
+        },
+        {
+          "n": 4,
+          "p_significant": 0.1105,
+          "p_called": 0.1085
+        },
+        {
+          "n": 5,
+          "p_significant": 0.145,
+          "p_called": 0.1435
+        },
+        {
+          "n": 6,
+          "p_significant": 0.17775,
+          "p_called": 0.17725
+        },
+        {
+          "n": 7,
+          "p_significant": 0.21425,
+          "p_called": 0.2135
+        },
+        {
+          "n": 8,
+          "p_significant": 0.2515,
+          "p_called": 0.25075
+        },
+        {
+          "n": 10,
+          "p_significant": 0.30225,
+          "p_called": 0.302
+        },
+        {
+          "n": 12,
+          "p_significant": 0.358,
+          "p_called": 0.358
+        },
+        {
+          "n": 14,
+          "p_significant": 0.4165,
+          "p_called": 0.4165
+        },
+        {
+          "n": 17,
+          "p_significant": 0.49575,
+          "p_called": 0.49575
+        },
+        {
+          "n": 21,
+          "p_significant": 0.5905,
+          "p_called": 0.5905
+        },
+        {
+          "n": 25,
+          "p_significant": 0.6715,
+          "p_called": 0.67075
+        },
+        {
+          "n": 26,
+          "p_significant": 0.69375,
+          "p_called": 0.69275
+        },
+        {
+          "n": 30,
+          "p_significant": 0.759,
+          "p_called": 0.75825
+        },
+        {
+          "n": 33,
+          "p_significant": 0.80175,
+          "p_called": 0.7995
+        },
+        {
+          "n": 36,
+          "p_significant": 0.8385,
+          "p_called": 0.83225
+        },
+        {
+          "n": 43,
+          "p_significant": 0.89825,
+          "p_called": 0.8795
+        },
+        {
+          "n": 51,
+          "p_significant": 0.938,
+          "p_called": 0.9035
+        },
+        {
+          "n": 61,
+          "p_significant": 0.9715,
+          "p_called": 0.923
+        },
+        {
+          "n": 73,
+          "p_significant": 0.98825,
+          "p_called": 0.94425
+        },
+        {
+          "n": 88,
+          "p_significant": 0.99625,
+          "p_called": 0.95875
+        },
+        {
+          "n": 90,
+          "p_significant": 0.99675,
+          "p_called": 0.961
+        },
+        {
+          "n": 105,
+          "p_significant": 0.99925,
+          "p_called": 0.97125
+        },
+        {
+          "n": 126,
+          "p_significant": 1.0,
+          "p_called": 0.9805
+        },
+        {
+          "n": 150,
+          "p_significant": 1.0,
+          "p_called": 0.9885
+        },
+        {
+          "n": 180,
+          "p_significant": 1.0,
+          "p_called": 0.99375
+        }
+      ],
+      "n_needed": 33,
+      "n_for_call": 33
+    },
+    {
+      "gene": "NM23A",
+      "sigma": 0.9296381081894266,
+      "points": [
+        {
+          "n": 2,
+          "p_significant": 0.0765,
+          "p_called": 0.0725
+        },
+        {
+          "n": 3,
+          "p_significant": 0.27625,
+          "p_called": 0.27275
+        },
+        {
+          "n": 4,
+          "p_significant": 0.457,
+          "p_called": 0.453
+        },
+        {
+          "n": 5,
+          "p_significant": 0.61925,
+          "p_called": 0.61275
+        },
+        {
+          "n": 6,
+          "p_significant": 0.73175,
+          "p_called": 0.7225
+        },
+        {
+          "n": 7,
+          "p_significant": 0.81975,
+          "p_called": 0.80175
+        },
+        {
+          "n": 8,
+          "p_significant": 0.8825,
+          "p_called": 0.8575
+        },
+        {
+          "n": 10,
+          "p_significant": 0.94675,
+          "p_called": 0.91025
+        },
+        {
+          "n": 12,
+          "p_significant": 0.9785,
+          "p_called": 0.94075
+        },
+        {
+          "n": 14,
+          "p_significant": 0.99075,
+          "p_called": 0.953
+        },
+        {
+          "n": 17,
+          "p_significant": 0.99775,
+          "p_called": 0.968
+        },
+        {
+          "n": 21,
+          "p_significant": 0.99975,
+          "p_called": 0.97975
+        },
+        {
+          "n": 25,
+          "p_significant": 1.0,
+          "p_called": 0.98775
+        },
+        {
+          "n": 26,
+          "p_significant": 1.0,
+          "p_called": 0.98875
+        },
+        {
+          "n": 30,
+          "p_significant": 1.0,
+          "p_called": 0.9925
+        },
+        {
+          "n": 33,
+          "p_significant": 1.0,
+          "p_called": 0.9945
+        },
+        {
+          "n": 36,
+          "p_significant": 1.0,
+          "p_called": 0.996
+        },
+        {
+          "n": 43,
+          "p_significant": 1.0,
+          "p_called": 0.997
+        },
+        {
+          "n": 51,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 61,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 73,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 88,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 90,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 105,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 126,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 150,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        },
+        {
+          "n": 180,
+          "p_significant": 1.0,
+          "p_called": 1.0
+        }
+      ],
+      "n_needed": 7,
+      "n_for_call": 7
+    }
+  ],
+  "curve_reps": 4000,
+  "table_reps": 20000,
+  "n_current": [53, 294],
+  "n_equivalent": 89.80979827089337,
+  "headline": "At 33 per group, a 3.00× change reaches p < 0.05 with 80 % power in 4 of 4 chosen genes; qPilot's rule (p < 0.05 and at least 2-fold) calls it up to 99 % of the time.",
+  "ceiling": null,
+  "cannot_detect": [],
+  "rules": [],
+  "layout": {
+    "plates": 4,
+    "panels": 1,
+    "batches": 4,
+    "samples_per_plate": 17,
+    "calibrated": true,
+    "wells": 1536
+  },
+  "layout_error": null,
+  "budget": null
+}
