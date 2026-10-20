@@ -5,6 +5,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "wouter";
 import { GenormBars } from "@/charts";
+import { GenePrismFigure, useHasPrismFigure } from "@/features/prism/GeneFigure";
 import type { Schemas } from "@/api/client";
 import { sectionPath } from "@/shell/sections";
 import { Badge, EmptyState } from "@/ui";
@@ -157,6 +158,31 @@ export function ReferenceStability({
           This study does not say which reference genes it normalises to.
         </EmptyState>
       )}
+    </Panel>
+  );
+}
+
+/**
+ * The gene's Prism figure (prism's), when the session's Prism project has a table for it: every
+ * biological unit, the group means and their 95 % CI, as the Prism bundle will hold them. Mount it
+ * for Studio sessions only (the preview is a session's).
+ */
+export function PrismCard({ workspace, gene }: { workspace: Workspace; gene: string }) {
+  const has = useHasPrismFigure(workspace.key, gene);
+  if (!has) return null;
+  return (
+    <Panel
+      id="gene-prism"
+      title="Prism figure"
+      hint="Every biological unit, the group means and their 95 % CI, as the Prism bundle will hold them."
+      actions={
+        <Link href={sectionPath(workspace, "prism")} className="inline-flex items-center gap-1 text-xs text-accent underline-offset-4 hover:underline">
+          Open Prism
+          <ArrowUpRight className="size-3" aria-hidden />
+        </Link>
+      }
+    >
+      <GenePrismFigure sid={workspace.key} gene={gene} />
     </Panel>
   );
 }
