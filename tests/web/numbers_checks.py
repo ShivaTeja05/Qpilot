@@ -15,6 +15,33 @@ from typing import Any
 from tests.web.numbers_engine import CARD_DIMENSION, Engine, flips_alone, holds
 
 GRID_REL = 1e-9
+#: The confidence reasons' wording before #0286 (a study analysed then keeps it in its store).
+OLD_WORDS = (
+    ("of the reasonable analyses", "of the {n} analyses qPilot checks"),
+    ("No combination of the reasonable choices", "No combination of the choices qPilot checks"),
+)
+
+
+def reason_words(text: str, n_cells: int) -> str:
+    """A reason in today's words (``qpilot/qpcr/confidence_checks.py`` after #0286)."""
+    for old, new in OLD_WORDS:
+        text = text.replace(old, new.format(n=n_cells))
+    return text
+
+
+def same_grade(api: dict, grade: Any, n_cells: int) -> None:
+    """The API's confidence is the engine's: level, checks and their numbers exactly; words as
+    today's (a store analysed before #0286 keeps the older wording, the views may serve it)."""
+    assert api["level"] == grade.level
+    assert api["min_flip_changes"] == grade.min_flip_changes
+    assert [reason_words(r, n_cells) for r in api["reasons"]] == grade.reasons
+    if "checks" in api:
+        assert [(c["id"], c["passed"]) for c in api["checks"]] == [
+            (c.id, c.passed) for c in grade.checks
+        ]
+        for got, want in zip(api["checks"], grade.checks, strict=True):
+            assert reason_words(got["note"], n_cells) == want.note, want.id
+            assert set(got["fact_ids"]) <= set(want.fact_ids), want.id
 
 
 def close(got: Any, want: float, rel: float = GRID_REL) -> bool:
@@ -55,11 +82,7 @@ def check_gene_rows(results: dict, eng: Engine) -> None:
         assert row["holds"] == robust.holds, gene
         assert math.isclose(row["holds"], holds(eng, gene), abs_tol=1e-12), gene
         assert row["n_cells"] == robust.n_cells == len(eng.grid) // len(eng.result.contrasts)
-        assert (row["level"], row["reasons"], row["min_flip_changes"]) == (
-            grade.level,
-            grade.reasons,
-            grade.min_flip_changes,
-        ), gene
+        same_grade(row, grade, robust.n_cells)
         assert row["efficiency"] == eng.result.efficiency.get(gene), gene
         assert row["flips_by"] == sorted(d for d, by in alone.items() if by[gene]), gene
     calls = Counter(c.conclusion for c in eng.result.contrasts.values())
@@ -126,7 +149,7 @@ def check_gene(view: dict, eng: Engine, gene: str) -> None:
     """One gene's view: its contrast, robustness, confidence and its every grid analysis."""
     assert view["contrast"] == eng.result.contrasts[gene].model_dump(mode="json")
     assert view["robustness"] == eng.result.robustness[gene].model_dump(mode="json")
-    assert view["confidence"] == eng.result.confidence[gene].model_dump(mode="json")
+    same_grade(view["confidence"], eng.result.confidence[gene], eng.result.robustness[gene].n_cells)
     grid = view["grid"]
     assert grid is not None, f"{gene}: no grid"
     assert grid["dimensions"] == list(eng.space.dimensions)
