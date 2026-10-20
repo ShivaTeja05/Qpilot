@@ -1,6 +1,6 @@
 /**
  * Gene (docs/app.md §4): one gene, everything about it. qPilot's result (call, fold [CI], p, n,
- * confidence and its reasons), what holds across reasonable analyses, one choice at a time,
+ * confidence and its reasons), what holds across other analyses, one choice at a time,
  * each sample's value and well, the audit's reading, the Decision Cards that move it, the assay
  * and the reference genes. Deep-linkable at `…/gene/<GENE>`; `[` and `]` move between genes.
  */
@@ -14,7 +14,7 @@ import { sectionPath, type SectionProps } from "@/shell/sections";
 import { ConclusionTag, EmptyState, ErrorPanel, LoadingBlock, Skeleton } from "@/ui";
 import { cn } from "@/lib/cn";
 import { fold } from "@/lib/format";
-import { useHotkeys } from "@/lib/hooks";
+import { useHotkeys, useReducedMotion } from "@/lib/hooks";
 import type { Schemas } from "@/api/client";
 import {
   geneQuery,
@@ -63,6 +63,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   const scope = useMemo(() => scopeOf(workspace), [workspace]);
   const [, navigate] = useLocation();
   const qc = useQueryClient();
+  const reducedMotion = useReducedMotion();
 
   const results = useResults(scope);
   const order = useMemo(() => results.data?.genes.map((g) => g.gene) ?? [], [results.data]);
@@ -268,7 +269,7 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
                     point={point}
                     samples={samples.data}
                     onClose={() => setSelected(null)}
-                    curve={<WellCurve scope={scope} plate={point.plate} well={point.well} gene={g.gene} />}
+                    curve={<WellCurve workspace={workspace} scope={scope} plate={point.plate} well={point.well} gene={g.gene} />}
                   />
                 ) : null
               }
@@ -286,7 +287,9 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
                 card={auditCard}
                 onSample={(s) => {
                   selectSample(s);
-                  document.getElementById("gene-samples")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  const el = document.getElementById("gene-samples");
+                  el?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+                  el?.focus({ preventScroll: true });
                 }}
               />
             ) : null}
@@ -314,6 +317,7 @@ const JUMPS: { id: string; label: string; audit?: boolean }[] = [
 
 /** In-page jumps (buttons, not `#` links: the page's routes live in the hash). */
 function JumpList({ hasAudit }: { hasAudit: boolean }) {
+  const reduced = useReducedMotion();
   return (
     <nav aria-label="On this page" className="mb-5 flex flex-wrap gap-1.5">
       {JUMPS.filter((j) => hasAudit || !j.audit).map((j) => (
@@ -322,8 +326,8 @@ function JumpList({ hasAudit }: { hasAudit: boolean }) {
           type="button"
           onClick={() => {
             const el = document.getElementById(j.id);
-            el?.scrollIntoView({ behavior: "smooth", block: "start" });
-            el?.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
+            el?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+            el?.focus({ preventScroll: true });
           }}
           className="rounded-full border border-line bg-surface px-2.5 py-1 text-xs text-muted transition-colors hover:border-line-strong hover:text-fg"
         >

@@ -164,7 +164,7 @@ def ensure_analysis(ctx: AppContext, sid: str) -> JobView | None:
         return None
 
     def work(progress: Progress) -> dict[str, Any]:
-        progress("Analysing the confirmed design: every curve, then every reasonable analysis")
+        progress("Analysing the confirmed design: every curve, then qPilot's choice grid")
         try:
             study_id = studio.study(sid)
         except (StudioError, ValueError, OSError) as err:

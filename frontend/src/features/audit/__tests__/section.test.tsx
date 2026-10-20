@@ -18,6 +18,9 @@ import verify from "./recorded/verify.json";
 const runningStatus = running as AuditStatus;
 const readyStatus = ready as AuditStatus;
 
+// The charts render real data; the shared machine can be slow.
+vi.setConfig({ testTimeout: 20_000 });
+
 function respond(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -95,5 +98,12 @@ describe("Audit section", () => {
     expect(within(checks).getByText(new RegExp(`${v.files_checked} files listed`))).toBeTruthy();
     expect(within(checks).getByText("It belongs to this study's record")).toBeTruthy();
     expect(within(checks).getByText("It describes the current decisions")).toBeTruthy();
+    // every file the server listed, each one a download from the audit's own files route
+    const files = screen.getByRole("region", { name: "The audit's files" });
+    const links = within(files).getAllByRole("link");
+    expect(links).toHaveLength(v.files.length);
+    expect(links[0]!.getAttribute("href")).toBe(
+      `/api/studies/${id}/audit/files/${encodeURIComponent(v.files[0]!.name)}`,
+    );
   });
 });

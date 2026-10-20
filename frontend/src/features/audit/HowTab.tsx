@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 import { count, plural, shortHash } from "@/lib/format";
 import { Badge, Card, CardBody, CardHeader, ErrorPanel, LoadingBlock, VerdictTag } from "@/ui";
 import { useAuditHow, type AuditTarget } from "./api";
-import type { AuditHow, AuditManifest, HowDecision } from "./types";
+import type { AuditHow, HowDecision, ManifestLike } from "./types";
 import { AUDIT_STEPS, LIMITS, NOT_RUN_WORDS, tierOf } from "./words";
 
 /** A tiny number as the page writes it: `5.3 × 10⁻¹⁵`. */
@@ -34,7 +34,7 @@ export function scientific(x: number | null | undefined): string {
   return `${m} × 10${exp}`;
 }
 
-export function HowTab({ target, manifest }: { target: AuditTarget; manifest: AuditManifest }) {
+export function HowTab({ target, manifest }: { target: AuditTarget; manifest: ManifestLike }) {
   const how = useAuditHow(target);
   if (how.isError)
     return (
@@ -60,7 +60,7 @@ export function HowTab({ target, manifest }: { target: AuditTarget; manifest: Au
   );
 }
 
-function Steps({ how, manifest }: { how: AuditHow; manifest: AuditManifest }) {
+function Steps({ how, manifest }: { how: AuditHow; manifest: ManifestLike }) {
   const r = manifest.reproduces_qpilot;
   const facts: Record<string, string | null> = {
     "Reproduce qPilot": r

@@ -41,7 +41,7 @@ scripts/serve-dev.sh                                     # terminal 1: qpilot ap
 cd frontend && QPILOT_APP_TOKEN=qpilot-dev npm run dev   # terminal 2: the page on http://127.0.0.1:5173
 ```
 
-`scripts/serve-dev.sh` runs `.venv/bin/qpilot` (create the virtual environment in the repository root, as in the README), fixes the launch key to `qpilot-dev` and keeps its studies apart in `~/.cache/qpilot/dev-studies`. `npm run dev` forwards `/api` to it and adds the same key to each forwarded request, so the development page needs no cookie. Never use a fixed key on a shared computer (see [`THREAT_MODEL.md`](THREAT_MODEL.md), row 24). `QPILOT_API` (default `http://127.0.0.1:7860`), `QPILOT_APP_TOKEN` and `VITE_PORT` (default 5173) override the defaults. Sections load real data from your own study store: fetch the demo (`qpilot fetch-demo`, or **Download** on the page) and open it, rather than typing numbers into a component.
+`scripts/serve-dev.sh` runs `.venv/bin/qpilot` (create the virtual environment in the repository root, as in the README), fixes the launch key to `qpilot-dev` and keeps its studies apart in `~/.cache/qpilot/dev-studies`. `npm run dev` forwards `/api` to it and adds the same key to each forwarded request, so the development page needs no cookie. Never use a fixed key on a shared computer (see [`THREAT_MODEL.md`](THREAT_MODEL.md), row 24). `QPILOT_API` (default `http://127.0.0.1:7860`), `QPILOT_APP_TOKEN` and `VITE_PORT` (default 5173) override the defaults. Sections load real data from your own study store: fetch the demo (`qpilot fetch-demo`, or **Download 7.0 MB and open** on the page) and open it, rather than typing numbers into a component.
 
 Before every commit that touches `frontend/` or the API's contract (all four must pass):
 

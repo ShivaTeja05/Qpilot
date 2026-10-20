@@ -2,7 +2,7 @@
  * The audit has not run on this study (or is running now): what it is, in plain words, what it
  * checks before it runs, its scale, and **Run the audit** with the job's progress.
  */
-import { Play } from "lucide-react";
+import { Loader2, Play } from "lucide-react";
 import { useEffect } from "react";
 import type { SectionProps } from "@/shell/sections";
 import { useJob } from "@/api/jobs";
@@ -51,7 +51,15 @@ export function NotRun({
     ? job.data.status === "queued" || job.data.status === "running"
     : Boolean(jobId);
 
-  const scope = status.scope;
+  // The server checks that the audit applies (its first step, alone) and says what it would
+  // cover for this study; the status is re-read when that check is done.
+  useSeedJob(status.checking);
+  const checking = useJob(status.checking?.id);
+  const checked = checking.data?.status === "done" || checking.data?.status === "failed";
+  useEffect(() => {
+    if (checked) void invalidate();
+  }, [checked, invalidate]);
+  const scope = status.check?.scope;
   const decisions = DECISION_WORDS.join(", ").replace(/, ([^,]*)$/, " and $1");
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -93,6 +101,12 @@ export function NotRun({
       >
         <CardHeader id="audit-run" title={running ? "The audit is running" : "Run the audit"} />
         <CardBody className="space-y-4">
+          {status.checking && !scope ? (
+            <p className="flex items-center gap-2 text-[13px] text-muted" role="status">
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              Checking that the audit applies to this study…
+            </p>
+          ) : null}
           {scope?.analyses_in_full_grid ? (
             <dl className="grid grid-cols-2 gap-3">
               <Stat label="analyses" value={count(scope.analyses_in_full_grid)} />

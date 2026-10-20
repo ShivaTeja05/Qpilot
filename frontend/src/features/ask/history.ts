@@ -4,7 +4,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { AskSource } from "./askApi";
-import type { AskView } from "./types";
+import type { AskAnswer } from "./types";
 
 /** Older turns are dropped beyond this many per study. */
 export const MAX_TURNS = 50;
@@ -21,7 +21,7 @@ export interface Turn {
   /** The server's job, once the question was accepted. */
   jobId: string | null;
   state: TurnState;
-  answer: AskView | null;
+  answer: AskAnswer | null;
   /** The refusal or failure, as the server worded it. */
   error: unknown;
 }

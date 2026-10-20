@@ -1,0 +1,69 @@
+{
+  "id": "91dda9c23a7b4641",
+  "kind": "ask",
+  "title": "Answering “What should I check first in this data?”",
+  "key": "bc1d233e3866",
+  "status": "done",
+  "step": "Reading the audit",
+  "fraction": null,
+  "typical_s": 1.0,
+  "elapsed_s": 0.01,
+  "result": {
+    "question": "What should I check first in this data?",
+    "answer": "The reference genes: changing only this changes 31 call(s): Decide this choice before looking at results and record the reason (Decision Card). The group cut-off: changing only this changes 17 call(s): Decide this choice before looking at results and record the reason (Decision Card). The late-Cq cut-off: changing only this changes 11 call(s): Decide this choice before looking at results and record the reason (Decision Card).",
+    "engine": "audit",
+    "tool": "issues",
+    "args": {
+      "n": 3
+    },
+    "tool_words": "the audit's issue queue",
+    "routed_by": "keywords",
+    "routed_words": "keyword matching (no model)",
+    "written_by": "template",
+    "writer_words": "the engine's checked template",
+    "provider": "none",
+    "model": null,
+    "facts": [
+      {
+        "id": "f_i1_title",
+        "meaning": "issue #1",
+        "value": "The reference genes: changing only this changes 31 call(s)"
+      },
+      {
+        "id": "f_i1_action",
+        "meaning": "what to do about issue #1",
+        "value": "Decide this choice before looking at results and record the reason (Decision Card)."
+      },
+      {
+        "id": "f_i2_title",
+        "meaning": "issue #2",
+        "value": "The group cut-off: changing only this changes 17 call(s)"
+      },
+      {
+        "id": "f_i2_action",
+        "meaning": "what to do about issue #2",
+        "value": "Decide this choice before looking at results and record the reason (Decision Card)."
+      },
+      {
+        "id": "f_i3_title",
+        "meaning": "issue #3",
+        "value": "The late-Cq cut-off: changing only this changes 11 call(s)"
+      },
+      {
+        "id": "f_i3_action",
+        "meaning": "what to do about issue #3",
+        "value": "Decide this choice before looking at results and record the reason (Decision Card)."
+      }
+    ],
+    "validated": true,
+    "note": null,
+    "status": null,
+    "card_id": null,
+    "focus": null,
+    "autonomy": "suggest",
+    "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
+    "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
+  },
+  "result_type": null,
+  "error": null
+}

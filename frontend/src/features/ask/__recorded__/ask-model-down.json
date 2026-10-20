@@ -1,5 +1,5 @@
 {
-  "id": "faa86bdd426242f8",
+  "id": "70c39d62288b43fd",
   "kind": "ask",
   "title": "Answering “Is the BIRC5 result robust?”",
   "key": "bc1d233e3866",
@@ -7,7 +7,7 @@
   "step": "Looking it up in the study",
   "fraction": null,
   "typical_s": null,
-  "elapsed_s": 0.06,
+  "elapsed_s": 0.08,
   "result": {
     "question": "Is the BIRC5 result robust?",
     "answer": "BIRC5 is higher in the MYCN high group under the recommended choices: 4× (confidence interval 2.9× to 5.5×). It holds in 100% of the 744 reasonable analyses; confidence Moderate. No single choice flips it.",
@@ -59,9 +59,11 @@
     "note": "A template answered; the model was not used: endpoint call failed: ConnectError.",
     "status": null,
     "card_id": null,
+    "focus": null,
     "autonomy": "suggest",
     "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
     "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
   },
+  "result_type": null,
   "error": null
 }

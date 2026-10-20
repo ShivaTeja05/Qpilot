@@ -28,7 +28,7 @@ import {
 import { useAuditVerify, type AuditTarget } from "./api";
 import { asSentence } from "./CannotRun";
 import { scientific } from "./HowTab";
-import type { AuditManifest, AuditVerify } from "./types";
+import type { AuditVerify, ManifestLike } from "./types";
 
 type Tone = "ok" | "warn" | "bad";
 
@@ -41,7 +41,7 @@ export function VerifyTab({
 }: {
   workspace: NonNullable<SectionProps["workspace"]>;
   target: AuditTarget;
-  manifest: AuditManifest;
+  manifest: ManifestLike;
   /** The audit's folder on this computer, when known. */
   dir?: string | null;
   /** An attached folder (no command line or record export from here). */
@@ -230,9 +230,6 @@ export function VerifyTab({
                     ? [["Run time", duration(manifest.seconds)] as [string, string]]
                     : []),
                   ["Versions", versions(manifest)],
-                  ...(manifest.settings
-                    ? [["Settings", settings(manifest)] as [string, string]]
-                    : []),
                 ]}
               />
             </CardBody>
@@ -268,7 +265,9 @@ export function VerifyTab({
         )}
       </div>
 
-      {v?.files?.length ? <Files files={v.files} base={target.base} /> : null}
+      {v?.files?.length ? (
+        <Files files={v.files} base={target.base} checksums={v.checksums_sha256} />
+      ) : null}
     </div>
   );
 }
@@ -335,7 +334,16 @@ function Check({
 }
 
 /** The audit's files with their checksums; each one downloads (only files AUDIT.sha256 lists). */
-function Files({ files, base }: { files: NonNullable<AuditVerify["files"]>; base: string }) {
+function Files({
+  files,
+  base,
+  checksums,
+}: {
+  files: AuditVerify["files"];
+  base: string;
+  /** The sha256 of AUDIT.sha256 itself (the list cannot hold its own). */
+  checksums: string | null;
+}) {
   return (
     <Card as="section" aria-labelledby="verify-files">
       <CardHeader
@@ -367,7 +375,10 @@ function Files({ files, base }: { files: NonNullable<AuditVerify["files"]>; base
                   </TD>
                   <TD numeric>{bytes(f.bytes)}</TD>
                   <TD>
-                    <Hash value={f.sha256} length={16} />
+                    <Hash
+                      value={f.sha256 ?? (f.name === "AUDIT.sha256" ? checksums : null)}
+                      length={16}
+                    />
                   </TD>
                 </TR>
               ))}
@@ -379,18 +390,9 @@ function Files({ files, base }: { files: NonNullable<AuditVerify["files"]>; base
   );
 }
 
-function versions(m: AuditManifest): string {
+function versions(m: ManifestLike): string {
   const v = m.versions ?? {};
   const parts = Object.entries(v).map(([k, x]) => `${k} ${x}`);
-  return parts.length ? parts.join(" · ") : "—";
-}
-
-function settings(m: AuditManifest): string {
-  const s = m.settings ?? {};
-  const parts = [
-    typeof s.permutations === "number" ? `${count(s.permutations)} permutations` : null,
-    typeof s.seed === "number" ? `seed ${s.seed}` : null,
-  ].filter(Boolean);
   return parts.length ? parts.join(" · ") : "—";
 }
 

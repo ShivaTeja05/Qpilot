@@ -6,7 +6,7 @@ import { dateTime } from "@/lib/format";
 import { ErrorPanel, JobCard } from "@/ui";
 import { Answer, type AnswerLinks } from "./Answer";
 import { updateTurn, type Turn } from "./history";
-import { toAskView } from "./types";
+import { toAskAnswer } from "./types";
 
 const UNREADABLE =
   "qPilot finished, but its answer could not be read. Ask again; if it keeps happening, the page and the server are out of step (reload the page).";
@@ -21,7 +21,7 @@ function useFollow(studyId: string, turn: Turn): void {
   useEffect(() => {
     if (!following) return;
     if (data?.status === "done") {
-      const answer = toAskView(data.result);
+      const answer = toAskAnswer(data.result);
       if (answer) updateTurn(studyId, turn.id, { state: "done", answer });
       // The event stream marks a job done before its result is read; wait for that read.
       else if (!fetching)

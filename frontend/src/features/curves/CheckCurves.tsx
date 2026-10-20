@@ -5,42 +5,99 @@
  */
 import { ScanLine } from "lucide-react";
 import { useRef, useState } from "react";
-import { api, unwrap } from "@/api/client";
+import { api, unwrap, type JobView } from "@/api/client";
 import { count } from "@/lib/format";
 import { useFocusTarget } from "@/shell/actions";
 import { useWrite } from "@/shell/writes";
 import type { SectionProps } from "@/shell/sections";
 import { Button, Card, CardBody, JobCard } from "@/ui";
 
+type Workspace = NonNullable<SectionProps["workspace"]>;
+
+/** What the job answers (routers/studio.py `_report`). */
 interface Report {
   message?: string;
   notes?: string[];
   disagreements?: number | null;
   targets_that_matter?: number | null;
-  proposed?: string[];
 }
 
-export function CheckCurves({ workspace }: { workspace: NonNullable<SectionProps["workspace"]> }) {
+export interface CheckCurvesState {
+  start: () => void;
+  /** Starting, or a check of this session is running. */
+  busy: boolean;
+  /** The job to show (the one started here, else the one the workspace says is running). */
+  jobId: string | null;
+  dismiss: () => void;
+}
+
+/** The check's state, shared by the panel, the button in the stage bar and the job card. */
+export function useCheckCurves(workspace: Workspace): CheckCurvesState {
   const sid = workspace.key;
-  const stage = workspace.stages.find((s) => s.stage === "curves");
   const running = workspace.active_jobs.find(
-    (j) => j.kind === "propose.curves" && (j.status === "queued" || j.status === "running"),
+    (j: JobView) =>
+      j.kind === "propose.curves" && (j.status === "queued" || j.status === "running"),
   );
   const [jobId, setJobId] = useState<string | null>(null);
-  const id = jobId ?? running?.id ?? null;
-  const button = useRef<HTMLButtonElement>(null);
-  useFocusTarget("Check the curves", button);
-
   const check = useWrite({
     workspaceKey: sid,
     mutationFn: () =>
       unwrap(api.POST("/api/sessions/{sid}/propose/curves", { params: { path: { sid } } })),
     onSuccess: (r) => setJobId(r.job.id),
   });
+  return {
+    start: () => check.mutate(),
+    busy: check.isPending || Boolean(running),
+    jobId: jobId ?? running?.id ?? null,
+    dismiss: () => setJobId(null),
+  };
+}
 
-  if (stage?.confirmed && !id) return null;
-  const busy = check.isPending || Boolean(running);
+/** The button; also the next step's focus target ("Check the curves"). */
+export function CheckCurvesButton({
+  state,
+  again,
+  primary,
+}: {
+  state: CheckCurvesState;
+  again?: boolean;
+  primary?: boolean;
+}) {
+  const button = useRef<HTMLButtonElement>(null);
+  useFocusTarget("Check the curves", button);
+  return (
+    <Button
+      ref={button}
+      variant={primary ? "primary" : "secondary"}
+      icon={<ScanLine />}
+      loading={state.busy}
+      disabled={state.busy}
+      onClick={state.start}
+      data-action="Check the curves"
+    >
+      {again ? "Check the curves again" : "Check the curves"}
+    </Button>
+  );
+}
 
+/** The job's progress, then what it found. */
+export function CheckCurvesJob({
+  state,
+  className,
+}: {
+  state: CheckCurvesState;
+  className?: string;
+}) {
+  if (!state.jobId) return null;
+  return (
+    <JobCard id={state.jobId} onDismiss={state.dismiss} className={className}>
+      {(result) => <ReportText report={(result ?? {}) as Report} />}
+    </JobCard>
+  );
+}
+
+/** Before any proposal: what the check does, and the button. */
+export function CheckCurvesPanel({ state }: { state: CheckCurvesState }) {
   return (
     <Card>
       <CardBody className="flex flex-col gap-3 pt-4">
@@ -51,29 +108,13 @@ export function CheckCurves({ workspace }: { workspace: NonNullable<SectionProps
               qPilot fits every curve with LinRegPCR and asks the Curve Judge, a local curve
               classifier that reads only the curve’s shape, for its own call on each study well.
               Where the two disagree in a way that could change a conclusion, each well is listed
-              below for you to decide; the others change nothing and are not listed. Usually about
-              15 s.
+              here for you to decide; the others change nothing and are not listed. The
+              amplification rule is proposed too. Usually about 15 s.
             </p>
           </div>
-          {!stage?.confirmed ? (
-            <Button
-              ref={button}
-              variant={stage && stage.pending > 0 ? "secondary" : "primary"}
-              icon={<ScanLine />}
-              loading={busy}
-              disabled={busy}
-              onClick={() => check.mutate()}
-              data-action="Check the curves"
-            >
-              {stage && stage.pending > 0 ? "Check the curves again" : "Check the curves"}
-            </Button>
-          ) : null}
+          <CheckCurvesButton state={state} primary />
         </div>
-        {id ? (
-          <JobCard id={id} onDismiss={() => setJobId(null)}>
-            {(result) => <ReportText report={(result ?? {}) as Report} />}
-          </JobCard>
-        ) : null}
+        <CheckCurvesJob state={state} />
       </CardBody>
     </Card>
   );

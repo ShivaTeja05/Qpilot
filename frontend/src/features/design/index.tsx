@@ -20,7 +20,7 @@ import { DesignNeeds } from "./DesignNeeds";
 import { comparisonState, concerns } from "./logic";
 import { DesignPlate, type PlateWell } from "./DesignPlate";
 import { FileFacts } from "./FileFacts";
-import { ProposeAgain, ProposeDesignPanel } from "./ProposeDesign";
+import { ProposeAgain, ProposeDesignPanel, ProposeReportView } from "./ProposeDesign";
 import { WellCurveDialog } from "./WellCurve";
 
 export default function DesignSection({ workspace }: SectionProps) {
@@ -64,7 +64,7 @@ export default function DesignSection({ workspace }: SectionProps) {
   }
 
   const status = workspace.stages.find((s) => s.stage === "design");
-  const pending = all.filter((p) => p.status === "proposed").length;
+  const pending = all.filter((p) => p.status === "proposed" && p.kind !== "stage.confirm").length;
   const confirmed = Boolean(status?.confirmed);
   const proposeJob = workspace.active_jobs.find((j) => j.kind === "propose.design" && (j.status === "queued" || j.status === "running"));
   const otherJobs = workspace.active_jobs.filter((j) => j.key === sid && j.kind !== "propose.design" && (j.status === "queued" || j.status === "running"));
@@ -89,7 +89,11 @@ export default function DesignSection({ workspace }: SectionProps) {
         eyebrow="Blind stage 1 of 2"
         title="Design"
         hint="What each sample is, the groups, the biological units, the reference genes and the gene symbols. No result is shown until the design and the curves are confirmed, so the design is decided on the evidence, not on the answer it gives."
-        actions={all.length ? <ConfirmStage sid={sid} stage="design" status={status} /> : null}
+        actions={
+          // One confirm button at a time: here while proposals wait (or once confirmed), under
+          // the inbox when everything is decided.
+          all.length && (confirmed || pending > 0) ? <ConfirmStage sid={sid} stage="design" status={status} /> : null
+        }
       />
 
       {all.length && status && !confirmed ? (
@@ -97,7 +101,7 @@ export default function DesignSection({ workspace }: SectionProps) {
       ) : null}
 
       {otherJobs.map((j) => (
-        <JobCard key={j.id} job={j} />
+        <JobCard key={j.id} id={j.id} />
       ))}
 
       {all.length ? (
@@ -120,7 +124,7 @@ export default function DesignSection({ workspace }: SectionProps) {
                 Propose the comparison
               </Button>
             ) : null}
-            {!confirmed ? <BulkActions sid={sid} stage="design" pending={pending} /> : null}
+            {!confirmed ? <BulkActions sid={sid} stage="design" /> : null}
             {!confirmed ? <ProposeAgain sid={sid} disabled={Boolean(proposeJob)} /> : null}
           </div>
         </div>
@@ -128,7 +132,11 @@ export default function DesignSection({ workspace }: SectionProps) {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
         <div className="min-w-0">
-          {proposeJob && all.length ? <JobCard job={proposeJob} className="mb-4" /> : null}
+          {proposeJob && all.length ? (
+            <JobCard id={proposeJob.id} className="mb-4">
+              {(result) => <ProposeReportView result={result} />}
+            </JobCard>
+          ) : null}
           <StageInbox
             sid={sid}
             stage="design"

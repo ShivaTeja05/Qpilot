@@ -6,7 +6,7 @@ import recorded from "./recorded/agents.json";
 import { RequestItem } from "./RequestItem";
 import type { AgentsView } from "./types";
 
-const request = (recorded as AgentsView).pending[0]!;
+const request = (recorded as unknown as AgentsView).pending[0]!;
 
 afterEach(cleanup);
 

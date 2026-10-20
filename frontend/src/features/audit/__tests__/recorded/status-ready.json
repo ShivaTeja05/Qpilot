@@ -63,11 +63,27 @@
       "qpilot": "0.1.0"
     },
     "checksums_sha256": "e1d49bbe5c76a8a43cff0f6075ab113548c77844144b0ab059281d7cf783837e",
+    "created_at": 1792524661.2831652,
     "seconds": 44.2
   },
   "current": true,
   "decisions_since": 0,
-  "views_ready": true,
-  "loading": null,
+  "views_ready": false,
+  "loading": {
+    "id": "2c72c59cf2fe40e3",
+    "kind": "audit.load",
+    "title": "Loading the audit",
+    "key": "e300000d4f9a",
+    "status": "queued",
+    "step": "",
+    "fraction": null,
+    "typical_s": 15.0,
+    "elapsed_s": 0.0,
+    "result": null,
+    "result_type": null,
+    "error": null
+  },
+  "check": null,
+  "checking": null,
   "typical_s": 55.0
 }
