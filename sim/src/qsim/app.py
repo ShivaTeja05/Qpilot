@@ -108,7 +108,7 @@ ROUTED_WORDS = {
 EVIDENCE_LABELS = {
     "all_baseline_call": "Call with the planned analysis",
     "all_baseline_fold": "Fold change with the planned analysis (group ÷ rest)",
-    "defensible_holds": "Share of reasonable analyses with the same call",
+    "defensible_holds": "Share of the audit's reasonable analyses with the same call",
     "defensible_flipped_by_one": "A single reasonable choice that changes the call",
     "defensible_interaction_only": "Changes only when two choices change together",
     "all_holds": "Share of all analyses, shortcuts included, with the same call",
@@ -120,14 +120,27 @@ EVIDENCE_LABELS = {
     "moves_to_flip": "Fewest reasonable moves (a choice changed or a sample left out) that change the call",
     "moves_path": "The quickest such path",
     "share_forks_significant_same_direction": "Share of analyses where the difference is clear",
-    "p_global": "p-value across reasonable analyses, all genes tested together",
+    "p_global": "p-value across the audit's reasonable analyses, all genes tested together",
     "q_global_bh": "The same, corrected for testing many genes",
     "verdict": "Verdict",
 }
 
 
+#: The audit's own set of analyses, always named (qPilot's choice grid is another set).
+REASONABLE = "the audit's reasonable analyses"
+REASONABLE_WHAT = (
+    "every combination of choices a careful lab could defend: no common shortcuts (such as a "
+    "single or paired control gene), and the groups and the correction for many genes as planned"
+)
+
+
 def _per100(share: float) -> int:
     return int(round(100 * float(share)))
+
+
+def _k(share: float, n: int) -> int:
+    """How many of ``n`` analyses a share of them is."""
+    return int(round(float(share) * n))
 
 
 def _fold(fold: float) -> str:
@@ -262,23 +275,23 @@ class Screen(LabViews):
         r, line = self.rules, self.line_words()
         return {
             "solid": (
-                f"Same call in at least {_per100(r['solid_holds'])} of 100 reasonable analyses, "
+                f"Same call in at least {_per100(r['solid_holds'])} % of {REASONABLE}, "
                 f"no {r['drop_k_searched']} or fewer samples change it, and the difference is "
-                f"clear in at least {_per100(r['solid_significant'])} of 100."
+                f"clear in at least {_per100(r['solid_significant'])} % of them."
             ),
             "holds with caveats": (
-                f"Same call in at least {_per100(r['solid_holds'])} of 100 reasonable analyses, "
+                f"Same call in at least {_per100(r['solid_holds'])} % of {REASONABLE}, "
                 f"but {r['drop_k_searched']} or fewer samples change it, or the difference is "
                 "not always clear."
             ),
             "depends on your choices": (
-                f"Same call in {_per100(r['fragile_holds'])} to {_per100(r['solid_holds'])} of "
-                "100 reasonable analyses: the rest depend on the choices made."
+                f"Same call in {_per100(r['fragile_holds'])} % to {_per100(r['solid_holds'])} % "
+                f"of {REASONABLE}: the rest depend on the choices made."
             ),
             "fragile": (
-                f"Same call in fewer than {_per100(r['fragile_holds'])} of 100 reasonable "
-                f"analyses, or {r['fragile_drop_k']} or fewer samples change it, or it sits "
-                f"within {_per100(2 ** r['fragile_margin_log2'] - 1)} % of the {line} line."
+                f"Same call in fewer than {_per100(r['fragile_holds'])} % of {REASONABLE}, or "
+                f"{r['fragile_drop_k']} or fewer samples change it, or it sits within "
+                f"{_per100(2 ** r['fragile_margin_log2'] - 1)} % of the {line} line."
             ),
             "check data first": "A problem found in the data changes this call when it is fixed.",
             "no call": (
@@ -390,7 +403,10 @@ class Screen(LabViews):
             raise KeyError(gene)
         e, r = self.explain[gene], self.genes.loc[gene]
         rules, line = self.rules, self.line_words()
-        holds, sig = _per100(e["holds_defensible"]), _per100(e["share_significant"])
+        holds = _per100(e["holds_defensible"])  # percent (the map's and the holds block's n)
+        n_set = int(e["analyses_defensible"])
+        same = f"{_k(e['holds_defensible'], n_set)} of {n_set}"  # "144 of 144"
+        clear = f"{_k(e['share_significant'], n_set)} of {n_set}"
         dk = e["drop_k"]
         margin = e["fold_margin_log2"]
         margin_pct = _per100(2 ** abs(margin) - 1)
@@ -401,24 +417,24 @@ class Screen(LabViews):
         verdict = e["verdict"]
         if verdict == "solid":
             why = (
-                f"Same call in {holds} of 100 reasonable analyses, and no "
+                f"Same call in {same} of {REASONABLE}, and no "
                 f"{rules['drop_k_searched']} or fewer samples change it."
             )
         elif verdict == "holds with caveats":
-            why = f"Same call in {holds} of 100 reasonable analyses, but " + (
+            why = f"Same call in {same} of {REASONABLE}, but " + (
                 f"removing {dk} samples changes it."
                 if dk
-                else f"the difference is clear in only {sig} of 100 of them."
+                else f"the difference is clear in only {clear} of them."
             )
         elif verdict == "depends on your choices":
             why = (
-                f"Same call in {holds} of 100 reasonable analyses; the others turn on "
+                f"Same call in {same} of {REASONABLE}; the others turn on "
                 f"{_join([PLAIN[d] for d in flip_decisions]) if flip_decisions else 'your choices'}."
             )
         elif verdict == "fragile":
             reasons = []
             if e["holds_defensible"] < rules["fragile_holds"]:
-                reasons.append(f"same call in only {holds} of 100 reasonable analyses")
+                reasons.append(f"same call in only {same} of {REASONABLE}")
             if dk is not None and dk <= rules["fragile_drop_k"]:
                 reasons.append(f"removing {dk} sample{'s' if dk > 1 else ''} changes it")
             if margin < rules["fragile_margin_log2"]:
@@ -433,7 +449,7 @@ class Screen(LabViews):
         else:
             why = (
                 f"A call needs at least {line} and a p-value below {self.alpha:g}. "
-                f"{holds} of 100 reasonable analyses agree there is no call."
+                f"{same[0].upper() + same[1:]} of {REASONABLE} agree there is no call."
             )
         result = {
             "headline": f"{gene} is {_fold(e['fold'])} in {self.group} samples than in {self.rest}.",
@@ -453,13 +469,15 @@ class Screen(LabViews):
         all_holds = _per100(r["all_holds"])
         holds_block = {
             "n": holds,
+            "same": _k(e["holds_defensible"], n_set),
+            "of": n_set,
             "lines": [
-                f"{e['analyses_defensible']} reasonable analyses were run: every combination "
-                "of choices a careful lab could defend.",
-                f"The difference itself is clear (p below {self.alpha:g}) in {sig} of 100 of them.",
+                f"The audit ran {n_set} reasonable analyses: {REASONABLE_WHAT}.",
+                f"The same call comes out in {same} of them, and the difference itself is clear "
+                f"(p below {self.alpha:g}) in {clear}.",
                 "Across every option tried, common shortcuts and other group cut-offs included "
                 f"({self.summary['ledger']['total_cells']:,} analyses), the same answer comes "
-                f"out in {all_holds} of 100.",
+                f"out in {all_holds} % of them.",
             ],
         }
 
@@ -547,7 +565,7 @@ class Screen(LabViews):
             todo.append("Nothing to report as a change.")
             if e["flips"]:
                 todo.append(
-                    "Some reasonable analyses would call it, so do not report it as unchanged "
+                    f"Some of {REASONABLE} would call it, so do not report it as unchanged "
                     "without saying so."
                 )
         for i in data_issues[:3]:
@@ -565,7 +583,7 @@ class Screen(LabViews):
                 "value": _fold(e["fold"]),
                 "sub": f"likely {_range(*e['ci'])}",
             },
-            {"label": "Same answer in", "value": f"{holds} of 100", "sub": "reasonable analyses"},
+            {"label": "Same answer in", "value": same, "sub": REASONABLE},
             {
                 "label": "p-value, planned analysis",
                 "value": f"{e['p']:.2g}",
@@ -598,8 +616,8 @@ class Screen(LabViews):
             },
             {
                 "label": "Difference is clear in",
-                "value": f"{sig} of 100",
-                "sub": f"reasonable analyses (p below {self.alpha:g})",
+                "value": clear,
+                "sub": f"{REASONABLE} (p below {self.alpha:g})",
             },
         ]
 
