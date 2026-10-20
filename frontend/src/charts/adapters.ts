@@ -35,7 +35,7 @@ export interface AuditAnalyses extends AuditScale {
   n_other: number;
   base_call: string;
   rows: {
-    log2: number;
+    log2: number | null;
     fold: string;
     call: string;
     call_key?: string | null;
@@ -45,21 +45,27 @@ export interface AuditAnalyses extends AuditScale {
   }[];
 }
 
+/** A finite number (null, NaN and infinities are left out of charts). */
+export const finite = (v: number | null | undefined): v is number =>
+  v != null && Number.isFinite(v);
+
 export function analysesDots(a: AuditAnalyses): AnalysisDot[] {
-  return a.rows.map((r) => ({
-    log2: r.log2,
-    call: callKey(r),
-    same: r.same,
-    planned: r.planned,
-    choices: r.choices,
-    foldText: r.fold,
-    callText: r.call,
-  }));
+  return a.rows
+    .flatMap((r) => (finite(r.log2) ? [{ ...r, log2: r.log2 }] : []))
+    .map((r) => ({
+      log2: r.log2,
+      call: callKey(r),
+      same: r.same,
+      planned: r.planned,
+      choices: r.choices,
+      foldText: r.fold,
+      callText: r.call,
+    }));
 }
 
 export interface AuditEffects extends AuditScale {
   gene: string;
-  planned_log2: number;
+  planned_log2: number | null;
   planned: string;
   decisions: {
     id: string;
@@ -68,7 +74,7 @@ export interface AuditEffects extends AuditScale {
     options: {
       label: string;
       tier: string;
-      log2: number;
+      log2: number | null;
       fold: string;
       call: string;
       call_key?: string | null;
@@ -82,28 +88,30 @@ export function choiceRows(e: AuditEffects): ChoiceRow[] {
   return e.decisions.map((d) => ({
     id: d.id,
     name: d.name,
-    options: d.options.map((o) => ({
-      label: o.label,
-      tier: o.tier,
-      log2: o.log2,
-      call: callKey(o),
-      changesCall: o.changes_call,
-      planned: o.planned,
-      foldText: o.fold,
-      callText: o.call,
-    })),
+    options: d.options
+      .flatMap((o) => (finite(o.log2) ? [{ ...o, log2: o.log2 }] : []))
+      .map((o) => ({
+        label: o.label,
+        tier: o.tier,
+        log2: o.log2,
+        call: callKey(o),
+        changesCall: o.changes_call,
+        planned: o.planned,
+        foldText: o.fold,
+        callText: o.call,
+      })),
   }));
 }
 
 export interface AuditSamples extends AuditScale {
   gene: string;
   fold: string;
-  fold_log2: number;
+  fold_log2: number | null;
   late_cut: string;
   changes: string[];
-  groups: Record<string, { label: string; n: number; missing: number; mean: number }>;
+  groups: Record<string, { label: string; n: number; missing: number; mean: number | null }>;
   points: {
-    x: number;
+    x: number | null;
     group: string;
     sample: string;
     plate: string;
@@ -123,30 +131,32 @@ export function sampleGroups(s: AuditSamples): SampleGroup[] {
     label: g.label,
     n: g.n,
     missing: g.missing,
-    mean: g.mean,
+    mean: g.mean ?? Number.NaN,
   }));
 }
 
 export function samplePoints(s: AuditSamples): SamplePoint[] {
-  return s.points.map((p) => ({
-    sample: p.sample,
-    group: p.group,
-    x: p.x,
-    plate: p.plate,
-    well: p.well,
-    cq: p.cq,
-    late: p.late,
-    nondetect: p.nondetect,
-    flagged: p.flagged,
-    carries: p.carries,
-    valueText: p.value,
-  }));
+  return s.points
+    .flatMap((p) => (finite(p.x) ? [{ ...p, x: p.x }] : []))
+    .map((p) => ({
+      sample: p.sample,
+      group: p.group,
+      x: p.x,
+      plate: p.plate,
+      well: p.well,
+      cq: p.cq,
+      late: p.late,
+      nondetect: p.nondetect,
+      flagged: p.flagged,
+      carries: p.carries,
+      valueText: p.value,
+    }));
 }
 
 export interface AuditStudy extends AuditScale {
   map: {
     gene: string;
-    log2: number;
+    log2: number | null;
     fold: string;
     holds: number;
     verdict: string;
@@ -159,19 +169,21 @@ export interface AuditStudy extends AuditScale {
 
 /** The audit's map: holds is "of 100" there; verdict glyphs. */
 export function auditMapPoints(s: AuditStudy, verdictLabel?: (v: string) => string): MapPoint[] {
-  return s.map.map((g) => {
-    const mark: Mark = isVerdict(g.verdict)
-      ? VERDICTS[g.verdict]
-      : { ...VERDICTS["no call"], label: g.verdict };
-    return {
-      gene: g.gene,
-      log2: g.log2,
-      holds: g.holds / 100,
-      mark: verdictLabel ? { ...mark, label: verdictLabel(g.verdict) } : mark,
-      headline: g.headline,
-      foldText: g.fold,
-    };
-  });
+  return s.map
+    .flatMap((g) => (finite(g.log2) ? [{ ...g, log2: g.log2 }] : []))
+    .map((g) => {
+      const mark: Mark = isVerdict(g.verdict)
+        ? VERDICTS[g.verdict]
+        : { ...VERDICTS["no call"], label: g.verdict };
+      return {
+        gene: g.gene,
+        log2: g.log2,
+        holds: g.holds / 100,
+        mark: verdictLabel ? { ...mark, label: verdictLabel(g.verdict) } : mark,
+        headline: g.headline,
+        foldText: g.fold,
+      };
+    });
 }
 
 /** "Calls changed by one choice alone", most first. */
@@ -217,23 +229,29 @@ export interface AuditWhatif extends AuditScale {
     new: string;
     new_call: string;
     new_call_key?: string | null;
-    base_log2: number;
-    new_log2: number;
+    base_log2: number | null;
+    new_log2: number | null;
     changed: boolean;
   }[];
 }
 
 export function whatifRows(w: AuditWhatif): DumbbellRow[] {
-  return w.rows.map((r) => ({
-    gene: r.gene,
-    baseLog2: r.base_log2,
-    newLog2: r.new_log2,
-    baseCall: callKey({ call_key: r.base_call_key, call: r.base_call }),
-    newCall: callKey({ call_key: r.new_call_key, call: r.new_call }),
-    headline: r.headline,
-    baseText: r.base,
-    newText: r.new,
-  }));
+  return w.rows
+    .flatMap((r) =>
+      finite(r.base_log2) && finite(r.new_log2)
+        ? [{ ...r, base_log2: r.base_log2, new_log2: r.new_log2 }]
+        : [],
+    )
+    .map((r) => ({
+      gene: r.gene,
+      baseLog2: r.base_log2,
+      newLog2: r.new_log2,
+      baseCall: callKey({ call_key: r.base_call_key, call: r.base_call }),
+      newCall: callKey({ call_key: r.new_call_key, call: r.new_call }),
+      headline: r.headline,
+      baseText: r.base,
+      newText: r.new,
+    }));
 }
 
 // ---- results (the API's GeneRow) ----------------------------------------------------------------
