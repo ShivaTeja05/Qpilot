@@ -20,6 +20,33 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
   );
 }
 
+interface NotComparedReason {
+  reason: string;
+  n: number;
+}
+
+/**
+ * Samples in neither group: the count from the API's own numbers and, when the API serves it,
+ * why (`not_compared`); never a guessed reason.
+ */
+function NotCompared({ summary }: { summary: ResultsView["summary"] }) {
+  const inGroups = summary.groups.reduce((n, g) => n + g.n, 0);
+  const left = summary.n_samples - inGroups;
+  if (left <= 0) return null;
+  const served = (summary as { not_compared?: { n: number; reasons?: NotComparedReason[] } | null })
+    .not_compared;
+  const reasons = served?.reasons ?? [];
+  return (
+    <p className="mt-1 text-[13px] text-muted">
+      {count(inGroups)} of {count(summary.n_samples)} samples are in the two groups; {count(left)}{" "}
+      {left === 1 ? "is" : "are"} in neither
+      {reasons.length
+        ? `: ${reasons.map((r) => `${count(r.n)} ${r.reason}`).join("; ")}.`
+        : " and take no part in the comparison."}
+    </p>
+  );
+}
+
 export function Summary({ view, auditHref }: { view: ResultsView; auditHref: string }) {
   const s = view.summary;
   const g = view.references;
@@ -43,6 +70,7 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
         <Stat label="Genes compared" value={count(s.n_genes)} />
       </div>
       {s.design_line && <p className="mt-3 text-[13px] text-muted">{s.design_line}</p>}
+      <NotCompared summary={s} />
       <div className="mt-4 grid gap-4 border-t border-line pt-4 lg:grid-cols-3">
         <div className="min-w-0">
           <div className="text-[12px] text-muted">Calls under the rule</div>

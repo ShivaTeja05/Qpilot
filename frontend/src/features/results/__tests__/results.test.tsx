@@ -11,7 +11,8 @@ import cardsJson from "@/test/recorded/api-cards.json";
 import resultsJson from "@/test/recorded/api-results.json";
 import type { CardsView, ResultsView } from "../api";
 import { DecisionCards, cardOrder } from "../DecisionCards";
-import { NO_FILTER, matches } from "../GenesPanel";
+import { GenesPanel, NO_FILTER, matches } from "../GenesPanel";
+import { Summary } from "../Summary";
 
 const cards = cardsJson as unknown as CardsView;
 const results = resultsJson as unknown as ResultsView;
@@ -90,5 +91,47 @@ describe("Decision Cards", { timeout: 30_000 }, () => {
     expect(sent.reason).toBe("Prespecified in our protocol");
     expect(sent.expected_head).toBe(cards.head);
     expect(first.options.map((o) => o.id)).toContain(sent.option);
+  });
+});
+
+describe("summary and phone layout", { timeout: 30_000 }, () => {
+  it("says how many samples are in neither group, from the API's own counts", () => {
+    render(wrap(<Summary view={results} auditHref="#" />));
+    const inGroups = results.summary.groups.reduce((n, g) => n + g.n, 0);
+    const left = results.summary.n_samples - inGroups;
+    expect(left).toBeGreaterThan(0);
+    expect(screen.getByText(new RegExp(`are in neither`)).textContent).toContain(String(left));
+  });
+  it("shows every gene as a card on a phone", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      (q: string) =>
+        ({
+          matches: q.includes("max-width: 639px"),
+          media: q,
+          addEventListener() {},
+          removeEventListener() {},
+          addListener() {},
+          removeListener() {},
+          onchange: null,
+          dispatchEvent: () => false,
+        }) as MediaQueryList,
+    );
+    render(
+      wrap(
+        <GenesPanel
+          genes={results.genes}
+          filter={NO_FILTER}
+          onFilter={() => {}}
+          dimLabel={(d) => d}
+          selected={null}
+          onOpen={() => {}}
+        />,
+      ),
+    );
+    const list = screen.getByRole("list", { name: "All genes" });
+    expect(within(list).getAllByRole("button")).toHaveLength(results.genes.length);
+    expect(screen.queryByRole("table")).toBeNull();
+    vi.unstubAllGlobals();
   });
 });
