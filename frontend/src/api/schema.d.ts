@@ -1703,6 +1703,66 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/trace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Trace Study
+         * @description Genes by how little it takes to change their call; the samples behind the most calls.
+         */
+        get: operations["get_trace_study"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/trace/{gene}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Trace Gene
+         * @description One gene's call followed down to its samples, wells and plates.
+         */
+        get: operations["get_trace_gene"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/trace/{gene}/without": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Trace Without
+         * @description The call recomputed with these samples set aside together (a what-if; nothing changes).
+         */
+        post: operations["post_trace_without"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/system": {
         parameters: {
             query?: never;
@@ -6570,6 +6630,740 @@ export type components = {
             text: string;
         };
         /**
+         * TraceCall
+         * @description The traced result: one gene's comparison in the analysis in use.
+         */
+        TraceCall: {
+            /**
+             * Ci
+             * @description 95 % CI of the fold change.
+             */
+            ci: [
+                number | null,
+                number | null
+            ];
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /**
+             * Line Log2
+             * @description The rule's line: at least this many log2 units.
+             */
+            line_log2: number;
+            /** Log2Fc */
+            log2fc: number;
+            /**
+             * Margin Log2
+             * @description |log2 fold change| minus the line (negative: inside).
+             */
+            margin_log2: number;
+            /**
+             * Mean A
+             * @description Mean relative value (log2) of the first group.
+             */
+            mean_a: number;
+            /** Mean B */
+            mean_b: number;
+            /** N A */
+            n_a: number;
+            /** N B */
+            n_b: number;
+            /** P */
+            p: number | null;
+            /**
+             * Se
+             * @description Standard error of the log2 fold change.
+             */
+            se: number;
+        };
+        /**
+         * TraceCallChange
+         * @description A conclusion that a what-if changes.
+         */
+        TraceCallChange: {
+            /**
+             * Call After
+             * @enum {string}
+             */
+            call_after: "up" | "down" | "none";
+            /**
+             * Call Before
+             * @enum {string}
+             */
+            call_before: "up" | "down" | "none";
+            /** Gene */
+            gene: string;
+            /** Log2Fc After */
+            log2fc_after: number;
+            /** Log2Fc Before */
+            log2fc_before: number;
+            /** P After */
+            p_after?: number | null;
+            /** P Before */
+            p_before?: number | null;
+        };
+        /**
+         * TraceCell
+         * @description The analysis traced: the options in use on each decision (the planned ones or a person's).
+         */
+        TraceCell: {
+            /**
+             * Amp Call
+             * @description Which curves count as amplified.
+             */
+            amp_call?: string | null;
+            /**
+             * Cut
+             * @description The marker cut-off (marker split only).
+             */
+            cut?: number | null;
+            /**
+             * Planned
+             * @description True when every option is the planned one.
+             */
+            planned: boolean;
+            /**
+             * Refs
+             * @description The control genes the values are normalised to.
+             */
+            refs: string[];
+            /**
+             * Undetermined
+             * @description What empty wells do: drop or cap.
+             */
+            undetermined: string;
+        };
+        /**
+         * TraceFlipSet
+         * @description The fewest samples found whose removal together changes the call.
+         */
+        TraceFlipSet: {
+            /** Call After */
+            call_after?: ("up" | "down" | "none") | null;
+            /**
+             * Exact
+             * @description True when no smaller set exists (one and two are checked exhaustively).
+             */
+            exact: boolean;
+            /**
+             * K
+             * @description How many (None: no set of up to `searched` samples).
+             */
+            k: number | null;
+            /** Log2Fc After */
+            log2fc_after?: number | null;
+            /** P After */
+            p_after?: number | null;
+            /** Searched */
+            searched: number;
+            /** Units */
+            units: string[];
+        };
+        /**
+         * TraceGene
+         * @description One gene's call followed down to its samples, wells and plates.
+         */
+        TraceGene: {
+            call: components["schemas"]["TraceCall"];
+            /** Cannot Show */
+            cannot_show: string[];
+            cell: components["schemas"]["TraceCell"];
+            /** Checked */
+            checked: string[];
+            flip: components["schemas"]["TraceFlipSet"];
+            /** Gene */
+            gene: string;
+            /**
+             * Influential Normal
+             * @description Influential samples with nothing unusual (keep them for that).
+             */
+            influential_normal: string[];
+            /** Labels */
+            labels: [
+                string,
+                string
+            ];
+            look_first: components["schemas"]["TraceLookFirst"];
+            /** Missing */
+            missing: components["schemas"]["TraceMissing"][];
+            /**
+             * N Flip Single
+             * @description Samples that each change the call when set aside alone.
+             */
+            n_flip_single: number;
+            /**
+             * N No Comparison
+             * @description Samples of the study in no comparison at all.
+             */
+            n_no_comparison: number;
+            /** N Used */
+            n_used: number;
+            /** Places */
+            places: components["schemas"]["TracePlace"][];
+            /** References */
+            references: components["schemas"]["TraceReference"][];
+            /** Replicates */
+            replicates: boolean;
+            /** Rule */
+            rule: string;
+            /**
+             * Samples
+             * @description Every sample in the comparison, most influential first.
+             */
+            samples: components["schemas"]["TraceSample"][];
+            /** Thresholds */
+            thresholds: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * TraceGeneRow
+         * @description One gene in the study-wide list, by how little it takes to change its call.
+         */
+        TraceGeneRow: {
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /** Flip Exact */
+            flip_exact: boolean;
+            /** Flip K */
+            flip_k: number | null;
+            /** Flip Units */
+            flip_units: string[];
+            /** Gene */
+            gene: string;
+            /** Log2Fc */
+            log2fc: number;
+            /** Margin Log2 */
+            margin_log2: number;
+            /** N Flip Single */
+            n_flip_single: number;
+            /** P */
+            p: number | null;
+            /** Rank */
+            rank: number;
+            /** Top D Log2Fc */
+            top_d_log2fc: number | null;
+            /**
+             * Top Unit
+             * @description The sample that moves it most when set aside.
+             */
+            top_unit: string | null;
+        };
+        /**
+         * TraceGeneView
+         * @description ``GET /studies/{id}/trace/{gene}``: one gene's call, followed down to its wells.
+         */
+        TraceGeneView: {
+            /**
+             * Head
+             * @description The decision chain head the trace was read at.
+             */
+            head: string;
+            /**
+             * Session
+             * @description The Studio session the study came from, if any.
+             */
+            session: string | null;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Texts
+             * @description The trace's sentences by id: `summary`, `flip`, `look_first`, `place_<rank>`.
+             */
+            texts: {
+                [key: string]: components["schemas"]["FactText"];
+            };
+            trace: components["schemas"]["TraceGene"];
+        };
+        /**
+         * TraceLoaded
+         * @description The result of the ``trace.load`` job: the study is ready to trace.
+         */
+        TraceLoaded: {
+            /** Head */
+            head: string;
+            /** N Genes */
+            n_genes: number;
+            /** Seconds */
+            seconds: number;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * TraceLookFirst
+         * @description The one well to look at first, and why (``kind`` none: nothing behind the result).
+         */
+        TraceLookFirst: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "place" | "influential" | "none";
+            /**
+             * Place
+             * @description Rank of the place, when kind is place.
+             */
+            place?: number | null;
+            /**
+             * Text
+             * @default look_first
+             */
+            text: string;
+            /** Unit */
+            unit?: string | null;
+            well?: components["schemas"]["TraceWell"] | null;
+        };
+        /**
+         * TraceMissing
+         * @description A sample in the comparison groups with no value here, and the well(s) behind it.
+         */
+        TraceMissing: {
+            /** Group */
+            group?: string | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "empty_target" | "excluded" | "empty_reference" | "empty_marker" | "not_in_groups";
+            /** Unit */
+            unit: string;
+            /**
+             * Wells
+             * @default []
+             */
+            wells: components["schemas"]["TraceWell"][];
+        };
+        /**
+         * TraceOption
+         * @description A what-if for one place; nothing is applied (applying one is a person's decision).
+         */
+        TraceOption: {
+            /**
+             * Call After
+             * @enum {string}
+             */
+            call_after: "up" | "down" | "none";
+            /**
+             * Changes
+             * @description Every gene whose call changes.
+             * @default []
+             */
+            changes: components["schemas"]["TraceCallChange"][];
+            /** D Log2Fc */
+            d_log2fc: number;
+            /** Fixed Groups Changes */
+            fixed_groups_changes?: components["schemas"]["TraceCallChange"][] | null;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "set_aside" | "read_from_other_references" | "set_aside_wells";
+            /** Label */
+            label: string;
+            /** Log2Fc After */
+            log2fc_after: number;
+            /** P After */
+            p_after: number | null;
+            /**
+             * Regrouped
+             * @description How the groups change (marker split).
+             */
+            regrouped?: string | null;
+        };
+        /**
+         * TracePlace
+         * @description A place to look: a well (or a whole sample), what is unusual there and what it does.
+         */
+        TracePlace: {
+            /**
+             * Checks
+             * @description Fingerprints found (S1 … S6).
+             */
+            checks: string[];
+            /**
+             * Consequence
+             * @enum {string}
+             */
+            consequence: "changes_call" | "moves_number" | "changes_nothing";
+            /** D Log2Fc */
+            d_log2fc: number;
+            /** Group */
+            group: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "reference_well" | "target_well" | "sample" | "plate_control";
+            /** Options */
+            options: components["schemas"]["TraceOption"][];
+            /** Rank */
+            rank: number;
+            /**
+             * Text
+             * @description Key of its sentence in `texts`.
+             */
+            text: string;
+            /** Unit */
+            unit: string;
+            /** Wells */
+            wells: components["schemas"]["TraceWell"][];
+        };
+        /**
+         * TraceReference
+         * @description What one control gene does to this result.
+         */
+        TraceReference: {
+            /** Call Without */
+            call_without?: ("up" | "down" | "none") | null;
+            /**
+             * Flagged
+             * @description Its wells that disagree with their sample's other control genes.
+             * @default []
+             */
+            flagged: components["schemas"]["TraceWell"][];
+            /** Gene */
+            gene: string;
+            /**
+             * Group Diff Log2
+             * @description Its own difference between the groups (log2).
+             */
+            group_diff_log2: number;
+            /** Log2Fc Without */
+            log2fc_without?: number | null;
+            /**
+             * Share Log2
+             * @description Its exact additive part of the log2 fold change: minus its group difference divided by the number of control genes (the target's own difference is the rest).
+             */
+            share_log2: number;
+            /** @description The result normalised to the other control genes only. */
+            without?: components["schemas"]["TraceCallChange"] | null;
+        };
+        /**
+         * TraceSample
+         * @description One biological sample's pull on the traced result (set aside alone, exact).
+         */
+        TraceSample: {
+            /**
+             * Call Without
+             * @enum {string}
+             */
+            call_without: "up" | "down" | "none";
+            /**
+             * D Log2Fc
+             * @description Change of the log2 fold change when it is set aside.
+             */
+            d_log2fc: number;
+            /**
+             * Flags
+             * @default []
+             */
+            flags: ("reference_pull" | "input_shift" | "low_efficiency" | "far_from_group" | "ntc_window" | "curve_note")[];
+            /**
+             * Flips
+             * @description Setting it aside alone changes the call.
+             */
+            flips: boolean;
+            /** Group */
+            group: string;
+            /** Log2Fc Without */
+            log2fc_without: number;
+            /** P Without */
+            p_without: number | null;
+            /**
+             * Plates
+             * @description Plates of its wells behind this result.
+             * @default []
+             */
+            plates: string[];
+            /**
+             * Rank
+             * @description 1 = moves the result most when set aside.
+             */
+            rank: number;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "a" | "b";
+            /** Unit */
+            unit: string;
+            /**
+             * Value Log2
+             * @description The sample's relative value for this gene (log2).
+             */
+            value_log2: number;
+            /**
+             * Wells
+             * @description Its target and control-gene wells (detailed samples only).
+             * @default []
+             */
+            wells: components["schemas"]["TraceWell"][];
+            /**
+             * Z In Group
+             * @description Robust z of that value within its group.
+             */
+            z_in_group?: number | null;
+        };
+        /**
+         * TraceStudy
+         * @description The study-wide view: genes by fragility, the samples behind the most results.
+         */
+        TraceStudy: {
+            /** Cannot Show */
+            cannot_show: string[];
+            cell: components["schemas"]["TraceCell"];
+            /** Checked */
+            checked: string[];
+            /** Genes */
+            genes: components["schemas"]["TraceGeneRow"][];
+            /** Labels */
+            labels: [
+                string,
+                string
+            ];
+            /**
+             * Left Out
+             * @description Samples in no comparison, and the well behind each.
+             */
+            left_out: components["schemas"]["TraceMissing"][];
+            /** N Compared */
+            n_compared: number;
+            /**
+             * N Fragile
+             * @description Genes that one sample set aside changes.
+             */
+            n_fragile: number;
+            /** N Genes */
+            n_genes: number;
+            /** N Units */
+            n_units: number;
+            /** Rule */
+            rule: string;
+            /** Suspects */
+            suspects: components["schemas"]["TraceSuspect"][];
+            /** Thresholds */
+            thresholds: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * TraceStudyView
+         * @description ``GET /studies/{id}/trace``: genes by fragility, the samples behind the most calls.
+         */
+        TraceStudyView: {
+            /** Head */
+            head: string;
+            /** Session */
+            session: string | null;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Texts
+             * @description The overview's sentences by id: `summary`.
+             */
+            texts: {
+                [key: string]: components["schemas"]["FactText"];
+            };
+            trace: components["schemas"]["TraceStudy"];
+        };
+        /**
+         * TraceSuspect
+         * @description A sample that moves many results, or whose wells show something unusual.
+         */
+        TraceSuspect: {
+            /** Flags */
+            flags: ("reference_pull" | "input_shift" | "low_efficiency" | "far_from_group" | "ntc_window" | "curve_note")[];
+            /** Genes Flipped */
+            genes_flipped: string[];
+            /** Group */
+            group: string | null;
+            /**
+             * Input Shift Log2
+             * @description S2: every gene's typical offset (log2).
+             */
+            input_shift_log2?: number | null;
+            /** Max Abs D Log2Fc */
+            max_abs_d_log2fc: number;
+            /** Max Gene */
+            max_gene: string | null;
+            /**
+             * N Genes Flipped
+             * @description Calls that change when it alone is set aside.
+             */
+            n_genes_flipped: number;
+            /**
+             * N Genes Moved
+             * @description Calls whose fold change it moves by at least its yardstick.
+             */
+            n_genes_moved: number;
+            /** Plates */
+            plates: string[];
+            /** Rank */
+            rank: number;
+            /**
+             * Read As Expected
+             * @description Calls that change if its unusual control-gene well read as its other control genes predict.
+             */
+            read_as_expected?: components["schemas"]["TraceCallChange"][] | null;
+            /** Unit */
+            unit: string;
+            /**
+             * Wells
+             * @description Its unusual wells (with their plates).
+             * @default []
+             */
+            wells: components["schemas"]["TraceWell"][];
+        };
+        /**
+         * TraceWell
+         * @description One well at a physical address, with what is unusual about it.
+         */
+        TraceWell: {
+            /**
+             * Amplified
+             * @description Counts as amplified under the analysis' rule.
+             */
+            amplified: boolean;
+            /** Cq */
+            cq?: number | null;
+            /**
+             * Cq Z
+             * @description Robust z of the Cq against the plate's study wells of this gene.
+             */
+            cq_z?: number | null;
+            /**
+             * Efficiency
+             * @description The well's own efficiency (2.0 = 100 %).
+             */
+            efficiency?: number | null;
+            /**
+             * Efficiency Z
+             * @description Robust z of the efficiency against the same wells.
+             */
+            efficiency_z?: number | null;
+            /**
+             * Excluded
+             * @description A person excluded the well.
+             */
+            excluded: boolean;
+            /**
+             * Flags
+             * @default []
+             */
+            flags: ("no_amplification" | "excluded" | "late_cq" | "efficiency_outlier" | "reference_pull" | "ntc_window" | "curve_note")[];
+            /** Gene */
+            gene: string;
+            /**
+             * Key
+             * @description `plate/well`, as the curve and plate routes take it.
+             */
+            key: string;
+            /**
+             * Lowest Standard
+             * @description The plate's standard with the fewest copies.
+             */
+            lowest_standard?: string | null;
+            /** Lowest Standard Cq */
+            lowest_standard_cq?: number | null;
+            /**
+             * Note
+             * @description LinRegPCR's note on the well.
+             * @default
+             */
+            note: string;
+            /** Ntc Cq */
+            ntc_cq?: number | null;
+            /**
+             * Ntc Well
+             * @description The plate's earliest amplifying no-template control.
+             */
+            ntc_well?: string | null;
+            /** Plate */
+            plate: string;
+            /**
+             * Plate Median Cq
+             * @description Median Cq of the plate's study wells of this gene.
+             */
+            plate_median_cq?: number | null;
+            /**
+             * Pull Log2
+             * @description Reference wells: how far this well moves every value of its sample (log2; + up), against what the sample's other control genes predict.
+             */
+            pull_log2?: number | null;
+            /**
+             * Reference Z
+             * @description Robust z of that disagreement over the study.
+             */
+            reference_z?: number | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "target" | "reference" | "marker" | "candidate_reference" | "ntc" | "standard" | "other";
+            /** Sample */
+            sample: string;
+            /** Sample Type */
+            sample_type: string;
+            /**
+             * Unit
+             * @description The biological sample (unit) the well belongs to.
+             */
+            unit: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * TraceWithout
+         * @description One gene recomputed with some samples set aside together (exact), and what else changes.
+         */
+        TraceWithout: {
+            after: components["schemas"]["TraceCall"];
+            before: components["schemas"]["TraceCall"];
+            /** Changes Call */
+            changes_call: boolean;
+            /** Gene */
+            gene: string;
+            /**
+             * Other Changes
+             * @description Other genes whose call changes too.
+             */
+            other_changes: components["schemas"]["TraceCallChange"][];
+            /** Units */
+            units: string[];
+        };
+        /**
+         * TraceWithoutBody
+         * @description The samples to set aside together (nothing is applied: a what-if).
+         */
+        TraceWithoutBody: {
+            /**
+             * Samples
+             * @description Sample names as the trace lists them (1 to 50).
+             * @default []
+             */
+            samples: string[];
+        };
+        /**
+         * TraceWithoutView
+         * @description ``POST /studies/{id}/trace/{gene}/without``: the call recomputed without some samples.
+         */
+        TraceWithoutView: {
+            /** Head */
+            head: string;
+            result: components["schemas"]["TraceWithout"];
+            /** Study Id */
+            study_id: string;
+        };
+        /**
          * TurnDownBody
          * @description Turn down an agent's request on a card (one option, or every request on it).
          */
@@ -9673,6 +10467,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResultsView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trace_study: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceStudyView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trace_gene: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gene: string;
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceGeneView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_trace_without: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gene: string;
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TraceWithoutBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceWithoutView"];
                 };
             };
             /** @description Validation Error */
