@@ -37,6 +37,7 @@
   }
  ],
  "gene": "ODC1",
+ "call_key": "up",
  "verdict": "solid",
  "label": "Solid",
  "headline_gene": true,
