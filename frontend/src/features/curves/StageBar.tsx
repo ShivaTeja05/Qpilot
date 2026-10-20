@@ -23,6 +23,8 @@ export function StageBar({
   const confirmed = Boolean(stage?.confirmed);
   const waiting = proposals.filter((p) => p.status === "proposed");
   const contradicted = waiting.filter((p) => p.check.status === "contradicted").length;
+  // The bulk actions are for proposals about the curves, not the confirm step.
+  const curvesWaiting = waiting.filter((p) => p.kind !== "stage.confirm").length;
   const rule = proposals.find(
     (p) => p.kind === "curve.call_rule" && (p.status === "accepted" || p.status === "edited"),
   );
@@ -52,7 +54,7 @@ export function StageBar({
       </div>
       {!confirmed ? (
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <BulkActions sid={sid} stage="curves" pending={waiting.length} />
+          {curvesWaiting ? <BulkActions sid={sid} stage="curves" pending={curvesWaiting} /> : null}
           <CheckCurvesButton state={check} again />
         </div>
       ) : null}

@@ -74,6 +74,7 @@ function CurvesStage({
   rest: string[];
 }) {
   const sid = workspace.key;
+  const go = useGo();
   const [, navigate] = useLocation();
   const curves = workspace.stages.find((s) => s.stage === "curves");
   const confirmed = Boolean(curves?.confirmed);
@@ -240,6 +241,16 @@ function CurvesStage({
                 )
               }
             />
+            {confirmed && proposals?.length ? (
+              <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
+                <p className="text-[13px] text-muted">
+                  The design and the curves are confirmed: the results are shown now.
+                </p>
+                <Button className="ml-auto" variant="primary" onClick={() => go("results")}>
+                  Go to Results
+                </Button>
+              </div>
+            ) : null}
           </section>
           {/* One tree in both layouts, so switching never remounts the plate or the curve. */}
           <div
