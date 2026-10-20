@@ -39,7 +39,7 @@ export function ProjectCard({
   inbox: { data?: ProposalList; isPending: boolean; error: unknown; refetch: () => unknown };
 }) {
   const draft = useStartDraft(workspace.key);
-  const actions = useProposalActions(workspace.key, inbox.data?.head);
+  const actions = useProposalActions(workspace.key, inbox.data?.head, "prism");
   const quotes = useQuotes(workspace.key);
   const [jobId, setJobId] = useState<string | null>(null);
   const running = activeJob(workspace, "prism.draft");
