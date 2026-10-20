@@ -18,7 +18,7 @@ import pytest
 from qpilot.core.store import StudyStore
 from qpilot.integration import simulator as sim
 from qpilot.web.routers import audit as audit_router
-from tests.web.test_audit import WRITE, _client, _copy, seeded  # noqa: F401  (fixture)
+from tests.web.test_audit import WRITE, _client, _close, _copy, seeded  # noqa: F401  (fixture)
 
 pytestmark = [
     pytest.mark.demo_data,  # the audited study's input file is the demo's
@@ -105,7 +105,7 @@ def test_the_audit_job_reports_its_stages_and_lands_whole(seeded, tmp_path, monk
         assert _leftovers(root) == []
         check = client.post(f"/api/studies/{study}/audit/verify", json={}, headers=WRITE).json()
         assert check["ok"], check["problems"]
-    ctx.close()
+    _close(ctx)
 
 
 def test_running_again_keeps_the_earlier_audit(seeded, tmp_path, monkeypatch):  # noqa: F811
@@ -123,7 +123,7 @@ def test_running_again_keeps_the_earlier_audit(seeded, tmp_path, monkeypatch):  
         assert len(earlier) == 1 and (earlier[0] / "audit_manifest.json").exists()
         assert (root / "simulator_audits" / study / "audit_manifest.json").exists()
         assert client.get(f"/api/studies/{study}/audit").json()["status"] == "ready"
-    ctx.close()
+    _close(ctx)
 
 
 @pytest.mark.parametrize(
@@ -168,7 +168,7 @@ def test_a_refusal_is_said_in_words_and_leaves_nothing(
         assert body["status"] == status and words in body["reason"]
         assert body["manifest"] is None and body["job"]["status"] == "failed"
         assert _leftovers(root) == [] and not (root / "simulator_audits" / study).exists()
-    ctx.close()
+    _close(ctx)
 
 
 @pytest.mark.demo_data
@@ -201,14 +201,24 @@ def test_technical_replicates_are_not_applicable_through_the_page(tmp_path):
     )
     study = store.ensure_study(DEMO_RDML, design=design)
     ctx, client = _client(store)
-    with client:
+    with client:  # run straight away: the job says why
         r = client.post(f"/api/studies/{study}/audit", json={}, headers=WRITE)
         job = _wait(client, r.json()["job"]["id"])
         body = client.get(f"/api/studies/{study}/audit").json()
         assert job["status"] == "failed" and body["status"] == "not_applicable"
         assert "technical replicates" in body["reason"]
         assert not (store.root / "simulator_audits" / study).exists()
-    ctx.close()
+    _close(ctx)
+    ctx, client = _client(store)
+    with client:  # look first: the pre-check says why before anything runs
+        checking = client.get(f"/api/studies/{study}/audit").json()["checking"]
+        assert _wait(client, checking["id"])["status"] == "done"
+        body = client.get(f"/api/studies/{study}/audit").json()
+        assert body["status"] == "not_applicable" and "technical replicates" in body["reason"]
+        assert body["check"]["applicable"] is False
+        r = client.post(f"/api/studies/{study}/audit", json={}, headers=WRITE)
+        assert r.status_code == 409 and r.json()["error"]["code"] == "not_applicable"
+    _close(ctx)
 
 
 def test_the_real_audit_through_the_page_reproduces_the_existing_one(seeded, tmp_path):  # noqa: F811
@@ -232,4 +242,4 @@ def test_the_real_audit_through_the_page_reproduces_the_existing_one(seeded, tmp
         check = client.post(f"/api/studies/{study}/audit/verify", json={}, headers=WRITE).json()
         assert check["ok"], check["problems"]
         assert _leftovers(root) == []
-    ctx.close()
+    _close(ctx)

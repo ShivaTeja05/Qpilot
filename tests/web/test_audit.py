@@ -65,6 +65,16 @@ def _client(store: StudyStore, **ctx_args):
     return ctx, client
 
 
+def _close(ctx) -> None:
+    """Let the server's background jobs (pre-check, loading the views) finish, then close it."""
+    import time
+
+    deadline = time.monotonic() + 900
+    while ctx.jobs.active() and time.monotonic() < deadline:
+        time.sleep(0.1)
+    ctx.close()
+
+
 @pytest.fixture(scope="module")
 def served(seeded):
     """One server over the seeded store for the whole module (its audit screen is built once)."""
@@ -72,7 +82,7 @@ def served(seeded):
     ctx, client = _client(StudyStore(root))
     with client:
         yield {"client": client, "ctx": ctx, "study": study_id, "root": root}
-    ctx.close()
+    _close(ctx)
 
 
 @pytest.fixture(scope="module")
@@ -80,8 +90,7 @@ def screen(served):
     """The server's own cached screen (built by the first view request)."""
     client, study = served["client"], served["study"]
     assert client.get(f"/api/studies/{study}/audit/overview").status_code == 200
-    cache = audit_router.screens(client.app)
-    return cache._entries[study].screen
+    return audit_router.screens(served["ctx"])._entries[study].screen
 
 
 def _copy(seeded, tmp_path: Path, audits: bool = True) -> Path:
@@ -136,11 +145,12 @@ def test_a_study_without_an_audit_says_none_and_its_views_say_run_it(seeded, tmp
     with client:
         body = client.get(f"/api/studies/{seeded[1]}/audit").json()
         assert body["status"] == "none" and body["manifest"] is None
+        assert body["checking"]["kind"] == "audit.check"  # what a run would cover, found now
         r = client.get(f"/api/studies/{seeded[1]}/audit/overview")
         assert r.status_code == 404 and r.json()["error"]["code"] == "no_audit"
         r = client.post(f"/api/studies/{seeded[1]}/audit/verify", json={}, headers=WRITE)
         assert r.status_code == 404 and r.json()["error"]["code"] == "no_audit"
-    ctx.close()
+    _close(ctx)
 
 
 def test_a_decision_after_the_audit_makes_it_not_current(seeded, tmp_path, monkeypatch):
@@ -161,9 +171,10 @@ def test_a_decision_after_the_audit_makes_it_not_current(seeded, tmp_path, monke
         check = client.post(f"/api/studies/{study}/audit/verify", json={}, headers=WRITE).json()
         assert check["ok"] is True, check["problems"]  # the audited head is still in the chain
         assert check["decisions_since"] == 1
+        assert check["head_in_chain"] is True and check["is_current"] is False
         assert check["record_chain_head"] == store.chain_head(study)
         assert check["record_chain_head"] != check["audit_chain_head"]
-    ctx.close()
+    _close(ctx)
 
 
 def test_without_the_simulator_the_audit_says_so(served, monkeypatch):
@@ -195,7 +206,8 @@ def test_every_view_is_the_screens_own_dict(served, screen):
     overview.pop("model")
     assert client.get(f"{url}/overview").json() == _plain(overview)
     assert client.get(f"{url}/study").json() == _plain(screen.study_view())
-    assert client.get(f"{url}/how").json() == _plain(screen.how_view())
+    how = {"faults": None, "known": None, **screen.how_view()}  # checks not made: null
+    assert client.get(f"{url}/how").json() == _plain(how)
     for gene in _genes(screen)[:6] + ["NM23A"] * ("NM23A" in screen.explain):
         card = screen.gene_card(gene)
         card.pop("evidence")
@@ -382,8 +394,12 @@ def test_the_audit_verifies_and_is_bound_to_the_studys_record(served):
     assert body["ok"] is True and body["problems"] == [] and body["summary"] == "audit OK"
     assert body["bound_to_record"] is True and body["decisions_since"] == 0
     assert body["audit_chain_head"] == body["record_chain_head"]
+    assert body["head_in_chain"] is True and body["is_current"] is True
     sums = root / "simulator_audits" / study / "AUDIT.sha256"
     assert body["files_checked"] == len(sums.read_text().splitlines())
+    assert {f["name"] for f in body["files"]} == {
+        line.split("  ", 1)[1] for line in sums.read_text().splitlines()
+    } | {"AUDIT.sha256"}
     alone = client.post(
         f"/api/studies/{study}/audit/verify", json={"bind_to_record": False}, headers=WRITE
     ).json()
@@ -397,7 +413,7 @@ def test_a_changed_audit_file_fails_verification(seeded, tmp_path):
     ctx, client = _client(StudyStore(root))
     with client:
         body = client.post(f"/api/studies/{seeded[1]}/audit/verify", json={}, headers=WRITE).json()
-    ctx.close()
+    _close(ctx)
     assert body["ok"] is False and "changed: genes.csv" in body["problems"]
 
 
@@ -433,7 +449,7 @@ def test_a_blind_session_hides_the_audit(seeded, tmp_path, monkeypatch):
         # once confirmed, the same study answers (here: it has no audit yet)
         monkeypatch.setattr(ctx.studio, "results_visible", lambda sid: True)
         assert client.get(url).json()["status"] == "none"
-    ctx.close()
+    _close(ctx)
 
 
 def test_a_study_made_outside_the_session_is_not_blind(seeded, tmp_path, monkeypatch):
@@ -447,7 +463,7 @@ def test_a_study_made_outside_the_session_is_not_blind(seeded, tmp_path, monkeyp
     monkeypatch.setattr(ctx.studio, "results_visible", lambda sid: False)
     with client:
         assert client.get(f"/api/studies/{study}/audit").json()["status"] == "none"
-    ctx.close()
+    _close(ctx)
 
 
 # ---- attached folders (qpilot app --audit DIR) -------------------------------------------
@@ -469,7 +485,7 @@ def test_an_attached_audit_has_the_same_views(served, seeded, tmp_path):
         check = client.post("/api/audits/mine/verify", json={}, headers=WRITE).json()
         assert check["ok"] and check["bound_to_record"]
         assert client.get("/api/audits/other/overview").status_code == 404
-    ctx.close()
+    _close(ctx)
 
 
 def test_an_attached_audit_without_its_study_says_why(seeded, tmp_path):
@@ -484,7 +500,7 @@ def test_an_attached_audit_without_its_study_says_why(seeded, tmp_path):
         assert r.status_code == 409 and r.json()["error"]["code"] == "unavailable"
         check = client.post("/api/audits/theirs/verify", json={}, headers=WRITE).json()
         assert check["ok"] and not check["bound_to_record"]  # checksums only
-    ctx.close()
+    _close(ctx)
 
 
 @pytest.mark.demo_data
@@ -504,4 +520,133 @@ def test_a_plain_simulator_run_can_be_attached(tmp_path):
         assert overview == _plain(expected)
         verify = client.post("/api/audits/results/verify", json={}, headers=WRITE).json()
         assert not verify["ok"] and "AUDIT.sha256 missing" in verify["problems"]
-    ctx.close()
+    _close(ctx)
+
+
+# ---- the pre-check, issues, files, lab numbers, Ask -------------------------------------
+
+
+def _job(client, job_id: str, timeout: float = 900.0) -> dict:
+    import time
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        job = client.get(f"/api/jobs/{job_id}").json()
+        if job["status"] in ("done", "failed"):
+            return job
+        time.sleep(0.05)
+    raise AssertionError(f"job {job_id} did not finish")
+
+
+def test_before_a_run_the_check_says_what_it_would_cover(seeded, tmp_path):
+    root = _copy(seeded, tmp_path, audits=False)
+    study = seeded[1]
+    manifest = json.loads(
+        (seeded[0] / "simulator_audits" / study / "audit_manifest.json").read_text()
+    )
+    ctx, client = _client(StudyStore(root))
+    with client:
+        first = client.get(f"/api/studies/{study}/audit").json()
+        assert first["status"] == "none" and first["check"] is None
+        assert _job(client, first["checking"]["id"])["status"] == "done"
+        body = client.get(f"/api/studies/{study}/audit").json()
+        assert body["status"] == "none" and body["checking"] is None
+        assert body["check"]["applicable"] is True and body["check"]["reason"] is None
+        assert body["check"]["scope"] == manifest["scope"]
+    _close(ctx)
+
+
+def test_the_whole_issue_queue(served, screen):
+    client, study = served["client"], served["study"]
+    body = client.get(f"/api/studies/{study}/audit/issues").json()
+    assert body["n_issues"] == len(body["issues"]) == len(screen.issues)
+    overview = client.get(f"/api/studies/{study}/audit/overview").json()
+    assert body["issues"][: len(overview["issues"])] == overview["issues"]
+    assert overview["n_issues"] == body["n_issues"]
+
+
+def test_the_audits_files_can_be_listed_and_downloaded(served):
+    client, study, root = served["client"], served["study"], served["root"]
+    folder = root / "simulator_audits" / study
+    files = client.get(f"/api/studies/{study}/audit/files").json()["files"]
+    listed = dict(
+        line.split("  ", 1)[::-1] for line in (folder / "AUDIT.sha256").read_text().splitlines()
+    )
+    assert {f["name"] for f in files} == set(listed) | {"AUDIT.sha256"}
+    for f in files:
+        assert f["bytes"] == (folder / f["name"]).stat().st_size
+        assert f["sha256"] == listed.get(f["name"])
+    r = client.get(f"/api/studies/{study}/audit/files/genes.csv")
+    assert r.status_code == 200 and r.content == (folder / "genes.csv").read_bytes()
+    assert "attachment" in r.headers["content-disposition"]
+    assert r.headers["content-type"].startswith("text/csv")
+    for bad in ("nope.csv", "..%2Fsessions", "%2E%2E", ".DS_Store"):
+        r = client.get(f"/api/studies/{study}/audit/files/{bad}")
+        assert r.status_code == 404, bad
+
+
+def test_a_file_the_audit_does_not_list_is_not_served(seeded, tmp_path):
+    root = _copy(seeded, tmp_path)
+    folder = root / "simulator_audits" / seeded[1]
+    (folder / "notes.txt").write_text("not part of the audit")
+    ctx, client = _client(StudyStore(root))
+    with client:
+        r = client.get(f"/api/studies/{seeded[1]}/audit/files/notes.txt")
+        names = [
+            f["name"] for f in client.get(f"/api/studies/{seeded[1]}/audit/files").json()["files"]
+        ]
+    _close(ctx)
+    assert r.status_code == 404 and "notes.txt" not in names
+
+
+def test_lab_numbers_are_the_worded_rows(served, screen):
+    client, study = served["client"], served["study"]
+    for gene in _genes(screen)[:8]:
+        lab = client.get(f"/api/studies/{study}/audit/lab/{gene}").json()
+        n, rows = lab["numbers"], {r["label"]: r["value"] for r in lab["rows"]}
+        assert rows["Samples in each group"].startswith(f"{n['n_high']} ")
+        assert rows["Plates for this assay"] == str(n["n_plates"])
+        if n["cq_median"] is not None:
+            assert rows["Cq, median (lowest to highest)"].startswith(f"{n['cq_median']:.1f} (")
+        assert rows["Wells that never amplified"] == str(n["n_nondetect"])
+        for cut, count in n["n_cq_above"].items():
+            assert rows[f"Wells with Cq above {cut}"] == str(count)
+        for ref in lab["references"]:
+            assert ref["m_value"] is None or ref["m"] == f"{ref['m_value']:.2f}"
+
+
+def test_ask_uses_the_same_screen_safely(served, screen):
+    """api-ops' Ask reaches the audit through audit_screen; its engine calls are serialised."""
+    client, study, ctx = served["client"], served["study"], served["ctx"]
+    assert audit_router.audit_screen(ctx, study) is screen
+    answer = screen.ask("What if we use the student test?")
+    assert answer["routed_code"] in ("rules", "keywords", "model")
+    assert answer["written_code"] in ("template", "model")
+    assert all({"id", "meaning", "value"} <= set(f) for f in answer["facts"])
+    assert isinstance(answer["problems"], list)
+    from qsim.app import LockedEngine
+
+    assert isinstance(screen.asker._engine, LockedEngine)
+    url = f"/api/studies/{study}/audit/whatif"
+    alone = client.post(url, json={"changes": {"test": "student"}}, headers=WRITE).json()
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        asks = [pool.submit(screen.ask, "What if we use the student test?") for _ in range(2)]
+        views = [
+            pool.submit(
+                lambda: client.post(
+                    url, json={"changes": {"test": "student"}}, headers=WRITE
+                ).json()
+            )
+            for _ in range(2)
+        ]
+        assert [v.result() for v in views] == [alone, alone]
+        assert [a.result()["text"] for a in asks] == [answer["text"]] * 2
+
+
+def test_no_audit_screen_without_an_audit(seeded, tmp_path):
+    root = _copy(seeded, tmp_path, audits=False)
+    ctx = make_context(StudyStore(root), token=TOKEN, watch=False)
+    try:
+        assert audit_router.audit_screen(ctx, seeded[1]) is None
+    finally:
+        _close(ctx)

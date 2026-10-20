@@ -12,11 +12,16 @@ Every string is text: names come from the study's file and are shown as text.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from qpilot.web.contract import JobView
+
+ShortText = Annotated[str, StringConstraints(max_length=200)]
+"""A choice id, an option id or a gene name in a request (never longer)."""
+Changes = Annotated[dict[ShortText, ShortText], Field(max_length=16)]
+"""Choices to change: decision id → option id (at most one per decision)."""
 
 CallKey = Literal["up", "down", "none"]
 """A call, as a key: ``up`` / ``down`` (higher / lower in the first group) or ``none``."""
@@ -29,7 +34,7 @@ AuditState = Literal[
 # ---- status and the run --------------------------------------------------------------------
 
 
-class Reproduction(BaseModel):
+class AuditReproduction(BaseModel):
     """The audit's contract: its planned analysis reproduces qPilot's stored result."""
 
     ok: bool
@@ -60,7 +65,7 @@ class AuditScope(BaseModel):
     analyses_in_full_grid: int
 
 
-class YourChoices(BaseModel):
+class AuditYourChoices(BaseModel):
     """The analysis chosen on the Decision Cards against the prespecified one."""
 
     changes_from_prespecified: dict[str, str] = {}
@@ -77,17 +82,31 @@ class AuditManifestView(BaseModel):
     design_hash: str | None
     source_file: str
     scope: AuditScope
-    reproduces_qpilot: Reproduction
+    reproduces_qpilot: AuditReproduction
     lock_sha256: str | None
     grid_hash: str | None
     analyses: int | None = Field(description="Analyses run (every combination of choices).")
     verdict_counts: dict[str, int] = Field(description="Genes per verdict (verdict words).")
-    your_choices: YourChoices
+    your_choices: AuditYourChoices
     versions: dict[str, str]
     checksums_sha256: str = Field(description="SHA-256 of the audit's AUDIT.sha256 file.")
+    created_at: float | None = Field(
+        default=None, description="Unix time the audit was sealed (its AUDIT.sha256 written)."
+    )
     seconds: float | None = Field(
         description="The simulator's own measured run time (summary.json timings); rebuilding "
         "the study first adds a few seconds."
+    )
+
+
+class AuditCheck(BaseModel):
+    """Whether the audit applies to a study, found before it runs (its first step, alone)."""
+
+    applicable: bool
+    code: Literal["not_applicable", "refused"] | None = None
+    reason: str | None = Field(default=None, description="Why not, in plain words.")
+    scope: AuditScope | None = Field(
+        default=None, description="What a run would cover (analyses, choices) for THIS study."
     )
 
 
@@ -113,6 +132,13 @@ class AuditStatus(BaseModel):
         "on the demo; the audit views wait for it).",
     )
     loading: JobView | None = Field(default=None, description="The job loading the live views.")
+    check: AuditCheck | None = Field(
+        default=None,
+        description="Not run yet: whether it applies and what it would cover, once checked.",
+    )
+    checking: JobView | None = Field(
+        default=None, description="Not run yet: the job checking it applies (~9 s on the demo)."
+    )
     typical_s: float = Field(description="How long an audit usually takes on the demo, measured.")
 
 
@@ -128,6 +154,20 @@ class AuditVerifyRequest(BaseModel):
     bind_to_record: bool = True
 
 
+class AuditFile(BaseModel):
+    """One file of the audit, for download."""
+
+    name: str
+    bytes: int
+    sha256: str | None = Field(description="As listed in AUDIT.sha256 (null for that file).")
+
+
+class AuditFiles(BaseModel):
+    """The audit's files (those its AUDIT.sha256 lists, and that list itself)."""
+
+    files: list[AuditFile]
+
+
 class AuditVerifyView(BaseModel):
     """The audit's checksums and manifest, and (when asked) its binding to the record."""
 
@@ -135,6 +175,7 @@ class AuditVerifyView(BaseModel):
     summary: str
     problems: list[str]
     files_checked: int
+    files: list[AuditFile] = []
     checksums_sha256: str | None
     lock_sha256: str | None
     bound_to_record: bool = Field(description="Whether the record binding was checked.")
@@ -143,12 +184,18 @@ class AuditVerifyView(BaseModel):
     decisions_since: int | None = Field(
         default=None, description="Decisions in the record after the audited head."
     )
+    head_in_chain: bool | None = Field(
+        default=None, description="The audited head is in the study's decision chain."
+    )
+    is_current: bool | None = Field(
+        default=None, description="No decision was made after the audit."
+    )
 
 
 # ---- the audit's views (qsim Screen dicts, typed) ----------------------------------------
 
 
-class StudyFacts(BaseModel):
+class AuditStudyFacts(BaseModel):
     """The audited study in counts and the group words."""
 
     samples: int
@@ -161,7 +208,7 @@ class StudyFacts(BaseModel):
     reasonable: int
 
 
-class VerdictCount(BaseModel):
+class AuditVerdictCount(BaseModel):
     """One verdict, its rule in words and how many genes got it."""
 
     key: str = Field(description="The verdict, as words ('holds with caveats').")
@@ -170,7 +217,7 @@ class VerdictCount(BaseModel):
     rule: str
 
 
-class OverviewGene(BaseModel):
+class AuditOverviewGene(BaseModel):
     """One gene's line in the overview."""
 
     gene: str
@@ -182,7 +229,7 @@ class OverviewGene(BaseModel):
     headline: bool
 
 
-class DecisionOption(BaseModel):
+class AuditOption(BaseModel):
     """One option of an analysis choice."""
 
     id: str
@@ -198,7 +245,7 @@ class AuditDecision(BaseModel):
     question: str
     changes_claim: bool
     baseline: str = Field(description="The planned option's id.")
-    options: list[DecisionOption]
+    options: list[AuditOption]
 
 
 class AuditIssue(BaseModel):
@@ -236,9 +283,9 @@ class AuditProvenance(BaseModel):
 class AuditOverview(BaseModel):
     """The audit's first screen: the study, verdict counts, genes, choices, top issues."""
 
-    study: StudyFacts
-    verdicts: list[VerdictCount]
-    genes: list[OverviewGene]
+    study: AuditStudyFacts
+    verdicts: list[AuditVerdictCount]
+    genes: list[AuditOverviewGene]
     headline: list[str]
     source: AuditSource
     decisions: list[AuditDecision]
@@ -247,7 +294,7 @@ class AuditOverview(BaseModel):
     provenance: AuditProvenance
 
 
-class MapPoint(BaseModel):
+class AuditMapPoint(BaseModel):
     """One gene on the robustness map."""
 
     gene: str
@@ -258,7 +305,7 @@ class MapPoint(BaseModel):
     headline: bool
 
 
-class ChoiceSpread(BaseModel):
+class AuditChoiceSpread(BaseModel):
     """How much one choice matters across genes."""
 
     id: str
@@ -268,15 +315,16 @@ class ChoiceSpread(BaseModel):
     question: bool
 
 
-class ReferenceStability(BaseModel):
+class AuditReference(BaseModel):
     """One control gene's geNorm M (as worded) and whether it differs between the groups."""
 
     gene: str
     m: str
+    m_value: float | None = None
     differs: bool
 
 
-class Influence(BaseModel):
+class AuditInfluence(BaseModel):
     """Single samples and reference wells that change calls."""
 
     one_sample_genes: int | None
@@ -287,26 +335,26 @@ class Influence(BaseModel):
 class AuditStudyView(BaseModel):
     """The Study tab: map, choices, reference stability, fix-these-first, influence."""
 
-    map: list[MapPoint]
-    choices: list[ChoiceSpread]
-    references: list[ReferenceStability]
+    map: list[AuditMapPoint]
+    choices: list[AuditChoiceSpread]
+    references: list[AuditReference]
     stable_below: str
     reference_note: str
     lock_headline: list[str]
     lock_called: list[str]
-    influence: Influence
+    influence: AuditInfluence
     line_log2: float
     line: str
 
 
-class HowOption(BaseModel):
+class AuditHowOption(BaseModel):
     """An option as the how-it-works page lists it."""
 
     label: str
     tier: str = Field(description="prespecified / defensible / common_practice")
 
 
-class HowDecision(BaseModel):
+class AuditHowDecision(BaseModel):
     """One choice at one stage of the pipeline."""
 
     name: str
@@ -317,19 +365,19 @@ class HowDecision(BaseModel):
     n_shortcut: int
     alone: int | None
     changes_question: bool
-    options: list[HowOption]
+    options: list[AuditHowOption]
     more: int
 
 
-class HowStage(BaseModel):
+class AuditHowStage(BaseModel):
     """One stage of the pipeline, in lab order."""
 
     title: str
     text: str
-    decisions: list[HowDecision]
+    decisions: list[AuditHowDecision]
 
 
-class PlantedFaults(BaseModel):
+class AuditPlantedFaults(BaseModel):
     """The planted-fault check, when the run made it."""
 
     trials: int
@@ -337,7 +385,7 @@ class PlantedFaults(BaseModel):
     caught: int
 
 
-class SmallDesign(BaseModel):
+class AuditSmallDesign(BaseModel):
     """False-call rates in small experiments drawn from the data (percent, worded)."""
 
     size: str
@@ -345,7 +393,7 @@ class SmallDesign(BaseModel):
     filtered: str
 
 
-class KnownEfficiency(BaseModel):
+class AuditKnownEfficiency(BaseModel):
     """One efficiency option's error on a dilution series with a known answer."""
 
     label: str
@@ -354,20 +402,20 @@ class KnownEfficiency(BaseModel):
     planned: bool
 
 
-class SpreadWarns(BaseModel):
+class AuditSpreadWarns(BaseModel):
     """Error when the spread is in the top quarter vs otherwise (percent, worded)."""
 
     top: str
     other: str
 
 
-class KnownAnswers(BaseModel):
+class AuditKnownAnswers(BaseModel):
     """The known-answer test, when the run made it."""
 
     dataset: str
     cases: int
-    efficiency: list[KnownEfficiency]
-    spread_warns: SpreadWarns
+    efficiency: list[AuditKnownEfficiency]
+    spread_warns: AuditSpreadWarns
     inside_range: int
     inside_ci: int
 
@@ -375,19 +423,19 @@ class KnownAnswers(BaseModel):
 class AuditHow(BaseModel):
     """How it works: stages, the call rule, verdict rules, checks made and not made."""
 
-    stages: list[HowStage]
+    stages: list[AuditHowStage]
     call_rule: str
     total: str
     reasonable: int
     seconds: str
     rules: dict[str, str] = Field(description="Each verdict's rule, keyed by the verdict words.")
-    faults: PlantedFaults | None = None
-    small: list[SmallDesign] = []
+    faults: AuditPlantedFaults | None = None
+    small: list[AuditSmallDesign] = []
     not_run: list[str] = []
-    known: KnownAnswers | None = None
+    known: AuditKnownAnswers | None = None
 
 
-class Tile(BaseModel):
+class AuditTile(BaseModel):
     """One number tile of the gene card (worded)."""
 
     label: str
@@ -395,7 +443,7 @@ class Tile(BaseModel):
     sub: str
 
 
-class GeneResult(BaseModel):
+class AuditGeneResult(BaseModel):
     """The result in sentences and the verdict's reason."""
 
     headline: str
@@ -403,14 +451,14 @@ class GeneResult(BaseModel):
     verdict_sentence: str
 
 
-class HoldsBlock(BaseModel):
+class AuditHolds(BaseModel):
     """How often the same answer comes out."""
 
     n: int = Field(description="Reasonable analyses with the same call, of 100.")
     lines: list[str]
 
 
-class ChangeRow(BaseModel):
+class AuditChange(BaseModel):
     """A choice (or two together) that changes the call."""
 
     choice: str
@@ -420,7 +468,7 @@ class ChangeRow(BaseModel):
     same_call: bool
 
 
-class SingleSample(BaseModel):
+class AuditSingleSample(BaseModel):
     """A single sample whose removal changes the call."""
 
     sample: str
@@ -433,23 +481,23 @@ class SingleSample(BaseModel):
 class AuditGeneCard(BaseModel):
     """One gene: result, verdict, what changes it, what it leans on, what to do."""
 
-    tiles: list[Tile]
+    tiles: list[AuditTile]
     gene: str
     call_key: CallKey
     verdict: str
     label: str
     headline_gene: bool
-    result: GeneResult
-    holds: HoldsBlock
-    changes: list[ChangeRow]
+    result: AuditGeneResult
+    holds: AuditHolds
+    changes: list[AuditChange]
     no_changes: str | None
     shortcut: str | None
     leans: list[str]
-    singles: list[SingleSample]
+    singles: list[AuditSingleSample]
     todo: list[str]
 
 
-class AnalysisRow(BaseModel):
+class AuditAnalysisRow(BaseModel):
     """One reasonable analysis of one gene."""
 
     log2: float | None
@@ -465,7 +513,7 @@ class AuditAnalyses(BaseModel):
     """Every reasonable analysis of one gene (the analyses strip)."""
 
     gene: str
-    rows: list[AnalysisRow]
+    rows: list[AuditAnalysisRow]
     n: int
     n_same: int
     n_other: int
@@ -475,7 +523,7 @@ class AuditAnalyses(BaseModel):
     line: str
 
 
-class EffectOption(BaseModel):
+class AuditEffectOption(BaseModel):
     """One option with every other choice as planned."""
 
     label: str
@@ -488,12 +536,12 @@ class EffectOption(BaseModel):
     planned: bool
 
 
-class EffectDecision(BaseModel):
+class AuditEffectDecision(BaseModel):
     """One choice, each option at a time."""
 
     id: str
     name: str
-    options: list[EffectOption]
+    options: list[AuditEffectOption]
     n_change: int
 
 
@@ -503,36 +551,55 @@ class AuditEffects(BaseModel):
     gene: str
     planned_log2: float | None
     planned: str
-    decisions: list[EffectDecision]
+    decisions: list[AuditEffectDecision]
     line_log2: float
     line: str
 
 
-class LabRow(BaseModel):
+class AuditLabRow(BaseModel):
     """One lab parameter, worded."""
 
     label: str
     value: str
 
 
+class AuditLabNumbers(BaseModel):
+    """The lab parameters as numbers (``null`` when the data has none)."""
+
+    n_high: int
+    n_rest: int
+    n_plates: int
+    cq_median: float | None
+    cq_min: float | None
+    cq_max: float | None
+    n_cq_above: dict[str, int] = Field(description="Wells with Cq above each late-Cq line.")
+    n_nondetect: int
+    eff_assay: float | None
+    eff_std_curve: float | None
+    n_flag_eff: int
+    n_flag_low: int
+    p: float | None
+
+
 class AuditLab(BaseModel):
     """The assay's lab parameters and the planned control genes' stability."""
 
     gene: str
-    rows: list[LabRow]
-    references: list[ReferenceStability]
+    rows: list[AuditLabRow]
+    numbers: AuditLabNumbers
+    references: list[AuditReference]
     refs_label: str
     stable_below: str
 
 
-class WhatIfRequest(BaseModel):
+class AuditWhatIfRequest(BaseModel):
     """Choices to change (decision id → option id) and genes to mark as picked."""
 
-    changes: dict[str, str] = Field(default_factory=dict, max_length=16)
-    genes: list[str] = Field(default_factory=list, max_length=2000)
+    changes: Changes = Field(default_factory=dict)
+    genes: list[ShortText] = Field(default_factory=list, max_length=2000)
 
 
-class WhatIfRow(BaseModel):
+class AuditWhatIfRow(BaseModel):
     """One gene, planned → chosen."""
 
     gene: str
@@ -554,7 +621,7 @@ class AuditWhatIf(BaseModel):
     """Every gene under the chosen options, changed calls counted."""
 
     changes: list[str] = Field(description="The options chosen, as labels.")
-    rows: list[WhatIfRow]
+    rows: list[AuditWhatIfRow]
     n_changed: int
     n_genes: int
     changed_genes: list[str]
@@ -562,14 +629,14 @@ class AuditWhatIf(BaseModel):
     line: str
 
 
-class SamplesRequest(BaseModel):
+class AuditSamplesRequest(BaseModel):
     """One gene's samples under a set of choices (decision id → option id)."""
 
-    gene: str = Field(max_length=200)
-    changes: dict[str, str] = Field(default_factory=dict, max_length=16)
+    gene: ShortText
+    changes: Changes = Field(default_factory=dict)
 
 
-class SamplePoint(BaseModel):
+class AuditSamplePoint(BaseModel):
     """One sample's value relative to the second group's mean."""
 
     x: float | None
@@ -585,7 +652,7 @@ class SamplePoint(BaseModel):
     value: str
 
 
-class GroupStats(BaseModel):
+class AuditGroupStats(BaseModel):
     """One group's label, count, missing count and mean (log2, relative to the second)."""
 
     label: str
@@ -594,25 +661,32 @@ class GroupStats(BaseModel):
     mean: float | None
 
 
-class SampleGroups(BaseModel):
+class AuditSampleGroups(BaseModel):
     """The two groups (``high`` is the first group, ``rest`` the second)."""
 
-    high: GroupStats
-    rest: GroupStats
+    high: AuditGroupStats
+    rest: AuditGroupStats
 
 
 class AuditSamples(BaseModel):
     """One gene's samples (the beeswarm)."""
 
     gene: str
-    points: list[SamplePoint]
-    groups: SampleGroups
+    points: list[AuditSamplePoint]
+    groups: AuditSampleGroups
     fold: str
     fold_log2: float | None
     late_cut: str
     changes: list[str]
     line_log2: float
     line: str
+
+
+class AuditIssues(BaseModel):
+    """The whole investigation queue, in its order."""
+
+    issues: list[AuditIssue]
+    n_issues: int
 
 
 # ---- attached audits (``qpilot app --audit DIR``) -----------------------------------------

@@ -9,7 +9,8 @@ integration prepares from the study (confirmed design, excluded wells, the two g
 live views (what-if, analyses, effects, samples, lab) describe the audited numbers.
 
 One screen is kept per study (and per attached folder), rebuilt when the audit changes, and
-every call into it holds that screen's lock: the simulator's engine is not thread-safe.
+every call into it holds that screen's lock: the simulator's engine is not thread-safe. Other
+routes reach the same screen through :func:`audit_screen` (Ask uses its Asker).
 
 A study whose Studio session is still blind answers 403 ``blind`` on every route here.
 """
@@ -23,13 +24,15 @@ import tempfile
 import threading
 import time
 import uuid
+import weakref
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TypeVar
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from qpilot.core.store import StudyNotFound
@@ -40,21 +43,25 @@ from qpilot.web.contract_audit import (
     AttachedAudit,
     AttachedAuditList,
     AuditAnalyses,
+    AuditCheck,
     AuditEffects,
+    AuditFile,
+    AuditFiles,
     AuditGeneCard,
     AuditHow,
+    AuditIssues,
     AuditLab,
     AuditManifestView,
     AuditOverview,
     AuditRunRequest,
     AuditSamples,
+    AuditSamplesRequest,
     AuditStatus,
     AuditStudyView,
     AuditVerifyRequest,
     AuditVerifyView,
     AuditWhatIf,
-    SamplesRequest,
-    WhatIfRequest,
+    AuditWhatIfRequest,
 )
 from qpilot.web.jobs import JobError, Progress
 
@@ -64,6 +71,7 @@ M = TypeVar("M", bound=BaseModel)
 
 AUDIT_TYPICAL_S = 55.0  # the demo's audit through this route: rebuild ~8 s + run ~45 s, measured
 LOAD_TYPICAL_S = 15.0  # rebuilding the study (~8 s) and the reasonable-analyses sweep (~5 s)
+CHECK_TYPICAL_S = 9.0  # rebuilding the study and the reproduction check, measured on the demo
 KEEP_SCREENS = 3  # live screens kept in memory (each holds a study's engine)
 POLL_S = 0.5
 #: Files the simulator writes in this order, each starting a stage: (file, step, fraction).
@@ -79,6 +87,26 @@ RUN_STAGES = (
     ("summary.json", "Comparing with your Decision Cards and sealing the audit", 0.98),
 )
 DROPPED = {"overview": ("model",), "gene": ("evidence",)}  # screen keys the page does not use
+#: Files of a plain simulator run that may be downloaded (a qPilot audit lists its own files).
+RUN_FILES = (
+    "REPORT.md",
+    "summary.json",
+    "explain.json",
+    "genes.csv",
+    "decisions.csv",
+    "issues.json",
+    "issues.csv",
+    "lock.json",
+    "one_sample_flips.csv",
+    "reference_wells_top50.csv",
+    "validation_untergasser.json",
+)
+MEDIA = {
+    ".json": "application/json",
+    ".csv": "text/csv; charset=utf-8",
+    ".md": "text/markdown; charset=utf-8",
+    ".sha256": "text/plain; charset=utf-8",
+}
 NO_SIMULATOR = (
     "The robustness audit needs the Decision Simulator, which is not installed here. From a "
     "qPilot clone, run pip install -e '.[sim]' and start qPilot again."
@@ -139,18 +167,25 @@ def _stamp(folder: Path) -> tuple[int, ...]:
     return tuple(out)
 
 
+_SCREENS: dict[int, Screens] = {}  # id(AppContext) -> its screens, dropped with the context
 _SCREENS_LOCK = threading.Lock()
 
 
-def screens(request_or_app: Any) -> Screens:
-    """The server's :class:`Screens` (kept on ``app.state``; one per server)."""
-    app = getattr(request_or_app, "app", request_or_app)
+def screens(ctx: AppContext) -> Screens:
+    """The server's :class:`Screens` (one per :class:`AppContext`)."""
     with _SCREENS_LOCK:
-        found = getattr(app.state, "audit_screens", None)
+        found = _SCREENS.get(id(ctx))
         if found is None:
-            found = Screens()
-            app.state.audit_screens = found
+            found = _SCREENS[id(ctx)] = Screens()
+            weakref.finalize(ctx, _SCREENS.pop, id(ctx), None)
     return found
+
+
+def _ask_client(ctx: AppContext) -> Any:
+    """A model client on the page's model (the one its model chip shows)."""
+    from qpilot.ai.client import ModelClient
+
+    return ModelClient(backend=ctx.studio.client.backend)
 
 
 def _build_for_study(ctx: AppContext, study_id: str, folder: Path) -> Callable[[], Any]:
@@ -159,10 +194,34 @@ def _build_for_study(ctx: AppContext, study_id: str, folder: Path) -> Callable[[
 
         from qpilot.integration.simulator import load_analysis, prepare
 
-        prepared = prepare(load_analysis(ctx.store, study_id))
-        return Screen.from_prepared(folder, prepared)
+        screen = Screen.from_prepared(folder, prepare(load_analysis(ctx.store, study_id)))
+        screen.use_ask_client(_ask_client(ctx))
+        return screen
 
     return build
+
+
+def audit_screen(ctx: AppContext, study_id: str) -> Any:
+    """The study's audit screen (:class:`qsim.app.Screen`) for other routes, or None.
+
+    None when the simulator is missing or the study has no audit. Raises the same refusals as
+    the audit routes (404 for an unknown study, 403 ``blind``). The screen's
+    :meth:`~qsim.app.Screen.ask` may be called from any thread: it serialises questions, and its
+    Ask engine takes the screen's engine lock for each engine call. The first call builds the
+    screen (about 8 s on the demo).
+    """
+    require_visible(ctx, study_id)
+    if not _available():
+        return None
+    folder = views.audit_dir(ctx.store, study_id)
+    if folder is None:
+        return None
+
+    def current(screen: Any) -> Any:
+        screen.use_ask_client(_ask_client(ctx))  # the page's model may have changed
+        return screen
+
+    return screens(ctx).call(study_id, folder, _build_for_study(ctx, study_id, folder), current)
 
 
 # ---- checks ----------------------------------------------------------------------------------
@@ -214,6 +273,8 @@ def _signature(folder: Path) -> tuple[tuple[str, int, int], ...]:
     """
     out = []
     for path in sorted(folder.iterdir()):
+        if path.name.startswith("."):
+            continue  # the store's lock file is touched by every read
         try:
             st = path.stat()
         except OSError:
@@ -318,6 +379,10 @@ class _Views:
         return _shape(AuditHow, screen.how_view())
 
     @staticmethod
+    def issues(screen: Any) -> AuditIssues:
+        return _shape(AuditIssues, screen.issue_list())
+
+    @staticmethod
     def gene(screen: Any, gene: str) -> AuditGeneCard:
         return _shape(AuditGeneCard, screen.gene_card(_gene_of(screen, gene)), "gene")
 
@@ -334,38 +399,34 @@ class _Views:
         return _shape(AuditLab, screen.lab_parameters(_gene_of(screen, gene)))
 
     @staticmethod
-    def whatif(screen: Any, body: WhatIfRequest) -> AuditWhatIf:
+    def whatif(screen: Any, body: AuditWhatIfRequest) -> AuditWhatIf:
         changes = _changes_of(screen, body.changes)
         return _shape(AuditWhatIf, screen.run_whatif(changes, list(body.genes)))
 
     @staticmethod
-    def samples(screen: Any, body: SamplesRequest) -> AuditSamples:
+    def samples(screen: Any, body: AuditSamplesRequest) -> AuditSamples:
         gene = _gene_of(screen, body.gene)
         return _shape(AuditSamples, screen.gene_samples(gene, _changes_of(screen, body.changes)))
 
 
-def _study_view(request: Request, ctx: AppContext, study_id: str, fn: Callable[[Any], M]) -> M:
+def _study_view(ctx: AppContext, study_id: str, fn: Callable[[Any], M]) -> M:
     require_visible(ctx, study_id)
     if not _available():
         raise api_error(409, "unavailable", NO_SIMULATOR)
     folder = _audit_folder(ctx, study_id)
-    return _run_view(
-        lambda: screens(request).call(study_id, folder, _build_for_study(ctx, study_id, folder), fn)
-    )
+    build = _build_for_study(ctx, study_id, folder)
+    return _run_view(lambda: screens(ctx).call(study_id, folder, build, fn))
 
 
-def _attached_view(request: Request, ctx: AppContext, name: str, fn: Callable[[Any], M]) -> M:
+def _attached_view(ctx: AppContext, name: str, fn: Callable[[Any], M]) -> M:
     folder = _attached(ctx, name)
     info = _attached_info(ctx, name, folder)
     if not info.available:
         raise api_error(409, "unavailable", info.reason or "This folder's views cannot be shown.")
     if info.study_id is not None:
         require_visible(ctx, info.study_id)
-    return _run_view(
-        lambda: screens(request).call(
-            f"attached:{name}", folder, _build_for_attached(ctx, folder, info), fn
-        )
-    )
+    build = _build_for_attached(ctx, folder, info)
+    return _run_view(lambda: screens(ctx).call(f"attached:{name}", folder, build, fn))
 
 
 def _run_view(call: Callable[[], M]) -> M:
@@ -387,40 +448,47 @@ def _sentence(err: BaseException, capital: bool = True) -> str:
     return text if text.endswith(".") else text + "."
 
 
-# ---- status and the run ----------------------------------------------------------------------
+# ---- status, the pre-check and the run -------------------------------------------------------
 
 
 def _manifest_view(folder: Path, manifest: dict[str, Any]) -> AuditManifestView:
-    sums = folder / "AUDIT.sha256"
     from qpilot.integration.simulator import sha256_file
 
+    sums = folder / "AUDIT.sha256"
     try:
         timings = json.loads((folder / "summary.json").read_text(encoding="utf-8"))["timings_s"]
         seconds: float | None = round(sum(float(v) for v in timings.values()), 1)
     except (OSError, ValueError, KeyError, TypeError):
         seconds = None
+    try:
+        created: float | None = sums.stat().st_mtime
+    except OSError:
+        created = None
     return AuditManifestView.model_validate(
         _finite(
             {
                 **manifest,
                 "checksums_sha256": sha256_file(sums) if sums.exists() else "",
                 "seconds": seconds,
+                "created_at": created,
             }
         )
     )
 
 
-def _decisions_since(ctx: AppContext, study_id: str, head: str | None) -> int:
-    entries = ctx.store.entries(study_id)
-    hashes = [e.hash for e in entries]
+def _chain_hashes(ctx: AppContext, study_id: str) -> list[str]:
+    return [e.hash for e in ctx.store.entries(study_id)]
+
+
+def _decisions_since(hashes: list[str], head: str | None) -> int:
     if head in hashes:
         return len(hashes) - hashes.index(head) - 1
     return len(hashes) if head else 0
 
 
-def _load_job(request: Request, ctx: AppContext, study_id: str, folder: Path) -> JobView | None:
+def _load_job(ctx: AppContext, study_id: str, folder: Path) -> JobView | None:
     """Start (or find) the job that loads the audit's live views, unless they are loaded."""
-    cache = screens(request)
+    cache = screens(ctx)
     if cache.ready(study_id, folder):
         return None
 
@@ -435,26 +503,72 @@ def _load_job(request: Request, ctx: AppContext, study_id: str, folder: Path) ->
         return {"study_id": study_id}
 
     job = ctx.jobs.submit(
-        "audit.load",
-        work,
-        title="Loading the audit",
-        key=study_id,
-        typical_s=LOAD_TYPICAL_S,
+        "audit.load", work, title="Loading the audit", key=study_id, typical_s=LOAD_TYPICAL_S
     )
     return JobView(**job.view())
 
 
+def _check(ctx: AppContext, study_id: str) -> dict[str, Any]:
+    """Whether the audit applies to the study, and its scope: the run's first step, alone."""
+    from qpilot.integration import simulator
+    from qpilot.qpcr.export import ExportError
+
+    try:
+        analysis = simulator.load_analysis(ctx.store, study_id)
+        prepared = simulator.prepare(analysis)
+        reproduced = simulator.reproduction(prepared, analysis.result)
+    except ExportError as err:
+        reason = "The audit cannot rebuild this study: " + _sentence(err, capital=False)
+        return {"applicable": False, "code": "not_applicable", "reason": reason}
+    except simulator.NotApplicable as err:
+        reason = "The audit does not apply here: " + _sentence(err, capital=False)
+        return {"applicable": False, "code": "not_applicable", "reason": reason}
+    except simulator.AuditRefused as err:
+        reason = "The audit would stop before writing anything. " + _sentence(err)
+        return {"applicable": False, "code": "refused", "reason": reason}
+    if not reproduced["ok"]:
+        reason = (
+            "The audit would stop before writing anything: the simulator's planned analysis "
+            "does not reproduce qPilot's result for this study (genes that differ: "
+            f"{', '.join(reproduced['mismatched'][:5]) or 'the gene lists differ'})."
+        )
+        return {"applicable": False, "code": "refused", "reason": reason}
+    return {"applicable": True, "code": None, "reason": None, "scope": _finite(prepared.scope)}
+
+
+def _check_job(ctx: AppContext, study_id: str) -> tuple[AuditCheck | None, JobView | None]:
+    """The pre-check's answer once known, else the job finding it (started when needed)."""
+    job = ctx.jobs.latest("audit.check", study_id)
+    if job is not None and job.status == "done" and isinstance(job.result, dict):
+        return AuditCheck.model_validate(job.result), None
+    retry = job is not None and job.status == "failed" and time.time() - (job.finished or 0) > 60
+    if job is None or retry:
+
+        def work(progress: Progress) -> dict[str, Any]:
+            progress("Rebuilding the study and checking the audit applies")
+            return _check(ctx, study_id)
+
+        job = ctx.jobs.submit(
+            "audit.check",
+            work,
+            title="Checking the audit applies",
+            key=study_id,
+            typical_s=CHECK_TYPICAL_S,
+        )
+    return None, JobView(**job.view())
+
+
 @router.get("/studies/{study_id}/audit", response_model=AuditStatus)
-def audit_status(study_id: str, ctx: Ctx, request: Request) -> AuditStatus:
+def audit_status(study_id: str, ctx: Ctx) -> AuditStatus:
     """Whether the study has an audit (and its manifest), one is running, or why not."""
     require_visible(ctx, study_id)
     base: dict[str, Any] = {"study_id": study_id, "typical_s": AUDIT_TYPICAL_S}
     job = ctx.jobs.latest("audit", study_id)
     if job is not None and job.status in ("queued", "running"):
         return AuditStatus(**base, status="running", job=JobView(**job.view()))
-    folder = views.audit_dir(ctx.store, study_id)
     if not _available():
         return AuditStatus(**base, status="unavailable", reason=NO_SIMULATOR)
+    folder = views.audit_dir(ctx.store, study_id)
     if folder is not None:
         manifest = _manifest(folder)
         if manifest is None:
@@ -462,16 +576,15 @@ def audit_status(study_id: str, ctx: Ctx, request: Request) -> AuditStatus:
                 **base, status="failed", reason="The audit's manifest cannot be read."
             )
         view = _manifest_view(folder, manifest)
-        since = _decisions_since(ctx, study_id, view.chain_head)
-        loading = _load_job(request, ctx, study_id, folder)
+        since = _decisions_since(_chain_hashes(ctx, study_id), view.chain_head)
         return AuditStatus(
             **base,
             status="ready",
             manifest=view,
             current=since == 0,
             decisions_since=since,
-            views_ready=screens(request).ready(study_id, folder),
-            loading=loading,
+            loading=_load_job(ctx, study_id, folder),
+            views_ready=screens(ctx).ready(study_id, folder),
         )
     if job is not None and job.status == "failed" and job.error:
         code = job.error.get("code", "failed")
@@ -479,13 +592,14 @@ def audit_status(study_id: str, ctx: Ctx, request: Request) -> AuditStatus:
         return AuditStatus(
             **base, status=status, reason=job.error.get("message"), job=JobView(**job.view())
         )
-    return AuditStatus(**base, status="none")
+    check, checking = _check_job(ctx, study_id)
+    if check is not None and not check.applicable:
+        return AuditStatus(**base, status=check.code or "refused", reason=check.reason, check=check)
+    return AuditStatus(**base, status="none", check=check, checking=checking)
 
 
 @router.post("/studies/{study_id}/audit", response_model=JobStarted, status_code=202)
-def run_audit(
-    study_id: str, ctx: Ctx, request: Request, body: AuditRunRequest | None = None
-) -> JobStarted:
+def run_audit(study_id: str, ctx: Ctx, body: AuditRunRequest | None = None) -> JobStarted:
     """Run the robustness audit (a job, about a minute on the demo)."""
     require_visible(ctx, study_id)
     if not _available():
@@ -501,6 +615,11 @@ def run_audit(
             "This study already has an audit. Run it again to replace it; the earlier one is "
             "kept beside it.",
         )
+    checked = ctx.jobs.latest("audit.check", study_id)
+    if checked is not None and checked.status == "done" and isinstance(checked.result, dict):
+        if not checked.result.get("applicable", True):
+            code = checked.result.get("code") or "refused"
+            raise api_error(409, code, checked.result.get("reason") or "The audit cannot run.")
     sid = ctx.store.get(study_id).input_sha256[:12]
 
     def work(progress: Progress) -> dict[str, Any]:
@@ -522,6 +641,7 @@ def run_audit(
 def _audit(ctx: AppContext, study_id: str, progress: Progress, replace: bool) -> dict[str, Any]:
     """Run the audit into a private folder, then move it into place (never half-written)."""
     from qpilot.integration import simulator
+    from qpilot.qpcr.export import ExportError
 
     root = ctx.store.root / "simulator_audits"
     root.mkdir(parents=True, exist_ok=True)
@@ -545,6 +665,11 @@ def _audit(ctx: AppContext, study_id: str, progress: Progress, replace: bool) ->
             ) from err
         except simulator.SimulatorUnavailable as err:
             raise JobError("unavailable", NO_SIMULATOR) from err
+        except ExportError as err:
+            raise JobError(
+                "not_applicable",
+                "The audit cannot rebuild this study: " + _sentence(err, capital=False),
+            ) from err
     except BaseException:
         stop.set()
         shutil.rmtree(partial, ignore_errors=True)
@@ -584,7 +709,47 @@ def _watch_stages(folder: Path, progress: Progress, stop: threading.Event) -> No
             done += 1
 
 
-# ---- verify ----------------------------------------------------------------------------------
+# ---- verify and files ------------------------------------------------------------------------
+
+
+def _listed(folder: Path) -> dict[str, str]:
+    """The audit's own file list (AUDIT.sha256): name -> sha256."""
+    try:
+        text = (folder / "AUDIT.sha256").read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    out: dict[str, str] = {}
+    for line in text.splitlines():
+        digest, _, name = line.partition("  ")
+        if name and len(digest) == 64:
+            out[name] = digest
+    return out
+
+
+def _files(folder: Path) -> list[AuditFile]:
+    listed = _listed(folder)
+    names = (
+        [*sorted(listed), "AUDIT.sha256"]
+        if listed
+        else [n for n in RUN_FILES if (folder / n).is_file()]
+    )
+    out = []
+    for name in names:
+        path = folder / name
+        if "/" in name or not path.is_file():
+            continue
+        out.append(AuditFile(name=name, bytes=path.stat().st_size, sha256=listed.get(name)))
+    return out
+
+
+def _download(folder: Path, name: str) -> FileResponse:
+    allowed = {f.name for f in _files(folder)}
+    root = folder.resolve()
+    path = (folder / name).resolve()
+    if name not in allowed or path.parent != root or not path.is_file():
+        raise api_error(404, "not_found", "This audit has no file with that name.")
+    media = MEDIA.get(path.suffix, "application/octet-stream")
+    return FileResponse(path, media_type=media, filename=name)
 
 
 def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> AuditVerifyView:
@@ -593,12 +758,14 @@ def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> 
 
     manifest = _manifest(folder) or {}
     sums = folder / "AUDIT.sha256"
-    files = len(sums.read_text(encoding="utf-8").splitlines()) if sums.exists() else 0
+    files = _files(folder)
+    head = manifest.get("chain_head")
     out: dict[str, Any] = {
-        "files_checked": files,
+        "files_checked": len(_listed(folder)),
+        "files": files,
         "checksums_sha256": sha256_file(sums) if sums.exists() else None,
         "lock_sha256": manifest.get("lock_sha256"),
-        "audit_chain_head": manifest.get("chain_head"),
+        "audit_chain_head": head,
         "bound_to_record": False,
     }
     if not bind or study_id is None:
@@ -613,9 +780,15 @@ def _verify(ctx: AppContext, folder: Path, study_id: str | None, bind: bool) -> 
                     409, "no_record", f"The study's record cannot be written: {err}"
                 ) from err
             check = verify_audit(folder, record)
-        out["bound_to_record"] = True
-        out["record_chain_head"] = ctx.store.chain_head(study_id)
-        out["decisions_since"] = _decisions_since(ctx, study_id, manifest.get("chain_head"))
+        hashes = _chain_hashes(ctx, study_id)
+        since = _decisions_since(hashes, head)
+        out.update(
+            bound_to_record=True,
+            record_chain_head=ctx.store.chain_head(study_id),
+            decisions_since=since,
+            head_in_chain=head in hashes if head else None,
+            is_current=since == 0,
+        )
     return AuditVerifyView(ok=check.ok, summary=check.summary(), problems=check.problems, **out)
 
 
@@ -630,61 +803,81 @@ def verify_study_audit(
     return _verify(ctx, folder, study_id, bind)
 
 
+@router.get("/studies/{study_id}/audit/files", response_model=AuditFiles)
+def audit_files(study_id: str, ctx: Ctx) -> AuditFiles:
+    """The audit's files (name, size, sha256 from its AUDIT.sha256), for download."""
+    require_visible(ctx, study_id)
+    return AuditFiles(files=_files(_audit_folder(ctx, study_id)))
+
+
+@router.get("/studies/{study_id}/audit/files/{name}", response_class=FileResponse)
+def audit_file(study_id: str, name: str, ctx: Ctx) -> FileResponse:
+    """Download one of the audit's files (only those its AUDIT.sha256 lists)."""
+    require_visible(ctx, study_id)
+    return _download(_audit_folder(ctx, study_id), name)
+
+
 # ---- the study's views ---------------------------------------------------------------------
 
 
 @router.get("/studies/{study_id}/audit/overview", response_model=AuditOverview)
-def audit_overview(study_id: str, ctx: Ctx, request: Request) -> AuditOverview:
+def audit_overview(study_id: str, ctx: Ctx) -> AuditOverview:
     """The audit's first screen: verdict counts, genes, choices, the top issues."""
-    return _study_view(request, ctx, study_id, _Views.overview)
+    return _study_view(ctx, study_id, _Views.overview)
 
 
 @router.get("/studies/{study_id}/audit/study", response_model=AuditStudyView)
-def audit_study(study_id: str, ctx: Ctx, request: Request) -> AuditStudyView:
+def audit_study(study_id: str, ctx: Ctx) -> AuditStudyView:
     """The Study tab: the map, which choices matter, reference stability, influence."""
-    return _study_view(request, ctx, study_id, _Views.study)
+    return _study_view(ctx, study_id, _Views.study)
 
 
 @router.get("/studies/{study_id}/audit/how", response_model=AuditHow)
-def audit_how(study_id: str, ctx: Ctx, request: Request) -> AuditHow:
+def audit_how(study_id: str, ctx: Ctx) -> AuditHow:
     """How it works: stages, the call rule, the verdict rules, checks made and not made."""
-    return _study_view(request, ctx, study_id, _Views.how)
+    return _study_view(ctx, study_id, _Views.how)
+
+
+@router.get("/studies/{study_id}/audit/issues", response_model=AuditIssues)
+def audit_issues(study_id: str, ctx: Ctx) -> AuditIssues:
+    """The whole investigation queue, in its order."""
+    return _study_view(ctx, study_id, _Views.issues)
 
 
 @router.get("/studies/{study_id}/audit/gene/{gene:path}", response_model=AuditGeneCard)
-def audit_gene(study_id: str, gene: str, ctx: Ctx, request: Request) -> AuditGeneCard:
+def audit_gene(study_id: str, gene: str, ctx: Ctx) -> AuditGeneCard:
     """One gene's card: result, verdict, what changes it, what it leans on, what to do."""
-    return _study_view(request, ctx, study_id, lambda s: _Views.gene(s, gene))
+    return _study_view(ctx, study_id, lambda s: _Views.gene(s, gene))
 
 
 @router.get("/studies/{study_id}/audit/analyses/{gene:path}", response_model=AuditAnalyses)
-def audit_analyses(study_id: str, gene: str, ctx: Ctx, request: Request) -> AuditAnalyses:
+def audit_analyses(study_id: str, gene: str, ctx: Ctx) -> AuditAnalyses:
     """Every reasonable analysis of one gene."""
-    return _study_view(request, ctx, study_id, lambda s: _Views.analyses(s, gene))
+    return _study_view(ctx, study_id, lambda s: _Views.analyses(s, gene))
 
 
 @router.get("/studies/{study_id}/audit/effects/{gene:path}", response_model=AuditEffects)
-def audit_effects(study_id: str, gene: str, ctx: Ctx, request: Request) -> AuditEffects:
+def audit_effects(study_id: str, gene: str, ctx: Ctx) -> AuditEffects:
     """One choice at a time for one gene."""
-    return _study_view(request, ctx, study_id, lambda s: _Views.effects(s, gene))
+    return _study_view(ctx, study_id, lambda s: _Views.effects(s, gene))
 
 
 @router.get("/studies/{study_id}/audit/lab/{gene:path}", response_model=AuditLab)
-def audit_lab(study_id: str, gene: str, ctx: Ctx, request: Request) -> AuditLab:
+def audit_lab(study_id: str, gene: str, ctx: Ctx) -> AuditLab:
     """The assay's lab parameters and the planned control genes' stability."""
-    return _study_view(request, ctx, study_id, lambda s: _Views.lab(s, gene))
+    return _study_view(ctx, study_id, lambda s: _Views.lab(s, gene))
 
 
 @router.post("/studies/{study_id}/audit/whatif", response_model=AuditWhatIf)
-def audit_whatif(study_id: str, body: WhatIfRequest, ctx: Ctx, request: Request) -> AuditWhatIf:
+def audit_whatif(study_id: str, body: AuditWhatIfRequest, ctx: Ctx) -> AuditWhatIf:
     """Every gene under other choices (a live engine run; nothing is written)."""
-    return _study_view(request, ctx, study_id, lambda s: _Views.whatif(s, body))
+    return _study_view(ctx, study_id, lambda s: _Views.whatif(s, body))
 
 
 @router.post("/studies/{study_id}/audit/samples", response_model=AuditSamples)
-def audit_samples(study_id: str, body: SamplesRequest, ctx: Ctx, request: Request) -> AuditSamples:
+def audit_samples(study_id: str, body: AuditSamplesRequest, ctx: Ctx) -> AuditSamples:
     """One gene's samples under a set of choices (a live engine run; nothing is written)."""
-    return _study_view(request, ctx, study_id, lambda s: _Views.samples(s, body))
+    return _study_view(ctx, study_id, lambda s: _Views.samples(s, body))
 
 
 # ---- attached folders (qpilot app --audit DIR) -------------------------------------------
@@ -735,12 +928,24 @@ def _build_for_attached(ctx: AppContext, folder: Path, info: AttachedAudit) -> C
         from qsim.app import Screen
 
         if info.study_id is None:
-            return Screen(folder)  # a plain simulator run: it reads its own input file
-        from qpilot.integration.simulator import load_analysis, prepare
+            screen = Screen(folder)  # a plain simulator run: it reads its own input file
+        else:
+            from qpilot.integration.simulator import load_analysis, prepare
 
-        return Screen.from_prepared(folder, prepare(load_analysis(ctx.store, info.study_id)))
+            prepared = prepare(load_analysis(ctx.store, info.study_id))
+            screen = Screen.from_prepared(folder, prepared)
+        screen.use_ask_client(_ask_client(ctx))
+        return screen
 
     return build
+
+
+def _attached_visible(ctx: AppContext, name: str) -> tuple[Path, AttachedAudit]:
+    folder = _attached(ctx, name)
+    info = _attached_info(ctx, name, folder)
+    if info.study_id is not None and info.available:
+        require_visible(ctx, info.study_id)
+    return folder, info
 
 
 @router.get("/audits", response_model=AttachedAuditList)
@@ -760,65 +965,85 @@ def attached_audit(name: str, ctx: Ctx) -> AttachedAudit:
 
 
 @router.get("/audits/{name}/overview", response_model=AuditOverview)
-def attached_overview(name: str, ctx: Ctx, request: Request) -> AuditOverview:
+def attached_overview(name: str, ctx: Ctx) -> AuditOverview:
     """An attached folder's first screen."""
-    return _attached_view(request, ctx, name, _Views.overview)
+    return _attached_view(ctx, name, _Views.overview)
 
 
 @router.get("/audits/{name}/study", response_model=AuditStudyView)
-def attached_study(name: str, ctx: Ctx, request: Request) -> AuditStudyView:
+def attached_study(name: str, ctx: Ctx) -> AuditStudyView:
     """An attached folder's Study tab."""
-    return _attached_view(request, ctx, name, _Views.study)
+    return _attached_view(ctx, name, _Views.study)
 
 
 @router.get("/audits/{name}/how", response_model=AuditHow)
-def attached_how(name: str, ctx: Ctx, request: Request) -> AuditHow:
+def attached_how(name: str, ctx: Ctx) -> AuditHow:
     """An attached folder's How it works."""
-    return _attached_view(request, ctx, name, _Views.how)
+    return _attached_view(ctx, name, _Views.how)
+
+
+@router.get("/audits/{name}/issues", response_model=AuditIssues)
+def attached_issues(name: str, ctx: Ctx) -> AuditIssues:
+    """An attached folder's whole investigation queue."""
+    return _attached_view(ctx, name, _Views.issues)
 
 
 @router.get("/audits/{name}/gene/{gene:path}", response_model=AuditGeneCard)
-def attached_gene(name: str, gene: str, ctx: Ctx, request: Request) -> AuditGeneCard:
+def attached_gene(name: str, gene: str, ctx: Ctx) -> AuditGeneCard:
     """One gene's card in an attached folder."""
-    return _attached_view(request, ctx, name, lambda s: _Views.gene(s, gene))
+    return _attached_view(ctx, name, lambda s: _Views.gene(s, gene))
 
 
 @router.get("/audits/{name}/analyses/{gene:path}", response_model=AuditAnalyses)
-def attached_analyses(name: str, gene: str, ctx: Ctx, request: Request) -> AuditAnalyses:
+def attached_analyses(name: str, gene: str, ctx: Ctx) -> AuditAnalyses:
     """Every reasonable analysis of one gene in an attached folder."""
-    return _attached_view(request, ctx, name, lambda s: _Views.analyses(s, gene))
+    return _attached_view(ctx, name, lambda s: _Views.analyses(s, gene))
 
 
 @router.get("/audits/{name}/effects/{gene:path}", response_model=AuditEffects)
-def attached_effects(name: str, gene: str, ctx: Ctx, request: Request) -> AuditEffects:
+def attached_effects(name: str, gene: str, ctx: Ctx) -> AuditEffects:
     """One choice at a time for one gene in an attached folder."""
-    return _attached_view(request, ctx, name, lambda s: _Views.effects(s, gene))
+    return _attached_view(ctx, name, lambda s: _Views.effects(s, gene))
 
 
 @router.get("/audits/{name}/lab/{gene:path}", response_model=AuditLab)
-def attached_lab(name: str, gene: str, ctx: Ctx, request: Request) -> AuditLab:
+def attached_lab(name: str, gene: str, ctx: Ctx) -> AuditLab:
     """Lab parameters for one gene in an attached folder."""
-    return _attached_view(request, ctx, name, lambda s: _Views.lab(s, gene))
+    return _attached_view(ctx, name, lambda s: _Views.lab(s, gene))
 
 
 @router.post("/audits/{name}/whatif", response_model=AuditWhatIf)
-def attached_whatif(name: str, body: WhatIfRequest, ctx: Ctx, request: Request) -> AuditWhatIf:
+def attached_whatif(name: str, body: AuditWhatIfRequest, ctx: Ctx) -> AuditWhatIf:
     """Every gene under other choices, in an attached folder."""
-    return _attached_view(request, ctx, name, lambda s: _Views.whatif(s, body))
+    return _attached_view(ctx, name, lambda s: _Views.whatif(s, body))
 
 
 @router.post("/audits/{name}/samples", response_model=AuditSamples)
-def attached_samples(name: str, body: SamplesRequest, ctx: Ctx, request: Request) -> AuditSamples:
+def attached_samples(name: str, body: AuditSamplesRequest, ctx: Ctx) -> AuditSamples:
     """One gene's samples under a set of choices, in an attached folder."""
-    return _attached_view(request, ctx, name, lambda s: _Views.samples(s, body))
+    return _attached_view(ctx, name, lambda s: _Views.samples(s, body))
 
 
 @router.post("/audits/{name}/verify", response_model=AuditVerifyView)
 def attached_verify(name: str, ctx: Ctx, body: AuditVerifyRequest | None = None) -> AuditVerifyView:
     """Check an attached audit's checksums (and its binding, when its study is here)."""
-    folder = _attached(ctx, name)
-    info = _attached_info(ctx, name, folder)
-    if info.study_id is not None and info.available:
-        require_visible(ctx, info.study_id)
+    folder, info = _attached_visible(ctx, name)
     bind = (True if body is None else body.bind_to_record) and info.available
     return _verify(ctx, folder, info.study_id, bind)
+
+
+@router.get("/audits/{name}/files", response_model=AuditFiles)
+def attached_files(name: str, ctx: Ctx) -> AuditFiles:
+    """An attached folder's downloadable files."""
+    folder, _ = _attached_visible(ctx, name)
+    return AuditFiles(files=_files(folder))
+
+
+@router.get("/audits/{name}/files/{file}", response_class=FileResponse)
+def attached_file(name: str, file: str, ctx: Ctx) -> FileResponse:
+    """Download one file of an attached folder (its listed files, or a run's result files)."""
+    folder, _ = _attached_visible(ctx, name)
+    return _download(folder, file)
+
+
+__all__ = ["Screens", "audit_screen", "require_visible", "router", "screens"]
