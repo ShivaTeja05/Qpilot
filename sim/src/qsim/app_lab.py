@@ -274,13 +274,31 @@ class LabViews:
             {
                 "gene": g,
                 "m": f"{m_values[g]:.2f}" if g in m_values else "",
+                "m_value": float(m_values[g]) if g in m_values else None,
                 "differs": g in implicated or g.split("(")[0] in implicated,
             }
             for g in planned_refs.value
         ]
+        # the same parameters as numbers, for charts and tables that format them themselves
+        numbers = {
+            "n_high": int(high.sum()),
+            "n_rest": int(rest.sum()),
+            "n_plates": len(set(s.run[:, col])),
+            "cq_median": float(np.median(found)) if found.size else None,
+            "cq_min": float(found.min()) if found.size else None,
+            "cq_max": float(found.max()) if found.size else None,
+            "n_cq_above": {f"{cut:g}": int((found > cut).sum()) for cut in lates},
+            "n_nondetect": int(np.isnan(cq).sum()),
+            "eff_assay": float(eff),
+            "eff_std_curve": float(np.nanmedian(std)) if np.isfinite(std).any() else None,
+            "n_flag_eff": int(s.flag_eff[:, col].sum()),
+            "n_flag_low": int(s.flag_low[:, col].sum()),
+            "p": float(e["p"]),
+        }
         return {
             "gene": gene,
             "rows": [{"label": a, "value": b} for a, b in rows],
+            "numbers": numbers,
             "references": references,
             "refs_label": planned_refs.label,
             "stable_below": f"{self.summary['space_rules']['stable_below_M']:g}",
@@ -320,6 +338,7 @@ class LabViews:
                 {
                     "gene": g,
                     "m": f"{m:.2f}",
+                    "m_value": float(m),
                     "differs": g in implicated or g.split("(")[0] in implicated,
                 }
                 for g, m in sorted(rules["geNorm_M"].items(), key=lambda kv: kv[1])
