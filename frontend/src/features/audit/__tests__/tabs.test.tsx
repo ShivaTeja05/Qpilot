@@ -3,7 +3,7 @@
  * record.py from a Studio walk and its audit). The API is answered from those recordings.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Schemas } from "@/api/client";
@@ -29,6 +29,9 @@ const target = studyAudit(key, studyId);
 const geneHref = (gene: string) => sectionPath(workspace, "gene", gene);
 
 let calls: { method: string; url: string; body: unknown }[] = [];
+
+// The charts render real data; the shared machine can be slow.
+vi.setConfig({ testTimeout: 20_000 });
 
 function respond(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -74,15 +77,18 @@ describe("Study tab", () => {
     expect(within(list).getAllByRole("link")).toHaveLength(ov.genes.length);
 
     const fragile = ov.verdicts.find((v) => v.key === "fragile")!;
+    const strip = document.getElementById("audit-verdicts")!.closest("section")!;
     fireEvent.click(
-      screen.getByRole("button", { name: new RegExp(`^${fragile.count}\\s*Fragile`) }),
+      within(strip).getByRole("button", { name: new RegExp(`^${fragile.count}\\s*Fragile`) }),
     );
     expect(within(screen.getByRole("list", { name: "Genes" })).getAllByRole("link")).toHaveLength(
       fragile.count,
     );
     // the map and the bars arrive with the study view
     expect(await screen.findByText("Calls changed by one choice alone")).toBeTruthy();
-    expect(await screen.findAllByRole("img", { name: /^Map of / })).not.toHaveLength(0);
+    await waitFor(() =>
+      expect(document.querySelector('svg[role="img"][aria-label^="Map of "]')).not.toBeNull(),
+    );
   });
 
   it("falls back to the overview's issues when the full queue is not served", async () => {

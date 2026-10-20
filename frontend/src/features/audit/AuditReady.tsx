@@ -29,7 +29,7 @@ import {
 } from "./api";
 import { HowTab } from "./HowTab";
 import { StudyTab } from "./StudyTab";
-import type { AttachedAudit, AuditStatus, Changes } from "./types";
+import type { AttachedAudit, Changes, ManifestLike, ReadyStatus } from "./types";
 import { TABS, type AuditPlace, type AuditTab } from "./url";
 import { VerifyTab } from "./VerifyTab";
 import { WhatifTab } from "./WhatifTab";
@@ -53,7 +53,7 @@ export function AuditReady({
 }: {
   workspace: NonNullable<SectionProps["workspace"]>;
   target: AuditTarget;
-  status: AuditStatus;
+  status: ReadyStatus;
   /** Set when the audit shown is an attached folder, not the study's own. */
   attached?: AttachedAudit;
   /** Chooses between the study's audit and attached ones. */
@@ -61,7 +61,7 @@ export function AuditReady({
   place: AuditPlace;
   go: (next: AuditPlace, replace?: boolean) => void;
 }) {
-  const manifest = status.manifest ?? {};
+  const manifest: ManifestLike = status.manifest ?? {};
   // Genes open the Gene section only when the audit is about this study.
   const ownStudy = !attached || attached.study_id === target.studyId;
   const geneHref = ownStudy ? (gene: string) => sectionPath(workspace, "gene", gene) : null;
@@ -107,7 +107,7 @@ export function AuditReady({
         actions={
           <>
             {switcher}
-            {status.created_at != null ? (
+            {manifest.created_at != null ? (
               <Tooltip
                 content={`Decision chain ${shortHash(audited, 12)} · lock ${shortHash(manifest.lock_sha256, 12)}`}
               >
@@ -116,7 +116,7 @@ export function AuditReady({
                   className="inline-flex items-center gap-1.5 text-[13px] text-muted"
                 >
                   <History className="size-3.5" aria-hidden />
-                  Audited {relativeTime(status.created_at)}
+                  Audited {relativeTime(manifest.created_at)}
                 </span>
               </Tooltip>
             ) : null}
