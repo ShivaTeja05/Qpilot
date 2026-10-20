@@ -48,11 +48,14 @@ function Status({ model }: { model: ModelStatus }) {
 
 export function ModelCard({
   initial,
-  children,
+  actions,
+  below,
 }: {
   initial: ModelStatus | undefined;
   /** More actions next to Check connection (Test this model). */
-  children?: ReactNode;
+  actions?: ReactNode;
+  /** Shown under the actions (the model test's job and scorecard). */
+  below?: ReactNode;
 }) {
   const query = useModelStatus(initial);
   const [checkedAt, setCheckedAt] = useState<number | null>(null);
@@ -117,7 +120,7 @@ export function ModelCard({
               >
                 Check connection
               </Button>
-              {children}
+              {actions}
               <p className="text-xs text-muted" aria-live="polite">
                 {!model.configured
                   ? "There is no model to check."
@@ -126,6 +129,7 @@ export function ModelCard({
                     : "qPilot asks the model a one-token question at most once a minute, in the background."}
               </p>
             </div>
+            {below}
           </>
         )}
 
