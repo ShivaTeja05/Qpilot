@@ -40,7 +40,13 @@ export function ConclusionTag({
   const c = asConclusion(conclusion);
   const v = CONCLUSION[c];
   return (
-    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap font-medium", CONCLUSION_TEXT[c], className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 whitespace-nowrap font-medium",
+        CONCLUSION_TEXT[c],
+        className,
+      )}
+    >
       <span aria-hidden className="text-[0.8em] leading-none">
         {v.glyph}
       </span>
@@ -85,7 +91,12 @@ export function LevelTag({
   const l = asLevel(level);
   if (!l) return <span className={cn("text-faint", className)}>—</span>;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-medium", className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-medium",
+        className,
+      )}
+    >
       <LevelBars level={l} />
       <span className={cn(hideWord && "sr-only", "text-fg")}>
         {l}
@@ -105,9 +116,23 @@ const VERDICT_TEXT: Record<Verdict, string> = {
 };
 
 /** The SVG glyph of a verdict shape (12 px box; uses currentColor). Charts may reuse it. */
-export function ShapeGlyph({ shape, size = 12, className }: { shape: VerdictShape; size?: number; className?: string }) {
+export function ShapeGlyph({
+  shape,
+  size = 12,
+  className,
+}: {
+  shape: VerdictShape;
+  size?: number;
+  className?: string;
+}) {
   return (
-    <svg viewBox="0 0 12 12" width={size} height={size} aria-hidden className={cn("shrink-0", className)}>
+    <svg
+      viewBox="0 0 12 12"
+      width={size}
+      height={size}
+      aria-hidden
+      className={cn("shrink-0", className)}
+    >
       {shape === "disc" && <circle cx="6" cy="6" r="5" fill="currentColor" />}
       {shape === "half" && (
         <>
@@ -117,7 +142,12 @@ export function ShapeGlyph({ shape, size = 12, className }: { shape: VerdictShap
       )}
       {shape === "diamond" && <path d="M6 0.8 11.2 6 6 11.2 0.8 6z" fill="currentColor" />}
       {shape === "cross" && (
-        <path d="M2.2 2.2 9.8 9.8M9.8 2.2 2.2 9.8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+        <path
+          d="M2.2 2.2 9.8 9.8M9.8 2.2 2.2 9.8"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
       )}
       {shape === "alert" && (
         <>
@@ -126,7 +156,9 @@ export function ShapeGlyph({ shape, size = 12, className }: { shape: VerdictShap
           <circle cx="6" cy="9.1" r="0.8" fill="var(--surface)" />
         </>
       )}
-      {shape === "ring" && <circle cx="6" cy="6" r="4.4" fill="none" stroke="currentColor" strokeWidth="1.6" />}
+      {shape === "ring" && (
+        <circle cx="6" cy="6" r="4.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      )}
     </svg>
   );
 }
@@ -145,7 +177,12 @@ export function VerdictTag({
   if (!v) return <span className={cn("text-faint", className)}>—</span>;
   const meta = VERDICT[v];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-medium", className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-medium",
+        className,
+      )}
+    >
       <ShapeGlyph shape={meta.shape} className={VERDICT_TEXT[v]} />
       <span className={cn(compact && "sr-only", "text-fg")}>{meta.label}</span>
     </span>
@@ -157,7 +194,11 @@ const CHECK_STYLE: Record<CheckStatus, string> = {
   contradicted: "border-danger/30 bg-danger-soft text-danger",
   cannot_check: "border-line bg-bg-subtle text-muted",
 };
-const CHECK_GLYPH: Record<CheckStatus, string> = { consistent: "✓", contradicted: "✕", cannot_check: "?" };
+const CHECK_GLYPH: Record<CheckStatus, string> = {
+  consistent: "✓",
+  contradicted: "✕",
+  cannot_check: "?",
+};
 
 /** The engine's check of a proposal: consistent / contradicted / cannot check. */
 export function CheckTag({ status, className }: { status: CheckStatus; className?: string }) {
