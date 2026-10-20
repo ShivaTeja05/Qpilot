@@ -1,0 +1,92 @@
+# MIQE 2.0 item map: which checklist items an Analysis Record can answer, and from what.
+#
+# Source: Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0: Revision of the Minimum
+# Information for Publication of Quantitative Real-Time PCR Experiments Guidelines.
+# Clin Chem 2025;71(6):634-651. doi:10.1093/clinchem/hvaf043 (Table 1).
+# Labels are short paraphrases for finding an item; Table 1 of the paper has the exact wording.
+# The published table is unnumbered: ids such as "5.13" are qPilot's section.position ids.
+# Its columns are "Provided" (Yes or No) and "Description/Justification" (if Yes, the location
+# or value; if No, the rationale). MIQE 2.0 has no essential/desirable split.
+# Item list from research note 14 (KQ1), confirmed by `scientist` (53 items: 8/13/7/6/19).
+# Classes below are qPilot's own triage, not part of MIQE; reports never quote class counts.
+# Footnotes encoded in the resolvers: c (sequences highly desirable, else assay context
+# sequences), d (section 3 and parts of 5 may not apply), e (no-RT control desirable, no longer
+# essential once DNA-free), f (reagent details), j (efficiency-corrected quantities necessary).
+#
+# class: a = from the RDML file plus the engine; b = from instrument/QC exports or a lab profile;
+#        c = a short per-study form; d = only a person can attest (never answered by qPilot).
+# fill:  the resolver in qpilot/report/miqe.py that answers the item from the study, or null.
+#        An item is "met" or "not met" only when the study's data answer it (the evidence cites
+#        the facts); "not applicable" when the data show it does not apply; otherwise it is
+#        "cannot tell from the data", with a hint of what the data do hold. Class d is never
+#        answered. The report counts items by status and never calls a study compliant.
+# Ported from branch agents/report (qPilot's WIP), unchanged apart from these comments.
+schema: qpilot.miqe2_items/1
+name: miqe2-items
+version: "1.0.0"
+reviewed_by: scientist (bus #0052, 19 Oct 2026)
+citation: >-
+  Bustin SA, Ruijter JM, van den Hoff MJB, Kubista M, Pfaffl MW, Shipley GL, Tran N, Rödiger S,
+  Untergasser A, Mueller R, Nolan T, Milavec M, Burns MJ, Huggett JF, Vandesompele J, Wittwer CT.
+  MIQE 2.0: Revision of the Minimum Information for Publication of Quantitative Real-Time PCR
+  Experiments Guidelines. Clin Chem 2025;71(6):634-651. doi:10.1093/clinchem/hvaf043
+sections:
+  "1": Reagent preparation
+  "2": Sample preparation
+  "3": Reverse transcription
+  "4": qPCR protocol
+  "5": Data analysis
+items:
+  - {id: "1.1", class: c, fill: null, label: "Bioinformatics tools, versions and settings used to design the assays"}
+  - {id: "1.2", class: a, fill: rdml_xref, label: "Official gene symbol, species and accession number"}
+  - {id: "1.3", class: c, fill: null, label: "Location of the amplicon"}
+  - {id: "1.4", class: a, fill: rdml_amplicon, label: "Amplicon length"}
+  - {id: "1.5", class: a, fill: rdml_primers, label: "Primer and probe sequences (or assay context sequences)"}
+  - {id: "1.6", class: a, fill: rdml_tags, label: "Location and identity of any modifications"}
+  - {id: "1.7", class: c, fill: null, label: "Manufacturer of the oligonucleotides"}
+  - {id: "1.8", class: d, fill: null, label: "Details of the optimisation performed"}
+  - {id: "2.1", class: a, fill: sample_counts, label: "Sample types and numbers"}
+  - {id: "2.2", class: d, fill: null, label: "Sampling procedure, including time to storage"}
+  - {id: "2.3", class: c, fill: null, label: "Aliquoting, storage conditions and duration"}
+  - {id: "2.4", class: c, fill: null, label: "Extraction method and amount of sample processed"}
+  - {id: "2.5", class: c, fill: null, label: "Source and amount of any spike-in"}
+  - {id: "2.6", class: c, fill: null, label: "Elution buffer volume"}
+  - {id: "2.7", class: c, fill: null, label: "Number of extraction replicates"}
+  - {id: "2.8", class: b, fill: null, label: "Extraction blanks and percentage yield"}
+  - {id: "2.9", class: b, fill: null, label: "Method used to evaluate nucleic acid quality and quantity"}
+  - {id: "2.10", class: c, fill: null, label: "Storage conditions of the extract (temperature, concentration, duration, buffer)"}
+  - {id: "2.11", class: a, fill: rdml_template, label: "Dilution steps for the working template"}
+  - {id: "2.12", class: a, fill: rdml_dnase, label: "Template modification (DNase treatment, pre-amplification, ...)"}
+  - {id: "2.13", class: c, fill: null, label: "Purification after modification"}
+  - {id: "3.1", class: a, fill: rdml_priming, label: "cDNA priming method and primer concentration"}
+  - {id: "3.2", class: c, fill: null, label: "One-step or two-step protocol"}
+  - {id: "3.3", class: a, fill: rdml_template, label: "Amount of RNA per reaction"}
+  - {id: "3.4", class: c, fill: null, label: "Reaction components and conditions"}
+  - {id: "3.5", class: a, fill: nrt, label: "Estimated copies with and without reverse transcription"}
+  - {id: "3.6", class: b, fill: null, label: "Reagent manufacturer, catalogue and lot numbers"}
+  - {id: "3.7", class: c, fill: null, label: "cDNA storage conditions"}
+  - {id: "4.1", class: a, fill: rdml_cycling, label: "Template treatment (initial heating or denaturation)"}
+  - {id: "4.2", class: c, fill: null, label: "Primer and probe concentrations and source"}
+  - {id: "4.3", class: c, fill: null, label: "Polymerase, Mg2+ and dNTP details"}
+  - {id: "4.4", class: b, fill: null, label: "Buffer or kit (manufacturer, catalogue and lot numbers)"}
+  - {id: "4.5", class: a, fill: rdml_cycling_volume, label: "Complete thermocycling parameters, including reaction volume"}
+  - {id: "4.6", class: a, fill: rdml_instrument, label: "Manufacturer and type of instrument"}
+  - {id: "5.1", class: a, fill: raw_data, label: "Raw fluorescence data stored or submitted as RDES or RDML"}
+  - {id: "5.2", class: a, fill: quantification, label: "Identity of standards and quantification method"}
+  - {id: "5.3", class: a, fill: baseline_cq, label: "Baseline correction and Cq determination"}
+  - {id: "5.4", class: a, fill: software, label: "qPCR analysis program (source and version)"}
+  - {id: "5.5", class: a, fill: controls, label: "Details of positive and negative controls"}
+  - {id: "5.6", class: a, fill: ntc_results, label: "Frequency and Cq of the negative controls"}
+  - {id: "5.7", class: a, fill: null, label: "Examples of positive and negative results"}
+  - {id: "5.8", class: a, fill: efficiency, label: "PCR efficiency and how it was estimated"}
+  - {id: "5.9", class: a, fill: quantity_method, label: "Method of target quantity calculation (efficiency-corrected)"}
+  - {id: "5.10", class: a, fill: replicates, label: "Description of the replicates"}
+  - {id: "5.11", class: a, fill: null, label: "Repeatability (intra-experiment variation)"}
+  - {id: "5.12", class: a, fill: null, label: "Reproducibility (inter-run, inter-user or inter-laboratory variation)"}
+  - {id: "5.13", class: a, fill: lod, label: "Whether a limit of detection was calculated"}
+  - {id: "5.14", class: a, fill: dynamic_range, label: "Dynamic range (linear range of the standard curve)"}
+  - {id: "5.15", class: a, fill: refgene_validation, label: "Method used to validate the reference genes"}
+  - {id: "5.16", class: a, fill: normalisation, label: "Normalisation method and calculation"}
+  - {id: "5.17", class: a, fill: statistics, label: "Statistical methods"}
+  - {id: "5.18", class: a, fill: significance, label: "Significance level and statistical power"}
+  - {id: "5.19", class: a, fill: specificity, label: "Specificity of the assay (melt curve, sequencing)"}
