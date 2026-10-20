@@ -17,7 +17,15 @@ import { Input, Select } from "../controls";
 import { EmptyState, LoadingBlock } from "../feedback";
 import { CheckTag } from "../tags";
 import type { EditOptions } from "./edit";
-import { isWarming, useMattersJobs, useProposalActions, useQuotes, useStageProposals, type InboxStage } from "./hooks";
+import {
+  isWarming,
+  useCheckEdit,
+  useMattersJobs,
+  useProposalActions,
+  useQuotes,
+  useStageProposals,
+  type InboxStage,
+} from "./hooks";
 import { Warming } from "./parts";
 import { ProposalCard, type ProposalCardHandle, type ProposalCardProps } from "./ProposalCard";
 
@@ -88,6 +96,7 @@ export function StageInbox({
   const { lookup, sheetCells } = useQuotes(sid);
   const actions = useProposalActions(sid, list.data?.head, stage);
   const matters = useMattersJobs(sid);
+  const checkEdit = useCheckEdit(sid);
   const [check, setCheck] = useState<CheckFilter>("all");
   const [kind, setKind] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -307,6 +316,7 @@ export function StageInbox({
                     onAccept={(reason) => actions.accept(p.id, reason)}
                     onEdit={(edits, reason) => actions.edit(p.id, edits, reason)}
                     onReject={(reason) => actions.reject(p.id, reason)}
+                    onCheckEdit={(edits) => checkEdit(p.id, edits)}
                     onAskMatters={() => void matters.ask(p.id)}
                     mattersJob={matters.jobOf(p.id)}
                     onOpenWell={onOpenWell}
