@@ -297,6 +297,9 @@ def test_efficiency_ranges(lex):
     assert claim.kind == "efficiency" and claim.efficiency == pytest.approx((89.5, 110.5))
     (claim,) = extract("PCR efficiency was between 1.9 and 2.1 for ODC1.", lex)
     assert claim.efficiency == pytest.approx((85.0, 115.0)) and claim.genes == ("ODC1",)
+    text = "Amplification efficiencies ranged from 73\u202f% (CLSTN1) to 94\u202f% (PTN)."
+    (claim,) = extract(text, Lexicon(compared=["CLSTN1", "PTN"]))
+    assert claim.efficiency == pytest.approx((72.5, 94.5)) and claim.genes == ()
     (claim,) = extract("Efficiencies were above 95 %.", lex)
     assert claim.efficiency[0] == pytest.approx(94.5) and math.isinf(claim.efficiency[1])
 

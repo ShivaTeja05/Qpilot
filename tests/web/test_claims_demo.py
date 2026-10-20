@@ -129,3 +129,36 @@ def test_examples_cover_every_kind_of_error_and_come_out_as_described(demo):
         start = body["paragraph"].index(example["text"])
         mine = [cl for cl in claims if cl["sentence"]["start"] == start]
         assert mine and {cl["verdict"] for cl in mine} == {example["intent"]}, example
+
+
+def test_the_other_direction_is_rescued_only_by_one_choice(demo):
+    """A claim against the planned call is "only under some choices" only when one choice
+    makes it hold; a combination of choices alone leaves it contradicted (and says so)."""
+    for gene in demo["results"]["headline"]:
+        row = demo["rows"][gene]
+        if row["conclusion"] == "none":
+            continue
+        word = "lower" if row["conclusion"] == "up" else "higher"
+        (claim,) = check(demo, f"{gene} tended to be {word} in MYCN-high tumours.")
+        assert claim["verdict"] in ("contradicted", "choices"), gene
+        if claim["verdict"] == "choices":
+            assert any(ch["holds"] for ch in claim["choices"]), gene
+        else:
+            notes = [c["text"]["plain"] for c in claim["checks"] if c["check"] == "choices"]
+            assert all("change together" in n for n in notes), notes
+
+
+def test_every_suggested_sentence_is_supported_when_checked(demo):
+    """The corrected sentences are built from facts; checked again, each is supported."""
+    rows = demo["rows"]
+    headline = demo["results"]["headline"]
+    text = " ".join(
+        f"{g} was {'lower' if rows[g]['conclusion'] == 'up' else 'higher'} in MYCN-high tumours."
+        for g in headline
+    )
+    text += " Expression was normalised to GAPDH. All assays had efficiencies of 90–110 %."
+    suggestions = [c["suggestion"]["plain"] for c in check(demo, text) if c["suggestion"]]
+    assert len(suggestions) >= len(headline)
+    for sentence in suggestions:
+        verdicts = {c["verdict"] for c in check(demo, sentence)}
+        assert verdicts == {"supported"}, (sentence, verdicts)

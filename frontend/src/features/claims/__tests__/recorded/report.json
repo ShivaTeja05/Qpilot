@@ -1,0 +1,4354 @@
+{
+  "study_id": "e300000d4f9a",
+  "length": 483,
+  "text_sha256": "e80d78b3257fead14e23d0b958ff0c174f8950b05aa1af01a52663f8406d2c94",
+  "claims": [
+    {
+      "id": "c1",
+      "kind": "gene",
+      "sentence": {
+        "start": 0,
+        "end": 77
+      },
+      "clause": {
+        "start": 0,
+        "end": 77
+      },
+      "spans": [
+        {
+          "start": 0,
+          "end": 4,
+          "role": "gene",
+          "written": "ODC1"
+        },
+        {
+          "start": 9,
+          "end": 17,
+          "role": "fold",
+          "written": "3.3-fold"
+        },
+        {
+          "start": 18,
+          "end": 24,
+          "role": "direction",
+          "written": "higher"
+        },
+        {
+          "start": 32,
+          "end": 41,
+          "role": "group",
+          "written": "MYCN-high"
+        },
+        {
+          "start": 56,
+          "end": 64,
+          "role": "group",
+          "written": "the rest"
+        },
+        {
+          "start": 66,
+          "end": 75,
+          "role": "p",
+          "written": "p < 0.001"
+        }
+      ],
+      "reading": {
+        "gene": "ODC1",
+        "gene_written": "ODC1",
+        "gene_via": "name",
+        "gene_status": "compared",
+        "direction": "up",
+        "direction_written": "higher",
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": "3.3-fold",
+        "fold_comparator": "exact",
+        "fold_kind": "fold",
+        "p_written": "p < 0.001",
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": [],
+        "groups_written": ["MYCN-high", "the rest"],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["ODC1", "higher in the MYCN-high group than in the rest", "3.3-fold", "p < 0.001"]
+      },
+      "verdict": "supported",
+      "verdict_label": "Supported",
+      "headline": {
+        "plain": "The fold you wrote, “3.3-fold”, is within the study's 95 % CI (2.3×–4.8×; estimate 3.3×).",
+        "segments": [
+          {
+            "text": "The fold you wrote, ",
+            "fact": null
+          },
+          {
+            "text": "“3.3-fold”",
+            "fact": "f_text_c1_fold"
+          },
+          {
+            "text": ", is within the study's 95 % CI (",
+            "fact": null
+          },
+          {
+            "text": "2.3×",
+            "fact": "f_ci_lo_odc1_recommended"
+          },
+          {
+            "text": "–",
+            "fact": null
+          },
+          {
+            "text": "4.8×",
+            "fact": "f_ci_hi_odc1_recommended"
+          },
+          {
+            "text": "; estimate ",
+            "fact": null
+          },
+          {
+            "text": "3.3×",
+            "fact": "f_fc_odc1_recommended"
+          },
+          {
+            "text": ").",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_text_c1_fold",
+            "text": "3.3-fold",
+            "value": "3.3-fold",
+            "unit": "",
+            "path": "your text, characters 9–17",
+            "origin": "text"
+          },
+          {
+            "id": "f_ci_lo_odc1_recommended",
+            "text": "2.3×",
+            "value": 2.292871356518271,
+            "unit": "×",
+            "path": "contrasts.ODC1.ci[0]",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_hi_odc1_recommended",
+            "text": "4.8×",
+            "value": 4.80321624539644,
+            "unit": "×",
+            "path": "contrasts.ODC1.ci[1]",
+            "origin": "result"
+          },
+          {
+            "id": "f_fc_odc1_recommended",
+            "text": "3.3×",
+            "value": 3.3186076821812986,
+            "unit": "×",
+            "path": "contrasts.ODC1.fc",
+            "origin": "result"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "check": "direction",
+          "status": "ok",
+          "text": {
+            "plain": "The study calls ODC1 up in the MYCN-high group against the rest: fold 3.3× (95 % CI 2.3×–4.8×), p 2.1e-08.",
+            "segments": [
+              {
+                "text": "The study calls ODC1 up in the MYCN-high group against the rest: fold ",
+                "fact": null
+              },
+              {
+                "text": "3.3×",
+                "fact": "f_fc_odc1_recommended"
+              },
+              {
+                "text": " (95 % CI ",
+                "fact": null
+              },
+              {
+                "text": "2.3×",
+                "fact": "f_ci_lo_odc1_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "4.8×",
+                "fact": "f_ci_hi_odc1_recommended"
+              },
+              {
+                "text": "), p ",
+                "fact": null
+              },
+              {
+                "text": "2.1e-08",
+                "fact": "f_p_odc1_recommended"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_fc_odc1_recommended",
+                "text": "3.3×",
+                "value": 3.3186076821812986,
+                "unit": "×",
+                "path": "contrasts.ODC1.fc",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_lo_odc1_recommended",
+                "text": "2.3×",
+                "value": 2.292871356518271,
+                "unit": "×",
+                "path": "contrasts.ODC1.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_odc1_recommended",
+                "text": "4.8×",
+                "value": 4.80321624539644,
+                "unit": "×",
+                "path": "contrasts.ODC1.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_p_odc1_recommended",
+                "text": "2.1e-08",
+                "value": 2.065427855257047e-8,
+                "unit": "",
+                "path": "contrasts.ODC1.p",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "fold",
+          "status": "ok",
+          "text": {
+            "plain": "The fold you wrote, “3.3-fold”, is within the study's 95 % CI (2.3×–4.8×; estimate 3.3×).",
+            "segments": [
+              {
+                "text": "The fold you wrote, ",
+                "fact": null
+              },
+              {
+                "text": "“3.3-fold”",
+                "fact": "f_text_c1_fold"
+              },
+              {
+                "text": ", is within the study's 95 % CI (",
+                "fact": null
+              },
+              {
+                "text": "2.3×",
+                "fact": "f_ci_lo_odc1_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "4.8×",
+                "fact": "f_ci_hi_odc1_recommended"
+              },
+              {
+                "text": "; estimate ",
+                "fact": null
+              },
+              {
+                "text": "3.3×",
+                "fact": "f_fc_odc1_recommended"
+              },
+              {
+                "text": ").",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_text_c1_fold",
+                "text": "3.3-fold",
+                "value": "3.3-fold",
+                "unit": "",
+                "path": "your text, characters 9–17",
+                "origin": "text"
+              },
+              {
+                "id": "f_ci_lo_odc1_recommended",
+                "text": "2.3×",
+                "value": 2.292871356518271,
+                "unit": "×",
+                "path": "contrasts.ODC1.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_odc1_recommended",
+                "text": "4.8×",
+                "value": 4.80321624539644,
+                "unit": "×",
+                "path": "contrasts.ODC1.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_fc_odc1_recommended",
+                "text": "3.3×",
+                "value": 3.3186076821812986,
+                "unit": "×",
+                "path": "contrasts.ODC1.fc",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "p",
+          "status": "ok",
+          "text": {
+            "plain": "The study's p for ODC1 is 2.1e-08, which satisfies “p < 0.001”.",
+            "segments": [
+              {
+                "text": "The study's p for ODC1 is ",
+                "fact": null
+              },
+              {
+                "text": "2.1e-08",
+                "fact": "f_p_odc1_recommended"
+              },
+              {
+                "text": ", which satisfies ",
+                "fact": null
+              },
+              {
+                "text": "“p < 0.001”",
+                "fact": "f_text_c1_p"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_p_odc1_recommended",
+                "text": "2.1e-08",
+                "value": 2.065427855257047e-8,
+                "unit": "",
+                "path": "contrasts.ODC1.p",
+                "origin": "result"
+              },
+              {
+                "id": "f_text_c1_p",
+                "text": "p < 0.001",
+                "value": "p < 0.001",
+                "unit": "",
+                "path": "your text, characters 66–75",
+                "origin": "text"
+              }
+            ]
+          }
+        },
+        {
+          "check": "grid",
+          "status": "note",
+          "text": {
+            "plain": "This reading holds in 77 % of the 744 analyses qPilot checks (the fold counts when it is within an analysis's estimate give or take the planned 95 % CI's width).",
+            "segments": [
+              {
+                "text": "This reading holds in ",
+                "fact": null
+              },
+              {
+                "text": "77 %",
+                "fact": "f_claims_c1_grid_share"
+              },
+              {
+                "text": " of the ",
+                "fact": null
+              },
+              {
+                "text": "744",
+                "fact": "f_claims_n_grid"
+              },
+              {
+                "text": " analyses qPilot checks (the fold counts when it is within an analysis's estimate give or take the planned 95 % CI's width).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_c1_grid_share",
+                "text": "77 %",
+                "value": 0.7661290322580645,
+                "unit": "",
+                "path": "grid.csv: ODC1, analyses where this reading holds (570 of 744)",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_n_grid",
+                "text": "744",
+                "value": 744,
+                "unit": "",
+                "path": "grid.csv: analyses of ODC1",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "choices",
+          "status": "note",
+          "text": {
+            "plain": "It stops holding with one choice changed: Top 10 % by MYCN expression.",
+            "segments": [
+              {
+                "text": "It stops holding with one choice changed: ",
+                "fact": null
+              },
+              {
+                "text": "Top 10 % by MYCN expression",
+                "fact": "f_claims_choice_cut_0"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_cut_0",
+                "text": "Top 10 % by MYCN expression",
+                "value": "Top 10 % by MYCN expression",
+                "unit": "",
+                "path": "grid.options.cut[0] = 0.1",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "audit",
+          "status": "note",
+          "text": {
+            "plain": "The robustness audit's verdict for ODC1: Solid (same call in 144 of 144 of the audit's reasonable analyses).",
+            "segments": [
+              {
+                "text": "The robustness audit's verdict for ODC1: ",
+                "fact": null
+              },
+              {
+                "text": "Solid",
+                "fact": "f_claims_audit_verdict_odc1"
+              },
+              {
+                "text": " (same call in ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_k_odc1"
+              },
+              {
+                "text": " of ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_n_odc1"
+              },
+              {
+                "text": " of the audit's reasonable analyses).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_audit_verdict_odc1",
+                "text": "Solid",
+                "value": "Solid",
+                "unit": "",
+                "path": "simulator_audits/e300000d4f9a/explain.json: ODC1.verdict",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_k_odc1",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: ODC1.holds_defensible × analyses_defensible",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_n_odc1",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: ODC1.analyses_defensible",
+                "origin": "audit"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [
+        {
+          "dimension": "cut",
+          "title": "Where to cut the comparison groups",
+          "option": "0.1",
+          "label": {
+            "plain": "Top 10 % by MYCN expression",
+            "segments": [
+              {
+                "text": "Top 10 % by MYCN expression",
+                "fact": "f_claims_choice_cut_0"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_cut_0",
+                "text": "Top 10 % by MYCN expression",
+                "value": "Top 10 % by MYCN expression",
+                "unit": "",
+                "path": "grid.options.cut[0] = 0.1",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_cutoff",
+          "option_id": "cut_10",
+          "planned": false,
+          "holds": false,
+          "call": "up",
+          "fc": 4.966139476
+        }
+      ],
+      "grid_holds": 570,
+      "grid_cells": 744,
+      "audit_verdict": "solid",
+      "audit_label": "Solid",
+      "suggestion": null,
+      "gene": "ODC1",
+      "severity": 0
+    },
+    {
+      "id": "c2",
+      "kind": "gene",
+      "sentence": {
+        "start": 78,
+        "end": 133
+      },
+      "clause": {
+        "start": 78,
+        "end": 133
+      },
+      "spans": [
+        {
+          "start": 78,
+          "end": 83,
+          "role": "gene",
+          "written": "NM23A"
+        },
+        {
+          "start": 88,
+          "end": 96,
+          "role": "robust",
+          "written": "robustly"
+        },
+        {
+          "start": 97,
+          "end": 109,
+          "role": "direction",
+          "written": "up-regulated"
+        },
+        {
+          "start": 117,
+          "end": 126,
+          "role": "group",
+          "written": "MYCN-high"
+        }
+      ],
+      "reading": {
+        "gene": "NM23A",
+        "gene_written": "NM23A",
+        "gene_via": "name",
+        "gene_status": "compared",
+        "direction": "up",
+        "direction_written": "up-regulated",
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": null,
+        "fold_comparator": null,
+        "fold_kind": null,
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": "robustly",
+        "normaliser": [],
+        "groups_written": ["MYCN-high"],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["NM23A", "higher in the MYCN-high group than in the rest", "robustly"]
+      },
+      "verdict": "overstated",
+      "verdict_label": "Overstated",
+      "headline": {
+        "plain": "“robustly” says more than the study shows: the call holds in 65 % of the 744 analyses qPilot checks (fewer than 80 %), and the robustness audit's verdict is Holds with caveats (same call in 144 of 144 of the audit's reasonable analyses).",
+        "segments": [
+          {
+            "text": "“robustly”",
+            "fact": "f_text_c2_robust"
+          },
+          {
+            "text": " says more than the study shows: the call holds in ",
+            "fact": null
+          },
+          {
+            "text": "65 %",
+            "fact": "f_holds_nm23a"
+          },
+          {
+            "text": " of the ",
+            "fact": null
+          },
+          {
+            "text": "744",
+            "fact": "f_claims_n_cells"
+          },
+          {
+            "text": " analyses qPilot checks (fewer than ",
+            "fact": null
+          },
+          {
+            "text": "80 %",
+            "fact": "f_claims_holds_min"
+          },
+          {
+            "text": "), and the robustness audit's verdict is ",
+            "fact": null
+          },
+          {
+            "text": "Holds with caveats",
+            "fact": "f_claims_audit_verdict_nm23a"
+          },
+          {
+            "text": " (same call in ",
+            "fact": null
+          },
+          {
+            "text": "144",
+            "fact": "f_claims_audit_k_nm23a"
+          },
+          {
+            "text": " of ",
+            "fact": null
+          },
+          {
+            "text": "144",
+            "fact": "f_claims_audit_n_nm23a"
+          },
+          {
+            "text": " of the audit's reasonable analyses).",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_text_c2_robust",
+            "text": "robustly",
+            "value": "robustly",
+            "unit": "",
+            "path": "your text, characters 88–96",
+            "origin": "text"
+          },
+          {
+            "id": "f_holds_nm23a",
+            "text": "65 %",
+            "value": 0.6505376344086021,
+            "unit": "",
+            "path": "robustness.NM23A.holds",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_n_cells",
+            "text": "744",
+            "value": 744,
+            "unit": "",
+            "path": "robustness (analyses qPilot checks)",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_holds_min",
+            "text": "80 %",
+            "value": 0.8,
+            "unit": "",
+            "path": "qpilot.qpcr.confidence_checks.HOLDS_MIN (the robustness check's threshold)",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_audit_verdict_nm23a",
+            "text": "Holds with caveats",
+            "value": "Holds with caveats",
+            "unit": "",
+            "path": "simulator_audits/e300000d4f9a/explain.json: NM23A.verdict",
+            "origin": "audit"
+          },
+          {
+            "id": "f_claims_audit_k_nm23a",
+            "text": "144",
+            "value": 144,
+            "unit": "",
+            "path": "explain.json: NM23A.holds_defensible × analyses_defensible",
+            "origin": "audit"
+          },
+          {
+            "id": "f_claims_audit_n_nm23a",
+            "text": "144",
+            "value": 144,
+            "unit": "",
+            "path": "explain.json: NM23A.analyses_defensible",
+            "origin": "audit"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "check": "direction",
+          "status": "ok",
+          "text": {
+            "plain": "The study calls NM23A up in the MYCN-high group against the rest: fold 2.2× (95 % CI 1.8×–2.7×), p 1.2e-09.",
+            "segments": [
+              {
+                "text": "The study calls NM23A up in the MYCN-high group against the rest: fold ",
+                "fact": null
+              },
+              {
+                "text": "2.2×",
+                "fact": "f_fc_nm23a_recommended"
+              },
+              {
+                "text": " (95 % CI ",
+                "fact": null
+              },
+              {
+                "text": "1.8×",
+                "fact": "f_ci_lo_nm23a_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "2.7×",
+                "fact": "f_ci_hi_nm23a_recommended"
+              },
+              {
+                "text": "), p ",
+                "fact": null
+              },
+              {
+                "text": "1.2e-09",
+                "fact": "f_p_nm23a_recommended"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_fc_nm23a_recommended",
+                "text": "2.2×",
+                "value": 2.1878561042496822,
+                "unit": "×",
+                "path": "contrasts.NM23A.fc",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_lo_nm23a_recommended",
+                "text": "1.8×",
+                "value": 1.754371668359274,
+                "unit": "×",
+                "path": "contrasts.NM23A.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_nm23a_recommended",
+                "text": "2.7×",
+                "value": 2.7284494039847518,
+                "unit": "×",
+                "path": "contrasts.NM23A.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_p_nm23a_recommended",
+                "text": "1.2e-09",
+                "value": 1.2380920536773977e-9,
+                "unit": "",
+                "path": "contrasts.NM23A.p",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "robust",
+          "status": "stronger",
+          "text": {
+            "plain": "“robustly” says more than the study shows: the call holds in 65 % of the 744 analyses qPilot checks (fewer than 80 %), and the robustness audit's verdict is Holds with caveats (same call in 144 of 144 of the audit's reasonable analyses).",
+            "segments": [
+              {
+                "text": "“robustly”",
+                "fact": "f_text_c2_robust"
+              },
+              {
+                "text": " says more than the study shows: the call holds in ",
+                "fact": null
+              },
+              {
+                "text": "65 %",
+                "fact": "f_holds_nm23a"
+              },
+              {
+                "text": " of the ",
+                "fact": null
+              },
+              {
+                "text": "744",
+                "fact": "f_claims_n_cells"
+              },
+              {
+                "text": " analyses qPilot checks (fewer than ",
+                "fact": null
+              },
+              {
+                "text": "80 %",
+                "fact": "f_claims_holds_min"
+              },
+              {
+                "text": "), and the robustness audit's verdict is ",
+                "fact": null
+              },
+              {
+                "text": "Holds with caveats",
+                "fact": "f_claims_audit_verdict_nm23a"
+              },
+              {
+                "text": " (same call in ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_k_nm23a"
+              },
+              {
+                "text": " of ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_n_nm23a"
+              },
+              {
+                "text": " of the audit's reasonable analyses).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_text_c2_robust",
+                "text": "robustly",
+                "value": "robustly",
+                "unit": "",
+                "path": "your text, characters 88–96",
+                "origin": "text"
+              },
+              {
+                "id": "f_holds_nm23a",
+                "text": "65 %",
+                "value": 0.6505376344086021,
+                "unit": "",
+                "path": "robustness.NM23A.holds",
+                "origin": "result"
+              },
+              {
+                "id": "f_claims_n_cells",
+                "text": "744",
+                "value": 744,
+                "unit": "",
+                "path": "robustness (analyses qPilot checks)",
+                "origin": "result"
+              },
+              {
+                "id": "f_claims_holds_min",
+                "text": "80 %",
+                "value": 0.8,
+                "unit": "",
+                "path": "qpilot.qpcr.confidence_checks.HOLDS_MIN (the robustness check's threshold)",
+                "origin": "result"
+              },
+              {
+                "id": "f_claims_audit_verdict_nm23a",
+                "text": "Holds with caveats",
+                "value": "Holds with caveats",
+                "unit": "",
+                "path": "simulator_audits/e300000d4f9a/explain.json: NM23A.verdict",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_k_nm23a",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: NM23A.holds_defensible × analyses_defensible",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_n_nm23a",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: NM23A.analyses_defensible",
+                "origin": "audit"
+              }
+            ]
+          }
+        },
+        {
+          "check": "grid",
+          "status": "note",
+          "text": {
+            "plain": "This reading holds in 65 % of the 744 analyses qPilot checks.",
+            "segments": [
+              {
+                "text": "This reading holds in ",
+                "fact": null
+              },
+              {
+                "text": "65 %",
+                "fact": "f_claims_c2_grid_share"
+              },
+              {
+                "text": " of the ",
+                "fact": null
+              },
+              {
+                "text": "744",
+                "fact": "f_claims_n_grid"
+              },
+              {
+                "text": " analyses qPilot checks.",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_c2_grid_share",
+                "text": "65 %",
+                "value": 0.6505376344086021,
+                "unit": "",
+                "path": "grid.csv: NM23A, analyses where this reading holds (484 of 744)",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_n_grid",
+                "text": "744",
+                "value": 744,
+                "unit": "",
+                "path": "grid.csv: analyses of ODC1",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "choices",
+          "status": "note",
+          "text": {
+            "plain": "It stops holding with one choice changed: Top 20 % by MYCN expression, HMBS alone or SDHA(1) alone (and 3 more).",
+            "segments": [
+              {
+                "text": "It stops holding with one choice changed: ",
+                "fact": null
+              },
+              {
+                "text": "Top 20 % by MYCN expression",
+                "fact": "f_claims_choice_cut_2"
+              },
+              {
+                "text": ", ",
+                "fact": null
+              },
+              {
+                "text": "HMBS alone",
+                "fact": "f_claims_choice_refs_1"
+              },
+              {
+                "text": " or ",
+                "fact": null
+              },
+              {
+                "text": "SDHA(1) alone",
+                "fact": "f_claims_choice_refs_3"
+              },
+              {
+                "text": " (and ",
+                "fact": null
+              },
+              {
+                "text": "3",
+                "fact": "f_claims_c2_more"
+              },
+              {
+                "text": " more).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_cut_2",
+                "text": "Top 20 % by MYCN expression",
+                "value": "Top 20 % by MYCN expression",
+                "unit": "",
+                "path": "grid.options.cut[2] = 0.2",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_choice_refs_1",
+                "text": "HMBS alone",
+                "value": "HMBS alone",
+                "unit": "",
+                "path": "grid.options.refs[1] = HMBS",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_choice_refs_3",
+                "text": "SDHA(1) alone",
+                "value": "SDHA(1) alone",
+                "unit": "",
+                "path": "grid.options.refs[3] = SDHA(1)",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_c2_more",
+                "text": "3",
+                "value": 3,
+                "unit": "",
+                "path": "grid.csv: more single choices",
+                "origin": "grid"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [
+        {
+          "dimension": "cut",
+          "title": "Where to cut the comparison groups",
+          "option": "0.2",
+          "label": {
+            "plain": "Top 20 % by MYCN expression",
+            "segments": [
+              {
+                "text": "Top 20 % by MYCN expression",
+                "fact": "f_claims_choice_cut_2"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_cut_2",
+                "text": "Top 20 % by MYCN expression",
+                "value": "Top 20 % by MYCN expression",
+                "unit": "",
+                "path": "grid.options.cut[2] = 0.2",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_cutoff",
+          "option_id": "cut_20",
+          "planned": false,
+          "holds": false,
+          "call": "none",
+          "fc": 1.829395943
+        },
+        {
+          "dimension": "refs",
+          "title": "Which control genes to normalise to",
+          "option": "HMBS",
+          "label": {
+            "plain": "HMBS alone",
+            "segments": [
+              {
+                "text": "HMBS alone",
+                "fact": "f_claims_choice_refs_1"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_refs_1",
+                "text": "HMBS alone",
+                "value": "HMBS alone",
+                "unit": "",
+                "path": "grid.options.refs[1] = HMBS",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_refset",
+          "option_id": "hmbs_alone",
+          "planned": false,
+          "holds": false,
+          "call": "none",
+          "fc": 1.618467926
+        },
+        {
+          "dimension": "refs",
+          "title": "Which control genes to normalise to",
+          "option": "SDHA(1)",
+          "label": {
+            "plain": "SDHA(1) alone",
+            "segments": [
+              {
+                "text": "SDHA(1) alone",
+                "fact": "f_claims_choice_refs_3"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_refs_3",
+                "text": "SDHA(1) alone",
+                "value": "SDHA(1) alone",
+                "unit": "",
+                "path": "grid.options.refs[3] = SDHA(1)",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_refset",
+          "option_id": "sdha_1_alone",
+          "planned": false,
+          "holds": false,
+          "call": "none",
+          "fc": 1.953691525
+        },
+        {
+          "dimension": "refs",
+          "title": "Which control genes to normalise to",
+          "option": "ALUsq(Eurogentec)|HMBS",
+          "label": {
+            "plain": "ALUsq(Eurogentec) + HMBS",
+            "segments": [
+              {
+                "text": "ALUsq(Eurogentec) + HMBS",
+                "fact": "f_claims_choice_refs_5"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_refs_5",
+                "text": "ALUsq(Eurogentec) + HMBS",
+                "value": "ALUsq(Eurogentec) + HMBS",
+                "unit": "",
+                "path": "grid.options.refs[5] = ALUsq(Eurogentec)|HMBS",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": null,
+          "option_id": null,
+          "planned": false,
+          "holds": false,
+          "call": "none",
+          "fc": 1.849870762
+        },
+        {
+          "dimension": "refs",
+          "title": "Which control genes to normalise to",
+          "option": "ALUsq(Eurogentec)|HMBS|SDHA(1)",
+          "label": {
+            "plain": "ALUsq(Eurogentec) + HMBS + SDHA(1)",
+            "segments": [
+              {
+                "text": "ALUsq(Eurogentec) + HMBS + SDHA(1)",
+                "fact": "f_claims_choice_refs_16"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_refs_16",
+                "text": "ALUsq(Eurogentec) + HMBS + SDHA(1)",
+                "value": "ALUsq(Eurogentec) + HMBS + SDHA(1)",
+                "unit": "",
+                "path": "grid.options.refs[16] = ALUsq(Eurogentec)|HMBS|SDHA(1)",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": null,
+          "option_id": null,
+          "planned": false,
+          "holds": false,
+          "call": "none",
+          "fc": 1.883849726
+        },
+        {
+          "dimension": "refs",
+          "title": "Which control genes to normalise to",
+          "option": "HMBS|SDHA(1)",
+          "label": {
+            "plain": "HMBS + SDHA(1)",
+            "segments": [
+              {
+                "text": "HMBS + SDHA(1)",
+                "fact": "f_claims_choice_refs_10"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_refs_10",
+                "text": "HMBS + SDHA(1)",
+                "value": "HMBS + SDHA(1)",
+                "unit": "",
+                "path": "grid.options.refs[10] = HMBS|SDHA(1)",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": null,
+          "option_id": null,
+          "planned": false,
+          "holds": false,
+          "call": "none",
+          "fc": 1.778197703
+        }
+      ],
+      "grid_holds": 484,
+      "grid_cells": 744,
+      "audit_verdict": "holds with caveats",
+      "audit_label": "Holds with caveats",
+      "suggestion": {
+        "plain": "NM23A was higher in the MYCN-high group than in the rest (fold change 2.2×, 95 % CI 1.8×–2.7×, p < 0.001); the call holds in 65 % of the 744 analyses qPilot checks, and with Top 20 % by MYCN expression it is no change.",
+        "segments": [
+          {
+            "text": "NM23A was higher in the MYCN-high group than in the rest (fold change ",
+            "fact": null
+          },
+          {
+            "text": "2.2×",
+            "fact": "f_fc_nm23a_recommended"
+          },
+          {
+            "text": ", 95 % CI ",
+            "fact": null
+          },
+          {
+            "text": "1.8×",
+            "fact": "f_ci_lo_nm23a_recommended"
+          },
+          {
+            "text": "–",
+            "fact": null
+          },
+          {
+            "text": "2.7×",
+            "fact": "f_ci_hi_nm23a_recommended"
+          },
+          {
+            "text": ", p ",
+            "fact": null
+          },
+          {
+            "text": "< 0.001",
+            "fact": "f_claims_ptext_nm23a"
+          },
+          {
+            "text": "); the call holds in ",
+            "fact": null
+          },
+          {
+            "text": "65 %",
+            "fact": "f_holds_nm23a"
+          },
+          {
+            "text": " of the ",
+            "fact": null
+          },
+          {
+            "text": "744",
+            "fact": "f_claims_n_cells"
+          },
+          {
+            "text": " analyses qPilot checks, and with ",
+            "fact": null
+          },
+          {
+            "text": "Top 20 % by MYCN expression",
+            "fact": "f_claims_choice_cut_2"
+          },
+          {
+            "text": " it is no change.",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_fc_nm23a_recommended",
+            "text": "2.2×",
+            "value": 2.1878561042496822,
+            "unit": "×",
+            "path": "contrasts.NM23A.fc",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_lo_nm23a_recommended",
+            "text": "1.8×",
+            "value": 1.754371668359274,
+            "unit": "×",
+            "path": "contrasts.NM23A.ci[0]",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_hi_nm23a_recommended",
+            "text": "2.7×",
+            "value": 2.7284494039847518,
+            "unit": "×",
+            "path": "contrasts.NM23A.ci[1]",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_ptext_nm23a",
+            "text": "< 0.001",
+            "value": "< 0.001",
+            "unit": "",
+            "path": "contrasts.NM23A.p (as a paper writes it)",
+            "origin": "result"
+          },
+          {
+            "id": "f_holds_nm23a",
+            "text": "65 %",
+            "value": 0.6505376344086021,
+            "unit": "",
+            "path": "robustness.NM23A.holds",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_n_cells",
+            "text": "744",
+            "value": 744,
+            "unit": "",
+            "path": "robustness (analyses qPilot checks)",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_choice_cut_2",
+            "text": "Top 20 % by MYCN expression",
+            "value": "Top 20 % by MYCN expression",
+            "unit": "",
+            "path": "grid.options.cut[2] = 0.2",
+            "origin": "grid"
+          }
+        ]
+      },
+      "gene": "NM23A",
+      "severity": 3
+    },
+    {
+      "id": "c3",
+      "kind": "gene",
+      "sentence": {
+        "start": 134,
+        "end": 196
+      },
+      "clause": {
+        "start": 134,
+        "end": 196
+      },
+      "spans": [
+        {
+          "start": 134,
+          "end": 139,
+          "role": "gene",
+          "written": "NTRK1"
+        },
+        {
+          "start": 140,
+          "end": 154,
+          "role": "direction",
+          "written": "did not differ"
+        },
+        {
+          "start": 167,
+          "end": 176,
+          "role": "group",
+          "written": "MYCN-high"
+        },
+        {
+          "start": 187,
+          "end": 195,
+          "role": "group",
+          "written": "the rest"
+        }
+      ],
+      "reading": {
+        "gene": "NTRK1",
+        "gene_written": "NTRK1",
+        "gene_via": "name",
+        "gene_status": "compared",
+        "direction": "none",
+        "direction_written": "did not differ",
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": null,
+        "fold_comparator": null,
+        "fold_kind": null,
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": [],
+        "groups_written": ["MYCN-high", "the rest"],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["NTRK1", "no difference between the MYCN-high group and the rest"]
+      },
+      "verdict": "choices",
+      "verdict_label": "Holds only under some choices",
+      "headline": {
+        "plain": "Not in the planned analysis, but with one choice changed: Cq ≤ 35 (common, not recommended).",
+        "segments": [
+          {
+            "text": "Not in the planned analysis, but with one choice changed: ",
+            "fact": null
+          },
+          {
+            "text": "Cq ≤ 35 (common, not recommended)",
+            "fact": "f_claims_choice_amp_call_3"
+          },
+          {
+            "text": ".",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_claims_choice_amp_call_3",
+            "text": "Cq ≤ 35 (common, not recommended)",
+            "value": "Cq ≤ 35 (common, not recommended)",
+            "unit": "",
+            "path": "grid.options.amp_call[3] = cq_le_35",
+            "origin": "grid"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "check": "direction",
+          "status": "opposite",
+          "text": {
+            "plain": "The study calls NTRK1 down in the MYCN-high group against the rest: fold 0.066× (95 % CI 0.032×–0.14×), p 1.3e-09.",
+            "segments": [
+              {
+                "text": "The study calls NTRK1 down in the MYCN-high group against the rest: fold ",
+                "fact": null
+              },
+              {
+                "text": "0.066×",
+                "fact": "f_fc_ntrk1_recommended"
+              },
+              {
+                "text": " (95 % CI ",
+                "fact": null
+              },
+              {
+                "text": "0.032×",
+                "fact": "f_ci_lo_ntrk1_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "0.14×",
+                "fact": "f_ci_hi_ntrk1_recommended"
+              },
+              {
+                "text": "), p ",
+                "fact": null
+              },
+              {
+                "text": "1.3e-09",
+                "fact": "f_p_ntrk1_recommended"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_fc_ntrk1_recommended",
+                "text": "0.066×",
+                "value": 0.0664778367884075,
+                "unit": "×",
+                "path": "contrasts.NTRK1.fc",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_lo_ntrk1_recommended",
+                "text": "0.032×",
+                "value": 0.031684262938106326,
+                "unit": "×",
+                "path": "contrasts.NTRK1.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_ntrk1_recommended",
+                "text": "0.14×",
+                "value": 0.13947942524965912,
+                "unit": "×",
+                "path": "contrasts.NTRK1.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_p_ntrk1_recommended",
+                "text": "1.3e-09",
+                "value": 1.348097591946546e-9,
+                "unit": "",
+                "path": "contrasts.NTRK1.p",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "grid",
+          "status": "note",
+          "text": {
+            "plain": "This reading holds in 16 % of the 744 analyses qPilot checks.",
+            "segments": [
+              {
+                "text": "This reading holds in ",
+                "fact": null
+              },
+              {
+                "text": "16 %",
+                "fact": "f_claims_c3_grid_share"
+              },
+              {
+                "text": " of the ",
+                "fact": null
+              },
+              {
+                "text": "744",
+                "fact": "f_claims_n_grid"
+              },
+              {
+                "text": " analyses qPilot checks.",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_c3_grid_share",
+                "text": "16 %",
+                "value": 0.15591397849462366,
+                "unit": "",
+                "path": "grid.csv: NTRK1, analyses where this reading holds (116 of 744)",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_n_grid",
+                "text": "744",
+                "value": 744,
+                "unit": "",
+                "path": "grid.csv: analyses of ODC1",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "choices",
+          "status": "note",
+          "text": {
+            "plain": "Not in the planned analysis, but with one choice changed: Cq ≤ 35 (common, not recommended).",
+            "segments": [
+              {
+                "text": "Not in the planned analysis, but with one choice changed: ",
+                "fact": null
+              },
+              {
+                "text": "Cq ≤ 35 (common, not recommended)",
+                "fact": "f_claims_choice_amp_call_3"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_amp_call_3",
+                "text": "Cq ≤ 35 (common, not recommended)",
+                "value": "Cq ≤ 35 (common, not recommended)",
+                "unit": "",
+                "path": "grid.options.amp_call[3] = cq_le_35",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "audit",
+          "status": "note",
+          "text": {
+            "plain": "The robustness audit's verdict for NTRK1: Depends on your choices (same call in 120 of 144 of the audit's reasonable analyses).",
+            "segments": [
+              {
+                "text": "The robustness audit's verdict for NTRK1: ",
+                "fact": null
+              },
+              {
+                "text": "Depends on your choices",
+                "fact": "f_claims_audit_verdict_ntrk1"
+              },
+              {
+                "text": " (same call in ",
+                "fact": null
+              },
+              {
+                "text": "120",
+                "fact": "f_claims_audit_k_ntrk1"
+              },
+              {
+                "text": " of ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_n_ntrk1"
+              },
+              {
+                "text": " of the audit's reasonable analyses).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_audit_verdict_ntrk1",
+                "text": "Depends on your choices",
+                "value": "Depends on your choices",
+                "unit": "",
+                "path": "simulator_audits/e300000d4f9a/explain.json: NTRK1.verdict",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_k_ntrk1",
+                "text": "120",
+                "value": 120,
+                "unit": "",
+                "path": "explain.json: NTRK1.holds_defensible × analyses_defensible",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_n_ntrk1",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: NTRK1.analyses_defensible",
+                "origin": "audit"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [
+        {
+          "dimension": "amp_call",
+          "title": "Which curves count as amplified",
+          "option": "cq_le_35",
+          "label": {
+            "plain": "Cq ≤ 35 (common, not recommended)",
+            "segments": [
+              {
+                "text": "Cq ≤ 35 (common, not recommended)",
+                "fact": "f_claims_choice_amp_call_3"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_amp_call_3",
+                "text": "Cq ≤ 35 (common, not recommended)",
+                "value": "Cq ≤ 35 (common, not recommended)",
+                "unit": "",
+                "path": "grid.options.amp_call[3] = cq_le_35",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_amp_call",
+          "option_id": "cq_le_35",
+          "planned": false,
+          "holds": true,
+          "call": "none",
+          "fc": 0.7777697108
+        }
+      ],
+      "grid_holds": 116,
+      "grid_cells": 744,
+      "audit_verdict": "depends on your choices",
+      "audit_label": "Depends on your choices",
+      "suggestion": {
+        "plain": "NTRK1 was lower in the MYCN-high group than in the rest (fold change 0.066×, 95 % CI 0.032×–0.14×, p < 0.001); the call holds in 84 % of the 744 analyses qPilot checks, and with Cq ≤ 35 (common, not recommended) it is no change.",
+        "segments": [
+          {
+            "text": "NTRK1 was lower in the MYCN-high group than in the rest (fold change ",
+            "fact": null
+          },
+          {
+            "text": "0.066×",
+            "fact": "f_fc_ntrk1_recommended"
+          },
+          {
+            "text": ", 95 % CI ",
+            "fact": null
+          },
+          {
+            "text": "0.032×",
+            "fact": "f_ci_lo_ntrk1_recommended"
+          },
+          {
+            "text": "–",
+            "fact": null
+          },
+          {
+            "text": "0.14×",
+            "fact": "f_ci_hi_ntrk1_recommended"
+          },
+          {
+            "text": ", p ",
+            "fact": null
+          },
+          {
+            "text": "< 0.001",
+            "fact": "f_claims_ptext_ntrk1"
+          },
+          {
+            "text": "); the call holds in ",
+            "fact": null
+          },
+          {
+            "text": "84 %",
+            "fact": "f_holds_ntrk1"
+          },
+          {
+            "text": " of the ",
+            "fact": null
+          },
+          {
+            "text": "744",
+            "fact": "f_claims_n_cells"
+          },
+          {
+            "text": " analyses qPilot checks, and with ",
+            "fact": null
+          },
+          {
+            "text": "Cq ≤ 35 (common, not recommended)",
+            "fact": "f_claims_choice_amp_call_3"
+          },
+          {
+            "text": " it is no change.",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_fc_ntrk1_recommended",
+            "text": "0.066×",
+            "value": 0.0664778367884075,
+            "unit": "×",
+            "path": "contrasts.NTRK1.fc",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_lo_ntrk1_recommended",
+            "text": "0.032×",
+            "value": 0.031684262938106326,
+            "unit": "×",
+            "path": "contrasts.NTRK1.ci[0]",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_hi_ntrk1_recommended",
+            "text": "0.14×",
+            "value": 0.13947942524965912,
+            "unit": "×",
+            "path": "contrasts.NTRK1.ci[1]",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_ptext_ntrk1",
+            "text": "< 0.001",
+            "value": "< 0.001",
+            "unit": "",
+            "path": "contrasts.NTRK1.p (as a paper writes it)",
+            "origin": "result"
+          },
+          {
+            "id": "f_holds_ntrk1",
+            "text": "84 %",
+            "value": 0.8440860215053764,
+            "unit": "",
+            "path": "robustness.NTRK1.holds",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_n_cells",
+            "text": "744",
+            "value": 744,
+            "unit": "",
+            "path": "robustness (analyses qPilot checks)",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_choice_amp_call_3",
+            "text": "Cq ≤ 35 (common, not recommended)",
+            "value": "Cq ≤ 35 (common, not recommended)",
+            "unit": "",
+            "path": "grid.options.amp_call[3] = cq_le_35",
+            "origin": "grid"
+          }
+        ]
+      },
+      "gene": "NTRK1",
+      "severity": 2
+    },
+    {
+      "id": "c4",
+      "kind": "gene",
+      "sentence": {
+        "start": 197,
+        "end": 262
+      },
+      "clause": {
+        "start": 197,
+        "end": 262
+      },
+      "spans": [
+        {
+          "start": 197,
+          "end": 202,
+          "role": "gene",
+          "written": "BIRC5"
+        },
+        {
+          "start": 207,
+          "end": 214,
+          "role": "fold",
+          "written": "11-fold"
+        },
+        {
+          "start": 215,
+          "end": 221,
+          "role": "direction",
+          "written": "higher"
+        },
+        {
+          "start": 229,
+          "end": 238,
+          "role": "group",
+          "written": "MYCN-high"
+        },
+        {
+          "start": 253,
+          "end": 261,
+          "role": "group",
+          "written": "the rest"
+        }
+      ],
+      "reading": {
+        "gene": "BIRC5",
+        "gene_written": "BIRC5",
+        "gene_via": "name",
+        "gene_status": "compared",
+        "direction": "up",
+        "direction_written": "higher",
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": "11-fold",
+        "fold_comparator": "exact",
+        "fold_kind": "fold",
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": [],
+        "groups_written": ["MYCN-high", "the rest"],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["BIRC5", "higher in the MYCN-high group than in the rest", "11-fold"]
+      },
+      "verdict": "overstated",
+      "verdict_label": "Overstated",
+      "headline": {
+        "plain": "The fold you wrote, “11-fold”, is larger than the study's 95 % CI allows (2.9×–5.5×; estimate 4×).",
+        "segments": [
+          {
+            "text": "The fold you wrote, ",
+            "fact": null
+          },
+          {
+            "text": "“11-fold”",
+            "fact": "f_text_c4_fold"
+          },
+          {
+            "text": ", is larger than the study's 95 % CI allows (",
+            "fact": null
+          },
+          {
+            "text": "2.9×",
+            "fact": "f_ci_lo_birc5_recommended"
+          },
+          {
+            "text": "–",
+            "fact": null
+          },
+          {
+            "text": "5.5×",
+            "fact": "f_ci_hi_birc5_recommended"
+          },
+          {
+            "text": "; estimate ",
+            "fact": null
+          },
+          {
+            "text": "4×",
+            "fact": "f_fc_birc5_recommended"
+          },
+          {
+            "text": ").",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_text_c4_fold",
+            "text": "11-fold",
+            "value": "11-fold",
+            "unit": "",
+            "path": "your text, characters 207–214",
+            "origin": "text"
+          },
+          {
+            "id": "f_ci_lo_birc5_recommended",
+            "text": "2.9×",
+            "value": 2.933476511654864,
+            "unit": "×",
+            "path": "contrasts.BIRC5.ci[0]",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_hi_birc5_recommended",
+            "text": "5.5×",
+            "value": 5.485491369580537,
+            "unit": "×",
+            "path": "contrasts.BIRC5.ci[1]",
+            "origin": "result"
+          },
+          {
+            "id": "f_fc_birc5_recommended",
+            "text": "4×",
+            "value": 4.01142868409124,
+            "unit": "×",
+            "path": "contrasts.BIRC5.fc",
+            "origin": "result"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "check": "direction",
+          "status": "ok",
+          "text": {
+            "plain": "The study calls BIRC5 up in the MYCN-high group against the rest: fold 4× (95 % CI 2.9×–5.5×), p 5e-14.",
+            "segments": [
+              {
+                "text": "The study calls BIRC5 up in the MYCN-high group against the rest: fold ",
+                "fact": null
+              },
+              {
+                "text": "4×",
+                "fact": "f_fc_birc5_recommended"
+              },
+              {
+                "text": " (95 % CI ",
+                "fact": null
+              },
+              {
+                "text": "2.9×",
+                "fact": "f_ci_lo_birc5_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "5.5×",
+                "fact": "f_ci_hi_birc5_recommended"
+              },
+              {
+                "text": "), p ",
+                "fact": null
+              },
+              {
+                "text": "5e-14",
+                "fact": "f_p_birc5_recommended"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_fc_birc5_recommended",
+                "text": "4×",
+                "value": 4.01142868409124,
+                "unit": "×",
+                "path": "contrasts.BIRC5.fc",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_lo_birc5_recommended",
+                "text": "2.9×",
+                "value": 2.933476511654864,
+                "unit": "×",
+                "path": "contrasts.BIRC5.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_birc5_recommended",
+                "text": "5.5×",
+                "value": 5.485491369580537,
+                "unit": "×",
+                "path": "contrasts.BIRC5.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_p_birc5_recommended",
+                "text": "5e-14",
+                "value": 5.043719769792568e-14,
+                "unit": "",
+                "path": "contrasts.BIRC5.p",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "fold",
+          "status": "stronger",
+          "text": {
+            "plain": "The fold you wrote, “11-fold”, is larger than the study's 95 % CI allows (2.9×–5.5×; estimate 4×).",
+            "segments": [
+              {
+                "text": "The fold you wrote, ",
+                "fact": null
+              },
+              {
+                "text": "“11-fold”",
+                "fact": "f_text_c4_fold"
+              },
+              {
+                "text": ", is larger than the study's 95 % CI allows (",
+                "fact": null
+              },
+              {
+                "text": "2.9×",
+                "fact": "f_ci_lo_birc5_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "5.5×",
+                "fact": "f_ci_hi_birc5_recommended"
+              },
+              {
+                "text": "; estimate ",
+                "fact": null
+              },
+              {
+                "text": "4×",
+                "fact": "f_fc_birc5_recommended"
+              },
+              {
+                "text": ").",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_text_c4_fold",
+                "text": "11-fold",
+                "value": "11-fold",
+                "unit": "",
+                "path": "your text, characters 207–214",
+                "origin": "text"
+              },
+              {
+                "id": "f_ci_lo_birc5_recommended",
+                "text": "2.9×",
+                "value": 2.933476511654864,
+                "unit": "×",
+                "path": "contrasts.BIRC5.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_birc5_recommended",
+                "text": "5.5×",
+                "value": 5.485491369580537,
+                "unit": "×",
+                "path": "contrasts.BIRC5.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_fc_birc5_recommended",
+                "text": "4×",
+                "value": 4.01142868409124,
+                "unit": "×",
+                "path": "contrasts.BIRC5.fc",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "grid",
+          "status": "note",
+          "text": {
+            "plain": "None of the 744 analyses qPilot checks gives the values you wrote.",
+            "segments": [
+              {
+                "text": "None of the ",
+                "fact": null
+              },
+              {
+                "text": "744",
+                "fact": "f_claims_n_grid"
+              },
+              {
+                "text": " analyses qPilot checks gives the values you wrote.",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_n_grid",
+                "text": "744",
+                "value": 744,
+                "unit": "",
+                "path": "grid.csv: analyses of ODC1",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "audit",
+          "status": "note",
+          "text": {
+            "plain": "The robustness audit's verdict for BIRC5: Solid (same call in 144 of 144 of the audit's reasonable analyses).",
+            "segments": [
+              {
+                "text": "The robustness audit's verdict for BIRC5: ",
+                "fact": null
+              },
+              {
+                "text": "Solid",
+                "fact": "f_claims_audit_verdict_birc5"
+              },
+              {
+                "text": " (same call in ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_k_birc5"
+              },
+              {
+                "text": " of ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_n_birc5"
+              },
+              {
+                "text": " of the audit's reasonable analyses).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_audit_verdict_birc5",
+                "text": "Solid",
+                "value": "Solid",
+                "unit": "",
+                "path": "simulator_audits/e300000d4f9a/explain.json: BIRC5.verdict",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_k_birc5",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: BIRC5.holds_defensible × analyses_defensible",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_n_birc5",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: BIRC5.analyses_defensible",
+                "origin": "audit"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [],
+      "grid_holds": 0,
+      "grid_cells": 744,
+      "audit_verdict": "solid",
+      "audit_label": "Solid",
+      "suggestion": {
+        "plain": "BIRC5 was higher in the MYCN-high group than in the rest (fold change 4×, 95 % CI 2.9×–5.5×, p < 0.001); the call holds in 100 % of the 744 analyses qPilot checks.",
+        "segments": [
+          {
+            "text": "BIRC5 was higher in the MYCN-high group than in the rest (fold change ",
+            "fact": null
+          },
+          {
+            "text": "4×",
+            "fact": "f_fc_birc5_recommended"
+          },
+          {
+            "text": ", 95 % CI ",
+            "fact": null
+          },
+          {
+            "text": "2.9×",
+            "fact": "f_ci_lo_birc5_recommended"
+          },
+          {
+            "text": "–",
+            "fact": null
+          },
+          {
+            "text": "5.5×",
+            "fact": "f_ci_hi_birc5_recommended"
+          },
+          {
+            "text": ", p ",
+            "fact": null
+          },
+          {
+            "text": "< 0.001",
+            "fact": "f_claims_ptext_birc5"
+          },
+          {
+            "text": "); the call holds in ",
+            "fact": null
+          },
+          {
+            "text": "100 %",
+            "fact": "f_holds_birc5"
+          },
+          {
+            "text": " of the ",
+            "fact": null
+          },
+          {
+            "text": "744",
+            "fact": "f_claims_n_cells"
+          },
+          {
+            "text": " analyses qPilot checks.",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_fc_birc5_recommended",
+            "text": "4×",
+            "value": 4.01142868409124,
+            "unit": "×",
+            "path": "contrasts.BIRC5.fc",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_lo_birc5_recommended",
+            "text": "2.9×",
+            "value": 2.933476511654864,
+            "unit": "×",
+            "path": "contrasts.BIRC5.ci[0]",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_hi_birc5_recommended",
+            "text": "5.5×",
+            "value": 5.485491369580537,
+            "unit": "×",
+            "path": "contrasts.BIRC5.ci[1]",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_ptext_birc5",
+            "text": "< 0.001",
+            "value": "< 0.001",
+            "unit": "",
+            "path": "contrasts.BIRC5.p (as a paper writes it)",
+            "origin": "result"
+          },
+          {
+            "id": "f_holds_birc5",
+            "text": "100 %",
+            "value": 1.0,
+            "unit": "",
+            "path": "robustness.BIRC5.holds",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_n_cells",
+            "text": "744",
+            "value": 744,
+            "unit": "",
+            "path": "robustness (analyses qPilot checks)",
+            "origin": "result"
+          }
+        ]
+      },
+      "gene": "BIRC5",
+      "severity": 3
+    },
+    {
+      "id": "c5",
+      "kind": "normaliser",
+      "sentence": {
+        "start": 263,
+        "end": 298
+      },
+      "clause": {
+        "start": 278,
+        "end": 297
+      },
+      "spans": [
+        {
+          "start": 278,
+          "end": 297,
+          "role": "normaliser",
+          "written": "normalised to GAPDH"
+        },
+        {
+          "start": 292,
+          "end": 297,
+          "role": "gene",
+          "written": "GAPDH"
+        }
+      ],
+      "reading": {
+        "gene": null,
+        "gene_written": null,
+        "gene_via": null,
+        "gene_status": null,
+        "direction": null,
+        "direction_written": null,
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": null,
+        "fold_comparator": null,
+        "fold_kind": null,
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": ["GAPDH"],
+        "groups_written": [],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["normalised to GAPDH"]
+      },
+      "verdict": "contradicted",
+      "verdict_label": "Contradicted",
+      "headline": {
+        "plain": "GAPDH is not measured in this study; its analysis normalises to ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2).",
+        "segments": [
+          {
+            "text": "GAPDH is not measured in this study; its analysis normalises to ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2).",
+            "fact": null
+          }
+        ],
+        "facts": []
+      },
+      "checks": [
+        {
+          "check": "normaliser",
+          "status": "opposite",
+          "text": {
+            "plain": "GAPDH is not measured in this study; its analysis normalises to ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2).",
+            "segments": [
+              {
+                "text": "GAPDH is not measured in this study; its analysis normalises to ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2).",
+                "fact": null
+              }
+            ],
+            "facts": []
+          }
+        }
+      ],
+      "choices": [],
+      "grid_holds": null,
+      "grid_cells": null,
+      "audit_verdict": null,
+      "audit_label": null,
+      "suggestion": {
+        "plain": "Expression was normalised to the geometric mean of ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2).",
+        "segments": [
+          {
+            "text": "Expression was normalised to the geometric mean of ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2).",
+            "fact": null
+          }
+        ],
+        "facts": []
+      },
+      "gene": null,
+      "severity": 4
+    },
+    {
+      "id": "c6",
+      "kind": "efficiency",
+      "sentence": {
+        "start": 299,
+        "end": 339
+      },
+      "clause": {
+        "start": 314,
+        "end": 338
+      },
+      "spans": [
+        {
+          "start": 314,
+          "end": 326,
+          "role": "efficiency",
+          "written": "efficiencies"
+        },
+        {
+          "start": 330,
+          "end": 338,
+          "role": "efficiency",
+          "written": "90–110 %"
+        }
+      ],
+      "reading": {
+        "gene": null,
+        "gene_written": null,
+        "gene_via": null,
+        "gene_status": null,
+        "direction": null,
+        "direction_written": null,
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": null,
+        "fold_comparator": null,
+        "fold_kind": null,
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": [],
+        "groups_written": [],
+        "n_written": null,
+        "efficiency_written": "90–110 %",
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["efficiency 90–110 %", "every assay"]
+      },
+      "verdict": "contradicted",
+      "verdict_label": "Contradicted",
+      "headline": {
+        "plain": "27 of 64 assays are outside “90–110 %”; for example CLSTN1 73 % and NTRK1 73 %. Efficiencies range from 73 % (CLSTN1) to 94 % (PTN).",
+        "segments": [
+          {
+            "text": "27",
+            "fact": "f_claims_c6_n_outside"
+          },
+          {
+            "text": " of ",
+            "fact": null
+          },
+          {
+            "text": "64",
+            "fact": "f_claims_c6_n_assays"
+          },
+          {
+            "text": " assays are outside ",
+            "fact": null
+          },
+          {
+            "text": "“90–110 %”",
+            "fact": "f_text_c6_efficiency"
+          },
+          {
+            "text": "; for example CLSTN1 ",
+            "fact": null
+          },
+          {
+            "text": "73 %",
+            "fact": "f_claims_effpct_clstn1"
+          },
+          {
+            "text": " and NTRK1 ",
+            "fact": null
+          },
+          {
+            "text": "73 %",
+            "fact": "f_claims_effpct_ntrk1"
+          },
+          {
+            "text": ". Efficiencies range from ",
+            "fact": null
+          },
+          {
+            "text": "73 %",
+            "fact": "f_claims_effpct_clstn1"
+          },
+          {
+            "text": " (CLSTN1) to ",
+            "fact": null
+          },
+          {
+            "text": "94 %",
+            "fact": "f_claims_effpct_ptn"
+          },
+          {
+            "text": " (PTN).",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_claims_c6_n_outside",
+            "text": "27",
+            "value": 27,
+            "unit": "",
+            "path": "efficiency (assays outside the range)",
+            "origin": "grid"
+          },
+          {
+            "id": "f_claims_c6_n_assays",
+            "text": "64",
+            "value": 64,
+            "unit": "",
+            "path": "efficiency (assays checked)",
+            "origin": "grid"
+          },
+          {
+            "id": "f_text_c6_efficiency",
+            "text": "90–110 %",
+            "value": "90–110 %",
+            "unit": "",
+            "path": "your text, characters 330–338",
+            "origin": "text"
+          },
+          {
+            "id": "f_claims_effpct_clstn1",
+            "text": "73 %",
+            "value": 0.726005,
+            "unit": "",
+            "path": "efficiency.CLSTN1 − 1",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_effpct_ntrk1",
+            "text": "73 %",
+            "value": 0.7341519999999999,
+            "unit": "",
+            "path": "efficiency.NTRK1 − 1",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_effpct_ptn",
+            "text": "94 %",
+            "value": 0.9355439999999999,
+            "unit": "",
+            "path": "efficiency.PTN − 1",
+            "origin": "result"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "check": "efficiency",
+          "status": "opposite",
+          "text": {
+            "plain": "27 of 64 assays are outside “90–110 %”; for example CLSTN1 73 % and NTRK1 73 %. Efficiencies range from 73 % (CLSTN1) to 94 % (PTN).",
+            "segments": [
+              {
+                "text": "27",
+                "fact": "f_claims_c6_n_outside"
+              },
+              {
+                "text": " of ",
+                "fact": null
+              },
+              {
+                "text": "64",
+                "fact": "f_claims_c6_n_assays"
+              },
+              {
+                "text": " assays are outside ",
+                "fact": null
+              },
+              {
+                "text": "“90–110 %”",
+                "fact": "f_text_c6_efficiency"
+              },
+              {
+                "text": "; for example CLSTN1 ",
+                "fact": null
+              },
+              {
+                "text": "73 %",
+                "fact": "f_claims_effpct_clstn1"
+              },
+              {
+                "text": " and NTRK1 ",
+                "fact": null
+              },
+              {
+                "text": "73 %",
+                "fact": "f_claims_effpct_ntrk1"
+              },
+              {
+                "text": ". Efficiencies range from ",
+                "fact": null
+              },
+              {
+                "text": "73 %",
+                "fact": "f_claims_effpct_clstn1"
+              },
+              {
+                "text": " (CLSTN1) to ",
+                "fact": null
+              },
+              {
+                "text": "94 %",
+                "fact": "f_claims_effpct_ptn"
+              },
+              {
+                "text": " (PTN).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_c6_n_outside",
+                "text": "27",
+                "value": 27,
+                "unit": "",
+                "path": "efficiency (assays outside the range)",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_c6_n_assays",
+                "text": "64",
+                "value": 64,
+                "unit": "",
+                "path": "efficiency (assays checked)",
+                "origin": "grid"
+              },
+              {
+                "id": "f_text_c6_efficiency",
+                "text": "90–110 %",
+                "value": "90–110 %",
+                "unit": "",
+                "path": "your text, characters 330–338",
+                "origin": "text"
+              },
+              {
+                "id": "f_claims_effpct_clstn1",
+                "text": "73 %",
+                "value": 0.726005,
+                "unit": "",
+                "path": "efficiency.CLSTN1 − 1",
+                "origin": "result"
+              },
+              {
+                "id": "f_claims_effpct_ntrk1",
+                "text": "73 %",
+                "value": 0.7341519999999999,
+                "unit": "",
+                "path": "efficiency.NTRK1 − 1",
+                "origin": "result"
+              },
+              {
+                "id": "f_claims_effpct_ptn",
+                "text": "94 %",
+                "value": 0.9355439999999999,
+                "unit": "",
+                "path": "efficiency.PTN − 1",
+                "origin": "result"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [],
+      "grid_holds": null,
+      "grid_cells": null,
+      "audit_verdict": null,
+      "audit_label": null,
+      "suggestion": {
+        "plain": "Amplification efficiencies ranged from 73 % (CLSTN1) to 94 % (PTN).",
+        "segments": [
+          {
+            "text": "Amplification efficiencies ranged from ",
+            "fact": null
+          },
+          {
+            "text": "73 %",
+            "fact": "f_claims_effpct_clstn1"
+          },
+          {
+            "text": " (CLSTN1) to ",
+            "fact": null
+          },
+          {
+            "text": "94 %",
+            "fact": "f_claims_effpct_ptn"
+          },
+          {
+            "text": " (PTN).",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_claims_effpct_clstn1",
+            "text": "73 %",
+            "value": 0.726005,
+            "unit": "",
+            "path": "efficiency.CLSTN1 − 1",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_effpct_ptn",
+            "text": "94 %",
+            "value": 0.9355439999999999,
+            "unit": "",
+            "path": "efficiency.PTN − 1",
+            "origin": "result"
+          }
+        ]
+      },
+      "gene": null,
+      "severity": 4
+    },
+    {
+      "id": "c7",
+      "kind": "normaliser",
+      "sentence": {
+        "start": 340,
+        "end": 373
+      },
+      "clause": {
+        "start": 355,
+        "end": 372
+      },
+      "spans": [
+        {
+          "start": 355,
+          "end": 372,
+          "role": "normaliser",
+          "written": "normalised to UBC"
+        },
+        {
+          "start": 369,
+          "end": 372,
+          "role": "gene",
+          "written": "UBC"
+        }
+      ],
+      "reading": {
+        "gene": null,
+        "gene_written": null,
+        "gene_via": null,
+        "gene_status": null,
+        "direction": null,
+        "direction_written": null,
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": null,
+        "fold_comparator": null,
+        "fold_kind": null,
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": ["UBC(2)"],
+        "groups_written": [],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["normalised to UBC(2)"]
+      },
+      "verdict": "choices",
+      "verdict_label": "Holds only under some choices",
+      "headline": {
+        "plain": "Your text normalises to UBC(2), one of the sets qPilot checks but not the planned one (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)).",
+        "segments": [
+          {
+            "text": "Your text normalises to UBC(2), one of the sets qPilot checks but not the planned one (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)).",
+            "fact": null
+          }
+        ],
+        "facts": []
+      },
+      "checks": [
+        {
+          "check": "normaliser",
+          "status": "note",
+          "text": {
+            "plain": "Your text normalises to UBC(2), one of the sets qPilot checks but not the planned one (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)).",
+            "segments": [
+              {
+                "text": "Your text normalises to UBC(2), one of the sets qPilot checks but not the planned one (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2)).",
+                "fact": null
+              }
+            ],
+            "facts": []
+          }
+        },
+        {
+          "check": "choices",
+          "status": "note",
+          "text": {
+            "plain": "With it, 14 gene calls differ from the planned analysis: CLSTN1, DPYSL3, EPN2, HIVEP2, INPP1, MRPL3 and more.",
+            "segments": [
+              {
+                "text": "With it, ",
+                "fact": null
+              },
+              {
+                "text": "14",
+                "fact": "f_claims_c7_changed"
+              },
+              {
+                "text": " gene calls differ from the planned analysis: CLSTN1, DPYSL3, EPN2, HIVEP2, INPP1, MRPL3 and more.",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_c7_changed",
+                "text": "14",
+                "value": 14,
+                "unit": "",
+                "path": "grid.csv: genes whose call differs with refs = UBC(2)",
+                "origin": "grid"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [
+        {
+          "dimension": "refs",
+          "title": "Which control genes to normalise to",
+          "option": "UBC(2)",
+          "label": {
+            "plain": "UBC(2) alone",
+            "segments": [
+              {
+                "text": "UBC(2) alone",
+                "fact": "f_claims_choice_refs_4"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_refs_4",
+                "text": "UBC(2) alone",
+                "value": "UBC(2) alone",
+                "unit": "",
+                "path": "grid.options.refs[4] = UBC(2)",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_refset",
+          "option_id": "ubc_2_alone",
+          "planned": false,
+          "holds": true,
+          "call": null,
+          "fc": null
+        }
+      ],
+      "grid_holds": null,
+      "grid_cells": null,
+      "audit_verdict": null,
+      "audit_label": null,
+      "suggestion": {
+        "plain": "Expression was normalised to the geometric mean of ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2).",
+        "segments": [
+          {
+            "text": "Expression was normalised to the geometric mean of ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1) and UBC(2).",
+            "fact": null
+          }
+        ],
+        "facts": []
+      },
+      "gene": null,
+      "severity": 2
+    },
+    {
+      "id": "c8",
+      "kind": "gene",
+      "sentence": {
+        "start": 374,
+        "end": 462
+      },
+      "clause": {
+        "start": 374,
+        "end": 462
+      },
+      "spans": [
+        {
+          "start": 374,
+          "end": 378,
+          "role": "gene",
+          "written": "ODC1"
+        },
+        {
+          "start": 394,
+          "end": 406,
+          "role": "direction",
+          "written": "up-regulated"
+        },
+        {
+          "start": 408,
+          "end": 411,
+          "role": "fold",
+          "written": "4.1"
+        }
+      ],
+      "reading": {
+        "gene": "ODC1",
+        "gene_written": "ODC1",
+        "gene_via": "name",
+        "gene_status": "compared",
+        "direction": "up",
+        "direction_written": "up-regulated",
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": "4.1",
+        "fold_comparator": "exact",
+        "fold_kind": "fold",
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": [],
+        "groups_written": [],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["ODC1", "higher in the MYCN-high group than in the rest", "4.1"]
+      },
+      "verdict": "supported",
+      "verdict_label": "Supported",
+      "headline": {
+        "plain": "The fold you wrote, “4.1”, is within the study's 95 % CI (2.3×–4.8×; estimate 3.3×).",
+        "segments": [
+          {
+            "text": "The fold you wrote, ",
+            "fact": null
+          },
+          {
+            "text": "“4.1”",
+            "fact": "f_text_c8_fold"
+          },
+          {
+            "text": ", is within the study's 95 % CI (",
+            "fact": null
+          },
+          {
+            "text": "2.3×",
+            "fact": "f_ci_lo_odc1_recommended"
+          },
+          {
+            "text": "–",
+            "fact": null
+          },
+          {
+            "text": "4.8×",
+            "fact": "f_ci_hi_odc1_recommended"
+          },
+          {
+            "text": "; estimate ",
+            "fact": null
+          },
+          {
+            "text": "3.3×",
+            "fact": "f_fc_odc1_recommended"
+          },
+          {
+            "text": ").",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_text_c8_fold",
+            "text": "4.1",
+            "value": "4.1",
+            "unit": "",
+            "path": "your text, characters 408–411",
+            "origin": "text"
+          },
+          {
+            "id": "f_ci_lo_odc1_recommended",
+            "text": "2.3×",
+            "value": 2.292871356518271,
+            "unit": "×",
+            "path": "contrasts.ODC1.ci[0]",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_hi_odc1_recommended",
+            "text": "4.8×",
+            "value": 4.80321624539644,
+            "unit": "×",
+            "path": "contrasts.ODC1.ci[1]",
+            "origin": "result"
+          },
+          {
+            "id": "f_fc_odc1_recommended",
+            "text": "3.3×",
+            "value": 3.3186076821812986,
+            "unit": "×",
+            "path": "contrasts.ODC1.fc",
+            "origin": "result"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "check": "direction",
+          "status": "ok",
+          "text": {
+            "plain": "The study calls ODC1 up in the MYCN-high group against the rest: fold 3.3× (95 % CI 2.3×–4.8×), p 2.1e-08.",
+            "segments": [
+              {
+                "text": "The study calls ODC1 up in the MYCN-high group against the rest: fold ",
+                "fact": null
+              },
+              {
+                "text": "3.3×",
+                "fact": "f_fc_odc1_recommended"
+              },
+              {
+                "text": " (95 % CI ",
+                "fact": null
+              },
+              {
+                "text": "2.3×",
+                "fact": "f_ci_lo_odc1_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "4.8×",
+                "fact": "f_ci_hi_odc1_recommended"
+              },
+              {
+                "text": "), p ",
+                "fact": null
+              },
+              {
+                "text": "2.1e-08",
+                "fact": "f_p_odc1_recommended"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_fc_odc1_recommended",
+                "text": "3.3×",
+                "value": 3.3186076821812986,
+                "unit": "×",
+                "path": "contrasts.ODC1.fc",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_lo_odc1_recommended",
+                "text": "2.3×",
+                "value": 2.292871356518271,
+                "unit": "×",
+                "path": "contrasts.ODC1.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_odc1_recommended",
+                "text": "4.8×",
+                "value": 4.80321624539644,
+                "unit": "×",
+                "path": "contrasts.ODC1.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_p_odc1_recommended",
+                "text": "2.1e-08",
+                "value": 2.065427855257047e-8,
+                "unit": "",
+                "path": "contrasts.ODC1.p",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "fold",
+          "status": "ok",
+          "text": {
+            "plain": "The fold you wrote, “4.1”, is within the study's 95 % CI (2.3×–4.8×; estimate 3.3×).",
+            "segments": [
+              {
+                "text": "The fold you wrote, ",
+                "fact": null
+              },
+              {
+                "text": "“4.1”",
+                "fact": "f_text_c8_fold"
+              },
+              {
+                "text": ", is within the study's 95 % CI (",
+                "fact": null
+              },
+              {
+                "text": "2.3×",
+                "fact": "f_ci_lo_odc1_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "4.8×",
+                "fact": "f_ci_hi_odc1_recommended"
+              },
+              {
+                "text": "; estimate ",
+                "fact": null
+              },
+              {
+                "text": "3.3×",
+                "fact": "f_fc_odc1_recommended"
+              },
+              {
+                "text": ").",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_text_c8_fold",
+                "text": "4.1",
+                "value": "4.1",
+                "unit": "",
+                "path": "your text, characters 408–411",
+                "origin": "text"
+              },
+              {
+                "id": "f_ci_lo_odc1_recommended",
+                "text": "2.3×",
+                "value": 2.292871356518271,
+                "unit": "×",
+                "path": "contrasts.ODC1.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_odc1_recommended",
+                "text": "4.8×",
+                "value": 4.80321624539644,
+                "unit": "×",
+                "path": "contrasts.ODC1.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_fc_odc1_recommended",
+                "text": "3.3×",
+                "value": 3.3186076821812986,
+                "unit": "×",
+                "path": "contrasts.ODC1.fc",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "grid",
+          "status": "note",
+          "text": {
+            "plain": "This reading holds in 78 % of the 744 analyses qPilot checks (the fold counts when it is within an analysis's estimate give or take the planned 95 % CI's width).",
+            "segments": [
+              {
+                "text": "This reading holds in ",
+                "fact": null
+              },
+              {
+                "text": "78 %",
+                "fact": "f_claims_c8_grid_share"
+              },
+              {
+                "text": " of the ",
+                "fact": null
+              },
+              {
+                "text": "744",
+                "fact": "f_claims_n_grid"
+              },
+              {
+                "text": " analyses qPilot checks (the fold counts when it is within an analysis's estimate give or take the planned 95 % CI's width).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_c8_grid_share",
+                "text": "78 %",
+                "value": 0.7795698924731183,
+                "unit": "",
+                "path": "grid.csv: ODC1, analyses where this reading holds (580 of 744)",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_n_grid",
+                "text": "744",
+                "value": 744,
+                "unit": "",
+                "path": "grid.csv: analyses of ODC1",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "choices",
+          "status": "note",
+          "text": {
+            "plain": "It stops holding with one choice changed: Top 20 % by MYCN expression, HMBS alone or HMBS + SDHA(1).",
+            "segments": [
+              {
+                "text": "It stops holding with one choice changed: ",
+                "fact": null
+              },
+              {
+                "text": "Top 20 % by MYCN expression",
+                "fact": "f_claims_choice_cut_2"
+              },
+              {
+                "text": ", ",
+                "fact": null
+              },
+              {
+                "text": "HMBS alone",
+                "fact": "f_claims_choice_refs_1"
+              },
+              {
+                "text": " or ",
+                "fact": null
+              },
+              {
+                "text": "HMBS + SDHA(1)",
+                "fact": "f_claims_choice_refs_10"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_cut_2",
+                "text": "Top 20 % by MYCN expression",
+                "value": "Top 20 % by MYCN expression",
+                "unit": "",
+                "path": "grid.options.cut[2] = 0.2",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_choice_refs_1",
+                "text": "HMBS alone",
+                "value": "HMBS alone",
+                "unit": "",
+                "path": "grid.options.refs[1] = HMBS",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_choice_refs_10",
+                "text": "HMBS + SDHA(1)",
+                "value": "HMBS + SDHA(1)",
+                "unit": "",
+                "path": "grid.options.refs[10] = HMBS|SDHA(1)",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "audit",
+          "status": "note",
+          "text": {
+            "plain": "The robustness audit's verdict for ODC1: Solid (same call in 144 of 144 of the audit's reasonable analyses).",
+            "segments": [
+              {
+                "text": "The robustness audit's verdict for ODC1: ",
+                "fact": null
+              },
+              {
+                "text": "Solid",
+                "fact": "f_claims_audit_verdict_odc1"
+              },
+              {
+                "text": " (same call in ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_k_odc1"
+              },
+              {
+                "text": " of ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_n_odc1"
+              },
+              {
+                "text": " of the audit's reasonable analyses).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_audit_verdict_odc1",
+                "text": "Solid",
+                "value": "Solid",
+                "unit": "",
+                "path": "simulator_audits/e300000d4f9a/explain.json: ODC1.verdict",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_k_odc1",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: ODC1.holds_defensible × analyses_defensible",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_n_odc1",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: ODC1.analyses_defensible",
+                "origin": "audit"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [
+        {
+          "dimension": "cut",
+          "title": "Where to cut the comparison groups",
+          "option": "0.2",
+          "label": {
+            "plain": "Top 20 % by MYCN expression",
+            "segments": [
+              {
+                "text": "Top 20 % by MYCN expression",
+                "fact": "f_claims_choice_cut_2"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_cut_2",
+                "text": "Top 20 % by MYCN expression",
+                "value": "Top 20 % by MYCN expression",
+                "unit": "",
+                "path": "grid.options.cut[2] = 0.2",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_cutoff",
+          "option_id": "cut_20",
+          "planned": false,
+          "holds": false,
+          "call": "up",
+          "fc": 2.711858369
+        },
+        {
+          "dimension": "refs",
+          "title": "Which control genes to normalise to",
+          "option": "HMBS",
+          "label": {
+            "plain": "HMBS alone",
+            "segments": [
+              {
+                "text": "HMBS alone",
+                "fact": "f_claims_choice_refs_1"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_refs_1",
+                "text": "HMBS alone",
+                "value": "HMBS alone",
+                "unit": "",
+                "path": "grid.options.refs[1] = HMBS",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_refset",
+          "option_id": "hmbs_alone",
+          "planned": false,
+          "holds": false,
+          "call": "up",
+          "fc": 2.51972061
+        },
+        {
+          "dimension": "refs",
+          "title": "Which control genes to normalise to",
+          "option": "HMBS|SDHA(1)",
+          "label": {
+            "plain": "HMBS + SDHA(1)",
+            "segments": [
+              {
+                "text": "HMBS + SDHA(1)",
+                "fact": "f_claims_choice_refs_10"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_refs_10",
+                "text": "HMBS + SDHA(1)",
+                "value": "HMBS + SDHA(1)",
+                "unit": "",
+                "path": "grid.options.refs[10] = HMBS|SDHA(1)",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": null,
+          "option_id": null,
+          "planned": false,
+          "holds": false,
+          "call": "up",
+          "fc": 2.718222561
+        }
+      ],
+      "grid_holds": 580,
+      "grid_cells": 744,
+      "audit_verdict": "solid",
+      "audit_label": "Solid",
+      "suggestion": null,
+      "gene": "ODC1",
+      "severity": 0
+    },
+    {
+      "id": "c9",
+      "kind": "gene",
+      "sentence": {
+        "start": 374,
+        "end": 462
+      },
+      "clause": {
+        "start": 374,
+        "end": 462
+      },
+      "spans": [
+        {
+          "start": 383,
+          "end": 388,
+          "role": "gene",
+          "written": "BIRC5"
+        },
+        {
+          "start": 394,
+          "end": 406,
+          "role": "direction",
+          "written": "up-regulated"
+        },
+        {
+          "start": 417,
+          "end": 423,
+          "role": "fold",
+          "written": "6-fold"
+        }
+      ],
+      "reading": {
+        "gene": "BIRC5",
+        "gene_written": "BIRC5",
+        "gene_via": "name",
+        "gene_status": "compared",
+        "direction": "up",
+        "direction_written": "up-regulated",
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": "6-fold",
+        "fold_comparator": "exact",
+        "fold_kind": "fold",
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": [],
+        "groups_written": [],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["BIRC5", "higher in the MYCN-high group than in the rest", "6-fold"]
+      },
+      "verdict": "choices",
+      "verdict_label": "Holds only under some choices",
+      "headline": {
+        "plain": "Not in the planned analysis, but with one choice changed: Cq ≤ 35 (common, not recommended).",
+        "segments": [
+          {
+            "text": "Not in the planned analysis, but with one choice changed: ",
+            "fact": null
+          },
+          {
+            "text": "Cq ≤ 35 (common, not recommended)",
+            "fact": "f_claims_choice_amp_call_3"
+          },
+          {
+            "text": ".",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_claims_choice_amp_call_3",
+            "text": "Cq ≤ 35 (common, not recommended)",
+            "value": "Cq ≤ 35 (common, not recommended)",
+            "unit": "",
+            "path": "grid.options.amp_call[3] = cq_le_35",
+            "origin": "grid"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "check": "direction",
+          "status": "ok",
+          "text": {
+            "plain": "The study calls BIRC5 up in the MYCN-high group against the rest: fold 4× (95 % CI 2.9×–5.5×), p 5e-14.",
+            "segments": [
+              {
+                "text": "The study calls BIRC5 up in the MYCN-high group against the rest: fold ",
+                "fact": null
+              },
+              {
+                "text": "4×",
+                "fact": "f_fc_birc5_recommended"
+              },
+              {
+                "text": " (95 % CI ",
+                "fact": null
+              },
+              {
+                "text": "2.9×",
+                "fact": "f_ci_lo_birc5_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "5.5×",
+                "fact": "f_ci_hi_birc5_recommended"
+              },
+              {
+                "text": "), p ",
+                "fact": null
+              },
+              {
+                "text": "5e-14",
+                "fact": "f_p_birc5_recommended"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_fc_birc5_recommended",
+                "text": "4×",
+                "value": 4.01142868409124,
+                "unit": "×",
+                "path": "contrasts.BIRC5.fc",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_lo_birc5_recommended",
+                "text": "2.9×",
+                "value": 2.933476511654864,
+                "unit": "×",
+                "path": "contrasts.BIRC5.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_birc5_recommended",
+                "text": "5.5×",
+                "value": 5.485491369580537,
+                "unit": "×",
+                "path": "contrasts.BIRC5.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_p_birc5_recommended",
+                "text": "5e-14",
+                "value": 5.043719769792568e-14,
+                "unit": "",
+                "path": "contrasts.BIRC5.p",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "fold",
+          "status": "stronger",
+          "text": {
+            "plain": "The fold you wrote, “6-fold”, is larger than the study's 95 % CI allows (2.9×–5.5×; estimate 4×).",
+            "segments": [
+              {
+                "text": "The fold you wrote, ",
+                "fact": null
+              },
+              {
+                "text": "“6-fold”",
+                "fact": "f_text_c9_fold"
+              },
+              {
+                "text": ", is larger than the study's 95 % CI allows (",
+                "fact": null
+              },
+              {
+                "text": "2.9×",
+                "fact": "f_ci_lo_birc5_recommended"
+              },
+              {
+                "text": "–",
+                "fact": null
+              },
+              {
+                "text": "5.5×",
+                "fact": "f_ci_hi_birc5_recommended"
+              },
+              {
+                "text": "; estimate ",
+                "fact": null
+              },
+              {
+                "text": "4×",
+                "fact": "f_fc_birc5_recommended"
+              },
+              {
+                "text": ").",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_text_c9_fold",
+                "text": "6-fold",
+                "value": "6-fold",
+                "unit": "",
+                "path": "your text, characters 417–423",
+                "origin": "text"
+              },
+              {
+                "id": "f_ci_lo_birc5_recommended",
+                "text": "2.9×",
+                "value": 2.933476511654864,
+                "unit": "×",
+                "path": "contrasts.BIRC5.ci[0]",
+                "origin": "result"
+              },
+              {
+                "id": "f_ci_hi_birc5_recommended",
+                "text": "5.5×",
+                "value": 5.485491369580537,
+                "unit": "×",
+                "path": "contrasts.BIRC5.ci[1]",
+                "origin": "result"
+              },
+              {
+                "id": "f_fc_birc5_recommended",
+                "text": "4×",
+                "value": 4.01142868409124,
+                "unit": "×",
+                "path": "contrasts.BIRC5.fc",
+                "origin": "result"
+              }
+            ]
+          }
+        },
+        {
+          "check": "grid",
+          "status": "note",
+          "text": {
+            "plain": "The values you wrote match the estimates of 5 % of the 744 analyses qPilot checks.",
+            "segments": [
+              {
+                "text": "The values you wrote match the estimates of ",
+                "fact": null
+              },
+              {
+                "text": "5 %",
+                "fact": "f_claims_c9_grid_share"
+              },
+              {
+                "text": " of the ",
+                "fact": null
+              },
+              {
+                "text": "744",
+                "fact": "f_claims_n_grid"
+              },
+              {
+                "text": " analyses qPilot checks.",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_c9_grid_share",
+                "text": "5 %",
+                "value": 0.053763440860215055,
+                "unit": "",
+                "path": "grid.csv: BIRC5, analyses where this reading holds (40 of 744)",
+                "origin": "grid"
+              },
+              {
+                "id": "f_claims_n_grid",
+                "text": "744",
+                "value": 744,
+                "unit": "",
+                "path": "grid.csv: analyses of ODC1",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "choices",
+          "status": "note",
+          "text": {
+            "plain": "Not in the planned analysis, but with one choice changed: Cq ≤ 35 (common, not recommended).",
+            "segments": [
+              {
+                "text": "Not in the planned analysis, but with one choice changed: ",
+                "fact": null
+              },
+              {
+                "text": "Cq ≤ 35 (common, not recommended)",
+                "fact": "f_claims_choice_amp_call_3"
+              },
+              {
+                "text": ".",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_amp_call_3",
+                "text": "Cq ≤ 35 (common, not recommended)",
+                "value": "Cq ≤ 35 (common, not recommended)",
+                "unit": "",
+                "path": "grid.options.amp_call[3] = cq_le_35",
+                "origin": "grid"
+              }
+            ]
+          }
+        },
+        {
+          "check": "audit",
+          "status": "note",
+          "text": {
+            "plain": "The robustness audit's verdict for BIRC5: Solid (same call in 144 of 144 of the audit's reasonable analyses).",
+            "segments": [
+              {
+                "text": "The robustness audit's verdict for BIRC5: ",
+                "fact": null
+              },
+              {
+                "text": "Solid",
+                "fact": "f_claims_audit_verdict_birc5"
+              },
+              {
+                "text": " (same call in ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_k_birc5"
+              },
+              {
+                "text": " of ",
+                "fact": null
+              },
+              {
+                "text": "144",
+                "fact": "f_claims_audit_n_birc5"
+              },
+              {
+                "text": " of the audit's reasonable analyses).",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_audit_verdict_birc5",
+                "text": "Solid",
+                "value": "Solid",
+                "unit": "",
+                "path": "simulator_audits/e300000d4f9a/explain.json: BIRC5.verdict",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_k_birc5",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: BIRC5.holds_defensible × analyses_defensible",
+                "origin": "audit"
+              },
+              {
+                "id": "f_claims_audit_n_birc5",
+                "text": "144",
+                "value": 144,
+                "unit": "",
+                "path": "explain.json: BIRC5.analyses_defensible",
+                "origin": "audit"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [
+        {
+          "dimension": "amp_call",
+          "title": "Which curves count as amplified",
+          "option": "cq_le_35",
+          "label": {
+            "plain": "Cq ≤ 35 (common, not recommended)",
+            "segments": [
+              {
+                "text": "Cq ≤ 35 (common, not recommended)",
+                "fact": "f_claims_choice_amp_call_3"
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_claims_choice_amp_call_3",
+                "text": "Cq ≤ 35 (common, not recommended)",
+                "value": "Cq ≤ 35 (common, not recommended)",
+                "unit": "",
+                "path": "grid.options.amp_call[3] = cq_le_35",
+                "origin": "grid"
+              }
+            ]
+          },
+          "card_id": "card_amp_call",
+          "option_id": "cq_le_35",
+          "planned": false,
+          "holds": true,
+          "call": "up",
+          "fc": 6.031928113
+        }
+      ],
+      "grid_holds": 40,
+      "grid_cells": 744,
+      "audit_verdict": "solid",
+      "audit_label": "Solid",
+      "suggestion": {
+        "plain": "BIRC5 was higher in the MYCN-high group than in the rest (fold change 4×, 95 % CI 2.9×–5.5×, p < 0.001); the call holds in 100 % of the 744 analyses qPilot checks.",
+        "segments": [
+          {
+            "text": "BIRC5 was higher in the MYCN-high group than in the rest (fold change ",
+            "fact": null
+          },
+          {
+            "text": "4×",
+            "fact": "f_fc_birc5_recommended"
+          },
+          {
+            "text": ", 95 % CI ",
+            "fact": null
+          },
+          {
+            "text": "2.9×",
+            "fact": "f_ci_lo_birc5_recommended"
+          },
+          {
+            "text": "–",
+            "fact": null
+          },
+          {
+            "text": "5.5×",
+            "fact": "f_ci_hi_birc5_recommended"
+          },
+          {
+            "text": ", p ",
+            "fact": null
+          },
+          {
+            "text": "< 0.001",
+            "fact": "f_claims_ptext_birc5"
+          },
+          {
+            "text": "); the call holds in ",
+            "fact": null
+          },
+          {
+            "text": "100 %",
+            "fact": "f_holds_birc5"
+          },
+          {
+            "text": " of the ",
+            "fact": null
+          },
+          {
+            "text": "744",
+            "fact": "f_claims_n_cells"
+          },
+          {
+            "text": " analyses qPilot checks.",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_fc_birc5_recommended",
+            "text": "4×",
+            "value": 4.01142868409124,
+            "unit": "×",
+            "path": "contrasts.BIRC5.fc",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_lo_birc5_recommended",
+            "text": "2.9×",
+            "value": 2.933476511654864,
+            "unit": "×",
+            "path": "contrasts.BIRC5.ci[0]",
+            "origin": "result"
+          },
+          {
+            "id": "f_ci_hi_birc5_recommended",
+            "text": "5.5×",
+            "value": 5.485491369580537,
+            "unit": "×",
+            "path": "contrasts.BIRC5.ci[1]",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_ptext_birc5",
+            "text": "< 0.001",
+            "value": "< 0.001",
+            "unit": "",
+            "path": "contrasts.BIRC5.p (as a paper writes it)",
+            "origin": "result"
+          },
+          {
+            "id": "f_holds_birc5",
+            "text": "100 %",
+            "value": 1.0,
+            "unit": "",
+            "path": "robustness.BIRC5.holds",
+            "origin": "result"
+          },
+          {
+            "id": "f_claims_n_cells",
+            "text": "744",
+            "value": 744,
+            "unit": "",
+            "path": "robustness (analyses qPilot checks)",
+            "origin": "result"
+          }
+        ]
+      },
+      "gene": "BIRC5",
+      "severity": 2
+    },
+    {
+      "id": "c10",
+      "kind": "n",
+      "sentence": {
+        "start": 374,
+        "end": 462
+      },
+      "clause": {
+        "start": 440,
+        "end": 453
+      },
+      "spans": [
+        {
+          "start": 440,
+          "end": 453,
+          "role": "n",
+          "written": "n = 53 vs 294"
+        }
+      ],
+      "reading": {
+        "gene": null,
+        "gene_written": null,
+        "gene_via": null,
+        "gene_status": null,
+        "direction": null,
+        "direction_written": null,
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": null,
+        "fold_comparator": null,
+        "fold_kind": null,
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": [],
+        "groups_written": [],
+        "n_written": "n = 53 vs 294",
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["n = 53 vs 294"]
+      },
+      "verdict": "supported",
+      "verdict_label": "Supported",
+      "headline": {
+        "plain": "The design compares 53 in the MYCN-high group and 294 in the rest, as “n = 53 vs 294” says.",
+        "segments": [
+          {
+            "text": "The design compares ",
+            "fact": null
+          },
+          {
+            "text": "53",
+            "fact": "f_n_hi"
+          },
+          {
+            "text": " in the MYCN-high group and ",
+            "fact": null
+          },
+          {
+            "text": "294",
+            "fact": "f_n_lo"
+          },
+          {
+            "text": " in the rest, as ",
+            "fact": null
+          },
+          {
+            "text": "“n = 53 vs 294”",
+            "fact": "f_text_c10_n"
+          },
+          {
+            "text": " says.",
+            "fact": null
+          }
+        ],
+        "facts": [
+          {
+            "id": "f_n_hi",
+            "text": "53",
+            "value": 53,
+            "unit": "",
+            "path": "study",
+            "origin": "result"
+          },
+          {
+            "id": "f_n_lo",
+            "text": "294",
+            "value": 294,
+            "unit": "",
+            "path": "study",
+            "origin": "result"
+          },
+          {
+            "id": "f_text_c10_n",
+            "text": "n = 53 vs 294",
+            "value": "n = 53 vs 294",
+            "unit": "",
+            "path": "your text, characters 440–453",
+            "origin": "text"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "check": "n",
+          "status": "ok",
+          "text": {
+            "plain": "The design compares 53 in the MYCN-high group and 294 in the rest, as “n = 53 vs 294” says.",
+            "segments": [
+              {
+                "text": "The design compares ",
+                "fact": null
+              },
+              {
+                "text": "53",
+                "fact": "f_n_hi"
+              },
+              {
+                "text": " in the MYCN-high group and ",
+                "fact": null
+              },
+              {
+                "text": "294",
+                "fact": "f_n_lo"
+              },
+              {
+                "text": " in the rest, as ",
+                "fact": null
+              },
+              {
+                "text": "“n = 53 vs 294”",
+                "fact": "f_text_c10_n"
+              },
+              {
+                "text": " says.",
+                "fact": null
+              }
+            ],
+            "facts": [
+              {
+                "id": "f_n_hi",
+                "text": "53",
+                "value": 53,
+                "unit": "",
+                "path": "study",
+                "origin": "result"
+              },
+              {
+                "id": "f_n_lo",
+                "text": "294",
+                "value": 294,
+                "unit": "",
+                "path": "study",
+                "origin": "result"
+              },
+              {
+                "id": "f_text_c10_n",
+                "text": "n = 53 vs 294",
+                "value": "n = 53 vs 294",
+                "unit": "",
+                "path": "your text, characters 440–453",
+                "origin": "text"
+              }
+            ]
+          }
+        }
+      ],
+      "choices": [],
+      "grid_holds": null,
+      "grid_cells": null,
+      "audit_verdict": null,
+      "audit_label": null,
+      "suggestion": null,
+      "gene": null,
+      "severity": 0
+    },
+    {
+      "id": "c11",
+      "kind": "gene",
+      "sentence": {
+        "start": 463,
+        "end": 483
+      },
+      "clause": {
+        "start": 463,
+        "end": 483
+      },
+      "spans": [
+        {
+          "start": 463,
+          "end": 468,
+          "role": "gene",
+          "written": "GAPDH"
+        },
+        {
+          "start": 473,
+          "end": 482,
+          "role": "direction",
+          "written": "unchanged"
+        }
+      ],
+      "reading": {
+        "gene": "GAPDH",
+        "gene_written": "GAPDH",
+        "gene_via": "name",
+        "gene_status": "absent",
+        "direction": "none",
+        "direction_written": "unchanged",
+        "negated": false,
+        "hedged": false,
+        "inverted": false,
+        "fold_written": null,
+        "fold_comparator": null,
+        "fold_kind": null,
+        "p_written": null,
+        "p_adjusted": false,
+        "significance": null,
+        "significance_written": null,
+        "robust_written": null,
+        "normaliser": [],
+        "groups_written": [],
+        "n_written": null,
+        "efficiency_written": null,
+        "efficiency_genes": [],
+        "source": "rules",
+        "words": ["GAPDH", "no difference between the MYCN-high group and the rest"]
+      },
+      "verdict": "unchecked",
+      "verdict_label": "Cannot check",
+      "headline": {
+        "plain": "GAPDH is not measured in this study, so its record cannot check this.",
+        "segments": [
+          {
+            "text": "GAPDH is not measured in this study, so its record cannot check this.",
+            "fact": null
+          }
+        ],
+        "facts": []
+      },
+      "checks": [
+        {
+          "check": "gene",
+          "status": "unknown",
+          "text": {
+            "plain": "GAPDH is not measured in this study, so its record cannot check this.",
+            "segments": [
+              {
+                "text": "GAPDH is not measured in this study, so its record cannot check this.",
+                "fact": null
+              }
+            ],
+            "facts": []
+          }
+        }
+      ],
+      "choices": [],
+      "grid_holds": null,
+      "grid_cells": null,
+      "audit_verdict": null,
+      "audit_label": null,
+      "suggestion": null,
+      "gene": null,
+      "severity": 1
+    }
+  ],
+  "summary": {
+    "n": 11,
+    "supported": 3,
+    "counts": {
+      "supported": 3,
+      "choices": 3,
+      "overstated": 2,
+      "contradicted": 2,
+      "unchecked": 1
+    },
+    "sentence": "3 of 11 claims supported by this study's record."
+  },
+  "reader": "rules",
+  "model_note": null,
+  "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "audit": "current",
+  "groups": ["MYCN-high", "rest"],
+  "rule": "up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call",
+  "verdicts": {
+    "supported": "Supported",
+    "choices": "Holds only under some choices",
+    "overstated": "Overstated",
+    "contradicted": "Contradicted",
+    "unchecked": "Cannot check"
+  },
+  "verdict_rules": {
+    "supported": "Direction, size and significance agree with the study's planned analysis.",
+    "choices": "Not what the planned analysis shows, but what some of the choices qPilot checks give.",
+    "overstated": "Says more than the data do: a larger change, a stronger p or a robustness word the study does not earn.",
+    "contradicted": "The study says otherwise: the other direction, no change where there is one, or a number its data exclude.",
+    "unchecked": "The study cannot answer it: a gene it did not compare, or words too vague to check."
+  },
+  "notes": [],
+  "text": "ODC1 was 3.3-fold higher in the MYCN-high group than in the rest (p < 0.001). NM23A was robustly up-regulated in the MYCN-high group. NTRK1 did not differ between the MYCN-high group and the rest. BIRC5 was 11-fold higher in the MYCN-high group than in the rest. Expression was normalised to GAPDH. All assays had efficiencies of 90–110 %. Expression was normalised to UBC. ODC1 and BIRC5 were up-regulated (4.1- and 6-fold, respectively). n = 53 vs 294 tumours. GAPDH was unchanged."
+}

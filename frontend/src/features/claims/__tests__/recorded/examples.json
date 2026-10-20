@@ -1,0 +1,37 @@
+{
+  "study_id": "e300000d4f9a",
+  "paragraph": "ODC1 was 3.3-fold higher in the MYCN-high group than in the rest (p < 0.001). NM23A was robustly up-regulated in the MYCN-high group. NTRK1 did not differ between the MYCN-high group and the rest. BIRC5 was 11-fold higher in the MYCN-high group than in the rest. Expression was normalised to GAPDH. All assays had efficiencies of 90–110 %.",
+  "examples": [
+    {
+      "text": "ODC1 was 3.3-fold higher in the MYCN-high group than in the rest (p < 0.001).",
+      "intent": "supported",
+      "what": "A true sentence: the lead gene's fold and p as the record has them."
+    },
+    {
+      "text": "NM23A was robustly up-regulated in the MYCN-high group.",
+      "intent": "overstated",
+      "what": "“Robustly” for a call that holds in fewer than 80 % of the analyses qPilot checks."
+    },
+    {
+      "text": "NTRK1 did not differ between the MYCN-high group and the rest.",
+      "intent": "choices",
+      "what": "“Did not differ” for a gene whose call one common choice removes."
+    },
+    {
+      "text": "BIRC5 was 11-fold higher in the MYCN-high group than in the rest.",
+      "intent": "overstated",
+      "what": "A fold larger than any analysis of this study gives."
+    },
+    {
+      "text": "Expression was normalised to GAPDH.",
+      "intent": "contradicted",
+      "what": "A common control gene this study never measured."
+    },
+    {
+      "text": "All assays had efficiencies of 90–110 %.",
+      "intent": "contradicted",
+      "what": "An efficiency range some of the assays fall outside."
+    }
+  ],
+  "note": "Written by qPilot from this study's own record (its genes, groups and numbers), not by a person or a model; each sentence was checked to come out as described."
+}

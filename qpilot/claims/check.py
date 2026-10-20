@@ -109,7 +109,7 @@ class StudyRecord:
     def phrases(self) -> tuple[str, str]:
         """The groups as a sentence names them (``MYCN-high``, ``the rest``)."""
         a, b = self.groups
-        return a, ("the rest" if b == "rest" else b)
+        return (f"the {a} group", "the rest") if b == "rest" else (a, b)
 
     @property
     def alpha(self) -> float:
@@ -248,7 +248,9 @@ class Book:
                 segments.append(ClaimSegment(text=template[last : match.start()]))
             fid = match.group(1)
             fact = self.facts[fid]
-            segments.append(ClaimSegment(text=shown(fact), fact=fid))
+            # a value quoted from the checked text reads as a quotation
+            words = f"“{shown(fact)}”" if self.origin.get(fid) == "text" else shown(fact)
+            segments.append(ClaimSegment(text=words, fact=fid))
             cited.setdefault(
                 fid,
                 ClaimFact(
@@ -538,7 +540,7 @@ def _check(name: CheckName, status: CheckStatus, text: ClaimText) -> ClaimCheck:
 
 def _unchecked(book: Book, gene: str, status: str | None) -> Outcome:
     lex = book.record.lexicon
-    a, b = book.record.groups
+    a, b = book.record.phrases
     if status == "absent":
         sentence = f"{gene} is not measured in this study, so its record cannot check this."
     elif status == "reference":
@@ -751,13 +753,13 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
         if holds_ok and audit_ok and direction_ok:
             status = "ok"
             text = (
-                f"“{written}” is earned: the call holds in {f['holds']} of the "
+                f"{written} is earned: the call holds in {f['holds']} of the "
                 f"{f['cells']} analyses qPilot checks"
             )
         else:
             status = "stronger"
             text = (
-                f"“{written}” says more than the study shows: the call holds in "
+                f"{written} says more than the study shows: the call holds in "
                 f"{f['holds']} of the {f['cells']} analyses qPilot checks"
             )
             if not holds_ok:
@@ -903,7 +905,11 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
         verdict: Verdict = "overstated" if robust_failed else "supported"
     elif named_holds:
         verdict = "choices"
-    elif grid_k and not (robust_failed and worst < WORST["weaker"]):
+    elif (
+        grid_k
+        and not (robust_failed and worst < WORST["weaker"])
+        and (worst < WORST["opposite"] or any(c.holds for c in choices))
+    ):  # the other direction is rescued only by one choice, never by a combination
         verdict = "choices"
     elif worst == WORST["opposite"]:
         verdict = "contradicted"
@@ -1216,7 +1222,9 @@ def _reading(text: str, claim: Claim, lexicon: Lexicon) -> ClaimReading:
         d = claim.direction
         if claim.inverted and d in ("up", "down"):
             d = "down" if d == "up" else "up"
-        a, b = lexicon.group_a, ("the rest" if lexicon.group_b == "rest" else lexicon.group_b)
+        a, b = lexicon.group_a, lexicon.group_b
+        if b == "rest":
+            a, b = f"the {a} group", "the rest"
         if d in ("up", "down"):
             words.append(f"{'higher' if d == 'up' else 'lower'} in {a} than in {b}")
         elif d == "none":
