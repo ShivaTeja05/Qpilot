@@ -115,11 +115,11 @@ AUDIT_WORDS = re.compile(
     r"lean[s]?\s+on|survives?)\b",
     re.I,
 )
-#: Questions only the audit answers: what-if and what to check first (the study's own tools
-#: would answer them with something else).
+#: Questions only the audit answers: what-if, what to check first, verdicts and the audit itself
+#: (the study's own tools would answer them with something else).
 AUDIT_ONLY_WORDS = re.compile(
     r"\b(what[\s-]+if|suppose|hypothetically|would\s+(it|the|this|that|my|our)|instead|"
-    r"look\s+at\s+first|check\s+(the\s+)?data|issues?)\b",
+    r"look\s+at\s+first|check\s+(the\s+)?data|issues?|verdicts?|audit(ed|s)?)\b",
     re.I,
 )
 NEEDS_AUDIT = (

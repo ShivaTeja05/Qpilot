@@ -125,7 +125,12 @@ def test_the_audit_cannot_be_forced_without_an_audit(client, no_model, study):
 
 def test_a_what_if_question_without_an_audit_says_to_run_it(client, no_model, study, web_store):
     head = web_store.chain_head(study)
-    for question in ("What if I normalise to HMBS alone?", "What should I look at first?"):
+    for question in (
+        "What if I normalise to HMBS alone?",
+        "What should I look at first?",
+        "What is the verdict for ODC1?",
+        "How many analyses did the audit run?",
+    ):
         answer = ask(client, study, question)
         assert answer["engine"] == "none" and answer["tool"] == "none", question
         assert "Run it in Audit" in answer["answer"] and answer["facts"] == []
