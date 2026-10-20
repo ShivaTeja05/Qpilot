@@ -799,6 +799,37 @@ def _row(saved: dict[str, Any]) -> ScorecardRow | None:
     )
 
 
+FALLBACKS = (
+    "Fallbacks count answers where the model was not usable and a template answered instead."
+)
+
+
+def _rows(saved: dict[str, Any]) -> dict[str, ScorecardRow]:
+    """Saved scorecards by profile, as rows of the Ask table (Studio-only ones left out)."""
+    rows = {}
+    for profile, report in saved.items():
+        if profile == "history" or not isinstance(report, dict):  # the CLI keeps earlier runs
+            continue
+        row = _row(report)
+        if row is not None:
+            rows[profile] = row
+    return rows
+
+
+def _scorecards(
+    study_id: str, title: str, rows: dict[str, ScorecardRow], profile: str, note: str
+) -> ModelTestResult:
+    current = rows.get(profile)
+    return ModelTestResult(
+        study_id=study_id,
+        title=title,
+        current=current,
+        saved=list(rows.values()),
+        n_questions=current.n_items if current else 0,
+        note=note,
+    )
+
+
 @router.post("/model/test", response_model=JobStarted, status_code=202)
 def test_model(ctx: Ctx, body: ModelTestBody | None = None) -> JobStarted:
     """Score the page's model on questions about one study (a job); saved with the study."""
@@ -815,22 +846,11 @@ def test_model(ctx: Ctx, body: ModelTestBody | None = None) -> JobStarted:
             + (f" to {client.model or client.provider}" if client.available else " (templates)")
         )
         profile, saved, n = run_scorecard(ctx.store, study_id, client)
-        rows = {k: _row(v) for k, v in saved.items() if k != "history" and isinstance(v, dict)}
-        current = rows.get(profile)
-        if current is None:
+        rows = _rows(saved)
+        if profile not in rows:
             raise JobError("failed", "The model test produced no scorecard.")
-        note = (
-            f"Computed now on {n} questions about {title}. Fallbacks count answers where "
-            "the model was not usable and a template answered instead."
-        )
-        return ModelTestResult(
-            study_id=study_id,
-            title=title,
-            current=current,
-            saved=[r for r in rows.values() if r is not None],
-            n_questions=n,
-            note=note,
-        ).model_dump(mode="json")
+        note = f"Computed now on {n} questions about {title}. {FALLBACKS}"
+        return _scorecards(study_id, title, rows, profile, note).model_dump(mode="json")
 
     job = ctx.jobs.submit(
         "model.test",
@@ -840,6 +860,25 @@ def test_model(ctx: Ctx, body: ModelTestBody | None = None) -> JobStarted:
         typical_s=_typical(ctx, MODEL_TEST_TYPICAL_S),
     )
     return JobStarted(job=JobView(**job.view()))
+
+
+@router.get("/model/scorecards", response_model=ModelTestResult)
+def model_scorecards(
+    ctx: Ctx, study: str | None = Query(default=None, max_length=12)
+) -> ModelTestResult:
+    """A study's saved scorecards (default: the demo study, else the latest visible one)."""
+    from qpilot.ai.suggest_only import SCORECARD_KEYS
+
+    study_id, place, places = resolve_study(ctx, study or _default_study(ctx))
+    title = places.title(place)
+    provider = ctx.studio.client.provider
+    profile = SCORECARD_KEYS.get(provider, provider)
+    rows = _rows(ctx.store.scorecard(study_id))
+    if profile in rows:
+        note = f"The last test of this model on {title}. {FALLBACKS}"
+    else:
+        note = f"This model has not been tested on {title} yet: Test this model scores it."
+    return _scorecards(study_id, title, rows, profile, note)
 
 
 @router.get("/model/seen", response_model=ModelSeen)

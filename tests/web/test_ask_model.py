@@ -81,6 +81,23 @@ def test_the_model_test_refuses_a_blind_session(sclient, opened):
     assert r.status_code == 409
 
 
+def test_saved_scorecards_are_read_without_running_a_test(client, no_model, study):
+    before = client.get("/api/model/scorecards").json()
+    assert before["study_id"] == study and before["current"] is None and before["saved"] == []
+    assert "not been tested" in before["note"] and before["n_questions"] == 0
+    done = wait_job(client, client.post("/api/model/test", json={}).json()["job"])
+    after = client.get(f"/api/model/scorecards?study={study}").json()
+    assert after["current"] == done["result"]["current"]
+    assert [r["profile"] for r in after["saved"]] == ["none"] and after["n_questions"] == 9
+    assert "last test of this model" in after["note"]
+
+
+def test_scorecards_need_a_visible_study(client, no_model, sclient, opened):
+    assert client.get("/api/model/scorecards").json()["error"]["code"] == "no_study"
+    r = sclient.get(f"/api/model/scorecards?study={opened}")
+    assert r.status_code == 403 and r.json()["error"]["code"] == "blind"
+
+
 # ---- what the model saw ----------------------------------------------------------------------
 
 RESULTS_PAYLOAD = {"provider": "none", "system": "You explain", "messages": [{"content": "3.6"}]}

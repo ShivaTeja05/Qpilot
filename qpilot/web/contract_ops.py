@@ -204,13 +204,17 @@ class ScorecardRow(BaseModel):
 
 
 class ModelTestResult(BaseModel):
-    """The result of a ``model.test`` job: this run's row and every saved row for the study."""
+    """A study's saved scorecards; ``current`` is the page's model's row.
+
+    The result of a ``model.test`` job (``current`` is the run just made) and of
+    ``GET /api/model/scorecards`` (``current`` is the last saved run of the page's model, or null).
+    """
 
     study_id: str
     title: str
-    current: ScorecardRow
+    current: ScorecardRow | None = None
     saved: list[ScorecardRow]
-    n_questions: int
+    n_questions: int = Field(description="Questions in ``current`` (0 when there is none).")
     note: str
 
 
