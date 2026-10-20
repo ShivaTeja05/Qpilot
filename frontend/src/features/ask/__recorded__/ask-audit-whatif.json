@@ -1,5 +1,5 @@
 {
-  "id": "16539c5cc32e4d2f",
+  "id": "7454deb265084f45",
   "kind": "ask",
   "title": "Answering “What if I normalise to HMBS alone?”",
   "key": "bc1d233e3866",
@@ -131,6 +131,6 @@
     "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
     "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
   },
-  "result_type": null,
+  "result_type": "AskAnswer",
   "error": null
 }

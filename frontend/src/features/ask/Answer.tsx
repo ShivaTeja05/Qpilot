@@ -39,7 +39,7 @@ export function Answer({ answer, links }: { answer: AskAnswer; links: AnswerLink
               <a
                 href={links.results}
                 onClick={() => links.onOpenCard?.(card)}
-                className="inline-flex items-center gap-1 text-[13px] font-medium text-accent underline-offset-4 hover:underline"
+                className="inline-flex items-center gap-1 text-[13px] font-medium text-accent underline decoration-accent/50 underline-offset-4 hover:decoration-accent"
               >
                 Open the card
                 <ArrowRight className="size-3.5" aria-hidden />
@@ -135,7 +135,7 @@ export function Answer({ answer, links }: { answer: AskAnswer; links: AnswerLink
         <a
           href={links.gene(gene)}
           onClick={links.onFollow}
-          className="inline-flex w-fit items-center gap-1 text-[13px] font-medium text-accent underline-offset-4 hover:underline"
+          className="inline-flex w-fit items-center gap-1 text-[13px] font-medium text-accent underline decoration-accent/50 underline-offset-4 hover:decoration-accent"
         >
           Open {gene}
           <ArrowRight className="size-3.5" aria-hidden />

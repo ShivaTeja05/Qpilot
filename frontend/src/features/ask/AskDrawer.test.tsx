@@ -11,6 +11,7 @@ import robustness from "./__recorded__/ask-robustness.json";
 import noRoute from "./__recorded__/no-route.json";
 import AskDrawer from "./AskDrawer";
 import { resetAllTurns } from "./history";
+import { asWritten } from "./testText";
 
 const session = frame as unknown as Schemas["WorkspaceView"];
 
@@ -108,7 +109,7 @@ describe("AskDrawer", () => {
     const box = screen.getByLabelText<HTMLTextAreaElement>("Your question about this study");
     fireEvent.change(box, { target: { value: "What should I check first in this data?" } });
     fireEvent.keyDown(box, { key: "Enter" });
-    await screen.findByText(noRoute.error.message);
+    await screen.findByText(noRoute.error.message, asWritten);
     expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
     const [url, init] = vi.mocked(fetch).mock.calls.find(([u]) => String(u).endsWith("/ask"))!;
     expect(String(url)).toBe(`/api/studies/${session.study_id}/ask`);
@@ -129,7 +130,7 @@ describe("AskDrawer", () => {
     // This time the server answers.
     answerWith(robustness, qc);
     fireEvent.click(retry);
-    await screen.findByText(robustness.result.answer);
+    await screen.findByText(robustness.result.answer, asWritten);
     const asks = vi.mocked(fetch).mock.calls.filter(([u]) => String(u).endsWith("/ask"));
     expect(asks.map(([, init]) => JSON.parse(String(init?.body)).question)).toEqual([
       robustness.result.question,
@@ -143,9 +144,10 @@ describe("AskDrawer", () => {
     answerWith(robustness, qc);
     renderDrawer(session, qc);
     ask(robustness.result.question);
-    await screen.findByText(robustness.result.answer);
-    for (const f of robustness.result.facts) expect(screen.getByText(f.meaning)).toBeTruthy();
-    expect(screen.getByText(robustness.result.writer_words)).toBeTruthy();
+    await screen.findByText(robustness.result.answer, asWritten);
+    for (const f of robustness.result.facts)
+      expect(screen.getByText(f.meaning, asWritten)).toBeTruthy();
+    expect(screen.getByText(robustness.result.writer_words, asWritten)).toBeTruthy();
     expect(screen.getByRole("link", { name: `Open ${robustness.result.args.gene}` })).toBeTruthy();
   });
 
@@ -155,7 +157,7 @@ describe("AskDrawer", () => {
     answerWith(request, qc);
     renderDrawer(session, qc);
     ask(request.result.question);
-    await screen.findByText(request.result.answer);
+    await screen.findByText(request.result.answer, asWritten);
     expect(screen.getByRole("link", { name: "Open the card" })).toBeTruthy();
     expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["w", session.key] });
   });

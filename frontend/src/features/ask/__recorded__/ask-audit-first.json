@@ -1,5 +1,5 @@
 {
-  "id": "91dda9c23a7b4641",
+  "id": "57b52ba23b5444fc",
   "kind": "ask",
   "title": "Answering “What should I check first in this data?”",
   "key": "bc1d233e3866",
@@ -7,7 +7,7 @@
   "step": "Reading the audit",
   "fraction": null,
   "typical_s": 1.0,
-  "elapsed_s": 0.01,
+  "elapsed_s": 3.21,
   "result": {
     "question": "What should I check first in this data?",
     "answer": "The reference genes: changing only this changes 31 call(s): Decide this choice before looking at results and record the reason (Decision Card). The group cut-off: changing only this changes 17 call(s): Decide this choice before looking at results and record the reason (Decision Card). The late-Cq cut-off: changing only this changes 11 call(s): Decide this choice before looking at results and record the reason (Decision Card).",
@@ -64,6 +64,6 @@
     "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
     "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
   },
-  "result_type": null,
+  "result_type": "AskAnswer",
   "error": null
 }

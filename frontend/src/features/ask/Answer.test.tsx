@@ -8,6 +8,7 @@ import robustness from "./__recorded__/ask-robustness.json";
 import study from "./__recorded__/ask-study.json";
 import { Answer } from "./Answer";
 import { cardFocus, toAskAnswer, type AskAnswer } from "./types";
+import { asWritten } from "./testText";
 
 afterEach(cleanup);
 
@@ -35,15 +36,15 @@ describe("toAskAnswer", () => {
 describe("Answer", () => {
   it("shows the words, which tool answered, who picked it, who wrote them, and every cited fact", () => {
     render(<Answer answer={read(robustness)} links={links} />);
-    expect(screen.getByText(robustness.result.answer)).toBeTruthy();
+    expect(screen.getByText(robustness.result.answer, asWritten)).toBeTruthy();
     expect(screen.getByText(/robustness of one gene/i)).toBeTruthy();
-    expect(screen.getByText(`Picked by ${robustness.result.routed_words}`)).toBeTruthy();
-    expect(screen.getByText(robustness.result.writer_words)).toBeTruthy();
+    expect(screen.getByText(`Picked by ${robustness.result.routed_words}`, asWritten)).toBeTruthy();
+    expect(screen.getByText(robustness.result.writer_words, asWritten)).toBeTruthy();
     const rows = factRows();
     expect(rows).toHaveLength(robustness.result.facts.length);
     robustness.result.facts.forEach((f, i) => {
-      expect(within(rows[i]!).getByText(f.meaning)).toBeTruthy();
-      expect(within(rows[i]!).getByText(f.value)).toBeTruthy();
+      expect(within(rows[i]!).getByText(f.meaning, asWritten)).toBeTruthy();
+      expect(within(rows[i]!).getByText(f.value, asWritten)).toBeTruthy();
     });
     const gene = robustness.result.args.gene;
     expect(screen.getByRole("link", { name: `Open ${gene}` }).getAttribute("href")).toBe(
@@ -53,7 +54,7 @@ describe("Answer", () => {
 
   it("lists the study summary's numbers, and says so when an answer cites none", () => {
     render(<Answer answer={read(study)} links={links} />);
-    for (const f of study.result.facts) expect(screen.getByText(f.value)).toBeTruthy();
+    for (const f of study.result.facts) expect(screen.getByText(f.value, asWritten)).toBeTruthy();
     cleanup();
     render(<Answer answer={read(request)} links={links} />);
     expect(request.result.facts).toHaveLength(0);
@@ -64,9 +65,9 @@ describe("Answer", () => {
     const onOpenCard = vi.fn();
     expect(request.result.head_after).toBe(request.result.head_before);
     render(<Answer answer={read(request)} links={{ ...links, onOpenCard }} />);
-    expect(screen.getByText(request.result.answer)).toBeTruthy();
+    expect(screen.getByText(request.result.answer, asWritten)).toBeTruthy();
     expect(screen.getByText("A choice for a person")).toBeTruthy();
-    expect(screen.getByText(request.result.note)).toBeTruthy();
+    expect(screen.getByText(request.result.note, asWritten)).toBeTruthy();
     const open = screen.getByRole("link", { name: "Open the card" });
     expect(open.getAttribute("href")).toBe(links.results);
     fireEvent.click(open);
@@ -77,12 +78,15 @@ describe("Answer", () => {
   it("says when the robustness audit answered, with its facts (text values wrap)", () => {
     render(<Answer answer={read(whatIf)} links={links} />);
     expect(screen.getByText("(the robustness audit)", { exact: false })).toBeTruthy();
-    expect(screen.getByText(`Picked by ${whatIf.result.routed_words}`)).toBeTruthy();
+    expect(screen.getByText(`Picked by ${whatIf.result.routed_words}`, asWritten)).toBeTruthy();
     const rows = factRows();
     expect(rows).toHaveLength(whatIf.result.facts.length);
     // The choices changed are words, not a number: a wrapping cell, not the mono number column.
     const changes = whatIf.result.facts.find((f) => f.id === "f_changes")!;
-    const cell = within(rows[whatIf.result.facts.indexOf(changes)]!).getByText(changes.value);
+    const cell = within(rows[whatIf.result.facts.indexOf(changes)]!).getByText(
+      changes.value,
+      asWritten,
+    );
     expect(cell.className).not.toMatch(/whitespace-nowrap/);
   });
 
@@ -92,6 +96,6 @@ describe("Answer", () => {
     expect(a.tool).toBe("issues");
     const rows = factRows();
     expect(rows).toHaveLength(a.facts.length);
-    a.facts.forEach((f, i) => expect(within(rows[i]!).getByText(f.value)).toBeTruthy());
+    a.facts.forEach((f, i) => expect(within(rows[i]!).getByText(f.value, asWritten)).toBeTruthy());
   });
 });

@@ -1,5 +1,5 @@
 {
-  "id": "70c39d62288b43fd",
+  "id": "f6814109518c4da4",
   "kind": "ask",
   "title": "Answering “Is the BIRC5 result robust?”",
   "key": "bc1d233e3866",
@@ -7,10 +7,10 @@
   "step": "Looking it up in the study",
   "fraction": null,
   "typical_s": null,
-  "elapsed_s": 0.08,
+  "elapsed_s": 0.05,
   "result": {
     "question": "Is the BIRC5 result robust?",
-    "answer": "BIRC5 is higher in the MYCN high group under the recommended choices: 4× (confidence interval 2.9× to 5.5×). It holds in 100% of the 744 reasonable analyses; confidence Moderate. No single choice flips it.",
+    "answer": "BIRC5 is higher in the MYCN high group under the recommended choices: 4.01× (confidence interval 2.93× to 5.49×). It holds in 100 % of the 744 analyses qPilot checks; confidence Moderate. No single choice flips it.",
     "engine": "study",
     "tool": "qpcr_robustness",
     "args": {
@@ -27,26 +27,26 @@
       {
         "id": "f_ans_fc",
         "meaning": "fold change under the recommended choices",
-        "value": "4×"
+        "value": "4.01×"
       },
       {
         "id": "f_ans_ci_lo",
         "meaning": "lower end of the 95 % confidence interval",
-        "value": "2.9×"
+        "value": "2.93×"
       },
       {
         "id": "f_ans_ci_hi",
         "meaning": "upper end of the 95 % confidence interval",
-        "value": "5.5×"
+        "value": "5.49×"
       },
       {
         "id": "f_ans_holds",
-        "meaning": "share of reasonable analyses with the same call",
-        "value": "100%"
+        "meaning": "share of the analyses qPilot checks with the same call",
+        "value": "100 %"
       },
       {
         "id": "f_ans_n_cells",
-        "meaning": "reasonable analyses",
+        "meaning": "analyses qPilot checks",
         "value": "744"
       },
       {
@@ -64,6 +64,6 @@
     "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
     "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
   },
-  "result_type": null,
+  "result_type": "AskAnswer",
   "error": null
 }
