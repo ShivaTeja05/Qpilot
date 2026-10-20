@@ -114,7 +114,8 @@ describe("time and size", () => {
     expect(duration(72)).toBe(`1${NNBSP}min 12${NNBSP}s`);
     expect(duration(120)).toBe(s("2 min"));
     expect(duration(7500)).toBe(`2${NNBSP}h 5${NNBSP}min`);
-    expect(bytes(6_985_790)).toBe(s("6.7 MB"));
+    expect(bytes(6_985_790)).toBe(s("7.0 MB"));
+    expect(bytes(640_000)).toBe(s("640 KB"));
     expect(bytes(12)).toBe(s("12 B"));
   });
   it("shortens hashes", () => {

@@ -4,6 +4,7 @@
  * meaning alone (docs/app.md §5).
  */
 import { cn } from "@/lib/cn";
+import { Glyph } from "./Glyph";
 import {
   CHECK,
   CONCLUSION,
@@ -16,7 +17,6 @@ import {
   type Conclusion,
   type Level,
   type Verdict,
-  type VerdictShape,
 } from "@/lib/vocab";
 
 const CONCLUSION_TEXT: Record<Conclusion, string> = {
@@ -89,7 +89,7 @@ export function LevelTag({
   hideWord?: boolean;
 }) {
   const l = asLevel(level);
-  if (!l) return <span className={cn("text-faint", className)}>—</span>;
+  if (!l) return <span className={cn("text-muted", className)}>—</span>;
   return (
     <span
       className={cn(
@@ -106,63 +106,6 @@ export function LevelTag({
   );
 }
 
-const VERDICT_TEXT: Record<Verdict, string> = {
-  solid: "text-v-solid",
-  "holds with caveats": "text-v-caveats",
-  "depends on your choices": "text-v-depends",
-  fragile: "text-v-fragile",
-  "check data first": "text-v-check",
-  "no call": "text-v-nocall",
-};
-
-/** The SVG glyph of a verdict shape (12 px box; uses currentColor). Charts may reuse it. */
-export function ShapeGlyph({
-  shape,
-  size = 12,
-  className,
-}: {
-  shape: VerdictShape;
-  size?: number;
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 12 12"
-      width={size}
-      height={size}
-      aria-hidden
-      className={cn("shrink-0", className)}
-    >
-      {shape === "disc" && <circle cx="6" cy="6" r="5" fill="currentColor" />}
-      {shape === "half" && (
-        <>
-          <circle cx="6" cy="6" r="4.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M6 1.6a4.4 4.4 0 0 1 0 8.8z" fill="currentColor" />
-        </>
-      )}
-      {shape === "diamond" && <path d="M6 0.8 11.2 6 6 11.2 0.8 6z" fill="currentColor" />}
-      {shape === "cross" && (
-        <path
-          d="M2.2 2.2 9.8 9.8M9.8 2.2 2.2 9.8"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-      )}
-      {shape === "alert" && (
-        <>
-          <path d="M6 0.9 11.4 10.8H0.6z" fill="currentColor" />
-          <path d="M6 4.4v3" stroke="var(--surface)" strokeWidth="1.4" strokeLinecap="round" />
-          <circle cx="6" cy="9.1" r="0.8" fill="var(--surface)" />
-        </>
-      )}
-      {shape === "ring" && (
-        <circle cx="6" cy="6" r="4.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      )}
-    </svg>
-  );
-}
-
 /** An audit verdict: glyph + word. `compact` shows the glyph only (word for screen readers). */
 export function VerdictTag({
   verdict,
@@ -174,7 +117,7 @@ export function VerdictTag({
   className?: string;
 }) {
   const v = asVerdict(verdict);
-  if (!v) return <span className={cn("text-faint", className)}>—</span>;
+  if (!v) return <span className={cn("text-muted", className)}>—</span>;
   const meta = VERDICT[v];
   return (
     <span
@@ -183,7 +126,7 @@ export function VerdictTag({
         className,
       )}
     >
-      <ShapeGlyph shape={meta.shape} className={VERDICT_TEXT[v]} />
+      <Glyph mark={meta} />
       <span className={cn(compact && "sr-only", "text-fg")}>{meta.label}</span>
     </span>
   );

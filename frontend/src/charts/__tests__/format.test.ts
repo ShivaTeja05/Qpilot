@@ -10,16 +10,16 @@ describe("numbers as the page writes them (docs/app.md §5)", () => {
     expect(fmtFold(0.5712)).toBe("0.57×");
     expect(fmtFold(1)).toBe("1.00×");
     expect(fmtFold(0.00423)).toBe("0.0042×");
-    expect(fmtFold(123.4)).toBe("123×");
-    expect(fmtFold(0)).toBe("–");
-    expect(fmtFold(Number.NaN)).toBe("–");
+    expect(fmtFold(123.4)).toBe("123.40×");
+    expect(fmtFold(0)).toBe("—");
+    expect(fmtFold(Number.NaN)).toBe("—");
     expect(fmtFoldLog2(1)).toBe("2.00×");
     expect(fmtFoldWords(-1)).toBe("2.00× lower");
     expect(fmtFoldWords(Math.log2(3.32))).toBe("3.32× higher");
   });
   it("confidence intervals and p-values", () => {
     expect(fmtCI([2.4213, 5.333])).toBe("[2.42–5.33]");
-    expect(fmtP(0.0031)).toBe("0.0031");
+    expect(fmtP(0.0031)).toBe("0.003");
     expect(fmtP(0.0234)).toBe("0.023");
     expect(fmtP(0.41)).toBe("0.41");
     expect(fmtP(3.4e-13)).toBe(`<${N}0.001`);
@@ -29,7 +29,7 @@ describe("numbers as the page writes them (docs/app.md §5)", () => {
     expect(fmtPct(48)).toBe(`48${N}%`);
     expect(fmtCount(24576)).toBe(`24${N}576`);
     expect(fmtCount(90396)).toBe(`90${N}396`);
-    expect(fmtCount(1745)).toBe("1745");
+    expect(fmtCount(1745)).toBe(`1${N}745`);
     expect(fmtCount(1234567)).toBe(`1${N}234${N}567`);
   });
 });

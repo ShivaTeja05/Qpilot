@@ -27,20 +27,40 @@ export function foldTickLabel(k: number): string {
 }
 
 /**
- * The domain of a fold axis (log2): the data, the call lines and 1× all inside, with a little air.
- * `line` is the call rule's minimum |log2 fold| (1 for "at least 2-fold"); 0 means no lines.
+ * The domain of a fold axis (log2), with a little air. `line` is the call rule's minimum |log2 fold|
+ * (1 for "at least 2-fold"); 0 means no lines. With `zero` (the default) 1× and both call lines are
+ * always inside; without it, only the call line on the data's side is (a one-gene chart whose
+ * analyses all sit above 2× then uses its width for the data).
  */
-export function foldDomain(values: readonly number[], line = 0, pad = 0.1): [number, number] {
+export function foldDomain(values: readonly number[], line = 0, pad = 0.1, zero = true): [number, number] {
   const finite = values.filter(Number.isFinite);
-  let lo = Math.min(0, -line, ...finite);
-  let hi = Math.max(0, line, ...finite);
+  if (!finite.length) return [-Math.max(1, line) * 1.2, Math.max(1, line) * 1.2];
+  const dmin = Math.min(...finite);
+  const dmax = Math.max(...finite);
+  let lo: number;
+  let hi: number;
+  if (zero) {
+    lo = Math.min(0, -line, dmin);
+    hi = Math.max(0, line, dmax);
+  } else {
+    lo = dmin;
+    hi = dmax;
+    if (line && dmax > 0) hi = Math.max(hi, line);
+    if (line && dmin < 0) lo = Math.min(lo, -line);
+    if (line && dmax > 0 && dmin > 0) lo = Math.min(lo, line);
+    if (line && dmax < 0 && dmin < 0) hi = Math.max(hi, -line);
+  }
   const span = Math.max(0.5, hi - lo);
   lo -= pad * span;
   hi += pad * span;
   return [lo, hi];
 }
 
-/** Whole-number log2 ticks, thinned so labels are at least `minGap` pixels apart. */
+/**
+ * Ticks at whole log2 steps (½×, 1×, 2×, 4×), thinned so labels are at least `minGap` pixels apart.
+ * A zoomed-in axis (fewer than three whole steps in view) gets evenly spaced fold values instead
+ * (2×, 2.2×, 2.4×, …), still placed on the log2 scale.
+ */
 export function foldTicks(lo: number, hi: number, pxPerUnit: number, minGap = 44): FoldTick[] {
   let step = 1;
   while (step * pxPerUnit < minGap && step < 64) step++;
@@ -48,7 +68,14 @@ export function foldTicks(lo: number, hi: number, pxPerUnit: number, minGap = 44
   for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) {
     if (k % step === 0) out.push({ log2: k, label: foldTickLabel(k) });
   }
-  return out;
+  if (out.length >= 3) return out;
+  const n = Math.max(2, Math.floor(((hi - lo) * pxPerUnit) / (minGap * 2)));
+  const fine = scaleLinear().domain([2 ** lo, 2 ** hi]).ticks(n);
+  const ticks = fine.filter((v) => v > 0).map((v) => ({ log2: Math.log2(v), label: `${Number(v.toPrecision(3))}×` }));
+  // keep the labels apart where the log scale squeezes them
+  const kept: FoldTick[] = [];
+  for (const t of ticks) if (!kept.length || (t.log2 - kept[kept.length - 1]!.log2) * pxPerUnit >= minGap) kept.push(t);
+  return kept.length >= 2 ? kept : out;
 }
 
 /** A fold scale over [x0, x1] pixels for these log2 values. */
@@ -58,8 +85,9 @@ export function foldScale(
   x0: number,
   x1: number,
   minGap = 44,
+  zero = true,
 ): FoldScale {
-  const [lo, hi] = foldDomain(values, line);
+  const [lo, hi] = foldDomain(values, line, 0.1, zero);
   const x = scaleLinear().domain([lo, hi]).range([x0, Math.max(x0 + 1, x1)]);
   return { x, lo, hi, ticks: foldTicks(lo, hi, (x1 - x0) / (hi - lo), minGap) };
 }
