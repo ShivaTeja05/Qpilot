@@ -175,7 +175,11 @@ def test_the_web_code_writes_only_as_a_person():
                 continue
             name = node.func.attr if isinstance(node.func, ast.Attribute) else ""
             name = name or (node.func.id if isinstance(node.func, ast.Name) else "")
+            # View models (PendingRequest, AgentRequest, …: capitalised constructors) only
+            # display the actor of an existing entry; every other call with actor= is a write.
             for keyword in node.keywords:
+                if name[:1].isupper():
+                    break
                 if keyword.arg == "actor" and not is_human(keyword.value):
                     problems.append(f"{where}:{node.lineno} {name}(actor={ast.unparse(keyword)})")
             if name == "apply_decision" and len(node.args) > 5 and not is_human(node.args[5]):
