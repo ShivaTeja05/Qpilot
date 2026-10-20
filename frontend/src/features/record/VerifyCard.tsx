@@ -5,6 +5,7 @@
  */
 import { CheckCircle2, FileArchive, MinusCircle, ShieldCheck, Upload, XCircle } from "lucide-react";
 import { useId, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { ApiError } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { bytes, count, dateTime, plural } from "@/lib/format";
 import { useFocusTarget } from "@/shell/actions";
@@ -87,7 +88,7 @@ export function verifyRows(r: VerifyReport, result?: Pick<VerifyResult, "audit" 
           {audit && !audit.ok && audit.problems.length ? (
             <ul className="mt-0.5 flex flex-col gap-0.5">
               {audit.problems.map((p) => (
-                <li key={p} className="break-words">
+                <li key={p} className="break-words whitespace-pre-line">
                   {p}
                 </li>
               ))}
@@ -243,7 +244,8 @@ export function VerifyCard() {
           </p>
         ) : verify.error ? (
           <ErrorPanel compact error={verify.error} title="This file could not be checked">
-            {file ? (
+            {/* A refusal (not a zip, not a record, too large) will not change on a retry. */}
+            {file && !(verify.error instanceof ApiError && verify.error.status >= 400 && verify.error.status < 500) ? (
               <Button size="sm" variant="secondary" className="mt-3" onClick={() => check(file)}>
                 Try again
               </Button>

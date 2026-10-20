@@ -1,5 +1,5 @@
 {
- "connect": "claude mcp add qpilot -e QPILOT_STUDIES_DIR=\"/Users/gangadhara/Documents/Wheel Hack/agent-bus/scratch/ui-record/studies\" -- qpilot serve",
+ "connect": "claude mcp add qpilot -e QPILOT_STUDIES_DIR=\"~/Documents/Wheel Hack/agent-bus/scratch/ui-record/studies\" -- qpilot serve",
  "connect_note": "Run this once in a terminal. Claude Code then starts `qpilot serve` itself; the agent reads and writes this same study store, and what it does appears here within about a second.",
  "store_note": "This page uses a study store other than the default one (~/.cache/qpilot/studies), so the command names it for the agent.",
  "tools": [
