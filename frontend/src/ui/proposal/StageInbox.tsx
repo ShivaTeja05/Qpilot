@@ -7,9 +7,17 @@ import { CheckCircle2, ChevronRight, Inbox, Search, X } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { count, relativeTime } from "@/lib/format";
+import { count, dateTime, relativeTime } from "@/lib/format";
 import { useHotkeys } from "@/lib/hooks";
-import { CHECK, KIND_TITLE, STATUS_WORDS, describeProposal, type CheckStatus, type Proposal } from "@/lib/vocab";
+import {
+  CHECK,
+  KIND_TITLE,
+  STATUS_WORDS,
+  describeProposal,
+  effectivePayload,
+  type CheckStatus,
+  type Proposal,
+} from "@/lib/vocab";
 import { Badge, Kbd } from "../Badge";
 import { Button } from "../Button";
 import { ErrorPanel } from "../ErrorPanel";
@@ -72,7 +80,8 @@ export interface StageInboxProps {
   arriving?: boolean;
 }
 
-const searchable = (p: Proposal) => `${p.subject} ${describeProposal(p)} ${KIND_TITLE[p.kind] ?? ""}`.toLowerCase();
+const searchable = (p: Proposal) =>
+  `${p.subject} ${describeProposal(p)} ${KIND_TITLE[p.kind] ?? ""}`.toLowerCase();
 
 /** The inbox of one stage, read from `GET /api/sessions/{sid}/proposals?stage=`. */
 export function StageInbox({
@@ -102,14 +111,19 @@ export function StageInbox({
   const [query, setQuery] = useState("");
   const [shown, setShown] = useState(PAGE);
   // The focused card, by id and by its place (used once it leaves the list: the next one).
-  const [focusAt, setFocusAt] = useState<{ id: string | null; index: number }>({ id: null, index: 0 });
+  const [focusAt, setFocusAt] = useState<{ id: string | null; index: number }>({
+    id: null,
+    index: 0,
+  });
   const refs = useRef(new Map<string, ProposalCardHandle>());
 
   const all = useMemo(() => list.data?.proposals ?? [], [list.data]);
   // A waiting confirm step is the confirm dialog's (ConfirmStage), not a card of the inbox.
   const pendingAll = useMemo(() => {
     const waiting = all.filter((p) => p.status === "proposed" && p.kind !== "stage.confirm");
-    return arriving ? [...waiting].sort((a, b) => a.created_at.localeCompare(b.created_at)) : waiting;
+    return arriving
+      ? [...waiting].sort((a, b) => a.created_at.localeCompare(b.created_at))
+      : waiting;
   }, [all, arriving]);
   const decided = useMemo(() => all.filter((p) => p.status !== "proposed"), [all]);
 
@@ -141,7 +155,8 @@ export function StageInbox({
 
   const focusIndex = visible.findIndex((p) => p.id === focusAt.id);
   // No card is focused until the person moves (j/k) or clicks one.
-  const effectiveIndex = focusIndex >= 0 ? focusIndex : focusAt.id ? Math.min(focusAt.index, visible.length - 1) : -1;
+  const effectiveIndex =
+    focusIndex >= 0 ? focusIndex : focusAt.id ? Math.min(focusAt.index, visible.length - 1) : -1;
   const focused = effectiveIndex >= 0 ? visible[effectiveIndex] : undefined;
   useEffect(() => {
     onFocusProposal?.(focused ?? null);
@@ -149,7 +164,10 @@ export function StageInbox({
 
   const move = (delta: number) => {
     if (!pending.length) return;
-    const next = Math.max(0, Math.min(pending.length - 1, (effectiveIndex < 0 ? -1 : effectiveIndex) + delta));
+    const next = Math.max(
+      0,
+      Math.min(pending.length - 1, (effectiveIndex < 0 ? -1 : effectiveIndex) + delta),
+    );
     if (next >= shown) setShown((n) => n + PAGE);
     const p = pending[next];
     if (p) {
@@ -184,7 +202,8 @@ export function StageInbox({
     );
   }
 
-  const filtered = checkNow !== "all" || kindNow !== "all" || Boolean(query.trim()) || Boolean(filter);
+  const filtered =
+    checkNow !== "all" || kindNow !== "all" || Boolean(query.trim()) || Boolean(filter);
   const checkOptions: { value: CheckFilter; label: string; n: number }[] = [
     { value: "all", label: "All waiting", n: pendingAll.length },
     { value: "contradicted", label: CHECK.contradicted.word, n: byCheck.contradicted },
@@ -198,7 +217,11 @@ export function StageInbox({
         {pendingAll.length ? (
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <div role="group" aria-label="Show by engine check" className="flex flex-wrap gap-1.5">
+              <div
+                role="group"
+                aria-label="Show by engine check"
+                className="flex flex-wrap gap-1.5"
+              >
                 {checkOptions.map((o) => (
                   <button
                     key={o.value}
@@ -234,12 +257,18 @@ export function StageInbox({
                     }}
                     options={[
                       { value: "all", label: `Every kind (${count(pendingAll.length)})` },
-                      ...kinds.map(([k, n]) => ({ value: k, label: `${KIND_TITLE[k as Proposal["kind"]] ?? k} (${count(n)})` })),
+                      ...kinds.map(([k, n]) => ({
+                        value: k,
+                        label: `${KIND_TITLE[k as Proposal["kind"]] ?? k} (${count(n)})`,
+                      })),
                     ]}
                   />
                 ) : null}
                 <div className="relative">
-                  <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-faint" aria-hidden />
+                  <Search
+                    className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-faint"
+                    aria-hidden
+                  />
                   <Input
                     type="search"
                     aria-label="Find a proposal (sample, target, words)"
@@ -257,7 +286,8 @@ export function StageInbox({
             {filter ? (
               <div className="flex items-center gap-2 text-[13px] text-muted">
                 <span>
-                  Showing proposals about <span className="font-medium text-fg">{filter.label}</span>
+                  Showing proposals about{" "}
+                  <span className="font-medium text-fg">{filter.label}</span>
                 </span>
                 {onClearFilter ? (
                   <Button size="sm" variant="ghost" icon={<X />} onClick={onClearFilter}>
@@ -267,18 +297,24 @@ export function StageInbox({
               </div>
             ) : null}
             {arriving ? (
-              <p className="rounded-lg border border-info/25 bg-info-soft/50 px-3 py-1.5 text-[13px] text-fg" aria-live="polite">
-                Proposals are still arriving ({count(pendingAll.length)} so far). They stay in arrival order until the job
-                ends; then the contradicted ones come first.
+              <p
+                className="rounded-lg border border-info/25 bg-info-soft/50 px-3 py-1.5 text-[13px] text-fg"
+                aria-live="polite"
+              >
+                Proposals are still arriving ({count(pendingAll.length)} so far). They stay in
+                arrival order until the job ends; then the contradicted ones come first.
               </p>
             ) : null}
             <p className="text-xs text-faint" aria-live={arriving ? undefined : "polite"}>
-              {filtered ? `${count(pending.length)} of ${count(pendingAll.length)} waiting` : `${count(pendingAll.length)} waiting`}
+              {filtered
+                ? `${count(pending.length)} of ${count(pendingAll.length)} waiting`
+                : `${count(pendingAll.length)} waiting`}
               {" · "}
               {arriving ? "in arrival order" : "contradicted first"}
               <span className="hidden sm:inline">
                 {" · "}
-                <Kbd>j</Kbd> <Kbd>k</Kbd> move · <Kbd>a</Kbd> <Kbd>e</Kbd> <Kbd>x</Kbd> accept, edit, reject
+                <Kbd>j</Kbd> <Kbd>k</Kbd> move · <Kbd>a</Kbd> <Kbd>e</Kbd> <Kbd>x</Kbd> accept,
+                edit, reject
               </span>
             </p>
           </div>
@@ -331,8 +367,13 @@ export function StageInbox({
           </ul>
         ) : null}
         {pending.length > shown ? (
-          <Button variant="secondary" className="self-center" onClick={() => setShown((s) => s + PAGE)}>
-            Show {count(Math.min(PAGE, pending.length - shown))} more ({count(pending.length - shown)} not shown)
+          <Button
+            variant="secondary"
+            className="self-center"
+            onClick={() => setShown((s) => s + PAGE)}
+          >
+            Show {count(Math.min(PAGE, pending.length - shown))} more (
+            {count(pending.length - shown)} not shown)
           </Button>
         ) : null}
 
@@ -343,7 +384,8 @@ export function StageInbox({
               <div>
                 <p className="text-sm font-semibold text-fg">Nothing is waiting in this stage</p>
                 <p className="mt-0.5 text-[13px] text-muted">
-                  Every proposal is decided ({count(decided.length)}). They are listed below with the reasons given.
+                  Every proposal is decided ({count(decided.length)}). They are listed below with
+                  the reasons given.
                 </p>
               </div>
             </div>
@@ -363,9 +405,33 @@ export function StageInbox({
   );
 }
 
-const DECIDED_TONE = { accepted: "ok", edited: "ok", rejected: "neutral", superseded: "neutral", proposed: "accent" } as const;
+/** Who decided and when, in words: "Rejected by a person · 20 Oct 2026, 21:24 (2 h ago)". */
+export function decidedLine(
+  p: Pick<Proposal, "status" | "decided_by" | "decided_at" | "superseded_by">,
+): string {
+  const who =
+    p.status === "superseded"
+      ? `replaced by a newer proposal${p.superseded_by ? ` (${p.superseded_by})` : ""}`
+      : p.decided_by === "human"
+        ? `${STATUS_WORDS[p.status]} by a person`
+        : STATUS_WORDS[p.status];
+  const when = p.decided_at ? ` · ${dateTime(p.decided_at)} (${relativeTime(p.decided_at)})` : "";
+  return `${who.charAt(0).toUpperCase()}${who.slice(1)}${when}`;
+}
 
-/** What was already decided in the stage (folded): status, the proposal, the reason; opens the card. */
+const DECIDED_TONE = {
+  accepted: "ok",
+  edited: "ok",
+  rejected: "neutral",
+  superseded: "neutral",
+  proposed: "accent",
+} as const;
+
+/**
+ * What was already decided in the stage (folded, as the old Studio page had it): each accepted,
+ * edited or rejected proposal with who decided, when, and the reason given; filters by kind and
+ * decision; a line opens the read-only card.
+ */
 export function DecidedList({
   proposals,
   quotes,
@@ -389,11 +455,15 @@ export function DecidedList({
   for (const p of proposals) byStatus.set(p.status, (byStatus.get(p.status) ?? 0) + 1);
   const byKind = new Map<string, number>();
   for (const p of proposals) byKind.set(p.kind, (byKind.get(p.kind) ?? 0) + 1);
-  const listed = proposals.filter((p) => (kind === "all" || p.kind === kind) && (status === "all" || p.status === status));
+  const listed = proposals.filter(
+    (p) => (kind === "all" || p.kind === kind) && (status === "all" || p.status === status),
+  );
   const chip = (active: boolean) =>
     cn(
       "inline-flex h-6 items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-colors",
-      active ? "border-accent/40 bg-accent-soft text-accent-strong" : "border-line bg-surface text-muted hover:border-line-strong hover:text-fg",
+      active
+        ? "border-accent/40 bg-accent-soft text-accent-strong"
+        : "border-line bg-surface text-muted hover:border-line-strong hover:text-fg",
     );
   return (
     <section className="rounded-xl border border-line bg-surface">
@@ -403,8 +473,13 @@ export function DecidedList({
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center gap-2 rounded-xl px-4 py-3 text-left hover:bg-surface-2"
       >
-        <ChevronRight aria-hidden className={cn("size-4 text-muted transition-transform duration-150", open && "rotate-90")} />
-        <span className="text-sm font-semibold text-fg">Decided in this stage ({count(proposals.length)})</span>
+        <ChevronRight
+          aria-hidden
+          className={cn("size-4 text-muted transition-transform duration-150", open && "rotate-90")}
+        />
+        <span className="text-sm font-semibold text-fg">
+          Decided in this stage ({count(proposals.length)})
+        </span>
         <span className="ml-auto flex flex-wrap justify-end gap-1.5">
           {[...byStatus].map(([s, n]) => (
             <Badge key={s} tone={DECIDED_TONE[s as Proposal["status"]]}>
@@ -418,24 +493,48 @@ export function DecidedList({
           <div className="flex flex-col gap-2 border-b border-line px-4 py-2.5">
             {byKind.size > 1 ? (
               <div role="group" aria-label="Show by kind" className="flex flex-wrap gap-1.5">
-                <button type="button" aria-pressed={kind === "all"} className={chip(kind === "all")} onClick={() => setKind("all")}>
+                <button
+                  type="button"
+                  aria-pressed={kind === "all"}
+                  className={chip(kind === "all")}
+                  onClick={() => setKind("all")}
+                >
                   Every kind <span className="font-mono tabular">{count(proposals.length)}</span>
                 </button>
                 {[...byKind].map(([k, n]) => (
-                  <button key={k} type="button" aria-pressed={kind === k} className={chip(kind === k)} onClick={() => setKind(k)}>
-                    {KIND_TITLE[k as Proposal["kind"]] ?? k} <span className="font-mono tabular">{count(n)}</span>
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={kind === k}
+                    className={chip(kind === k)}
+                    onClick={() => setKind(k)}
+                  >
+                    {KIND_TITLE[k as Proposal["kind"]] ?? k}{" "}
+                    <span className="font-mono tabular">{count(n)}</span>
                   </button>
                 ))}
               </div>
             ) : null}
             {byStatus.size > 1 ? (
               <div role="group" aria-label="Show by decision" className="flex flex-wrap gap-1.5">
-                <button type="button" aria-pressed={status === "all"} className={chip(status === "all")} onClick={() => setStatus("all")}>
+                <button
+                  type="button"
+                  aria-pressed={status === "all"}
+                  className={chip(status === "all")}
+                  onClick={() => setStatus("all")}
+                >
                   Every decision
                 </button>
                 {[...byStatus].map(([st, n]) => (
-                  <button key={st} type="button" aria-pressed={status === st} className={chip(status === st)} onClick={() => setStatus(st)}>
-                    {STATUS_WORDS[st as Proposal["status"]]} <span className="font-mono tabular">{count(n)}</span>
+                  <button
+                    key={st}
+                    type="button"
+                    aria-pressed={status === st}
+                    className={chip(status === st)}
+                    onClick={() => setStatus(st)}
+                  >
+                    {STATUS_WORDS[st as Proposal["status"]]}{" "}
+                    <span className="font-mono tabular">{count(n)}</span>
                   </button>
                 ))}
               </div>
@@ -451,14 +550,33 @@ export function DecidedList({
                   className="flex w-full flex-wrap items-baseline gap-x-2 gap-y-1 px-4 py-2 text-left text-[13px] hover:bg-surface-2"
                 >
                   <Badge tone={DECIDED_TONE[p.status]}>{STATUS_WORDS[p.status]}</Badge>
-                  <span className="min-w-0 flex-1 text-fg">{describeProposal(p)}</span>
+                  <span className="min-w-0 flex-1 text-fg">
+                    {p.status === "edited"
+                      ? describeProposal(p, effectivePayload(p))
+                      : describeProposal(p)}
+                  </span>
                   <CheckTag status={p.check.status} />
-                  {p.reason ? <span className="basis-full pl-1 text-muted">— reason: “{p.reason}”</span> : null}
-                  {p.decided_at ? <span className="basis-full pl-1 text-xs text-faint">{relativeTime(p.decided_at)}</span> : null}
+                  {p.status === "edited" ? (
+                    <span className="basis-full pl-1 text-muted">
+                      — as proposed: {describeProposal(p)}
+                    </span>
+                  ) : null}
+                  {p.reason ? (
+                    <span className="basis-full pl-1 text-muted">— reason: “{p.reason}”</span>
+                  ) : null}
+                  <span className="basis-full pl-1 text-xs text-faint">{decidedLine(p)}</span>
                 </button>
                 {openId === p.id ? (
                   <div className="px-3 pb-3">
-                    <ProposalCard proposal={p} quotes={quotes} sheetCells={sheetCells} resultsVisible={resultsVisible} onOpenWell={onOpenWell} readOnly headingLevel={4} />
+                    <ProposalCard
+                      proposal={p}
+                      quotes={quotes}
+                      sheetCells={sheetCells}
+                      resultsVisible={resultsVisible}
+                      onOpenWell={onOpenWell}
+                      readOnly
+                      headingLevel={4}
+                    />
                   </div>
                 ) : null}
               </li>
