@@ -1,6 +1,6 @@
 /** All genes: a virtualised, sortable table with filters that also dim the map. */
 import { Search } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { CALLS, CALL_ORDER, LEVEL_ORDER, VERDICTS, VERDICT_ORDER } from "@/charts";
 import { ci, count, fold, pValue, percent } from "@/lib/format";
 import {
@@ -191,6 +191,8 @@ export function GenesPanel({
   );
 
   const set = (patch: Partial<GeneFilter>) => onFilter({ ...filter, ...patch });
+  // Stable while the filter is unchanged, so the table keeps its rows between renders.
+  const rowFilter = useCallback((g: (typeof genes)[number]) => matches(g, filter), [filter]);
   const callCount = (c: string) => genes.filter((g) => g.conclusion === c).length;
 
   return (
@@ -262,7 +264,7 @@ export function GenesPanel({
           columns={columns}
           getRowId={(g) => g.gene}
           label={`All genes: call, fold change with its 95 % confidence interval, p, the share ${cells ? `of the ${count(cells)} analyses` : "of the analyses"} qPilot checks that give the same call, and the confidence level`}
-          rowFilter={(g) => matches(g, filter)}
+          rowFilter={rowFilter}
           initialSorting={[{ id: "holds", desc: false }]}
           onRowClick={(g) => onOpen(g.gene)}
           selectedId={selected}
