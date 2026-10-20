@@ -17,6 +17,12 @@ import { count, fold } from "@/lib/format";
 import { Card, CardBody, CardHeader, SegmentedControl } from "@/ui";
 import type { GeneRow, ResultsView } from "./api";
 
+/** The size of qPilot's choice grid, when every gene was checked over the same one. */
+export function gridSize(genes: readonly GeneRow[]): number | null {
+  const sizes = new Set(genes.filter((g) => g.holds != null).map((g) => g.n_cells));
+  return sizes.size === 1 ? [...sizes][0]! : null;
+}
+
 export function MapPanel({
   view,
   by,
@@ -70,11 +76,15 @@ export function MapPanel({
     ];
   }, [genes, by, lineFold]);
 
+  const cells = gridSize(genes);
+  const setWords = cells
+    ? `of the ${count(cells)} analyses qPilot checks`
+    : "of the analyses qPilot checks";
   const oneChoice = genes.filter((g) => g.conclusion !== "none" && g.flips_by.length > 0).length;
   const called = genes.filter((g) => g.conclusion !== "none").length;
   const group = view.summary.groups[0]?.label;
   const summary =
-    `Robustness map of ${count(genes.length)} genes: fold change across, share of reasonable analyses with the same call up. ` +
+    `Robustness map of ${count(genes.length)} genes: fold change across, and up, the share ${setWords} that give the same call. ` +
     `${count(called)} genes are called; a single choice can change the call of ${count(oneChoice)} of them.`;
 
   return (
@@ -82,7 +92,7 @@ export function MapPanel({
       <CardHeader
         id="map-title"
         title="Robustness map"
-        hint="Every gene: how large the change is, and how often a reasonable analysis gives the same call. Genes low on the map lean on the choices made."
+        hint={`Every gene: how large the change is, and how often it keeps its call ${setWords} (qPilot's choice grid: every control-gene set, cut-off, empty-well rule and amplification-call rule). Genes low on the map lean on the choices made.`}
         actions={
           <SegmentedControl<MapEncoding>
             label="Colour the genes by"
@@ -111,6 +121,12 @@ export function MapPanel({
           higher={group ? `higher in ${group}` : "higher"}
           legend={legend}
           summary={summary}
+          setWords={setWords}
+          yLabel={
+            cells
+              ? `Same call in qPilot's choice grid (${count(cells)} analyses)`
+              : "Same call in qPilot's choice grid"
+          }
           selected={selected}
           highlight={highlight}
           onSelect={onOpen}

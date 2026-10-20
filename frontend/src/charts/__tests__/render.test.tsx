@@ -46,6 +46,8 @@ describe("charts on recorded data", { timeout: 30_000 }, () => {
         lineLabel="2× line"
         legend={[]}
         summary="Map of all genes."
+        setWords="of the audit's 144 reasonable analyses"
+        yLabel="Same call in the audit's reasonable set"
         onSelect={onSelect}
       />,
     );

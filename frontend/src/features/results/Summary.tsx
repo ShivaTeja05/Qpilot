@@ -98,7 +98,7 @@ export function Summary({ view, auditHref }: { view: ResultsView; auditHref: str
                 className="inline-flex items-center gap-1 font-medium text-accent hover:underline"
               >
                 <ShieldCheck size={13} aria-hidden />
-                Test every reasonable analysis
+                Run the robustness audit
               </Link>
             </p>
           )}

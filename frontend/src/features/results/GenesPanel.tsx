@@ -19,6 +19,7 @@ import {
   type ColumnDef,
 } from "@/ui";
 import type { GeneRow } from "./api";
+import { gridSize } from "./MapPanel";
 
 export interface GeneFilter {
   text: string;
@@ -83,6 +84,7 @@ export function GenesPanel({
   onOpen: (gene: string) => void;
 }) {
   const audited = genes.some((g) => g.verdict);
+  const cells = gridSize(genes);
   const shown = genes.filter((g) => matches(g, filter)).length;
   const columns = useMemo<ColumnDef<GeneRow, unknown>[]>(
     () => [
@@ -132,7 +134,7 @@ export function GenesPanel({
       },
       {
         id: "holds",
-        header: "Same call in",
+        header: cells ? `Holds (of ${count(cells)})` : "Holds",
         accessorFn: (g) => g.holds ?? -1,
         meta: { numeric: true, width: "8.5rem" },
         cell: ({ row }) => <HoldsCell holds={row.original.holds} />,
@@ -184,7 +186,7 @@ export function GenesPanel({
         },
       },
     ],
-    [audited, dimLabel],
+    [audited, dimLabel, cells],
   );
 
   const set = (patch: Partial<GeneFilter>) => onFilter({ ...filter, ...patch });
@@ -258,7 +260,7 @@ export function GenesPanel({
           data={genes}
           columns={columns}
           getRowId={(g) => g.gene}
-          label="All genes: call, fold change with its 95 % confidence interval, p, the share of reasonable analyses with the same call, and the confidence level"
+          label={`All genes: call, fold change with its 95 % confidence interval, p, the share ${cells ? `of the ${count(cells)} analyses` : "of the analyses"} qPilot checks that give the same call, and the confidence level`}
           rowFilter={(g) => matches(g, filter)}
           initialSorting={[{ id: "holds", desc: false }]}
           onRowClick={(g) => onOpen(g.gene)}

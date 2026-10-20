@@ -101,7 +101,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
     <div className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="Results"
-        hint="Every gene's call, how robust it is to reasonable analysis choices, and the choices still to decide."
+        hint="Every gene's call, how well it holds across the analyses qPilot checks, and the choices still to decide."
       />
       {results.error ? (
         <ErrorPanel error={results.error} onRetry={() => void results.refetch()} />
