@@ -7,11 +7,10 @@ import { ArrowRight } from "lucide-react";
 import { HBars, VERDICT_ORDER } from "@/charts";
 import { cn } from "@/lib/cn";
 import { count, plural, shortHash } from "@/lib/format";
-import { Badge, Card, CardBody, CardHeader, ErrorPanel, LoadingBlock } from "@/ui";
+import { Badge, Card, CardBody, CardHeader, ErrorPanel, LoadingBlock, VerdictTag } from "@/ui";
 import { useAuditHow, type AuditTarget } from "./api";
 import type { AuditHow, AuditManifest, HowDecision } from "./types";
 import { AUDIT_STEPS, LIMITS, NOT_RUN_WORDS, tierOf } from "./words";
-import { VerdictMark } from "./VerdictMark";
 
 /** A tiny number as the page writes it: `5.3 × 10⁻¹⁵`. */
 export function scientific(x: number | null | undefined): string {
@@ -66,7 +65,7 @@ function Steps({ how, manifest }: { how: AuditHow; manifest: AuditManifest }) {
   const facts: Record<string, string | null> = {
     "Reproduce qPilot": r
       ? r.ok
-        ? `Reproduced ${r.genes != null ? plural(r.genes, "gene") : "every gene"} exactly: the largest difference was ${scientific(r.max_abs_diff_log2fc)} in log2 fold change and ${scientific(r.max_abs_diff_p)} in p (allowed: ${scientific(r.tolerance)}).`
+        ? `Matched qPilot on ${r.genes != null ? plural(r.genes, "gene") : "every gene"}: the largest difference was ${scientific(r.max_abs_diff_log2fc)} in log2 fold change and ${scientific(r.max_abs_diff_p)} in p (allowed: ${scientific(r.tolerance)}).`
         : "Did not reproduce qPilot's result."
       : null,
     "Lock the plan": manifest.lock_sha256 ? `lock ${shortHash(manifest.lock_sha256, 12)}` : null,
@@ -210,7 +209,7 @@ function Rules({ how }: { how: AuditHow }) {
           {VERDICT_ORDER.filter((v) => how.rules[v]).map((v) => (
             <div key={v}>
               <dt>
-                <VerdictMark verdict={v} />
+                <VerdictTag verdict={v} />
               </dt>
               <dd className="mt-0.5 pl-[18px] text-[13px] text-muted">{how.rules[v]}</dd>
             </div>

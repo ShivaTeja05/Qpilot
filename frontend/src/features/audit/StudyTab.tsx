@@ -18,8 +18,10 @@ import {
   choicesAloneBars,
   choicesSpreadBars,
   isVerdict,
+  type BarRow,
   type LegendItem,
 } from "@/charts";
+import { ApiError } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { count, plural } from "@/lib/format";
 import { sectionPath, type SectionProps } from "@/shell/sections";
@@ -34,20 +36,22 @@ import {
   Input,
   LoadingBlock,
   Skeleton,
+  VerdictTag,
 } from "@/ui";
 import { useAuditIssues, useAuditStudy, type AuditTarget } from "./api";
 import { IssueQueue } from "./IssueQueue";
 import type { AuditOverview, AuditStudyView } from "./types";
-import { VerdictMark } from "./VerdictMark";
 
 export function StudyTab({
   workspace,
   target,
   overview,
+  onOpenLab,
 }: {
   workspace: NonNullable<SectionProps["workspace"]>;
   target: AuditTarget;
   overview: AuditOverview | undefined;
+  onOpenLab: () => void;
 }) {
   const study = useAuditStudy(target);
   const issues = useAuditIssues(target);
@@ -149,7 +153,7 @@ export function StudyTab({
             <CardBody>
               {study.data ? (
                 <SpreadBars
-                  rows={choicesSpreadBars(study.data)}
+                  rows={spreadRows(study.data)}
                   valueHeader="Share of the spread"
                   summary={spreadSummary(study.data)}
                 />
@@ -173,17 +177,13 @@ export function StudyTab({
         total={overview?.n_issues}
         loading={issues.isPending}
         error={
-          issues.isError &&
-          !(
-            issues.error instanceof Error &&
-            "status" in issues.error &&
-            issues.error.status === 404
-          )
+          issues.isError && !(issues.error instanceof ApiError && issues.error.status === 404)
             ? issues.error
             : undefined
         }
         onRetry={() => void issues.refetch()}
         geneHref={geneHref}
+        onOpenLab={onOpenLab}
       />
     </div>
   );
@@ -252,7 +252,7 @@ function GeneList({
     <Card
       as="section"
       aria-labelledby="audit-genes"
-      className="flex min-h-0 flex-col xl:max-h-[560px]"
+      className="flex max-h-[480px] min-h-0 flex-col xl:max-h-[560px]"
     >
       <CardHeader
         id="audit-genes"
@@ -298,7 +298,7 @@ function GeneList({
                   href={geneHref(g.gene)}
                   className="grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-bg-subtle"
                 >
-                  <VerdictMark verdict={g.verdict} label={g.label} compact />
+                  <VerdictTag verdict={g.verdict} compact />
                   <span className="min-w-0">
                     <span
                       className={cn(
@@ -417,6 +417,16 @@ function Names({ names }: { names: string[] }) {
         </span>
       ))}
     </>
+  );
+}
+
+/** The spread bars, with a note on the choices fixed in reasonable analyses (they change the question). */
+function spreadRows(s: AuditStudyView): BarRow[] {
+  const question = new Set(s.choices.filter((c) => c.question).map((c) => c.id));
+  return choicesSpreadBars(s).map((r) =>
+    question.has(r.key)
+      ? { ...r, note: "fixed in reasonable analyses: it changes the question" }
+      : r,
   );
 }
 

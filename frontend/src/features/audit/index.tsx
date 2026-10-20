@@ -7,7 +7,7 @@ import { ShieldCheck } from "lucide-react";
 import { useCallback } from "react";
 import { useLocation } from "wouter";
 import { sectionPath, type SectionProps } from "@/shell/sections";
-import { EmptyState, ErrorPanel, LoadingBlock, PageHeader, TooltipProvider } from "@/ui";
+import { EmptyState, ErrorPanel, LoadingBlock, PageHeader } from "@/ui";
 import { useAuditStatus, type AuditTarget } from "./api";
 import { AuditReady } from "./AuditReady";
 import { CannotRun } from "./CannotRun";
@@ -49,16 +49,13 @@ export default function AuditSection({ workspace, rest }: SectionProps) {
       </div>
     );
   }
-  // TODO(audit): drop this provider once the shell (which mounts one) is merged.
   return (
-    <TooltipProvider>
-      <AuditBody
-        workspace={workspace}
-        target={{ workspaceKey: workspace.key, studyId }}
-        place={place}
-        go={go}
-      />
-    </TooltipProvider>
+    <AuditBody
+      workspace={workspace}
+      target={{ workspaceKey: workspace.key, studyId }}
+      place={place}
+      go={go}
+    />
   );
 }
 

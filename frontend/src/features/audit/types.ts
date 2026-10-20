@@ -70,6 +70,8 @@ export interface AuditStatus {
   manifest?: AuditManifest | null;
   /** For a study not audited yet: what the audit would cover (when cheap to know). */
   scope?: AuditScope | null;
+  /** The audit's folder on this computer (for the verify command). */
+  dir?: string | null;
   /** When the audit was written (unix seconds or ISO). */
   created?: number | string | null;
 }

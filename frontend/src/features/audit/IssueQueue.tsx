@@ -32,6 +32,7 @@ export function IssueQueue({
   error,
   onRetry,
   geneHref,
+  onOpenLab,
 }: {
   issues: IssueView[] | undefined;
   /** How many issues the audit found (the list may be its first few until the queue loads). */
@@ -40,6 +41,8 @@ export function IssueQueue({
   error?: unknown;
   onRetry?: () => void;
   geneHref: (gene: string) => string;
+  /** Opens the What-if lab (offered on issues about an analysis choice). */
+  onOpenLab?: () => void;
 }) {
   const [about, setAbout] = useState<string>("all");
   const [onlyChanges, setOnlyChanges] = useState<"all" | "changes">("all");
@@ -144,6 +147,7 @@ export function IssueQueue({
                   issue={issue}
                   rank={(issues ?? []).indexOf(issue) + 1}
                   geneHref={geneHref}
+                  onOpenLab={onOpenLab}
                 />
               ))}
             </ol>
@@ -203,10 +207,12 @@ function IssueRow({
   issue,
   rank,
   geneHref,
+  onOpenLab,
 }: {
   issue: IssueView;
   rank: number;
   geneHref: (gene: string) => string;
+  onOpenLab?: () => void;
 }) {
   const genes = issue.changes.slice(0, SHOWN_GENES);
   const where = [
@@ -258,6 +264,11 @@ function IssueRow({
         {where.length ? <p className="text-xs text-muted">Where: {where.join(" · ")}</p> : null}
         {issue.causes.length ? (
           <p className="text-xs text-faint">Consistent with {issue.causes.join("; ")}</p>
+        ) : null}
+        {onOpenLab && issue.id.startsWith("D-") ? (
+          <Button size="sm" variant="link" className="h-auto px-0" onClick={onOpenLab}>
+            Try this choice in the What-if lab
+          </Button>
         ) : null}
       </div>
     </li>

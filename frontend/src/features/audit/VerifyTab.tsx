@@ -124,9 +124,8 @@ export function VerifyTab({
                   : "It names another study"
               }
             >
-              Study {manifest.study_id ?? "—"}, from the file {manifest.source_file ?? "—"} (sha256{" "}
+              Study {manifest.study_id ?? "—"}, from the file {manifest.source_file ?? "—"}, sha256{" "}
               <Hash value={manifest.input_sha256 ?? ""} length={12} />
-              ).
             </Check>
             <Check
               tone={
@@ -147,12 +146,12 @@ export function VerifyTab({
               {current && !isCurrent ? (
                 <>
                   ; the study is now at <Hash value={current} length={12} />
-                  {since != null ? ` (${plural(since, "decision")} later)` : ""}. Its verdicts hold
-                  for the earlier state; run the audit again to include them.
+                  {since != null ? ` (${plural(since, "decision")} later)` : ""}
+                  <span className="block">
+                    Its verdicts hold for the earlier state; run the audit again to include them.
+                  </span>
                 </>
-              ) : (
-                "."
-              )}
+              ) : null}
             </Check>
           </ul>
         </CardBody>

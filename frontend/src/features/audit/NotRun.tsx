@@ -8,11 +8,10 @@ import type { SectionProps } from "@/shell/sections";
 import { useJob } from "@/api/jobs";
 import { count } from "@/lib/format";
 import type { Verdict } from "@/lib/vocab";
-import { Button, Card, CardBody, CardHeader, ErrorPanel, JobCard } from "@/ui";
+import { Button, Card, CardBody, CardHeader, ErrorPanel, JobCard, VerdictTag } from "@/ui";
 import { useInvalidateAudit, useRunAudit, type AuditTarget } from "./api";
 import type { AuditStatus } from "./types";
 import { DECISION_WORDS } from "./words";
-import { VerdictMark } from "./VerdictMark";
 
 /** What each verdict means, without the audit's thresholds (they come with the audit). */
 const VERDICT_MEANING: Record<Verdict, string> = {
@@ -60,7 +59,7 @@ export function NotRun({
           <ul className="grid gap-2 sm:grid-cols-2">
             {(Object.keys(VERDICT_MEANING) as Verdict[]).map((v) => (
               <li key={v} className="rounded-lg border border-line p-2.5">
-                <VerdictMark verdict={v} />
+                <VerdictTag verdict={v} />
                 <p className="mt-1 text-[13px] text-muted">{VERDICT_MEANING[v]}</p>
               </li>
             ))}

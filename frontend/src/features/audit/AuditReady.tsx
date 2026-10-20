@@ -115,7 +115,12 @@ export function AuditReady({
           />
         ) : null}
         <TabsContent value="study">
-          <StudyTab workspace={workspace} target={target} overview={overview.data} />
+          <StudyTab
+            workspace={workspace}
+            target={target}
+            overview={overview.data}
+            onOpenLab={() => go({ tab: "whatif", changes: {} })}
+          />
         </TabsContent>
         <TabsContent value="whatif">
           <WhatifTab
@@ -131,7 +136,7 @@ export function AuditReady({
           <HowTab target={target} manifest={manifest} />
         </TabsContent>
         <TabsContent value="verify">
-          <VerifyTab workspace={workspace} target={target} manifest={manifest} />
+          <VerifyTab workspace={workspace} target={target} manifest={manifest} dir={status.dir} />
         </TabsContent>
       </Tabs>
     </div>
