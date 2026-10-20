@@ -56,23 +56,30 @@ A *workspace* is one study at a time. Opening a file creates a **Studio session*
 **A level** says how far to trust one gene's result: **High**, **Moderate**, **Low**, **Very low** (four bars, three, two, one). It is never a percentage. A gene starts at High and moves down one level for each of three checks it fails:
 
 * *precision*: its 95 % confidence interval crosses the 2-fold line;
-* *robustness*: its call holds in fewer than 80 % of the reasonable analyses;
+* *robustness*: its call holds in fewer than 80 % of the analyses qPilot checks (qPilot's choice grid, below);
 * *normalisation*: fewer than two control genes are stable by geNorm (M below 1.5), or no V(n/n+1) is below 0.15.
 
-It moves up one level only when the change is at least 4-fold (or at most a quarter), the call holds in every reasonable analysis, and the precision and normalisation checks pass. The reasons are always listed beside the level, in words. Three more facts are reported but do not change the level: how few choices at once flip the call, the assay's efficiency and undetermined wells, and the smallest change your design could detect.
+It moves up one level only when the change is at least 4-fold (or at most a quarter), the call holds in every analysis qPilot checks, and the precision and normalisation checks pass. The reasons are always listed beside the level, in words. Three more facts are reported but do not change the level: how few choices at once flip the call, the assay's efficiency and undetermined wells, and the smallest change your design could detect.
 
 **A verdict** (only after the audit has run) is the audit's reading of one gene, in six words:
 
 | Verdict | In plain words |
 |---|---|
-| **Solid** | The same call in at least 95 of 100 reasonable analyses, no 5 or fewer samples change it, and the difference is clear in at least 95 of 100. |
-| **Holds with caveats** | The same call in at least 95 of 100, but 5 or fewer samples change it, or the difference is not always clear. |
-| **Depends on your choices** | The same call in 80 to 95 of 100; the rest depend on the choices made. |
-| **Fragile** | The same call in fewer than 80 of 100, or 2 or fewer samples change it, or it sits very close to the fold-change line. |
+| **Solid** | The same call in at least 95 % of the audit's reasonable analyses, no 5 or fewer samples change it, and the difference is clear in at least 95 % of them. |
+| **Holds with caveats** | The same call in at least 95 %, but 5 or fewer samples change it, or the difference is not always clear. |
+| **Depends on your choices** | The same call in 80 to 95 %; the rest depend on the choices made. |
+| **Fragile** | The same call in fewer than 80 %, or 2 or fewer samples change it, or it sits very close to the fold-change line. |
 | **Check data first** | A problem found in the data changes this call when it is fixed. |
 | **No change called** | Not called a change (see the rule above). |
 
-Every one of these has a shape and a word as well as a colour, so none depends on colour alone. **Holds** (for example "holds 64 %") is a robustness fraction: the share of reasonable analyses that give the gene the same call. It is not a probability that the call is right. Two sets of analyses are in play and the page says which: on **Results** and **Gene**, the reasonable analyses qPilot itself runs (744 on the demo: 31 sets of control genes × 3 group cut-offs × 2 ways of treating empty wells × 4 rules for which curves count as amplified); in the **Audit**, the audit's own *defensible* analyses (144 on the demo, out of the 90,396 it runs in all).
+Every one of these has a shape and a word as well as a colour, so none depends on colour alone.
+
+**Two sets of analyses, never confused.** "Holds" is a robustness fraction: the share of a set of analyses that give the gene the same call. It is not a probability that the call is right, and the page always says which set and how many:
+
+* **qPilot's choice grid** (Results, Gene, Ask, the Decision Cards): "holds in 65 % of the 744 analyses qPilot checks". It is every combination of the choices on the Decision Cards: every control-gene set (single genes included), group cut-off, rule for empty wells and rule for which curves count as amplified (31 × 3 × 2 × 4 = 744 on the demo).
+* **The audit's reasonable set** (Audit, verdicts, the gene card): "same call in 144 of 144 of the audit's reasonable analyses". It leaves out shortcuts such as single or paired control genes, and holds the group cut-off and the correction for many genes as planned; the audit also runs the full grid of 90,396 so you can see how far a choice would take a result.
+
+The two answer different questions, so they differ: on the demo NM23A's call holds in 65 % of qPilot's 744 analyses and in all 144 of the audit's reasonable set. On the Gene page both appear, each labelled.
 
 ## 4. Open
 
@@ -125,9 +132,9 @@ Opens once the design and the curves are confirmed; qPilot then analyses your co
 
 **The summary strip:** plates, reactions, samples, the groups and how many biological units each has, genes compared, calls under the rule (how many up, down, no call), the reference genes with their geNorm stability, and whether the robustness audit has run ("Audited at the current decisions", or "Decisions changed since the audit: run it again to bring it up to date").
 
-**The robustness map.** One point per gene. Left–right: fold change (log scale, labelled in ×). Up–down: the share of reasonable analyses that give the same call. The 2× lines mark the rule. A gene far from the lines and high on the map is a result that does not depend on your choices; a gene near a line, or low, does. **Colour the genes by** the call, the confidence level or, after an audit, the audit verdict. Hover or use the arrow keys to read a gene; click it, or press Enter, to open it. The chart has a table version for reading the same numbers as text.
+**The robustness map.** One point per gene. Left–right: fold change (log scale, labelled in ×). Up–down: the share of the analyses qPilot checks (qPilot's choice grid) that give the same call. The 2× lines mark the rule. A gene far from the lines and high on the map is a result that does not depend on your choices; a gene near a line, or low, does. **Colour the genes by** the call, the confidence level or, after an audit, the audit verdict. Hover or use the arrow keys to read a gene; click it, or press Enter, to open it. The chart has a table version for reading the same numbers as text.
 
-**All genes** is a table you can sort and filter: find a gene by name, and filter by call, by confidence, by audit verdict, or to **only genes one choice can flip**. Each row gives the gene, its call, the fold change with its 95 % confidence interval, p, the share of reasonable analyses with the same call ("Same call in"), the confidence level and why ("Why this level").
+**All genes** is a table you can sort and filter: find a gene by name, and filter by call, by confidence, by audit verdict, or to **only genes one choice can flip**. Each row gives the gene, its call, the fold change with its 95 % confidence interval, p, the share of the analyses qPilot checks with the same call ("Same call in"), the confidence level and why ("Why this level").
 
 **What one choice alone can flip** is the flip matrix: each row is a decision on a Decision Card, each column a gene (the genes that flip most first); a darker cell means more of that decision's other options change the gene's call. Decide those cards before you report the genes they flip.
 
@@ -149,7 +156,7 @@ Open a gene from the Results map or table, or from **Go to a gene** (or ⌘K). `
 
 The header gives the gene's name (with a **Headline gene** badge for the study's headline genes), the fold change with its 95 % confidence interval, the p-value, the number of samples per group, the **confidence** level with its reasons, and the **audit verdict** ("Not audited yet" before the audit has run). **Copy summary** puts a plain-text summary of the gene on your clipboard. A row of links under the header jumps to each part below.
 
-* **What holds.** How often the same call comes out when the analysis is done another reasonable way, and a strip with every reasonable analysis as a dot on the fold-change axis, coloured by call. A switch, **Which analyses**, chooses between *qPilot's grid* (every combination of the Decision Cards' options) and *The audit* (every reasonable combination of the audit's eight decisions; shown once the audit has run). A strip spread across the 2× line is a gene whose call depends on your choices.
+* **What holds.** How often the same call comes out when the analysis is done another way, and a strip with every analysis as a dot on the fold-change axis, coloured by call. A switch, **Which analyses**, chooses between *qPilot's grid* (the analyses qPilot checks: every combination of the Decision Cards' options) and *The audit* (the audit's reasonable analyses; shown once the audit has run), each with its own count. A strip spread across the 2× line is a gene whose call depends on your choices.
 * **One choice at a time.** For each decision, a dot per option, with every other choice as planned. A ringed dot changes the call on its own.
 * **Your samples.** Each sample's normalised value, relative to the mean of the rest, by group. Click a sample to open its well, its plate, its Cq, and badges such as "Leaving it out changes the call", "No Cq: never amplified" and "Flagged by LinRegPCR". An outlier is a place to look, not yet a reason to remove it.
 * **What changes it, what it leans on, what to do** (after an audit): the choices that flip it, the samples that change the call on their own, and what to check or fix.
@@ -158,7 +165,7 @@ The header gives the gene's name (with a **Headline gene** badge for the study's
 
 ## 9. Audit
 
-The audit re-runs your **confirmed** study under every combination of eight analysis decisions (efficiency model, flagged wells, late Cq, empty wells, which control genes, where to cut the groups, which test, correction for many genes): 90,396 analyses on the demo, about 50 seconds. It first checks that its own baseline reproduces qPilot's results gene by gene; if it does not, it refuses and writes nothing. It then gives each gene one of the six verdicts of [section 3](#3-three-scales-you-will-see-everywhere). A verdict counts only the options the audit marks *defensible* (144 analyses on the demo); the other options are there so that you can see how far a choice would take a result. Two of the decisions, where to cut the groups and the correction for many genes, change the claim rather than the analysis, and are reported separately.
+The audit re-runs your **confirmed** study under every combination of eight analysis decisions (efficiency model, flagged wells, late Cq, empty wells, which control genes, where to cut the groups, which test, correction for many genes): 90,396 analyses on the demo, about 50 seconds. It first checks that its own baseline reproduces qPilot's results gene by gene; if it does not, it refuses and writes nothing. It then gives each gene one of the six verdicts of [section 3](#3-three-scales-you-will-see-everywhere). A verdict counts only the audit's reasonable set (144 analyses on the demo: no shortcuts such as single or paired control genes, and the group cut-off and the correction for many genes as planned); the rest of the 90,396 are there so that you can see how far a choice would take a result. Those two decisions change the claim rather than the analysis, and are reported separately.
 
 * **Not run yet:** the page says what the audit is and offers **Run the audit** (a job with stages).
 * **Not applicable:** a design with technical replicates, today, because the audit needs one well per sample and gene. The page says so in words.
