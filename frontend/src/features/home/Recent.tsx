@@ -40,7 +40,7 @@ const CHIP: Record<StageState, string> = {
   confirmed: "border-ok/25 bg-ok-soft text-ok",
   waiting: "border-accent/30 bg-accent-soft text-accent-strong",
   open: "border-line-strong bg-surface text-muted",
-  closed: "border-dashed border-line text-faint",
+  closed: "border-dashed border-line-strong text-muted",
 };
 
 function StageChip({ stage }: { stage: StageView }) {
@@ -96,13 +96,9 @@ function WorkspaceCard({ w, now }: { w: WorkspaceSummary; now: number }) {
     .filter(Boolean)
     .join(", ");
   return (
-    <Link
-      href={href}
-      data-card
-      aria-labelledby={`${id}-title`}
-      aria-describedby={`${id}-details`}
-      className="group flex h-full flex-col rounded-xl border border-line bg-surface p-4 transition-[border-color,box-shadow,transform] duration-150 ease-out hover:border-line-strong hover:shadow-md focus-visible:border-accent motion-safe:hover:-translate-y-px"
-    >
+    // The title is the link, stretched over the whole card (its ::after), so the link's name is
+    // the title and the rest of the card is its description.
+    <article className="group relative flex h-full flex-col rounded-xl border border-line bg-surface p-4 transition-[border-color,box-shadow,transform] duration-150 ease-out hover:border-line-strong hover:shadow-md has-[a:focus-visible]:border-accent has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-focus motion-safe:hover:-translate-y-px">
       <div className="flex items-start gap-3">
         <span
           className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-bg-subtle text-muted [&_svg]:size-4"
@@ -111,11 +107,15 @@ function WorkspaceCard({ w, now }: { w: WorkspaceSummary; now: number }) {
           {w.kind === "session" ? <Sparkles /> : <FlaskConical />}
         </span>
         <div className="min-w-0 flex-1">
-          <h3
-            id={`${id}-title`}
-            className="line-clamp-2 text-[15px] leading-snug font-semibold tracking-tight text-fg"
-          >
-            {w.title}
+          <h3 className="line-clamp-2 text-[15px] leading-snug font-semibold tracking-tight text-fg">
+            <Link
+              href={href}
+              data-card
+              aria-describedby={`${id}-details`}
+              className="outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']"
+            >
+              {w.title}
+            </Link>
           </h3>
           <p
             className="mt-0.5 truncate font-mono text-xs text-muted"
@@ -185,7 +185,7 @@ function WorkspaceCard({ w, now }: { w: WorkspaceSummary; now: number }) {
       <span id={`${id}-details`} className="sr-only">
         {details}
       </span>
-    </Link>
+    </article>
   );
 }
 

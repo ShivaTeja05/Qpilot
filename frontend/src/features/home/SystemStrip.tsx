@@ -6,7 +6,7 @@ import { Cpu, Network, ShieldCheck, ShieldOff } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "wouter";
 import { ErrorPanel, Skeleton } from "@/ui";
-import { ModelChip } from "@/features/settings/ModelChip";
+import { ModelChip } from "@/shell/ModelChip";
 import type { SystemView } from "@/shell/data";
 
 function Item({ label, icon, children }: { label: string; icon?: ReactNode; children: ReactNode }) {
@@ -53,7 +53,7 @@ export function SystemStrip({
             <Item label="Model">
               <span className="inline-flex items-center gap-2">
                 <ModelChip model={system.model} />
-                <Link href="/settings" className="text-accent underline-offset-2 hover:underline">
+                <Link href="/settings" className="text-accent underline underline-offset-2">
                   Settings
                 </Link>
               </span>
@@ -73,7 +73,7 @@ export function SystemStrip({
                 : "Robustness audit not installed (pip install -e '.[sim]')"}
             </Item>
           </dl>
-          <ul className="mt-3 flex flex-col gap-0.5 text-faint sm:flex-row sm:flex-wrap sm:gap-x-4">
+          <ul className="mt-3 flex flex-col gap-0.5 text-muted sm:flex-row sm:flex-wrap sm:gap-x-4">
             {system.never.map((line) => (
               <li key={line}>{line}</li>
             ))}
