@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { Link } from "wouter";
 import type { Schemas } from "@/api/client";
 import { sectionPath } from "@/shell/sections";
+import { TraceLink } from "@/features/trace/TraceLink";
 import { Badge, Button, ConclusionTag, CopyButton, Kbd, LevelTag, Select, Tooltip, VerdictTag } from "@/ui";
 import { cn } from "@/lib/cn";
 import { ci, count, fold, pValue } from "@/lib/format";
@@ -42,6 +43,7 @@ export function GeneNav({
         All genes
       </Link>
       <div className="flex flex-wrap items-center gap-2">
+        {gene ? <TraceLink gene={gene} className="mr-2" /> : null}
         {near.total ? (
           <span className="text-xs text-muted tabular" aria-live="polite">
             {near.position ? `${count(near.position)} of ${count(near.total)}` : `${count(near.total)} genes`}

@@ -54,11 +54,28 @@ def call_word(call: str) -> str:
     return {"up": "up", "down": "down", "none": "no call"}[call]
 
 
-class Facts:
-    """The facts of one trace; :meth:`tok` registers a value and returns its token."""
+def near_line_fmt(fold: float, line: float | None, decimals: int = 2) -> str:
+    """A format with enough decimals that ``fold`` never reads as the rule's ``line``.
 
-    def __init__(self, prefix: str) -> None:
+    1.9996 next to a 2-fold line is written ``1.9996``, not ``2.00``: a number on the page
+    never sits on the wrong side of the rule because of rounding.
+    """
+    if line is not None and math.isfinite(fold):
+        while decimals < 6 and fold != line and round(fold, decimals) == round(line, decimals):
+            decimals += 1
+    return "{:." + str(decimals) + "f}"
+
+
+class Facts:
+    """The facts of one trace; :meth:`tok` registers a value and returns its token.
+
+    ``line`` is the rule's fold line (2.0 for "at least 2-fold"): folds near it get the decimals
+    that keep them on their side of it.
+    """
+
+    def __init__(self, prefix: str, line: float | None = None) -> None:
         self.prefix = f"f_trace_{slug(prefix)}"
+        self.line = line
         self.facts: dict[str, Fact] = {}
         self.texts: dict[str, str] = {}
 
@@ -90,7 +107,11 @@ class Facts:
 
     def fold(self, key: str, fc: float) -> str:
         """A fold change as ``3.59×``."""
-        return self.tok(key, float(fc), fold_fmt(float(fc)), TIMES)
+        fc = float(fc)
+        fmt = fold_fmt(fc)
+        if fc >= 1:
+            fmt = near_line_fmt(fc, self.line)
+        return self.tok(key, fc, fmt, TIMES)
 
     def times(self, key: str, log2: float) -> str:
         """The size of a log2 change as an unsigned factor, ``1.05×``."""
@@ -103,7 +124,8 @@ class Facts:
     def change(self, key: str, log2fc: float) -> str:
         """A fold change in words: ``3.59× higher`` or ``1.98-fold lower``."""
         if log2fc < 0:
-            return f"{self.tok(key, float(2**-log2fc), '{:.2f}', '-fold')} lower"
+            down = float(2**-log2fc)
+            return f"{self.tok(key, down, near_line_fmt(down, self.line))}-fold lower"
         return f"{self.fold(key, float(2**log2fc))} higher"
 
     def p(self, key: str, p: float | None, alpha: float) -> str:

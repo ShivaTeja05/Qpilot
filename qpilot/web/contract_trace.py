@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from qpilot.trace.schema import TraceGene, TraceStudy, TraceWithout
+from qpilot.trace.schema import TraceGene, TracePlate, TraceStudy, TraceWithout
 from qpilot.web.contract import FactText
 
 
@@ -52,6 +52,13 @@ class TraceWithoutView(BaseModel):
     study_id: str
     head: str
     result: TraceWithout
+
+
+class TracePlateView(BaseModel):
+    """``GET /studies/{id}/trace/plate?run=``: one plate's wells with Trace's flags."""
+
+    study_id: str
+    plate: TracePlate
 
 
 class TraceLoaded(BaseModel):

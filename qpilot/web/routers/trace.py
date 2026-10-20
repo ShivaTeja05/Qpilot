@@ -23,17 +23,18 @@ import time
 from collections import OrderedDict
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from qpilot.trace import TraceContext, TraceError, build_context, model_for_study
 from qpilot.trace.gene import trace_gene
-from qpilot.trace.study import trace_study, without_samples
+from qpilot.trace.study import plate_wells, trace_study, without_samples
 from qpilot.web import results_views as rv
 from qpilot.web.context import AppContext, Ctx, api_error
 from qpilot.web.contract import JobView
 from qpilot.web.contract_trace import (
     TraceGeneView,
     TraceLoaded,
+    TracePlateView,
     TraceStudyView,
     TraceWithoutBody,
     TraceWithoutView,
@@ -263,6 +264,24 @@ def get_trace_study(study_id: str, ctx: Ctx) -> TraceStudyView:
         trace=out.data,
         texts=_texts(out.texts, out.facts),
     )
+
+
+@router.get("/studies/{study_id}/trace/plate", response_model=TracePlateView)
+def get_trace_plate(
+    study_id: str,
+    ctx: Ctx,
+    run: str | None = Query(default=None, max_length=128, description="The plate (run id)."),
+) -> TracePlateView:
+    """Every well of one plate with Trace's flags (the plate map next to a traced well)."""
+    _visible(ctx, study_id)
+    if not run:
+        raise api_error(422, "bad_request", "Name the plate to show (`run`).")
+    traced = _ready(ctx, study_id)
+    try:
+        plate = plate_wells(traced, run)
+    except TraceError as err:
+        raise api_error(404, "not_found", str(err)) from err
+    return TracePlateView(study_id=study_id, plate=plate)
 
 
 @router.get("/studies/{study_id}/trace/{gene}", response_model=TraceGeneView)
