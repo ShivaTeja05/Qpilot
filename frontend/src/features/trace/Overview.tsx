@@ -73,11 +73,11 @@ export function OverviewPage({ workspace, scope }: { workspace: Workspace; scope
         <FactText text={view.texts.summary} />
       </p>
       <Ladder trace={view.trace} />
-      <div className="mt-5 grid gap-5 2xl:grid-cols-2">
+      <div className="mt-5 grid min-w-0 gap-5 2xl:grid-cols-2 [&>*]:min-w-0">
         <FragileGenes workspace={workspace} trace={view.trace} />
         <Suspects workspace={workspace} trace={view.trace} />
       </div>
-      <div className="mt-5 grid gap-5 xl:grid-cols-2">
+      <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-2 [&>*]:min-w-0">
         <OffWells workspace={workspace} trace={view.trace} />
         <LeftOut trace={view.trace} />
       </div>
@@ -233,7 +233,7 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
     [limit],
   );
   return (
-    <Card as="section" aria-labelledby="trace-o-genes">
+    <Card as="section" aria-labelledby="trace-o-genes" className="min-w-0">
       <CardHeader
         id="trace-o-genes"
         title="Calls that hang on few samples"
@@ -257,7 +257,7 @@ function FragileGenes({ workspace, trace }: { workspace: Workspace; trace: Overv
 function Suspects({ workspace, trace }: { workspace: Workspace; trace: Overview }) {
   const shown = trace.suspects.slice(0, 16);
   return (
-    <Card as="section" aria-labelledby="trace-o-suspects">
+    <Card as="section" aria-labelledby="trace-o-suspects" className="min-w-0">
       <CardHeader
         id="trace-o-suspects"
         title="Samples behind the most calls"
@@ -302,7 +302,7 @@ export function readWords(s: Suspect): string {
 function SuspectRow({ workspace, s }: { workspace: Workspace; s: Suspect }) {
   const flags = s.flags.map((f) => SAMPLE_FLAG[f]?.word ?? f);
   return (
-    <li className="flex flex-col gap-1 py-2.5 first:pt-0 last:pb-0">
+    <li className="flex min-w-0 flex-col gap-1 py-2.5 [overflow-wrap:anywhere] first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium text-fg">Sample {s.unit}</span>
         {s.group ? <span className="text-[12px] text-muted">{s.group}</span> : null}
@@ -352,7 +352,7 @@ function OffWells({ workspace, trace }: { workspace: Workspace; trace: Overview 
     s.wells.filter((w) => w.flags.includes("reference_pull")).map((w) => ({ s, w })),
   );
   return (
-    <Card as="section" aria-labelledby="trace-o-off">
+    <Card as="section" aria-labelledby="trace-o-off" className="min-w-0">
       <CardHeader
         id="trace-o-off"
         title="Control-gene wells that disagree"
@@ -360,7 +360,12 @@ function OffWells({ workspace, trace }: { workspace: Workspace; trace: Overview 
       />
       <CardBody>
         {rows.length ? (
-          <div className="overflow-x-auto">
+          <div
+            className="relative max-w-full overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-accent"
+            tabIndex={0}
+            role="region"
+            aria-label="The table of control-gene wells that disagree (scrolls sideways)"
+          >
             <Table>
               <THead>
                 <TR>
@@ -431,7 +436,7 @@ function OffWells({ workspace, trace }: { workspace: Workspace; trace: Overview 
 function LeftOut({ trace }: { trace: Overview }) {
   const rows: Missing[] = trace.left_out;
   return (
-    <Card as="section" aria-labelledby="trace-o-left">
+    <Card as="section" aria-labelledby="trace-o-left" className="min-w-0">
       <CardHeader
         id="trace-o-left"
         title="Samples in no comparison"
@@ -440,7 +445,7 @@ function LeftOut({ trace }: { trace: Overview }) {
       <CardBody>
         {rows.length ? (
           <div
-            className="max-h-[420px] overflow-auto rounded-md focus-visible:outline-2 focus-visible:outline-accent"
+            className="relative max-h-[420px] max-w-full overflow-auto rounded-md focus-visible:outline-2 focus-visible:outline-accent"
             tabIndex={0}
             role="region"
             aria-label="The list of samples in no comparison (scrolls)"
