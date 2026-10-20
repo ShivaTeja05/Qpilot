@@ -176,6 +176,7 @@ function NavItem({
 }
 
 function stageChips(w: WorkspaceSummary): string {
+  if (w.warming) return "Opening…";
   if (w.kind !== "session") return w.results_visible ? "Analysed" : "Study";
   const design = w.stages.find((s) => s.stage === "design");
   const curves = w.stages.find((s) => s.stage === "curves");

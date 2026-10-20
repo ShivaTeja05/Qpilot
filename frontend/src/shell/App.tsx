@@ -10,7 +10,7 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, Router, useLocation } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
-import { ApiError } from "@/api/client";
+import { ApiError, type JobView } from "@/api/client";
 import { onLiveEvent, useLiveEvents } from "@/api/live";
 import { cn } from "@/lib/cn";
 import { count } from "@/lib/format";
@@ -19,6 +19,7 @@ import {
   Button,
   EmptyState,
   ErrorPanel,
+  JobCard,
   LoadingBlock,
   Skeleton,
   Toaster,
@@ -68,18 +69,27 @@ function SectionSkeleton() {
  * While a workspace's frame loads: the skeleton, then (after 1.5 s) what is happening in words,
  * then (after 15 s) that it is still working and a way back to Open.
  */
-function FrameLoading({ fileName }: { fileName?: string | null }) {
+function FrameLoading({
+  fileName,
+  warmJob,
+}: {
+  fileName?: string | null;
+  /** The server's `warm` job: the study is open but its file is being read once after a start. */
+  warmJob?: JobView | null;
+}) {
   const [started] = useState(() => Date.now());
   const now = useNow(500);
   const waited = (now - started) / 1000;
+  const warming = warmJob !== undefined;
   return (
     <div className="flex flex-col gap-4">
-      {waited >= 1.5 ? (
+      {warming || waited >= 1.5 ? (
         <div role="status" className="flex flex-col gap-1">
-          <p className="text-base font-semibold text-fg">Opening the study…</p>
+          <h1 className="text-xl font-semibold tracking-tight text-fg">Opening the study…</h1>
           <p className="text-[13px] text-muted">
-            {fileName ? `Reading ${fileName}` : "Reading the study"} (usually a few seconds; a large
-            file or a busy computer can take a minute).
+            {warming
+              ? `Reading ${fileName ?? "the file"} once after qPilot started (usually a few seconds; on a busy computer up to a minute). This page fills in by itself; nothing about the study is decided or hidden yet.`
+              : `${fileName ? `Reading ${fileName}` : "Reading the study"} (usually a few seconds; a large file or a busy computer can take a minute).`}
           </p>
           {waited >= 15 ? (
             <p className="mt-1 text-[13px] text-muted">
@@ -91,6 +101,7 @@ function FrameLoading({ fileName }: { fileName?: string | null }) {
           ) : null}
         </div>
       ) : null}
+      {warmJob ? <JobCard job={warmJob} className="max-w-xl" /> : null}
       <SectionSkeleton />
     </div>
   );
@@ -140,6 +151,13 @@ function SectionView({
         />
       );
     }
+    if (frame?.warming)
+      return (
+        <FrameLoading
+          fileName={frame.facts?.file_name ?? fileName}
+          warmJob={frame.active_jobs.find((j) => j.kind.startsWith("warm")) ?? null}
+        />
+      );
     if (!frame || route.bare) return <FrameLoading fileName={fileName} />;
     if (!state.reachable) return <LockedSection state={state} frame={frame} route={route} />;
   }
@@ -201,7 +219,8 @@ function Shell() {
 
   // A bare workspace link (#/s/<id>) opens the useful section.
   useEffect(() => {
-    if (route.bare && frame)
+    // While the file warms the stages are unknown: wait for them before choosing.
+    if (route.bare && frame && !frame.warming)
       navigate(pathOf(route.kind, route.key, defaultSection(frame)), { replace: true });
   }, [route.bare, route.kind, route.key, frame, navigate]);
 
@@ -260,7 +279,11 @@ function Shell() {
 
   const offline = system.error instanceof ApiError && system.error.code === "offline";
   const showBanner = Boolean(
-    frame && route.key && SECTION[route.section].scope === "workspace" && !route.bare,
+    frame &&
+    !frame.warming &&
+    route.key &&
+    SECTION[route.section].scope === "workspace" &&
+    !route.bare,
   );
 
   return (
