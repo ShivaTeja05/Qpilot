@@ -71,7 +71,13 @@ export {
   visibleText,
   type QuarantineEntry,
 } from "./words";
-export { DecidedList, StageInbox, type InboxFilter, type StageInboxProps } from "./StageInbox";
+export {
+  DecidedList,
+  decidedLine,
+  StageInbox,
+  type InboxFilter,
+  type StageInboxProps,
+} from "./StageInbox";
 export {
   BulkAction,
   BulkActions,
