@@ -12,6 +12,7 @@ import {
   usePrismBundles,
   useStartRoundTrip,
   type BundleEntry,
+  type Proposal,
   type ProposalList,
   type RoundTripResult,
   type Workspace,
@@ -161,7 +162,12 @@ export function RoundTripCard({
             <ul className="flex flex-col gap-3">
               {[...waiting, ...decided].map((p) => (
                 <li key={p.id}>
-                  <ProposalItem sid={workspace.key} proposal={p} head={inbox.data?.head ?? null} />
+                  <ProposalItem
+                    sid={workspace.key}
+                    proposal={p}
+                    head={inbox.data?.head ?? null}
+                    note={basisStudy(p) && basisStudy(p) !== workspace.study_id ? "About a bundle sent for an earlier analysis." : undefined}
+                  />
                 </li>
               ))}
             </ul>
@@ -170,6 +176,12 @@ export function RoundTripCard({
       </CardBody>
     </Card>
   );
+}
+
+/** The study a round-trip consequence was computed for (its `basis`), when it says. */
+function basisStudy(p: Proposal): string | null {
+  const basis = (p.consequence as { basis?: { study_id?: unknown } } | null | undefined)?.basis;
+  return typeof basis?.study_id === "string" ? basis.study_id : null;
 }
 
 function isCurrent(b: BundleEntry, studyId: string | null | undefined): boolean {

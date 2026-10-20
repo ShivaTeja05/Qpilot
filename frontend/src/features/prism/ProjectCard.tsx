@@ -93,7 +93,7 @@ export function ProjectCard({
             {earlier
               ? "The project accepted earlier was for an analysis whose choices have changed since."
               : "qPilot drafts it from this analysis: a table for each headline gene, Welch's t test on log2 values, the graph and a caption whose numbers are facts of this study."}
-            {flow.draftBlocked ? <span className="mt-1 block text-faint">{flow.draftBlocked}</span> : null}
+            {flow.draftBlocked && flow.choicesConfirmed ? <span className="mt-1 block text-faint">{flow.draftBlocked}</span> : null}
           </EmptyState>
         )}
 

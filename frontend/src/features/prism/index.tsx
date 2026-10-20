@@ -17,7 +17,6 @@ import { RoundTripCard } from "./RoundTripCard";
 import { RoutesCard } from "./RoutesCard";
 import { SendCard } from "./SendCard";
 import { Steps } from "./Steps";
-import { NOT_AFFILIATED } from "./words";
 
 const HINT = "Hand GraphPad Prism numbers it cannot misread, and see what changed when the tables come back.";
 
@@ -75,7 +74,6 @@ function PrismWorkspace({ workspace }: { workspace: Workspace }) {
   return (
     <>
       <PageHeader eyebrow="Studio · GraphPad Prism" title="Prism" hint={HINT} />
-      <p className="-mt-4 mb-6 text-[12px] text-faint">{NOT_AFFILIATED}</p>
       <div className="flex flex-col gap-6">
         <Steps flow={flow} />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">

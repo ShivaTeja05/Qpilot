@@ -56,7 +56,18 @@ export function proposalWords(p: Proposal): string {
   return describeProposal(p, payload);
 }
 
-export function ProposalItem({ sid, proposal, head }: { sid: string; proposal: Proposal; head: string | null }) {
+export function ProposalItem({
+  sid,
+  proposal,
+  head,
+  note,
+}: {
+  sid: string;
+  proposal: Proposal;
+  head: string | null;
+  /** A line above the card's words (e.g. "About an earlier analysis"). */
+  note?: string;
+}) {
   const decide = useDecide(sid);
   const [mode, setMode] = useState<Action | null>(null);
   const [reason, setReason] = useState("");
@@ -103,6 +114,7 @@ export function ProposalItem({ sid, proposal, head }: { sid: string; proposal: P
           <Badge tone={pending ? "accent" : proposal.status === "rejected" ? "neutral" : "ok"}>{STATUS_WORDS[proposal.status]}</Badge>
           <LevelTag level={proposal.level} className="ml-auto" />
         </div>
+        {note ? <p className="text-[12px] text-muted">{note}</p> : null}
         <p className="text-[14px] leading-snug text-fg">{proposalWords(proposal)}</p>
 
         {roundTrip ? (
