@@ -11,7 +11,7 @@ import { useLocation } from "wouter";
 import type { SamplePoint } from "@/charts";
 import { useJob } from "@/api/jobs";
 import { sectionPath, type SectionProps } from "@/shell/sections";
-import { ConclusionTag, EmptyState, ErrorPanel, LoadingBlock, Skeleton } from "@/ui";
+import { ConclusionTag, EmptyState, ErrorPanel, LoadingBlock, Skeleton, TooltipProvider } from "@/ui";
 import { cn } from "@/lib/cn";
 import { fold } from "@/lib/format";
 import { useHotkeys } from "@/lib/hooks";
@@ -40,7 +40,22 @@ const NO_CHANGES: Record<string, string> = {};
 
 export default function GeneSection({ workspace, rest }: SectionProps) {
   if (!workspace) return null;
-  return <GenePage workspace={workspace} wanted={rest[0] ? decodeURIComponent(rest[0]) : undefined} />;
+  return (
+    // The shell mounts one too; this keeps the section's tooltips working on their own.
+    <TooltipProvider>
+      <GenePage workspace={workspace} wanted={decoded(rest[0])} />
+    </TooltipProvider>
+  );
+}
+
+/** A path segment as text (the router may hand it over encoded or not). */
+function decoded(segment: string | undefined): string | undefined {
+  if (!segment) return undefined;
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
 }
 
 function Page({ children }: { children: ReactNode }) {
@@ -127,6 +142,8 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
 
   if (gene.error && !gene.data) {
     const isRef = geneName != null && used.includes(geneName);
+    // Only the study's own gene list can say a gene is not there (a 404 may also be a route).
+    const unknown = Boolean(results.data) && !order.includes(geneName ?? "") && isNotFound(gene.error);
     return (
       <Page>
         {nav}
@@ -138,12 +155,12 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
             </p>
             <ReferenceStability gene={geneName} genorm={references?.genorm} used={used} />
           </>
-        ) : isNotFound(gene.error) ? (
+        ) : unknown ? (
           <ErrorPanel title={`No gene called “${wanted}” in this study`} error={gene.error}>
             <p className="mt-2 text-[13px] text-muted">Pick one with the menu above, or go back to all genes.</p>
           </ErrorPanel>
         ) : (
-          <ErrorPanel error={gene.error} onRetry={() => void gene.refetch()} />
+          <ErrorPanel title={`${wanted} could not be opened`} error={gene.error} onRetry={() => void gene.refetch()} />
         )}
       </Page>
     );
