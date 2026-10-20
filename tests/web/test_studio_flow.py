@@ -203,11 +203,14 @@ def test_reject_needs_a_reason_and_edit_must_change_something(sclient, opened):
     sid = opened
     propose(sclient, sid, "design")
     p = pending(sclient, sid, "design")[0]
-    r = sclient.post(f"/api/sessions/{sid}/proposals/{p['id']}/reject", json={"reason": "  "})
+    r = sclient.post(
+        f"/api/sessions/{sid}/proposals/{p['id']}/reject",
+        json={"reason": "  ", "expected_head": head(sclient, sid)},
+    )
     assert r.status_code == 422 and "reason" in r.json()["error"]["message"]
     r = sclient.post(
         f"/api/sessions/{sid}/proposals/{p['id']}/edit",
-        json={"edits": dict(p["payload"]), "reason": "same"},
+        json={"edits": dict(p["payload"]), "reason": "same", "expected_head": head(sclient, sid)},
     )
     assert r.status_code == 422 and "Nothing was changed" in r.json()["error"]["message"]
     r = sclient.post(
@@ -215,7 +218,10 @@ def test_reject_needs_a_reason_and_edit_must_change_something(sclient, opened):
         json={"reason": "not this one", "expected_head": head(sclient, sid)},
     )
     assert r.status_code == 200 and r.json()["outcome"]["status"] == "rejected"
-    r = sclient.post(f"/api/sessions/{sid}/proposals/{p['id']}/reject", json={"reason": "x" * 2001})
+    r = sclient.post(
+        f"/api/sessions/{sid}/proposals/{p['id']}/reject",
+        json={"reason": "x" * 2001, "expected_head": head(sclient, sid)},
+    )
     assert r.status_code == 422
 
 
@@ -228,7 +234,11 @@ def test_an_agent_proposal_can_be_edited_and_accepted(sclient, web_store, opened
     assert view["proposal"]["made_by"]["kind"] == "agent" and view["blind"]
     r = sclient.post(
         f"/api/sessions/{sid}/proposals/{group['id']}/edit",
-        json={"edits": {"group": "control"}, "reason": "the lab calls it control"},
+        json={
+            "edits": {"group": "control"},
+            "reason": "the lab calls it control",
+            "expected_head": head(sclient, sid),
+        },  # fmt: skip
     )
     assert r.status_code == 200, r.text
     body = r.json()
@@ -244,21 +254,33 @@ def test_bulk_lists_are_exactly_what_is_acted_on(sclient, opened):
     # a list that is not the one shown is refused as a whole
     r = sclient.post(
         f"/api/sessions/{sid}/bulk/accept",
-        json={"stage": "design", "ids": [*shown["ids"], "p_0000000000000000"]},
+        json={
+            "stage": "design",
+            "ids": [*shown["ids"], "p_0000000000000000"],
+            "expected_head": shown["head"],
+        },  # fmt: skip
     )
     assert r.status_code == 409 and r.json()["error"]["code"] == "stale"
     assert r.json()["error"]["details"]["ids"] == shown["ids"]
-    r = sclient.post(f"/api/sessions/{sid}/bulk/accept", json={"stage": "design", "ids": []})
+    r = sclient.post(
+        f"/api/sessions/{sid}/bulk/accept",
+        json={"stage": "design", "ids": [], "expected_head": shown["head"]},
+    )
     assert r.status_code == 422
     r = sclient.post(
-        f"/api/sessions/{sid}/bulk/accept", json={"stage": "design", "ids": shown["ids"]}
+        f"/api/sessions/{sid}/bulk/accept",
+        json={"stage": "design", "ids": shown["ids"], "expected_head": shown["head"]},
     )
     assert r.status_code == 200 and r.json()["done"] == len(shown["ids"])
     rejecting = sclient.get(f"/api/sessions/{sid}/bulk/reject", params={"stage": "design"})
     assert rejecting.status_code == 200 and rejecting.json()["action"] == "reject"
     r = sclient.post(
         f"/api/sessions/{sid}/bulk/reject",
-        json={"stage": "design", "ids": rejecting.json()["ids"] or ["p_0000000000000000"]},
+        json={
+            "stage": "design",
+            "ids": rejecting.json()["ids"] or ["p_0000000000000000"],
+            "expected_head": head(sclient, sid),
+        },  # fmt: skip
     )
     assert r.status_code in (409, 422)
 
@@ -338,3 +360,83 @@ def test_proposing_writes_as_the_system_and_says_so(sclient, opened, stage):
     listed = sclient.get(f"/api/sessions/{sid}/proposals", params={"stage": "design"}).json()
     assert {p["made_by"]["kind"] for p in listed["proposals"]} == {"rule"}
     assert set(listed["descriptions"]) == {p["id"] for p in listed["proposals"]}
+
+
+def test_a_confirm_step_is_only_accepted_as_shown(sclient, web_store, opened):
+    sid = opened
+    design_ready(sclient, web_store, sid)
+    view = sclient.post(f"/api/sessions/{sid}/confirm/design").json()
+    pid = view["proposal"]["id"]
+    for action, body in (
+        ("edit", {"edits": {"covers": []}, "reason": "x"}),
+        ("accept", {"reason": "x"}),
+    ):
+        r = sclient.post(
+            f"/api/sessions/{sid}/proposals/{pid}/{action}",
+            json={**body, "expected_head": view["head"]},
+        )
+        assert r.status_code == 403 and r.json()["error"]["code"] == "refused", action
+    stages = {s["stage"]: s for s in sclient.get(f"/api/sessions/{sid}").json()["stages"]}
+    assert not stages["design"]["confirmed"]
+    # withdrawing it (a reject with a reason) is allowed
+    r = sclient.post(
+        f"/api/sessions/{sid}/proposals/{pid}/reject",
+        json={"reason": "not yet", "expected_head": view["head"]},
+    )
+    assert r.status_code == 200 and "stays open" in r.json()["message"]
+
+
+def test_asking_twice_whether_it_matters_runs_once(sclient, web_store, opened, monkeypatch):
+    import threading
+
+    sid = opened
+    design_ready(sclient, web_store, sid)
+    some = sclient.get(f"/api/sessions/{sid}/proposals", params={"stage": "design"}).json()
+    target = next(p for p in some["proposals"] if p["alternatives"])
+    gate = threading.Event()
+    studio = sclient.app.state.ctx.studio
+    real = studio.matters
+    monkeypatch.setattr(studio, "matters", lambda s, p: (gate.wait(10), real(s, p))[1])
+    try:
+        url = f"/api/sessions/{sid}/proposals/{target['id']}/matters"
+        first, second = sclient.post(url).json()["job"], sclient.post(url).json()["job"]
+    finally:
+        gate.set()
+    assert first["id"] == second["id"]
+    assert wait_job(sclient, first)["status"] == "done"
+
+
+def test_a_cold_file_answers_warming_then_fills_in(sclient, opened):
+    from qpilot.qpcr import inspect as qinspect
+
+    sid = opened
+    ctx = sclient.app.state.ctx
+    qinspect.clear_cache()  # as after a restart: the file's facts are not in memory
+    ctx.facts_wait = 0.0
+    frame = sclient.get(f"/api/sessions/{sid}").json()
+    assert frame["warming"] and frame["stages"] == [] and frame["facts"] is None
+    assert any(j["kind"] == "warm" for j in frame["active_jobs"])
+    r = sclient.get(f"/api/sessions/{sid}/plate")
+    if r.status_code == 503:
+        assert r.json()["error"]["code"] == "warming" and r.json()["error"]["details"]["job"]
+        wait_job(sclient, r.json()["error"]["details"]["job"])
+    listed = sclient.get("/api/workspaces").json()["workspaces"]
+    assert [w["key"] for w in listed] == [sid]
+    ctx.facts_wait = None
+    frame = sclient.get(f"/api/sessions/{sid}").json()
+    assert not frame["warming"] and frame["stages"] and frame["facts"]
+
+
+def test_an_edit_is_checked_before_it_is_accepted(sclient, web_store, opened):
+    sid = opened
+    propose(sclient, sid, "design")
+    p = next(x for x in pending(sclient, sid, "design") if x["kind"] == "design.well_role")
+    other = "unkn" if p["payload"].get("role") != "unkn" else "ntc"
+    r = sclient.post(
+        f"/api/sessions/{sid}/proposals/{p['id']}/check", json={"edits": {"role": other}}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] in ("consistent", "contradicted", "cannot_check")
+    r = sclient.post(f"/api/sessions/{sid}/proposals/{p['id']}/check", json={"edits": {"x": 1}})
+    assert r.status_code == 422
+    assert pending(sclient, sid, "design")[0]["status"] == "proposed", "a check writes nothing"

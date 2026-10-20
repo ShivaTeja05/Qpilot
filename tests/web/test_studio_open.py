@@ -48,3 +48,11 @@ def test_an_upload_is_kept_by_content(sclient, web_store, mini_rdml):
     assert first["result"]["key"] == second["result"]["key"]
     kept = list(views.inputs_dir(web_store).iterdir())
     assert len(kept) == 1 and kept[0].suffix == ".rdml" and len(kept[0].stem) == 24
+
+
+def test_the_workspace_shows_the_name_the_file_had(sclient, mini_rdml):
+    job = wait_job(
+        sclient, _open(sclient, "Liver KO vs WT.rdml", mini_rdml.read_bytes()).json()["job"]
+    )
+    frame = sclient.get(f"/api/sessions/{job['result']['key']}").json()
+    assert frame["title"] == "Liver KO vs WT.rdml" == frame["facts"]["file_name"]

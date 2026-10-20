@@ -45,6 +45,10 @@ def _pending(c, sid, stage):
     return [p for p in body["proposals"] if p["status"] == "proposed"], body["head"]
 
 
+def _head(c, sid):
+    return c.get(f"/api/sessions/{sid}/proposals").json()["head"]
+
+
 def _confirm(c, sid, stage):
     view = c.post(f"/api/sessions/{sid}/confirm/{stage}").json()
     assert view["ready"], view
@@ -102,7 +106,7 @@ def test_the_demo_walk_over_http(demo_client):  # noqa: PLR0915
     for p in left:
         r = c.post(
             f"/api/sessions/{sid}/proposals/{p['id']}/reject",
-            json={"reason": REASONS["design_rejects"]},
+            json={"reason": REASONS["design_rejects"], "expected_head": _head(c, sid)},
         )
         assert r.status_code == 200, r.text
     assert c.get(f"/api/studies/{sid}/results").status_code == 404  # a session id is no study
@@ -133,7 +137,8 @@ def test_the_demo_walk_over_http(demo_client):  # noqa: PLR0915
     assert r.status_code == 200 and r.json()["done"] == len(calls)
     rule = next(p for p in _pending(c, sid, "curves")[0] if p["kind"] == "curve.call_rule")
     r = c.post(
-        f"/api/sessions/{sid}/proposals/{rule['id']}/accept", json={"reason": REASONS["rule"]}
+        f"/api/sessions/{sid}/proposals/{rule['id']}/accept",
+        json={"reason": REASONS["rule"], "expected_head": _head(c, sid)},
     )
     assert r.status_code == 200
     decided = _confirm(c, sid, "curves")

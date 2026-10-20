@@ -19,15 +19,17 @@ from typing import Any, TypeVar
 from fastapi import APIRouter, Query
 
 from qpilot.core.store import StudyNotFound
-from qpilot.schemas_studio import Proposal, ProposalOutcome
+from qpilot.schemas_studio import Proposal, ProposalCheck, ProposalOutcome
 from qpilot.studio_service import StudioError
 from qpilot.web import studio_views as sv
 from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session
 from qpilot.web.contract import (
+    AnalyseDone,
     BulkAction,
     BulkDone,
     BulkList,
     BulkRequest,
+    CheckEdits,
     ConfirmRequest,
     ConfirmStage,
     ConfirmView,
@@ -50,6 +52,12 @@ from qpilot.web.contract import (
 from qpilot.web.jobs import JobError, Progress
 
 router = APIRouter(tags=["studio"])
+JOB_RESULTS = {
+    "propose.design": ProposeReport,
+    "propose.curves": ProposeReport,
+    "proposal.matters": MattersAnswer,
+    "analyse": AnalyseDone,
+}
 
 T = TypeVar("T")
 HUMAN = "human"  # the only actor the page writes as
@@ -65,11 +73,28 @@ MAX_IDS = 200
 
 
 def session(ctx: AppContext, sid: str) -> str:
-    """A known session id, or 404."""
+    """A known session whose file is there and read (404, 409 file missing, 503 warming)."""
+    from qpilot.web.warm import require
+
     check_key(sid)
     if not is_session(ctx.store, sid):
         raise api_error(404, "not_found", "There is no Studio session with this id.")
+    file_or_409(ctx, sid)
+    require(ctx, sid)
     return sid
+
+
+def file_or_409(ctx: AppContext, sid: str) -> None:
+    """Refuse (in words) a session whose input file is missing or changed since it was opened."""
+    from qpilot.web.warm import session_file_present
+
+    if not session_file_present(ctx.store, sid):
+        raise api_error(
+            409,
+            "studio",
+            "The input file is missing or has changed since it was opened: open it again "
+            "(the session continues where it was left).",
+        )
 
 
 def call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
@@ -105,6 +130,17 @@ def proposal_of(ctx: AppContext, sid: str, pid: str) -> Proposal:
             "and the curves are confirmed.",
         )
     return proposal
+
+
+def not_a_confirm(proposal: Proposal) -> None:
+    """A stage's confirm step is accepted only by “Yes, confirm” (as shown), never edited."""
+    if proposal.kind == "stage.confirm":
+        raise api_error(
+            403,
+            "refused",
+            "A stage is confirmed with “Confirm this stage…” and then “Yes, confirm”, which "
+            "show what it covers; a confirm step is never edited.",
+        )
 
 
 def changed(ctx: AppContext, sid: str) -> None:
@@ -338,6 +374,7 @@ def accept(sid: str, pid: str, body: ProposalAction, ctx: Ctx) -> ProposalDecide
     """Accept a proposal as it is (a reason is needed when the engine's check contradicts it)."""
     session(ctx, sid)
     proposal = proposal_of(ctx, sid, pid)
+    not_a_confirm(proposal)
     reason = body.reason.strip()
     if proposal.kind == "prism.exclusion_reason" and not reason:
         raise api_error(422, "bad_request", sv.WORDS["exclusion_reason"])
@@ -352,6 +389,7 @@ def edit(sid: str, pid: str, body: ProposalAction, ctx: Ctx) -> ProposalDecided:
     """Change some payload fields and accept; the edited proposal is checked again first."""
     session(ctx, sid)
     proposal = proposal_of(ctx, sid, pid)
+    not_a_confirm(proposal)
     if not isinstance(body.edits, dict):
         raise api_error(422, "bad_request", sv.WORDS["edit_not_object"])
     missing = object()
@@ -367,6 +405,20 @@ def edit(sid: str, pid: str, body: ProposalAction, ctx: Ctx) -> ProposalDecided:
     )  # fmt: skip
     words = sv.describe(proposal, {**proposal.payload, **edits})
     return decided(ctx, sid, outcome, f"Edited and accepted: {words}.")
+
+
+@router.post("/sessions/{sid}/proposals/{pid}/check", response_model=ProposalCheck)
+def check_edit(sid: str, pid: str, body: CheckEdits, ctx: Ctx) -> ProposalCheck:
+    """The engine's check of an edited reading, before a person accepts it (writes nothing)."""
+    session(ctx, sid)
+    proposal = proposal_of(ctx, sid, pid)
+    not_a_confirm(proposal)
+    extra = sorted(set(body.edits) - set(proposal.payload))
+    if extra:
+        raise api_error(
+            422, "bad_request", f"An edit changes the proposal's fields only, not {extra}."
+        )
+    return call(ctx.studio.check, sid, proposal.model_copy(update={"edits": body.edits}))
 
 
 @router.post("/sessions/{sid}/proposals/{pid}/reject", response_model=ProposalDecided)
@@ -418,7 +470,7 @@ def matters(sid: str, pid: str, ctx: Ctx) -> JobStarted:
         title="Does this matter?",
         key=sid,
         typical_s=MATTERS_S,
-        dedupe=False,
+        tag=pid,
     )
     return JobStarted(job=JobView(**job.view()))
 
