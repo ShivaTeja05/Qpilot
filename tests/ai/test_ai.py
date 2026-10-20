@@ -225,7 +225,26 @@ def test_ask_reference_stability_is_genorms_ranking(store, study, fixture_result
     first = genorm.order[0]
     assert out.facts["f_ans_m_1"].value == genorm.M_initial[first]
     assert out.plain.index(genorm.order[0]) < out.plain.index(genorm.order[-1])
+    assert out.plain.startswith(f"geNorm's most stable pair is {first} and {genorm.order[1]}")
     assert out.validated
+
+
+def test_a_confidence_reasons_numbers_reach_the_model_as_tokens():
+    from qpilot.ai.ask import _tokenise_reason
+
+    seen = {}
+
+    def tok(fid, value):
+        seen[fid] = value
+        return "{{" + fid + "}}"
+
+    reason = "The conclusion holds in fewer than 80 % of the 744 analyses qPilot checks; 2 choices."
+    out = _tokenise_reason(reason, tok)
+    assert out == (
+        "The conclusion holds in fewer than 80 % of the {{f_ans_n_cells}} analyses qPilot "
+        "checks; {{f_ans_min_flip}} choices."
+    )
+    assert seen == {"f_ans_n_cells": 744, "f_ans_min_flip": 2}
 
 
 def test_ask_how_many_genes_a_choice_changes_is_the_cards_impact(store, study, fixture_cards):
