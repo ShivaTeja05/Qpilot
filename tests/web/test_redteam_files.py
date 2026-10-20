@@ -23,7 +23,9 @@ def _zip(members: dict[str, bytes], links: dict[str, str] | None = None) -> byte
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for name, data in members.items():
-            zf.writestr(zipfile.ZipInfo(name), data)
+            info = zipfile.ZipInfo(name)
+            info.compress_type = zipfile.ZIP_DEFLATED  # a ZipInfo is stored unless told
+            zf.writestr(info, data)
         for name, target in (links or {}).items():
             info = zipfile.ZipInfo(name)
             info.external_attr = (stat.S_IFLNK | 0o777) << 16
