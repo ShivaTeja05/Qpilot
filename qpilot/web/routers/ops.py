@@ -315,16 +315,20 @@ def tool_catalogue(store: StudyStore) -> tuple[list[AgentTool], bool]:
 
 
 def _connect(store: StudyStore) -> tuple[str, str | None]:
-    """The connect command; it names this store when ``qpilot serve`` would use another."""
-    from qpilot.core.store import default_studies_dir
+    """The connect command; it names this store unless it is the built-in default.
 
-    if store.root.resolve() == default_studies_dir().resolve():
+    Claude Code starts ``qpilot serve`` with its own environment, which need not carry this
+    shell's ``QPILOT_STUDIES_DIR``: any other store is named in the command.
+    """
+    builtin = Path.home() / ".cache" / "qpilot" / "studies"
+    if store.root.resolve() == builtin.resolve():
         return CONNECT, None
     root = str(store.root)
     quoted = f'"{root}"' if re.search(r"[\s\"'$`\\]", root) else root
     return (
         f"claude mcp add qpilot -e QPILOT_STUDIES_DIR={quoted} -- qpilot serve",
-        "This page uses a study store other than the default one, so the command names it.",
+        "This page uses a study store other than the default one (~/.cache/qpilot/studies), "
+        "so the command names it for the agent.",
     )
 
 
@@ -359,7 +363,8 @@ def _study_entries(
 
     store = places.ctx.store
     head, card_list, pending = store.snapshot(study_id)
-    rows = [e.model_dump() for e in store.entries(study_id) if e.actor == "agent"]
+    log = store.entries(study_id)
+    rows = [e.model_dump() for e in log if e.actor == "agent"]
     rows += [a for a in store.attempts(study_id) if a.get("actor") == "agent"]
     if not pending and not rows:
         return None, [], []
@@ -389,8 +394,10 @@ def _study_entries(
                 expected_head=head,
             )
         )
+    waiting = {e.hash for e in pending}
     activity = []
     for row in rows:
+        settled = _settled(log, row, waiting) if row["status"] == "pending_human" else {}
         card_title, label = _card_words(cards, row["card_id"], row["option"])
         status = str(row["status"])
         words = DECISION_WORDS.get(status, "{title}: {label}")
@@ -406,9 +413,35 @@ def _study_entries(
                 reason=row.get("reason"),
                 card_id=row["card_id"],
                 option=row["option"],
+                seq=row.get("seq"),
+                hash=row.get("hash") or None,
+                **settled,
             )
         )
     return place, requests, activity
+
+
+def _settled(log: list[Any], request: dict[str, Any], waiting: set[str]) -> dict[str, Any]:
+    """What became of an agent's request: still waiting, or the later entry that settled it.
+
+    The same replay as the store's pending list (``core.store.pending_after``): an applied
+    decision on the card settles every request on it; a person's rejection settles the
+    requests for the option it names.
+    """
+    if request.get("hash") in waiting:
+        return {"request_state": "waiting"}
+    later = [e for e in log if e.seq > request["seq"] and e.card_id == request["card_id"]]
+    for entry in later:
+        if entry.status == "applied":
+            state = "approved" if entry.option == request["option"] else "decided_otherwise"
+        elif entry.status == "rejected" and entry.actor == "human":
+            if entry.option != request["option"]:
+                continue
+            state = "turned_down"
+        else:
+            continue
+        return {"request_state": state, "settled_by": entry.actor, "settled_at": entry.at}
+    return {"request_state": "closed"}
 
 
 PROPOSAL_WORDS = {

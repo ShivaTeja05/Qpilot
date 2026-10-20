@@ -6,6 +6,8 @@ on it through the MCP tool code itself (:class:`qpilot.mcp_server.QpilotTools`),
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from qpilot.ai.explain import KIND_TITLE
@@ -32,10 +34,27 @@ def test_every_tool_qpilot_serve_registers_says_what_it_can_change():
     assert TOOL_ACCESS["qpcr_propose"][0] == "propose"
 
 
-def test_an_empty_store_shows_how_to_connect_and_the_tools(client, web_store, monkeypatch):
-    monkeypatch.setenv("QPILOT_STUDIES_DIR", str(web_store.root))
-    body = client.get("/api/agents").json()
+def test_the_default_store_connects_with_the_plain_command(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from qpilot.web.context import make_context
+    from qpilot.web.server import create_app
+    from tests.web.conftest import BASE, TOKEN
+
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    ctx = make_context(
+        StudyStore(tmp_path / ".cache" / "qpilot" / "studies"), token=TOKEN, watch=False
+    )
+    try:
+        with TestClient(create_app(ctx), base_url=BASE) as c:
+            body = c.get("/api/agents", headers={"x-qpilot-token": TOKEN}).json()
+    finally:
+        ctx.close()
     assert body["connect"] == CONNECT and body["store_note"] is None
+
+
+def test_an_empty_store_shows_how_to_connect_and_the_tools(client, web_store):
+    body = client.get("/api/agents").json()
     assert [t["name"] for t in body["tools"]] == list(served_tool_names())
     assert body["simulator"] == (len(body["tools"]) > len(TOOL_NAMES))
     by_name = {t["name"]: t for t in body["tools"]}
@@ -47,8 +66,11 @@ def test_an_empty_store_shows_how_to_connect_and_the_tools(client, web_store, mo
     assert any("always waits for a person" in r for r in body["rules"])
 
 
-def test_another_store_is_named_in_the_connect_command(client, web_store, monkeypatch):
-    monkeypatch.delenv("QPILOT_STUDIES_DIR")
+@pytest.mark.parametrize("env", [True, False])
+def test_another_store_is_named_in_the_connect_command(client, web_store, monkeypatch, env):
+    # Claude Code starts qpilot serve with its own environment: the variable may not reach it
+    if not env:
+        monkeypatch.delenv("QPILOT_STUDIES_DIR")
     body = client.get("/api/agents").json()
     assert body["connect"].startswith("claude mcp add qpilot -e QPILOT_STUDIES_DIR=")
     assert str(web_store.root) in body["connect"] and body["connect"].endswith("qpilot serve")
@@ -82,6 +104,7 @@ def test_an_agents_request_waits_for_a_person_and_is_listed(client, web_store, s
     activity = body["activity"]
     assert [a["kind"] for a in activity] == ["decision", "decision"]
     assert all(a["status"] == "pending_human" for a in activity)
+    assert all(a["request_state"] == "waiting" and a["seq"] and a["hash"] for a in activity)
     assert activity[0]["at"] >= activity[1]["at"]  # newest first
     assert "Asked a person to set" in activity[0]["summary"]
 
@@ -92,7 +115,20 @@ def test_a_person_turning_it_down_empties_the_queue_but_keeps_the_history(client
     web_store.reject_pending(study, "card_undetermined", "Keep dropping them.", head)
     body = client.get("/api/agents").json()
     assert body["pending"] == []
-    assert [a["status"] for a in body["activity"]] == ["pending_human"]  # people are not listed
+    (entry,) = body["activity"]  # a person's entries are not listed
+    assert entry["status"] == "pending_human" and entry["request_state"] == "turned_down"
+    assert entry["settled_by"] == "human" and entry["settled_at"]
+
+
+@pytest.mark.parametrize(("option", "state"), [("cap", "approved"), ("drop", "decided_otherwise")])
+def test_a_request_a_person_decided_says_how(client, web_store, study, option, state):
+    QpilotTools(web_store).qpcr_decide(study, "card_undetermined", "cap", CAP_REASON)
+    head = web_store.chain_head(study)
+    web_store.append_decision(
+        study, "card_undetermined", option, "Checked the plates.", "human", head
+    )
+    (entry,) = client.get("/api/agents").json()["activity"]
+    assert entry["request_state"] == state and entry["settled_by"] == "human"
 
 
 def test_a_stale_request_is_listed_as_not_applied(client, web_store, study):
