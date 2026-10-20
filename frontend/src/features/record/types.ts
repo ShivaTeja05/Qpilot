@@ -27,22 +27,25 @@ export interface ChainEntry {
   undo?: boolean;
 }
 
-/**
- * `GET /api/studies/{id}/decisions` as the server sends it, plus two fields the page shows when
- * the server adds them (requested from api): the chain's root and its re-computed check.
- */
-export type DecisionsApi = Schemas["DecisionsView"] & { root?: string | null; chain_intact?: boolean | null };
+/** `GET /api/studies/{id}/decisions` as the server sends it (`qpilot/web/contract.py`). */
+export type DecisionsApi = Schemas["DecisionsView"];
+/** A write refused as stale: logged beside the chain (`attempts.jsonl`), it never moved the head. */
+export type StaleAttempt = Schemas["StaleAttempt"];
 
 /** The chain as the Record section reads it. */
 export interface DecisionsView {
   study_id: string;
-  /** The chain's first `prev_hash`: the input file's SHA-256 (null for an empty chain). */
+  /** The chain's genesis: the input file's SHA-256. */
   root: string | null;
   head: string;
   entries: ChainEntry[];
-  chain_intact?: boolean | null;
+  /** The server re-computed every link and hash. */
+  chain_intact: boolean;
+  /** The first entry that fails, when the chain is broken. */
+  broken_at: number | null;
   /** Hashes of the agent requests still waiting for a person. */
   waiting: string[];
+  attempts: StaleAttempt[];
 }
 
 /** The server's chain view in the Record section's shape. */
@@ -50,11 +53,13 @@ export function fromApi(view: DecisionsApi): DecisionsView {
   const entries = view.entries.map((e) => ({ ...e.entry, card_title: e.card_title, option_label: e.option_label, undo: e.undo }));
   return {
     study_id: view.study_id,
-    root: view.root ?? entries[0]?.prev_hash ?? null,
+    root: view.root || entries[0]?.prev_hash || null,
     head: view.head,
     entries,
     chain_intact: view.chain_intact,
+    broken_at: view.broken_at ?? null,
     waiting: view.pending.map((p) => p.entry.hash),
+    attempts: view.attempts,
   };
 }
 
