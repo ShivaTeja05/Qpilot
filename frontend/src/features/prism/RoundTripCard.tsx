@@ -5,7 +5,20 @@
  */
 import { FolderInput, Inbox as InboxIcon } from "lucide-react";
 import { useId, useMemo, useState } from "react";
-import { Badge, Button, Card, CardBody, CardHeader, EmptyState, ErrorPanel, Field, Input, JobCard, LoadingBlock, Select } from "@/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  ErrorPanel,
+  Field,
+  Input,
+  JobCard,
+  LoadingBlock,
+  Select,
+} from "@/ui";
 import { count, dateTime, plural, shortHash } from "@/lib/format";
 import {
   activeJob,
@@ -34,7 +47,13 @@ export function RoundTripCard({
   const shownJob = jobId ?? running?.id ?? null;
 
   // newest first; only bundles this launch wrote can be read back from the page
-  const list = useMemo(() => (bundles.data ?? []).filter((b): b is PrismBundleView & { id: string } => Boolean(b.id && b.round_trip)), [bundles.data]);
+  const list = useMemo(
+    () =>
+      (bundles.data ?? []).filter((b): b is PrismBundleView & { id: string } =>
+        Boolean(b.id && b.round_trip),
+      ),
+    [bundles.data],
+  );
   const older = (bundles.data?.length ?? 0) - list.length;
   const [bundleId, setBundleId] = useState<string | undefined>(undefined);
   const bundle = list.find((b) => b.id === bundleId) ?? list[0];
@@ -49,7 +68,13 @@ export function RoundTripCard({
   const decided = proposals.filter((p) => p.status !== "proposed");
 
   return (
-    <Card as="section" aria-labelledby="prism-roundtrip-title" id="prism-step-roundtrip" tabIndex={-1} className="scroll-mt-4 outline-none">
+    <Card
+      as="section"
+      aria-labelledby="prism-roundtrip-title"
+      id="prism-step-roundtrip"
+      tabIndex={-1}
+      className="scroll-mt-4 outline-none"
+    >
       <CardHeader
         id="prism-roundtrip-title"
         title="Round trip: what changed in Prism"
@@ -59,23 +84,33 @@ export function RoundTripCard({
         {bundles.isPending ? (
           <LoadingBlock label="Reading the bundles" lines={2} />
         ) : bundles.error ? (
-          <ErrorPanel error={bundles.error} title="The bundles could not be listed" onRetry={() => void bundles.refetch()} compact />
+          <ErrorPanel
+            error={bundles.error}
+            title="The bundles could not be listed"
+            onRetry={() => void bundles.refetch()}
+            compact
+          />
         ) : !list.length ? (
           <EmptyState
             icon={<FolderInput />}
-            title={older ? "No bundle from this launch to read back" : "Nothing has been sent to Prism yet"}
+            title={
+              older
+                ? "No bundle from this launch to read back"
+                : "Nothing has been sent to Prism yet"
+            }
             compact
           >
             {older ? (
               <>
-                {plural(older, "bundle was", "bundles were")} sent from this session before qPilot was last started (or from
-                another page); the page reads back only bundles it wrote itself. Send again, or compare in a terminal with{" "}
+                {plural(older, "bundle was", "bundles were")} sent from this session before qPilot
+                was last started (or from another page); the page reads back only bundles it wrote
+                itself. Send again, or compare in a terminal with{" "}
                 <span className="font-mono">qpilot prism diff</span>.
               </>
             ) : (
               <>
-                Send to Prism first. After editing in Prism, run <span className="font-mono">send_back.pzc</span> there and
-                come back here.
+                Send to Prism first. After editing in Prism, run{" "}
+                <span className="font-mono">send_back.pzc</span> there and come back here.
               </>
             )}
           </EmptyState>
@@ -84,8 +119,8 @@ export function RoundTripCard({
             <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-fg marker:text-muted">
               <li>In Prism, make your edits and save the projects.</li>
               <li>
-                Run <span className="font-mono">send_back.pzc</span> from the bundle folder: Prism exports each table to its{" "}
-                <span className="font-mono">sent_back</span> folder.
+                Run <span className="font-mono">send_back.pzc</span> from the bundle folder: Prism
+                exports each table to its <span className="font-mono">sent_back</span> folder.
               </li>
               <li>Choose the bundle, give that folder, and read what came back.</li>
             </ol>
@@ -94,7 +129,10 @@ export function RoundTripCard({
               onSubmit={(e) => {
                 e.preventDefault();
                 if (!bundle || !folder.trim()) return;
-                start.mutate({ bundle: bundle.id, folder: folder.trim() }, { onSuccess: ({ job }) => setJobId(job.id) });
+                start.mutate(
+                  { bundle: bundle.id, folder: folder.trim() },
+                  { onSuccess: ({ job }) => setJobId(job.id) },
+                );
               }}
             >
               <Field label="Bundle sent from this session" htmlFor={bundleSelectId}>
@@ -105,13 +143,17 @@ export function RoundTripCard({
                     setBundleId(v);
                     setTyped(null);
                   }}
-                  options={list.map((b) => ({ value: b.id, label: bundleLabel(b), hint: shortHash(b.bundle_sha256, 12) }))}
+                  options={list.map((b) => ({
+                    value: b.id,
+                    label: bundleLabel(b),
+                    hint: shortHash(b.bundle_sha256, 12),
+                  }))}
                 />
               </Field>
               {bundle && !bundle.current ? (
                 <p className="text-[12.5px] text-warn">
-                  This bundle was sent for an earlier analysis: the choices changed since, so no consequences can be computed.
-                  Send again and edit the new projects.
+                  This bundle was sent for an earlier analysis: the choices changed since, so no
+                  consequences can be computed. Send again and edit the new projects.
                 </p>
               ) : null}
               <Field
@@ -144,7 +186,13 @@ export function RoundTripCard({
           </div>
         )}
 
-        {start.error ? <ErrorPanel error={start.error} title="Could not read what came back from Prism" compact /> : null}
+        {start.error ? (
+          <ErrorPanel
+            error={start.error}
+            title="Could not read what came back from Prism"
+            compact
+          />
+        ) : null}
         {shownJob ? (
           <JobCard id={shownJob} onDismiss={() => setJobId(null)}>
             {(result) => (result ? <RoundTripSummary result={result as PrismRoundTrip} /> : null)}
@@ -165,11 +213,16 @@ export function RoundTripCard({
           {inbox.isPending ? (
             <LoadingBlock label="Reading the questions" lines={2} />
           ) : inbox.error ? (
-            <ErrorPanel error={inbox.error} title="The questions could not be read" onRetry={() => void inbox.refetch()} compact />
+            <ErrorPanel
+              error={inbox.error}
+              title="The questions could not be read"
+              onRetry={() => void inbox.refetch()}
+              compact
+            />
           ) : !proposals.length ? (
             <EmptyState icon={<InboxIcon />} title="No questions yet" compact>
-              When the tables come back with a value changed, excluded or deleted, each one is asked here — with what it does
-              to the conclusions.
+              When the tables come back with a value changed, excluded or deleted, each one is asked
+              here — with what it does to the conclusions.
             </EmptyState>
           ) : (
             <ul className="flex flex-col gap-3">
@@ -179,7 +232,11 @@ export function RoundTripCard({
                     sid={workspace.key}
                     proposal={p}
                     head={inbox.data?.head ?? null}
-                    note={basisStudy(p) && basisStudy(p) !== workspace.study_id ? "About a bundle sent for an earlier analysis." : undefined}
+                    note={
+                      basisStudy(p) && basisStudy(p) !== workspace.study_id
+                        ? "About a bundle sent for an earlier analysis."
+                        : undefined
+                    }
                   />
                 </li>
               ))}
@@ -202,10 +259,17 @@ function bundleLabel(b: PrismBundleView): string {
 }
 
 export function RoundTripSummary({ result }: { result: PrismRoundTrip }) {
-  const byKind = result.items.reduce<Record<string, number>>((acc, it) => ({ ...acc, [it.kind]: (acc[it.kind] ?? 0) + 1 }), {});
+  const byKind = result.items.reduce<Record<string, number>>(
+    (acc, it) => ({ ...acc, [it.kind]: (acc[it.kind] ?? 0) + 1 }),
+    {},
+  );
   return (
     <div className="flex flex-col gap-2 text-[13px] text-fg">
-      <p>{result.items.length ? result.message : "No differences: Prism sent back exactly what qPilot wrote."}</p>
+      <p>
+        {result.items.length
+          ? result.message
+          : "No differences: Prism sent back exactly what qPilot wrote."}
+      </p>
       {result.items.length ? (
         <ul className="flex flex-wrap gap-1.5" aria-label="Differences by kind">
           {Object.entries(byKind).map(([kind, n]) => (

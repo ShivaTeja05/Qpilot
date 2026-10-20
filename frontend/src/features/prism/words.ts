@@ -43,7 +43,8 @@ export const DIFF_KIND_WORDS: Record<string, string> = {
 export function exportedBy(actor: string | null | undefined): { words: string; open: boolean } {
   if (actor === "human") return { words: "a person", open: false };
   if (actor === "system") return { words: "qPilot (it changes no conclusion)", open: false };
-  if (actor == null || actor === "") return { words: "not decided yet: exported at the recommended option", open: true };
+  if (actor == null || actor === "")
+    return { words: "not decided yet: exported at the recommended option", open: true };
   return { words: `an agent (${actor})`, open: false };
 }
 

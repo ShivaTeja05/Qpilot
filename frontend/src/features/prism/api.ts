@@ -28,7 +28,13 @@ export interface PrismStatus {
   session_id: string;
   study_id: string;
   choices_confirmed: boolean;
-  project: { status: "accepted" | "waiting" | "none"; proposal_id?: string | null; template_id?: string | null; genes: string[]; made_by?: string | null };
+  project: {
+    status: "accepted" | "waiting" | "none";
+    proposal_id?: string | null;
+    template_id?: string | null;
+    genes: string[];
+    made_by?: string | null;
+  };
   can_draft: boolean;
   can_send: boolean;
   /** What to do next, in words. */
@@ -295,7 +301,9 @@ export function usePrismBundles(sid: string, enabled = true) {
   return useQuery({
     queryKey: prismKeys.bundles(sid),
     enabled,
-    queryFn: async () => (await request<{ session_id: string; bundles: PrismBundleView[] }>(`${base(sid)}/bundles`)).bundles,
+    queryFn: async () =>
+      (await request<{ session_id: string; bundles: PrismBundleView[] }>(`${base(sid)}/bundles`))
+        .bundles,
   });
 }
 
@@ -305,7 +313,9 @@ export function useStageInbox(sid: string, stage: "prism" | "roundtrip", enabled
     queryKey: prismKeys.inbox(sid, stage),
     enabled,
     queryFn: () =>
-      unwrap(api.GET("/api/sessions/{sid}/proposals", { params: { path: { sid }, query: { stage } } })),
+      unwrap(
+        api.GET("/api/sessions/{sid}/proposals", { params: { path: { sid }, query: { stage } } }),
+      ),
   });
 }
 
@@ -315,7 +325,8 @@ type Started = { job: JobView };
 function useStart<B>(sid: string, action: "draft" | "send" | "roundtrip") {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: B) => request<Started>(`${base(sid)}/${action}`, { method: "POST", body: body ?? undefined }),
+    mutationFn: (body: B) =>
+      request<Started>(`${base(sid)}/${action}`, { method: "POST", body: body ?? undefined }),
     onSuccess: ({ job }) => {
       qc.setQueryData(["job", job.id], job);
     },
@@ -329,10 +340,14 @@ export const useStartDraft = (sid: string) => useStart<void>(sid, "draft");
 export const useStartSend = (sid: string) => useStart<void>(sid, "send");
 
 /** POST roundtrip: compare what came back from Prism with the bundle. */
-export const useStartRoundTrip = (sid: string) => useStart<{ bundle: string; folder: string }>(sid, "roundtrip");
+export const useStartRoundTrip = (sid: string) =>
+  useStart<{ bundle: string; folder: string }>(sid, "roundtrip");
 
 /** The newest still-running job of this session of one kind (`prism.send` …): it survives navigation. */
-export function activeJob(workspace: Workspace, kind: "prism.draft" | "prism.send" | "prism.roundtrip"): JobView | null {
+export function activeJob(
+  workspace: Workspace,
+  kind: "prism.draft" | "prism.send" | "prism.roundtrip",
+): JobView | null {
   const jobs = (workspace.active_jobs ?? []).filter((j) => j.kind === kind);
   return jobs.length ? jobs[jobs.length - 1]! : null;
 }

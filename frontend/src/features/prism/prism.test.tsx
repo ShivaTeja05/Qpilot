@@ -33,7 +33,9 @@ describe("flow", () => {
   });
 
   it("tells a project accepted for an earlier analysis from one for this analysis", () => {
-    const accepted = prism.proposals.find((p) => p.kind === "prism.project" && p.status === "accepted")!;
+    const accepted = prism.proposals.find(
+      (p) => p.kind === "prism.project" && p.status === "accepted",
+    )!;
     const forStudy = String((accepted.payload as { study_id?: string }).study_id);
     const now = projectState(prism.proposals, session.study_id);
     if (forStudy === session.study_id) {
@@ -61,18 +63,24 @@ describe("flow", () => {
 });
 
 describe("round-trip consequence", () => {
-  const exclusion = roundTrip.proposals.find((p) => p.kind === "prism.exclusion_reason") as Proposal;
+  const exclusion = roundTrip.proposals.find(
+    (p) => p.kind === "prism.exclusion_reason",
+  ) as Proposal;
   const c = exclusion.consequence as Record<string, number | number[]>;
 
   it("shows the gene's fold change before and after, and the conclusions it changes", () => {
     render(<PrismConsequence proposal={exclusion} />);
     expect(screen.getByText(fold(c.fc_before as number))).toBeTruthy();
     expect(screen.getByText(fold(c.fc_after as number))).toBeTruthy();
-    expect(screen.getByText(ofTotal(c.n_conclusions_changed as number, c.n_genes as number))).toBeTruthy();
+    expect(
+      screen.getByText(ofTotal(c.n_conclusions_changed as number, c.n_genes as number)),
+    ).toBeTruthy();
   });
 
   it("says when the consequence is out of date", () => {
-    render(<PrismConsequence proposal={exclusion} stale="the decisions changed since this export." />);
+    render(
+      <PrismConsequence proposal={exclusion} stale="the decisions changed since this export." />,
+    );
     expect(screen.getByText(/Out of date/)).toBeTruthy();
   });
 });

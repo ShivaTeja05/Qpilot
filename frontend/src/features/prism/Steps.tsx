@@ -30,7 +30,9 @@ export function Steps({ flow }: { flow: Flow }) {
                 aria-current={current ? "step" : undefined}
                 className={cn(
                   "flex h-full items-start gap-2.5 rounded-xl border p-3 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-                  current ? "border-accent/50 bg-accent-soft" : "border-line bg-surface hover:border-line-strong",
+                  current
+                    ? "border-accent/50 bg-accent-soft"
+                    : "border-line bg-surface hover:border-line-strong",
                 )}
               >
                 <span
@@ -49,7 +51,9 @@ export function Steps({ flow }: { flow: Flow }) {
                 <span className="min-w-0">
                   <span className="block text-[13px] font-medium text-fg">{step.title}</span>
                   <span className="block text-[12px] text-muted">
-                    <span className="sr-only">{step.state === "done" ? "Done: " : current ? "Next: " : "Later: "}</span>
+                    <span className="sr-only">
+                      {step.state === "done" ? "Done: " : current ? "Next: " : "Later: "}
+                    </span>
                     {step.detail}
                   </span>
                 </span>

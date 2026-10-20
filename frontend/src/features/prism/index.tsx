@@ -16,7 +16,8 @@ import { RoutesCard } from "./RoutesCard";
 import { SendCard } from "./SendCard";
 import { Steps } from "./Steps";
 
-const HINT = "Hand GraphPad Prism numbers it cannot misread, and see what changed when the tables come back.";
+const HINT =
+  "Hand GraphPad Prism numbers it cannot misread, and see what changed when the tables come back.";
 
 export default function PrismSection({ workspace }: SectionProps) {
   // The shell shows Prism only for a session whose results are visible (it says why otherwise);
@@ -28,7 +29,11 @@ export default function PrismSection({ workspace }: SectionProps) {
 function PrismWorkspace({ workspace }: { workspace: Workspace }) {
   const prismInbox = useStageInbox(workspace.key, "prism");
   const roundTripInbox = useStageInbox(workspace.key, "roundtrip");
-  const flow = flowOf(workspace, prismInbox.data?.proposals ?? [], roundTripInbox.data?.proposals ?? []);
+  const flow = flowOf(
+    workspace,
+    prismInbox.data?.proposals ?? [],
+    roundTripInbox.data?.proposals ?? [],
+  );
   return (
     <>
       <PageHeader eyebrow="Studio · GraphPad Prism" title="Prism" hint={HINT} />

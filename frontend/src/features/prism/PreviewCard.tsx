@@ -43,10 +43,18 @@ export function PreviewCard({ workspace }: { workspace: Workspace }) {
         {preview.isPending ? (
           <div className="flex flex-col gap-2">
             <LoadingBlock label="Building the preview" lines={6} />
-            <p className="text-[12px] text-muted">The first preview after qPilot starts rebuilds the analysis's tables; it can take half a minute.</p>
+            <p className="text-[12px] text-muted">
+              The first preview after qPilot starts rebuilds the analysis's tables; it can take half
+              a minute.
+            </p>
           </div>
         ) : preview.error ? (
-          <ErrorPanel error={preview.error} title="No Prism preview" onRetry={() => void preview.refetch()} compact />
+          <ErrorPanel
+            error={preview.error}
+            title="No Prism preview"
+            onRetry={() => void preview.refetch()}
+            compact
+          />
         ) : (
           <PreviewBody preview={preview.data} gene={gene} onGene={setGene} />
         )}
@@ -70,8 +78,8 @@ export function PreviewBody({
   if (!gene) {
     return (
       <EmptyState icon={<FileText />} title="No tables to send" compact>
-        The comparison has no gene with values in both groups, so there is nothing for Prism to test. Check the design's
-        groups and the reference genes.
+        The comparison has no gene with values in both groups, so there is nothing for Prism to
+        test. Check the design's groups and the reference genes.
       </EmptyState>
     );
   }
@@ -83,9 +91,19 @@ export function PreviewBody({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {genes.length <= 6 ? (
-          <SegmentedControl label="Gene" value={gene} onValueChange={onGene} options={genes.map((g) => ({ value: g, label: g }))} />
+          <SegmentedControl
+            label="Gene"
+            value={gene}
+            onValueChange={onGene}
+            options={genes.map((g) => ({ value: g, label: g }))}
+          />
         ) : (
-          <Select label="Gene" value={gene} onValueChange={onGene} options={genes.map((g) => ({ value: g, label: g }))} />
+          <Select
+            label="Gene"
+            value={gene}
+            onValueChange={onGene}
+            options={genes.map((g) => ({ value: g, label: g }))}
+          />
         )}
         <p className="text-[12px] text-muted">
           {plural(genes.length, "table")}, one per gene · template{" "}
@@ -132,9 +150,9 @@ export function PreviewBody({
             <p className="mt-3 flex items-start gap-2 rounded-lg border border-warn/30 bg-warn-soft p-2.5 text-[12.5px] text-fg">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
               <span>
-                The Prism template <span className="font-mono">{template.file}</span> has not been made in Prism yet. The
-                bundle is still written; its README says how to build the template, and Prism then applies this test and
-                graph.
+                The Prism template <span className="font-mono">{template.file}</span> has not been
+                made in Prism yet. The bundle is still written; its README says how to build the
+                template, and Prism then applies this test and graph.
               </span>
             </p>
           ) : null}
@@ -154,7 +172,9 @@ export function PreviewBody({
             Caption
           </h3>
           <p className="max-w-prose text-[13px] leading-relaxed text-fg">{preview.caption}</p>
-          <p className="mt-1 text-[12px] text-muted">Every number in it is a fact of this study, filled in by qPilot.</p>
+          <p className="mt-1 text-[12px] text-muted">
+            Every number in it is a fact of this study, filled in by qPilot.
+          </p>
         </section>
       ) : null}
 
@@ -165,7 +185,10 @@ export function PreviewBody({
           </h3>
           <ul className="flex flex-wrap gap-1.5">
             {preview.would_write.map((f) => (
-              <li key={f} className="rounded-md border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[12px] text-fg">
+              <li
+                key={f}
+                className="rounded-md border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[12px] text-fg"
+              >
                 {f}
               </li>
             ))}
@@ -225,8 +248,11 @@ function TableHead({ gene, preview }: { gene: string; preview: PrismPreview }) {
         </Table>
       </div>
       <p className="mt-1.5 text-[12px] text-muted">
-        {table.rows.length < table.n_rows ? `First ${count(table.rows.length)} of ${count(table.n_rows)} rows. ` : null}
-        Shown to 2 decimals; the file holds every digit. An empty cell (·) is a unit of the other group.
+        {table.rows.length < table.n_rows
+          ? `First ${count(table.rows.length)} of ${count(table.n_rows)} rows. `
+          : null}
+        Shown to 2 decimals; the file holds every digit. An empty cell (·) is a unit of the other
+        group.
       </p>
     </section>
   );
@@ -234,7 +260,11 @@ function TableHead({ gene, preview }: { gene: string; preview: PrismPreview }) {
 
 function ChoicesTable({ preview }: { preview: PrismPreview }) {
   if (!preview.choices.length) {
-    return <p className="text-[13px] text-muted">This analysis has no Decision Cards: the tables follow the confirmed design.</p>;
+    return (
+      <p className="text-[13px] text-muted">
+        This analysis has no Decision Cards: the tables follow the confirmed design.
+      </p>
+    );
   }
   const open = preview.choices.filter((c) => c.actor == null).length;
   return (
@@ -252,9 +282,15 @@ function ChoicesTable({ preview }: { preview: PrismPreview }) {
             {preview.choices.map((c) => (
               <TR key={c.card_id}>
                 <TD>{c.title ?? cardWords(c.card_id)}</TD>
-                <TD className="text-[12.5px]">{c.option_label ?? <span className="font-mono">{c.option}</span>}</TD>
                 <TD className="text-[12.5px]">
-                  {c.actor == null ? <Badge tone="warn">not decided</Badge> : <span className="text-muted">{c.decided_by}</span>}
+                  {c.option_label ?? <span className="font-mono">{c.option}</span>}
+                </TD>
+                <TD className="text-[12.5px]">
+                  {c.actor == null ? (
+                    <Badge tone="warn">not decided</Badge>
+                  ) : (
+                    <span className="text-muted">{c.decided_by}</span>
+                  )}
                 </TD>
               </TR>
             ))}
@@ -263,8 +299,8 @@ function ChoicesTable({ preview }: { preview: PrismPreview }) {
       </div>
       {open ? (
         <p className="mt-1.5 text-[12px] text-muted">
-          {plural(open, "card")} still open: exported at the recommended option. Deciding later changes the analysis, and
-          the bundle has to be sent again.
+          {plural(open, "card")} still open: exported at the recommended option. Deciding later
+          changes the analysis, and the bundle has to be sent again.
         </p>
       ) : null}
     </>

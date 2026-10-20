@@ -1,316 +1,311 @@
 {
- "stage": "prism",
- "head": "b27a0111f1164a55ee837e0525bb86597563954bd1f9aed5427ab899f574d95a",
- "proposals": [
-  {
-   "id": "p_3e1d55b43e4d12b0",
-   "study_id": "bc1d233e3866",
-   "kind": "prism.project",
-   "subject": "prism",
-   "payload": {
-    "caption": "log2 relative quantities, MYCN high versus the rest; one point per biological unit, with the mean and 95 % confidence interval; Welch's t test on the log2 scale. BIRC5: {{f_fc_birc5_recommended}} (95 % confidence interval {{f_ci_lo_birc5_recommended}} to {{f_ci_hi_birc5_recommended}}; p = {{f_p_birc5_recommended}}); the conclusion holds in {{f_holds_birc5}} of {{f_n_cells}} reasonable analyses. NM23A: {{f_fc_nm23a_recommended}} (95 % confidence interval {{f_ci_lo_nm23a_recommended}} to {{f_ci_hi_nm23a_recommended}}; p = {{f_p_nm23a_recommended}}); the conclusion holds in {{f_holds_nm23a}} of {{f_n_cells}} reasonable analyses. NTRK1: {{f_fc_ntrk1_recommended}} (95 % confidence interval {{f_ci_lo_ntrk1_recommended}} to {{f_ci_hi_ntrk1_recommended}}; p = {{f_p_ntrk1_recommended}}); the conclusion holds in {{f_holds_ntrk1}} of {{f_n_cells}} reasonable analyses. ODC1: {{f_fc_odc1_recommended}} (95 % confidence interval {{f_ci_lo_odc1_recommended}} to {{f_ci_hi_odc1_recommended}}; p = {{f_p_odc1_recommended}}); the conclusion holds in {{f_holds_odc1}} of {{f_n_cells}} reasonable analyses.",
-    "facts": [
-     "f_ci_hi_birc5_recommended",
-     "f_ci_hi_nm23a_recommended",
-     "f_ci_hi_ntrk1_recommended",
-     "f_ci_hi_odc1_recommended",
-     "f_ci_lo_birc5_recommended",
-     "f_ci_lo_nm23a_recommended",
-     "f_ci_lo_ntrk1_recommended",
-     "f_ci_lo_odc1_recommended",
-     "f_fc_birc5_recommended",
-     "f_fc_nm23a_recommended",
-     "f_fc_ntrk1_recommended",
-     "f_fc_odc1_recommended",
-     "f_genes_differ_route_ddcq",
-     "f_genes_differ_route_linear_student",
-     "f_genes_differ_route_linear_welch",
-     "f_holds_birc5",
-     "f_holds_nm23a",
-     "f_holds_ntrk1",
-     "f_holds_odc1",
-     "f_level_birc5",
-     "f_level_nm23a",
-     "f_level_ntrk1",
-     "f_level_odc1",
-     "f_n_cells",
-     "f_n_differ_route_ddcq",
-     "f_n_differ_route_linear_student",
-     "f_n_differ_route_linear_welch",
-     "f_n_genes",
-     "f_n_hi",
-     "f_n_lo",
-     "f_p_birc5_recommended",
-     "f_p_nm23a_recommended",
-     "f_p_ntrk1_recommended",
-     "f_p_odc1_recommended"
-    ],
-    "genes": [
-     "BIRC5",
-     "NM23A",
-     "NTRK1",
-     "ODC1"
-    ],
-    "graph": {
-     "centre": "mean",
-     "error_bars": "95 % confidence interval",
-     "label": "scatter of every unit with mean and 95 % confidence interval",
-     "points": "every biological unit"
-    },
-    "robustness": {
-     "BIRC5": {
-      "holds": "{{f_holds_birc5}}",
-      "level": "{{f_level_birc5}}",
-      "of_analyses": "{{f_n_cells}}"
-     },
-     "NM23A": {
-      "holds": "{{f_holds_nm23a}}",
-      "level": "{{f_level_nm23a}}",
-      "of_analyses": "{{f_n_cells}}"
-     },
-     "NTRK1": {
-      "holds": "{{f_holds_ntrk1}}",
-      "level": "{{f_level_ntrk1}}",
-      "of_analyses": "{{f_n_cells}}"
-     },
-     "ODC1": {
-      "holds": "{{f_holds_odc1}}",
-      "level": "{{f_level_odc1}}",
-      "of_analyses": "{{f_n_cells}}"
-     }
-    },
-    "routes": {
-     "ddcq": {
-      "genes": "{{f_genes_differ_route_ddcq}}",
-      "label": "ΔΔCq (efficiency assumed 2.0), Welch's t test on log2",
-      "n_differ": "{{f_n_differ_route_ddcq}}"
-     },
-     "linear_student": {
-      "genes": "{{f_genes_differ_route_linear_student}}",
-      "label": "2^-ΔΔCq per sample, Student's t test on the linear scale",
-      "n_differ": "{{f_n_differ_route_linear_student}}"
-     },
-     "linear_welch": {
-      "genes": "{{f_genes_differ_route_linear_welch}}",
-      "label": "2^-ΔΔCq per sample, Welch's t test on the linear scale",
-      "n_differ": "{{f_n_differ_route_linear_welch}}"
-     }
-    },
-    "study_id": "cf49ccd72052",
-    "template_id": "two_groups_log2",
-    "test": {
-     "id": "welch_log2",
-     "label": "Welch's unpaired t test (two-sided) on log2 relative quantities, one value per biological unit",
-     "scale": "log2_rq",
-     "why": [
-      "Welch's t test does not assume that the two groups vary equally, and it is the test qPilot's engine used on the same log2 values, so Prism's p-values match the record.",
-      "The groups hold {{f_n_hi}} and {{f_n_lo}} biological units; technical replicates are averaged within a unit and never counted as n.",
-      "The usual spreadsheet route changes conclusions on these plates: {{f_n_differ_route_ddcq}} of {{f_n_genes}} genes with an assumed efficiency, {{f_n_differ_route_linear_welch}} with Welch's test on the linear scale and {{f_n_differ_route_linear_student}} with Student's test on the linear scale."
-     ]
+  "stage": "prism",
+  "head": "b27a0111f1164a55ee837e0525bb86597563954bd1f9aed5427ab899f574d95a",
+  "proposals": [
+    {
+      "id": "p_3e1d55b43e4d12b0",
+      "study_id": "bc1d233e3866",
+      "kind": "prism.project",
+      "subject": "prism",
+      "payload": {
+        "caption": "log2 relative quantities, MYCN high versus the rest; one point per biological unit, with the mean and 95 % confidence interval; Welch's t test on the log2 scale. BIRC5: {{f_fc_birc5_recommended}} (95 % confidence interval {{f_ci_lo_birc5_recommended}} to {{f_ci_hi_birc5_recommended}}; p = {{f_p_birc5_recommended}}); the conclusion holds in {{f_holds_birc5}} of {{f_n_cells}} reasonable analyses. NM23A: {{f_fc_nm23a_recommended}} (95 % confidence interval {{f_ci_lo_nm23a_recommended}} to {{f_ci_hi_nm23a_recommended}}; p = {{f_p_nm23a_recommended}}); the conclusion holds in {{f_holds_nm23a}} of {{f_n_cells}} reasonable analyses. NTRK1: {{f_fc_ntrk1_recommended}} (95 % confidence interval {{f_ci_lo_ntrk1_recommended}} to {{f_ci_hi_ntrk1_recommended}}; p = {{f_p_ntrk1_recommended}}); the conclusion holds in {{f_holds_ntrk1}} of {{f_n_cells}} reasonable analyses. ODC1: {{f_fc_odc1_recommended}} (95 % confidence interval {{f_ci_lo_odc1_recommended}} to {{f_ci_hi_odc1_recommended}}; p = {{f_p_odc1_recommended}}); the conclusion holds in {{f_holds_odc1}} of {{f_n_cells}} reasonable analyses.",
+        "facts": [
+          "f_ci_hi_birc5_recommended",
+          "f_ci_hi_nm23a_recommended",
+          "f_ci_hi_ntrk1_recommended",
+          "f_ci_hi_odc1_recommended",
+          "f_ci_lo_birc5_recommended",
+          "f_ci_lo_nm23a_recommended",
+          "f_ci_lo_ntrk1_recommended",
+          "f_ci_lo_odc1_recommended",
+          "f_fc_birc5_recommended",
+          "f_fc_nm23a_recommended",
+          "f_fc_ntrk1_recommended",
+          "f_fc_odc1_recommended",
+          "f_genes_differ_route_ddcq",
+          "f_genes_differ_route_linear_student",
+          "f_genes_differ_route_linear_welch",
+          "f_holds_birc5",
+          "f_holds_nm23a",
+          "f_holds_ntrk1",
+          "f_holds_odc1",
+          "f_level_birc5",
+          "f_level_nm23a",
+          "f_level_ntrk1",
+          "f_level_odc1",
+          "f_n_cells",
+          "f_n_differ_route_ddcq",
+          "f_n_differ_route_linear_student",
+          "f_n_differ_route_linear_welch",
+          "f_n_genes",
+          "f_n_hi",
+          "f_n_lo",
+          "f_p_birc5_recommended",
+          "f_p_nm23a_recommended",
+          "f_p_ntrk1_recommended",
+          "f_p_odc1_recommended"
+        ],
+        "genes": ["BIRC5", "NM23A", "NTRK1", "ODC1"],
+        "graph": {
+          "centre": "mean",
+          "error_bars": "95 % confidence interval",
+          "label": "scatter of every unit with mean and 95 % confidence interval",
+          "points": "every biological unit"
+        },
+        "robustness": {
+          "BIRC5": {
+            "holds": "{{f_holds_birc5}}",
+            "level": "{{f_level_birc5}}",
+            "of_analyses": "{{f_n_cells}}"
+          },
+          "NM23A": {
+            "holds": "{{f_holds_nm23a}}",
+            "level": "{{f_level_nm23a}}",
+            "of_analyses": "{{f_n_cells}}"
+          },
+          "NTRK1": {
+            "holds": "{{f_holds_ntrk1}}",
+            "level": "{{f_level_ntrk1}}",
+            "of_analyses": "{{f_n_cells}}"
+          },
+          "ODC1": {
+            "holds": "{{f_holds_odc1}}",
+            "level": "{{f_level_odc1}}",
+            "of_analyses": "{{f_n_cells}}"
+          }
+        },
+        "routes": {
+          "ddcq": {
+            "genes": "{{f_genes_differ_route_ddcq}}",
+            "label": "ΔΔCq (efficiency assumed 2.0), Welch's t test on log2",
+            "n_differ": "{{f_n_differ_route_ddcq}}"
+          },
+          "linear_student": {
+            "genes": "{{f_genes_differ_route_linear_student}}",
+            "label": "2^-ΔΔCq per sample, Student's t test on the linear scale",
+            "n_differ": "{{f_n_differ_route_linear_student}}"
+          },
+          "linear_welch": {
+            "genes": "{{f_genes_differ_route_linear_welch}}",
+            "label": "2^-ΔΔCq per sample, Welch's t test on the linear scale",
+            "n_differ": "{{f_n_differ_route_linear_welch}}"
+          }
+        },
+        "study_id": "cf49ccd72052",
+        "template_id": "two_groups_log2",
+        "test": {
+          "id": "welch_log2",
+          "label": "Welch's unpaired t test (two-sided) on log2 relative quantities, one value per biological unit",
+          "scale": "log2_rq",
+          "why": [
+            "Welch's t test does not assume that the two groups vary equally, and it is the test qPilot's engine used on the same log2 values, so Prism's p-values match the record.",
+            "The groups hold {{f_n_hi}} and {{f_n_lo}} biological units; technical replicates are averaged within a unit and never counted as n.",
+            "The usual spreadsheet route changes conclusions on these plates: {{f_n_differ_route_ddcq}} of {{f_n_genes}} genes with an assumed efficiency, {{f_n_differ_route_linear_welch}} with Welch's test on the linear scale and {{f_n_differ_route_linear_student}} with Student's test on the linear scale."
+          ]
+        }
+      },
+      "evidence": [
+        {
+          "kind": "fact",
+          "ref": "f_ci_hi_birc5_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_ci_hi_nm23a_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_ci_hi_ntrk1_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_ci_hi_odc1_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_ci_lo_birc5_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_ci_lo_nm23a_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_ci_lo_ntrk1_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_ci_lo_odc1_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_fc_birc5_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_fc_nm23a_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_fc_ntrk1_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_fc_odc1_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_genes_differ_route_ddcq",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_genes_differ_route_linear_student",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_genes_differ_route_linear_welch",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_holds_birc5",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_holds_nm23a",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_holds_ntrk1",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_holds_odc1",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_level_birc5",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_level_nm23a",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_level_ntrk1",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_level_odc1",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_n_cells",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_n_differ_route_ddcq",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_n_differ_route_linear_student",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_n_differ_route_linear_welch",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_n_genes",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_n_hi",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_n_lo",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_p_birc5_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_p_nm23a_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_p_ntrk1_recommended",
+          "note": ""
+        },
+        {
+          "kind": "fact",
+          "ref": "f_p_odc1_recommended",
+          "note": ""
+        }
+      ],
+      "alternatives": [],
+      "check": {
+        "status": "cannot_check",
+        "rule_ids": [],
+        "details": {},
+        "note": "no engine check exists for this kind"
+      },
+      "consequence": null,
+      "level": "Moderate",
+      "reasons": [
+        "the test is the engine's own, on the same log2 values",
+        "the caption is qPilot's template"
+      ],
+      "made_by": {
+        "kind": "rule",
+        "provider": null,
+        "model": null,
+        "prompt_sha256": null,
+        "agent": null
+      },
+      "status": "accepted",
+      "decided_by": "human",
+      "decided_at": "2026-10-20T19:19:50Z",
+      "reason": "the default template and the headline genes",
+      "edits": null,
+      "superseded_by": null,
+      "created_at": "2026-10-20T19:19:50Z"
     }
-   },
-   "evidence": [
-    {
-     "kind": "fact",
-     "ref": "f_ci_hi_birc5_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_ci_hi_nm23a_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_ci_hi_ntrk1_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_ci_hi_odc1_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_ci_lo_birc5_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_ci_lo_nm23a_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_ci_lo_ntrk1_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_ci_lo_odc1_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_fc_birc5_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_fc_nm23a_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_fc_ntrk1_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_fc_odc1_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_genes_differ_route_ddcq",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_genes_differ_route_linear_student",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_genes_differ_route_linear_welch",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_holds_birc5",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_holds_nm23a",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_holds_ntrk1",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_holds_odc1",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_level_birc5",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_level_nm23a",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_level_ntrk1",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_level_odc1",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_n_cells",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_n_differ_route_ddcq",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_n_differ_route_linear_student",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_n_differ_route_linear_welch",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_n_genes",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_n_hi",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_n_lo",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_p_birc5_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_p_nm23a_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_p_ntrk1_recommended",
-     "note": ""
-    },
-    {
-     "kind": "fact",
-     "ref": "f_p_odc1_recommended",
-     "note": ""
-    }
-   ],
-   "alternatives": [],
-   "check": {
-    "status": "cannot_check",
-    "rule_ids": [],
-    "details": {},
-    "note": "no engine check exists for this kind"
-   },
-   "consequence": null,
-   "level": "Moderate",
-   "reasons": [
-    "the test is the engine's own, on the same log2 values",
-    "the caption is qPilot's template"
-   ],
-   "made_by": {
-    "kind": "rule",
-    "provider": null,
-    "model": null,
-    "prompt_sha256": null,
-    "agent": null
-   },
-   "status": "accepted",
-   "decided_by": "human",
-   "decided_at": "2026-10-20T19:19:50Z",
-   "reason": "the default template and the headline genes",
-   "edits": null,
-   "superseded_by": null,
-   "created_at": "2026-10-20T19:19:50Z"
+  ],
+  "counts": {
+    "accepted": 1
   }
- ],
- "counts": {
-  "accepted": 1
- }
 }

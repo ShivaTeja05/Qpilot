@@ -16,7 +16,9 @@ type Dict = Record<string, unknown>;
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const str = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
 const pair = (v: unknown): [number, number] | null =>
-  Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === "number") ? [v[0] as number, v[1] as number] : null;
+  Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === "number")
+    ? [v[0] as number, v[1] as number]
+    : null;
 
 /** A call word that may be "withheld" (the engine then shows no numbers). */
 function Call({ value }: { value: unknown }) {
@@ -24,7 +26,17 @@ function Call({ value }: { value: unknown }) {
   return <ConclusionTag conclusion={str(value) ?? "none"} />;
 }
 
-function Row({ label, before, after, changed }: { label: string; before: ReactNode; after: ReactNode; changed?: boolean }) {
+function Row({
+  label,
+  before,
+  after,
+  changed,
+}: {
+  label: string;
+  before: ReactNode;
+  after: ReactNode;
+  changed?: boolean;
+}) {
   return (
     <div className="contents">
       <dt className="text-muted">{label}</dt>
@@ -45,9 +57,22 @@ export function GeneChangeRows({ change }: { change: GeneChange | Dict }) {
   const callChanged = c.conclusion_before !== c.conclusion_after;
   return (
     <dl className="grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-1 text-[13px]">
-      <Row label="Call" before={<Call value={c.conclusion_before} />} after={<Call value={c.conclusion_after} />} changed={callChanged} />
-      <Row label="Fold change" before={fold(num(c.fc_before))} after={c.fc_after == null ? MISSING : fold(num(c.fc_after))} />
-      <Row label="p" before={pValue(num(c.p_before))} after={c.p_after == null ? MISSING : pValue(num(c.p_after))} />
+      <Row
+        label="Call"
+        before={<Call value={c.conclusion_before} />}
+        after={<Call value={c.conclusion_after} />}
+        changed={callChanged}
+      />
+      <Row
+        label="Fold change"
+        before={fold(num(c.fc_before))}
+        after={c.fc_after == null ? MISSING : fold(num(c.fc_after))}
+      />
+      <Row
+        label="p"
+        before={pValue(num(c.p_before))}
+        after={c.p_after == null ? MISSING : pValue(num(c.p_after))}
+      />
       {nb ? (
         <Row
           label="Units per group"
@@ -70,7 +95,13 @@ function Changed({ n, total, genes }: { n: number | null; total: number | null; 
 }
 
 /** The consequence block of a `prism.exclusion_reason` or `prism.value_edit` proposal. */
-export function PrismConsequence({ proposal, stale }: { proposal: Pick<Proposal, "kind" | "consequence" | "check">; stale?: string | null }) {
+export function PrismConsequence({
+  proposal,
+  stale,
+}: {
+  proposal: Pick<Proposal, "kind" | "consequence" | "check">;
+  stale?: string | null;
+}) {
   const c = (proposal.consequence ?? null) as Dict | null;
   if (proposal.kind === "prism.value_edit") {
     const exported = c?.exported ?? proposal.check.details?.exported;
@@ -80,7 +111,9 @@ export function PrismConsequence({ proposal, stale }: { proposal: Pick<Proposal,
         <dt className="text-muted">qPilot wrote</dt>
         <dd className="font-mono tabular">{exported == null ? MISSING : String(exported)}</dd>
         <dt className="text-muted">Prism sent back</dt>
-        <dd className="font-mono tabular text-danger">{returned == null || returned === "" ? "(empty)" : String(returned)}</dd>
+        <dd className="font-mono tabular text-danger">
+          {returned == null || returned === "" ? "(empty)" : String(returned)}
+        </dd>
       </dl>
     );
   }
@@ -105,9 +138,17 @@ export function PrismConsequence({ proposal, stale }: { proposal: Pick<Proposal,
           {str(c.gene) ?? "This gene"} without this value
         </p>
         <GeneChangeRows change={c} />
-        {withheld ? <p className="mt-1.5 text-[12.5px] text-warn">The engine then withholds this gene: {withheld}</p> : null}
+        {withheld ? (
+          <p className="mt-1.5 text-[12.5px] text-warn">
+            The engine then withholds this gene: {withheld}
+          </p>
+        ) : null}
       </div>
-      <Changed n={num(c.n_conclusions_changed)} total={num(c.n_genes)} genes={Array.isArray(c.changed_genes) ? c.changed_genes.map(String) : []} />
+      <Changed
+        n={num(c.n_conclusions_changed)}
+        total={num(c.n_genes)}
+        genes={Array.isArray(c.changed_genes) ? c.changed_genes.map(String) : []}
+      />
       {all ? (
         <div className="rounded-md border border-line bg-surface-2 p-2.5">
           <p className="mb-1.5 text-[12px] font-medium text-muted">

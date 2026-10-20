@@ -6,9 +6,26 @@
 import { FileSpreadsheet, Lock, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { sectionPath } from "@/shell/sections";
-import { Button, Card, CardBody, CardHeader, EmptyState, ErrorPanel, JobCard, KeyValues, LoadingBlock } from "@/ui";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  ErrorPanel,
+  JobCard,
+  KeyValues,
+  LoadingBlock,
+} from "@/ui";
 import { effectivePayload, makerText } from "@/lib/vocab";
-import { activeJob, useStartDraft, type PrismDrafted, type Proposal, type ProposalList, type Workspace } from "./api";
+import {
+  activeJob,
+  useStartDraft,
+  type PrismDrafted,
+  type Proposal,
+  type ProposalList,
+  type Workspace,
+} from "./api";
 import type { Flow } from "./flow";
 import { ProposalItem } from "./Inbox";
 
@@ -43,7 +60,13 @@ export function ProjectCard({
   );
 
   return (
-    <Card as="section" aria-labelledby="prism-project-title" id="prism-step-project" tabIndex={-1} className="scroll-mt-4 outline-none">
+    <Card
+      as="section"
+      aria-labelledby="prism-project-title"
+      id="prism-step-project"
+      tabIndex={-1}
+      className="scroll-mt-4 outline-none"
+    >
       <CardHeader
         id="prism-project-title"
         title="The Prism project"
@@ -55,8 +78,8 @@ export function ProjectCard({
             <p className="flex items-start gap-2 text-[13px] text-fg">
               <Lock className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden />
               <span>
-                First lock the analysis choices: decide the Decision Cards in Results and confirm them. The tables are
-                exported at exactly those choices.
+                First lock the analysis choices: decide the Decision Cards in Results and confirm
+                them. The tables are exported at exactly those choices.
               </span>
             </p>
             <Button asChild variant="secondary" size="sm" className="shrink-0">
@@ -68,10 +91,17 @@ export function ProjectCard({
         {inbox.isPending ? (
           <LoadingBlock label="Reading the Prism draft" lines={3} />
         ) : inbox.error ? (
-          <ErrorPanel error={inbox.error} title="The Prism draft could not be read" onRetry={() => void inbox.refetch()} compact />
+          <ErrorPanel
+            error={inbox.error}
+            title="The Prism draft could not be read"
+            onRetry={() => void inbox.refetch()}
+            compact
+          />
         ) : waiting ? (
           <div className="flex flex-col gap-2">
-            <p className="text-[13px] text-muted">A drafted project is waiting for you: check it, then accept or reject it.</p>
+            <p className="text-[13px] text-muted">
+              A drafted project is waiting for you: check it, then accept or reject it.
+            </p>
             <ProposalItem sid={workspace.key} proposal={waiting} head={inbox.data?.head ?? null} />
           </div>
         ) : accepted ? (
@@ -79,7 +109,9 @@ export function ProjectCard({
             <ProjectSummary proposal={accepted} />
             <div className="flex flex-wrap items-center gap-3">
               {draftButton("Draft it again", "secondary")}
-              <p className="text-[12px] text-muted">A new draft replaces this one only when you accept it.</p>
+              <p className="text-[12px] text-muted">
+                A new draft replaces this one only when you accept it.
+              </p>
             </div>
           </div>
         ) : (
@@ -92,14 +124,22 @@ export function ProjectCard({
             {earlier
               ? "The project accepted earlier was for an analysis whose choices have changed since."
               : "qPilot drafts it from this analysis: a table for each headline gene, Welch's t test on log2 values, the graph and a caption whose numbers are facts of this study."}
-            {flow.draftBlocked && flow.choicesConfirmed ? <span className="mt-1 block text-faint">{flow.draftBlocked}</span> : null}
+            {flow.draftBlocked && flow.choicesConfirmed ? (
+              <span className="mt-1 block text-faint">{flow.draftBlocked}</span>
+            ) : null}
           </EmptyState>
         )}
 
-        {draft.error ? <ErrorPanel error={draft.error} title="No Prism project drafted" compact /> : null}
+        {draft.error ? (
+          <ErrorPanel error={draft.error} title="No Prism project drafted" compact />
+        ) : null}
         {shownJob ? (
           <JobCard id={shownJob} onDismiss={() => setJobId(null)}>
-            {(result) => <p className="text-[13px] text-fg">{(result as PrismDrafted | null)?.message ?? "Drafted."}</p>}
+            {(result) => (
+              <p className="text-[13px] text-fg">
+                {(result as PrismDrafted | null)?.message ?? "Drafted."}
+              </p>
+            )}
           </JobCard>
         ) : null}
       </CardBody>
@@ -111,7 +151,8 @@ export function ProjectCard({
 export function ProjectSummary({ proposal }: { proposal: Proposal }) {
   const d = effectivePayload(proposal);
   const genes = Array.isArray(d.genes) ? d.genes.map(String) : [];
-  const graph = d.graph && typeof d.graph === "object" ? (d.graph as Record<string, unknown>).label : d.graph;
+  const graph =
+    d.graph && typeof d.graph === "object" ? (d.graph as Record<string, unknown>).label : d.graph;
   return (
     <div className="rounded-lg border border-ok/30 bg-ok-soft/40 p-3">
       <p className="mb-2 text-[13px] font-medium text-fg">Accepted for this analysis</p>

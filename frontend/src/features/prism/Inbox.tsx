@@ -10,7 +10,13 @@ import { useId, useState } from "react";
 import { api, ApiError, unwrap } from "@/api/client";
 import { Badge, Button, Card, CardBody, Field, LevelTag, Textarea, toast } from "@/ui";
 import { errorMessage } from "@/ui";
-import { describeProposal, effectivePayload, KIND_TITLE, makerText, STATUS_WORDS } from "@/lib/vocab";
+import {
+  describeProposal,
+  effectivePayload,
+  KIND_TITLE,
+  makerText,
+  STATUS_WORDS,
+} from "@/lib/vocab";
 import type { Proposal } from "./api";
 import { PrismConsequence } from "./Consequence";
 
@@ -21,7 +27,17 @@ type Action = "accept" | "reject" | "keep";
 export function useDecide(sid: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ pid, action, reason, head }: { pid: string; action: Action; reason: string; head: string | null }) => {
+    mutationFn: ({
+      pid,
+      action,
+      reason,
+      head,
+    }: {
+      pid: string;
+      action: Action;
+      reason: string;
+      head: string | null;
+    }) => {
       const params = { path: { sid, pid } };
       const body = { reason, expected_head: head };
       if (action === "keep") {
@@ -40,7 +56,9 @@ export function useDecide(sid: string) {
     },
     onError: (error) => {
       if (error instanceof ApiError && error.stale) {
-        toast.info("Something was decided since you loaded this (another tab or an agent). Here is the current state.");
+        toast.info(
+          "Something was decided since you loaded this (another tab or an agent). Here is the current state.",
+        );
       } else {
         toast.error(errorMessage(error));
       }
@@ -75,7 +93,8 @@ export function ProposalItem({
   const pending = proposal.status === "proposed";
   const roundTrip = proposal.kind !== "prism.project";
   // the server refuses an exclusion accepted without its reason, and every rejection without one
-  const needsReason = mode === "reject" || (mode === "accept" && proposal.kind === "prism.exclusion_reason");
+  const needsReason =
+    mode === "reject" || (mode === "accept" && proposal.kind === "prism.exclusion_reason");
   const actions: { action: Action; label: string }[] =
     proposal.kind === "prism.exclusion_reason"
       ? [
@@ -107,11 +126,19 @@ export function ProposalItem({
   };
 
   return (
-    <Card as="article" aria-label={KIND_TITLE[proposal.kind]} className={pending ? undefined : "bg-surface-2"}>
+    <Card
+      as="article"
+      aria-label={KIND_TITLE[proposal.kind]}
+      className={pending ? undefined : "bg-surface-2"}
+    >
       <CardBody className="flex flex-col gap-3 pt-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wider text-faint">{KIND_TITLE[proposal.kind]}</span>
-          <Badge tone={pending ? "accent" : proposal.status === "rejected" ? "neutral" : "ok"}>{STATUS_WORDS[proposal.status]}</Badge>
+          <span className="text-xs font-medium uppercase tracking-wider text-faint">
+            {KIND_TITLE[proposal.kind]}
+          </span>
+          <Badge tone={pending ? "accent" : proposal.status === "rejected" ? "neutral" : "ok"}>
+            {STATUS_WORDS[proposal.status]}
+          </Badge>
           <LevelTag level={proposal.level} className="ml-auto" />
         </div>
         {note ? <p className="text-[12px] text-muted">{note}</p> : null}
@@ -131,7 +158,9 @@ export function ProposalItem({
             ))}
           </ul>
         ) : null}
-        {proposal.check.note ? <p className="text-[12.5px] text-muted">{proposal.check.note}</p> : null}
+        {proposal.check.note ? (
+          <p className="text-[12.5px] text-muted">{proposal.check.note}</p>
+        ) : null}
         {proposal.reason ? (
           <p className="text-[12.5px] text-fg">
             <span className="text-muted">Reason given: </span>
@@ -151,7 +180,15 @@ export function ProposalItem({
                     : undefined
                 }
               >
-                <Textarea id={reasonId} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} showCount rows={2} autoFocus />
+                <Textarea
+                  id={reasonId}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  maxLength={500}
+                  showCount
+                  rows={2}
+                  autoFocus
+                />
               </Field>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -184,7 +221,9 @@ export function ProposalItem({
             </div>
           )
         ) : null}
-        <p className="border-t border-line pt-2 text-[12px] text-faint">{makerText(proposal.made_by)}</p>
+        <p className="border-t border-line pt-2 text-[12px] text-faint">
+          {makerText(proposal.made_by)}
+        </p>
       </CardBody>
     </Card>
   );

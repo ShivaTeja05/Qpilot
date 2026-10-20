@@ -30,7 +30,12 @@ export function RoutesCard({ workspace }: { workspace: Workspace }) {
         {routes.isPending ? (
           <LoadingBlock label="Recomputing the usual routes" lines={4} />
         ) : routes.error ? (
-          <ErrorPanel error={routes.error} title="The route comparison could not be read" onRetry={() => void routes.refetch()} compact />
+          <ErrorPanel
+            error={routes.error}
+            title="The route comparison could not be read"
+            onRetry={() => void routes.refetch()}
+            compact
+          />
         ) : (
           <RoutesBody data={routes.data} workspace={workspace} />
         )}
@@ -44,12 +49,14 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
   if (!rows.length) {
     return (
       <p className="text-[13px] text-muted">
-        This analysis has no route comparison: it needs two groups and at least one reference gene with a Cq in every
-        sample. The bundle is still the engine's own analysis.
+        This analysis has no route comparison: it needs two groups and at least one reference gene
+        with a Cq in every sample. The bundle is still the engine's own analysis.
       </p>
     );
   }
-  const headline = rows.find((r) => r.route === HEADLINE) ?? rows.reduce((a, b) => (b.n_differ > a.n_differ ? b : a));
+  const headline =
+    rows.find((r) => r.route === HEADLINE) ??
+    rows.reduce((a, b) => (b.n_differ > a.n_differ ? b : a));
   const alarming = headline.n_differ > 0;
   return (
     <div className="flex flex-col gap-4">
@@ -59,7 +66,9 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
           alarming ? "border-danger/30 bg-danger-soft" : "border-line bg-surface-2",
         )}
       >
-        {alarming ? <AlertTriangle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden /> : null}
+        {alarming ? (
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />
+        ) : null}
         <p className="text-[15px] leading-snug text-fg">
           Taken the usual way — 2^-ΔΔCq in a spreadsheet, then a t test in Prism —{" "}
           <strong className={cn("font-semibold tabular", alarming && "text-danger")}>
@@ -69,7 +78,10 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
         </p>
       </div>
 
-      <ol className="flex flex-col divide-y divide-line rounded-lg border border-line" aria-label="Routes into Prism">
+      <ol
+        className="flex flex-col divide-y divide-line rounded-lg border border-line"
+        aria-label="Routes into Prism"
+      >
         {rows.map((row) => (
           <RouteItem key={row.route} row={row} workspace={workspace} engine={data.engine ?? null} />
         ))}
@@ -77,8 +89,10 @@ export function RoutesBody({ data, workspace }: { data: PrismRoutes; workspace: 
 
       <p className="text-[12px] leading-relaxed text-muted">
         Computed by qPilot's engine on this study, with the engine's call rule
-        {data.rule ? ` (${data.rule})` : " (up or down only if p < 0.05 and at least two-fold)"}; never used for a conclusion. What Send to Prism writes is the engine's own analysis — log2
-        values, one per biological unit, and Welch's t test — so Prism starts from the engine's conclusions.
+        {data.rule ? ` (${data.rule})` : " (up or down only if p < 0.05 and at least two-fold)"};
+        never used for a conclusion. What Send to Prism writes is the engine's own analysis — log2
+        values, one per biological unit, and Welch's t test — so Prism starts from the engine's
+        conclusions.
       </p>
     </div>
   );
@@ -89,7 +103,15 @@ function rank(id: string): number {
   return i < 0 ? ROUTE_ORDER.length : i;
 }
 
-function RouteItem({ row, workspace, engine }: { row: PrismRoute; workspace: Workspace; engine: Record<string, string> | null }) {
+function RouteItem({
+  row,
+  workspace,
+  engine,
+}: {
+  row: PrismRoute;
+  workspace: Workspace;
+  engine: Record<string, string> | null;
+}) {
   const [all, setAll] = useState(false);
   const nGenes = row.n_genes;
   const words = ROUTE_WORDS[row.route];
@@ -103,7 +125,11 @@ function RouteItem({ row, workspace, engine }: { row: PrismRoute; workspace: Wor
         {words ? <p className="mt-0.5 text-[12px] text-muted">{words.why}</p> : null}
         {row.genes.length ? (
           <div className="mt-2">
-            <ul id={listId} className="flex flex-wrap gap-1.5" aria-label={`Genes this route concludes differently (${count(row.genes.length)})`}>
+            <ul
+              id={listId}
+              className="flex flex-wrap gap-1.5"
+              aria-label={`Genes this route concludes differently (${count(row.genes.length)})`}
+            >
               {genes.map((g) => (
                 <li key={g}>
                   <GeneChip gene={g} workspace={workspace} engine={engine?.[g]} />
@@ -118,7 +144,10 @@ function RouteItem({ row, workspace, engine }: { row: PrismRoute; workspace: Wor
                 onClick={() => setAll((v) => !v)}
                 className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-muted underline-offset-2 hover:text-fg hover:underline"
               >
-                <ChevronDown className={cn("size-3.5 transition-transform", all && "rotate-180")} aria-hidden />
+                <ChevronDown
+                  className={cn("size-3.5 transition-transform", all && "rotate-180")}
+                  aria-hidden
+                />
                 {all ? "Show fewer" : `Show all ${count(row.genes.length)}`}
               </button>
             ) : null}
@@ -127,7 +156,12 @@ function RouteItem({ row, workspace, engine }: { row: PrismRoute; workspace: Wor
       </div>
       <div className="flex flex-col gap-1.5 md:items-end">
         <p className="text-[13px] text-fg">
-          <span className={cn("text-lg font-semibold tabular", row.n_differ > 0 ? "text-danger" : "text-ok")}>
+          <span
+            className={cn(
+              "text-lg font-semibold tabular",
+              row.n_differ > 0 ? "text-danger" : "text-ok",
+            )}
+          >
             {count(row.n_differ)}
           </span>
           <span className="text-muted"> of {count(nGenes)} differ</span>
@@ -137,7 +171,10 @@ function RouteItem({ row, workspace, engine }: { row: PrismRoute; workspace: Wor
           role="img"
           aria-label={`${ofTotal(row.n_differ, nGenes)} conclusions differ`}
         >
-          <div className="h-full rounded-full bg-danger/70" style={{ width: `${Math.round(share * 100)}%` }} />
+          <div
+            className="h-full rounded-full bg-danger/70"
+            style={{ width: `${Math.round(share * 100)}%` }}
+          />
         </div>
       </div>
     </li>
@@ -145,15 +182,29 @@ function RouteItem({ row, workspace, engine }: { row: PrismRoute; workspace: Wor
 }
 
 /** A gene this route concludes differently: the engine's call, and a link to the gene. */
-function GeneChip({ gene, workspace, engine }: { gene: string; workspace: Workspace; engine?: string }) {
+function GeneChip({
+  gene,
+  workspace,
+  engine,
+}: {
+  gene: string;
+  workspace: Workspace;
+  engine?: string;
+}) {
   return (
     <a
       href={`#${sectionPath(workspace, "gene", gene)}`}
       className="inline-flex items-center gap-1 rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-fg hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      title={engine ? `The engine calls ${gene} ${CONCLUSION[asConclusion(engine)].word}; this route does not. Open ${gene}.` : `Open ${gene}`}
+      title={
+        engine
+          ? `The engine calls ${gene} ${CONCLUSION[asConclusion(engine)].word}; this route does not. Open ${gene}.`
+          : `Open ${gene}`
+      }
     >
       {gene}
-      {engine ? <ConclusionTag conclusion={engine} compact className="font-sans text-[11px]" /> : null}
+      {engine ? (
+        <ConclusionTag conclusion={engine} compact className="font-sans text-[11px]" />
+      ) : null}
     </a>
   );
 }

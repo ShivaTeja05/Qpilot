@@ -28,7 +28,12 @@ export interface Flow {
   draftBlocked: string | null;
   /** Why Send waits, in words (null: it can run). */
   sendBlocked: string | null;
-  steps: { id: "choices" | "draft" | "send" | "roundtrip"; title: string; state: StepState; detail: string }[];
+  steps: {
+    id: "choices" | "draft" | "send" | "roundtrip";
+    title: string;
+    state: StepState;
+    detail: string;
+  }[];
 }
 
 function stage(workspace: Workspace, name: string) {
@@ -36,12 +41,19 @@ function stage(workspace: Workspace, name: string) {
 }
 
 /** The project proposals of the Prism stage, split by whether they hold for the analysis shown. */
-export function projectState(proposals: Proposal[], studyId: string | null | undefined): ProjectState {
+export function projectState(
+  proposals: Proposal[],
+  studyId: string | null | undefined,
+): ProjectState {
   const projects = proposals.filter((p) => p.kind === "prism.project");
   const forStudy = (p: Proposal) => effectivePayload(p).study_id === studyId;
-  const accepted = projects.filter((p) => (p.status === "accepted" || p.status === "edited") && forStudy(p));
+  const accepted = projects.filter(
+    (p) => (p.status === "accepted" || p.status === "edited") && forStudy(p),
+  );
   const waiting = projects.filter((p) => p.status === "proposed");
-  const earlier = projects.filter((p) => (p.status === "accepted" || p.status === "edited") && !forStudy(p));
+  const earlier = projects.filter(
+    (p) => (p.status === "accepted" || p.status === "edited") && !forStudy(p),
+  );
   return {
     accepted: accepted.at(-1) ?? null,
     waiting: waiting.at(-1) ?? null,
@@ -49,7 +61,11 @@ export function projectState(proposals: Proposal[], studyId: string | null | und
   };
 }
 
-export function flowOf(workspace: Workspace, prismInbox: Proposal[], roundTripInbox: Proposal[]): Flow {
+export function flowOf(
+  workspace: Workspace,
+  prismInbox: Proposal[],
+  roundTripInbox: Proposal[],
+): Flow {
   const choicesConfirmed = Boolean(stage(workspace, "choices")?.confirmed);
   const sent = Boolean(stage(workspace, "prism")?.confirmed);
   const project = projectState(prismInbox, workspace.study_id);
@@ -79,7 +95,11 @@ export function flowOf(workspace: Workspace, prismInbox: Proposal[], roundTripIn
       id: "draft",
       title: "Draft the project",
       state: state(1),
-      detail: project.accepted ? "Accepted" : project.waiting ? "Waiting for you" : "Not drafted yet",
+      detail: project.accepted
+        ? "Accepted"
+        : project.waiting
+          ? "Waiting for you"
+          : "Not drafted yet",
     },
     {
       id: "send",
@@ -92,7 +112,9 @@ export function flowOf(workspace: Workspace, prismInbox: Proposal[], roundTripIn
       title: "Round trip",
       // never "done": tables can come back from Prism again after any edit
       state: at === 3 ? "current" : "waiting",
-      detail: roundTripWaiting ? `${roundTripWaiting} question${roundTripWaiting === 1 ? "" : "s"} waiting` : "What changed in Prism",
+      detail: roundTripWaiting
+        ? `${roundTripWaiting} question${roundTripWaiting === 1 ? "" : "s"} waiting`
+        : "What changed in Prism",
     },
   ];
   return { choicesConfirmed, project, sent, roundTripWaiting, draftBlocked, sendBlocked, steps };

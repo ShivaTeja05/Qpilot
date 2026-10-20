@@ -41,7 +41,9 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
   const y = useMemo(() => {
     const values = groups.flatMap((g) => [
       ...g.points.map((p) => p.value),
-      ...[g.ci_lo, g.ci_hi, g.mean].filter((v): v is number => typeof v === "number" && Number.isFinite(v)),
+      ...[g.ci_lo, g.ci_hi, g.mean].filter(
+        (v): v is number => typeof v === "number" && Number.isFinite(v),
+      ),
     ]);
     const lo = values.length ? Math.min(...values) : 0;
     const hi = values.length ? Math.max(...values) : 1;
@@ -82,14 +84,26 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
 
   const summary = summaryOf(figure);
   const legend: LegendItem[] = [
-    ...groups.slice(0, 4).map((g, gi) => ({ mark: { shape: "circle" as const, tone: TONES[gi]! }, label: `${g.name} (${count(g.n)})` })),
-    { swatch: <LineSwatch tone="var(--text)" width={3} />, label: "Mean and 95 % confidence interval" },
+    ...groups.slice(0, 4).map((g, gi) => ({
+      mark: { shape: "circle" as const, tone: TONES[gi]! },
+      label: `${g.name} (${count(g.n)})`,
+    })),
+    {
+      swatch: <LineSwatch tone="var(--text)" width={3} />,
+      label: "Mean and 95 % confidence interval",
+    },
   ];
 
   const columns: Column<Dot>[] = [
     { key: "unit", header: "Biological unit", cell: (d) => d.unit, sort: (d) => d.unit },
     { key: "group", header: "Group", cell: (d) => groups[d.gi]?.name ?? "", sort: (d) => d.gi },
-    { key: "value", header: "log2 relative quantity", cell: (d) => log2Text(d.value), sort: (d) => d.value, numeric: true },
+    {
+      key: "value",
+      header: "log2 relative quantity",
+      cell: (d) => log2Text(d.value),
+      sort: (d) => d.value,
+      numeric: true,
+    },
   ];
 
   const ticks = y.ticks(Math.max(3, Math.round(height / 60)));
@@ -98,8 +112,19 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
       summary={summary}
       legend={legend}
       caption={caption}
-      live={active ? `${tipFor(active).title}, ${groups[active.gi]?.name}: ${tipFor(active).value}` : undefined}
-      table={() => <DataTable columns={columns} rows={order} rowKey={(d) => `${d.gi}:${d.unit}`} caption={summary} />}
+      live={
+        active
+          ? `${tipFor(active).title}, ${groups[active.gi]?.name}: ${tipFor(active).value}`
+          : undefined
+      }
+      table={() => (
+        <DataTable
+          columns={columns}
+          rows={order}
+          rowKey={(d) => `${d.gi}:${d.unit}`}
+          caption={summary}
+        />
+      )}
     >
       <div
         ref={ref}
@@ -113,11 +138,32 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
           hide();
         }}
       >
-        <svg width={width} height={height} role="img" aria-label={summary} className="block overflow-visible" onPointerLeave={hide}>
+        <svg
+          width={width}
+          height={height}
+          role="img"
+          aria-label={summary}
+          className="block overflow-visible"
+          onPointerLeave={hide}
+        >
           {ticks.map((t) => (
             <g key={t}>
-              <line x1={AXIS_W} x2={width - 4} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeDasharray={t === 0 ? undefined : "2 3"} />
-              <text x={AXIS_W - 6} y={y(t) + 4} textAnchor="end" fontSize={11} fill="var(--text-muted)" className="tabular">
+              <line
+                x1={AXIS_W}
+                x2={width - 4}
+                y1={y(t)}
+                y2={y(t)}
+                stroke="var(--line)"
+                strokeDasharray={t === 0 ? undefined : "2 3"}
+              />
+              <text
+                x={AXIS_W - 6}
+                y={y(t) + 4}
+                textAnchor="end"
+                fontSize={11}
+                fill="var(--text-muted)"
+                className="tabular"
+              >
                 {log2Text(t)}
               </text>
             </g>
@@ -134,20 +180,56 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
             const cx = centreX(gi);
             const capW = Math.min(band * 0.22, 26);
             const meanW = Math.min(band * 0.42, 52);
-            const has = (v: number | null | undefined): v is number => typeof v === "number" && Number.isFinite(v);
+            const has = (v: number | null | undefined): v is number =>
+              typeof v === "number" && Number.isFinite(v);
             return (
               <g key={g.name}>
-                <text x={cx} y={height - BOTTOM + 18} textAnchor="middle" fontSize={12} fontWeight={600} fill="var(--text)">
+                <text
+                  x={cx}
+                  y={height - BOTTOM + 18}
+                  textAnchor="middle"
+                  fontSize={12}
+                  fontWeight={600}
+                  fill="var(--text)"
+                >
                   {g.name}
                 </text>
-                <text x={cx} y={height - BOTTOM + 33} textAnchor="middle" fontSize={11} fill="var(--text-muted)" className="tabular">
+                <text
+                  x={cx}
+                  y={height - BOTTOM + 33}
+                  textAnchor="middle"
+                  fontSize={11}
+                  fill="var(--text-muted)"
+                  className="tabular"
+                >
                   {count(g.n)} units
                 </text>
                 {has(g.ci_lo) && has(g.ci_hi) ? (
                   <g aria-hidden="true">
-                    <line x1={cx} x2={cx} y1={y(g.ci_lo!)} y2={y(g.ci_hi!)} stroke="var(--text)" strokeWidth={2} />
-                    <line x1={cx - capW / 2} x2={cx + capW / 2} y1={y(g.ci_lo!)} y2={y(g.ci_lo!)} stroke="var(--text)" strokeWidth={2} />
-                    <line x1={cx - capW / 2} x2={cx + capW / 2} y1={y(g.ci_hi!)} y2={y(g.ci_hi!)} stroke="var(--text)" strokeWidth={2} />
+                    <line
+                      x1={cx}
+                      x2={cx}
+                      y1={y(g.ci_lo!)}
+                      y2={y(g.ci_hi!)}
+                      stroke="var(--text)"
+                      strokeWidth={2}
+                    />
+                    <line
+                      x1={cx - capW / 2}
+                      x2={cx + capW / 2}
+                      y1={y(g.ci_lo!)}
+                      y2={y(g.ci_lo!)}
+                      stroke="var(--text)"
+                      strokeWidth={2}
+                    />
+                    <line
+                      x1={cx - capW / 2}
+                      x2={cx + capW / 2}
+                      y1={y(g.ci_hi!)}
+                      y2={y(g.ci_hi!)}
+                      stroke="var(--text)"
+                      strokeWidth={2}
+                    />
                   </g>
                 ) : null}
                 {has(g.mean) ? (
@@ -170,13 +252,31 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
             return (
               <g key={`${d.gi}:${d.unit}`} onPointerEnter={() => show(d.x, d.y, tipFor(d))}>
                 <circle cx={d.x} cy={d.y} r={Math.max(5, r + 2)} fill="transparent" />
-                <circle cx={d.x} cy={d.y} r={on ? r + 1.5 : r} fill={TONES[d.gi % TONES.length]} fillOpacity={0.55} />
-                {on ? <circle cx={d.x} cy={d.y} r={r + 5} fill="none" stroke="var(--accent)" strokeWidth={2} /> : null}
+                <circle
+                  cx={d.x}
+                  cy={d.y}
+                  r={on ? r + 1.5 : r}
+                  fill={TONES[d.gi % TONES.length]}
+                  fillOpacity={0.55}
+                />
+                {on ? (
+                  <circle
+                    cx={d.x}
+                    cy={d.y}
+                    r={r + 5}
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth={2}
+                  />
+                ) : null}
               </g>
             );
           })}
         </svg>
-        <Tooltip tip={active ? { x: active.x, y: active.y, content: tipFor(active) } : tip} width={width} />
+        <Tooltip
+          tip={active ? { x: active.x, y: active.y, content: tipFor(active) } : tip}
+          width={width}
+        />
       </div>
     </ChartFrame>
   );
@@ -186,7 +286,10 @@ export function PrismFigure({ figure, caption }: { figure: PrismFigureData; capt
 export function summaryOf(figure: PrismFigureData): string {
   const parts = figure.groups.map((g) => {
     const mean = g.mean != null ? `, mean ${log2Text(g.mean)}` : "";
-    const ci = g.ci_lo != null && g.ci_hi != null ? ` (95 % CI ${log2Text(g.ci_lo)} to ${log2Text(g.ci_hi)})` : "";
+    const ci =
+      g.ci_lo != null && g.ci_hi != null
+        ? ` (95 % CI ${log2Text(g.ci_lo)} to ${log2Text(g.ci_hi)})`
+        : "";
     return `${g.name}: ${count(g.n)} units${mean}${ci}`;
   });
   return `${figure.gene}, log2 relative quantity per biological unit. ${parts.join("; ")}.`;

@@ -6,9 +6,26 @@
  */
 import { CheckCircle2, Download, Info, Send, TriangleAlert } from "lucide-react";
 import { useState } from "react";
-import { Button, Card, CardBody, CardHeader, CommandLine, ErrorPanel, Hash, JobCard } from "@/ui";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CommandLine,
+  CopyButton,
+  ErrorPanel,
+  Hash,
+  JobCard,
+} from "@/ui";
 import { bytes, dateTime, plural, relativeTime } from "@/lib/format";
-import { activeJob, usePrismBundles, useStartSend, type PrismBundleView, type PrismSent, type Workspace } from "./api";
+import {
+  activeJob,
+  usePrismBundles,
+  useStartSend,
+  type PrismBundleView,
+  type PrismSent,
+  type Workspace,
+} from "./api";
 import type { Flow } from "./flow";
 import { NOT_AFFILIATED, NOT_RUN_YET } from "./words";
 
@@ -21,7 +38,13 @@ export function SendCard({ workspace, flow }: { workspace: Workspace; flow: Flow
   const last = bundles.data?.find((b) => b.current) ?? null;
 
   return (
-    <Card as="section" aria-labelledby="prism-send-title" id="prism-step-send" tabIndex={-1} className="scroll-mt-4 outline-none">
+    <Card
+      as="section"
+      aria-labelledby="prism-send-title"
+      id="prism-step-send"
+      tabIndex={-1}
+      className="scroll-mt-4 outline-none"
+    >
       <CardHeader
         id="prism-send-title"
         title="Send to Prism"
@@ -63,21 +86,42 @@ export function SendCard({ workspace, flow }: { workspace: Workspace; flow: Flow
   );
 }
 
+/** Where the bundle is on this computer (the folder holds every file of the zip). */
+function BundleFolder({ folder }: { folder: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2 text-[12.5px]">
+      <span className="shrink-0 text-muted">In the folder</span>
+      <code className="min-w-0 truncate font-mono text-fg" title={folder}>
+        {folder}
+      </code>
+      <CopyButton text={folder} label="Copy the folder path" />
+    </div>
+  );
+}
+
 function LastBundle({ bundle }: { bundle: PrismBundleView }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 p-3">
-      <p className="text-[13px] text-fg">
-        Sent for this analysis <span className="text-muted">{relativeTime(bundle.at)}</span>{" "}
-        <span className="text-muted">({dateTime(bundle.at)})</span> · <Hash value={bundle.bundle_sha256} prefix="bundle" />
-      </p>
-      {bundle.download ? (
-        <Button asChild variant="secondary" size="sm">
-          <a href={bundle.download.url} download={bundle.download.name}>
-            <Download aria-hidden />
-            Download the bundle
-          </a>
-        </Button>
-      ) : null}
+    <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface-2 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[13px] text-fg">
+          Sent for this analysis <span className="text-muted">{relativeTime(bundle.at)}</span>{" "}
+          <span className="text-muted">({dateTime(bundle.at)})</span> ·{" "}
+          <Hash value={bundle.bundle_sha256} prefix="bundle" />
+        </p>
+        {bundle.download ? (
+          <Button asChild variant="secondary" size="sm">
+            <a href={bundle.download.url} download={bundle.download.name}>
+              <Download aria-hidden />
+              Download the bundle
+            </a>
+          </Button>
+        ) : null}
+      </div>
+      {bundle.exists ? (
+        <BundleFolder folder={bundle.folder} />
+      ) : (
+        <p className="text-[12.5px] text-warn">Its folder is no longer on this computer.</p>
+      )}
     </div>
   );
 }
@@ -86,8 +130,10 @@ export function SendOutcome({ result }: { result: PrismSent }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[13px] text-fg">
-        Wrote {plural(result.n_files, "file")} · <Hash value={result.bundle.bundle_sha256} prefix="bundle sha256" />.
+        Wrote {plural(result.n_files, "file")} ·{" "}
+        <Hash value={result.bundle.bundle_sha256} prefix="bundle sha256" />.
       </p>
+      <BundleFolder folder={result.bundle.folder} />
       <div>
         <Button asChild variant="primary" size="sm">
           <a href={result.download.url} download={result.download.name}>
@@ -112,13 +158,15 @@ export function SendOutcome({ result }: { result: PrismSent }) {
           <p className="flex items-start gap-2">
             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
             <span>
-              {sentence(result.launch_note) || "Prism was not started."} Download the bundle, unzip it on the computer that has Prism and
-              open <span className="font-mono">run.pzc</span> there (double-click it on a Mac), or run:
+              {sentence(result.launch_note) || "Prism was not started."} Download the bundle, unzip
+              it on the computer that has Prism and open <span className="font-mono">run.pzc</span>{" "}
+              there (double-click it on a Mac), or run:
             </span>
           </p>
           {result.command_line ? <CommandLine command={result.command_line} /> : null}
           <p className="text-[12.5px] text-muted">
-            That computer needs GraphPad Prism with a licence; qPilot never writes or reads Prism files itself.
+            That computer needs GraphPad Prism with a licence; qPilot never writes or reads Prism
+            files itself.
           </p>
         </div>
       )}
@@ -131,8 +179,9 @@ export function SendOutcome({ result }: { result: PrismSent }) {
         </ul>
       ) : null}
       <p className="text-[12.5px] text-muted">
-        After editing in Prism, save the projects and run <span className="font-mono">send_back.pzc</span> from the bundle
-        folder; then use Round trip below.
+        After editing in Prism, save the projects and run{" "}
+        <span className="font-mono">send_back.pzc</span> from the bundle folder; then use Round trip
+        below.
       </p>
     </div>
   );
