@@ -5,7 +5,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Bot, Check, ChevronDown, CircleCheck, Sparkles, Undo2 } from "lucide-react";
-import { useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { api, ApiError, unwrap } from "@/api/client";
 import { CALLS, Glyph, type CallKey } from "@/charts";
 import { cn } from "@/lib/cn";
@@ -54,17 +54,28 @@ export function DecisionCards({
   workspaceKey,
   studyId,
   headline,
+  focusCard,
   className,
 }: {
   view: CardsView;
   workspaceKey: string;
   studyId: string;
   headline: string[];
+  /** A card to scroll to and focus (deep link `results/card/<id>`). */
+  focusCard?: string | null;
   className?: string;
 }) {
   const ordered = useMemo(() => cardOrder(view.cards), [view.cards]);
   const refs = useRef<(HTMLElement | null)[]>([]);
   const [focus, setFocus] = useState(0);
+  useEffect(() => {
+    if (!focusCard) return;
+    const i = ordered.findIndex((c) => c.id === focusCard);
+    const el = refs.current[i];
+    if (i < 0 || !el) return;
+    el.scrollIntoView({ block: "center" });
+    el.focus({ preventScroll: true });
+  }, [focusCard, ordered]);
   const modelAnswers = useModelAnswers();
   const move = (d: number) => {
     const next = Math.max(0, Math.min(ordered.length - 1, focus + d));
@@ -112,6 +123,7 @@ export function DecisionCards({
                 workspaceKey={workspaceKey}
                 studyId={studyId}
                 modelAnswers={modelAnswers}
+                expanded={c.id === focusCard}
                 onFocus={() => setFocus(i)}
               />
             </li>
@@ -137,9 +149,12 @@ function DecisionCardItem({
   workspaceKey,
   studyId,
   modelAnswers,
+  expanded,
   onFocus,
 }: {
   ref: (el: HTMLElement | null) => void;
+  /** Start expanded even when decided (a deep link to this card). */
+  expanded?: boolean;
   card: CardView;
   head: string | null;
   headline: string[];
@@ -150,7 +165,7 @@ function DecisionCardItem({
 }) {
   const done = card.status === "decided" || card.status === "auto_decided";
   const pending = card.status === "pending_human";
-  const [open, setOpen] = useState(!done);
+  const [open, setOpen] = useState(!done || expanded);
   const [undoing, setUndoing] = useState(false);
   const initial = pending ? (card.pending_option ?? card.recommended) : (card.decision ?? card.recommended);
   const [option, setOption] = useState(initial);

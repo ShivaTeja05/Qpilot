@@ -9,6 +9,7 @@ import { type MapEncoding } from "@/charts";
 import { sectionPath, type SectionProps } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
 import { useCards, useResults } from "./api";
+import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { MapPanel } from "./MapPanel";
@@ -41,7 +42,7 @@ function ResultsSkeleton() {
   );
 }
 
-export default function ResultsSection({ workspace }: SectionProps) {
+export default function ResultsSection({ workspace, rest }: SectionProps) {
   const [, navigate] = useLocation();
   const key = workspace?.key ?? "";
   const studyId = workspace?.results_visible ? workspace.study_id : null;
@@ -126,7 +127,16 @@ export default function ResultsSection({ workspace }: SectionProps) {
                   <Skeleton className="h-40 w-full rounded-xl" />
                 </div>
               ) : (
-                <DecisionCards view={cards.data} workspaceKey={key} studyId={studyId} headline={view.headline} />
+                <div className="space-y-3">
+                  <DecisionCards
+                    view={cards.data}
+                    workspaceKey={key}
+                    studyId={studyId}
+                    headline={view.headline}
+                    focusCard={rest[0] === "card" ? (rest[1] ?? null) : null}
+                  />
+                  <ChoicesConfirm workspace={workspace} autoFocus={rest[0] === "confirm"} />
+                </div>
               )}
             </aside>
           </div>
