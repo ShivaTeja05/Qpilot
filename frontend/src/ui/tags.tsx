@@ -89,7 +89,7 @@ export function LevelTag({
   hideWord?: boolean;
 }) {
   const l = asLevel(level);
-  if (!l) return <span className={cn("text-faint", className)}>—</span>;
+  if (!l) return <span className={cn("text-muted", className)}>—</span>;
   return (
     <span
       className={cn(
@@ -174,7 +174,7 @@ export function VerdictTag({
   className?: string;
 }) {
   const v = asVerdict(verdict);
-  if (!v) return <span className={cn("text-faint", className)}>—</span>;
+  if (!v) return <span className={cn("text-muted", className)}>—</span>;
   const meta = VERDICT[v];
   return (
     <span

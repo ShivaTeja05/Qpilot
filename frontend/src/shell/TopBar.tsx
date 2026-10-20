@@ -241,7 +241,7 @@ function AgentBell({ route }: { route: Route }) {
         )}
         {running.length ? (
           <>
-            <p className="px-2 pt-2 pb-1 text-xs font-medium text-faint">Running</p>
+            <p className="px-2 pt-2 pb-1 text-xs font-medium text-muted">Running</p>
             <ul className="flex flex-col gap-1">
               {running.map((j) => (
                 <RunningJob key={j.id} job={j} />
@@ -273,7 +273,7 @@ function RunningJob({ job }: { job: JobView }) {
         <span className="truncate text-[13px] font-medium">{job.title}</span>
         <span className="shrink-0 text-xs text-muted tabular">
           {duration(job.elapsed_s)}
-          {job.typical_s ? <span className="text-faint"> / ~{duration(job.typical_s)}</span> : null}
+          {job.typical_s ? <span className="text-muted"> / ~{duration(job.typical_s)}</span> : null}
         </span>
       </div>
       {job.step ? <p className="truncate text-xs text-muted">{job.step}</p> : null}
@@ -371,9 +371,9 @@ export function TopBar({
       </Link>
       <div className="flex min-w-0 flex-1 items-center gap-2">
         {title ? (
-          <h1 className="truncate text-sm font-semibold text-fg sm:text-[15px]" title={title}>
+          <p className="truncate text-sm font-semibold text-fg sm:text-[15px]" title={title}>
             {title}
-          </h1>
+          </p>
         ) : (
           <span className="qp-skeleton h-4 w-48 rounded" aria-hidden />
         )}
@@ -391,12 +391,10 @@ export function TopBar({
             <Link
               href={pathOf(route.kind, route.key, "record")}
               className="hidden h-6 shrink-0 items-center gap-1 rounded-full border border-line px-2 font-mono text-[11.5px] text-muted transition-colors hover:border-line-strong hover:text-fg md:inline-flex"
-              aria-label={
-                head ? `Chain head ${head}. Open the Record` : "No decisions yet. Open the Record"
-              }
             >
               <GitBranch className="size-3" aria-hidden />
               <span className="font-sans">chain</span> {head ? `${shortHash(head, 4)}…` : "empty"}
+              <span className="sr-only"> (the decision log's head; open the Record)</span>
             </Link>
           </Tooltip>
         ) : null}
@@ -405,7 +403,7 @@ export function TopBar({
         <div className="hidden lg:block">
           <ModelChip system={system} />
         </div>
-        <div className="hidden xl:block">
+        <div className="hidden min-[1440px]:block">
           <Autonomy system={system} />
         </div>
         <AgentBell route={route} />
@@ -431,13 +429,16 @@ export function TopBar({
         <button
           type="button"
           onClick={openPalette}
-          aria-label="Search and commands"
           aria-keyshortcuts="Meta+K Control+K"
-          className="hidden h-8 w-52 items-center gap-2 rounded-lg border border-line bg-surface-2 pr-1.5 pl-2.5 text-[13px] text-faint transition-colors hover:border-line-strong hover:text-muted xl:inline-flex"
+          className="hidden h-8 w-52 items-center gap-2 rounded-lg border border-line bg-surface-2 pr-1.5 pl-2.5 text-[13px] text-muted transition-colors hover:border-line-strong hover:text-muted xl:inline-flex"
         >
           <Search className="size-4" aria-hidden />
-          <span className="flex-1 text-left">Go to…</span>
-          <Kbd>{MOD}K</Kbd>
+          <span className="flex-1 text-left">
+            Go to…<span className="sr-only"> (search and commands)</span>
+          </span>
+          <span aria-hidden>
+            <Kbd>{MOD}K</Kbd>
+          </span>
         </button>
         <IconButton label="Search and commands" onClick={openPalette} className="xl:hidden">
           <Search />
@@ -449,7 +450,7 @@ export function TopBar({
         {/* Narrow screens: the controls that do not fit, in one menu. */}
         <Menu>
           <MenuTrigger asChild>
-            <IconButton label="More controls" className="xl:hidden">
+            <IconButton label="More controls" className="min-[1440px]:hidden">
               <MenuIcon />
             </IconButton>
           </MenuTrigger>
@@ -461,7 +462,7 @@ export function TopBar({
             </MenuItem>
             <MenuSeparator />
             <div className="px-2 py-1.5">
-              <p className="mb-1.5 text-xs font-medium text-faint">Agents may</p>
+              <p className="mb-1.5 text-xs font-medium text-muted">Agents may</p>
               <Autonomy system={system} />
             </div>
             <MenuSeparator />
