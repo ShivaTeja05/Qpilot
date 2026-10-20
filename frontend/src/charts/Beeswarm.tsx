@@ -4,7 +4,8 @@
  * non-detects and flagged wells have their own marks; samples whose removal alone changes the call
  * are ringed. Click (or Enter) a sample to open its well.
  */
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { cn } from "@/lib/cn";
 import { ChartFrame, type LegendItem } from "./core/ChartFrame";
 import { DataTable, type Column } from "./core/DataTable";
 import { FOLD_AXIS_BELOW, FoldAxis } from "./core/FoldAxis";
@@ -12,7 +13,7 @@ import { foldScale } from "./core/fold";
 import { fmtFoldWords } from "./core/format";
 import { GlyphMark } from "./core/Glyph";
 import { useTip, usePointNav, useWidth } from "./core/hooks";
-import { beeswarm } from "./core/layout";
+import { beeswarm, localPoint, nearestIndex } from "./core/layout";
 import { Tooltip } from "./core/Tooltip";
 import type { Mark } from "./core/encodings";
 
@@ -39,7 +40,7 @@ export interface SampleGroup {
   label: string;
   n: number;
   missing?: number;
-  /** The group's mean, log2, on the same scale as the points. */
+  /** The group's mean, log2, on the same scale as the points (NaN: no mean line). */
   mean: number;
 }
 
@@ -121,6 +122,7 @@ export function Beeswarm({
   }, [groups, points, fs, rowH, bandTop, r]);
   const order = useMemo(() => [...dots].sort((a, b) => a.gi - b.gi || a.x - b.x), [dots]);
   const nav = usePointNav(order.length, (i) => onSelectSample?.(order[i]!.p));
+  const [hover, setHover] = useState(-1);
   const active = nav.active != null ? order[nav.active] : null;
 
   const tipFor = (d: Dot) => {
@@ -144,12 +146,10 @@ export function Beeswarm({
 
   const has = (f: (p: SamplePoint) => boolean | undefined) => points.some((p) => f(p));
   const legend: LegendItem[] = [
-    ...groups
-      .slice(0, 4)
-      .map((g, gi) => ({
-        mark: { shape: "circle" as const, tone: GROUP_TONES[gi]! },
-        label: g.label,
-      })),
+    ...groups.slice(0, 4).map((g, gi) => ({
+      mark: { shape: "circle" as const, tone: GROUP_TONES[gi]! },
+      label: g.label,
+    })),
     ...(has((p) => p.late)
       ? [
           {
@@ -272,8 +272,19 @@ export function Beeswarm({
           height={height}
           role="img"
           aria-label={summary}
-          className="block overflow-visible"
-          onPointerLeave={hide}
+          className={cn("block overflow-visible", hover >= 0 && onSelectSample && "cursor-pointer")}
+          onPointerLeave={() => {
+            setHover(-1);
+            hide();
+          }}
+          onPointerMove={(e) => {
+            const { x, y } = localPoint(e);
+            const i = nearestIndex(dots, x, y, 10);
+            setHover(i);
+            if (i >= 0) show(dots[i]!.x, dots[i]!.y, tipFor(dots[i]!));
+            else hide();
+          }}
+          onClick={() => hover >= 0 && onSelectSample?.(dots[hover]!.p)}
         >
           <FoldAxis scale={fs} top={TOP} bottom={bottom} lower={lower} higher={higher} />
           {groups.map((g, gi) => {
@@ -304,15 +315,17 @@ export function Beeswarm({
                     </text>
                   </>
                 )}
-                <line
-                  x1={meanX}
-                  x2={meanX}
-                  y1={centre - half - 2}
-                  y2={centre + half + 2}
-                  stroke="var(--text)"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                />
+                {Number.isFinite(g.mean) && (
+                  <line
+                    x1={meanX}
+                    x2={meanX}
+                    y1={centre - half - 2}
+                    y2={centre + half + 2}
+                    stroke="var(--text)"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                  />
+                )}
               </g>
             );
           })}
@@ -320,15 +333,9 @@ export function Beeswarm({
             .slice()
             .sort((a, b) => Number(a.p.carries) - Number(b.p.carries))
             .map((d) => {
-              const on = active === d || selected === d.p.sample;
+              const on = active === d || selected === d.p.sample || dots[hover] === d;
               return (
-                <g
-                  key={`${d.p.group}:${d.p.sample}`}
-                  className={onSelectSample ? "cursor-pointer" : undefined}
-                  onPointerEnter={() => show(d.x, d.y, tipFor(d))}
-                  onClick={onSelectSample ? () => onSelectSample(d.p) : undefined}
-                >
-                  <circle cx={d.x} cy={d.y} r={Math.max(5, r + 2)} fill="transparent" />
+                <g key={`${d.p.group}:${d.p.sample}`}>
                   <GlyphMark
                     mark={markFor(d.p, d.gi)}
                     x={d.x}
@@ -362,7 +369,7 @@ export function Beeswarm({
                 </g>
               );
             })}
-          {g0 && g1 && foldText && (
+          {g0 && g1 && foldText && Number.isFinite(g0.mean) && Number.isFinite(g1.mean) && (
             <g aria-hidden="true">
               {(() => {
                 const yb = TOP + rowH;

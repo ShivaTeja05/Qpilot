@@ -17,10 +17,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ahcy"
+            "f_holds_ahcy",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -88,10 +89,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_akr1c1"
+            "f_holds_akr1c1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -159,10 +161,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_arhgef7"
+            "f_holds_arhgef7",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -231,10 +234,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_birc5"
+            "f_holds_birc5",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -242,7 +246,7 @@
             "f_min_flip_birc5"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -302,10 +306,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_camta1"
+            "f_holds_camta1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -373,10 +378,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_camta2"
+            "f_holds_camta2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -429,7 +435,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -446,10 +452,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_cd44"
+            "f_holds_cd44",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -517,10 +524,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_cdca5"
+            "f_holds_cdca5",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -589,10 +597,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_cdh5"
+            "f_holds_cdh5",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -600,7 +609,7 @@
             "f_min_flip_cdh5"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -660,10 +669,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_cdkn3"
+            "f_holds_cdkn3",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -732,10 +742,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_clstn1"
+            "f_holds_clstn1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -804,10 +815,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_cpsg3"
+            "f_holds_cpsg3",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -815,7 +827,7 @@
             "f_min_flip_cpsg3"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -875,10 +887,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ddc"
+            "f_holds_ddc",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -886,7 +899,7 @@
             "f_min_flip_ddc"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -946,10 +959,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_dpysl3"
+            "f_holds_dpysl3",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -1002,7 +1016,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -1019,10 +1033,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ecel1"
+            "f_holds_ecel1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1030,7 +1045,7 @@
             "f_min_flip_ecel1"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -1090,10 +1105,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_elavl4"
+            "f_holds_elavl4",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1162,10 +1178,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_epb41l3"
+            "f_holds_epb41l3",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1173,7 +1190,7 @@
             "f_min_flip_epb41l3"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -1233,10 +1250,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_epha5"
+            "f_holds_epha5",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1244,7 +1262,7 @@
             "f_min_flip_epha5"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -1304,10 +1322,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_epn2"
+            "f_holds_epn2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1376,10 +1395,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_fyn"
+            "f_holds_fyn",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1448,10 +1468,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_gnb1"
+            "f_holds_gnb1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1520,10 +1541,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_hivep2"
+            "f_holds_hivep2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -1576,7 +1598,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -1593,10 +1615,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_igsf4"
+            "f_holds_igsf4",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -1649,7 +1672,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -1666,10 +1689,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_inpp1"
+            "f_holds_inpp1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1738,10 +1762,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_map2k4"
+            "f_holds_map2k4",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -1794,7 +1819,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -1811,10 +1836,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_map7"
+            "f_holds_map7",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1822,7 +1848,7 @@
             "f_min_flip_map7"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -1883,10 +1909,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_mapt"
+            "f_holds_mapt",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -1955,10 +1982,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_mcm2"
+            "f_holds_mcm2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -2026,10 +2054,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_mrpl3"
+            "f_holds_mrpl3",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -2098,10 +2127,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_mtss1"
+            "f_holds_mtss1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -2154,7 +2184,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -2171,10 +2201,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_nhlh2"
+            "f_holds_nhlh2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -2182,7 +2213,7 @@
             "f_min_flip_nhlh2"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -2242,10 +2273,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_nm23a"
+            "f_holds_nm23a",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -2298,7 +2330,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -2315,10 +2347,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_nrcam"
+            "f_holds_nrcam",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -2326,7 +2359,7 @@
             "f_min_flip_nrcam"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -2386,10 +2419,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ntrk1"
+            "f_holds_ntrk1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -2397,7 +2431,7 @@
             "f_min_flip_ntrk1"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -2457,10 +2491,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_odc1"
+            "f_holds_odc1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -2468,7 +2503,7 @@
             "f_min_flip_odc1"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -2528,10 +2563,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_paics"
+            "f_holds_paics",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -2584,7 +2620,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -2601,10 +2637,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_pde4dip"
+            "f_holds_pde4dip",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -2657,7 +2694,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -2674,10 +2711,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_pik3r1"
+            "f_holds_pik3r1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -2730,7 +2768,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -2747,10 +2785,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_plagl1"
+            "f_holds_plagl1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -2803,7 +2842,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -2820,10 +2859,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_plat"
+            "f_holds_plat",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -2892,10 +2932,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_pmp22"
+            "f_holds_pmp22",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -2903,7 +2944,7 @@
             "f_min_flip_pmp22"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -2963,10 +3004,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_prame"
+            "f_holds_prame",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -3034,10 +3076,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_prdm2"
+            "f_holds_prdm2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -3090,7 +3133,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -3107,10 +3150,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_prkacb_bis"
+            "f_holds_prkacb_bis",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -3163,7 +3207,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -3180,10 +3224,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_prkcz"
+            "f_holds_prkcz",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -3236,7 +3281,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -3253,10 +3298,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ptn"
+            "f_holds_ptn",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -3325,10 +3371,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ptprf"
+            "f_holds_ptprf",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -3397,10 +3444,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ptprh"
+            "f_holds_ptprh",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -3408,7 +3456,7 @@
             "f_min_flip_ptprh"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -3468,10 +3516,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ptprn2"
+            "f_holds_ptprn2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -3524,7 +3573,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -3541,10 +3590,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_qpct"
+            "f_holds_qpct",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -3552,7 +3602,7 @@
             "f_min_flip_qpct"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -3612,10 +3662,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_scg2"
+            "f_holds_scg2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -3623,7 +3674,7 @@
             "f_min_flip_scg2"
           ],
           "id": "fragility",
-          "note": "No combination of the reasonable choices flips this conclusion.",
+          "note": "No combination of the choices qPilot checks flips this conclusion.",
           "passed": true
         },
         {
@@ -3683,10 +3734,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_slc25a5"
+            "f_holds_slc25a5",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -3739,7 +3791,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -3756,10 +3808,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_slc6a8"
+            "f_holds_slc6a8",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -3828,10 +3881,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_snapc1"
+            "f_holds_snapc1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
           "passed": false
         },
         {
@@ -3884,7 +3938,7 @@
       "min_flip_changes": 1,
       "reasons": [
         "The 95 % confidence interval crosses the 2-fold line.",
-        "The conclusion holds in fewer than 80 % of the reasonable analyses.",
+        "The conclusion holds in fewer than 80 % of the 186 analyses qPilot checks.",
         "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
       ]
     },
@@ -3901,10 +3955,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_tnfrsf"
+            "f_holds_tnfrsf",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -3973,10 +4028,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_tyms"
+            "f_holds_tyms",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -4045,10 +4101,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_ulk2"
+            "f_holds_ulk2",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {
@@ -4117,10 +4174,11 @@
         },
         {
           "fact_ids": [
-            "f_holds_wsb1"
+            "f_holds_wsb1",
+            "f_n_cells"
           ],
           "id": "robustness",
-          "note": "The conclusion holds in at least 80 % of the reasonable analyses.",
+          "note": "The conclusion holds in at least 80 % of the 186 analyses qPilot checks.",
           "passed": true
         },
         {

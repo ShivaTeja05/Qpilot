@@ -19,6 +19,7 @@ import {
   type ColumnDef,
 } from "@/ui";
 import type { GeneRow } from "./api";
+import { gridSize } from "./MapPanel";
 
 export interface GeneFilter {
   text: string;
@@ -83,6 +84,7 @@ export function GenesPanel({
   onOpen: (gene: string) => void;
 }) {
   const audited = genes.some((g) => g.verdict);
+  const cells = gridSize(genes);
   const shown = genes.filter((g) => matches(g, filter)).length;
   const columns = useMemo<ColumnDef<GeneRow, unknown>[]>(
     () => [
@@ -90,7 +92,7 @@ export function GenesPanel({
         id: "gene",
         header: "Gene",
         accessorKey: "gene",
-        meta: { width: "9.5rem" },
+        meta: { width: "8.5rem" },
         cell: ({ row }) => (
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate font-medium text-fg">{row.original.gene}</span>
@@ -106,35 +108,21 @@ export function GenesPanel({
         id: "call",
         header: "Call",
         accessorFn: (g) => CALL_ORDER.indexOf(g.conclusion),
-        meta: { width: "6.5rem" },
+        meta: { width: "6rem" },
         cell: ({ row }) => <ConclusionTag conclusion={row.original.conclusion} />,
       },
       {
         id: "fold",
         header: "Fold",
         accessorFn: (g) => Math.log2(g.fc),
-        meta: { numeric: true, width: "5.5rem" },
+        meta: { numeric: true, width: "4.75rem" },
         cell: ({ row }) => fold(row.original.fc),
       },
       {
-        id: "ci",
-        header: "95 % CI",
-        accessorFn: (g) => Math.log2(g.ci[0] ?? Number.NaN),
-        meta: { numeric: true, width: "8.5rem" },
-        cell: ({ row }) => ci(row.original.ci[0], row.original.ci[1]),
-      },
-      {
-        id: "p",
-        header: "p",
-        accessorKey: "p",
-        meta: { numeric: true, width: "5.5rem" },
-        cell: ({ row }) => pValue(row.original.p),
-      },
-      {
         id: "holds",
-        header: "Same call in",
+        header: cells ? `Holds (of ${count(cells)})` : "Holds",
         accessorFn: (g) => g.holds ?? -1,
-        meta: { numeric: true, width: "8.5rem" },
+        meta: { numeric: true, width: "7.5rem" },
         cell: ({ row }) => <HoldsCell holds={row.original.holds} />,
       },
       {
@@ -152,17 +140,32 @@ export function GenesPanel({
               header: "Audit",
               accessorFn: (g) =>
                 g.verdict ? VERDICT_ORDER.indexOf(g.verdict as (typeof VERDICT_ORDER)[number]) : 9,
-              meta: { width: "11rem" },
+              meta: { width: "10.5rem" },
               cell: ({ row }) =>
                 row.original.verdict ? <VerdictTag verdict={row.original.verdict} /> : null,
             },
           ] satisfies ColumnDef<GeneRow, unknown>[])
         : []),
       {
+        id: "ci",
+        header: "95 % CI",
+        accessorFn: (g) => Math.log2(g.ci[0] ?? Number.NaN),
+        meta: { numeric: true, width: "8.5rem" },
+        cell: ({ row }) => ci(row.original.ci[0], row.original.ci[1]),
+      },
+      {
+        id: "p",
+        header: "p",
+        accessorKey: "p",
+        meta: { numeric: true, width: "5.5rem" },
+        cell: ({ row }) => pValue(row.original.p),
+      },
+      {
         id: "why",
         header: "Why this level",
         accessorFn: (g) => g.reasons.join(" "),
         enableSorting: false,
+        meta: { width: "22rem" },
         cell: ({ row }) => {
           const g = row.original;
           const flips = g.flips_by.map(dimLabel);
@@ -184,7 +187,7 @@ export function GenesPanel({
         },
       },
     ],
-    [audited, dimLabel],
+    [audited, dimLabel, cells],
   );
 
   const set = (patch: Partial<GeneFilter>) => onFilter({ ...filter, ...patch });
@@ -258,7 +261,7 @@ export function GenesPanel({
           data={genes}
           columns={columns}
           getRowId={(g) => g.gene}
-          label="All genes: call, fold change with its 95 % confidence interval, p, the share of reasonable analyses with the same call, and the confidence level"
+          label={`All genes: call, fold change with its 95 % confidence interval, p, the share ${cells ? `of the ${count(cells)} analyses` : "of the analyses"} qPilot checks that give the same call, and the confidence level`}
           rowFilter={(g) => matches(g, filter)}
           initialSorting={[{ id: "holds", desc: false }]}
           onRowClick={(g) => onOpen(g.gene)}

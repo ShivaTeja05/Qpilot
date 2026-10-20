@@ -14,7 +14,7 @@ edit.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Annotated, Any, TypeVar
 
 from fastapi import APIRouter, Query
 
@@ -28,6 +28,7 @@ from qpilot.web.contract import (
     BulkAction,
     BulkDone,
     BulkList,
+    BulkMakers,
     BulkRequest,
     CheckEdits,
     ConfirmRequest,
@@ -478,7 +479,9 @@ def matters(sid: str, pid: str, ctx: Ctx) -> JobStarted:
 # ---- bulk: shown first, then exactly that list -----------------------------------------------
 
 
-def _bulk_ids(ctx: AppContext, sid: str, action: BulkAction, stage: str) -> list[Proposal]:
+def _bulk_ids(
+    ctx: AppContext, sid: str, action: BulkAction, stage: str, makers: BulkMakers = "ai"
+) -> list[Proposal]:
     if stage not in STAGES:
         raise api_error(422, "bad_request", f"There is no stage {stage!r}.")
     if stage not in ("design", "curves") and not ctx.studio.results_visible(sid):
@@ -494,17 +497,27 @@ def _bulk_ids(ctx: AppContext, sid: str, action: BulkAction, stage: str) -> list
         for p in pending
         if p.kind != "stage.confirm"
         and p.check.status == "contradicted"
-        and p.made_by.kind in sv.AI_MAKERS
+        and (makers == "all" or p.made_by.kind in sv.AI_MAKERS)
     ]
 
 
 @router.get("/sessions/{sid}/bulk/{action}", response_model=BulkList)
 def bulk_list(
-    sid: str, action: BulkAction, ctx: Ctx, stage: str = Query(max_length=16)
+    sid: str,
+    action: BulkAction,
+    ctx: Ctx,
+    stage: str = Query(max_length=16),
+    makers: Annotated[
+        BulkMakers,
+        Query(
+            description="Reject: contradicted proposals of a model or an agent (ai), or every "
+            "contradicted proposal, the rules' too (all)."
+        ),
+    ] = "ai",
 ) -> BulkList:
-    """Exactly what “Accept all consistent…” or “Reject contradicted AI calls…” would cover."""
+    """Exactly what “Accept all consistent…” or “Reject contradicted …” would cover."""
     session(ctx, sid)
-    listed = _bulk_ids(ctx, sid, action, stage)
+    listed = _bulk_ids(ctx, sid, action, stage, makers)
     if action == "accept":
         message = sv.WORDS["bulk_show"] if listed else sv.WORDS["bulk_none"]
     else:
@@ -524,7 +537,7 @@ def bulk_list(
 def bulk_do(sid: str, action: BulkAction, body: BulkRequest, ctx: Ctx) -> BulkDone:
     """Accept (or reject, with one reason) exactly the list the person was shown."""
     session(ctx, sid)
-    current = [p.id for p in _bulk_ids(ctx, sid, action, body.stage)]
+    current = [p.id for p in _bulk_ids(ctx, sid, action, body.stage, body.makers)]
     if not body.ids:
         raise api_error(422, "bad_request", "The list is empty: nothing was done.")
     if len(set(body.ids)) != len(body.ids) or not set(body.ids) <= set(current):

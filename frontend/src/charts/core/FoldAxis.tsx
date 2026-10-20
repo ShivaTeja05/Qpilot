@@ -49,7 +49,7 @@ export function FoldAxis({
             y={bottom + 15}
             textAnchor="middle"
             fontSize={11}
-            fill="var(--text-faint)"
+            fill="var(--text-muted)"
             className="tabular"
           >
             {t.label}

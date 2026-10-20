@@ -57,7 +57,7 @@ def test_html_marks_every_number_with_its_fact(fixture_facts):
 def test_confidence_phrasing_follows_fragility(fixture_facts):
     odc1 = render_template("confidence_v1", fixture_facts, gene="ODC1").plain
     nm23a = render_template("confidence_v1", fixture_facts, gene="NM23A").plain
-    assert "no combination of the reasonable choices flips it" in odc1
+    assert "no combination of the choices qPilot checks flips it" in odc1
     assert "a single choice can flip it" in nm23a and "Very low" in nm23a
 
 
@@ -83,7 +83,7 @@ def test_cli_explain_lists_and_renders(fixtures_dir, capsys):
     assert "refset_v1" in capsys.readouterr().out
     results = str(fixtures_dir / "results.json")
     assert main(["explain", "meter_v1", "--results", results]) == 0
-    assert "186 reasonable analyses" in capsys.readouterr().out
+    assert "the 186 analyses qPilot checks" in capsys.readouterr().out
     assert main(["explain", "meter_v1", "--results", results, "--tokens"]) == 0
     assert "{{f_n_cells}}" in capsys.readouterr().out
     assert main(["explain", "confidence_v1", "--results", results]) == 1

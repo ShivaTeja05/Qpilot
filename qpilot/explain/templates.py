@@ -241,7 +241,7 @@ def _summary(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
 def _meter(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
     _need(facts, "f_n_cells", "f_n_genes", "f_n_hold_lt_80")
     return (
-        f"Every conclusion was recomputed under {_t('f_n_cells')} reasonable analyses. "
+        f"Every conclusion was recomputed under the {_t('f_n_cells')} analyses qPilot checks. "
         f"{_t('f_n_hold_lt_80')} of {_t('f_n_genes')} genes keep their conclusion in fewer than "
         "four out of five of them."
     )
@@ -254,11 +254,11 @@ def _confidence(facts: Facts, card: DecisionCard | None, gene: str | None) -> st
     _need(facts, f"f_level_{g}", f"f_holds_{g}", f"f_min_flip_{g}", "f_n_cells")
     text = (
         f"{gene}: {_t(f'f_level_{g}')} confidence. The conclusion holds in {_t(f'f_holds_{g}')} "
-        f"of {_t('f_n_cells')} analyses; "
+        f"of the {_t('f_n_cells')} analyses qPilot checks; "
     )
     flips = int(_value(facts, f"f_min_flip_{g}"))
     if flips == 0:
-        text += "no combination of the reasonable choices flips it."
+        text += "no combination of the choices qPilot checks flips it."
     elif flips == 1:
         text += "changing a single choice can flip it."
     else:
