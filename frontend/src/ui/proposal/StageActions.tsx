@@ -426,7 +426,9 @@ export function ConfirmStage({
             ) : (
               <p className="text-[13px] text-muted">It covers no accepted proposal of this stage.</p>
             )}
-            {error ? <ErrorPanel error={error} compact title="Not confirmed" /> : null}
+            {error ? (
+              <ErrorPanel error={error} compact title={error instanceof ApiError && error.stale ? undefined : "Not confirmed"} />
+            ) : null}
           </div>
         ) : null}
       </Dialog>
