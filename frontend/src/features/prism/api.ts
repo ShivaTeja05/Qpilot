@@ -43,8 +43,12 @@ export interface PreviewTable {
 
 export interface ExportedChoice {
   card_id: string;
+  /** The card's title ("Reference genes"), when the server sends it. */
+  title?: string | null;
   dimension?: string | null;
   option: string;
+  /** The option's label ("Top 15 % by MYCN expression"), when the server sends it. */
+  option_label?: string | null;
   recommended?: string | null;
   value?: unknown;
   /** `human` | `system` | an agent name; null while the card is open (recommended option). */
