@@ -46,7 +46,7 @@ export const LANDED = {
   /** ask: the Ask drawer's content (the frame, ⌘J, is shell's and tested always). */
   askDrawer: false,
   /** home: Open (hero, demo, Recent cards, system strip). */
-  home: false,
+  home: true,
   /** home: Settings. */
   settings: false,
   /** design: the Design inbox + plate map. */
@@ -54,9 +54,9 @@ export const LANDED = {
   /** curves: the Curves inbox, plate heatmap, curve viewer. */
   curves: false,
   /** insight: Results (summary, robustness map, all-genes table, flips, Decision Cards). */
-  results: false,
+  results: true,
   /** insight: deciding a card, then Undo (writes to the store). */
-  decide: false,
+  decide: true,
   /** gene: the Gene section. */
   gene: false,
   /** audit: the Audit section (seeded audit, gene rows). */
