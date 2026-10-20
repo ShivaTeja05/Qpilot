@@ -66,11 +66,24 @@ def test_a_gene_question_is_answered_from_the_robustness_grid(client, no_model, 
     assert facts["f_ans_ci_hi"]["value"] == f"{contrast.ci[1]:.2f}×"
     assert facts["f_ans_holds"]["value"].endswith("\u202f%")
     assert facts["f_ans_fc"]["meaning"].startswith("fold change")
+    assert facts["f_ans_n_cells"]["meaning"] == "analyses qPilot checks"
     assert {"f_ans_holds", "f_ans_n_cells", "f_ans_level"} <= set(facts)
     for fact in facts.values():
         assert fact["value"] in answer["answer"]
     assert "analyses qPilot checks" in answer["answer"]  # the named set (#0254)
     assert answer["status"] is None and answer["head_after"] == answer["head_before"]
+
+
+def test_new_answers_say_what_each_number_is(client, no_model, study):
+    for question in (
+        "Which genes are up?",
+        "Which control genes are most stable?",
+        "How many genes change with the reference genes?",
+    ):
+        answer = ask(client, study, question)
+        assert answer["facts"], question
+        for fact in answer["facts"]:
+            assert fact["meaning"] != "answer" and fact["value"] in answer["answer"], fact
 
 
 def test_page_formats():
