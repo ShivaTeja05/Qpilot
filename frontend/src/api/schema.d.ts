@@ -49,7 +49,7 @@ export type paths = {
         };
         /**
          * Attached Audit
-         * @description One attached folder: what it describes; opening it starts loading its live views.
+         * @description One attached folder: what it describes and whether its views can be shown.
          */
         get: operations["attached_audit"];
         put?: never;
@@ -360,6 +360,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/downloads/{download_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download
+         * @description A file this server wrote into its export folder (a record or a Prism bundle zip).
+         */
+        get: operations["download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events": {
         parameters: {
             query?: never;
@@ -517,6 +537,26 @@ export type paths = {
          * @description Score the page's model on questions about one study (a job); saved with the study.
          */
         post: operations["test_model"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/records/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Record
+         * @description Check an uploaded record: every checksum, both hash chains, and its audit binding.
+         */
+        post: operations["verify_record"];
         delete?: never;
         options?: never;
         head?: never;
@@ -685,6 +725,146 @@ export type paths = {
         get: operations["get_plate"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prism Status
+         * @description Where Prism stands: the project of the current analysis, and what can be done next.
+         */
+        get: operations["prism_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism/bundles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prism Bundles
+         * @description Every bundle sent to Prism from this session (``Studio.exports``), newest first.
+         */
+        get: operations["prism_bundles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prism Draft
+         * @description Draft the Prism project (a proposal in the Prism inbox; a person accepts it).
+         */
+        post: operations["prism_draft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prism Preview
+         * @description What Send to Prism would write (nothing is written), with each gene's graph as data.
+         */
+        get: operations["prism_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism/roundtrip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prism Roundtrip
+         * @description Compare what Prism sent back with the bundle; each change becomes a proposal.
+         */
+        post: operations["prism_roundtrip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prism Routes
+         * @description How often the usual Excel→Prism routes would change a conclusion on this study.
+         */
+        get: operations["prism_routes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prism Send
+         * @description Write the accepted project's bundle, offer it as a zip, start Prism if it is here.
+         */
+        post: operations["prism_send"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1439,6 +1619,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Record
+         * @description Export the Analysis Record (input, results, every decision, checksums) as a zip.
+         */
+        post: operations["export_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Records
+         * @description The records of this study in qPilot's export folder, newest first.
+         */
+        get: operations["list_records"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/results": {
         parameters: {
             query?: never;
@@ -1907,8 +2127,6 @@ export type components = {
              * @description Whether its views can be shown.
              */
             available: boolean;
-            /** @description The job loading its live views (started by opening it). */
-            loading?: components["schemas"]["JobView"] | null;
             /** Name */
             name: string;
             /**
@@ -1935,12 +2153,6 @@ export type components = {
             verdict_counts: {
                 [key: string]: number;
             };
-            /**
-             * Views Ready
-             * @description Its live views are loaded.
-             * @default false
-             */
-            views_ready: boolean;
         };
         /**
          * AttachedAuditList
@@ -2028,6 +2240,24 @@ export type components = {
             verdict_counts: {
                 [key: string]: number;
             };
+        };
+        /**
+         * AuditBinding
+         * @description Whether a robustness audit verifies and belongs to this record.
+         */
+        AuditBinding: {
+            /** Ok */
+            ok: boolean;
+            /** Problems */
+            problems: string[];
+            /**
+             * Source
+             * @description zip: the audit came in the uploaded zip; store: this qPilot's audit of the record's study.
+             * @enum {string}
+             */
+            source: "zip" | "store";
+            /** Study Id */
+            study_id?: string | null;
         };
         /**
          * AuditChange
@@ -2261,19 +2491,9 @@ export type components = {
             lines: string[];
             /**
              * N
-             * @description Percent (0–100) of the audit's reasonable analyses with the same call.
+             * @description Reasonable analyses with the same call, of 100.
              */
             n: number;
-            /**
-             * Of
-             * @description How many reasonable analyses the audit ran (144 on the demo).
-             */
-            of: number;
-            /**
-             * Same
-             * @description How many of the audit's reasonable analyses have the same call.
-             */
-            same: number;
         };
         /**
          * AuditHow
@@ -2488,22 +2708,12 @@ export type components = {
             n_flag_low: number;
             /** N High */
             n_high: number;
-            /**
-             * N High Value
-             * @description Samples of the first group with a value (the p's n).
-             */
-            n_high_value: number;
             /** N Nondetect */
             n_nondetect: number;
             /** N Plates */
             n_plates: number;
             /** N Rest */
             n_rest: number;
-            /**
-             * N Rest Value
-             * @description Samples of the second group with a value.
-             */
-            n_rest_value: number;
             /** P */
             p: number | null;
         };
@@ -2595,7 +2805,7 @@ export type components = {
             headline: boolean;
             /**
              * Holds
-             * @description Percent (0–100) of the audit's reasonable analyses with the same call.
+             * @description Reasonable analyses with the same call, of 100.
              */
             holds: number;
             /** Log2 */
@@ -3241,6 +3451,14 @@ export type components = {
              */
             sheet?: string | null;
         };
+        /** Body_verify_record */
+        Body_verify_record: {
+            /**
+             * Record
+             * @description An Analysis Record as a .zip.
+             */
+            record: string;
+        };
         /**
          * BulkDone
          * @description What a bulk action did, one chain entry per proposal.
@@ -3864,6 +4082,34 @@ export type components = {
             source: string;
         };
         /**
+         * DownloadLink
+         * @description A file qPilot wrote into its export folder (beside the store), offered for download.
+         */
+        DownloadLink: {
+            /** Bytes */
+            bytes: number;
+            /**
+             * Id
+             * @description Opaque; registered by this server (listings re-register).
+             */
+            id: string;
+            /**
+             * Name
+             * @description The file name the browser saves it under.
+             */
+            name: string;
+            /**
+             * Path
+             * @description Where the file is kept on this computer.
+             */
+            path: string;
+            /**
+             * Url
+             * @description `/api/downloads/<id>` (served as an attachment).
+             */
+            url: string;
+        };
+        /**
          * Evidence
          * @description One source behind a proposal; every item is clickable in Studio.
          *
@@ -4306,6 +4552,27 @@ export type components = {
             label: string;
             /** N */
             n: number;
+        };
+        /**
+         * GroupPoints
+         * @description Every biological unit of one group, and the group mean with its 95 % CI (Student t).
+         */
+        GroupPoints: {
+            /** Ci Hi */
+            ci_hi?: number | null;
+            /** Ci Lo */
+            ci_lo?: number | null;
+            /**
+             * Mean
+             * @description None for fewer than two units.
+             */
+            mean?: number | null;
+            /** N */
+            n: number;
+            /** Name */
+            name: string;
+            /** Points */
+            points: components["schemas"]["UnitValue"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -4839,6 +5106,499 @@ export type components = {
             well: string;
         };
         /**
+         * PreviewTable
+         * @description The first rows of one table Prism will import (cells as text, as in the CSV).
+         */
+        PreviewTable: {
+            /** Columns */
+            columns: string[];
+            /** Gene */
+            gene: string;
+            /** N Rows */
+            n_rows: number;
+            /** Rows */
+            rows: string[][];
+        };
+        /**
+         * PrismBundle
+         * @description Everything qPilot hands to Prism, and what a later round trip is compared against.
+         *
+         *     Mode S (``mode="script"``, the default): CSV tables plus ``run.pzc`` / ``send_back.pzc``;
+         *     Prism does all reading and writing of Prism files. Mode X (``mode="xml"``) is off by default.
+         */
+        PrismBundle: {
+            /**
+             * Bundle Sha256
+             * @default
+             */
+            bundle_sha256: string;
+            /** Chain Head */
+            chain_head: string;
+            /** Design Hash */
+            design_hash: string;
+            /**
+             * Files
+             * @default {}
+             */
+            files: {
+                [key: string]: string;
+            };
+            /**
+             * Info
+             * @default {}
+             */
+            info: {
+                [key: string]: string;
+            };
+            /**
+             * Mode
+             * @default script
+             * @enum {string}
+             */
+            mode: "script" | "xml";
+            /** Record Ref */
+            record_ref: string;
+            /**
+             * Scale
+             * @default log2_rq
+             * @constant
+             */
+            scale: "log2_rq";
+            /** Study Id */
+            study_id: string;
+            /** Tables */
+            tables: components["schemas"]["PrismTable"][];
+            /** Template Id */
+            template_id: string;
+            /** Test */
+            test: string;
+        };
+        /**
+         * PrismBundles
+         * @description ``GET …/prism/bundles``: every bundle sent from this session, newest first.
+         */
+        PrismBundles: {
+            /** Bundles */
+            bundles: components["schemas"]["PrismBundleView"][];
+            /** Session Id */
+            session_id: string;
+        };
+        /**
+         * PrismBundleView
+         * @description One bundle sent to Prism from this session.
+         */
+        PrismBundleView: {
+            /** At */
+            at: string;
+            /** Bundle Sha256 */
+            bundle_sha256: string;
+            /**
+             * Current
+             * @description Its analysis is the session's current one.
+             */
+            current: boolean;
+            download?: components["schemas"]["DownloadLink"] | null;
+            /** Exists */
+            exists: boolean;
+            /** Folder */
+            folder: string;
+            /**
+             * Id
+             * @description Opaque id of a bundle Send to Prism wrote into qPilot's export folder (round trip, download); None for one written elsewhere or no longer there.
+             */
+            id: string | null;
+            /**
+             * Round Trip
+             * @description A round trip can be started from this page.
+             */
+            round_trip: boolean;
+            /**
+             * Sent Back Folder
+             * @description The folder a round trip read, or where send_back.pzc writes.
+             */
+            sent_back_folder?: string | null;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * PrismChoice
+         * @description One analysis choice the bundle is exported at, and who decided it.
+         */
+        PrismChoice: {
+            /** Actor */
+            actor?: string | null;
+            /** Card Id */
+            card_id: string;
+            /**
+             * Decided By
+             * @description Who decided, in words.
+             */
+            decided_by: string;
+            /** Dimension */
+            dimension: string;
+            /** Option */
+            option: string;
+            /**
+             * Option Label
+             * @description The exported option in words (never a raw id).
+             */
+            option_label: string;
+            /** Recommended */
+            recommended: string;
+            /** Status */
+            status: string;
+            /**
+             * Title
+             * @description The card's question, e.g. which control genes to use.
+             */
+            title: string;
+            /** Value */
+            value?: unknown;
+        };
+        /**
+         * PrismDiffItem
+         * @description One difference between the exported bundle and what came back from Prism.
+         */
+        PrismDiffItem: {
+            /**
+             * Column
+             * @default null
+             */
+            column: string | null;
+            /**
+             * Exported
+             * @default null
+             */
+            exported: number | null;
+            /** Gene */
+            gene: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "excluded" | "changed" | "missing" | "added_row" | "removed_row" | "added_column" | "removed_column" | "unreadable";
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Returned
+             * @default null
+             */
+            returned: number | null;
+            /**
+             * Row
+             * @default null
+             */
+            row: string | null;
+            /** Table */
+            table: string;
+        };
+        /**
+         * PrismDrafted
+         * @description The result of a Draft the Prism project job.
+         */
+        PrismDrafted: {
+            /** Message */
+            message: string;
+            /**
+             * Proposal Id
+             * @default null
+             */
+            proposal_id: string | null;
+            /**
+             * Reason
+             * @default null
+             */
+            reason: string | null;
+            /** Status */
+            status: string;
+        };
+        /**
+         * PrismFigure
+         * @description An approximation of the template's graph for one gene (Prism draws the real one).
+         */
+        PrismFigure: {
+            /** Gene */
+            gene: string;
+            /** Groups */
+            groups: components["schemas"]["GroupPoints"][];
+            /** Note */
+            note: string;
+            /** Scale */
+            scale: string;
+        };
+        /**
+         * PrismPreview
+         * @description ``GET …/prism/preview``: what Send to Prism would write. Nothing is written.
+         */
+        PrismPreview: {
+            bundle: components["schemas"]["PrismBundle"];
+            /** Caption */
+            caption?: string | null;
+            /** Choices */
+            choices: components["schemas"]["PrismChoice"][];
+            /** Choices Confirmed */
+            choices_confirmed: boolean;
+            /**
+             * Figures
+             * @description Per gene, from the full table (column layout only; empty otherwise).
+             * @default {}
+             */
+            figures: {
+                [key: string]: components["schemas"]["PrismFigure"];
+            };
+            /** Genes */
+            genes: string[];
+            /** Not Affiliated */
+            not_affiliated: string;
+            project: components["schemas"]["PrismProject"];
+            /** Session Id */
+            session_id: string;
+            /** Study Id */
+            study_id: string;
+            /** Tables */
+            tables: components["schemas"]["PreviewTable"][];
+            template: components["schemas"]["PrismTemplate"];
+            /** Would Write */
+            would_write: string[];
+            /**
+             * Writes Nothing
+             * @default true
+             */
+            writes_nothing: boolean;
+        };
+        /**
+         * PrismProject
+         * @description The Prism project of the session's current analysis, and what can be done next.
+         */
+        PrismProject: {
+            /**
+             * Genes
+             * @default []
+             */
+            genes: string[];
+            /**
+             * Made By
+             * @description rule, model or agent
+             */
+            made_by?: string | null;
+            /** Proposal Id */
+            proposal_id?: string | null;
+            /**
+             * Status
+             * @description accepted: a person accepted a project for this analysis; waiting: a drafted project waits in the Prism inbox; none: nothing drafted yet.
+             * @enum {string}
+             */
+            status: "accepted" | "waiting" | "none";
+            /** Template Id */
+            template_id?: string | null;
+        };
+        /**
+         * PrismRoundTrip
+         * @description The result of a round trip: what changed in Prism, as proposals with consequences.
+         */
+        PrismRoundTrip: {
+            /** Bundle Id */
+            bundle_id: string;
+            /**
+             * Combined
+             * @description What all the proposed exclusions do together.
+             * @default null
+             */
+            combined: {
+                [key: string]: unknown;
+            } | null;
+            /** Items */
+            items: components["schemas"]["PrismDiffItem"][];
+            /** Message */
+            message: string;
+            /** Notes */
+            notes: string[];
+            /**
+             * Proposed
+             * @description Ids of the proposals added to the Round trip inbox.
+             */
+            proposed: string[];
+            /** Refused */
+            refused: components["schemas"]["RoundTripRefused"][];
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * PrismRoute
+         * @description How many of this study's conclusions one usual Excel→Prism route would change.
+         */
+        PrismRoute: {
+            /**
+             * Fact
+             * @description The fact id of `n_differ`.
+             */
+            fact: string;
+            /** Genes */
+            genes: string[];
+            /** Genes Fact */
+            genes_fact?: string | null;
+            /**
+             * Label
+             * @description The route in the page's words.
+             */
+            label: string;
+            /**
+             * Method
+             * @description The route's method, briefly (qpilot.qpcr.routes).
+             */
+            method: string;
+            /** N Differ */
+            n_differ: number;
+            /** N Genes */
+            n_genes: number;
+            /** Route */
+            route: string;
+        };
+        /**
+         * PrismRoutes
+         * @description ``GET …/prism/routes``: why the bridge matters, on this study's own plates.
+         */
+        PrismRoutes: {
+            /**
+             * Engine
+             * @description The engine's conclusion (up / down / none) for every gene a route changes.
+             */
+            engine: {
+                [key: string]: string;
+            };
+            /** N Genes */
+            n_genes: number | null;
+            /** Note */
+            note: string;
+            /** Routes */
+            routes: components["schemas"]["PrismRoute"][];
+            /**
+             * Rule
+             * @description The conclusion rule, in words.
+             */
+            rule: string;
+            /** Session Id */
+            session_id: string;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * PrismSent
+         * @description The result of a Send to Prism job.
+         */
+        PrismSent: {
+            bundle: components["schemas"]["PrismBundleView"];
+            /**
+             * Command Line
+             * @description What to run on the computer with Prism.
+             */
+            command_line: string;
+            /**
+             * Done
+             * @description Prism finished run.pzc (when launched).
+             * @default null
+             */
+            done: boolean | null;
+            download: components["schemas"]["DownloadLink"];
+            /**
+             * Files
+             * @description Every file of the bundle, relative to its folder.
+             */
+            files: string[];
+            /**
+             * Launch Note
+             * @default null
+             */
+            launch_note: string | null;
+            /** Launched */
+            launched: boolean;
+            /** N Files */
+            n_files: number;
+            /** Notes */
+            notes: string[];
+            /** Send Back Command */
+            send_back_command: string;
+        };
+        /**
+         * PrismStatus
+         * @description ``GET /api/sessions/{sid}/prism``: where Prism stands for this session.
+         */
+        PrismStatus: {
+            /**
+             * Bundles
+             * @description Bundles in qPilot's export folder for this session.
+             */
+            bundles: number;
+            /** Can Draft */
+            can_draft: boolean;
+            /** Can Send */
+            can_send: boolean;
+            /** Choices Confirmed */
+            choices_confirmed: boolean;
+            /**
+             * Next
+             * @description What to do next, in words.
+             */
+            next: string;
+            project: components["schemas"]["PrismProject"];
+            /** Session Id */
+            session_id: string;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * PrismTable
+         * @description One data table Prism will import: one gene, log2 relative quantities.
+         *
+         *     ``column``: one column per group, one row per biological unit. ``nested``: one subcolumn
+         *     per biological unit with its technical replicates stacked inside (GraphPad's layout).
+         */
+        PrismTable: {
+            /** Columns */
+            columns: string[];
+            /** Csv */
+            csv: string;
+            /** Csv Sha256 */
+            csv_sha256: string;
+            /** Gene */
+            gene: string;
+            /**
+             * Layout
+             * @enum {string}
+             */
+            layout: "column" | "nested";
+            /** N Rows */
+            n_rows: number;
+            /** Name */
+            name: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * PrismTemplate
+         * @description The Prism template the bundle uses.
+         */
+        PrismTemplate: {
+            /**
+             * Available
+             * @description False: not made in Prism yet (the README says how).
+             */
+            available: boolean;
+            /** File */
+            file: string;
+            /** Graph */
+            graph: string;
+            /** Id */
+            id: string;
+            /** Layout */
+            layout: string;
+            /** Test */
+            test: string;
+        };
+        /**
          * Proposal
          * @description Something the AI (or an agent, or a fallback rule) thinks; no effect until accepted.
          *
@@ -5190,6 +5950,134 @@ export type components = {
             };
         };
         /**
+         * RecordCommands
+         * @description Commands that check a record on any computer with qPilot.
+         */
+        RecordCommands: {
+            /** Rerun */
+            rerun: string;
+            /** Verify */
+            verify: string;
+        };
+        /**
+         * RecordExported
+         * @description The result of an Export the Analysis Record job.
+         */
+        RecordExported: {
+            /** Chain Head */
+            chain_head: string;
+            commands: components["schemas"]["RecordCommands"];
+            download: components["schemas"]["DownloadLink"];
+            /**
+             * Head Moved
+             * @description Something was decided after the page's view.
+             */
+            head_moved: boolean;
+            /** Input Included */
+            input_included: boolean;
+            /** N Files */
+            n_files: number;
+            /**
+             * Open Flips
+             * @description Cards that can change a conclusion and are still open (the record says so).
+             */
+            open_flips: string[];
+            /** Record Id */
+            record_id: string;
+            /** Study Id */
+            study_id: string;
+            /** Warnings */
+            warnings: string[];
+            /** Written At */
+            written_at?: string | null;
+        };
+        /**
+         * RecordFacts
+         * @description What a record says about itself (``record.json``), as read from the uploaded zip.
+         */
+        RecordFacts: {
+            /** Chain Head */
+            chain_head?: string | null;
+            /** Input Included */
+            input_included?: boolean | null;
+            /** Input Sha256 */
+            input_sha256?: string | null;
+            /**
+             * Record Id
+             * @description sha256 of CHECKSUMS.sha256.
+             */
+            record_id?: string | null;
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
+            /** Study Id */
+            study_id?: string | null;
+            /** Written At */
+            written_at?: string | null;
+        };
+        /**
+         * RecordList
+         * @description ``GET /api/studies/{id}/records``: the records in qPilot's export folder, newest first.
+         */
+        RecordList: {
+            /** Records */
+            records: components["schemas"]["RecordExported"][];
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * RecordRequest
+         * @description Export options.
+         */
+        RecordRequest: {
+            /**
+             * Expected Head
+             * @description The chain head the page showed (a warning if it moved).
+             */
+            expected_head?: string | null;
+            /**
+             * Include Input
+             * @description False leaves the raw input out (verifiable, not re-runnable).
+             * @default true
+             */
+            include_input: boolean;
+        };
+        /**
+         * RecordVerified
+         * @description ``POST /api/records/verify``: checksums, both chains, and the audit binding.
+         */
+        RecordVerified: {
+            audit?: components["schemas"]["AuditBinding"] | null;
+            /**
+             * Audit Note
+             * @description Which audit was checked, or why none was.
+             */
+            audit_note: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Known Study
+             * @description The record's study is in this qPilot's store.
+             */
+            known_study: boolean;
+            /** Note */
+            note: string;
+            /**
+             * Ok
+             * @description The record verifies (and its audit, when one is bound).
+             */
+            ok: boolean;
+            record: components["schemas"]["RecordFacts"];
+            report: components["schemas"]["VerifyReport"];
+            /**
+             * Summary
+             * @description One line per problem, or one OK line.
+             */
+            summary: string[];
+        };
+        /**
          * RefusedProposal
          * @description A proposal the inbox refused to take (with why).
          */
@@ -5295,6 +6183,38 @@ export type components = {
              * @default []
              */
             withheld: components["schemas"]["WithheldGene"][];
+        };
+        /**
+         * RoundTripRefused
+         * @description A change the round trip did not turn into a question, and why.
+         */
+        RoundTripRefused: {
+            /**
+             * Reason
+             * @default null
+             */
+            reason: string | null;
+            /**
+             * Subject
+             * @default null
+             */
+            subject: string | null;
+        };
+        /**
+         * RoundTripRequest
+         * @description Which bundle came back, and the folder Prism saved the tables into.
+         */
+        RoundTripRequest: {
+            /**
+             * Bundle
+             * @description A bundle id from `…/prism/bundles`.
+             */
+            bundle: string;
+            /**
+             * Folder
+             * @description The full path of the sent-back folder.
+             */
+            folder: string;
         };
         /**
          * RuleView
@@ -5537,6 +6457,16 @@ export type components = {
              */
             reason: string;
         };
+        /**
+         * UnitValue
+         * @description One biological unit's value in a Prism table (log2 relative quantity).
+         */
+        UnitValue: {
+            /** Unit */
+            unit: string;
+            /** Value */
+            value: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -5549,6 +6479,53 @@ export type components = {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VerifyReport
+         * @description Outcome of :func:`verify`; ``ok`` only when nothing failed.
+         */
+        VerifyReport: {
+            /** Chain Broken At */
+            chain_broken_at?: number | null;
+            /**
+             * Changed
+             * @default []
+             */
+            changed: string[];
+            /**
+             * Has Proposals
+             * @default false
+             */
+            has_proposals: boolean;
+            /**
+             * Inconsistent
+             * @default []
+             */
+            inconsistent: string[];
+            /**
+             * Missing
+             * @default []
+             */
+            missing: string[];
+            /**
+             * N Entries
+             * @default 0
+             */
+            n_entries: number;
+            /**
+             * N Proposal Entries
+             * @default 0
+             */
+            n_proposal_entries: number;
+            /** Ok */
+            ok: boolean;
+            /** Proposal Chain Broken At */
+            proposal_chain_broken_at?: number | null;
+            /**
+             * Unlisted
+             * @default []
+             */
+            unlisted: string[];
         };
         /**
          * WarmAllDone
@@ -6268,6 +7245,37 @@ export interface operations {
             };
         };
     };
+    download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                download_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     events: {
         parameters: {
             query?: never;
@@ -6472,6 +7480,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_verify_record"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordVerified"];
                 };
             };
             /** @description Validation Error */
@@ -6807,6 +7848,229 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlateView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrismStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_bundles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrismBundles"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_draft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_preview: {
+        parameters: {
+            query?: {
+                rows?: number;
+            };
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrismPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_roundtrip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoundTripRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_routes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrismRoutes"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
                 };
             };
             /** @description Validation Error */
@@ -8080,6 +9344,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeneView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RecordRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_records: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordList"];
                 };
             };
             /** @description Validation Error */
