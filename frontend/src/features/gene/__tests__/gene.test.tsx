@@ -119,7 +119,7 @@ describe("the header", () => {
     expect(screen.getByText(fold(row.fc))).toBeTruthy();
     expect(screen.getByText(ci(row.ci[0], row.ci[1]))).toBeTruthy();
     expect(screen.getByText(text(pValue(row.p)))).toBeTruthy();
-    expect(screen.getByText(results.rule.text)).toBeTruthy();
+    expect(screen.getByText(`The rule: ${results.rule.text}`)).toBeTruthy();
     expect(screen.getByText(card.label)).toBeTruthy();
     expect(screen.getByText(card.result.verdict_sentence)).toBeTruthy();
     // Each reason is said once in the list and once in the (collapsed) list of every check.

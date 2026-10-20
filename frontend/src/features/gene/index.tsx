@@ -55,7 +55,8 @@ function decoded(segment: string | undefined): string | undefined {
 }
 
 function Page({ children }: { children: ReactNode }) {
-  return <div className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">{children}</div>;
+  // The shell's <main> pads the page; this only keeps long lines readable on wide screens.
+  return <div className="mx-auto w-full max-w-[1400px]">{children}</div>;
 }
 
 function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; wanted: string | undefined }) {

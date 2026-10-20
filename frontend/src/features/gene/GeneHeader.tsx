@@ -168,7 +168,7 @@ export function GeneHeader({
         <Fact label="Fold change" hint={<>95&nbsp;% CI <span className="tabular">{ci(lo, hi)}</span></>}>
           <span className="font-mono text-2xl font-semibold tabular">{fold(gene.fc)}</span>
         </Fact>
-        <Fact label="p-value" hint={ruleWords}>
+        <Fact label="p-value">
           <span className="font-mono text-2xl font-semibold tabular">{pValue(gene.p)}</span>
         </Fact>
         <Fact
@@ -210,6 +210,7 @@ export function GeneHeader({
         </Fact>
       </dl>
 
+      {ruleWords ? <p className="mt-2 text-xs text-muted">The rule: {ruleWords}</p> : null}
       {reasons.length ? (
         <div className="mt-3 text-[13px]">
           <p className="font-medium text-fg">
