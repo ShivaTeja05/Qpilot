@@ -49,7 +49,7 @@ def write_examples(record: StudyRecord, headline: list[str]) -> ClaimExamples:
     robust = result.robustness
     called = [g for g in contrasts if contrasts[g].conclusion in ("up", "down")]
     order = [g for g in headline if g in contrasts] + [g for g in called if g not in headline]
-    a_in = f"the {a} group" if b == "the rest" else a  # "higher in the MYCN-high group"
+    a_in = a  # "higher in the MYCN-high group" (StudyRecord.phrases)
 
     def called_robust(gene: str, strong: bool) -> bool:
         c, r = contrasts[gene], robust.get(gene)

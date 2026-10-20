@@ -4294,7 +4294,7 @@ export type components = {
             /** Direction Written */
             direction_written?: string | null;
             /** Efficiency Genes */
-            efficiency_genes?: string[];
+            efficiency_genes: string[];
             /** Efficiency Written */
             efficiency_written?: string | null;
             /** Fold Comparator */
@@ -4318,7 +4318,7 @@ export type components = {
             /** Gene Written */
             gene_written?: string | null;
             /** Groups Written */
-            groups_written?: string[];
+            groups_written: string[];
             /**
              * Hedged
              * @default false
@@ -4341,7 +4341,7 @@ export type components = {
              * Normaliser
              * @description Control genes named.
              */
-            normaliser?: string[];
+            normaliser: string[];
             /**
              * P Adjusted
              * @default false
@@ -4365,7 +4365,7 @@ export type components = {
              * Words
              * @description The reading in short pieces for the page (each from the text or a name).
              */
-            words?: string[];
+            words: string[];
         };
         /**
          * ClaimsAssistResult
@@ -4386,7 +4386,7 @@ export type components = {
              * Rejected
              * @description Why proposals were dropped.
              */
-            rejected?: string[];
+            rejected: string[];
             report: components["schemas"]["ClaimsReport"];
         };
         /**
@@ -4459,7 +4459,7 @@ export type components = {
             /** Model Note */
             model_note?: string | null;
             /** Notes */
-            notes?: string[];
+            notes: string[];
             /**
              * Reader
              * @default rules
@@ -4531,7 +4531,7 @@ export type components = {
             /** Checks */
             checks: components["schemas"]["ClaimCheck"][];
             /** Choices */
-            choices?: components["schemas"]["ClaimChoice"][];
+            choices: components["schemas"]["ClaimChoice"][];
             clause: components["schemas"]["TextRange"];
             /**
              * Gene
