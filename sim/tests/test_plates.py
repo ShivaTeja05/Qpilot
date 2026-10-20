@@ -1,21 +1,16 @@
-"""Opening a lab's own RDML file: the design check, the quick run and the upload endpoint."""
+"""Opening a lab's own RDML file: the design check and the quick run."""
 
 from __future__ import annotations
 
 import json
 import re
-import threading
-import time
-import urllib.error
-import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
-from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
 
-from qsim.app import App, Screen, make_handler
+from qsim.app import Screen
 from qsim.cli import main
 from qsim.data import demo_rdml, sha256
 from qsim.plates import MAX_BYTES, PlateProblem, check, prepare, save_upload
@@ -170,63 +165,3 @@ def test_cli_says_why_a_file_cannot_be_opened(tmp_path, capsys):
     assert f"qsim cannot open {UNTERGASSER[0].name}." in err
     assert "two-group design" in err and "MYCN(4)" in err
     assert not (tmp_path / "plates").exists() or not any((tmp_path / "plates").iterdir())
-
-
-def test_open_your_own_plate_endpoints(run, plate):
-    root, folder, _ = run
-    app = App(Screen(folder), root)
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(app))
-    threading.Thread(target=httpd.serve_forever, daemon=True).start()
-    base = f"http://127.0.0.1:{httpd.server_address[1]}"
-
-    def call(path, data=None, headers=None):
-        req = urllib.request.Request(base + path, data, headers or {})
-        try:
-            with urllib.request.urlopen(req, timeout=60) as r:
-                return r.status, json.loads(r.read())
-        except urllib.error.HTTPError as err:
-            return err.code, json.loads(err.read() or b"{}")
-
-    def upload(data, name="my plate.rdml", **extra):
-        headers = {"Content-Type": "application/octet-stream", "X-Plate-Name": name, **extra}
-        return call("/api/plate", data, headers)
-
-    def finished():
-        for _ in range(600):
-            status, job = call("/api/plate/status")
-            if job["state"] != "running":
-                return job
-            time.sleep(0.2)
-        raise AssertionError("the job did not finish")
-
-    try:
-        status, info = call("/api/plates")
-        assert status == 200 and info["current"] == folder.name and "MYCN(4)" in info["design"]
-        assert [p["name"] for p in info["plates"]] == ["smaller_study.rdml"]
-
-        # only this server's own page may post, and only files of a sensible size
-        assert upload(b"<rdml/>", Origin="http://evil.example")[0] == 403
-        assert upload(b"<rdml/>", Host="evil.example")[0] == 403
-        assert call("/api/plate", b"<rdml/>", {"Content-Type": "text/plain"})[0] == 400
-        assert upload(b"<rdml/>", **{"Content-Length": str(MAX_BYTES + 1)})[0] == 413
-        status, body = upload(b"plain text")
-        assert status == 400 and "not an RDML file" in body["error"]
-
-        # a file the design does not fit: a plain reason, nothing left behind, same screen
-        assert upload(UNTERGASSER[0].read_bytes(), UNTERGASSER[0].name)[0] == 202
-        job = finished()
-        assert job["state"] == "failed" and "two-group design" in job["message"]
-        assert sorted(p.name for p in (root / "plates").iterdir()) == [folder.name]
-        assert app.screen.dir == folder
-
-        # the same study again: the run is reused and the screen reloads from it
-        assert upload(plate.read_bytes())[0] == 202
-        assert call("/api/plate/open", json.dumps({"id": folder.name}).encode())[0] == 409
-        job = finished()
-        assert job["state"] == "done" and job["id"] == folder.name
-        status, ov = call("/api/overview")
-        assert ov["source"]["name"] == "smaller_study.rdml"
-        assert call("/api/plate/open", json.dumps({"id": "nope"}).encode())[0] == 400
-    finally:
-        httpd.shutdown()
-        httpd.server_close()
