@@ -36,6 +36,7 @@ import { G_KEY, Palette } from "./Palette";
 import { BottomBar, Rail } from "./Rail";
 import { pathOf, useRoute, type Route } from "./route";
 import { SECTION, type SectionId } from "./sections";
+import { SectionBoundary } from "./SectionBoundary";
 import { ShortcutSheet } from "./Shortcuts";
 import { TopBar } from "./TopBar";
 
@@ -117,6 +118,7 @@ function SectionView({
       if (frameError instanceof ApiError && frameError.status === 404) {
         return (
           <EmptyState
+            headingLevel={1}
             className="mx-auto mt-10 max-w-xl"
             icon={<FolderX />}
             title="This study is not in this qPilot's store"
@@ -142,9 +144,11 @@ function SectionView({
     if (!state.reachable) return <LockedSection state={state} frame={frame} route={route} />;
   }
   return (
-    <Suspense fallback={<SectionSkeleton />}>
-      <Component workspace={frame ?? null} rest={route.rest} />
-    </Suspense>
+    <SectionBoundary label={SECTION[route.section].label} resetKey={route.path}>
+      <Suspense fallback={<SectionSkeleton />}>
+        <Component workspace={frame ?? null} rest={route.rest} />
+      </Suspense>
+    </SectionBoundary>
   );
 }
 

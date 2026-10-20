@@ -51,7 +51,7 @@
  * States
  *   Skeleton        shimmer block (className sets size)
  *   LoadingBlock    a few skeleton lines + "Loading…" for screen readers: label · lines
- *   EmptyState      icon · title · children (what to do) · action · compact
+ *   EmptyState      icon · title · children (what to do) · action · compact · headingLevel (default 2)
  *   ProgressBar     value 0–1 (indeterminate when null) · label
  *   ErrorPanel      error (ApiError aware: needsKey / stale / offline) · title · onRetry · compact
  *   errorMessage    an error's plain words; errorHeading: a heading from its code
