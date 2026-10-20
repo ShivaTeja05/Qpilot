@@ -5,6 +5,11 @@
  */
 import {
   Activity,
+  CalendarRange,
+  FileText,
+  History,
+  Quote,
+  Route,
   BookCheck,
   Bot,
   FlaskConical,
@@ -27,8 +32,13 @@ export type SectionId =
   | "results"
   | "gene"
   | "audit"
+  | "trace"
+  | "claims"
   | "prism"
+  | "report"
   | "record"
+  | "history"
+  | "planner"
   | "agents"
   | "settings";
 
@@ -116,6 +126,24 @@ export const SECTIONS: Section[] = [
     component: lazy(() => import("@/features/audit")),
   },
   {
+    id: "trace",
+    label: "Trace",
+    hint: "Follow any number down to the samples and wells that drive it",
+    icon: Route,
+    scope: "workspace",
+    needsResults: true,
+    component: lazy(() => import("@/features/trace")),
+  },
+  {
+    id: "claims",
+    label: "Claims",
+    hint: "Paste what your paper says: every claim checked against this study",
+    icon: Quote,
+    scope: "workspace",
+    needsResults: true,
+    component: lazy(() => import("@/features/claims")),
+  },
+  {
     id: "prism",
     label: "Prism",
     hint: "Tables and figures for GraphPad Prism, and what came back",
@@ -127,12 +155,39 @@ export const SECTIONS: Section[] = [
     component: lazy(() => import("@/features/prism")),
   },
   {
+    id: "report",
+    label: "Report",
+    hint: "Methods paragraph, MIQE checklist and a study passport to share",
+    icon: FileText,
+    scope: "workspace",
+    needsResults: true,
+    component: lazy(() => import("@/features/report")),
+  },
+  {
     id: "record",
     label: "Record",
     hint: "The hash-chained Analysis Record anyone can re-run",
     icon: BookCheck,
     scope: "workspace",
     component: lazy(() => import("@/features/record")),
+  },
+  {
+    id: "history",
+    label: "History",
+    hint: "Replay every decision and see what each one changed",
+    icon: History,
+    scope: "workspace",
+    needsResults: true,
+    component: lazy(() => import("@/features/history")),
+  },
+  {
+    id: "planner",
+    label: "Plan next",
+    hint: "Samples needed, what you could detect, and a plate layout",
+    icon: CalendarRange,
+    scope: "workspace",
+    needsResults: true,
+    component: lazy(() => import("@/features/planner")),
   },
   {
     id: "agents",

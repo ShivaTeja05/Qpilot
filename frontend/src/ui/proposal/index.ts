@@ -23,6 +23,9 @@
  *                       j/k + a/e/x, "Decided in this stage (n)" folded underneath.
  *   BulkActions         "Accept all consistent…" and "Reject contradicted AI calls…" (sid · stage):
  *                       the exact list first, then exactly that list; off when nothing qualifies.
+ *                       Reject chooses its scope: the AI's calls, or every contradicted proposal
+ *                       (rules included; the button reads "Reject contradicted proposals…" when
+ *                       no AI call is contradicted). The write names the scope its list used.
  *   ConfirmStage        "Confirm this stage…" (sid · stage · status): what it covers, "Yes, confirm".
  *   StageSummary        "The design this gives" / "The curve calls this gives" from accepted proposals
  *   DecidedList, ProposalLines, BulkAction
@@ -38,7 +41,13 @@ export {
   type ProposalCardHandle,
   type ProposalCardProps,
 } from "./ProposalCard";
-export { AlternativeStarts, PayloadEditor, diffPayload, type EditOptions, type Payload } from "./edit";
+export {
+  AlternativeStarts,
+  PayloadEditor,
+  diffPayload,
+  type EditOptions,
+  type Payload,
+} from "./edit";
 export {
   CheckSummary,
   DetailsView,
@@ -63,7 +72,15 @@ export {
   type QuarantineEntry,
 } from "./words";
 export { DecidedList, StageInbox, type InboxFilter, type StageInboxProps } from "./StageInbox";
-export { BulkAction, BulkActions, ConfirmStage, ProposalLines } from "./StageActions";
+export {
+  BulkAction,
+  BulkActions,
+  ConfirmStage,
+  ProposalLines,
+  REJECT_AI_LABEL,
+  REJECT_ALL_LABEL,
+  type BulkMakers,
+} from "./StageActions";
 export { StageSummary } from "./summary";
 export {
   isWarming,

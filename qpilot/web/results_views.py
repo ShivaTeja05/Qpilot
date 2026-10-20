@@ -46,6 +46,8 @@ from qpilot.web.contract import (
     GeneView,
     GenormView,
     GroupCount,
+    NotCompared,
+    NotComparedReason,
     OptionEffect,
     PendingRequest,
     ResultsSummary,
@@ -426,6 +428,73 @@ def audit_badge(store: StudyStore, study_id: str) -> AuditBadge:
     )
 
 
+_nc_lock = threading.Lock()
+_not_compared: OrderedDict[tuple[str, int], NotCompared | None] = OrderedDict()
+
+
+def not_compared(store: StudyStore, result: StudyResult) -> NotCompared | None:
+    """The study's samples in neither group, by reason, from the engine's model of the study.
+
+    The model is rebuilt from the cached curve analysis (about a second on the demo) once per
+    study and kept; None when the input file is not there to rebuild it.
+    """
+    path = store.workspace(result.study_id) / "results.json"
+    try:
+        key = (str(path), path.stat().st_mtime_ns)
+    except OSError:
+        return None
+    with _nc_lock:
+        if key in _not_compared:
+            return _not_compared[key]
+    value = _rebuild_not_compared(store, result)
+    with _nc_lock:
+        _not_compared[key] = value
+        while len(_not_compared) > MAX_GRIDS:
+            _not_compared.popitem(last=False)
+    return value
+
+
+def _rebuild_not_compared(store: StudyStore, result: StudyResult) -> NotCompared | None:
+    from qpilot.qpcr.curves import analyse_study
+    from qpilot.qpcr.study import StudySettings, build_model
+
+    source = store.source(result.study_id)
+    if source is None:
+        return None
+    try:
+        design = store.design(result.study_id)
+        settings = StudySettings.from_design(design) if design is not None else StudySettings()
+        curves = analyse_study(source, settings.experiment_id, settings.candidates, settings.curves)
+        model = build_model(curves, settings)
+    except Exception:  # a study that cannot be rebuilt here: the page says only the counts
+        return None
+    matrix = model.matrix
+    grouped = model.high | model.rest
+    refs = [r for r in model.space.primary["refs"] if r in matrix.columns]
+    marker = None if model.labels is not None else settings.marker
+    by_reason: dict[str, list[str]] = {}
+    for sample in matrix.index:
+        if sample in grouped:
+            continue
+        row = matrix.loc[sample]
+        missing = [r for r in refs if pd.isna(row[r])]
+        if marker is not None and marker in row.index and pd.isna(row[marker]):
+            reason = f"no value for the marker gene {marker}"
+        elif missing:
+            names = ", ".join(missing)
+            reason = f"no value for the control gene{'s' * (len(missing) > 1)} {names}"
+        elif model.labels is not None:
+            reason = "in neither group of the confirmed design"
+        else:
+            reason = "not ranked by the marker (no reason recorded)"
+        by_reason.setdefault(reason, []).append(str(sample))
+    reasons = [
+        NotComparedReason(reason=r, n=len(v), samples=sorted(v))
+        for r, v in sorted(by_reason.items(), key=lambda kv: -len(kv[1]))
+    ]
+    return NotCompared(n=sum(r.n for r in reasons), reasons=reasons)
+
+
 def withheld(result: StudyResult) -> list[WithheldGene]:
     """Genes the engine withheld (``f_withheld_*`` facts), with the reason in words."""
     out = []
@@ -563,6 +632,7 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
             cut=None if "f_group_a" in result.facts else design.cut,
             design_line=design_line(result),
             text=summary_text,
+            not_compared=not_compared(store, result),
         ),
         rule=RuleView(
             alpha=rule.alpha,
