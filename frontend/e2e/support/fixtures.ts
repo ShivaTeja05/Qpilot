@@ -136,6 +136,15 @@ export class App {
     }
     await this.page.evaluate(async () => {
       await document.fonts.ready;
+      // Let transitions and animations finish (a sheet sliding in, a theme fading): axe reads
+      // colours as painted, so a half-faded layer is not a contrast problem of the page.
+      const until = Date.now() + 3000;
+      while (
+        Date.now() < until &&
+        document.getAnimations().some((a) => a.playState === "running")
+      ) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     });
   }
@@ -145,6 +154,7 @@ export class App {
    * the test goes on so every state gets checked); all findings are attached to the report.
    */
   async axe(state: string): Promise<AxeFinding[]> {
+    await this.settle();
     const results = await new AxeBuilder({ page: this.page }).withTags(AXE_TAGS).analyze();
     const findings: AxeFinding[] = results.violations.map((v) => ({
       id: v.id,

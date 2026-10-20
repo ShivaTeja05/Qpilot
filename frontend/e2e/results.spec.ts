@@ -175,9 +175,9 @@ test.describe("deciding", () => {
     await app.axe("Decision Card, ready to decide");
     await decide.click();
 
-    await expect(app.page.getByText("Decided and added to the record.")).toBeVisible({
-      timeout: 120_000,
-    });
+    // A toast says what happened, titled with the card (its words are the server's message).
+    const toasts = app.page.getByRole("region", { name: /^Notifications/ }).getByRole("listitem");
+    await expect(toasts.filter({ hasText: card!.title }).first()).toBeVisible({ timeout: 120_000 });
     await app.settle(120_000);
     await app.axe("after Decide (toast, card decided)");
     const decided = (await cards(api, demo)).cards.find((c) => c.card.id === card!.card.id)!;
@@ -195,9 +195,11 @@ test.describe("deciding", () => {
       .getByRole("textbox", { name: /Why undo it/ })
       .fill("e2e: undoing the test decision");
     await article.getByRole("button", { name: /^Undo: back to / }).click();
-    await expect(app.page.getByText("Decided and added to the record.").nth(1)).toBeVisible({
-      timeout: 120_000,
-    });
+    await expect
+      .poll(async () => (await decisions(api, demo)).entries.length, {
+        timeout: 120_000,
+      })
+      .toBe(chainBefore + 2);
     await app.settle(120_000);
     const after = (await cards(api, demo)).cards.find((c) => c.card.id === card!.card.id)!;
     expect((await decisions(api, demo)).entries.length, "undo is a new entry").toBe(
