@@ -161,12 +161,7 @@ def test_the_reblinded_frame_hides_the_old_study(reblinded):
     assert [w["key"] for w in listed] == [sid], "the session's study is listed on its own"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-009 GET /api/studies/{id} (and every route under it) serves a session's study "
-    "while that session is blind again (design changed after confirm): the study routes never "
-    "ask the session's gate; the id is in the analyse job's result and the study.changed events",
-)
+# RT-UI-009: fixed by api; this test keeps it fixed.
 def test_a_blind_sessions_study_is_not_served_by_id(reblinded):
     c, study_id = reblinded["client"], reblinded["study_id"]
     r = c.get(f"/api/studies/{study_id}")
@@ -221,7 +216,7 @@ def test_no_route_of_a_blind_session_answers_with_a_result(reblinded):
     assert len([r for r in routes if r.startswith("/api/sessions/")]) >= 8, routes
     for route in routes:
         if route.startswith("/api/studies/"):
-            continue  # RT-UI-009 (above) covers the study routes
+            continue  # the study routes: test_every_study_route_of_a_blind_session_is_blind
         url = _fill(route, reblinded, c)
         if url is None:
             continue
@@ -368,12 +363,7 @@ def test_an_edit_cannot_rewrite_who_made_a_proposal(sclient, web_store, opened):
         assert decided["made_by"]["kind"] == "agent" and decided["decided_by"] == "human"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-013 POST …/proposals/{pid}/edit accepts a stage.confirm step with edited "
-    "payload (covers, design_hash): the stage is confirmed on a payload the confirm view never "
-    "showed, skipping propose_confirm's checks; only 'Yes, confirm' may accept a confirm step",
-)
+# RT-UI-013: fixed by api; this test keeps it fixed.
 def test_a_confirm_step_cannot_be_edited(sclient, web_store, opened):
     from tests.web.test_studio_flow import design_ready, head
 
@@ -462,12 +452,7 @@ def test_an_agents_proposal_elsewhere_never_makes_a_person_stale(sclient, web_st
     assert r.status_code == 200, r.text[:200]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-014 expected_head is optional on accept/edit/reject/confirm/bulk: a write "
-    "without it skips the stale check, so a page bug (or any client) decides on a view the "
-    "chain has moved past; docs/app.md §6 says writes carry it",
-)
+# RT-UI-014: fixed by api; this test keeps it fixed.
 def test_a_decision_without_the_head_it_was_made_on_is_refused(sclient, web_store, opened):
     sid = opened
     _agent_proposal(web_store, sid, "WT_2", "KO")
@@ -532,11 +517,7 @@ def test_hostile_parameters_are_plain_refusals(sclient, opened, path, params):
         assert "Traceback" not in r.text and "/Users/" not in r.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-016 GET /api/sessions/{sid}/proposals?status=<anything else> is a 500: the "
-    "status is passed unchecked to Studio.inbox, whose ValueError is not caught",
-)
+# RT-UI-016: fixed by api; this test keeps it fixed.
 @pytest.mark.parametrize("status", ["proposed' OR 1=1", "pending", "x" * 40])
 def test_an_unknown_status_filter_is_a_plain_refusal(web_store, opened, studio_ctx, status):
     from qpilot.web.server import create_app

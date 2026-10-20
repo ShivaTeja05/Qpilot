@@ -44,13 +44,7 @@ def _card(card_view: dict[str, Any]) -> dict[str, Any]:
 # ---- actors ----------------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-017 Ask turns a person's typed request ('use <option>') into a chain entry "
-    "written as actor 'agent' (keyword-routed qpcr_decide through the MCP tool code): the page "
-    "writes as an agent, and the record says an agent asked for what a person typed "
-    "(docs/app.md §1.1: every write from the page is human; agents act only through MCP)",
-)
+# RT-UI-017: fixed by api-ops (7b4ff82); this test keeps it fixed.
 # decide_and_tell first: each case changes the card, so the other still has an option to ask for
 @pytest.mark.parametrize("autonomy", ["decide_and_tell", "suggest"])
 def test_ask_never_writes_to_the_chain_as_an_agent(visible, autonomy):
@@ -199,12 +193,7 @@ def test_bad_decisions_are_refused_in_words(visible, body):
 # ---- jobs that answer the wrong question -----------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RT-UI-018 'Explain with the model' dedupes by (card.explain, study): asking to "
-    "explain card B while card A's explanation runs returns A's job, so B's card shows A's "
-    "explanation",
-)
+# RT-UI-018: fixed by api; this test keeps it fixed.
 def test_explaining_two_cards_meanwhile_gives_two_jobs(visible, monkeypatch):
     from qpilot.ai import explain as explain_mod
 

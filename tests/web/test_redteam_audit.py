@@ -120,7 +120,7 @@ def test_running_the_audit_twice_is_one_job(audited):
 
 
 @pytest.mark.xfail(
-    strict=True,
+    strict=False,  # fixed on ui/api-audit faa5025 (verified): plain once merged
     reason="RT-UI-021 a NUL in an audit file name (…/audit/files/AUDIT.sha256%00.txt) is a 500: "
     "_download resolves the path before checking the name against the audit's list",
 )
@@ -129,14 +129,15 @@ def test_a_nul_in_an_audit_file_name_is_not_found(audited):
 
     from tests.web.conftest import BASE, TOKEN
 
-    with TestClient(audited["app"], base_url=BASE, raise_server_exceptions=False) as c:
-        c.headers["x-qpilot-token"] = TOKEN
-        r = c.get(f"/api/studies/{audited['study_id']}/audit/files/AUDIT.sha256%00.txt")
+    # No ``with``: leaving it would run the shared app's shutdown and close its context.
+    c = TestClient(audited["app"], base_url=BASE, raise_server_exceptions=False)
+    c.headers["x-qpilot-token"] = TOKEN
+    r = c.get(f"/api/studies/{audited['study_id']}/audit/files/AUDIT.sha256%00.txt")
     assert r.status_code == 404, r.status_code
 
 
 @pytest.mark.xfail(
-    strict=True,
+    strict=False,  # fixed on ui/api-audit faa5025 (verified): plain once merged
     reason="RT-UI-022 a damaged audit_manifest.json (not JSON) makes POST …/audit/verify a 500 "
     "(json.loads unguarded); status already says 'The audit's manifest cannot be read.'",
 )
@@ -145,8 +146,8 @@ def test_verifying_a_damaged_audit_says_so(audited):
 
     from tests.web.conftest import BASE, ORIGIN, TOKEN
 
-    with TestClient(audited["app"], base_url=BASE, raise_server_exceptions=False) as c:
-        c.headers["x-qpilot-token"] = TOKEN
-        r = c.post(f"/api/studies/{audited['study_id']}/audit/verify", json={}, headers=ORIGIN)
+    c = TestClient(audited["app"], base_url=BASE, raise_server_exceptions=False)  # no ``with``
+    c.headers["x-qpilot-token"] = TOKEN
+    r = c.post(f"/api/studies/{audited['study_id']}/audit/verify", json={}, headers=ORIGIN)
     assert r.status_code in (200, 409, 422), r.status_code
     assert "Traceback" not in r.text
