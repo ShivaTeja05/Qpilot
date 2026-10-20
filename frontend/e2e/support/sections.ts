@@ -79,9 +79,9 @@ export const LANDED = {
   /** claims: the Claims section. */
   claims: false,
   /** report: the Reviewer's Report / study report. */
-  report: false,
+  report: true,
   /** history: the History section. */
-  history: false,
+  history: true,
   /** planner: Plan next. */
   planner: true,
 };
