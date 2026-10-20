@@ -6,7 +6,7 @@
  */
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/api/client";
-import { errorMessage, toast } from "@/ui";
+import { errorHeading, errorMessage, toast } from "@/ui";
 
 export interface WriteToast {
   title: string;
@@ -51,10 +51,11 @@ export function reportWriteError(qc: QueryClient, error: unknown, key?: string |
   if (error instanceof ApiError && error.needsKey) {
     toast.error("Open the link qPilot printed in your terminal", {
       description: "This page lost its launch key (qPilot may have been restarted).",
+      duration: Infinity,
     });
     return;
   }
-  toast.error("Not done", { description: errorMessage(error) });
+  toast.error(errorHeading(error), { description: errorMessage(error), duration: Infinity });
 }
 
 /** A write with re-reads and toasts built in (a TanStack mutation). */
@@ -70,6 +71,7 @@ export function useWrite<V = void, R = unknown>(options: WriteOptions<V, R>) {
         toast.success(t.title, {
           description: t.description,
           action: t.undo ? { label: "Undo", onClick: t.undo } : undefined,
+          duration: t.undo ? 10_000 : undefined,
         });
       }
       options.onSuccess?.(result, vars);

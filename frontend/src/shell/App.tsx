@@ -7,14 +7,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { FolderX } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import { Suspense, useEffect, useRef } from "react";
-import { Router, useLocation } from "wouter";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { Link, Router, useLocation } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import { ApiError } from "@/api/client";
 import { onLiveEvent, useLiveEvents } from "@/api/live";
 import { cn } from "@/lib/cn";
 import { count } from "@/lib/format";
-import { useHotkeys } from "@/lib/hooks";
+import { useHotkeys, useNow } from "@/lib/hooks";
 import {
   Button,
   EmptyState,
@@ -63,16 +63,51 @@ function SectionSkeleton() {
   );
 }
 
+/**
+ * While a workspace's frame loads: the skeleton, then (after 1.5 s) what is happening in words,
+ * then (after 15 s) that it is still working and a way back to Open.
+ */
+function FrameLoading({ fileName }: { fileName?: string | null }) {
+  const [started] = useState(() => Date.now());
+  const now = useNow(500);
+  const waited = (now - started) / 1000;
+  return (
+    <div className="flex flex-col gap-4">
+      {waited >= 1.5 ? (
+        <div role="status" className="flex flex-col gap-1">
+          <p className="text-base font-semibold text-fg">Opening the study…</p>
+          <p className="text-[13px] text-muted">
+            {fileName ? `Reading ${fileName}` : "Reading the study"} (usually a few seconds; a large
+            file or a busy computer can take a minute).
+          </p>
+          {waited >= 15 ? (
+            <p className="mt-1 text-[13px] text-muted">
+              Still working.{" "}
+              <Link href="/" className="font-medium text-accent underline-offset-4 hover:underline">
+                Back to Open
+              </Link>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      <SectionSkeleton />
+    </div>
+  );
+}
+
 function SectionView({
   route,
   frame,
   frameError,
   state,
+  fileName,
 }: {
   route: Route;
   frame: WorkspaceView | undefined;
   frameError: unknown;
   state: SectionState;
+  /** The workspace's file (from the list), to say what is being read while the frame loads. */
+  fileName?: string | null;
 }) {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
@@ -103,7 +138,7 @@ function SectionView({
         />
       );
     }
-    if (!frame || route.bare) return <SectionSkeleton />;
+    if (!frame || route.bare) return <FrameLoading fileName={fileName} />;
     if (!state.reachable) return <LockedSection state={state} frame={frame} route={route} />;
   }
   return (
@@ -131,6 +166,7 @@ function useAgentRequestToasts(workspaces: ReturnType<typeof useWorkspaces>["dat
               : `${count(n)} agent requests are waiting for you`,
             {
               description: w.title,
+              duration: 10_000,
               action: {
                 label: "Review",
                 onClick: () => navigate(`/${w.kind === "session" ? "s" : "r"}/${w.key}/agents`),
@@ -277,6 +313,7 @@ function Shell() {
                   frame={frame}
                   frameError={route.key ? frameQuery.error : null}
                   state={states[route.section]}
+                  fileName={summary?.file_name}
                 />
               </motion.div>
             </AnimatePresence>
