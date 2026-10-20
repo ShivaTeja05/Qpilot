@@ -77,7 +77,7 @@ export const LANDED = {
   /** trace: from a result to the wells to look at. */
   trace: false,
   /** claims: the Claims section. */
-  claims: false,
+  claims: true,
   /** report: the Reviewer's Report / study report. */
   report: true,
   /** history: the History section. */
