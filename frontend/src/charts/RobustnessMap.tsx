@@ -51,17 +51,41 @@ export interface RobustnessMapProps {
   onSelect?: (gene: string) => void;
 }
 
-const M = { top: 30, right: 18, left: 46 };
+const M = { top: 40, right: 18, left: 46 };
 
 export function RobustnessMap(props: RobustnessMapProps) {
-  const { points, line, lineLabel, lower, higher, legend, summary, caption, controls, selected, highlight, holdsLine, extraColumns = [], onSelect } = props;
+  const {
+    points,
+    line,
+    lineLabel,
+    lower,
+    higher,
+    legend,
+    summary,
+    caption,
+    controls,
+    selected,
+    highlight,
+    holdsLine,
+    extraColumns = [],
+    onSelect,
+  } = props;
   const [ref, width] = useWidth<HTMLDivElement>();
   const { tip, show, hide } = useTip();
   const height = Math.round(Math.max(320, Math.min(480, width * 0.5)));
   const bottom = height - FOLD_AXIS_BELOW - 6;
   const r = width < 520 ? 4.5 : 5.5;
 
-  const fs = useMemo(() => foldScale(points.map((p) => p.log2), line, M.left + 8, width - M.right), [points, line, width]);
+  const fs = useMemo(
+    () =>
+      foldScale(
+        points.map((p) => p.log2),
+        line,
+        M.left + 8,
+        width - M.right,
+      ),
+    [points, line, width],
+  );
   const yMin = useMemo(() => {
     const lowest = Math.min(1, ...points.map((p) => p.holds), holdsLine?.share ?? 1);
     return Math.max(0, Math.floor((lowest * 100 - 6) / 10) / 10);
@@ -75,7 +99,10 @@ export function RobustnessMap(props: RobustnessMapProps) {
   }, [yMin, bottom]);
 
   // reading order for the keyboard: left to right
-  const order = useMemo(() => [...points].sort((a, b) => a.log2 - b.log2 || a.gene.localeCompare(b.gene)), [points]);
+  const order = useMemo(
+    () => [...points].sort((a, b) => a.log2 - b.log2 || a.gene.localeCompare(b.gene)),
+    [points],
+  );
   const nav = usePointNav(order.length, (i) => onSelect?.(order[i]!.gene));
   const active = nav.active != null ? order[nav.active] : null;
 
@@ -98,7 +125,12 @@ export function RobustnessMap(props: RobustnessMapProps) {
           a.holds - b.holds,
       )
       .map((p) => ({ item: p, x: fs.x(p.log2), y: y(p.holds), text: p.gene }));
-    return placeLabels(want, obstacles, { x0: M.left, y0: M.top - 14, x1: width - 2, y1: bottom - 2 });
+    return placeLabels(want, obstacles, {
+      x0: M.left,
+      y0: M.top - 14,
+      x1: width - 2,
+      y1: bottom - 2,
+    });
   }, [points, selected, width, bottom, r, fs, y]);
 
   const tipFor = (p: MapPoint) => ({
@@ -110,8 +142,20 @@ export function RobustnessMap(props: RobustnessMapProps) {
   const columns: Column<MapPoint>[] = [
     { key: "gene", header: "Gene", cell: (p) => p.gene, sort: (p) => p.gene },
     { key: "mark", header: "Shown as", cell: (p) => p.mark.label, sort: (p) => p.mark.label },
-    { key: "fold", header: "Fold change", cell: (p) => p.foldText ?? fmtFoldLog2(p.log2), sort: (p) => p.log2, numeric: true },
-    { key: "holds", header: "Same call in", cell: (p) => fmtShare(p.holds), sort: (p) => p.holds, numeric: true },
+    {
+      key: "fold",
+      header: "Fold change",
+      cell: (p) => p.foldText ?? fmtFoldLog2(p.log2),
+      sort: (p) => p.log2,
+      numeric: true,
+    },
+    {
+      key: "holds",
+      header: "Same call in",
+      cell: (p) => fmtShare(p.holds),
+      sort: (p) => p.holds,
+      numeric: true,
+    },
     ...extraColumns,
   ];
 
@@ -123,7 +167,13 @@ export function RobustnessMap(props: RobustnessMapProps) {
       caption={caption}
       live={active ? `${active.gene}: ${tipFor(active).value}. ${active.mark.label}.` : undefined}
       table={() => (
-        <DataTable columns={columns} rows={points} rowKey={(p) => p.gene} onRowClick={onSelect ? (p) => onSelect(p.gene) : undefined} caption={summary} />
+        <DataTable
+          columns={columns}
+          rows={points}
+          rowKey={(p) => p.gene}
+          onRowClick={onSelect ? (p) => onSelect(p.gene) : undefined}
+          caption={summary}
+        />
       )}
     >
       <div
@@ -138,30 +188,65 @@ export function RobustnessMap(props: RobustnessMapProps) {
           hide();
         }}
       >
-        <svg width={width} height={height} role="img" aria-label={summary} className="block overflow-visible" onPointerLeave={hide}>
+        <svg
+          width={width}
+          height={height}
+          role="img"
+          aria-label={summary}
+          className="block overflow-visible"
+          onPointerLeave={hide}
+        >
           {/* share axis */}
           <g aria-hidden="true">
             {yTicks.map((v) => (
               <g key={v}>
                 <line x1={M.left} x2={width - M.right} y1={y(v)} y2={y(v)} stroke="var(--line)" />
-                <text x={M.left - 8} y={y(v) + 4} textAnchor="end" fontSize={11} fill="var(--text-faint)" className="tabular">
+                <text
+                  x={M.left - 8}
+                  y={y(v) + 4}
+                  textAnchor="end"
+                  fontSize={11}
+                  fill="var(--text-faint)"
+                  className="tabular"
+                >
                   {fmtShare(v)}
                 </text>
               </g>
             ))}
-            <text x={0} y={M.top - 16} fontSize={11} fill="var(--text-muted)">
-              Same call in … of reasonable analyses
+            <text x={0} y={12} fontSize={11} fill="var(--text-muted)">
+              Share of reasonable analyses with the same call
             </text>
             {holdsLine && holdsLine.share >= yMin && (
               <g>
-                <line x1={M.left} x2={width - M.right} y1={y(holdsLine.share)} y2={y(holdsLine.share)} stroke="var(--text-faint)" strokeDasharray="4 3" />
-                <text x={width - M.right} y={y(holdsLine.share) - 4} textAnchor="end" fontSize={11} fill="var(--text-muted)">
+                <line
+                  x1={M.left}
+                  x2={width - M.right}
+                  y1={y(holdsLine.share)}
+                  y2={y(holdsLine.share)}
+                  stroke="var(--text-faint)"
+                  strokeDasharray="4 3"
+                />
+                <text
+                  x={width - M.right}
+                  y={y(holdsLine.share) - 4}
+                  textAnchor="end"
+                  fontSize={11}
+                  fill="var(--text-muted)"
+                >
                   {holdsLine.label}
                 </text>
               </g>
             )}
           </g>
-          <FoldAxis scale={fs} top={M.top} bottom={bottom} line={line} lineLabel={lineLabel} lower={lower} higher={higher} />
+          <FoldAxis
+            scale={fs}
+            top={M.top}
+            bottom={bottom}
+            line={line}
+            lineLabel={lineLabel}
+            lower={lower}
+            higher={higher}
+          />
           {/* genes */}
           <g>
             {drawOrder.map((p) => {
@@ -177,7 +262,16 @@ export function RobustnessMap(props: RobustnessMapProps) {
                   onClick={onSelect ? () => onSelect(p.gene) : undefined}
                 >
                   <circle cx={cx} cy={cy} r={12} fill="transparent" />
-                  {on && <circle cx={cx} cy={cy} r={r + 5} fill="none" stroke="var(--accent)" strokeWidth={2} />}
+                  {on && (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={r + 5}
+                      fill="none"
+                      stroke="var(--accent)"
+                      strokeWidth={2}
+                    />
+                  )}
                   <GlyphMark mark={p.mark} x={cx} y={cy} r={on ? r + 1 : r} />
                 </g>
               );
@@ -200,7 +294,10 @@ export function RobustnessMap(props: RobustnessMapProps) {
             ))}
           </g>
         </svg>
-        <Tooltip tip={active ? { x: fs.x(active.log2), y: y(active.holds), content: tipFor(active) } : tip} width={width} />
+        <Tooltip
+          tip={active ? { x: fs.x(active.log2), y: y(active.holds), content: tipFor(active) } : tip}
+          width={width}
+        />
       </div>
     </ChartFrame>
   );

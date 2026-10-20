@@ -1,0 +1,2663 @@
+{
+ "stage": "design",
+ "head": "ecf7d7b9eb65c5f0ff84f087af54f905c33ef3c7d902e68f4246fc530e1c6e92",
+ "proposals": [
+  {
+   "id": "p_da91b1cb6d63a790",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "dil_1_10_10e9",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_5731790734c4",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "contradicted",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": false,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 0,
+        "n_sets_at_known_copies": 0,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "no set of two or more amplified replicates",
+       "status": "cannot_check"
+      }
+     },
+     "n_amplified": 0,
+     "n_level_amplified": 0,
+     "n_level_wells": 36,
+     "n_wells": 24,
+     "n_with_cq": 18
+    },
+    "note": "no well of this sample (nor of its dilution level) was called amplified, so it cannot serve as a standard; no set of two or more amplified replicates; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:35Z"
+  },
+  {
+   "id": "p_e1d5744195f3b32c",
+   "study_id": "2529de8272eb",
+   "kind": "design.dilution_series",
+   "subject": "declared_standards_dna_dilutions_embl",
+   "payload": {
+    "experiment_id": "DNA Dilutions - EMBL",
+    "samples": {
+     "Dil BSG - 10e2": 10.0,
+     "Dil BSG - 10e3": 100.0,
+     "Dil BSG - 10e4": 1000.0,
+     "Dil BSG - 10e5": 10000.0,
+     "Dil BSG - 10e6": 100000.0,
+     "Dil BSG - 10e7": 1000000.0,
+     "Dil BSG - 10e8": 10000000.0,
+     "Dil BSG - 10e9": 100000000.0,
+     "dil_1_10_10e2": 10.0,
+     "dil_1_10_10e3": 100.0,
+     "dil_1_10_10e4": 1000.0,
+     "dil_1_10_10e5": 10000.0,
+     "dil_1_10_10e6": 100000.0,
+     "dil_1_10_10e7": 1000000.0,
+     "dil_1_10_10e8": 10000000.0,
+     "dil_1_10_10e9": 100000000.0,
+     "genomic DNA 0.7ng": 26.0,
+     "genomic DNA 20ng": 750.0,
+     "genomic DNA 2ng": 75.0,
+     "genomic DNA 7ng": 210.0
+    }
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_71b89728e962",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_064a9bd2e034",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_17c28abeef18",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_e20bd8ffb7ca",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_e87b0334bb63",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_9053d78edac2",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_956c96f4f228",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_068f5f4494a1",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_c5b557a9d999",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_89fbe7484284",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_a9b2c7779b1d",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_9538a91d53b4",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_75f6b4c0c47a",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_8371bf4e41f1",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_f2111e5a5c74",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_5731790734c4",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_ef63ff77be13",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_0d751c8a4440",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_3e3e1e475944",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_1fae9dd15e96",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "contradicted",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP"
+    ],
+    "details": {
+     "amplification_factor": 1.945382,
+     "checks": {
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 1,
+        "n_over_tolerance_at_known_copies": 1,
+        "n_sets": 66,
+        "n_sets_at_known_copies": 62,
+        "over_tolerance": [
+         {
+          "copies": 100.0,
+          "efficiency": 1.9471,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 1.1861,
+          "run_id": "P10 - DNA Dilutions",
+          "sample": "dil_1_10_10e3",
+          "target": "FSTL_1_K_219",
+          "tolerance": 0.5682
+         }
+        ],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": true
+       },
+       "note": "some replicate sets differ by more than the expected spread (a warning only)",
+       "status": "consistent"
+      }
+     },
+     "efficiency": 0.945382,
+     "efficiency_range": [
+      0.9,
+      1.1
+     ],
+     "efficiency_warning": true,
+     "family_series": [
+      "declared_standards_dna_dilutions_embl",
+      "declared_standards_dpcr_dkfz"
+     ],
+     "fits": [
+      {
+       "amplification_factor": 2.066513,
+       "efficiency": 1.066513,
+       "efficiency_fraction_of_doubling": 1.033257,
+       "efficiency_warning": false,
+       "intercept": 31.455127,
+       "levels": [
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0,
+        100000000.0
+       ],
+       "levels_used": [
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0
+       ],
+       "levels_without_amplification": [
+        100000000.0
+       ],
+       "n_late_cq_not_counted": 6,
+       "n_wells": 60,
+       "n_wells_used": 52,
+       "r2": 0.78606,
+       "run_id": "P10 - DNA Dilutions",
+       "slope": -3.172205,
+       "status": "contradicted",
+       "target": "FSTL_1_F_109"
+      },
+      {
+       "amplification_factor": 1.933719,
+       "efficiency": 0.933719,
+       "efficiency_fraction_of_doubling": 0.966859,
+       "efficiency_warning": false,
+       "intercept": 34.003842,
+       "levels": [
+        26.0,
+        75.0,
+        210.0,
+        750.0
+       ],
+       "levels_used": [
+        26.0,
+        75.0,
+        210.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 12,
+       "n_wells_used": 12,
+       "r2": 0.984604,
+       "run_id": "P10 - DNA Dilutions",
+       "slope": -3.491701,
+       "status": "consistent",
+       "target": "FSTL_1_F_109 APS"
+      },
+      {
+       "amplification_factor": 1.911791,
+       "efficiency": 0.911791,
+       "efficiency_fraction_of_doubling": 0.955896,
+       "efficiency_warning": false,
+       "intercept": 33.283498,
+       "levels": [
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0,
+        100000000.0
+       ],
+       "levels_used": [
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0
+       ],
+       "levels_without_amplification": [
+        100000000.0
+       ],
+       "n_late_cq_not_counted": 6,
+       "n_wells": 60,
+       "n_wells_used": 52,
+       "r2": 0.997808,
+       "run_id": "P10 - DNA Dilutions",
+       "slope": -3.553149,
+       "status": "consistent",
+       "target": "FSTL_1_H_201"
+      },
+      {
+       "amplification_factor": 1.810049,
+       "efficiency": 0.810049,
+       "efficiency_fraction_of_doubling": 0.905024,
+       "efficiency_warning": true,
+       "intercept": 33.064461,
+       "levels": [
+        26.0,
+        75.0,
+        210.0,
+        750.0
+       ],
+       "levels_used": [
+        26.0,
+        75.0,
+        210.0,
+        750.0
+       ],
+       "levels_without_amplification": [],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 12,
+       "n_wells_used": 12,
+       "r2": 0.986835,
+       "run_id": "P10 - DNA Dilutions",
+       "slope": -3.880628,
+       "status": "consistent",
+       "target": "FSTL_1_H_201 APS"
+      },
+      {
+       "amplification_factor": 1.986838,
+       "efficiency": 0.986838,
+       "efficiency_fraction_of_doubling": 0.993419,
+       "efficiency_warning": false,
+       "intercept": 31.512819,
+       "levels": [
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0,
+        100000000.0
+       ],
+       "levels_used": [
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0
+       ],
+       "levels_without_amplification": [
+        100000000.0
+       ],
+       "n_late_cq_not_counted": 5,
+       "n_wells": 48,
+       "n_wells_used": 42,
+       "r2": 0.997084,
+       "run_id": "P10 - DNA Dilutions",
+       "slope": -3.353877,
+       "status": "consistent",
+       "target": "FSTL_1_K_219"
+      },
+      {
+       "amplification_factor": 1.957045,
+       "efficiency": 0.957045,
+       "efficiency_fraction_of_doubling": 0.978523,
+       "efficiency_warning": false,
+       "intercept": 31.780974,
+       "levels": [
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0,
+        100000000.0
+       ],
+       "levels_used": [
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0
+       ],
+       "levels_without_amplification": [
+        100000000.0
+       ],
+       "n_late_cq_not_counted": 0,
+       "n_wells": 48,
+       "n_wells_used": 42,
+       "r2": 0.99087,
+       "run_id": "P10 - DNA Dilutions",
+       "slope": -3.429345,
+       "status": "consistent",
+       "target": "FSTL_1_L_412"
+      }
+     ],
+     "invalid_quantities": [],
+     "levels_used": [
+      10.0,
+      26.0,
+      75.0,
+      100.0,
+      210.0,
+      750.0,
+      1000.0,
+      10000.0,
+      100000.0,
+      1000000.0,
+      10000000.0
+     ],
+     "levels_without_amplification": [
+      100000000.0
+     ],
+     "missing_samples": [],
+     "n_fits": 6,
+     "n_fits_contradicted": 1,
+     "r2": 0.78606,
+     "r2_max": 0.997808,
+     "r2_min_required": 0.98,
+     "slope": -3.460523
+    },
+    "note": "on some plates the wells do not fall on a line of Cq against the logarithm of quantity; some replicate sets differ by more than the expected spread (a warning only)"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "declared standards with quantities in the file"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:36Z"
+  },
+  {
+   "id": "p_0974281fb90f38c7",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "Dil BSG - 10e9",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_068f5f4494a1",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "contradicted",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": false,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 0,
+        "n_sets_at_known_copies": 0,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "no set of two or more amplified replicates",
+       "status": "cannot_check"
+      }
+     },
+     "n_amplified": 0,
+     "n_level_amplified": 0,
+     "n_level_wells": 24,
+     "n_wells": 12,
+     "n_with_cq": 9
+    },
+    "note": "no well of this sample (nor of its dilution level) was called amplified, so it cannot serve as a standard; no set of two or more amplified replicates; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "rejected",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:14:40Z",
+   "reason": "No well of this standard amplified",
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_04633dd287a1fc01",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "Dil BSG - 10e2",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_71b89728e962",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 2,
+        "n_sets_at_known_copies": 2,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 6,
+     "n_level_amplified": 18,
+     "n_level_wells": 24,
+     "n_wells": 12,
+     "n_with_cq": 8
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_b139e6abe0a18dae",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "Dil BSG - 10e3",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_064a9bd2e034",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 4,
+        "n_sets_at_known_copies": 4,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 12,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 12,
+     "n_with_cq": 12
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_bf14c14f07993f77",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "Dil BSG - 10e4",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_17c28abeef18",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 4,
+        "n_sets_at_known_copies": 4,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 12,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 12,
+     "n_with_cq": 12
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_9370c425fce42ba5",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "Dil BSG - 10e5",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_e20bd8ffb7ca",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 4,
+        "n_sets_at_known_copies": 4,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 12,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 12,
+     "n_with_cq": 12
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_2e920242fe000374",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "Dil BSG - 10e6",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_e87b0334bb63",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 4,
+        "n_sets_at_known_copies": 4,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 12,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 12,
+     "n_with_cq": 12
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_9a76078f1f908bef",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "Dil BSG - 10e7",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_9053d78edac2",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 4,
+        "n_sets_at_known_copies": 4,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 12,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 12,
+     "n_with_cq": 12
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_db4cf855f4197daf",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "Dil BSG - 10e8",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_956c96f4f228",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 4,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": false,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 0,
+        "n_sets_at_known_copies": 0,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "no set of two or more amplified replicates",
+       "status": "cannot_check"
+      }
+     },
+     "n_amplified": 4,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 4,
+     "n_with_cq": 4
+    },
+    "note": "the sample's wells amplify; no set of two or more amplified replicates; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_7e8aa54fbee71a7a",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "dil_1_10_10e2",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_c5b557a9d999",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 30,
+     "n_level_wells": 36,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:34Z"
+  },
+  {
+   "id": "p_7ec2cefffc8c713d",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "dil_1_10_10e3",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_89fbe7484284",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 1,
+        "n_over_tolerance_at_known_copies": 1,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [
+         {
+          "copies": 100.0,
+          "efficiency": 1.9471,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 1.1861,
+          "run_id": "P10 - DNA Dilutions",
+          "sample": "dil_1_10_10e3",
+          "target": "FSTL_1_K_219",
+          "tolerance": 0.5682
+         }
+        ],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": true
+       },
+       "note": "some replicate sets differ by more than the expected spread (a warning only)",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 36,
+     "n_level_wells": 36,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; some replicate sets differ by more than the expected spread (a warning only); every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:35Z"
+  },
+  {
+   "id": "p_cb57984dd9c1c0c3",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "dil_1_10_10e4",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_a9b2c7779b1d",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 1,
+        "n_over_tolerance_at_known_copies": 1,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [
+         {
+          "copies": 1000.0,
+          "efficiency": 1.855,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.6207,
+          "run_id": "p11 - dPCR",
+          "sample": "dil_1_10_10e4",
+          "target": "FSTL_1_H_201",
+          "tolerance": 0.521
+         }
+        ],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": true
+       },
+       "note": "some replicate sets differ by more than the expected spread (a warning only)",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 36,
+     "n_level_wells": 36,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; some replicate sets differ by more than the expected spread (a warning only); every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:35Z"
+  },
+  {
+   "id": "p_242b52e396bbcd96",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "dil_1_10_10e5",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_9538a91d53b4",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 36,
+     "n_level_wells": 36,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:35Z"
+  },
+  {
+   "id": "p_404698abaeb1eef1",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "dil_1_10_10e6",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_75f6b4c0c47a",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 36,
+     "n_level_wells": 36,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:35Z"
+  },
+  {
+   "id": "p_0ac455b070a19514",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "dil_1_10_10e7",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_8371bf4e41f1",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 36,
+     "n_level_wells": 36,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:35Z"
+  },
+  {
+   "id": "p_1c55df8a3c99c67e",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "dil_1_10_10e8",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_f2111e5a5c74",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 32,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 4,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 32,
+     "n_level_amplified": 36,
+     "n_level_wells": 36,
+     "n_wells": 32,
+     "n_with_cq": 32
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:35Z"
+  },
+  {
+   "id": "p_4405c795ab1e0257",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "genomic DNA 0.2ng",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_174f1df37f44",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 4,
+        "n_sets_at_known_copies": 4,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 11,
+     "n_level_amplified": 11,
+     "n_level_wells": 12,
+     "n_wells": 12,
+     "n_with_cq": 12
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:35Z"
+  },
+  {
+   "id": "p_1abc27fe44a94185",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "genomic DNA 0.7ng",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_ef63ff77be13",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:36Z"
+  },
+  {
+   "id": "p_8808554eea540d18",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "genomic DNA 0ng",
+   "payload": {
+    "role": "ntc"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_9c6520979f80",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-NTC",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 12,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      }
+     },
+     "k_cycles": 5.0,
+     "min_gap_cycles": 17.5002,
+     "n_amplified_no_reference": 0,
+     "n_clean": 9,
+     "n_cq_without_amplification_call": 0,
+     "n_late": 3,
+     "n_like_sample": 0,
+     "n_wells": 12,
+     "wells_with_signal": [
+      {
+       "class": "late",
+       "cq": 46.6395,
+       "gap_cycles": 22.2186,
+       "run_id": "p11 - dPCR",
+       "target": "FSTL_1_H_201",
+       "unknown_median_cq": 24.4209,
+       "well": "E19"
+      },
+      {
+       "class": "late",
+       "cq": 41.9211,
+       "gap_cycles": 17.5002,
+       "run_id": "p11 - dPCR",
+       "target": "FSTL_1_H_201",
+       "unknown_median_cq": 24.4209,
+       "well": "E20"
+      },
+      {
+       "class": "late",
+       "cq": 46.75,
+       "gap_cycles": 22.3291,
+       "run_id": "p11 - dPCR",
+       "target": "FSTL_1_H_201",
+       "unknown_median_cq": 24.4209,
+       "well": "E21"
+      }
+     ]
+    },
+    "note": "late signal well after the study samples, typical of primer-dimer; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:36Z"
+  },
+  {
+   "id": "p_1d82dfab7f89fc2e",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "genomic DNA 2ng",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_0d751c8a4440",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:36Z"
+  },
+  {
+   "id": "p_ec7de73080a2a303",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "genomic DNA 7ng",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_3e3e1e475944",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 1,
+        "n_over_tolerance_at_known_copies": 1,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [
+         {
+          "copies": 210.0,
+          "efficiency": 1.8594,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.6457,
+          "run_id": "p11 - dPCR",
+          "sample": "genomic DNA 7ng",
+          "target": "FSTL_1_K_219",
+          "tolerance": 0.559
+         }
+        ],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": true
+       },
+       "note": "some replicate sets differ by more than the expected spread (a warning only)",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; some replicate sets differ by more than the expected spread (a warning only); every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:36Z"
+  },
+  {
+   "id": "p_18930fdb874245e9",
+   "study_id": "2529de8272eb",
+   "kind": "design.well_role",
+   "subject": "genomic DNA 20ng",
+   "payload": {
+    "role": "std"
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_1fae9dd15e96",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP",
+     "D-COVER"
+    ],
+    "details": {
+     "checks": {
+      "D-COVER": {
+       "details": {
+        "n_subject_wells": 24,
+        "n_wells": 582,
+        "n_with_several_roles": 0,
+        "n_without_role": 0,
+        "wells_with_several_roles": []
+       },
+       "note": "every well concerned has exactly one role",
+       "status": "consistent"
+      },
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 0,
+        "n_over_tolerance_at_known_copies": 0,
+        "n_sets": 8,
+        "n_sets_at_known_copies": 8,
+        "over_tolerance": [],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": false
+       },
+       "note": "technical replicates agree within tolerance",
+       "status": "consistent"
+      }
+     },
+     "n_amplified": 24,
+     "n_level_amplified": 24,
+     "n_level_wells": 24,
+     "n_wells": 24,
+     "n_with_cq": 24
+    },
+    "note": "the sample's wells amplify; technical replicates agree within tolerance; every well concerned has exactly one role"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "the file declares this sample type"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:36Z"
+  },
+  {
+   "id": "p_ecb373ebad7c5bed",
+   "study_id": "2529de8272eb",
+   "kind": "design.dilution_series",
+   "subject": "declared_standards_dpcr_dkfz",
+   "payload": {
+    "experiment_id": "dPCR - DKFZ",
+    "samples": {
+     "dil_1_10_10e2": 10.0,
+     "dil_1_10_10e3": 100.0,
+     "dil_1_10_10e4": 1000.0,
+     "dil_1_10_10e5": 10000.0,
+     "dil_1_10_10e6": 100000.0,
+     "dil_1_10_10e7": 1000000.0,
+     "dil_1_10_10e8": 10000000.0,
+     "dil_1_10_10e9": 100000000.0,
+     "genomic DNA 0.2ng": 7.5,
+     "genomic DNA 0.7ng": 26.0,
+     "genomic DNA 20ng": 750.0,
+     "genomic DNA 2ng": 75.0,
+     "genomic DNA 7ng": 210.0
+    }
+   },
+   "evidence": [
+    {
+     "kind": "text",
+     "ref": "t_c5b557a9d999",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_89fbe7484284",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_a9b2c7779b1d",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_9538a91d53b4",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_75f6b4c0c47a",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_8371bf4e41f1",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_f2111e5a5c74",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_5731790734c4",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_174f1df37f44",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_ef63ff77be13",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_0d751c8a4440",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_3e3e1e475944",
+     "note": ""
+    },
+    {
+     "kind": "text",
+     "ref": "t_1fae9dd15e96",
+     "note": ""
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-SERIES",
+     "D-REP"
+    ],
+    "details": {
+     "amplification_factor": 1.899483,
+     "checks": {
+      "D-REP": {
+       "details": {
+        "copies_known": true,
+        "n_over_tolerance": 2,
+        "n_over_tolerance_at_known_copies": 2,
+        "n_sets": 48,
+        "n_sets_at_known_copies": 48,
+        "over_tolerance": [
+         {
+          "copies": 1000.0,
+          "efficiency": 1.855,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.6207,
+          "run_id": "p11 - dPCR",
+          "sample": "dil_1_10_10e4",
+          "target": "FSTL_1_H_201",
+          "tolerance": 0.521
+         },
+         {
+          "copies": 210.0,
+          "efficiency": 1.8594,
+          "judged_at_known_copies": true,
+          "n": 3,
+          "range": 0.6457,
+          "run_id": "p11 - dPCR",
+          "sample": "genomic DNA 7ng",
+          "target": "FSTL_1_K_219",
+          "tolerance": 0.559
+         }
+        ],
+        "tolerance_formula": "2.1/ln(E) * sqrt(0.15**2 + 1/N)",
+        "warning": true
+       },
+       "note": "some replicate sets differ by more than the expected spread (a warning only)",
+       "status": "consistent"
+      }
+     },
+     "efficiency": 0.899483,
+     "efficiency_range": [
+      0.9,
+      1.1
+     ],
+     "efficiency_warning": true,
+     "family_series": [
+      "declared_standards_dna_dilutions_embl",
+      "declared_standards_dpcr_dkfz"
+     ],
+     "fits": [
+      {
+       "amplification_factor": 1.871895,
+       "efficiency": 0.871895,
+       "efficiency_fraction_of_doubling": 0.935948,
+       "efficiency_warning": true,
+       "intercept": 34.855247,
+       "levels": [
+        7.5,
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0,
+        100000000.0
+       ],
+       "levels_used": [
+        7.5,
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0
+       ],
+       "levels_without_amplification": [
+        100000000.0
+       ],
+       "n_late_cq_not_counted": 3,
+       "n_wells": 39,
+       "n_wells_used": 36,
+       "r2": 0.997092,
+       "run_id": "p11 - dPCR",
+       "slope": -3.67267,
+       "status": "consistent",
+       "target": "FSTL_1_F_109"
+      },
+      {
+       "amplification_factor": 1.910136,
+       "efficiency": 0.910136,
+       "efficiency_fraction_of_doubling": 0.955068,
+       "efficiency_warning": false,
+       "intercept": 33.734666,
+       "levels": [
+        7.5,
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0,
+        100000000.0
+       ],
+       "levels_used": [
+        7.5,
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0
+       ],
+       "levels_without_amplification": [
+        100000000.0
+       ],
+       "n_late_cq_not_counted": 3,
+       "n_wells": 39,
+       "n_wells_used": 36,
+       "r2": 0.998406,
+       "run_id": "p11 - dPCR",
+       "slope": -3.557905,
+       "status": "consistent",
+       "target": "FSTL_1_H_201"
+      },
+      {
+       "amplification_factor": 1.901875,
+       "efficiency": 0.901875,
+       "efficiency_fraction_of_doubling": 0.950937,
+       "efficiency_warning": false,
+       "intercept": 33.543438,
+       "levels": [
+        7.5,
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0,
+        100000000.0
+       ],
+       "levels_used": [
+        7.5,
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0
+       ],
+       "levels_without_amplification": [
+        100000000.0
+       ],
+       "n_late_cq_not_counted": 3,
+       "n_wells": 39,
+       "n_wells_used": 36,
+       "r2": 0.998631,
+       "run_id": "p11 - dPCR",
+       "slope": -3.581894,
+       "status": "consistent",
+       "target": "FSTL_1_K_219"
+      },
+      {
+       "amplification_factor": 1.897091,
+       "efficiency": 0.897091,
+       "efficiency_fraction_of_doubling": 0.948546,
+       "efficiency_warning": true,
+       "intercept": 33.399189,
+       "levels": [
+        7.5,
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0,
+        100000000.0
+       ],
+       "levels_used": [
+        7.5,
+        10.0,
+        26.0,
+        75.0,
+        100.0,
+        210.0,
+        750.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0,
+        10000000.0
+       ],
+       "levels_without_amplification": [
+        100000000.0
+       ],
+       "n_late_cq_not_counted": 1,
+       "n_wells": 39,
+       "n_wells_used": 36,
+       "r2": 0.997696,
+       "run_id": "p11 - dPCR",
+       "slope": -3.595981,
+       "status": "consistent",
+       "target": "FSTL_1_L_412"
+      }
+     ],
+     "invalid_quantities": [],
+     "levels_used": [
+      7.5,
+      10.0,
+      26.0,
+      75.0,
+      100.0,
+      210.0,
+      750.0,
+      1000.0,
+      10000.0,
+      100000.0,
+      1000000.0,
+      10000000.0
+     ],
+     "levels_without_amplification": [
+      100000000.0
+     ],
+     "missing_samples": [],
+     "n_fits": 4,
+     "n_fits_contradicted": 0,
+     "r2": 0.997092,
+     "r2_max": 0.998631,
+     "r2_min_required": 0.98,
+     "slope": -3.588938
+    },
+    "note": "the wells fall on a line of Cq against the logarithm of quantity; the efficiency from the slope is outside the usual range (a warning only); some dilution levels have no amplified well and were left out of the fit; some replicate sets differ by more than the expected spread (a warning only)"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "declared standards with quantities in the file"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T20:15:31Z",
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T20:13:37Z"
+  }
+ ],
+ "counts": {
+  "proposed": 2,
+  "contradicted": 2,
+  "rejected": 1,
+  "accepted": 21
+ },
+ "descriptions": {
+  "p_da91b1cb6d63a790": "Treat sample dil_1_10_10e9 as a standard of known quantity",
+  "p_e1d5744195f3b32c": "Samples Dil BSG - 10e2 \u2026 genomic DNA 7ng (20 in all, experiment DNA Dilutions - EMBL) form a dilution series declared_standards_dna_dilutions_embl, quantities 10 to 1e+08",
+  "p_0974281fb90f38c7": "Treat sample Dil BSG - 10e9 as a standard of known quantity",
+  "p_04633dd287a1fc01": "Treat sample Dil BSG - 10e2 as a standard of known quantity",
+  "p_b139e6abe0a18dae": "Treat sample Dil BSG - 10e3 as a standard of known quantity",
+  "p_bf14c14f07993f77": "Treat sample Dil BSG - 10e4 as a standard of known quantity",
+  "p_9370c425fce42ba5": "Treat sample Dil BSG - 10e5 as a standard of known quantity",
+  "p_2e920242fe000374": "Treat sample Dil BSG - 10e6 as a standard of known quantity",
+  "p_9a76078f1f908bef": "Treat sample Dil BSG - 10e7 as a standard of known quantity",
+  "p_db4cf855f4197daf": "Treat sample Dil BSG - 10e8 as a standard of known quantity",
+  "p_7e8aa54fbee71a7a": "Treat sample dil_1_10_10e2 as a standard of known quantity",
+  "p_7ec2cefffc8c713d": "Treat sample dil_1_10_10e3 as a standard of known quantity",
+  "p_cb57984dd9c1c0c3": "Treat sample dil_1_10_10e4 as a standard of known quantity",
+  "p_242b52e396bbcd96": "Treat sample dil_1_10_10e5 as a standard of known quantity",
+  "p_404698abaeb1eef1": "Treat sample dil_1_10_10e6 as a standard of known quantity",
+  "p_0ac455b070a19514": "Treat sample dil_1_10_10e7 as a standard of known quantity",
+  "p_1c55df8a3c99c67e": "Treat sample dil_1_10_10e8 as a standard of known quantity",
+  "p_4405c795ab1e0257": "Treat sample genomic DNA 0.2ng as a standard of known quantity",
+  "p_1abc27fe44a94185": "Treat sample genomic DNA 0.7ng as a standard of known quantity",
+  "p_8808554eea540d18": "Treat sample genomic DNA 0ng as a no-template control",
+  "p_1d82dfab7f89fc2e": "Treat sample genomic DNA 2ng as a standard of known quantity",
+  "p_ec7de73080a2a303": "Treat sample genomic DNA 7ng as a standard of known quantity",
+  "p_18930fdb874245e9": "Treat sample genomic DNA 20ng as a standard of known quantity",
+  "p_ecb373ebad7c5bed": "Samples dil_1_10_10e2 \u2026 genomic DNA 7ng (13 in all, experiment dPCR - DKFZ) form a dilution series declared_standards_dpcr_dkfz, quantities 7.5 to 1e+08"
+ }
+}

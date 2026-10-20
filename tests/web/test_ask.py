@@ -141,6 +141,29 @@ def test_a_blind_session_cannot_be_asked(sclient, opened):
     assert error["details"]["session"] == opened
 
 
+def test_the_same_question_while_it_runs_is_one_job(client, no_model, web_ctx, study):
+    import threading
+
+    from qpilot.web.routers import ops
+
+    release = threading.Event()
+    real = ops._ask_study
+
+    def slow(*args):
+        release.wait(30)
+        return real(*args)
+
+    ops._ask_study = slow
+    try:
+        one = client.post(f"/api/studies/{study}/ask", json={"question": "How many samples?"})
+        two = client.post(f"/api/studies/{study}/ask", json={"question": "how many  samples?"})
+        assert one.json()["job"]["id"] == two.json()["job"]["id"]
+    finally:
+        release.set()
+        ops._ask_study = real
+    assert wait_job(client, one.json()["job"])["status"] == "done"
+
+
 def test_two_questions_are_two_jobs(client, no_model, study):
     one = client.post(f"/api/studies/{study}/ask", json={"question": "How many samples?"})
     two = client.post(f"/api/studies/{study}/ask", json={"question": "How many plates?"})
