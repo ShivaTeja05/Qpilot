@@ -13,6 +13,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from qpilot.web.contract import CarriedFrom
+
 Conclusion = Literal["up", "down", "none"]
 Actor = Literal["human", "agent", "system"]
 EntryStatus = Literal["applied", "auto", "pending_human", "rejected", "stale"]
@@ -100,6 +102,10 @@ class HistoryStep(BaseModel):
     reason: str | None = Field(default=None, description="Quoted text from whoever decided.")
     status: EntryStatus | None = None
     undo: bool = Field(default=False, description="Written by Undo.")
+    carried: CarriedFrom | None = Field(
+        default=None,
+        description="A person's decision carried from an earlier analysis (reason: their words).",
+    )
     hash: str = Field(description="The entry's hash (step 0: the input file's sha256).")
     prev_hash: str | None = None
     link_ok: bool = Field(description="This entry's link and hash re-computed on the server.")
@@ -169,6 +175,28 @@ class RelatedStudy(BaseModel):
     n_entries: int
 
 
+class CarryCard(BaseModel):
+    """One card a person had decided in the earlier analysis, and what became of it here."""
+
+    card_id: str
+    card_title: str
+    option: str | None = Field(default=None, description="What the person had chosen there.")
+    option_label: str | None = None
+    why: str | None = Field(default=None, description="Why it is asked again, in words.")
+
+
+class CarryNote(BaseModel):
+    """What a person had decided in the analysis before this one, carried here or asked again.
+
+    The choices stage is never carried: a person confirms the new analysis's choices again.
+    """
+
+    from_study: str = Field(description="The session's analysis before this one.")
+    carried: list[CarryCard] = Field(description="Carried as new entries (see the steps).")
+    asked_again: list[CarryCard] = Field(description="Not carried: the choice matters more here.")
+    gone: list[CarryCard] = Field(description="The card or the option is not in this analysis.")
+
+
 class AuditMark(BaseModel):
     """Where the robustness audit sits on the chain."""
 
@@ -203,6 +231,10 @@ class HistoryView(BaseModel):
     studio: list[StudioMilestone] = Field(description="The session's Studio log, by stage run.")
     studio_intact: bool = True
     related: list[RelatedStudy] = Field(description="Other analyses of the same input file.")
+    carry: CarryNote | None = Field(
+        default=None,
+        description="A person's decisions from the session's analysis before this one.",
+    )
     audit: AuditMark | None = None
 
 

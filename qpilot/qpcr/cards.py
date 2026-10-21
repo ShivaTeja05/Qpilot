@@ -19,7 +19,7 @@ from qpilot.core.card_kinds import register_card_kind
 # numbers (agents/numbers): the efficiency-model axis of the decision space.
 register_card_kind(
     "numbers.efficiency_model",
-    "Which efficiency turns Cq into quantity?",
+    "Which efficiency turns Cq into quantity",
     "numbers",
     dimension="efficiency",
 )

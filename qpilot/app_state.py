@@ -28,6 +28,7 @@ FLIPPED_FACT = {
     "group_cutoff": "f_n_flipped_cutoff",
     "undetermined": "f_n_flipped_undetermined",
     "amp_call": "f_n_flipped_amp_call",
+    "numbers.efficiency_model": "f_n_flipped_efficiency",
 }
 #: ``DesignSummary.note`` of a study whose groups come from a confirmed design (sample sheet or
 #: accepted proposals), as written by ``qpilot.qpcr.study``; such a study has no cut-off.

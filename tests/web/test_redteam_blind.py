@@ -337,6 +337,11 @@ def test_result_stages_stay_blind(reblinded):
         assert r.status_code == 403
     r = c.get(f"/api/sessions/{sid}/confirm/choices")
     assert r.status_code == 403 and r.json()["error"]["code"] == "blind"
+    # which further choices to test (the efficiency models) follows the results
+    r = c.get(f"/api/sessions/{sid}/proposals", params={"stage": "choices"})
+    assert r.status_code == 403 and r.json()["error"]["code"] == "blind"
+    r = c.post(f"/api/sessions/{sid}/propose/axis", json={"axis": "efficiency", "on": True})
+    assert r.status_code == 403 and r.json()["error"]["code"] == "blind"
 
 
 def test_events_never_carry_a_result(reblinded):

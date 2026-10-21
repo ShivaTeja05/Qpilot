@@ -519,3 +519,36 @@ def test_on_the_demo_the_cap_is_a_ceiling_never_a_downgrade(demo_rdml_path):
         assert after.checks[:-1] == before.checks and after.checks[-1].id == "import_trust"
         assert capped.contrasts[gene] == plain.contrasts[gene]
         assert capped.robustness[gene] == plain.robustness[gene]
+
+
+def test_processed_curves_rule_out_the_efficiency_models_they_cannot_support(trusted):
+    """The efficiency axis (ui/numbers) never tests what the import's processing rules out."""
+    from qpilot.qpcr.study import run_study
+
+    store, studio, sid, study = (
+        trusted["store"],
+        trusted["studio"],
+        trusted["sid"],
+        trusted["study"],
+    )
+    design = store.design(study).model_copy(
+        update={"axes": {"efficiency": ("linregpcr", "per_well", "assumed_2")}}
+    )
+    for analysis, gone in (
+        ("as_is", {"per_well"}),
+        ("cq_only", {"per_well", "assumed_2"}),
+    ):
+        chosen = design.model_copy(
+            update={"import_trust": ImportTrust(verdict="baseline_subtracted", analysis=analysis)}
+        )
+        result, _, grid = run_study(studio.source(sid), StudySettings.from_design(chosen))
+        said = {
+            f.id.removeprefix("f_axis_efficiency_unavailable_"): f.value
+            for f in result.facts.values()
+            if f.id.startswith("f_axis_efficiency_unavailable_")
+        }
+        assert gone <= set(said), (analysis, said)
+        assert said["per_well"] == trust.not_measured(chosen.import_trust)["per_well"]
+        tested = set(grid["efficiency"]) if "efficiency" in grid.columns else {"linregpcr"}
+        assert not (tested & gone), (analysis, tested)
+    assert trust.not_measured(None) == {}

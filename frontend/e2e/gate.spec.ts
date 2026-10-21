@@ -41,6 +41,18 @@ async function gate(api: APIRequestContext, studyId: string): Promise<Gate> {
   throw new Error("/gate kept loading");
 }
 
+/**
+ * Back to the top before axe: the top bar is sticky, and axe counts a button half under it as too
+ * small (target-size). axe still checks the whole page, opened rows and forms included.
+ */
+async function toTop(page: import("@playwright/test").Page) {
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    for (let el = document.querySelector("main") as HTMLElement | null; el; el = el.parentElement)
+      if (el.scrollHeight > el.clientHeight) el.scrollTop = 0;
+  });
+}
+
 /** The first clause of a server sentence (the page cites numbers inline, so compare words). */
 const firstClause = (s: string) => s.split(/[.:;]/)[0]!.trim();
 
@@ -72,6 +84,7 @@ test.describe("Controls", () => {
       await rows.first().click();
       await expect(rows.first()).toHaveAttribute("aria-expanded", "true");
     }
+    await toTop(app.page);
     await app.axe("Controls");
     await app.shot("gate", "1440-light");
   });
@@ -95,6 +108,7 @@ test.describe("Controls", () => {
     await expect(decide).toBeDisabled();
     await article.getByRole("textbox", { name: /Why this option/ }).fill("e2e: not sent");
     await expect(decide).toBeEnabled();
+    await toTop(app.page);
     await app.axe("Controls, a card ready to decide");
   });
 });
@@ -156,6 +170,7 @@ test.describe("Controls: deciding", () => {
       });
     await expect(left).toBeVisible({ timeout: 120_000 });
     await app.settle(60_000);
+    await toTop(app.page);
     await app.axe("Controls, wells left out");
 
     // Put them back: the first analysis again, and the card says a person decided.

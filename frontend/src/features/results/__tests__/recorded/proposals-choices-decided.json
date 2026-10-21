@@ -1,0 +1,137 @@
+{
+ "stage": "choices",
+ "head": "e33d6274ae4ea1618ff1a5fff41836b75294b40d60ab937e5ef47875012a6a46",
+ "proposals": [
+  {
+   "id": "p_1dda8f37467680d1",
+   "study_id": "bc1d233e3866",
+   "kind": "stage.confirm",
+   "subject": "choices",
+   "payload": {
+    "chain_head": "46729c6c7838577e9f6c66bbf2a17ce7323c5c8bedd8c9f47ee50a8c9b14c20d",
+    "covers": [],
+    "decisions": {
+     "card_amp_call": "linregpcr",
+     "card_cutoff": "cut_15",
+     "card_refset": "recommended",
+     "card_undetermined": "drop"
+    },
+    "design_hash": "2000023796a66143d52b9131d191dca0c4ac1d6181790f5b5e42a4252c07186a",
+    "stage": "choices",
+    "study_id": "cf49ccd72052"
+   },
+   "evidence": [],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": null,
+   "level": "Moderate",
+   "reasons": [
+    "every choices proposal is settled; a person confirms the stage"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T19:19:50Z",
+   "reason": "checked",
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T19:19:50Z"
+  },
+  {
+   "id": "p_48265368e0f5b010",
+   "study_id": "bc1d233e3866",
+   "kind": "choice.axis",
+   "subject": "efficiency",
+   "payload": {
+    "options": [
+     "linregpcr",
+     "per_well",
+     "assumed_2",
+     "standard_curve"
+    ]
+   },
+   "evidence": [
+    {
+     "kind": "rule",
+     "ref": "efficiency",
+     "note": "method card methods/efficiency_model.md: which efficiency turns Cq into quantity"
+    },
+    {
+     "kind": "pattern",
+     "ref": "each well's own efficiency",
+     "note": "23092 study wells: median 1.896, 1.197 to 2.101; 9 outside LinRegPCR's valid range (1.0, 2.3)"
+    },
+    {
+     "kind": "pattern",
+     "ref": "each assay's mean efficiency",
+     "note": "LinRegPCR's mean efficiency per assay and plate: 1.726 to 1.936"
+    }
+   ],
+   "alternatives": [
+    {
+     "options": [
+      "linregpcr"
+     ]
+    }
+   ],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-AXIS"
+    ],
+    "details": {
+     "dilution_series_with_three_levels": 66,
+     "options": [
+      "linregpcr",
+      "per_well",
+      "assumed_2",
+      "standard_curve"
+     ],
+     "own_efficiency_in_valid_range": 23484,
+     "own_efficiency_median": 1.895757,
+     "own_efficiency_outside_valid_range": 13,
+     "study_wells_with_a_quantity": 23497
+    },
+    "note": "each option is the choice's own and the file has what it needs; which options apply to the analysed experiment is said again when the study is analysed"
+   },
+   "consequence": null,
+   "level": "Moderate",
+   "reasons": [
+    "qPilot turns each Cq into a quantity with LinRegPCR's mean efficiency of each assay on each plate; testing the other efficiency models shows which conclusions depend on that choice. The analysis in use stays the same until a person decides otherwise on the card it raises.",
+    "not offered: one efficiency per amplicon over all its plates (every amplicon is on one run, so one efficiency per amplicon is LinRegPCR's own)"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-21T09:09:06Z",
+   "reason": "test the efficiency models before deciding the cards",
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-21T09:09:05Z"
+  }
+ ],
+ "counts": {
+  "accepted": 2
+ },
+ "descriptions": {
+  "p_1dda8f37467680d1": "Confirm the Choices stage: the Decision Cards of analysis cf49ccd72052",
+  "p_48265368e0f5b010": "Also test which efficiency turns Cq into quantity: each well's own efficiency; efficiency assumed to be 2.0 (100 %); efficiency from the plate's dilution series (besides LinRegPCR's mean efficiency of the amplicon on each plate, the analysis in use)"
+ }
+}

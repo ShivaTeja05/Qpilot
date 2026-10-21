@@ -8,6 +8,18 @@ research use only, not for clinical decisions.
 ## [Unreleased]
 
 ### Added
+- **The efficiency models, opt-in** (`qpilot/qpcr/axes/`, merged from `agents/numbers`, with the
+  axis registry, stage caches and grid cap): which efficiency turns each Cq into a quantity
+  (LinRegPCR's mean per assay and plate, each well's own, one per assay over its plates, an
+  assumed 2.0, the dilution series') as one more choice of the robustness grid, screened first,
+  with its own Decision Card (`numbers.efficiency_model`). Asked for in Studio (Results → "Also
+  test efficiency models": a `choice.axis` proposal the rule makes, D-AXIS checks and a person
+  accepts; `POST /api/sessions/{sid}/propose/axis`) or with `qpilot run --efficiency all|LIST`.
+  The request lives in the design (`StudyDesign.axes`; absent by default, so every existing
+  design hash, study id and the locked demo output are unchanged), so `qpilot verify` and
+  `qpilot rerun` reproduce it. Trace, the Prism export, the robustness audit's "your choices",
+  Report and History follow the model in use. Method card `methods/efficiency_model.md`; on the
+  demo it changes 6 of 58 calls (each well's own 5, an assumed 2.0 4, the dilution series 3).
 - **Instrument exports on Open** (`qpilot/io/connectors/`, `qpilot/web/intake.py`): drop a Bio-Rad
   CFX export set, a QuantStudio / StepOne / 7500 export, a LightCycler 480 raw-data text or Cp
   table, an RDES or a tidy table; qPilot sorts the files by content, reads them once into
@@ -20,6 +32,18 @@ research use only, not for clinical decisions.
   G-REP), and for each rule that warns or fails, whether leaving out the wells it points at would
   change a conclusion. Rules label; a person decides (below). Agreement with an independent
   oracle on the demo: `validation/scientist/`.
+- **Choices carried to a new analysis** (`StudyStore.carry_decisions`, `Studio._study`): when a
+  person's decision changes a Studio session's confirmed design after the curves are confirmed
+  (a Prism exclusion, a well left out or put back), what a person chose on the earlier
+  analysis's Decision Cards is carried to the new one as new chain entries by `human` whose
+  reason names the earlier study and entry (`Carried from analysis <study> (entry <hash>): …`).
+  Not carried: the system's and agents' decisions, a missing card or option, a card with an
+  agent's request waiting, and a choice that matters more in the new analysis (asked again,
+  with what the person chose). Only between analyses whose designs differ in the wells left out
+  (a design changed in a blind stage starts afresh). The choices stage is confirmed again by a
+  person. Results
+  (**Carried**, the earlier choice on a card asked again), the Record's chain and History (the
+  carried step, its link checked, and what was carried or asked again) say so.
 - **Deciding a Run Gate card** (`POST /api/studies/{id}/gate/cards/{card_id}/decide`,
   `Studio.decide_gate`): in a Studio session a person chooses an option of a `gate.rule` card
   with a reason. Leaving wells out becomes one `curve.exclude_well` proposal per well (a new
@@ -40,7 +64,9 @@ research use only, not for clinical decisions.
   The choice is a `curve.import_trust` proposal accepted with a reason in the session's inbox
   (a new Curves kind, never in "Accept all consistent"); agents' `qpcr_decide` on
   `card_import_trust` is `pending_human`. Curves normalised to a passive reference (Rn) get no
-  card. `StudyDesign.import_trust` carries it, so a record re-runs to the same grades.
+  card. `StudyDesign.import_trust` carries it, so a record re-runs to the same grades. The
+  efficiency models never test each well's own efficiency for such curves (nor, under Cq only,
+  the per-amplicon mean or the assumed 2): they are listed as not applicable, with why.
 - Confidence caps (`qpilot/core/confidence.py`): `grade(..., cap=Cap(level, check_id, note))`,
   a ceiling with a named reason, reported among the checks. No new field on a grade: every
   existing result and record re-runs byte for byte.
@@ -49,6 +75,19 @@ research use only, not for clinical decisions.
   person to approve or turn down on the card.
 - `ProposalStore.decide_together`: one click of a person that proposes and decides several
   proposals in one locked write, all or nothing.
+- **The MCP tools' contract for agents** (`qpilot/agents/`): every refusal carries `error`, a
+  stable `code` and a `fix` and is marked `isError` (a stale decide and a refused proposal too);
+  `pending_human` says why it waits (`needs_human_decision`, `autonomy_forbids`) and is not an
+  error. `qpcr_decide` and `qpcr_propose` take an `idempotency_key`: a retry gets the first answer
+  back and is never logged twice. Every tool has a title, honest annotations and an output schema
+  each successful reply is checked against; `response_format="concise"` on the reading tools;
+  `fact_ids` on the study's numbers; the study's files as read-only MCP resources. The human-only
+  rule is unchanged, and a request on a Run Gate card gets the same codes and keys. See
+  `docs/agents.md`.
+- `qpcr_inspect` and `qpcr_study` read instrument exports (a file, or the folder of one export
+  set) inside `QPILOT_DATA_ROOTS`, as the page's Open does: converted once into the study store,
+  the import kept with the session, `imported` in the reply (reader, raw-ness, warnings). An
+  export is analysed only with a design a person confirmed.
 - Open Decision Card kinds (`qpilot/core/card_kinds.py`): a validated registry; a kind this build
   does not know is a human decision (fail closed).
 - Public instrument-export corpus for tests (`tests/fixtures/corpus/`, 18 real sets with

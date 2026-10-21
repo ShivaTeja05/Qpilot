@@ -149,7 +149,9 @@ def test_non_rdml_refused(data_root):
 
 def test_study_tool_reports_policy_error(tools, tmp_path, data_root):
     (tmp_path / "x.rdml").write_text("x")
-    assert tools.qpcr_study(str(tmp_path / "x.rdml")) == {"error": "path outside QPILOT_DATA_ROOTS"}
+    out = tools.qpcr_study(str(tmp_path / "x.rdml"))
+    assert out["error"] == "path outside QPILOT_DATA_ROOTS"
+    assert (out["code"], out["field"]) == ("path_not_allowed", "rdml_path")
 
 
 def test_server_registers_every_served_tool(tmp_studies_dir):
@@ -204,9 +206,10 @@ def test_stdio_round_trip(demo, tmp_studies_dir, data_root):
         command=sys.executable, args=["-m", "qpilot.mcp_server"], env=env
     )
 
-    async def call(session, name, args):
+    async def call(session, name, args, refused=False):
         result = await session.call_tool(name, args)
-        assert not result.is_error if hasattr(result, "is_error") else not result.isError
+        failed = result.is_error if hasattr(result, "is_error") else result.isError
+        assert failed is refused
         return json.loads(result.content[0].text)
 
     async def scenario():
@@ -246,8 +249,10 @@ def test_stdio_round_trip(demo, tmp_studies_dir, data_root):
                         "reason": "try",
                         "expected_head": study["chain_head"],
                     },
+                    refused=True,  # nothing was decided: a refusal with a code and a fix
                 )
-                assert stale["status"] == "stale"
+                assert (stale["status"], stale["code"]) == ("stale", "stale_head")
+                assert stale["error"] == stale["reason"] and stale["applied"] is False
 
     anyio.run(scenario)
     # The agent's request is visible to the app's process through the shared store.

@@ -1,0 +1,73 @@
+{
+ "study_id": "e300000d4f9a",
+ "session": "bc1d233e3866",
+ "axes": [
+  {
+   "name": "efficiency",
+   "title": "Which efficiency turns Cq into quantity",
+   "status": "off",
+   "text": {
+    "plain": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each plate. Testing the other efficiency models adds them as one more choice of the grid; the analysis in use stays the same until a person decides otherwise.",
+    "segments": [
+     {
+      "text": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each plate. Testing the other efficiency models adds them as one more choice of the grid; the analysis in use stays the same until a person decides otherwise.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "options": [
+    {
+     "id": "linregpcr",
+     "label": "LinRegPCR's mean efficiency of the amplicon on each plate",
+     "tier": "primary",
+     "primary": true,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "per_well",
+     "label": "Each well's own efficiency",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "amplicon_mean",
+     "label": "One efficiency per amplicon over all its plates",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "assumed_2",
+     "label": "Efficiency assumed to be 2.0 (100 %)",
+     "tier": "common_practice",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "standard_curve",
+     "label": "Efficiency from the plate's dilution series",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    }
+   ],
+   "card_id": null,
+   "notes": [],
+   "can_propose": true,
+   "command": null
+  }
+ ]
+}

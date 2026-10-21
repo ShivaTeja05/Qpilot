@@ -148,6 +148,30 @@ def caps(verdict: str) -> dict[str, Cap]:
     }
 
 
+#: Efficiency models (``qpilot/qpcr/axes/efficiency.py``) an import's processing rules out.
+_PROCESSED = (
+    "the curves were processed before export (see Import Trust), so no well's own efficiency "
+    "is trusted"
+)
+_NO_CURVES = "the curves are not used (Cq only), so no efficiency was measured"
+_ASSUMED = "the analysis in use (Cq only) already assumes every cycle doubles the product"
+
+
+def not_measured(trust: ImportTrust | None) -> dict[str, str]:
+    """Efficiency options that do not apply under this import trust -> why, in plain words.
+
+    Processed curves rule out each well's own efficiency (scientist-spec-capture.md §4); Cq
+    only also rules out the per-amplicon mean (nothing was measured) and the assumed 2 (it is
+    the analysis in use).
+    """
+    if trust is None:
+        return {}
+    out = {"per_well": _PROCESSED}
+    if trust.analysis == "cq_only":
+        out.update(per_well=_NO_CURVES, amplicon_mean=_NO_CURVES, assumed_2=_ASSUMED)
+    return out
+
+
 def recipe(connector_id: str) -> str:
     """How to export the raw curves from the software that wrote this export."""
     return _RECIPES.get(connector_id, _RECIPE)
@@ -279,6 +303,7 @@ __all__ = [
     "caps",
     "card_verdict",
     "check",
+    "not_measured",
     "recipe",
     "session_verdict",
     "trust_card",

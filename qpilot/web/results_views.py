@@ -27,13 +27,17 @@ import pandas as pd
 from qpilot.core.store import StudyNotFound, StudyStore
 from qpilot.schemas import DecisionCard, DecisionEntry, Fact, StudyResult
 from qpilot.web.contract import (
+    AskedAgain,
     AtChoices,
     AuditBadge,
     AutonomyChange,
     AutonomyView,
+    AxisOptionView,
+    AxisView,
     CardOptionView,
     CardsView,
     CardView,
+    CarriedFrom,
     DecisionEntryView,
     DecisionsView,
     FactRef,
@@ -63,12 +67,14 @@ KIND_DIMENSION = {
     "group_cutoff": "cut",
     "undetermined": "undetermined",
     "amp_call": "amp_call",
+    "numbers.efficiency_model": "efficiency",
 }
 DIMENSION_TITLE = {
     "refs": "Which control genes to normalise to",
     "cut": "Where to cut the comparison groups",
     "undetermined": "What to do with wells that never amplified",
     "amp_call": "Which curves count as amplified",
+    "efficiency": "Which efficiency turns Cq into quantity",
 }
 UNDO_PREFIX = "Undo:"
 TOLERANCE = 1e-9
@@ -191,6 +197,80 @@ def session_of_study(store: StudyStore, study_id: str) -> str | None:
     return None
 
 
+# ---- a person's decisions carried from an earlier analysis of the same file -----------------
+
+
+class CarryLinks:
+    """Reads the carried entries of one study, each earlier study's chain read once."""
+
+    def __init__(self, store: StudyStore, input_sha256: str) -> None:
+        self.store = store
+        self.input_sha256 = input_sha256
+        self._chains: dict[str, dict[str, DecisionEntry]] = {}
+
+    def _chain(self, study_id: str) -> dict[str, DecisionEntry]:
+        if study_id not in self._chains:
+            try:
+                same = self.store.get(study_id).input_sha256 == self.input_sha256
+                entries = self.store.entries(study_id) if same else []
+            except (StudyNotFound, OSError, ValueError):
+                entries = []
+            self._chains[study_id] = {e.hash: e for e in entries}
+        return self._chains[study_id]
+
+    def of(self, entry: DecisionEntry | None) -> CarriedFrom | None:
+        """Where a person's carried entry came from, its link checked (None for any other)."""
+        from qpilot.core.decisions import carried_from
+
+        if entry is None or entry.actor != "human" or entry.status != "applied":
+            return None
+        origin = carried_from(entry.reason)
+        if origin is None:
+            return None
+        there = self._chain(origin.study_id).get(origin.entry_hash)
+        made = (there.card_id, there.option, there.actor, there.status) if there else None
+        found = made == (entry.card_id, entry.option, "human", "applied")
+        return CarriedFrom(
+            study_id=origin.study_id,
+            entry_hash=origin.entry_hash,
+            reason=origin.reason,
+            found=found,
+            decided_at=there.at if found and there is not None else None,
+        )
+
+
+def carry_report(store: StudyStore, study_id: str) -> dict[str, Any] | None:
+    """The session's report of the latest carry of a person's decisions into this study."""
+    sid = session_of_study(store, study_id)
+    if sid is None:
+        return None
+    try:
+        meta = json.loads((store.find_session(sid) / "studio.json").read_text(encoding="utf-8"))
+    except (StudyNotFound, OSError, ValueError):
+        return None
+    report = (meta.get("carried") or {}).get(study_id)
+    return report if isinstance(report, dict) else None
+
+
+def asked_again_of(
+    store: StudyStore, card: DecisionCard, report: dict[str, Any] | None
+) -> AskedAgain | None:
+    """A person's earlier decision on this card that was asked again, while no person decided it."""
+    why = ((report or {}).get("asked_again") or {}).get(card.id)
+    if not why or card.decided_by == "human":
+        return None
+    source = str(report.get("source") or "") if report else ""
+    option = None
+    label = None
+    try:
+        earlier = store.card(source, card.id)
+        option = earlier.decision
+        label = next((o.label for o in earlier.options if o.id == option), option)
+    except (StudyNotFound, KeyError, OSError, ValueError):
+        pass
+    return AskedAgain(study_id=source, option=option, option_label=label, why=str(why))
+
+
 # ---- the grid: every analysis, the planned one, and the cards' options ----------------------
 
 
@@ -263,6 +343,10 @@ def _expected_values(result: StudyResult) -> dict[str, str]:
     out = {"refs": "|".join(result.design.refs_primary), "undetermined": "drop"}
     if "f_group_a" not in result.facts:
         out["cut"] = str(result.design.cut)
+    if "f_axis_efficiency" in result.facts:  # the efficiency models are tested
+        from qpilot.qpcr.axes.efficiency import PRIMARY
+
+        out["efficiency"] = PRIMARY
     amp = result.facts.get("f_amp_primary")
     if amp is not None:  # the fact holds the rule's label; the grid holds its id
         from qpilot.qpcr.amp_call import RULES
@@ -374,6 +458,13 @@ def _text(value: Any) -> str | None:
 
 def option_label(dimension: str, value: str) -> str:
     """Words for a grid option no card names."""
+    if dimension == "efficiency":
+        from qpilot.qpcr.axes import AxisError, get_axis
+
+        try:
+            return get_axis(dimension).option(value).label
+        except AxisError:
+            return value
     if dimension == "refs":
         return " + ".join(value.split("|"))
     if dimension == "cut":
@@ -591,6 +682,104 @@ def _row(
     )
 
 
+AXIS_WORDS = {
+    "off": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each "
+    "plate. Testing the other efficiency models adds them as one more choice of the grid; the "
+    "analysis in use stays the same until a person decides otherwise.",
+    "swept": "Tested as one more choice of the grid: changing only the efficiency model changes "
+    "{{f_n_flipped_efficiency}} of {{f_n_genes}} calls. Its Decision Card says what each model "
+    "changes; the analysis in use stays LinRegPCR's mean efficiency until a person decides.",
+    "screened_out": "Tried alone first: no efficiency model changes a call, and the largest "
+    "move of a log2 fold change is {{f_screen_efficiency_dlog2fc}}, under the screening "
+    "threshold, so the grid keeps LinRegPCR's mean efficiency and raises no card.",
+    "not_applicable": "None of the efficiency models asked for applies to this study, so the "
+    "grid keeps LinRegPCR's mean efficiency.",
+    "single_option": "Only LinRegPCR's mean efficiency was asked for, so nothing else is tested.",
+}
+EFFICIENCY_COMMAND = "qpilot run --efficiency all"
+
+
+def axis_views(
+    store: StudyStore,
+    result: StudyResult,
+    cards: Sequence[DecisionCard],
+    session: str | None,
+) -> list[AxisView]:
+    """The further choices the grid can test on request (today: the efficiency models).
+
+    Read from the study's facts and its stored design: which options were asked for, which
+    apply, what each one alone changes, and the card it raised. Every number is a fact.
+    """
+    from qpilot.core.facts import slug
+    from qpilot.qpcr.axes import get_axis
+
+    axis = get_axis("efficiency")
+    facts = result.facts
+    try:
+        design = store.design(result.study_id)
+    except (OSError, ValueError):
+        design = None
+    asked = tuple((design.axes or {}).get(axis.name, ())) if design is not None else ()
+    status_fact = facts.get(f"f_axis_{axis.name}")
+    status = str(status_fact.value) if status_fact is not None else "off"
+    if status not in AXIS_WORDS:
+        status = "off"
+    options = []
+    for option in axis.catalogue:
+        s = slug(option.id)
+        why = facts.get(f"f_axis_{axis.name}_unavailable_{s}")
+        flips = facts.get(f"f_n_flipped_eff_{s}") or facts.get(f"f_screen_{axis.name}_flips_{s}")
+        primary = option.tier == "primary"
+        tested = status != "off" and (primary or option.id in asked) and why is None
+        options.append(
+            AxisOptionView(
+                id=option.id,
+                label=option.label,
+                tier=option.tier,
+                primary=primary,
+                tested=tested,
+                flips=fact_ref(flips) if flips is not None and not primary else None,
+                unavailable=str(why.value) if why is not None else None,
+            )
+        )
+    try:
+        text = fact_text(AXIS_WORDS[status], facts)
+    except (KeyError, TypeError, ValueError):
+        text = plain_text(AXIS_WORDS["off"])
+    notes = []
+    if "f_n_eff_excluded_per_well" in facts:
+        notes.append(
+            fact_text(
+                "With each well's own efficiency, {{f_n_eff_excluded_per_well}} study wells "
+                "whose own efficiency is outside LinRegPCR's valid range are left out.",
+                facts,
+            )
+        )
+    fallback = facts.get("f_eff_std_fallback")
+    if fallback is not None and str(fallback.value) not in ("", "none"):
+        notes.append(
+            fact_text(
+                "Amplicons without a dilution series keep LinRegPCR's mean efficiency under the "
+                "dilution-series model: {{f_eff_std_fallback}}.",
+                facts,
+            )
+        )
+    card = next((c for c in cards if KIND_DIMENSION.get(c.kind) == axis.name), None)
+    return [
+        AxisView(
+            name=axis.name,
+            title=axis.title,
+            status=status,  # type: ignore[arg-type]
+            text=text,
+            options=options,
+            card_id=card.id if card is not None else None,
+            notes=notes,
+            can_propose=session is not None,
+            command=None if session is not None else EFFICIENCY_COMMAND,
+        )
+    ]
+
+
 def results_view(store: StudyStore, study_id: str, session: str | None = None) -> ResultsView:
     """Everything the Results section shows."""
     from qpilot.app_state import design_line
@@ -661,6 +850,7 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
         pending_requests=len(pending),
         head=head,
         audit=audit_badge(store, study_id),
+        axes=axis_views(store, result, cards, session),
     )
 
 
@@ -764,13 +954,40 @@ def undo_target(entries: Iterable[DecisionEntry], card_id: str) -> str | None:
     return stack[-2] if len(stack) >= 2 else None
 
 
+def _last_decision(entries: Iterable[DecisionEntry], card_id: str) -> DecisionEntry | None:
+    """The entry that made a card's decision in force (its last applied or automatic one)."""
+    last = None
+    for entry in entries:
+        if entry.card_id == card_id and entry.status in ("applied", "auto"):
+            last = entry
+    return last
+
+
+def card_carry(
+    store: StudyStore,
+    card: DecisionCard,
+    entries: Sequence[DecisionEntry],
+    links: CarryLinks,
+    report: dict[str, Any] | None,
+) -> tuple[CarriedFrom | None, AskedAgain | None]:
+    """Whether a card's decision was carried from an earlier analysis, or asked again here."""
+    carried = links.of(_last_decision(entries, card.id)) if card.decided_by == "human" else None
+    return carried, asked_again_of(store, card, report)
+
+
 def card_view(
     card: DecisionCard,
     result: StudyResult,
     entries: Sequence[DecisionEntry],
     pending: Sequence[DecisionEntry],
+    carried: CarriedFrom | None = None,
+    asked: AskedAgain | None = None,
 ) -> CardView:
-    """One Decision Card in words, with every option's consequence per headline gene."""
+    """One Decision Card in words, with every option's consequence per headline gene.
+
+    A decision carried from an earlier analysis says so in the status line, with the person's
+    own words as the reason; ``asked`` is a person's earlier decision asked again here.
+    """
     from qpilot.ai.explain import KIND_TITLE
     from qpilot.app_state import FLIPPED_FACT, _status_line
     from qpilot.core.validator import names_from_result
@@ -780,6 +997,12 @@ def card_view(
     labels = {o.id: o.label for o in card.options}
     waiting = [p for p in pending if p.card_id == card.id]
     status = _status_line(card, labels, waiting[-1].option if waiting else None)
+    if carried is not None and card.status == "decided":
+        chosen = labels.get(card.decision or "", card.decision or "")
+        status = (
+            f"Decided by {card.decided_by}: {chosen}, carried from the earlier analysis "
+            f"{carried.study_id}. Reason: {carried.reason}"
+        )
     try:
         rendered = render_template(
             card.rationale_template, facts, card=card, allowed_names=names_from_result(result)
@@ -847,6 +1070,8 @@ def card_view(
         ],
         undo_option=undo,
         undo_label=labels.get(undo) if undo else None,
+        carried=carried,
+        asked_again=asked,
     )
 
 
@@ -858,10 +1083,14 @@ def cards_view(store: StudyStore, study_id: str) -> CardsView:
     head, cards, pending = store.snapshot(study_id)
     entries = store.entries(study_id)
     upcoming = next_card(cards)
+    links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
     return CardsView(
         study_id=study_id,
         head=head,
-        cards=[card_view(c, result, entries, pending) for c in cards_in_order(cards)],
+        cards=[
+            card_view(c, result, entries, pending, *card_carry(store, c, entries, links, report))
+            for c in cards_in_order(cards)
+        ],
         next_card=upcoming.id if upcoming else None,
         counter=decision_counter(cards),
         pending_requests=len(pending),
@@ -875,7 +1104,10 @@ def one_card(store: StudyStore, study_id: str, card_id: str) -> CardView:
     card = next((c for c in cards if c.id == card_id), None)
     if card is None:
         raise KeyError(card_id)
-    return card_view(card, result, store.entries(study_id), pending)
+    entries = store.entries(study_id)
+    links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
+    carry = card_carry(store, card, entries, links, report)
+    return card_view(card, result, entries, pending, *carry)
 
 
 # ---- the decision chain ----------------------------------------------------------------------
@@ -887,6 +1119,7 @@ def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
 
     head, cards, pending = store.snapshot(study_id)
     by_id = {c.id: c for c in cards}
+    links = CarryLinks(store, store.get(study_id).input_sha256)
 
     def view(entry: DecisionEntry) -> DecisionEntryView:
         card = by_id.get(entry.card_id)
@@ -896,6 +1129,7 @@ def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
             card_title=KIND_TITLE.get(card.kind, card.kind) if card else entry.card_id,
             option_label=labels.get(entry.option, entry.option),
             undo=entry.reason.startswith(UNDO_PREFIX),
+            carried=links.of(entry),
         )
 
     from qpilot.core.record import verify_chain
@@ -980,8 +1214,9 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
             conclusion=[_text(x) for x in rows["conclusion"]],  # type: ignore[misc]
         )
     effects = _flip_rows(result, grid, cards, [gene]) if gene in result.robustness else []
+    links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
     affecting = [
-        card_view(c, result, entries, pending)
+        card_view(c, result, entries, pending, *card_carry(store, c, entries, links, report))
         for c in cards
         if result.robustness.get(gene)
         and result.robustness[gene].impact.get(KIND_DIMENSION.get(c.kind, ""), {}).get("flips")

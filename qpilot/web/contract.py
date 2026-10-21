@@ -316,6 +316,19 @@ class ProposeReport(BaseModel):
     message: str = Field(description="What happened, in one or two sentences.")
 
 
+class ProposeAxis(BaseModel):
+    """Ask qPilot to propose testing a further choice of the analysis (or to stop testing it).
+
+    Nothing changes until a person accepts the proposal it adds to the choices stage.
+    """
+
+    axis: Literal["efficiency"] = Field(
+        default="efficiency",
+        description="The further choice: which efficiency turns Cq into quantity.",
+    )
+    on: bool = Field(default=True, description="True: test it; false: stop testing it.")
+
+
 class ProposeOne(BaseModel):
     """The answer to proposing a single thing (the comparison): what was added, or why not."""
 
@@ -715,8 +728,9 @@ class GeneRow(BaseModel):
     holds: float | None = Field(
         default=None,
         description="Share of the analyses in qPilot's choice grid (every control-gene set, "
-        "cut-off, empty-well rule and amplification-call rule; n_cells of them) with the same "
-        "call, 0–1. Not the audit's reasonable set.",
+        "cut-off, empty-well rule and amplification-call rule, and the efficiency models when a "
+        "person asked to test them; n_cells of them) with the same call, 0–1. Not the audit's "
+        "reasonable set.",
     )
     n_cells: int
     level: str | None = None
@@ -745,6 +759,45 @@ class WithheldGene(BaseModel):
     reason: str
 
 
+AxisStatus = Literal["off", "swept", "screened_out", "not_applicable", "single_option"]
+
+
+class AxisOptionView(BaseModel):
+    """One option of a further choice: whether this analysis tests it, and what it changes."""
+
+    id: str
+    label: str
+    tier: Literal["primary", "defensible", "common_practice"]
+    primary: bool = Field(description="The analysis in use (until a person decides the card).")
+    tested: bool = Field(description="Asked for, and it applies to this study.")
+    flips: FactRef | None = Field(
+        default=None, description="Genes whose call this option alone changes (a fact)."
+    )
+    unavailable: str | None = Field(default=None, description="Why it does not apply here.")
+
+
+class AxisView(BaseModel):
+    """A further choice the grid can test on request (the efficiency models)."""
+
+    name: str
+    title: str
+    status: AxisStatus = Field(
+        description="off: not asked for; swept: one more dimension of the grid; screened_out: "
+        "tried alone first and changes nothing that matters, so held at the primary; "
+        "not_applicable: no requested option applies to this study."
+    )
+    text: FactText = Field(description="What that means here, every number a fact.")
+    options: list[AxisOptionView]
+    card_id: str | None = Field(default=None, description="The Decision Card it raised.")
+    notes: list[FactText] = []
+    can_propose: bool = Field(
+        description="A Studio session's analysis: a person can ask to test it, or to stop."
+    )
+    command: str | None = Field(
+        default=None, description="For a study outside Studio: the CLI command that tests it."
+    )
+
+
 class ResultsView(BaseModel):
     """Everything the Results section shows about a study (raw numbers; the page formats)."""
 
@@ -766,6 +819,9 @@ class ResultsView(BaseModel):
     pending_requests: int
     head: str
     audit: AuditBadge
+    axes: list[AxisView] = Field(
+        default=[], description="Further choices the grid can test on request (opt-in)."
+    )
 
 
 class OptionEffect(BaseModel):
@@ -817,6 +873,13 @@ class CardView(BaseModel):
     pending: list[PendingRequest]
     undo_option: str | None = Field(default=None, description="What Undo would restore.")
     undo_label: str | None = None
+    carried: CarriedFrom | None = Field(
+        default=None, description="The decision in force was carried from an earlier analysis."
+    )
+    asked_again: AskedAgain | None = Field(
+        default=None,
+        description="A person decided this card in the earlier analysis; asked again here.",
+    )
 
 
 class CardsView(BaseModel):
@@ -886,6 +949,27 @@ class Explanation(BaseModel):
     note: str = ""
 
 
+class CarriedFrom(BaseModel):
+    """Where a carried decision came from: a person's decision in an earlier analysis."""
+
+    study_id: str = Field(description="The earlier analysis of the same file.")
+    entry_hash: str = Field(description="The entry there that made the decision.")
+    reason: str = Field(description="The person's own words (quoted text).")
+    found: bool = Field(
+        description="That entry is in that study's chain: same card, same option, by a person."
+    )
+    decided_at: str | None = Field(default=None, description="When that entry was written.")
+
+
+class AskedAgain(BaseModel):
+    """A person's decision in the earlier analysis that was not carried to this one."""
+
+    study_id: str = Field(description="The earlier analysis.")
+    option: str | None = Field(default=None, description="What the person had chosen there.")
+    option_label: str | None = None
+    why: str = Field(description="Why it is asked again, in words.")
+
+
 class DecisionEntryView(BaseModel):
     """One entry of the decision chain, with its card and option in words."""
 
@@ -893,6 +977,9 @@ class DecisionEntryView(BaseModel):
     card_title: str
     option_label: str
     undo: bool = Field(description="Written by Undo.")
+    carried: CarriedFrom | None = Field(
+        default=None, description="Carried from an earlier analysis when the design changed."
+    )
 
 
 class StaleAttempt(BaseModel):

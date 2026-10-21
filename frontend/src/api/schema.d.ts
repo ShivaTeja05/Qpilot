@@ -1011,6 +1011,31 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{sid}/propose/axis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose Axis
+         * @description The rule proposes testing a further choice (the efficiency models), or no longer testing it.
+         *
+         *     It joins the choices stage's inbox; nothing changes until a person accepts it, and then the
+         *     study is analysed again with the choice as one more dimension of the grid. Results only
+         *     (403 ``blind`` before the design and the curves are confirmed); 409 ``studio`` when there is
+         *     nothing to propose (already tested, or no other option applies to this study).
+         */
+        post: operations["propose_axis"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{sid}/propose/comparison": {
         parameters: {
             query?: never;
@@ -2538,6 +2563,29 @@ export type components = {
             source: "auto" | "study" | "audit";
         };
         /**
+         * AskedAgain
+         * @description A person's decision in the earlier analysis that was not carried to this one.
+         */
+        AskedAgain: {
+            /**
+             * Option
+             * @description What the person had chosen there.
+             */
+            option?: string | null;
+            /** Option Label */
+            option_label?: string | null;
+            /**
+             * Study Id
+             * @description The earlier analysis.
+             */
+            study_id: string;
+            /**
+             * Why
+             * @description Why it is asked again, in words.
+             */
+            why: string;
+        };
+        /**
          * AtChoices
          * @description A gene's result at the options a person chose on the Decision Cards (from the grid).
          */
@@ -3971,6 +4019,78 @@ export type components = {
             /** Study Id */
             study_id: string;
         };
+        /**
+         * AxisOptionView
+         * @description One option of a further choice: whether this analysis tests it, and what it changes.
+         */
+        AxisOptionView: {
+            /** @description Genes whose call this option alone changes (a fact). */
+            flips?: components["schemas"]["FactRef"] | null;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Primary
+             * @description The analysis in use (until a person decides the card).
+             */
+            primary: boolean;
+            /**
+             * Tested
+             * @description Asked for, and it applies to this study.
+             */
+            tested: boolean;
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "primary" | "defensible" | "common_practice";
+            /**
+             * Unavailable
+             * @description Why it does not apply here.
+             */
+            unavailable?: string | null;
+        };
+        /**
+         * AxisView
+         * @description A further choice the grid can test on request (the efficiency models).
+         */
+        AxisView: {
+            /**
+             * Can Propose
+             * @description A Studio session's analysis: a person can ask to test it, or to stop.
+             */
+            can_propose: boolean;
+            /**
+             * Card Id
+             * @description The Decision Card it raised.
+             */
+            card_id?: string | null;
+            /**
+             * Command
+             * @description For a study outside Studio: the CLI command that tests it.
+             */
+            command?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: components["schemas"]["FactText"][];
+            /** Options */
+            options: components["schemas"]["AxisOptionView"][];
+            /**
+             * Status
+             * @description off: not asked for; swept: one more dimension of the grid; screened_out: tried alone first and changes nothing that matters, so held at the primary; not_applicable: no requested option applies to this study.
+             * @enum {string}
+             */
+            status: "off" | "swept" | "screened_out" | "not_applicable" | "single_option";
+            /** @description What that means here, every number a fact. */
+            text: components["schemas"]["FactText"];
+            /** Title */
+            title: string;
+        };
         /** Body_open_file */
         Body_open_file: {
             /**
@@ -4293,7 +4413,11 @@ export type components = {
          * @description One Decision Card with its words, options and what each option changes.
          */
         CardView: {
+            /** @description A person decided this card in the earlier analysis; asked again here. */
+            asked_again?: components["schemas"]["AskedAgain"] | null;
             card: components["schemas"]["DecisionCard"];
+            /** @description The decision in force was carried from an earlier analysis. */
+            carried?: components["schemas"]["CarriedFrom"] | null;
             explanation: components["schemas"]["FactText"];
             /**
              * Genes
@@ -4321,6 +4445,87 @@ export type components = {
              * @description What Undo would restore.
              */
             undo_option?: string | null;
+        };
+        /**
+         * CarriedFrom
+         * @description Where a carried decision came from: a person's decision in an earlier analysis.
+         */
+        CarriedFrom: {
+            /**
+             * Decided At
+             * @description When that entry was written.
+             */
+            decided_at?: string | null;
+            /**
+             * Entry Hash
+             * @description The entry there that made the decision.
+             */
+            entry_hash: string;
+            /**
+             * Found
+             * @description That entry is in that study's chain: same card, same option, by a person.
+             */
+            found: boolean;
+            /**
+             * Reason
+             * @description The person's own words (quoted text).
+             */
+            reason: string;
+            /**
+             * Study Id
+             * @description The earlier analysis of the same file.
+             */
+            study_id: string;
+        };
+        /**
+         * CarryCard
+         * @description One card a person had decided in the earlier analysis, and what became of it here.
+         */
+        CarryCard: {
+            /** Card Id */
+            card_id: string;
+            /** Card Title */
+            card_title: string;
+            /**
+             * Option
+             * @description What the person had chosen there.
+             */
+            option?: string | null;
+            /** Option Label */
+            option_label?: string | null;
+            /**
+             * Why
+             * @description Why it is asked again, in words.
+             */
+            why?: string | null;
+        };
+        /**
+         * CarryNote
+         * @description What a person had decided in the analysis before this one, carried here or asked again.
+         *
+         *     The choices stage is never carried: a person confirms the new analysis's choices again.
+         */
+        CarryNote: {
+            /**
+             * Asked Again
+             * @description Not carried: the choice matters more here.
+             */
+            asked_again: components["schemas"]["CarryCard"][];
+            /**
+             * Carried
+             * @description Carried as new entries (see the steps).
+             */
+            carried: components["schemas"]["CarryCard"][];
+            /**
+             * From Study
+             * @description The session's analysis before this one.
+             */
+            from_study: string;
+            /**
+             * Gone
+             * @description The card or the option is not in this analysis.
+             */
+            gone: components["schemas"]["CarryCard"][];
         };
         /**
          * Check
@@ -5177,6 +5382,8 @@ export type components = {
         DecisionEntryView: {
             /** Card Title */
             card_title: string;
+            /** @description Carried from an earlier analysis when the design changed. */
+            carried?: components["schemas"]["CarriedFrom"] | null;
             entry: components["schemas"]["DecisionEntry"];
             /** Option Label */
             option_label: string;
@@ -6159,7 +6366,7 @@ export type components = {
             headline: boolean;
             /**
              * Holds
-             * @description Share of the analyses in qPilot's choice grid (every control-gene set, cut-off, empty-well rule and amplification-call rule; n_cells of them) with the same call, 0–1. Not the audit's reasonable set.
+             * @description Share of the analyses in qPilot's choice grid (every control-gene set, cut-off, empty-well rule and amplification-call rule, and the efficiency models when a person asked to test them; n_cells of them) with the same call, 0–1. Not the audit's reasonable set.
              */
             holds?: number | null;
             /** Level */
@@ -6520,6 +6727,8 @@ export type components = {
             card_id?: string | null;
             /** Card Title */
             card_title?: string | null;
+            /** @description A person's decision carried from an earlier analysis (reason: their words). */
+            carried?: components["schemas"]["CarriedFrom"] | null;
             /**
              * Chain Intact
              * @description Every entry up to this one verifies.
@@ -6588,6 +6797,8 @@ export type components = {
              * @description The first entry that fails.
              */
             broken_at?: number | null;
+            /** @description A person's decisions from the session's analysis before this one. */
+            carry?: components["schemas"]["CarryNote"] | null;
             /** Chain Intact */
             chain_intact: boolean;
             /**
@@ -8703,7 +8914,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
+            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
             /**
              * Level
              * @default Low
@@ -8886,6 +9097,27 @@ export type components = {
              * @description Why a round-trip consequence no longer holds (then refused).
              */
             stale_consequence?: string | null;
+        };
+        /**
+         * ProposeAxis
+         * @description Ask qPilot to propose testing a further choice of the analysis (or to stop testing it).
+         *
+         *     Nothing changes until a person accepts the proposal it adds to the choices stage.
+         */
+        ProposeAxis: {
+            /**
+             * Axis
+             * @description The further choice: which efficiency turns Cq into quantity.
+             * @default efficiency
+             * @constant
+             */
+            axis: "efficiency";
+            /**
+             * On
+             * @description True: test it; false: stop testing it.
+             * @default true
+             */
+            on: boolean;
         };
         /**
          * ProposeDesign
@@ -9559,6 +9791,12 @@ export type components = {
          */
         ResultsView: {
             audit: components["schemas"]["AuditBadge"];
+            /**
+             * Axes
+             * @description Further choices the grid can test on request (opt-in).
+             * @default []
+             */
+            axes: components["schemas"]["AxisView"][];
             /** Cards Waiting */
             cards_waiting: number;
             /**
@@ -10112,6 +10350,11 @@ export type components = {
              * @description The marker cut-off (marker split only).
              */
             cut?: number | null;
+            /**
+             * Efficiency
+             * @description Which efficiency turns Cq into quantity (when a person asked to test it).
+             */
+            efficiency?: string | null;
             /**
              * Planned
              * @description True when every option is the planned one.
@@ -12850,6 +13093,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProposalDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    propose_axis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProposeAxis"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposeOne"];
                 };
             };
             /** @description Validation Error */

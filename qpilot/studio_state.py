@@ -211,6 +211,30 @@ def _d_trust(subject: str, d: Mapping[str, Any]) -> str:
     return f"Import Trust: {label[0].lower()}{label[1:]}"
 
 
+def _d_axis(subject: str, d: Mapping[str, Any]) -> str:
+    from qpilot.qpcr.axes import get_axis
+
+    axis = get_axis(subject)
+    if not isinstance(d["options"], list | tuple) or not d["options"]:
+        raise TypeError("options must be a non-empty list")
+    options = [str(o) for o in d["options"]]
+    labels = {o.id: _lower_first(o.label) for o in axis.catalogue}
+    question = _lower_first(axis.title)
+    if len(options) < 2:
+        return f"Stop testing {question}; keep {labels.get(options[0], options[0])} only"
+    others = "; ".join(labels.get(o, o) for o in options[1:])
+    return (
+        f"Also test {question}: {others} (besides {labels.get(options[0], options[0])}, "
+        "the analysis in use)"
+    )
+
+
+def _lower_first(text: str) -> str:
+    """``Each well's own`` -> ``each well's own``; a name like ``LinRegPCR's`` keeps its case."""
+    first = text.split(" ", 1)[0]
+    return text[:1].lower() + text[1:] if first[1:].islower() else text
+
+
 def _d_project(subject: str, d: Mapping[str, Any]) -> str:
     genes = ", ".join(str(g) for g in d.get("genes") or []) or "the headline genes"
     template = d.get("template_id") or "two_groups_log2"
@@ -257,6 +281,7 @@ _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
     "curve.well_call": _d_well,
     "curve.exclude_well": _d_exclude,
     "curve.import_trust": _d_trust,
+    "choice.axis": _d_axis,
     "prism.project": _d_project,
     "prism.exclusion_reason": _d_exclusion,
     "prism.value_edit": _d_value_edit,

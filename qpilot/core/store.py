@@ -34,13 +34,20 @@ import re
 import tempfile
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from filelock import FileLock
 
-from qpilot.core.decisions import check_request, needs_human
+from qpilot.core.decisions import (
+    asked_again,
+    carried_from,
+    carried_reason,
+    check_request,
+    needs_human,
+)
 from qpilot.schemas import Actor, DecisionCard, DecisionEntry, DecisionOutcome, StudyResult
 from qpilot.schemas_studio import Proposal, ProposalCheck, StudyDesign
 
@@ -363,6 +370,21 @@ def _apply_entry(card: DecisionCard, entry: DecisionEntry) -> DecisionCard:
     return card  # stale attempts change nothing
 
 
+@dataclass
+class CarryReport:
+    """What :meth:`StudyStore.carry_decisions` did, card by card."""
+
+    source: str
+    target: str
+    carried: list[str] = field(default_factory=list)  # card ids, one new entry each
+    asked_again: dict[str, str] = field(default_factory=dict)  # card id -> why, in words
+    gone: list[str] = field(default_factory=list)  # card or option not in the target
+
+    def as_dict(self) -> dict[str, Any]:
+        """Plain JSON (the session keeps the latest report per study)."""
+        return asdict(self)
+
+
 class StudyStore:
     """Reads and writes study workspaces; implements ``qpilot.schemas.StudyStoreAPI``."""
 
@@ -581,6 +603,76 @@ class StudyStore:
             raise KeyError(f"no pending request on card {card_id!r}{which}")
         options = list(dict.fromkeys(p.option for p in waiting))  # distinct, oldest first
         return self._write(study_id, card_id, options, reason, "human", "rejected", expected_head)
+
+    def carry_decisions(self, source: str, target: str) -> CarryReport:
+        """Carry what a person decided in ``source`` to ``target``, another analysis of its file.
+
+        For each card of ``source`` whose decision a person made, one new ``applied`` entry by
+        ``human`` on the same card and option in ``target``, whose reason names the earlier
+        study and the entry that made the decision, then the person's words
+        (:func:`~qpilot.core.decisions.carried_reason`). The system's and agents' decisions,
+        agents' requests and their turn-downs are never carried. A decision is asked again
+        (not carried) when the choice matters more in ``target``
+        (:func:`~qpilot.core.decisions.asked_again`) or an agent's request waits on the card;
+        it is left alone when the card or option is gone, when ``target`` already shows the
+        option decided by a person, or when the same entry was carried there before (so a later
+        change in ``target`` stands). Writes under ``target``'s lock; ``ValueError`` when the
+        two are not analyses of the same file.
+        """
+        with self._locked(self.workspace(source)):
+            earlier = self.get(source)
+            before = self.cards(source)
+            made: dict[str, DecisionEntry] = {}
+            for entry in self.entries(source):
+                if entry.status in ("applied", "auto"):
+                    made[entry.card_id] = entry
+        workspace = self.workspace(target)
+        report = CarryReport(source=earlier.study_id, target=target)
+        with self._locked(workspace):
+            root = self.get(target).input_sha256
+            if root != earlier.input_sha256:
+                raise ValueError("decisions are carried only between analyses of the same file")
+            report.target = self.get(target).study_id
+            log = workspace / "decisions.jsonl"
+            entries = read_entries(log)
+            cards = {c.id: c for c in replay_cards(self.cards(target), entries)}
+            waiting = {p.card_id for p in pending_after(entries)}
+            done = {
+                c.entry_hash
+                for e in entries
+                if e.actor == "human" and (c := carried_from(e.reason)) is not None
+            }
+            for old in before:
+                entry = made.get(old.id)
+                if (
+                    entry is None
+                    or entry.actor != "human"
+                    or old.decided_by != "human"
+                    or entry.option != old.decision
+                ):
+                    continue  # nothing a person decided
+                new = cards.get(old.id)
+                if new is None or entry.option not in {o.id for o in new.options}:
+                    report.gone.append(old.id)
+                    continue
+                if entry.hash in done or (new.decided_by, new.decision) == ("human", entry.option):
+                    continue
+                why = asked_again(old, new)
+                if why is None and new.id in waiting:
+                    why = "an agent's request waits on this card for a person"
+                if why is not None:
+                    report.asked_again[old.id] = why
+                    continue
+                words = carried_from(entry.reason)
+                reason = carried_reason(
+                    earlier.study_id, entry.hash, words.reason if words else entry.reason
+                )
+                self._append(log, entries, root, old.id, entry.option, reason, "human", "applied")
+                report.carried.append(old.id)
+            if report.carried:
+                self._write_cards(workspace, replay_cards(self.cards(target), entries))
+                self._write_pending(workspace, entries)
+        return report
 
     def append_ai_call(self, study_id: str, entry: dict[str, Any]) -> None:
         """Append one model-call log line (no key, no raw payload unless opted in)."""

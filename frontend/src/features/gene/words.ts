@@ -16,7 +16,7 @@ export const DIMENSION: Record<string, { name: string; short: string }> = {
     name: "What to do with wells that never amplified",
     short: "Wells that never amplified",
   },
-  efficiency: { name: "Which amplification efficiency to use", short: "Efficiency" },
+  efficiency: { name: "Which efficiency turns Cq into quantity", short: "Efficiency model" },
   nondetect: { name: "What to do with a missing Cq", short: "Missing Cq" },
 };
 
