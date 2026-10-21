@@ -30,6 +30,7 @@ import { DesignNeeds } from "./DesignNeeds";
 import { comparisonState, concerns } from "./logic";
 import { DesignPlate, type PlateWell } from "./DesignPlate";
 import { FileFacts } from "./FileFacts";
+import { ImportCard } from "./ImportCard";
 import { ProposeAgain, ProposeDesignPanel, ProposeReportView } from "./ProposeDesign";
 import { WellCurveDialog } from "./WellCurve";
 
@@ -81,6 +82,9 @@ export default function DesignSection({ workspace }: SectionProps) {
         {workspace.active_jobs.map((j) => (
           <JobCard key={j.id} id={j.id} />
         ))}
+        <div className="max-w-2xl">
+          <ImportCard capture={workspace.capture} />
+        </div>
       </div>
     );
   }
@@ -202,6 +206,7 @@ export default function DesignSection({ workspace }: SectionProps) {
         <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:self-start xl:overflow-y-auto xl:pb-2 qp-scroll" aria-label="Plate and file">
           <DesignPlate sid={sid} runs={summary?.runs ?? []} quotes={quotes.lookup} highlight={highlight} onShowProposals={showWell} />
           <FileFacts facts={workspace.facts} summary={summary} analysed={workspace.results_visible} warming={isWarming(list.error)} />
+          <ImportCard capture={workspace.capture} />
         </aside>
       </div>
       <WellCurveDialog sid={sid} well={well} onClose={() => setWell(null)} />

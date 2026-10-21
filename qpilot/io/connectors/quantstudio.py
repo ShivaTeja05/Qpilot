@@ -89,6 +89,7 @@ _HEADER_HINTS = {
     "quantificationcyclemethod",
 }
 _BLOCKS = (("1536", (32, 48)), ("384", (16, 24)), ("96", (8, 12)), ("48", (6, 8)))
+_NO_PASSIVE = {"", "null", "none", "na", "nopassivereference"}
 
 
 @dataclass
@@ -125,6 +126,37 @@ def _kind_from_columns(row: list[str]) -> str | None:
     return None
 
 
+def _stepone_section(kind: str, found: dict[str, int]) -> bool:
+    """A section exported on its own by StepOne / 7500 software (a ``Well`` column, no position).
+
+    Only Thermo Fisher's own column sets count: ``Rn`` with ``Delta Rn`` (amplification), or a
+    ``Task`` with ``Target Name`` (results, sample setup), so a generic tidy table stays tidy.
+    """
+    if "well_index" not in found or "well" in found:
+        return False
+    if kind == "amplification":
+        return "rn" in found and "drn" in found
+    if kind == "results":
+        return "type" in found and "target" in found
+    if kind == "setup":
+        return "type" in found and "target" in found and "sample" in found
+    return False
+
+
+_SECTION_STEMS = {squash(name) for name in _SECTION_NAMES} | {"amplification", "setup"}
+
+
+def _group_key(stem: str) -> str:
+    """The plate a file belongs to: its stem without the section name.
+
+    Files named only after their section (``amplification_data.txt``, ``results.txt``,
+    ``sample_setup.txt``: a StepOne export saved section by section) form one plate.
+    """
+    if squash(stem) in _SECTION_STEMS:
+        return ""
+    return plate_stem(stem).lower()
+
+
 def _split(grid: Grid) -> _Parsed:
     """Header pairs and sections of one text file or sheet."""
     parsed = _Parsed()
@@ -134,6 +166,11 @@ def _split(grid: Grid) -> _Parsed:
         first = row[0].strip() if row else ""
         if first.startswith("*") and current is None:
             parsed.header.extend(header_pairs(["\t".join(row)]))
+            continue
+        if first.startswith("#") and current is None:  # Design & Analysis: "# Key: Value"
+            key, colon, value = (grid.delimiter or ",").join(row).lstrip("#").partition(":")
+            if colon and key.strip() and len(key.strip()) <= 80:
+                parsed.header.append((key.strip(), value.strip()))
             continue
         if first.startswith("[") and first.endswith("]"):
             current = _Section(_section_kind(first[1:-1]), [], grid.decimal_comma)
@@ -195,14 +232,16 @@ class QuantStudioConnector:
             found = match_columns(row, QS_COLUMNS)
             if "well" in found and kind in ("amplification", "results", "setup", "melt"):
                 return Sniff(85, f"quantstudio.{kind}")
+            if _stepone_section(kind, found):
+                return Sniff(80, f"quantstudio.{kind}")
         return None
 
     def read(self, sources: list[Source]) -> list[PlateData]:
         """One plate per file, or per group of section files sharing a stem."""
         groups: dict[str, list[Source]] = {}
         for source in sources:
-            groups.setdefault(plate_stem(source.path.stem).lower(), []).append(source)
-        return [_read_plate(members) for members in groups.values()]
+            groups.setdefault(_group_key(source.path.stem), []).append(source)
+        return [_read_plate(members, named=key != "") for key, members in groups.items()]
 
 
 def _block(header: list[tuple[str, str]]) -> tuple[int, int]:
@@ -214,8 +253,8 @@ def _block(header: list[tuple[str, str]]) -> tuple[int, int]:
     return (0, 0)
 
 
-def _read_plate(members: list[Source]) -> PlateData:
-    run_id = plate_stem(members[0].path.stem)
+def _read_plate(members: list[Source], *, named: bool = True) -> PlateData:
+    run_id = plate_stem(members[0].path.stem) if named else "plate"
     parsed = _Parsed()
     for source in members:
         for grid in read_grids(source.path):
@@ -245,6 +284,8 @@ def _read_plate(members: list[Source]) -> PlateData:
         _melt(section, width, assembler, info)
     for (row, column), entries in info.items():  # wells with a Cq but no curve
         for entry in entries:
+            if not (entry.get("sample") or entry.get("target") or entry.get("cq")):
+                continue  # an empty well listed in the setup or results
             target = entry.get("target") or entry.get("dye") or "target"
             _apply(assembler.reaction(row, column, target), entry)
     plate = assembler.plate(rows=rows, columns=columns, value_kind=value_kind)
@@ -256,6 +297,13 @@ def _read_plate(members: list[Source]) -> PlateData:
         plate.notes.append(
             "The export has Delta Rn but no Rn column: the curves are baseline-subtracted. "
             "Re-export with Rn (Amplification Data) for per-well efficiency."
+        )
+    passive = next((v for k, v in plate.header if k == "passive_reference"), None)
+    if value_kind == "Rn" and passive is not None and squash(passive) in _NO_PASSIVE:
+        plate.value_kind = "fluorescence"
+        plate.notes.append(
+            "The export names no passive reference, so its Rn column is not a ratio to a "
+            "reference dye; qPilot judges from the curves themselves whether they were processed."
         )
     return plate
 
@@ -336,6 +384,11 @@ def _target_for(info: dict, position: tuple[int, int], target: str, dye: str = "
     return dye or "target"
 
 
+def _used(info: dict, position: tuple[int, int]) -> bool:
+    """Whether the setup or results name a sample or a target for this well."""
+    return any(e.get("sample") or e.get("target") for e in info.get(position, []))
+
+
 def _consume(info: dict, position: tuple[int, int], target: str) -> dict[str, str] | None:
     """Take the setup entry for this well and target out of ``info`` (``None`` if absent)."""
     entries = info.get(position, [])
@@ -363,6 +416,8 @@ def _amplification(section: _Section, width: int, assembler: LongAssembler, info
         position = _position(table, row, width)
         if position is None:
             continue
+        if table.has("target") and not table.get(row, "target") and not _used(info, position):
+            continue  # an empty well: no target here and no sample or target in the setup
         target = _target_for(info, position, table.get(row, "target"))
         reaction = assembler.reaction(*position, target)
         if (*position, target) not in taken:

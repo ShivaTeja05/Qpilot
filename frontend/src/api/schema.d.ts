@@ -2063,6 +2063,10 @@ export type paths = {
         /**
          * Open File
          * @description Open a file (and optional sample sheet) as a Studio session; nothing is analysed yet.
+         *
+         *     Send ``rdml`` (one RDML file) or ``files`` (instrument exports), not both. A vendor export
+         *     is read once into a deterministic RDML file; what was read is shown in the session's
+         *     ``capture``.
          */
         post: operations["open_file"];
         delete?: never;
@@ -3878,10 +3882,15 @@ export type components = {
         /** Body_open_file */
         Body_open_file: {
             /**
-             * Rdml
-             * @description The instrument's RDML export (.rdml, .xml).
+             * Files
+             * @description What the instrument wrote, instead of `rdml`: one export or a whole export set (CFX amplification per dye + Cq results + run information; QuantStudio / StepOne / 7500; LightCycler 480; RDES or a tidy table), at most 64 files. Sorted by content: an RDML file, the export, and a sample sheet among them.
              */
-            rdml: string;
+            files?: string[] | null;
+            /**
+             * Rdml
+             * @description An RDML file (.rdml, .xml), opened as it is.
+             */
+            rdml?: string | null;
             /**
              * Sentence
              * @default
@@ -3985,6 +3994,143 @@ export type components = {
             reason: string;
             /** Stage */
             stage: string;
+        };
+        /**
+         * CaptureNote
+         * @description A warning from the import, in qPilot's words (never file text).
+         */
+        CaptureNote: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * CapturePlate
+         * @description What was read for one plate (one RDML run).
+         */
+        CapturePlate: {
+            /** Columns */
+            columns: number;
+            /** Dyes */
+            dyes: string[];
+            /**
+             * N Cycles
+             * @description Cycles per amplification curve (0: no curves).
+             */
+            n_cycles: number;
+            /** N Reactions */
+            n_reactions: number;
+            /**
+             * N Unmapped Types
+             * @description Wells whose vendor sample type qPilot does not know (treated as unknowns).
+             */
+            n_unmapped_types: number;
+            /** N Wells */
+            n_wells: number;
+            /** N With Vendor Cq */
+            n_with_vendor_cq: number;
+            /** Rows */
+            rows: number;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Sample Types
+             * @description Wells per declared RDML sample type.
+             */
+            sample_types: {
+                [key: string]: number;
+            };
+            /** Targets */
+            targets: string[];
+            /** Value Kind */
+            value_kind: string;
+            /**
+             * Vendor Omitted
+             * @description Wells the vendor software marked omitted: recorded, never applied.
+             */
+            vendor_omitted: string[];
+            /**
+             * Verdict
+             * @description This plate's raw-ness verdict.
+             */
+            verdict: string;
+        };
+        /**
+         * CaptureRawness
+         * @description Were the curves processed before export, and what that means for the analysis.
+         */
+        CaptureRawness: {
+            /**
+             * Linregpcr Ok
+             * @description The curves suit LinRegPCR's per-well efficiency.
+             */
+            linregpcr_ok: boolean;
+            /** Meaning */
+            meaning: string;
+            /** Title */
+            title: string;
+            /**
+             * Verdict
+             * @description raw | normalized | baseline_subtracted | scaled | cq_only | unknown
+             */
+            verdict: string;
+        };
+        /**
+         * CaptureSource
+         * @description One file qPilot read, by the name it had on the person's computer.
+         */
+        CaptureSource: {
+            /** Bytes */
+            bytes: number;
+            /** Name */
+            name: string;
+            /**
+             * Role
+             * @description amplification, cq, melt, setup, plate (all in one) or ignored
+             */
+            role: string;
+        };
+        /**
+         * CaptureSummary
+         * @description An instrument export as qPilot read it into the session's RDML file.
+         */
+        CaptureSummary: {
+            /** Connector */
+            connector: string;
+            /** Dialect */
+            dialect: string;
+            /**
+             * Label
+             * @description The export family, e.g. 'Bio-Rad CFX Manager / Maestro'.
+             */
+            label: string;
+            /** Layers */
+            layers: {
+                [key: string]: boolean;
+            };
+            /**
+             * N Quarantined
+             * @description Free-text values kept in quarantine.
+             */
+            n_quarantined: number;
+            /** Plates */
+            plates: components["schemas"]["CapturePlate"][];
+            rawness: components["schemas"]["CaptureRawness"];
+            /** Sources */
+            sources: components["schemas"]["CaptureSource"][];
+            /**
+             * Unused
+             * @description Files dropped with the export that qPilot did not read.
+             * @default []
+             */
+            unused: string[];
+            /** Value Kind */
+            value_kind: string;
+            /** Value Words */
+            value_words: string;
+            /** Warnings */
+            warnings: components["schemas"]["CaptureNote"][];
         };
         /**
          * CardOption
@@ -4860,11 +5006,8 @@ export type components = {
             impact: {
                 [key: string]: unknown;
             };
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "reference_set" | "group_cutoff" | "undetermined" | "amp_call";
+            /** Kind */
+            kind: string;
             /** Options */
             options: components["schemas"]["CardOption"][];
             /** Rank */
@@ -6440,6 +6583,12 @@ export type components = {
         OpenDone: {
             /** Key */
             key: string;
+            /**
+             * Unused
+             * @description Dropped files qPilot did not read (named back to the person).
+             * @default []
+             */
+            unused: string[];
         };
         /**
          * OptionEffect
@@ -10216,6 +10365,8 @@ export type components = {
              * @description What agents may do in this study (None: no study yet).
              */
             autonomy?: ("suggest" | "decide_and_tell") | null;
+            /** @description What qPilot read from the instrument export this session was opened from (None: opened from an RDML file). */
+            capture?: components["schemas"]["CaptureSummary"] | null;
             /** Decisions Head */
             decisions_head?: string | null;
             facts?: components["schemas"]["FileFacts"] | null;
@@ -13695,7 +13846,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_open_file"];
             };

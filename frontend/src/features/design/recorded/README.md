@@ -9,3 +9,15 @@ agent's server running (`qpilot app --port 7881`; the key is in `$QPILOT_APP_TOK
 curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" http://127.0.0.1:7881/api/sessions/2529de8272eb/plate > untergasser-plate.json
 curl -s -H "x-qpilot-token: $QPILOT_APP_TOKEN" http://127.0.0.1:7881/api/sessions/2529de8272eb > untergasser-session.json  # "summary" dropped
 ```
+
+## Imports (`import-*.json`)
+
+The `capture` of a session frame (`GET /api/sessions/{sid}` → `capture`) for two exports of the
+public corpus (`tests/fixtures/corpus`), opened through `POST /api/workspaces` with `files` on a
+throwaway store (FastAPI TestClient over the real app, no model):
+
+- `import-cfx-hsieh-gapdh.json`: every `2016-09-04 gapdh*` file of
+  `biorad/hsieh2016-cfx-manager-3.1-sybr` (CFX Manager 3.1, baseline-subtracted, melt, two
+  sheets qPilot does not read);
+- `import-lc480-cp-table.json`: `roche/sanger-lc480-cp-table/qPCR.txt` (a LightCycler 480 Cp
+  table: Cq only, standards, five omitted wells).

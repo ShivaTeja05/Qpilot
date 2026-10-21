@@ -50,6 +50,8 @@ WORKBOOK_SUFFIXES = (".xlsx", ".xlsm")
 _UNDETERMINED = {"undetermined", "nan", "n/a", "na", "none", "", "-", "--", "no ct", "noct",
                  "no cq", "nocq", "inf", "infinity", "-inf", "null", "nd", "n.d."}  # fmt: skip
 _NUMBER = re.compile(r"^[+-]?(\d+([.,]\d*)?|[.,]\d+)([eE][+-]?\d+)?$")
+#: ``1,250.000``: QuantStudio writes quantities with a thousands separator and a decimal point.
+_THOUSANDS = re.compile(r"^[+-]?\d{1,3}(,\d{3})+\.\d+$")
 
 
 @dataclass
@@ -86,11 +88,14 @@ def number(text: str, *, decimal_comma: bool = False) -> float | None:
 
     Args:
         text: The cell text.
-        decimal_comma: Accept ``1,25`` as 1.25 (files whose delimiter is not a comma).
+        decimal_comma: Accept ``1,25`` as 1.25 (files whose delimiter is not a comma); without
+            it, ``1,250.000`` (a thousands separator before a decimal point) is 1250.
     """
     value = text.strip().replace("−", "-")  # a Unicode minus sign
     if value.lower() in _UNDETERMINED:
         return None
+    if not decimal_comma and _THOUSANDS.match(value):
+        value = value.replace(",", "")
     if not _NUMBER.match(value):
         return None
     if "," in value:
@@ -152,7 +157,8 @@ def file_kind(path: Path) -> str:
     """``xlsx``, ``xls``, ``zip``, ``text`` or ``binary``, from the first bytes (not the suffix)."""
     with path.open("rb") as handle:
         start = handle.read(8)
-    if start.startswith(b"PK\x03\x04") or start.startswith(b"PK\x05\x06"):
+    # a zip; CFX Manager 3.0 writes RDML archives that start with the spanning marker PK 07 08
+    if start.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08PK\x03\x04")):
         try:
             with zipfile.ZipFile(path) as archive:
                 names = set(archive.namelist())

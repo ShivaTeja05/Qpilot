@@ -6,8 +6,8 @@ form one study (one plate each, or one CFX export set per plate); a folder means
 
 :func:`materialise` is what engine callers use: an RDML input is returned as it is (path and
 sha256 unchanged), any other input is written once as a deterministic RDML archive in the
-cache, keyed by the connector's id and version and the sha256 of every source file, next to
-its ``.capture.json`` (:class:`~qpilot.io.connectors.base.CaptureMeta`).
+cache, keyed by the connector's id and version and the name and sha256 of every source file,
+next to its ``.capture.json`` (:class:`~qpilot.io.connectors.base.CaptureMeta`).
 """
 
 from __future__ import annotations
@@ -447,7 +447,8 @@ def materialise(
     """An RDML file the engine can read for this input, plus what was captured.
 
     An RDML input is returned as it is. Anything else is converted once and cached under
-    ``<cache>/capture/`` (a second call with the same bytes reads the cache).
+    ``<cache>/capture/`` (a second call with the same files, by name and bytes, reads the
+    cache; names count because plate names and CFX fluorophores are read from them).
 
     Raises:
         CaptureError: The input cannot be read (see :func:`capture`).
@@ -456,6 +457,8 @@ def materialise(
     chosen, _ = _choose(files, connector)
     digest = hashlib.sha256(f"{chosen.id}\x00{chosen.version}".encode())
     for path in files:
+        # the name counts too: plate names and CFX fluorophores are read from file names
+        digest.update(b"\x00" + path.name.encode("utf-8", "surrogateescape"))
         digest.update(b"\x00" + sha256_file(path).encode())
     key = digest.hexdigest()[:20]
     root = _cache_root(cache_dir)

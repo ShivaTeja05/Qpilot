@@ -57,6 +57,17 @@ def _probe_rows(probe: Probe) -> list[list[str]]:
     return [next(csv.reader([line], delimiter=delimiter), []) for line in lines]
 
 
+#: Sample-sheet fields (``qpilot.io.sheets.HEADER_SYNONYMS``) a Cq table never has.
+_DESIGN_FIELDS = frozenset({"group", "bio_unit", "bio_rep"})
+
+
+def _design_columns(row: list[str]) -> bool:
+    """Whether a header row names a sample sheet's design column (group, animal, bio rep)."""
+    from qpilot.io.sheets import header_field
+
+    return any(header_field(cell) in _DESIGN_FIELDS for cell in row if cell)
+
+
 def _numeric_header(cell: str) -> bool:
     return number(cell) is not None
 
@@ -183,12 +194,18 @@ class TidyConnector:
     suffixes = (".csv", ".tsv", ".txt", ".xlsx")
 
     def sniff(self, probe: Probe) -> Sniff | None:
-        """A header naming a well, a cycle and a signal; or a target / sample and a Cq."""
+        """A header naming a well, a cycle and a signal; or a target / sample and a Cq.
+
+        A table that also names a group, an animal or a biological replicate is a qPilot
+        sample sheet (``qpilot.io.sheets``), even with a Cq column: it is not claimed.
+        """
         for row in _probe_rows(probe)[:30]:
             found = match_columns(row, COLUMNS)
             if "well" in found and "cycle" in found and any(s in found for s in _SIGNALS):
                 return Sniff(50, "tidy.long")
             if "cq" in found and ("target" in found or "sample" in found) and "cycle" not in found:
+                if _design_columns(row):
+                    return None
                 return Sniff(30, "tidy.cq", "cq")
         return None
 
