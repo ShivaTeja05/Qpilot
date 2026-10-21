@@ -65,7 +65,7 @@ From the instrument's raw curves to a record anyone can re-run, on the same stud
 | 🧾 | **Report, Run Review and the Analysis Record** | Methods, MIQE 2.0 and a passport; a Run Review a person signs off; an Excel workbook; and one hash-chained, checksummed zip with the input, results, every decision with its reason and who made it, and the audit, which anyone can verify and re-run |
 | 🧰 | **Instruments** | A registry and a hash-chained logbook per instrument, what each run file says about it (calibration age, run state), incidents a person confirms, and the lookback "which of my conclusions used this period?" |
 | 📊 | **Prism bridge** | log2 tables per biological unit, a Prism script (`run.pzc`) and provenance, plus what changed in Prism, read back as proposals. [`docs/prism.md`](docs/prism.md) |
-| 📐 | **Plan next** | Before the next plate: samples needed (biological, RT and technical replicates in one formula), what a design cannot detect, and a plate layout |
+| 📐 | **Plan next** | Before the next plate: samples needed from this study's own noise, what a design cannot detect, and a plate layout; `qpilot plan` adds the replicate budget (biological, RT and technical replicates in one formula) |
 | 🔌 | **One MCP server** | `qpilot serve`: 26 tools (21 `qpcr_*` and 5 read-only `sim_*`). An agent can ask and propose; it cannot overrule a person, and the page shows what an agent is waiting to ask you. [`docs/agents.md`](docs/agents.md) |
 
 [`docs/user-guide.md`](docs/user-guide.md) walks through the page section by section.
@@ -123,7 +123,7 @@ One hash-routed page, one study at a time. The rail lists the workflow in order,
 | **Report** | Methods, the MIQE 2.0 checklist, a reviewer's report, the study passport, the **Run Review** a person signs off, and the Excel workbook |
 | **Record** | The decision chain, export of the Analysis Record, verification of a record |
 | **History** | Replay the decisions in order and see what each changed |
-| **Plan next** | Samples per group from this study's own noise, the replicate budget, and a plate layout |
+| **Plan next** | Samples per group from this study's own noise, what a design cannot detect, and a plate layout |
 | **Instruments** | The instrument registry and logbooks, incidents a person confirms, and the lookback over a period |
 | **Agents** | How to connect an agent, and what agents are asking or have done |
 | **Settings** | The model's status and a test of it, what agents may do on their own (explained here; set for each study in its top bar), theme |
