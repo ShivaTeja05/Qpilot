@@ -69,7 +69,7 @@ function StateMark({ state, compact }: { state: SectionState; compact?: boolean 
         )}
         aria-hidden
       >
-        {state.count > 99 ? "99+" : state.count}
+        {state.count}
       </span>
     );
   }
@@ -98,7 +98,9 @@ const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 function navName(label: string, state: SectionState | undefined): string {
   if (!state) return label;
   if (state.count > 0 && state.reachable) {
-    const badge = state.count > 99 ? "99+" : String(state.count);
+    // The exact count (proposals are capped at a few hundred): a "99+" badge would not be part
+    // of the name a screen reader or speech input matches (axe label-content-name-mismatch).
+    const badge = String(state.count);
     const what = state.section.id === "agents" ? "waiting for you" : "to review";
     return `${label} ${badge} ${what}${state.done ? ", confirmed" : ""}`;
   }
