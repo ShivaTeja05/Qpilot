@@ -8,6 +8,15 @@ research use only, not for clinical decisions.
 ## [Unreleased]
 
 ### Added
+- **origin/main (18 Oct) merged into the one page** (`INTEGRATION.md`): Shiva Teja's Trace engine
+  with its planted-fault benchmark, the Spreadsheet Check, the Evidence Ledger, the Run Review,
+  the instrument registry and logbook with lookback, the replicate budget planner, nine MCP tools
+  (now with typed refusals and output schemas), Ask's Trace questions and the Excel export. The
+  Gradio features are ported to the page: **What this study cannot tell you** (Results), **Where
+  to look** with **Decide…** (Trace; the card is decided on Results), the **Run Review** with a
+  person's sign-off and the **Excel workbook** (Report), and two lab sections, **Sheet check** and
+  **Instruments** (incidents an agent proposes are confirmed or turned down there, by a person).
+  The Evidence Ledger's raw-ness item reads Open's own raw-ness check of an instrument export.
 - **The efficiency models, opt-in** (`qpilot/qpcr/axes/`, merged from `agents/numbers`, with the
   axis registry, stage caches and grid cap): which efficiency turns each Cq into a quantity
   (LinRegPCR's mean per assay and plate, each well's own, one per assay over its plates, an
