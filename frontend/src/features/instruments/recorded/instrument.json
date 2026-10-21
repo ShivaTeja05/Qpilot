@@ -1,0 +1,255 @@
+{
+ "instrument": {
+  "instrument_id": "quantstudio-5-bench-2",
+  "display_name": "QuantStudio 5, bench 2",
+  "make_model": "Applied Biosystems QuantStudio 5",
+  "location": "Lab 2.14, by the window",
+  "shared": true,
+  "n_events": 9,
+  "n_open_incidents": 2,
+  "n_proposed": 1,
+  "calibrations": [
+   {
+    "type": "background",
+    "performed_on": "2025-08-28",
+    "age_days": 419,
+    "source": "typed"
+   }
+  ],
+  "chain_ok": true,
+  "problems": []
+ },
+ "events": [
+  {
+   "seq": 1,
+   "kind": "calibration",
+   "kind_word": "Calibration",
+   "source": "typed",
+   "actor": "human",
+   "at": "2025-08-28",
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": null,
+   "wells": [],
+   "details": {
+    "performed_on": "2025-08-28",
+    "type": "background"
+   },
+   "note": "Background and ROI by the engineer.",
+   "hash": "ddbcf6aea64fbab74901b88e6005e9e0fec8ad37f0908dcc9dfb7431f5bb3415"
+  },
+  {
+   "seq": 2,
+   "kind": "service",
+   "kind_word": "Service visit",
+   "source": "typed",
+   "actor": "human",
+   "at": "2025-08-28",
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": null,
+   "wells": [],
+   "details": {},
+   "note": "Annual service visit; block cleaned.",
+   "hash": "4e0bc547146f661b31322067b8a79024a98f9ff1be55c42fa27be17edca3065a"
+  },
+  {
+   "seq": 3,
+   "kind": "note",
+   "kind_word": "Note",
+   "source": "typed",
+   "actor": "human",
+   "at": null,
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": null,
+   "wells": [],
+   "details": {},
+   "note": "Plate holder pushed back <b>flush</b> & re-seated; see <a href=\"#\">manual</a>",
+   "hash": "de439f31e7167c9586a2d16bda52c4f317970f86c6aae0e4a21ab1378e294f60"
+  },
+  {
+   "seq": 4,
+   "kind": "run_event",
+   "kind_word": "Run event",
+   "source": "file",
+   "actor": "system",
+   "at": "2019-05-10T09:00:00Z",
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+   "wells": [],
+   "details": {
+    "cycle": 23,
+    "what": "pause"
+   },
+   "note": "",
+   "hash": "b3ab54946a875a3a048642f17e02358e1fdc3772dda864f6d0cea6932dd57960"
+  },
+  {
+   "seq": 5,
+   "kind": "incident",
+   "kind_word": "Incident",
+   "source": "typed",
+   "actor": "agent",
+   "at": null,
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+   "wells": [
+    "B3",
+    "B4"
+   ],
+   "details": {
+    "action": "log",
+    "status": "proposed",
+    "signature": {
+     "metric": "cq_residual",
+     "direction": "high",
+     "numbers": {}
+    }
+   },
+   "note": "B3 and B4 ran late on three plates in a row <i>after the pause</i>.",
+   "hash": "11e1c549a81c344a4d2c4bfda34f38c68936155b8936ff5521ebc174ab0b66dc"
+  },
+  {
+   "seq": 6,
+   "kind": "incident",
+   "kind_word": "Incident",
+   "source": "typed",
+   "actor": "agent",
+   "at": null,
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+   "wells": [
+    "H12"
+   ],
+   "details": {
+    "action": "log",
+    "status": "proposed",
+    "signature": {
+     "metric": "plateau",
+     "direction": "low",
+     "numbers": {}
+    }
+   },
+   "note": "H12's plateau is low next to its replicates.",
+   "hash": "8b69fd82f4a89523f3c285d29f6fcbaa6f05a43aae45ec793ad9d941ea590d60"
+  },
+  {
+   "seq": 7,
+   "kind": "incident",
+   "kind_word": "Incident",
+   "source": "typed",
+   "actor": "human",
+   "at": null,
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": null,
+   "wells": [],
+   "details": {
+    "action": "confirm",
+    "incident": 6
+   },
+   "note": "",
+   "hash": "bfe3e423986998b6126d17725160f0f0d739707396e38fb7fbc70ef5caabda46"
+  },
+  {
+   "seq": 8,
+   "kind": "incident",
+   "kind_word": "Incident",
+   "source": "typed",
+   "actor": "human",
+   "at": null,
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": null,
+   "wells": [
+    "A1",
+    "A2"
+   ],
+   "details": {
+    "action": "log",
+    "status": "confirmed",
+    "signature": {
+     "metric": "plateau",
+     "direction": "low",
+     "numbers": {}
+    }
+   },
+   "note": "Edge wells low after the lid was opened.",
+   "hash": "8b13b5fe79f8526d28d8a996ec734fed6ccd6ee385a4faf7a40381babaa0c3bc"
+  },
+  {
+   "seq": 9,
+   "kind": "fix",
+   "kind_word": "Fix",
+   "source": "typed",
+   "actor": "human",
+   "at": null,
+   "recorded_at": "2026-10-21T11:39:04Z",
+   "run_hash": null,
+   "wells": [],
+   "details": {
+    "incident": 8
+   },
+   "note": "Lid gasket replaced.",
+   "hash": "57644525dc3133ce0b41bc0843c950e4a916ece2976c966550868f7b8c0aa093"
+  }
+ ],
+ "incidents": [
+  {
+   "seq": 5,
+   "status": "proposed",
+   "at": "2026-10-21T11:39:04Z",
+   "actor": "agent",
+   "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+   "wells": [
+    "B3",
+    "B4"
+   ],
+   "metric": "cq_residual",
+   "direction": "high",
+   "error_code": null,
+   "note": "B3 and B4 ran late on three plates in a row <i>after the pause</i>.",
+   "fixes": [],
+   "can_confirm": true,
+   "can_fix": false
+  },
+  {
+   "seq": 6,
+   "status": "confirmed",
+   "at": "2026-10-21T11:39:04Z",
+   "actor": "agent",
+   "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+   "wells": [
+    "H12"
+   ],
+   "metric": "plateau",
+   "direction": "low",
+   "error_code": null,
+   "note": "H12's plateau is low next to its replicates.",
+   "fixes": [],
+   "can_confirm": false,
+   "can_fix": true
+  },
+  {
+   "seq": 8,
+   "status": "confirmed",
+   "at": "2026-10-21T11:39:04Z",
+   "actor": "human",
+   "run_hash": null,
+   "wells": [
+    "A1",
+    "A2"
+   ],
+   "metric": "plateau",
+   "direction": "low",
+   "error_code": null,
+   "note": "Edge wells low after the lid was opened.",
+   "fixes": [
+    {
+     "seq": 9,
+     "note": "Lid gasket replaced.",
+     "at": null
+    }
+   ],
+   "can_confirm": false,
+   "can_fix": false
+  }
+ ],
+ "head": "57644525dc3133ce0b41bc0843c950e4a916ece2976c966550868f7b8c0aa093"
+}

@@ -1,0 +1,18 @@
+{
+ "instrument": {
+  "instrument_id": "cfx96-core",
+  "display_name": "CFX96 in the core facility",
+  "make_model": "Bio-Rad CFX96",
+  "location": "Core facility, room 0.08",
+  "shared": false,
+  "n_events": 0,
+  "n_open_incidents": 0,
+  "n_proposed": 0,
+  "calibrations": [],
+  "chain_ok": true,
+  "problems": []
+ },
+ "events": [],
+ "incidents": [],
+ "head": "d08efbc2089e5665c60f788269797c25fd4f2a68109a126bc5e529156f9a0ead"
+}

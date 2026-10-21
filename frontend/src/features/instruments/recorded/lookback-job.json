@@ -1,0 +1,269 @@
+{
+ "id": "d413271bb77f49e6",
+ "kind": "lookback.run",
+ "title": "Looking back over an instrument's period",
+ "key": "e300000d4f9a",
+ "status": "done",
+ "step": "Leaving out the runs in the window and analysing the study again",
+ "fraction": 0.2,
+ "typical_s": 6.0,
+ "elapsed_s": 1.24,
+ "result": {
+  "study_id": "e300000d4f9a",
+  "instrument_id": "quantstudio-5-bench-2",
+  "start": "2008-03-03",
+  "end": "2008-03-03",
+  "status": "evaluated",
+  "n_conclusions": 58,
+  "n_changed": 3,
+  "changed": [
+   {
+    "gene": "CDKN3",
+    "before": "up",
+    "after": "none"
+   },
+   {
+    "gene": "IGSF4",
+    "before": "none",
+    "after": "down"
+   },
+   {
+    "gene": "NM23A",
+    "before": "up",
+    "after": "none"
+   }
+  ],
+  "runs_in_window": [
+   "HPRT1_20080303",
+   "INPP1_20080303",
+   "PTPRN2_20080303"
+  ],
+  "n_wells_in_window": 1152,
+  "assumed_all_runs": true,
+  "text": {
+   "plain": "Lookback for instrument quantstudio-5-bench-2 from 2008-03-03 to 2008-03-03: runs in the window 3, wells 1,152, studies 1.\nStudy e300000d4f9a: leaving out its runs in the window (3) changes 3 of 58 conclusions (CDKN3, IGSF4, NM23A). No longer concluded, because their plates are in the window (not counted as changes): INPP1, PTPRN2. Control-gene candidates measured in the window (HPRT1) were left out: the study was analysed again with ALUsq(Eurogentec), HMBS, SDHA(1), UBC(2). The marker groups are derived again from these candidates; they changed.",
+   "segments": [
+    {
+     "text": "Lookback for instrument ",
+     "fact": null
+    },
+    {
+     "text": "quantstudio-5-bench-2",
+     "fact": "f_lookback_instrument"
+    },
+    {
+     "text": " from ",
+     "fact": null
+    },
+    {
+     "text": "2008-03-03",
+     "fact": "f_lookback_start"
+    },
+    {
+     "text": " to ",
+     "fact": null
+    },
+    {
+     "text": "2008-03-03",
+     "fact": "f_lookback_end"
+    },
+    {
+     "text": ": runs in the window ",
+     "fact": null
+    },
+    {
+     "text": "3",
+     "fact": "f_lookback_n_runs"
+    },
+    {
+     "text": ", wells ",
+     "fact": null
+    },
+    {
+     "text": "1,152",
+     "fact": "f_lookback_n_wells"
+    },
+    {
+     "text": ", studies ",
+     "fact": null
+    },
+    {
+     "text": "1",
+     "fact": "f_lookback_n_studies"
+    },
+    {
+     "text": ".\nStudy ",
+     "fact": null
+    },
+    {
+     "text": "e300000d4f9a",
+     "fact": "f_lookback_e300000d4f9a_study"
+    },
+    {
+     "text": ": leaving out its runs in the window (",
+     "fact": null
+    },
+    {
+     "text": "3",
+     "fact": "f_lookback_e300000d4f9a_n_runs"
+    },
+    {
+     "text": ") changes ",
+     "fact": null
+    },
+    {
+     "text": "3",
+     "fact": "f_lookback_e300000d4f9a_n_changed"
+    },
+    {
+     "text": " of ",
+     "fact": null
+    },
+    {
+     "text": "58",
+     "fact": "f_lookback_e300000d4f9a_n_conclusions"
+    },
+    {
+     "text": " conclusions (",
+     "fact": null
+    },
+    {
+     "text": "CDKN3, IGSF4, NM23A",
+     "fact": "f_lookback_e300000d4f9a_changed_genes"
+    },
+    {
+     "text": "). No longer concluded, because their plates are in the window (not counted as changes): ",
+     "fact": null
+    },
+    {
+     "text": "INPP1, PTPRN2",
+     "fact": "f_lookback_e300000d4f9a_gone_genes"
+    },
+    {
+     "text": ". Control-gene candidates measured in the window (",
+     "fact": null
+    },
+    {
+     "text": "HPRT1",
+     "fact": "f_lookback_e300000d4f9a_refs_out"
+    },
+    {
+     "text": ") were left out: the study was analysed again with ",
+     "fact": null
+    },
+    {
+     "text": "ALUsq(Eurogentec), HMBS, SDHA(1), UBC(2)",
+     "fact": "f_lookback_e300000d4f9a_refs_after"
+    },
+    {
+     "text": ". The marker groups are derived again from these candidates; they changed.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_lookback_instrument",
+     "text": "quantstudio-5-bench-2",
+     "value": "quantstudio-5-bench-2",
+     "unit": "",
+     "path": "lookback.instrument_id"
+    },
+    {
+     "id": "f_lookback_start",
+     "text": "2008-03-03",
+     "value": "2008-03-03",
+     "unit": "",
+     "path": "lookback.start"
+    },
+    {
+     "id": "f_lookback_end",
+     "text": "2008-03-03",
+     "value": "2008-03-03",
+     "unit": "",
+     "path": "lookback.end"
+    },
+    {
+     "id": "f_lookback_n_runs",
+     "text": "3",
+     "value": 3,
+     "unit": "",
+     "path": "lookback.n_runs_in_window"
+    },
+    {
+     "id": "f_lookback_n_wells",
+     "text": "1,152",
+     "value": 1152,
+     "unit": "",
+     "path": "lookback.n_wells_in_window"
+    },
+    {
+     "id": "f_lookback_n_studies",
+     "text": "1",
+     "value": 1,
+     "unit": "",
+     "path": "lookback.n_studies_in_window"
+    },
+    {
+     "id": "f_lookback_e300000d4f9a_study",
+     "text": "e300000d4f9a",
+     "value": "e300000d4f9a",
+     "unit": "",
+     "path": "lookback.studies[0].study_id"
+    },
+    {
+     "id": "f_lookback_e300000d4f9a_n_runs",
+     "text": "3",
+     "value": 3,
+     "unit": "",
+     "path": "lookback.studies[0].runs_in_window"
+    },
+    {
+     "id": "f_lookback_e300000d4f9a_n_changed",
+     "text": "3",
+     "value": 3,
+     "unit": "",
+     "path": "lookback.studies[0].n_changed"
+    },
+    {
+     "id": "f_lookback_e300000d4f9a_n_conclusions",
+     "text": "58",
+     "value": 58,
+     "unit": "",
+     "path": "lookback.studies[0].n_conclusions"
+    },
+    {
+     "id": "f_lookback_e300000d4f9a_changed_genes",
+     "text": "CDKN3, IGSF4, NM23A",
+     "value": "CDKN3, IGSF4, NM23A",
+     "unit": "",
+     "path": "lookback.studies[0].changed"
+    },
+    {
+     "id": "f_lookback_e300000d4f9a_gone_genes",
+     "text": "INPP1, PTPRN2",
+     "value": "INPP1, PTPRN2",
+     "unit": "",
+     "path": "lookback.studies[0].no_longer_concluded"
+    },
+    {
+     "id": "f_lookback_e300000d4f9a_refs_out",
+     "text": "HPRT1",
+     "value": "HPRT1",
+     "unit": "",
+     "path": "lookback.studies[0].candidates"
+    },
+    {
+     "id": "f_lookback_e300000d4f9a_refs_after",
+     "text": "ALUsq(Eurogentec), HMBS, SDHA(1), UBC(2)",
+     "value": "ALUsq(Eurogentec), HMBS, SDHA(1), UBC(2)",
+     "unit": "",
+     "path": "lookback.studies[0].candidates_after"
+    }
+   ],
+   "source": "template"
+  },
+  "saved": false
+ },
+ "result_type": "LookbackView",
+ "error": null
+}

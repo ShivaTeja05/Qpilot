@@ -1,0 +1,63 @@
+{
+ "instruments": [
+  {
+   "instrument_id": "cfx96-core",
+   "display_name": "CFX96 in the core facility",
+   "make_model": "Bio-Rad CFX96",
+   "location": "Core facility, room 0.08",
+   "shared": false,
+   "n_events": 0,
+   "n_open_incidents": 0,
+   "n_proposed": 0,
+   "calibrations": [],
+   "chain_ok": false,
+   "problems": [
+    "the chain does not verify at entry 1"
+   ]
+  },
+  {
+   "instrument_id": "quantstudio-5-bench-2",
+   "display_name": "QuantStudio 5, bench 2",
+   "make_model": "Applied Biosystems QuantStudio 5",
+   "location": "Lab 2.14, by the window",
+   "shared": true,
+   "n_events": 9,
+   "n_open_incidents": 2,
+   "n_proposed": 1,
+   "calibrations": [
+    {
+     "type": "background",
+     "performed_on": "2025-08-28",
+     "age_days": 419,
+     "source": "typed"
+    }
+   ],
+   "chain_ok": true,
+   "problems": []
+  }
+ ],
+ "kinds": [
+  {
+   "id": "calibration",
+   "word": "Calibration"
+  },
+  {
+   "id": "component_change",
+   "word": "Part changed"
+  },
+  {
+   "id": "service",
+   "word": "Service visit"
+  },
+  {
+   "id": "move",
+   "word": "Moved"
+  },
+  {
+   "id": "note",
+   "word": "Note"
+  }
+ ],
+ "as_of": "2026-10-21",
+ "note": "A working memory for the lab, not a regulated record: what the run files say, what people logged, and incidents a person confirmed. Serial numbers stay in this computer's registry and are never shown or sent."
+}

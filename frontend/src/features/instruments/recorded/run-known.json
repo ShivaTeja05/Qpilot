@@ -1,0 +1,554 @@
+{
+ "run_id": "69f462672459ce60a2cb66a5",
+ "name": "qs5-2019-05-10.eds",
+ "context": {
+  "source_file": "69f462672459ce60a2cb66a5.eds",
+  "source_kind": "eds",
+  "run_id": null,
+  "identity": {
+   "model": "QuantStudio 1/3/5 class",
+   "instrument_type": "appletini",
+   "serial": null,
+   "block_serial": null,
+   "cover_serial": null,
+   "optical_head_serial": null,
+   "firmware": null,
+   "software": "QuantStudio Design & Analysis Software v1.4.3"
+  },
+  "run": {
+   "start": "2019-05-10T09:00:00Z",
+   "end": "2019-05-10T10:40:00Z",
+   "state": "complete",
+   "date_source": "instrument",
+   "date": "2019-05-10"
+  },
+  "calibrations": [
+   {
+    "type": "background",
+    "label": "Background",
+    "performed_on": "2018-03-24",
+    "expires_on": "2018-09-20",
+    "expired_at_run": true,
+    "age_days": 412,
+    "interval_days": 180,
+    "source": "calibrations/background.ini:[head].timestamp"
+   },
+   {
+    "type": "pure_dye",
+    "label": "Pure Dye",
+    "performed_on": "2019-01-02",
+    "expires_on": "2021-01-01",
+    "expired_at_run": false,
+    "age_days": 128,
+    "interval_days": 730,
+    "source": "calibrations/puredye.ini:[head].timestamp"
+   },
+   {
+    "type": "roi",
+    "label": "ROI",
+    "performed_on": "2018-03-24",
+    "expires_on": "2020-03-23",
+    "expired_at_run": false,
+    "age_days": 412,
+    "interval_days": 730,
+    "source": "calibrations/roi.ini:[head].timestamp"
+   },
+   {
+    "type": "uniformity",
+    "label": "Uniformity",
+    "performed_on": "2018-03-24",
+    "expires_on": "2020-03-23",
+    "expired_at_run": false,
+    "age_days": 412,
+    "interval_days": 730,
+    "source": "calibrations/uniformity.ini:[head].timestamp"
+   }
+  ],
+  "events": [
+   {
+    "kind": "pause",
+    "at": "2019-05-10T09:10:09",
+    "cycle": 23,
+    "source": "messages.log:line 97",
+    "cycles": [
+     23,
+     24
+    ]
+   },
+   {
+    "kind": "resume",
+    "at": "2019-05-10T09:14:09",
+    "cycle": 23,
+    "source": "messages.log:line 98"
+   }
+  ],
+  "temperature": {
+   "max_hold_deviation_c": 0.1,
+   "zone_spread_p95_c": 0.21,
+   "min_lid_c_cycling": 104.95
+  },
+  "well_flags": {},
+  "notes": [
+   "personal field present, not read",
+   "time zone not in file"
+  ],
+  "checked": [
+   "identity",
+   "run_state",
+   "calibrations",
+   "event_log",
+   "temperature"
+  ],
+  "serials_present": [
+   "block_serial",
+   "cover_serial",
+   "serial"
+  ],
+  "facts": {
+   "f_instr_cal_background_age_days": {
+    "id": "f_instr_cal_background_age_days",
+    "value": 412,
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/background.ini:[head].timestamp"
+   },
+   "f_instr_cal_background_expired": {
+    "id": "f_instr_cal_background_expired",
+    "value": "yes",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/background.ini:[head].expirytime"
+   },
+   "f_instr_cal_background_expires_on": {
+    "id": "f_instr_cal_background_expires_on",
+    "value": "2018-09-20",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/background.ini:[head].expirytime"
+   },
+   "f_instr_cal_background_interval_days": {
+    "id": "f_instr_cal_background_interval_days",
+    "value": 180,
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/background.ini:[head].expirytime"
+   },
+   "f_instr_cal_background_label": {
+    "id": "f_instr_cal_background_label",
+    "value": "Background",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/background.ini:[head].timestamp"
+   },
+   "f_instr_cal_background_performed_on": {
+    "id": "f_instr_cal_background_performed_on",
+    "value": "2018-03-24",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/background.ini:[head].timestamp"
+   },
+   "f_instr_cal_pure_dye_age_days": {
+    "id": "f_instr_cal_pure_dye_age_days",
+    "value": 128,
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/puredye.ini:[head].timestamp"
+   },
+   "f_instr_cal_pure_dye_expired": {
+    "id": "f_instr_cal_pure_dye_expired",
+    "value": "no",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/puredye.ini:[head].expirytime"
+   },
+   "f_instr_cal_pure_dye_expires_on": {
+    "id": "f_instr_cal_pure_dye_expires_on",
+    "value": "2021-01-01",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/puredye.ini:[head].expirytime"
+   },
+   "f_instr_cal_pure_dye_interval_days": {
+    "id": "f_instr_cal_pure_dye_interval_days",
+    "value": 730,
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/puredye.ini:[head].expirytime"
+   },
+   "f_instr_cal_pure_dye_label": {
+    "id": "f_instr_cal_pure_dye_label",
+    "value": "Pure Dye",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/puredye.ini:[head].timestamp"
+   },
+   "f_instr_cal_pure_dye_performed_on": {
+    "id": "f_instr_cal_pure_dye_performed_on",
+    "value": "2019-01-02",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/puredye.ini:[head].timestamp"
+   },
+   "f_instr_cal_roi_age_days": {
+    "id": "f_instr_cal_roi_age_days",
+    "value": 412,
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/roi.ini:[head].timestamp"
+   },
+   "f_instr_cal_roi_expired": {
+    "id": "f_instr_cal_roi_expired",
+    "value": "no",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/roi.ini:[head].expirytime"
+   },
+   "f_instr_cal_roi_expires_on": {
+    "id": "f_instr_cal_roi_expires_on",
+    "value": "2020-03-23",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/roi.ini:[head].expirytime"
+   },
+   "f_instr_cal_roi_interval_days": {
+    "id": "f_instr_cal_roi_interval_days",
+    "value": 730,
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/roi.ini:[head].expirytime"
+   },
+   "f_instr_cal_roi_label": {
+    "id": "f_instr_cal_roi_label",
+    "value": "ROI",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/roi.ini:[head].timestamp"
+   },
+   "f_instr_cal_roi_performed_on": {
+    "id": "f_instr_cal_roi_performed_on",
+    "value": "2018-03-24",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/roi.ini:[head].timestamp"
+   },
+   "f_instr_cal_uniformity_age_days": {
+    "id": "f_instr_cal_uniformity_age_days",
+    "value": 412,
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/uniformity.ini:[head].timestamp"
+   },
+   "f_instr_cal_uniformity_expired": {
+    "id": "f_instr_cal_uniformity_expired",
+    "value": "no",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/uniformity.ini:[head].expirytime"
+   },
+   "f_instr_cal_uniformity_expires_on": {
+    "id": "f_instr_cal_uniformity_expires_on",
+    "value": "2020-03-23",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/uniformity.ini:[head].expirytime"
+   },
+   "f_instr_cal_uniformity_interval_days": {
+    "id": "f_instr_cal_uniformity_interval_days",
+    "value": 730,
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/uniformity.ini:[head].expirytime"
+   },
+   "f_instr_cal_uniformity_label": {
+    "id": "f_instr_cal_uniformity_label",
+    "value": "Uniformity",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/uniformity.ini:[head].timestamp"
+   },
+   "f_instr_cal_uniformity_performed_on": {
+    "id": "f_instr_cal_uniformity_performed_on",
+    "value": "2018-03-24",
+    "fmt": "{}",
+    "unit": "",
+    "path": "calibrations/uniformity.ini:[head].timestamp"
+   },
+   "f_instr_event_1_cycle": {
+    "id": "f_instr_event_1_cycle",
+    "value": 23,
+    "fmt": "{}",
+    "unit": "",
+    "path": "messages.log:line 97"
+   },
+   "f_instr_event_1_first_cycle": {
+    "id": "f_instr_event_1_first_cycle",
+    "value": 23,
+    "fmt": "{}",
+    "unit": "",
+    "path": "messages.log:line 97"
+   },
+   "f_instr_event_1_kind": {
+    "id": "f_instr_event_1_kind",
+    "value": "pause",
+    "fmt": "{}",
+    "unit": "",
+    "path": "messages.log:line 97"
+   },
+   "f_instr_event_1_last_cycle": {
+    "id": "f_instr_event_1_last_cycle",
+    "value": 24,
+    "fmt": "{}",
+    "unit": "",
+    "path": "messages.log:line 97"
+   },
+   "f_instr_event_2_cycle": {
+    "id": "f_instr_event_2_cycle",
+    "value": 23,
+    "fmt": "{}",
+    "unit": "",
+    "path": "messages.log:line 98"
+   },
+   "f_instr_event_2_kind": {
+    "id": "f_instr_event_2_kind",
+    "value": "resume",
+    "fmt": "{}",
+    "unit": "",
+    "path": "messages.log:line 98"
+   },
+   "f_instr_instrument_type": {
+    "id": "f_instr_instrument_type",
+    "value": "appletini",
+    "fmt": "{}",
+    "unit": "",
+    "path": "experiment.xml:InstrumentTypeId"
+   },
+   "f_instr_max_hold_deviation_c": {
+    "id": "f_instr_max_hold_deviation_c",
+    "value": 0.1,
+    "fmt": "{:.2f}",
+    "unit": " °C",
+    "path": "logs/temperature.log"
+   },
+   "f_instr_min_lid_c_cycling": {
+    "id": "f_instr_min_lid_c_cycling",
+    "value": 104.95,
+    "fmt": "{:.2f}",
+    "unit": " °C",
+    "path": "logs/temperature.log"
+   },
+   "f_instr_model": {
+    "id": "f_instr_model",
+    "value": "QuantStudio 1/3/5 class",
+    "fmt": "{}",
+    "unit": "",
+    "path": "experiment.xml:InstrumentTypeId"
+   },
+   "f_instr_n_events": {
+    "id": "f_instr_n_events",
+    "value": 2,
+    "fmt": "{}",
+    "unit": "",
+    "path": "messages.log"
+   },
+   "f_instr_run_date": {
+    "id": "f_instr_run_date",
+    "value": "2019-05-10",
+    "fmt": "{}",
+    "unit": "",
+    "path": "experiment.xml:RunStartTime"
+   },
+   "f_instr_run_end": {
+    "id": "f_instr_run_end",
+    "value": "2019-05-10T10:40:00Z",
+    "fmt": "{}",
+    "unit": "",
+    "path": "experiment.xml:RunEndTime"
+   },
+   "f_instr_run_start": {
+    "id": "f_instr_run_start",
+    "value": "2019-05-10T09:00:00Z",
+    "fmt": "{}",
+    "unit": "",
+    "path": "experiment.xml:RunStartTime"
+   },
+   "f_instr_run_state": {
+    "id": "f_instr_run_state",
+    "value": "complete",
+    "fmt": "{}",
+    "unit": "",
+    "path": "experiment.xml:RunState"
+   },
+   "f_instr_software": {
+    "id": "f_instr_software",
+    "value": "QuantStudio Design & Analysis Software v1.4.3",
+    "fmt": "{}",
+    "unit": "",
+    "path": "Manifest.mf:line 3"
+   },
+   "f_instr_zone_spread_p95_c": {
+    "id": "f_instr_zone_spread_p95_c",
+    "value": 0.21,
+    "fmt": "{:.2f}",
+    "unit": " °C",
+    "path": "logs/temperature.log"
+   }
+  }
+ },
+ "gate": [
+  {
+   "rule_id": "G-INSTR",
+   "status": "pass",
+   "code": "run_complete",
+   "text": {
+    "plain": "Run completed.",
+    "segments": [
+     {
+      "text": "Run completed.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   }
+  },
+  {
+   "rule_id": "G-INSTR",
+   "status": "warn",
+   "code": "interrupted",
+   "text": {
+    "plain": "The run was paused during cycles 23–24.",
+    "segments": [
+     {
+      "text": "The run was paused during cycles ",
+      "fact": null
+     },
+     {
+      "text": "23",
+      "fact": "f_instr_event_1_first_cycle"
+     },
+     {
+      "text": "–",
+      "fact": null
+     },
+     {
+      "text": "24",
+      "fact": "f_instr_event_1_last_cycle"
+     },
+     {
+      "text": ".",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_instr_event_1_first_cycle",
+      "text": "23",
+      "value": 23,
+      "unit": "",
+      "path": "messages.log:line 97"
+     },
+     {
+      "id": "f_instr_event_1_last_cycle",
+      "text": "24",
+      "value": 24,
+      "unit": "",
+      "path": "messages.log:line 97"
+     }
+    ],
+    "source": "template"
+   }
+  },
+  {
+   "rule_id": "G-INSTR",
+   "status": "info",
+   "code": "calibration_expired",
+   "text": {
+    "plain": "Background calibration done 412 days before this run, past the vendor's 180-day expiry.",
+    "segments": [
+     {
+      "text": "Background",
+      "fact": "f_instr_cal_background_label"
+     },
+     {
+      "text": " calibration done ",
+      "fact": null
+     },
+     {
+      "text": "412",
+      "fact": "f_instr_cal_background_age_days"
+     },
+     {
+      "text": " days before this run, past the vendor's ",
+      "fact": null
+     },
+     {
+      "text": "180",
+      "fact": "f_instr_cal_background_interval_days"
+     },
+     {
+      "text": "-day expiry.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_instr_cal_background_label",
+      "text": "Background",
+      "value": "Background",
+      "unit": "",
+      "path": "calibrations/background.ini:[head].timestamp"
+     },
+     {
+      "id": "f_instr_cal_background_age_days",
+      "text": "412",
+      "value": 412,
+      "unit": "",
+      "path": "calibrations/background.ini:[head].timestamp"
+     },
+     {
+      "id": "f_instr_cal_background_interval_days",
+      "text": "180",
+      "value": 180,
+      "unit": "",
+      "path": "calibrations/background.ini:[head].expirytime"
+     }
+    ],
+    "source": "template"
+   }
+  },
+  {
+   "rule_id": "G-INSTR",
+   "status": "pass",
+   "code": "hold_on_setpoint",
+   "text": {
+    "plain": "Hold temperatures stayed within 0.50 °C of the setpoint.",
+    "segments": [
+     {
+      "text": "Hold temperatures stayed within ",
+      "fact": null
+     },
+     {
+      "text": "0.50 °C",
+      "fact": "f_instr_hold_limit_c"
+     },
+     {
+      "text": " of the setpoint.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_instr_hold_limit_c",
+      "text": "0.50 °C",
+      "value": 0.5,
+      "unit": " °C",
+      "path": "lab setting: G-INSTR hold_limit_c"
+     }
+    ],
+    "source": "template"
+   }
+  }
+ ],
+ "instrument_id": "quantstudio-5-bench-2",
+ "question": null
+}

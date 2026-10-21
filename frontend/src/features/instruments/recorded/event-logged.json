@@ -1,0 +1,75 @@
+{
+ "message": "Note logged.",
+ "seq": 3,
+ "instrument": {
+  "instrument": {
+   "instrument_id": "quantstudio-5-bench-2",
+   "display_name": "QuantStudio 5, bench 2",
+   "make_model": "Applied Biosystems QuantStudio 5",
+   "location": "Lab 2.14, by the window",
+   "shared": true,
+   "n_events": 3,
+   "n_open_incidents": 0,
+   "n_proposed": 0,
+   "calibrations": [
+    {
+     "type": "background",
+     "performed_on": "2025-08-28",
+     "age_days": 419,
+     "source": "typed"
+    }
+   ],
+   "chain_ok": true,
+   "problems": []
+  },
+  "events": [
+   {
+    "seq": 1,
+    "kind": "calibration",
+    "kind_word": "Calibration",
+    "source": "typed",
+    "actor": "human",
+    "at": "2025-08-28",
+    "recorded_at": "2026-10-21T11:39:04Z",
+    "run_hash": null,
+    "wells": [],
+    "details": {
+     "performed_on": "2025-08-28",
+     "type": "background"
+    },
+    "note": "Background and ROI by the engineer.",
+    "hash": "ddbcf6aea64fbab74901b88e6005e9e0fec8ad37f0908dcc9dfb7431f5bb3415"
+   },
+   {
+    "seq": 2,
+    "kind": "service",
+    "kind_word": "Service visit",
+    "source": "typed",
+    "actor": "human",
+    "at": "2025-08-28",
+    "recorded_at": "2026-10-21T11:39:04Z",
+    "run_hash": null,
+    "wells": [],
+    "details": {},
+    "note": "Annual service visit; block cleaned.",
+    "hash": "4e0bc547146f661b31322067b8a79024a98f9ff1be55c42fa27be17edca3065a"
+   },
+   {
+    "seq": 3,
+    "kind": "note",
+    "kind_word": "Note",
+    "source": "typed",
+    "actor": "human",
+    "at": null,
+    "recorded_at": "2026-10-21T11:39:04Z",
+    "run_hash": null,
+    "wells": [],
+    "details": {},
+    "note": "Plate holder pushed back <b>flush</b> & re-seated; see <a href=\"#\">manual</a>",
+    "hash": "de439f31e7167c9586a2d16bda52c4f317970f86c6aae0e4a21ab1378e294f60"
+   }
+  ],
+  "incidents": [],
+  "head": "de439f31e7167c9586a2d16bda52c4f317970f86c6aae0e4a21ab1378e294f60"
+ }
+}

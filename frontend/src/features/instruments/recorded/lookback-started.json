@@ -1,0 +1,16 @@
+{
+ "job": {
+  "id": "d413271bb77f49e6",
+  "kind": "lookback.run",
+  "title": "Looking back over an instrument's period",
+  "key": "e300000d4f9a",
+  "status": "queued",
+  "step": "",
+  "fraction": null,
+  "typical_s": 6.0,
+  "elapsed_s": 0.0,
+  "result": null,
+  "result_type": "LookbackView",
+  "error": null
+ }
+}

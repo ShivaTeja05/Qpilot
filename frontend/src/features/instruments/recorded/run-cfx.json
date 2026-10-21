@@ -1,0 +1,91 @@
+{
+ "run_id": "feea7e0ac9e6e9ac64fb7f3d",
+ "name": "2016-09-04 gapdh_Run Information.csv",
+ "context": {
+  "source_file": "feea7e0ac9e6e9ac64fb7f3d.csv",
+  "source_kind": "cfx_run_information",
+  "run_id": null,
+  "identity": {
+   "model": "Bio-Rad CFX",
+   "instrument_type": null,
+   "serial": null,
+   "block_serial": null,
+   "cover_serial": null,
+   "optical_head_serial": null,
+   "firmware": null,
+   "software": "CFX Manager 3.1.1517.0823."
+  },
+  "run": {
+   "start": null,
+   "end": null,
+   "state": null,
+   "date_source": null,
+   "date": null
+  },
+  "calibrations": [],
+  "events": [],
+  "temperature": null,
+  "well_flags": {},
+  "notes": [
+   "personal field present, not read",
+   "user name present, not read",
+   "date format ambiguous"
+  ],
+  "checked": [
+   "identity"
+  ],
+  "serials_present": [
+   "optical_head_serial",
+   "serial"
+  ],
+  "facts": {
+   "f_instr_model": {
+    "id": "f_instr_model",
+    "value": "Bio-Rad CFX",
+    "fmt": "{}",
+    "unit": "",
+    "path": "run_information.csv:Run Information keys"
+   },
+   "f_instr_software": {
+    "id": "f_instr_software",
+    "value": "CFX Manager 3.1.1517.0823.",
+    "fmt": "{}",
+    "unit": "",
+    "path": "run_information.csv:line 13"
+   }
+  }
+ },
+ "gate": [
+  {
+   "rule_id": "G-INSTR",
+   "status": "not_applicable",
+   "code": "nothing_to_check",
+   "text": {
+    "plain": "The file names the instrument but records no run state, calibration or event to check.",
+    "segments": [
+     {
+      "text": "The file names the instrument but records no run state, calibration or event to check.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   }
+  }
+ ],
+ "instrument_id": null,
+ "question": {
+  "question": "Which instrument is this?",
+  "reason": "unknown_serial",
+  "choices": [
+   {
+    "instrument_id": "cfx96-core",
+    "display_name": "CFX96 in the core facility"
+   },
+   {
+    "instrument_id": "quantstudio-5-bench-2",
+    "display_name": "QuantStudio 5, bench 2"
+   }
+  ]
+ }
+}
