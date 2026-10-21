@@ -56,19 +56,32 @@ export function asksToTest(p: Pick<Proposal, "payload" | "edits">): boolean {
   return Array.isArray(options) && options.length > 1;
 }
 
+/** Every option a choice.axis proposal names, in its payload or its other readings. */
+export function namedOptions(p: Pick<Proposal, "payload" | "alternatives">): string[] {
+  const readings = [p.payload, ...(p.alternatives ?? [])] as Payload[];
+  return [
+    ...new Set(readings.flatMap((r) => (Array.isArray(r.options) ? r.options.map(String) : []))),
+  ];
+}
+
 /** Ticks for the options of the axis: the primary is always in, each other one optional. */
 export function OptionsEditor({
   axis,
   value,
   onChange,
+  allowed,
 }: {
   axis: AxisView;
   value: Payload;
   onChange: (next: Payload) => void;
+  /** The models the proposal names (its payload and its other reading): the ones that apply. */
+  allowed?: string[];
 }) {
   const chosen = new Set(Array.isArray(value.options) ? value.options.map(String) : []);
   const primary = axis.options.find((o) => o.primary)?.id ?? "linregpcr";
-  const offered = axis.options.filter((o) => !o.primary && !o.unavailable);
+  const offered = axis.options.filter(
+    (o) => !o.primary && !o.unavailable && (!allowed || allowed.includes(o.id)),
+  );
   const set = (option: string, on: boolean) => {
     const next = new Set(chosen);
     if (on) next.add(option);
@@ -112,7 +125,11 @@ function OptionRow({ option }: { option: AxisView["options"][number] }) {
           {state}
         </span>
       </div>
-      {option.unavailable ? <p className="text-xs text-muted">{option.unavailable}</p> : null}
+      {option.unavailable ? (
+        <p className="text-xs text-muted">
+          {option.unavailable.charAt(0).toUpperCase() + option.unavailable.slice(1)}.
+        </p>
+      ) : null}
       {option.flips && option.tested ? (
         <p className="text-xs text-muted">
           Alone, it changes{" "}
@@ -188,7 +205,12 @@ function AxisProposals({
             onReject={(reason) => actions.reject(p.id, reason)}
             onCheckEdit={checkEdit ? (edits) => checkEdit(p.id, edits) : undefined}
             renderEditor={({ value, onChange }) => (
-              <OptionsEditor axis={axis} value={value} onChange={onChange} />
+              <OptionsEditor
+                axis={axis}
+                value={value}
+                onChange={onChange}
+                allowed={namedOptions(p)}
+              />
             )}
             renderConsequence={(q) => ({ summary: consequenceWords(asksToTest(q)) })}
           />

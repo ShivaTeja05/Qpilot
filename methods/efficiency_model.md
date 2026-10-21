@@ -27,6 +27,6 @@
 
 **What is not claimed.** That any efficiency is "correct", or that a gene whose call changes is wrong: the card says what the answer depends on. The delta-method widening of the confidence interval for the uncertainty of the efficiency itself (`variance_of_e`, spec §2) is computed by the engine but not shown yet.
 
-**Validation.** `tests/numbers/test_efficiency.py` (the primary is passed through; the rebuild is exact on a toy table; options that do not apply), `tests/numbers/test_efficiency_demo.py` (the demo flips above, the card and its facts, determinism), `tests/numbers/test_design_axes.py` (the design, the Studio proposal and its check, `qpilot verify` / `qpilot rerun`, the CLI flag).
+**Validation.** `tests/numbers/test_efficiency.py` (the primary is passed through; the rebuild is exact on a toy table; options that do not apply), `tests/numbers/test_efficiency_demo.py` (the demo flips above, the card and its facts, determinism), `tests/numbers/test_design_axes.py` (the design field, the `choice.axis` decision, D-AXIS, the CLI flag), `tests/web/test_studio_axes.py` (propose, check, accept and switch off over HTTP; blind before the curves are confirmed; `qpilot verify` / `qpilot rerun` of the record), `tests/numbers/test_efficiency_studio_demo.py` (the demo's Studio design with the models: card, Results, Trace, the Prism export, the audit's mapping, the record, `qpilot run --efficiency`).
 
 **Licence.** Apache-2.0 (qPilot's own code).

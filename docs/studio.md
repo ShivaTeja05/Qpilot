@@ -25,7 +25,7 @@ A session has five stages. The page shows them in the rail and in the next-step 
 |---|---|---|---|
 | Design | Design | what each sample and gene is, the groups, the comparison | yes |
 | Curves | Curves | which wells count as amplified, and by which rule | yes |
-| Choices | Results | the Decision Cards: the choices that could change a conclusion | no |
+| Choices | Results | the Decision Cards: the choices that could change a conclusion; which further choices to test (the efficiency models, opt-in) | no |
 | Prism draft | Prism | the Prism project | no |
 | Round trip | Prism | what changed in Prism, as questions with their consequences | no |
 
@@ -77,7 +77,10 @@ covers; only **Yes, confirm** confirms. If the inbox changed while you were look
 or an agent), the page says so and shows the current inbox instead of acting on the old list.
 
 After both blind stages are confirmed the page shows the results, the Decision Cards (the Choices
-stage), and the Prism project with a preview of its tables, test and graph (every biological unit
+stage; **Also test efficiency models** asks qPilot to propose one more choice of the grid, which
+efficiency turns each Cq into a quantity: accepting it analyses the study again with that choice,
+whose own card says what each model changes, and the design, so the record, names it; see
+`methods/efficiency_model.md`), and the Prism project with a preview of its tables, test and graph (every biological unit
 with the group mean and its 95 % confidence interval, an approximation of what Prism draws), then
 **Send to Prism** and the round trip.
 

@@ -45,7 +45,7 @@ One hash-routed page. Global routes: `#/` (Open), `#/settings`. A workspace is e
 | Open | `#/` | always | `GET /api/system`, `GET /api/workspaces`, `POST /api/workspaces` (upload: `rdml` + `sheet`, or `files` = instrument exports sorted by content → `qpilot.web.intake` + `io.connectors.materialise`), `POST /api/workspaces/demo`, `POST /api/demo/fetch` |
 | Design (blind) | `…/design` | session | `GET /api/sessions/{sid}` (incl. `capture`: what an export was read as), `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
-| Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence), `/flips`, `/cards`, decide/undo/turn down/explain → store + `core.decisions` + `ai.explain` |
+| Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards`, decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis` |
 | Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test) |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
@@ -156,6 +156,16 @@ No group labels here.
   waiting for a person show first, with **Approve** / **Turn down**. **Explain with the model**
   (only when a model answers; numbers in the explanation are facts, cited).
 * `j`/`k` move between cards, `Enter` focuses the reason, `⌘Enter` decides.
+* **Also test efficiency models** (under the cards; `ResultsView.axes`, opt-in): what qPilot does
+  with the efficiency model now (not tested / tested in the grid / tried, changes nothing / does
+  not apply), each model with what it alone changes (facts) or why it does not apply here, and a
+  link to its Decision Card (`numbers.efficiency_model`) once it is in the grid. In a session,
+  **Propose testing the efficiency models** (`POST /api/sessions/{sid}/propose/axis`) adds a
+  `choice.axis` proposal to the choices stage (the rule proposes, D-AXIS checks, a person accepts,
+  edits the models with one switch each, or rejects); accepting analyses the study again with it,
+  and **Propose to stop testing them** goes back to the earlier analysis with its decisions. A
+  study analysed outside Studio shows `qpilot run --efficiency all` instead. Method card:
+  `methods/efficiency_model.md`.
 
 ### Controls (`features/gate`) — Run Gate
 What the controls on each plate say, and whether any of it changes a call. The shipped rule pack
