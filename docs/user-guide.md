@@ -23,6 +23,11 @@ The page runs on your computer. It sends nothing anywhere unless you press a but
 15. [Keyboard](#15-keyboard)
 16. [When something does not work](#16-when-something-does-not-work)
 17. [What the page never does](#17-what-the-page-never-does)
+18. [What this study cannot tell you](#18-what-this-study-cannot-tell-you) (Results)
+19. [Where to look](#19-where-to-look) (Trace)
+20. [Run Review and the Excel workbook](#20-run-review-and-the-excel-workbook) (Report)
+21. [Sheet check](#21-sheet-check)
+22. [Instruments](#22-instruments)
 
 ## 1. Start the page
 
@@ -268,3 +273,71 @@ Everything can also be done with the Tab key, and every control shows where the 
 * It never loads anything from the internet and never sends your data anywhere on its own.
 * It never records a decision as anyone but the person at the page.
 * It never claims a confidence in percent: levels are ordinal, with reasons.
+
+## 18. What this study cannot tell you
+
+On Results, the **Evidence Ledger** lists what your data has and lacks: NTCs on every plate,
+no-RT controls, reference candidates with geNorm M and V, where the efficiency comes from, whether
+the curves are raw, RNA integrity, RT replicates, biological units, an inter-run calibrator,
+reagent lots, instrument and calibration dates. Each item is **present**, **absent**, **unknown**
+or **not applicable**, and says what that means for your conclusions; the absent and unknown ones
+come first. An absent item never changes a conclusion or a confidence level: it says what this
+study cannot show (for example, without a no-RT control, genomic DNA carry-over cannot be
+checked). When you opened an instrument export, the raw-ness item reads qPilot's own check of the
+curves; for an RDML file it says the file did not go through that check.
+
+*On the demo:* 3 items present, 6 absent, 1 unknown, 1 not applicable (no no-RT control, no RNA
+integrity, no RT replicates, no sample sheet naming biological units, no lots, no instrument dates).
+
+## 19. Where to look
+
+In **Trace**, **Where to look** follows a gene's result, one sample or one well (`PLATE:WELL`)
+back through the normaliser and the reference wells to the plate controls, and lists the places
+to look first: the sample, plate and well, what is unusual there (for example "one reference well
+disagrees with the sample's other reference wells"), what to check, and what each option would
+do: keep it, read that well from the sample's other reference wells, or set the sample aside. A
+place where an option **changes a call** has **Decide…**: it opens that place as a Decision Card
+on Results, where you decide it with a reason like any other card. Deciding it is your choice,
+kept in the record; the study's numbers stay as analysed (to leave a well out of the analysis,
+leave it out in Curves or from Controls). An agent can ask, never decide such a card.
+
+Where to look traces the analysis in use (your decisions applied). *On the demo:* CAMTA2 (no call)
+points first at tumour 2016, plate HMBS_20080318, well K22: that HMBS well reads Cq 46.1 while the
+tumour's four other reference wells agree, so all 58 of its values read 5.55× too high; reading
+the well from the other four makes CAMTA2 down.
+
+## 20. Run Review and the Excel workbook
+
+In **Report**, the **Run Review** is one page for the person who reviews someone else's run: the
+headline genes, what the study cannot tell you, and every sign-off so far. Sign off with
+**Accept**, **Repeat** or **Discuss**, a comment and your name: it goes into the decision record as
+yours, changes no result and no card, and qPilot never passes or fails a run for you. If something
+was decided while you were reading, the review is shown again and you sign off on what is there
+now.
+
+Report's exports include an **Excel workbook**: the results table with a "Trace" column naming
+each gene's first place to look, a "Where to look" sheet and an "About" sheet. It shows the
+results at the recommended choices, as the Analysis Record does.
+
+## 21. Sheet check
+
+**Sheet check** (under *Lab* in the rail) recomputes your own ΔΔCq spreadsheet (`.xlsx` or
+`.csv`) from its own Cq values: how many fold changes reproduce, the first column and row that
+differ, and the known slip that reproduces it (an inverted sign, the exponent applied twice,
+statistics run on fold changes, …). Compared with a study, genes whose arithmetic reproduces but
+whose fold change differs from qPilot's are a difference of method, not a slip. qPilot guesses
+which column holds what and says so until you **confirm the mapping** (change any column first).
+Your sheet is never edited, nothing is saved, and its sample and group names are not shown back.
+
+## 22. Instruments
+
+**Instruments** (under *Lab*) is your lab's working memory for each instrument: its latest
+calibrations and their age, open incidents, and its logbook (a hash chain, so an edit shows).
+An agent may only propose an incident; you **confirm** it or **turn it down** here, and note what
+fixed it. Log calibrations, part changes, service visits, moves and notes yourself. **Read a run
+file** (`.eds`, a QuantStudio or CFX export, RDML) shows what the file says about the instrument
+and the run (calibration dates, pauses, an aborted run); serial numbers never leave your
+computer, and the first file from an unknown instrument asks once which instrument it is.
+**Lookback** answers "which of my conclusions used this instrument between these dates, and what
+changes without those runs?"; it writes nothing.
+
