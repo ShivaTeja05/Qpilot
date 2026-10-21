@@ -73,7 +73,7 @@ class GateContext:
         t = self.table
         self.table = t.assign(
             key=t["run_id"] + "/" + t["well"],
-            amplified=t["amplification"].astype(bool) & t["cq"].notna(),
+            amplified=t["amplification"].eq(True) & t["cq"].notna(),
         )
 
     def plates(self) -> list[str]:
@@ -214,39 +214,63 @@ def ntc_gap(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
         f_k = ctx.fact(rule, scope, "k", k, "{:g}")
         facts = [n_ntc, n_amp, f_cq, f_k]
         evidence.update(cq_ntc=cq_ntc, k_cycles=k, efficiency=eff, chemistry_class="unclassified")
+        f_gap = None
         if not detected.empty:
             gap = cq_ntc - float(detected["cq"].min())
-            facts.append(ctx.fact(rule, scope, "gap", gap, "{:.2f}"))
+            f_gap = ctx.fact(rule, scope, "gap", gap, "{:.2f}")
+            facts.append(f_gap)
             evidence["gap_to_lowest_unknown"] = gap
         if tainted.empty:
+            earliest = (
+                f" (the earliest {{{{{f_gap}}}}} cycles before it)" if f_gap is not None else ""
+            )
             yield Finding(
                 scope=scope,
                 outcome="amplified_clear",
                 reason=(
                     f"{{{{{n_amp}}}}} of {{{{{n_ntc}}}}} no-template wells amplified, the "
                     f"earliest at Cq {{{{{f_cq}}}}}; every study sample amplified at least "
-                    f"{{{{{f_k}}}}} cycles earlier."
+                    f"{{{{{f_k}}}}} cycles earlier{earliest}."
                 ),
                 facts=facts,
                 evidence=evidence,
             )
             continue
-        fraction = float(np.max(eff ** -(cq_ntc - tainted["cq"].to_numpy(dtype=float))))
+        gaps = cq_ntc - tainted["cq"].to_numpy(dtype=float)
+        # A share of a well's signal is at most all of it: a well that amplified no earlier than
+        # the control could owe all of its signal to what the control shows.
+        fraction = min(1.0, float(np.max(eff**-gaps)))
+        late = int(np.sum(gaps <= 0))
         f_n = ctx.fact(rule, scope, "ntainted", int(len(tainted)))
-        f_frac = ctx.fact(rule, scope, "contamfrac", fraction * 100, "{:.1f}", "%")
-        evidence.update(n_tainted=int(len(tainted)), max_contaminant_fraction=fraction)
+        evidence.update(
+            n_tainted=int(len(tainted)), n_not_earlier=late, max_contaminant_fraction=fraction
+        )
+        wells, its = ("study well", "its") if len(tainted) == 1 else ("study wells", "their")
+        if late:
+            f_late = ctx.fact(rule, scope, "nlate", late)
+            share = (
+                f"{{{{{f_late}}}}} of them amplified no earlier than the control: their whole "
+                "signal could be what the control shows."
+            )
+            shown = [f_late]
+        else:
+            f_frac = ctx.fact(rule, scope, "contamfrac", fraction, "{:.1%}")
+            share = (
+                f"If the control's signal were template, it could be up to {{{{{f_frac}}}}} of "
+                "theirs."
+            )
+            shown = [f_frac]
         yield Finding(
             scope=scope,
             outcome="tainted",
             reason=(
                 f"{{{{{n_amp}}}}} of {{{{{n_ntc}}}}} no-template wells amplified, the earliest at "
-                f"Cq {{{{{f_cq}}}}}. {{{{{f_n}}}}} study wells amplified less than {{{{{f_k}}}}} "
-                f"cycles before it, so their positive call and quantity are in doubt (MIQE 2.0). "
-                f"If the control's signal were template, it could be up to {{{{{f_frac}}}}} of "
-                "theirs. Without melt data the control's product is unclassified (contamination "
+                f"Cq {{{{{f_cq}}}}}. {{{{{f_n}}}}} {wells} amplified less than {{{{{f_k}}}}} "
+                f"cycles before it, so {its} positive call and quantity are in doubt (MIQE 2.0). "
+                f"{share} Without melt data the control's product is unclassified (contamination "
                 "or primer-dimer) and is treated as possible contamination."
             ),
-            facts=[*facts, f_n, f_frac],
+            facts=[*facts, f_n, *shown],
             evidence=evidence,
             flagged=sorted(tainted["key"]),
             options={"exclude_flagged": sorted(tainted["key"])},
@@ -316,7 +340,8 @@ def nrt_gdna(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
             float(rows["eff_target"].dropna().median()) if rows["eff_target"].notna().any() else 2.0
         )
         by_sample = {s: g for s, g in unkn.groupby("sample")}
-        pooled = not any(s in by_sample for s in nrt["sample"])
+        studied = set(rows.loc[rows["sample_type"] == ANALYSED, "sample"])
+        pooled = not any(s in studied for s in nrt["sample"])
         pairs = (
             [(s, nrt, g) for s, g in by_sample.items()]
             if pooled
@@ -346,7 +371,7 @@ def nrt_gdna(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
                 "a" if share < cut_a else "b" if share < cut_b else "c" if share < cut_c else "f"
             )
             f_d = ctx.fact(rule, scope, "dcqnrt", delta, "{:.2f}")
-            f_s = ctx.fact(rule, scope, "gdna", share * 100, "{:.1f}", "%")
+            f_s = ctx.fact(rule, scope, "gdna", share, "{:.1%}")
             keys = sorted(rt_rows["key"])
             yield Finding(
                 scope=scope,
@@ -380,14 +405,14 @@ def pos_window(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
             yield _na(scope, "no_pos_typed", "No positive control for this target here.")
             continue
         facts = []
+        reason = "The positive control is not mapped to a control and a Cq window yet."
         if pos["amplified"].any():
-            facts.append(ctx.fact(rule, scope, "cqpos", float(pos["cq"].min()), "{:.2f}"))
+            earliest = float(pos.loc[pos["amplified"], "cq"].min())
+            f_pos = ctx.fact(rule, scope, "cqpos", earliest, "{:.2f}")
+            facts.append(f_pos)
+            reason += f" It amplified at Cq {{{{{f_pos}}}}}."
         yield Finding(
-            scope=scope,
-            outcome=NOT_APPLICABLE,
-            code="pos_unmapped",
-            reason="The positive control is not mapped to a control and a Cq window yet.",
-            facts=facts,
+            scope=scope, outcome=NOT_APPLICABLE, code="pos_unmapped", reason=reason, facts=facts
         )
 
 
@@ -473,9 +498,9 @@ def std_curve(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
             continue
         pct = (fit["efficiency"] - 1) * 100
         f = {
-            "e": ctx.fact(rule, scope, "estd", pct, "{:.1f}", "%"),
-            "lo": ctx.fact(rule, scope, "estdlo", (fit["e_low"] - 1) * 100, "{:.1f}", "%"),
-            "hi": ctx.fact(rule, scope, "estdhi", (fit["e_high"] - 1) * 100, "{:.1f}", "%"),
+            "e": ctx.fact(rule, scope, "estd", fit["efficiency"] - 1, "{:.1%}"),
+            "lo": ctx.fact(rule, scope, "estdlo", fit["e_low"] - 1, "{:.1%}"),
+            "hi": ctx.fact(rule, scope, "estdhi", fit["e_high"] - 1, "{:.1%}"),
             "r2": ctx.fact(rule, scope, "r2", fit["r2"], "{:.3f}"),
             "slope": ctx.fact(rule, scope, "slope", fit["slope"], "{:.3f}"),
             "lv": ctx.fact(rule, scope, "nlevels", fit["levels"]),
@@ -509,13 +534,17 @@ def std_curve(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
         facts = list(f.values())
         if fit["eff_wells"] is not None and ctx.rawness in (None, "raw"):
             gap = fit["efficiency"] - fit["eff_wells"]
-            f_w = ctx.fact(rule, scope, "ewells", fit["eff_wells"], "{:.3f}")
-            f_g = ctx.fact(rule, scope, "egap", gap, "{:.3f}")
-            facts += [f_w, f_g]
+            f_w = ctx.fact(rule, scope, "ewells", fit["eff_wells"] - 1, "{:.1%}")
+            facts.append(f_w)
             evidence.update(eff_per_well_mean=fit["eff_wells"], eff_gap=gap)
             sentences.append(
-                f"The same wells' own mean efficiency is {{{{{f_w}}}}} (amplification factor; "
-                "the gap is evidence, not a failure)."
+                f"The same wells' own mean efficiency (LinRegPCR, per curve) is {{{{{f_w}}}}}; "
+                "the difference is evidence, not a failure."
+            )
+        if fit["span_log10"] < 4:
+            sentences.append(
+                f"The standards span {{{{{f['span']}}}}} orders of magnitude (MIQE 2.0 asks for "
+                "four to five)."
             )
         if out_e:
             sentences.append("The efficiency is outside the pack's window.")
@@ -530,14 +559,21 @@ def std_curve(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
             "In relative quantification this does not taint study samples; it marks the curve as "
             "an efficiency source."
         )
+        reason = " ".join(sentences)
         yield Finding(
-            scope=scope, outcome=outcome, reason=" ".join(sentences), facts=facts, evidence=evidence
+            scope=scope,
+            outcome=outcome,
+            reason=reason,
+            facts=[fid for fid in facts if "{{" + fid + "}}" in reason],
+            evidence=evidence,
         )
 
 
 # ---------- G-REP ----------
 
-_Q95 = {2: 2.772, 3: 3.314, 4: 3.633, 5: 3.858, 6: 4.030}
+# scipy.stats.studentized_range.ppf(0.95, n, inf) to six decimals (the spec rounds to three; the
+# oracle uses scipy's values, and 2.772 vs 2.7718 moves a duplicate's tolerance by 7e-5 cycles).
+_Q95 = {2: 2.771808, 3: 3.314493, 4: 3.63316, 5: 3.857656, 6: 4.030092}
 
 
 def range_quantile(n: int) -> float:
@@ -645,7 +681,7 @@ def replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
             )
         if evaluated and flagged_groups / evaluated > share_max:
             scope = {"plate": plate, "target": target}
-            f_s = ctx.fact(rule, scope, "share", flagged_groups / evaluated * 100, "{:.0f}", "%")
+            f_s = ctx.fact(rule, scope, "share", flagged_groups / evaluated, "{:.0%}")
             yield Finding(
                 scope=scope,
                 outcome="many_outside",
@@ -775,6 +811,7 @@ def run_gate(
     rawness: str | None = None,
     confirmed_no_controls: Collection[str] = (),
     model: Any = None,
+    cell: Mapping[str, Any] | None = None,
 ) -> core_gate.GateReport:
     """Evaluate ``pack`` on a study's wells and run the consequence test on every hit.
 
@@ -787,6 +824,8 @@ def run_gate(
         rawness: ``capture``'s raw-ness verdict for the input, when known.
         confirmed_no_controls: Plates a person confirmed have no control wells.
         model: The study's :class:`qpilot.qpcr.study.StudyModel` when already built.
+        cell: The analysis in use when a person's decisions moved it off the planned one (one
+            option per decision-space dimension); every option is then compared at that cell.
 
     Returns:
         The report; deterministic for the same inputs.
@@ -805,7 +844,7 @@ def run_gate(
     )
     evals = evaluate(rule_pack, ctx)
     model = model or build_model(curves, settings)
-    base = core_gate.baseline(model.space)
+    base = core_gate.baseline(core_gate.at_cell(model.space, cell))
     analysed = set(ctx.table.loc[ctx.table["sample_type"] == ANALYSED, "key"])
 
     def variant(keys: list[str]) -> Any:
@@ -814,7 +853,7 @@ def run_gate(
                 "", keys, "These wells are not study samples, so no conclusion uses them."
             )
         try:
-            return build_model(curves, settings, extra_excluded=keys).space
+            return core_gate.at_cell(build_model(curves, settings, extra_excluded=keys).space, cell)
         except (NGuardError, DesignError, ValueError) as err:
             return core_gate.unknown("", keys, f"The analysis cannot be re-run without them: {err}")
 
