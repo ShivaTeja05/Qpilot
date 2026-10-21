@@ -41,7 +41,8 @@ test.describe("Trace", () => {
       "Samples behind the most calls",
       "Control-gene wells that disagree",
     ]) {
-      await expect(main.getByRole("region", { name })).toBeVisible();
+      // The card and, inside it, its scrolling table carry the same name.
+      await expect(main.getByRole("region", { name }).first()).toBeVisible();
     }
     await app.axe("Trace overview");
   });
@@ -80,7 +81,9 @@ test.describe("Trace", () => {
     const gene = headline[0]!;
     await app.open(route(demo, "gene", gene));
     await app.page
-      .getByRole("link", { name: literal(`Trace ${gene} down to its samples, wells and plates`) })
+      .getByRole("link", {
+        name: new RegExp(`^Trace this gene\\s*:\\s*${literal(gene).source} down to its samples`),
+      })
       .first()
       .click();
     await app.settle();

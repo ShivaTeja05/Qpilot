@@ -28,11 +28,11 @@ export const SECTIONS: SectionUnderTest[] = [
   { id: "prism", label: "Prism", owner: "prism", scope: "workspace", sessionOnly: true },
   { id: "record", label: "Record", owner: "record", scope: "workspace" },
   { id: "agents", label: "Agents", owner: "record", scope: "workspace" },
-  { id: "trace", label: "Trace", owner: "trace", scope: "workspace", notInRail: true },
-  { id: "claims", label: "Claims", owner: "claims", scope: "workspace", notInRail: true },
-  { id: "report", label: "Report", owner: "report", scope: "workspace", notInRail: true },
-  { id: "history", label: "History", owner: "history", scope: "workspace", notInRail: true },
-  { id: "planner", label: "Plan next", owner: "planner", scope: "workspace", notInRail: true },
+  { id: "trace", label: "Trace", owner: "trace", scope: "workspace" },
+  { id: "claims", label: "Claims", owner: "claims", scope: "workspace" },
+  { id: "report", label: "Report", owner: "report", scope: "workspace" },
+  { id: "history", label: "History", owner: "history", scope: "workspace" },
+  { id: "planner", label: "Plan next", owner: "planner", scope: "workspace" },
   { id: "settings", label: "Settings", owner: "home", scope: "global" },
 ];
 

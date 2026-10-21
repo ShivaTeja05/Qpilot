@@ -56,7 +56,7 @@ test.describe("Record", () => {
       .getByRole("button", { name: /^(Export the Analysis Record|Export again)$/ })
       .click();
     // A job card while it runs, then the download link with the record's file name.
-    const link = exportCard.getByRole("link", { name: /^Download .+\.zip/ });
+    const link = exportCard.getByRole("link", { name: /^Download( the record| .+\.zip)/ });
     await expect(link).toBeVisible({ timeout: 240_000 });
     await app.axe("Record, exported");
     const [download] = await Promise.all([app.page.waitForEvent("download"), link.click()]);
