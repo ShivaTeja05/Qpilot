@@ -92,14 +92,17 @@ function InstrumentItem({ instrument: i }: { instrument: InstrumentSummary }) {
         actions={<ChainBadge ok={i.chain_ok} />}
       />
       <CardBody className="flex flex-1 flex-col gap-3">
-        <ChainProblems problems={i.problems} />
-        <KeyValues
-          rows={[
-            ["Latest calibrations", <Calibrations key="c" items={i.calibrations} />],
-            ["Incidents", <OpenCount key="o" summary={i} />],
-            ["Logbook", plural(i.n_events, "entry", "entries")],
-          ]}
-        />
+        {i.chain_ok ? (
+          <KeyValues
+            rows={[
+              ["Latest calibrations", <Calibrations key="c" items={i.calibrations} />],
+              ["Incidents", <OpenCount key="o" summary={i} />],
+              ["Logbook", plural(i.n_events, "entry", "entries")],
+            ]}
+          />
+        ) : (
+          <ChainProblems problems={i.problems} />
+        )}
         <div className="mt-auto">
           <a
             href={href(i.instrument_id)}
@@ -203,13 +206,17 @@ function InstrumentPage({ id }: { id: string }) {
           error={one.error}
           title="This instrument's logbook could not be read"
           onRetry={() => void one.refetch()}
-        >
-          {summary && !summary.chain_ok ? <ChainProblems problems={summary.problems} /> : null}
-        </ErrorPanel>
+        />
       ) : !view ? (
         <Card className="p-4">
           <LoadingBlock label="Reading the logbook" lines={5} />
         </Card>
+      ) : !view.instrument.chain_ok ? (
+        // A chain that does not verify is shown as broken, never replayed: nothing to decide or log.
+        <>
+          <Logbook view={view} />
+          <LookbackCard instruments={list.data?.instruments ?? []} instrumentId={id} />
+        </>
       ) : (
         <>
           <Card as="section" aria-labelledby="instr-now">
@@ -229,12 +236,10 @@ function InstrumentPage({ id }: { id: string }) {
           </Card>
           <WaitingForYou instrumentId={id} incidents={view.incidents} />
           <OpenIncidents instrumentId={id} incidents={view.incidents} />
-          {view.instrument.chain_ok ? (
-            <div className="grid items-start gap-4 xl:grid-cols-2">
-              <LogEvent instrumentId={id} kinds={kinds} />
-              <LogIncident instrumentId={id} />
-            </div>
-          ) : null}
+          <div className="grid items-start gap-4 xl:grid-cols-2">
+            <LogEvent instrumentId={id} kinds={kinds} />
+            <LogIncident instrumentId={id} />
+          </div>
           <Logbook view={view} />
           <SettledIncidents incidents={view.incidents} />
           <LookbackCard instruments={list.data?.instruments ?? []} instrumentId={id} />

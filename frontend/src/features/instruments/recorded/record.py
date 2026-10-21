@@ -25,13 +25,14 @@ lookback over the demo study. It writes, next to this file, exactly what the pag
 * ``linked.json`` -- ``POST /api/instruments/runs/{run_id}/link``;
 * ``run-known.json`` -- the same file read again once linked;
 * ``run-cfx.json`` -- the CFX export (a serial the registry does not know);
-* ``never.json`` -- the serial numbers the two files carry, read locally from each file's own
-  ``summary()`` (the test checks that none of them is ever on the page);
+* ``never.json`` -- the invented serial numbers of the synthetic ``.eds``, read locally from its
+  own ``summary()`` (the test checks that none of them is ever on the page; serials of public
+  example files are never copied into the repository);
 * ``lookback-started.json`` / ``lookback-job.json`` -- ``POST /api/studies/{id}/lookback`` (3 Mar
   2008, the method card's window that changes calls) and its finished job;
 * ``broken.json`` / ``broken-one.json`` -- ``GET /api/instruments`` and ``/{id}`` while one line of
-  the CFX's logbook is altered on disk (the bytes are put back right after); the one instrument
-  answers with a refusal, kept as ``{"status", "body"}``.
+  the CFX's logbook is altered on disk (the bytes are put back right after): the instrument with
+  its chain's problems and nothing replayed.
 
 Run it on a fresh copy of the store: it registers and logs again on every run.
 """
@@ -67,12 +68,8 @@ def call(
     *,
     raw: bytes | None = None,
     content_type: str = "application/json",
-    refusal: bool = False,
 ) -> Any:
-    """GET (or POST ``body`` as JSON, or ``raw`` bytes) one API path with the dev launch key.
-
-    With ``refusal``, an error answer is returned as ``{"status", "body"}`` instead of stopping.
-    """
+    """GET (or POST ``body`` as JSON, or ``raw`` bytes) one API path with the dev launch key."""
     origin = f"http://127.0.0.1:{port}"
     data = raw if raw is not None else (None if body is None else json.dumps(body).encode())
     request = urllib.request.Request(
@@ -89,8 +86,6 @@ def call(
         with urllib.request.urlopen(request, timeout=300) as response:  # noqa: S310 (local server)
             return json.loads(response.read())
     except urllib.error.HTTPError as err:
-        if refusal:
-            return {"status": err.code, "body": json.loads(err.read())}
         raise SystemExit(f"{path}: {err.code} {err.read().decode(errors='replace')}") from None
 
 
@@ -214,7 +209,7 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as tmp:
         eds = qs_v1_expired(Path(tmp) / "qs5-2019-05-10.eds")
-        never = serials_of(eds) + serials_of(CFX_RUN)
+        never = serials_of(eds)  # invented by the builder; public files' serials stay out
         out["run-unknown.json"] = run = upload(port, eds)
         out["linked.json"] = call(
             port, f"/api/instruments/runs/{run['run_id']}/link", {"instrument_id": qs}
@@ -273,7 +268,7 @@ def main() -> None:
     try:
         log.write_bytes(original.replace(b"room 1.20", b"room 1.21", 1))
         out["broken.json"] = call(port, "/api/instruments")
-        out["broken-one.json"] = call(port, f"/api/instruments/{cfx}", refusal=True)
+        out["broken-one.json"] = call(port, f"/api/instruments/{cfx}")
     finally:
         log.write_bytes(original)
     out["instruments.json"] = call(port, "/api/instruments")

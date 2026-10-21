@@ -61,11 +61,11 @@
    "n_samples": 366,
    "n_genes": 58,
    "counts_of": "analysis",
-   "decisions": 2,
+   "decisions": 1,
    "pending_requests": 0,
    "has_audit": true,
    "is_demo": true,
-   "updated_at": 1792582744.224291,
+   "updated_at": 1792584050.0363405,
    "warming": false
   }
  ]

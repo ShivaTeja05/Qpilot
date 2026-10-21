@@ -30,7 +30,7 @@
     "source": "typed",
     "actor": "human",
     "at": "2025-08-28",
-    "recorded_at": "2026-10-21T11:39:04Z",
+    "recorded_at": "2026-10-21T12:00:50Z",
     "run_hash": null,
     "wells": [],
     "details": {
@@ -38,7 +38,7 @@
      "type": "background"
     },
     "note": "Background and ROI by the engineer.",
-    "hash": "ddbcf6aea64fbab74901b88e6005e9e0fec8ad37f0908dcc9dfb7431f5bb3415"
+    "hash": "8ec97149fda8b432c7437e9f11bee353be6dc6be0e1f83d87903c4b3dc445527"
    },
    {
     "seq": 2,
@@ -47,12 +47,12 @@
     "source": "typed",
     "actor": "human",
     "at": "2025-08-28",
-    "recorded_at": "2026-10-21T11:39:04Z",
+    "recorded_at": "2026-10-21T12:00:50Z",
     "run_hash": null,
     "wells": [],
     "details": {},
     "note": "Annual service visit; block cleaned.",
-    "hash": "4e0bc547146f661b31322067b8a79024a98f9ff1be55c42fa27be17edca3065a"
+    "hash": "2f76ce829747e9c7d95a4c0d7e2ab1562e24e3358d3c0595a2c10d28da90d524"
    },
    {
     "seq": 3,
@@ -61,12 +61,12 @@
     "source": "typed",
     "actor": "human",
     "at": null,
-    "recorded_at": "2026-10-21T11:39:04Z",
+    "recorded_at": "2026-10-21T12:00:50Z",
     "run_hash": null,
     "wells": [],
     "details": {},
     "note": "Plate holder pushed back <b>flush</b> & re-seated; see <a href=\"#\">manual</a>",
-    "hash": "de439f31e7167c9586a2d16bda52c4f317970f86c6aae0e4a21ab1378e294f60"
+    "hash": "1f8a010a5437a355ff98b4d32116f159c610232681604187373850d1bb7baae3"
    },
    {
     "seq": 4,
@@ -75,15 +75,15 @@
     "source": "file",
     "actor": "system",
     "at": "2019-05-10T09:00:00Z",
-    "recorded_at": "2026-10-21T11:39:04Z",
-    "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+    "recorded_at": "2026-10-21T12:00:50Z",
+    "run_hash": "e8753dc40bd2e1d217e577f05f0f9a25a66d1388b94fb94b81525c4ab140123b",
     "wells": [],
     "details": {
      "cycle": 23,
      "what": "pause"
     },
     "note": "",
-    "hash": "b3ab54946a875a3a048642f17e02358e1fdc3772dda864f6d0cea6932dd57960"
+    "hash": "3a7cc33349e7cd2a548e3ae5f323d6eb8518ce498088fa069654474224ad6046"
    },
    {
     "seq": 5,
@@ -92,8 +92,8 @@
     "source": "typed",
     "actor": "agent",
     "at": null,
-    "recorded_at": "2026-10-21T11:39:04Z",
-    "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+    "recorded_at": "2026-10-21T12:00:50Z",
+    "run_hash": "e8753dc40bd2e1d217e577f05f0f9a25a66d1388b94fb94b81525c4ab140123b",
     "wells": [
      "B3",
      "B4"
@@ -108,7 +108,7 @@
      }
     },
     "note": "B3 and B4 ran late on three plates in a row <i>after the pause</i>.",
-    "hash": "11e1c549a81c344a4d2c4bfda34f38c68936155b8936ff5521ebc174ab0b66dc"
+    "hash": "1cc766719fb335178cb26b2da5e592c693e86d569015d8061f894035a33ff8aa"
    },
    {
     "seq": 6,
@@ -117,8 +117,8 @@
     "source": "typed",
     "actor": "agent",
     "at": null,
-    "recorded_at": "2026-10-21T11:39:04Z",
-    "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+    "recorded_at": "2026-10-21T12:00:50Z",
+    "run_hash": "e8753dc40bd2e1d217e577f05f0f9a25a66d1388b94fb94b81525c4ab140123b",
     "wells": [
      "H12"
     ],
@@ -132,7 +132,7 @@
      }
     },
     "note": "H12's plateau is low next to its replicates.",
-    "hash": "8b69fd82f4a89523f3c285d29f6fcbaa6f05a43aae45ec793ad9d941ea590d60"
+    "hash": "5f4862503603f40c2d4f42eb2cd3cd8f61b582b9d835abacca2be674cba1eaf8"
    },
    {
     "seq": 7,
@@ -141,7 +141,7 @@
     "source": "typed",
     "actor": "human",
     "at": null,
-    "recorded_at": "2026-10-21T11:39:04Z",
+    "recorded_at": "2026-10-21T12:00:50Z",
     "run_hash": null,
     "wells": [],
     "details": {
@@ -149,7 +149,7 @@
      "incident": 6
     },
     "note": "",
-    "hash": "bfe3e423986998b6126d17725160f0f0d739707396e38fb7fbc70ef5caabda46"
+    "hash": "d4bf0ebebe0104b9d183f241f13ef1022635e08dcb5f24d91333c08f0bff009e"
    },
    {
     "seq": 8,
@@ -158,7 +158,7 @@
     "source": "typed",
     "actor": "human",
     "at": null,
-    "recorded_at": "2026-10-21T11:39:04Z",
+    "recorded_at": "2026-10-21T12:00:50Z",
     "run_hash": null,
     "wells": [
      "A1",
@@ -174,16 +174,16 @@
      }
     },
     "note": "Edge wells low after the lid was opened.",
-    "hash": "8b13b5fe79f8526d28d8a996ec734fed6ccd6ee385a4faf7a40381babaa0c3bc"
+    "hash": "ecda6e286461af928c3553022a0451a3bb6590298bee3bd83dc9f201d2f38c8d"
    }
   ],
   "incidents": [
    {
     "seq": 5,
     "status": "proposed",
-    "at": "2026-10-21T11:39:04Z",
+    "at": "2026-10-21T12:00:50Z",
     "actor": "agent",
-    "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+    "run_hash": "e8753dc40bd2e1d217e577f05f0f9a25a66d1388b94fb94b81525c4ab140123b",
     "wells": [
      "B3",
      "B4"
@@ -199,9 +199,9 @@
    {
     "seq": 6,
     "status": "confirmed",
-    "at": "2026-10-21T11:39:04Z",
+    "at": "2026-10-21T12:00:50Z",
     "actor": "agent",
-    "run_hash": "69f462672459ce60a2cb66a5fbc529b691f6abb8ef8970cfd5e68c39b0771ab3",
+    "run_hash": "e8753dc40bd2e1d217e577f05f0f9a25a66d1388b94fb94b81525c4ab140123b",
     "wells": [
      "H12"
     ],
@@ -216,7 +216,7 @@
    {
     "seq": 8,
     "status": "confirmed",
-    "at": "2026-10-21T11:39:04Z",
+    "at": "2026-10-21T12:00:50Z",
     "actor": "human",
     "run_hash": null,
     "wells": [
@@ -232,6 +232,6 @@
     "can_fix": true
    }
   ],
-  "head": "8b13b5fe79f8526d28d8a996ec734fed6ccd6ee385a4faf7a40381babaa0c3bc"
+  "head": "ecda6e286461af928c3553022a0451a3bb6590298bee3bd83dc9f201d2f38c8d"
  }
 }

@@ -1,5 +1,5 @@
 {
- "id": "d413271bb77f49e6",
+ "id": "9023fd442daa4992",
  "kind": "lookback.run",
  "title": "Looking back over an instrument's period",
  "key": "e300000d4f9a",
@@ -7,7 +7,7 @@
  "step": "Leaving out the runs in the window and analysing the study again",
  "fraction": 0.2,
  "typical_s": 6.0,
- "elapsed_s": 1.24,
+ "elapsed_s": 1.28,
  "result": {
   "study_id": "e300000d4f9a",
   "instrument_id": "quantstudio-5-bench-2",

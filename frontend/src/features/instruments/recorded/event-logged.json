@@ -30,7 +30,7 @@
     "source": "typed",
     "actor": "human",
     "at": "2025-08-28",
-    "recorded_at": "2026-10-21T11:39:04Z",
+    "recorded_at": "2026-10-21T12:00:50Z",
     "run_hash": null,
     "wells": [],
     "details": {
@@ -38,7 +38,7 @@
      "type": "background"
     },
     "note": "Background and ROI by the engineer.",
-    "hash": "ddbcf6aea64fbab74901b88e6005e9e0fec8ad37f0908dcc9dfb7431f5bb3415"
+    "hash": "8ec97149fda8b432c7437e9f11bee353be6dc6be0e1f83d87903c4b3dc445527"
    },
    {
     "seq": 2,
@@ -47,12 +47,12 @@
     "source": "typed",
     "actor": "human",
     "at": "2025-08-28",
-    "recorded_at": "2026-10-21T11:39:04Z",
+    "recorded_at": "2026-10-21T12:00:50Z",
     "run_hash": null,
     "wells": [],
     "details": {},
     "note": "Annual service visit; block cleaned.",
-    "hash": "4e0bc547146f661b31322067b8a79024a98f9ff1be55c42fa27be17edca3065a"
+    "hash": "2f76ce829747e9c7d95a4c0d7e2ab1562e24e3358d3c0595a2c10d28da90d524"
    },
    {
     "seq": 3,
@@ -61,15 +61,15 @@
     "source": "typed",
     "actor": "human",
     "at": null,
-    "recorded_at": "2026-10-21T11:39:04Z",
+    "recorded_at": "2026-10-21T12:00:50Z",
     "run_hash": null,
     "wells": [],
     "details": {},
     "note": "Plate holder pushed back <b>flush</b> & re-seated; see <a href=\"#\">manual</a>",
-    "hash": "de439f31e7167c9586a2d16bda52c4f317970f86c6aae0e4a21ab1378e294f60"
+    "hash": "1f8a010a5437a355ff98b4d32116f159c610232681604187373850d1bb7baae3"
    }
   ],
   "incidents": [],
-  "head": "de439f31e7167c9586a2d16bda52c4f317970f86c6aae0e4a21ab1378e294f60"
+  "head": "1f8a010a5437a355ff98b4d32116f159c610232681604187373850d1bb7baae3"
  }
 }

@@ -162,19 +162,24 @@ describe("the instrument list", () => {
     for (const p of bad.problems) expect(screen.getByText(sentence(p))).toBeTruthy();
   });
 
-  it("opens a broken logbook as the server's refusal, with the chain's problems", async () => {
-    const bad = broken.instruments.find((i) => !i.chain_ok)!;
-    const refusal = brokenOneJson as { status: number; body: { error: { message: string } } };
+  it("opens a broken logbook from its view: the problems in words, nothing replayed", async () => {
+    const view = brokenOneJson as unknown as InstrumentView;
+    const bad = view.instrument;
+    expect(bad.chain_ok).toBe(false);
     net.answer = (m, p) =>
       m === "GET" && p === "/api/instruments"
         ? [200, broken]
         : m === "GET" && p === `/api/instruments/${bad.instrument_id}`
-          ? [refusal.status, refusal.body]
+          ? [200, view]
           : recorded(m, p);
     wrap(<InstrumentsSection workspace={null} rest={[bad.instrument_id]} />);
-    expect(await screen.findByText(refusal.body.error.message)).toBeTruthy();
-    for (const p of bad.problems) expect(screen.getByText(sentence(p))).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Log an event" })).toBeNull();
+    const logbook = (await screen.findByRole("heading", { name: "Logbook" })).closest("section")!;
+    expect(within(logbook).getByText("Logbook chain does not verify")).toBeTruthy();
+    for (const p of bad.problems) expect(within(logbook).getByText(sentence(p))).toBeTruthy();
+    expect(within(logbook).queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    for (const heading of [/Waiting for you/, /Open incidents/, "Log an event", "Now"])
+      expect(screen.queryByRole("heading", { name: heading })).toBeNull();
   });
 
   it("says what the section is for when nothing is registered", async () => {
