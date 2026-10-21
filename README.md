@@ -12,6 +12,9 @@
 
 [Quickstart](#quickstart) · [The page](#the-page) · [How it works](#how-it-works) · [Commands](#commands) · [AI agents](#use-from-an-ai-agent) · [Validation](#validation) · [Docs](#documentation)
 
+**[▶ Try it online: qpilot-navy.vercel.app](https://qpilot-navy.vercel.app)**: the whole page on the public demo study, in a shared sandbox that resets when it restarts (don't upload confidential data).<br>
+If the sandbox is asleep, the [read-only demo](https://qpilot-demo-pi.vercel.app) shows the same study from recorded answers.
+
 <img src="docs/threshold.gif" alt="A qPCR amplification curve: where the threshold sits decides the Cq" width="520">
 
 </div>
