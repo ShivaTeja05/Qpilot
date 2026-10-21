@@ -28,11 +28,13 @@ from datetime import UTC, datetime
 from typing import Any
 
 from qpilot.core.record import verify_chain
-from qpilot.core.store import StudyStore, replay_cards
+from qpilot.core.store import StudyNotFound, StudyStore, replay_cards
 from qpilot.schemas import DecisionCard, DecisionEntry, StudyResult
 from qpilot.web import results_views as rv
 from qpilot.web.contract_history import (
     AuditMark,
+    CarryCard,
+    CarryNote,
     ChoiceChange,
     ChoiceInForce,
     GeneChange,
@@ -354,7 +356,11 @@ def _effect(entry: DecisionEntry | None, changed: list[str], moved: int, same: b
         return "A person turned down an agent's request; nothing changed."
     if entry.status == "stale":
         return "A write refused as out of date; nothing changed."
+    from qpilot.core.decisions import carried_from
+
     prefix = "Undo. " if entry.reason.startswith(rv.UNDO_PREFIX) else ""
+    if entry.actor == "human" and carried_from(entry.reason) is not None:
+        prefix = "Carried from the earlier analysis. "
     if same:
         return prefix + "The analysis in force stayed the same: no number changed."
     if changed:
@@ -383,6 +389,44 @@ def _audit_mark(chain: Chain) -> AuditMark | None:
     return AuditMark(chain_head=badge.chain_head, step=step, current=badge.current)
 
 
+def carry_note(store: StudyStore, study_id: str, cards: Sequence[DecisionCard]) -> CarryNote | None:
+    """What a person had decided in the session's analysis before this one, and what became of it.
+
+    Read from the session's report of the carry (:meth:`StudyStore.carry_decisions`); the
+    carried entries themselves are steps of this chain.
+    """
+    report = rv.carry_report(store, study_id)
+    if not report or not report.get("source"):
+        return None
+    source = str(report["source"])
+    here = {c.id: c for c in cards}
+    try:
+        there = {c.id: c for c in store.cards(source)}
+    except (StudyNotFound, OSError, ValueError):
+        there = {}
+
+    def card(card_id: str, why: str | None = None) -> CarryCard:
+        before = there.get(card_id)
+        option = before.decision if before is not None else None
+        labels = {o.id: o.label for o in before.options} if before is not None else {}
+        shown = here.get(card_id) or before
+        return CarryCard(
+            card_id=card_id,
+            card_title=_card_title(shown) if shown is not None else card_id,
+            option=option,
+            option_label=labels.get(option or "", option),
+            why=why,
+        )
+
+    asked = report.get("asked_again") or {}
+    return CarryNote(
+        from_study=source,
+        carried=[card(c) for c in report.get("carried") or []],
+        asked_again=[card(c, str(why)) for c, why in asked.items()],
+        gone=[card(c) for c in report.get("gone") or []],
+    )
+
+
 def history_view(store: StudyStore, study_id: str, session: str | None = None) -> HistoryView:
     """Every step of a study's decision chain with the analysis in force and its calls."""
     from qpilot.history.studio import studio_context
@@ -391,6 +435,7 @@ def history_view(store: StudyStore, study_id: str, session: str | None = None) -
     result = chain.result
     genes = list(result.contrasts)
     audit = _audit_mark(chain)
+    links = rv.CarryLinks(store, result.input_sha256)
     steps: list[HistoryStep] = []
     for k, cards in enumerate(chain.step_cards):
         entry = chain.entries[k - 1] if k else None
@@ -423,6 +468,7 @@ def history_view(store: StudyStore, study_id: str, session: str | None = None) -
         if entry is not None:
             card = next((c for c in chain.cards if c.id == entry.card_id), None)
             labels = {o.id: o.label for o in card.options} if card else {}
+            carried = links.of(entry)
             step = step.model_copy(
                 update={
                     "at": entry.at,
@@ -431,9 +477,10 @@ def history_view(store: StudyStore, study_id: str, session: str | None = None) -
                     "card_title": _card_title(card) if card else entry.card_id,
                     "option": entry.option,
                     "option_label": labels.get(entry.option, entry.option),
-                    "reason": entry.reason,
+                    "reason": carried.reason if carried is not None else entry.reason,
                     "status": entry.status,
                     "undo": entry.reason.startswith(rv.UNDO_PREFIX),
+                    "carried": carried,
                 }
             )
         steps.append(step)
@@ -466,6 +513,7 @@ def history_view(store: StudyStore, study_id: str, session: str | None = None) -
         studio=milestones,
         studio_intact=intact,
         related=related,
+        carry=carry_note(store, study_id, chain.cards),
         audit=audit,
     )
 
