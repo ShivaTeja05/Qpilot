@@ -5,14 +5,23 @@ through the contract-change protocol in ``team/00-TEAM-PLAN-OVERVIEW.md`` §7. A
 owned by Dev 2.
 """
 
-from typing import Any, Literal, Protocol
+from typing import Annotated, Any, Literal, Protocol
 
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 
 Conclusion = Literal["up", "down", "none"]
 Actor = Literal["human", "agent", "system"]
 Autonomy = Literal["suggest", "decide_and_tell", "automatic", "teach"]  # last two reserved
 Level = Literal["High", "Moderate", "Low", "Very low"]
+
+#: How a Decision Card kind is spelt: lower-case snake_case with at most one ``namespace.``
+#: prefix (``reference_set``, ``gate.rule``). Which kinds exist is ``core/card_kinds.py``'s
+#: registry; loading a card checks only the spelling, building one checks the registry.
+CARD_KIND_PATTERN = r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)?$"
+MAX_CARD_KIND = 64
+CardKindName = Annotated[
+    str, StringConstraints(pattern=CARD_KIND_PATTERN, max_length=MAX_CARD_KIND)
+]
 
 
 class ContrastResult(BaseModel):
@@ -102,7 +111,7 @@ class DecisionCard(BaseModel):
     """A choice that could change a conclusion, with evidence, options and the decision."""
 
     id: str
-    kind: Literal["reference_set", "group_cutoff", "undetermined", "amp_call"]
+    kind: CardKindName  # a registered kind (core/card_kinds.py); was a closed Literal of four
     rank: int
     impact: dict[str, Any]  # {"flips": bool, "n_genes_flipped": int, "max_delta_log2fc": float}
     evidence: dict[str, Any]

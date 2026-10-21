@@ -34,7 +34,7 @@ from filelock import FileLock
 from qpilot.core.store import LOCK_TIMEOUT_S
 from qpilot.schemas_studio import QuarantineEntry
 
-TOKEN = re.compile(r"^s_[0-9a-f]{10}$")
+TOKEN = re.compile(r"^s_[0-9a-f]{10}\Z")
 KEY_DIR = ".keys"
 KEY_FILE = "hmac.key"
 KEY_BYTES = 32
