@@ -222,6 +222,10 @@ class AuditStudyFacts(BaseModel):
     rest: str = Field(description="The second group, as a sentence says it ('the rest').")
     analyses: int
     reasonable: int
+    references: list[str] = Field(
+        default_factory=list,
+        description="The planned reference genes, as named in the overview (origin/main, 18 Oct).",
+    )
 
 
 class AuditVerdictCount(BaseModel):

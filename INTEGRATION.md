@@ -53,7 +53,8 @@ enumerate the routes, so they cover these too).
   above; the safety assertions of `tests/app/test_app.py` and `test_app_state.py` are carried into
   `tests/web/` (§2) and `tests/app/test_app_state.py` (view-models the page still uses).
 * **qsim's results-screen redesign** (5620ca3, 47b66e1): the page's Audit, Gene and Report
-  sections already cover its views (overview and verdicts, genes with prev/next, the what-if lab,
+  sections already cover its views (its one engine change, the overview naming the planned
+  reference genes, is kept: the API serves it and the Audit header says it) (overview and verdicts, genes with prev/next, the what-if lab,
   a methods paragraph and exports); its decision record kept in the browser is replaced by the
   real decision chain.
 * **`demo/demo.mp4`** (a recording of the Gradio app): kept in the repository, no longer linked

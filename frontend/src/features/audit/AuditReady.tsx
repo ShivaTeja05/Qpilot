@@ -103,7 +103,11 @@ export function AuditReady({
             <>
               {count(analyses)} analyses of {count(overview.data.study.genes)} genes in{" "}
               {count(overview.data.study.samples)} samples: {overview.data.study.group} (
-              {overview.data.study.group_def}) against {overview.data.study.rest ?? "the rest"}.
+              {overview.data.study.group_def}) against {overview.data.study.rest ?? "the rest"}
+              {overview.data.study.references?.length
+                ? `, normalised to ${overview.data.study.references.join(", ")} as planned`
+                : ""}
+              .
             </>
           ) : (
             "Your confirmed study under every combination of eight analysis decisions, and one verdict per gene."

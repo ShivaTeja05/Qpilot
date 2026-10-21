@@ -4054,6 +4054,11 @@ export type components = {
             /** Reasonable */
             reasonable: number;
             /**
+             * References
+             * @description The planned reference genes, as named in the overview (origin/main, 18 Oct).
+             */
+            references?: string[];
+            /**
              * Rest
              * @description The second group, as a sentence says it ('the rest').
              */
