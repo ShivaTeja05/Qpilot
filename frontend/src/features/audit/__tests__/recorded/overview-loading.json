@@ -1,0 +1,22 @@
+{
+  "error": {
+    "details": {
+      "job": {
+        "id": "663e25ffa4a84230",
+        "kind": "audit.load",
+        "title": "Loading the audit",
+        "key": "e300000d4f9a",
+        "status": "running",
+        "step": "Rebuilding the study the audit describes",
+        "fraction": null,
+        "typical_s": 15.0,
+        "elapsed_s": 0.0,
+        "result": null,
+        "result_type": "AuditLoadResult",
+        "error": null
+      }
+    },
+    "code": "loading",
+    "message": "The audit's live views are loading (about 15 s the first time on the demo). Ask again when the job is done."
+  }
+}

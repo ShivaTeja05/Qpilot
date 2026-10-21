@@ -21,6 +21,8 @@ import {
 import type { JobView } from "@/api/client";
 import { useJob } from "@/api/jobs";
 import {
+  loadingJob,
+  shownError,
   useAuditOverview,
   useInvalidateAudit,
   useRunAudit,
@@ -86,7 +88,10 @@ export function AuditReady({
     : null;
   const invalidateAll = useInvalidateAudit(target);
   const invalidate = useCallback(() => void invalidateAll(), [invalidateAll]);
-  const loading = !status.views_ready && status.loading ? status.loading : null;
+  // The views load once per server start: the status names the job, and so does any view that
+  // answers 409 `loading` before it is done.
+  const loading =
+    (!status.views_ready && status.loading ? status.loading : null) ?? loadingJob(overview.error);
 
   return (
     <div className={PAGE}>
@@ -149,7 +154,7 @@ export function AuditReady({
             </TabsTrigger>
           ))}
         </TabsList>
-        {overview.isError ? (
+        {shownError(overview.error) ? (
           <ErrorPanel
             className="mt-4"
             error={overview.error}

@@ -11,6 +11,7 @@ import study from "@/test/recorded/audit-study.json";
 import { TooltipProvider } from "@/ui";
 import Section from "..";
 import type { AuditStatus, AuditVerify } from "../types";
+import overviewLoading from "./recorded/overview-loading.json";
 import running from "./recorded/status-running.json";
 import ready from "./recorded/status-ready.json";
 import verify from "./recorded/verify.json";
@@ -28,7 +29,10 @@ function respond(status: number, body: unknown): Response {
   });
 }
 
+/** Recorded answers by "METHOD /path"; an `{ httpStatus, body }` entry answers with that status. */
 const routes = new Map<string, unknown>();
+const answered = (value: unknown): value is { httpStatus: number; body: unknown } =>
+  typeof value === "object" && value !== null && "httpStatus" in value;
 
 beforeEach(() => {
   routes.clear();
@@ -40,7 +44,9 @@ beforeEach(() => {
     return Promise.resolve(
       body === undefined
         ? respond(404, { error: { code: "not_found", message: "Not recorded.", details: {} } })
-        : respond(200, body),
+        : answered(body)
+          ? respond(body.httpStatus, body.body)
+          : respond(200, body),
     );
   });
 });
@@ -87,6 +93,17 @@ describe("Audit section", () => {
     expect(screen.queryByText(/since this audit/)).toBeNull();
   });
 
+  it("shows the load job, not an error, while the views are loading", async () => {
+    const id = readyStatus.study_id!;
+    const job = overviewLoading.error.details.job;
+    routes.set(`GET /api/studies/${id}/audit/overview`, { httpStatus: 409, body: overviewLoading });
+    routes.set(`GET /api/jobs/${job.id}`, job);
+    // the status no longer names the load (e.g. read before it started): the view's 409 does
+    show({ ...readyStatus, views_ready: false, loading: null });
+    expect(await screen.findByText(job.title)).toBeTruthy();
+    expect(screen.queryByText("The audit's views could not be read")).toBeNull();
+  });
+
   it("Verify shows the server's check and the binding to the record", async () => {
     const id = readyStatus.study_id!;
     const v = verify as AuditVerify;
@@ -98,6 +115,9 @@ describe("Audit section", () => {
     expect(within(checks).getByText(new RegExp(`${v.files_checked} files listed`))).toBeTruthy();
     expect(within(checks).getByText("It belongs to this study's record")).toBeTruthy();
     expect(within(checks).getByText("It describes the current decisions")).toBeTruthy();
+    // a link inside a sentence is underlined, not told apart by colour alone
+    const record = screen.getByRole("link", { name: "Record" });
+    expect(record.className.split(/\s+/)).toContain("underline");
     // every file the server listed, each one a download from the audit's own files route
     const files = screen.getByRole("region", { name: "The audit's files" });
     const links = within(files).getAllByRole("link");
