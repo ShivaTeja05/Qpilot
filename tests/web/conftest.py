@@ -19,7 +19,10 @@ def web_store(tmp_studies_dir) -> StudyStore:
 
 
 @pytest.fixture
-def web_ctx(web_store):
+def web_ctx(web_store, monkeypatch):
+    # No model unless a test configures one: the developer's environment never leaks in (CI has
+    # no QPILOT_MODEL_PROVIDER, so Studio's default would be the local endpoint).
+    monkeypatch.setenv("QPILOT_MODEL_PROVIDER", "none")
     ctx = make_context(web_store, token=TOKEN, watch=False)
     yield ctx
     ctx.close()

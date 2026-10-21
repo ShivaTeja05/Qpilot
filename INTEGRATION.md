@@ -82,9 +82,18 @@ merged source. Shiva's nine MCP tools and Import Trust's sentences all keep thei
 Import Trust and the Evidence Ledger's raw-ness item read the same import check (`io/rawness`):
 the card decides what to do about it, the ledger says what it means.
 
-## 5. Gates on this branch (21 Oct 2026, after 2fa4a08)
+## 5. ui/one-page merged a third time (0f7c415)
 
-ruff check + format clean (whole repository) · `pytest -m "not demo_data"` 3557 passed, 3 skipped,
+Hosted mode for a public sandbox (`QPILOT_HOSTED=1`: extra hosts, allowed origins, framing, no
+launch key; `SystemView.hosted`, the HostedBanner), the Hugging Face Space files
+(`deploy/hf-space/`, `scripts/build_hf_space.py`) and HEAD on the page route. Merged as 3de7dcd:
+only the built page conflicted (rebuilt); `schema.d.ts` regenerated. This branch's routes
+(evidence, review, where-to-look, sheets, instruments) go through the same Guard, so hosted mode
+covers them as it covers every route.
+
+## 6. Gates on this branch (21 Oct 2026, after 3de7dcd)
+
+ruff check + format clean (whole repository) · `pytest -m "not demo_data"` 3562 passed, 3 skipped,
 6 xfailed (the capture weak spots, strict) · `pytest -m demo_data` 420 passed · `sim/tests` 55
 passed · `qpilot studio demo --check` 28/28 · `scripts/demo_regression.py` PASS (17/17 locked;
 results.json additive) · frontend typecheck, lint, prettier, `check:api` clean, vitest 381 passed,
