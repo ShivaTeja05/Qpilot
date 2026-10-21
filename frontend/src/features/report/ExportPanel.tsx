@@ -141,7 +141,7 @@ function DownloadLinks({ file }: { file: ReportExported }) {
         <a href={file.download.url} download={file.download.name}>
           <Download aria-hidden />
           <span className="min-w-0 truncate">{file.download.name}</span>
-          <span className="font-normal text-faint">{bytes(file.download.bytes)}</span>
+          <span className="font-normal text-muted">{bytes(file.download.bytes)}</span>
         </a>
       </Button>
       {file.record ? (
@@ -149,7 +149,7 @@ function DownloadLinks({ file }: { file: ReportExported }) {
           <a href={file.record.download.url} download={file.record.download.name}>
             <Download aria-hidden />
             The Analysis Record
-            <span className="font-normal text-faint">{bytes(file.record.download.bytes)}</span>
+            <span className="font-normal text-muted">{bytes(file.record.download.bytes)}</span>
           </a>
         </Button>
       ) : null}
@@ -181,7 +181,7 @@ function WrittenFile({ file, head, now }: { file: ReportExported; head: string |
             <a href={file.download.url} download={file.download.name}>
               <Download aria-hidden />
               Download
-              <span className="font-normal text-faint">{bytes(file.download.bytes)}</span>
+              <span className="font-normal text-muted">{bytes(file.download.bytes)}</span>
             </a>
           </Button>
           {file.record ? (

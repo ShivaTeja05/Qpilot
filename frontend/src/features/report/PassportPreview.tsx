@@ -108,7 +108,7 @@ export function PassportPreview({
         <GenesPreview genes={view.genes} rule={view.rule} workspace={workspace} />
         <DecisionsPreview view={view} />
 
-        <p className="text-[12px] text-faint">
+        <p className="text-[12px] text-muted">
           The file also carries the reviewer's report, the Methods with their references, the MIQE 2.0 checklist, the
           limitations and every number with where it comes from, exactly as on this page.
         </p>
@@ -134,7 +134,7 @@ function Verify({ passport }: { passport: ReportExported | null }) {
         How to verify this passport{" "}
         <span className="font-normal text-muted">(written {dateTime(passport.written_at)})</span>
       </p>
-      <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-muted marker:text-faint">
+      <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-muted marker:text-muted">
         <li>
           Get <span className="font-mono text-[12.5px] text-fg">{r.download.name}</span>, written with it.
         </li>
@@ -207,7 +207,12 @@ function GenesPreview({
       <h4 id="pp-genes" className="text-[13px] font-semibold text-fg">
         Every gene <span className="font-normal text-muted">· headline genes first · {rule}</span>
       </h4>
-      <div className="mt-2 overflow-x-auto rounded-lg border border-line qp-scroll">
+      <div
+        className="relative mt-2 overflow-x-auto rounded-lg border border-line qp-scroll"
+        tabIndex={0}
+        role="region"
+        aria-label="Every gene (scrolls sideways)"
+      >
         <Table caption="Every gene: call, fold change with its 95 % confidence interval, p, n per group, how often the call holds, confidence and the audit's verdict">
           <THead>
             <TR>
@@ -269,7 +274,12 @@ function DecisionsPreview({ view }: { view: ReportView }) {
       <h4 id="pp-decisions" className="text-[13px] font-semibold text-fg">
         Decisions <span className="font-normal text-muted">· the hash-chained log, then the choices still open</span>
       </h4>
-      <div className="mt-2 overflow-x-auto rounded-lg border border-line qp-scroll">
+      <div
+        className="relative mt-2 overflow-x-auto rounded-lg border border-line qp-scroll"
+        tabIndex={0}
+        role="region"
+        aria-label="Decisions (scrolls sideways)"
+      >
         <Table caption="The decision log and the choices still open">
           <THead>
             <TR>
