@@ -356,6 +356,8 @@ def _effect(entry: DecisionEntry | None, changed: list[str], moved: int, same: b
         return "A person turned down an agent's request; nothing changed."
     if entry.status == "stale":
         return "A write refused as out of date; nothing changed."
+    if entry.kind == "review":
+        return "A person signed off the run review; it decides no choice, so no number changed."
     from qpilot.core.decisions import carried_from
 
     prefix = "Undo. " if entry.reason.startswith(rv.UNDO_PREFIX) else ""
@@ -474,9 +476,19 @@ def history_view(store: StudyStore, study_id: str, session: str | None = None) -
                     "at": entry.at,
                     "actor": entry.actor,
                     "card_id": entry.card_id,
-                    "card_title": _card_title(card) if card else entry.card_id,
+                    "card_title": (
+                        rv.REVIEW_TITLE
+                        if entry.kind == "review"
+                        else _card_title(card)
+                        if card
+                        else entry.card_id
+                    ),
                     "option": entry.option,
-                    "option_label": labels.get(entry.option, entry.option),
+                    "option_label": (
+                        rv.REVIEW_WORDS.get(entry.option, entry.option)
+                        if entry.kind == "review"
+                        else labels.get(entry.option, entry.option)
+                    ),
                     "reason": carried.reason if carried is not None else entry.reason,
                     "status": entry.status,
                     "undo": entry.reason.startswith(rv.UNDO_PREFIX),

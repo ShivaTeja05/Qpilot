@@ -231,3 +231,15 @@ def test_an_imports_rawness_verdict_reaches_the_ledger(walked, monkeypatch):
     assert item["line"]["plain"].startswith("Raw-ness of the curves: absent.")
     assert "Re-export the raw fluorescence" in item["line"]["plain"]
     _numbers_are_facts(item["line"])
+
+
+def test_a_sign_off_reads_as_a_sign_off_in_the_record_and_history(walked):
+    c, store, study = walked["client"], walked["store"], walked["study"]
+    body = {"outcome": "discuss", "comment": "Plate two.", "reviewer": "D", "expected_head": ""}
+    body["expected_head"] = store.chain_head(study)
+    assert c.post(f"/api/studies/{study}/review/sign-off", json=body).status_code == 200
+    last = c.get(f"/api/studies/{study}/decisions").json()["entries"][-1]
+    assert (last["card_title"], last["option_label"]) == ("Run Review sign-off", "Discuss")
+    step = c.get(f"/api/studies/{study}/history").json()["steps"][-1]
+    assert (step["card_title"], step["option_label"]) == ("Run Review sign-off", "Discuss")
+    assert "signed off the run review" in step["effect"]

@@ -206,17 +206,26 @@ def _genes(c: Ctx) -> list[ReportGene]:
 
 
 def _decisions(c: Ctx) -> list[ReportDecision]:
-    cards = {card.id: card for card in c.inputs.cards}
+    from qpilot.web.results_views import REVIEW_TITLE, REVIEW_WORDS
+
+    cards = {card.id: card for card in [*c.inputs.cards, *c.inputs.traced]}
     out = []
     for e in c.inputs.entries:
         card = cards.get(e.card_id)
+        review = e.kind == "review"  # a person's sign-off of the run: no card
         out.append(
             ReportDecision(
                 seq=e.seq,
                 card_id=e.card_id,
-                card_title=c.card_title(card) if card else e.card_id,
+                card_title=REVIEW_TITLE if review else c.card_title(card) if card else e.card_id,
                 option=e.option,
-                option_label=c.option_label(card, e.option) if card else e.option,
+                option_label=(
+                    REVIEW_WORDS.get(e.option, e.option)
+                    if review
+                    else c.option_label(card, e.option)
+                    if card
+                    else e.option
+                ),
                 actor=e.actor,
                 status=e.status,
                 at=e.at,

@@ -1141,6 +1141,11 @@ def one_card(store: StudyStore, study_id: str, card_id: str) -> CardView:
 # ---- the decision chain ----------------------------------------------------------------------
 
 
+#: How a run review's sign-off reads in the chain (``StudyStore.append_review``).
+REVIEW_TITLE = "Run Review sign-off"
+REVIEW_WORDS = {"accept": "Accept", "repeat": "Repeat", "discuss": "Discuss"}
+
+
 def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
     """The chain, entry by entry, with each card and option in words."""
     from qpilot.ai.explain import KIND_TITLE
@@ -1150,6 +1155,14 @@ def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
     links = CarryLinks(store, store.get(study_id).input_sha256)
 
     def view(entry: DecisionEntry) -> DecisionEntryView:
+        if entry.kind == "review":  # a person's sign-off of the run: no card replays it
+            return DecisionEntryView(
+                entry=entry,
+                card_title=REVIEW_TITLE,
+                option_label=REVIEW_WORDS.get(entry.outcome or entry.option, entry.option),
+                undo=False,
+                carried=None,
+            )
         card = by_id.get(entry.card_id)
         labels = {o.id: o.label for o in card.options} if card else {}
         return DecisionEntryView(

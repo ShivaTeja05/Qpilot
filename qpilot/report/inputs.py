@@ -44,7 +44,7 @@ class StudyInputs:
     study_id: str
     session: str | None
     result: StudyResult
-    cards: list[DecisionCard]
+    cards: list[DecisionCard]  # the analysis's choices (cards opened on demand are in traced)
     entries: list[DecisionEntry]
     pending: list[DecisionEntry]
     head: str
@@ -56,6 +56,9 @@ class StudyInputs:
     audit: Audit | None = None
     versions: dict[str, str] = field(default_factory=dict)
     problems: list[str] = field(default_factory=list)
+    #: Cards opened on demand by Trace (``trace_set_aside``): decisions about a place, not
+    #: analysis choices, so Methods and the open-choice checks leave them out.
+    traced: list[DecisionCard] = field(default_factory=list)
     _rdml: RdmlMeta | None = None
     _rdml_read: bool = False
 
@@ -139,8 +142,12 @@ def gather(store: StudyStore, study_id: str, session: str | None = None) -> Stud
     Raises:
         StudyNotFound: No analysed study with this id.
     """
+    from qpilot.core.store import ON_DEMAND_KINDS
+
     result = store.get(study_id)
-    head, cards, pending = store.snapshot(study_id)
+    head, every, pending = store.snapshot(study_id)
+    cards = [c for c in every if c.kind not in ON_DEMAND_KINDS]
+    traced = [c for c in every if c.kind in ON_DEMAND_KINDS]
     problems: list[str] = []
     try:
         design = store.design(study_id)
@@ -173,6 +180,7 @@ def gather(store: StudyStore, study_id: str, session: str | None = None) -> Stud
         audit=audit_of(store, study_id),
         versions=software_versions(),
         problems=problems,
+        traced=traced,
     )
 
 
