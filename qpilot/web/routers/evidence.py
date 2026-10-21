@@ -134,10 +134,31 @@ def _kept(ctx: AppContext, study_id: str) -> EvidenceLedger | None:
     return ledger
 
 
+def import_rawness(ctx: AppContext, study_id: str) -> dict[str, Any] | None:
+    """The raw-ness verdict Open's import check kept for the study's session, if any."""
+    from qpilot.web import intake
+
+    sid = rv.session_of_study(ctx.store, study_id)
+    if sid is None:
+        return None
+    try:
+        found = intake.load(ctx.store, sid)
+    except Exception:  # an unreadable import record only means no verdict
+        return None
+    rawness = found[0].rawness if found is not None else None
+    return dict(rawness) if rawness else None
+
+
 def ledger_of(ctx: AppContext, study_id: str) -> tuple[EvidenceLedger | None, str, str]:
-    """``(ledger, note, source)``: the kept ledger, else one rebuilt read-only (kept in memory)."""
+    """``(ledger, note, source)``: the kept ledger, else one rebuilt read-only (kept in memory).
+
+    A study opened from an instrument export gets the import's raw-ness verdict in its ledger
+    (rebuilt when the kept one was built without it).
+    """
+    rawness = import_rawness(ctx, study_id)
     kept = _kept(ctx, study_id)
-    if kept is not None:
+    judged = kept is not None and kept.item("rawness").consequence.code.startswith("rawness_import")
+    if kept is not None and (rawness is None or judged):
         return kept, "", "kept"
     key = _version(ctx, study_id)
     with _lock:
@@ -146,7 +167,7 @@ def ledger_of(ctx: AppContext, study_id: str) -> tuple[EvidenceLedger | None, st
             ledger, note = _rebuilt[key]
             return ledger, note, "rebuilt" if ledger is not None else "none"
     try:
-        ledger, note = evidence_store(ctx.store, study_id), ""
+        ledger, note = evidence_store(ctx.store, study_id, rawness=rawness), ""
     except StudyNotFound:
         raise
     except EvidenceError as err:

@@ -572,3 +572,38 @@ def test_evidence_store_refuses_without_the_input_file(
     store.put(fixture_result, fixture_cards)
     with pytest.raises(EvidenceError, match="input file"):
         evidence_store(store, fixture_result.study_id)
+
+
+# ---- the import's raw-ness verdict (qpilot.io.rawness, run when an export is opened) ----------
+
+
+@pytest.mark.parametrize(
+    ("verdict", "status"),
+    [
+        ("raw", "present"),
+        ("normalized", "present"),
+        ("baseline_subtracted", "absent"),
+        ("scaled", "unknown"),
+        ("cq_only", "absent"),
+        ("unknown", "unknown"),
+    ],
+)
+def test_the_imports_rawness_verdict_replaces_the_cheap_signs(verdict, status):
+    table, design = toy_table(), toy_design()
+    plates = {"p1": verdict, "p2": "raw" if verdict != "cq_only" else verdict}
+    led = evidence_for(
+        table,
+        toy_model(table, design),
+        design,
+        rawness={"study_verdict": verdict, "plate_verdicts": plates},
+    )
+    item = led.item("rawness")
+    assert (item.status, item.consequence.code) == (status, f"rawness_import_{verdict}")
+    assert item.value == verdict
+    assert render_evidence(led).plain  # validated: every number is a fact
+    plain = evidence_for(table, toy_model(table, design), design)
+    assert plain.item("rawness").consequence.code.startswith("rawness_unknown")
+    junk = evidence_for(
+        table, toy_model(table, design), design, rawness={"study_verdict": "<b>?</b>"}
+    )
+    assert junk.item("rawness").consequence.code.startswith("rawness_unknown")

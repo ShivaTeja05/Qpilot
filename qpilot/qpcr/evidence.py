@@ -164,19 +164,50 @@ CONSEQUENCES: dict[str, str] = {
         "No study well has a measured efficiency, so quantities rest on an assumed efficiency."
     ),
     "rawness_unknown_consistent": (
-        "Not judged yet: the raw-ness detector is not built. The cheap signs are consistent "
-        "with raw curves: {{f_ev_rawness_n_wells_with_curves}} wells were analysed from their "
+        "Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and "
+        "this study's file did not go through it. The cheap signs are consistent with raw "
+        "curves: {{f_ev_rawness_n_wells_with_curves}} wells were analysed from their "
         "amplification curves and none has a baseline at or below zero."
     ),
     "rawness_unknown_low_baseline": (
-        "Not judged yet: the raw-ness detector is not built. "
+        "Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and "
+        "this study's file did not go through it. "
         "{{f_ev_rawness_n_wells_baseline_not_positive}} of "
         "{{f_ev_rawness_n_wells_with_curves}} wells have a baseline at or below zero, as "
         "baseline-subtracted data would; treat the curves as possibly processed."
     ),
     "rawness_unknown_no_baseline": (
-        "Not judged yet: the raw-ness detector is not built, and the table carries no baseline "
-        "to look at."
+        "Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and "
+        "this study's file did not go through it; the table carries no baseline to look at."
+    ),
+    # The import's own check (qpilot.io.rawness, run when an instrument export is opened).
+    "rawness_import_raw": (
+        "The import's raw-ness check read the curves as raw fluorescence on "
+        "{{f_ev_rawness_n_plates_raw}} of {{f_ev_rawness_n_plates_judged}} plates, so LinRegPCR "
+        "estimates each well's baseline and efficiency itself."
+    ),
+    "rawness_import_normalized": (
+        "The import's raw-ness check read the curves as normalised to a passive reference (Rn) "
+        "on {{f_ev_rawness_n_plates_judged}} plates; the ground phase is kept, so LinRegPCR "
+        "still estimates each well's baseline and efficiency."
+    ),
+    "rawness_import_baseline_subtracted": (
+        "The import's raw-ness check found baseline-subtracted curves on "
+        "{{f_ev_rawness_n_plates_not_raw}} of {{f_ev_rawness_n_plates_judged}} plates: per-well "
+        "efficiency is weakened there. Re-export the raw fluorescence to restore it."
+    ),
+    "rawness_import_scaled": (
+        "The import's raw-ness check found curves rescaled to a fixed range on "
+        "{{f_ev_rawness_n_plates_not_raw}} of {{f_ev_rawness_n_plates_judged}} plates; whether "
+        "a baseline was subtracted first cannot be seen."
+    ),
+    "rawness_import_cq_only": (
+        "The import holds Cq values only: efficiency is assumed, not measured from curves."
+    ),
+    "rawness_import_unknown": (
+        "The import's raw-ness check could not tell whether the curves were processed "
+        "({{f_ev_rawness_n_plates_judged}} plates judged); treat per-well efficiencies with "
+        "caution."
     ),
     "rin_absent": (
         "No RNA integrity value (RIN or similar) is recorded for any of the "
@@ -559,9 +590,46 @@ def _efficiency(table: pd.DataFrame, study: pd.DataFrame) -> _Draft:
     return draft
 
 
-def _rawness(table: pd.DataFrame, file: RdmlEvidence | None, experiment_id: str | None) -> _Draft:
+#: The import's raw-ness verdict (``qpilot.io.rawness``) -> the ledger's status for raw curves.
+RAWNESS_STATUS: dict[str, Status] = {
+    "raw": "present",
+    "normalized": "present",
+    "baseline_subtracted": "absent",
+    "scaled": "unknown",
+    "cq_only": "absent",
+    "unknown": "unknown",
+}
+
+
+def _rawness_import(table: pd.DataFrame, rawness: Mapping[str, Any]) -> _Draft | None:
+    """The rawness item from the import's own check, when the study came from one."""
+    verdict = str(rawness.get("study_verdict") or "")
+    if verdict not in RAWNESS_STATUS:
+        return None
+    plates = rawness.get("plate_verdicts")
+    plates = dict(plates) if isinstance(plates, Mapping) else {}
+    draft = _Draft("rawness", RAWNESS_STATUS[verdict], f"rawness_import_{verdict}", value=verdict)
+    if verdict != "cq_only":
+        raw = sum(v in ("raw", "normalized") for v in plates.values())
+        draft.put("n_plates_judged", len(plates), COUNT_FMT)
+        draft.put("n_plates_raw", raw, COUNT_FMT)
+        draft.put("n_plates_not_raw", len(plates) - raw, COUNT_FMT)
+    draft.put("n_wells_with_curves", len(table), COUNT_FMT)
+    return draft
+
+
+def _rawness(
+    table: pd.DataFrame,
+    file: RdmlEvidence | None,
+    experiment_id: str | None,
+    rawness: Mapping[str, Any] | None = None,
+) -> _Draft:
     if table.empty:
         return _Draft("rawness", "unknown", "no_study_wells", value="unknown")
+    if rawness:
+        found = _rawness_import(table, rawness)
+        if found is not None:
+            return found
     if "baseline" in table.columns:
         low = int((pd.to_numeric(table["baseline"], errors="coerce") <= 0).sum())
         code = "rawness_unknown_low_baseline" if low else "rawness_unknown_consistent"
@@ -752,6 +820,7 @@ def evidence_for(
     model: StudyModel,
     design: StudyDesign | None = None,
     rdml_doc: Any = None,
+    rawness: Mapping[str, Any] | None = None,
 ) -> EvidenceLedger:
     """Build the Evidence Ledger of one study from its inputs (pure; nothing is written).
 
@@ -764,6 +833,9 @@ def evidence_for(
         rdml_doc: The loaded RDML document, or an :class:`RdmlEvidence` already extracted from
             it. Without it, the items that need the file (RNA integrity, lots, instrument
             dates) are ``unknown``.
+        rawness: The import's raw-ness block (``CaptureMeta.rawness``, from
+            :mod:`qpilot.io.rawness`) when the study was opened from an instrument export; the
+            rawness item then states its verdict instead of the cheap signs.
 
     Returns:
         The :class:`EvidenceLedger`, items in :data:`ITEMS` order, without ``study_id`` or
@@ -785,7 +857,7 @@ def evidence_for(
         _no_rt(table, study),
         _reference_genes(model.stability, tuple(model.settings.candidates)),
         _efficiency(table, study),
-        _rawness(table, file, model.settings.experiment_id),
+        _rawness(table, file, model.settings.experiment_id, rawness),
         _rna_integrity(samples, file),
         _rt_replicates(table, design, samples, file),
         _biological_units(samples, design),
@@ -796,7 +868,9 @@ def evidence_for(
     return _assemble(drafts, model.settings.experiment_id)
 
 
-def evidence_store(store: Any, study_id: str) -> EvidenceLedger:
+def evidence_store(
+    store: Any, study_id: str, *, rawness: Mapping[str, Any] | None = None
+) -> EvidenceLedger:
     """The Evidence Ledger of a stored study, rebuilt read-only from its input file.
 
     The per-well table comes from the curve cache (LinRegPCR runs only if the cache is cold)
@@ -806,6 +880,8 @@ def evidence_store(store: Any, study_id: str) -> EvidenceLedger:
     Args:
         store: A :class:`~qpilot.core.store.StudyStore`.
         study_id: The study id (or a unique prefix of it).
+        rawness: The import's raw-ness block when the study came from an instrument export
+            (see :func:`evidence_for`).
 
     Returns:
         The ledger with ``study_id`` and ``input_sha256`` set.
@@ -833,7 +909,7 @@ def evidence_store(store: Any, study_id: str) -> EvidenceLedger:
         doc = load(source, validate=False)
     except RdmlLoadError as err:
         raise EvidenceError(f"the input file cannot be read again: {err}") from err
-    ledger = evidence_for(curves, model, design, doc)
+    ledger = evidence_for(curves, model, design, doc, rawness=rawness)
     return ledger.model_copy(
         update={"study_id": result.study_id, "input_sha256": result.input_sha256}
     )

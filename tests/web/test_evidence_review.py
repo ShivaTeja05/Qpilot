@@ -215,3 +215,19 @@ def test_only_the_sign_off_route_writes_a_review():
     found = [p for p in web.rglob("*.py") if ".append_review(" in p.read_text()]
     assert [p.name for p in found] == ["evidence.py"]
     assert 'actor="human"' in (web / "routers" / "evidence.py").read_text()
+
+
+def test_an_imports_rawness_verdict_reaches_the_ledger(walked, monkeypatch):
+    """Open's raw-ness check of an instrument export (qpilot.io.rawness) fills the ledger's item."""
+    c, study = walked["client"], walked["study"]
+    verdict = {
+        "study_verdict": "baseline_subtracted",
+        "plate_verdicts": {"p1": "baseline_subtracted"},
+    }
+    monkeypatch.setattr(evidence_router, "import_rawness", lambda _ctx, _sid: verdict)
+    body = c.get(f"/api/studies/{study}/evidence").json()
+    item = next(i for i in body["items"] if i["id"] == "rawness")
+    assert item["status"] == "absent" and item["value"] == "baseline_subtracted"
+    assert item["line"]["plain"].startswith("Raw-ness of the curves: absent.")
+    assert "Re-export the raw fluorescence" in item["line"]["plain"]
+    _numbers_are_facts(item["line"])
