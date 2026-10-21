@@ -1,0 +1,12 @@
+{
+ "status": 409,
+ "body": {
+  "error": {
+   "details": {
+    "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62"
+   },
+   "code": "stale",
+   "message": "Something was decided since the Run Review was shown (another tab or an agent), so it is shown again. Read it, then sign off again."
+  }
+ }
+}

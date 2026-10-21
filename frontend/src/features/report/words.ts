@@ -1,7 +1,10 @@
-/** The Report section's vocabulary: MIQE statuses and review severities (glyph + word + tone). */
+/**
+ * The Report section's vocabulary: MIQE statuses, review severities and Evidence Ledger statuses
+ * (glyph + word + tone).
+ */
 import type { Tone } from "@/ui";
 import type { SectionId } from "@/shell/sections";
-import type { MiqeStatus, ReviewFinding } from "./api";
+import type { EvidenceStatus, MiqeStatus, ReviewFinding } from "./api";
 
 export const MIQE_ORDER: MiqeStatus[] = ["met", "not_met", "not_applicable", "cannot_tell"];
 
@@ -58,4 +61,15 @@ export const GO_TO: Record<string, { section: SectionId; label: string }> = {
   record: { section: "record", label: "Open the Record" },
   design: { section: "design", label: "Open Design" },
   curves: { section: "curves", label: "Open Curves" },
+};
+
+/**
+ * An Evidence Ledger item's status: a glyph and a tone beside the server's own word. An absent
+ * or unknown item says what the study cannot show; it is never a failure (no danger tone).
+ */
+export const EVIDENCE: Record<EvidenceStatus, { glyph: string; tone: Tone }> = {
+  present: { glyph: "✓", tone: "ok" },
+  absent: { glyph: "○", tone: "warn" },
+  unknown: { glyph: "?", tone: "warn" },
+  not_applicable: { glyph: "–", tone: "neutral" },
 };

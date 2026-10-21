@@ -1,9 +1,18 @@
 /**
- * Write the report as a file: Markdown, a printable page, or the study passport (one offline
- * HTML file bound to a fresh Analysis Record). Each is a job with its card; the files written
- * since qPilot started stay listed with their downloads.
+ * Write the report as a file: Markdown, a printable page, the study passport (one offline HTML
+ * file bound to a fresh Analysis Record), or the results as an Excel workbook with Trace's places
+ * to look. Each is a job with its card (and the server's warnings); the files written since
+ * qPilot started stay listed with their downloads.
  */
-import { AlertTriangle, BookMarked, Download, FileCode2, FileText, Printer } from "lucide-react";
+import {
+  AlertTriangle,
+  BookMarked,
+  Download,
+  FileCode2,
+  FileSpreadsheet,
+  FileText,
+  Printer,
+} from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useJob } from "@/api/jobs";
 import { bytes, dateTime, relativeTime } from "@/lib/format";
@@ -18,26 +27,49 @@ import {
   type ReportFormat,
 } from "./api";
 
-export const FORMATS: { format: ReportFormat; title: string; hint: string; icon: ReactNode }[] = [
+export const FORMATS: {
+  format: ReportFormat;
+  title: string;
+  hint: string;
+  icon: ReactNode;
+  /** The write button's words. */
+  action: string;
+}[] = [
   {
     format: "passport",
     title: "Study passport",
     hint: "One HTML file a reviewer opens offline with a double-click: summary, charts, every gene, decisions, the audit, Methods, MIQE and how to verify it. Writes a fresh Analysis Record beside it.",
     icon: <BookMarked />,
+    action: "Write the passport",
   },
   {
     format: "html",
     title: "Printable page",
     hint: "The reviewer's report, Methods, the MIQE checklist and the limitations, laid out to print or save as PDF.",
     icon: <Printer />,
+    action: "Write the printable page",
   },
   {
     format: "md",
     title: "Markdown",
     hint: "The same report as text for a lab notebook, a repository or a manuscript draft.",
     icon: <FileCode2 />,
+    action: "Write the Markdown",
+  },
+  {
+    format: "xlsx",
+    title: "Excel workbook: results and where to look",
+    hint: "Every gene's result in a spreadsheet, with Trace's places to look for each one: the samples and wells to check first, and what each does to the call.",
+    icon: <FileSpreadsheet />,
+    action: "Write the workbook",
   },
 ];
+
+/** The format of a running export job, from its title (the server's words). */
+export function formatOf(title: string): ReportFormat {
+  if (title.includes("Excel")) return "xlsx";
+  return title.includes("passport") ? "passport" : title.includes("Markdown") ? "md" : "html";
+}
 
 export function ExportPanel({
   workspaceKey,
@@ -65,10 +97,10 @@ export function ExportPanel({
       <CardHeader
         id="report-export-title"
         title="Write the report as a file"
-        hint="Every file is written from the numbers on this page, nothing else; strings from your files are shown as text, never as markup."
+        hint="Every file is written from this study's own numbers, nothing else; strings from your files are kept as text, never as markup or formulas."
       />
       <CardBody className="@container flex flex-col gap-4">
-        <ul className="grid gap-3 @2xl:grid-cols-3">
+        <ul className="grid gap-3 @xl:grid-cols-2">
           {FORMATS.map((f) => (
             <li
               key={f.format}
@@ -87,9 +119,7 @@ export function ExportPanel({
                 loading={start.isPending && start.variables?.format === f.format}
                 onClick={() => start.mutate({ format: f.format, head })}
               >
-                {f.format === "passport"
-                  ? "Write the passport"
-                  : `Write the ${f.title.toLowerCase()}`}
+                {f.action}
               </Button>
             </li>
           ))}

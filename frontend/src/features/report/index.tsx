@@ -1,8 +1,9 @@
 /**
  * Report: the study written up from its own numbers — a summary, what a careful reviewer would
- * flag, a Methods section to paste into a paper, the MIQE 2.0 checklist, the limitations, and a
- * study passport (one offline HTML file bound to an Analysis Record). Every number is a fact of
- * the study; hover one to see where it comes from.
+ * flag, the Run Review (the Evidence Ledger and a person's sign-off), a Methods section to paste
+ * into a paper, the MIQE 2.0 checklist, the limitations, and a study passport (one offline HTML
+ * file bound to an Analysis Record). Every number is a fact of the study; hover one to see where
+ * it comes from.
  */
 import { ArrowRight, BookMarked, FileText } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -29,15 +30,17 @@ import {
 } from "@/ui";
 import { asExported, useReport, useReportExports, type ReportFormat, type ReportView } from "./api";
 import { Cited } from "./Cited";
-import { ExportPanel } from "./ExportPanel";
+import { ExportPanel, formatOf } from "./ExportPanel";
 import { MethodsPanel } from "./MethodsPanel";
 import { MiqePanel } from "./MiqePanel";
 import { PassportPreview } from "./PassportPreview";
 import { ReviewPanel } from "./ReviewPanel";
+import { RunReview } from "./RunReview";
 
 const PARTS = [
   { id: "summary", label: "Summary" },
   { id: "review", label: "Reviewer's report" },
+  { id: "run-review", label: "Run Review" },
   { id: "methods", label: "Methods" },
   { id: "miqe", label: "MIQE 2.0 checklist" },
   { id: "limitations", label: "Limitations" },
@@ -47,11 +50,6 @@ const PARTS = [
 type PartId = (typeof PARTS)[number]["id"];
 
 const anchor = (id: PartId) => `report-${id}`;
-
-/** The format of a running export job, from its title (the server's words). */
-function formatOf(title: string): ReportFormat {
-  return title.includes("passport") ? "passport" : title.includes("Markdown") ? "md" : "html";
-}
 
 function scrollTo(id: PartId) {
   const el = document.getElementById(anchor(id));
@@ -85,7 +83,7 @@ export default function ReportSection({ workspace }: SectionProps) {
     <PageHeader
       eyebrow="Report"
       title="Report"
-      hint="Your study written up from its own numbers: what a reviewer would flag, a Methods section to paste, the MIQE 2.0 checklist and a study passport to share."
+      hint="Your study written up from its own numbers: what a reviewer would flag, the Run Review to sign off, a Methods section to paste, the MIQE 2.0 checklist and a study passport to share."
       actions={
         report.data ? (
           <Button variant="primary" icon={<BookMarked />} onClick={() => scrollTo("passport")}>
@@ -145,6 +143,7 @@ export default function ReportSection({ workspace }: SectionProps) {
         <Document
           view={report.data}
           workspace={workspace}
+          runReview={<RunReview workspace={workspace} workspaceKey={key} studyId={readable} />}
           exportPanel={
             <ExportPanel
               workspaceKey={key}
@@ -172,11 +171,13 @@ export default function ReportSection({ workspace }: SectionProps) {
 function Document({
   view,
   workspace,
+  runReview,
   exportPanel,
   passport,
 }: {
   view: ReportView;
   workspace: SectionProps["workspace"];
+  runReview: ReactNode;
   exportPanel: ReactNode;
   passport: ReturnType<typeof asExported>;
 }) {
@@ -265,6 +266,14 @@ function Document({
           hint="What a careful reviewer would flag, most severe first. Each finding is read from this study's numbers."
         >
           <ReviewPanel review={view.review} facts={view.facts} workspace={workspace} />
+        </Part>
+
+        <Part
+          id="run-review"
+          title="Run Review"
+          hint="For whoever reviews this run: the headline genes, what the data cannot show, and a sign-off kept in the decision log."
+        >
+          {runReview}
         </Part>
 
         <Part

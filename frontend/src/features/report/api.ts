@@ -1,6 +1,7 @@
 /**
  * The Report section's requests: the study's report (Methods, MIQE 2.0, reviewer's report), the
- * report files written since qPilot started, and writing one (a job). Query keys start with
+ * report files written since qPilot started, and writing one (a job); the Run Review (headline
+ * genes, the Evidence Ledger, the sign-offs) and a person's sign-off. Query keys start with
  * `["w", key]` so live events refresh them.
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,16 @@ export type ReportDecision = Schemas["ReportDecision"];
 export type ReportExported = Schemas["ReportExported"];
 export type ReportFormat = Schemas["ReportExportBody"]["format"];
 export type Facts = ReportView["facts"];
+
+export type RunReviewView = Schemas["RunReviewView"];
+export type FactText = Schemas["FactText"];
+export type EvidenceView = RunReviewView["evidence"];
+export type EvidenceItem = Schemas["EvidenceItemView"];
+export type EvidenceStatus = EvidenceItem["status"];
+export type SignOff = Schemas["SignOffView"];
+export type SignOffOutcome = SignOff["outcome"];
+export type SignOffDone = Schemas["SignOffDone"];
+export type NotBuilt = Schemas["NotBuiltView"];
 
 /** The study's report (built once per state of the study; the first read takes a few seconds). */
 export function useReport(workspaceKey: string, studyId: string | null | undefined) {
@@ -79,4 +90,55 @@ export function asExported(result: unknown): ReportExported | null {
   return r && typeof r.format === "string" && typeof r.download?.url === "string"
     ? (r as ReportExported)
     : null;
+}
+
+const reviewKey = (workspaceKey: string, studyId: string | null | undefined) =>
+  ["w", workspaceKey, "run-review", studyId] as const;
+
+/** The Run Review: headline genes, the Evidence Ledger and every recorded sign-off. */
+export function useRunReview(workspaceKey: string, studyId: string | null | undefined) {
+  return useQuery({
+    queryKey: reviewKey(workspaceKey, studyId),
+    enabled: Boolean(studyId),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/studies/{study_id}/review", { params: { path: { study_id: studyId! } } }),
+      ),
+  });
+}
+
+export interface SignOffVars {
+  outcome: SignOffOutcome;
+  comment: string;
+  reviewer: string;
+  /** The chain head the review was read at (`RunReviewView.head`). */
+  head: string;
+}
+
+/**
+ * A person signs off the run (the server records it as `human`). The answer carries the review
+ * again, so the page shows it at once; a `stale` refusal (a decision since the review was read)
+ * re-reads it (`useWrite`), and the mutation's error keeps the server's words for the form.
+ */
+export function useSignOff(
+  workspaceKey: string,
+  studyId: string | null | undefined,
+  onDone?: (done: SignOffDone) => void,
+) {
+  const qc = useQueryClient();
+  return useWrite<SignOffVars, SignOffDone>({
+    workspaceKey,
+    mutationFn: async ({ outcome, comment, reviewer, head }) => {
+      const done = await unwrap(
+        api.POST("/api/studies/{study_id}/review/sign-off", {
+          params: { path: { study_id: studyId! } },
+          body: { outcome, comment, reviewer, expected_head: head },
+        }),
+      );
+      qc.setQueryData(reviewKey(workspaceKey, studyId), done.review);
+      return done;
+    },
+    success: (done) => done.message,
+    onSuccess: (done) => onDone?.(done),
+  });
 }

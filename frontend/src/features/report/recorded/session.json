@@ -1,0 +1,70 @@
+{
+ "key": "bc1d233e3866",
+ "kind": "session",
+ "title": "Vermeulen 2013 neuroblastoma study (demo)",
+ "facts": null,
+ "summary": null,
+ "stages": [
+  {
+   "stage": "design",
+   "open": true,
+   "confirmed": true,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "curves",
+   "open": true,
+   "confirmed": true,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "choices",
+   "open": true,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "prism",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "roundtrip",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  }
+ ],
+ "results_visible": true,
+ "study_id": "e300000d4f9a",
+ "proposals_head": "b27a0111f1164a55ee837e0525bb86597563954bd1f9aed5427ab899f574d95a",
+ "decisions_head": "dfccbec9827bb6061eeb1e0e74cc482d864da6ca944c9cdf2fc433d05a64a168",
+ "next_step": {
+  "title": "Decide 4 analysis choices",
+  "detail": "Each card shows what every option would change; you give the reason.",
+  "section": "results",
+  "action": "Decide"
+ },
+ "active_jobs": [],
+ "has_audit": true,
+ "is_demo": true,
+ "warming": false,
+ "autonomy": "suggest",
+ "capture": null
+}
