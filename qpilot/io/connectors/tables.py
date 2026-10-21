@@ -152,7 +152,8 @@ def file_kind(path: Path) -> str:
     """``xlsx``, ``xls``, ``zip``, ``text`` or ``binary``, from the first bytes (not the suffix)."""
     with path.open("rb") as handle:
         start = handle.read(8)
-    if start.startswith(b"PK\x03\x04") or start.startswith(b"PK\x05\x06"):
+    # a zip; CFX Manager 3.0 writes RDML archives that start with the spanning marker PK 07 08
+    if start.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08PK\x03\x04")):
         try:
             with zipfile.ZipFile(path) as archive:
                 names = set(archive.namelist())
