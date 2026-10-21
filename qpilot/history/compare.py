@@ -46,6 +46,7 @@ FIELD_TITLE = {
     "well_calls": "Curve calls a person resolved",
     "excluded_wells": "Wells left out",
     "amp_calls": "Amplification rules offered",
+    "axes": "Further choices tested (efficiency models)",
     "note": "Note",
 }
 MAX_TEXT = 200
@@ -77,6 +78,8 @@ def design_changes(before: StudyDesign | None, after: StudyDesign | None) -> lis
     out = []
     for field in a.keys() | b.keys():
         old, new = a.get(field), b.get(field)
+        if field == "axes":  # no further choice tested: none listed
+            old, new = old or {}, new or {}
         if old == new:
             continue
         title = FIELD_TITLE.get(field, field.replace("_", " "))

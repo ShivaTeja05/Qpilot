@@ -35,6 +35,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS, AmpCallError, apply_rule, get_rule, well_keys
+from qpilot.qpcr.axes import AxisError, get_axis
 from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS
 from qpilot.qpcr.design import DEMO_GROUP_VAR, DEMO_MARKER
 from qpilot.qpcr.quant import EXCLUDED
@@ -56,6 +57,8 @@ MAX_FILE_BYTES = 1 << 20  # design files and sample sheets: 1 MiB is far more th
 APPLIED = frozenset({"accepted", "edited"})  # the only proposal statuses the engine reads
 SHEET_REQUIRED = ("sample", "group")
 SHEET_OPTIONAL = ("biological_unit", "role", "quantity")
+#: The opt-in axes a design (a person's ``choice.axis`` decision) can ask the grid to test.
+DESIGN_AXES: tuple[str, ...] = ("efficiency",)
 _WELL_KEY = re.compile(r"^[^/]+/[^/]+$")
 
 
@@ -134,6 +137,11 @@ def check_design(design: StudyDesign) -> StudyDesign:
             get_rule(rule_id)
         except AmpCallError as err:
             problems.append(str(err))
+    for name, options in (design.axes or {}).items():
+        try:
+            axis_options(name, options)
+        except DesignError as err:
+            problems.append(str(err))
     for key, sample in design.samples.items():
         if key != sample.sample:
             problems.append(f"samples[{key!r}] describes sample {sample.sample!r}")
@@ -148,6 +156,43 @@ def check_design(design: StudyDesign) -> StudyDesign:
     if problems:
         raise DesignError("; ".join(problems))
     return design
+
+
+def axis_primary(name: str) -> str:
+    """The primary option id of an opt-in axis a design can switch on."""
+    if name not in DESIGN_AXES:
+        known = ", ".join(DESIGN_AXES)
+        raise DesignError(f"a design cannot ask to test {name!r} (it can: {known})")
+    axis = get_axis(name)
+    return next(o.id for o in axis.catalogue if o.tier == "primary")
+
+
+def axis_options(name: str, options: Iterable[Any]) -> tuple[str, ...]:
+    """The options of a design axis as the design stores them: primary first, each known, once.
+
+    One option (the primary alone) means the axis is not tested.
+
+    Raises:
+        DesignError: An unknown axis or option, a repeated option, or a first option that is
+            not the primary (the analysis in use never changes by testing more).
+    """
+    primary = axis_primary(name)
+    if isinstance(options, str | bytes) or not isinstance(options, Iterable):
+        raise DesignError(f"the options of {name!r} are a list of option ids")
+    out = tuple(options)
+    if not out or not all(isinstance(o, str) for o in out):
+        raise DesignError(f"the options of {name!r} are a non-empty list of option ids")
+    if out[0] != primary:
+        raise DesignError(f"the options of {name!r} must start with {primary!r}, the primary")
+    for option in out:
+        try:
+            get_axis(name).option(option)
+        except AxisError as err:
+            raise DesignError(str(err)) from None
+    repeated = sorted({o for o in out if out.count(o) > 1})
+    if repeated:
+        raise DesignError(f"the options of {name!r} list {repeated} more than once")
+    return out
 
 
 def unit_groups(design: StudyDesign, problems: list[str] | None = None) -> dict[str, str]:
@@ -362,7 +407,8 @@ def design_from_proposals(
     * a ``design.preset`` is the base: it replaces ``base`` and is applied first, whenever it
       was accepted, so a preset accepted after other decisions never discards them;
     * every other proposal follows in list order, and a later proposal on the same kind and
-      subject wins;
+      subject wins (a ``choice.axis`` sets which further choice the grid tests; its primary
+      option alone takes the axis out again, back to the design as it was);
     * ``prism.exclusion_reason`` comes last, on the finished design (its units, sample roles
       and amplification rule), again in list order.
 
@@ -508,6 +554,14 @@ def _apply(
         if not isinstance(amplified, bool):
             raise DesignError(f"amplified must be true or false, not {amplified!r}")
         data["well_calls"][subject] = amplified
+    elif kind == "choice.axis":
+        options = axis_options(subject, payload["options"])
+        axes = dict(data.get("axes") or {})
+        if len(options) > 1:
+            axes[subject] = options
+        else:  # the primary alone: the axis is not tested, and the design is as before
+            axes.pop(subject, None)
+        data["axes"] = axes or None
     elif kind == "prism.exclusion_reason":
         _exclusion(data, payload, curves)
     return data  # prism.project and prism.value_edit do not change the design

@@ -275,6 +275,18 @@ export function ruleLabel(rule: unknown): string {
   return m ? `Cq ≤ ${m[1]}` : r;
 }
 
+/** The efficiency models (`qpilot/qpcr/axes`, the `efficiency` choice) in words. */
+export const EFFICIENCY_MODEL_WORDS: Record<string, string> = {
+  linregpcr: "LinRegPCR's mean efficiency of the amplicon on each plate",
+  per_well: "each well's own efficiency",
+  amplicon_mean: "one efficiency per amplicon over all its plates",
+  assumed_2: "efficiency assumed to be 2.0 (100 %)",
+  standard_curve: "efficiency from the plate's dilution series",
+};
+const AXIS_QUESTION: Record<string, string> = {
+  efficiency: "which efficiency turns Cq into quantity",
+};
+
 type Payload = Record<string, unknown>;
 const str = (v: unknown) => String(v ?? "?");
 
@@ -314,6 +326,14 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     return `Samples ${span} (${names.length} in all, experiment ${str(d.experiment_id)}) form a dilution series ${s}${quantities}`;
   },
   "curve.call_rule": (_s, d) => `Count a well as amplified by ${ruleWords(d.rule)}`,
+  "choice.axis": (s, d) => {
+    const question = AXIS_QUESTION[s];
+    if (!question || !Array.isArray(d.options) || !d.options.length) throw new Error("not an axis");
+    const words = (o: unknown) => EFFICIENCY_MODEL_WORDS[String(o)] ?? String(o);
+    const [primary, ...others] = d.options;
+    if (!others.length) return `Stop testing ${question}; keep ${words(primary)} only`;
+    return `Also test ${question}: ${others.map(words).join("; ")} (besides ${words(primary)}, the analysis in use)`;
+  },
   "curve.well_call": (s, d) => {
     if (typeof d.amplified !== "boolean") throw new Error("amplified must be boolean");
     return `Count well ${s} as ${d.amplified ? "amplified" : "not amplified (no usable curve)"}`;
@@ -387,6 +407,7 @@ export const KIND_TITLE: Record<Proposal["kind"], string> = {
   "design.dilution_series": "Dilution series",
   "curve.call_rule": "Amplification rule",
   "curve.well_call": "Well call",
+  "choice.axis": "Further choice to test",
   "prism.project": "Prism project",
   "prism.exclusion_reason": "Exclusion in Prism",
   "prism.value_edit": "Value changed in Prism",

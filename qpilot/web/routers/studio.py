@@ -44,6 +44,7 @@ from qpilot.web.contract import (
     ProposalAction,
     ProposalDecided,
     ProposalView,
+    ProposeAxis,
     ProposeDesign,
     ProposeOne,
     ProposeReport,
@@ -364,6 +365,38 @@ def propose_comparison(sid: str, ctx: Ctx) -> ProposeOne:
         message = "The comparison is proposed: check which group is the reference, then decide."
     else:
         message = sv.sentence(f"No comparison proposed: {outcome.reason or outcome.status}")
+    return ProposeOne(outcome=outcome, message=message)
+
+
+@router.post("/sessions/{sid}/propose/axis", response_model=ProposeOne)
+def propose_axis(sid: str, ctx: Ctx, body: ProposeAxis | None = None) -> ProposeOne:
+    """The rule proposes testing a further choice (the efficiency models), or no longer testing it.
+
+    It joins the choices stage's inbox; nothing changes until a person accepts it, and then the
+    study is analysed again with the choice as one more dimension of the grid. Results only
+    (403 ``blind`` before the design and the curves are confirmed); 409 ``studio`` when there is
+    nothing to propose (already tested, or no other option applies to this study).
+    """
+    body = body or ProposeAxis()
+    session(ctx, sid)
+    if not ctx.studio.results_visible(sid):
+        raise api_error(
+            403,
+            "blind",
+            "Which further choices to test follows the results, which stay hidden until the "
+            "design and the curves are confirmed.",
+        )
+    outcome = call(ctx.studio.propose_axis, sid, body.axis, body.on)
+    if outcome.status == "proposed":
+        changed(ctx, sid)
+        message = (
+            "Proposed: test the efficiency models as one more choice. Check the options, then "
+            "decide; nothing changes until you accept."
+            if body.on
+            else "Proposed: stop testing the efficiency models. Nothing changes until you accept."
+        )
+    else:
+        message = sv.sentence(f"Nothing proposed: {outcome.reason or outcome.status}")
     return ProposeOne(outcome=outcome, message=message)
 
 

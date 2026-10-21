@@ -52,6 +52,11 @@ export function matches(g: GeneRow, f: GeneFilter): boolean {
   return true;
 }
 
+/** Decision titles inside a sentence: each starts lower-case, names keep theirs ("Cq"). */
+export function choiceList(titles: string[]): string {
+  return titles.map((t) => t.charAt(0).toLowerCase() + t.slice(1)).join(", ");
+}
+
 function HoldsCell({ holds }: { holds: number | null | undefined }) {
   if (holds == null) return <span className="text-faint">—</span>;
   return (
@@ -154,7 +159,7 @@ function GeneCards({
                   </span>
                   {flips.length > 0 && (
                     <span className="block text-[12px] text-muted">
-                      A single choice can flip it: {flips.join(", ").toLowerCase()}.
+                      A single choice can flip it: {choiceList(flips)}.
                     </span>
                   )}
                 </button>
@@ -275,7 +280,7 @@ export function GenesPanel({
           const text = [
             now,
             ...g.reasons,
-            flips.length ? `A single choice can flip it: ${flips.join(", ").toLowerCase()}.` : null,
+            flips.length ? `A single choice can flip it: ${choiceList(flips)}.` : null,
           ]
             .filter(Boolean)
             .join(" ");

@@ -35,6 +35,7 @@ import statistics
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -162,7 +163,8 @@ class StudySettings:
 
         The demo preset (:func:`qpilot.qpcr.designs.vermeulen_design`) gives exactly
         ``StudySettings()``, so its output is the legacy output byte for byte. Any other design
-        is carried in ``design`` and switches the Studio facts on. Control-gene candidates are
+        is carried in ``design`` and switches the Studio facts on; its ``axes`` give the options
+        of the opt-in axes a person asked to test (``efficiency``). Control-gene candidates are
         ``reference_candidates``, or (when that is empty) the targets whose role is ``ref``,
         sorted by name.
 
@@ -182,6 +184,7 @@ class StudySettings:
             "amp_calls": tuple(design.amp_calls),
             "design": None if legacy else design,
             "studio_facts": not legacy,
+            "efficiency": tuple((design.axes or {}).get("efficiency", (eff_axis.PRIMARY,))),
         }
         if design.mode == "marker_split" and design.marker_split is not None:
             split = design.marker_split
@@ -352,6 +355,52 @@ class StudyModel:
     rest: frozenset[str]
     screens: dict[str, robustness.AxisScreen] = field(default_factory=dict)
     axis_notes: dict[str, dict] = field(default_factory=dict)  # per opt-in axis, for facts
+    tables: CellTables | None = None
+
+    def cell_table(self, cell: Mapping[str, Any]) -> pd.DataFrame:
+        """The per-well table a cell's matrix is built from (see :class:`CellTables`)."""
+        if self.tables is None:
+            return self.inputs.primary_table
+        return self.tables.table(cell)
+
+    def cell_stage(self, cell: Mapping[str, Any]) -> MatrixStage:
+        """Units x genes ``log2 N0`` of a cell, with the values every well of which is left out."""
+        if self.tables is None:
+            return MatrixStage(self.matrix, self.inputs.excluded)
+        return self.tables.stage(cell)
+
+
+@dataclass(frozen=True, eq=False)
+class CellTables:
+    """The per-well table under any combination of matrix-stage options.
+
+    One arithmetic for the decision space's matrices, Trace and the Prism export: the design's
+    per-well table, the efficiency model's quantities (LinRegPCR's own for the primary, passed
+    through untouched), then the amplification rule. A cell that leaves out an option uses its
+    primary; the primaries give exactly the table the primary matrix was built from.
+    """
+
+    inputs: _Inputs
+    amp_primary: str
+    legacy: bool  # the legacy demo path: no amplification rule is applied
+    calls: Mapping[str, bool]
+    curves: Mapping[tuple[str, str], eff_axis.StdCurve]
+
+    def table(self, cell: Mapping[str, Any]) -> pd.DataFrame:
+        """The per-well table under the cell's amplification rule and efficiency model."""
+        amp = str(cell.get("amp_call", self.amp_primary))
+        efficiency = str(cell.get("efficiency", eff_axis.PRIMARY))
+        if efficiency == eff_axis.PRIMARY and amp == self.amp_primary:
+            return self.inputs.primary_table
+        table = eff_axis.universe(self.inputs.table, efficiency, self.curves).table
+        return table if self.legacy else apply_rule(table, amp, self.calls)
+
+    def stage(self, cell: Mapping[str, Any]) -> MatrixStage:
+        """Units x genes ``log2 N0`` of the cell's table, and the values left out entirely."""
+        table = self.table(cell)
+        units = self.inputs.units
+        excluded = excluded_cells(table, units) if EXCLUDED in table.columns else None
+        return MatrixStage(log2_matrix(table, units), excluded)
 
 
 def build_model(
@@ -393,7 +442,7 @@ def build_model(
         excluded=inputs.excluded,
         group_labels=labels,
     )
-    efficiency, eff_notes = _efficiency_axis(inputs, settings)
+    efficiency, eff_notes, tables = _efficiency_axis(inputs, settings)
     space = QpcrSpace(
         matrix, stability, spec, amp_alternatives=inputs.alternatives, **options, **efficiency
     )
@@ -413,7 +462,18 @@ def build_model(
         _n_guard((high, rest), (settings.group_var, "rest"))
     notes = {"efficiency": eff_notes} if eff_notes else {}
     return StudyModel(
-        settings, inputs, matrix, stability, space, labels, screen, high, rest, screens, notes
+        settings,
+        inputs,
+        matrix,
+        stability,
+        space,
+        labels,
+        screen,
+        high,
+        rest,
+        screens,
+        notes,
+        tables,
     )
 
 
@@ -422,16 +482,20 @@ SCREENED_REASON = (
 )
 
 
-def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, dict]:
-    """``QpcrSpace`` keywords and notes for the efficiency axis (none: only the primary).
+def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, dict, CellTables]:
+    """``QpcrSpace`` keywords and notes for the efficiency axis, and the study's cell tables.
 
-    Options that do not apply to the study (no dilution series, every amplicon on one run)
-    are not offered and are reported with the reason. The matrix of any other option is
-    rebuilt from Cq and the per-run threshold, under the same amplification rule and design.
+    No keywords and no notes when only the primary is offered. Options that do not apply to
+    the study (no dilution series, every amplicon on one run) are not offered and are
+    reported with the reason, asked for or not. The matrix of any other option is rebuilt
+    from Cq and the per-run threshold, under the same amplification rule and design
+    (:class:`CellTables`).
     """
     offered = tuple(settings.efficiency)
+    legacy = settings.design is None and settings.amp_calls == DEFAULT_AMP_CALLS
+    calls = dict(settings.design.well_calls) if settings.design is not None else {}
     if offered == (eff_axis.PRIMARY,):
-        return {}, {}
+        return {}, {}, CellTables(inputs, settings.amp_calls[0], legacy, calls, {})
     if not offered or offered[0] != eff_axis.PRIMARY:
         raise DesignError(f"the efficiency options must start with {eff_axis.PRIMARY!r}")
     for option in offered:
@@ -441,18 +505,10 @@ def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, di
     if settings.design is not None:
         quantities = {s: d.quantity for s, d in settings.design.samples.items() if d.quantity}
     curves = eff_axis.standard_curves(inputs.table, quantities)
-    missing = {k: v for k, v in eff_axis.unavailable(inputs.table, curves).items() if k in offered}
+    every = eff_axis.unavailable(inputs.table, curves)  # asked for or not: said in the facts
+    missing = {k: v for k, v in every.items() if k in offered}
     kept = [o for o in offered if o not in missing]
-    legacy = settings.design is None and settings.amp_calls == DEFAULT_AMP_CALLS
-    calls = dict(settings.design.well_calls) if settings.design is not None else {}
-
-    def source(chosen: Mapping[str, object]) -> MatrixStage:
-        table = eff_axis.universe(inputs.table, str(chosen["efficiency"]), curves).table
-        if not legacy:
-            table = apply_rule(table, str(chosen["amp_call"]), calls)
-        excluded = excluded_cells(table, inputs.units) if EXCLUDED in table.columns else None
-        return MatrixStage(log2_matrix(table, inputs.units), excluded)
-
+    tables = CellTables(inputs, settings.amp_calls[0], legacy, calls, curves)
     notes: dict = {"unavailable": missing}
     if "per_well" in kept:
         notes["n_excluded_per_well"] = eff_axis.universe(inputs.table, "per_well").n_excluded
@@ -461,10 +517,10 @@ def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, di
         notes["std_curve_fallback"] = list(fallback)
     keywords = {
         "matrix_axes": {"efficiency": kept},
-        "matrix_source": source,
-        "unavailable": {"efficiency": missing},
+        "matrix_source": tables.stage,
+        "unavailable": {"efficiency": every},
     }
-    return keywords, notes
+    return keywords, notes, tables
 
 
 def study_from_curves(
@@ -1092,7 +1148,10 @@ def _efficiency_card_facts(add: Callable[..., None], card: DecisionCard) -> None
     root = f"cards.{card.id}"
     for option in card.options:
         s = slug(option.id)
-        add(f"f_eff_label_{s}", option.label, path=f"{root}.{option.id}.label")
+        label = option.label  # inside a sentence: "each well's own …", "LinRegPCR's …"
+        if label.split(" ", 1)[0][1:].islower():
+            label = label[:1].lower() + label[1:]
+        add(f"f_eff_label_{s}", label, path=f"{root}.{option.id}.label")
         flips = int(card.evidence["n_flipped_by_option"][option.id])
         add(f"f_n_flipped_eff_{s}", flips, path=f"{root}.evidence.n_flipped_by_option.{option.id}")
 

@@ -33,6 +33,7 @@ FLIP_FACT = {
     "reference_set": "f_n_flipped_refset",
     "group_cutoff": "f_n_flipped_cutoff",
     "undetermined": "f_n_flipped_undetermined",
+    "numbers.efficiency_model": "f_n_flipped_efficiency",
 }
 
 

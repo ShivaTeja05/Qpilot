@@ -57,6 +57,14 @@ GROUPS_OPTION = "design"  # the single "cut" option of a design with two named g
 #: a Cq above the line count as not detected). ``cq_le_40`` and ``learned`` have no counterpart.
 AMP_TO_LATE_CQ = {"linregpcr": "none", "cq_le_35": "cq35", "cq_le_38": "cq38"}
 UNDETERMINED_TO_NONDETECT = {"drop": "drop", "cap": "cap_min"}
+#: qPilot's efficiency models (``qpilot/qpcr/axes``) -> the simulator's ``efficiency`` options.
+#: One efficiency per amplicon over its plates has no counterpart there.
+EFFICIENCY_TO_SIM = {
+    "linregpcr": "assay_mean",
+    "per_well": "per_well",
+    "assumed_2": "assume_100",
+    "standard_curve": "std_curve",
+}
 
 
 class SimulatorUnavailable(RuntimeError):
@@ -445,6 +453,12 @@ def chosen_changes(prepared: Prepared, choices) -> tuple[dict[str, str], list[st
                 notes.append(f"amplification rule {choice.value}: no simulator counterpart")
             else:
                 changes["late_cq"] = late
+        elif choice.dimension == "efficiency":
+            model = EFFICIENCY_TO_SIM.get(str(choice.value))
+            if model is None:
+                notes.append(f"efficiency model {choice.value}: no simulator counterpart")
+            else:
+                changes["efficiency"] = model
         else:
             notes.append(f"{choice.dimension}: no simulator counterpart")
     base = space.baseline

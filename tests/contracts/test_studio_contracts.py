@@ -63,7 +63,8 @@ def test_proposal_rejects_unknown_kind_and_non_human_decider():
 
 
 def test_every_kind_has_a_stage():
-    assert {k.split(".")[0] for k in PROPOSAL_KINDS} == {"design", "curve", "prism", "stage"}
+    stages = {"design", "curve", "choice", "prism", "stage"}
+    assert {k.split(".")[0] for k in PROPOSAL_KINDS} == stages
 
 
 def test_entry_and_outcome_roundtrip():

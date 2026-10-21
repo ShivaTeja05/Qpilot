@@ -31,6 +31,8 @@ from qpilot.web.contract import (
     AuditBadge,
     AutonomyChange,
     AutonomyView,
+    AxisOptionView,
+    AxisView,
     CardOptionView,
     CardsView,
     CardView,
@@ -63,12 +65,14 @@ KIND_DIMENSION = {
     "group_cutoff": "cut",
     "undetermined": "undetermined",
     "amp_call": "amp_call",
+    "numbers.efficiency_model": "efficiency",
 }
 DIMENSION_TITLE = {
     "refs": "Which control genes to normalise to",
     "cut": "Where to cut the comparison groups",
     "undetermined": "What to do with wells that never amplified",
     "amp_call": "Which curves count as amplified",
+    "efficiency": "Which efficiency turns Cq into quantity",
 }
 UNDO_PREFIX = "Undo:"
 TOLERANCE = 1e-9
@@ -263,6 +267,10 @@ def _expected_values(result: StudyResult) -> dict[str, str]:
     out = {"refs": "|".join(result.design.refs_primary), "undetermined": "drop"}
     if "f_group_a" not in result.facts:
         out["cut"] = str(result.design.cut)
+    if "f_axis_efficiency" in result.facts:  # the efficiency models are tested
+        from qpilot.qpcr.axes.efficiency import PRIMARY
+
+        out["efficiency"] = PRIMARY
     amp = result.facts.get("f_amp_primary")
     if amp is not None:  # the fact holds the rule's label; the grid holds its id
         from qpilot.qpcr.amp_call import RULES
@@ -374,6 +382,13 @@ def _text(value: Any) -> str | None:
 
 def option_label(dimension: str, value: str) -> str:
     """Words for a grid option no card names."""
+    if dimension == "efficiency":
+        from qpilot.qpcr.axes import AxisError, get_axis
+
+        try:
+            return get_axis(dimension).option(value).label
+        except AxisError:
+            return value
     if dimension == "refs":
         return " + ".join(value.split("|"))
     if dimension == "cut":
@@ -591,6 +606,104 @@ def _row(
     )
 
 
+AXIS_WORDS = {
+    "off": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each "
+    "plate. Testing the other efficiency models adds them as one more choice of the grid; the "
+    "analysis in use stays the same until a person decides otherwise.",
+    "swept": "Tested as one more choice of the grid: changing only the efficiency model changes "
+    "{{f_n_flipped_efficiency}} of {{f_n_genes}} calls. Its Decision Card says what each model "
+    "changes; the analysis in use stays LinRegPCR's mean efficiency until a person decides.",
+    "screened_out": "Tried alone first: no efficiency model changes a call, and the largest "
+    "move of a log2 fold change is {{f_screen_efficiency_dlog2fc}}, under the screening "
+    "threshold, so the grid keeps LinRegPCR's mean efficiency and raises no card.",
+    "not_applicable": "None of the efficiency models asked for applies to this study, so the "
+    "grid keeps LinRegPCR's mean efficiency.",
+    "single_option": "Only LinRegPCR's mean efficiency was asked for, so nothing else is tested.",
+}
+EFFICIENCY_COMMAND = "qpilot run --efficiency all"
+
+
+def axis_views(
+    store: StudyStore,
+    result: StudyResult,
+    cards: Sequence[DecisionCard],
+    session: str | None,
+) -> list[AxisView]:
+    """The further choices the grid can test on request (today: the efficiency models).
+
+    Read from the study's facts and its stored design: which options were asked for, which
+    apply, what each one alone changes, and the card it raised. Every number is a fact.
+    """
+    from qpilot.core.facts import slug
+    from qpilot.qpcr.axes import get_axis
+
+    axis = get_axis("efficiency")
+    facts = result.facts
+    try:
+        design = store.design(result.study_id)
+    except (OSError, ValueError):
+        design = None
+    asked = tuple((design.axes or {}).get(axis.name, ())) if design is not None else ()
+    status_fact = facts.get(f"f_axis_{axis.name}")
+    status = str(status_fact.value) if status_fact is not None else "off"
+    if status not in AXIS_WORDS:
+        status = "off"
+    options = []
+    for option in axis.catalogue:
+        s = slug(option.id)
+        why = facts.get(f"f_axis_{axis.name}_unavailable_{s}")
+        flips = facts.get(f"f_n_flipped_eff_{s}") or facts.get(f"f_screen_{axis.name}_flips_{s}")
+        primary = option.tier == "primary"
+        tested = status != "off" and (primary or option.id in asked) and why is None
+        options.append(
+            AxisOptionView(
+                id=option.id,
+                label=option.label,
+                tier=option.tier,
+                primary=primary,
+                tested=tested,
+                flips=fact_ref(flips) if flips is not None and not primary else None,
+                unavailable=str(why.value) if why is not None else None,
+            )
+        )
+    try:
+        text = fact_text(AXIS_WORDS[status], facts)
+    except (KeyError, TypeError, ValueError):
+        text = plain_text(AXIS_WORDS["off"])
+    notes = []
+    if "f_n_eff_excluded_per_well" in facts:
+        notes.append(
+            fact_text(
+                "With each well's own efficiency, {{f_n_eff_excluded_per_well}} study wells "
+                "whose own efficiency is outside LinRegPCR's valid range are left out.",
+                facts,
+            )
+        )
+    fallback = facts.get("f_eff_std_fallback")
+    if fallback is not None and str(fallback.value) not in ("", "none"):
+        notes.append(
+            fact_text(
+                "Amplicons without a dilution series keep LinRegPCR's mean efficiency under the "
+                "dilution-series model: {{f_eff_std_fallback}}.",
+                facts,
+            )
+        )
+    card = next((c for c in cards if KIND_DIMENSION.get(c.kind) == axis.name), None)
+    return [
+        AxisView(
+            name=axis.name,
+            title=axis.title,
+            status=status,  # type: ignore[arg-type]
+            text=text,
+            options=options,
+            card_id=card.id if card is not None else None,
+            notes=notes,
+            can_propose=session is not None,
+            command=None if session is not None else EFFICIENCY_COMMAND,
+        )
+    ]
+
+
 def results_view(store: StudyStore, study_id: str, session: str | None = None) -> ResultsView:
     """Everything the Results section shows."""
     from qpilot.app_state import design_line
@@ -661,6 +774,7 @@ def results_view(store: StudyStore, study_id: str, session: str | None = None) -
         pending_requests=len(pending),
         head=head,
         audit=audit_badge(store, study_id),
+        axes=axis_views(store, result, cards, session),
     )
 
 

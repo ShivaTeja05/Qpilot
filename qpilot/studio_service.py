@@ -11,7 +11,8 @@ stage       what the scientist confirms
 ==========  ==============================================================================
 design      well roles, groups, biological units, reference genes (blind: no conclusion)
 curves      which curves count as amplified, and each disagreement that matters (blind)
-choices     the Decision Cards (reference set, cut-off, empty wells, amplification call)
+choices     the Decision Cards (reference set, cut-off, empty wells, amplification call), and
+            which further choices the grid tests (the efficiency models, opt-in)
 prism       the Prism project: tables, test, graph, caption (then Send to Prism)
 roundtrip   what changed in Prism, each exclusion with a reason and its consequence
 ==========  ==============================================================================
@@ -81,7 +82,7 @@ BLIND_STAGES: tuple[str, ...] = ("design", "curves")
 STAGE_KINDS = {
     "design": "design.",
     "curves": "curve.",
-    "choices": "",  # the Decision Cards, not proposals
+    "choices": "choice.",  # the Decision Cards, and which further choices the grid tests
     "prism": "prism.project",
     "roundtrip": ("prism.exclusion_reason", "prism.value_edit"),
 }
@@ -545,6 +546,11 @@ class Studio:
         must gain a comparison; Studio's default amplification rules are the options of the
         ``amp_call`` axis. Only accepted proposals are read: ``accepted`` (in the order a
         person decided them, from one :meth:`ProposalStore.view`), else the inbox's now.
+
+        The further choices a person asked the grid to test (``choice.axis``) come last, after
+        the curves and the round-trip exclusions; like the exclusions they are not part of the
+        curves hash, so testing them never re-opens a blind stage. They change the design, and
+        so the study: switching one off again gives back the study as it was.
         """
         from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS
         from qpilot.qpcr.designs import DesignError, design_from_proposals
@@ -574,11 +580,13 @@ class Studio:
             full = design_from_proposals(design, curve_part, curves)
             prism_part = [p for p in accepted if p.kind == "prism.exclusion_reason"]
             full = design_from_proposals(full, prism_part, curves)
+            choice_part = [p for p in accepted if p.kind.startswith("choice.")]
+            full = design_from_proposals(full, choice_part, curves)
         except DesignError as err:
             return Assembly(None, [*blockers, str(err)])
         if blockers:
             return Assembly(None, blockers, design_hash)
-        curves_hash = full.model_copy(update={"excluded_wells": ()}).design_hash()
+        curves_hash = full.model_copy(update={"excluded_wells": (), "axes": None}).design_hash()
         return Assembly(full, [], design_hash, curves_hash)
 
     def _curves_table(self, session_id: str) -> Any:
@@ -926,7 +934,7 @@ class Studio:
         from qpilot.qpcr.designs import DesignError
         from qpilot.qpcr.study import StudySettings, build_model
 
-        single = design.model_copy(update={"amp_calls": design.amp_calls[:1]})
+        single = design.model_copy(update={"amp_calls": design.amp_calls[:1], "axes": None})
         settings = StudySettings.from_design(single)
         try:
             curves = analyse_study(
@@ -1215,6 +1223,149 @@ class Studio:
         return reject_request(
             self.store, self.study(session_id), card_id, reason, expected_head, option
         )
+
+    def axis_offer(self, session_id: str, axis: str = "efficiency") -> dict[str, Any]:
+        """What testing an opt-in axis would add to the confirmed design (nothing is written).
+
+        ``options``: every option of the axis that applies to this study, primary first;
+        ``unavailable``: option id -> why it does not apply here; ``tested``: the options the
+        design tests now (the primary alone when it does not); ``evidence``: the per-well
+        numbers the proposal cites. Results only: needs the blind stages confirmed.
+        """
+        from qpilot.qpcr.axes import efficiency as eff_axis
+        from qpilot.qpcr.curves import analyse_study
+        from qpilot.qpcr.designs import DESIGN_AXES, axis_primary, design_curves
+        from qpilot.qpcr.study import StudySettings
+
+        if axis not in DESIGN_AXES:
+            raise StudioError(f"there is no further choice called {axis!r} to test")
+        assembly = self.confirmed_assembly(session_id)
+        if assembly is None:
+            raise StudioError(
+                "confirm the design and the curves first: which further choices to test "
+                "follows them"
+            )
+        design = assembly.design
+        assert design is not None  # a confirmed design always assembles
+        tested = tuple((design.axes or {}).get(axis, (axis_primary(axis),)))
+        settings = StudySettings.from_design(design)
+        curves = analyse_study(
+            self.source(session_id), settings.experiment_id, settings.candidates, settings.curves
+        )
+        table = design_curves(curves, design)
+        quantities = {s: d.quantity for s, d in design.samples.items() if d.quantity}
+        std = eff_axis.standard_curves(table, quantities)
+        unavailable = eff_axis.unavailable(table, std)
+        study = table[(table["sample_type"] == "unkn") & table["n0"].notna()]
+        own = study["eff_indiv"].astype(float)
+        low, high = eff_axis.E_VALID
+        valid = own[own.notna() & (own > low) & (own < high)]
+        if valid.empty:
+            unavailable["per_well"] = "no study well has its own efficiency inside (1.0, 2.3)"
+        options = tuple(o for o in eff_axis.OPTIONS if o not in unavailable)
+        assay = study["eff_target"].astype(float).dropna()
+        evidence = {
+            "study_wells": len(study),
+            "own_in_range": len(valid),
+            "own_outside_range": len(study) - len(valid),
+            "own_min": float(valid.min()) if len(valid) else None,
+            "own_median": float(valid.median()) if len(valid) else None,
+            "own_max": float(valid.max()) if len(valid) else None,
+            "assay_min": float(assay.min()) if len(assay) else None,
+            "assay_max": float(assay.max()) if len(assay) else None,
+            "dilution_series": len(std),
+        }
+        return {
+            "axis": axis,
+            "options": options,
+            "unavailable": unavailable,
+            "tested": tested,
+            "evidence": evidence,
+        }
+
+    def propose_axis(
+        self, session_id: str, axis: str = "efficiency", on: bool = True
+    ) -> ProposalOutcome:
+        """The rule proposes testing a further choice (or no longer testing it); a person decides.
+
+        On: every option of the axis that applies to the confirmed design, primary first (for
+        the efficiency models: LinRegPCR's mean efficiency, each well's own, one per amplicon,
+        an assumed 2.0, the dilution series'); off: the primary alone. Nothing changes until a
+        person accepts it; then the design names the axis and the study is analysed again with
+        it as one more dimension of the grid, whose Decision Card says what each option would
+        change. The analysis in use stays the primary until a person decides that card.
+        """
+        from qpilot.qpcr.axes import get_axis
+
+        offer = self.axis_offer(session_id, axis)
+        primary, options = offer["options"][0], offer["options"]
+        wanted = options if on else (primary,)
+        if on and len(options) < 2:
+            why = "; ".join(f"{k}: {v}" for k, v in sorted(offer["unavailable"].items()))
+            raise StudioError(f"no other option of this choice applies to this study ({why})")
+        if tuple(wanted) == tuple(offer["tested"]):
+            state = "already tested" if on else "not tested"
+            raise StudioError(f"this choice is {state} in the current analysis")
+        catalogue = {o.id: o for o in get_axis(axis).catalogue}
+        numbers = offer["evidence"]
+        evidence = [
+            Evidence(
+                kind="rule",
+                ref=axis,
+                note="method card methods/efficiency_model.md: which efficiency turns Cq into "
+                "quantity",
+            )
+        ]
+        if numbers["own_median"] is not None:
+            evidence.append(
+                Evidence(
+                    kind="pattern",
+                    ref="each well's own efficiency",
+                    note=f"{numbers['own_in_range']} study wells: median "
+                    f"{numbers['own_median']:.3f}, {numbers['own_min']:.3f} to "
+                    f"{numbers['own_max']:.3f}; {numbers['own_outside_range']} outside "
+                    "LinRegPCR's valid range (1.0, 2.3)",
+                )
+            )
+        if numbers["assay_min"] is not None:
+            evidence.append(
+                Evidence(
+                    kind="pattern",
+                    ref="each assay's mean efficiency",
+                    note=f"LinRegPCR's mean efficiency per assay and plate: "
+                    f"{numbers['assay_min']:.3f} to {numbers['assay_max']:.3f}",
+                )
+            )
+        if on:
+            reasons = [
+                "qPilot turns each Cq into a quantity with LinRegPCR's mean efficiency of each "
+                "assay on each plate; testing the other efficiency models shows which "
+                "conclusions depend on that choice. The analysis in use stays the same until "
+                "a person decides otherwise on the card it raises.",
+                *(
+                    f"not offered: {catalogue[o].label.lower()} ({why})"
+                    for o, why in sorted(offer["unavailable"].items())
+                ),
+            ]
+            alternatives = [{"options": [primary]}]
+        else:
+            reasons = [
+                "stop testing the efficiency models: the analysis goes back to the grid "
+                "without that choice, with the decisions made there"
+            ]
+            alternatives = [{"options": list(options)}]
+        proposal = Proposal(
+            study_id=session_id,
+            kind="choice.axis",
+            subject=axis,
+            payload={"options": list(wanted)},
+            evidence=evidence,
+            alternatives=alternatives,
+            level="Moderate",
+            reasons=reasons,
+            made_by=MadeBy(kind="rule"),
+        )
+        return self.store.proposals(session_id).propose(proposal, "system")
 
     # ---- stage 4: the Prism project -----------------------------------------------------------
 
@@ -1536,6 +1687,8 @@ def _in_stage(proposal: Proposal, stage: str) -> bool:
         return proposal.kind.startswith("design.")
     if stage == "curves":
         return proposal.kind.startswith("curve.")
+    if stage == "choices":
+        return proposal.kind.startswith("choice.")
     if stage == "prism":
         return proposal.kind == "prism.project"
     if stage == "roundtrip":

@@ -721,7 +721,8 @@ def _cell(inputs: ExportInputs, model: StudyModel) -> dict[str, Any]:
     """The decision-space cell the export was computed at, in a re-analysed space.
 
     Raises:
-        ExportError: The exported amplification rule is no longer an option of the space.
+        ExportError: The exported amplification rule or efficiency model is no longer an
+            option of the space.
     """
     space = model.space
     chosen = {choice.dimension: choice.value for choice in inputs.choices}
@@ -734,6 +735,14 @@ def _cell(inputs: ExportInputs, model: StudyModel) -> dict[str, Any]:
         cell["amp_call"] = rule
     elif rule != primary:
         raise ExportError(f"the amplification rule {rule!r} is no longer an option of the study")
+    primary = model.settings.efficiency[0]
+    efficiency = chosen.get("efficiency", primary)
+    if efficiency in space.dimensions.get("efficiency", ()):
+        cell["efficiency"] = efficiency
+    elif efficiency != primary:
+        raise ExportError(
+            f"the efficiency model {efficiency!r} is no longer an option of the study"
+        )
     return cell
 
 
@@ -849,10 +858,15 @@ def study_inputs(
     }
     if "amp_call" in space.dimensions:  # the card's options are the rule ids themselves
         specs["card_amp_call"] = _RuleOptions(space.dimensions["amp_call"])
+    if "efficiency" in space.dimensions:  # ... and the efficiency models' ids
+        specs["card_efficiency"] = _RuleOptions(space.dimensions["efficiency"], "efficiency")
     choices = tuple(_choice(card, specs) for card in sorted(cards, key=lambda c: c.rank))
     value = {c.dimension: c.value for c in choices}
     rule_id = value.get("amp_call", settings.amp_calls[0])
-    if rule_id == settings.amp_calls[0]:
+    efficiency = value.get("efficiency", settings.efficiency[0])
+    if efficiency != settings.efficiency[0]:  # rebuilt quantities, then the rule
+        data = model.cell_table({"amp_call": rule_id, "efficiency": efficiency})
+    elif rule_id == settings.amp_calls[0]:
         data = model.inputs.primary_table
     else:
         calls = dict(design.well_calls) if design is not None else {}
@@ -900,7 +914,10 @@ demo_inputs = study_inputs
 
 @dataclass(frozen=True)
 class _RuleOptions:
-    """Stands in for a card spec whose options are the amplification rules themselves."""
+    """Stands in for a card spec whose options are the dimension's values themselves.
+
+    The amplification rules (``amp_call``) and the efficiency models (``efficiency``).
+    """
 
     rules: Sequence[str]
     dimension: str = "amp_call"
