@@ -34,7 +34,7 @@ from qpilot.report.model import (
 )
 from qpilot.web.contract_files import DownloadLink
 
-ReportFormat = Literal["md", "html", "passport"]
+ReportFormat = Literal["md", "html", "passport", "xlsx"]
 
 
 class ReportExportBody(BaseModel):
@@ -43,7 +43,8 @@ class ReportExportBody(BaseModel):
     format: ReportFormat = Field(
         description=(
             "md: the report as Markdown; html: a printable page; passport: one self-contained "
-            "offline HTML file with charts, bound to a fresh Analysis Record."
+            "offline HTML file with charts, bound to a fresh Analysis Record; xlsx: the results "
+            "as an Excel workbook with Trace's places to look for each gene."
         )
     )
     expected_head: str | None = Field(

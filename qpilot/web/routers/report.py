@@ -48,13 +48,19 @@ PREFIX = "record-report-"
 EXPORT_FILE = "report_export.json"
 # Measured on the demo on 20 Oct (a shared, loaded laptop): the report is cached after its first
 # build (~3 s); the passport also writes and zips the Analysis Record (7.8 MB with the input).
-TYPICAL_S: dict[str, float] = {"md": 3.0, "html": 3.0, "passport": 6.0}
+# The workbook traces every compared gene (``qpilot.report.excel``, origin/main's Excel export).
+TYPICAL_S: dict[str, float] = {"md": 3.0, "html": 3.0, "passport": 6.0, "xlsx": 12.0}
 TITLES: dict[str, str] = {
     "md": "The report as Markdown",
     "html": "The report as a printable page",
     "passport": "The study passport (one offline HTML file)",
+    "xlsx": "The results as an Excel workbook, with Trace's places to look",
 }
-EXTENSIONS: dict[str, str] = {"md": "md", "html": "html", "passport": "html"}
+EXTENSIONS: dict[str, str] = {"md": "md", "html": "html", "passport": "html", "xlsx": "xlsx"}
+AT_RECOMMENDED = (
+    "The workbook shows the results at the recommended choices, as the Analysis Record does; "
+    "the decisions you made are in the record and on the Decision Cards."
+)
 
 
 def _study(ctx: AppContext, study_id: str) -> str | None:
@@ -128,6 +134,11 @@ def export_report(study_id: str, body: ReportExportBody, ctx: Ctx) -> JobStarted
     fmt: ReportFormat = body.format
 
     def work(progress: Progress) -> dict[str, Any]:
+        if fmt == "xlsx":  # the results table and Trace: no report prose to check
+            folder = folders.private_dir(
+                folders.workspace_exports(ctx.store.root, study_id), PREFIX
+            )
+            return _write_excel(ctx, study_id, folder, body, progress)
         progress("Reading the study and checking that every number is a fact", 0.1)
         view = _view_job(ctx, study_id, sid)
         folder = folders.private_dir(folders.workspace_exports(ctx.store.root, study_id), PREFIX)
@@ -189,6 +200,52 @@ def export_report(study_id: str, body: ReportExportBody, ctx: Ctx) -> JobStarted
         tag=fmt,  # one job per format: a Markdown export never answers for the passport
     )
     return JobStarted(job=JobView(**job.view()))
+
+
+def _write_excel(
+    ctx: AppContext,
+    study_id: str,
+    folder: Path,
+    body: ReportExportBody,
+    progress: Progress,
+) -> dict[str, Any]:
+    """The ``xlsx`` export: the results and Trace's places to look (``qpilot.report.excel``)."""
+    from qpilot.report.excel import ExcelError, export_excel
+
+    progress("Tracing each gene for the 'Where to look' sheet", 0.3)
+    path = folder / f"qpilot-results-{study_id}.xlsx"
+    try:
+        info = export_excel(ctx.store, study_id, path, top=3)
+    except (ExcelError, StudyNotFound, OSError) as err:
+        shutil.rmtree(folder, ignore_errors=True)
+        raise JobError("cannot_export", f"The workbook could not be written: {err}") from err
+    warnings = []
+    if not info.traced:
+        why = (info.note or "no result could be traced").rstrip(".")
+        warnings.append(f"Trace did not run ({why}); the results are written without it.")
+    cards = ctx.store.cards(study_id)
+    if any(c.decision is not None and c.decision != c.recommended for c in cards):
+        warnings.append(AT_RECOMMENDED)
+    head = ctx.store.chain_head(study_id)
+    moved = bool(body.expected_head) and head != body.expected_head
+    if moved:
+        warnings.append(
+            "Something was decided after this page last refreshed; the file shows the study as "
+            "it is now."
+        )
+    exported = ReportExported(
+        study_id=study_id,
+        format="xlsx",
+        title=TITLES["xlsx"],
+        download=_link(ctx, path),
+        chain_head=head,
+        written_at=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        n_facts=0,
+        head_moved=moved,
+        warnings=warnings,
+    )
+    (folder / EXPORT_FILE).write_text(exported.model_dump_json(), encoding="utf-8")
+    return exported.model_dump(mode="json")
 
 
 def _view_job(ctx: AppContext, study_id: str, sid: str | None) -> ReportView:

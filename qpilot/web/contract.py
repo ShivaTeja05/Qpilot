@@ -859,6 +859,17 @@ class PendingRequest(BaseModel):
     at: str
 
 
+class CardPlace(BaseModel):
+    """Where a card opened from Trace points: the sample, plate and well, and what to check."""
+
+    sample: str
+    plate: str | None = None
+    well: str | None = None
+    target: str | None = None
+    what_to_check: list[str] = Field(default_factory=list)
+    note: str = Field(description="What deciding it does (the study's numbers stay as analysed).")
+
+
 class CardView(BaseModel):
     """One Decision Card with its words, options and what each option changes."""
 
@@ -879,6 +890,9 @@ class CardView(BaseModel):
     asked_again: AskedAgain | None = Field(
         default=None,
         description="A person decided this card in the earlier analysis; asked again here.",
+    )
+    place: CardPlace | None = Field(
+        default=None, description="A card opened from Trace: the place it is about."
     )
 
 

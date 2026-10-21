@@ -400,6 +400,190 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/instruments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Instruments
+         * @description Every registered instrument and its state now (read-only).
+         */
+        get: operations["list_instruments"];
+        put?: never;
+        /**
+         * Register Instrument
+         * @description Register an instrument: a name people use, its model and where it stands.
+         */
+        post: operations["register_instrument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instruments/{instrument_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Instrument
+         * @description One instrument: its state, its logbook in chain order and its incidents (read-only).
+         */
+        get: operations["get_instrument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instruments/{instrument_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log Event
+         * @description A person logs a calibration, a part change, a service visit, a move or a note.
+         */
+        post: operations["log_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instruments/{instrument_id}/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log Incident Route
+         * @description A person logs an incident they saw (confirmed, since a person logs it).
+         */
+        post: operations["log_incident_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instruments/{instrument_id}/incidents/{seq}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Incident Route
+         * @description A person confirms an incident an agent proposed (only a person can).
+         */
+        post: operations["confirm_incident_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instruments/{instrument_id}/incidents/{seq}/fix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fix Incident Route
+         * @description A person notes what fixed an incident.
+         */
+        post: operations["fix_incident_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instruments/{instrument_id}/incidents/{seq}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject Incident Route
+         * @description A person turns down an incident an agent proposed (only a person can).
+         */
+        post: operations["reject_incident_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instruments/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read Run
+         * @description What a run file says about its instrument, and which registered instrument it names.
+         */
+        post: operations["read_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instruments/runs/{run_id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Run
+         * @description A person says which instrument the file is from; what the file states is logged once.
+         */
+        post: operations["link_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jobs": {
         parameters: {
             query?: never;
@@ -1140,6 +1324,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sheets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Sheet
+         * @description Keep a lab's analysis sheet for checking (by content; the same file is kept once).
+         */
+        post: operations["upload_sheet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sheets/{sheet_id}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Kept Sheet
+         * @description Recompute the sheet from its own Cq values (read-only: nothing is saved or edited).
+         */
+        post: operations["check_kept_sheet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}": {
         parameters: {
             query?: never;
@@ -1688,6 +1912,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Evidence
+         * @description The Evidence Ledger: what this study can and cannot tell you (read-only).
+         */
+        get: operations["get_evidence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/flips": {
         parameters: {
             query?: never;
@@ -1828,6 +2072,26 @@ export type paths = {
         get: operations["get_history_diff"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/lookback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Lookback
+         * @description Which of the study's conclusions used the instrument in the window, and what changes.
+         */
+        post: operations["run_lookback"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2018,6 +2282,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Review
+         * @description The Run Review: headline genes, the Evidence Ledger and the recorded sign-offs.
+         */
+        get: operations["get_review"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/review/sign-off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Sign Off
+         * @description A person signs off the run: one ``review`` entry in the decision chain, as ``human``.
+         */
+        post: operations["post_sign_off"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/trace": {
         parameters: {
             query?: never;
@@ -2092,6 +2396,46 @@ export type paths = {
         get: operations["get_trace_plate"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/where-to-look": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Where
+         * @description From a gene's result, a sample or a well to the places to look (read-only).
+         */
+        get: operations["get_where"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/where-to-look/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Open Place
+         * @description A person's Decide…: the place at ``rank`` becomes a Decision Card on Results.
+         */
+        post: operations["post_open_place"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4068,6 +4412,22 @@ export type components = {
              */
             sheet?: string | null;
         };
+        /** Body_read_run */
+        Body_read_run: {
+            /**
+             * Run
+             * @description An .eds, a QuantStudio or CFX export, or RDML.
+             */
+            run: string;
+        };
+        /** Body_upload_sheet */
+        Body_upload_sheet: {
+            /**
+             * Sheet
+             * @description The analysis sheet (.xlsx or .csv).
+             */
+            sheet: string;
+        };
         /** Body_verify_record */
         Body_verify_record: {
             /**
@@ -4160,6 +4520,20 @@ export type components = {
             reason: string;
             /** Stage */
             stage: string;
+        };
+        /**
+         * CalibrationAge
+         * @description The latest calibration of one type, from the logbook.
+         */
+        CalibrationAge: {
+            /** Age Days */
+            age_days: number;
+            /** Performed On */
+            performed_on: string;
+            /** Source */
+            source: string;
+            /** Type */
+            type: string;
         };
         /**
          * CaptureNote
@@ -4339,6 +4713,27 @@ export type components = {
             requested: boolean;
         };
         /**
+         * CardPlace
+         * @description Where a card opened from Trace points: the sample, plate and well, and what to check.
+         */
+        CardPlace: {
+            /**
+             * Note
+             * @description What deciding it does (the study's numbers stay as analysed).
+             */
+            note: string;
+            /** Plate */
+            plate?: string | null;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target?: string | null;
+            /** Well */
+            well?: string | null;
+            /** What To Check */
+            what_to_check?: string[];
+        };
+        /**
          * CardsView
          * @description The study's Decision Cards, most impact first.
          */
@@ -4382,6 +4777,8 @@ export type components = {
             options: components["schemas"]["CardOptionView"][];
             /** Pending */
             pending: components["schemas"]["PendingRequest"][];
+            /** @description A card opened from Trace: the place it is about. */
+            place?: components["schemas"]["CardPlace"] | null;
             /** Status Line */
             status_line: string;
             /** Title */
@@ -5293,6 +5690,12 @@ export type components = {
         /**
          * DecisionEntry
          * @description One line of decisions.jsonl; ``hash`` is sha256 of the canonical JSON minus ``hash``.
+         *
+         *     ``kind`` is None for a decision on a card (every entry written before review entries
+         *     existed). A ``review`` entry is a person's sign-off on the whole run: ``option`` repeats
+         *     its ``outcome``, ``reason`` holds the comment, and no card replays it. Fields that are None
+         *     are left out of the stored line and of the hash, so an entry written before these fields
+         *     existed hashes exactly as it did.
          */
         DecisionEntry: {
             /**
@@ -5309,12 +5712,18 @@ export type components = {
              * @default
              */
             hash: string;
+            /** Kind */
+            kind?: "review" | null;
             /** Option */
             option: string;
+            /** Outcome */
+            outcome?: ("accept" | "repeat" | "discuss") | null;
             /** Prev Hash */
             prev_hash: string;
             /** Reason */
             reason: string;
+            /** Reviewer */
+            reviewer?: string | null;
             /** Seq */
             seq: number;
             /**
@@ -5487,6 +5896,66 @@ export type components = {
             url: string;
         };
         /**
+         * EventBody
+         * @description A person logs a service visit, a move, a calibration, a part change or a note.
+         */
+        EventBody: {
+            /**
+             * At
+             * @description When (ISO date); today if left out.
+             */
+            at?: string | null;
+            /** Calibration Type */
+            calibration_type?: string | null;
+            /** Component */
+            component?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "calibration" | "component_change" | "service" | "move" | "note";
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /**
+         * EventView
+         * @description One logbook entry (what a person typed is shown here, on their own page).
+         */
+        EventView: {
+            /** Actor */
+            actor: string;
+            /** At */
+            at: string | null;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /** Hash */
+            hash: string;
+            /** Kind */
+            kind: string;
+            /** Kind Word */
+            kind_word: string;
+            /** Note */
+            note: string;
+            /** Recorded At */
+            recorded_at: string;
+            /** Run Hash */
+            run_hash: string | null;
+            /** Seq */
+            seq: number;
+            /**
+             * Source
+             * @description file, inferred or typed.
+             */
+            source: string;
+            /** Wells */
+            wells: string[];
+        };
+        /**
          * Evidence
          * @description One source behind a proposal; every item is clickable in Studio.
          *
@@ -5509,36 +5978,41 @@ export type components = {
             ref: string;
         };
         /**
-         * EvidenceView
-         * @description One evidence item with the file's text it points at (quoted, never obeyed).
+         * EvidenceItemView
+         * @description One item of the Evidence Ledger: what the study has or lacks, and what that means.
          */
-        EvidenceView: {
+        EvidenceItemView: {
             /**
-             * Flags
-             * @default []
+             * Cannot Tell
+             * @description Absent or unknown: the item says what this study cannot tell you.
              */
-            flags: string[];
-            /** Kind */
-            kind: string;
+            cannot_tell: boolean;
+            /** Id */
+            id: string;
+            /** @description Title, status and what it means, numbers as facts. */
+            line: components["schemas"]["FactText"];
             /**
-             * Note
-             * @default
+             * Miqe
+             * @description The MIQE 2.0 items it answers.
              */
-            note: string;
-            /** Origin */
-            origin?: string | null;
-            /** Ref */
-            ref: string;
+            miqe: string[];
             /**
-             * Text
-             * @description The quoted text behind a text id / cell.
+             * Status
+             * @enum {string}
              */
-            text?: string | null;
+            status: "present" | "absent" | "not_applicable" | "unknown";
             /**
-             * Well
-             * @description `run_id/well` when it points at a well.
+             * Status Word
+             * @description present, absent, not applicable or unknown.
              */
-            well?: string | null;
+            status_word: string;
+            /** Title */
+            title: string;
+            /**
+             * Value
+             * @description e.g. the efficiency source.
+             */
+            value?: string | null;
         };
         /**
          * Explanation
@@ -5627,6 +6101,28 @@ export type components = {
             n_wells: number;
             /** Sheet Name */
             sheet_name?: string | null;
+        };
+        /**
+         * FixBody
+         * @description What fixed an incident (a person).
+         */
+        FixBody: {
+            /** At */
+            at?: string | null;
+            /** Note */
+            note: string;
+        };
+        /**
+         * FixView
+         * @description What a person noted fixed an incident.
+         */
+        FixView: {
+            /** At */
+            at: string | null;
+            /** Note */
+            note: string;
+            /** Seq */
+            seq: number | null;
         };
         /**
          * FlipOption
@@ -5917,6 +6413,19 @@ export type components = {
              * @enum {string}
              */
             verdict: "pass" | "warn" | "fail" | "not_applicable";
+        };
+        /**
+         * GateLineView
+         * @description One G-INSTR line about a run file, in words (numbers as facts).
+         */
+        GateLineView: {
+            /** Code */
+            code: string;
+            /** Rule Id */
+            rule_id: string;
+            /** Status */
+            status: string;
+            text: components["schemas"]["FactText"];
         };
         /**
          * GateLoaded
@@ -6820,6 +7329,63 @@ export type components = {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * IncidentBody
+         * @description A person logs an incident they saw (confirmed, since a person logs it).
+         */
+        IncidentBody: {
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "low" | "high";
+            /** Metric */
+            metric: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Run Hash */
+            run_hash?: string | null;
+            /** Wells */
+            wells: string[];
+        };
+        /**
+         * IncidentView
+         * @description An incident rebuilt from the chain: proposed (by an agent), confirmed or turned down.
+         */
+        IncidentView: {
+            /** Actor */
+            actor: string;
+            /** At */
+            at: string | null;
+            /** Can Confirm */
+            can_confirm: boolean;
+            /** Can Fix */
+            can_fix: boolean;
+            /** Direction */
+            direction: string | null;
+            /** Error Code */
+            error_code: string | null;
+            /** Fixes */
+            fixes: components["schemas"]["FixView"][];
+            /** Metric */
+            metric: string | null;
+            /** Note */
+            note: string;
+            /** Run Hash */
+            run_hash: string | null;
+            /** Seq */
+            seq: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "proposed" | "confirmed" | "rejected";
+            /** Wells */
+            wells: string[];
+        };
+        /**
          * InspectRun
          * @description One plate.
          */
@@ -6915,6 +7481,70 @@ export type components = {
             text_id: string;
         };
         /**
+         * InstrumentSummary
+         * @description One registered instrument as the list shows it (no serial number, no alias).
+         */
+        InstrumentSummary: {
+            /** Calibrations */
+            calibrations: components["schemas"]["CalibrationAge"][];
+            /** Chain Ok */
+            chain_ok: boolean;
+            /** Display Name */
+            display_name: string;
+            /** Instrument Id */
+            instrument_id: string;
+            /** Location */
+            location: string;
+            /** Make Model */
+            make_model: string;
+            /** N Events */
+            n_events: number;
+            /** N Open Incidents */
+            n_open_incidents: number;
+            /**
+             * N Proposed
+             * @description Incidents an agent proposed, waiting for a person.
+             */
+            n_proposed: number;
+            /**
+             * Problems
+             * @description What is wrong with the logbook's chain, if any.
+             */
+            problems: string[];
+            /** Shared */
+            shared: boolean;
+        };
+        /**
+         * InstrumentsView
+         * @description ``GET /instruments``: the registry, with each instrument's state now.
+         */
+        InstrumentsView: {
+            /** As Of */
+            as_of: string;
+            /** Instruments */
+            instruments: components["schemas"]["InstrumentSummary"][];
+            /** Kinds */
+            kinds: components["schemas"]["KindView"][];
+            /**
+             * Note
+             * @description What the registry and logbook are, and what they are not.
+             */
+            note: string;
+        };
+        /**
+         * InstrumentView
+         * @description ``GET /instruments/{id}``: the instrument, its logbook and its incidents.
+         */
+        InstrumentView: {
+            /** Events */
+            events: components["schemas"]["EventView"][];
+            /** Head */
+            head: string;
+            /** Incidents */
+            incidents: components["schemas"]["IncidentView"][];
+            instrument: components["schemas"]["InstrumentSummary"];
+        };
+        /**
          * JobStarted
          * @description What a slow request answers at once.
          */
@@ -6976,6 +7606,19 @@ export type components = {
             label: string;
         };
         /**
+         * KindView
+         * @description An event kind a person can log, in words.
+         */
+        KindView: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "calibration" | "component_change" | "service" | "move" | "note";
+            /** Word */
+            word: string;
+        };
+        /**
          * Limitation
          * @description One limitation, in plain words.
          */
@@ -6983,6 +7626,101 @@ export type components = {
             /** Id */
             id: string;
             text: components["schemas"]["ReportText"];
+        };
+        /**
+         * LinkBody
+         * @description Which instrument a run file is from (a person answers the question).
+         */
+        LinkBody: {
+            /** Instrument Id */
+            instrument_id: string;
+        };
+        /**
+         * Linked
+         * @description The run file is linked: its next files resolve by themselves.
+         */
+        Linked: {
+            /** Instrument Id */
+            instrument_id: string;
+            /** Message */
+            message: string;
+            /**
+             * N Logged
+             * @description Events the file states (an aborted run, a pause …).
+             */
+            n_logged: number;
+        };
+        /**
+         * Logged
+         * @description The answer to a logbook write: what was written and the instrument now.
+         */
+        Logged: {
+            instrument: components["schemas"]["InstrumentView"];
+            /** Message */
+            message: string;
+            /** Seq */
+            seq: number;
+        };
+        /**
+         * LookbackBody
+         * @description Which instrument and which days (ISO dates, inclusive).
+         */
+        LookbackBody: {
+            /** End */
+            end: string;
+            /** Instrument Id */
+            instrument_id: string;
+            /** Start */
+            start: string;
+        };
+        /**
+         * LookbackChange
+         * @description A gene whose call differs once the window's runs are left out.
+         */
+        LookbackChange: {
+            /** After */
+            after: string;
+            /** Before */
+            before: string;
+            /** Gene */
+            gene: string;
+        };
+        /**
+         * LookbackView
+         * @description What leaving a study's runs on that instrument in that window out does to its calls.
+         */
+        LookbackView: {
+            /**
+             * Assumed All Runs
+             * @description No run-to-instrument map was recorded: every run counts as on it.
+             */
+            assumed_all_runs: boolean;
+            /** Changed */
+            changed: components["schemas"]["LookbackChange"][];
+            /** End */
+            end: string;
+            /** Instrument Id */
+            instrument_id: string;
+            /** N Changed */
+            n_changed: number;
+            /** N Conclusions */
+            n_conclusions: number;
+            /** N Wells In Window */
+            n_wells_in_window: number;
+            /** Runs In Window */
+            runs_in_window: string[];
+            /**
+             * Saved
+             * @default false
+             */
+            saved: boolean;
+            /** Start */
+            start: string;
+            /** Status */
+            status: string;
+            /** Study Id */
+            study_id: string;
+            text: components["schemas"]["FactText"];
         };
         /**
          * MadeBy
@@ -7277,6 +8015,23 @@ export type components = {
             title: string;
         };
         /**
+         * NotBuiltView
+         * @description A part of the full Run Review that is not built yet (said, never faked).
+         */
+        NotBuiltView: {
+            /** Id */
+            id: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Section
+             * @description The page section that shows it instead.
+             */
+            section?: string | null;
+            /** Title */
+            title: string;
+        };
+        /**
          * NotCompared
          * @description Samples of the study that are in neither compared group, by reason.
          */
@@ -7311,6 +8066,23 @@ export type components = {
              * @default []
              */
             unused: string[];
+        };
+        /**
+         * OpenPlaceBody
+         * @description Open the place at ``rank`` of a trace as a Decision Card (a person's click).
+         */
+        OpenPlaceBody: {
+            /**
+             * Expected Head
+             * @description The chain head the trace was read at (409 stale when it moved).
+             */
+            expected_head: string;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Rank */
+            rank: number;
         };
         /**
          * OptionEffect
@@ -7358,6 +8130,23 @@ export type components = {
             reason: string;
             /** Seq */
             seq: number;
+        };
+        /**
+         * PlaceOpened
+         * @description The card a place opened as: decide it on Results like any other card.
+         */
+        PlaceOpened: {
+            /** Card Id */
+            card_id: string;
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            /**
+             * Opened
+             * @description False when the card was already open.
+             */
+            opened: boolean;
         };
         /**
          * PlanBudget
@@ -8914,7 +9703,7 @@ export type components = {
             /** Description */
             description: string;
             /** Evidence */
-            evidence: components["schemas"]["EvidenceView"][];
+            evidence: components["schemas"]["qpilot__web__contract__EvidenceView"][];
             /** Head */
             head: string;
             /**
@@ -9022,6 +9811,76 @@ export type components = {
              * @default null
              */
             targets_that_matter: number | null;
+        };
+        /**
+         * EvidenceView
+         * @description One evidence item with the file's text it points at (quoted, never obeyed).
+         */
+        qpilot__web__contract__EvidenceView: {
+            /**
+             * Flags
+             * @default []
+             */
+            flags: string[];
+            /** Kind */
+            kind: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Origin */
+            origin?: string | null;
+            /** Ref */
+            ref: string;
+            /**
+             * Text
+             * @description The quoted text behind a text id / cell.
+             */
+            text?: string | null;
+            /**
+             * Well
+             * @description `run_id/well` when it points at a well.
+             */
+            well?: string | null;
+        };
+        /**
+         * EvidenceView
+         * @description ``GET /studies/{id}/evidence``: the Evidence Ledger, or why there is none.
+         */
+        qpilot__web__contract_evidence__EvidenceView: {
+            /** Available */
+            available: boolean;
+            /** Counts */
+            counts?: {
+                [key: string]: number;
+            };
+            /** Items */
+            items?: components["schemas"]["EvidenceItemView"][];
+            /**
+             * Method Card
+             * @default methods/evidence.md
+             */
+            method_card: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Rule
+             * @description Absent items never change a conclusion or a confidence grade.
+             */
+            rule: string;
+            /**
+             * Source
+             * @description kept: saved when the study was analysed; rebuilt: re-read from the input file for this page (nothing saved); none: not available (note says why).
+             * @enum {string}
+             */
+            source: "kept" | "rebuilt" | "none";
+            /** Study Id */
+            study_id: string;
+            summary?: components["schemas"]["FactText"] | null;
         };
         /**
          * QuarantineEntry
@@ -9205,6 +10064,34 @@ export type components = {
             subject: string | null;
         };
         /**
+         * RegisterBody
+         * @description Register an instrument (a person; serials are linked from its run files, never typed).
+         */
+        RegisterBody: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Instrument Id
+             * @description A short id; made from the name when left out.
+             */
+            instrument_id?: string | null;
+            /**
+             * Location
+             * @default
+             */
+            location: string;
+            /**
+             * Make Model
+             * @default
+             */
+            make_model: string;
+            /**
+             * Shared
+             * @default false
+             */
+            shared: boolean;
+        };
+        /**
          * RelatedStudy
          * @description Another analysis of the same input file (another design of it).
          */
@@ -9312,10 +10199,10 @@ export type components = {
             expected_head?: string | null;
             /**
              * Format
-             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record.
+             * @description md: the report as Markdown; html: a printable page; passport: one self-contained offline HTML file with charts, bound to a fresh Analysis Record; xlsx: the results as an Excel workbook with Trace's places to look for each gene.
              * @enum {string}
              */
-            format: "md" | "html" | "passport";
+            format: "md" | "html" | "passport" | "xlsx";
         };
         /**
          * ReportExported
@@ -9329,7 +10216,7 @@ export type components = {
              * Format
              * @enum {string}
              */
-            format: "md" | "html" | "passport";
+            format: "md" | "html" | "passport" | "xlsx";
             /**
              * Head Moved
              * @default false
@@ -9721,6 +10608,35 @@ export type components = {
             title: string;
         };
         /**
+         * ReviewHeadlineView
+         * @description One headline gene on the Run Review.
+         */
+        ReviewHeadlineView: {
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Gene */
+            gene: string;
+            line: components["schemas"]["FactText"];
+        };
+        /**
+         * ReviewOutcomeView
+         * @description One outcome a person can sign off with.
+         */
+        ReviewOutcomeView: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "accept" | "repeat" | "discuss";
+            /** Label */
+            label: string;
+            /** Meaning */
+            meaning: string;
+        };
+        /**
          * ReviewView
          * @description The reviewer's report: findings by severity, then what checks out.
          */
@@ -9780,6 +10696,89 @@ export type components = {
             min_log2fc: number;
             /** Text */
             text: string;
+        };
+        /**
+         * RunFileView
+         * @description ``POST /instruments/runs``: what a run file says about its instrument (no serials).
+         */
+        RunFileView: {
+            /**
+             * Context
+             * @description The run context's model view: model, firmware, run state, calibrations and their age, pauses, temperature, vendor flags; serial fields named, never shown.
+             */
+            context: {
+                [key: string]: unknown;
+            };
+            /** Gate */
+            gate: components["schemas"]["GateLineView"][];
+            /**
+             * Instrument Id
+             * @description The registered instrument it names.
+             */
+            instrument_id?: string | null;
+            /** Name */
+            name: string;
+            question?: components["schemas"]["RunQuestion"] | null;
+            /**
+             * Run Id
+             * @description The kept file's content id.
+             */
+            run_id: string;
+        };
+        /**
+         * RunQuestion
+         * @description The one question asked for a run file that names no registered instrument.
+         */
+        RunQuestion: {
+            /** Choices */
+            choices: {
+                [key: string]: string;
+            }[];
+            /** Question */
+            question: string;
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * RunReviewView
+         * @description ``GET /studies/{id}/review``: one page for the person who reviews someone else's work.
+         */
+        RunReviewView: {
+            /**
+             * Can Sign Off
+             * @description False for an analysis a Studio session has moved on from (sign off the current one); why_not says so.
+             */
+            can_sign_off: boolean;
+            evidence: components["schemas"]["qpilot__web__contract_evidence__EvidenceView"];
+            /**
+             * Head
+             * @description The chain head now; send it back as expected_head.
+             */
+            head: string;
+            /** Headline */
+            headline: components["schemas"]["ReviewHeadlineView"][];
+            /** Max Comment */
+            max_comment: number;
+            /** Max Reviewer */
+            max_reviewer: number;
+            /** Not Built */
+            not_built: components["schemas"]["NotBuiltView"][];
+            /** Outcomes */
+            outcomes: components["schemas"]["ReviewOutcomeView"][];
+            /** Purpose */
+            purpose: string;
+            /** Session */
+            session?: string | null;
+            /** Sign Offs */
+            sign_offs: components["schemas"]["SignOffView"][];
+            /** Study Id */
+            study_id: string;
+            title: components["schemas"]["FactText"];
+            /**
+             * Why Not
+             * @default
+             */
+            why_not: string;
         };
         /**
          * ScorecardRow
@@ -9868,6 +10867,321 @@ export type components = {
             row: number;
             /** Text Id */
             text_id: string;
+        };
+        /**
+         * SheetCheckBody
+         * @description What to check against, and the mapping a person set (all optional).
+         */
+        SheetCheckBody: {
+            /**
+             * Columns
+             * @description Columns a person set (others keep the guess).
+             */
+            columns?: components["schemas"]["SheetColumnSet"][] | null;
+            /**
+             * Confirm
+             * @description A person confirms the mapping as shown (with any columns set).
+             * @default false
+             */
+            confirm: boolean;
+            /** References */
+            references?: string[] | null;
+            /**
+             * Study Id
+             * @description Compare the sheet's fold changes with this study's.
+             */
+            study_id?: string | null;
+        };
+        /**
+         * SheetCheckView
+         * @description ``POST /sheets/{id}/check``: the sheet recomputed (read-only; nothing is saved).
+         */
+        SheetCheckView: {
+            /** Columns */
+            columns: components["schemas"]["SheetColumnCheckView"][];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * File Kind
+             * @enum {string}
+             */
+            file_kind: "xlsx" | "csv";
+            /** File Sha256 */
+            file_sha256: string;
+            /** Findings */
+            findings: components["schemas"]["SheetFindingView"][];
+            findings_text: components["schemas"]["FactText"];
+            /** Genes */
+            genes: components["schemas"]["SheetGeneView"][];
+            /** Hand Overs */
+            hand_overs: components["schemas"]["SheetHandOverView"][];
+            headline: components["schemas"]["FactText"];
+            mapping: components["schemas"]["SheetMappingView"];
+            /**
+             * Method Card
+             * @default methods/sheetcheck.md
+             */
+            method_card: string;
+            /** N Rows */
+            n_rows: number;
+            /** Name */
+            name: string;
+            /** Never Edited */
+            never_edited: string;
+            /** Notes */
+            notes: string[];
+            /** Sheet Id */
+            sheet_id: string;
+            /** Study Id */
+            study_id: string | null;
+        };
+        /**
+         * SheetColumnCheckView
+         * @description One recomputed output column for one gene.
+         */
+        SheetColumnCheckView: {
+            /** Column */
+            column: string;
+            /** Gene */
+            gene: string | null;
+            /** N Cells */
+            n_cells: number;
+            /** N Differ */
+            n_differ: number;
+            /** N Reproduced */
+            n_reproduced: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "reproduced" | "follows" | "differs" | "not_checked";
+            /** Step */
+            step: string;
+            /** Step Word */
+            step_word: string;
+        };
+        /**
+         * SheetColumnSet
+         * @description One column a person sets.
+         */
+        SheetColumnSet: {
+            /** Column */
+            column: string;
+            /** Gene */
+            gene?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "sample" | "group" | "bio_unit" | "gene" | "type" | "well" | "cq" | "mean_cq" | "dcq" | "ddcq" | "fc" | "mean_fc" | "sd" | "sem" | "p" | "ignored";
+        };
+        /**
+         * SheetColumnView
+         * @description One column and what it is taken to hold.
+         */
+        SheetColumnView: {
+            /**
+             * Basis
+             * @description Where the guess came from; 'user' when a person set it.
+             * @enum {string}
+             */
+            basis: "header" | "content" | "user";
+            /**
+             * Column
+             * @description The column letter (A, B, …).
+             */
+            column: string;
+            /** Confidence */
+            confidence: number;
+            /** Gene */
+            gene?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "sample" | "group" | "bio_unit" | "gene" | "type" | "well" | "cq" | "mean_cq" | "dcq" | "ddcq" | "fc" | "mean_fc" | "sd" | "sem" | "p" | "ignored";
+            /** Role Word */
+            role_word: string;
+            /** Scale */
+            scale?: string | null;
+        };
+        /**
+         * SheetFindingView
+         * @description One output that differs on its own, and what reproduces it.
+         */
+        SheetFindingView: {
+            /** Column */
+            column: string;
+            /** First Row */
+            first_row: number;
+            /** Gene */
+            gene: string | null;
+            /** Id */
+            id: string;
+            /** N Rows */
+            n_rows: number;
+            /**
+             * Paths
+             * @description The known slips or methods that reproduce it.
+             */
+            paths: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "explained" | "ambiguous" | "unexplained";
+            /** Step Word */
+            step_word: string;
+        };
+        /**
+         * SheetGeneView
+         * @description A gene of the sheet; ``flagged`` when its name looks like a date Excel made from it.
+         */
+        SheetGeneView: {
+            /** Flagged */
+            flagged: boolean;
+            /** Key */
+            key: string;
+            /** Note */
+            note: string;
+            /** Reference */
+            reference: boolean;
+        };
+        /**
+         * SheetHandOverView
+         * @description A gene whose sheet arithmetic reproduces but whose fold change differs from the study's.
+         */
+        SheetHandOverView: {
+            /** Causes */
+            causes: string[];
+            /** Conclusion Differs */
+            conclusion_differs: boolean;
+            /** Gene */
+            gene: string;
+            line: components["schemas"]["FactText"];
+        };
+        /**
+         * SheetMappingView
+         * @description How the sheet is read: a guess until a person confirms it.
+         */
+        SheetMappingView: {
+            /** Columns */
+            columns: components["schemas"]["SheetColumnView"][];
+            /** Confirmed */
+            confirmed: boolean;
+            /** Header Row */
+            header_row: number;
+            /**
+             * Layout
+             * @enum {string}
+             */
+            layout: "wide" | "long";
+            /** References */
+            references: string[];
+            /** Roles */
+            roles: components["schemas"]["SheetRoleView"][];
+            /** Sheet */
+            sheet: number;
+            /**
+             * Status
+             * @description 'mapping guessed, not confirmed' or 'mapping confirmed'.
+             */
+            status: string;
+        };
+        /**
+         * SheetRoleView
+         * @description A role a person can give a column.
+         */
+        SheetRoleView: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "sample" | "group" | "bio_unit" | "gene" | "type" | "well" | "cq" | "mean_cq" | "dcq" | "ddcq" | "fc" | "mean_fc" | "sd" | "sem" | "p" | "ignored";
+            /** Word */
+            word: string;
+        };
+        /**
+         * SheetUploaded
+         * @description ``POST /sheets``: the sheet is kept (by content) for checking; nothing is checked yet.
+         */
+        SheetUploaded: {
+            /** Bytes */
+            bytes: number;
+            /**
+             * Name
+             * @description The file's name on your computer (shown, never opened).
+             */
+            name: string;
+            /**
+             * Sheet Id
+             * @description The kept file's content id (24 hex characters).
+             */
+            sheet_id: string;
+        };
+        /**
+         * SignOffBody
+         * @description A person's sign-off (the server records it as ``human``; the page cannot choose).
+         */
+        SignOffBody: {
+            /**
+             * Comment
+             * @description Why (required; kept in the chain).
+             */
+            comment: string;
+            /**
+             * Expected Head
+             * @description The chain head the review was read at (409 stale when a decision moved it since).
+             */
+            expected_head: string;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "accept" | "repeat" | "discuss";
+            /**
+             * Reviewer
+             * @description Who signs off (kept in the chain).
+             */
+            reviewer: string;
+        };
+        /**
+         * SignOffDone
+         * @description The answer to a sign-off: the entry as written, the new head and the page again.
+         */
+        SignOffDone: {
+            /** Head */
+            head: string;
+            /** Message */
+            message: string;
+            review: components["schemas"]["RunReviewView"];
+            sign_off: components["schemas"]["SignOffView"];
+        };
+        /**
+         * SignOffView
+         * @description A recorded sign-off: one ``review`` entry in the decision chain (always a person's).
+         */
+        SignOffView: {
+            /** At */
+            at: string;
+            /** Comment */
+            comment: string;
+            /** Hash */
+            hash: string;
+            line: components["schemas"]["FactText"];
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "accept" | "repeat" | "discuss";
+            /** Outcome Word */
+            outcome_word: string;
+            /** Reviewer */
+            reviewer: string;
+            /** Seq */
+            seq: number;
         };
         /**
          * StageView
@@ -11004,6 +12318,152 @@ export type components = {
             well: string;
         };
         /**
+         * WhereAbsent
+         * @description A sample in no comparison.
+         */
+        WhereAbsent: {
+            /** Sample */
+            sample: string;
+            /** Why */
+            why: string;
+        };
+        /**
+         * WhereCheck
+         * @description One fingerprint check a place fails (S1-S7), in words.
+         */
+        WhereCheck: {
+            /** Code */
+            code: string;
+            /** Consistent With */
+            consistent_with: string;
+            /** Looks Like */
+            looks_like: string;
+            /** What To Check */
+            what_to_check: string;
+        };
+        /**
+         * WhereOption
+         * @description One thing a person could do at a place, and what it would do to the calls.
+         */
+        WhereOption: {
+            /**
+             * Changed Calls
+             * @description Genes whose call this option changes.
+             */
+            changed_calls: string[];
+            /**
+             * Consequence
+             * @description changes_call, beyond_ci or changes_nothing.
+             */
+            consequence: string;
+            /** Consequence Word */
+            consequence_word: string;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+        };
+        /**
+         * WherePlace
+         * @description A place to look: a well (or the sample's tube) where something is unusual.
+         */
+        WherePlace: {
+            /**
+             * Can Decide
+             * @description Decide… is offered: an option here changes a call (a person's decision).
+             */
+            can_decide: boolean;
+            /**
+             * Card Id
+             * @description The Decision Card this place opens as (Decide…).
+             */
+            card_id: string;
+            /**
+             * Card Status
+             * @description The card's status when it is already open (open, decided, …).
+             */
+            card_status?: string | null;
+            /** Checks */
+            checks: components["schemas"]["WhereCheck"][];
+            /** Consequence */
+            consequence: string;
+            /** Consequence Word */
+            consequence_word: string;
+            /** Options */
+            options: components["schemas"]["WhereOption"][];
+            /** Plate */
+            plate?: string | null;
+            /** Rank */
+            rank: number;
+            /** Role */
+            role: string;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target?: string | null;
+            /** Well */
+            well?: string | null;
+        };
+        /**
+         * WhereView
+         * @description ``GET /studies/{id}/where-to-look``: from a gene, a sample or a well to the places to look.
+         *
+         *     Read-only: nothing is opened or written. ``text`` is the "Where to look" panel, one
+         *     sentence per line, every number a cited fact.
+         */
+        WhereView: {
+            /** Absent */
+            absent: components["schemas"]["WhereAbsent"][];
+            /**
+             * Answer
+             * @description place_to_look, choice_to_look_at, nothing_to_look_at or absent.
+             */
+            answer: string;
+            /** Cannot Show */
+            cannot_show: string[];
+            /** Checked Nothing Found */
+            checked_nothing_found: string[];
+            /** Decide Note */
+            decide_note: string;
+            /**
+             * Head
+             * @description The chain head it was read at; send it to open a card.
+             */
+            head: string;
+            /**
+             * Method Card
+             * @default methods/trace.md
+             */
+            method_card: string;
+            /** N Absent */
+            n_absent: number;
+            /**
+             * N More
+             * @description Further places found, not shown.
+             */
+            n_more: number;
+            /** Places */
+            places: components["schemas"]["WherePlace"][];
+            /**
+             * Planned
+             * @description True when the analysis traced is the planned one (no card decided otherwise); either way it is the analysis in use.
+             */
+            planned: boolean;
+            /**
+             * Root
+             * @description {kind: gene | sample | well, id}.
+             */
+            root: {
+                [key: string]: string;
+            };
+            /** Session */
+            session: string | null;
+            /** Study Id */
+            study_id: string;
+            /** Text */
+            text: components["schemas"]["FactText"][];
+        };
+        /**
          * WithheldGene
          * @description A gene the engine compared no fold change for, and why (it is not in ``genes``).
          */
@@ -11748,6 +13208,328 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_instruments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentsView"];
+                };
+            };
+        };
+    };
+    register_instrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_instrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Logged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_incident_route: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncidentBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Logged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_incident_route: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: string;
+                seq: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Logged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fix_incident_route: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: string;
+                seq: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FixBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Logged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_incident_route: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: string;
+                seq: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Logged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_read_run"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunFileView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Linked"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -13003,6 +14785,74 @@ export interface operations {
             };
         };
     };
+    upload_sheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_sheet"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SheetUploaded"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_kept_sheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sheet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SheetCheckBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SheetCheckView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_study: {
         parameters: {
             query?: never;
@@ -13954,6 +15804,37 @@ export interface operations {
             };
         };
     };
+    get_evidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["qpilot__web__contract_evidence__EvidenceView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_flips: {
         parameters: {
             query?: never;
@@ -14172,6 +16053,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HistoryDiff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_lookback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookbackBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
                 };
             };
             /** @description Validation Error */
@@ -14522,6 +16438,72 @@ export interface operations {
             };
         };
     };
+    get_review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunReviewView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_sign_off: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignOffBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignOffDone"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_trace_study: {
         parameters: {
             query?: never;
@@ -14642,6 +16624,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TracePlateView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_where: {
+        parameters: {
+            query?: {
+                gene?: string | null;
+                sample?: string | null;
+                top?: number;
+                /** @description PLATE:WELL */
+                well?: string | null;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhereView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_open_place: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenPlaceBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceOpened"];
                 };
             };
             /** @description Validation Error */

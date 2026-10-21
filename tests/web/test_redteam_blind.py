@@ -250,6 +250,10 @@ BODIES = {
     "samples": {"gene": "1-Mar"},
     "autonomy": {"autonomy": "decide_and_tell"},
     "verify": {"bind_to_record": True},
+    "export": {"format": "xlsx"},
+    "sign-off": {"outcome": "accept", "comment": "c", "reviewer": "r", "expected_head": "0" * 64},
+    "open": {"kind": "gene", "id": "1-Mar", "rank": 1, "expected_head": "0" * 64},
+    "lookback": {"instrument_id": "qs-1", "start": "2020-01-01", "end": "2020-12-31"},
 }
 
 

@@ -39,7 +39,7 @@ from qpilot.web.jobs import JobError, Progress
 router = APIRouter(tags=["results"])
 JOB_RESULTS = {"card.explain": Explanation}
 
-CARD_ID = re.compile(r"^[a-z][a-z0-9_]{0,63}\Z")
+CARD_ID = re.compile(r"^[a-z][a-z0-9_]{0,127}\Z")  # a Trace card names its place
 HUMAN = "human"
 EXPLAIN_S = 8.0
 STALE = (

@@ -35,6 +35,7 @@ from qpilot.web.contract import (
     AxisOptionView,
     AxisView,
     CardOptionView,
+    CardPlace,
     CardsView,
     CardView,
     CarriedFrom,
@@ -1072,6 +1073,33 @@ def card_view(
         undo_label=labels.get(undo) if undo else None,
         carried=carried,
         asked_again=asked,
+        place=card_place(card),
+    )
+
+
+#: What deciding a card opened from Trace does, said on the card.
+TRACE_CARD_NOTE = (
+    "Opened from Trace. Deciding it is a person's choice, kept in the decision chain with the "
+    "reason; the study's numbers stay as analysed (to leave a well out of the analysis, leave "
+    "it out in a Studio session's Curves, or from Controls)."
+)
+
+
+def card_place(card: DecisionCard) -> CardPlace | None:
+    """The place a card opened from Trace is about (None for every other card)."""
+    from qpilot.core.store import ON_DEMAND_KINDS
+
+    if card.kind not in ON_DEMAND_KINDS:
+        return None
+    ev = card.evidence or {}
+    checks = [c for c in ev.get("what_to_check") or () if isinstance(c, str)]
+    return CardPlace(
+        sample=str(ev.get("sample") or ""),
+        plate=str(ev["plate"]) if ev.get("plate") else None,
+        well=str(ev["well"]) if ev.get("well") else None,
+        target=str(ev["target"]) if ev.get("target") else None,
+        what_to_check=checks,
+        note=TRACE_CARD_NOTE,
     )
 
 
