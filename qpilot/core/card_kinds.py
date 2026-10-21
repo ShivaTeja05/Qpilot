@@ -176,6 +176,10 @@ register_card_kind(
     dimension="undetermined",
 )
 register_card_kind("amp_call", "Which curves count as amplified", "qpcr", dimension="amp_call")
+# Opened on demand by Trace (``StudyStore.open_card``) for one place to look; no grid dimension,
+# so no analysis builds it. Its ``impact["flips"]`` says whether setting the well aside can
+# change a conclusion, and the escalation rule reads that as for every other card.
+register_card_kind("trace_set_aside", "What to do with one unusual well", "trace")
 
 # Run Gate's kinds (built by core/gate.py, domain-agnostic). A gate card exists only when
 # excluding what a rule flags can change a conclusion; deciding to set a whole plate aside is

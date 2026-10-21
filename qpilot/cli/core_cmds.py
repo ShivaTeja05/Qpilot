@@ -1,4 +1,4 @@
-"""CLI commands owned by Dev 2: serve (MCP), plan, verify, rerun, harness."""
+"""CLI commands owned by Dev 2: serve (MCP), plan, record, verify, rerun, harness."""
 
 from __future__ import annotations
 
@@ -23,6 +23,51 @@ def _record_dir(path: str, scratch: Path) -> Path:
     if p.exists():
         raise RecordError(f"not an Analysis Record folder or zip: {p}")
     raise RecordError(f"no such record: {p}")
+
+
+def _record_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--study",
+        default=None,
+        help="study id, or the 12 characters Studio shows (default: the only study)",
+    )
+    parser.add_argument("--out", required=True, help="a new or empty folder for the record")
+    parser.add_argument(
+        "--no-input",
+        action="store_true",
+        help="leave the raw input file out: the record verifies but cannot be re-run",
+    )
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        help="pseudonymise texts for sharing; the raw input is always left out",
+    )
+
+
+def _record(args: argparse.Namespace) -> int:
+    """Write the Analysis Record of a study in the store, e.g. one a person decided in Studio."""
+    from qpilot.core.record import RecordError, write_record
+    from qpilot.core.store import StudyNotFound, StudyStore
+
+    if args.study is None:
+        studies = StudyStore().list_studies()
+        if len(studies) != 1:
+            listed = ", ".join(s[:12] for s in studies) or "none"
+            print(f"qpilot record: give --study <id> (studies here: {listed})", file=sys.stderr)
+            return 2
+    store, study = _pick_study(args)
+    try:
+        info = write_record(
+            store, study, args.out, include_input=not args.no_input, share=args.share
+        )
+    except (RecordError, StudyNotFound) as err:
+        print(f"qpilot record: {err}", file=sys.stderr)
+        return 2
+    print(f"wrote {info.record_dir}: {info.n_files} files, chain head {info.chain_head[:12]}")
+    if not info.input_included:
+        print("the raw input is not in this record: it verifies but cannot be re-run")
+    print(f"check it with: qpilot verify {info.record_dir}")
+    return 0
 
 
 def _verify_arguments(parser: argparse.ArgumentParser) -> None:
@@ -109,11 +154,11 @@ def _rerun(args: argparse.Namespace) -> int:
 
 
 def _plan_arguments(parser: argparse.ArgumentParser) -> None:
-    from qpilot.qpcr.plan import SIGMA_HELP
+    from qpilot.qpcr.plan import SD_RT_HELP, SD_WELL_HELP, SIGMA_HELP
 
     parser.add_argument("--fc", type=float, default=2.0, help="fold change to detect (default 2)")
     parser.add_argument("--sd", type=float, default=None, help=SIGMA_HELP)
-    parser.add_argument("--n", type=int, default=None, help="planned samples per group")
+    parser.add_argument("--n", type=int, default=None, help="planned samples (subjects) per group")
     parser.add_argument("--alpha", type=float, default=0.05)
     parser.add_argument("--power", type=float, default=0.80)
     parser.add_argument("--plates", type=int, default=None, help="number of plates")
@@ -123,6 +168,23 @@ def _plan_arguments(parser: argparse.ArgumentParser) -> None:
         help="no inter-run calibrator on every plate",
     )
     parser.add_argument("--refs", type=int, default=None, help="candidate reference genes")
+    budget = parser.add_argument_group(
+        "replicate budget",
+        "with any of these, --sd is the SD between subjects alone and --n counts subjects",
+    )
+    budget.add_argument("--sd-rt", type=float, default=None, help=SD_RT_HELP)
+    budget.add_argument("--sd-well", type=float, default=None, help=SD_WELL_HELP)
+    budget.add_argument("--n-rt", type=int, default=1, help="RT reactions per subject (default 1)")
+    budget.add_argument("--n-tech", type=int, default=1, help="wells per RT reaction (default 1)")
+    budget.add_argument("--cost-subject", type=float, default=None, help="cost of one subject")
+    budget.add_argument("--cost-rt", type=float, default=None, help="cost of one RT reaction")
+    budget.add_argument("--cost-well", type=float, default=None, help="cost of one qPCR well")
+    budget.add_argument(
+        "--cq",
+        type=float,
+        default=None,
+        help="expected Cq of the target (accepted; the claim-floor check is not built yet)",
+    )
     parser.add_argument("--json", action="store_true", help="print JSON")
 
 
@@ -139,6 +201,14 @@ def _plan(args: argparse.Namespace) -> int:
             n_plates=args.plates,
             calibrator_on_every_plate=None if args.plates is None else not args.no_calibrator,
             n_candidate_refs=args.refs,
+            sd_rt=args.sd_rt,
+            sd_well=args.sd_well,
+            n_rt=args.n_rt,
+            n_tech=args.n_tech,
+            cost_subject=args.cost_subject,
+            cost_rt=args.cost_rt,
+            cost_well=args.cost_well,
+            expected_cq=args.cq,
         )
     except ValueError as err:
         print(f"qpilot plan: {err}", file=sys.stderr)
@@ -151,6 +221,10 @@ def _plan(args: argparse.Namespace) -> int:
         print(f"Cannot detect: {line}")
     for line in out.rules:
         print(f"Rule: {line}")
+    for line in (out.budget or {}).get("sentences", []):
+        print(f"Budget: {line}")
+    for line in (out.budget or {}).get("notes", []):
+        print(f"Note: {line}")
     return 0
 
 
@@ -340,6 +414,12 @@ COMMANDS: list[Command] = [
         "before the first plate: samples needed and what a design cannot detect",
         _plan_arguments,
         _plan,
+    ),
+    (
+        "record",
+        "write the Analysis Record of a study, e.g. one decided in Studio",
+        _record_arguments,
+        _record,
     ),
     (
         "verify",

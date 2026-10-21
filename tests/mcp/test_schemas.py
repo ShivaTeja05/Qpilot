@@ -66,9 +66,16 @@ def test_the_agents_page_access_words_match_the_annotations(served):
         access = TOOL_ACCESS[name][0] if name in TOOL_ACCESS else "read"
         assert tool.annotations.read_only_hint is (access == "read"), name
     writes = {n for n, t in tools.items() if not t.annotations.read_only_hint}
-    assert writes == {"qpcr_study", "qpcr_decide", "qpcr_propose", "qpcr_inspect"}
+    assert writes == {
+        "qpcr_study",
+        "qpcr_decide",
+        "qpcr_propose",
+        "qpcr_inspect",
+        "qpcr_incident_log",  # an incident proposed in an instrument's logbook
+    }
     repeats_log = {n for n, t in tools.items() if not t.annotations.idempotent_hint}
-    assert repeats_log == {"qpcr_decide", "qpcr_propose"}  # unless an idempotency_key is given
+    # qpcr_decide and qpcr_propose unless an idempotency_key is given
+    assert repeats_log == {"qpcr_decide", "qpcr_propose", "qpcr_incident_log"}
 
 
 def test_every_refusal_shares_one_schema():

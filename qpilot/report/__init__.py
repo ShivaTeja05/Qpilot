@@ -1,4 +1,4 @@
-"""The study report: Methods, the MIQE 2.0 checklist, a reviewer's report and a passport.
+"""The study report (Methods, MIQE 2.0, a reviewer's report, a passport) and the Run Review.
 
 Everything here reads a study from the store (and its audit, when one was run) and writes
 **facts, never typed numbers**: every number in a sentence is a fact token bound to the engine's
@@ -15,4 +15,10 @@ report as data, cached), :mod:`~qpilot.report.render` (Markdown and printable HT
 Ported from the work in progress on branch ``agents/report`` (the fact registry, the MIQE 2.0
 item map and its resolvers, the RDML metadata reader and the reviewer's rule list), re-tested and
 re-pointed at the live store instead of an exported record.
+
+Two more pages compose the engine's outputs without new maths:
+
+* :mod:`qpilot.report.run_review`: the Run Review, one page per run for the person who reviews
+  someone else's work (thin version: Evidence Ledger, headline and recorded sign-offs).
+* :mod:`qpilot.report.excel`: the study's tables as one Excel workbook.
 """

@@ -107,6 +107,32 @@ TOOL_ACCESS: dict[str, tuple[ToolAccess, str]] = {
     "qpcr_curve_calls": ("read", "Nothing."),
     "qpcr_prism_preview": ("read", "Nothing: it shows what Send to Prism would write."),
     "qpcr_prism_diff": ("read", "Nothing: the differences are not stored."),
+    "qpcr_evidence": ("read", "Nothing: the Evidence Ledger is read, or rebuilt without saving."),
+    "qpcr_run_review": (
+        "read",
+        "Nothing: no tool signs off a run review; a person does, in the Run Review.",
+    ),
+    "qpcr_run_context": (
+        "read",
+        "Nothing: it reads a run file inside the shared folders; serial numbers never leave it.",
+    ),
+    "qpcr_lookback": ("read", "Nothing: nothing is written to any logbook."),
+    "qpcr_instrument_history": ("read", "Nothing: what a person typed is counted, not shown."),
+    "qpcr_instrument_status": ("read", "Nothing."),
+    "qpcr_incident_log": (
+        "propose",
+        "Proposes an incident in an instrument's logbook (codes only, no free text). It matches "
+        "nothing until a person confirms it in Instruments, and it never touches a study.",
+    ),
+    "qpcr_trace": (
+        "read",
+        "Nothing: it opens no Decision Card. Setting a place aside is a person's decision.",
+    ),
+    "qpcr_check_sheet": (
+        "read",
+        "Nothing: the sheet is read, never edited, and its column mapping stays a guess until "
+        "a person confirms it.",
+    ),
 }
 SIM_EFFECT = "Nothing: it reads the study's verified robustness audit."
 

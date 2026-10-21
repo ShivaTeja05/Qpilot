@@ -186,7 +186,7 @@ def test_serve_list_tools_prints_what_is_served(capsys, monkeypatch):
     assert main(["serve", "--list-tools"]) == 0
     out = capsys.readouterr()
     assert out.out.split() == list(TOOL_NAMES)
-    assert "12 tools" in out.err and "not installed" in out.err
+    assert "21 tools" in out.err and "not installed" in out.err
 
 
 # ---- real stdio round trip ---------------------------------------------------------------

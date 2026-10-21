@@ -53,6 +53,7 @@ from filelock import FileLock
 
 from qpilot.core.proposals import InboxView
 from qpilot.core.store import (
+    ON_DEMAND_KINDS,
     SheetChanged,
     StudyNotFound,
     StudyStore,
@@ -744,7 +745,11 @@ class Studio:
         if stage == "choices":
             study_id = self.study(session_id)
             head, cards, _ = self.store.snapshot(study_id)
-            undecided = [c.id for c in cards if c.status in ("open", "pending_human")]
+            undecided = [  # an on-demand card (a Trace set-aside) is not an analysis choice
+                c.id
+                for c in cards
+                if c.status in ("open", "pending_human") and c.kind not in ON_DEMAND_KINDS
+            ]
             if undecided:
                 raise StudioError(
                     "decide every analysis choice first (still open: " + ", ".join(undecided) + ")"
@@ -2028,9 +2033,12 @@ def _system_confirm(proposal: Proposal) -> bool:
 def _decisions(cards: Sequence[DecisionCard]) -> dict[str, str]:
     """The option applied on each decided Decision Card (by a person, the system or an agent).
 
-    A pending request leaves a card's applied option as it was, so it is not in here.
+    A pending request leaves a card's applied option as it was, so it is not in here. Cards
+    opened on demand (``ON_DEMAND_KINDS``) are not analysis choices, so they are left out.
     """
-    return {c.id: c.decision for c in cards if c.decision is not None}
+    return {
+        c.id: c.decision for c in cards if c.decision is not None and c.kind not in ON_DEMAND_KINDS
+    }
 
 
 def _takes(func: Any, name: str) -> bool:

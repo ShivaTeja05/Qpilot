@@ -87,3 +87,112 @@ def test_cli_explain_lists_and_renders(fixtures_dir, capsys):
     assert main(["explain", "meter_v1", "--results", results, "--tokens"]) == 0
     assert "{{f_n_cells}}" in capsys.readouterr().out
     assert main(["explain", "confidence_v1", "--results", results]) == 1
+
+
+FEATURE_TEMPLATES = ("evidence_v1", "grt_v1", "runreview_v1", "instrument_gate_v1",
+                     "lookback_v1", "position_v1")  # fmt: skip
+
+
+def test_feature_templates_are_registered_and_digit_free_without_their_facts(fixture_result):
+    import re
+
+    for key in FEATURE_TEMPLATES:
+        assert key in TEMPLATES
+        rendered = render_template(key, fixture_result.facts)
+        assert rendered.plain and not re.search(r"\d", rendered.plain), key
+        assert rendered.fact_ids == ()
+
+
+def test_the_evidence_template_renders_a_ledger_through_the_registry():
+    from qpilot.explain.evidence_text import render_evidence
+    from qpilot.qpcr.evidence import evidence_for
+    from tests.engine.evidence_toys import toy_design, toy_model, toy_table
+
+    table, design = toy_table(), toy_design()
+    ledger = evidence_for(table, toy_model(table, design), design)
+    rendered = render_template("evidence_v1", ledger.facts)
+    assert rendered.tokens == render_evidence(ledger).tokens
+    assert "f_ev_n_present" in rendered.fact_ids and "No-RT control: absent." in rendered.plain
+
+
+def test_structured_templates_point_to_their_renderer(fixture_facts):
+    cases = {
+        "instrument_gate_v1": ("f_instr_run_run_state", "render_gate"),
+        "lookback_v1": ("f_lookback_instrument", "lookback_tokens"),
+        "position_v1": ("f_position_base_rate", "position_tokens"),
+    }
+    for key, (fid, renderer) in cases.items():
+        facts = {**fixture_facts, fid: Fact(id=fid, value="x")}
+        with pytest.raises(TemplateError, match=renderer):
+            render_template(key, facts)
+
+
+ENGINE_TEMPLATES = ("trace_v1", "trace_set_aside_v1", "sheetcheck_v1", "sheetcheck_findings_v1",
+                    "sheetcheck_handover_v1")  # fmt: skip
+
+
+def test_trace_and_sheetcheck_templates_are_registered_and_digit_free(fixture_result):
+    import re
+
+    from qpilot.core.vocabulary import banned_words
+
+    names = names_from_result(fixture_result)
+    for key in ENGINE_TEMPLATES:
+        assert key in TEMPLATES
+        for gene in (None, "ODC1"):
+            rendered = render_template(key, fixture_result.facts, gene=gene)
+            assert rendered.plain and not re.search(r"\d", rendered.plain.replace("ODC1", ""))
+            assert rendered.fact_ids == () and banned_words(rendered.plain, names) == []
+
+
+@pytest.fixture(scope="module")
+def toy_trace():
+    from qpilot.qpcr import trace as T
+    from tests.app.trace_toys import GENE, toy_trace_table
+    from tests.engine.test_trace import context
+
+    ctx = context(toy_trace_table())
+    return ctx, T.trace_gene(ctx, GENE, top=3)
+
+
+def test_the_trace_template_renders_a_gene_panel_through_the_registry(toy_trace):
+    from qpilot.explain.trace_text import render_trace
+
+    ctx, result = toy_trace
+    rendered = render_template("trace_v1", result.facts, gene="DOWN", allowed_names=ctx.items)
+    assert rendered.tokens == render_trace(result, allowed_names=ctx.items).tokens
+    assert "Where to look first:" in rendered.plain and "f_trace_down_1_sample" in rendered.fact_ids
+
+
+def test_the_sheetcheck_template_renders_a_check_through_the_registry(tmp_path):
+    from qpilot.explain.sheetcheck_text import render
+    from qpilot.qpcr.sheetcheck import check_sheet
+    from tests.engine.test_sheetcheck import _slip_sheets, synthetic, wide_table, write_csv
+
+    study = synthetic()
+    columns, summaries, kwargs = _slip_sheets(study)["sign_inverted"]
+    path = write_csv(tmp_path / "slip.csv", *wide_table(study, columns, summaries))
+    result = check_sheet(path, **kwargs)
+    for key in ("sheetcheck_v1", "sheetcheck_findings_v1"):
+        rendered = render_template(key, result.facts)
+        assert rendered.tokens == render(result, key).tokens
+    assert (
+        "The first place to look is column" in render_template("sheetcheck_v1", result.facts).plain
+    )
+
+
+def test_explain_card_works_on_a_trace_card(toy_trace, fixture_facts):
+    from qpilot.ai.client import MockBackend
+    from qpilot.explain.trace_text import CARD_TEXT
+
+    _, result = toy_trace
+    card = result.card(1)
+    assert card.kind == "trace_set_aside" and card.rationale_template == "trace_set_aside_v1"
+    explained = explain_card(card, fixture_facts, client=ModelClient())  # no model: the template
+    assert explained.fallback and explained.validated and explained.tokens == CARD_TEXT
+    reply = "Keep the well, or set the sample aside; a person decides, and it is logged."
+    explained = explain_card(card, fixture_facts, client=ModelClient(MockBackend([reply])))
+    assert not explained.fallback and explained.validated and explained.tokens == reply
+    naked = ModelClient(MockBackend(["Set aside sample s12, it is 8 cycles late."]))
+    explained = explain_card(card, fixture_facts, client=naked)  # a naked number: the template
+    assert explained.fallback and explained.validated and explained.tokens == CARD_TEXT

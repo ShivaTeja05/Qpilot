@@ -13,6 +13,7 @@ Conclusion = Literal["up", "down", "none"]
 Actor = Literal["human", "agent", "system"]
 Autonomy = Literal["suggest", "decide_and_tell", "automatic", "teach"]  # last two reserved
 Level = Literal["High", "Moderate", "Low", "Very low"]
+ReviewOutcome = Literal["accept", "repeat", "discuss"]
 
 #: How a Decision Card kind is spelt: lower-case snake_case with at most one ``namespace.``
 #: prefix (``reference_set``, ``gate.rule``). Which kinds exist is ``core/card_kinds.py``'s
@@ -147,7 +148,14 @@ class StudyResult(BaseModel):
 
 
 class DecisionEntry(BaseModel):
-    """One line of decisions.jsonl; ``hash`` is sha256 of the canonical JSON minus ``hash``."""
+    """One line of decisions.jsonl; ``hash`` is sha256 of the canonical JSON minus ``hash``.
+
+    ``kind`` is None for a decision on a card (every entry written before review entries
+    existed). A ``review`` entry is a person's sign-off on the whole run: ``option`` repeats
+    its ``outcome``, ``reason`` holds the comment, and no card replays it. Fields that are None
+    are left out of the stored line and of the hash, so an entry written before these fields
+    existed hashes exactly as it did.
+    """
 
     seq: int
     prev_hash: str
@@ -158,6 +166,9 @@ class DecisionEntry(BaseModel):
     status: Literal["applied", "stale", "pending_human", "rejected", "auto"]
     at: str
     hash: str = ""
+    kind: Literal["review"] | None = None
+    outcome: ReviewOutcome | None = None
+    reviewer: str | None = None
 
 
 class DecisionOutcome(BaseModel):
@@ -170,13 +181,18 @@ class DecisionOutcome(BaseModel):
 
 
 class PlanResult(BaseModel):
-    """Design check before an experiment: samples needed and what the design cannot detect."""
+    """Design check before an experiment: samples needed and what the design cannot detect.
+
+    ``budget`` is the replicate budget (RT and technical replicates, costs); it is ``None``
+    unless a replicate or cost input was given (``qpilot.qpcr.plan.plan``).
+    """
 
     n_needed: int | None
     mde_fold: float | None
     cannot_detect: list[str]
     rules: list[str]
     message: str = ""
+    budget: dict[str, Any] | None = None
 
 
 class DecisionSpace(Protocol):

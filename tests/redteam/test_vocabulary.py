@@ -39,6 +39,8 @@ EXCLUDED_DIRS = (
     "qpilot/data/",  # data tables (the HGNC list has a gene called IVD)
     "docs/review/",  # the red team's findings log quotes offending text on purpose
     "docs/classroom/",  # teaching material from the hackathon, kept as it was written
+    # the banned-word list itself (qPilot's check on the prose it generates) must spell them
+    "qpilot/core/vocabulary.py",
 )
 MAX_BYTES = 2_000_000
 ALLOW_MARKER = "vocabulary: allow"

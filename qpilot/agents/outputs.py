@@ -139,6 +139,9 @@ class StudyOut(_Open):
         None, description="MCP resource URIs of the study's files (grid, decision log, facts)."
     )
     imported: ImportView | None = None
+    evidence: dict[str, str] | None = Field(
+        None, description="Evidence Ledger item id -> status, when the study kept a ledger."
+    )
     response_format: ResponseFormat = "detailed"
 
 
@@ -222,6 +225,9 @@ class PlanOut(_Open):
     rules: list[str]
     message: str = ""
     simulated: dict[str, float] | None = None
+    budget: dict[str, Any] | None = Field(
+        None, description="The replicate budget, when replicate or cost inputs were given."
+    )
 
 
 class ProposeOut(_Open):
@@ -296,6 +302,122 @@ class PrismDiffOut(_Open):
     saved: bool
 
 
+# ---- evidence, run review, instruments, trace and the spreadsheet check --------------------------
+
+
+class EvidenceOut(_Open):
+    """``qpcr_evidence``: the Evidence Ledger, what the study can and cannot tell you."""
+
+    version: int
+    study_id: str | None
+    items: list[dict[str, Any]] = Field(
+        description="One item per kind of evidence (qpilot.qpcr.evidence.EvidenceItem): "
+        "present, absent, unknown or not_applicable, with what that means."
+    )
+    counts: dict[str, int]
+    facts: dict[str, FactView | dict[str, Any]]
+    text: str
+
+
+class RunReviewOut(_Open):
+    """``qpcr_run_review``: headline genes, the ledger and sign-offs (comments counted only)."""
+
+    study_id: str
+    headline: list[dict[str, Any]]
+    reviews: list[dict[str, Any]] = Field(
+        description="Sign-offs: outcome, reviewer, time and comment_chars (never the comment)."
+    )
+    ledger: dict[str, Any] | None = None
+    ledger_note: str = ""
+    text: str
+    sign_off: str = Field(description="Only a person signs off, in the qPilot app.")
+
+
+class RunContextOut(_Open):
+    """``qpcr_run_context``: what a run file says about its instrument (no serial numbers)."""
+
+    context: dict[str, Any]
+    gate: list[dict[str, Any]]
+    text: str
+    instrument_id: str | None = None
+    question: Any = None
+
+
+class LookbackOut(_Open):
+    """``qpcr_lookback``: which conclusions used an instrument in a window, and what changes."""
+
+    instrument_id: str
+    start: str
+    end: str
+    n_studies_in_window: int
+    n_runs_in_window: int
+    n_wells_in_window: int
+    n_changed: int
+    studies: list[dict[str, Any]]
+    assumed_all_runs: bool
+    text: str
+    saved: bool
+
+
+class InstrumentHistoryOut(_Open):
+    """``qpcr_instrument_history``: the logbook's events and whether its chain verifies."""
+
+    instrument: dict[str, Any]
+    events: list[dict[str, Any]]
+    verify: list[Any]
+
+
+class InstrumentStatusOut(_Open):
+    """``qpcr_instrument_status``: open incidents and the age of the latest calibrations."""
+
+    instrument: dict[str, Any]
+    verify: list[Any]
+    open_incidents: list[dict[str, Any]] | None = None
+    n_proposed: int | None = None
+    n_confirmed_open: int | None = None
+    calibrations: dict[str, dict[str, Any]] | None = None
+    as_of: str | None = None
+
+
+class IncidentLogOut(_Open):
+    """``qpcr_incident_log``: the incident as proposed; only a person confirms it."""
+
+    status: Literal["proposed"]
+    incident: dict[str, Any]
+    head: str
+    seen_before: list[Any]
+    next: str
+
+
+class TraceOut(_Open):
+    """``qpcr_trace``: the places to look behind a result, sample or well (read-only)."""
+
+    study_id: str
+    root: dict[str, str]
+    answer: str
+    places: list[dict[str, Any]]
+    summary: dict[str, Any]
+    n_absent: int
+    absent: list[dict[str, Any]]
+    facts: dict[str, FactView | dict[str, Any]]
+    text: str
+    saved: bool
+
+
+class CheckSheetOut(_Open):
+    """``qpcr_check_sheet``: a lab's sheet recomputed; the mapping is a guess until confirmed."""
+
+    file_sha256: str
+    confirmed: bool
+    mapping_status: str
+    n_rows: int
+    findings: list[dict[str, Any]]
+    hand_overs: list[dict[str, Any]]
+    text: str
+    next: str
+    saved: bool
+
+
 # ---- the Decision Simulator's tools -------------------------------------------------------------
 
 
@@ -349,13 +471,19 @@ class SimFindingsOut(_Open):
 __all__ = [
     "CardView",
     "CheckDesignOut",
+    "CheckSheetOut",
     "ContrastView",
     "CurveCallsOut",
     "DecideOut",
+    "EvidenceOut",
     "GateCheck",
     "GateOut",
     "ImportView",
+    "IncidentLogOut",
     "InspectOut",
+    "InstrumentHistoryOut",
+    "InstrumentStatusOut",
+    "LookbackOut",
     "PlanOut",
     "PrismDiffOut",
     "PrismPreviewOut",
@@ -364,10 +492,13 @@ __all__ = [
     "Refusal",
     "ResponseFormat",
     "RobustnessOut",
+    "RunContextOut",
+    "RunReviewOut",
     "SimAuditOut",
     "SimDecisionsOut",
     "SimFindingsOut",
     "SimGeneOut",
     "SimWhatifOut",
     "StudyOut",
+    "TraceOut",
 ]

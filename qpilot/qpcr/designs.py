@@ -56,7 +56,7 @@ LEGACY_DESIGN_ID = "vermeulen_expression_defined"
 MAX_FILE_BYTES = 1 << 20  # design files and sample sheets: 1 MiB is far more than any needs
 APPLIED = frozenset({"accepted", "edited"})  # the only proposal statuses the engine reads
 SHEET_REQUIRED = ("sample", "group")
-SHEET_OPTIONAL = ("biological_unit", "role", "quantity")
+SHEET_OPTIONAL = ("biological_unit", "role", "quantity", "rt_replicate")
 #: The opt-in axes a design (a person's ``choice.axis`` decision) can ask the grid to test.
 DESIGN_AXES: tuple[str, ...] = ("efficiency",)
 _WELL_KEY = re.compile(r"^[^/]+/[^/]+$")
@@ -303,9 +303,10 @@ def read_sample_sheet(path: str | Path) -> dict[str, SampleDesign]:
     """Read a sample sheet (CSV): ``sample`` and ``group`` required; see the module docstring.
 
     Optional columns ``biological_unit``, ``role`` (an RDML sample type, default: as declared
-    in the file) and ``quantity`` (standards). Other columns are ignored with a warning. Header
-    names are matched case-insensitively; blank rows are skipped; a sample listed twice is
-    refused.
+    in the file), ``quantity`` (standards) and ``rt_replicate`` (the reverse-transcription
+    replicate a sample is within its biological unit; read by the G-RT rule only). Other
+    columns are ignored with a warning. Header names are matched case-insensitively; blank rows
+    are skipped; a sample listed twice is refused.
     """
     text = _read_text(path, "sample sheet")
     name = Path(path).name
@@ -339,6 +340,8 @@ def read_sample_sheet(path: str | Path) -> dict[str, SampleDesign]:
             fields["biological_unit"] = cells["biological_unit"]
         if cells.get("role"):
             fields["role"] = cells["role"].lower()
+        if cells.get("rt_replicate"):
+            fields["rt_replicate"] = cells["rt_replicate"]
         if cells.get("quantity"):
             try:
                 fields["quantity"] = float(cells["quantity"])

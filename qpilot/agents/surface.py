@@ -105,6 +105,24 @@ SPECS: dict[str, ToolSpec] = {
     "qpcr_curve_calls": _read("Compare amplification calls per well", o.CurveCallsOut),
     "qpcr_prism_preview": _read("Preview Send to Prism", o.PrismPreviewOut),
     "qpcr_prism_diff": _read("Diff a Prism round trip", o.PrismDiffOut),
+    "qpcr_evidence": _read("What this study cannot tell you", o.EvidenceOut),
+    "qpcr_run_review": _read("The Run Review of a study", o.RunReviewOut),
+    "qpcr_run_context": _read("What the run file says about the instrument", o.RunContextOut),
+    "qpcr_lookback": _read("Which conclusions used an instrument period", o.LookbackOut),
+    "qpcr_instrument_history": _read("An instrument's logbook", o.InstrumentHistoryOut),
+    "qpcr_instrument_status": _read(
+        "An instrument's open incidents and calibration age", o.InstrumentStatusOut
+    ),
+    # Writes an incident to the instrument's logbook as *proposed* (a person confirms it); each
+    # call proposes again, so it is not idempotent. Nothing is overwritten.
+    "qpcr_incident_log": ToolSpec(
+        "Propose an incident (a person confirms)",
+        o.IncidentLogOut,
+        read_only=False,
+        idempotent=False,
+    ),
+    "qpcr_trace": _read("Trace a result to the wells to look at", o.TraceOut),
+    "qpcr_check_sheet": _read("Recompute a lab's analysis spreadsheet", o.CheckSheetOut),
     "sim_audit": _read("Read the Decision Simulator audit", o.SimAuditOut),
     "sim_gene": _read("Read one gene in the audit", o.SimGeneOut),
     "sim_whatif": _read("Recompute under other choices", o.SimWhatifOut),

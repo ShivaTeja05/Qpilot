@@ -14,7 +14,16 @@ and no digit may appear outside a token or an allowed name (a gene such as ``ODC
 
 Templates: ``refset_v1``, ``cutoff_v1``, ``undetermined_auto_v1``, ``undetermined_v1``,
 ``ampcall_v1`` (card explanations, keyed by ``DecisionCard.rationale_template``), ``summary_v1``,
-``meter_v1`` and ``confidence_v1`` (needs ``gene=``).
+``meter_v1`` and ``confidence_v1`` (needs ``gene=``). Feature templates, written in their own
+modules and registered here: ``evidence_v1``, ``grt_v1`` and ``runreview_v1``
+(:mod:`qpilot.explain.evidence_text`), ``instrument_gate_v1``
+(:mod:`qpilot.explain.instrument_text`), ``lookback_v1`` and ``position_v1``
+(:mod:`qpilot.explain.lookback_text`), ``trace_v1`` (needs ``gene=`` and that gene's trace facts
+for the panel) and ``trace_set_aside_v1`` (:mod:`qpilot.explain.trace_text`; the rationale of a
+``trace_set_aside`` card), ``sheetcheck_v1``, ``sheetcheck_findings_v1`` and
+``sheetcheck_handover_v1`` (:mod:`qpilot.explain.sheetcheck_text`). Each renders a digit-free
+sentence when its facts are absent; ``instrument_gate_v1``, ``lookback_v1`` and ``position_v1``
+need their structured result for anything more.
 """
 
 from __future__ import annotations
@@ -268,6 +277,100 @@ def _confidence(facts: Facts, card: DecisionCard | None, gene: str | None) -> st
     return text
 
 
+# ---------- feature templates (registered here, written in their own modules) ----------
+# Imported inside each wrapper: those modules import this one (RenderedText, to_html), and the
+# structured renderers (a ledger, Gate lines, a lookback) stay where their feature lives.
+
+NO_INSTRUMENT_FILE = "No instrument run file has been read for this study."
+
+
+def _evidence(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.evidence_text import evidence_text
+
+    return evidence_text(facts, card, gene)
+
+
+def _gate_rt(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.evidence_text import gate_rt_text
+
+    return gate_rt_text(facts, card, gene)
+
+
+def _runreview(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    from qpilot.explain.evidence_text import runreview_text
+
+    return runreview_text(facts, card, gene)
+
+
+def _structured_only(key: str, renderer: str) -> TemplateError:
+    return TemplateError(f"{key} renders from the structured result; use {renderer}")
+
+
+def _instrument_gate(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``instrument_gate_v1``: a digit-free sentence without G-INSTR facts.
+
+    The wording of each line depends on its code, which lives on the Gate line, not in the
+    facts: with G-INSTR facts present, render the lines with
+    ``qpilot.explain.instrument_text.render_gate``.
+    """
+    if any(fid.startswith("f_instr_") for fid in facts):
+        raise _structured_only("instrument_gate_v1", "explain.instrument_text.render_gate(lines)")
+    return NO_INSTRUMENT_FILE
+
+
+def _lookback(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``lookback_v1``: a digit-free sentence without lookback facts (else use the result)."""
+    from qpilot.explain.lookback_text import NO_LOOKBACK
+
+    if "f_lookback_instrument" in facts:
+        raise _structured_only("lookback_v1", "explain.lookback_text.lookback_tokens(result)")
+    return NO_LOOKBACK
+
+
+def _position(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``position_v1``: a digit-free sentence without position facts (else use the report)."""
+    from qpilot.explain.lookback_text import NO_POSITIONS
+
+    if "f_position_base_rate" in facts:
+        raise _structured_only("position_v1", "explain.lookback_text.position_tokens(report)")
+    return NO_POSITIONS
+
+
+def _trace(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``trace_v1``: one gene's "Where to look" panel from its trace facts (digit-free without)."""
+    from qpilot.explain.trace_text import trace_v1
+
+    return trace_v1(facts, card, gene)
+
+
+def _trace_set_aside(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``trace_set_aside_v1``: the rationale of a Trace card (no numbers)."""
+    from qpilot.explain.trace_text import trace_set_aside_v1
+
+    return trace_set_aside_v1(facts, card, gene)
+
+
+def _sheetcheck(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``sheetcheck_v1``: the headline of a Spreadsheet Check (digit-free without its facts)."""
+    from qpilot.explain.sheetcheck_text import sheetcheck_v1
+
+    return sheetcheck_v1(facts, card, gene)
+
+
+def _sheetcheck_findings(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``sheetcheck_findings_v1``: one sentence per finding (only that gene's with ``gene=``)."""
+    from qpilot.explain.sheetcheck_text import sheetcheck_findings_v1
+
+    return sheetcheck_findings_v1(facts, card, gene)
+
+
+def _sheetcheck_handover(facts: Facts, card: DecisionCard | None, gene: str | None) -> str:
+    """``sheetcheck_handover_v1``: one gene's method hand-over (``gene=``)."""
+    from qpilot.explain.sheetcheck_text import sheetcheck_handover_v1
+
+    return sheetcheck_handover_v1(facts, card, gene)
+
+
 Template = Callable[[Facts, "DecisionCard | None", "str | None"], str]
 
 
@@ -303,6 +406,17 @@ TEMPLATES: dict[str, Template] = {
     "summary_v1": _summary,
     "meter_v1": _meter,
     "confidence_v1": _confidence,
+    "evidence_v1": _evidence,
+    "grt_v1": _gate_rt,
+    "runreview_v1": _runreview,
+    "instrument_gate_v1": _instrument_gate,
+    "lookback_v1": _lookback,
+    "position_v1": _position,
+    "trace_v1": _trace,
+    "trace_set_aside_v1": _trace_set_aside,
+    "sheetcheck_v1": _sheetcheck,
+    "sheetcheck_findings_v1": _sheetcheck_findings,
+    "sheetcheck_handover_v1": _sheetcheck_handover,
 }
 
 

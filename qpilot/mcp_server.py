@@ -1,6 +1,6 @@
 """qPilot's door for AI agents: tools over MCP (stdio), backed by the on-disk study store.
 
-Twelve ``qpcr_*`` tools (:data:`TOOL_NAMES`), plus the Decision Simulator's five read-only
+Twenty-one ``qpcr_*`` tools (:data:`TOOL_NAMES`), plus the Decision Simulator's five read-only
 ``sim_*`` tools when ``qsim`` is installed (:func:`served_tool_names`; ``qpilot serve
 --list-tools`` prints what this install serves, and the server says on stderr when they are off).
 
@@ -24,6 +24,15 @@ Rules enforced here, in code:
   anything the agent could claim, and no tool can accept, edit or reject a proposal
   (``core/proposals.py`` refuses every actor but ``human``). An agent never proposes a
   ``stage.confirm`` and never re-binds the input file or sample sheet of an open session.
+- **Instruments.** ``qpcr_run_context`` reads a run file inside ``QPILOT_DATA_ROOTS`` and
+  returns its ``model_view`` only: serial numbers and identity strings never leave the machine.
+  Logbook views count the text a person typed instead of showing it. ``qpcr_incident_log`` is
+  a proposal: the incident is written ``proposed`` by an agent and only a person confirms it.
+- **Trace and sheets.** ``qpcr_trace`` and ``qpcr_check_sheet`` only read: Trace opens no
+  card (setting a place aside is a person's decision), and a sheet is never edited; its
+  column mapping stays "guessed, not confirmed" until a person confirms it.
+- **Annotations.** Every tool carries a title and MCP tool annotations (:data:`TOOL_META`):
+  the read tools say ``readOnlyHint``; none is destructive and none reaches the network.
 - **JSON only.** Tools return engine numbers, never prose written by a model.
 - **Typed refusals, keyed retries.** A reply that did nothing as asked carries ``error``,
   ``code`` and ``fix`` (:mod:`qpilot.agents.refusals`); ``qpcr_decide`` and ``qpcr_propose``
@@ -37,7 +46,7 @@ import logging
 import os
 import re
 import sys
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 from typing import Any, Literal
 
@@ -69,7 +78,12 @@ INSTRUCTIONS = (
     "engine's checks without saving. Results stay hidden until a person confirms the design "
     "and the curves. You may propose; only a person in qPilot Studio accepts. A refusal has "
     "an error, a code and a fix; pending_human is not an error, so do not ask again. Give "
-    "qpcr_decide and qpcr_propose an idempotency_key to retry them safely. Report only "
+    "qpcr_decide and qpcr_propose an idempotency_key to retry them safely. "
+    "qpcr_evidence says what a study cannot tell you; qpcr_run_context reads what a run file "
+    "says about the instrument (never its serial numbers); qpcr_incident_log only proposes "
+    "an incident, which a person confirms. qpcr_trace goes from a gene's result, a sample or "
+    "a well back to the places to look; qpcr_check_sheet recomputes a lab's own spreadsheet "
+    "(its column mapping is a guess until a person confirms it). Report only "
     "numbers these tools return. Research use only; not for clinical or diagnostic use."
 )
 UNKNOWN_STUDY = "unknown study_id; call qpcr_study first"
@@ -88,11 +102,25 @@ EXPORT_NEEDS_DESIGN = (
 MAX_QUOTED = 400  # names returned to an agent as quoted data
 GATE_CARD_PREFIX = "card_gate_"
 GATE_HEAD_STALE = "the study changed since you read it; read it again (qpcr_gate)"
-KIND_TO_DIMENSION = {
+INSTRUMENT_SUFFIXES = {".eds", ".csv", ".txt", ".rdml", ".xml"}
+NO_SIGN_OFF = "a person signs off a run review in the qPilot app; no tool can"
+INCIDENT_NEXT = (
+    "proposed: a person confirms or turns it down in qPilot; until then it matches nothing"
+)
+MAX_INCIDENT_WELLS = 96  # an agent's proposal names a few wells, never a whole plate list
+TRACE_ROOT = "give exactly one of gene, sample or well (PLATE:WELL, e.g. HMBS_20080318:K22)"
+MAX_TRACE_TOP = 20  # places an agent gets back (the summary counts every place)
+MAX_TRACE_ABSENT = 20  # samples in no comparison listed (n_absent counts them all)
+SHEET_NEXT = (
+    "mapping guessed, not confirmed: a person confirms the columns with "
+    "`qpilot check sheet FILE --confirm` (or sets them with --map COL=ROLE)"
+)
+KIND_TO_DIMENSION: dict[str, str | None] = {
     "reference_set": "refs",
     "group_cutoff": "cut",
     "undetermined": "undetermined",
     "amp_call": "amp_call",
+    "trace_set_aside": None,  # opened on demand: no grid dimension, so qpcr_robustness skips it
 }
 
 
@@ -265,6 +293,134 @@ def _keep_import(store: StudyStore, session_id: str, rdml: Path, meta: Any) -> N
     views.remember_name(rdml, intake.title(meta))
 
 
+def check_instrument_file(run_path: str) -> Path:
+    """Resolve a run file and require an instrument export (.eds/.csv/.txt/.rdml/.xml) in a root."""
+    path = _resolve(run_path, "file not found")
+    if not path.is_file() or path.suffix.lower() not in INSTRUMENT_SUFFIXES:
+        raise PathRefused("not an .eds, .csv, .txt, .rdml or .xml run file", Code.UNSUPPORTED_INPUT)
+    return path
+
+
+# ---- helpers shared with the command line (qpilot/cli/quality_cmds.py) ----------------------
+
+
+def study_ledger(store: StudyStore, study_id: str) -> tuple[Any, str]:
+    """A study's Evidence Ledger and, when there is none, why (read-only).
+
+    The ledger kept at analysis (``evidence.json``) when there is one, else one rebuilt from
+    the input file; nothing is written.
+    """
+    from qpilot.qpcr.evidence import LEDGER_VERSION, EvidenceError, EvidenceLedger, evidence_store
+
+    data = store.get_artifact(study_id, "evidence.json")
+    if isinstance(data, dict):
+        try:
+            ledger = EvidenceLedger.model_validate(data)
+        except ValidationError:
+            ledger = None
+        if ledger is not None and ledger.version == LEDGER_VERSION:
+            return ledger, ""
+    try:
+        return evidence_store(store, study_id), ""
+    except StudyNotFound:
+        raise
+    except EvidenceError as err:
+        return None, str(err)
+    except Exception as err:  # the input file cannot be analysed again: say so, never raise
+        return None, f"the input file cannot be analysed again ({type(err).__name__})"
+
+
+def study_review(store: StudyStore, study_id: str, *, comments: bool = True) -> Any:
+    """The Run Review of a stored study with its recorded sign-offs (read-only).
+
+    ``comments=False`` leaves out what reviewers typed (the view an agent gets); the outcome,
+    the reviewer and the time stay.
+    """
+    from qpilot.report.run_review import HEADLINE_GENES, build_review
+
+    result = store.get(study_id)
+    design = store.design(study_id)
+    headline = tuple(design.headline) if design is not None else HEADLINE_GENES
+    ledger, note = study_ledger(store, study_id)
+    entries = [e.model_dump(mode="json") for e in store.reviews(study_id)]
+    if not comments:
+        entries = [{**e, "reason": ""} for e in entries]
+    return build_review(result, headline=headline, ledger=ledger, ledger_note=note,
+                        reviews=entries)  # fmt: skip
+
+
+def stored_run_map(store: StudyStore, study_id: str) -> dict[str, str] | None:
+    """The run -> instrument map recorded for a study (``instrument_refs.json``), if any."""
+    data = store.get_artifact(study_id, "instrument_refs.json")
+    if isinstance(data, dict) and isinstance(data.get("runs"), dict):
+        data = data["runs"]
+    if not isinstance(data, dict) or not data:
+        return None
+    if not all(isinstance(k, str) and isinstance(v, str) for k, v in data.items()):
+        return None
+    return dict(data)
+
+
+def study_run_ids(store: StudyStore, study_id: str) -> list[str]:
+    """The run ids of a stored study (from its run contexts, else its per-well table)."""
+    data = store.get_artifact(study_id, "run_context.json")
+    runs = data.get("runs") if isinstance(data, dict) else None
+    if isinstance(runs, list):
+        ids = sorted({r["run_id"] for r in runs if isinstance(r, dict) and r.get("run_id")})
+        if ids:
+            return ids
+    from qpilot.qpcr.lookback import load_study
+
+    curves, _, _ = load_study(store, study_id)
+    return sorted(set(curves["run_id"].astype(str)))
+
+
+def run_map(
+    store: StudyStore, study_ids: list[str], instrument_id: str
+) -> tuple[dict[str, str], list[str]]:
+    """Run -> instrument for lookback: the recorded map, else every run on ``instrument_id``.
+
+    Returns the map and the study ids whose runs were all assumed to be on that instrument
+    (no map recorded). A study whose runs cannot be listed is left to the lookback to report.
+    """
+    mapping: dict[str, str] = {}
+    assumed: list[str] = []
+    for sid in study_ids:
+        recorded = stored_run_map(store, sid)
+        if recorded is not None:
+            mapping.update(recorded)
+            continue
+        try:
+            ids = study_run_ids(store, sid)
+        except (StudyNotFound, FileNotFoundError, OSError, ValueError):
+            continue
+        mapping.update({run_id: instrument_id for run_id in ids})
+        assumed.append(sid)
+    return mapping, assumed
+
+
+def instrument_registry(store: StudyStore) -> Any:
+    """The instrument registry next to this store's studies."""
+    from qpilot.core.instruments import INSTRUMENTS_DIR, Registry
+
+    return Registry(store.root / INSTRUMENTS_DIR)
+
+
+def _incident_view(incident: Any) -> dict[str, Any]:
+    """An incident without the text anyone typed (its length only)."""
+    return {
+        "incident": incident.seq,
+        "status": incident.status,
+        "at": incident.at or incident.recorded_at,
+        "actor": incident.actor,
+        "run_hash": incident.run_hash,
+        "wells": list(incident.wells),
+        "signature": incident.signature.model_dump(mode="json", exclude_none=True),
+        "fixed": bool(incident.fixes),
+        "note_chars": len(incident.note),
+    }
+
+
 def _card_view(card: DecisionCard) -> dict[str, Any]:
     return {
         "card_id": card.id,
@@ -429,6 +585,7 @@ class QpilotTools:
             "facts": {
                 f: result.facts[f].model_dump(mode="json") for f in fact_ids if f in result.facts
             },
+            "evidence": _evidence_statuses(self.store, study_id),
         }
         if imported is not None:
             out["imported"] = _import_view(imported)
@@ -754,11 +911,23 @@ class QpilotTools:
         n_plates: int | None = None,
         calibrator_on_every_plate: bool | None = None,
         n_candidate_refs: int | None = None,
+        sd_rt: float | None = None,
+        sd_well: float | None = None,
+        n_rt: int = 1,
+        n_tech: int = 1,
+        cost_subject: float | None = None,
+        cost_rt: float | None = None,
+        cost_well: float | None = None,
+        expected_cq: float | None = None,
     ) -> dict[str, Any]:
         """Before the first plate: samples per group needed and what a design cannot detect.
 
         ``sd_log2`` is the SD of log2 normalised expression between biological replicates (not
-        technical Cq SD). Without it you get a message instead of a sample size.
+        technical Cq SD). Without it you get a message instead of a sample size. The replicate
+        budget: ``sd_rt`` (SD between RT reactions of one subject) and ``sd_well`` (between
+        wells of one RT reaction), ``n_rt`` RT reactions per subject and ``n_tech`` wells per RT
+        reaction (whole numbers, 1 to 10), and the three costs for the cheapest design. With any
+        of these, ``sd_log2`` is the SD between subjects alone; the answer gains ``budget``.
         """
         try:
             out = plan(
@@ -770,6 +939,14 @@ class QpilotTools:
                 n_plates=n_plates,
                 calibrator_on_every_plate=calibrator_on_every_plate,
                 n_candidate_refs=n_candidate_refs,
+                sd_rt=sd_rt,
+                sd_well=sd_well,
+                n_rt=n_rt,
+                n_tech=n_tech,
+                cost_subject=cost_subject,
+                cost_rt=cost_rt,
+                cost_well=cost_well,
+                expected_cq=expected_cq,
             )
         except (ValueError, TypeError, ArithmeticError) as err:
             return refuse(Code.INVALID_ARGUMENT, str(err))
@@ -778,9 +955,11 @@ class QpilotTools:
             # qPilot's own rule (p < 0.05 and at least 2-fold), simulated: what a design calls.
             from qpilot.qpcr.plan import simulate_calls
 
-            sims = {"needed": simulate_calls(fc, sd_log2, out.n_needed, alpha)}
+            # with a replicate budget the subject means vary by the effective SD
+            sd = out.budget["sd_effective"] if out.budget else sd_log2
+            sims = {"needed": simulate_calls(fc, sd, out.n_needed, alpha)}
             if n_per_group:
-                sims["planned"] = simulate_calls(fc, sd_log2, n_per_group, alpha)
+                sims["planned"] = simulate_calls(fc, sd, n_per_group, alpha)
             result["simulated"] = {
                 f"{k}_{what}": round(v, 4)
                 for k, (sig, called) in sims.items()
@@ -1070,6 +1249,452 @@ class QpilotTools:
             return refuse(Code.INPUT_UNREADABLE, f"no diff ({type(err).__name__}: {err})")
         return {**report, "saved": False}
 
+    # ---- evidence, run review, instruments -------------------------------------------------
+
+    def _study_id(self, study_id: str) -> str:
+        """A study id, or a Studio session's study once its results are visible (else raises)."""
+        if not isinstance(study_id, str):
+            raise StudyNotFound("a study id is text")
+        try:
+            self.store.find_session(study_id)
+        except StudyNotFound:
+            self.store.workspace(study_id)
+            return self.store.get(study_id).study_id
+        return self.studio.study(study_id)  # StudioError while the session is blind
+
+    def qpcr_evidence(self, study_id: str) -> dict[str, Any]:
+        """What this study can and cannot tell you: the Evidence Ledger (read-only).
+
+        Eleven items (NTC, no-RT, reference genes, efficiency, raw-ness, RNA integrity, RT
+        replicates, biological units, inter-run calibrator, lots, instrument), each
+        ``present``, ``absent``, ``unknown`` or ``not_applicable`` with what that means for the
+        conclusions, MIQE 2.0 item tags and the facts behind every number.
+        """
+        from qpilot.explain.evidence_text import render_evidence
+        from qpilot.studio_service import StudioError
+
+        try:
+            sid = self._study_id(study_id)
+            ledger, note = study_ledger(self.store, sid)
+            if ledger is None:
+                return refuse(Code.INPUT_UNREADABLE, f"no Evidence Ledger: {note}", study_id=sid)
+            text = render_evidence(ledger).plain
+        except StudyNotFound:
+            return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
+        except StudioError:
+            return refuse(Code.RESULTS_HIDDEN, BLIND)
+        except Exception as err:  # answer, never raise
+            return refuse(Code.ENGINE_REFUSED, f"no Evidence Ledger ({type(err).__name__})")
+        return {**ledger.model_dump(mode="json"), "counts": ledger.counts(), "text": text}
+
+    def qpcr_run_review(self, study_id: str) -> dict[str, Any]:
+        """The Run Review of a study: headline genes, the Evidence Ledger and sign-offs.
+
+        Read-only. Sign-offs show the outcome, reviewer and time; what a reviewer typed is
+        counted, not shown. A person signs off in the qPilot app; no tool can.
+        """
+        from qpilot.report.run_review import render_text
+        from qpilot.studio_service import StudioError
+
+        try:
+            sid = self._study_id(study_id)
+            typed = {e.seq: len(e.reason or "") for e in self.store.reviews(sid)}
+            review = study_review(self.store, sid, comments=False)
+            text = render_text(review)
+        except StudyNotFound:
+            return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
+        except StudioError:
+            return refuse(Code.RESULTS_HIDDEN, BLIND)
+        except Exception as err:  # answer, never raise
+            return refuse(Code.ENGINE_REFUSED, f"no run review ({type(err).__name__})")
+        out = review.model_dump(mode="json")
+        for item in out["reviews"]:
+            item.pop("comment", None)
+            item["comment_chars"] = typed.get(item["seq"], 0)
+        return {**out, "text": text, "sign_off": NO_SIGN_OFF}
+
+    def qpcr_run_context(self, run_path: str) -> dict[str, Any]:
+        """What a run file says about the instrument and the run (no serial numbers).
+
+        ``run_path`` is an ``.eds`` archive, a QuantStudio or CFX export (``.csv``/``.txt``) or
+        an ``.rdml`` file inside ``QPILOT_DATA_ROOTS``. Returns the run context's model view
+        (model, firmware, run state, calibrations and their age, pauses, temperature, vendor
+        well flags; ``serials_present`` names serial fields without their values), the G-INSTR
+        gate lines, and the registered instrument it resolves to, if any.
+        """
+        if not isinstance(run_path, str):
+            return refuse(Code.INVALID_ARGUMENT, "run_path must be a path", field="run_path")
+        try:
+            path = check_instrument_file(run_path)
+        except PathRefused as err:
+            return err.refusal("run_path")
+        from qpilot.explain.instrument_text import render_gate
+        from qpilot.qpcr.gate_instr import g_instr
+        from qpilot.qpcr.instrument_context import InstrumentFileError, read_run_context
+
+        try:
+            ctx = read_run_context(path)
+            lines = g_instr(ctx)
+            text = render_gate(lines).plain
+        except InstrumentFileError as err:
+            return refuse(Code.INPUT_UNREADABLE, f"could not read this run file: {err}")
+        except Exception as err:  # answer, never raise
+            return refuse(
+                Code.INPUT_UNREADABLE, f"could not read this run file ({type(err).__name__})"
+            )
+        try:
+            registry = instrument_registry(self.store)
+            summary = ctx.summary()
+            instrument_id = registry.resolve(summary)
+            question = registry.ask(summary)
+        except Exception:  # an unreadable registry never hides what the file says
+            instrument_id, question = None, None
+        return {
+            "context": ctx.model_view(),
+            "gate": [line.model_dump(mode="json") for line in lines],
+            "text": text,
+            "instrument_id": instrument_id,
+            "question": question,
+        }
+
+    def qpcr_lookback(
+        self, study_id: str, instrument_id: str, start: str, end: str
+    ) -> dict[str, Any]:
+        """Which of a study's conclusions used an instrument between two dates, and what changes.
+
+        ``start`` and ``end`` are ISO dates (inclusive). The study's runs are taken from its
+        recorded run -> instrument map; without one, every run of the study counts as run on
+        ``instrument_id`` (``assumed_all_runs`` says so). Leaving the window's runs out, the
+        answer is "changes k of N conclusions" with the genes. Read-only: nothing is logged.
+        """
+        from qpilot.explain.lookback_text import lookback_text
+        from qpilot.qpcr.lookback import LookbackError, lookback
+        from qpilot.studio_service import StudioError
+
+        if not all(isinstance(v, str) for v in (instrument_id, start, end)):
+            return refuse(
+                Code.INVALID_ARGUMENT, "instrument_id, start and end are text (dates as 2008-03-18)"
+            )
+        try:
+            sid = self._study_id(study_id)
+            mapping, assumed = run_map(self.store, [sid], instrument_id)
+            result = lookback(self.store, mapping, instrument_id, start, end, studies=[sid])
+            text = lookback_text(result)
+        except StudyNotFound:
+            return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
+        except StudioError:
+            return refuse(Code.RESULTS_HIDDEN, BLIND)
+        except LookbackError as err:
+            return refuse(Code.INVALID_ARGUMENT, str(err))
+        except Exception as err:  # answer, never raise
+            return refuse(Code.ENGINE_REFUSED, f"no lookback ({type(err).__name__})")
+        return {
+            **result.model_dump(mode="json"),
+            "assumed_all_runs": bool(assumed),
+            "text": text,
+            "saved": False,
+        }
+
+    def qpcr_instrument_history(
+        self, instrument_id: str, since: str | None = None
+    ) -> dict[str, Any]:
+        """An instrument's logbook: calibrations, part changes, run events, incidents, fixes.
+
+        Events in chain order (optionally on or after ``since``, an ISO date), and whether the
+        hash chain verifies. No serial numbers; text a person typed is counted, not shown.
+        """
+        from qpilot.core.instruments import InstrumentError, event_view
+
+        if not isinstance(instrument_id, str) or not (since is None or isinstance(since, str)):
+            return refuse(Code.INVALID_ARGUMENT, "instrument_id (and since, an ISO date) are text")
+        try:
+            registry = instrument_registry(self.store)
+            instrument = registry.get(instrument_id)
+            book = registry.logbook(instrument_id)
+            problems = book.verify()
+            if problems:
+                return {"instrument": instrument.public(), "events": [], "verify": problems}
+            events = [event_view(e) for e in book.events(since=since)]
+        except InstrumentError as err:
+            return _instrument_refusal(err)
+        except Exception as err:  # answer, never raise
+            return refuse(Code.ENGINE_REFUSED, f"no history ({type(err).__name__})")
+        return {"instrument": instrument.public(), "events": events, "verify": problems}
+
+    def qpcr_instrument_status(self, instrument_id: str) -> dict[str, Any]:
+        """An instrument now: open incidents, the age of its latest calibrations, and the chain.
+
+        Calibration ages come from the logbook's calibration entries (in days, to today).
+        Incidents are open while proposed or confirmed without a fix. No serial numbers and
+        none of the text anyone typed.
+        """
+        from datetime import UTC, date, datetime
+
+        from qpilot.core.instruments import InstrumentError
+
+        if not isinstance(instrument_id, str):
+            return refuse(Code.INVALID_ARGUMENT, "instrument_id is text", field="instrument_id")
+        try:
+            registry = instrument_registry(self.store)
+            instrument = registry.get(instrument_id)
+            book = registry.logbook(instrument_id)
+            problems = book.verify()
+            if problems:
+                return {"instrument": instrument.public(), "verify": problems}
+            incidents = book.incidents()
+            events = book.events(kinds=["calibration"])
+        except InstrumentError as err:
+            return _instrument_refusal(err)
+        except Exception as err:  # answer, never raise
+            return refuse(Code.ENGINE_REFUSED, f"no status ({type(err).__name__})")
+        today = datetime.now(UTC).date()
+        latest: dict[str, dict[str, Any]] = {}
+        for event in events:
+            payload = event.payload or {}
+            ctype = str(payload.get("type") or "calibration")
+            when = str(payload.get("performed_on") or event.at or event.recorded_at)
+            try:
+                day = date.fromisoformat(when[:10])
+            except ValueError:
+                continue
+            if ctype not in latest or day.isoformat() >= latest[ctype]["performed_on"]:
+                latest[ctype] = {
+                    "performed_on": day.isoformat(),
+                    "age_days": (today - day).days,
+                    "source": event.source,
+                }
+        open_ = [i for i in incidents if i.status != "rejected" and not i.fixes]
+        return {
+            "instrument": instrument.public(),
+            "open_incidents": [_incident_view(i) for i in open_],
+            "n_proposed": sum(i.status == "proposed" for i in open_),
+            "n_confirmed_open": sum(i.status == "confirmed" for i in open_),
+            "calibrations": dict(sorted(latest.items())),
+            "as_of": today.isoformat(),
+            "verify": problems,
+        }
+
+    def qpcr_incident_log(
+        self,
+        instrument_id: str,
+        wells: list[str],
+        metric: str,
+        direction: str,
+        run_hash: str | None = None,
+    ) -> dict[str, Any]:
+        """Propose an incident on an instrument's wells; a person confirms it, never a tool.
+
+        ``wells`` are positions (``["B3", "B4"]``), ``metric`` what was off (``plateau``,
+        ``cq_residual``: lower-case letters, digits and ``_``), ``direction`` ``low`` or
+        ``high``, ``run_hash`` the run file's sha256 (or a prefix). Codes only: no free text is
+        taken. The incident is written ``proposed`` by an agent and matches nothing until a
+        person confirms it in qPilot. Confirmed incidents it has "seen before" are listed.
+        """
+        from qpilot.core.instruments import InstrumentError, log_incident, match_incidents
+
+        if not isinstance(instrument_id, str) or not isinstance(metric, str):
+            return refuse(Code.INVALID_ARGUMENT, "instrument_id and metric are text")
+        if direction not in ("low", "high"):
+            return refuse(Code.INVALID_ARGUMENT, "direction is 'low' or 'high'", field="direction")
+        if (
+            not isinstance(wells, list)
+            or not wells
+            or len(wells) > MAX_INCIDENT_WELLS
+            or not all(isinstance(w, str) for w in wells)
+        ):
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                f"wells is a list of 1 to {MAX_INCIDENT_WELLS} positions like B3",
+                field="wells",
+            )
+        if run_hash is not None and not isinstance(run_hash, str):
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                "run_hash is the run file's sha256 (hex) or a prefix of it",
+                field="run_hash",
+            )
+        signature = {"metric": metric, "direction": direction}
+        try:
+            registry = instrument_registry(self.store)
+            book = registry.logbook(instrument_id)
+            seen = match_incidents(book, {**signature, "wells": wells})
+            event = log_incident(
+                book, actor="agent", wells=wells, signature=signature, run_hash=run_hash
+            )
+        except InstrumentError as err:
+            return _instrument_refusal(err)
+        except Exception as err:  # answer, never raise
+            return refuse(Code.ENGINE_REFUSED, f"incident not logged ({type(err).__name__})")
+        if (event.payload or {}).get("status") != "proposed":  # an agent never confirms
+            return refuse(Code.ENGINE_REFUSED, "unexpected outcome")
+        return {
+            "status": "proposed",
+            "incident": {
+                "incident": event.seq,
+                "instrument_id": event.instrument_id,
+                "wells": list(event.wells or ()),
+                "signature": signature,
+                "run_hash": event.run_hash,
+                "actor": event.actor,
+                "status": "proposed",
+            },
+            "head": event.hash,
+            "seen_before": seen,
+            "next": INCIDENT_NEXT,
+        }
+
+    # ---- trace and the spreadsheet check ---------------------------------------------------
+
+    def qpcr_trace(
+        self,
+        study_id: str,
+        gene: str | None = None,
+        sample: str | None = None,
+        well: str | None = None,
+        top: int = 3,
+    ) -> dict[str, Any]:
+        """Trace one gene's result, a sample or a well back to the places to look (read-only).
+
+        Give exactly one of ``gene``, ``sample`` or ``well`` (``PLATE:WELL``, for example
+        ``HMBS_20080318:K22``). ``places`` lists the ``top`` places (1 to 20), ranked by what
+        each option there would do: ``changes_call``, ``beyond_ci`` or ``changes_nothing``.
+        Each names the sample, plate and well, the checks it fails, how many values it feeds
+        and every option's consequence; ``summary`` counts every place found. ``text`` is the
+        "Where to look" panel and ``facts`` hold every number it shows. Opens no card and
+        writes nothing; a Studio session stays blind until a person confirms the design and
+        the curves. Setting a place aside is a person's decision in qPilot.
+        """
+        given = [v for v in (gene, sample, well) if v is not None]
+        if len(given) != 1 or not isinstance(given[0], str) or not given[0].strip():
+            return refuse(Code.INVALID_ARGUMENT, TRACE_ROOT)
+        if isinstance(top, bool) or not isinstance(top, int) or not 1 <= top <= MAX_TRACE_TOP:
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                f"top must be a whole number from 1 to {MAX_TRACE_TOP}",
+                field="top",
+            )
+        from qpilot.explain.trace_text import render_trace
+        from qpilot.qpcr.trace import TraceError, trace_store
+        from qpilot.studio_service import StudioError
+
+        try:
+            sid = self._study_id(study_id)
+            result = trace_store(self.store, sid, gene=gene, sample=sample, well=well, top=top)
+            rendered = render_trace(result)
+        except StudyNotFound:
+            return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
+        except StudioError:
+            return refuse(Code.RESULTS_HIDDEN, BLIND)
+        except TraceError as err:
+            return _trace_refusal(err)
+        except Exception as err:  # answer, never raise
+            return refuse(Code.ENGINE_REFUSED, f"no trace ({type(err).__name__})")
+        return {"study_id": sid, **trace_view(result, rendered, top), "saved": False}
+
+    def qpcr_check_sheet(self, sheet_path: str, study_id: str | None = None) -> dict[str, Any]:
+        """Recompute a lab's own ΔΔCq sheet from its Cq values; name the first step that differs.
+
+        ``sheet_path`` is an ``.xlsx`` or ``.csv`` file inside ``QPILOT_DATA_ROOTS``; it is read,
+        never edited. The column mapping is guessed: the answer says ``mapping guessed, not
+        confirmed`` (``confirmed: false``) until a person confirms it. Findings name the first
+        column and row that differ and the known path that reproduces them. With ``study_id``,
+        genes whose sheet arithmetic reproduces but whose fold change differs from the study's
+        are hand-overs (the causes listed). Sample and group labels never appear in the answer.
+        """
+        if not isinstance(sheet_path, str) or not (study_id is None or isinstance(study_id, str)):
+            return refuse(Code.INVALID_ARGUMENT, "sheet_path (and study_id) are text")
+        try:
+            path = check_sheet(sheet_path)
+        except PathRefused as err:
+            return err.refusal("sheet_path")
+        from qpilot.explain.sheetcheck_text import render
+        from qpilot.qpcr import sheetcheck
+        from qpilot.studio_service import StudioError
+
+        try:
+            if study_id is None:
+                result = sheetcheck.check_sheet(path)
+            else:
+                sid = self._study_id(study_id)
+                result = sheetcheck.check_sheet_store(self.store, sid, path)
+            text = render(result).plain
+        except StudyNotFound:
+            return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
+        except StudioError:
+            return refuse(Code.RESULTS_HIDDEN, BLIND)
+        except sheetcheck.SheetCheckError as err:
+            return refuse(Code.INPUT_UNREADABLE, f"could not check this sheet: {err}")
+        except Exception as err:  # answer, never raise
+            return refuse(
+                Code.INPUT_UNREADABLE, f"could not check this sheet ({type(err).__name__})"
+            )
+        return {
+            **result.model_dump(mode="json"),
+            "confirmed": result.mapping.confirmed,
+            "text": text,
+            "next": SHEET_NEXT,
+            "saved": False,
+        }
+
+
+def trace_view(result: Any, rendered: Any, top: int) -> dict[str, Any]:
+    """A trace trimmed for an agent: no lineage graph, ``top`` places, the facts its text cites.
+
+    ``absent`` lists at most :data:`MAX_TRACE_ABSENT` samples (``n_absent`` counts them all).
+    """
+    data = result.model_dump(mode="json", exclude={"nodes", "facts"})
+    data["places"] = data["places"][:top]
+    data["n_absent"] = len(data["absent"])
+    data["absent"] = data["absent"][:MAX_TRACE_ABSENT]
+    data["facts"] = {
+        fid: result.facts[fid].model_dump(mode="json")
+        for fid in rendered.fact_ids
+        if fid in result.facts
+    }
+    data["text"] = rendered.plain
+    return data
+
+
+def _trace_refusal(err: Exception) -> dict[str, Any]:
+    """The typed refusal for a :class:`~qpilot.qpcr.trace.TraceError`."""
+    text = f"no trace: {err}"
+    lowered = str(err).lower()
+    if lowered.startswith(("unknown ", "no well ", "no place at rank")):
+        return refuse(Code.UNKNOWN_ITEM, text)
+    if "has no comparison" in lowered or "is a control gene" in lowered:
+        return refuse(Code.NOT_APPLICABLE, text)
+    if "input file" in lowered or "sha256 differs" in lowered or "does not reproduce" in lowered:
+        return refuse(Code.INTEGRITY_FAILED, text)
+    return refuse(Code.INVALID_ARGUMENT, text)
+
+
+def _instrument_refusal(err: Exception) -> dict[str, Any]:
+    """The typed refusal for an :class:`~qpilot.core.instruments.InstrumentError`."""
+    from qpilot.core.instruments import UnknownInstrument
+
+    text = str(err)
+    lowered = text.lower()
+    if isinstance(err, UnknownInstrument):
+        return refuse(Code.UNKNOWN_ITEM, text)
+    if "chain" in lowered or "verify" in lowered:
+        return refuse(Code.INTEGRITY_FAILED, text)
+    return refuse(Code.INVALID_ARGUMENT, text)
+
+
+def _evidence_statuses(store: StudyStore, study_id: str) -> dict[str, str] | None:
+    """The Evidence Ledger's item statuses when the study kept one (cheap: no re-analysis)."""
+    try:
+        data = store.get_artifact(study_id, "evidence.json")
+    except Exception:  # a damaged artifact never breaks qpcr_study
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("items"), list):
+        return None
+    return {
+        str(i["id"]): str(i["status"])
+        for i in data["items"]
+        if isinstance(i, dict) and "id" in i and "status" in i
+    }
+
 
 # StudioError carries one plain sentence (qpilot/studio_service.py, core/store.py); its opening
 # says which refusal it is. tests/mcp/test_refusals.py holds every sentence a tool can meet.
@@ -1154,7 +1779,43 @@ TOOL_NAMES = (
     "qpcr_curve_calls",
     "qpcr_prism_preview",
     "qpcr_prism_diff",
+    "qpcr_evidence",
+    "qpcr_run_review",
+    "qpcr_run_context",
+    "qpcr_lookback",
+    "qpcr_instrument_history",
+    "qpcr_instrument_status",
+    "qpcr_incident_log",
+    "qpcr_trace",
+    "qpcr_check_sheet",
 )
+
+
+class _ToolMeta(Mapping[str, tuple[str, str]]):
+    """Each ``qpcr_*`` tool's title and access kind (``read``, ``write`` or ``propose``).
+
+    A read-only view of :data:`qpilot.agents.surface.SPECS`, the one table the server registers
+    tools from (imported on first use: it pulls in ``mcp``). ``write`` changes the store and is
+    safe to repeat; ``propose`` adds a request or proposal each time.
+    """
+
+    def __getitem__(self, name: str) -> tuple[str, str]:
+        if name not in TOOL_NAMES:
+            raise KeyError(name)
+        from qpilot.agents.surface import SPECS
+
+        spec = SPECS[name]
+        kind = "read" if spec.read_only else "write" if spec.idempotent else "propose"
+        return spec.title, kind
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(TOOL_NAMES)
+
+    def __len__(self) -> int:
+        return len(TOOL_NAMES)
+
+
+TOOL_META: Mapping[str, tuple[str, str]] = _ToolMeta()
 
 
 SIM_OFF_NOTICE = (

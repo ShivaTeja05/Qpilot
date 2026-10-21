@@ -1,9 +1,13 @@
-"""CLI commands for the GraphPad Prism bridge: ``export prism`` and ``prism diff | verify``.
+"""CLI commands for exports and the GraphPad Prism bridge: ``export prism | excel``, ``prism``.
 
 ``qpilot export prism --study ID [--template two_groups_log2] [--genes ODC1,NTRK1] [--share]
 --out DIR`` writes the CSV tables, ``run.pzc``, ``send_back.pzc``, ``qpilot_provenance.json``,
 ``qpilot_bundle.json`` and a short ``README.txt`` into a new folder. Nothing is written into the
 study's workspace.
+
+``qpilot export excel --out FILE.xlsx [--study ID]`` writes one workbook: the results table with
+a ``Trace`` column (each gene's top place to look) and a "Where to look" sheet
+(:mod:`qpilot.report.excel`). The Prism options do not apply to it and are refused.
 
 ``qpilot prism diff --study ID --bundle DIR --sent-back DIR`` prints, as JSON, what changed in
 the tables Prism sent back, and the proposals that follow (never accepted here).
@@ -19,6 +23,11 @@ import json
 import sys
 
 from qpilot.cli._types import Command
+
+DEFAULT_TEMPLATE = "two_groups_log2"
+DEFAULT_GRAPHS = "pdf"
+#: Options of ``export prism`` that ``export excel`` refuses.
+PRISM_ONLY = ("template", "genes", "share", "rdml", "platform", "prism_dir", "graphs")
 
 
 def _store_and_study(args: argparse.Namespace):
@@ -37,13 +46,17 @@ def _store_and_study(args: argparse.Namespace):
 def _export_arguments(parser: argparse.ArgumentParser) -> None:
     from qpilot.prism.tables import TEMPLATES
 
-    parser.add_argument("what", choices=["prism"], help="what to export (prism)")
+    parser.add_argument(
+        "what",
+        choices=["prism", "excel"],
+        help="what to export: prism (a Prism bundle folder) or excel (one .xlsx workbook)",
+    )
     parser.add_argument("--study", default=None, help="study id (default: the only study)")
     parser.add_argument(
         "--template",
-        default="two_groups_log2",
+        default=None,
         choices=sorted(TEMPLATES),
-        help="the Prism template the tables are made for (default: two_groups_log2)",
+        help=f"prism: the template the tables are made for (default: {DEFAULT_TEMPLATE})",
     )
     parser.add_argument(
         "--genes", default=None, help="comma-separated genes (default: the headline genes)"
@@ -51,7 +64,9 @@ def _export_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--share", action="store_true", help="pseudonymise sample names in the row titles"
     )
-    parser.add_argument("--out", required=True, help="a new or empty folder for the bundle")
+    parser.add_argument(
+        "--out", required=True, help="prism: a new or empty folder; excel: a new .xlsx file"
+    )
     parser.add_argument(
         "--rdml", default=None, help="the study's input file, when qPilot no longer knows it"
     )
@@ -67,25 +82,30 @@ def _export_arguments(parser: argparse.ArgumentParser) -> None:
         help="the bundle folder as the Prism computer sees it (default: --out)",
     )
     parser.add_argument(
-        "--graphs", default="pdf", help="graph exports: pdf, png, pdf,png or none (default pdf)"
+        "--graphs",
+        default=None,
+        help=f"prism: graph exports, pdf, png, pdf,png or none (default {DEFAULT_GRAPHS})",
     )
 
 
 def _export(args: argparse.Namespace) -> int:
+    if args.what == "excel":
+        return _export_excel(args)
     from qpilot.core.store import StudyNotFound
     from qpilot.prism import export_study
     from qpilot.qpcr.export import ExportError
 
     store, study_id = _store_and_study(args)
     genes = [g.strip() for g in args.genes.split(",") if g.strip()] if args.genes else None
-    graphs = [] if args.graphs == "none" else [g.strip() for g in args.graphs.split(",")]
+    chosen = args.graphs or DEFAULT_GRAPHS
+    graphs = [] if chosen == "none" else [g.strip() for g in chosen.split(",")]
     try:
         result = export_study(
             store,
             study_id,
             args.out,
             genes=genes,
-            template_id=args.template,
+            template_id=args.template or DEFAULT_TEMPLATE,
             share=args.share,
             platform=args.platform,
             prism_dir=args.prism_dir,
@@ -104,6 +124,35 @@ def _export(args: argparse.Namespace) -> int:
         print(f"Note: {note}")
     print(f"Run in Prism: {result.launch.command_line}")
     print("Not yet checked on a real Prism seat (plan step 0.1); see docs/prism.md.")
+    return 0
+
+
+def _export_excel(args: argparse.Namespace) -> int:
+    """``export excel``: one workbook; the Prism-only options are refused, not ignored."""
+    from qpilot.core.store import StudyNotFound
+    from qpilot.report.excel import ExcelError, export_excel
+
+    given = [
+        "--" + name.replace("_", "-")
+        for name in PRISM_ONLY
+        if getattr(args, name, None) not in (None, False)
+    ]
+    if given:
+        names = ", ".join(given)
+        print(f"qpilot export excel: {names} only apply to export prism", file=sys.stderr)
+        return 2
+    store, study_id = _store_and_study(args)
+    try:
+        info = export_excel(store, study_id, args.out)
+    except (ExcelError, StudyNotFound, OSError) as err:
+        print(f"qpilot export excel: {err}", file=sys.stderr)
+        return 2
+    print(
+        f"Wrote {info.path}: {info.n_results} results and {info.n_places} places to look "
+        "(sheets Results, Where to look, About)"
+    )
+    if not info.traced:
+        print(f"Note: Trace did not run ({info.note or 'no result could be traced'}).")
     return 0
 
 
@@ -153,7 +202,8 @@ def _prism(args: argparse.Namespace) -> int:
 COMMANDS: list[Command] = [
     (
         "export",
-        "export a study for another tool: `export prism` writes tables and a Prism script",
+        "export a study: `export prism` writes tables and a Prism script; `export excel` a "
+        "workbook with Trace's places to look",
         _export_arguments,
         _export,
     ),

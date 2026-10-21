@@ -250,6 +250,12 @@ class SampleDesign(BaseModel):
     Wells of the same sample and target are technical replicates. Several samples may share
     one ``biological_unit`` (for example three cDNA preparations of one animal); the engine
     averages log2 quantities per unit and gene and never counts technical replicates as n.
+
+    ``rt_replicate`` labels a reverse-transcription replicate: samples of one biological unit
+    with different labels were reverse-transcribed separately from the same RNA. Only the
+    G-RT rule (:mod:`qpilot.qpcr.gate_rt`) and the Evidence Ledger read it; the analysis
+    averages the samples of a unit as before. ``None`` (the default) is left out of
+    :meth:`StudyDesign.canonical`, so existing design hashes do not change.
     """
 
     sample: str
@@ -257,6 +263,7 @@ class SampleDesign(BaseModel):
     group: str | None = None
     biological_unit: str | None = None
     quantity: float | None = None  # standards: copies or relative dilution
+    rt_replicate: str | None = None  # RT replicate label within the biological unit
 
     def unit(self) -> str:
         """The biological unit (the sample itself when none is set)."""

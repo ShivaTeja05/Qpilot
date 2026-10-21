@@ -6,3 +6,5 @@ qpilot/vendor/rdmlpython/schema/RDML_v1_1_REC.xsd:generic-api-key:1267
 qpilot/vendor/rdmlpython/schema/RDML_v1_2_REC.xsd:generic-api-key:1299
 qpilot/vendor/rdmlpython/schema/RDML_v1_3_REC.xsd:generic-api-key:1597
 qpilot/vendor/rdmlpython/schema/RDML_v1_4_CR.xsd:generic-api-key:1651
+# False positive: a template key ("instrument_gate_v1") whose name holds "KEY" (origin/main, 18 Oct).
+qpilot/explain/instrument_text.py:generic-api-key:28

@@ -55,6 +55,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pandas as pd
 
+from qpilot.core.store import ON_DEMAND_KINDS
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule, conclude, welch
 from qpilot.qpcr.quant import EXCLUDED, Undetermined, excluded_cells, log2_matrix, relative
 from qpilot.schemas import ContrastResult, DecisionCard, StudyResult
@@ -796,7 +797,8 @@ def study_inputs(
     and the decision space from :func:`qpilot.qpcr.study.build_model`, the same object the
     study was analysed with. Each choice is its card's decided option (the recommended option
     while the card is open), mapped back to its dimension value with the option specs
-    ``qpcr/study.py`` builds the cards from; the per-well table is the design's under the
+    ``qpcr/study.py`` builds the cards from (cards opened on demand, such as Trace's set-aside
+    cards, are not analysis choices and are left out); the per-well table is the design's under the
     chosen amplification rule, and the groups are the study's fixed comparison. The design
     (the demo preset when there is none) and the curve analysis's own per-well table come along,
     so :class:`Reanalysis` can run the engine again.
@@ -860,7 +862,8 @@ def study_inputs(
         specs["card_amp_call"] = _RuleOptions(space.dimensions["amp_call"])
     if "efficiency" in space.dimensions:  # ... and the efficiency models' ids
         specs["card_efficiency"] = _RuleOptions(space.dimensions["efficiency"], "efficiency")
-    choices = tuple(_choice(card, specs) for card in sorted(cards, key=lambda c: c.rank))
+    analysis_cards = [c for c in cards if c.kind not in ON_DEMAND_KINDS]
+    choices = tuple(_choice(card, specs) for card in sorted(analysis_cards, key=lambda c: c.rank))
     value = {c.dimension: c.value for c in choices}
     rule_id = value.get("amp_call", settings.amp_calls[0])
     efficiency = value.get("efficiency", settings.efficiency[0])
