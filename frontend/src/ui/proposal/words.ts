@@ -57,8 +57,8 @@ export const INSTRUCTION_TEXT =
   "This text reads like an instruction. It is shown as data and is never obeyed: no model, agent or rule acts on it.";
 
 // Control characters and bidirectional overrides can hide or reorder what a text says.
-// eslint-disable-next-line no-control-regex
 const INVISIBLE =
+  // eslint-disable-next-line no-control-regex
   /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g;
 
 /** A quoted text with invisible and direction-changing characters made visible. */
