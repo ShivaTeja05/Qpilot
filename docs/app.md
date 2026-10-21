@@ -157,7 +157,24 @@ wells left out) and makes a new analysis, like an accepted Prism exclusion.
 * **Decision Cards** (right column, ranked by impact): question, evidence, each option with what
   it changes for the headline genes, the recommended option, reason (required), **Decide**;
   decided cards collapse with who decided and why, **Undo** (a new chain entry). Agent requests
-  waiting for a person show first, with **Approve** / **Turn down**. **Explain with the model**
+  waiting for a person show first, with **Approve** / **Turn down**.
+* **Choices carried to a new analysis.** When a person's decision changes a session's confirmed
+  design after the curves are confirmed (an accepted Prism exclusion, a well left out or put
+  back), the session moves to another analysis of the file (`Studio._study`), whose design
+  differs only in the wells left out. What a person decided on the earlier analysis's cards is
+  carried to it (`StudyStore.carry_decisions`): one new
+  chain entry per card, `actor` human, `applied`, reason `Carried from analysis <study> (entry
+  <hash>): <the person's words>`, so the hashed entry names where it came from; the card shows
+  **Carried** and its status line says from where. Never carried: the system's automatic
+  decisions (the new analysis makes its own), agents' choices and requests, a card or option the
+  new analysis lacks, a decision already carried there once (a later change stands), a card with
+  an agent's request waiting, and a choice that **matters more** in the new analysis (it can
+  change a conclusion, or more or other ones, where it could not before): that card says what
+  the person chose and why it is asked again. The **choices stage is not carried**: its
+  confirmation is a person's statement about one analysis's cards, so a person confirms again
+  (one click when every card is decided). A design changed in a blind stage and confirmed again
+  is another question: its cards start afresh. A reason typed as `Carried from analysis…` is
+  refused. **Explain with the model**
   (only when a model answers; numbers in the explanation are facts, cited).
 * `j`/`k` move between cards, `Enter` focuses the reason, `⌘Enter` decides.
 
@@ -189,9 +206,9 @@ analysis in use (each card's applied option, the planned one elsewhere).
   analysed again (the `analyse` job; the gate then reads the new analysis, where the option says
   "already left out" and the wells are listed with who decided, why and when, and **Put the
   wells back**). **Keep every well** puts back what a person left out through the card, or, when
-  nothing has to change, records the keep (the rule's exclusions, rejected with the reason). The
-  new analysis starts with its Decision Cards at the recommended options (as after a Prism round
-  trip), and the page says so before deciding. An agent's request (`qpcr_decide` on a
+  nothing has to change, records the keep (the rule's exclusions, rejected with the reason). What
+  a person chose on the Decision Cards is carried to the new analysis (as after a Prism round
+  trip; see Results), and the page says so before deciding. An agent's request (`qpcr_decide` on a
   `card_gate_*` card over MCP: always `pending_human`, filed as the agent's exclusions) waits on
   its card with **Approve** / **Turn down**. Refusals: `blind` (403) like every result, `stale`
   (409) when the analysis, the chain or the inbox changed since the view, `studio` (409) for a
@@ -229,7 +246,8 @@ the changes come back as proposals with their consequences).
 
 ### Record (`features/record`)
 The decision chain as a timeline (seq, card, option, actor icon human/agent/system, reason,
-time, hash → prev hash, status applied/pending/rejected/stale). **Export the Analysis Record**
+time, hash → prev hash, status applied/pending/rejected/stale; a carried entry is marked
+**Carried**, with the earlier analysis's entry it names and whether it is found there). **Export the Analysis Record**
 (job → download; record id, chain head, files). **Verify a record** (drop a zip → checksums,
 chain, audit binding). Copyable `qpilot verify` / `qpilot rerun` commands.
 

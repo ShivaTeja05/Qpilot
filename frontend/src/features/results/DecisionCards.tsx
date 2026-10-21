@@ -3,7 +3,16 @@
  * an option, says why, and decides; an agent's request waits here for Approve or Turn down.
  * `j`/`k` move between cards, `Enter` goes to the reason, `⌘Enter` decides.
  */
-import { AlertTriangle, Bot, Check, ChevronDown, CircleCheck, Sparkles, Undo2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Bot,
+  Check,
+  ChevronDown,
+  CircleCheck,
+  History,
+  Sparkles,
+  Undo2,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ApiError, type Schemas } from "@/api/client";
@@ -267,6 +276,11 @@ function DecisionCardItem({
             <Badge tone={pending ? "warn" : STATUS_BADGE[card.status].tone}>
               {pending ? "Agent request" : STATUS_BADGE[card.status].label}
             </Badge>
+            {view.carried && (
+              <Badge tone="info" icon={<History aria-hidden />}>
+                Carried
+              </Badge>
+            )}
           </div>
           <p
             className={cn(
@@ -312,6 +326,18 @@ function DecisionCardItem({
             className="overflow-hidden"
           >
             <div className="space-y-3 px-4 pb-4" data-card-body>
+              {view.asked_again && (
+                <p className="flex items-start gap-2 rounded-lg border border-line bg-sunken p-3 text-[13px] text-fg">
+                  <History className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden />
+                  <span>
+                    In the earlier analysis{" "}
+                    <span className="font-mono text-[12px]">{view.asked_again.study_id}</span> a
+                    person chose{" "}
+                    <strong>{view.asked_again.option_label ?? view.asked_again.option}</strong>. It
+                    was not carried here: {view.asked_again.why}. Decide it again.
+                  </span>
+                </p>
+              )}
               {request && (
                 <div className="flex items-start gap-2 rounded-lg border border-warn/40 bg-warn-soft p-3 text-[13px] text-fg">
                   <Bot className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />

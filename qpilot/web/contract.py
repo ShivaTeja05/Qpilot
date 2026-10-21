@@ -817,6 +817,13 @@ class CardView(BaseModel):
     pending: list[PendingRequest]
     undo_option: str | None = Field(default=None, description="What Undo would restore.")
     undo_label: str | None = None
+    carried: CarriedFrom | None = Field(
+        default=None, description="The decision in force was carried from an earlier analysis."
+    )
+    asked_again: AskedAgain | None = Field(
+        default=None,
+        description="A person decided this card in the earlier analysis; asked again here.",
+    )
 
 
 class CardsView(BaseModel):
@@ -886,6 +893,27 @@ class Explanation(BaseModel):
     note: str = ""
 
 
+class CarriedFrom(BaseModel):
+    """Where a carried decision came from: a person's decision in an earlier analysis."""
+
+    study_id: str = Field(description="The earlier analysis of the same file.")
+    entry_hash: str = Field(description="The entry there that made the decision.")
+    reason: str = Field(description="The person's own words (quoted text).")
+    found: bool = Field(
+        description="That entry is in that study's chain: same card, same option, by a person."
+    )
+    decided_at: str | None = Field(default=None, description="When that entry was written.")
+
+
+class AskedAgain(BaseModel):
+    """A person's decision in the earlier analysis that was not carried to this one."""
+
+    study_id: str = Field(description="The earlier analysis.")
+    option: str | None = Field(default=None, description="What the person had chosen there.")
+    option_label: str | None = None
+    why: str = Field(description="Why it is asked again, in words.")
+
+
 class DecisionEntryView(BaseModel):
     """One entry of the decision chain, with its card and option in words."""
 
@@ -893,6 +921,9 @@ class DecisionEntryView(BaseModel):
     card_title: str
     option_label: str
     undo: bool = Field(description="Written by Undo.")
+    carried: CarriedFrom | None = Field(
+        default=None, description="Carried from an earlier analysis when the design changed."
+    )
 
 
 class StaleAttempt(BaseModel):

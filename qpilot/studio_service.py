@@ -1241,13 +1241,44 @@ class Studio:
         design = assembly.design
         assert design is not None  # a confirmed design always assembles
         study_id = self.store.ensure_study(self.source(session_id), design=design)
-        studies = dict(self._meta(session_id).get("studies", {}))
-        if study_id not in studies:
-            studies[study_id] = design.design_hash()
-            self._update_meta(session_id, {"studies": studies, "current_study": study_id})
-        elif self._meta(session_id).get("current_study") != study_id:
-            self._update_meta(session_id, {"current_study": study_id})
+        meta = self._meta(session_id)
+        if study_id not in meta.get("studies", {}) or meta.get("current_study") != study_id:
+            self._edit_meta(session_id, lambda m: self._switch(m, study_id, design))
         return study_id, list(view.accepted)
+
+    def _switch(self, meta: dict[str, Any], study_id: str, design: StudyDesign) -> None:
+        """Make ``study_id`` the session's analysis (in ``meta``, under the session's lock).
+
+        When it replaces another analysis whose design differs only in the wells left out (a
+        person left a well out after the curves were confirmed, from Prism, Controls or the
+        Curves inbox, or put one back), what a person decided on the earlier one's Decision
+        Cards is carried to it first (:meth:`StudyStore.carry_decisions`), so the switch is seen
+        only once they are; the report is kept under ``carried``. A design changed in a blind
+        stage and confirmed again is another question, so its cards start afresh. The choices
+        stage is never carried: its confirmation describes the cards of one analysis, so a person
+        confirms the new one. A carry that fails is logged and never keeps the analysis from
+        being used.
+        """
+        studies = dict(meta.get("studies", {}))
+        studies.setdefault(study_id, design.design_hash())
+        previous = meta.get("current_study")
+        if previous and previous != study_id:
+            try:
+                same = _same_but_wells(self.store.design(previous), design)
+                report = self.store.carry_decisions(previous, study_id) if same else None
+            except (StudyNotFound, OSError, ValueError):
+                log.warning(
+                    "decisions not carried from %s to %s", previous, study_id, exc_info=True
+                )
+            else:
+                if report is not None:
+                    meta["carried"] = {**meta.get("carried", {}), study_id: report.as_dict()}
+        meta.update({"studies": studies, "current_study": study_id})
+
+    def carried(self, session_id: str, study_id: str) -> dict[str, Any] | None:
+        """The report of the latest carry of a person's decisions into ``study_id`` (or None)."""
+        report = self._meta(session_id).get("carried", {}).get(study_id)
+        return report if isinstance(report, dict) else None
 
     def decide(
         self,
@@ -1817,6 +1848,14 @@ def _confirmed(
         except StudyNotFound:
             return False
     return False
+
+
+def _same_but_wells(before: StudyDesign | None, after: StudyDesign) -> bool:
+    """Two confirmed designs that differ at most in the wells left out of the analysis."""
+    if before is None:
+        return False
+    hashes = {d.model_copy(update={"excluded_wells": ()}).design_hash() for d in (before, after)}
+    return len(hashes) == 1
 
 
 def _system_confirm(proposal: Proposal) -> bool:

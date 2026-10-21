@@ -115,8 +115,10 @@ APPLY_STUDY = (
 )
 DECIDE_NOTE = (
     "Deciding writes one entry per well to this session's record, with your reason. Leaving "
-    "wells out, or putting them back, analyses the study again; the new analysis starts with "
-    "its Decision Cards at the recommended options, so look at them again on Results."
+    "wells out, or putting them back, analyses the study again. What you chose on the Decision "
+    "Cards is carried to the new analysis, each as a new entry that says where it came from, "
+    "except a choice that matters more there: that one is asked again. Then confirm the "
+    "choices again on Results."
 )
 OUTSIDE_STUDIO = (
     "This study was analysed outside Studio, so its wells cannot be left out here. Open its "

@@ -104,7 +104,9 @@ differs); see also [studio-measured.md](studio-measured.md).
 5. **Round trip.** Excluding ODC1's sample 1496 in Prism comes back as one question: "Reason?",
    with its consequence — ODC1 3.590× → 3.319×, still up; 0 of 58 conclusions change. Accepting
    it (with the reason) re-runs the analysis: the page then shows only the new analysis (ODC1
-   3.3×) and the Choices stage opens again for it.
+   3.3×) and the Choices stage opens again for it. The choices you made on the cards are carried
+   to it (each a new entry naming the earlier analysis's entry), except one that matters more in
+   the new analysis, which is asked again; confirm the choices again.
 
 ### Several exclusions at once
 

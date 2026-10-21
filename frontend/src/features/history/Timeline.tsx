@@ -122,6 +122,11 @@ function PointNode({
               <Undo2 aria-hidden />
             </span>
           ) : null}
+          {step?.carried ? (
+            <span className="absolute -bottom-1 -left-1 grid size-5 place-items-center rounded-full border border-line bg-surface text-muted [&_svg]:size-3">
+              <HistoryIcon aria-hidden />
+            </span>
+          ) : null}
           {pending ? (
             <span className="absolute -bottom-1 -left-1 grid size-5 place-items-center rounded-full border border-warn/40 bg-warn-soft text-warn [&_svg]:size-3">
               <Hourglass aria-hidden />

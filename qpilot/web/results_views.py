@@ -27,6 +27,7 @@ import pandas as pd
 from qpilot.core.store import StudyNotFound, StudyStore
 from qpilot.schemas import DecisionCard, DecisionEntry, Fact, StudyResult
 from qpilot.web.contract import (
+    AskedAgain,
     AtChoices,
     AuditBadge,
     AutonomyChange,
@@ -34,6 +35,7 @@ from qpilot.web.contract import (
     CardOptionView,
     CardsView,
     CardView,
+    CarriedFrom,
     DecisionEntryView,
     DecisionsView,
     FactRef,
@@ -189,6 +191,80 @@ def session_of_study(store: StudyStore, study_id: str) -> str | None:
         if study_id in studies:
             return folder.name[:12]
     return None
+
+
+# ---- a person's decisions carried from an earlier analysis of the same file -----------------
+
+
+class CarryLinks:
+    """Reads the carried entries of one study, each earlier study's chain read once."""
+
+    def __init__(self, store: StudyStore, input_sha256: str) -> None:
+        self.store = store
+        self.input_sha256 = input_sha256
+        self._chains: dict[str, dict[str, DecisionEntry]] = {}
+
+    def _chain(self, study_id: str) -> dict[str, DecisionEntry]:
+        if study_id not in self._chains:
+            try:
+                same = self.store.get(study_id).input_sha256 == self.input_sha256
+                entries = self.store.entries(study_id) if same else []
+            except (StudyNotFound, OSError, ValueError):
+                entries = []
+            self._chains[study_id] = {e.hash: e for e in entries}
+        return self._chains[study_id]
+
+    def of(self, entry: DecisionEntry | None) -> CarriedFrom | None:
+        """Where a person's carried entry came from, its link checked (None for any other)."""
+        from qpilot.core.decisions import carried_from
+
+        if entry is None or entry.actor != "human" or entry.status != "applied":
+            return None
+        origin = carried_from(entry.reason)
+        if origin is None:
+            return None
+        there = self._chain(origin.study_id).get(origin.entry_hash)
+        made = (there.card_id, there.option, there.actor, there.status) if there else None
+        found = made == (entry.card_id, entry.option, "human", "applied")
+        return CarriedFrom(
+            study_id=origin.study_id,
+            entry_hash=origin.entry_hash,
+            reason=origin.reason,
+            found=found,
+            decided_at=there.at if found and there is not None else None,
+        )
+
+
+def carry_report(store: StudyStore, study_id: str) -> dict[str, Any] | None:
+    """The session's report of the latest carry of a person's decisions into this study."""
+    sid = session_of_study(store, study_id)
+    if sid is None:
+        return None
+    try:
+        meta = json.loads((store.find_session(sid) / "studio.json").read_text(encoding="utf-8"))
+    except (StudyNotFound, OSError, ValueError):
+        return None
+    report = (meta.get("carried") or {}).get(study_id)
+    return report if isinstance(report, dict) else None
+
+
+def asked_again_of(
+    store: StudyStore, card: DecisionCard, report: dict[str, Any] | None
+) -> AskedAgain | None:
+    """A person's earlier decision on this card that was asked again, while no person decided it."""
+    why = ((report or {}).get("asked_again") or {}).get(card.id)
+    if not why or card.decided_by == "human":
+        return None
+    source = str(report.get("source") or "") if report else ""
+    option = None
+    label = None
+    try:
+        earlier = store.card(source, card.id)
+        option = earlier.decision
+        label = next((o.label for o in earlier.options if o.id == option), option)
+    except (StudyNotFound, KeyError, OSError, ValueError):
+        pass
+    return AskedAgain(study_id=source, option=option, option_label=label, why=str(why))
 
 
 # ---- the grid: every analysis, the planned one, and the cards' options ----------------------
@@ -764,13 +840,40 @@ def undo_target(entries: Iterable[DecisionEntry], card_id: str) -> str | None:
     return stack[-2] if len(stack) >= 2 else None
 
 
+def _last_decision(entries: Iterable[DecisionEntry], card_id: str) -> DecisionEntry | None:
+    """The entry that made a card's decision in force (its last applied or automatic one)."""
+    last = None
+    for entry in entries:
+        if entry.card_id == card_id and entry.status in ("applied", "auto"):
+            last = entry
+    return last
+
+
+def card_carry(
+    store: StudyStore,
+    card: DecisionCard,
+    entries: Sequence[DecisionEntry],
+    links: CarryLinks,
+    report: dict[str, Any] | None,
+) -> tuple[CarriedFrom | None, AskedAgain | None]:
+    """Whether a card's decision was carried from an earlier analysis, or asked again here."""
+    carried = links.of(_last_decision(entries, card.id)) if card.decided_by == "human" else None
+    return carried, asked_again_of(store, card, report)
+
+
 def card_view(
     card: DecisionCard,
     result: StudyResult,
     entries: Sequence[DecisionEntry],
     pending: Sequence[DecisionEntry],
+    carried: CarriedFrom | None = None,
+    asked: AskedAgain | None = None,
 ) -> CardView:
-    """One Decision Card in words, with every option's consequence per headline gene."""
+    """One Decision Card in words, with every option's consequence per headline gene.
+
+    A decision carried from an earlier analysis says so in the status line, with the person's
+    own words as the reason; ``asked`` is a person's earlier decision asked again here.
+    """
     from qpilot.ai.explain import KIND_TITLE
     from qpilot.app_state import FLIPPED_FACT, _status_line
     from qpilot.core.validator import names_from_result
@@ -780,6 +883,12 @@ def card_view(
     labels = {o.id: o.label for o in card.options}
     waiting = [p for p in pending if p.card_id == card.id]
     status = _status_line(card, labels, waiting[-1].option if waiting else None)
+    if carried is not None and card.status == "decided":
+        chosen = labels.get(card.decision or "", card.decision or "")
+        status = (
+            f"Decided by {card.decided_by}: {chosen}, carried from the earlier analysis "
+            f"{carried.study_id}. Reason: {carried.reason}"
+        )
     try:
         rendered = render_template(
             card.rationale_template, facts, card=card, allowed_names=names_from_result(result)
@@ -847,6 +956,8 @@ def card_view(
         ],
         undo_option=undo,
         undo_label=labels.get(undo) if undo else None,
+        carried=carried,
+        asked_again=asked,
     )
 
 
@@ -858,10 +969,14 @@ def cards_view(store: StudyStore, study_id: str) -> CardsView:
     head, cards, pending = store.snapshot(study_id)
     entries = store.entries(study_id)
     upcoming = next_card(cards)
+    links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
     return CardsView(
         study_id=study_id,
         head=head,
-        cards=[card_view(c, result, entries, pending) for c in cards_in_order(cards)],
+        cards=[
+            card_view(c, result, entries, pending, *card_carry(store, c, entries, links, report))
+            for c in cards_in_order(cards)
+        ],
         next_card=upcoming.id if upcoming else None,
         counter=decision_counter(cards),
         pending_requests=len(pending),
@@ -875,7 +990,10 @@ def one_card(store: StudyStore, study_id: str, card_id: str) -> CardView:
     card = next((c for c in cards if c.id == card_id), None)
     if card is None:
         raise KeyError(card_id)
-    return card_view(card, result, store.entries(study_id), pending)
+    entries = store.entries(study_id)
+    links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
+    carry = card_carry(store, card, entries, links, report)
+    return card_view(card, result, entries, pending, *carry)
 
 
 # ---- the decision chain ----------------------------------------------------------------------
@@ -887,6 +1005,7 @@ def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
 
     head, cards, pending = store.snapshot(study_id)
     by_id = {c.id: c for c in cards}
+    links = CarryLinks(store, store.get(study_id).input_sha256)
 
     def view(entry: DecisionEntry) -> DecisionEntryView:
         card = by_id.get(entry.card_id)
@@ -896,6 +1015,7 @@ def decisions_view(store: StudyStore, study_id: str) -> DecisionsView:
             card_title=KIND_TITLE.get(card.kind, card.kind) if card else entry.card_id,
             option_label=labels.get(entry.option, entry.option),
             undo=entry.reason.startswith(UNDO_PREFIX),
+            carried=links.of(entry),
         )
 
     from qpilot.core.record import verify_chain
@@ -980,8 +1100,9 @@ def gene_view(store: StudyStore, study_id: str, gene: str) -> GeneView:
             conclusion=[_text(x) for x in rows["conclusion"]],  # type: ignore[misc]
         )
     effects = _flip_rows(result, grid, cards, [gene]) if gene in result.robustness else []
+    links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
     affecting = [
-        card_view(c, result, entries, pending)
+        card_view(c, result, entries, pending, *card_carry(store, c, entries, links, report))
         for c in cards
         if result.robustness.get(gene)
         and result.robustness[gene].impact.get(KIND_DIMENSION.get(c.kind, ""), {}).get("flips")

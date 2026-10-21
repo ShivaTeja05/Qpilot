@@ -18,7 +18,7 @@ looser.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from pydantic import BaseModel, field_validator
 
@@ -41,6 +41,12 @@ AUTO_REASON = "Decided automatically: no option on this card changes any conclus
 AUTO_REASON_ELSEWHERE = (
     "Decided automatically: at the recommended settings no option on this card changes any "
     "conclusion. At other settings it can, so an agent must ask a person to change it."
+)
+# A person's decision carried to another analysis of the same file (StudyStore.carry_decisions)
+# says where it came from inside the hashed entry: the earlier study and the entry's hash.
+CARRIED_PREFIX = "Carried from analysis"
+_CARRIED = re.compile(
+    r"Carried from analysis ([0-9a-f]{12}) \(entry ([0-9a-f]{64})\): (.*)\Z", re.S
 )
 
 
@@ -195,6 +201,66 @@ def needs_human(card: DecisionCard) -> bool:
     )
 
 
+def stakes(card: DecisionCard) -> int:
+    """How much a card's choice matters, from 0 to 2.
+
+    0: it changes no conclusion at any setting. 1: it is a person's when an agent asks (it can
+    change one at other settings, or the study is in teaching mode). 2: it changes one at the
+    analysis's own settings, or its kind is always a person's decision.
+    """
+    if card.impact.get("flips") or requires_human(card.kind):
+        return 2
+    return 1 if needs_human(card) else 0
+
+
+def _calls_changed(card: DecisionCard) -> set[str]:
+    """The headline items whose conclusion differs between the card's options."""
+    calls: dict[str, set[str]] = {}
+    for option in card.options:
+        for item, result in option.per_gene.items():
+            calls.setdefault(item, set()).add(result.conclusion)
+    return {item for item, seen in calls.items() if len(seen) > 1}
+
+
+def asked_again(before: DecisionCard, after: DecisionCard) -> str | None:
+    """Why a person's decision on ``before`` is not carried to ``after``, or None to carry it.
+
+    A decision is carried to another analysis only when the choice matters no more there than
+    where the person made it: never onto a card that changes a conclusion (or more of them, or
+    another one) while it changed none (or fewer) before, so a choice made when nothing hung on
+    it is never applied, unseen, where something does.
+    """
+    if stakes(after) > stakes(before):
+        if stakes(after) == 2:
+            return "in this analysis the choice can change a conclusion"
+        return "in this analysis the choice can change a conclusion at other settings"
+    for key in ("n_genes_flipped", "n_genes_flipped_anywhere"):
+        if int(after.impact.get(key) or 0) > int(before.impact.get(key) or 0):
+            return "in this analysis the choice changes more conclusions"
+    if not _calls_changed(after) <= _calls_changed(before):
+        return "in this analysis the choice changes another conclusion"
+    return None
+
+
+class Carried(NamedTuple):
+    """Where a carried decision came from, read back from its reason."""
+
+    study_id: str
+    entry_hash: str
+    reason: str  # the person's own words
+
+
+def carried_reason(study_id: str, entry_hash: str, reason: str) -> str:
+    """The reason of a carried entry: the earlier study, its entry's hash, the person's words."""
+    return f"{CARRIED_PREFIX} {study_id} (entry {entry_hash}): {reason}"
+
+
+def carried_from(reason: str) -> Carried | None:
+    """The origin a carried entry's reason names (None for any other reason)."""
+    found = _CARRIED.match(reason or "")
+    return Carried(*found.groups()) if found else None
+
+
 def check_request(card: DecisionCard, option: str, reason: str) -> str:
     """Validate a decision request; return the cleaned reason or raise :class:`DecisionError`."""
     if option not in {o.id for o in card.options}:
@@ -203,6 +269,8 @@ def check_request(card: DecisionCard, option: str, reason: str) -> str:
     cleaned = re.sub("[\u2028\u2029\u0085]+", " ", reason or "").strip()
     if not cleaned:
         raise DecisionError("a reason is required")
+    if cleaned.startswith(CARRIED_PREFIX):  # only qPilot writes that, when it carries one
+        raise DecisionError(f"a reason cannot start with {CARRIED_PREFIX!r}")
     if len(cleaned) > MAX_REASON:
         raise DecisionError(f"reason longer than {MAX_REASON} characters")
     return cleaned
