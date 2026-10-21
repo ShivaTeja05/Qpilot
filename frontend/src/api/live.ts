@@ -71,7 +71,11 @@ export function useLiveEvents(): void {
       eventListeners.forEach((l) => l(event));
       if (event.type === "job.updated" && event.job) {
         const job = event.job;
-        qc.setQueryData<JobView>(["job", job.id], (old) => ({ ...old, ...job, result: old?.result }));
+        qc.setQueryData<JobView>(["job", job.id], (old) => ({
+          ...old,
+          ...job,
+          result: old?.result,
+        }));
         if (job.status === "done" || job.status === "failed") {
           void qc.invalidateQueries({ queryKey: ["job", job.id] });
           if (job.key) invalidateKey(job.key);

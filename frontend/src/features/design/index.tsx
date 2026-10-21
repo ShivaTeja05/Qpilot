@@ -49,7 +49,8 @@ export default function DesignSection({ workspace }: SectionProps) {
   const highlight = useMemo(() => (focus ? (w: PlateWell) => concerns(focus, w) : null), [focus]);
   const onFocusProposal = useCallback((p: Proposal | null) => setFocus(p), []);
   const showWell = useCallback(
-    (w: PlateWell) => setFilter({ label: `sample ${w.sample} (well ${w.well})`, match: (p) => concerns(p, w) }),
+    (w: PlateWell) =>
+      setFilter({ label: `sample ${w.sample} (well ${w.well})`, match: (p) => concerns(p, w) }),
     [],
   );
   const editOptions = useMemo(() => {
@@ -58,7 +59,8 @@ export default function DesignSection({ workspace }: SectionProps) {
     for (const p of all) {
       const d = { ...p.payload, ...(p.edits ?? {}) } as Record<string, unknown>;
       if (p.kind === "design.group" && typeof d.group === "string") groups.add(d.group);
-      if (p.kind === "design.bio_unit" && typeof d.biological_unit === "string") units.add(d.biological_unit);
+      if (p.kind === "design.bio_unit" && typeof d.biological_unit === "string")
+        units.add(d.biological_unit);
     }
     return { groups: [...groups].sort(), units: [...units].sort() };
   }, [all]);
@@ -67,8 +69,9 @@ export default function DesignSection({ workspace }: SectionProps) {
   if (!sid) {
     return (
       <EmptyState icon={<EyeOff />} title="Design belongs to a Studio session">
-        This study was analysed outside Studio (by <code className="font-mono">qpilot run</code> or an agent), so its design
-        was given, not proposed here. Open its file from Open to review a design proposal by proposal.
+        This study was analysed outside Studio (by <code className="font-mono">qpilot run</code> or
+        an agent), so its design was given, not proposed here. Open its file from Open to review a
+        design proposal by proposal.
       </EmptyState>
     );
   }
@@ -88,14 +91,23 @@ export default function DesignSection({ workspace }: SectionProps) {
   const status = workspace.stages.find((s) => s.stage === "design");
   const pending = all.filter((p) => p.status === "proposed" && p.kind !== "stage.confirm").length;
   const confirmed = Boolean(status?.confirmed);
-  const proposeJob = workspace.active_jobs.find((j) => j.kind === "propose.design" && (j.status === "queued" || j.status === "running"));
-  const otherJobs = workspace.active_jobs.filter((j) => j.key === sid && j.kind !== "propose.design" && (j.status === "queued" || j.status === "running"));
+  const proposeJob = workspace.active_jobs.find(
+    (j) => j.kind === "propose.design" && (j.status === "queued" || j.status === "running"),
+  );
+  const otherJobs = workspace.active_jobs.filter(
+    (j) =>
+      j.key === sid &&
+      j.kind !== "propose.design" &&
+      (j.status === "queued" || j.status === "running"),
+  );
   const summary = workspace.summary;
 
   const proposeComparison = async () => {
     setProposingComparison(true);
     try {
-      const r = await unwrap(api.POST("/api/sessions/{sid}/propose/comparison", { params: { path: { sid } } }));
+      const r = await unwrap(
+        api.POST("/api/sessions/{sid}/propose/comparison", { params: { path: { sid } } }),
+      );
       await refreshWorkspace(qc, sid);
       toast.info(r.message);
     } catch (err) {
@@ -114,12 +126,19 @@ export default function DesignSection({ workspace }: SectionProps) {
         actions={
           // One confirm button at a time: here while proposals wait (or once confirmed), under
           // the inbox when everything is decided.
-          all.length && (confirmed || pending > 0) ? <ConfirmStage sid={sid} stage="design" status={status} /> : null
+          all.length && (confirmed || pending > 0) ? (
+            <ConfirmStage sid={sid} stage="design" status={status} />
+          ) : null
         }
       />
 
       {all.length && status && !confirmed ? (
-        <DesignNeeds blockers={status.blockers} proposals={all} onOpen={() => go("home")} onSettings={() => go("settings")} />
+        <DesignNeeds
+          blockers={status.blockers}
+          proposals={all}
+          onOpen={() => go("home")}
+          onSettings={() => go("settings")}
+        />
       ) : null}
 
       {otherJobs.map((j) => (
@@ -132,7 +151,10 @@ export default function DesignSection({ workspace }: SectionProps) {
             {pending ? (
               <>
                 <span className="font-semibold text-fg">{count(pending)}</span> waiting ·{" "}
-                <span className="font-semibold text-danger">{count(list.data?.counts.contradicted ?? 0)}</span> contradicted
+                <span className="font-semibold text-danger">
+                  {count(list.data?.counts.contradicted ?? 0)}
+                </span>{" "}
+                contradicted
               </>
             ) : confirmed ? (
               "The design is confirmed; it is summarised below. A later decision on a design proposal re-opens this stage."
@@ -142,7 +164,12 @@ export default function DesignSection({ workspace }: SectionProps) {
           </p>
           <div className="ml-auto flex flex-wrap items-center gap-2">
             {comparison.ready && !confirmed ? (
-              <Button variant="secondary" icon={<GitCompareArrows />} loading={proposingComparison} onClick={() => void proposeComparison()}>
+              <Button
+                variant="secondary"
+                icon={<GitCompareArrows />}
+                loading={proposingComparison}
+                onClick={() => void proposeComparison()}
+              >
                 Propose the comparison
               </Button>
             ) : null}
@@ -156,7 +183,12 @@ export default function DesignSection({ workspace }: SectionProps) {
         <div className="flex min-w-0 flex-col gap-4">
           {confirmed && all.length ? (
             <Card as="section" aria-labelledby="confirmed-design">
-              <CardHeader id="confirmed-design" title="The confirmed design" hint="What the accepted proposals add up to. The engine runs from this and from nothing else." level={2} />
+              <CardHeader
+                id="confirmed-design"
+                title="The confirmed design"
+                hint="What the accepted proposals add up to. The engine runs from this and from nothing else."
+                level={2}
+              />
               <CardBody>
                 <StageSummary stage="design" proposals={all} />
               </CardBody>
@@ -175,7 +207,9 @@ export default function DesignSection({ workspace }: SectionProps) {
             allDecided={
               confirmed ? null : (
                 <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
-                  <p className="text-[13px] text-muted">Next: confirm the design. It shows exactly what it covers first.</p>
+                  <p className="text-[13px] text-muted">
+                    Next: confirm the design. It shows exactly what it covers first.
+                  </p>
                   <div className="ml-auto">
                     <ConfirmStage sid={sid} stage="design" status={status} size="sm" />
                   </div>
@@ -192,16 +226,32 @@ export default function DesignSection({ workspace }: SectionProps) {
           />
           {confirmed && all.length ? (
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
-              <p className="text-[13px] text-muted">The curves stage is open: check which wells amplified.</p>
+              <p className="text-[13px] text-muted">
+                The curves stage is open: check which wells amplified.
+              </p>
               <Button className="ml-auto" variant="primary" onClick={() => go("curves")}>
                 Go to Curves
               </Button>
             </div>
           ) : null}
         </div>
-        <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:self-start xl:overflow-y-auto xl:pb-2 qp-scroll" aria-label="Plate and file">
-          <DesignPlate sid={sid} runs={summary?.runs ?? []} quotes={quotes.lookup} highlight={highlight} onShowProposals={showWell} />
-          <FileFacts facts={workspace.facts} summary={summary} analysed={workspace.results_visible} warming={isWarming(list.error)} />
+        <aside
+          className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:self-start xl:overflow-y-auto xl:pb-2 qp-scroll"
+          aria-label="Plate and file"
+        >
+          <DesignPlate
+            sid={sid}
+            runs={summary?.runs ?? []}
+            quotes={quotes.lookup}
+            highlight={highlight}
+            onShowProposals={showWell}
+          />
+          <FileFacts
+            facts={workspace.facts}
+            summary={summary}
+            analysed={workspace.results_visible}
+            warming={isWarming(list.error)}
+          />
         </aside>
       </div>
       <WellCurveDialog sid={sid} well={well} onClose={() => setWell(null)} />

@@ -8,8 +8,12 @@ import { Badge, CheckTag, type Tone } from "@/ui";
 import type { AgentActivity, RequestState } from "./types";
 
 /** Identifies an agent's request across the activity list and the waiting list. */
-export const requestKey = (r: { key: string; card_id?: string | null; option?: string | null; at: string }) =>
-  `${r.key}|${r.card_id ?? ""}|${r.option ?? ""}|${r.at}`;
+export const requestKey = (r: {
+  key: string;
+  card_id?: string | null;
+  option?: string | null;
+  at: string;
+}) => `${r.key}|${r.card_id ?? ""}|${r.option ?? ""}|${r.at}`;
 
 const REQUEST_STATE: Record<RequestState, { word: string; tone: Tone }> = {
   waiting: { word: "Waiting for a person", tone: "warn" },
@@ -22,7 +26,8 @@ const REQUEST_STATE: Record<RequestState, { word: string; tone: Tone }> = {
 /** A status word and tone for a chain entry's or a proposal's status. */
 function statusOf(a: AgentActivity, waiting: Set<string>): { word: string; tone: Tone } {
   // The log keeps a request as it was written; what became of it is a later entry's.
-  if (a.kind === "decision" && a.request_state && a.request_state in REQUEST_STATE) return REQUEST_STATE[a.request_state];
+  if (a.kind === "decision" && a.request_state && a.request_state in REQUEST_STATE)
+    return REQUEST_STATE[a.request_state];
   if (a.kind === "decision" && a.status === "pending_human" && !waiting.has(requestKey(a)))
     return { word: "Answered by a person", tone: "neutral" };
   if (a.kind === "decision") {
@@ -32,7 +37,13 @@ function statusOf(a: AgentActivity, waiting: Set<string>): { word: string; tone:
     const word = STATUS_WORDS[a.status as keyof typeof STATUS_WORDS];
     if (word) {
       const tone: Tone =
-        a.status === "proposed" ? "warn" : a.status === "rejected" ? "danger" : a.status === "superseded" ? "neutral" : "ok";
+        a.status === "proposed"
+          ? "warn"
+          : a.status === "rejected"
+            ? "danger"
+            : a.status === "superseded"
+              ? "neutral"
+              : "ok";
       return { word, tone };
     }
   }
@@ -53,13 +64,19 @@ export function ActivityList({
   where: (item: AgentActivity) => ReactNode;
 }) {
   return (
-    <ol className="flex flex-col divide-y divide-line" aria-label="Recent agent activity, newest first">
+    <ol
+      className="flex flex-col divide-y divide-line"
+      aria-label="Recent agent activity, newest first"
+    >
       {items.map((a, i) => {
         const s = statusOf(a, waiting);
         const place = where(a);
         const check = a.check && a.check in CHECK ? (a.check as CheckStatus) : null;
         return (
-          <li key={`${a.kind}-${a.proposal_id ?? a.card_id}-${a.at}-${i}`} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+          <li
+            key={`${a.kind}-${a.proposal_id ?? a.card_id}-${a.at}-${i}`}
+            className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
+          >
             <span
               className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-muted [&_svg]:size-3.5"
               aria-hidden

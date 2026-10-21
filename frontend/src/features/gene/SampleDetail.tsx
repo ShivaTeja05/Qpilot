@@ -18,13 +18,32 @@ export function SampleDetail({
 }) {
   const group = samples.groups[point.group];
   const flags = [
-    point.carries ? <Badge key="carries" tone="warn">Leaving it out changes the call</Badge> : null,
-    point.nondetect ? <Badge key="nd" tone="warn">No Cq: never amplified</Badge> : null,
-    point.late ? <Badge key="late" tone="warn">Late Cq (above {samples.late_cut})</Badge> : null,
-    point.flagged ? <Badge key="flag" tone="warn">Flagged by LinRegPCR</Badge> : null,
+    point.carries ? (
+      <Badge key="carries" tone="warn">
+        Leaving it out changes the call
+      </Badge>
+    ) : null,
+    point.nondetect ? (
+      <Badge key="nd" tone="warn">
+        No Cq: never amplified
+      </Badge>
+    ) : null,
+    point.late ? (
+      <Badge key="late" tone="warn">
+        Late Cq (above {samples.late_cut})
+      </Badge>
+    ) : null,
+    point.flagged ? (
+      <Badge key="flag" tone="warn">
+        Flagged by LinRegPCR
+      </Badge>
+    ) : null,
   ].filter(Boolean);
   return (
-    <section aria-label={`Sample ${point.sample}`} className="mt-4 rounded-lg border border-line-strong bg-surface-2 p-3">
+    <section
+      aria-label={`Sample ${point.sample}`}
+      className="mt-4 rounded-lg border border-line-strong bg-surface-2 p-3"
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-fg">Sample {point.sample}</h3>

@@ -49,7 +49,12 @@ export interface DecisionsView {
 
 /** The server's chain view in the Record section's shape. */
 export function fromApi(view: DecisionsApi): DecisionsView {
-  const entries = view.entries.map((e) => ({ ...e.entry, card_title: e.card_title, option_label: e.option_label, undo: e.undo }));
+  const entries = view.entries.map((e) => ({
+    ...e.entry,
+    card_title: e.card_title,
+    option_label: e.option_label,
+    undo: e.undo,
+  }));
   return {
     study_id: view.study_id,
     root: view.root || entries[0]?.prev_hash || null,

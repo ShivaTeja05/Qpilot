@@ -58,11 +58,15 @@ export const INSTRUCTION_TEXT =
 
 // Control characters and bidirectional overrides can hide or reorder what a text says.
 // eslint-disable-next-line no-control-regex
-const INVISIBLE = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g;
+const INVISIBLE =
+  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g;
 
 /** A quoted text with invisible and direction-changing characters made visible. */
 export function visibleText(value: string): string {
-  return value.replace(INVISIBLE, (c) => `⟨U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}⟩`);
+  return value.replace(
+    INVISIBLE,
+    (c) => `⟨U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}⟩`,
+  );
 }
 
 /** What each engine rule can refute (the method card's one line). */
@@ -74,9 +78,12 @@ export const RULE_WORDS: Record<string, string> = {
   "D-REP":
     "Technical replicates must agree within the Poisson-aware tolerance 2.1/ln(E) · √(0.15² + 1/N); only a warning when the copy number is unknown.",
   "D-SYMBOL": "A gene symbol must be the approved HGNC symbol for the target's name.",
-  "D-COVER": "Every well must end up with exactly one role, and a role must name a sample or well that exists.",
-  "D-NGUARD": "Each group of a comparison needs at least two biological units (otherwise no p-value is given).",
-  "D-CURVE": "The well's curve as LinRegPCR fitted it (an exponential phase, a plateau, a quantity).",
+  "D-COVER":
+    "Every well must end up with exactly one role, and a role must name a sample or well that exists.",
+  "D-NGUARD":
+    "Each group of a comparison needs at least two biological units (otherwise no p-value is given).",
+  "D-CURVE":
+    "The well's curve as LinRegPCR fitted it (an exponential phase, a plateau, a quantity).",
 };
 
 /** A rule's short name, shown on its chip next to the id. */

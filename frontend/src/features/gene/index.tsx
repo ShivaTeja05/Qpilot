@@ -29,7 +29,14 @@ import {
   type GeneRow,
 } from "./api";
 import { effectChoiceRows, geneCardRefs, gridDots } from "./adapters";
-import { AuditInvite, AuditReading, OneChoice, WhatHolds, YourSamples, type Source } from "./AuditParts";
+import {
+  AuditInvite,
+  AuditReading,
+  OneChoice,
+  WhatHolds,
+  YourSamples,
+  type Source,
+} from "./AuditParts";
 import { GeneHeader, GeneNav } from "./GeneHeader";
 import { neighbours, resolveGene } from "./nav";
 import { SampleDetail } from "./SampleDetail";
@@ -59,7 +66,13 @@ function Page({ children }: { children: ReactNode }) {
   return <div className="mx-auto w-full max-w-[1400px]">{children}</div>;
 }
 
-function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; wanted: string | undefined }) {
+function GenePage({
+  workspace,
+  wanted,
+}: {
+  workspace: Schemas["WorkspaceView"];
+  wanted: string | undefined;
+}) {
   const scope = useMemo(() => scopeOf(workspace), [workspace]);
   const [, navigate] = useLocation();
   const qc = useQueryClient();
@@ -80,7 +93,8 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   // `[` and `]` should open at once: read the neighbours while this gene is on screen.
   useEffect(() => {
     if (!gene.data || !scope.studyId) return;
-    for (const n of [near.next, near.prev]) if (n) void qc.prefetchQuery({ ...geneQuery(scope, n), staleTime: 60_000 });
+    for (const n of [near.next, near.prev])
+      if (n) void qc.prefetchQuery({ ...geneQuery(scope, n), staleTime: 60_000 });
   }, [gene.data, near.next, near.prev, qc, scope]);
 
   useHotkeys({
@@ -90,7 +104,8 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
 
   // A misspelt or lower-case gene in the link: show the study's spelling.
   useEffect(() => {
-    if (wanted && geneName && geneName !== wanted) navigate(sectionPath(workspace, "gene", geneName), { replace: true });
+    if (wanted && geneName && geneName !== wanted)
+      navigate(sectionPath(workspace, "gene", geneName), { replace: true });
   }, [wanted, geneName, workspace, navigate]);
 
   // ---- the audit
@@ -98,7 +113,8 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   const statusMissing = isNotFound(status.error);
   const audited = status.data?.status === "ready";
   // The first read of an audit loads its live views (~15 s); the views wait for that job.
-  const warming = audited && status.data && !status.data.views_ready ? (status.data.loading ?? null) : null;
+  const warming =
+    audited && status.data && !status.data.views_ready ? (status.data.loading ?? null) : null;
   const auditOutdated = status.data?.current === false ? (status.data.decisions_since ?? 0) : 0;
   const card = useAuditView(scope, "gene", geneName, audited);
   const notCovered = audited && isNotFound(card.error);
@@ -127,7 +143,9 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   const [selected, setSelected] = useState<{ gene: string | null; sample: string } | null>(null);
   const selectedSample = selected?.gene === geneName ? selected.sample : null;
   const selectSample = (sample: string) => setSelected({ gene: geneName, sample });
-  const point = selectedSample ? samples.data?.points.find((p) => p.sample === selectedSample) : undefined;
+  const point = selectedSample
+    ? samples.data?.points.find((p) => p.sample === selectedSample)
+    : undefined;
 
   const labels = groupLabels(results.data);
   const rule = results.data?.rule;
@@ -150,7 +168,12 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
     return (
       <Page>
         {nav}
-        <GeneChooser workspace={workspace} genes={results.data?.genes} error={results.error} onRetry={() => void results.refetch()} />
+        <GeneChooser
+          workspace={workspace}
+          genes={results.data?.genes}
+          error={results.error}
+          onRetry={() => void results.refetch()}
+        />
       </Page>
     );
   }
@@ -158,7 +181,8 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
   if (gene.error && !gene.data) {
     const isRef = geneName != null && used.includes(geneName);
     // Only the study's own gene list can say a gene is not there (a 404 may also be a route).
-    const unknown = Boolean(results.data) && !order.includes(geneName ?? "") && isNotFound(gene.error);
+    const unknown =
+      Boolean(results.data) && !order.includes(geneName ?? "") && isNotFound(gene.error);
     return (
       <Page>
         {nav}
@@ -166,16 +190,23 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
           <>
             <h1 className="mb-1 text-[32px] font-semibold tracking-tight text-fg">{geneName}</h1>
             <p className="mb-6 text-sm text-muted">
-              A reference gene: the other genes are normalised to it, so it is not compared between the groups itself.
+              A reference gene: the other genes are normalised to it, so it is not compared between
+              the groups itself.
             </p>
             <ReferenceStability gene={geneName} genorm={references} />
           </>
         ) : unknown ? (
           <ErrorPanel title={`No gene called “${wanted}” in this study`} error={gene.error}>
-            <p className="mt-2 text-[13px] text-muted">Pick one with the menu above, or go back to all genes.</p>
+            <p className="mt-2 text-[13px] text-muted">
+              Pick one with the menu above, or go back to all genes.
+            </p>
           </ErrorPanel>
         ) : (
-          <ErrorPanel title={`${wanted} could not be opened`} error={gene.error} onRetry={() => void gene.refetch()} />
+          <ErrorPanel
+            title={`${wanted} could not be opened`}
+            error={gene.error}
+            onRetry={() => void gene.refetch()}
+          />
         )}
       </Page>
     );
@@ -212,13 +243,18 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
     />
   );
   const notCoveredNote = notCovered ? (
-    <p className="text-[13px] text-muted">The audit does not cover {g.gene}: {String((card.error as Error).message)}</p>
+    <p className="text-[13px] text-muted">
+      The audit does not cover {g.gene}: {String((card.error as Error).message)}
+    </p>
   ) : null;
 
   return (
     <Page>
       {nav}
-      <div className={cn("transition-opacity duration-150", gene.isPlaceholderData && "opacity-60")} aria-busy={gene.isPlaceholderData}>
+      <div
+        className={cn("transition-opacity duration-150", gene.isPlaceholderData && "opacity-60")}
+        aria-busy={gene.isPlaceholderData}
+      >
         <GeneHeader
           view={view}
           labels={labels}
@@ -228,7 +264,13 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
           minLog2fc={rule?.min_log2fc}
           ruleText={rule?.text}
           auditOutdated={auditOutdated}
-          summary={geneSummary({ gene: g, labels, audit: auditCard, studyId: scope.studyId, chainHead: results.data?.head ?? workspace.decisions_head })}
+          summary={geneSummary({
+            gene: g,
+            labels,
+            audit: auditCard,
+            studyId: scope.studyId,
+            chainHead: results.data?.head ?? workspace.decisions_head,
+          })}
         />
         <JumpList hasAudit={Boolean(auditCard)} />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -269,15 +311,23 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
                     point={point}
                     samples={samples.data}
                     onClose={() => setSelected(null)}
-                    curve={<WellCurve workspace={workspace} scope={scope} plate={point.plate} well={point.well} gene={g.gene} />}
+                    curve={
+                      <WellCurve
+                        workspace={workspace}
+                        scope={scope}
+                        plate={point.plate}
+                        well={point.well}
+                        gene={g.gene}
+                      />
+                    }
                   />
                 ) : null
               }
               invite={
                 notCoveredNote ?? (
                   <EmptyState compact title="Each sample's value comes from the audit">
-                    The audit's engine computes every sample's value under any set of choices. Run it from “What
-                    holds” above; then click a sample to open its well.
+                    The audit's engine computes every sample's value under any set of choices. Run
+                    it from “What holds” above; then click a sample to open its well.
                   </EmptyState>
                 )
               }
@@ -288,7 +338,10 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
                 onSample={(s) => {
                   selectSample(s);
                   const el = document.getElementById("gene-samples");
-                  el?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+                  el?.scrollIntoView({
+                    behavior: reducedMotion ? "auto" : "smooth",
+                    block: "start",
+                  });
                   el?.focus({ preventScroll: true });
                 }}
               />
@@ -298,7 +351,9 @@ function GenePage({ workspace, wanted }: { workspace: Schemas["WorkspaceView"]; 
             <GeneCards workspace={workspace} gene={g.gene} cards={geneCards} />
             <AssayWells efficiency={g.efficiency} lab={covered ? lab.data : null} />
             <ReferenceStability gene={g.gene} genorm={references} lab={covered ? lab.data : null} />
-            {workspace.kind === "session" ? <PrismCard workspace={workspace} gene={g.gene} /> : null}
+            {workspace.kind === "session" ? (
+              <PrismCard workspace={workspace} gene={g.gene} />
+            ) : null}
           </aside>
         </div>
       </div>
@@ -360,11 +415,15 @@ function GeneChooser({
         The study has no gene of interest compared between groups.
       </EmptyState>
     );
-  const sorted = [...genes].sort((a, b) => Number(Boolean(b.headline)) - Number(Boolean(a.headline)));
+  const sorted = [...genes].sort(
+    (a, b) => Number(Boolean(b.headline)) - Number(Boolean(a.headline)),
+  );
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight text-fg">Choose a gene</h1>
-      <p className="mt-1 mb-5 text-sm text-muted">Every gene has its own page: its result, what holds, its samples and its wells.</p>
+      <p className="mt-1 mb-5 text-sm text-muted">
+        Every gene has its own page: its result, what holds, its samples and its wells.
+      </p>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2">
         {sorted.map((g) => (
           <li key={g.gene}>

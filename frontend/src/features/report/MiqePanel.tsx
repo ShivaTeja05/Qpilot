@@ -13,12 +13,20 @@ import { MIQE, MIQE_ORDER } from "./words";
 
 type Filter = MiqeStatus | "all";
 
-export function MiqeRing({ counts, size = 112 }: { counts: Record<string, number>; size?: number }) {
+export function MiqeRing({
+  counts,
+  size = 112,
+}: {
+  counts: Record<string, number>;
+  size?: number;
+}) {
   const total = MIQE_ORDER.reduce((n, s) => n + (counts[s] ?? 0), 0);
   const r = size / 2 - 9;
   const circ = 2 * Math.PI * r;
   let offset = 0;
-  const label = MIQE_ORDER.map((s) => `${count(counts[s] ?? 0)} ${MIQE[s].word.toLowerCase()}`).join(", ");
+  const label = MIQE_ORDER.map(
+    (s) => `${count(counts[s] ?? 0)} ${MIQE[s].word.toLowerCase()}`,
+  ).join(", ");
   return (
     <svg
       width={size}
@@ -28,7 +36,14 @@ export function MiqeRing({ counts, size = 112 }: { counts: Record<string, number
       aria-label={`MIQE 2.0 items by status: ${label}.`}
       className="shrink-0"
     >
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={12} className="stroke-sunken" />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        strokeWidth={12}
+        className="stroke-sunken"
+      />
       {total
         ? MIQE_ORDER.map((s) => {
             const n = counts[s] ?? 0;
@@ -52,7 +67,12 @@ export function MiqeRing({ counts, size = 112 }: { counts: Record<string, number
             return el;
           })
         : null}
-      <text x="50%" y="47%" textAnchor="middle" className="fill-fg text-[20px] font-semibold tabular">
+      <text
+        x="50%"
+        y="47%"
+        textAnchor="middle"
+        className="fill-fg text-[20px] font-semibold tabular"
+      >
         {count(counts.met ?? 0)}/{count(total)}
       </text>
       <text x="50%" y="63%" textAnchor="middle" className="fill-muted text-[11px]">
@@ -100,7 +120,8 @@ export function MiqePanel({ miqe, facts }: { miqe: ReportView["miqe"]; facts: Fa
                 <span className={cn("font-semibold", MIQE[s].text)} aria-hidden>
                   {MIQE[s].glyph}
                 </span>
-                {MIQE[s].word} <span className="tabular font-medium text-fg">{count(miqe.counts[s] ?? 0)}</span>
+                {MIQE[s].word}{" "}
+                <span className="tabular font-medium text-fg">{count(miqe.counts[s] ?? 0)}</span>
               </li>
             ))}
           </ul>
@@ -123,7 +144,10 @@ export function MiqePanel({ miqe, facts }: { miqe: ReportView["miqe"]; facts: Fa
           ]}
         />
         <div className="relative min-w-[180px] flex-1 sm:max-w-[260px]">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-faint" aria-hidden />
+          <Search
+            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-faint"
+            aria-hidden
+          />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -141,7 +165,9 @@ export function MiqePanel({ miqe, facts }: { miqe: ReportView["miqe"]; facts: Fa
       ) : (
         sections.map(({ section, items }) => (
           <section key={section} aria-label={section}>
-            <h3 className="mb-1.5 text-[12px] font-semibold tracking-wide text-muted uppercase">{section}</h3>
+            <h3 className="mb-1.5 text-[12px] font-semibold tracking-wide text-muted uppercase">
+              {section}
+            </h3>
             <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
               {items.map((item) => (
                 <Item key={item.id} item={item} facts={facts} />

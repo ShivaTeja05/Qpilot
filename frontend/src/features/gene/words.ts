@@ -12,7 +12,10 @@ export const DIMENSION: Record<string, { name: string; short: string }> = {
   refs: { name: "Which control genes to normalise to", short: "Control genes" },
   cut: { name: "Where to cut the comparison groups", short: "Group cut-off" },
   amp_call: { name: "Which curves count as amplified", short: "Amplification call" },
-  undetermined: { name: "What to do with wells that never amplified", short: "Wells that never amplified" },
+  undetermined: {
+    name: "What to do with wells that never amplified",
+    short: "Wells that never amplified",
+  },
   efficiency: { name: "Which amplification efficiency to use", short: "Efficiency" },
   nondetect: { name: "What to do with a missing Cq", short: "Missing Cq" },
 };
@@ -32,13 +35,19 @@ export function checkName(id: string): string {
 }
 
 /** The two groups' labels: the high group first, then the rest. */
-export function groupLabels(results: Pick<ResultsView, "summary"> | null | undefined): { hi: string; lo: string } {
+export function groupLabels(results: Pick<ResultsView, "summary"> | null | undefined): {
+  hi: string;
+  lo: string;
+} {
   const groups = results?.summary?.groups ?? [];
   return { hi: groups[0]?.label ?? "the high group", lo: groups[1]?.label ?? "the rest" };
 }
 
 /** "3.32× higher in MYCN-high than in the rest" / "3.40× lower …" / "no change called". */
-export function directionWords(gene: Pick<GeneRow, "fc" | "conclusion">, labels: { hi: string; lo: string }): string {
+export function directionWords(
+  gene: Pick<GeneRow, "fc" | "conclusion">,
+  labels: { hi: string; lo: string },
+): string {
   const fc = gene.fc;
   if (!(fc > 0)) return "";
   const higher = fc >= 1;
@@ -88,6 +97,9 @@ export function geneSummary({
     lines.push(`Audit verdict: ${audit.label}. ${audit.result.verdict_sentence}`);
     if (audit.todo.length) lines.push(`What to do: ${audit.todo.join(" ")}`);
   }
-  if (studyId) lines.push(`qPilot study ${studyId}${chainHead ? `, decision chain ${chainHead.slice(0, 12)}` : ""}. Research use only.`);
+  if (studyId)
+    lines.push(
+      `qPilot study ${studyId}${chainHead ? `, decision chain ${chainHead.slice(0, 12)}` : ""}. Research use only.`,
+    );
   return lines.join("\n");
 }

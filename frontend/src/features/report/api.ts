@@ -25,7 +25,9 @@ export function useReport(workspaceKey: string, studyId: string | null | undefin
     queryKey: ["w", workspaceKey, "report", studyId],
     enabled: Boolean(studyId),
     queryFn: () =>
-      unwrap(api.GET("/api/studies/{study_id}/report", { params: { path: { study_id: studyId! } } })),
+      unwrap(
+        api.GET("/api/studies/{study_id}/report", { params: { path: { study_id: studyId! } } }),
+      ),
   });
 }
 
@@ -36,7 +38,9 @@ export function useReportExports(workspaceKey: string, studyId: string | null | 
     enabled: Boolean(studyId),
     queryFn: () =>
       unwrap(
-        api.GET("/api/studies/{study_id}/report/exports", { params: { path: { study_id: studyId! } } }),
+        api.GET("/api/studies/{study_id}/report/exports", {
+          params: { path: { study_id: studyId! } },
+        }),
       ),
   });
 }
@@ -65,11 +69,14 @@ export function useExportReport(
 /** Re-read the list of written files (a job finished). */
 export function useRefreshExports(workspaceKey: string, studyId: string | null | undefined) {
   const qc = useQueryClient();
-  return () => void qc.invalidateQueries({ queryKey: ["w", workspaceKey, "report-exports", studyId] });
+  return () =>
+    void qc.invalidateQueries({ queryKey: ["w", workspaceKey, "report-exports", studyId] });
 }
 
 /** A job's result, if it has the shape of a written report file. */
 export function asExported(result: unknown): ReportExported | null {
   const r = result as Partial<ReportExported> | null | undefined;
-  return r && typeof r.format === "string" && typeof r.download?.url === "string" ? (r as ReportExported) : null;
+  return r && typeof r.format === "string" && typeof r.download?.url === "string"
+    ? (r as ReportExported)
+    : null;
 }

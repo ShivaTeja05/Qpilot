@@ -22,7 +22,11 @@ export function useDecisions(workspaceKey: string, studyId: string | null | unde
 }
 
 /** Start exporting the Analysis Record; the answer names the job to follow (its card says the rest). */
-export function useExportRecord(workspaceKey: string, studyId: string | null | undefined, onJob: (id: string) => void) {
+export function useExportRecord(
+  workspaceKey: string,
+  studyId: string | null | undefined,
+  onJob: (id: string) => void,
+) {
   return useWrite<string | null | undefined, { job: JobView }>({
     workspaceKey,
     mutationFn: async (expectedHead) => {
@@ -44,7 +48,10 @@ export function useRecords(workspaceKey: string, studyId: string | null | undefi
   return useQuery({
     queryKey: ["w", workspaceKey, "records", studyId],
     enabled: Boolean(studyId),
-    queryFn: () => unwrap(api.GET("/api/studies/{study_id}/records", { params: { path: { study_id: studyId! } } })),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/studies/{study_id}/records", { params: { path: { study_id: studyId! } } }),
+      ),
   });
 }
 

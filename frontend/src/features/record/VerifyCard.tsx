@@ -28,7 +28,10 @@ function names(list: string[], n = 4): string {
 }
 
 /** A verify report (and the audit binding) as one row per check, in plain words. */
-export function verifyRows(r: VerifyReport, result?: Pick<VerifyResult, "audit" | "audit_note">): CheckRow[] {
+export function verifyRows(
+  r: VerifyReport,
+  result?: Pick<VerifyResult, "audit" | "audit_note">,
+): CheckRow[] {
   const fileProblems = r.changed.length + r.missing.length + r.unlisted.length;
   const rows: CheckRow[] = [
     {
@@ -108,7 +111,11 @@ const STATE_ICON: Record<CheckState, ReactNode> = {
   fail: <XCircle className="text-danger" aria-hidden />,
   absent: <MinusCircle className="text-faint" aria-hidden />,
 };
-const STATE_WORD: Record<CheckState, string> = { pass: "passed", fail: "failed", absent: "not checked" };
+const STATE_WORD: Record<CheckState, string> = {
+  pass: "passed",
+  fail: "failed",
+  absent: "not checked",
+};
 
 export function VerifyResultView({ result, size }: { result: VerifyResult; size?: number | null }) {
   const rows = verifyRows(result.report, result);
@@ -130,7 +137,9 @@ export function VerifyResultView({ result, size }: { result: VerifyResult; size?
             {result.ok
               ? "Nothing in it was altered since qPilot wrote it."
               : "Something in it changed after it was written. Do not rely on it; ask its author for the original zip."}{" "}
-            <span className="font-mono text-[12px] [overflow-wrap:anywhere]">{result.file_name}</span>
+            <span className="font-mono text-[12px] [overflow-wrap:anywhere]">
+              {result.file_name}
+            </span>
             {size != null ? <span className="text-faint"> · {bytes(size)}</span> : null}
           </p>
         </div>
@@ -154,7 +163,14 @@ export function VerifyResultView({ result, size }: { result: VerifyResult; size?
         <KeyValues
           className="mt-1.5"
           rows={[
-            ["Study", facts.study_id ? <span className="font-mono text-[12px]">{facts.study_id}</span> : "not stated"],
+            [
+              "Study",
+              facts.study_id ? (
+                <span className="font-mono text-[12px]">{facts.study_id}</span>
+              ) : (
+                "not stated"
+              ),
+            ],
             ["Record", <Hash key="r" value={facts.record_id} length={12} />],
             ["Chain head", <Hash key="h" value={facts.chain_head} />],
             ["Input file", <Hash key="i" value={facts.input_sha256} prefix="sha256" />],
@@ -167,7 +183,10 @@ export function VerifyResultView({ result, size }: { result: VerifyResult; size?
                   ? "with the input file"
                   : "not stated",
             ],
-            ["In this qPilot", result.known_study ? "yes, this study is in this qPilot's store" : "no"],
+            [
+              "In this qPilot",
+              result.known_study ? "yes, this study is in this qPilot's store" : "no",
+            ],
           ]}
         />
       </div>
@@ -214,16 +233,25 @@ export function VerifyCard() {
           className={cn(
             "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-center transition-colors duration-150",
             "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus",
-            over ? "border-accent bg-accent-soft" : "border-line-strong hover:border-faint hover:bg-bg-subtle",
+            over
+              ? "border-accent bg-accent-soft"
+              : "border-line-strong hover:border-faint hover:bg-bg-subtle",
           )}
         >
-          <span className="flex size-9 items-center justify-center rounded-full bg-bg-subtle text-muted [&_svg]:size-4" aria-hidden>
+          <span
+            className="flex size-9 items-center justify-center rounded-full bg-bg-subtle text-muted [&_svg]:size-4"
+            aria-hidden
+          >
             {file ? <FileArchive /> : <Upload />}
           </span>
           <span className="text-sm font-medium text-fg">
             {file ? <span className="break-all">{file.name}</span> : "Drop a record .zip here"}
           </span>
-          <span className="text-xs text-muted">{file ? `${bytes(file.size)} · drop another to check it` : "or choose a file (up to 200 MB)"}</span>
+          <span className="text-xs text-muted">
+            {file
+              ? `${bytes(file.size)} · drop another to check it`
+              : "or choose a file (up to 200 MB)"}
+          </span>
           <input
             ref={input}
             id={inputId}
@@ -239,13 +267,21 @@ export function VerifyCard() {
 
         {verify.isPending ? (
           <p className="flex items-center gap-2 text-[13px] text-muted" role="status">
-            <ShieldCheck className="size-4 animate-pulse text-accent motion-reduce:animate-none" aria-hidden /> Checking{" "}
-            {file?.name}…
+            <ShieldCheck
+              className="size-4 animate-pulse text-accent motion-reduce:animate-none"
+              aria-hidden
+            />{" "}
+            Checking {file?.name}…
           </p>
         ) : verify.error ? (
           <ErrorPanel compact error={verify.error} title="This file could not be checked">
             {/* A refusal (not a zip, not a record, too large) will not change on a retry. */}
-            {file && !(verify.error instanceof ApiError && verify.error.status >= 400 && verify.error.status < 500) ? (
+            {file &&
+            !(
+              verify.error instanceof ApiError &&
+              verify.error.status >= 400 &&
+              verify.error.status < 500
+            ) ? (
               <Button size="sm" variant="secondary" className="mt-3" onClick={() => check(file)}>
                 Try again
               </Button>

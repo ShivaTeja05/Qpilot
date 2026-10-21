@@ -59,7 +59,10 @@ export function useAnswerRequest(workspaceKey: string | null | undefined, onDone
     },
     success: (done, { request, verdict }) => {
       if (done.outcome.status === "stale")
-        return { title: "Something was decided on this card first", description: "Here is the current state; look again." };
+        return {
+          title: "Something was decided on this card first",
+          description: "Here is the current state; look again.",
+        };
       const what = `${cardTitle(request)} → ${optionLabel(request)}`;
       return {
         title: verdict === "approve" ? `Approved: ${what}` : `Turned down: ${what}`,

@@ -60,7 +60,10 @@ export function RequestItem({
   return (
     <li className="rounded-xl border border-warn/30 bg-surface">
       <div className="flex items-start gap-3 p-4">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-info/40 text-info [&_svg]:size-4" aria-hidden>
+        <span
+          className="flex size-9 shrink-0 items-center justify-center rounded-full border border-info/40 text-info [&_svg]:size-4"
+          aria-hidden
+        >
           <Bot />
         </span>
         <div className="min-w-0 flex-1">
@@ -127,10 +130,20 @@ export function RequestItem({
             </div>
           ) : (
             <div className={cn("mt-3 flex flex-wrap items-center gap-2")}>
-              <Button size="sm" variant="primary" icon={<Check />} onClick={() => setMode("approve")}>
+              <Button
+                size="sm"
+                variant="primary"
+                icon={<Check />}
+                onClick={() => setMode("approve")}
+              >
                 Approve…
               </Button>
-              <Button size="sm" variant="secondary" icon={<X />} onClick={() => setMode("turn_down")}>
+              <Button
+                size="sm"
+                variant="secondary"
+                icon={<X />}
+                onClick={() => setMode("turn_down")}
+              >
                 Turn down…
               </Button>
               {seeCard}

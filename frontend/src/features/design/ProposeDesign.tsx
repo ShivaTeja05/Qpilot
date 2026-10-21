@@ -31,7 +31,8 @@ export function ProposeReportView({ result }: { result: unknown }) {
       {r.refused?.length ? (
         <details className="text-muted">
           <summary className="cursor-pointer">
-            {count(r.refused.length)} proposal{r.refused.length === 1 ? " was" : "s were"} refused before it reached the inbox
+            {count(r.refused.length)} proposal{r.refused.length === 1 ? " was" : "s were"} refused
+            before it reached the inbox
           </summary>
           <ul className="mt-1 list-disc pl-5">
             {r.refused.map((x, i) => (
@@ -57,7 +58,9 @@ function useProposeDesign(sid: string) {
     setBusy(true);
     try {
       const body = sentence.trim() ? { sentence: sentence.trim() } : {};
-      const started = await unwrap(api.POST("/api/sessions/{sid}/propose/design", { params: { path: { sid } }, body }));
+      const started = await unwrap(
+        api.POST("/api/sessions/{sid}/propose/design", { params: { path: { sid } }, body }),
+      );
       setJob(started.job);
       void refreshWorkspace(qc, sid);
     } catch (err) {
@@ -82,7 +85,10 @@ export function ProposeDesignPanel({ sid, running }: { sid: string; running?: Jo
       className="flex flex-col gap-4 rounded-xl border border-dashed border-line-strong bg-surface px-5 py-6 sm:px-8 sm:py-8"
     >
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong" aria-hidden>
+        <div
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong"
+          aria-hidden
+        >
           <Sparkles className="size-5" />
         </div>
         <div className="min-w-0">
@@ -90,10 +96,10 @@ export function ProposeDesignPanel({ sid, running }: { sid: string; running?: Jo
             Ask for proposals on the design
           </h2>
           <p className="mt-1 max-w-prose text-[13px] text-muted">
-            qPilot's rules read the names in the file (and the model reads them too, when one answers): what each sample
-            is, the groups, the biological units, the reference genes, the gene symbols. Each becomes a proposal the
-            engine checks; nothing is decided until you accept it. No result is shown until you confirm the design and
-            the curves.
+            qPilot's rules read the names in the file (and the model reads them too, when one
+            answers): what each sample is, the groups, the biological units, the reference genes,
+            the gene symbols. Each becomes a proposal the engine checks; nothing is decided until
+            you accept it. No result is shown until you confirm the design and the curves.
           </p>
         </div>
       </div>
@@ -119,7 +125,15 @@ export function ProposeDesignPanel({ sid, running }: { sid: string; running?: Jo
             />
           </Field>
           <div>
-            <Button ref={button} variant="primary" size="lg" icon={<Sparkles />} loading={busy} onClick={() => void start(sentence)} data-action={PROPOSE_LABEL}>
+            <Button
+              ref={button}
+              variant="primary"
+              size="lg"
+              icon={<Sparkles />}
+              loading={busy}
+              onClick={() => void start(sentence)}
+              data-action={PROPOSE_LABEL}
+            >
               {PROPOSE_LABEL}
             </Button>
           </div>
@@ -169,7 +183,14 @@ export function ProposeAgain({ sid, disabled }: { sid: string; disabled?: boolea
         <JobCard id={job.id}>{(result) => <ProposeReportView result={result} />}</JobCard>
       ) : (
         <Field label="One sentence about the experiment" optional htmlFor={`again-${sid}`}>
-          <Textarea id={`again-${sid}`} value={sentence} onChange={(e) => setSentence(e.target.value)} maxLength={MAX_SENTENCE} showCount rows={2} />
+          <Textarea
+            id={`again-${sid}`}
+            value={sentence}
+            onChange={(e) => setSentence(e.target.value)}
+            maxLength={MAX_SENTENCE}
+            showCount
+            rows={2}
+          />
         </Field>
       )}
     </Dialog>

@@ -45,12 +45,18 @@ export type CallKey = "up" | "down" | "none";
 
 /** `GET /api/studies/{id}/results`. */
 function fetchResults(studyId: string) {
-  return unwrap(api.GET("/api/studies/{study_id}/results", { params: { path: { study_id: studyId } } }));
+  return unwrap(
+    api.GET("/api/studies/{study_id}/results", { params: { path: { study_id: studyId } } }),
+  );
 }
 
 /** `GET /api/studies/{id}/genes/{gene}` (404 `not_found` for a gene the study does not compare). */
 function fetchGene(studyId: string, gene: string) {
-  return unwrap(api.GET("/api/studies/{study_id}/genes/{gene}", { params: { path: { study_id: studyId, gene } } }));
+  return unwrap(
+    api.GET("/api/studies/{study_id}/genes/{gene}", {
+      params: { path: { study_id: studyId, gene } },
+    }),
+  );
 }
 
 // The types are the client's own answers (generated from the contract): openapi-fetch reads a
@@ -104,7 +110,9 @@ export function useGene(s: GeneScope, gene: string | null) {
 // ---- the robustness audit's views (api-audit: contract_audit.py; generated types) --------------
 
 const auditPath = (studyId: string) => ({ params: { path: { study_id: studyId } } });
-const auditGenePath = (studyId: string, gene: string) => ({ params: { path: { study_id: studyId, gene } } });
+const auditGenePath = (studyId: string, gene: string) => ({
+  params: { path: { study_id: studyId, gene } },
+});
 
 function fetchAuditStatus(studyId: string) {
   return unwrap(api.GET("/api/studies/{study_id}/audit", auditPath(studyId)));
@@ -113,16 +121,25 @@ function fetchAuditGene(studyId: string, gene: string) {
   return unwrap(api.GET("/api/studies/{study_id}/audit/gene/{gene}", auditGenePath(studyId, gene)));
 }
 function fetchAuditAnalyses(studyId: string, gene: string) {
-  return unwrap(api.GET("/api/studies/{study_id}/audit/analyses/{gene}", auditGenePath(studyId, gene)));
+  return unwrap(
+    api.GET("/api/studies/{study_id}/audit/analyses/{gene}", auditGenePath(studyId, gene)),
+  );
 }
 function fetchAuditEffects(studyId: string, gene: string) {
-  return unwrap(api.GET("/api/studies/{study_id}/audit/effects/{gene}", auditGenePath(studyId, gene)));
+  return unwrap(
+    api.GET("/api/studies/{study_id}/audit/effects/{gene}", auditGenePath(studyId, gene)),
+  );
 }
 function fetchAuditLab(studyId: string, gene: string) {
   return unwrap(api.GET("/api/studies/{study_id}/audit/lab/{gene}", auditGenePath(studyId, gene)));
 }
 function fetchAuditSamples(studyId: string, gene: string, changes: Record<string, string>) {
-  return unwrap(api.POST("/api/studies/{study_id}/audit/samples", { ...auditPath(studyId), body: { gene, changes } }));
+  return unwrap(
+    api.POST("/api/studies/{study_id}/audit/samples", {
+      ...auditPath(studyId),
+      body: { gene, changes },
+    }),
+  );
 }
 
 export type AuditStatus = Awaited<ReturnType<typeof fetchAuditStatus>>;
@@ -161,17 +178,28 @@ const AUDIT_VIEW = {
 } as const;
 type AuditGeneView = keyof typeof AUDIT_VIEW;
 
-export function useAuditView<V extends AuditGeneView>(s: GeneScope, view: V, gene: string | null, enabled: boolean) {
+export function useAuditView<V extends AuditGeneView>(
+  s: GeneScope,
+  view: V,
+  gene: string | null,
+  enabled: boolean,
+) {
   return useQuery({
     queryKey: wkey(s, "audit", view, gene),
     enabled: Boolean(s.studyId && gene) && enabled,
-    queryFn: () => AUDIT_VIEW[view](s.studyId!, gene!) as Promise<Awaited<ReturnType<(typeof AUDIT_VIEW)[V]>>>,
+    queryFn: () =>
+      AUDIT_VIEW[view](s.studyId!, gene!) as Promise<Awaited<ReturnType<(typeof AUDIT_VIEW)[V]>>>,
     staleTime: 5 * 60_000,
   });
 }
 
 /** Each sample's value of this gene under a set of choices (the planned analysis by default). */
-export function useAuditSamples(s: GeneScope, gene: string | null, changes: Record<string, string>, enabled: boolean) {
+export function useAuditSamples(
+  s: GeneScope,
+  gene: string | null,
+  changes: Record<string, string>,
+  enabled: boolean,
+) {
   return useQuery({
     queryKey: wkey(s, "audit", "samples", gene, changes),
     enabled: Boolean(s.studyId && gene) && enabled,
@@ -186,7 +214,9 @@ export function useRunAudit(s: GeneScope) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (again: boolean = false) =>
-      unwrap(api.POST("/api/studies/{study_id}/audit", { ...auditPath(s.studyId!), body: { again } })),
+      unwrap(
+        api.POST("/api/studies/{study_id}/audit", { ...auditPath(s.studyId!), body: { again } }),
+      ),
     onSuccess: () => void qc.invalidateQueries({ queryKey: wkey(s, "audit", "status") }),
   });
 }
