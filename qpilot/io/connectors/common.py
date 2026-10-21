@@ -42,7 +42,10 @@ COLUMNS: dict[str, tuple[str, ...]] = {
 _STEM_TRAILERS = re.compile(
     r"(?i)[\s_-]*(-\s*)?(quantification\s+amplification\s+results|amplification\s+results|"
     r"quantification\s+cq\s+results|quantification\s+summary|quantification\s+results|"
-    r"melt\s+curve\s+(rfu|derivative|peak)\s+results|amplification\s+data|results|"
+    r"melt\s+curve\s+(rfu|derivative|peak|plate\s+view)\s+results|amplification\s+data|"
+    r"run\s+information|end\s+point\s+results|standard\s+curve\s+results|"
+    r"quantification\s+plate\s+view\s+results|allelic\s+discrimination\s+results|"
+    r"gene\s+expression\s+results(\s+-\s+\w+(\s+\w+)?)?|results|"
     r"sample\s+setup|melt\s+curve\s+raw\s+data|multicomponent\s+data|raw\s+data|amp|melt|"
     r"amplification|melting|data|export|cq|ct)(_[A-Za-z0-9 ()-]{1,24})?(_\d+)?$"
 )

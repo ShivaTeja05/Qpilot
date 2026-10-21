@@ -71,6 +71,7 @@ _RUN_INFO_KEYS = {
     "samplevol",
     "lidtemp",
 }
+_DATA_ROLES = ("amplification", "cq", "melt")
 _FLUOR_SUFFIX = re.compile(r"_([A-Za-z0-9][A-Za-z0-9 ()/+-]{0,23})$")
 
 
@@ -128,10 +129,11 @@ class CfxConnector:
         groups: dict[str, list[Source]] = {}
         for source in sources:
             groups.setdefault(plate_stem(source.path.stem).lower(), []).append(source)
-        plates = []
-        for members in groups.values():
-            plates.append(_read_run(members))
-        return plates
+        data = {k: m for k, m in groups.items() if any(s.sniff.role in _DATA_ROLES for s in m)}
+        for key, members in groups.items():  # a lone Run Information sheet joins the only run
+            if key not in data and len(data) == 1:
+                next(iter(data.values())).extend(members)
+        return [_read_run(members) for members in data.values()]
 
 
 def _fluor_from_name(stem: str) -> str:
