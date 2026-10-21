@@ -236,3 +236,15 @@ def test_stakes_and_asked_again(fixture_cards):
     more = cutoff.model_copy(update={"impact": {**cutoff.impact, "n_genes_flipped": 40}})
     assert asked_again(cutoff, more) == "in this analysis the choice changes more conclusions"
     assert carried_from("Undo: back") is None and carried_from(undetermined.reason or "") is None
+
+
+def test_two_carries_at_once_write_one_entry(store, two):
+    from concurrent.futures import ThreadPoolExecutor
+
+    source, target = two
+    before = len(store.entries(target))
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        reports = list(pool.map(lambda _: store.carry_decisions(source, target), range(4)))
+    assert sorted(len(r.carried) for r in reports) == [0, 0, 0, 1]
+    assert len(store.entries(target)) == before + 1
+    assert verify_chain(store.entries(target), store.get(target).input_sha256) is None
