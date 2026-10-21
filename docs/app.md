@@ -46,7 +46,7 @@ One hash-routed page. Global routes: `#/` (Open), `#/settings`. A workspace is e
 | Design (blind) | `…/design` | session | `GET /api/sessions/{sid}` (incl. `capture`: what an export was read as), `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
 | Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards`, decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis` |
-| Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test) |
+| Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
 | Prism | `…/prism` | session, results visible | `/prism/preview|routes|bundles`, `POST /prism/draft|send|roundtrip` → `Studio.preview_prism/propose_prism/send_to_prism/launch_prism/round_trip` |
@@ -138,7 +138,11 @@ and names only, no sample name, no Cq value, no group.
 amplification call (shape + colour), Cq, efficiency or R² (switch), disagreements outlined; a
 gene filter. Click a well → **curve viewer** (uPlot): raw fluorescence by cycle, linear/log
 switch, the Cq marker and baseline when known; neighbouring wells of the same sample overlaid.
-No group labels here.
+No group labels here. A well left out of (or put back into) the analysis is a `curve.exclude_well`
+proposal (subject `run/well`, payload `{"excluded": true|false}`), accepted only with a reason
+and never in "Accept all consistent"; the Controls section makes them from a gate card. Accepted
+after the curves are confirmed, it keeps them confirmed (the confirmation does not cover the
+wells left out) and makes a new analysis, like an accepted Prism exclusion.
 
 ### Results (`features/results`)
 * Summary strip: plates, reactions, samples, groups (n each), the conclusion rule ("up or down
@@ -153,7 +157,24 @@ No group labels here.
 * **Decision Cards** (right column, ranked by impact): question, evidence, each option with what
   it changes for the headline genes, the recommended option, reason (required), **Decide**;
   decided cards collapse with who decided and why, **Undo** (a new chain entry). Agent requests
-  waiting for a person show first, with **Approve** / **Turn down**. **Explain with the model**
+  waiting for a person show first, with **Approve** / **Turn down**.
+* **Choices carried to a new analysis.** When a person's decision changes a session's confirmed
+  design after the curves are confirmed (an accepted Prism exclusion, a well left out or put
+  back), the session moves to another analysis of the file (`Studio._study`), whose design
+  differs only in the wells left out. What a person decided on the earlier analysis's cards is
+  carried to it (`StudyStore.carry_decisions`): one new
+  chain entry per card, `actor` human, `applied`, reason `Carried from analysis <study> (entry
+  <hash>): <the person's words>`, so the hashed entry names where it came from; the card shows
+  **Carried** and its status line says from where. Never carried: the system's automatic
+  decisions (the new analysis makes its own), agents' choices and requests, a card or option the
+  new analysis lacks, a decision already carried there once (a later change stands), a card with
+  an agent's request waiting, and a choice that **matters more** in the new analysis (it can
+  change a conclusion, or more or other ones, where it could not before): that card says what
+  the person chose and why it is asked again. The **choices stage is not carried**: its
+  confirmation is a person's statement about one analysis's cards, so a person confirms again
+  (one click when every card is decided). A design changed in a blind stage and confirmed again
+  is another question: its cards start afresh. A reason typed as `Carried from analysis…` is
+  refused. **Explain with the model**
   (only when a model answers; numbers in the explanation are facts, cited).
 * `j`/`k` move between cards, `Enter` focuses the reason, `⌘Enter` decides.
 * **Also test efficiency models** (under the cards; `ResultsView.axes`, opt-in): what qPilot does
@@ -186,10 +207,24 @@ analysis in use (each card's applied option, the planned one elsewhere).
   its row.
 * **Decision Cards from the controls**: the `gate.rule` cards (only when leaving the wells out can
   change a conclusion: open when it changes a call at the analysis in use, decided automatically
-  to keep when it changes one only at other settings; either way an agent must ask a person),
-  read-only in the Decision Card language, with a link to Curves (session) or Trace (study).
-  Deciding a gate card is not wired to the store: a gate card has no grid dimension; wells are
-  left out in Curves, which analyses the study again.
+  to keep when it changes one only at other settings; either way an agent must ask a person), in
+  the Decision Card language. A gate card has no grid dimension, so it is not decided in the
+  study's decision chain. **In a Studio session a person decides it here**: options, a reason
+  (required), **Decide**. Leaving wells out becomes one `curve.exclude_well` proposal per well
+  (proposed by Run Gate's rule, accepted by the person with the reason, all in one write to the
+  session's hash-chained inbox, the same exclusions the Curves inbox lists), and the study is
+  analysed again (the `analyse` job; the gate then reads the new analysis, where the option says
+  "already left out" and the wells are listed with who decided, why and when, and **Put the
+  wells back**). **Keep every well** puts back what a person left out through the card, or, when
+  nothing has to change, records the keep (the rule's exclusions, rejected with the reason). What
+  a person chose on the Decision Cards is carried to the new analysis (as after a Prism round
+  trip; see Results), and the page says so before deciding. An agent's request (`qpcr_decide` on a
+  `card_gate_*` card over MCP: always `pending_human`, filed as the agent's exclusions) waits on
+  its card with **Approve** / **Turn down**. Refusals: `blind` (403) like every result, `stale`
+  (409) when the analysis, the chain or the inbox changed since the view, `studio` (409) for a
+  check whose wells change no conclusion, and for **a study analysed outside Studio**, which has
+  no inbox: its cards are read-only, and the page says plainly that wells are left out by opening
+  its file in Studio (Trace follows its calls down to their wells).
 * **The rules and where their thresholds come from**: each rule's statement and its sources.
 
 ### Gene (`features/gene`) — the merge
@@ -221,7 +256,8 @@ the changes come back as proposals with their consequences).
 
 ### Record (`features/record`)
 The decision chain as a timeline (seq, card, option, actor icon human/agent/system, reason,
-time, hash → prev hash, status applied/pending/rejected/stale). **Export the Analysis Record**
+time, hash → prev hash, status applied/pending/rejected/stale; a carried entry is marked
+**Carried**, with the earlier analysis's entry it names and whether it is found there). **Export the Analysis Record**
 (job → download; record id, chain head, files). **Verify a record** (drop a zip → checksums,
 chain, audit binding). Copyable `qpilot verify` / `qpilot rerun` commands.
 

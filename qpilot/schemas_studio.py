@@ -28,6 +28,7 @@ kind                        subject            payload
 ``design.dilution_series``  series name        ``{"experiment_id": str, "samples": {id: qty}}``
 ``curve.call_rule``         ``amp_call``       ``{"rule": AmpCallRule.id}``
 ``curve.well_call``         ``run_id/well``    ``{"amplified": bool}``
+``curve.exclude_well``      ``run_id/well``    ``{"excluded": bool}`` (``false`` puts it back)
 ``choice.axis``             axis name          ``{"options": [option id, ...]}``, primary first
                             (``efficiency``)   (one option: the axis is not tested)
 ``prism.project``           ``prism``          ``{"template_id": str, "genes": [...], ...}``
@@ -97,6 +98,7 @@ ProposalKind = Literal[
     "design.dilution_series",
     "curve.call_rule",
     "curve.well_call",
+    "curve.exclude_well",
     "choice.axis",
     "prism.project",
     "prism.exclusion_reason",

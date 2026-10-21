@@ -554,6 +554,15 @@ def _apply(
         if not isinstance(amplified, bool):
             raise DesignError(f"amplified must be true or false, not {amplified!r}")
         data["well_calls"][subject] = amplified
+    elif kind == "curve.exclude_well":
+        excluded = payload["excluded"]
+        if not isinstance(excluded, bool):
+            raise DesignError(f"excluded must be true or false, not {excluded!r}")
+        if not _WELL_KEY.match(subject):
+            raise DesignError(f"a well is named '<run_id>/<well>', not {subject!r}")
+        current = set(data["excluded_wells"])
+        current = current | {subject} if excluded else current - {subject}
+        data["excluded_wells"] = tuple(sorted(current))
     elif kind == "choice.axis":
         options = axis_options(subject, payload["options"])
         axes = dict(data.get("axes") or {})

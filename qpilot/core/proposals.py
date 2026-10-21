@@ -746,6 +746,118 @@ class ProposalStore:
             for status, p, why in results
         ]
 
+    def decide_together(
+        self,
+        new: Iterable[tuple[Proposal, str]],
+        pending: Iterable[tuple[str, str]],
+        actor: Actor,
+        reason: str,
+        *,
+        proposer: Actor = "system",
+        expected_head: str | None = None,
+    ) -> list[ProposalOutcome]:
+        """One click of a person that settles several proposals at once: all of it, or nothing.
+
+        ``new`` are proposals made for this click by ``proposer`` (qPilot's rule, say), each
+        with the person's answer (``"accept"`` or ``"reject"``); ``pending`` are proposal ids
+        already waiting in the inbox (an agent's request) with the person's answer to each.
+        Each new proposal is cleaned, checked and capped as :meth:`propose` does (an older
+        pending proposal in its slot is superseded), and each answer is held to the rules of
+        :meth:`accept` and :meth:`reject`: only a person, the guard on what is accepted, a
+        settled proposal refused. The reason is required (one click decides many).
+
+        Everything is written in one locked write, in order (each new proposal's ``propose``
+        line followed by the person's answer, then the answers to the pending ones). When any
+        item is refused, or a person decided anything since ``expected_head`` (or a listed
+        pending proposal changed since), nothing is written and every outcome is ``refused``
+        (or ``stale``) with the reason.
+        """
+        _require_human(actor)
+        if type(proposer) is not str or proposer not in ACTORS:
+            raise ProposalError(f"actor must be one of {', '.join(ACTORS)}")
+        cleaned = clean_reason(reason, required=True)
+        new, pending = list(new), list(pending)
+        if not new and not pending:
+            raise ProposalError("nothing to decide")
+        if len(new) + len(pending) > MAX_PENDING:
+            raise ProposalError(f"one decision settles up to {MAX_PENDING:,} proposals")
+        if any(action not in ("accept", "reject") for _, action in [*new, *pending]):
+            raise ProposalError("each proposal is accepted or rejected")
+        if len({pid for pid, _ in pending}) != len(pending):
+            raise ProposalError("a proposal is listed twice")
+        count = len(new) + len(pending)
+
+        def every(status: str, why: str, head: str) -> list[ProposalOutcome]:
+            return [ProposalOutcome(status=status, head=head, reason=why) for _ in range(count)]  # type: ignore[arg-type]
+
+        made: list[tuple[Proposal, str]] = []
+        try:
+            for proposal, action in new:
+                clean = self._clean(proposal)
+                _check_maker(clean, proposer)
+                if self._checker is not None:
+                    clean = clean.model_copy(update={"check": self._engine_check(clean)})
+                made.append((clean, action))
+        except ProposalError as err:
+            return every("refused", str(err), self.head())
+        with self._locked():
+            entries, state = self._load()
+            head = entries[-1].hash if entries else self.root
+            if expected_head is not None and any(
+                changed_since(entries, self.root, expected_head, pid)
+                for pid in [*(pid for pid, _ in pending), ""]
+            ):
+                return every("stale", STALE_REASON, head)
+            written: list[ProposalEntry] = []
+            done: list[tuple[str, str]] = []
+            at = _now()  # one click, one moment
+            for clean, action in made:
+                current = list(state.proposals.values())
+                waiting = [p for p in current if p.status == "proposed"]
+                refusal = self._full(clean, waiting, state) or _ask(self._guard, clean, current)
+                if refusal:
+                    return every("refused", refusal, head)
+                pid = proposal_id(clean, at, len(entries) + len(written) + 1)
+                if pid in state.proposals:
+                    return every("refused", "proposal id collision", head)
+                stored = clean.model_copy(update={"id": pid, "created_at": at})
+                written.append(
+                    self._entry(
+                        entries + written, state, "propose", pid, proposer, at, proposal=stored
+                    )
+                )
+                for old in [p for p in waiting if _slot(p) == _slot(stored)]:
+                    written.append(
+                        self._entry(
+                            entries + written, state, "supersede", old.id, "system", at,
+                            superseded_by=pid,
+                        )
+                    )  # fmt: skip
+                done.append((pid, action))
+            for pid, action in pending:
+                current = state.proposals.get(pid)
+                if current is None:
+                    return every("refused", f"unknown proposal {pid!r}", head)
+                if current.status != "proposed":
+                    return every("refused", f"this proposal is already {current.status}", head)
+                done.append((pid, action))
+            for pid, action in done:
+                if action == "accept":
+                    refusal = self._guarded(state.proposals[pid], None, state)
+                    if refusal:
+                        return every("refused", refusal, head)
+                written.append(
+                    self._entry(entries + written, state, action, pid, "human", at, reason=cleaned)
+                )
+            self._write(written)
+            head = written[-1].hash
+            return [
+                ProposalOutcome(
+                    status=state.proposals[pid].status, head=head, proposal=state.proposals[pid]
+                )
+                for pid, _ in done
+            ]
+
     def _decide(
         self,
         proposal_id: str,

@@ -44,6 +44,7 @@ from qpilot.core.rules import (
     load_pack,
     pack_from_json,
 )
+from qpilot.qpcr.quant import EXCLUDED
 from qpilot.schemas import Fact
 
 CONTROL_TYPES = frozenset({"ntc", "nac", "ntp", "nrt", "pos", "std"})
@@ -53,6 +54,8 @@ PACKS_DIR_CANDIDATES = (
     Path(__file__).resolve().parents[2] / "packs",  # source checkout
 )
 DEFAULT_PACK = "research-default"
+#: An option whose wells the analysis already leaves out (a person decided it).
+ALREADY_LEFT_OUT = "These wells are already left out of the analysis."
 
 
 # ---------- context ----------
@@ -846,16 +849,26 @@ def run_gate(
     model = model or build_model(curves, settings)
     base = core_gate.baseline(core_gate.at_cell(model.space, cell))
     analysed = set(ctx.table.loc[ctx.table["sample_type"] == ANALYSED, "key"])
+    left_out = set()
+    if EXCLUDED in ctx.table.columns:
+        left_out = set(ctx.table.loc[ctx.table[EXCLUDED].astype(bool), "key"])
 
     def variant(keys: list[str]) -> Any:
+        if left_out.issuperset(keys):
+            return core_gate.unchanged("", keys, ALREADY_LEFT_OUT, code="already_left_out")
         if not analysed.intersection(keys):
             return core_gate.unchanged(
-                "", keys, "These wells are not study samples, so no conclusion uses them."
+                "",
+                keys,
+                "These wells are not study samples, so no conclusion uses them.",
+                code="not_study_samples",
             )
         try:
             return core_gate.at_cell(build_model(curves, settings, extra_excluded=keys).space, cell)
         except (NGuardError, DesignError, ValueError) as err:
-            return core_gate.unknown("", keys, f"The analysis cannot be re-run without them: {err}")
+            return core_gate.unknown(
+                "", keys, f"The analysis cannot be re-run without them: {err}", code="cannot_rerun"
+            )
 
     params = rule_pack.consequence
     done = core_gate.run_consequences(

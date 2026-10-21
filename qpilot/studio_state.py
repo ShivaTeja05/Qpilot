@@ -192,6 +192,15 @@ def _d_well(subject: str, d: Mapping[str, Any]) -> str:
     return f"Count well {subject} as {words}"
 
 
+def _d_exclude(subject: str, d: Mapping[str, Any]) -> str:
+    excluded = d["excluded"]
+    if not isinstance(excluded, bool):
+        raise TypeError("excluded must be true or false")
+    if excluded:
+        return f"Leave well {subject} out of the analysis"
+    return f"Put well {subject} back into the analysis"
+
+
 def _d_axis(subject: str, d: Mapping[str, Any]) -> str:
     from qpilot.qpcr.axes import get_axis
 
@@ -260,6 +269,7 @@ _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
     "design.dilution_series": _d_series,
     "curve.call_rule": _d_rule,
     "curve.well_call": _d_well,
+    "curve.exclude_well": _d_exclude,
     "choice.axis": _d_axis,
     "prism.project": _d_project,
     "prism.exclusion_reason": _d_exclusion,

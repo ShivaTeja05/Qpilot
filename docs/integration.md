@@ -164,9 +164,9 @@ sequenceDiagram
 ## Agents: one MCP server
 
 `qpilot serve` (and `python -m qpilot.mcp_server`, `claude mcp add qpilot -- qpilot serve`) registers
-qPilot's eleven `qpcr_*` tools and, when the Decision Simulator (`qsim`) imports, its five read-only
+qPilot's twelve `qpcr_*` tools and, when the Decision Simulator (`qsim`) imports, its five read-only
 tools: `sim_audit`, `sim_gene`, `sim_decisions`, `sim_whatif` and `sim_findings`. Without `qsim` the
-server lists the eleven tools, does not fail, and prints on stderr that the `sim_*` tools are off;
+server lists the twelve tools, does not fail, and prints on stderr that the `sim_*` tools are off;
 `qpilot serve --list-tools` prints what this install serves. `python -m qpilot.integration serve`
 is the same server with the `sim_*` tools always on (the audit readers need only the saved files).
 

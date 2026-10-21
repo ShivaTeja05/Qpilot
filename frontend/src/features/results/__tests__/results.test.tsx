@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/api/client";
 import cardsJson from "@/test/recorded/api-cards.json";
 import resultsJson from "@/test/recorded/api-results.json";
-import type { CardsView, ResultsView } from "../api";
+import type { CardView, CardsView, ResultsView } from "../api";
 import { DecisionCards, cardOrder } from "../DecisionCards";
 import { GenesPanel, NO_FILTER, matches } from "../GenesPanel";
 import { Summary } from "../Summary";
@@ -91,6 +91,42 @@ describe("Decision Cards", { timeout: 30_000 }, () => {
     expect(sent.reason).toBe("Prespecified in our protocol");
     expect(sent.expected_head).toBe(cards.head);
     expect(first.options.map((o) => o.id)).toContain(sent.option);
+  });
+
+  it("mark a choice carried from the earlier analysis, and say why another is asked again", () => {
+    const [refset, cutoff, ...rest] = cards.cards as [CardView, CardView, ...CardView[]];
+    const carried: CardView = {
+      ...cutoff,
+      card: { ...cutoff.card, status: "decided", decision: "cut_15", decided_by: "human" },
+      status_line:
+        "Decided by human: Top 15 %, carried from the earlier analysis cf49ccd72052. Reason: protocol",
+      carried: {
+        study_id: "cf49ccd72052",
+        entry_hash: "ab".repeat(32),
+        reason: "protocol",
+        found: true,
+        decided_at: null,
+      },
+    };
+    const asked: CardView = {
+      ...refset,
+      asked_again: {
+        study_id: "cf49ccd72052",
+        option: "top3",
+        option_label: "The three most stable",
+        why: "in this analysis the choice can change a conclusion",
+      },
+    };
+    const view = { ...cards, cards: [asked, carried, ...rest] };
+    render(wrap(<DecisionCards view={view} workspaceKey="w" studyId={results.study_id} />));
+    const done = screen.getByRole("article", { name: new RegExp(cutoff.title) });
+    expect(within(done).getByText("Carried")).toBeTruthy();
+    expect(done.textContent).toContain("carried from the earlier analysis cf49ccd72052");
+    const open = screen.getByRole("article", { name: new RegExp(refset.title) });
+    expect(open.textContent).toContain(
+      "In the earlier analysis cf49ccd72052 a person chose The three most stable. It was not carried here: in this analysis the choice can change a conclusion. Decide it again.",
+    );
+    expect(within(open).queryByText("Carried")).toBeNull();
   });
 });
 

@@ -97,6 +97,16 @@ PING_WAIT_S = 2.0  # the longest a caller (a page render) waits for an answer no
 BLANK_DESIGN_ID = "studio_blank"
 CURVE_JUDGE_UNREADABLE = "unable to read this file"
 EXCLUSION_KIND = "prism.exclusion_reason"
+EXCLUDE_KIND = "curve.exclude_well"  # a well left out of (or put back into) the analysis
+#: Kinds a person accepts only with a reason (a well left out is never in "Accept all
+#: consistent": each is accepted on its own, or by a Run Gate card's one click).
+REASON_KINDS = (EXCLUSION_KIND, EXCLUDE_KIND)
+GATE_KEEP = "keep"  # a Run Gate card's option "keep every well (the analysis as it stands)"
+GATE_MAKER = "qpilot-run-gate"
+GATE_STALE = (
+    "the analysis changed since the controls were checked; read them again (they are checked "
+    "at the new analysis)"
+)
 STALE_EXCLUSIONS = (
     "its consequence was computed before the exclusions accepted since then; read what Prism "
     "sent back again (Round trip) for numbers that hold"
@@ -145,6 +155,62 @@ class Assembly:
     blockers: list[str]
     design_hash: str = ""
     curves_hash: str = ""
+
+
+@dataclass(frozen=True)
+class GateChoice:
+    """One option of a Run Gate card as the gate measured it (built by the server, never sent).
+
+    ``wells`` are what the option leaves out (none for ``keep``); ``universe`` every well any
+    option of the card leaves out. ``matters``: the option (for ``keep``, any option) changes a
+    call at the analysis in use. ``study_id`` is the analysis the gate measured.
+    """
+
+    study_id: str
+    card_id: str
+    rule_id: str
+    verdict: str
+    where: str
+    option: str
+    label: str
+    wells: tuple[str, ...]
+    universe: tuple[str, ...]
+    matters: bool
+    pack: str
+
+    @property
+    def verdict_words(self) -> str:
+        """The verdict as a verb ("fails", "warns")."""
+        return {"fail": "fails", "warn": "warns"}.get(self.verdict, self.verdict)
+
+
+@dataclass(frozen=True)
+class GateDecision:
+    """What a choice on a Run Gate card did: wells left out or put back, a keep recorded, or not.
+
+    ``status``: ``left_out`` / ``put_back`` / ``kept`` (a person's choice, written), or
+    ``pending_human`` (an agent's request, filed), ``stale`` or ``refused`` (nothing written).
+    ``not_put_back`` are wells left out another way (a Prism round trip) that "keep" leaves as
+    they are.
+    """
+
+    status: str
+    head: str
+    left_out: list[str] = field(default_factory=list)
+    put_back: list[str] = field(default_factory=list)
+    not_put_back: list[str] = field(default_factory=list)
+    proposals: list[Proposal] = field(default_factory=list)
+    reason: str | None = None
+
+
+@dataclass(frozen=True)
+class _GatePlan:
+    """How the inbox gets a gate choice: wells that change, and the proposals that do it."""
+
+    changes: list[tuple[str, bool]]  # well -> left out, for every well whose state changes
+    new: list[tuple[str, bool]]  # the changes no waiting proposal already asks for
+    settle: list[tuple[str, str]]  # waiting proposals (id, accept | reject)
+    elsewhere: list[str]  # left out another way (a Prism round trip): "keep" leaves them
 
 
 @dataclass
@@ -811,7 +877,7 @@ class Studio:
         return [
             p.id
             for p in self.inbox(session_id, stage, status="proposed")
-            if p.check.status == "consistent" and p.kind != "stage.confirm"
+            if p.check.status == "consistent" and p.kind not in ("stage.confirm", EXCLUDE_KIND)
         ]
 
     def accept_all_consistent(
@@ -1183,13 +1249,44 @@ class Studio:
         design = assembly.design
         assert design is not None  # a confirmed design always assembles
         study_id = self.store.ensure_study(self.source(session_id), design=design)
-        studies = dict(self._meta(session_id).get("studies", {}))
-        if study_id not in studies:
-            studies[study_id] = design.design_hash()
-            self._update_meta(session_id, {"studies": studies, "current_study": study_id})
-        elif self._meta(session_id).get("current_study") != study_id:
-            self._update_meta(session_id, {"current_study": study_id})
+        meta = self._meta(session_id)
+        if study_id not in meta.get("studies", {}) or meta.get("current_study") != study_id:
+            self._edit_meta(session_id, lambda m: self._switch(m, study_id, design))
         return study_id, list(view.accepted)
+
+    def _switch(self, meta: dict[str, Any], study_id: str, design: StudyDesign) -> None:
+        """Make ``study_id`` the session's analysis (in ``meta``, under the session's lock).
+
+        When it replaces another analysis whose design differs only in the wells left out (a
+        person left a well out after the curves were confirmed, from Prism, Controls or the
+        Curves inbox, or put one back), what a person decided on the earlier one's Decision
+        Cards is carried to it first (:meth:`StudyStore.carry_decisions`), so the switch is seen
+        only once they are; the report is kept under ``carried``. A design changed in a blind
+        stage and confirmed again is another question, so its cards start afresh. The choices
+        stage is never carried: its confirmation describes the cards of one analysis, so a person
+        confirms the new one. A carry that fails is logged and never keeps the analysis from
+        being used.
+        """
+        studies = dict(meta.get("studies", {}))
+        studies.setdefault(study_id, design.design_hash())
+        previous = meta.get("current_study")
+        if previous and previous != study_id:
+            try:
+                same = _same_but_wells(self.store.design(previous), design)
+                report = self.store.carry_decisions(previous, study_id) if same else None
+            except (StudyNotFound, OSError, ValueError):
+                log.warning(
+                    "decisions not carried from %s to %s", previous, study_id, exc_info=True
+                )
+            else:
+                if report is not None:
+                    meta["carried"] = {**meta.get("carried", {}), study_id: report.as_dict()}
+        meta.update({"studies": studies, "current_study": study_id})
+
+    def carried(self, session_id: str, study_id: str) -> dict[str, Any] | None:
+        """The report of the latest carry of a person's decisions into ``study_id`` (or None)."""
+        report = self._meta(session_id).get("carried", {}).get(study_id)
+        return report if isinstance(report, dict) else None
 
     def decide(
         self,
@@ -1366,6 +1463,176 @@ class Studio:
             made_by=MadeBy(kind="rule"),
         )
         return self.store.proposals(session_id).propose(proposal, "system")
+
+    # ---- Run Gate: what a person (or an agent) chooses on a control check ----------------------
+
+    def decide_gate(
+        self,
+        session_id: str,
+        choice: GateChoice,
+        actor: Actor,
+        reason: str,
+        expected_head: str | None = None,
+    ) -> GateDecision:
+        """A person chooses an option of a Run Gate card: the wells become curve exclusions.
+
+        The card's options are states of the wells it points at. Leaving wells out makes one
+        ``curve.exclude_well`` per well (proposed by Run Gate's rule, accepted by the person
+        with the reason) and puts back the card's other wells a person left out; keeping every
+        well puts back the wells a person left out, or, when nothing has to change, records the
+        keep (the rule's exclusions, rejected with the reason). An agent's request waiting on
+        these wells is answered by the same click: accepted when it asks for what the person
+        chose, rejected otherwise. Everything is one write to the inbox (all or nothing), and
+        a changed design means the study is analysed again (:meth:`study`).
+
+        Only a person; refused while the results are hidden, and ``stale`` when the session's
+        analysis is no longer the one the gate measured (``choice.study_id``) or a person
+        decided anything in the inbox since ``expected_head``.
+        """
+        from qpilot.core.proposals import clean_reason
+
+        _require_human(actor, "decide what a control check means for the analysis")
+        reason = clean_reason(reason, required=True)
+        assembly, view = self._gate_view(session_id, choice)
+        if isinstance(assembly, GateDecision):
+            return assembly
+        plan = _gate_plan(assembly, view, choice)
+        new = [(self._gate_proposal(session_id, choice, w, x, None), "accept") for w, x in plan.new]
+        settle = list(plan.settle)
+        if not new and not settle:
+            if choice.option != GATE_KEEP:
+                raise StudioError("these wells are already left out of the analysis")
+            excluded = set(assembly.design.excluded_wells)  # type: ignore[union-attr]
+            keep = [w for w in choice.universe if w not in excluded]
+            if not keep:
+                raise StudioError("nothing to decide: none of these wells is in the analysis")
+            new = [(self._gate_proposal(session_id, choice, w, True, None), "reject") for w in keep]
+        # the plan was made from ``view``: nothing a person decides after it may slip under it
+        since = expected_head if expected_head is not None else view.head
+        outcomes = self.store.proposals(session_id).decide_together(
+            new, settle, actor, reason, proposer="system", expected_head=since
+        )
+        first = outcomes[0]
+        if first.status in ("stale", "refused"):
+            return GateDecision(status=first.status, head=first.head, reason=first.reason)
+        decided = [o.proposal for o in outcomes if o.proposal is not None]
+        out = [p.subject for p in decided if p.status != "rejected" and leaves_out(p)]
+        back = [p.subject for p in decided if p.status != "rejected" and not leaves_out(p)]
+        status = "left_out" if out else "put_back" if back else "kept"
+        return GateDecision(
+            status=status,
+            head=outcomes[-1].head,
+            left_out=sorted(set(out)),
+            put_back=sorted(set(back)),
+            not_put_back=list(plan.elsewhere),
+            proposals=decided,
+        )
+
+    def request_gate(
+        self, session_id: str, choice: GateChoice, reason: str, agent: str | None = None
+    ) -> GateDecision:
+        """An agent asks for an option of a Run Gate card: proposals that wait for a person.
+
+        One agent-made ``curve.exclude_well`` per well whose state the option would change;
+        nothing is applied (only a person accepts, :meth:`decide_gate` or the Curves inbox), so
+        the answer is ``pending_human`` whatever the card is. When nothing would change, nothing
+        is filed and the answer says so.
+        """
+        from qpilot.core.proposals import clean_reason
+
+        reason = clean_reason(reason, required=True)
+        assembly, view = self._gate_view(session_id, choice)
+        if isinstance(assembly, GateDecision):
+            return assembly
+        plan = _gate_plan(assembly, view, choice)
+        inbox = self.store.proposals(session_id)
+        filed: list[Proposal] = []
+        head = view.head
+        for well, excluded in plan.changes:
+            proposal = self._gate_proposal(session_id, choice, well, excluded, (reason, agent))
+            outcome = inbox.propose(proposal, "agent")
+            if outcome.status == "refused":
+                return GateDecision(status="refused", head=outcome.head, reason=outcome.reason)
+            head = outcome.head
+            if outcome.proposal is not None:
+                filed.append(outcome.proposal)
+        return GateDecision(
+            status="pending_human",
+            head=head,
+            proposals=filed,
+            reason=(
+                "Only a person decides what a control check means for the analysis: the "
+                "request waits in qPilot (Controls, or the Curves inbox)."
+                if filed
+                else "Nothing to ask: the wells are already as this option leaves them."
+            ),
+        )
+
+    def _gate_view(
+        self, session_id: str, choice: GateChoice
+    ) -> tuple[Assembly | GateDecision, InboxView]:
+        """The confirmed design and inbox the gate's choice applies to, or why not (stale)."""
+        assembly, view = self._confirmed_view(session_id)
+        if assembly is None or assembly.design is None:
+            raise StudioError("confirm the design and the curves first: results stay hidden")
+        if self.expected_study(session_id, assembly) != choice.study_id:
+            return GateDecision(status="stale", head=view.head, reason=GATE_STALE), view
+        return assembly, view
+
+    def _gate_proposal(
+        self,
+        session_id: str,
+        choice: GateChoice,
+        well: str,
+        excluded: bool,
+        agent: tuple[str, str | None] | None,
+    ) -> Proposal:
+        """One well of a Run Gate choice as a ``curve.exclude_well`` proposal.
+
+        Run Gate's rule makes it (``made_by`` rule ``qpilot-run-gate``, the pack as the model),
+        or an agent when ``agent`` gives its reason (and name). The consequence says only
+        whether the option changes a call at the analysis in use and which card and option it
+        came from: never a gene, a direction or a number, so the proposal stays blind-safe
+        should the design change and the session be blind again.
+        """
+        if agent is None:
+            made_by = MadeBy(kind="rule", provider=GATE_MAKER, model=choice.pack)
+            reasons = [f"{choice.rule_id} {choice.verdict_words} ({choice.where}): {choice.label}"]
+        else:
+            made_by = MadeBy(kind="agent", agent=agent[1])
+            reasons = [agent[0]]
+        words = "leave it out" if excluded else "put it back"
+        return Proposal(
+            study_id=session_id,
+            kind=EXCLUDE_KIND,
+            subject=well,
+            payload={"excluded": excluded},
+            evidence=[
+                Evidence(kind="rule", ref=choice.rule_id, note=f"Run Gate, {choice.where}"),
+                Evidence(kind="well", ref=well, note=f"a well the check points at: {words}"),
+            ],
+            alternatives=[{"excluded": not excluded}],
+            consequence={
+                "matters": choice.matters,
+                "gate": {
+                    "card_id": choice.card_id,
+                    "option": choice.option,
+                    "study_id": choice.study_id,
+                },
+            },
+            level="Moderate",
+            reasons=reasons,
+            made_by=made_by,
+        )
+
+    def gate_record(self, session_id: str) -> dict[str, list[Proposal]]:
+        """Every ``curve.exclude_well`` proposal tied to a Run Gate card, by card, oldest first."""
+        out: dict[str, list[Proposal]] = {}
+        for proposal in self.store.proposals(session_id).proposals(kind_prefix=EXCLUDE_KIND):
+            card = gate_card_of(proposal)
+            if card is not None:
+                out.setdefault(card, []).append(proposal)
+        return out
 
     # ---- stage 4: the Prism project -----------------------------------------------------------
 
@@ -1736,6 +2003,14 @@ def _confirmed(
     return False
 
 
+def _same_but_wells(before: StudyDesign | None, after: StudyDesign) -> bool:
+    """Two confirmed designs that differ at most in the wells left out of the analysis."""
+    if before is None:
+        return False
+    hashes = {d.model_copy(update={"excluded_wells": ()}).design_hash() for d in (before, after)}
+    return len(hashes) == 1
+
+
 def _system_confirm(proposal: Proposal) -> bool:
     """True for the system's own confirm step (an agent's or a model's never counts)."""
     return proposal.made_by.kind == "rule"
@@ -1844,6 +2119,70 @@ def _fields_and_makers(
             for f in fields
         ]
     return fields, makers
+
+
+def leaves_out(proposal: Proposal) -> bool:
+    """A ``curve.exclude_well`` proposal leaves its well out (else it puts it back)."""
+    return proposal.effective_payload().get("excluded") is True
+
+
+def gate_card_of(proposal: Proposal) -> str | None:
+    """The Run Gate card a ``curve.exclude_well`` proposal came from, if it did."""
+    gate = (proposal.consequence or {}).get("gate") if proposal.kind == EXCLUDE_KIND else None
+    card = gate.get("card_id") if isinstance(gate, dict) else None
+    return card if isinstance(card, str) else None
+
+
+def _gate_plan(assembly: Assembly, view: InboxView, choice: GateChoice) -> _GatePlan:
+    """The wells of a gate choice whose state changes, and the proposals that settle it.
+
+    A well is left out when the design excludes it now. "Keep" puts back only the wells a
+    person left out with ``curve.exclude_well``; a Prism round trip's exclusion stays. A waiting
+    proposal on these wells from this card (or from no card) is used when it asks for what the
+    person chose, and turned down when it asks for something else; one from another card is
+    left for that card.
+    """
+    assert assembly.design is not None
+    excluded = set(assembly.design.excluded_wells)
+    by_person: dict[str, bool] = {}
+    for p in view.accepted:  # in decision order: the latest acceptance wins
+        if p.kind == EXCLUDE_KIND:
+            by_person[p.subject] = leaves_out(p)
+    wanted = set(choice.wells)
+    changes: list[tuple[str, bool]] = []
+    elsewhere: list[str] = []
+    for well in choice.universe:
+        want = well in wanted
+        if want == (well in excluded):
+            continue
+        if not want and by_person.get(well) is not True:
+            elsewhere.append(well)
+            continue
+        changes.append((well, want))
+    mine = {choice.card_id, None}
+    waiting = [
+        p
+        for p in view.proposals
+        if p.kind == EXCLUDE_KIND
+        and p.status == "proposed"
+        and p.subject in choice.universe
+        and gate_card_of(p) in mine
+    ]
+    new: list[tuple[str, bool]] = []
+    settle: list[tuple[str, str]] = []
+    used: set[str] = set()
+    for well, want in changes:
+        match = next((p for p in waiting if p.subject == well and leaves_out(p) is want), None)
+        if match is None:
+            new.append((well, want))
+        else:
+            settle.append((match.id, "accept"))
+            used.add(match.id)
+    for p in waiting:
+        if p.id not in used:
+            agrees = leaves_out(p) is (p.subject in wanted) and p.subject not in elsewhere
+            settle.append((p.id, "accept" if agrees else "reject"))
+    return _GatePlan(changes, new, settle, elsewhere)
 
 
 def _report(
