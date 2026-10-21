@@ -60,11 +60,13 @@ from qpilot.core.store import (
     canonical_json,
     dump_json,
 )
+from qpilot.io import trust
 from qpilot.schemas import Actor, DecisionCard
 from qpilot.schemas_studio import (
     TEXT_ID,
     DesignField,
     Evidence,
+    ImportTrust,
     InspectSummary,
     MadeBy,
     MarkerSplit,
@@ -98,11 +100,16 @@ BLANK_DESIGN_ID = "studio_blank"
 CURVE_JUDGE_UNREADABLE = "unable to read this file"
 EXCLUSION_KIND = "prism.exclusion_reason"
 EXCLUDE_KIND = "curve.exclude_well"  # a well left out of (or put back into) the analysis
-#: Kinds a person accepts only with a reason (a well left out is never in "Accept all
-#: consistent": each is accepted on its own, or by a Run Gate card's one click).
-REASON_KINDS = (EXCLUSION_KIND, EXCLUDE_KIND)
+TRUST_KIND = "curve.import_trust"  # a person's option on the Import Trust card (qpilot/io/trust.py)
+#: Kinds a person accepts only with a reason (a well left out and an Import Trust choice are
+#: never in "Accept all consistent": each is accepted on its own, or by a card's one click).
+REASON_KINDS = (EXCLUSION_KIND, EXCLUDE_KIND, TRUST_KIND)
 GATE_KEEP = "keep"  # a Run Gate card's option "keep every well (the analysis as it stands)"
 GATE_MAKER = "qpilot-run-gate"
+TRUST_STALE = (
+    "the analysis changed since the Import Trust card was read; read it again (it is shown at "
+    "the new analysis)"
+)
 GATE_STALE = (
     "the analysis changed since the controls were checked; read them again (they are checked "
     "at the new analysis)"
@@ -199,6 +206,23 @@ class GateDecision:
     left_out: list[str] = field(default_factory=list)
     put_back: list[str] = field(default_factory=list)
     not_put_back: list[str] = field(default_factory=list)
+    proposals: list[Proposal] = field(default_factory=list)
+    reason: str | None = None
+
+
+@dataclass(frozen=True)
+class TrustDecision:
+    """What a choice on the Import Trust card did.
+
+    ``status``: ``decided`` (a person's choice, written; ``changed`` when the analysis is not the
+    one it was, so the study is analysed again), ``pending_human`` (an agent's request, filed),
+    ``stale`` or ``refused`` (nothing written).
+    """
+
+    status: str
+    head: str
+    option: str | None = None
+    changed: bool = False
     proposals: list[Proposal] = field(default_factory=list)
     reason: str | None = None
 
@@ -617,6 +641,11 @@ class Studio:
         the curves and the round-trip exclusions; like the exclusions they are not part of the
         curves hash, so testing them never re-opens a blind stage. They change the design, and
         so the study: switching one off again gives back the study as it was.
+        A session opened from an instrument export whose curves call for the Import Trust card
+        (``qpilot/io/trust.py``) gets ``import_trust``: the import's verdict and the analysis
+        of the option a person last accepted on the card (the curves as imported before any).
+        It is set after both hashes are taken, so neither blind confirmation covers it: the
+        card is decided once the results are visible, and choosing it never re-opens them.
         """
         from qpilot.qpcr.amp_call import STUDIO_AMP_CALLS
         from qpilot.qpcr.designs import DesignError, design_from_proposals
@@ -653,7 +682,20 @@ class Studio:
         if blockers:
             return Assembly(None, blockers, design_hash)
         curves_hash = full.model_copy(update={"excluded_wells": (), "axes": None}).design_hash()
+        verdict = self.import_verdict(session_id)
+        if verdict is not None:
+            option = trust_option(accepted) or trust.IN_USE
+            analysis = trust.analysis_for(option)
+            chosen = ImportTrust(verdict=verdict, analysis=analysis)  # type: ignore[arg-type]
+            full = full.model_copy(update={"import_trust": chosen})
         return Assembly(full, [], design_hash, curves_hash)
+
+    def import_verdict(self, session_id: str) -> str | None:
+        """The raw-ness verdict of the session's import when it calls for the Import Trust card."""
+        try:
+            return trust.session_verdict(self._folder(session_id))
+        except StudyNotFound:
+            return None
 
     def _curves_table(self, session_id: str) -> Any:
         """Every well of every experiment (for mapping gene/sample exclusions to wells)."""
@@ -877,7 +919,8 @@ class Studio:
         return [
             p.id
             for p in self.inbox(session_id, stage, status="proposed")
-            if p.check.status == "consistent" and p.kind not in ("stage.confirm", EXCLUDE_KIND)
+            if p.check.status == "consistent"
+            and p.kind not in ("stage.confirm", EXCLUDE_KIND, TRUST_KIND)
         ]
 
     def accept_all_consistent(
@@ -1637,6 +1680,173 @@ class Studio:
                 out.setdefault(card, []).append(proposal)
         return out
 
+    # ---- the Import Trust card: what curves processed before export mean --------------------
+
+    def decide_import_trust(
+        self,
+        session_id: str,
+        option: str,
+        actor: Actor,
+        reason: str,
+        expected_head: str | None = None,
+        study_id: str | None = None,
+    ) -> TrustDecision:
+        """A person chooses an option of the Import Trust card, with a reason.
+
+        The choice is one ``curve.import_trust`` proposal (made by the card's rule, accepted by
+        the person with the reason) or the agent's request asking for it (approved); every other
+        waiting request on the card is turned down by the same click, all in one write to the
+        inbox. ``cq_only`` changes the analysis (the study is analysed again); the other options
+        keep it. Only a person; refused while the results are hidden, when the import calls for
+        no card, for an option already chosen, and for Cq only without instrument Cq values;
+        ``stale`` when the analysis is not ``study_id`` any more or a person decided anything
+        in the inbox since ``expected_head``.
+        """
+        from qpilot.core.proposals import clean_reason
+
+        _require_human(actor, "decide how far imported curves can be trusted")
+        reason = clean_reason(reason, required=True)
+        assembly, view = self._trust_view(session_id, option, study_id)
+        if isinstance(assembly, TrustDecision):
+            return assembly
+        assert assembly.design is not None and assembly.design.import_trust is not None
+        if trust_option(view.accepted) == option:
+            raise StudioError("this is already the decision on the Import Trust card")
+        waiting = trust_requests(view)
+        match = next((p for p in waiting if trust_choice(p) == option), None)
+        settle = [(p.id, "accept" if p is match else "reject") for p in waiting]
+        new = (
+            []
+            if match is not None
+            else [(self._trust_proposal(session_id, option, None), "accept")]
+        )
+        since = expected_head if expected_head is not None else view.head
+        outcomes = self.store.proposals(session_id).decide_together(
+            new, settle, actor, reason, proposer="system", expected_head=since
+        )
+        first = outcomes[0]
+        if first.status in ("stale", "refused"):
+            return TrustDecision(status=first.status, head=first.head, reason=first.reason)
+        before = assembly.design.import_trust.analysis
+        return TrustDecision(
+            status="decided",
+            head=outcomes[-1].head,
+            option=option,
+            changed=trust.analysis_for(option) != before,
+            proposals=[o.proposal for o in outcomes if o.proposal is not None],
+        )
+
+    def request_import_trust(
+        self,
+        session_id: str,
+        option: str,
+        reason: str,
+        agent: str | None = None,
+        study_id: str | None = None,
+    ) -> TrustDecision:
+        """An agent asks for an option of the Import Trust card: a proposal that waits.
+
+        Nothing is applied (only a person accepts, :meth:`decide_import_trust` or the Curves
+        inbox), so the answer is ``pending_human``; asking for what is already decided files
+        nothing and says so.
+        """
+        from qpilot.core.proposals import clean_reason
+
+        reason = clean_reason(reason, required=True)
+        assembly, view = self._trust_view(session_id, option, study_id)
+        if isinstance(assembly, TrustDecision):
+            return assembly
+        if trust_option(view.accepted) == option:
+            return TrustDecision(
+                status="pending_human",
+                head=view.head,
+                option=option,
+                reason="Nothing to ask: a person already chose this option on the card.",
+            )
+        proposal = self._trust_proposal(session_id, option, (reason, agent))
+        outcome = self.store.proposals(session_id).propose(proposal, "agent")
+        if outcome.status == "refused":
+            return TrustDecision(status="refused", head=outcome.head, reason=outcome.reason)
+        return TrustDecision(
+            status="pending_human",
+            head=outcome.head,
+            option=option,
+            proposals=[outcome.proposal] if outcome.proposal is not None else [],
+            reason=(
+                "Only a person decides how far imported curves can be trusted: the request "
+                "waits in qPilot (Results, or the Curves inbox)."
+            ),
+        )
+
+    def instrument_cq_count(self, session_id: str, experiment_id: str | None) -> int:
+        """How many wells of the session's file have a Cq from the instrument (RDML ``<cq>``)."""
+        from qpilot.io.rdml_io import load
+        from qpilot.qpcr.curves import instrument_cq
+
+        return len(instrument_cq(load(self.source(session_id)), experiment_id))
+
+    def _trust_view(
+        self, session_id: str, option: str, study_id: str | None
+    ) -> tuple[Assembly | TrustDecision, InboxView]:
+        """The confirmed design an Import Trust choice applies to, or why not."""
+        trust.analysis_for(option)  # ValueError: not an option of the card
+        assembly, view = self._confirmed_view(session_id)
+        if assembly is None or assembly.design is None:
+            raise StudioError("confirm the design and the curves first: results stay hidden")
+        if assembly.design.import_trust is None:
+            raise StudioError(
+                "this study's curves call for no Import Trust card: they are raw, normalised to "
+                "a passive reference, or were not opened from an instrument export"
+            )
+        if study_id is not None and self.expected_study(session_id, assembly) != study_id:
+            return TrustDecision(status="stale", head=view.head, reason=TRUST_STALE), view
+        experiment = assembly.design.experiment_id
+        if option == "cq_only" and self.instrument_cq_count(session_id, experiment) < 1:
+            raise StudioError(
+                "the export has no Cq values from the instrument, so it cannot be analysed "
+                "without its curves"
+            )
+        return assembly, view
+
+    def _trust_proposal(
+        self, session_id: str, option: str, agent: tuple[str, str | None] | None
+    ) -> Proposal:
+        """An option of the Import Trust card as a ``curve.import_trust`` proposal.
+
+        The card's rule makes it (``made_by`` rule ``qpilot-import-trust``), or an agent when
+        ``agent`` gives its reason (and name). Its consequence names only the analysis the
+        option leads to and its cap level: never a gene, a direction or a number.
+        """
+        verdict = self.import_verdict(session_id)
+        if agent is None:
+            made_by = MadeBy(kind="rule", provider=trust.MAKER)
+            reasons = [f"the import's raw-ness verdict is {verdict}: {trust.LABELS[option]}"]
+        else:
+            made_by = MadeBy(kind="agent", agent=agent[1])
+            reasons = [agent[0]]
+        cap = trust.caps(verdict or "unknown")[option]
+        return Proposal(
+            study_id=session_id,
+            kind=TRUST_KIND,
+            subject=trust.SUBJECT,
+            payload={"option": option},
+            evidence=[
+                Evidence(kind="rule", ref=trust.RULE_ID, note=f"raw-ness verdict {verdict}"),
+                Evidence(kind="file", ref="capture.json", note="what the export was read as"),
+            ],
+            alternatives=[{"option": o} for o in trust.OPTIONS if o != option],
+            consequence={
+                "import_trust": {
+                    "option": option,
+                    "analysis": trust.analysis_for(option),
+                    "cap": cap.level,
+                }
+            },
+            level="Moderate",
+            reasons=reasons,
+            made_by=made_by,
+        )
+
     # ---- stage 4: the Prism project -----------------------------------------------------------
 
     def propose_prism(
@@ -2140,6 +2350,33 @@ def gate_card_of(proposal: Proposal) -> str | None:
     gate = (proposal.consequence or {}).get("gate") if proposal.kind == EXCLUDE_KIND else None
     card = gate.get("card_id") if isinstance(gate, dict) else None
     return card if isinstance(card, str) else None
+
+
+def trust_choice(proposal: Proposal) -> str | None:
+    """The Import Trust option a ``curve.import_trust`` proposal asks for."""
+    option = proposal.effective_payload().get("option")
+    return option if isinstance(option, str) and option in trust.OPTIONS else None
+
+
+def trust_option(accepted: Sequence[Proposal]) -> str | None:
+    """The option a person last accepted on the Import Trust card (decision order), or None."""
+    found = [trust_choice(p) for p in accepted if p.kind == TRUST_KIND]
+    return next((o for o in reversed(found) if o is not None), None)
+
+
+def trust_decision(accepted: Sequence[Proposal]) -> Proposal | None:
+    """The accepted proposal of the option in use on the Import Trust card, or None."""
+    found = [p for p in accepted if p.kind == TRUST_KIND and trust_choice(p) is not None]
+    return found[-1] if found else None
+
+
+def trust_requests(view: InboxView) -> list[Proposal]:
+    """Agents' requests on the Import Trust card that wait for a person, oldest first."""
+    return [
+        p
+        for p in view.proposals
+        if p.kind == TRUST_KIND and p.status == "proposed" and p.made_by.kind == "agent"
+    ]
 
 
 def _gate_plan(assembly: Assembly, view: InboxView, choice: GateChoice) -> _GatePlan:

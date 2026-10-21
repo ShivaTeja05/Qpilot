@@ -563,6 +563,12 @@ def _apply(
         current = set(data["excluded_wells"])
         current = current | {subject} if excluded else current - {subject}
         data["excluded_wells"] = tuple(sorted(current))
+    elif kind == "curve.import_trust":  # Studio.assemble adds the import's verdict
+        from qpilot.io.trust import analysis_for
+
+        analysis = analysis_for(str(payload["option"]))
+        if data.get("import_trust"):
+            data["import_trust"] = {**data["import_trust"], "analysis": analysis}
     elif kind == "choice.axis":
         options = axis_options(subject, payload["options"])
         axes = dict(data.get("axes") or {})

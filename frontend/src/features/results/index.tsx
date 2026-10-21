@@ -14,6 +14,7 @@ import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
 import { FurtherChoices } from "./FurtherChoices";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
+import { ImportTrustCard } from "./ImportTrust";
 import { MapPanel } from "./MapPanel";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
@@ -169,6 +170,11 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
     </div>
   ) : (
     <div className="space-y-3">
+      <ImportTrustCard
+        workspaceKey={key}
+        studyId={studyId}
+        isSession={workspace.kind === "session"}
+      />
       <DecisionCards
         view={cards.data}
         workspaceKey={key}

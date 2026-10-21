@@ -51,8 +51,12 @@
       "n_wells": 96,
       "n_reactions": 96,
       "n_cycles": 40,
-      "targets": ["SYBR"],
-      "dyes": ["SYBR"],
+      "targets": [
+        "SYBR"
+      ],
+      "dyes": [
+        "SYBR"
+      ],
       "sample_types": {
         "unkn": 96
       },
@@ -67,7 +71,8 @@
     "verdict": "baseline_subtracted",
     "title": "Baseline already subtracted",
     "meaning": "The instrument software subtracted a baseline before export. That weakens LinRegPCR's per-well efficiency, because it cannot see each well's own baseline. Re-export the raw fluorescence to restore it: in CFX Manager or Maestro choose 'No Baseline Subtraction' before exporting; from QuantStudio export Rn, not Delta Rn.",
-    "linregpcr_ok": false
+    "linregpcr_ok": false,
+    "import_trust": true
   },
   "warnings": [
     {

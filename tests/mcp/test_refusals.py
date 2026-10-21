@@ -440,6 +440,20 @@ STUDIO_SENTENCES = [
     ("this bundle was not sent to Prism from this session", "invalid_argument"),
     ("these wells are already left out of the analysis", "invalid_argument"),
     ("nothing to decide: none of these wells is in the analysis", "invalid_argument"),
+    ("there is no further choice called 'efficiency' to test", "unknown_item"),
+    ("this choice is already tested in the current analysis", "invalid_argument"),
+    ("no other option of this choice applies to this study (one run)", "not_applicable"),
+    ("this is already the decision on the Import Trust card", "invalid_argument"),
+    (
+        "this study's curves call for no Import Trust card: they are raw, normalised to a "
+        "passive reference, or were not opened from an instrument export",
+        "not_applicable",
+    ),
+    (
+        "the export has no Cq values from the instrument, so it cannot be analysed without its "
+        "curves",
+        "not_applicable",
+    ),
     ("a sentence qPilot Studio does not say yet", "engine_refused"),
 ]
 

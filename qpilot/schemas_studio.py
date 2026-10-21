@@ -29,6 +29,8 @@ kind                        subject            payload
 ``curve.call_rule``         ``amp_call``       ``{"rule": AmpCallRule.id}``
 ``curve.well_call``         ``run_id/well``    ``{"amplified": bool}``
 ``curve.exclude_well``      ``run_id/well``    ``{"excluded": bool}`` (``false`` puts it back)
+``curve.import_trust``      ``import``         ``{"option": str}``: the Import Trust card's option
+                                               (``reexport_raw``, ``analyse_as_is``, ``cq_only``)
 ``choice.axis``             axis name          ``{"options": [option id, ...]}``, primary first
                             (``efficiency``)   (one option: the axis is not tested)
 ``prism.project``           ``prism``          ``{"template_id": str, "genes": [...], ...}``
@@ -99,6 +101,7 @@ ProposalKind = Literal[
     "curve.call_rule",
     "curve.well_call",
     "curve.exclude_well",
+    "curve.import_trust",
     "choice.axis",
     "prism.project",
     "prism.exclusion_reason",
@@ -288,6 +291,21 @@ class MarkerSplit(BaseModel):
     group_var: str = "MYCN_high"
 
 
+class ImportTrust(BaseModel):
+    """How far the curves of an instrument export can be trusted, and what the analysis uses.
+
+    ``verdict`` is the import's raw-ness verdict (``qpilot/io/rawness.py``) when it calls for
+    the Import Trust card (``qpilot/io/trust.py``): the curves were baseline-subtracted before
+    export, or qPilot could not tell. ``analysis`` is what a person chose on the card:
+    ``as_is`` (LinRegPCR on the curves as imported; also the analysis before any choice) or
+    ``cq_only`` (the curves are not used: each well's Cq is the instrument's, its quantity
+    ``2^-Cq``). Either way the grade is capped (``qpilot/io/trust.py``).
+    """
+
+    verdict: Literal["baseline_subtracted", "unknown"]
+    analysis: Literal["as_is", "cq_only"] = "as_is"
+
+
 class StudyDesign(BaseModel):
     """A confirmed study design; the engine runs from this and from nothing else.
 
@@ -302,8 +320,10 @@ class StudyDesign(BaseModel):
     decision). ``amp_calls`` are the options of the amplification-call axis, primary first; one
     option means no axis. ``axes`` are the opt-in axes of the decision space a person asked to
     test, each with its options, primary first (``{"efficiency": ("linregpcr", "per_well")}``,
-    see ``qpilot/qpcr/axes``); ``None`` (the default) is left out of :meth:`canonical`, so the
-    design hash and every existing study id stay what they were.
+    see ``qpilot/qpcr/axes``). ``import_trust`` is set for a study opened from an instrument
+    export whose curves were processed before export (:class:`ImportTrust`). ``None`` (the
+    default for both) is left out of :meth:`canonical`, so the design hash and every existing
+    study id stay what they were.
     """
 
     design_id: str = "custom"
@@ -319,6 +339,7 @@ class StudyDesign(BaseModel):
     well_calls: dict[str, bool] = {}
     excluded_wells: tuple[str, ...] = ()
     amp_calls: tuple[str, ...] = ("linregpcr",)
+    import_trust: ImportTrust | None = None
     axes: dict[str, tuple[str, ...]] | None = None
     note: str = ""
 

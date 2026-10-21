@@ -39,6 +39,7 @@ KIND_TITLE = {
     "curve.call_rule": "Amplification rule",
     "curve.well_call": "Well call",
     "curve.exclude_well": "Well exclusion",
+    "curve.import_trust": "Import Trust",
     "prism.project": "Prism project",
     "prism.exclusion_reason": "Exclusion in Prism",
     "prism.value_edit": "Value changed in Prism",
@@ -52,9 +53,14 @@ STAGE_WORD = {
     "other": "Studio",
 }
 # Accepted proposals that make (or re-make) the session's analysis: the curves confirmation,
-# and a change after it that a person accepted from a Prism round trip or the Controls section
-# (a well left out of, or put back into, the analysis).
-PRODUCES = {"prism.exclusion_reason", "prism.value_edit", "curve.exclude_well"}
+# and a change after it that a person accepted from a Prism round trip, the Controls section
+# (a well left out of, or put back into, the analysis) or the Import Trust card.
+PRODUCES = {
+    "prism.exclusion_reason",
+    "prism.value_edit",
+    "curve.exclude_well",
+    "curve.import_trust",
+}
 MAX_LISTED = 3
 MAX_TEXT = 160
 MAX_CACHED = 8
@@ -196,6 +202,11 @@ def _click_words(entry: ProposalEntry, proposals: list[Proposal]) -> str:
         wells = "1 well" if n == 1 else f"{n} wells"
         out = (first.edits or first.payload).get("excluded") is True
         what = f"Left out {wells} ({shown})" if out else f"Put {wells} back ({shown})"
+    elif first.kind == "curve.import_trust":
+        from qpilot.io.trust import LABELS
+
+        option = str((first.edits or first.payload).get("option"))
+        what = f"Import Trust: {LABELS.get(option, option)}"
     else:
         what = f"{KIND_TITLE.get(first.kind, first.kind)} accepted ({shown})"
     reason = _short(entry.reason)
@@ -208,7 +219,8 @@ def milestones(
     """The session's log by stage run, the producing clicks, and whether it is intact.
 
     Each producing click is ``(at, run index, words, wells)``; ``wells`` says what a
-    well-exclusion click left out or put back (else None).
+    well-exclusion click left out or put back, and for an Import Trust click the analysis it
+    chose (else None).
 
     A click is the producing acceptances of one moment with one reason and one kind (a person
     leaving several wells out at once is one click).
@@ -242,17 +254,26 @@ def milestones(
     return [_milestone(run, stage, broken) for stage, run in runs], producing, broken is None
 
 
-def _click_wells(proposals: list[Proposal]) -> tuple[frozenset[str], bool] | None:
-    """The wells a well-exclusion click left out (True) or put back (False); else None."""
+def _click_wells(proposals: list[Proposal]) -> tuple[frozenset[str], bool] | str | None:
+    """What a click set: a well exclusion's wells, an Import Trust choice's analysis, or None.
+
+    Wells come with True (left out) or False (put back); the analysis is ``as_is``/``cq_only``.
+    """
     first = proposals[0]
+    if first.kind == "curve.import_trust":
+        from qpilot.io.trust import ANALYSIS
+
+        return ANALYSIS.get(str((first.edits or first.payload).get("option")))
     if first.kind != "curve.exclude_well":
         return None
     out = (first.edits or first.payload).get("excluded") is True
     return frozenset(p.subject for p in proposals), out
 
 
-def _fits(store: StudyStore, study_id: str, wells: tuple[frozenset[str], bool] | None) -> bool:
-    """Whether a study's design has a well-exclusion click's wells left out (or in).
+def _fits(
+    store: StudyStore, study_id: str, wells: tuple[frozenset[str], bool] | str | None
+) -> bool:
+    """Whether a study's design has what a click set (its wells left out or in, its analysis).
 
     Times have one-second steps, so on a fast analysis time alone can tie two clicks.
     """
@@ -262,6 +283,9 @@ def _fits(store: StudyStore, study_id: str, wells: tuple[frozenset[str], bool] |
         design = store.design(study_id)
     except (StudyNotFound, OSError, ValueError):
         return True
+    if isinstance(wells, str):
+        trust = design.import_trust if design is not None else None
+        return trust is not None and trust.analysis == wells
     excluded = set(design.excluded_wells) if design is not None else set()
     keys, out = wells
     return keys <= excluded if out else not (keys & excluded)

@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from qpilot.core.store import StudyNotFound, StudyStore, atomic_write, dump_json
+from qpilot.io import trust
 from qpilot.io.connectors import CaptureError, CaptureMeta, Detection, Materialised, detect
 from qpilot.io.connectors import materialise as materialise_export
 from qpilot.io.connectors.common import plate_stem
@@ -45,7 +46,7 @@ from qpilot.web.contract_capture import (
 
 IMPORTS_DIR = "imports"
 SOURCES_DIR = "sources"
-CAPTURE_FILE = "capture.json"
+CAPTURE_FILE = trust.CAPTURE_FILE  # "capture.json": qpilot.io.trust reads its verdict too
 CAPTURE_SCHEMA = "qpilot.web.capture/1"
 MAX_FILES = 64
 MAX_NAME_BYTES = 200
@@ -430,6 +431,7 @@ def summary(store: StudyStore, sid: str) -> CaptureSummary | None:
             title=words[0],
             meaning=words[1],
             linregpcr_ok=bool(rawness.get("linregpcr_ok")),
+            import_trust=trust.card_verdict(verdict) is not None,
         ),
         warnings=[CaptureNote(code=w.code, message=w.message) for w in meta.warnings],
         n_quarantined=len(meta.quarantine),
