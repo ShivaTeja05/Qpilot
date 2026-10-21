@@ -35,7 +35,8 @@ the design system, the API conventions and who builds what. Keep it true as the 
 
 ## 2. Information architecture
 
-One hash-routed page. Global routes: `#/` (Open), `#/settings`. A workspace is either a Studio
+One hash-routed page. Global routes: `#/` (Open), `#/sheetcheck`, `#/instruments`, `#/settings`.
+A workspace is either a Studio
 **session** (`#/s/<session id>/<section>/…`, the session id is `input_sha256[:12]`) or a
 **study** analysed outside one (`#/r/<study id>/<section>/…`; e.g. by `qpilot run` or an agent's
 `qpcr_study`), whose results show straight away.
@@ -45,13 +46,20 @@ One hash-routed page. Global routes: `#/` (Open), `#/settings`. A workspace is e
 | Open | `#/` | always | `GET /api/system`, `GET /api/workspaces`, `POST /api/workspaces` (upload: `rdml` + `sheet`, or `files` = instrument exports sorted by content → `qpilot.web.intake` + `io.connectors.materialise`), `POST /api/workspaces/demo`, `POST /api/demo/fetch` |
 | Design (blind) | `…/design` | session | `GET /api/sessions/{sid}` (incl. `capture`: what an export was read as), `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
-| Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards`, decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis` |
+| Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards` (incl. cards opened from Trace, with their `place`), decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `GET /api/studies/{id}/evidence` (the Evidence Ledger) → `qpcr.evidence`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis` |
 | Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
+| Trace | `…/trace`, `…/trace/<GENE>` | results visible | `GET /api/studies/{id}/trace`, `…/trace/{gene}`, `…/trace/plate?run=`, `POST …/trace/{gene}/without` (first load a `trace.load` job: 409 `loading` + the job) → `qpilot.trace`; **Where to look**: `GET …/where-to-look?gene=|sample=|well=`, `POST …/where-to-look/open` (Decide…) → `qpcr.trace` at the analysis in use + `StudyStore.open_card` |
+| Claims | `…/claims` | results visible | `POST /api/studies/{id}/claims` → `qpilot.claims` |
+| Report | `…/report` | results visible | `GET /api/studies/{id}/report`, `POST …/report/export` (`md`, `html`, `passport`, `xlsx`: a `report.export` job), `GET …/report/exports` → `qpilot.report` (+ `report.excel`); **Run Review**: `GET …/review`, `POST …/review/sign-off` → `report.run_review` + `StudyStore.append_review` |
+| History | `…/history` | results visible | `GET /api/studies/{id}/history`, `/history/diff`, `/history/compare` → `qpilot.history` |
+| Plan next | `…/planner` | results visible | `GET|POST /api/studies/{id}/planner`, `POST …/planner/layout`, `GET …/planner/layout.csv` → `qpcr.plan` + `qpcr.layout` |
 | Prism | `…/prism` | session, results visible | `/prism/preview|routes|bundles`, `POST /prism/draft|send|roundtrip` → `Studio.preview_prism/propose_prism/send_to_prism/launch_prism/round_trip` |
 | Record | `…/record` | always (empty until analysed) | `GET /decisions` (chain), `POST /record` (export → download), `POST /api/records/verify` → `core.record` |
 | Agents | `…/agents` | always | `GET /api/agents` (MCP command, tools, pending requests, recent agent entries) |
+| Sheet check | `#/sheetcheck` | always | `POST /api/sheets` (keep a `.xlsx`/`.csv`), `POST /api/sheets/{id}/check` (`study_id?`, a person's `columns`, `confirm`) → `qpcr.sheetcheck` |
+| Instruments | `#/instruments`, `#/instruments/<id>` | always | `GET|POST /api/instruments`, `GET /api/instruments/{id}`, `POST …/events`, `POST …/incidents`, `POST …/incidents/{seq}/confirm|reject|fix`, `POST /api/instruments/runs` (+ `…/runs/{id}/link`), `POST /api/studies/{id}/lookback` (a `lookback.run` job) → `core.instruments` + `qpcr.instrument_context` + `qpcr.lookback` |
 | Settings | `#/settings` | always | `GET/PUT /api/settings`, `GET /api/model`, `POST /api/model/test` (harness scorecard) |
 
 Ask (a drawer, every workspace section): `POST /api/studies/{id}/ask` → `ai.ask.ask`, and for an
@@ -177,6 +185,18 @@ wells left out) and makes a new analysis, like an accepted Prism exclusion.
   is another question: its cards start afresh. A reason typed as `Carried from analysis…` is
   refused. **Explain with the model**
   (only when a model answers; numbers in the explanation are facts, cited).
+* **What this study cannot tell you** (the Evidence Ledger, `qpcr/evidence.py`, origin/main's
+  Gradio panel): eleven items (NTC, no-RT, reference genes, efficiency, raw-ness, RNA integrity,
+  RT replicates, biological units, inter-run calibrator, lots, instrument), each present /
+  absent / unknown / not applicable (glyph + word), what that means (every number a fact),
+  absent and unknown first. Absent items never change a conclusion or a grade. The ledger is the
+  one kept at analysis (`evidence.json`), else rebuilt read-only; for a study opened from an
+  instrument export the raw-ness item reads Open's own check (`io/rawness`).
+* **Cards opened from Trace** (`trace_set_aside`, a person's Decide… in Trace's Where to look)
+  are listed with the other cards, say the place they are about (sample · plate · well) and what
+  to check, and are decided the same way: a choice that can change a conclusion is a person's,
+  at every autonomy level. Deciding one is kept in the chain; the study's numbers stay as
+  analysed (leaving a well out of the analysis is Curves' or Controls' job).
 * `j`/`k` move between cards, `Enter` focuses the reason, `⌘Enter` decides.
 * **Also test efficiency models** (under the cards; `ResultsView.axes`, opt-in): what qPilot does
   with the efficiency model now (not tested / tested in the grid / tried, changes nothing / does
@@ -229,6 +249,28 @@ analysis in use (each card's applied option, the planned one elsewhere).
   its file in Studio (Trace follows its calls down to their wells).
 * **The rules and where their thresholds come from**: each rule's statement and its sources.
 
+### Trace (`features/trace`)
+Follow any number down to the samples, wells and plates that drive it (`qpilot.trace`: flip sets,
+control-gene shares, plates, a what-if without samples), at the analysis in use. **Where to
+look** (origin/main's Trace engine, `qpcr/trace.py`, built here for the analysis in use and
+cross-checked against the section's own numbers): trace a gene, a sample or a well
+(`PLATE:WELL`); the places to look ranked by what each option there does (changes a call > moves
+a fold change beyond its CI > changes nothing), the fingerprint checks each fails (S1–S7) in
+words, what was checked and found nothing, what the data cannot show. **Decide…** on a place
+whose option changes a call opens it as a Decision Card on Results (`StudyStore.open_card`: no
+chain entry; the same card when opened again). Method card: `methods/trace.md`.
+
+### Report (`features/report`)
+Methods, MIQE 2.0, a reviewer's report, the study passport, and **exports** (Markdown, printable
+HTML, passport, and the **Excel workbook**: the results with a "Where to look" sheet, at the
+recommended choices like the Analysis Record). **Run Review** (origin/main's Gradio accordion,
+`report/run_review.py`): the headline genes, the Evidence Ledger, every sign-off recorded, the
+parts not built yet (pointing at Controls and Plan next where those exist), and a person's
+**sign-off**: accept / repeat / discuss, a comment and a name, one `review` entry in the decision
+chain (actor `human`, set by the server; no card replays it, so it never makes a decision stale;
+a decision made since the review was read makes the sign-off stale: 409, shown again). qPilot
+never passes or fails a run.
+
 ### Gene (`features/gene`) — the merge
 Header: gene, call (arrow + word), fold [95 % CI], p, n per group, confidence level + reasons,
 verdict (when audited). Then, top to bottom: **What holds** (holds fraction, the analyses strip
@@ -268,6 +310,30 @@ How to connect (`claude mcp add qpilot -- qpilot serve`, copy button), the tools
 propose; none can decide a conclusion-changing choice), live list of requests waiting for a
 person (same Approve / Turn down as Results) and recent agent entries from the chain and the
 proposal inbox.
+
+### Sheet check (`features/sheetcheck`) — global
+origin/main's Spreadsheet Check (`qpcr/sheetcheck.py`): drop a lab's own ΔΔCq sheet (`.xlsx` /
+`.csv`; kept by content, never edited) and qPilot recomputes it from its own Cq values: how many
+fold changes reproduce, the first column and row that differ, the known slip that reproduces it
+(an inverted sign, the exponent applied twice, statistics on fold changes …), and, compared with
+a study (blind rule applies), the genes whose arithmetic reproduces but whose fold change
+differs from qPilot's (a difference of method). The column mapping is a guess and says so until
+a person confirms it (and may set any column first). Sample and group labels never come back
+from the server. Method card: `methods/sheetcheck.md`.
+
+### Instruments (`features/instruments`) — global
+origin/main's instrument registry and hash-chained logbook (`core/instruments.py`): the
+instruments, the age of their latest calibrations, open incidents, and whether each logbook's
+chain verifies. **Waiting for you**: incidents an agent proposed (`qpcr_incident_log`), which only
+a person confirms or turns down here; **Note what fixed it**; **Log an event** (calibration, part
+change, service, move, note) and **an incident you saw** (confirmed, since a person logs it); the
+logbook in chain order. **Read a run file** (`.eds`, QuantStudio/CFX exports, RDML): what it says
+about the instrument (model, firmware, run state, calibration ages, pauses; serial numbers named,
+never shown) with its G-INSTR lines, and which registered instrument it is, or "Which instrument
+is this?" once (the answer is remembered locally; what the file states is logged). **Lookback**:
+which of a study's conclusions used an instrument between two dates, and what leaving those runs
+out changes (a job; writes nothing). Every write is `actor="human"`. Methods:
+`methods/instrument_context.md`, `methods/lookback.md`.
 
 ### Settings (`features/settings`)
 Model: provider (none / local OpenAI-compatible / Anthropic, from the environment), status and
