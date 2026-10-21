@@ -79,6 +79,11 @@ TRIAGE_TEXT = {
     "human": "Can change a conclusion: only a person decides (see its Decision Card).",
     "defer": "Could not be checked yet; it is checked again when the data allow.",
 }
+ELSEWHERE_TEXT = (
+    "Changes no call at the analysis in use, but can change a call at other settings: decided "
+    "automatically to keep the wells (see its Decision Card); an agent asking to leave them out "
+    "must ask a person."
+)
 APPLY_SESSION = (
     "Rules label; nothing here changes your analysis. To leave wells out, exclude them in "
     "Curves: the study is analysed again and the record says who decided and why."
@@ -508,7 +513,9 @@ def build_view(
                 verdict=c.verdict,
                 consequence=c.consequence,
                 triage=c.triage,
-                triage_text=TRIAGE_TEXT[c.triage],
+                triage_text=(
+                    ELSEWHERE_TEXT if c.card_id and c.triage != "human" else TRIAGE_TEXT[c.triage]
+                ),
                 rescue_option=c.rescue_option,
                 options=[
                     GateOption(
