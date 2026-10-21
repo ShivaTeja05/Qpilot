@@ -77,7 +77,6 @@ import datetime as dt
 import hashlib
 import json
 import sys
-from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -256,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:
             "sha256": rdml_sha,
             "experiment": EXPERIMENT,
             "wells": len(table),
-            "linregpcr_settings": asdict(CurveSettings()),
+            "linregpcr_settings": CurveSettings().linregpcr(),
         },
         "fingerprint": curve_judge.fingerprint(args.rdml),  # what the file declares; not gated
         "normalisation": NORMALISATION,

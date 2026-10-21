@@ -919,6 +919,8 @@ def check_proposal(
         return ProposalCheck(
             status="cannot_check", note="the input file is not available to the engine"
         )
+    if proposal.kind == "curve.import_trust":
+        return trust_check(proposal, store, study_id, path)
     try:
         facts = file_facts(path, sheet_path)
     except (RdmlLoadError, SheetError, CurveAnalysisError) as err:
@@ -929,6 +931,32 @@ def check_proposal(
         )
     _DECLARED[study_id] = declared_design(facts)
     return check_with_facts(proposal, facts, accepted=accepted)
+
+
+def trust_check(
+    proposal: Proposal, store: StudyStore, session_id: str, path: Path
+) -> ProposalCheck:
+    """``D-TRUST`` for an option of the Import Trust card (:func:`qpilot.io.trust.check`).
+
+    The verdict is the one the session's import was read with; the instrument's Cq values are
+    counted in the file the session opened (the RDML file the export was written to).
+    """
+    from qpilot.core.store import StudyNotFound
+    from qpilot.io import trust
+    from qpilot.io.rdml_io import load
+    from qpilot.qpcr.curves import instrument_cq
+
+    if proposal.subject != trust.SUBJECT:
+        return _check("contradicted", trust.RULE_ID, {}, "the card is about the import as a whole")
+    try:
+        verdict = trust.session_verdict(store.find_session(session_id))
+    except StudyNotFound:
+        verdict = None
+    try:
+        n_cq = len(instrument_cq(load(path), None))
+    except (RdmlLoadError, CurveAnalysisError, KeyError, ValueError):
+        n_cq = 0
+    return trust.check(proposal.effective_payload().get("option"), verdict, n_cq)
 
 
 def check_with_facts(

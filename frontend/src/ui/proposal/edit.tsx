@@ -6,13 +6,14 @@
 import { ArrowLeftRight } from "lucide-react";
 import { useId, type ReactNode } from "react";
 import {
+  describeProposal,
   PRESET_WORDS,
+  type Proposal,
   ROLE_SHORT,
   ROLE_WORDS,
-  describeProposal,
   ruleLabel,
   ruleWords,
-  type Proposal,
+  TRUST_WORDS,
 } from "@/lib/vocab";
 import { Button } from "../Button";
 import { Field, Input, SegmentedControl, Select, Switch, Textarea } from "../controls";
@@ -350,6 +351,17 @@ export function PayloadEditor({
         </Field>
       );
     }
+    case "curve.import_trust":
+      return (
+        <Field label="Import Trust">
+          <Select
+            label="Import Trust"
+            value={String(value.option ?? "")}
+            onValueChange={(v) => set("option", v)}
+            options={Object.entries(TRUST_WORDS).map(([v, label]) => ({ value: v, label }))}
+          />
+        </Field>
+      );
     case "curve.exclude_well":
       return (
         <Field label={`Well ${s}`}>
@@ -464,6 +476,8 @@ function shortReading(p: Pick<Proposal, "kind">, d: Payload): string {
       return d.amplified ? "Amplified" : "Not amplified";
     case "curve.exclude_well":
       return d.excluded ? "Left out" : "In the analysis";
+    case "curve.import_trust":
+      return TRUST_WORDS[String(d.option)] ?? String(d.option);
     case "design.comparison":
       return `${String(d.group_a)} vs ${String(d.group_b)}`;
     case "design.group":

@@ -51,6 +51,11 @@ class CaptureRawness(BaseModel):
     title: str
     meaning: str
     linregpcr_ok: bool = Field(description="The curves suit LinRegPCR's per-well efficiency.")
+    import_trust: bool = Field(
+        default=False,
+        description="The verdict calls for the Import Trust card: a person decides on Results, "
+        "once the blind is lifted, what it means for the analysis.",
+    )
 
 
 class CaptureNote(BaseModel):

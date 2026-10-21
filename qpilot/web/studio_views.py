@@ -58,6 +58,9 @@ WORDS = {
         "Say why this well is left out of the analysis, or put back (the reason is kept in "
         "the record)."
     ),
+    "reason:curve.import_trust": (
+        "Say why the imported curves are used this way (the reason is kept in the record)."
+    ),
     "edit_nothing": "Nothing was changed; use Accept to accept the proposal as it is.",
     "edit_not_object": "The edited payload must be a JSON object; nothing was changed.",
     "stale": (

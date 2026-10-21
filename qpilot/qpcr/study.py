@@ -10,7 +10,8 @@ This is the one place where the qPCR plugin meets the domain-agnostic core:
    escalation rule (a choice that can flip a conclusion is a human decision); the reference-set
    card then gains the flip count by normaliser-set size and the control-gene group-effect check
    (:func:`qpilot.qpcr.refgenes.group_effect`);
-4. ``qpcr.confidence_checks`` and ``core.confidence`` grade every gene;
+4. ``qpcr.confidence_checks`` and ``core.confidence`` grade every gene (capped for an instrument
+   export whose curves were processed before export, :mod:`qpilot.io.trust`);
 5. every number that prose may cite is registered as a fact (``core.facts``) under the id
    convention ``f_<metric>_<slug>_<context>``, e.g. ``f_fc_odc1_hmbs``.
 
@@ -40,10 +41,11 @@ from typing import Any
 import pandas as pd
 
 from qpilot.core import robustness
-from qpilot.core.confidence import grade
+from qpilot.core.confidence import Cap, grade
 from qpilot.core.decisions import CardSpec, OptionSpec, build_cards, card_impact
 from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import atomic_write, dump_json
+from qpilot.io.trust import cap_for, not_measured
 from qpilot.qpcr.amp_call import (
     DEFAULT_AMP_CALLS,
     METHOD_CARD_PATH,
@@ -56,7 +58,13 @@ from qpilot.qpcr.amp_call import (
 from qpilot.qpcr.axes import efficiency as eff_axis
 from qpilot.qpcr.confidence_checks import START_LEVEL, checks_for, mde_fold, upgrade_rule
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule
-from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS, CurveSettings, analyse_study
+from qpilot.qpcr.curves import (
+    DEMO_EXPERIMENT,
+    INSTRUMENT_CQ,
+    REFERENCE_TARGETS,
+    CurveSettings,
+    analyse_study,
+)
 from qpilot.qpcr.design import DEMO_GROUP_VAR, DEMO_MARKER, GroupSpec, design_summary
 from qpilot.qpcr.designs import (
     HEADLINE_GENES,
@@ -186,6 +194,9 @@ class StudySettings:
             "studio_facts": not legacy,
             "efficiency": tuple((design.axes or {}).get("efficiency", (eff_axis.PRIMARY,))),
         }
+        trust = design.import_trust
+        if trust is not None and trust.analysis == "cq_only":  # the Import Trust card's Cq only
+            values["curves"] = CurveSettings(quantities=INSTRUMENT_CQ)
         if design.mode == "marker_split" and design.marker_split is not None:
             split = design.marker_split
             values.update(
@@ -486,7 +497,8 @@ def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, di
     """``QpcrSpace`` keywords and notes for the efficiency axis, and the study's cell tables.
 
     No keywords and no notes when only the primary is offered. Options that do not apply to
-    the study (no dilution series, every amplicon on one run) are not offered and are
+    the study (no dilution series, every amplicon on one run, an efficiency the imported curves'
+    processing rules out: :func:`qpilot.io.trust.not_measured`) are not offered and are
     reported with the reason, asked for or not. The matrix of any other option is rebuilt
     from Cq and the per-run threshold, under the same amplification rule and design
     (:class:`CellTables`).
@@ -506,6 +518,8 @@ def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, di
         quantities = {s: d.quantity for s, d in settings.design.samples.items() if d.quantity}
     curves = eff_axis.standard_curves(inputs.table, quantities)
     every = eff_axis.unavailable(inputs.table, curves)  # asked for or not: said in the facts
+    trust = settings.design.import_trust if settings.design is not None else None
+    every.update(not_measured(trust))
     missing = {k: v for k, v in every.items() if k in offered}
     kept = [o for o in offered if o not in missing]
     tables = CellTables(inputs, settings.amp_calls[0], legacy, calls, curves)
@@ -553,7 +567,8 @@ def study_from_curves(
         efficiency=_efficiency(curves),
         conclusion_rule=settings.rule.as_dict(),
     )
-    confidence = {gene: _grade(gene, base, fragility) for gene in space.items}
+    cap = cap_for(settings.design.import_trust if settings.design is not None else None)
+    confidence = {gene: _grade(gene, base, fragility, cap) for gene in space.items}
     headline = [gene for gene in settings.headline if gene in space.items]
     specs = _card_specs(space, stability, summary, settings, headline, counts)
     if "amp_call" in space.dimensions:
@@ -656,7 +671,9 @@ def _summary_of_design(
     )
 
 
-def _grade(gene: str, result: StudyResult, fragility: dict[str, int]) -> Grade:
+def _grade(
+    gene: str, result: StudyResult, fragility: dict[str, int], cap: Cap | None = None
+) -> Grade:
     checks = checks_for(gene, result, fragility)
     holds = result.robustness[gene].holds
     return grade(
@@ -664,6 +681,7 @@ def _grade(gene: str, result: StudyResult, fragility: dict[str, int]) -> Grade:
         checks,
         upgrade_rule(result.contrasts[gene], holds),
         min_flip_changes=int(fragility[gene]),
+        cap=cap,
     )
 
 

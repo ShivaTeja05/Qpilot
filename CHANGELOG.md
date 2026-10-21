@@ -63,6 +63,23 @@ research use only, not for clinical decisions.
   left out", who decided and why, Put the wells back). Keeping every well is recorded. A study
   analysed outside Studio says its wells are left out by opening its file in Studio. History
   names the click that made each analysis.
+- **The Import Trust card** (`capture.import_trust`, `qpilot/io/trust.py`,
+  `GET|POST /api/studies/{id}/import-trust[/decide]`, `Studio.decide_import_trust`): a Studio
+  session opened from an instrument export whose curves were most likely baseline-subtracted
+  before export (or whose processing qPilot could not tell) is analysed from the curves as
+  imported with every gene's confidence capped at Moderate ("vendor-baselined curves") until a
+  person decides on Results: re-export the raw curves (the vendor's recipe; this analysis stays),
+  analyse them as they are (capped at Moderate), or use the instrument's Cq values only (the
+  curves are not used, quantity 2^-Cq with efficiency assumed; a new analysis capped at Low).
+  The choice is a `curve.import_trust` proposal accepted with a reason in the session's inbox
+  (a new Curves kind, never in "Accept all consistent"); agents' `qpcr_decide` on
+  `card_import_trust` is `pending_human`. Curves normalised to a passive reference (Rn) get no
+  card. `StudyDesign.import_trust` carries it, so a record re-runs to the same grades. The
+  efficiency models never test each well's own efficiency for such curves (nor, under Cq only,
+  the per-amplicon mean or the assumed 2): they are listed as not applicable, with why.
+- Confidence caps (`qpilot/core/confidence.py`): `grade(..., cap=Cap(level, check_id, note))`,
+  a ceiling with a named reason, reported among the checks. No new field on a grade: every
+  existing result and record re-runs byte for byte.
 - MCP `qpcr_gate` (read-only): the controls, the consequence tests and the `card_gate_*` cards;
   `qpcr_decide` on a gate card is always `pending_human`, filed as the agent's exclusions for a
   person to approve or turn down on the card.

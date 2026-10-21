@@ -46,7 +46,7 @@ A workspace is either a Studio
 | Open | `#/` | always | `GET /api/system`, `GET /api/workspaces`, `POST /api/workspaces` (upload: `rdml` + `sheet`, or `files` = instrument exports sorted by content → `qpilot.web.intake` + `io.connectors.materialise`), `POST /api/workspaces/demo`, `POST /api/demo/fetch` |
 | Design (blind) | `…/design` | session | `GET /api/sessions/{sid}` (incl. `capture`: what an export was read as), `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
-| Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards` (incl. cards opened from Trace, with their `place`), decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `GET /api/studies/{id}/evidence` (the Evidence Ledger) → `qpcr.evidence`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis` |
+| Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards` (incl. cards opened from Trace, with their `place`), decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `GET /api/studies/{id}/evidence` (the Evidence Ledger) → `qpcr.evidence`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis`; `GET /api/studies/{id}/import-trust`, `POST …/import-trust/decide` (session only) → `io.trust` + `Studio.decide_import_trust` (+ the `analyse` job for Cq only) |
 | Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
@@ -125,8 +125,10 @@ an instrument export the **Imported from …** card (`WorkspaceView.capture`): t
 their names, per plate wells / cycles / targets / dyes / declared sample types, the instrument's
 Cq count and omitted wells (recorded, never applied), the signal, the raw-ness verdict with what
 it means (baseline-subtracted or rescaled curves weaken LinRegPCR's per-well efficiency, with how
-to re-export; Cq only: no curves to check), files not used and each warning. Blind-safe: counts
-and names only, no sample name, no Cq value, no group.
+to re-export; Cq only: no curves to check), files not used and each warning. When the verdict calls
+for the Import Trust card (`CaptureRawness.import_trust`: baseline-subtracted, or qPilot could not
+tell) one line says that every gene is capped at Moderate until a person decides, on Results once
+the blind is lifted. Blind-safe: counts and names only, no sample name, no Cq value, no group.
 * Proposal card: (1) the proposal in words + the alternatives considered; (2) **Why**: each
   evidence item as a fold-out (text quote with its origin, a sheet cell, a well → opens its
   curve); (3) **Engine check**: consistent / contradicted / cannot check, with the rule ids and
@@ -150,7 +152,10 @@ No group labels here. A well left out of (or put back into) the analysis is a `c
 proposal (subject `run/well`, payload `{"excluded": true|false}`), accepted only with a reason
 and never in "Accept all consistent"; the Controls section makes them from a gate card. Accepted
 after the curves are confirmed, it keeps them confirmed (the confirmation does not cover the
-wells left out) and makes a new analysis, like an accepted Prism exclusion.
+wells left out) and makes a new analysis, like an accepted Prism exclusion. A person's option on
+the Import Trust card (Results) is a `curve.import_trust` proposal (subject `import`, payload
+`{"option": …}`, engine check D-TRUST), also accepted only with a reason and never in "Accept all
+consistent"; it is outside both blind confirmations (they never re-open for it).
 
 ### Results (`features/results`)
 * Summary strip: plates, reactions, samples, groups (n each), the conclusion rule ("up or down
@@ -197,6 +202,30 @@ wells left out) and makes a new analysis, like an accepted Prism exclusion.
   to check, and are decided the same way: a choice that can change a conclusion is a person's,
   at every autonomy level. Deciding one is kept in the chain; the study's numbers stay as
   analysed (leaving a well out of the analysis is Curves' or Controls' job).
+* **Import Trust** (first in the Decision Cards column, a Studio session opened from an instrument
+  export whose curves were most likely baseline-subtracted before export, or whose processing
+  qPilot could not tell; `capture.import_trust`, always a person's decision; policy and words in
+  `qpilot/io/trust.py`, science in `agent-bus/contracts/scientist-spec-capture.md` §4–5). Until a
+  person decides, the curves as imported are analysed with every gene's confidence capped at
+  **Moderate** ("vendor-baselined curves": a failed `import_trust` check, and a reason where it
+  holds the level down; the caps are qPilot policy and say so). Options, each with its cap:
+  **Re-export the raw curves** (recommended; the vendor's recipe, e.g. CFX "No Baseline
+  Subtraction"; this analysis stays as it is), **Analyse the curves as they are** (Moderate),
+  **Use the instrument's Cq values only** (the curves are not used: the instrument's Cq, quantity
+  2^-Cq with every cycle assumed to double, no per-well efficiency; capped at **Low**, "efficiency
+  assumed"; not offered without instrument Cq values). A reason is required; the choice is one
+  `curve.import_trust` proposal accepted by the person in the session's hash-chained inbox, and
+  only Cq only (or leaving it) analyses the study again (its Decision Cards start at the
+  recommended options, said before deciding). An agent's `qpcr_decide` on `card_import_trust`
+  over MCP is `pending_human` and waits on the card with **Approve** / **Turn down** (turning down
+  rejects the request in the inbox). Shown on Results, not on Design: it can be decided only once
+  the blind is lifted, and the cap it sets is what every gene's level and reasons here say.
+  The efficiency models a person asks the grid to test never include each well's own efficiency
+  for such curves, and under Cq only neither the per-amplicon mean nor the assumed 2 (said as not
+  applicable, with why: `io.trust.not_measured`). Curves normalised to a passive reference (Rn)
+  keep their ground phase and get no card; nor does an RDML file or a study analysed outside
+  Studio. Refusals: `blind` (403), `studio` (409: outside
+  Studio, no card, an option already chosen, Cq only without instrument Cq), `stale` (409).
 * `j`/`k` move between cards, `Enter` focuses the reason, `⌘Enter` decides.
 * **Also test efficiency models** (under the cards; `ResultsView.axes`, opt-in): what qPilot does
   with the efficiency model now (not tested / tested in the grid / tried, changes nothing / does

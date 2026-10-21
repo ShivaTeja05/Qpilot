@@ -201,6 +201,16 @@ def _d_exclude(subject: str, d: Mapping[str, Any]) -> str:
     return f"Put well {subject} back into the analysis"
 
 
+def _d_trust(subject: str, d: Mapping[str, Any]) -> str:
+    from qpilot.io.trust import LABELS
+
+    option = d["option"]
+    if option not in LABELS:
+        raise TypeError("not an option of the Import Trust card")
+    label = LABELS[option]
+    return f"Import Trust: {label[0].lower()}{label[1:]}"
+
+
 def _d_axis(subject: str, d: Mapping[str, Any]) -> str:
     from qpilot.qpcr.axes import get_axis
 
@@ -270,6 +280,7 @@ _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
     "curve.call_rule": _d_rule,
     "curve.well_call": _d_well,
     "curve.exclude_well": _d_exclude,
+    "curve.import_trust": _d_trust,
     "choice.axis": _d_axis,
     "prism.project": _d_project,
     "prism.exclusion_reason": _d_exclusion,
