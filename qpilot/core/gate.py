@@ -265,6 +265,12 @@ def _flipped_anywhere(base: Baseline, variant: DecisionSpace, grid: pd.DataFrame
     return [item for item in base.items if item in moved or item in missing]
 
 
+def elsewhere(option: OptionConsequence) -> list[str]:
+    """Items whose call changes only at other settings of the grid (not at the primary cell)."""
+    primary = set(option.flipped)
+    return [item for item in option.flipped_anywhere if item not in primary]
+
+
 def unknown(option: str, excluded: Iterable[str], reason: str) -> OptionConsequence:
     """An option that could not be evaluated, with the reason in plain words."""
     return OptionConsequence(
@@ -331,6 +337,7 @@ def consequence_facts(
         rows = [
             (f"f_gate_nflip_{stem}", opt.n_flipped, "{}", "n_flipped"),
             (f"f_gate_nflipany_{stem}", opt.n_flipped_anywhere, "{}", "n_flipped_anywhere"),
+            (f"f_gate_nelse_{stem}", len(elsewhere(opt)), "{}", "n_flipped_elsewhere"),
             (f"f_gate_dlog2_{stem}", round(opt.max_delta_log2fc, 6), "{:.2f}", "max_delta_log2fc"),
             (f"f_gate_nexcl_{stem}", len(opt.excluded), "{}", "n_excluded"),
         ]
