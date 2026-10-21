@@ -44,7 +44,8 @@ key, no model), walks the built page through every section, gene, tab, palette a
 Chromium while recording, writes this folder, then serves it the way Vercel will and walks it
 again. It fails if any request has no recording, if any request leaves the site, or on any
 console error. Local paths in the answers are rewritten to qPilot's defaults (`~/.cache/qpilot`),
-and the script refuses to write the site if a user name or home path is left anywhere.
+and an answer that still holds a user name, a home or temporary path is never published (it is
+dropped and listed). The recorded files are not committed: run the script to make them.
 
 `node scripts/static-demo/record.mjs --verify` checks the folder as it is;
 `node scripts/static-demo/serve.mjs ../site 7961` serves it locally.
