@@ -4,6 +4,10 @@ A *session* is a Studio session (named ``input_sha256[:12]``): the AI proposes, 
 checks, a person decides, and results stay hidden until the design and the curves are
 confirmed. A *study* is an analysis made outside a session (``qpilot run``, an agent's
 ``qpcr_study``); its results are shown straight away.
+
+Opening takes an RDML file (``rdml``, opened as it is) or what an instrument wrote (``files``:
+one export or a whole export set, sorted by content in :mod:`qpilot.web.intake`; a vendor export
+is read once into deterministic RDML and the session opens that).
 """
 
 from __future__ import annotations
@@ -16,8 +20,9 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, File, Form, UploadFile
 
 from qpilot.core.store import StudyNotFound
+from qpilot.io.connectors import CaptureError
 from qpilot.studio_service import StudioError
-from qpilot.web import studio_views, views
+from qpilot.web import intake, studio_views, views
 from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session
 from qpilot.web.contract import (
     DemoFetched,
@@ -131,7 +136,19 @@ def _unreadable(name: str, why: str, path: Path | None = None) -> str:
     )
 
 
-def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) -> JobView:
+def _remember_sentence(ctx: AppContext, sid: str, sentence: str) -> None:
+    if sentence:
+        with ctx.lock:
+            ctx.settings.setdefault("sentences", {})[sid] = sentence[: views.MAX_SENTENCE]
+
+
+def _open_job(
+    ctx: AppContext,
+    rdml: Path,
+    sheet: Path | None,
+    sentence: str,
+    unused: list[str] | None = None,
+) -> JobView:
     """Open as a job, named by the file the person dropped; one job per file (and sheet)."""
     name = views.display_name(rdml) or rdml.name
 
@@ -148,11 +165,9 @@ def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) ->
             raise JobError(
                 "cannot_open", f"{name} could not be opened: {text or type(err).__name__}"
             ) from err
-        if sentence:
-            with ctx.lock:
-                ctx.settings.setdefault("sentences", {})[sid] = sentence[: views.MAX_SENTENCE]
+        _remember_sentence(ctx, sid, sentence)
         ctx.bus.publish({"type": "proposals.changed", "key": sid, "source": "page"})
-        return {"key": sid}
+        return {"key": sid, "unused": list(unused or [])}
 
     job = ctx.jobs.submit(
         "open",
@@ -165,14 +180,128 @@ def _open_job(ctx: AppContext, rdml: Path, sheet: Path | None, sentence: str) ->
     return JobView(**job.view())
 
 
+def _import_job(
+    ctx: AppContext,
+    found: intake.Sorted,
+    sheet: Path | None,
+    sentence: str,
+) -> JobView:
+    """Read an instrument export into RDML once, then open that file as a session (a job)."""
+    exports = found.exports
+    what = exports[0].name if len(exports) == 1 else f"{len(exports)} files"
+    unused = [item.name for item in found.unused]
+
+    def work(progress: Progress) -> dict[str, Any]:
+        progress(f"Reading {what} ({found.label}) and quarantining every name")
+        try:
+            result = intake.read_export(ctx.store, exports)
+        except intake.Refused as err:
+            raise JobError(err.code, err.message) from err
+        except CaptureError as err:
+            raise JobError("cannot_open", f"The export could not be read: {err}.") from err
+        name = intake.title(result.meta)
+        progress(f"Opening {name}")
+        try:
+            sid = ctx.studio.open(result.rdml_path, sheet, actor="human")
+        except Exception as err:  # any reader failure is a sentence about the person's files
+            path = result.rdml_path
+            text = str(err).replace(str(path), name).replace(path.name, name)
+            raise JobError(
+                "cannot_open", f"{name} could not be opened: {text.strip() or type(err).__name__}"
+            ) from err
+        intake.save(ctx.store, sid, result.meta, unused)
+        _remember_sentence(ctx, sid, sentence)
+        ctx.bus.publish({"type": "proposals.changed", "key": sid, "source": "page"})
+        return {"key": sid, "unused": unused}
+
+    job = ctx.jobs.submit(
+        "open",
+        work,
+        title=f"Opening {what}",
+        key=None,
+        typical_s=OPEN_TYPICAL_S,
+        tag="|".join(sorted(str(item.path) for item in exports)) + f"|{sheet or ''}",
+    )
+    return JobView(**job.view())
+
+
+async def _open_dropped(
+    ctx: AppContext, uploads: list[UploadFile], sheet: UploadFile | None, sentence: str
+) -> JobView:
+    """Keep every dropped file by content, sort them by content, open the RDML or the export."""
+    if len(uploads) > intake.MAX_FILES:
+        raise api_error(
+            400,
+            "too_many_files",
+            f"That is {len(uploads)} files; qPilot opens at most {intake.MAX_FILES} at a time.",
+        )
+    for upload in uploads:  # every name is checked before any byte is kept
+        problem = intake.suffix_problem(Path(upload.filename or "").name)
+        if problem:
+            raise api_error(400, "bad_file", problem)
+    dropped: list[intake.Dropped] = []
+    for upload in uploads:
+        kept = await _keep(ctx, upload, "export", MAX_RDML_BYTES)
+        name = views.display_name(kept) or kept.name
+        if any(d.path == kept for d in dropped):
+            continue  # the same file dropped twice
+        try:
+            dropped.append(intake.classify(kept, name))
+        except intake.Refused as err:
+            raise api_error(400, err.code, err.message) from err
+    sheet_path = None
+    if sheet is not None and sheet.filename:
+        sheet_path = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
+    try:
+        found = intake.sort_dropped(dropped)
+    except intake.Refused as err:
+        raise api_error(400, err.code, err.message) from err
+    if found.sheets:
+        if sheet_path is not None:
+            names = f"{views.display_name(sheet_path)}, {found.sheets[0].name}"
+            raise api_error(400, "mixed_files", f"Add one sample sheet at a time ({names}).")
+        sheet_path = found.sheets[0].path
+    if found.rdml:
+        unused = [item.name for item in found.unused]
+        return _open_job(ctx, intake.rdml_input(found.rdml[0]), sheet_path, sentence, unused)
+    return _import_job(ctx, found, sheet_path, sentence)
+
+
 @router.post("/workspaces", response_model=JobStarted, status_code=202)
 async def open_file(
-    rdml: Annotated[UploadFile, File(description="The instrument's RDML export (.rdml, .xml).")],
     ctx: Ctx,
+    rdml: Annotated[
+        UploadFile | None, File(description="An RDML file (.rdml, .xml), opened as it is.")
+    ] = None,
     sheet: Annotated[UploadFile | None, File(description="Optional sample sheet.")] = None,
+    files: Annotated[
+        list[UploadFile] | None,
+        File(
+            description="What the instrument wrote, instead of `rdml`: one export or a whole "
+            "export set (CFX amplification per dye + Cq results + run information; QuantStudio "
+            "/ StepOne / 7500; LightCycler 480; RDES or a tidy table), at most 64 files. Sorted "
+            "by content: an RDML file, the export, and a sample sheet among them."
+        ),
+    ] = None,
     sentence: Annotated[str, Form(max_length=views.MAX_SENTENCE)] = "",
 ) -> JobStarted:
-    """Open a file (and optional sample sheet) as a Studio session; nothing is analysed yet."""
+    """Open a file (and optional sample sheet) as a Studio session; nothing is analysed yet.
+
+    Send ``rdml`` (one RDML file) or ``files`` (instrument exports), not both. A vendor export
+    is read once into a deterministic RDML file; what was read is shown in the session's
+    ``capture``.
+    """
+    uploads = [f for f in files or [] if f.filename]
+    if uploads:
+        if rdml is not None and rdml.filename:
+            raise api_error(
+                400, "mixed_files", "Send an RDML file or instrument export files, not both."
+            )
+        return JobStarted(job=await _open_dropped(ctx, uploads, sheet, sentence.strip()))
+    if rdml is None or not rdml.filename:
+        raise api_error(
+            400, "no_file", "Choose a file to open: an RDML file or your instrument's export."
+        )
     rdml_path = await _keep(ctx, rdml, "rdml", MAX_RDML_BYTES)
     sheet_path = None
     if sheet is not None and sheet.filename:

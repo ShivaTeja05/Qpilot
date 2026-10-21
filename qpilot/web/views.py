@@ -24,7 +24,12 @@ from qpilot.web.contract import (
 )
 
 STUDY_KEY = re.compile(r"^[0-9a-f]{12}\Z")
-INPUT_SUFFIXES = {"rdml": (".rdml", ".xml"), "sheet": (".xlsx", ".csv")}
+INPUT_SUFFIXES = {
+    "rdml": (".rdml", ".xml"),
+    "sheet": (".xlsx", ".csv"),
+    # instrument exports (and RDML, and a sample sheet) dropped together; the content decides
+    "export": (".rdml", ".rdm", ".xml", ".lc96p", ".csv", ".tsv", ".txt", ".xlsx", ".xlsm"),
+}
 MAX_SENTENCE = 500
 
 
@@ -50,10 +55,17 @@ MAX_NAME = 200
 
 
 def _name_file(kept: Path) -> Path | None:
-    """Where a kept upload's original name is written (beside the kept-inputs folder)."""
-    if kept.parent.name != "studio-inputs":
-        return None
-    return kept.parent.parent / "studio-input-names" / kept.name
+    """Where a kept upload's original name is written (beside the kept-inputs folder).
+
+    An RDML file built from an instrument export (``<studies>/imports/capture/<key>.rdml``)
+    keeps its name next to it (``<key>.rdml.name``): the export's file, or its plate and how
+    many files.
+    """
+    if kept.parent.name == "studio-inputs":
+        return kept.parent.parent / "studio-input-names" / kept.name
+    if kept.parent.name == "capture" and kept.parent.parent.name == "imports":
+        return kept.parent / f"{kept.name}.name"
+    return None
 
 
 def remember_name(kept: Path, name: str) -> None:
@@ -255,7 +267,7 @@ def file_facts(studio: Studio, sid: str) -> FileFacts | None:
     return FileFacts(
         file_name=display_name(record.get("path")),
         input_sha256=summary.input_sha256,
-        sheet_name=Path(sheet["path"]).name if sheet.get("path") else None,
+        sheet_name=display_name(sheet["path"]) if sheet.get("path") else None,
         n_plates=len(summary.runs),
         n_wells=sum(r.n_wells for r in summary.runs),
         n_samples=summary.n_samples,
@@ -480,8 +492,11 @@ def session_view(
     ready: bool | None = None,
 ) -> WorkspaceView:
     """Everything the page needs to show a session's frame: file, stages, next step."""
+    from qpilot.web import intake
+
     store = studio.store
     line = session_summary(studio, sid, ready)
+    capture = intake.summary(store, sid)  # what an instrument export was read as (or None)
     if line.warming:
         from qpilot.web.warm import COLD_MESSAGE
 
@@ -495,6 +510,7 @@ def session_view(
             is_demo=line.is_demo,
             has_audit=line.has_audit,
             warming=True,
+            capture=capture,
         )
     try:
         summary = studio.summary(sid)
@@ -535,6 +551,7 @@ def session_view(
         active_jobs=active_jobs or [],
         has_audit=line.has_audit,
         is_demo=line.is_demo,
+        capture=capture,
     )
 
 

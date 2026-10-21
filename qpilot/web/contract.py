@@ -31,6 +31,7 @@ from qpilot.schemas_studio import (
     QuarantineEntry,
     WellCall,
 )
+from qpilot.web.contract_capture import CaptureSummary
 
 # ---- errors and jobs -----------------------------------------------------------------------
 
@@ -241,6 +242,11 @@ class WorkspaceView(BaseModel):
     )
     autonomy: Literal["suggest", "decide_and_tell"] | None = Field(
         default=None, description="What agents may do in this study (None: no study yet)."
+    )
+    capture: CaptureSummary | None = Field(
+        default=None,
+        description="What qPilot read from the instrument export this session was opened from "
+        "(None: opened from an RDML file).",
     )
 
 
@@ -999,6 +1005,9 @@ class OpenDone(BaseModel):
     """An opened file: the workspace to go to."""
 
     key: str
+    unused: list[str] = Field(
+        default=[], description="Dropped files qPilot did not read (named back to the person)."
+    )
 
 
 class DemoFetched(BaseModel):
