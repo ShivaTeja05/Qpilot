@@ -19,6 +19,11 @@ only UI. This file says what was combined, ported or left out, and why.
 | **Ask** (`ai/ask.py`) | study topics (overview, calls, references, cards), "not understood" | Trace questions ("why is X no call?", "where should I look?", a well) | **Both**: Trace questions route first, then the study topics |
 | **`qpcr/space.py`** | stage caches for the efficiency axis | a public what-if API over its internals | **Both**: the what-if API reads the stage caches, so it works on any matrix axis |
 
+One difference stays visible: **Ask, MCP's `qpcr_trace`, `qpilot trace` and the Excel sheet**
+trace the stored results (every choice at its recommended option), as on origin/main; the Trace
+section and its Where to look trace **the analysis in use**. They differ only once a person has
+decided a card away from its recommended option.
+
 Not combined (different questions, kept apart): origin/main's G-RT and G-INSTR gate lines
 (`qpcr/gate_rt.py`, `gate_instr.py`) feed the Evidence Ledger and the run-file reading; the Run
 Gate rule pack (`core/rules.py`, `qpcr/gate_rules.py`: G-TYPED, NTC, NAC, NRT, POS, STD, REP) is

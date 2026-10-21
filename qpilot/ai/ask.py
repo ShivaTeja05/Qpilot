@@ -553,9 +553,10 @@ def can_answer(ctx: _Context) -> str:
     example = (called or sorted(ctx.result.contrasts) or ["a gene"])[0]
     return (
         f"I can answer: how one gene came out and how robust it is (try “Is {example} "
-        "robust?”), which genes are up or down, which control genes are most stable, how many "
-        "genes each analysis choice can change, and the study's size. Name a gene or ask one "
-        "of those."
+        "robust?”), where to look behind a gene, a sample or a well (try “Where should I look "
+        f"for {example}?”), which genes are up or down, which control genes are most stable, how "
+        "many genes each analysis choice can change, and the study's size. Name a gene or ask "
+        "one of those."
     )
 
 

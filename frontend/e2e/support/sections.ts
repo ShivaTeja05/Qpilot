@@ -34,6 +34,8 @@ export const SECTIONS: SectionUnderTest[] = [
   { id: "report", label: "Report", owner: "report", scope: "workspace" },
   { id: "history", label: "History", owner: "history", scope: "workspace" },
   { id: "planner", label: "Plan next", owner: "planner", scope: "workspace" },
+  { id: "sheetcheck", label: "Sheet check", owner: "integrate-main", scope: "global" },
+  { id: "instruments", label: "Instruments", owner: "integrate-main", scope: "global" },
   { id: "settings", label: "Settings", owner: "home", scope: "global" },
 ];
 
