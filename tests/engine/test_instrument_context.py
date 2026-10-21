@@ -1,7 +1,10 @@
 """The instrument-context reader: what a run file says about the instrument (plan 2.15, L1).
 
-Every input is synthetic and built in ``tmp_path`` (``tests/engine/instrument_files.py``); the
-layouts follow the measured oracle. The demo RDML test is marked ``demo_data``.
+Most inputs are synthetic and built in ``tmp_path`` (``tests/engine/instrument_files.py``); the
+layouts follow the measured oracle. The text exports of the fixtures corpus are read as they are
+(Design & Analysis 2.x, QuantStudio TXT, CFX Run Information); their serials and personal fields
+are read from the files by the tests, never written here. The demo RDML test is marked
+``demo_data``.
 """
 
 import io
@@ -29,6 +32,12 @@ from qpilot.qpcr.instrument_context import (
 from tests.engine import instrument_files as F
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+CORPUS = FIXTURES / "corpus"
+DA_QS3 = CORPUS / "thermofisher" / "securebio-qs3-design-analysis-2.7"
+DA_7500 = CORPUS / "thermofisher" / "opentrons-7500-design-analysis-csv"
+DA_SYNTH = CORPUS / "synthetic" / "quantstudio-design-analysis-rn-drn"
+DA_REAL = sorted([*DA_QS3.glob("*.csv"), *DA_7500.glob("*.csv")])
+QS_TXT_REAL = sorted((CORPUS / "thermofisher" / "allotropy-quantstudio-rtpcr-txt").glob("*.txt"))
 SUMMARY_KEYS = {
     "source_kind",
     "run_id",
@@ -55,6 +64,17 @@ def _dump(ctx: RunContext) -> str:
 
 def _cal(ctx: RunContext, kind: str) -> dict:
     return next(c for c in ctx.calibrations if c["type"] == kind)
+
+
+def _hash_header(path: Path) -> dict[str, str]:
+    """A Design & Analysis export's ``# Key: Value`` lines (key in lower case), read plainly."""
+    header: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        if not line.startswith("#"):
+            break
+        key, _, value = line[1:].partition(":")
+        header[key.strip().lower()] = value.strip()
+    return header
 
 
 # ---------------------------------------------------------------------------------------------
@@ -609,6 +629,8 @@ def test_an_expired_flag_from_the_file(tmp_path):
         ("2019-09-11 12:05:00 AM UTC", "2019-09-11T00:05:00Z", None),
         ("2019-09-11 12:05:00 PM GMT", "2019-09-11T12:05:00Z", None),
         ("2019-07-01 09:00:00 AM BST", "2019-07-01T08:00:00Z", None),
+        ("2023-11-14 04:20:56 PM EST", "2023-11-14T21:20:56Z", None),  # Design & Analysis
+        ("2024-04-22 03:55:26 PM EDT", "2024-04-22T19:55:26Z", None),
         ("2019-09-11 11:04:11 CEST", "2019-09-11T11:04:11", ic.NOTE_TZ_NOT_CONVERTED),
         ("2019-09-11 11:04:11", "2019-09-11T11:04:11", ic.NOTE_TZ_NOT_IN_FILE),
     ],
@@ -629,6 +651,87 @@ def test_quantstudio_txt_dialect(tmp_path):
     assert ctx.well_flags == {"A1": ["NOISE"]}
     assert ctx.facts["f_instr_cal_background_performed_on"].path == "export.txt:line 3"
     assert "QS6 Room 1" in ctx.aliases
+
+
+def test_real_quantstudio_txt_exports_from_the_corpus():
+    assert len(QS_TXT_REAL) == 6
+    for path in QS_TXT_REAL:
+        ctx = read_run_context(path)
+        assert ctx.source_kind == "quantstudio_export", path.name
+        assert "identity" in ctx.checked and ctx.identity["model"], path.name
+        assert ctx.run["end"].endswith("Z") and ctx.run["date_source"] == "instrument", path.name
+        assert ic.NOTE_TZ_NOT_CONVERTED not in ctx.notes, path.name  # EDT and EST
+        view = json.dumps(ctx.model_view(), ensure_ascii=False)
+        assert not any(v and v in view for k, v in ctx.identity.items() if k in ic.LOCAL_IDENTITY)
+    with_cals = [p.name for p in QS_TXT_REAL if "calibrations" in read_run_context(p).checked]
+    assert len(with_cals) == 5  # the results-only export has no calibration rows
+
+
+# ---------------------------------------------------------------------------------------------
+# Design & Analysis 2.x exports: the ``# Key: Value`` header (real files of the corpus)
+# ---------------------------------------------------------------------------------------------
+
+
+def test_design_and_analysis_exports_from_the_corpus():
+    # QuantStudio 3, Design & Analysis 2.7: both files of both runs carry the run's header
+    qs3 = sorted(DA_QS3.glob("*.csv"))
+    assert len(qs3) == 4
+    for path in qs3:
+        ctx = read_run_context(path)
+        assert ctx.source_kind == "quantstudio_export", path.name
+        # instrument type, block type, serials, run times, software; no calibration, run state,
+        # log or flag column is in the file, so the identity is all there is to check
+        assert ctx.checked == ["identity"], path.name
+        assert ctx.identity["model"] == "QuantStudio™ 3 System"
+        assert ctx.identity["block_type"] == "96-Well 0.1-mL Block"
+        assert ctx.identity["software"] == "Design & Analysis Software v2.7.0"
+        assert ctx.calibrations == [] and ctx.well_flags == {} and ctx.run["state"] is None
+        assert ctx.model_view()["serials_present"] == ["block_serial", "serial"]  # cover empty
+    cov2 = read_run_context(DA_QS3 / "2023-11-14_Cov2_Copy_Results_20240422_155540.csv")
+    assert cov2.run["start"] == "2023-11-14T21:20:56Z"  # 04:20:56 PM EST
+    assert cov2.run["end"] == "2023-11-14T22:19:47Z"  # "Run End Data/Time", as the file spells it
+    assert (cov2.run["date"], cov2.run["date_source"]) == ("2023-11-14", "instrument")
+    assert "time_zone" not in cov2.run and ic.NOTE_TZ_NOT_CONVERTED not in cov2.notes
+    assert cov2.facts["f_instr_run_start"].path == "export.csv:line 11"
+    assert cov2.facts["f_instr_serial"].path == LOCAL_ONLY + "export.csv:line 8"
+    assert cov2.facts["f_instr_block_serial"].path == LOCAL_ONLY + "export.csv:line 10"
+    assert cov2.facts["f_instr_instrument_name"].path.startswith(LOCAL_ONLY)
+    assert ic.NOTE_USER_NAME in cov2.notes  # "Operator: DEFAULT"
+    assert ic.NOTE_PERSONAL_FIELD in cov2.notes  # "File Name: <run>.eds"
+
+    # a 7500 run in the same dialect: other run-time keys, its serial written "null"
+    m7500 = read_run_context(DA_7500 / "Zymo_LOD_1x_2020-04-18_Copy_Results.csv")
+    assert m7500.source_kind == "quantstudio_export" and m7500.checked == ["identity"]
+    assert m7500.identity["model"] == "7500 System" and m7500.identity["serial"] is None
+    assert m7500.run["start"] == "2020-04-19T02:08:17Z"  # "Plate Run Start", 07:08:17 PM PDT
+    assert m7500.run["end"] == "2020-04-19T04:00:39Z"
+    assert m7500.run["date"] == "2020-04-18"  # the run's own calendar day
+    assert ic.NOTE_OPERATOR_PATH in m7500.notes  # "Plate File Name" is a path
+
+    # the corpus's synthetic export of the QuantStudio layout: no run times
+    synth = read_run_context(DA_SYNTH / "qpilot-synthetic_Results.csv")
+    assert synth.source_kind == "quantstudio_export" and synth.checked == ["identity"]
+    assert synth.identity["model"] == "QuantStudio™ 5 System"
+    assert synth.run["date"] is None and synth.run["date_source"] is None
+
+
+@pytest.mark.parametrize("path", DA_REAL, ids=lambda p: p.name)
+def test_design_and_analysis_serials_and_personal_fields_stay_local(path):
+    header = _hash_header(path)
+    ctx = read_run_context(path)
+    serials = [v for k, v in header.items() if "serial" in k and v and v != "null"]
+    assert serials or path.parent == DA_7500
+    view = json.dumps(ctx.model_view(), ensure_ascii=False)
+    for serial in serials:
+        assert serial in ctx.aliases and serial not in view  # the logbook keeps it, locally
+    for fact in ctx.facts.values():
+        if fact.value in serials or fact.value in ctx.aliases:
+            assert is_local_only(fact), fact.id
+    assert not any(alias in view for alias in ctx.aliases)
+    dump = _dump(ctx)  # the operator, user and free-text fields leave a fixed note only
+    for key in ("file name", "plate file name", "operator", "user name", "comment", "description"):
+        if header.get(key):
+            assert header[key] not in dump, key
 
 
 # ---------------------------------------------------------------------------------------------

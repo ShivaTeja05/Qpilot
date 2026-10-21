@@ -6,8 +6,9 @@ rows, CFX run information). Each plate records the files it was read from (``Pla
 read from the file names as the connectors group them for a capture recorded before it did); the
 plate's run file is read from the folder that keeps the files by content, checked by sha256, and
 G-INSTR says it read the export's file. A run file a person links comes first, the study's RDML
-last. Synthetic run files (``tests/engine/instrument_files``), the corpus's synthetic CFX export
-and one public QuantStudio text export of the corpus; no download.
+last. Synthetic run files (``tests/engine/instrument_files``), the corpus's synthetic CFX export,
+one public QuantStudio text export and one public Design & Analysis 2.7 export set of the corpus;
+no download.
 """
 
 from __future__ import annotations
@@ -21,13 +22,14 @@ from qpilot.io.connectors import CaptureMeta, capture
 from qpilot.io.connectors.common import plate_sources
 from qpilot.qpcr.export_runs import export_runs
 from qpilot.qpcr.gate_rules import GateContext, file_runs, with_export, with_linked
-from qpilot.qpcr.instrument_context import read_run_context
+from qpilot.qpcr.instrument_context import LOCAL_IDENTITY, read_run_context
 from tests.engine import instrument_files as F
 from tests.gate.test_gate_rt_instr import G_INSTR, core_gate_plain, evals_of, plate_table
 
 CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "corpus"
 SYNTH_CFX = CORPUS / "synthetic" / "cfx-manager-raw-vs-baseline-subtracted"
 ALLOTROPY = CORPUS / "thermofisher" / "allotropy-quantstudio-rtpcr-txt"
+DA_QS3 = CORPUS / "thermofisher" / "securebio-qs3-design-analysis-2.7"
 RAW, BASELINED = "qpilot-synthetic-raw", "qpilot-synthetic-baselined"
 RUN_INFO = f"{RAW} -  Run Information.csv"
 CFX_SECRETS = ("CC000123", "785BR0001", F.OPERATOR, "AlexandraQuill")
@@ -139,6 +141,42 @@ def test_a_real_quantstudio_text_export_is_its_own_plates_run_file(tmp_path):
     ctx, (ev,) = instr(with_export({}, {plate: run.context}))
     assert (ev.verdict, ev.outcome) == ("pass", "calibrations_in_date")
     assert core_gate_plain(ev, ctx).startswith(LEAD)
+
+
+def test_a_design_and_analysis_export_gives_each_plate_its_run_file(tmp_path):
+    files = sorted(DA_QS3.glob("*.csv"))  # two runs, each an Amplification Data and a Results
+    meta = capture(files).meta
+    found = export_runs(meta, keep(tmp_path / "kept", files))
+    assert set(found) == {"2023-11-14_Cov2_Copy", "2023-11-14_PMMoV_VIC"}
+    for plate, run in found.items():
+        assert run.name in plate_sources(meta)[plate]  # one of the plate's own two files
+        assert run.context.source_kind == "quantstudio_export"
+        assert run.context.checked == ["identity"]  # the `# Key: Value` header names no more
+    assert found["2023-11-14_Cov2_Copy"].context.run["start"] == "2023-11-14T21:20:56Z"
+    assert found["2023-11-14_PMMoV_VIC"].context.run["start"] == "2023-11-14T22:24:18Z"
+    runs = with_export({}, {plate: run.context for plate, run in found.items()})
+    assert {run.source for run in runs.values()} == {"export"}
+    ctx, evs = instr(runs)
+    assert len(evs) == 2
+    for ev in evs:
+        assert (ev.verdict, ev.code) == (NOT_APPLICABLE, "nothing_to_check")
+        assert ev.evidence["source"] == "export run file"
+        assert ev.evidence["source_kind"] == "quantstudio_export"
+        assert core_gate_plain(ev, ctx) == (
+            "This plate's run file in the instrument export names the instrument but records no "
+            "run state, calibration or event to check."
+        )
+    secrets = {
+        value
+        for run in found.values()
+        for key, value in run.context.identity.items()
+        if value and key in LOCAL_IDENTITY
+    } | {alias for run in found.values() for alias in run.context.aliases}
+    assert len(secrets) == 2  # the instrument's serial (its name too) and the block's serial
+    values = " ".join(str(f.value) for f in ctx.facts.as_dict().values())
+    for ev in evs:
+        shown = core_gate_plain(ev, ctx) + repr(ev.evidence) + values
+        assert not any(secret in shown for secret in secrets)
 
 
 def test_a_kept_file_that_is_gone_or_changed_is_not_read(tmp_path):

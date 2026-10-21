@@ -14,7 +14,8 @@ back, from four kinds of file, into one :class:`RunContext`:
   ``run/run_summary.json`` and ``summary.json`` (keys mapped tolerantly), ``messages.log``
   (a curated event vocabulary, never error counts) and ``logs/temperature.log`` (a summary);
 * ``quantstudio_export``: the header rows of a QuantStudio results export (``.csv`` rows
-  ``key,value`` padded with commas, or the ``.txt`` ``* key = value`` dialect) and its per-well
+  ``key,value`` padded with commas, the ``.txt`` ``* key = value`` dialect, or the
+  ``# Key: Value`` lines a Design & Analysis 2.x export puts above its table) and its per-well
   flag columns (``Y``/``N``);
 * ``cfx_run_information``: a Bio-Rad CFX "Run Information" key/value export;
 * ``rdml``: ``run.instrument`` (Bio-Rad CFX strings carry the serials; a LightCycler 96 string
@@ -40,7 +41,7 @@ Rules:
   age; a time zone qPilot does not know is kept as text and not converted.
 
 Formats checked on real files and formats inferred are listed in ``methods/instrument_context.md``
-(open questions U1 to U7). Whether an expired optical calibration moves Cq is not known; this
+(open questions U1 to U9). Whether an expired optical calibration moves Cq is not known; this
 module reports the fact and never judges the run.
 
 Deterministic: no model call and no network.
@@ -140,7 +141,16 @@ NOTE_TEMPERATURE_FORMAT = "temperature log present but its layout is not underst
 NOTE_UNMAPPED = "some summary keys are not mapped (listed in unmapped_keys)"
 NOTE_MANY_RUNS = "the file holds several runs; read them one by one with run_contexts_from_rdml"
 
-_TZ_OFFSETS = {"UTC": 0, "GMT": 0, "Z": 0, "PDT": -7, "PST": -8, "BST": 1}
+_TZ_OFFSETS = {
+    "UTC": 0,
+    "GMT": 0,
+    "Z": 0,
+    "PDT": -7,
+    "PST": -8,
+    "EDT": -4,  # Design & Analysis exports of a US lab write EST and EDT
+    "EST": -5,
+    "BST": 1,
+}
 
 #: ``InstrumentTypeId`` values seen in public files and the instrument class they stand for.
 INSTRUMENT_TYPE_IDS: dict[str, str] = {
@@ -190,13 +200,14 @@ METHOD_CARD: dict[str, Any] = {
     "version": "1",
     "title": "What the run file says about the instrument",
     "source": (
-        "Vendor file layouts read from public files (QuantStudio CSV results exports, an "
-        "ABI 7500 .eds, a Bio-Rad CFX RDML export); no published method"
+        "Vendor file layouts read from public files (QuantStudio CSV results exports, "
+        "Design & Analysis 2.x CSV exports, an ABI 7500 .eds, a Bio-Rad CFX RDML export); no "
+        "published method"
     ),
     "implementation": "qpilot/qpcr/instrument_context.py",
     "inputs": [
         "a QuantStudio-family .eds archive",
-        "a QuantStudio .csv/.txt results export",
+        "a QuantStudio .csv/.txt results export (and a Design & Analysis 2.x .csv export)",
         "a Bio-Rad CFX Run Information export",
         "an RDML file",
     ],
@@ -210,6 +221,7 @@ METHOD_CARD: dict[str, Any] = {
         "tests/engine/test_instrument_context.py::test_7500_layout_from_the_real_file",
         "tests/engine/test_instrument_context.py::test_stepone_calibration_date_not_in_file",
         "tests/engine/test_instrument_context.py::test_quantstudio_csv_qs5_and_qs3_headers",
+        "tests/engine/test_instrument_context.py::test_design_and_analysis_exports_from_the_corpus",
         "tests/engine/test_instrument_context.py::test_six_megabyte_log_parses_quickly",
         "tests/engine/test_instrument_context.py::test_demo_rdml_has_no_instrument_fields",
         "tests/engine/test_gate_instr.py::test_pause_at_cycle_23_warns_naming_cycles_23_24",
@@ -357,9 +369,9 @@ def read_run_context(
     """Read what a run file says about the instrument.
 
     Args:
-        path: An ``.eds`` archive, a QuantStudio ``.csv``/``.txt`` results export, a CFX "Run
-            Information" ``.csv``/``.txt`` export, or an ``.rdml`` file. The kind is sniffed
-            from the content, not the suffix alone.
+        path: An ``.eds`` archive, a QuantStudio ``.csv``/``.txt`` results export (a Design &
+            Analysis 2.x ``.csv`` export too), a CFX "Run Information" ``.csv``/``.txt`` export,
+            or an ``.rdml`` file. The kind is sniffed from the content, not the suffix alone.
         date_order: For exports whose dates are written ``11-12-2018``: ``"DMY"`` or ``"MDY"``
             when the caller knows the order (for instance from this instrument's earlier files);
             ``None`` lets the file settle it (any day above twelve) or leaves it ambiguous.
@@ -1361,8 +1373,7 @@ _LOG_EVENTS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "power",
         re.compile(
-            r"\bpower (failure|fail|loss|lost|outage|interrupt\w*)\b|"
-            r"\bpowered (off|down)\b",
+            r"\bpower (failure|fail|loss|lost|outage|interrupt\w*)\b|" r"\bpowered (off|down)\b",
             re.I,
         ),
     ),
@@ -1665,11 +1676,19 @@ _CFX_MARKERS = (
 )
 
 
+#: A Design & Analysis 2.x header line: the key runs to the first colon (one real file writes
+#: ``Heated Cover Serial Number:`` with no space after it); the value may hold commas and colons.
+_HASH_KEY_VALUE = re.compile(r"^#\s*([A-Za-z][^:]{0,79}?)\s*:\s*(.*)$")
+
+
 def _key_value(line: str) -> tuple[str, str] | None:
-    """``(key, value)`` from a header row (``key,value,,,``, tab-separated, ``* key = value``)."""
+    """``(key, value)`` from a header row (``k,v,,``, tabbed, ``* k = v`` or ``# Key: Value``)."""
     text = line.strip()
     if not text:
         return None
+    if text.startswith("#"):
+        match = _HASH_KEY_VALUE.match(text)
+        return (match[1].strip(), match[2].strip()) if match else None
     if text.startswith("*"):
         match = re.match(r"^\*\s*(.+?)\s*=\s*(.*)$", text)
         return (match[1].strip(), match[2].strip()) if match else None
@@ -1712,6 +1731,21 @@ def _read_text_export(file: Path, date_order: str | None) -> RunContext:
 
 _QS_EXPIRED = re.compile(r"^calibration\s+(?P<what>.+?)\s+is\s+expired$", re.I)
 _QS_PERFORMED = re.compile(r"^calibration\s+(?P<what>.+?)\s+performed\s+on$", re.I)
+_QS_SERIALS = {
+    "instrument serial number": "serial",
+    "heated cover serial number": "cover_serial",  # Design & Analysis 2.x
+    "block serial number": "block_serial",  # Design & Analysis 2.x
+}
+#: Run start and end keys, spelled as the files spell them: the results export's, then Design &
+#: Analysis 2.x's (a QuantStudio's "Run End Data/Time", a 7500's "Plate Run ... Date/Time").
+_QS_RUN_TIMES = {
+    "experiment run start time": "start",
+    "experiment run end time": "end",
+    "run start date/time": "start",
+    "run end data/time": "end",
+    "plate run start date/time": "start",
+    "plate run end date/time": "end",
+}
 
 
 def _cal_type(what: str) -> tuple[str, str] | None:
@@ -1724,7 +1758,7 @@ def _cal_type(what: str) -> tuple[str, str] | None:
 def _read_quantstudio(
     name: str, lines: Sequence[str], label: str, date_order: str | None
 ) -> RunContext:
-    """The QuantStudio results export: header rows, then per-well flag columns."""
+    """The QuantStudio results export: header rows or ``# Key: Value`` lines, then flag columns."""
     b = _Builder(source_file=name, source_kind="quantstudio_export")
     header: list[tuple[int, str, str]] = []
     table_at: list[int] = []
@@ -1763,8 +1797,8 @@ def _read_quantstudio(
                     cal.raw_date = value.strip().split(" ")[0]
         elif lower == "instrument type":
             b.set_identity("model", _clean_text(value, 80), pointer)
-        elif lower == "instrument serial number":
-            b.set_identity("serial", _clean_id(value), pointer)
+        elif lower in _QS_SERIALS:
+            b.set_identity(_QS_SERIALS[lower], _clean_id(value), pointer)
         elif lower == "instrument name":
             b.alias(value, "instrument_name", pointer)
         elif lower == "block type":
@@ -1774,7 +1808,7 @@ def _read_quantstudio(
                 b.fact("block_type", block_type, pointer)
         elif lower in ("software version", "software name and version"):
             b.set_identity("software", _clean_text(value, 64), pointer)
-        elif lower in ("experiment run end time", "experiment run start time"):
+        elif lower in _QS_RUN_TIMES:
             parsed = _parse_vendor_time(value, order)
             moment, day = parsed.moment, parsed.day
             if parsed.note:
@@ -1784,17 +1818,22 @@ def _read_quantstudio(
             if parsed.zone:
                 b.run_zone = parsed.zone
                 b.fact("run_time_zone", parsed.zone, pointer)
-            if lower.endswith("end time"):
+            which = _QS_RUN_TIMES[lower]
+            if which == "end":
                 b.end, b.end_text = moment, _iso(moment)
                 b.identity_paths["_end"] = pointer
             else:
                 b.start, b.start_text = moment, _iso(moment)
                 b.identity_paths["_start"] = pointer
-            if day is not None and (b.local_date is None or lower.endswith("start time")):
+            if day is not None and (b.local_date is None or which == "start"):
                 b.local_date = day
                 b.identity_paths["_date"] = pointer
         elif lower == "experiment file name" and value:
             b.note(NOTE_OPERATOR_PATH)
+        elif lower in ("file name", "plate file name") and value:  # Design & Analysis 2.x
+            b.note(NOTE_OPERATOR_PATH if re.search(r"[/\\]", value) else NOTE_PERSONAL_FIELD)
+        elif lower in ("comment", "description") and value:  # Design & Analysis 2.x
+            b.note(NOTE_PERSONAL_FIELD)
         elif lower in ("user name", "user", "operator") and value:
             b.note(NOTE_USER_NAME)
     b.calibrations = [cals[k] for k in sorted(cals)]
