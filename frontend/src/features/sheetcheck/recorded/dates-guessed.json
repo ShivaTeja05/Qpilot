@@ -1,0 +1,215 @@
+{
+ "sheet_id": "165c09084b78af10609b5080",
+ "name": "dates.csv",
+ "file_sha256": "165c09084b78af10609b5080160021beaf1bec4b6b2529341f6053c121620504",
+ "file_kind": "csv",
+ "n_rows": 24,
+ "study_id": null,
+ "mapping": {
+  "status": "mapping guessed, not confirmed",
+  "confirmed": false,
+  "sheet": 1,
+  "header_row": 1,
+  "layout": "long",
+  "columns": [
+   {
+    "column": "A",
+    "role": "sample",
+    "role_word": "sample name",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "B",
+    "role": "group",
+    "role_word": "group",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "C",
+    "role": "gene",
+    "role_word": "gene",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "D",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   }
+  ],
+  "references": [
+   "GAPDH",
+   "ACTB"
+  ],
+  "roles": [
+   {
+    "id": "sample",
+    "word": "sample name"
+   },
+   {
+    "id": "group",
+    "word": "group"
+   },
+   {
+    "id": "bio_unit",
+    "word": "biological unit"
+   },
+   {
+    "id": "gene",
+    "word": "gene"
+   },
+   {
+    "id": "type",
+    "word": "sample type"
+   },
+   {
+    "id": "well",
+    "word": "well"
+   },
+   {
+    "id": "cq",
+    "word": "Cq"
+   },
+   {
+    "id": "mean_cq",
+    "word": "mean Cq"
+   },
+   {
+    "id": "dcq",
+    "word": "ΔCq"
+   },
+   {
+    "id": "ddcq",
+    "word": "ΔΔCq"
+   },
+   {
+    "id": "fc",
+    "word": "fold change"
+   },
+   {
+    "id": "mean_fc",
+    "word": "group mean fold change"
+   },
+   {
+    "id": "sd",
+    "word": "standard deviation"
+   },
+   {
+    "id": "sem",
+    "word": "standard error of the mean"
+   },
+   {
+    "id": "p",
+    "word": "p-value"
+   },
+   {
+    "id": "ignored",
+    "word": "not used"
+   }
+  ]
+ },
+ "headline": {
+  "plain": "Column mapping: mapping guessed, not confirmed. The sheet shows no fold change to recompute. No column could be recomputed from the sheet's Cq values. 1 gene names look like a date or number Excel made from a name; check them before trusting the gene labels.",
+  "segments": [
+   {
+    "text": "Column mapping: ",
+    "fact": null
+   },
+   {
+    "text": "mapping guessed, not confirmed",
+    "fact": "f_sc_mapping_status"
+   },
+   {
+    "text": ". The sheet shows no fold change to recompute. No column could be recomputed from the sheet's Cq values. ",
+    "fact": null
+   },
+   {
+    "text": "1",
+    "fact": "f_sc_n_symbol_flags"
+   },
+   {
+    "text": " gene names look like a date or number Excel made from a name; check them before trusting the gene labels.",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_sc_mapping_status",
+    "text": "mapping guessed, not confirmed",
+    "value": "mapping guessed, not confirmed",
+    "unit": "",
+    "path": "mapping_status"
+   },
+   {
+    "id": "f_sc_n_symbol_flags",
+    "text": "1",
+    "value": 1,
+    "unit": "",
+    "path": "summary.n_symbol_flags"
+   }
+  ],
+  "source": "template"
+ },
+ "findings_text": {
+  "plain": "Every column the check could recompute reproduces from the sheet's own Cq values.",
+  "segments": [
+   {
+    "text": "Every column the check could recompute reproduces from the sheet's own Cq values.",
+    "fact": null
+   }
+  ],
+  "facts": [],
+  "source": "template"
+ },
+ "findings": [],
+ "columns": [],
+ "hand_overs": [],
+ "genes": [
+  {
+   "key": "GAPDH",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "ACTB",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "1-Mar",
+   "reference": false,
+   "flagged": true,
+   "note": "looks like a date Excel made from a gene name; every gene whose name Excel turns into this date is listed"
+  }
+ ],
+ "counts": {
+  "fold_changes": 0,
+  "reproduced": 0,
+  "differ": 0,
+  "named": 0,
+  "ambiguous": 0,
+  "unexplained": 0,
+  "columns_checked": 0,
+  "columns_reproduced": 0,
+  "findings": 0,
+  "hand_overs": 0,
+  "gene_name_flags": 1
+ },
+ "notes": [],
+ "never_edited": "The sheet was read only; it is never edited, and nothing here is saved.",
+ "method_card": "methods/sheetcheck.md"
+}

@@ -1,0 +1,970 @@
+{
+ "sheet_id": "0066a04d1fd1b2d9f70d1a5f",
+ "name": "demo-sheet.csv",
+ "file_sha256": "0066a04d1fd1b2d9f70d1a5fff3162a910d19ed4041a42ed80ab3776c249f076",
+ "file_kind": "csv",
+ "n_rows": 347,
+ "study_id": "e300000d4f9a",
+ "mapping": {
+  "status": "mapping guessed, not confirmed",
+  "confirmed": false,
+  "sheet": 1,
+  "header_row": 1,
+  "layout": "wide",
+  "columns": [
+   {
+    "column": "A",
+    "role": "sample",
+    "role_word": "sample name",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "B",
+    "role": "group",
+    "role_word": "group",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "C",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "HPRT1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "D",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "SDHA(1)",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "E",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "UBC(2)",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "F",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "ODC1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "G",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "BIRC5",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "H",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "NTRK1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "I",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "CAMTA2",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "J",
+    "role": "dcq",
+    "role_word": "ΔCq",
+    "gene": "ODC1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "K",
+    "role": "ddcq",
+    "role_word": "ΔΔCq",
+    "gene": "ODC1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "L",
+    "role": "fc",
+    "role_word": "fold change",
+    "gene": "ODC1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "M",
+    "role": "dcq",
+    "role_word": "ΔCq",
+    "gene": "BIRC5",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "N",
+    "role": "ddcq",
+    "role_word": "ΔΔCq",
+    "gene": "BIRC5",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "O",
+    "role": "fc",
+    "role_word": "fold change",
+    "gene": "BIRC5",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "P",
+    "role": "dcq",
+    "role_word": "ΔCq",
+    "gene": "NTRK1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "Q",
+    "role": "ddcq",
+    "role_word": "ΔΔCq",
+    "gene": "NTRK1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "R",
+    "role": "fc",
+    "role_word": "fold change",
+    "gene": "NTRK1",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "S",
+    "role": "dcq",
+    "role_word": "ΔCq",
+    "gene": "CAMTA2",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "T",
+    "role": "ddcq",
+    "role_word": "ΔΔCq",
+    "gene": "CAMTA2",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "U",
+    "role": "fc",
+    "role_word": "fold change",
+    "gene": "CAMTA2",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   }
+  ],
+  "references": [
+   "HPRT1",
+   "SDHA(1)",
+   "UBC(2)"
+  ],
+  "roles": [
+   {
+    "id": "sample",
+    "word": "sample name"
+   },
+   {
+    "id": "group",
+    "word": "group"
+   },
+   {
+    "id": "bio_unit",
+    "word": "biological unit"
+   },
+   {
+    "id": "gene",
+    "word": "gene"
+   },
+   {
+    "id": "type",
+    "word": "sample type"
+   },
+   {
+    "id": "well",
+    "word": "well"
+   },
+   {
+    "id": "cq",
+    "word": "Cq"
+   },
+   {
+    "id": "mean_cq",
+    "word": "mean Cq"
+   },
+   {
+    "id": "dcq",
+    "word": "ΔCq"
+   },
+   {
+    "id": "ddcq",
+    "word": "ΔΔCq"
+   },
+   {
+    "id": "fc",
+    "word": "fold change"
+   },
+   {
+    "id": "mean_fc",
+    "word": "group mean fold change"
+   },
+   {
+    "id": "sd",
+    "word": "standard deviation"
+   },
+   {
+    "id": "sem",
+    "word": "standard error of the mean"
+   },
+   {
+    "id": "p",
+    "word": "p-value"
+   },
+   {
+    "id": "ignored",
+    "word": "not used"
+   }
+  ]
+ },
+ "headline": {
+  "plain": "Column mapping: mapping guessed, not confirmed. 1,383 of 1,383 fold changes reproduce from the sheet's own Cq values. Every column the check could recompute reproduces from the sheet's own Cq values. For 4 genes the sheet's arithmetic reproduces but qPilot's own analysis of the study differs: a difference of method, shown in the robustness grid, not a slip in the sheet.",
+  "segments": [
+   {
+    "text": "Column mapping: ",
+    "fact": null
+   },
+   {
+    "text": "mapping guessed, not confirmed",
+    "fact": "f_sc_mapping_status"
+   },
+   {
+    "text": ". ",
+    "fact": null
+   },
+   {
+    "text": "1,383",
+    "fact": "f_sc_n_fc_reproduced"
+   },
+   {
+    "text": " of ",
+    "fact": null
+   },
+   {
+    "text": "1,383",
+    "fact": "f_sc_n_fc"
+   },
+   {
+    "text": " fold changes reproduce from the sheet's own Cq values. Every column the check could recompute reproduces from the sheet's own Cq values. For ",
+    "fact": null
+   },
+   {
+    "text": "4",
+    "fact": "f_sc_n_hand_overs"
+   },
+   {
+    "text": " genes the sheet's arithmetic reproduces but qPilot's own analysis of the study differs: a difference of method, shown in the robustness grid, not a slip in the sheet.",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_sc_mapping_status",
+    "text": "mapping guessed, not confirmed",
+    "value": "mapping guessed, not confirmed",
+    "unit": "",
+    "path": "mapping_status"
+   },
+   {
+    "id": "f_sc_n_fc_reproduced",
+    "text": "1,383",
+    "value": 1383,
+    "unit": "",
+    "path": "summary.n_reproduced"
+   },
+   {
+    "id": "f_sc_n_fc",
+    "text": "1,383",
+    "value": 1383,
+    "unit": "",
+    "path": "summary.n_fold_changes"
+   },
+   {
+    "id": "f_sc_n_hand_overs",
+    "text": "4",
+    "value": 4,
+    "unit": "",
+    "path": "summary.n_hand_overs"
+   }
+  ],
+  "source": "template"
+ },
+ "findings_text": {
+  "plain": "Every column the check could recompute reproduces from the sheet's own Cq values.",
+  "segments": [
+   {
+    "text": "Every column the check could recompute reproduces from the sheet's own Cq values.",
+    "fact": null
+   }
+  ],
+  "facts": [],
+  "source": "template"
+ },
+ "findings": [],
+ "columns": [
+  {
+   "column": "J",
+   "step": "dcq",
+   "step_word": "ΔCq",
+   "gene": "ODC1",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  },
+  {
+   "column": "M",
+   "step": "dcq",
+   "step_word": "ΔCq",
+   "gene": "BIRC5",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  },
+  {
+   "column": "P",
+   "step": "dcq",
+   "step_word": "ΔCq",
+   "gene": "NTRK1",
+   "status": "reproduced",
+   "n_cells": 342,
+   "n_reproduced": 342,
+   "n_differ": 0
+  },
+  {
+   "column": "S",
+   "step": "dcq",
+   "step_word": "ΔCq",
+   "gene": "CAMTA2",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  },
+  {
+   "column": "K",
+   "step": "ddcq",
+   "step_word": "ΔΔCq",
+   "gene": "ODC1",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  },
+  {
+   "column": "N",
+   "step": "ddcq",
+   "step_word": "ΔΔCq",
+   "gene": "BIRC5",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  },
+  {
+   "column": "Q",
+   "step": "ddcq",
+   "step_word": "ΔΔCq",
+   "gene": "NTRK1",
+   "status": "reproduced",
+   "n_cells": 342,
+   "n_reproduced": 342,
+   "n_differ": 0
+  },
+  {
+   "column": "T",
+   "step": "ddcq",
+   "step_word": "ΔΔCq",
+   "gene": "CAMTA2",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  },
+  {
+   "column": "L",
+   "step": "fc",
+   "step_word": "fold change",
+   "gene": "ODC1",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  },
+  {
+   "column": "O",
+   "step": "fc",
+   "step_word": "fold change",
+   "gene": "BIRC5",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  },
+  {
+   "column": "R",
+   "step": "fc",
+   "step_word": "fold change",
+   "gene": "NTRK1",
+   "status": "reproduced",
+   "n_cells": 342,
+   "n_reproduced": 342,
+   "n_differ": 0
+  },
+  {
+   "column": "U",
+   "step": "fc",
+   "step_word": "fold change",
+   "gene": "CAMTA2",
+   "status": "reproduced",
+   "n_cells": 347,
+   "n_reproduced": 347,
+   "n_differ": 0
+  }
+ ],
+ "hand_overs": [
+  {
+   "gene": "ODC1",
+   "conclusion_differs": false,
+   "causes": [
+    "efficiency",
+    "normaliser",
+    "sample_set"
+   ],
+   "line": {
+    "plain": "ODC1: the sheet's arithmetic reproduces and gives 4.44×; qPilot's own analysis of the same study gives 3.32× (call: up in the sheet, up here). This is a difference of method, not a slip: it comes from each well's own amplification efficiency in the engine and another set of reference genes and other group sizes. The robustness grid shows how much each choice moves it.",
+    "segments": [
+     {
+      "text": "ODC1",
+      "fact": "f_sc_ho_odc1_gene"
+     },
+     {
+      "text": ": the sheet's arithmetic reproduces and gives ",
+      "fact": null
+     },
+     {
+      "text": "4.44×",
+      "fact": "f_sc_ho_odc1_sheet_fc"
+     },
+     {
+      "text": "; qPilot's own analysis of the same study gives ",
+      "fact": null
+     },
+     {
+      "text": "3.32×",
+      "fact": "f_sc_ho_odc1_engine_fc"
+     },
+     {
+      "text": " (call: ",
+      "fact": null
+     },
+     {
+      "text": "up",
+      "fact": "f_sc_ho_odc1_sheet_call"
+     },
+     {
+      "text": " in the sheet, ",
+      "fact": null
+     },
+     {
+      "text": "up",
+      "fact": "f_sc_ho_odc1_engine_call"
+     },
+     {
+      "text": " here). This is a difference of method, not a slip: it comes from ",
+      "fact": null
+     },
+     {
+      "text": "each well's own amplification efficiency in the engine and another set of reference genes and other group sizes",
+      "fact": "f_sc_ho_odc1_causes"
+     },
+     {
+      "text": ". The robustness grid shows how much each choice moves it.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_sc_ho_odc1_gene",
+      "text": "ODC1",
+      "value": "ODC1",
+      "unit": "",
+      "path": "hand_overs[0].gene"
+     },
+     {
+      "id": "f_sc_ho_odc1_sheet_fc",
+      "text": "4.44×",
+      "value": 4.43731973751,
+      "unit": "×",
+      "path": "hand_overs[0].sheet_fc"
+     },
+     {
+      "id": "f_sc_ho_odc1_engine_fc",
+      "text": "3.32×",
+      "value": 3.31860768218,
+      "unit": "×",
+      "path": "hand_overs[0].engine_fc"
+     },
+     {
+      "id": "f_sc_ho_odc1_sheet_call",
+      "text": "up",
+      "value": "up",
+      "unit": "",
+      "path": "hand_overs[0].sheet_conclusion"
+     },
+     {
+      "id": "f_sc_ho_odc1_engine_call",
+      "text": "up",
+      "value": "up",
+      "unit": "",
+      "path": "hand_overs[0].engine_conclusion"
+     },
+     {
+      "id": "f_sc_ho_odc1_causes",
+      "text": "each well's own amplification efficiency in the engine and another set of reference genes and other group sizes",
+      "value": "each well's own amplification efficiency in the engine and another set of reference genes and other group sizes",
+      "unit": "",
+      "path": "hand_overs[0].causes"
+     }
+    ],
+    "source": "template"
+   }
+  },
+  {
+   "gene": "BIRC5",
+   "conclusion_differs": false,
+   "causes": [
+    "efficiency",
+    "normaliser"
+   ],
+   "line": {
+    "plain": "BIRC5: the sheet's arithmetic reproduces and gives 5.24×; qPilot's own analysis of the same study gives 4.01× (call: up in the sheet, up here). This is a difference of method, not a slip: it comes from each well's own amplification efficiency in the engine and another set of reference genes. The robustness grid shows how much each choice moves it.",
+    "segments": [
+     {
+      "text": "BIRC5",
+      "fact": "f_sc_ho_birc5_gene"
+     },
+     {
+      "text": ": the sheet's arithmetic reproduces and gives ",
+      "fact": null
+     },
+     {
+      "text": "5.24×",
+      "fact": "f_sc_ho_birc5_sheet_fc"
+     },
+     {
+      "text": "; qPilot's own analysis of the same study gives ",
+      "fact": null
+     },
+     {
+      "text": "4.01×",
+      "fact": "f_sc_ho_birc5_engine_fc"
+     },
+     {
+      "text": " (call: ",
+      "fact": null
+     },
+     {
+      "text": "up",
+      "fact": "f_sc_ho_birc5_sheet_call"
+     },
+     {
+      "text": " in the sheet, ",
+      "fact": null
+     },
+     {
+      "text": "up",
+      "fact": "f_sc_ho_birc5_engine_call"
+     },
+     {
+      "text": " here). This is a difference of method, not a slip: it comes from ",
+      "fact": null
+     },
+     {
+      "text": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "fact": "f_sc_ho_birc5_causes"
+     },
+     {
+      "text": ". The robustness grid shows how much each choice moves it.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_sc_ho_birc5_gene",
+      "text": "BIRC5",
+      "value": "BIRC5",
+      "unit": "",
+      "path": "hand_overs[1].gene"
+     },
+     {
+      "id": "f_sc_ho_birc5_sheet_fc",
+      "text": "5.24×",
+      "value": 5.23981614676,
+      "unit": "×",
+      "path": "hand_overs[1].sheet_fc"
+     },
+     {
+      "id": "f_sc_ho_birc5_engine_fc",
+      "text": "4.01×",
+      "value": 4.01142868409,
+      "unit": "×",
+      "path": "hand_overs[1].engine_fc"
+     },
+     {
+      "id": "f_sc_ho_birc5_sheet_call",
+      "text": "up",
+      "value": "up",
+      "unit": "",
+      "path": "hand_overs[1].sheet_conclusion"
+     },
+     {
+      "id": "f_sc_ho_birc5_engine_call",
+      "text": "up",
+      "value": "up",
+      "unit": "",
+      "path": "hand_overs[1].engine_conclusion"
+     },
+     {
+      "id": "f_sc_ho_birc5_causes",
+      "text": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "value": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "unit": "",
+      "path": "hand_overs[1].causes"
+     }
+    ],
+    "source": "template"
+   }
+  },
+  {
+   "gene": "NTRK1",
+   "conclusion_differs": false,
+   "causes": [
+    "efficiency",
+    "normaliser"
+   ],
+   "line": {
+    "plain": "NTRK1: the sheet's arithmetic reproduces and gives 0.0363×; qPilot's own analysis of the same study gives 0.0665× (call: down in the sheet, down here). This is a difference of method, not a slip: it comes from each well's own amplification efficiency in the engine and another set of reference genes. The robustness grid shows how much each choice moves it.",
+    "segments": [
+     {
+      "text": "NTRK1",
+      "fact": "f_sc_ho_ntrk1_gene"
+     },
+     {
+      "text": ": the sheet's arithmetic reproduces and gives ",
+      "fact": null
+     },
+     {
+      "text": "0.0363×",
+      "fact": "f_sc_ho_ntrk1_sheet_fc"
+     },
+     {
+      "text": "; qPilot's own analysis of the same study gives ",
+      "fact": null
+     },
+     {
+      "text": "0.0665×",
+      "fact": "f_sc_ho_ntrk1_engine_fc"
+     },
+     {
+      "text": " (call: ",
+      "fact": null
+     },
+     {
+      "text": "down",
+      "fact": "f_sc_ho_ntrk1_sheet_call"
+     },
+     {
+      "text": " in the sheet, ",
+      "fact": null
+     },
+     {
+      "text": "down",
+      "fact": "f_sc_ho_ntrk1_engine_call"
+     },
+     {
+      "text": " here). This is a difference of method, not a slip: it comes from ",
+      "fact": null
+     },
+     {
+      "text": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "fact": "f_sc_ho_ntrk1_causes"
+     },
+     {
+      "text": ". The robustness grid shows how much each choice moves it.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_sc_ho_ntrk1_gene",
+      "text": "NTRK1",
+      "value": "NTRK1",
+      "unit": "",
+      "path": "hand_overs[2].gene"
+     },
+     {
+      "id": "f_sc_ho_ntrk1_sheet_fc",
+      "text": "0.0363×",
+      "value": 0.0363042227254,
+      "unit": "×",
+      "path": "hand_overs[2].sheet_fc"
+     },
+     {
+      "id": "f_sc_ho_ntrk1_engine_fc",
+      "text": "0.0665×",
+      "value": 0.0664778367884,
+      "unit": "×",
+      "path": "hand_overs[2].engine_fc"
+     },
+     {
+      "id": "f_sc_ho_ntrk1_sheet_call",
+      "text": "down",
+      "value": "down",
+      "unit": "",
+      "path": "hand_overs[2].sheet_conclusion"
+     },
+     {
+      "id": "f_sc_ho_ntrk1_engine_call",
+      "text": "down",
+      "value": "down",
+      "unit": "",
+      "path": "hand_overs[2].engine_conclusion"
+     },
+     {
+      "id": "f_sc_ho_ntrk1_causes",
+      "text": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "value": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "unit": "",
+      "path": "hand_overs[2].causes"
+     }
+    ],
+    "source": "template"
+   }
+  },
+  {
+   "gene": "CAMTA2",
+   "conclusion_differs": false,
+   "causes": [
+    "efficiency",
+    "normaliser"
+   ],
+   "line": {
+    "plain": "CAMTA2: the sheet's arithmetic reproduces and gives 0.525×; qPilot's own analysis of the same study gives 0.505× (call: none in the sheet, none here). This is a difference of method, not a slip: it comes from each well's own amplification efficiency in the engine and another set of reference genes. The robustness grid shows how much each choice moves it.",
+    "segments": [
+     {
+      "text": "CAMTA2",
+      "fact": "f_sc_ho_camta2_gene"
+     },
+     {
+      "text": ": the sheet's arithmetic reproduces and gives ",
+      "fact": null
+     },
+     {
+      "text": "0.525×",
+      "fact": "f_sc_ho_camta2_sheet_fc"
+     },
+     {
+      "text": "; qPilot's own analysis of the same study gives ",
+      "fact": null
+     },
+     {
+      "text": "0.505×",
+      "fact": "f_sc_ho_camta2_engine_fc"
+     },
+     {
+      "text": " (call: ",
+      "fact": null
+     },
+     {
+      "text": "none",
+      "fact": "f_sc_ho_camta2_sheet_call"
+     },
+     {
+      "text": " in the sheet, ",
+      "fact": null
+     },
+     {
+      "text": "none",
+      "fact": "f_sc_ho_camta2_engine_call"
+     },
+     {
+      "text": " here). This is a difference of method, not a slip: it comes from ",
+      "fact": null
+     },
+     {
+      "text": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "fact": "f_sc_ho_camta2_causes"
+     },
+     {
+      "text": ". The robustness grid shows how much each choice moves it.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_sc_ho_camta2_gene",
+      "text": "CAMTA2",
+      "value": "CAMTA2",
+      "unit": "",
+      "path": "hand_overs[3].gene"
+     },
+     {
+      "id": "f_sc_ho_camta2_sheet_fc",
+      "text": "0.525×",
+      "value": 0.524579184421,
+      "unit": "×",
+      "path": "hand_overs[3].sheet_fc"
+     },
+     {
+      "id": "f_sc_ho_camta2_engine_fc",
+      "text": "0.505×",
+      "value": 0.505286035824,
+      "unit": "×",
+      "path": "hand_overs[3].engine_fc"
+     },
+     {
+      "id": "f_sc_ho_camta2_sheet_call",
+      "text": "none",
+      "value": "none",
+      "unit": "",
+      "path": "hand_overs[3].sheet_conclusion"
+     },
+     {
+      "id": "f_sc_ho_camta2_engine_call",
+      "text": "none",
+      "value": "none",
+      "unit": "",
+      "path": "hand_overs[3].engine_conclusion"
+     },
+     {
+      "id": "f_sc_ho_camta2_causes",
+      "text": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "value": "each well's own amplification efficiency in the engine and another set of reference genes",
+      "unit": "",
+      "path": "hand_overs[3].causes"
+     }
+    ],
+    "source": "template"
+   }
+  }
+ ],
+ "genes": [
+  {
+   "key": "HPRT1",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "SDHA(1)",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol; date tokens or assay suffixes were removed before the lookup"
+  },
+  {
+   "key": "UBC(2)",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol; date tokens or assay suffixes were removed before the lookup"
+  },
+  {
+   "key": "ODC1",
+   "reference": false,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "BIRC5",
+   "reference": false,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "NTRK1",
+   "reference": false,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "CAMTA2",
+   "reference": false,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  }
+ ],
+ "counts": {
+  "fold_changes": 1383,
+  "reproduced": 1383,
+  "differ": 0,
+  "named": 0,
+  "ambiguous": 0,
+  "unexplained": 0,
+  "columns_checked": 12,
+  "columns_reproduced": 12,
+  "findings": 0,
+  "hand_overs": 4,
+  "gene_name_flags": 0
+ },
+ "notes": [],
+ "never_edited": "The sheet was read only; it is never edited, and nothing here is saved.",
+ "method_card": "methods/sheetcheck.md"
+}

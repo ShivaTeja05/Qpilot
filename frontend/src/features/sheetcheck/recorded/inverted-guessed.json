@@ -1,0 +1,551 @@
+{
+ "sheet_id": "dc009f6c9c4f2626a74898e8",
+ "name": "inverted.csv",
+ "file_sha256": "dc009f6c9c4f2626a74898e86d7210366d03b380b177c16eed247c28db4f2f34",
+ "file_kind": "csv",
+ "n_rows": 8,
+ "study_id": null,
+ "mapping": {
+  "status": "mapping guessed, not confirmed",
+  "confirmed": false,
+  "sheet": 1,
+  "header_row": 1,
+  "layout": "wide",
+  "columns": [
+   {
+    "column": "A",
+    "role": "sample",
+    "role_word": "sample name",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "B",
+    "role": "group",
+    "role_word": "group",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "C",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "GAPDH",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "D",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "ACTB",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "E",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "MYC",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "F",
+    "role": "dcq",
+    "role_word": "ΔCq",
+    "gene": "MYC",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "G",
+    "role": "ddcq",
+    "role_word": "ΔΔCq",
+    "gene": "MYC",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "H",
+    "role": "fc",
+    "role_word": "fold change",
+    "gene": "MYC",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   }
+  ],
+  "references": [
+   "GAPDH",
+   "ACTB"
+  ],
+  "roles": [
+   {
+    "id": "sample",
+    "word": "sample name"
+   },
+   {
+    "id": "group",
+    "word": "group"
+   },
+   {
+    "id": "bio_unit",
+    "word": "biological unit"
+   },
+   {
+    "id": "gene",
+    "word": "gene"
+   },
+   {
+    "id": "type",
+    "word": "sample type"
+   },
+   {
+    "id": "well",
+    "word": "well"
+   },
+   {
+    "id": "cq",
+    "word": "Cq"
+   },
+   {
+    "id": "mean_cq",
+    "word": "mean Cq"
+   },
+   {
+    "id": "dcq",
+    "word": "ΔCq"
+   },
+   {
+    "id": "ddcq",
+    "word": "ΔΔCq"
+   },
+   {
+    "id": "fc",
+    "word": "fold change"
+   },
+   {
+    "id": "mean_fc",
+    "word": "group mean fold change"
+   },
+   {
+    "id": "sd",
+    "word": "standard deviation"
+   },
+   {
+    "id": "sem",
+    "word": "standard error of the mean"
+   },
+   {
+    "id": "p",
+    "word": "p-value"
+   },
+   {
+    "id": "ignored",
+    "word": "not used"
+   }
+  ]
+ },
+ "headline": {
+  "plain": "Column mapping: mapping guessed, not confirmed. 2 of 10 fold changes reproduce from the sheet's own Cq values; 8 differ, 8 with a named cause. The first place to look is column H (fold change for MYC), from row 2 onwards (8 rows). It is consistent with the sign of ΔΔCq inverted in the exponent.",
+  "segments": [
+   {
+    "text": "Column mapping: ",
+    "fact": null
+   },
+   {
+    "text": "mapping guessed, not confirmed",
+    "fact": "f_sc_mapping_status"
+   },
+   {
+    "text": ". ",
+    "fact": null
+   },
+   {
+    "text": "2",
+    "fact": "f_sc_n_fc_reproduced"
+   },
+   {
+    "text": " of ",
+    "fact": null
+   },
+   {
+    "text": "10",
+    "fact": "f_sc_n_fc"
+   },
+   {
+    "text": " fold changes reproduce from the sheet's own Cq values; ",
+    "fact": null
+   },
+   {
+    "text": "8",
+    "fact": "f_sc_n_fc_differ"
+   },
+   {
+    "text": " differ, ",
+    "fact": null
+   },
+   {
+    "text": "8",
+    "fact": "f_sc_n_fc_named"
+   },
+   {
+    "text": " with a named cause. The first place to look is column ",
+    "fact": null
+   },
+   {
+    "text": "H",
+    "fact": "f_sc_1_column"
+   },
+   {
+    "text": " (",
+    "fact": null
+   },
+   {
+    "text": "fold change",
+    "fact": "f_sc_1_step"
+   },
+   {
+    "text": " for ",
+    "fact": null
+   },
+   {
+    "text": "MYC",
+    "fact": "f_sc_1_gene"
+   },
+   {
+    "text": "), from row ",
+    "fact": null
+   },
+   {
+    "text": "2",
+    "fact": "f_sc_1_first_row"
+   },
+   {
+    "text": " onwards (",
+    "fact": null
+   },
+   {
+    "text": "8",
+    "fact": "f_sc_1_n_rows"
+   },
+   {
+    "text": " rows). It is consistent with ",
+    "fact": null
+   },
+   {
+    "text": "the sign of ΔΔCq inverted in the exponent",
+    "fact": "f_sc_1_path"
+   },
+   {
+    "text": ".",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_sc_mapping_status",
+    "text": "mapping guessed, not confirmed",
+    "value": "mapping guessed, not confirmed",
+    "unit": "",
+    "path": "mapping_status"
+   },
+   {
+    "id": "f_sc_n_fc_reproduced",
+    "text": "2",
+    "value": 2,
+    "unit": "",
+    "path": "summary.n_reproduced"
+   },
+   {
+    "id": "f_sc_n_fc",
+    "text": "10",
+    "value": 10,
+    "unit": "",
+    "path": "summary.n_fold_changes"
+   },
+   {
+    "id": "f_sc_n_fc_differ",
+    "text": "8",
+    "value": 8,
+    "unit": "",
+    "path": "summary.n_differ"
+   },
+   {
+    "id": "f_sc_n_fc_named",
+    "text": "8",
+    "value": 8,
+    "unit": "",
+    "path": "summary.n_named"
+   },
+   {
+    "id": "f_sc_1_column",
+    "text": "H",
+    "value": "H",
+    "unit": "",
+    "path": "findings[0].column"
+   },
+   {
+    "id": "f_sc_1_step",
+    "text": "fold change",
+    "value": "fold change",
+    "unit": "",
+    "path": "findings[0].step"
+   },
+   {
+    "id": "f_sc_1_gene",
+    "text": "MYC",
+    "value": "MYC",
+    "unit": "",
+    "path": "findings[0].gene"
+   },
+   {
+    "id": "f_sc_1_first_row",
+    "text": "2",
+    "value": 2,
+    "unit": "",
+    "path": "findings[0].first_row"
+   },
+   {
+    "id": "f_sc_1_n_rows",
+    "text": "8",
+    "value": 8,
+    "unit": "",
+    "path": "findings[0].rows"
+   },
+   {
+    "id": "f_sc_1_path",
+    "text": "the sign of ΔΔCq inverted in the exponent",
+    "value": "the sign of ΔΔCq inverted in the exponent",
+    "unit": "",
+    "path": "findings[0].paths"
+   }
+  ],
+  "source": "template"
+ },
+ "findings_text": {
+  "plain": "Column H (fold change for MYC) differs from row 2 onwards (8 rows). It is consistent with the sign of ΔΔCq inverted in the exponent.",
+  "segments": [
+   {
+    "text": "Column ",
+    "fact": null
+   },
+   {
+    "text": "H",
+    "fact": "f_sc_1_column"
+   },
+   {
+    "text": " (",
+    "fact": null
+   },
+   {
+    "text": "fold change",
+    "fact": "f_sc_1_step"
+   },
+   {
+    "text": " for ",
+    "fact": null
+   },
+   {
+    "text": "MYC",
+    "fact": "f_sc_1_gene"
+   },
+   {
+    "text": ") differs from row ",
+    "fact": null
+   },
+   {
+    "text": "2",
+    "fact": "f_sc_1_first_row"
+   },
+   {
+    "text": " onwards (",
+    "fact": null
+   },
+   {
+    "text": "8",
+    "fact": "f_sc_1_n_rows"
+   },
+   {
+    "text": " rows). It is consistent with ",
+    "fact": null
+   },
+   {
+    "text": "the sign of ΔΔCq inverted in the exponent",
+    "fact": "f_sc_1_path"
+   },
+   {
+    "text": ".",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_sc_1_column",
+    "text": "H",
+    "value": "H",
+    "unit": "",
+    "path": "findings[0].column"
+   },
+   {
+    "id": "f_sc_1_step",
+    "text": "fold change",
+    "value": "fold change",
+    "unit": "",
+    "path": "findings[0].step"
+   },
+   {
+    "id": "f_sc_1_gene",
+    "text": "MYC",
+    "value": "MYC",
+    "unit": "",
+    "path": "findings[0].gene"
+   },
+   {
+    "id": "f_sc_1_first_row",
+    "text": "2",
+    "value": 2,
+    "unit": "",
+    "path": "findings[0].first_row"
+   },
+   {
+    "id": "f_sc_1_n_rows",
+    "text": "8",
+    "value": 8,
+    "unit": "",
+    "path": "findings[0].rows"
+   },
+   {
+    "id": "f_sc_1_path",
+    "text": "the sign of ΔΔCq inverted in the exponent",
+    "value": "the sign of ΔΔCq inverted in the exponent",
+    "unit": "",
+    "path": "findings[0].paths"
+   }
+  ],
+  "source": "template"
+ },
+ "findings": [
+  {
+   "id": "sheet_check_1",
+   "column": "H",
+   "step_word": "fold change",
+   "gene": "MYC",
+   "first_row": 2,
+   "n_rows": 8,
+   "status": "explained",
+   "paths": [
+    "sign_inverted"
+   ]
+  }
+ ],
+ "columns": [
+  {
+   "column": "F",
+   "step": "dcq",
+   "step_word": "ΔCq",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 8,
+   "n_reproduced": 8,
+   "n_differ": 0
+  },
+  {
+   "column": "G",
+   "step": "ddcq",
+   "step_word": "ΔΔCq",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 8,
+   "n_reproduced": 8,
+   "n_differ": 0
+  },
+  {
+   "column": "H",
+   "step": "fc",
+   "step_word": "fold change",
+   "gene": "MYC",
+   "status": "differs",
+   "n_cells": 8,
+   "n_reproduced": 0,
+   "n_differ": 8
+  },
+  {
+   "column": "H",
+   "step": "mean_fc",
+   "step_word": "group mean fold change",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 1,
+   "n_reproduced": 1,
+   "n_differ": 0
+  },
+  {
+   "column": "H",
+   "step": "mean_fc",
+   "step_word": "group mean fold change",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 1,
+   "n_reproduced": 1,
+   "n_differ": 0
+  },
+  {
+   "column": "H",
+   "step": "p",
+   "step_word": "p-value",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 1,
+   "n_reproduced": 1,
+   "n_differ": 0
+  }
+ ],
+ "hand_overs": [],
+ "genes": [
+  {
+   "key": "GAPDH",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "ACTB",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "MYC",
+   "reference": false,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  }
+ ],
+ "counts": {
+  "fold_changes": 10,
+  "reproduced": 2,
+  "differ": 8,
+  "named": 8,
+  "ambiguous": 0,
+  "unexplained": 0,
+  "columns_checked": 6,
+  "columns_reproduced": 5,
+  "findings": 1,
+  "hand_overs": 0,
+  "gene_name_flags": 0
+ },
+ "notes": [],
+ "never_edited": "The sheet was read only; it is never edited, and nothing here is saved.",
+ "method_card": "methods/sheetcheck.md"
+}

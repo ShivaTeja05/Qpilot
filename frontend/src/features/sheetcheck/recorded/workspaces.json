@@ -1,0 +1,72 @@
+{
+ "workspaces": [
+  {
+   "key": "bc1d233e3866",
+   "kind": "session",
+   "id": "session:bc1d233e3866",
+   "title": "Vermeulen 2013 neuroblastoma study (demo)",
+   "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
+   "file_name": "data_vermeulen_raw.rdml",
+   "file_present": true,
+   "study_id": "e300000d4f9a",
+   "results_visible": true,
+   "stages": [
+    {
+     "stage": "design",
+     "open": true,
+     "confirmed": true,
+     "pending": 0,
+     "blockers": [],
+     "consistent": 0,
+     "confirm_waiting": false
+    },
+    {
+     "stage": "curves",
+     "open": true,
+     "confirmed": true,
+     "pending": 0,
+     "blockers": [],
+     "consistent": 0,
+     "confirm_waiting": false
+    },
+    {
+     "stage": "choices",
+     "open": true,
+     "confirmed": false,
+     "pending": 0,
+     "blockers": [],
+     "consistent": 0,
+     "confirm_waiting": false
+    },
+    {
+     "stage": "prism",
+     "open": false,
+     "confirmed": false,
+     "pending": 0,
+     "blockers": [],
+     "consistent": 0,
+     "confirm_waiting": false
+    },
+    {
+     "stage": "roundtrip",
+     "open": false,
+     "confirmed": false,
+     "pending": 0,
+     "blockers": [],
+     "consistent": 0,
+     "confirm_waiting": false
+    }
+   ],
+   "n_plates": 64,
+   "n_samples": 366,
+   "n_genes": 58,
+   "counts_of": "analysis",
+   "decisions": 2,
+   "pending_requests": 0,
+   "has_audit": true,
+   "is_demo": true,
+   "updated_at": 1792583063.4527555,
+   "warming": false
+  }
+ ]
+}

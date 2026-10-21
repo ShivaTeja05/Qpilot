@@ -1,0 +1,327 @@
+{
+ "sheet_id": "db21b2f2f3265fb3e3829a42",
+ "name": "clean.csv",
+ "file_sha256": "db21b2f2f3265fb3e3829a428d57deb08ca34ffd27b198ad4fe0a05e7a028483",
+ "file_kind": "csv",
+ "n_rows": 8,
+ "study_id": null,
+ "mapping": {
+  "status": "mapping guessed, not confirmed",
+  "confirmed": false,
+  "sheet": 1,
+  "header_row": 1,
+  "layout": "wide",
+  "columns": [
+   {
+    "column": "A",
+    "role": "sample",
+    "role_word": "sample name",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "B",
+    "role": "group",
+    "role_word": "group",
+    "gene": null,
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.95
+   },
+   {
+    "column": "C",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "GAPDH",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "D",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "ACTB",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "E",
+    "role": "cq",
+    "role_word": "Cq",
+    "gene": "MYC",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "F",
+    "role": "dcq",
+    "role_word": "ΔCq",
+    "gene": "MYC",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "G",
+    "role": "ddcq",
+    "role_word": "ΔΔCq",
+    "gene": "MYC",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   },
+   {
+    "column": "H",
+    "role": "fc",
+    "role_word": "fold change",
+    "gene": "MYC",
+    "scale": null,
+    "basis": "header",
+    "confidence": 0.9
+   }
+  ],
+  "references": [
+   "GAPDH",
+   "ACTB"
+  ],
+  "roles": [
+   {
+    "id": "sample",
+    "word": "sample name"
+   },
+   {
+    "id": "group",
+    "word": "group"
+   },
+   {
+    "id": "bio_unit",
+    "word": "biological unit"
+   },
+   {
+    "id": "gene",
+    "word": "gene"
+   },
+   {
+    "id": "type",
+    "word": "sample type"
+   },
+   {
+    "id": "well",
+    "word": "well"
+   },
+   {
+    "id": "cq",
+    "word": "Cq"
+   },
+   {
+    "id": "mean_cq",
+    "word": "mean Cq"
+   },
+   {
+    "id": "dcq",
+    "word": "ΔCq"
+   },
+   {
+    "id": "ddcq",
+    "word": "ΔΔCq"
+   },
+   {
+    "id": "fc",
+    "word": "fold change"
+   },
+   {
+    "id": "mean_fc",
+    "word": "group mean fold change"
+   },
+   {
+    "id": "sd",
+    "word": "standard deviation"
+   },
+   {
+    "id": "sem",
+    "word": "standard error of the mean"
+   },
+   {
+    "id": "p",
+    "word": "p-value"
+   },
+   {
+    "id": "ignored",
+    "word": "not used"
+   }
+  ]
+ },
+ "headline": {
+  "plain": "Column mapping: mapping guessed, not confirmed. 10 of 10 fold changes reproduce from the sheet's own Cq values. Every column the check could recompute reproduces from the sheet's own Cq values.",
+  "segments": [
+   {
+    "text": "Column mapping: ",
+    "fact": null
+   },
+   {
+    "text": "mapping guessed, not confirmed",
+    "fact": "f_sc_mapping_status"
+   },
+   {
+    "text": ". ",
+    "fact": null
+   },
+   {
+    "text": "10",
+    "fact": "f_sc_n_fc_reproduced"
+   },
+   {
+    "text": " of ",
+    "fact": null
+   },
+   {
+    "text": "10",
+    "fact": "f_sc_n_fc"
+   },
+   {
+    "text": " fold changes reproduce from the sheet's own Cq values. Every column the check could recompute reproduces from the sheet's own Cq values.",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_sc_mapping_status",
+    "text": "mapping guessed, not confirmed",
+    "value": "mapping guessed, not confirmed",
+    "unit": "",
+    "path": "mapping_status"
+   },
+   {
+    "id": "f_sc_n_fc_reproduced",
+    "text": "10",
+    "value": 10,
+    "unit": "",
+    "path": "summary.n_reproduced"
+   },
+   {
+    "id": "f_sc_n_fc",
+    "text": "10",
+    "value": 10,
+    "unit": "",
+    "path": "summary.n_fold_changes"
+   }
+  ],
+  "source": "template"
+ },
+ "findings_text": {
+  "plain": "Every column the check could recompute reproduces from the sheet's own Cq values.",
+  "segments": [
+   {
+    "text": "Every column the check could recompute reproduces from the sheet's own Cq values.",
+    "fact": null
+   }
+  ],
+  "facts": [],
+  "source": "template"
+ },
+ "findings": [],
+ "columns": [
+  {
+   "column": "F",
+   "step": "dcq",
+   "step_word": "ΔCq",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 8,
+   "n_reproduced": 8,
+   "n_differ": 0
+  },
+  {
+   "column": "G",
+   "step": "ddcq",
+   "step_word": "ΔΔCq",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 8,
+   "n_reproduced": 8,
+   "n_differ": 0
+  },
+  {
+   "column": "H",
+   "step": "fc",
+   "step_word": "fold change",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 8,
+   "n_reproduced": 8,
+   "n_differ": 0
+  },
+  {
+   "column": "H",
+   "step": "mean_fc",
+   "step_word": "group mean fold change",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 1,
+   "n_reproduced": 1,
+   "n_differ": 0
+  },
+  {
+   "column": "H",
+   "step": "mean_fc",
+   "step_word": "group mean fold change",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 1,
+   "n_reproduced": 1,
+   "n_differ": 0
+  },
+  {
+   "column": "H",
+   "step": "p",
+   "step_word": "p-value",
+   "gene": "MYC",
+   "status": "reproduced",
+   "n_cells": 1,
+   "n_reproduced": 1,
+   "n_differ": 0
+  }
+ ],
+ "hand_overs": [],
+ "genes": [
+  {
+   "key": "GAPDH",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "ACTB",
+   "reference": true,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  },
+  {
+   "key": "MYC",
+   "reference": false,
+   "flagged": false,
+   "note": "an approved HGNC symbol"
+  }
+ ],
+ "counts": {
+  "fold_changes": 10,
+  "reproduced": 10,
+  "differ": 0,
+  "named": 0,
+  "ambiguous": 0,
+  "unexplained": 0,
+  "columns_checked": 6,
+  "columns_reproduced": 6,
+  "findings": 0,
+  "hand_overs": 0,
+  "gene_name_flags": 0
+ },
+ "notes": [],
+ "never_edited": "The sheet was read only; it is never edited, and nothing here is saved.",
+ "method_card": "methods/sheetcheck.md"
+}

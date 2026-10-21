@@ -1,0 +1,10 @@
+{
+ "status": 422,
+ "body": {
+  "error": {
+   "details": {},
+   "code": "bad_sheet",
+   "message": "This sheet cannot be checked: no table with a sample column was found in the first rows of any sheet; give the mapping explicitly"
+  }
+ }
+}

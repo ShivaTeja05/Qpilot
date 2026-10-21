@@ -1,0 +1,10 @@
+{
+ "status": 400,
+ "body": {
+  "error": {
+   "details": {},
+   "code": "bad_file",
+   "message": "notes.pdf: expected a .xlsx or .csv file."
+  }
+ }
+}
