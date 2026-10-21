@@ -11,6 +11,7 @@ import { Answer } from "./Answer";
 import { ModelLine } from "./ModelLine";
 import { ModelSaw } from "./ModelSaw";
 import { TooltipProvider } from "@/ui";
+import { asWritten } from "./testText";
 import { toAskAnswer } from "./types";
 
 const notAnsweringModel = notAnswering as Schemas["ModelStatus"];
@@ -36,15 +37,16 @@ describe("model states", () => {
     expect(line.textContent).toContain(notAnsweringModel.model!);
     expect(line.textContent).toContain(notAnsweringModel.reason!);
     expect(screen.getByText(/Templates answer meanwhile/)).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Model settings" }).getAttribute("href")).toBe(
-      "#/settings",
-    );
+    const settings = screen.getByRole("link", { name: "Model settings" });
+    expect(settings.getAttribute("href")).toBe("#/settings");
+    // A link inside text is underlined, not told apart by colour alone (axe link-in-text-block).
+    expect(settings.className).toMatch(/(^|\s)underline(\s|$)/);
   });
 
   it("shows why the template answered when the model was tried and failed", () => {
     render(<Answer answer={toAskAnswer(modelDown.result)!} links={{}} />);
-    expect(screen.getByText(modelDown.result.note)).toBeTruthy();
-    expect(screen.getByText(modelDown.result.writer_words)).toBeTruthy();
+    expect(screen.getByText(modelDown.result.note, asWritten)).toBeTruthy();
+    expect(screen.getByText(modelDown.result.writer_words, asWritten)).toBeTruthy();
   });
 });
 

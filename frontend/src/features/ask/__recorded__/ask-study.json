@@ -1,5 +1,5 @@
 {
-  "id": "cd4b27bea38847f3",
+  "id": "ef98d91b58744188",
   "kind": "ask",
   "title": "Answering “How many plates, samples and genes are in this study?”",
   "key": "bc1d233e3866",
@@ -47,6 +47,6 @@
     "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
     "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
   },
-  "result_type": null,
+  "result_type": "AskAnswer",
   "error": null
 }

@@ -51,7 +51,10 @@ export function ModelLine({
         <span className="text-fg">{text}</span>
         {detail ? <> {detail}</> : null}{" "}
         {model.configured && tone === "ok" ? null : (
-          <a href="#/settings" className="text-accent underline-offset-4 hover:underline">
+          <a
+            href="#/settings"
+            className="text-accent underline decoration-accent/50 underline-offset-4 hover:decoration-accent"
+          >
             Model settings
           </a>
         )}

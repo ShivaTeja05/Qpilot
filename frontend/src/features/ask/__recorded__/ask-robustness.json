@@ -1,5 +1,5 @@
 {
-  "id": "1d9764bfe5674a23",
+  "id": "1b794913dac94de7",
   "kind": "ask",
   "title": "Answering “Is the AHCY result robust?”",
   "key": "bc1d233e3866",
@@ -7,10 +7,10 @@
   "step": "Looking it up in the study",
   "fraction": null,
   "typical_s": 0.5,
-  "elapsed_s": 0.07,
+  "elapsed_s": 0.06,
   "result": {
     "question": "Is the AHCY result robust?",
-    "answer": "AHCY is higher in the MYCN high group under the recommended choices: 2.6× (confidence interval 2.1× to 3.2×). It holds in 91% of the 744 reasonable analyses; confidence Moderate. It can change with: which control genes to normalise to.",
+    "answer": "AHCY is higher in the MYCN high group under the recommended choices: 2.61× (confidence interval 2.12× to 3.23×). It holds in 91 % of the 744 analyses qPilot checks; confidence Moderate. It can change with: which control genes to normalise to.",
     "engine": "study",
     "tool": "qpcr_robustness",
     "args": {
@@ -27,26 +27,26 @@
       {
         "id": "f_ans_fc",
         "meaning": "fold change under the recommended choices",
-        "value": "2.6×"
+        "value": "2.61×"
       },
       {
         "id": "f_ans_ci_lo",
         "meaning": "lower end of the 95 % confidence interval",
-        "value": "2.1×"
+        "value": "2.12×"
       },
       {
         "id": "f_ans_ci_hi",
         "meaning": "upper end of the 95 % confidence interval",
-        "value": "3.2×"
+        "value": "3.23×"
       },
       {
         "id": "f_ans_holds",
-        "meaning": "share of reasonable analyses with the same call",
-        "value": "91%"
+        "meaning": "share of the analyses qPilot checks with the same call",
+        "value": "91 %"
       },
       {
         "id": "f_ans_n_cells",
-        "meaning": "reasonable analyses",
+        "meaning": "analyses qPilot checks",
         "value": "744"
       },
       {
@@ -64,6 +64,6 @@
     "head_before": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d",
     "head_after": "8b008d8d6d2030be1d6086cc9414f59009a4d6dd4d0e2008c9f981fbf79f721d"
   },
-  "result_type": null,
+  "result_type": "AskAnswer",
   "error": null
 }
