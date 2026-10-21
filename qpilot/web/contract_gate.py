@@ -63,15 +63,18 @@ class GatePlate(BaseModel):
 
 
 class GateEvaluation(BaseModel):
-    """One verdict of one rule on one plate, plate x target or sample."""
+    """One verdict of one rule on one plate, plate x target, sample or biological unit."""
 
     id: str = Field(description="A stable id of the evaluation (12 hex).")
     rule_id: str
     title: str
-    level: Literal["plate", "target", "sample", "study"]
+    level: Literal["plate", "target", "sample", "unit", "study"]
     plate: str | None = None
     target: str | None = None
     sample: str | None = None
+    unit: str | None = Field(
+        default=None, description="The biological unit (G-RT: its reverse-transcription replicates)"
+    )
     verdict: Verdict
     outcome: str = Field(description="The evaluator's outcome before the pack's severity.")
     code: str = Field(description="Why a rule is not applicable (machine reason), else empty.")
@@ -145,6 +148,7 @@ class GateConsequence(BaseModel):
     plate: str | None = None
     target: str | None = None
     sample: str | None = None
+    unit: str | None = None
     verdict: Verdict
     consequence: ConsequenceClass = Field(description="The worst class over the options.")
     triage: Triage
@@ -163,6 +167,41 @@ class GateConsequence(BaseModel):
     )
     decision: GateDecisionView | None = None
     requests: list[GateRequestView] = []
+
+
+class GateRunFile(BaseModel):
+    """Which run file G-INSTR read for one plate: one a person linked, the export's, the study's.
+
+    The study's own file (RDML) names the instrument and the run date at most; the run file the
+    instrument wrote (an ``.eds``, a QuantStudio results export, CFX run information) says
+    whether the run completed, its pauses and its calibrations. A study opened from an
+    instrument export reads the plate's run file among the export's own files when it has one;
+    a run file a person links comes first. No serial number is ever here.
+    """
+
+    plate: str
+    source: Literal["linked", "export", "study_file", "none"] = Field(
+        description="linked: a run file a person linked; export: the plate's run file in the "
+        "instrument export the study was opened from; study_file: the study's own file; none: "
+        "qPilot has no run context for this plate."
+    )
+    kind: str | None = Field(
+        default=None,
+        description="What the file read is: eds, quantstudio_export, cfx_run_information, rdml.",
+    )
+    name: str | None = Field(
+        default=None,
+        description="A linked or export file's name as the person's file was called, serials "
+        "blanked.",
+    )
+    linked_at: str | None = Field(default=None, description="When a person linked it.")
+    problem: Literal["", "missing", "changed", "unreadable"] = Field(
+        default="", description="Why a linked file was not read (it is gone, changed or refused)."
+    )
+    verdict: Verdict = Field(description="G-INSTR's verdict for this plate.")
+    evaluation: str | None = Field(
+        default=None, description="The id of the plate's G-INSTR evaluation."
+    )
 
 
 class GateView(BaseModel):
@@ -204,6 +243,10 @@ class GateView(BaseModel):
         "`expected_inbox`).",
     )
     decide_note: str = Field(default="", description="What deciding a card here does, in words.")
+    runs: list[GateRunFile] = Field(
+        default=[], description="Per plate, the run file G-INSTR read (empty without G-INSTR)."
+    )
+    run_note: str = Field(default="", description="What linking a run file does, in words.")
 
 
 class GateDecide(BaseModel):
@@ -231,6 +274,22 @@ class GateDecided(BaseModel):
     job: JobView | None = Field(
         default=None, description="The analysis of the changed design, when it changed."
     )
+
+
+class GateRunUnlink(BaseModel):
+    """``POST /studies/{id}/gate/run-files/unlink``: a person removes a plate's linked run file."""
+
+    plate: str = Field(min_length=1, max_length=200)
+
+
+class GateRunLinked(BaseModel):
+    """What linking (or unlinking) a run file did; the gate is read again with it."""
+
+    plate: str
+    linked: bool = Field(description="True: the plate now has this run file; False: unlinked.")
+    name: str | None = None
+    kind: str | None = None
+    message: str
 
 
 class GateLoaded(BaseModel):

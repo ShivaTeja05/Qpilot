@@ -28,7 +28,8 @@ Rules enforced here, in code:
   (``core/proposals.py`` refuses every actor but ``human``). An agent never proposes a
   ``stage.confirm`` and never re-binds the input file or sample sheet of an open session.
 - **Instruments.** ``qpcr_run_context`` reads a run file inside ``QPILOT_DATA_ROOTS`` and
-  returns its ``model_view`` only: serial numbers and identity strings never leave the machine.
+  returns its ``model_view`` only: serial numbers, identity strings and the file's own name
+  (CFX Manager puts the user in it) never leave the machine.
   Logbook views count the text a person typed instead of showing it. ``qpcr_incident_log`` is
   a proposal: the incident is written ``proposed`` by an agent and only a person confirms it.
 - **Trace and sheets.** ``qpcr_trace`` and ``qpcr_check_sheet`` only read: Trace opens no

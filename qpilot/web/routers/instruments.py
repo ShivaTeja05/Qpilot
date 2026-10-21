@@ -447,14 +447,9 @@ def _without_identity(name: str, run: Any) -> str:
     Export tools often put the instrument's serial in the file name; serials never leave the
     registry, so they are not echoed back in the name either.
     """
-    from qpilot.qpcr.instrument_context import LOCAL_IDENTITY
+    from qpilot.qpcr.instrument_context import without_serials
 
-    identity = getattr(run, "identity", {}) or {}
-    secret = [str(identity.get(k)) for k in LOCAL_IDENTITY if identity.get(k)]
-    for value in sorted(secret, key=len, reverse=True):
-        if len(value) >= 4:
-            name = re.sub(re.escape(value), "…", name, flags=re.IGNORECASE)
-    return name
+    return without_serials(name, getattr(run, "identity", {}) or {})
 
 
 def run_view(ctx: AppContext, path: Path) -> RunFileView:

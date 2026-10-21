@@ -2,13 +2,17 @@
  * The Controls section on JSON recorded from the real route (`recorded/record.py`): the demo study
  * analysed outside Studio (64 plates, three auto-decided cards, read-only) and the Studio tests'
  * mini file with an early no-template control (one open card a person decides here; the same
- * card with an agent's request waiting; and the new analysis after a person left the wells out).
- * No number is typed in: every expectation is read from a recording or formatted from it.
+ * card with an agent's request waiting; and the new analysis after a person left the wells out),
+ * a file with reverse-transcription replicates and a run file a person linked to one plate
+ * (G-RT and G-INSTR warn there), and an instrument export opened in Studio whose own run
+ * information G-INSTR reads. No number is typed in: every expectation is read from a recording
+ * or formatted from it.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, type Schemas } from "@/api/client";
+import { count, plural } from "@/lib/format";
 import { TooltipProvider } from "@/ui";
 import type { GateView } from "../api";
 import { GatePage } from "../index";
@@ -18,19 +22,25 @@ import {
   filterEvaluations,
   leadOption,
   plateLabel,
+  runFilesSentence,
+  runSourceText,
   verdictCounts,
   wellText,
   whereText,
 } from "../words";
 import demoJson from "./recorded/gate-demo.json";
+import exportJson from "./recorded/gate-export.json";
 import leftOutJson from "./recorded/gate-mini-left-out.json";
 import miniJson from "./recorded/gate-mini.json";
 import requestJson from "./recorded/gate-mini-request.json";
+import rtJson from "./recorded/gate-rt-linked.json";
 
 const DEMO = demoJson as unknown as GateView;
 const MINI = miniJson as unknown as GateView;
 const REQUEST = requestJson as unknown as GateView;
 const LEFT_OUT = leftOutJson as unknown as GateView;
+const RT = rtJson as unknown as GateView;
+const EXPORT = exportJson as unknown as GateView;
 const BANNED = /\b(valid|validated|invalid|compliant|diagnostic|QC passed)\b/i;
 /** Testing Library folds the page's narrow no-break spaces into plain ones. */
 const text = (s: string) => s.replace(/\s+/g, " ");
@@ -338,5 +348,171 @@ describe("the Controls page", { timeout: 30_000 }, () => {
     expect(init.params.path.card_id).toBe(conseq.decision_id);
     expect(init.body.option).toBe("keep");
     expect(init.body.expected_head).toBe(LEFT_OUT.head);
+  });
+});
+
+describe("G-RT and G-INSTR on the Controls page", { timeout: 30_000 }, () => {
+  const rtRow = RT.evaluations.find((e) => e.rule_id === "G-RT" && e.verdict === "warn")!;
+  const instrRow = RT.evaluations.find((e) => e.rule_id === "G-INSTR" && e.verdict === "warn")!;
+  const linked = RT.runs.find((r) => r.source === "linked")!;
+
+  it("names a unit's check and the run file each plate's check read", () => {
+    expect(rtRow.level).toBe("unit");
+    expect(whereText(rtRow)).toBe(`Unit ${rtRow.unit} · ${rtRow.target}`);
+    expect(whereText(instrRow)).toBe(`Plate ${plateLabel(instrRow.plate)}`);
+    expect(linked.evaluation).toBe(instrRow.id);
+    expect(runSourceText(linked)).toBe(`${linked.name} (an .eds file), linked by a person`);
+    const own = RT.runs.find((r) => r.source === "study_file")!;
+    expect(runSourceText(own)).toMatch(/^The study's own file \(RDML/);
+    expect(runSourceText({ ...linked, problem: "changed" })).toContain("has changed");
+    for (const line of [RT.headline.plain, RT.run_note, ...RT.cards.map((c) => c.status_line)])
+      expect(line).not.toMatch(BANNED);
+  });
+
+  it("lists both checks with the problems, a unit's and a run's, each opening to its reason", () => {
+    page(RT);
+    const list = screen.getByRole("list", { name: "Rule checks" });
+    const rows = within(list).getAllByRole("button", { expanded: false });
+    expect(rows).toHaveLength(RT.counts.fail! + RT.counts.warn!);
+    const unit = rows.find((r) => r.textContent?.includes(whereText(rtRow)))!;
+    expect(unit.textContent).toContain("G-RT");
+    const run = rows.find((r) => r.textContent?.includes("G-INSTR"))!;
+    fireEvent.click(run);
+    const body = document.getElementById(run.getAttribute("aria-controls")!)!;
+    expect(text(body.textContent ?? "")).toContain(text(instrRow.reason.plain));
+    // a whole run's wells: the first ones as chips, the rest folded away
+    expect(instrRow.flagged.length).toBeGreaterThan(24);
+    expect(within(body).getAllByText(wellText(instrRow.flagged[0]!)).length).toBeGreaterThan(0);
+    // the rule's wells and the option's (the same run) fold the same way
+    expect(
+      within(body).getAllByText(`and ${plural(instrRow.flagged.length - 24, "more well")}`),
+    ).toHaveLength(2);
+    expect(text(body.textContent ?? "")).toContain(`Run file read: ${runSourceText(linked)}.`);
+    fireEvent.click(
+      within(body).getByRole("button", { name: "Link another run file for this plate" }),
+    );
+    expect(document.activeElement?.textContent).toBe(
+      `Choose the run file for plate ${plateLabel(linked.plate)}`,
+    );
+  });
+
+  it("says which plates read a linked run file, and unlinks one", async () => {
+    const post = vi.spyOn(api, "POST").mockImplementation((() =>
+      Promise.resolve({
+        data: {
+          plate: linked.plate,
+          linked: false,
+          name: linked.name,
+          kind: "eds",
+          message: "Unlinked.",
+        },
+        response: new Response(null, { status: 200 }),
+      })) as never);
+    page(RT);
+    const region = screen.getByRole("region", { name: "Run files" });
+    expect(text(region.textContent ?? "")).toContain(text(RT.run_note));
+    const own = RT.runs.filter((r) => r.source === "study_file").length;
+    expect(text(region.textContent ?? "")).toContain(
+      `G-INSTR reads a run file a person linked for 1 of the ${plural(RT.runs.length, "plate")}, the study's own file for ${own}.`,
+    );
+    const items = within(
+      within(region).getByRole("list", { name: "Linked run files" }),
+    ).getAllByRole("listitem");
+    expect(items).toHaveLength(1);
+    expect(text(items[0]!.textContent ?? "")).toContain(runSourceText(linked));
+    fireEvent.click(
+      within(items[0]!).getByRole("button", {
+        name: `Unlink the run file of plate ${plateLabel(linked.plate)}`,
+      }),
+    );
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    const [route, init] = post.mock.calls[0] as unknown as [
+      string,
+      { params: { path: { study_id: string } }; body: { plate: string } },
+    ];
+    expect(route).toBe("/api/studies/{study_id}/gate/run-files/unlink");
+    expect(init.params.path.study_id).toBe(RT.study_id);
+    expect(init.body).toEqual({ plate: linked.plate });
+  });
+
+  it("links a run file to the chosen plate as a form upload", async () => {
+    const sent: { url: string; form: FormData }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init: RequestInit) => {
+        sent.push({ url, form: init.body as FormData });
+        const done = {
+          plate: RT.runs[0]!.plate,
+          linked: true,
+          name: "run.eds",
+          kind: "eds",
+          message: "Linked.",
+        };
+        return Promise.resolve(
+          new Response(JSON.stringify(done), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      }),
+    );
+    page(RT);
+    const first = RT.runs[0]!.plate;
+    const input = screen.getByLabelText(`Run file for plate ${plateLabel(first)}`);
+    const file = new File(["run"], "run.eds", { type: "application/octet-stream" });
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]!.url).toBe(`/api/studies/${RT.study_id}/gate/run-files`);
+    expect(sent[0]!.form.get("plate")).toBe(first);
+    expect((sent[0]!.form.get("run") as File).name).toBe("run.eds");
+  });
+
+  it("says the demo's checks read the study's own file on every plate", () => {
+    page(DEMO);
+    const region = screen.getByRole("region", { name: "Run files" });
+    expect(DEMO.runs.every((r) => r.source === "study_file")).toBe(true);
+    expect(text(region.textContent ?? "")).toContain(
+      `G-INSTR reads the study's own file for every one of the ${plural(DEMO.runs.length, "plate")}.`,
+    );
+    expect(within(region).queryByRole("list", { name: "Linked run files" })).toBeNull();
+  });
+});
+
+describe("G-INSTR on a study opened from an instrument export", { timeout: 30_000 }, () => {
+  const run = EXPORT.runs[0]!;
+  const row = EXPORT.evaluations.find((e) => e.rule_id === "G-INSTR")!;
+
+  it("names the export's own run file, not a person's link", () => {
+    expect(EXPORT.runs.map((r) => r.source)).toEqual(["export"]);
+    expect(run.kind).toBe("cfx_run_information");
+    expect(runSourceText(run)).toBe(
+      `${run.name} (CFX run information), in the instrument export this study was opened from`,
+    );
+    expect(run.linked_at).toBeNull();
+    expect(run.evaluation).toBe(row.id);
+    expect(row.reason.plain).toMatch(/^This plate's run file in the instrument export /);
+    for (const line of [EXPORT.run_note, row.reason.plain]) expect(line).not.toMatch(BANNED);
+  });
+
+  it("says in the Run files card what each plate reads, with no link to undo", () => {
+    page(EXPORT);
+    const region = screen.getByRole("region", { name: "Run files" });
+    expect(text(region.textContent ?? "")).toContain(text(EXPORT.run_note));
+    expect(text(region.textContent ?? "")).toContain(
+      "G-INSTR reads the run file in the instrument export for the plate.",
+    );
+    expect(within(region).queryByRole("list", { name: "Linked run files" })).toBeNull();
+  });
+
+  it("counts each source of run file across plates in one sentence", () => {
+    const runs = [...RT.runs, ...EXPORT.runs];
+    const n = (source: string) => count(runs.filter((r) => r.source === source).length);
+    expect(runFilesSentence(runs)).toBe(
+      `G-INSTR reads a run file a person linked for ${n("linked")} of the ${plural(runs.length, "plate")}, the run file in the instrument export for ${n("export")}, the study's own file for ${n("study_file")}.`,
+    );
+    const twice = EXPORT.runs.concat(EXPORT.runs);
+    expect(runFilesSentence(twice)).toBe(
+      `G-INSTR reads the run file in the instrument export for every one of the ${plural(twice.length, "plate")}.`,
+    );
   });
 });

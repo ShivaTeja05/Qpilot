@@ -1,4 +1,4 @@
-"""Pieces several connectors share: column vocabulary, plate names, and long-table assembly.
+"""Pieces connectors share: column vocabulary, plate names and files, long-table assembly.
 
 A *long* table has one row per well, target and cycle (or per well and target for a Cq table):
 QuantStudio's ``[Amplification Data]``, the LightCycler text export and qPilot's generic tidy
@@ -11,9 +11,10 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from pathlib import Path
 
-from qpilot.io.connectors.base import CaptureError, Curve, PlateData, Reaction
-from qpilot.io.connectors.builder import parse_well, well_name
+from qpilot.io.connectors.base import CaptureError, CaptureMeta, Curve, PlateData, Reaction
+from qpilot.io.connectors.builder import clean_id, parse_well, well_name
 from qpilot.io.connectors.sample_types import map_vendor_type
 
 #: Canonical column -> accepted spellings (compared after ``tables.squash``).
@@ -64,6 +65,27 @@ def plate_stem(file_stem: str) -> str:
             break
         stem = trimmed
     return stem or file_stem
+
+
+def plate_sources(meta: CaptureMeta) -> dict[str, list[str]]:
+    """Each plate's input files: run id -> the names of the files it was read from.
+
+    A capture names them per plate (:attr:`PlateMeta.sources`). One recorded before it did is
+    read as the connectors group files: one plate was read from every file; with several, a
+    file belongs to the plate its stem names (:func:`plate_stem`), and one naming none is left out.
+    """
+    names = [s.name for s in meta.sources]
+    if any(p.sources for p in meta.plates):
+        return {p.run_id: [n for n in p.sources if n in names] for p in meta.plates}
+    if len(meta.plates) == 1:
+        return {meta.plates[0].run_id: names}
+    out: dict[str, list[str]] = {p.run_id: [] for p in meta.plates}
+    plates = {run_id.lower(): run_id for run_id in out}
+    for name in names:
+        run_id = plates.get(clean_id(plate_stem(Path(name).stem), "").lower())
+        if run_id is not None:
+            out[run_id].append(name)
+    return out
 
 
 def well_position(label: str, index: str = "", columns: int = 12) -> tuple[int, int] | None:
@@ -190,4 +212,11 @@ def header_pairs(lines: Iterable[str]) -> list[tuple[str, str]]:
     return pairs
 
 
-__all__ = ["COLUMNS", "LongAssembler", "header_pairs", "plate_stem", "well_position"]
+__all__ = [
+    "COLUMNS",
+    "LongAssembler",
+    "header_pairs",
+    "plate_sources",
+    "plate_stem",
+    "well_position",
+]

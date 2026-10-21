@@ -368,6 +368,8 @@ def test_the_demo_gate_route(tmp_path):
     check_texts(body)
     same_as_report(body, gate_router.compute(store, study, None))
     expected = gate_file(rdml)
+    # the seven rules of research-default 1.0.0 as before; G-RT (no RT replicates marked) and
+    # G-INSTR (the RDML says nothing about the runs) add 1 + 64 "not applicable"
     assert (
         body["counts"]
         == expected.counts
@@ -375,9 +377,15 @@ def test_the_demo_gate_route(tmp_path):
             "pass": 491,
             "warn": 8,
             "fail": 14,
-            "not_applicable": 192,
+            "not_applicable": 192 + 1 + 64,
         }
     )
+    new = [e for e in body["evaluations"] if e["rule_id"] in ("G-RT", "G-INSTR")]
+    assert {(e["rule_id"], e["verdict"]) for e in new} == {
+        ("G-RT", "not_applicable"),
+        ("G-INSTR", "not_applicable"),
+    }
+    assert len(body["runs"]) == 64 and {r["source"] for r in body["runs"]} == {"study_file"}
     assert body["n_gated"] == 64 and len(body["consequences"]) == 10
     assert all(o["n_flipped"] == 0 for x in body["consequences"] for o in x["options"])
     assert [card["card"]["status"] for card in body["cards"]] == ["auto_decided"] * 3

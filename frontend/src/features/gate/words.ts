@@ -3,8 +3,9 @@
  * "compliant" or "diagnostic"), what a consequence class means, where a finding sits, and the
  * filters of the rule list. Pure functions, tested on the recorded answers.
  */
+import { count, plural } from "@/lib/format";
 import type { Tone } from "@/ui";
-import type { ConsequenceClass, Consequence, Evaluation, Plate, Verdict } from "./api";
+import type { ConsequenceClass, Consequence, Evaluation, Plate, RunFile, Verdict } from "./api";
 
 export const VERDICTS: Verdict[] = ["fail", "warn", "pass", "not_applicable"];
 
@@ -42,10 +43,13 @@ export function plateLabel(run: string | null | undefined): string {
   return run.replace(/_\d{8}$/, "");
 }
 
-/** Where a finding sits, in words: plate · target · sample (the target when it is not the plate's name). */
-export function whereText(e: Pick<Evaluation, "plate" | "target" | "sample">): string {
+/**
+ * Where a finding sits, in words: plate · unit · target · sample (the target when it is not the
+ * plate's name; a biological unit for G-RT, whose wells can be on several plates).
+ */
+export function whereText(e: Pick<Evaluation, "plate" | "target" | "sample" | "unit">): string {
   const plate = plateLabel(e.plate);
-  const parts = [plate ? `Plate ${plate}` : ""];
+  const parts = [plate ? `Plate ${plate}` : "", e.unit ? `Unit ${e.unit}` : ""];
   if (e.target && e.target !== plate) parts.push(e.target);
   if (e.sample) parts.push(`sample ${e.sample}`);
   return parts.filter(Boolean).join(" · ") || "The study";
@@ -113,4 +117,51 @@ export function leadOption(c: Consequence): Consequence["options"][number] | und
       b.n_flipped_elsewhere - a.n_flipped_elsewhere ||
       b.max_delta_log2fc - a.max_delta_log2fc,
   )[0];
+}
+
+/** What a run file is, in words (the reader's `source_kind`). */
+export const RUN_KIND_WORD: Record<string, string> = {
+  eds: "an .eds file",
+  quantstudio_export: "a QuantStudio results export",
+  cfx_run_information: "CFX run information",
+  rdml: "RDML",
+};
+
+/** Which run file G-INSTR read for a plate, in one phrase. */
+export function runSourceText(r: Pick<RunFile, "source" | "kind" | "name" | "problem">): string {
+  const kind = r.kind ? (RUN_KIND_WORD[r.kind] ?? r.kind) : "a run file";
+  if (r.source === "linked") {
+    if (r.problem === "missing") return "A linked run file that is no longer where qPilot kept it";
+    if (r.problem === "changed") return "A linked run file that has changed since it was linked";
+    if (r.problem) return "A linked run file that cannot be read any more";
+    return `${r.name ?? "A run file"} (${kind}), linked by a person`;
+  }
+  if (r.source === "export")
+    return `${r.name ?? "The plate's run file"} (${kind}), in the instrument export this study was opened from`;
+  if (r.source === "study_file")
+    return "The study's own file (RDML: the instrument and the run date at most)";
+  return "No run file";
+}
+
+/** What each source of run file is called in the Run files card's sentence. */
+const RUN_SOURCE_PHRASE: Partial<Record<RunFile["source"], string>> = {
+  linked: "a run file a person linked",
+  export: "the run file in the instrument export",
+  study_file: "the study's own file",
+};
+
+/** Which run files G-INSTR reads across the plates, in one sentence. */
+export function runFilesSentence(runs: Pick<RunFile, "source">[]): string {
+  const parts = (["linked", "export", "study_file"] as const)
+    .map((source) => [source, runs.filter((r) => r.source === source).length] as const)
+    .filter(([, n]) => n > 0);
+  const plates =
+    runs.length === 1 ? "the plate" : `every one of the ${plural(runs.length, "plate")}`;
+  if (parts.length === 1 && parts[0]![1] === runs.length)
+    return `G-INSTR reads ${RUN_SOURCE_PHRASE[parts[0]![0]]} for ${plates}.`;
+  const said = parts.map(
+    ([source, n], i) =>
+      `${RUN_SOURCE_PHRASE[source]} for ${count(n)}${i === 0 ? ` of the ${plural(runs.length, "plate")}` : ""}`,
+  );
+  return `G-INSTR reads ${said.join(", ")}.`;
 }

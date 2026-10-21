@@ -24,11 +24,25 @@ trace the stored results (every choice at its recommended option), as on origin/
 section and its Where to look trace **the analysis in use**. They differ only once a person has
 decided a card away from its recommended option.
 
-Not combined (different questions, kept apart): origin/main's G-RT and G-INSTR gate lines
-(`qpcr/gate_rt.py`, `gate_instr.py`) feed the Evidence Ledger and the run-file reading; the Run
-Gate rule pack (`core/rules.py`, `qpcr/gate_rules.py`: G-TYPED, NTC, NAC, NRT, POS, STD, REP) is
-the Controls section. `core/consequence.py` (Trace's consequence classes) and `core/gate.py`
-(the Run Gate's consequence test over the grid) answer different questions.
+**G-RT and G-INSTR in the Run Gate** (follow-up, branch `ui/gate-lines`): origin/main's gate
+lines (`qpcr/gate_rt.py`, `gate_instr.py`) still feed the Evidence Ledger and the Instruments
+section's run-file reading as they did, and are now also **rules of the pack**
+(`research-default` 1.1.0, whose seven 1.0.0 rules are unchanged: same verdicts on the demo).
+G-RT gives a verdict per biological unit × target from the design's `rt_replicate` labels (the
+ranges `gate_rt` computes), G-INSTR a verdict per plate from the plate's run file (the lines
+`g_instr` makes, worded by `explain/instrument_text`, every number re-registered as an
+`f_gate_*` fact); both have sources and thresholds in the pack and the consequence test where
+they point at wells (leave the unit's wells out for the target; leave the run's study wells
+out). Two differences from the lines on their own, said where they show: the gate's G-RT counts
+wells a person left out (so its option can say "already left out"), and G-INSTR's information
+lines (an expired calibration) are warnings in the pack, so the consequence test prices them.
+The study's own file is RDML, which names the instrument and the run date at most, so a person
+links the instrument's run file to a plate on Controls (`qpcr/run_links.py`, kept per input
+file; `POST /api/studies/{id}/gate/run-files`, `…/unlink`); a Studio session opened from an
+instrument export reads each plate's run file among the export's own files first (follow-up
+branch `ui/export-run-files`, `qpcr/export_runs.py`). `core/consequence.py` (Trace's
+consequence classes) and `core/gate.py` (the Run Gate's consequence test over the grid) still
+answer different questions.
 
 ## 2. The Gradio features, now on the page
 
@@ -82,12 +96,35 @@ merged source. Shiva's nine MCP tools and Import Trust's sentences all keep thei
 Import Trust and the Evidence Ledger's raw-ness item read the same import check (`io/rawness`):
 the card decides what to do about it, the ledger says what it means.
 
-## 5. Gates on this branch (21 Oct 2026, after 2fa4a08)
+## 5. ui/one-page merged a third time (0f7c415)
 
-ruff check + format clean (whole repository) · `pytest -m "not demo_data"` 3557 passed, 3 skipped,
+Hosted mode for a public sandbox (`QPILOT_HOSTED=1`: extra hosts, allowed origins, framing, no
+launch key; `SystemView.hosted`, the HostedBanner), the Hugging Face Space files
+(`deploy/hf-space/`, `scripts/build_hf_space.py`) and HEAD on the page route. Merged as 3de7dcd:
+only the built page conflicted (rebuilt); `schema.d.ts` regenerated. This branch's routes
+(evidence, review, where-to-look, sheets, instruments) go through the same Guard, so hosted mode
+covers them as it covers every route.
+
+## 6. Gates on this branch (21 Oct 2026, after 3de7dcd)
+
+ruff check + format clean (whole repository) · `pytest -m "not demo_data"` 3562 passed, 3 skipped,
 6 xfailed (the capture weak spots, strict) · `pytest -m demo_data` 420 passed · `sim/tests` 55
 passed · `qpilot studio demo --check` 28/28 · `scripts/demo_regression.py` PASS (17/17 locked;
 results.json additive) · frontend typecheck, lint, prettier, `check:api` clean, vitest 381 passed,
 build committed · e2e (Playwright + axe, fresh copy of the seeded demo store) 212 passed,
 2 skipped, 0 failed, including `e2e/integrate.spec.ts` and the two lab sections at every width
 and theme. Nothing is pushed.
+
+## 7. Follow-ups merged onto main (21 Oct 2026)
+
+**ui/gate-lines (G-RT and G-INSTR in the Run Gate, 21 Oct 2026):** ruff check + format clean ·
+`pytest -m "not demo_data"` 3584 passed (+ the gate run-file tests added after: 9 in
+`tests/web/test_gate_runs.py`, 20 in `tests/gate/test_gate_rt_instr.py`) · `pytest -m demo_data`
+420 passed (the demo route's verdict counts now add G-RT's and G-INSTR's "not applicable") ·
+`scripts/demo_regression.py` PASS (17/17 locked) · frontend typecheck, lint, prettier,
+`check:api` clean, vitest 386 passed, build committed · e2e `gate.spec.ts` 3 passed and the
+Controls screens at every width and theme 8 passed (axe clean), on a fresh copy of the seeded store.
+
+The stacked follow-ups ui/export-run-files, ui/run-dialects and ui/run-file-user (G-INSTR reads
+a Studio export's own run file; the Design & Analysis `# Key: Value` header; no run file name or
+serials in a model view) came with it and were merged onto main with the read-only Vercel demo.

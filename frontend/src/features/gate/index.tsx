@@ -28,6 +28,7 @@ import { scopeOf, useGate, loadingJob, type GateScope, type GateView } from "./a
 import { GateCards } from "./Cards";
 import { ClassChip, PlateStrip, VerdictCounts } from "./Pieces";
 import { RuleList } from "./Rules";
+import { RunFiles } from "./RunFiles";
 import { DEFAULT_FILTER, leadOption, whereText, type RuleFilter } from "./words";
 
 type Workspace = Schemas["WorkspaceView"];
@@ -163,17 +164,27 @@ export function GatePage({
   view,
   workspace,
   scope,
+  checking = false,
 }: {
   view: GateView;
   workspace: Workspace;
   scope?: GateScope;
+  /** The gate is being read again (a decision, or a run file linked). */
+  checking?: boolean;
 }) {
   const [filter, setFilter] = useState<RuleFilter>(DEFAULT_FILTER);
   const [focus, setFocus] = useState<string | null>(null);
+  const [runPlate, setRunPlate] = useState<string>("");
+  const [runFocus, setRunFocus] = useState(0);
   const open = (id: string) => {
     setFilter({ ...DEFAULT_FILTER, verdict: "all" });
     setFocus(id);
   };
+  const linkRun = (plate: string) => {
+    setRunPlate(plate);
+    setRunFocus((n) => n + 1);
+  };
+  const plateForRun = runPlate || view.runs[0]?.plate || "";
   return (
     <>
       <Header view={view} />
@@ -220,11 +231,26 @@ export function GatePage({
       </Card>
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] [&>*]:min-w-0">
         <div className="flex min-w-0 flex-col gap-5">
-          <RuleList view={view} filter={filter} onFilter={setFilter} focusId={focus} />
+          <RuleList
+            view={view}
+            filter={filter}
+            onFilter={setFilter}
+            focusId={focus}
+            onLinkRun={view.runs.length ? linkRun : undefined}
+          />
           <Consequences view={view} onOpen={open} />
         </div>
         <div className="flex min-w-0 flex-col gap-5">
           <GateCards view={view} workspace={workspace} scope={scope} />
+          <RunFiles
+            view={view}
+            scope={scope ?? scopeOf(workspace)}
+            plate={plateForRun}
+            onPlate={setRunPlate}
+            focus={runFocus}
+            onOpen={open}
+            checking={checking}
+          />
           <PackRules view={view} />
         </div>
       </div>
@@ -281,7 +307,7 @@ export default function GateSection({ workspace }: SectionProps) {
   }
   return (
     <Page>
-      <GatePage view={q.data} workspace={workspace} scope={scope} />
+      <GatePage view={q.data} workspace={workspace} scope={scope} checking={q.isFetching} />
     </Page>
   );
 }
