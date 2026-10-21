@@ -77,6 +77,37 @@ class Baseline(BaseModel):
     cells: Any = None  # pandas Series indexed by (cell index tuple, item) -> conclusion
 
 
+class AtCell:
+    """A decision space read at another primary cell (the analysis in use, not the planned one).
+
+    Every other dimension of the grid stays as it is, so the grid itself is the same; only what
+    counts as "the analysis as it stands" moves. Dimensions the space does not have are ignored,
+    and dimensions the cell does not name keep the space's own primary option.
+    """
+
+    def __init__(self, space: DecisionSpace, cell: Mapping[str, Any]) -> None:
+        self.space = space
+        self.dimensions = space.dimensions
+        self.items = space.items
+        self.primary = {
+            **space.primary,
+            **{k: v for k, v in cell.items() if k in space.dimensions and v in space.dimensions[k]},
+        }
+
+    def evaluate(self, cell: dict[str, Any]) -> dict[str, ContrastResult]:
+        """The wrapped space's results for ``cell``."""
+        return self.space.evaluate(cell)
+
+    def conclude(self, result: ContrastResult) -> str:
+        """The wrapped space's conclusion rule."""
+        return self.space.conclude(result)
+
+
+def at_cell(space: DecisionSpace, cell: Mapping[str, Any] | None) -> DecisionSpace:
+    """``space`` read at ``cell`` (see :class:`AtCell`); ``space`` itself when ``cell`` is empty."""
+    return AtCell(space, cell) if cell else space
+
+
 def baseline(space: DecisionSpace, grid: pd.DataFrame | None = None) -> Baseline:
     """Summarise ``space`` (and its grid, computed when not given) for comparison."""
     grid = robustness.run_grid(space) if grid is None else grid
@@ -416,7 +447,10 @@ def run_consequences(
             if key not in cache:
                 variant = build_variant(list(key))
                 if isinstance(variant, OptionConsequence):
-                    cache[key] = (variant, {})
+                    # "unchanged": every result is the analysis as it stands (shown on the card
+                    # like any option); "unknown": there is nothing to show.
+                    same = variant.consequence == "none" and not variant.changed
+                    cache[key] = (variant, dict(base.results) if same else {})
                 else:
                     cache[key] = compare(
                         option, key, base, variant, magnitude_log2, magnitude_agreement
