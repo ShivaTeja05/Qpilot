@@ -85,6 +85,15 @@ describe("Reject contradicted… (scope)", () => {
     expect(all.getAttribute("aria-checked")).toBe("true");
     await waitFor(() => expect(gets).toContain("?stage=design&makers=all"));
     expect(await within(dialog).findByText("made by rule")).toBeTruthy();
+    // The list scrolls, so it takes keyboard focus and has a name.
+    const list = within(dialog).getByRole("list", { name: /proposals this will reject/ });
+    expect(list.getAttribute("tabindex")).toBe("0");
+    // Pressed without a reason: nothing is sent, and the dialog says what is missing.
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: `Reject these ${rejectAll.ids.length}` }),
+    );
+    expect(within(dialog).getByRole("alert").textContent).toMatch(/Give one reason first/);
+    expect(posts).toHaveLength(0);
     fireEvent.change(within(dialog).getByLabelText("One reason for all of them"), {
       target: { value: "no well of this standard amplified" },
     });
@@ -115,9 +124,9 @@ describe("Reject contradicted… (scope)", () => {
         /No waiting proposal from a model or an agent is contradicted/,
       ),
     ).toBeTruthy();
-    expect(
-      (within(dialog).getByRole("button", { name: "Reject these 0" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
+    // Nothing to do: no dead "Reject these 0" button, only Close.
+    expect(within(dialog).queryByRole("button", { name: /^Reject these/ })).toBeNull();
+    // The footer's Close beside the dialog's own close icon.
+    expect(within(dialog).getAllByRole("button", { name: "Close" })).toHaveLength(2);
   });
 });

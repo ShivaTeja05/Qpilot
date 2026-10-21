@@ -99,6 +99,8 @@ export function BulkAction({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [changed, setChanged] = useState(false);
+  // Said when the person presses the button without a reason (never a dead button).
+  const [reasonMissing, setReasonMissing] = useState(false);
   // Reject's scope: the AI's calls while any is contradicted, else every contradicted proposal.
   const [chosen, setChosen] = useState<BulkMakers | null>(null);
   const makers: BulkMakers =
@@ -127,6 +129,11 @@ export function BulkAction({
   const ids = list.data?.ids ?? [];
   const go = async () => {
     if (!list.data) return;
+    if (action === "reject" && !reason.trim()) {
+      setReasonMissing(true);
+      document.getElementById(`bulk-reason-${sid}`)?.focus();
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -201,16 +208,19 @@ export function BulkAction({
       footer={
         <>
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
-            Cancel
+            {ids.length ? "Cancel" : "Close"}
           </Button>
-          <Button
-            variant={action === "accept" ? "primary" : "danger"}
-            onClick={() => void go()}
-            loading={busy}
-            disabled={!ids.length || list.isFetching || (needsReason && !reason.trim())}
-          >
-            {words.go(ids.length)}
-          </Button>
+          {/* Only when there is something to do: no dead primary button for an empty list. */}
+          {ids.length ? (
+            <Button
+              variant={action === "accept" ? "primary" : "danger"}
+              onClick={() => void go()}
+              loading={busy}
+              disabled={busy || list.isFetching}
+            >
+              {words.go(ids.length)}
+            </Button>
+          ) : null}
         </>
       }
     >
@@ -265,6 +275,7 @@ export function BulkAction({
                 proposals={list.data.proposals}
                 descriptions={list.data.descriptions}
                 showMaker={action === "reject"}
+                label={`The ${count(ids.length)} proposals this will ${action === "accept" ? "accept" : "reject"}`}
               />
             </>
           ) : (
@@ -283,16 +294,33 @@ export function BulkAction({
             <Textarea
               id={`bulk-reason-${sid}`}
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => {
+                setReason(e.target.value);
+                setReasonMissing(false);
+              }}
               maxLength={MAX_REASON}
               showCount
               rows={2}
               required
+              aria-invalid={reasonMissing || undefined}
+              aria-describedby={reasonMissing ? `bulk-reason-${sid}-error` : undefined}
             />
+            {reasonMissing ? (
+              <p
+                id={`bulk-reason-${sid}-error`}
+                role="alert"
+                className="text-xs font-medium text-danger"
+              >
+                Give one reason first: it is kept with each rejection in the record.
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
-                onClick={() => setReason("Contradicted by the engine check")}
+                onClick={() => {
+                  setReason("Contradicted by the engine check");
+                  setReasonMissing(false);
+                }}
                 className="rounded-full border border-line bg-surface-2 px-2.5 py-0.5 text-xs text-muted hover:border-line-strong hover:text-fg"
               >
                 Contradicted by the engine check
@@ -312,12 +340,15 @@ export function ProposalLines({
   descriptions,
   max = 400,
   showMaker,
+  label,
 }: {
   proposals: Proposal[];
   descriptions?: Record<string, string>;
   max?: number;
   /** Say who made each one (rule, model, Curve Judge, agent). */
   showMaker?: boolean;
+  /** The list's name for screen readers (it scrolls, so it takes keyboard focus). */
+  label?: string;
 }) {
   const kinds = new Map<string, number>();
   for (const p of proposals) kinds.set(p.kind, (kinds.get(p.kind) ?? 0) + 1);
@@ -330,7 +361,15 @@ export function ProposalLines({
           </Badge>
         ))}
       </div>
-      <ol className="max-h-[46vh] list-decimal divide-y divide-line overflow-y-auto rounded-lg border border-line pl-9 qp-scroll">
+      <ol
+        // It scrolls: one tab stop so the keyboard can scroll it too (axe scrollable-region-focusable).
+        tabIndex={0}
+        aria-label={
+          label ??
+          `The ${count(proposals.length)} proposal${proposals.length === 1 ? "" : "s"} listed`
+        }
+        className="max-h-[46vh] list-decimal divide-y divide-line overflow-y-auto rounded-lg border border-line pl-9 qp-scroll"
+      >
         {proposals.slice(0, max).map((p) => (
           <li
             key={p.id}
@@ -416,6 +455,8 @@ export function ConfirmStage({
   const button = useRef<HTMLButtonElement>(null);
   useFocusTarget("Confirm this stage…", button);
   const label = STAGE_LABEL[stage as StageName] ?? stage;
+  // Curves: the design's own confirmed fingerprint, to say how the curves' differs from it.
+  const confirmedDesign = useStageProposals(stage === "curves" ? sid : null, "design");
   const waiting = useQuery({
     queryKey: ["w", sid, "confirm", stage],
     enabled: Boolean(status?.open && !status.confirmed),
@@ -499,6 +540,9 @@ export function ConfirmStage({
   };
 
   const hash = view?.proposal?.payload?.design_hash;
+  const designHash = confirmedDesign.data?.proposals.find(
+    (p) => p.kind === "stage.confirm" && p.subject === "design" && p.status === "accepted",
+  )?.payload.design_hash;
   return (
     <>
       <div className="flex flex-col items-start gap-1">
@@ -536,15 +580,17 @@ export function ConfirmStage({
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy === "confirm"}>
               Not now
             </Button>
-            <Button
-              variant="primary"
-              icon={<ShieldCheck />}
-              onClick={() => void confirm()}
-              loading={busy === "confirm"}
-              disabled={!view?.ready}
-            >
-              Yes, confirm
-            </Button>
+            {view?.ready ? (
+              <Button
+                variant="primary"
+                icon={<ShieldCheck />}
+                onClick={() => void confirm()}
+                loading={busy === "confirm"}
+                disabled={busy === "confirm"}
+              >
+                Yes, confirm
+              </Button>
+            ) : null}
           </>
         }
       >
@@ -559,9 +605,18 @@ export function ConfirmStage({
               </p>
             ) : null}
             {typeof hash === "string" ? (
-              <p className="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
-                It confirms the {stage === "design" ? "design" : "curve calls"} with fingerprint{" "}
+              <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-muted">
+                {stage === "design"
+                  ? "It confirms the design with fingerprint"
+                  : "It confirms the design with its curve calls, fingerprint"}
                 <Hash value={hash} length={12} />
+                <span>
+                  {stage === "curves" && designHash
+                    ? designHash === hash
+                      ? "— the same as the confirmed design's, because no curve decision changes a well's call."
+                      : "— the confirmed design's fingerprint with the curve decisions applied."
+                    : "(the SHA-256 of the design as the engine reads it)."}
+                </span>
               </p>
             ) : null}
             {view.warnings.map((w) => (
@@ -594,7 +649,11 @@ export function ConfirmStage({
                   It covers {count(view.covers.length)} accepted proposal
                   {view.covers.length === 1 ? "" : "s"}:
                 </p>
-                <ProposalLines proposals={view.covers} descriptions={view.descriptions} />
+                <ProposalLines
+                  proposals={view.covers}
+                  descriptions={view.descriptions}
+                  label={`The ${count(view.covers.length)} accepted proposals the confirm covers`}
+                />
               </>
             ) : (
               <p className="text-[13px] text-muted">

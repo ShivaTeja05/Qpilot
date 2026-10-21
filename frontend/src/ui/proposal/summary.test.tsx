@@ -15,15 +15,23 @@ describe("StageSummary", () => {
     expect(screen.getByText(/Built-in design “vermeulen_expression_defined”/)).toBeTruthy();
     expect(screen.getByText("Gene symbols")).toBeTruthy();
     // The one recorded contradicted role was rejected: it does not count.
-    const accepted = demo.filter((p) => p.kind === "design.well_role" && p.status === "accepted").length;
-    expect(screen.getByText("Sample types").nextElementSibling!.textContent).toMatch(new RegExp(`${accepted}`));
+    const accepted = demo.filter(
+      (p) => p.kind === "design.well_role" && p.status === "accepted",
+    ).length;
+    expect(screen.getByText("Sample types").nextElementSibling!.textContent).toMatch(
+      new RegExp(`${accepted}`),
+    );
   });
 
   it("counts sample types from a session's accepted roles", () => {
     const all = untergasser.proposals as unknown as Proposal[];
     render(<StageSummary stage="design" proposals={all} />);
-    const std = all.filter((p) => p.kind === "design.well_role" && p.status === "accepted" && p.payload.role === "std").length;
-    expect(screen.getByText("Sample types").nextElementSibling!.textContent).toContain(`Standard ${std}`);
+    const std = all.filter(
+      (p) => p.kind === "design.well_role" && p.status === "accepted" && p.payload.role === "std",
+    ).length;
+    expect(screen.getByText("Sample types").nextElementSibling!.textContent).toContain(
+      `Standard ${std}`,
+    );
   });
 
   it("says which rule calls a well amplified", () => {

@@ -47,7 +47,13 @@ import { JobCard } from "../JobCard";
 import { Hash } from "../Copy";
 import { Textarea } from "../controls";
 import { CheckTag, LevelTag } from "../tags";
-import { AlternativeStarts, PayloadEditor, diffPayload, type EditOptions, type Payload } from "./edit";
+import {
+  AlternativeStarts,
+  PayloadEditor,
+  diffPayload,
+  type EditOptions,
+  type Payload,
+} from "./edit";
 import {
   CheckDetails,
   CheckSummary,
@@ -62,6 +68,8 @@ import {
   type ProposalCheck,
   type QuoteLookup,
 } from "./parts";
+
+const REASON_MISSING = "Give a reason first: it is kept in the record with your decision.";
 
 /** The longest reason the decision chain takes (`qpilot.core.decisions.MAX_REASON`). */
 export const MAX_REASON = 500;
@@ -121,7 +129,9 @@ export interface ProposalCardProps {
    * Replace part 4 for a kind this card does not describe well enough (return null to keep
    * the default). Called only when results may be shown or the kind is not blind.
    */
-  renderConsequence?: (p: Proposal) => { summary: ReactNode; details?: ReactNode; tone?: "warn" } | null;
+  renderConsequence?: (
+    p: Proposal,
+  ) => { summary: ReactNode; details?: ReactNode; tone?: "warn" } | null;
   /** Actions that need a reason for this proposal (on top of the chain's own rules). */
   requireReason?: ProposalAction[];
   /** The reason box's question, per action. */
@@ -147,7 +157,21 @@ const STATUS_TONE: Record<Proposal["status"], Tone> = {
 
 /** "Not done" for a refusal; the panel's own heading for a stale view, a lost key or no server. */
 function errorTitle(error: unknown): string | undefined {
-  return error instanceof ApiError && (error.stale || error.needsKey || error.code === "offline") ? undefined : "Not done";
+  return error instanceof ApiError && (error.stale || error.needsKey || error.code === "offline")
+    ? undefined
+    : "Not done";
+}
+
+/**
+ * The exported value written to as many decimals as the value Prism sent back (the round trip
+ * compares them so); the full value is on hover. `1.5563229036983888` beside `2.5563` → `1.5563`.
+ */
+export function sameDecimals(exported: unknown, returned: unknown): string {
+  if (typeof exported !== "number" || !Number.isFinite(exported))
+    return exported == null ? "—" : String(exported);
+  const shown = typeof returned === "number" && Number.isFinite(returned) ? String(returned) : null;
+  const decimals = shown && shown.includes(".") ? shown.split(".")[1]!.length : 4;
+  return exported.toFixed(Math.min(Math.max(decimals, 1), 10));
 }
 
 /** A `{matters: bool|null}` job result (or a bare boolean) → the answer. */
@@ -168,6 +192,7 @@ function ReasonBox({
   required,
   suggestions,
   autoFocus,
+  error,
 }: {
   id: string;
   label: string;
@@ -176,6 +201,8 @@ function ReasonBox({
   required?: boolean;
   suggestions?: string[];
   autoFocus?: boolean;
+  /** What is missing, said after a press of the submit button. */
+  error?: string | null;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -192,9 +219,16 @@ function ReasonBox({
         rows={2}
         required={required}
         aria-required={required || undefined}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
         autoFocus={autoFocus}
         className="min-h-14"
       />
+      {error ? (
+        <p id={`${id}-error`} role="alert" className="text-xs font-medium text-danger">
+          {error}
+        </p>
+      ) : null}
       {suggestions?.length ? (
         <div className="flex flex-wrap gap-1.5">
           {suggestions.map((s) => (
@@ -249,38 +283,65 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
   const [mode, setMode] = useState<ProposalAction | null>(null);
   const [busy, setBusy] = useState<ProposalAction | null>(null);
   const [error, setError] = useState<unknown>(null);
-  const [reason, setReason] = useState("");
+  const [reason, setReasonState] = useState("");
+  // What the person still has to give, said when they press the button (never a dead button).
+  const [missing, setMissing] = useState<"reason" | "change" | null>(null);
+  const setReason = (v: string) => {
+    setReasonState(v);
+    setMissing(null);
+  };
   const [draft, setDraft] = useState<Payload>(() => effectivePayload(p));
+  const changeDraft = (next: Payload) => {
+    setDraft(next);
+    setMissing(null);
+  };
   // The engine's answer for one edited reading (`key` = the edits as JSON).
-  const [recheck, setRecheck] = useState<{ key: string; check?: ProposalCheck; failed?: boolean } | null>(null);
+  const [recheck, setRecheck] = useState<{
+    key: string;
+    check?: ProposalCheck;
+    failed?: boolean;
+  } | null>(null);
 
   const pending = p.status === "proposed";
   const contradicted = p.check.status === "contradicted";
   // The server refuses an exclusion accepted without a reason; ask for it here.
-  const needs = new Set<ProposalAction>(requireReason ?? (p.kind === "prism.exclusion_reason" ? ["accept", "edit"] : []));
+  const needs = new Set<ProposalAction>(
+    requireReason ?? (p.kind === "prism.exclusion_reason" ? ["accept", "edit"] : []),
+  );
   const acceptNeedsReason = needs.has("accept");
   const labels: Partial<Record<ProposalAction, string>> = {
     ...(p.kind === "prism.exclusion_reason"
-      ? { accept: "Say why this value was excluded in Prism (kept in the record).", edit: "Say why (kept in the record)." }
+      ? {
+          accept: "Say why this value was excluded in Prism (kept in the record).",
+          edit: "Say why (kept in the record).",
+        }
       : {}),
     ...reasonLabels,
   };
   const blind = isBlindKind(p);
-  const editable = Boolean(onEdit) && p.kind !== "stage.confirm" && Object.keys(p.payload).length > 0;
+  const editable =
+    Boolean(onEdit) && p.kind !== "stage.confirm" && Object.keys(p.payload).length > 0;
   const canAct = pending && !readOnly;
 
   // The "Does this matter?" job, followed here so the section only has to start it.
   const job = useJob(mattersJob ?? null);
   const jobView = job.data as JobView | undefined;
-  const ownMatters = p.consequence && (p.consequence as Record<string, unknown>).matters === true ? true : undefined;
+  const ownMatters =
+    p.consequence && (p.consequence as Record<string, unknown>).matters === true ? true : undefined;
   const mattersValue: boolean | null | undefined =
-    ownMatters ?? (matters !== undefined ? matters : jobView?.status === "done" ? readMatters(jobView.result) : undefined);
+    ownMatters ??
+    (matters !== undefined
+      ? matters
+      : jobView?.status === "done"
+        ? readMatters(jobView.result)
+        : undefined);
   const asking = jobView != null && (jobView.status === "queued" || jobView.status === "running");
 
   const close = useCallback(() => {
     setMode(null);
     setError(null);
-    setReason("");
+    setReasonState("");
+    setMissing(null);
     setRecheck(null);
   }, []);
 
@@ -359,7 +420,13 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
     };
   }, [checking, editKey]);
   const recheckNow = checking && recheck?.key === editKey ? recheck : null;
-  const recheckStatus = !checking ? "idle" : !recheckNow ? "checking" : recheckNow.failed ? "failed" : "done";
+  const recheckStatus = !checking
+    ? "idle"
+    : !recheckNow
+      ? "checking"
+      : recheckNow.failed
+        ? "failed"
+        : "done";
 
   const editContradicted = recheckNow?.check?.status === "contradicted";
   const reasonRequired =
@@ -367,14 +434,23 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
     (mode === "accept" && (contradicted || needs.has("accept"))) ||
     (mode === "edit" && (contradicted || editContradicted || needs.has("edit")));
   const changed = editKey !== "{}";
-  const canSubmit = !busy && (!reasonRequired || reason.trim().length > 0) && (mode !== "edit" || changed);
-
   const submit = () => {
-    if (!canSubmit) return;
+    if (busy) return;
+    if (mode === "edit" && !changed) {
+      setMissing("change");
+      return;
+    }
+    if (reasonRequired && !reason.trim()) {
+      setMissing("reason");
+      document.getElementById(`${uid}-reason`)?.focus();
+      return;
+    }
+    setMissing(null);
     const r = reason.trim();
     if (mode === "accept" && onAccept) void run("accept", () => onAccept(r));
     if (mode === "reject" && onReject) void run("reject", () => onReject(r));
-    if (mode === "edit" && onEdit) void run("edit", () => onEdit(JSON.parse(editKey) as Payload, r));
+    if (mode === "edit" && onEdit)
+      void run("edit", () => onEdit(JSON.parse(editKey) as Payload, r));
   };
 
   const onFormKey = (e: KeyboardEvent) => {
@@ -391,7 +467,10 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
 
   const H = `h${headingLevel}` as "h3";
   const titleId = `${uid}-title`;
-  const question = p.kind.startsWith("prism.") && typeof p.payload.question === "string" ? p.payload.question : null;
+  const question =
+    p.kind.startsWith("prism.") && typeof p.payload.question === "string"
+      ? p.payload.question
+      : null;
   const consequence = (p.consequence ?? null) as Record<string, unknown> | null;
 
   // ---- part 4: the consequence ----
@@ -402,7 +481,8 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
   if (blind) {
     consequenceSummary = <MattersLine matters={mattersValue} />;
     consequenceTone = mattersValue === true ? "warn" : undefined;
-    const askable = p.kind.startsWith("design.") && p.alternatives.length > 0 && pending && onAskMatters;
+    const askable =
+      p.kind.startsWith("design.") && p.alternatives.length > 0 && pending && onAskMatters;
     if (askable && mattersValue === undefined && !asking && !ownMatters) {
       consequenceSide = (
         <Button size="sm" variant="secondary" onClick={onAskMatters}>
@@ -418,11 +498,14 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
   } else if (stale) {
     consequenceSummary = (
       <span className="text-warn">
-        <strong>Out of date:</strong> {stale}. Its numbers are not shown, and accepting it is refused until they are computed again.
+        <strong>Out of date:</strong> {stale}. Its numbers are not shown, and accepting it is
+        refused until they are computed again.
       </span>
     );
   } else if (!consequence) {
-    consequenceSummary = <span className="text-muted">No consequence is computed for this kind of proposal.</span>;
+    consequenceSummary = (
+      <span className="text-muted">No consequence is computed for this kind of proposal.</span>
+    );
   } else if (!resultsVisible) {
     consequenceSummary = <span className="text-muted">{HIDDEN_TEXT}</span>;
   } else if (p.kind === "prism.exclusion_reason" && "fc_before" in consequence) {
@@ -432,13 +515,18 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
     consequenceSummary = (
       <span>
         The value no longer matches the record: qPilot exported{" "}
-        <span className="font-mono tabular">{String(consequence.exported ?? "—")}</span>, Prism sent back{" "}
+        <span className="font-mono tabular" title={String(consequence.exported ?? "")}>
+          {sameDecimals(consequence.exported, consequence.returned)}
+        </span>
+        , Prism sent back{" "}
         <span className="font-mono tabular">{String(consequence.returned ?? "—")}</span>.
       </span>
     );
   } else {
     consequenceSummary = <span className="text-muted">What accepting it changes, in numbers.</span>;
-    consequenceFold = <DetailsView details={consequence} onOpenWell={onOpenWell} hide={["basis"]} />;
+    consequenceFold = (
+      <DetailsView details={consequence} onOpenWell={onOpenWell} hide={["basis"]} />
+    );
   }
 
   return (
@@ -468,7 +556,9 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
         <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0 flex-1">
             <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted">
-              <span className="shrink-0 font-medium tracking-wider text-faint uppercase">{KIND_TITLE[p.kind] ?? p.kind}</span>
+              <span className="shrink-0 font-medium tracking-wider text-faint uppercase">
+                {KIND_TITLE[p.kind] ?? p.kind}
+              </span>
               <span aria-hidden className="text-faint">
                 ·
               </span>
@@ -479,25 +569,28 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
             </H>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {pending ? null : (
-              <Badge tone={STATUS_TONE[p.status]}>{STATUS_WORDS[p.status]}</Badge>
-            )}
+            {pending ? null : <Badge tone={STATUS_TONE[p.status]}>{STATUS_WORDS[p.status]}</Badge>}
             <CheckTag status={p.check.status} />
           </div>
         </header>
 
         {question ? (
-          <p className="mt-2 rounded-lg border border-info/25 bg-info-soft px-3 py-2 text-[13px] text-fg">{question}</p>
+          <p className="mt-2 rounded-lg border border-info/25 bg-info-soft px-3 py-2 text-[13px] text-fg">
+            {question}
+          </p>
         ) : null}
         {p.edits && Object.keys(p.edits).length ? (
           <p className="mt-2 text-[13px] text-fg">
-            <span className="font-medium">As edited by a person:</span> {describeProposal(p, effectivePayload(p))}
+            <span className="font-medium">As edited by a person:</span>{" "}
+            {describeProposal(p, effectivePayload(p))}
           </p>
         ) : null}
         {p.alternatives.length ? (
           <div className="mt-2 text-[13px] text-muted">
             <span className="font-medium text-fg">
-              {p.alternatives.length === 1 ? "Other reading considered:" : "Other readings considered:"}
+              {p.alternatives.length === 1
+                ? "Other reading considered:"
+                : "Other readings considered:"}
             </span>{" "}
             {p.alternatives.length === 1 ? (
               describeProposal(p, { ...(p.payload as Payload), ...p.alternatives[0] })
@@ -540,7 +633,12 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
             }
           >
             {p.evidence.length ? (
-              <EvidenceList evidence={p.evidence} quotes={quotes} sheetCells={sheetCells} onOpenWell={onOpenWell} />
+              <EvidenceList
+                evidence={p.evidence}
+                quotes={quotes}
+                sheetCells={sheetCells}
+                onOpenWell={onOpenWell}
+              />
             ) : null}
           </Part>
           <Part
@@ -550,7 +648,12 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
           >
             {stale ? null : <CheckDetails check={p.check} onOpenWell={onOpenWell} />}
           </Part>
-          <Part label="Consequence" tone={consequenceTone} summary={consequenceSummary} side={consequenceSide}>
+          <Part
+            label="Consequence"
+            tone={consequenceTone}
+            summary={consequenceSummary}
+            side={consequenceSide}
+          >
             {consequenceFold}
           </Part>
           {mattersJob && jobView && jobView.status !== "done" ? (
@@ -563,7 +666,9 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
             summary={
               <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <LevelTag level={p.level} />
-                {p.reasons.length === 1 && p.evidence.length ? <span className="text-muted">{p.reasons[0]}</span> : null}
+                {p.reasons.length === 1 && p.evidence.length ? (
+                  <span className="text-muted">{p.reasons[0]}</span>
+                ) : null}
               </span>
             }
           >
@@ -584,7 +689,13 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
               className="mt-1 flex flex-col gap-3 rounded-lg border border-line bg-surface-2 p-3"
               onKeyDown={onFormKey}
               role="group"
-              aria-label={mode === "edit" ? "Edit the proposal" : mode === "reject" ? "Reject the proposal" : "Accept the proposal"}
+              aria-label={
+                mode === "edit"
+                  ? "Edit the proposal"
+                  : mode === "reject"
+                    ? "Reject the proposal"
+                    : "Accept the proposal"
+              }
             >
               {mode === "accept" ? (
                 <ReasonBox
@@ -596,6 +707,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   }
                   value={reason}
                   onChange={setReason}
+                  error={missing === "reason" ? REASON_MISSING : null}
                   required
                   autoFocus
                 />
@@ -606,6 +718,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   label={labels.reject ?? "Why do you reject it?"}
                   value={reason}
                   onChange={setReason}
+                  error={missing === "reason" ? REASON_MISSING : null}
                   required
                   autoFocus
                   suggestions={contradicted ? ["Contradicted by the engine check"] : undefined}
@@ -613,17 +726,26 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
               ) : null}
               {mode === "edit" ? (
                 <>
-                  <AlternativeStarts proposal={p} onPick={setDraft} />
+                  <AlternativeStarts proposal={p} onPick={changeDraft} />
                   {renderEditor ? (
-                    renderEditor({ value: draft, onChange: setDraft })
+                    renderEditor({ value: draft, onChange: changeDraft })
                   ) : (
-                    <PayloadEditor proposal={p} value={draft} onChange={setDraft} options={editOptions} />
+                    <PayloadEditor
+                      proposal={p}
+                      value={draft}
+                      onChange={changeDraft}
+                      options={editOptions}
+                    />
                   )}
                   <div className="rounded-md border border-line bg-surface px-3 py-2 text-[13px]">
                     {changed ? (
                       <>
-                        <span className="font-medium text-fg">As edited:</span> {describeProposal(p, draft)}
-                        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted" aria-live="polite">
+                        <span className="font-medium text-fg">As edited:</span>{" "}
+                        {describeProposal(p, draft)}
+                        <div
+                          className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted"
+                          aria-live="polite"
+                        >
                           {recheckStatus === "checking" ? "The engine is checking the edit…" : null}
                           {recheckStatus === "done" && recheckNow?.check ? (
                             <>
@@ -631,12 +753,23 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                               <span>{recheckNow.check.note}</span>
                             </>
                           ) : null}
-                          {recheckStatus === "failed" ? "The edit could not be checked now; it is checked again when you accept." : null}
-                          {recheckStatus === "idle" && !onCheckEdit ? "The engine checks the edit when you accept it." : null}
+                          {recheckStatus === "failed"
+                            ? "The edit could not be checked now; it is checked again when you accept."
+                            : null}
+                          {recheckStatus === "idle" && !onCheckEdit
+                            ? "The engine checks the edit when you accept it."
+                            : null}
                         </div>
                       </>
                     ) : (
-                      <span className="text-muted">Change a field to edit the proposal.</span>
+                      <span
+                        className={missing === "change" ? "font-medium text-danger" : "text-muted"}
+                        role={missing === "change" ? "alert" : undefined}
+                      >
+                        {missing === "change"
+                          ? "Change a field first: as it is, the edit would change nothing."
+                          : "Change a field to edit the proposal."}
+                      </span>
                     )}
                   </div>
                   <ReasonBox
@@ -650,6 +783,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                     }
                     value={reason}
                     onChange={setReason}
+                    error={missing === "reason" ? REASON_MISSING : null}
                     required={reasonRequired}
                   />
                 </>
@@ -659,11 +793,17 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                 <Button
                   variant={mode === "reject" ? "danger" : "primary"}
                   onClick={submit}
-                  disabled={!canSubmit}
+                  disabled={Boolean(busy)}
                   loading={busy === mode}
                   icon={mode === "reject" ? <X /> : <Check />}
                 >
-                  {mode === "accept" ? (contradicted ? "Accept anyway" : "Accept") : mode === "reject" ? "Reject" : "Accept the edit"}
+                  {mode === "accept"
+                    ? contradicted
+                      ? "Accept anyway"
+                      : "Accept"
+                    : mode === "reject"
+                      ? "Reject"
+                      : "Accept the edit"}
                 </Button>
                 <Button variant="ghost" onClick={close} disabled={Boolean(busy)}>
                   Cancel
@@ -689,12 +829,22 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                 </Button>
               ) : null}
               {editable ? (
-                <Button icon={<Pencil />} onClick={startEdit} disabled={Boolean(busy)} aria-keyshortcuts="e">
+                <Button
+                  icon={<Pencil />}
+                  onClick={startEdit}
+                  disabled={Boolean(busy)}
+                  aria-keyshortcuts="e"
+                >
                   Edit…
                 </Button>
               ) : null}
               {onReject ? (
-                <Button icon={<X />} onClick={startReject} disabled={Boolean(busy)} aria-keyshortcuts="x">
+                <Button
+                  icon={<X />}
+                  onClick={startReject}
+                  disabled={Boolean(busy)}
+                  aria-keyshortcuts="x"
+                >
                   Reject…
                 </Button>
               ) : null}
@@ -703,7 +853,9 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                   <Kbd>a</Kbd> accept <Kbd>e</Kbd> edit <Kbd>x</Kbd> reject
                 </span>
               ) : null}
-              {error && !mode ? <ErrorPanel error={error} compact title={errorTitle(error)} className="w-full" /> : null}
+              {error && !mode ? (
+                <ErrorPanel error={error} compact title={errorTitle(error)} className="w-full" />
+              ) : null}
             </div>
           )
         ) : null}
@@ -711,7 +863,9 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
 
       <footer className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-b-xl border-t border-line bg-surface-2 px-4 py-2 text-xs text-muted sm:px-5">
         <span className="min-w-0">{makerText(p.made_by)}</span>
-        {p.created_at ? <span className="text-faint">proposed {relativeTime(p.created_at)}</span> : null}
+        {p.created_at ? (
+          <span className="text-faint">proposed {relativeTime(p.created_at)}</span>
+        ) : null}
         <span className="ml-auto inline-flex items-center">
           <Hash value={p.id} length={10} prefix="id" />
         </span>
