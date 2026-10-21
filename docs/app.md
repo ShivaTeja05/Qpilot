@@ -42,8 +42,8 @@ One hash-routed page. Global routes: `#/` (Open), `#/settings`. A workspace is e
 
 | Section | Route | Shown when | Data (API → service) |
 |---|---|---|---|
-| Open | `#/` | always | `GET /api/system`, `GET /api/workspaces`, `POST /api/workspaces` (upload), `POST /api/workspaces/demo`, `POST /api/demo/fetch` |
-| Design (blind) | `…/design` | session | `GET /api/sessions/{sid}`, `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
+| Open | `#/` | always | `GET /api/system`, `GET /api/workspaces`, `POST /api/workspaces` (upload: `rdml` + `sheet`, or `files` = instrument exports sorted by content → `qpilot.web.intake` + `io.connectors.materialise`), `POST /api/workspaces/demo`, `POST /api/demo/fetch` |
+| Design (blind) | `…/design` | session | `GET /api/sessions/{sid}` (incl. `capture`: what an export was read as), `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
 | Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence), `/flips`, `/cards`, decide/undo/turn down/explain → store + `core.decisions` + `ai.explain` |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
@@ -84,19 +84,40 @@ audited study the audit's `Asker` — the answer shows which tool answered, who 
 ## 4. Sections in detail
 
 ### Open (`features/home`)
-Hero: one sentence of what qPilot does, then three actions: **Drop a file** (RDML; optional
-sample sheet; optional one sentence about the experiment, ≤ 500 characters), **Open the demo
+Hero: one sentence of what qPilot does, then three actions: **Drop a file** (an RDML file, or
+what the instrument exported: one file or a whole export set, up to 64 files, from Bio-Rad CFX
+(amplification per dye + Cq results + run information), QuantStudio / StepOne / 7500,
+LightCycler 480, RDES or a tidy table; optional sample sheet; optional one sentence about the
+experiment, ≤ 500 characters), **Open the demo
 study** (Vermeulen 2009 / Ruijter 2013, 64 plates, 366 tumours; if not cached: "Download 7 MB
 from the RDML consortium's repository (SHA-256 pinned)" first), **Recent** (workspace cards: title,
 file, plates · samples · genes, stage chips, decisions, pending requests, audit badge, updated
 "2 h ago"; demo badge). System strip: version, method commit, `outbound` line, simulator
 installed, model chip. "Start a fresh demo" lives in Settings (moves earlier work aside).
 
+The intake lists each dropped file with a first guess from its name ("CFX amplification curves
+(SYBR)", "QuantStudio amplification data", "RDML file") and names back what it cannot take (an
+`.eds`/`.pcrd`/`.ixo` project file says how to export it). One RDML file (with at most one sheet)
+goes in `rdml` + `sheet` as before; anything else goes in `files`, and the **server** decides by
+content (`detect()`, never the suffix alone): an RDML file opens as it is; files a vendor
+connector reads are the export (one kind at a time); a remaining `.csv`/`.xlsx` with a sample
+column that is not a sheet of the export itself is the sample sheet; anything else is named back
+as not used. A refusal is a sentence (400 while sorting, a failed open job for a reader's
+refusal). An export is staged under the person's own names in the study store
+(`imports/sources/`), written once as deterministic RDML (`imports/capture/<key>.rdml`, cached),
+and the session opens that file; what was read is kept as `capture.json` in the session folder.
+
 ### Design (`features/design`) — blind
 Left: the inbox (the six-part proposal card, contradicted first). Right (sticky): the **plate
 map** for the selected plate (wells coloured by declared sample type: unknown / standard / NTC
 / NRT / …; target per plate; quarantined names shown as their quoted text on hover, flagged
-`instruction_like` text marked and never obeyed), and the file facts.
+`instruction_like` text marked and never obeyed), the file facts, and for a session opened from
+an instrument export the **Imported from …** card (`WorkspaceView.capture`): the source files by
+their names, per plate wells / cycles / targets / dyes / declared sample types, the instrument's
+Cq count and omitted wells (recorded, never applied), the signal, the raw-ness verdict with what
+it means (baseline-subtracted or rescaled curves weaken LinRegPCR's per-well efficiency, with how
+to re-export; Cq only: no curves to check), files not used and each warning. Blind-safe: counts
+and names only, no sample name, no Cq value, no group.
 * Proposal card: (1) the proposal in words + the alternatives considered; (2) **Why**: each
   evidence item as a fold-out (text quote with its origin, a sheet cell, a well → opens its
   curve); (3) **Engine check**: consistent / contradicted / cannot check, with the rule ids and

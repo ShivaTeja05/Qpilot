@@ -1,20 +1,45 @@
 /**
- * Open a file: drop or choose the instrument's RDML export, add a sample sheet and one sentence
- * if you have them, then Open. The upload shows its progress, then the open job (the file is
- * read and every name quarantined; nothing is analysed), then the session's next step.
+ * Open a file: drop or choose the instrument's RDML file or its export (one file or a whole
+ * export set: CFX, QuantStudio, LightCycler 480, a tidy table), add a sample sheet and one
+ * sentence if you have them, then Open. The upload shows its progress, then the open job (the
+ * files are read, an export is written as RDML, every name quarantined; nothing is analysed),
+ * then the session's next step. What each file is, the server decides from its content; the
+ * labels here are a first guess from the names.
  */
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, FileSpreadsheet, FileUp, FlaskConical, Plus, X } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, FileText, FileUp, FlaskConical, Plus, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Button, ErrorPanel, Field, IconButton, JobCard, Kbd, ProgressBar, Textarea } from "@/ui";
+import {
+  Button,
+  ErrorPanel,
+  Field,
+  IconButton,
+  JobCard,
+  Kbd,
+  ProgressBar,
+  Textarea,
+  toast,
+} from "@/ui";
 import { cn } from "@/lib/cn";
-import { bytes } from "@/lib/format";
+import { bytes, plural } from "@/lib/format";
 import { MOD } from "@/lib/hooks";
 import { useOpenFileRequest } from "@/shell/actions";
 import { openFile } from "./upload";
 import type { Intake } from "./useIntake";
 import { openedKey, useGoToSession, useJobOutcome } from "./useOpenWorkspace";
-import { MAX_SENTENCE, SHEET_SUFFIXES, RDML_SUFFIXES } from "./workspace";
+import { EXPORT_SUFFIXES, MAX_SENTENCE, SHEET_SUFFIXES, guessFile } from "./workspace";
+
+const KIND_ICON = {
+  rdml: <FlaskConical />,
+  export: <FileText />,
+  table: <FileSpreadsheet />,
+} as const;
+
+/** The files an open job did not use (`OpenDone.unused`), if it names any. */
+function unusedOf(result: unknown): string[] {
+  const unused = (result as { unused?: unknown } | null | undefined)?.unused;
+  return Array.isArray(unused) ? unused.filter((n): n is string => typeof n === "string") : [];
+}
 
 type Phase =
   | { kind: "choose" }
@@ -76,6 +101,12 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
   const job = useJobOutcome(phase.kind === "opening" ? phase.jobId : null, (j) => {
     const key = openedKey(j.result);
     if (key) {
+      const unused = unusedOf(j.result);
+      if (unused.length) {
+        toast.info(`Not used: ${unused.join(", ")}`, {
+          description: "qPilot did not read these files; the rest were opened.",
+        });
+      }
       intake.reset();
       void goTo(key).catch((error: unknown) => setPhase({ kind: "failed", error }));
     }
@@ -84,11 +115,15 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
   // ⌘O (the shell binds it everywhere, comes here, and asks): show the file picker.
   useOpenFileRequest(() => !busy && fileInput.current?.click());
 
+  const plan = intake.plan;
   const start = () => {
-    if (!intake.rdml || busy) return;
-    const total = intake.rdml.size + (intake.sheet?.size ?? 0);
+    if (!plan || busy) return;
+    const sent = plan.mode === "rdml" ? [plan.rdml] : plan.files;
+    const total = [...sent, ...(plan.sheet ? [plan.sheet] : [])].reduce((n, f) => n + f.size, 0);
     const upload = openFile(
-      { rdml: intake.rdml, sheet: intake.sheet, sentence: intake.sentence },
+      plan.mode === "rdml"
+        ? { rdml: plan.rdml, sheet: plan.sheet, sentence: intake.sentence }
+        : { files: plan.files, sheet: plan.sheet, sentence: intake.sentence },
       (p) =>
         setPhase((cur) =>
           cur.kind === "uploading" ? { ...cur, loaded: p.loaded, total: p.total } : cur,
@@ -114,7 +149,7 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
         tabIndex={-1}
         aria-hidden
         multiple
-        accept={[...RDML_SUFFIXES, ...SHEET_SUFFIXES].join(",")}
+        accept={EXPORT_SUFFIXES.join(",")}
         onChange={(e) => {
           intake.add(Array.from(e.target.files ?? []));
           e.target.value = "";
@@ -128,7 +163,7 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
         aria-hidden
         accept={SHEET_SUFFIXES.join(",")}
         onChange={(e) => {
-          intake.add(Array.from(e.target.files ?? []));
+          intake.setSheet(e.target.files?.[0] ?? null);
           e.target.value = "";
         }}
       />
@@ -150,7 +185,7 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
   );
 
   // Nothing chosen yet: the drop zone.
-  if (!intake.rdml && phase.kind === "choose") {
+  if (!intake.files.length && phase.kind === "choose") {
     return shell(
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10 text-center sm:py-12">
         <div
@@ -164,16 +199,17 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
         </div>
         <div className="max-w-sm">
           <h2 id={titleId} className="text-lg font-semibold tracking-tight text-fg">
-            {dragging ? "Drop it to open" : "Open your RDML file"}
+            {dragging ? "Drop them to open" : "Open your instrument's files"}
           </h2>
           <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-            Drop the instrument&rsquo;s RDML export here, or choose it. Add a sample sheet (
-            {SHEET_SUFFIXES.join(" or ")}) with it if you have one.
+            Drop an RDML file or what your instrument exported here, or choose them: Bio-Rad CFX
+            (every sheet of a run), QuantStudio, StepOne or 7500, LightCycler 480, or a tidy table.
+            Add a sample sheet ({SHEET_SUFFIXES.join(" or ")}) with them if you have one.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button variant="primary" size="lg" icon={<FileUp />} onClick={choose}>
-            Choose a file…
+            Choose files…
           </Button>
           <span className="hidden items-center gap-1 text-xs text-faint sm:inline-flex" aria-hidden>
             <Kbd>{MOD}</Kbd>
@@ -186,8 +222,8 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
           </p>
         ) : null}
         <p className="max-w-sm text-xs text-muted">
-          Opening reads the file and quarantines every name in it; nothing is analysed yet. The file
-          stays on this computer.
+          Opening reads the files and quarantines every name in them; an export is written as an
+          RDML file first. Nothing is analysed yet, and the files stay on this computer.
         </p>
       </div>,
       true,
@@ -199,53 +235,76 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
       <div>
         <h2 id={titleId} className="text-lg font-semibold tracking-tight text-fg">
           {phase.kind === "opening" && job?.status !== "failed"
-            ? "Opening your file"
-            : "Open this file"}
+            ? intake.files.length > 1
+              ? "Opening your files"
+              : "Opening your file"
+            : intake.files.length > 1
+              ? `Open these ${intake.files.length} files`
+              : "Open this file"}
         </h2>
         <p className="mt-0.5 text-[13px] text-muted">
           A sample sheet and one sentence help the AI propose the design. Both are optional.
         </p>
       </div>
 
-      {intake.rdml ? (
-        <FileRow
-          file={intake.rdml}
-          kind="RDML file"
-          icon={<FlaskConical />}
-          onRemove={intake.removeRdml}
-          disabled={busy}
-        />
-      ) : (
-        <Button
-          variant="secondary"
-          icon={<FileUp />}
-          onClick={choose}
-          disabled={busy}
-          className="self-start"
-        >
-          Choose the RDML file…
+      <div
+        className={cn(
+          "flex flex-col gap-2",
+          intake.files.length > 4 &&
+            "qp-scroll max-h-72 overflow-y-auto rounded-lg pr-1 outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
+        )}
+        {...(intake.files.length > 4
+          ? { tabIndex: 0, role: "region", "aria-label": "Files to open" }
+          : {})}
+      >
+        {intake.files.map((file) => {
+          const guess = guessFile(file.name);
+          return (
+            <FileRow
+              key={`${file.name}-${file.size}`}
+              file={file}
+              kind={guess.label}
+              icon={KIND_ICON[guess.kind]}
+              onRemove={() => intake.remove(file)}
+              disabled={busy}
+            />
+          );
+        })}
+      </div>
+      {intake.files.length > 1 || plan?.mode === "files" ? (
+        <p className="text-xs text-muted">
+          qPilot reads each file&rsquo;s content to decide what it is (the labels above are a guess
+          from the names): one export or one RDML file, and a sample sheet if one is among them.
+          {intake.files.length > 1
+            ? ` ${plural(intake.files.length, "file")} are sent together.`
+            : ""}
+        </p>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="ghost" size="sm" icon={<Plus />} onClick={choose} disabled={busy}>
+          Add more files…
         </Button>
-      )}
+        {intake.sheet ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Plus />}
+            onClick={() => sheetInput.current?.click()}
+            disabled={busy}
+          >
+            Add a sample sheet ({SHEET_SUFFIXES.join(" or ")})
+          </Button>
+        )}
+      </div>
       {intake.sheet ? (
         <FileRow
           file={intake.sheet}
           kind="Sample sheet"
           icon={<FileSpreadsheet />}
-          onRemove={intake.removeSheet}
+          onRemove={() => intake.setSheet(null)}
           disabled={busy}
         />
-      ) : (
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Plus />}
-          onClick={() => sheetInput.current?.click()}
-          disabled={busy}
-          className="self-start"
-        >
-          Add a sample sheet ({SHEET_SUFFIXES.join(" or ")})
-        </Button>
-      )}
+      ) : null}
       {intake.notice ? (
         <p className="text-xs text-warn" role="status">
           {intake.notice}
@@ -299,7 +358,15 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
           </JobCard>
         ) : null}
         {phase.kind === "failed" ? (
-          <ErrorPanel compact error={phase.error} title="This file could not be opened" />
+          <ErrorPanel
+            compact
+            error={phase.error}
+            title={
+              intake.files.length > 1
+                ? "These files could not be opened"
+                : "This file could not be opened"
+            }
+          />
         ) : null}
         {job?.status === "failed" ? (
           <Button
@@ -318,7 +385,7 @@ export function OpenFile({ intake, dragging }: { intake: Intake; dragging: boole
               size="lg"
               icon={<ArrowRight />}
               onClick={start}
-              disabled={!intake.rdml}
+              disabled={!plan}
             >
               Open
             </Button>

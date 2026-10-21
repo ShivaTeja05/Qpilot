@@ -1,0 +1,83 @@
+{
+  "connector": "cfx",
+  "label": "Bio-Rad CFX Manager / Maestro export",
+  "dialect": "cfx.amplification+cfx.cq+cfx.melt+cfx.melt_derivative+cfx.run_information",
+  "sources": [
+    {
+      "name": "2016-09-04 gapdh -  Melt Curve Derivative Results_SYBR.csv",
+      "role": "ignored",
+      "bytes": 99641
+    },
+    {
+      "name": "2016-09-04 gapdh -  Melt Curve RFU Results_SYBR.csv",
+      "role": "melt",
+      "bytes": 99622
+    },
+    {
+      "name": "2016-09-04 gapdh -  Quantification Amplification Results_SYBR.csv",
+      "role": "amplification",
+      "bytes": 66294
+    },
+    {
+      "name": "2016-09-04 gapdh -  Quantification Cq Results_0.csv",
+      "role": "cq",
+      "bytes": 7139
+    },
+    {
+      "name": "2016-09-04 gapdh_Run Information.csv",
+      "role": "setup",
+      "bytes": 370
+    }
+  ],
+  "unused": [
+    "2016-09-04 gapdh -  End Point Results_SYBR.csv",
+    "2016-09-04 gapdh -  Melt Curve Peak Results_0.csv"
+  ],
+  "value_kind": "RFU",
+  "value_words": "RFU, as the instrument software exported them",
+  "layers": {
+    "amplification": true,
+    "melt": true,
+    "cq": true,
+    "sample_types": true,
+    "targets": true,
+    "quantities": false
+  },
+  "plates": [
+    {
+      "run_id": "2016-09-04 gapdh",
+      "rows": 8,
+      "columns": 12,
+      "n_wells": 96,
+      "n_reactions": 96,
+      "n_cycles": 40,
+      "targets": ["SYBR"],
+      "dyes": ["SYBR"],
+      "sample_types": {
+        "unkn": 96
+      },
+      "n_unmapped_types": 0,
+      "n_with_vendor_cq": 96,
+      "vendor_omitted": [],
+      "value_kind": "RFU",
+      "verdict": "baseline_subtracted"
+    }
+  ],
+  "rawness": {
+    "verdict": "baseline_subtracted",
+    "title": "Baseline already subtracted",
+    "meaning": "The instrument software subtracted a baseline before export. That weakens LinRegPCR's per-well efficiency, because it cannot see each well's own baseline. Re-export the raw fluorescence to restore it: in CFX Manager or Maestro choose 'No Baseline Subtraction' before exporting; from QuantStudio export Rn, not Delta Rn.",
+    "linregpcr_ok": false
+  },
+  "warnings": [
+    {
+      "code": "UNNAMED_WELLS",
+      "message": "96 reactions have no sample name; each such well is its own sample, named after its plate and well."
+    },
+    {
+      "code": "CURVES_NOT_RAW",
+      "message": "The amplification curves were most likely baseline-subtracted before export, so qPilot cannot estimate each well's baseline and efficiency itself. Re-export the raw fluorescence to restore per-well efficiency."
+    }
+  ],
+  "n_quarantined": 14
+}

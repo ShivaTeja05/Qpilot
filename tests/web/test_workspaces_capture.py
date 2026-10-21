@@ -114,6 +114,8 @@ def test_a_cq_only_table_says_there_are_no_curves_to_check(sclient):
     assert plate["n_cycles"] == 0 and plate["sample_types"]["std"] == 21
     assert len(plate["vendor_omitted"]) == 5
     assert "VENDOR_OMITTED" in {w["code"] for w in capture["warnings"]}
+    r = sclient.post(f"/api/sessions/{sid}/propose/design")  # the design needs no curves
+    assert wait_job(sclient, r.json()["job"])["status"] == "done"
 
 
 def test_files_the_export_does_not_use_are_named_back(sclient):
