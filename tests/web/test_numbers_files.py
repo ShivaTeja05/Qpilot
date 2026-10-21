@@ -128,7 +128,7 @@ def test_the_caption_cites_the_engine_numbers(preview, world):
     for gene in preview["genes"]:
         n = eng.robustness[gene].n_cells
         pct = round(100 * eng.robustness[gene].holds)
-        assert f"holds in {pct}% of {n}" in caption.replace(" %", "%"), (gene, caption)
+        assert f"holds in {pct}% of the {n} analyses" in caption.replace(" %", "%"), (gene, caption)
 
 
 def _job(client, response) -> dict:
