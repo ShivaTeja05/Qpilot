@@ -81,11 +81,6 @@ def _texts(api, study_id: str, genes: list[str]) -> Iterator[tuple[str, str]]:
         yield from strings(get_json(api, f"/api/studies/{study_id}/{tail}"), tail)
 
 
-@pytest.mark.xfail(
-    strict=False,  # a store analysed after #0286 already passes; strict once #0358 merges
-    reason="#0358 to api: studies analysed before #0286 keep 'holds in fewer than 80 % of the "
-    "reasonable analyses' in results.json; the views are to re-word it on read",
-)
 @pytest.mark.parametrize("which", ["legacy", "study"])
 def test_results_shares_name_qpilot_s_grid(api, world, which):
     study_id = getattr(world, which)
@@ -130,11 +125,6 @@ def test_audit_shares_name_the_audit_s_set(api, world):
     assert not found, "\n".join(found[:8])
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#0333/#0334 to api-files: qpilot/prism/provenance.py writes 'holds in 99% of 744 "
-    "reasonable analyses' into the Prism caption",
-)
 def test_the_prism_caption_names_qpilot_s_grid(api, world):
     pytest.importorskip("qpilot.web.routers.files", reason="the Prism routes are not merged")
     preview = get_json(api, f"/api/sessions/{world.sid}/prism/preview")

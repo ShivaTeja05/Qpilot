@@ -118,8 +118,8 @@ def caption(inputs: ExportInputs, genes: Sequence[str]) -> dict[str, str]:
             t = ["{{" + fid + "}}" for fid in ids]
             sentences.append(
                 f"{gene}: {t[0]} in {first} versus {second} (95 % confidence interval {t[1]} "
-                f"to {t[2]}; p = {t[3]}); the conclusion holds in {t[4]} of {t[5]} reasonable "
-                "analyses."
+                f"to {t[2]}; p = {t[3]}); the conclusion holds in {t[4]} of the {t[5]} "
+                "analyses qPilot checks."
             )
         tokens = " ".join(sentences)
     names = set(genes) | set(inputs.refs) | set(inputs.group_order) | METHOD_NAMES
