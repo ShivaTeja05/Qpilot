@@ -7,8 +7,9 @@ client starts ``qpilot serve`` in whatever directory it likes; Claude Desktop st
 disk (or the whole home folder), and ``qpcr_inspect(rdml_path=<demo>, sheet_path=<any .csv or
 .xlsx>)`` hands back every cell of that file to the agent as quoted data. Measured on main
 @ 81484f7 with cwd ``/``: a CSV holding ``123-45-6789`` and ``HIV positive`` came back in
-``quoted_names``. The tests below hold the server to its threat model: with no
-``QPILOT_DATA_ROOTS`` set, the filesystem root and the home folder are never an implicit root.
+``quoted_names`` (fixed by 4f98f25 on agents/mcp). The tests below hold the server to its
+threat model: with no ``QPILOT_DATA_ROOTS`` set, the filesystem root and the home folder are
+never an implicit root.
 """
 
 from __future__ import annotations
@@ -32,7 +33,6 @@ def _secret_sheet(folder: Path) -> Path:
     return sheet
 
 
-@pytest.mark.xfail(strict=True, reason="RT-001: cwd '/' makes the whole disk a data root")
 def test_a_server_started_in_the_filesystem_root_does_not_open_the_whole_disk(
     no_roots_env: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -43,7 +43,6 @@ def test_a_server_started_in_the_filesystem_root_does_not_open_the_whole_disk(
         check_sheet(str(sheet))
 
 
-@pytest.mark.xfail(strict=True, reason="RT-001: cwd ~ makes the whole home folder a data root")
 def test_a_server_started_in_the_home_folder_does_not_open_the_whole_home_folder(
     no_roots_env: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

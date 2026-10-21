@@ -5,8 +5,8 @@ item names a resolver here; a resolver reads the study (result, facts, confirmed
 versions, the input file's RDML metadata, the audit) and returns a :class:`Fill` ("Yes" → met,
 "No" → not met, with fact-bound evidence), a :class:`Hint` (cannot tell from the data, with what
 the data do hold), :class:`NotApplicable`, or None (cannot tell). Items only a person can attest
-(class ``d``) are never answered. The headline counts items by status: never a score, never a
-claim that a study is compliant.
+(class ``d``) are never answered. The headline counts items by status: never a score,
+never a claim that a study is compliant.
 
 Ported from branch ``agents/report`` (resolvers reviewed by ``scientist``, bus #0052), re-pointed
 at the live store; the status vocabulary is the page's.
