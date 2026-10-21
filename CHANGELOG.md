@@ -20,6 +20,18 @@ research use only, not for clinical decisions.
   G-REP), and for each rule that warns or fails, whether leaving out the wells it points at would
   change a conclusion. Rules label; nothing is applied. Agreement with an independent oracle on
   the demo: `validation/scientist/`.
+- **The MCP tools' contract for agents** (`qpilot/agents/`): every refusal carries `error`, a
+  stable `code` and a `fix` and is marked `isError` (a stale decide and a refused proposal too);
+  `pending_human` says why it waits (`needs_human_decision`, `autonomy_forbids`) and is not an
+  error. `qpcr_decide` and `qpcr_propose` take an `idempotency_key`: a retry gets the first answer
+  back and is never logged twice. Every tool has a title, honest annotations and an output schema
+  each successful reply is checked against; `response_format="concise"` on the reading tools;
+  `fact_ids` on the study's numbers; the study's files as read-only MCP resources. The human-only
+  rule is unchanged. See `docs/agents.md`.
+- `qpcr_inspect` and `qpcr_study` read instrument exports (a file, or the folder of one export
+  set) inside `QPILOT_DATA_ROOTS`, as the page's Open does: converted once into the study store,
+  the import kept with the session, `imported` in the reply (reader, raw-ness, warnings). An
+  export is analysed only with a design a person confirmed.
 - Open Decision Card kinds (`qpilot/core/card_kinds.py`): a validated registry; a kind this build
   does not know is a human decision (fail closed).
 - Public instrument-export corpus for tests (`tests/fixtures/corpus/`, 18 real sets with
