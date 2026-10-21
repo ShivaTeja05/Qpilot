@@ -28,6 +28,7 @@ The page runs on your computer. It sends nothing anywhere unless you press a but
 20. [Run Review and the Excel workbook](#20-run-review-and-the-excel-workbook) (Report)
 21. [Sheet check](#21-sheet-check)
 22. [Instruments](#22-instruments)
+23. [RT replicates and run files on Controls](#23-rt-replicates-and-run-files-on-controls)
 
 ## 1. Start the page
 
@@ -341,3 +342,26 @@ computer, and the first file from an unknown instrument asks once which instrume
 **Lookback** answers "which of my conclusions used this instrument between these dates, and what
 changes without those runs?"; it writes nothing.
 
+## 23. RT replicates and run files on Controls
+
+Two of the rules on **Controls** look past the control wells.
+
+* **G-RT** (reverse-transcription replicates): when your sample sheet's `rt_replicate` column
+  marks samples of one biological unit that were reverse-transcribed separately from the same
+  RNA, each unit and gene gets a verdict. The Cq of each RT replicate is the mean of its wells; a
+  range of one cycle or more between them is a warning (the criterion as quoted from Bustin et al.
+  2015, still to be checked against the paper). Like every warning, it is priced: qPilot re-runs
+  the analysis without that unit's wells for that gene and says whether a call changes. Without
+  RT replicates in the sheet the rule says the spread of reverse transcription is not measured.
+* **G-INSTR** (what the run file says): for each plate, whether the run completed, whether it
+  was paused or the lid or drawer opened (and in which cycles), which calibrations were past the
+  vendor's expiry, and whether a hold drifted from its setpoint. Each is a warning to weigh, not
+  a reason to set the run aside: qPilot re-runs the analysis without the run's study wells and
+  says whether a call changes. An RDML file names the instrument and the run date at most, so
+  link the run file your instrument wrote (an `.eds`, a QuantStudio results export or CFX run
+  information) to its plate on the **Run files** card, or from the plate's G-INSTR check. The
+  link is kept for every analysis of the file, with when you made it; **Unlink** removes it.
+  Linking changes no number, and serial numbers never leave your computer.
+
+*On the demo:* no RT replicates are marked and the file is RDML, so both rules are not
+applicable (one line for G-RT, one per plate for G-INSTR), each saying what would let it check.

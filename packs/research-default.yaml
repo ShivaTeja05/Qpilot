@@ -4,8 +4,13 @@
 # from agent-bus/contracts/scientist-spec-gate.md (scientist, 18 Oct 2026); quotes marked verified
 # there were re-read on that date. Edit a copy: change the version, set based_on to this pack's
 # hash (qpilot gate rules diff shows what changed), and point qpilot gate --pack at it.
+#
+# 1.1.0 (21 Oct 2026): G-RT and G-INSTR, origin/main's gate lines (qpcr/gate_rt.py,
+# qpcr/gate_instr.py), are rules of the pack: sourced, with their thresholds as parameters, a
+# verdict per biological unit x target (G-RT) and per plate (G-INSTR), and the consequence test
+# where they point at wells. The rules of 1.0.0 are unchanged.
 pack: research-default
-version: 1.0.0
+version: 1.1.0
 label: >-
   Research use only. Rules are lab-editable examples with sources; they are not clinical
   run-validity rules.
@@ -49,6 +54,22 @@ sources:
     citation: >-
       By analogy with clinical run-validity practice (e.g. the CDC 2019-nCoV RT-PCR panel
       instructions). Cited to explain the rule; research-default does not copy clinical rules.
+  bustin_2015:
+    citation: >-
+      Bustin S, Dhillon HS, Kirvell S, et al. Variability of the reverse transcription step:
+      practical implications. Clin Chem 2015;61(1):202-212 (published online 2014).
+    url: https://doi.org/10.1373/clinchem.2014.230615
+    note: >-
+      The RT-replicate delta Cq < 1 criterion as quoted in qPilot's research notes
+      (04-preanalytics-qc-gates.md); to be checked against the paper before it is cited
+      (SOLVABLE-ERRORS-PLAN section 7, fact 3). The paper gives it as a criterion for choosing a
+      reverse transcriptase; G-RT applies the same line to each biological unit and target.
+  vendor_run_file:
+    citation: >-
+      The instrument's own run file (a QuantStudio or StepOne .eds, a QuantStudio results export,
+      CFX run information): the run state, the event log and each calibration's expiry as the
+      vendor's software wrote them. qPilot reads them (methods/instrument_context.md) and adds no
+      threshold of its own.
   lab_default:
     citation: Unsourced, lab-editable default (qPilot project convention).
 rules:
@@ -153,3 +174,48 @@ rules:
     consequence_scope: [drop_outlier_well, drop_sample]
     default_action: card
     sources: [ruiz_villalba_2021, bar_2003, lab_default]
+  - id: G-RT
+    name: Reverse-transcription replicate spread
+    check: rt_replicate_spread
+    statement: >-
+      Where the design marks reverse-transcription replicates (samples of one biological unit
+      reverse-transcribed separately from the same RNA: the sample sheet's rt_replicate column),
+      each replicate's Cq is the mean Cq of its study wells, and the range between the replicates
+      of one unit and target must stay below the limit. A range at or above it is a warning; the
+      consequence test decides. Without annotated replicates the rule is not applicable: the
+      spread of reverse transcription is not measured.
+    applies_to: {sample_types: [unkn], per: [unit, target]}
+    needs: [cq, rt_replicate]
+    params: {limit_cycles: 1.0}
+    severity: {rt_within_limit: pass, rt_over_limit: warn}
+    consequence_scope: [exclude_unit_target, drop_rt_replicate]
+    default_action: card
+    sources: [bustin_2015]
+  - id: G-INSTR
+    name: What the run file says about the run
+    check: instrument_run
+    statement: >-
+      For each plate, its run file says whether the run completed, whether it was paused or a lid
+      or drawer opened (and in which cycles), which calibrations were past the vendor's expiry at
+      run time, and whether a hold drifted from its setpoint by more than the lab's limit. Each of
+      these is a warning to weigh, not a reason to set the run aside: the consequence test says
+      whether leaving the run's study wells out changes a call. The study's own file (RDML) names
+      the instrument and the run date at most; a person links the instrument's run file to a
+      plate to check the rest.
+    applies_to: {per: [plate]}
+    needs: [run_context]
+    params: {hold_limit_c: 0.5}
+    severity:
+      run_complete: pass
+      run_not_complete: warn
+      interrupted: warn
+      aborted_in_log: warn
+      power_event: warn
+      no_interruptions: pass
+      calibration_expired: warn
+      calibrations_in_date: pass
+      hold_off_setpoint: warn
+      hold_on_setpoint: pass
+    consequence_scope: [exclude_run]
+    default_action: card
+    sources: [vendor_run_file, lab_default]

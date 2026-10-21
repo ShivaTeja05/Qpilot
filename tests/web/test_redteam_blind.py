@@ -254,6 +254,7 @@ BODIES = {
     "sign-off": {"outcome": "accept", "comment": "c", "reviewer": "r", "expected_head": "0" * 64},
     "open": {"kind": "gene", "id": "1-Mar", "rank": 1, "expected_head": "0" * 64},
     "lookback": {"instrument_id": "qs-1", "start": "2020-01-01", "end": "2020-12-31"},
+    "unlink": {"plate": "1-Mar_plate"},
 }
 
 

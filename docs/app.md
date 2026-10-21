@@ -47,7 +47,7 @@ A workspace is either a Studio
 | Design (blind) | `…/design` | session | `GET /api/sessions/{sid}` (incl. `capture`: what an export was read as), `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
 | Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards` (incl. cards opened from Trace, with their `place`), decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `GET /api/studies/{id}/evidence` (the Evidence Ledger) → `qpcr.evidence`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis`; `GET /api/studies/{id}/import-trust`, `POST …/import-trust/decide` (session only) → `io.trust` + `Studio.decide_import_trust` (+ the `analyse` job for Cq only) |
-| Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job |
+| Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job; `POST /api/studies/{id}/gate/run-files` (multipart `plate` + `run`), `POST …/gate/run-files/unlink` → `qpcr.run_links` (G-INSTR's run file for a plate) |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
 | Trace | `…/trace`, `…/trace/<GENE>` | results visible | `GET /api/studies/{id}/trace`, `…/trace/{gene}`, `…/trace/plate?run=`, `POST …/trace/{gene}/without` (first load a `trace.load` job: 409 `loading` + the job) → `qpilot.trace`; **Where to look**: `GET …/where-to-look?gene=|sample=|well=`, `POST …/where-to-look/open` (Decide…) → `qpcr.trace` at the analysis in use + `StudyStore.open_card` |
@@ -241,11 +241,37 @@ consistent"; it is outside both blind confirmations (they never re-open for it).
 
 ### Controls (`features/gate`) — Run Gate
 What the controls on each plate say, and whether any of it changes a call. The shipped rule pack
-(`research-default`: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP; thresholds and sources
-in `packs/research-default.yaml`, science in `agent-bus/contracts/scientist-spec-gate.md`) is
-evaluated on the study's wells; every rule that warns or fails and points at wells gets the
-consequence test: the whole analysis grid is re-run without those wells and compared at the
-analysis in use (each card's applied option, the planned one elsewhere).
+(`research-default` 1.1.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR;
+thresholds and sources in `packs/research-default.yaml`, science in
+`agent-bus/contracts/scientist-spec-gate.md`) is evaluated on the study's wells; every rule that
+warns or fails and points at wells gets the consequence test: the whole analysis grid is re-run
+without those wells and compared at the analysis in use (each card's applied option, the planned
+one elsewhere).
+* **G-RT and G-INSTR** are origin/main's gate lines (`qpcr/gate_rt.py`, `qpcr/gate_instr.py`) as
+  rules of the pack, with their thresholds as parameters (`limit_cycles` 1, Bustin et al. 2015
+  as quoted in the research notes and still to be checked against the paper; `hold_limit_c`
+  0.5 °C, a lab default) and the pack's severity. **G-RT** gives a verdict per biological unit ×
+  target where the design marks reverse-transcription replicates (`rt_replicate`; one "not
+  applicable" for the study when none are marked, as on the demo), counting every study well
+  (including wells a person left out, so its option then says "already left out"; the Evidence
+  Ledger's G-RT line counts the wells in use); a range at or above the limit warns and the
+  consequence test leaves the unit's wells out for that target (or, with three or more RT
+  replicates, the one farthest from the others). **G-INSTR** gives a verdict per plate from the
+  plate's run file: whether the run completed, pauses and lid or drawer openings (with the
+  cycles), calibrations past the vendor's expiry, holds off their setpoint. Each is a warning to
+  weigh (G-INSTR's information lines, such as an expired calibration, are warnings here, so the
+  consequence test prices them), and the test leaves the run's study wells out. The study's own
+  file is RDML (`run_context.json`, else the input file), which names the instrument and the run
+  date at most, so on the demo every plate is "not applicable" with what to do.
+* **Run files**: a person links the run file the instrument wrote (an `.eds`, a QuantStudio
+  results export, CFX run information; never an RDML) to a plate, by dropping it on the card or
+  from a G-INSTR check's **Link a run file for this plate**. The file is kept by content and
+  read with the hardened reader; the link (`qpcr/run_links.py`, `<store>/run_links/<input
+  sha256>.json`: plate, file, sha256, its name with serials blanked, kind, `by: human`, when) is
+  kept per **input file**, so every analysis of the file reads it, including the new one a
+  person's decision makes. A linked file that is gone or changed is said, never read. The card
+  lists each linked file with its plate's verdict, **Show the check** and **Unlink**. Linking
+  changes no number: the gate is read again. Serial numbers never come back from the server.
 * Header with the pack (name, version, hash); **In one line**: the headline (every number a fact),
   the verdict counts (Fail / Warn / Pass / Not applicable: status words only, no claim about the
   run as a whole) and what to do (Curves in a session, Trace for a study analysed outside Studio).
@@ -277,6 +303,8 @@ analysis in use (each card's applied option, the planned one elsewhere).
   no inbox: its cards are read-only, and the page says plainly that wells are left out by opening
   its file in Studio (Trace follows its calls down to their wells).
 * **The rules and where their thresholds come from**: each rule's statement and its sources.
+* A rule check that points at more than 24 wells (a whole run) shows the first ones and folds
+  the rest.
 
 ### Trace (`features/trace`)
 Follow any number down to the samples, wells and plates that drive it (`qpilot.trace`: flip sets,
@@ -453,7 +481,7 @@ API modules each define their own response models in `qpilot/web/contract_<area>
 | **history** | `qpilot/web/routers/history.py`, `qpilot/web/contract_history.py`, `qpilot/history/**`, `tests/web/test_history*.py`, `frontend/src/features/history/**` |
 | **planner** | `qpilot/web/routers/planner.py`, `qpilot/web/contract_planner.py`, `qpilot/qpcr/layout.py` (new), additive changes to `qpilot/qpcr/plan.py`, `tests/web/test_planner*.py`, `frontend/src/features/planner/**` |
 | **ux-review** | nothing in the repo: reviews merged builds in a browser and files issues to owners |
-| **gate** | `qpilot/core/{rules,gate,card_kinds}.py`, `qpilot/qpcr/gate_rules.py`, `packs/`, `qpilot/web/routers/gate.py`, `qpilot/web/contract_gate.py`, `tests/gate/**`, `tests/web/test_gate*.py`, `frontend/src/features/gate/**` |
+| **gate** | `qpilot/core/{rules,gate,card_kinds}.py`, `qpilot/qpcr/{gate_rules,run_links}.py`, `packs/`, `qpilot/web/routers/gate.py`, `qpilot/web/contract_gate.py`, `tests/gate/**`, `tests/web/test_gate*.py`, `frontend/src/features/gate/**` |
 | **coordinator** | `docs/app.md`, `frontend/src/shell/sections.ts`, `frontend/src/api/{client,live,jobs}.ts`, `qpilot/web/routers/__init__.py`, `qpilot/web/static/` (built on merge), CI, merges |
 
 Reusable UI primitives live in `src/ui/` (barrel `src/ui/index.ts`), charts in `src/charts/`

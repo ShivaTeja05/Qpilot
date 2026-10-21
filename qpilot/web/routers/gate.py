@@ -18,6 +18,13 @@ study analysed outside Studio has no inbox: its wells are left out by opening it
 Agents ask through MCP (``qpcr_decide``), which files their request for a person
 (``pending_human``); the view shows it with the card.
 
+G-RT and G-INSTR (origin/main's gate lines) are rules of the pack. G-INSTR reads each plate's
+run file: the study's own (``run_context.json``, else the input RDML; the instrument and the
+run date at most), or one a person linked to the plate here (``POST /studies/{id}/gate/
+run-files``: an ``.eds`` or an export the instrument wrote, kept by content and read for every
+analysis of the same input file, :mod:`qpilot.qpcr.run_links`; ``…/run-files/unlink`` removes
+it). Linking changes no number: the gate is read again with the plate's run file.
+
 Like every result, a study analysed from a Studio session answers ``403 blind`` until its design
 and curves are confirmed (the results routes' rule). The first gate of a study re-reads its wells
 and re-runs the grid once per option (about six seconds on the demo): it runs as a ``gate.run``
@@ -33,9 +40,9 @@ from __future__ import annotations
 import threading
 import time
 from collections import OrderedDict
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, Form, UploadFile
 
 from qpilot.core import gate as core_gate
 from qpilot.core.rules import VERDICTS, RuleEval, RulePack
@@ -62,6 +69,9 @@ from qpilot.web.contract_gate import (
     GatePlate,
     GateRequestView,
     GateRuleInfo,
+    GateRunFile,
+    GateRunLinked,
+    GateRunUnlink,
     GateSource,
     GateView,
 )
@@ -133,6 +143,20 @@ STALE_GATE = (
     "the controls at the analysis in use now."
 )
 KEEP_LABEL = "Keep every well (the analysis as it stands)"
+RUN_NOTE = (
+    "The study's own file (RDML) names the instrument and the run date at most. Link the run "
+    "file the instrument wrote for a plate (an .eds file, a QuantStudio results export or CFX "
+    "run information) and G-INSTR checks whether the run completed, its pauses and its "
+    "calibrations. Linking changes no number; it is kept for every analysis of this file, with "
+    "who linked it and when. Serial numbers in the file are never shown."
+)
+RDML_RUN_FILE = (
+    "This is an RDML file: the study's own file is already read, and RDML has no field for the "
+    "run state, pauses or calibrations. Link the file the instrument wrote: an .eds file, a "
+    "QuantStudio results export or CFX run information."
+)
+NOT_A_PLATE = "This study has no plate called that."
+RUN_FILE_HELP = "The plate's run file: an .eds, a QuantStudio results export, CFX run information."
 OPTION_CODES = ("already_left_out", "not_study_samples", "cannot_rerun")
 CARD_PREFIX = "card_gate_"
 
@@ -226,7 +250,56 @@ def compute(store: Any, study_id: str, choice: dict[str, str] | None) -> core_ga
         rawness=import_rawness(store, study_id),
         model=model,
         cell=cell,
+        runs=study_runs(store, study_id, source),
     )
+
+
+def input_sha(store: Any, study_id: str) -> str:
+    """The sha256 of a study's input file (from its ``source.json``, else its results)."""
+    import json
+
+    try:
+        data = json.loads((store.workspace(study_id) / "source.json").read_text(encoding="utf-8"))
+        digest = str(data.get("sha256") or "")
+    except (OSError, ValueError, AttributeError):
+        digest = ""
+    return digest or str(store.get(study_id).input_sha256)
+
+
+def links_version(store: Any, study_id: str) -> str:
+    """Which run files are linked to the study's plates (part of every cache key)."""
+    from qpilot.qpcr import run_links
+
+    try:
+        return run_links.version(store.root, input_sha(store, study_id))
+    except (OSError, ValueError):
+        return ""
+
+
+def study_links(store: Any, study_id: str) -> dict[str, Any]:
+    """The run files a person linked to the plates of the study's input file."""
+    from qpilot.qpcr import run_links
+
+    try:
+        return run_links.load(store.root, input_sha(store, study_id))
+    except (OSError, ValueError):
+        return {}
+
+
+def study_runs(store: Any, study_id: str, source: Any) -> dict[str, Any]:
+    """Plate -> the run file G-INSTR reads: a linked one, else the study's own (RDML) run."""
+    from qpilot.qpcr import run_links
+    from qpilot.qpcr.gate_rules import file_runs, stored_runs, with_linked
+    from qpilot.web.views import inputs_dir
+
+    own = stored_runs(store.get_artifact(study_id, "run_context.json"))
+    if own is None:
+        own = file_runs(source)
+    links = study_links(store, study_id)
+    if not links:
+        return own
+    contexts, problems = run_links.read_linked(links, inputs_dir(store))
+    return with_linked(own, contexts, problems)
 
 
 def report_for(store: Any, study_id: str) -> core_gate.GateReport:
@@ -243,7 +316,8 @@ def report_for(store: Any, study_id: str) -> core_gate.GateReport:
         version = store.workspace(study_id).joinpath("results.json").stat().st_mtime_ns
     except OSError:
         version = 0
-    key = (str(store.root), version, study_id, tuple(sorted((choice or {}).items())))
+    links = links_version(store, study_id)
+    key = (str(store.root), version, study_id, links, tuple(sorted((choice or {}).items())))
     report = _kept(_reports, key)
     if report is None:
         report = compute(store, study_id, choice)
@@ -266,7 +340,8 @@ def import_rawness(store: Any, study_id: str) -> str | None:
 
 def _report(ctx: AppContext, study_id: str, choice: dict[str, str] | None) -> core_gate.GateReport:
     """The kept report, or run it in a ``gate.run`` job (409 loading while it runs)."""
-    key = (*_version(ctx, study_id), study_id, tuple(sorted((choice or {}).items())))
+    links = links_version(ctx.store, study_id)
+    key = (*_version(ctx, study_id), study_id, links, tuple(sorted((choice or {}).items())))
     report = _kept(_reports, key)
     if report is not None:
         return report
@@ -386,12 +461,13 @@ def _option_text(
 
 
 def _scope(ev: RuleEval) -> dict[str, Any]:
-    level = next((k for k in ("sample", "target", "plate") if k in ev.scope), "study")
+    level = next((k for k in ("sample", "unit", "target", "plate") if k in ev.scope), "study")
     return {
         "level": level,
         "plate": ev.scope.get("plate"),
         "target": ev.scope.get("target"),
         "sample": ev.scope.get("sample"),
+        "unit": ev.scope.get("unit"),
     }
 
 
@@ -723,11 +799,13 @@ def build_view(
     analysis: str,
     record: SessionRecord | None = None,
     left_out: frozenset[str] = frozenset(),
+    links: dict[str, Any] | None = None,
 ) -> GateView:
     """The page's view of one gate report (words, facts in sentences, cards as Results shows).
 
     ``record`` (a Studio session's) adds what a person chose on each card and the agents'
-    requests waiting on it; ``left_out`` are the wells the analysed design leaves out.
+    requests waiting on it; ``left_out`` are the wells the analysed design leaves out;
+    ``links`` the run files a person linked to its plates (plate -> ``RunLink``).
     """
     from qpilot.qpcr.gate_rules import OPTION_LABELS
 
@@ -823,6 +901,7 @@ def build_view(
         worst = next((v for v in WORST if counts[v]), "not_applicable")
         plates.append(GatePlate(plate=plate, status=status, counts=counts, worst=worst))
     n_gated = sum(1 for p in plates if p.status == "gated")
+    runs = _runs(report, links or {})
     return GateView(
         study_id=study_id,
         session=session,
@@ -843,7 +922,45 @@ def build_view(
         evaluations=evaluations,
         consequences=consequences,
         cards=cards,
+        runs=runs,
+        run_note=RUN_NOTE if runs else "",
     )
+
+
+def _runs(report: core_gate.GateReport, links: dict[str, Any]) -> list[GateRunFile]:
+    """Per plate, the run file G-INSTR read (none when the pack has no G-INSTR)."""
+    found = {
+        ev.scope["plate"]: ev
+        for ev in report.evals
+        if ev.check == "instrument_run" and "plate" in ev.scope
+    }
+    out = []
+    for plate in report.units:
+        ev = found.get(plate)
+        if ev is None:
+            continue
+        link = links.get(plate)
+        source = str(ev.evidence.get("source") or "")
+        problem = ev.code == "linked_file_unreadable"
+        out.append(
+            GateRunFile(
+                plate=plate,
+                source=(
+                    "linked"
+                    if link is not None and (problem or source == "linked run file")
+                    else "study_file"
+                    if source == "study file"
+                    else "none"
+                ),
+                kind=(str(ev.evidence["source_kind"]) if ev.evidence.get("source_kind") else None),
+                name=link.name if link is not None else None,
+                linked_at=link.at if link is not None else None,
+                problem=str(ev.evidence.get("problem") or "") if problem else "",  # type: ignore
+                verdict=ev.verdict,  # type: ignore[arg-type]
+                evaluation=core_gate.eval_id(ev),
+            )
+        )
+    return out
 
 
 # ---- the route -----------------------------------------------------------------------------
@@ -866,7 +983,7 @@ def get_gate(study_id: str, ctx: Ctx) -> GateView:
     sid = _visible(ctx, study_id)
     head = ctx.store.chain_head(study_id)
     inbox = ctx.studio.head(sid) if sid else None
-    vkey = (*_version(ctx, study_id), study_id, head, inbox)
+    vkey = (*_version(ctx, study_id), study_id, head, inbox, links_version(ctx.store, study_id))
     view = _kept(_views, vkey)
     if view is not None:
         return view
@@ -881,6 +998,7 @@ def get_gate(study_id: str, ctx: Ctx) -> GateView:
         "planned" if choice is None else "your_choices",
         record=_session_record(ctx, sid, study_id) if sid else None,
         left_out=_left_out(ctx.store, study_id),
+        links=study_links(ctx.store, study_id),
     )
     _keep(_views, vkey, view)
     return view
@@ -938,7 +1056,8 @@ def gate_choice(
 
 
 def _where(ev: RuleEval) -> str:
-    parts = [f"{k} {ev.scope[k]}" for k in ("plate", "target", "sample") if k in ev.scope]
+    keys = ("plate", "unit", "target", "sample")
+    parts = [f"{k} {ev.scope[k]}" for k in keys if k in ev.scope]
     return ", ".join(parts) or "the study"
 
 
@@ -1017,4 +1136,103 @@ def decide_gate_card(study_id: str, card_id: str, body: GateDecide, ctx: Ctx) ->
         put_back=outcome.put_back,
         inbox_head=outcome.head,
         job=job,
+    )
+
+
+# ---- run files a person links to a plate (G-INSTR) ------------------------------------------
+
+
+def _plates(ctx: AppContext, study_id: str) -> list[str]:
+    """The study's plates, as the gate reads them (409 while a first gate is loading).
+
+    The plates do not depend on the run files linked or the analysis in use, so any report
+    kept for this results version answers; a link made while the gate is read again with the
+    previous one does not wait for it.
+    """
+    version = _version(ctx, study_id)
+    with _lock:
+        for key, report in reversed(_reports.items()):
+            if key[:3] == (*version, study_id):
+                return list(report.units)
+    return list(_report(ctx, study_id, _choice(ctx, study_id)).units)
+
+
+def _changed(ctx: AppContext, study_id: str, sid: str | None) -> None:
+    ctx.bus.publish({"type": "study.changed", "key": study_id, "source": "page"})
+    if sid:
+        ctx.bus.publish({"type": "study.changed", "key": sid, "source": "page"})
+
+
+@router.post("/studies/{study_id}/gate/run-files", response_model=GateRunLinked)
+async def link_gate_run_file(
+    study_id: str,
+    ctx: Ctx,
+    plate: Annotated[str | None, Form(max_length=200)] = None,
+    run: Annotated[UploadFile | None, File(description=RUN_FILE_HELP)] = None,
+) -> GateRunLinked:
+    """A person links the run file the instrument wrote to one plate (G-INSTR reads it).
+
+    The file is kept by content and read (what it says about the run; no serial number comes
+    back); the link is kept for every analysis of the study's input file, with ``by: human``
+    and the time. Blind like every result; ``bad_file`` (422) for a file qPilot cannot read or
+    an RDML file; ``not_found`` (404) for a plate the study does not have.
+    """
+    from datetime import UTC, datetime
+
+    from qpilot.core.store import sha256_file
+    from qpilot.qpcr import run_links
+    from qpilot.web import views
+    from qpilot.web.routers.instruments import _keep_run, _read_run, _without_identity
+
+    sid = _visible(ctx, study_id)  # blind first: a refused body says nothing either way
+    if not plate or run is None:
+        raise api_error(422, "bad_request", "Choose a plate and the run file to link to it.")
+    if plate not in _plates(ctx, study_id):
+        raise api_error(404, "not_found", NOT_A_PLATE)
+    path = await _keep_run(ctx, run)
+    context = _read_run(path)
+    if context.source_kind == "rdml":
+        raise api_error(422, "bad_file", RDML_RUN_FILE)
+    name = _without_identity(views.display_name(path) or path.name, context)
+    entry = run_links.RunLink(
+        plate=plate,
+        file=path.name,
+        sha256=sha256_file(path),
+        name=name[:200],
+        kind=str(context.source_kind),
+        at=datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+    )
+    try:
+        run_links.link(ctx.store.root, input_sha(ctx.store, study_id), entry)
+    except run_links.RunLinkError as err:
+        raise api_error(422, "bad_request", str(err)) from err
+    _changed(ctx, study_id, sid)
+    return GateRunLinked(
+        plate=plate,
+        linked=True,
+        name=entry.name,
+        kind=entry.kind,
+        message=(
+            "Linked: G-INSTR now reads this run file for the plate, in every analysis of this "
+            "file. The controls are checked again."
+        ),
+    )
+
+
+@router.post("/studies/{study_id}/gate/run-files/unlink", response_model=GateRunLinked)
+def unlink_gate_run_file(study_id: str, body: GateRunUnlink, ctx: Ctx) -> GateRunLinked:
+    """A person removes a plate's linked run file (G-INSTR reads the study's own file again)."""
+    from qpilot.qpcr import run_links
+
+    sid = _visible(ctx, study_id)
+    gone = run_links.unlink(ctx.store.root, input_sha(ctx.store, study_id), body.plate)
+    if gone is None:
+        raise api_error(404, "not_found", "No run file is linked to this plate.")
+    _changed(ctx, study_id, sid)
+    return GateRunLinked(
+        plate=body.plate,
+        linked=False,
+        name=gone.name,
+        kind=gone.kind,
+        message="Unlinked: G-INSTR reads the study's own file for this plate again.",
     )

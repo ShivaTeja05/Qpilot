@@ -4,7 +4,7 @@
  * filters of the rule list. Pure functions, tested on the recorded answers.
  */
 import type { Tone } from "@/ui";
-import type { ConsequenceClass, Consequence, Evaluation, Plate, Verdict } from "./api";
+import type { ConsequenceClass, Consequence, Evaluation, Plate, RunFile, Verdict } from "./api";
 
 export const VERDICTS: Verdict[] = ["fail", "warn", "pass", "not_applicable"];
 
@@ -42,10 +42,13 @@ export function plateLabel(run: string | null | undefined): string {
   return run.replace(/_\d{8}$/, "");
 }
 
-/** Where a finding sits, in words: plate · target · sample (the target when it is not the plate's name). */
-export function whereText(e: Pick<Evaluation, "plate" | "target" | "sample">): string {
+/**
+ * Where a finding sits, in words: plate · unit · target · sample (the target when it is not the
+ * plate's name; a biological unit for G-RT, whose wells can be on several plates).
+ */
+export function whereText(e: Pick<Evaluation, "plate" | "target" | "sample" | "unit">): string {
   const plate = plateLabel(e.plate);
-  const parts = [plate ? `Plate ${plate}` : ""];
+  const parts = [plate ? `Plate ${plate}` : "", e.unit ? `Unit ${e.unit}` : ""];
   if (e.target && e.target !== plate) parts.push(e.target);
   if (e.sample) parts.push(`sample ${e.sample}`);
   return parts.filter(Boolean).join(" · ") || "The study";
@@ -113,4 +116,26 @@ export function leadOption(c: Consequence): Consequence["options"][number] | und
       b.n_flipped_elsewhere - a.n_flipped_elsewhere ||
       b.max_delta_log2fc - a.max_delta_log2fc,
   )[0];
+}
+
+/** What a run file is, in words (the reader's `source_kind`). */
+export const RUN_KIND_WORD: Record<string, string> = {
+  eds: "an .eds file",
+  quantstudio_export: "a QuantStudio results export",
+  cfx_run_information: "CFX run information",
+  rdml: "RDML",
+};
+
+/** Which run file G-INSTR read for a plate, in one phrase. */
+export function runSourceText(r: Pick<RunFile, "source" | "kind" | "name" | "problem">): string {
+  if (r.source === "linked") {
+    if (r.problem === "missing") return "A linked run file that is no longer where qPilot kept it";
+    if (r.problem === "changed") return "A linked run file that has changed since it was linked";
+    if (r.problem) return "A linked run file that cannot be read any more";
+    const kind = r.kind ? (RUN_KIND_WORD[r.kind] ?? r.kind) : "a run file";
+    return `${r.name ?? "A run file"} (${kind}), linked by a person`;
+  }
+  if (r.source === "study_file")
+    return "The study's own file (RDML: the instrument and the run date at most)";
+  return "No run file";
 }

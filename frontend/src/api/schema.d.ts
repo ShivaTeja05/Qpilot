@@ -1998,6 +1998,51 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/gate/run-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Gate Run File
+         * @description A person links the run file the instrument wrote to one plate (G-INSTR reads it).
+         *
+         *     The file is kept by content and read (what it says about the run; no serial number comes
+         *     back); the link is kept for every analysis of the study's input file, with ``by: human``
+         *     and the time. Blind like every result; ``bad_file`` (422) for a file qPilot cannot read or
+         *     an RDML file; ``not_found`` (404) for a plate the study does not have.
+         */
+        post: operations["link_gate_run_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/gate/run-files/unlink": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unlink Gate Run File
+         * @description A person removes a plate's linked run file (G-INSTR reads the study's own file again).
+         */
+        post: operations["unlink_gate_run_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/genes/{gene}": {
         parameters: {
             query?: never;
@@ -4440,6 +4485,16 @@ export type components = {
             /** Title */
             title: string;
         };
+        /** Body_link_gate_run_file */
+        Body_link_gate_run_file: {
+            /** Plate */
+            plate?: string | null;
+            /**
+             * Run
+             * @description The plate's run file: an .eds, a QuantStudio results export, CFX run information.
+             */
+            run?: string | null;
+        };
         /** Body_open_file */
         Body_open_file: {
             /**
@@ -6330,6 +6385,8 @@ export type components = {
              * @description What happens to the finding, in words.
              */
             triage_text: string;
+            /** Unit */
+            unit?: string | null;
             /**
              * Verdict
              * @enum {string}
@@ -6421,7 +6478,7 @@ export type components = {
         };
         /**
          * GateEvaluation
-         * @description One verdict of one rule on one plate, plate x target or sample.
+         * @description One verdict of one rule on one plate, plate x target, sample or biological unit.
          */
         GateEvaluation: {
             /**
@@ -6448,7 +6505,7 @@ export type components = {
              * Level
              * @enum {string}
              */
-            level: "plate" | "target" | "sample" | "study";
+            level: "plate" | "target" | "sample" | "unit" | "study";
             /**
              * Outcome
              * @description The evaluator's outcome before the pack's severity.
@@ -6465,6 +6522,11 @@ export type components = {
             target?: string | null;
             /** Title */
             title: string;
+            /**
+             * Unit
+             * @description The biological unit (G-RT: its reverse-transcription replicates)
+             */
+            unit?: string | null;
             /**
              * Verdict
              * @enum {string}
@@ -6650,6 +6712,84 @@ export type components = {
             title: string;
         };
         /**
+         * GateRunFile
+         * @description Which run file G-INSTR read for one plate: one a person linked, or the study's own file.
+         *
+         *     The study's own file (RDML) names the instrument and the run date at most; the run file the
+         *     instrument wrote (an ``.eds``, a QuantStudio results export, CFX run information) says
+         *     whether the run completed, its pauses and its calibrations. No serial number is ever here.
+         */
+        GateRunFile: {
+            /**
+             * Evaluation
+             * @description The id of the plate's G-INSTR evaluation.
+             */
+            evaluation?: string | null;
+            /**
+             * Kind
+             * @description What the file read is: eds, quantstudio_export, cfx_run_information, rdml.
+             */
+            kind?: string | null;
+            /**
+             * Linked At
+             * @description When a person linked it.
+             */
+            linked_at?: string | null;
+            /**
+             * Name
+             * @description A linked file's name as the person gave it, serials blanked.
+             */
+            name?: string | null;
+            /** Plate */
+            plate: string;
+            /**
+             * Problem
+             * @description Why a linked file was not read (it is gone, changed or refused).
+             * @default
+             * @enum {string}
+             */
+            problem: "" | "missing" | "changed" | "unreadable";
+            /**
+             * Source
+             * @description linked: a run file a person linked; study_file: the study's own file; none: qPilot has no run context for this plate.
+             * @enum {string}
+             */
+            source: "linked" | "study_file" | "none";
+            /**
+             * Verdict
+             * @description G-INSTR's verdict for this plate.
+             * @enum {string}
+             */
+            verdict: "pass" | "warn" | "fail" | "not_applicable";
+        };
+        /**
+         * GateRunLinked
+         * @description What linking (or unlinking) a run file did; the gate is read again with it.
+         */
+        GateRunLinked: {
+            /** Kind */
+            kind?: string | null;
+            /**
+             * Linked
+             * @description True: the plate now has this run file; False: unlinked.
+             */
+            linked: boolean;
+            /** Message */
+            message: string;
+            /** Name */
+            name?: string | null;
+            /** Plate */
+            plate: string;
+        };
+        /**
+         * GateRunUnlink
+         * @description ``POST /studies/{id}/gate/run-files/unlink``: a person removes a plate's linked run file.
+         */
+        GateRunUnlink: {
+            /** Plate */
+            plate: string;
+        };
+        /**
          * GateSource
          * @description Where a rule's threshold comes from.
          */
@@ -6730,6 +6870,18 @@ export type components = {
             pack: components["schemas"]["GatePack"];
             /** Plates */
             plates: components["schemas"]["GatePlate"][];
+            /**
+             * Run Note
+             * @description What linking a run file does, in words.
+             * @default
+             */
+            run_note: string;
+            /**
+             * Runs
+             * @description Per plate, the run file G-INSTR read (empty without G-INSTR).
+             * @default []
+             */
+            runs: components["schemas"]["GateRunFile"][];
             /**
              * Session
              * @description The Studio session the study came from, if any.
@@ -16247,6 +16399,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GateDecided"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_gate_run_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_link_gate_run_file"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateRunLinked"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlink_gate_run_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GateRunUnlink"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateRunLinked"];
                 };
             };
             /** @description Validation Error */

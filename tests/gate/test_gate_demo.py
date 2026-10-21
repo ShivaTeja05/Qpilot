@@ -24,6 +24,7 @@ import pandas as pd
 import pytest
 
 from qpilot.core.decisions import needs_human
+from qpilot.core.rules import summarise
 from qpilot.qpcr.gate_rules import (
     GateContext,
     gate_file,
@@ -149,7 +150,16 @@ def test_the_replicate_tolerance_equals_the_independent_one():
 def test_the_consequence_test_on_the_demo(demo):
     """No control finding changes a call at the planned analysis; three change one elsewhere."""
     report, _ = demo
-    assert report.counts == {"pass": 491, "warn": 8, "fail": 14, "not_applicable": 192}
+    # the rules of research-default 1.0.0 give the same verdicts as before G-RT and G-INSTR
+    old = [ev for ev in report.evals if ev.rule_id not in ("G-RT", "G-INSTR")]
+    assert summarise(old) == {"pass": 491, "warn": 8, "fail": 14, "not_applicable": 192}
+    # the demo annotates no RT replicates, and its RDML says nothing about the runs
+    new = Counter((ev.rule_id, ev.verdict, ev.code) for ev in report.evals if ev not in old)
+    assert new == {
+        ("G-RT", "not_applicable", "rt_not_annotated"): 1,
+        ("G-INSTR", "not_applicable", "nothing_in_file"): 64,
+    }
+    assert report.counts == {"pass": 491, "warn": 8, "fail": 14, "not_applicable": 257}
     assert len(report.consequences) == 10
     assert all(o.n_flipped == 0 for c in report.consequences for o in c.options)
     assert report.triage == {"ignore": 10, "rescue": 0, "human": 0, "defer": 0}

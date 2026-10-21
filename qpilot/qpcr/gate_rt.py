@@ -16,8 +16,9 @@ For every biological unit × target with at least two annotated RT replicates:
 The line is ``not_applicable`` when no RT replicates are annotated ("no RT replicates
 annotated"; the Evidence Ledger then says "RT variability not measured"), or when no unit ×
 target has two RT replicates with a Cq. A warning is a reported check: it never changes a
-conclusion or a confidence grade. Pricing it through the Run Gate's consequence test is for
-the Gate (add_plan 3.2), which does not exist yet.
+conclusion or a confidence grade. The Run Gate prices it: the rule pack's G-RT
+(``qpcr/gate_rules.py``) reads the same ranges per unit × target, and its consequence test
+re-runs the analysis without the unit's wells for that target.
 
 **Source of the criterion** (:data:`SOURCE`). The one-cycle line is the RT-replicate ΔCq < 1
 criterion of Bustin et al. (Clin Chem, published online in 2014), as quoted in the repository's
@@ -94,6 +95,79 @@ def rt_labels(design: StudyDesign | None) -> dict[str, tuple[str, str]]:
     return {s: (d.unit(), d.rt_replicate) for s, d in design.samples.items() if d.rt_replicate}
 
 
+def rt_replicate_wells(
+    curves: pd.DataFrame, design: StudyDesign | None, *, include_excluded: bool = False
+) -> pd.DataFrame:
+    """The study wells of the samples that carry an RT label, one row per well.
+
+    Args:
+        curves: The per-well table (``run_id, well, sample, sample_type, target, cq``); the
+            design's well-level choices are applied here (re-typed and excluded wells).
+        design: The confirmed design; ``None`` or no ``rt_replicate`` labels give no rows.
+        include_excluded: Keep the wells a person left out (the Run Gate labels every well and
+            says when an option's wells are already left out); the Evidence Ledger leaves
+            them out.
+
+    Returns:
+        Columns ``unit, rt, target, key, cq`` (``key`` is ``run_id/well``), in table order.
+
+    Raises:
+        DesignError: The design names wells that are not in the table.
+    """
+    columns = ["unit", "rt", "target", "key", "cq"]
+    labels = rt_labels(design)
+    if not labels:
+        return pd.DataFrame(columns=columns)
+    table = design_curves(curves, design)
+    wells = table[(table["sample_type"] == "unkn") & table["sample"].isin(labels)]
+    if EXCLUDED in wells.columns and not include_excluded:
+        wells = wells[~wells[EXCLUDED].astype(bool)]
+    if wells.empty:
+        return pd.DataFrame(columns=columns)
+    return pd.DataFrame(
+        {
+            "unit": wells["sample"].map(lambda s: labels[s][0]).astype(str),
+            "rt": wells["sample"].map(lambda s: labels[s][1]).astype(str),
+            "target": wells["target"].astype(str),
+            "key": wells["run_id"].astype(str) + "/" + wells["well"].astype(str),
+            "cq": pd.to_numeric(wells["cq"], errors="coerce").astype(float),
+        }
+    ).reset_index(drop=True)
+
+
+def rt_means(wells: pd.DataFrame) -> pd.Series:
+    """Each RT replicate's Cq: the mean Cq of its wells, indexed by (unit, target, rt)."""
+    return wells.groupby(["unit", "target", "rt"], sort=True)["cq"].mean()
+
+
+def rt_ranges(wells: pd.DataFrame) -> pd.DataFrame:
+    """The RT-replicate Cq range of every unit × target with two or more RT labels.
+
+    Args:
+        wells: Rows of :func:`rt_replicate_wells`.
+
+    Returns:
+        One row per unit × target, sorted by unit then target, with the columns
+        :data:`RANGE_COLUMNS` (``range`` is NaN when fewer than two RT replicates have a Cq).
+    """
+    if wells.empty:
+        return pd.DataFrame(columns=list(RANGE_COLUMNS))
+    grouped = rt_means(wells).groupby(level=["unit", "target"], sort=True)
+    out = pd.DataFrame(
+        {
+            "n_rt": grouped.size(),
+            "n_measured": grouped.count(),
+            "cq_min": grouped.min(),
+            "cq_max": grouped.max(),
+        }
+    ).reset_index()
+    out = out[out["n_rt"] >= 2].reset_index(drop=True)
+    spread = (out["cq_max"] - out["cq_min"]).round(_DECIMALS)
+    out["range"] = spread.where(out["n_measured"] >= 2)
+    out[["n_rt", "n_measured"]] = out[["n_rt", "n_measured"]].astype(int)
+    return out[list(RANGE_COLUMNS)]
+
+
 def rt_replicate_range(curves: pd.DataFrame, design: StudyDesign | None) -> pd.DataFrame:
     """The RT-replicate Cq range of every biological unit × target with two or more RT labels.
 
@@ -111,38 +185,7 @@ def rt_replicate_range(curves: pd.DataFrame, design: StudyDesign | None) -> pd.D
     Raises:
         DesignError: The design names wells that are not in the table.
     """
-    labels = rt_labels(design)
-    if not labels:
-        return pd.DataFrame(columns=list(RANGE_COLUMNS))
-    table = design_curves(curves, design)
-    wells = table[(table["sample_type"] == "unkn") & table["sample"].isin(labels)]
-    if EXCLUDED in wells.columns:
-        wells = wells[~wells[EXCLUDED].astype(bool)]
-    if wells.empty:
-        return pd.DataFrame(columns=list(RANGE_COLUMNS))
-    frame = pd.DataFrame(
-        {
-            "unit": wells["sample"].map(lambda s: labels[s][0]).astype(str),
-            "rt": wells["sample"].map(lambda s: labels[s][1]).astype(str),
-            "target": wells["target"].astype(str),
-            "cq": pd.to_numeric(wells["cq"], errors="coerce").astype(float),
-        }
-    )
-    per_rt = frame.groupby(["unit", "target", "rt"], sort=True)["cq"].mean()
-    grouped = per_rt.groupby(level=["unit", "target"], sort=True)
-    out = pd.DataFrame(
-        {
-            "n_rt": grouped.size(),
-            "n_measured": grouped.count(),
-            "cq_min": grouped.min(),
-            "cq_max": grouped.max(),
-        }
-    ).reset_index()
-    out = out[out["n_rt"] >= 2].reset_index(drop=True)
-    spread = (out["cq_max"] - out["cq_min"]).round(_DECIMALS)
-    out["range"] = spread.where(out["n_measured"] >= 2)
-    out[["n_rt", "n_measured"]] = out[["n_rt", "n_measured"]].astype(int)
-    return out[list(RANGE_COLUMNS)]
+    return rt_ranges(rt_replicate_wells(curves, design))
 
 
 def g_rt(

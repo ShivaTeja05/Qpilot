@@ -8,7 +8,7 @@
  * session or the study (a decision, the end of the `gate.run` job) re-reads it.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError, unwrap, type JobView, type Schemas } from "@/api/client";
+import { api, ApiError, postForm, unwrap, type JobView, type Schemas } from "@/api/client";
 
 export interface GateScope {
   /** The workspace key (a session id or a study id). */
@@ -46,6 +46,8 @@ export type ConsequenceClass = Consequence["consequence"];
 export type GateDecision = NonNullable<Consequence["decision"]>;
 export type GateRequest = Consequence["requests"][number];
 export type GateDecided = Schemas["GateDecided"];
+export type RunFile = GateView["runs"][number];
+export type RunLinked = Schemas["GateRunLinked"];
 
 /** The `gate.run` job a 409 `loading` names (the controls are being checked). */
 export function loadingJob(error: unknown): JobView | null {
@@ -96,6 +98,42 @@ export function useGateDecide(s: GateScope, view: GateView | undefined) {
             expected_head: view?.head ?? null,
             expected_inbox: view?.inbox_head ?? null,
           },
+        }),
+      ),
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["w", s.key] }),
+  });
+}
+
+/**
+ * A person links the run file the instrument wrote to one plate (G-INSTR reads it in the
+ * plate's place, for every analysis of the study's file). Linking changes no number; the gate
+ * is read again (a `gate.run` job) when it settles.
+ */
+export function useLinkRunFile(s: GateScope) {
+  const qc = useQueryClient();
+  return useMutation<RunLinked, unknown, { plate: string; file: File }>({
+    mutationFn: ({ plate, file }) => {
+      const form = new FormData();
+      form.append("plate", plate);
+      form.append("run", file, file.name);
+      return postForm<RunLinked>(
+        `/api/studies/${encodeURIComponent(s.studyId ?? "")}/gate/run-files`,
+        form,
+      );
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["w", s.key] }),
+  });
+}
+
+/** A person removes a plate's linked run file (G-INSTR reads the study's own file again). */
+export function useUnlinkRunFile(s: GateScope) {
+  const qc = useQueryClient();
+  return useMutation<RunLinked, unknown, string>({
+    mutationFn: (plate) =>
+      unwrap(
+        api.POST("/api/studies/{study_id}/gate/run-files/unlink", {
+          params: { path: { study_id: s.studyId! } },
+          body: { plate },
         }),
       ),
     onSettled: () => void qc.invalidateQueries({ queryKey: ["w", s.key] }),

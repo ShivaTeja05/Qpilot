@@ -8,6 +8,14 @@ research use only, not for clinical decisions.
 ## [Unreleased]
 
 ### Added
+- **G-RT and G-INSTR in the Run Gate** (`packs/research-default.yaml` 1.1.0,
+  `qpilot/qpcr/gate_rules.py`, `qpilot/qpcr/run_links.py`): origin/main's RT-replicate and
+  instrument gate lines are rules of the pack, with sources and thresholds (`limit_cycles`,
+  `hold_limit_c`), a verdict per biological unit × target (G-RT) and per plate (G-INSTR), and the
+  consequence test where they point at wells. On Controls a person links the run file the
+  instrument wrote (an `.eds`, a QuantStudio export, CFX run information) to a plate, kept for
+  every analysis of the file (`POST /api/studies/{id}/gate/run-files`, `…/unlink`); the Run
+  files card lists them. The seven rules of 1.0.0 are unchanged (same verdicts on the demo).
 - **origin/main (18 Oct) merged into the one page** (`INTEGRATION.md`): Shiva Teja's Trace engine
   with its planted-fault benchmark, the Spreadsheet Check, the Evidence Ledger, the Run Review,
   the instrument registry and logbook with lookback, the replicate budget planner, nine MCP tools

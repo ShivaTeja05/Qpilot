@@ -16,7 +16,12 @@ next to this file, exactly what it answers:
   out (``qpcr_decide``: the request waits on the card for a person);
 * ``gate-mini-left-out.json`` -- the gate of the new analysis after a person left the wells out
   (``POST .../gate/cards/{card}/decide``): no card any more, the wells listed as left out, with
-  who decided and why.
+  who decided and why;
+* ``gate-rt-linked.json`` -- a two-plate file whose design marks reverse-transcription
+  replicates (``tests/web/test_gate_runs.py``: unit ``KO2``'s second RT is late on ``1-Mar``,
+  so G-RT warns) analysed outside Studio, after a person linked a paused run's ``.eds``
+  (``tests/engine/instrument_files.py``) to ``1-Mar_plate`` (``POST .../gate/run-files``): G-INSTR
+  warns there and leaving the run's study wells out changes the gene's call.
 """
 
 from __future__ import annotations
@@ -52,11 +57,12 @@ def write(name: str, body: dict) -> None:
     print(f"wrote {name} ({len(text):,} bytes)")
 
 
-def record(store, studio, study: str, name: str, then=None) -> None:
+def record(store, studio, study: str, name: str, then=None, before=None) -> None:
     """Record ``/gate`` of one study of ``store`` (an in-process server).
 
-    ``then(client, body)``, when given, acts after the recording (as a person or an agent would)
-    and returns more ``(study, name)`` pairs to record.
+    ``before(client)``, when given, acts first (as a person would); ``then(client, body)``
+    acts after the recording (as a person or an agent would) and returns more
+    ``(study, name)`` pairs to record.
     """
     from fastapi.testclient import TestClient
 
@@ -68,6 +74,8 @@ def record(store, studio, study: str, name: str, then=None) -> None:
         with TestClient(create_app(ctx), base_url=BASE) as client:
             client.headers["x-qpilot-token"] = TOKEN
             client.headers["origin"] = BASE
+            if before is not None:
+                before(client)
             body = get(client, f"/api/studies/{study}/gate")
             write(name, body)
             for more_study, more_name in then(client, body) if then else []:
@@ -128,6 +136,28 @@ def main() -> None:
     studio = Studio(store, client=ModelClient(backend=NoneBackend()))
     sid, study = walk_mini(studio, mini)
     record(store, studio, study, "gate-mini.json", mini_steps(store, sid, study))
+
+    import pytest
+
+    from tests.engine import instrument_files as F
+    from tests.web.test_gate_runs import rt_file
+
+    with pytest.MonkeyPatch.context() as mp:
+        rdml, design = rt_file(data / "rt.rdml", mp)
+    store = StudyStore(base / "rt" / "studies")
+    study = store.ensure_study(rdml, design)
+    eds = F.qs_v1_expired(base / "QS5_run.eds", pause_at=23)
+
+    def link(client):
+        with eds.open("rb") as handle:
+            r = client.post(
+                f"/api/studies/{study}/gate/run-files",
+                data={"plate": "1-Mar_plate"},
+                files={"run": ("QS5_run.eds", handle, "application/octet-stream")},
+            )
+        r.raise_for_status()
+
+    record(store, None, study, "gate-rt-linked.json", before=link)
 
 
 if __name__ == "__main__":
