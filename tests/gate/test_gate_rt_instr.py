@@ -205,7 +205,7 @@ def plate_table(plates=("P1", "P2")) -> pd.DataFrame:
 
 
 def linked(path) -> RunFile:
-    return RunFile(context=read_run_context(path), linked=True)
+    return RunFile(context=read_run_context(path), source="linked")
 
 
 def test_a_paused_run_with_an_expired_calibration_warns_and_points_at_the_runs_wells(tmp_path):

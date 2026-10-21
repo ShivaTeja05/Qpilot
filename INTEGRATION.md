@@ -38,7 +38,9 @@ wells a person left out (so its option can say "already left out"), and G-INSTR'
 lines (an expired calibration) are warnings in the pack, so the consequence test prices them.
 The study's own file is RDML, which names the instrument and the run date at most, so a person
 links the instrument's run file to a plate on Controls (`qpcr/run_links.py`, kept per input
-file; `POST /api/studies/{id}/gate/run-files`, `…/unlink`). `core/consequence.py` (Trace's
+file; `POST /api/studies/{id}/gate/run-files`, `…/unlink`); a Studio session opened from an
+instrument export reads each plate's run file among the export's own files first (follow-up
+branch `ui/export-run-files`, `qpcr/export_runs.py`). `core/consequence.py` (Trace's
 consequence classes) and `core/gate.py` (the Run Gate's consequence test over the grid) still
 answer different questions.
 

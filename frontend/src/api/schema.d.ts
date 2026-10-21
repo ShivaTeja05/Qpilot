@@ -2034,7 +2034,7 @@ export type paths = {
         put?: never;
         /**
          * Unlink Gate Run File
-         * @description A person removes a plate's linked run file (G-INSTR reads the study's own file again).
+         * @description A person removes a plate's linked run file (G-INSTR reads the plate's own one again).
          */
         post: operations["unlink_gate_run_file"];
         delete?: never;
@@ -6713,11 +6713,13 @@ export type components = {
         };
         /**
          * GateRunFile
-         * @description Which run file G-INSTR read for one plate: one a person linked, or the study's own file.
+         * @description Which run file G-INSTR read for one plate: one a person linked, the export's, the study's.
          *
          *     The study's own file (RDML) names the instrument and the run date at most; the run file the
          *     instrument wrote (an ``.eds``, a QuantStudio results export, CFX run information) says
-         *     whether the run completed, its pauses and its calibrations. No serial number is ever here.
+         *     whether the run completed, its pauses and its calibrations. A study opened from an
+         *     instrument export reads the plate's run file among the export's own files when it has one;
+         *     a run file a person links comes first. No serial number is ever here.
          */
         GateRunFile: {
             /**
@@ -6737,7 +6739,7 @@ export type components = {
             linked_at?: string | null;
             /**
              * Name
-             * @description A linked file's name as the person gave it, serials blanked.
+             * @description A linked or export file's name as the person's file was called, serials blanked.
              */
             name?: string | null;
             /** Plate */
@@ -6751,10 +6753,10 @@ export type components = {
             problem: "" | "missing" | "changed" | "unreadable";
             /**
              * Source
-             * @description linked: a run file a person linked; study_file: the study's own file; none: qPilot has no run context for this plate.
+             * @description linked: a run file a person linked; export: the plate's run file in the instrument export the study was opened from; study_file: the study's own file; none: qPilot has no run context for this plate.
              * @enum {string}
              */
-            source: "linked" | "study_file" | "none";
+            source: "linked" | "export" | "study_file" | "none";
             /**
              * Verdict
              * @description G-INSTR's verdict for this plate.

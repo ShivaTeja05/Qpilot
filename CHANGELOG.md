@@ -16,6 +16,12 @@ research use only, not for clinical decisions.
   instrument wrote (an `.eds`, a QuantStudio export, CFX run information) to a plate, kept for
   every analysis of the file (`POST /api/studies/{id}/gate/run-files`, `…/unlink`); the Run
   files card lists them. The seven rules of 1.0.0 are unchanged (same verdicts on the demo).
+- **G-INSTR reads the run file an instrument export already holds** (`qpilot/qpcr/export_runs.py`):
+  a Studio session opened from a vendor export reads each plate's run file among the export's own
+  files (a QuantStudio results export's header, CFX Run Information) without a person linking it,
+  labelled as the export's (`source: export` on Controls); a run file a person links comes first,
+  the study's RDML last. Each plate of an import now names the files it was read from
+  (`CaptureMeta.plates[].sources`; older imports are read by file name).
 - **origin/main (18 Oct) merged into the one page** (`INTEGRATION.md`): Shiva Teja's Trace engine
   with its planted-fault benchmark, the Spreadsheet Check, the Evidence Ledger, the Run Review,
   the instrument registry and logbook with lookback, the replicate budget planner, nine MCP tools

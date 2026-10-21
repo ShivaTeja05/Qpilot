@@ -362,6 +362,10 @@ Two of the rules on **Controls** look past the control wells.
   information) to its plate on the **Run files** card, or from the plate's G-INSTR check. The
   link is kept for every analysis of the file, with when you made it; **Unlink** removes it.
   Linking changes no number, and serial numbers never leave your computer.
+  If you opened your instrument's export instead of RDML and it carries the run's own record (a
+  QuantStudio results export, which starts with the run's header, or CFX's Run Information sheet
+  exported with the data), G-INSTR reads it for its plate without a link and says it read "this
+  plate's run file in the instrument export". A run file you link still comes first.
 
 *On the demo:* no RT replicates are marked and the file is RDML, so both rules are not
 applicable (one line for G-RT, one per plate for G-INSTR), each saying what would let it check.

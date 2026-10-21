@@ -1,16 +1,17 @@
 /**
  * Run files (G-INSTR): per plate, which run file the rule read. The study's own file (RDML)
- * names the instrument and the run date at most; a person links the run file the instrument
- * wrote (an .eds, a QuantStudio results export or CFX run information) to a plate, and G-INSTR
- * checks whether that run completed, its pauses and its calibrations. Linking changes no
- * number: the gate is read again with it, and the link is kept for every analysis of the file.
- * Serial numbers never come back from the server.
+ * names the instrument and the run date at most; a study opened from an instrument export reads
+ * each plate's run file in the export when it has one (a QuantStudio results export, CFX run
+ * information); a person links the run file the instrument wrote (an .eds, a QuantStudio results
+ * export or CFX run information) to a plate, and G-INSTR checks whether that run completed, its
+ * pauses and its calibrations. Linking changes no number: the gate is read again with it, and the
+ * link is kept for every analysis of the file. Serial numbers never come back from the server.
  */
 import { FileUp, Link2Off } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { ApiError } from "@/api/client";
 import { cn } from "@/lib/cn";
-import { count, dateTime, plural } from "@/lib/format";
+import { dateTime } from "@/lib/format";
 import { Button, Card, CardBody, CardHeader, ErrorPanel, Select, toast } from "@/ui";
 import {
   useLinkRunFile,
@@ -20,7 +21,7 @@ import {
   type RunFile,
 } from "./api";
 import { VerdictChip } from "./Pieces";
-import { plateLabel, runSourceText } from "./words";
+import { plateLabel, runFilesSentence, runSourceText } from "./words";
 
 const ACCEPT = ".eds,.csv,.txt";
 
@@ -108,10 +109,9 @@ export function RunFiles({
   }, [focus]);
   if (view.runs.length === 0) return null;
   const linked = view.runs.filter((r) => r.source === "linked");
-  const own = view.runs.filter((r) => r.source === "study_file").length;
   const options = view.runs.map((r) => ({
     value: r.plate,
-    label: `${plateLabel(r.plate)}${r.source === "linked" ? " (linked)" : ""}`,
+    label: `${plateLabel(r.plate)}${r.source === "linked" ? " (linked)" : r.source === "export" ? " (from the export)" : ""}`,
   }));
   const choose = (files: FileList | null) => {
     const file = files?.[0];
@@ -131,11 +131,7 @@ export function RunFiles({
       <Card as="section" aria-labelledby="gate-runs-title">
         <CardHeader id="gate-runs-title" title="Run files" hint={view.run_note} />
         <CardBody className="flex flex-col gap-3">
-          <p className="text-[13px] text-fg">
-            {linked.length === 0
-              ? `G-INSTR reads the study's own file for every one of the ${plural(view.runs.length, "plate")}.`
-              : `G-INSTR reads a run file a person linked for ${count(linked.length)} of the ${plural(view.runs.length, "plate")}, the study's own file for ${count(own)}.`}
-          </p>
+          <p className="text-[13px] text-fg">{runFilesSentence(view.runs)}</p>
           <div
             onDragOver={(e) => {
               e.preventDefault();

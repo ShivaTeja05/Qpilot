@@ -47,7 +47,7 @@ A workspace is either a Studio
 | Design (blind) | `…/design` | session | `GET /api/sessions/{sid}` (incl. `capture`: what an export was read as), `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
 | Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards` (incl. cards opened from Trace, with their `place`), decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `GET /api/studies/{id}/evidence` (the Evidence Ledger) → `qpcr.evidence`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis`; `GET /api/studies/{id}/import-trust`, `POST …/import-trust/decide` (session only) → `io.trust` + `Studio.decide_import_trust` (+ the `analyse` job for Cq only) |
-| Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job; `POST /api/studies/{id}/gate/run-files` (multipart `plate` + `run`), `POST …/gate/run-files/unlink` → `qpcr.run_links` (G-INSTR's run file for a plate) |
+| Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job; `POST /api/studies/{id}/gate/run-files` (multipart `plate` + `run`), `POST …/gate/run-files/unlink` → `qpcr.run_links` (G-INSTR's run file for a plate; else the export's own, `qpcr.export_runs`) |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
 | Trace | `…/trace`, `…/trace/<GENE>` | results visible | `GET /api/studies/{id}/trace`, `…/trace/{gene}`, `…/trace/plate?run=`, `POST …/trace/{gene}/without` (first load a `trace.load` job: 409 `loading` + the job) → `qpilot.trace`; **Where to look**: `GET …/where-to-look?gene=|sample=|well=`, `POST …/where-to-look/open` (Decide…) → `qpcr.trace` at the analysis in use + `StudyStore.open_card` |
@@ -263,15 +263,30 @@ one elsewhere).
   consequence test prices them), and the test leaves the run's study wells out. The study's own
   file is RDML (`run_context.json`, else the input file), which names the instrument and the run
   date at most, so on the demo every plate is "not applicable" with what to do.
+* **Which run file each plate reads**: a run file a person linked to the plate, else (a Studio
+  session opened from an instrument export) the plate's run file among the export's own files,
+  else the study's own file. Each plate of the RDML built from an export names the files it was
+  read from (`CaptureMeta.plates[].sources`; read from the file names, as the connectors group
+  them, for an import recorded before); `qpcr/export_runs.py` reads those kept in the
+  kept-inputs folder by content, only while their sha256 is the one captured, and gives the
+  plate the one that lets the most be checked: a QuantStudio results export's header rows
+  (calibrations and their expiry, the run's end, per-well flags) or CFX Run Information
+  exported with the data. Its check says it read "this plate's run file in the instrument
+  export" (`source: export` in the view, with the file's name, serials blanked), never "linked
+  by a person"; an export opened by an agent (its files are not kept by the page) reads the
+  RDML. Amplification and Cq sheets are not run files and are passed over.
 * **Run files**: a person links the run file the instrument wrote (an `.eds`, a QuantStudio
   results export, CFX run information; never an RDML) to a plate, by dropping it on the card or
-  from a G-INSTR check's **Link a run file for this plate**. The file is kept by content and
+  from a G-INSTR check's **Link a run file for this plate**; it is read instead of the export's
+  own file or the RDML, and **Unlink** reads that again. The file is kept by content and
   read with the hardened reader; the link (`qpcr/run_links.py`, `<store>/run_links/<input
   sha256>.json`: plate, file, sha256, its name with serials blanked, kind, `by: human`, when) is
   kept per **input file**, so every analysis of the file reads it, including the new one a
   person's decision makes. A linked file that is gone or changed is said, never read. The card
-  lists each linked file with its plate's verdict, **Show the check** and **Unlink**. Linking
-  changes no number: the gate is read again. Serial numbers never come back from the server.
+  lists each linked file with its plate's verdict, **Show the check** and **Unlink**, and says
+  in one sentence which run file each plate reads (linked, the export's, the study's own); the
+  plate list marks the plates linked or read from the export. Linking changes no number: the
+  gate is read again. Serial numbers never come back from the server.
 * Header with the pack (name, version, hash); **In one line**: the headline (every number a fact),
   the verdict counts (Fail / Warn / Pass / Not applicable: status words only, no claim about the
   run as a whole) and what to do (Curves in a session, Trace for a study analysed outside Studio).

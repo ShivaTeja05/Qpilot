@@ -21,7 +21,11 @@ next to this file, exactly what it answers:
   replicates (``tests/web/test_gate_runs.py``: unit ``KO2``'s second RT is late on ``1-Mar``,
   so G-RT warns) analysed outside Studio, after a person linked a paused run's ``.eds``
   (``tests/engine/instrument_files.py``) to ``1-Mar_plate`` (``POST .../gate/run-files``): G-INSTR
-  warns there and leaving the run's study wells out changes the gene's call.
+  warns there and leaving the run's study wells out changes the gene's call;
+* ``gate-export.json`` -- the corpus's synthetic CFX export of one plate dropped on the page
+  (``POST /api/workspaces``) with the run's Run Information sheet and a sample sheet
+  (``tests/web/test_gate_export_runs.py``), walked through Studio: G-INSTR reads the export's
+  own run information for the plate (it names the instrument; there is nothing to check).
 """
 
 from __future__ import annotations
@@ -31,6 +35,8 @@ import os
 import sys
 import tempfile
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -57,13 +63,9 @@ def write(name: str, body: dict) -> None:
     print(f"wrote {name} ({len(text):,} bytes)")
 
 
-def record(store, studio, study: str, name: str, then=None, before=None) -> None:
-    """Record ``/gate`` of one study of ``store`` (an in-process server).
-
-    ``before(client)``, when given, acts first (as a person would); ``then(client, body)``
-    acts after the recording (as a person or an agent would) and returns more
-    ``(study, name)`` pairs to record.
-    """
+@contextmanager
+def serving(store, studio) -> Iterator:
+    """A keyed client of an in-process server over ``store``."""
     from fastapi.testclient import TestClient
 
     from qpilot.web.context import make_context
@@ -74,14 +76,25 @@ def record(store, studio, study: str, name: str, then=None, before=None) -> None
         with TestClient(create_app(ctx), base_url=BASE) as client:
             client.headers["x-qpilot-token"] = TOKEN
             client.headers["origin"] = BASE
-            if before is not None:
-                before(client)
-            body = get(client, f"/api/studies/{study}/gate")
-            write(name, body)
-            for more_study, more_name in then(client, body) if then else []:
-                write(more_name, get(client, f"/api/studies/{more_study}/gate"))
+            yield client
     finally:
         ctx.close()
+
+
+def record(store, studio, study: str, name: str, then=None, before=None) -> None:
+    """Record ``/gate`` of one study of ``store`` (an in-process server).
+
+    ``before(client)``, when given, acts first (as a person would); ``then(client, body)``
+    acts after the recording (as a person or an agent would) and returns more
+    ``(study, name)`` pairs to record.
+    """
+    with serving(store, studio) as client:
+        if before is not None:
+            before(client)
+        body = get(client, f"/api/studies/{study}/gate")
+        write(name, body)
+        for more_study, more_name in then(client, body) if then else []:
+            write(more_name, get(client, f"/api/studies/{more_study}/gate"))
 
 
 def mini_steps(store, sid: str, study: str):
@@ -158,6 +171,14 @@ def main() -> None:
         r.raise_for_status()
 
     record(store, None, study, "gate-rt-linked.json", before=link)
+
+    from tests.web.test_gate_export_runs import open_and_walk
+
+    store = StudyStore(base / "export" / "studies")
+    studio = Studio(store, client=ModelClient(backend=NoneBackend()))
+    with serving(store, studio) as client:
+        _, study = open_and_walk(client, studio, base / "export" / "files")
+    record(store, studio, study, "gate-export.json")
 
 
 if __name__ == "__main__":

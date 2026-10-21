@@ -18,9 +18,10 @@ Checks in this module: ``typed_controls`` (G-TYPED), ``ntc_gap`` (G-NTC-1), ``na
 ``rt_replicate_spread`` (G-RT: the Cq range between reverse-transcription replicates of one
 biological unit, from the design's ``rt_replicate`` labels; ranges as :mod:`qpilot.qpcr.gate_rt`
 computes them) and ``instrument_run`` (G-INSTR: what each plate's run file says about the run
-and the instrument, the lines of :mod:`qpilot.qpcr.gate_instr`, read from the study's own file
-or from a run file a person linked to the plate). Rules label; they never drop a well. What
-leaving wells out would do is the consequence test (:func:`run_gate`).
+and the instrument, the lines of :mod:`qpilot.qpcr.gate_instr`, read from a run file a person
+linked to the plate, else the plate's run file in the instrument export the study was opened
+from, else the study's own file). Rules label; they never drop a well. What leaving wells out
+would do is the consequence test (:func:`run_gate`).
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ import re
 from collections.abc import Collection, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -72,21 +73,33 @@ ALREADY_LEFT_OUT = "These wells are already left out of the analysis."
 # ---------- context ----------
 
 
+#: Where a plate's run file comes from (G-INSTR), in the order one takes another's place.
+RunSource = Literal["study_file", "export", "linked"]
+
+
 @dataclass(frozen=True)
 class RunFile:
     """What one plate's run file says (G-INSTR), and where qPilot read it.
 
-    ``linked`` is True for a run file a person linked to the plate (an ``.eds`` or an export
-    the instrument wrote), False for the study's own file (RDML: the instrument and the run date
-    at most). ``study_date`` is the plate's run date in the study's own file, when known, so a
-    linked file whose run date differs is said. A linked file that cannot be read has no
-    ``context`` and says why (``problem``: ``missing``, ``changed`` or ``unreadable``).
+    ``source`` is ``linked`` for a run file a person linked to the plate (an ``.eds`` or an
+    export the instrument wrote), ``export`` for the plate's own run file in the instrument
+    export a Studio session was opened from (a QuantStudio results export, CFX run information:
+    :mod:`qpilot.qpcr.export_runs`), ``study_file`` for the study's own file (RDML: the
+    instrument and the run date at most). ``study_date`` is the plate's run date in the file a
+    linked one takes the place of, when known, so a linked file whose run date differs is said.
+    A linked file that cannot be read has no ``context`` and says why (``problem``:
+    ``missing``, ``changed`` or ``unreadable``).
     """
 
     context: RunContext | None
-    linked: bool = False
+    source: RunSource = "study_file"
     study_date: str | None = None
     problem: str = ""
+
+    @property
+    def linked(self) -> bool:
+        """Whether a person linked this run file to the plate."""
+        return self.source == "linked"
 
 
 @dataclass
@@ -852,6 +865,20 @@ RDML_SAYS_LITTLE = (
     "RDML has no field for the run state, pauses or calibrations: link the run file the "
     "instrument wrote for this plate (an .eds file or a QuantStudio or CFX export) to check them."
 )
+#: Per run file source: the evidence's ``source``, the reason's lead, and the file in a sentence.
+RUN_SOURCES: dict[str, tuple[str, str, str]] = {
+    "linked": (
+        "linked run file",
+        "From the run file a person linked to this plate:",
+        "The run file a person linked to this plate",
+    ),
+    "export": (
+        "export run file",
+        "From this plate's run file in the instrument export:",
+        "This plate's run file in the instrument export",
+    ),
+    "study_file": ("study file", "From the study's file:", "The study's file"),
+}
 
 
 def instrument_run(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
@@ -861,7 +888,7 @@ def instrument_run(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
     :mod:`qpilot.explain.instrument_text`; each number they cite is registered again as this
     rule's fact (serials and instrument names never are: G-INSTR leaves them out). The verdict
     is the worst line's under the pack's severity; a warning or a failure points at the run's
-    study wells, and the consequence test leaves them out.
+    study wells, and the consequence test leaves them out. The reason says which file it read.
     """
     hold = _param(rule, "hold_limit_c", DEFAULT_HOLD_LIMIT_C)
     for plate in ctx.plates():
@@ -935,22 +962,17 @@ def _run_finding(rule: Rule, ctx: GateContext, plate: str, found: RunFile, hold:
             f"The linked file's run date ({{{{{f_a}}}}}) is not this plate's date in the "
             f"study's file ({{{{{f_b}}}}}): check that it is this plate's run file."
         )
-    source = (
-        "From the run file a person linked to this plate:"
-        if found.linked
-        else "From the study's file:"
-    )
+    source, lead, which = RUN_SOURCES[found.source]
     evidence: dict[str, Any] = {
-        "source": "linked run file" if found.linked else "study file",
+        "source": source,
         "source_kind": run.source_kind,
         "run_state": run.run.get("state"),
         "cycles": ",".join(str(c) for c in cycles),
     }
     if worst is None:
         codes = {line.code for line in lines}
-        which = "The run file a person linked to this plate" if found.linked else "The study's file"
         said = [f"{which} {t[9:]}" if t.startswith("The file ") else t for t in sentences]
-        hint = [] if found.linked else [RDML_SAYS_LITTLE]
+        hint = [RDML_SAYS_LITTLE] if found.source == "study_file" else []
         return Finding(
             scope=scope,
             outcome=NOT_APPLICABLE,
@@ -965,7 +987,7 @@ def _run_finding(rule: Rule, ctx: GateContext, plate: str, found: RunFile, hold:
     return Finding(
         scope=scope,
         outcome=worst[1],
-        reason=" ".join([source, *sentences]),
+        reason=" ".join([lead, *sentences]),
         facts=list(cited.values()),
         evidence=evidence,
         flagged=keys if verdict in ("warn", "fail") else [],
@@ -1005,23 +1027,37 @@ def stored_runs(data: Any) -> dict[str, RunFile] | None:
     return out
 
 
+def with_export(
+    own: Mapping[str, RunFile], exported: Mapping[str, RunContext]
+) -> dict[str, RunFile]:
+    """The study's own run files, with each plate's run file in the instrument export in its place.
+
+    ``exported`` is what :func:`qpilot.qpcr.export_runs.export_runs` read (plate -> context);
+    a run file a person links goes on top of both (:func:`with_linked`).
+    """
+    out = dict(own)
+    for plate, context in exported.items():
+        out[plate] = RunFile(context=context, source="export")
+    return out
+
+
 def with_linked(
     own: Mapping[str, RunFile],
     linked: Mapping[str, RunContext],
     problems: Mapping[str, str] | None = None,
 ) -> dict[str, RunFile]:
-    """The study's own run files, with the run files a person linked in their plates' place.
+    """The plates' run files (``own``), with the run files a person linked in their place.
 
     ``problems`` names the plates whose linked file cannot be read (``missing``, ``changed``,
-    ``unreadable``): G-INSTR says so for them instead of reading the study's own file.
+    ``unreadable``): G-INSTR says so for them instead of reading the file in ``own``.
     """
     out = dict(own)
     for plate, context in linked.items():
         mine = own.get(plate)
         day = mine.context.run.get("date") if mine is not None and mine.context else None
-        out[plate] = RunFile(context=context, linked=True, study_date=str(day) if day else None)
+        out[plate] = RunFile(context=context, source="linked", study_date=str(day) if day else None)
     for plate, problem in (problems or {}).items():
-        out[plate] = RunFile(context=None, linked=True, problem=str(problem))
+        out[plate] = RunFile(context=None, source="linked", problem=str(problem))
     return out
 
 
@@ -1175,8 +1211,9 @@ def run_gate(
         cell: The analysis in use when a person's decisions moved it off the planned one (one
             option per decision-space dimension); every option is then compared at that cell.
         runs: Plate -> its run file (G-INSTR): the study's own (:func:`file_runs`,
-            :func:`stored_runs`), with any a person linked (:func:`with_linked`); ``None``
-            when none was read (G-INSTR is then not applicable on every plate).
+            :func:`stored_runs`), the instrument export's (:func:`with_export`), with any a
+            person linked on top (:func:`with_linked`); ``None`` when none was read (G-INSTR is
+            then not applicable on every plate).
 
     Returns:
         The report; deterministic for the same inputs.

@@ -19,11 +19,13 @@ Agents ask through MCP (``qpcr_decide``), which files their request for a person
 (``pending_human``); the view shows it with the card.
 
 G-RT and G-INSTR (origin/main's gate lines) are rules of the pack. G-INSTR reads each plate's
-run file: the study's own (``run_context.json``, else the input RDML; the instrument and the
-run date at most), or one a person linked to the plate here (``POST /studies/{id}/gate/
-run-files``: an ``.eds`` or an export the instrument wrote, kept by content and read for every
-analysis of the same input file, :mod:`qpilot.qpcr.run_links`; ``…/run-files/unlink`` removes
-it). Linking changes no number: the gate is read again with the plate's run file.
+run file: one a person linked to the plate here (``POST /studies/{id}/gate/run-files``: an
+``.eds`` or an export the instrument wrote, kept by content and read for every analysis of the
+same input file, :mod:`qpilot.qpcr.run_links`; ``…/run-files/unlink`` removes it), else, for a
+study opened from an instrument export, the plate's run file among the export's own files (a
+QuantStudio results export, CFX run information: :mod:`qpilot.qpcr.export_runs`), else the
+study's own (``run_context.json``, else the input RDML; the instrument and the run date at
+most). Linking changes no number: the gate is read again with the plate's run file.
 
 Like every result, a study analysed from a Studio session answers ``403 blind`` until its design
 and curves are confirmed (the results routes' rule). The first gate of a study re-reads its wells
@@ -144,12 +146,16 @@ STALE_GATE = (
 )
 KEEP_LABEL = "Keep every well (the analysis as it stands)"
 RUN_NOTE = (
-    "The study's own file (RDML) names the instrument and the run date at most. Link the run "
-    "file the instrument wrote for a plate (an .eds file, a QuantStudio results export or CFX "
-    "run information) and G-INSTR checks whether the run completed, its pauses and its "
-    "calibrations. Linking changes no number; it is kept for every analysis of this file, with "
-    "who linked it and when. Serial numbers in the file are never shown."
+    "The study's own file (RDML) names the instrument and the run date at most. A study opened "
+    "from an instrument export reads each plate's run file in the export when it has one (a "
+    "QuantStudio results export, CFX run information). Link the run file the instrument wrote "
+    "for a plate (an .eds file, a QuantStudio results export or CFX run information) and G-INSTR "
+    "reads it instead: whether the run completed, its pauses and its calibrations. Linking "
+    "changes no number; it is kept for every analysis of this file, with who linked it and "
+    "when. Serial numbers in the file are never shown."
 )
+#: The evidence's ``source`` of a G-INSTR evaluation -> which run file the view says it read.
+RUN_SOURCE = {"linked run file": "linked", "export run file": "export", "study file": "study_file"}
 RDML_RUN_FILE = (
     "This is an RDML file: the study's own file is already read, and RDML has no field for the "
     "run state, pauses or calibrations. Link the file the instrument wrote: an .eds file, a "
@@ -286,20 +292,35 @@ def study_links(store: Any, study_id: str) -> dict[str, Any]:
         return {}
 
 
+def study_exports(store: Any, study_id: str) -> dict[str, Any]:
+    """Plate -> the run file in the instrument export the study was opened from (``ExportRun``).
+
+    Empty for a study opened from an RDML file or analysed outside Studio, and for plates whose
+    export has no run file qPilot reads (or whose kept copy is gone or changed).
+    """
+    from qpilot.qpcr.export_runs import export_runs
+    from qpilot.web.views import inputs_dir
+
+    meta = study_capture(store, study_id)
+    return export_runs(meta, inputs_dir(store)) if meta is not None else {}
+
+
 def study_runs(store: Any, study_id: str, source: Any) -> dict[str, Any]:
-    """Plate -> the run file G-INSTR reads: a linked one, else the study's own (RDML) run."""
+    """Plate -> the run file G-INSTR reads: a linked one, else the export's, else the RDML's."""
     from qpilot.qpcr import run_links
-    from qpilot.qpcr.gate_rules import file_runs, stored_runs, with_linked
+    from qpilot.qpcr.gate_rules import file_runs, stored_runs, with_export, with_linked
     from qpilot.web.views import inputs_dir
 
     own = stored_runs(store.get_artifact(study_id, "run_context.json"))
     if own is None:
         own = file_runs(source)
+    exported = {plate: run.context for plate, run in study_exports(store, study_id).items()}
+    runs = with_export(own, exported)
     links = study_links(store, study_id)
     if not links:
-        return own
+        return runs
     contexts, problems = run_links.read_linked(links, inputs_dir(store))
-    return with_linked(own, contexts, problems)
+    return with_linked(runs, contexts, problems)
 
 
 def report_for(store: Any, study_id: str) -> core_gate.GateReport:
@@ -325,16 +346,25 @@ def report_for(store: Any, study_id: str) -> core_gate.GateReport:
     return report
 
 
-def import_rawness(store: Any, study_id: str) -> str | None:
-    """The import's raw-ness verdict for a study opened from an instrument export, else None."""
+def study_capture(store: Any, study_id: str) -> Any:
+    """What the instrument export a study was opened from was read as (``CaptureMeta``), else None.
+
+    ``None`` for a study opened from an RDML file or analysed outside Studio.
+    """
     from qpilot.web import intake
     from qpilot.web.results_views import session_of_study
 
     sid = session_of_study(store, study_id)
     found = intake.load(store, sid) if sid else None
-    if found is None or not found[0].rawness:
+    return found[0] if found is not None else None
+
+
+def import_rawness(store: Any, study_id: str) -> str | None:
+    """The import's raw-ness verdict for a study opened from an instrument export, else None."""
+    meta = study_capture(store, study_id)
+    if meta is None or not meta.rawness:
         return None
-    verdict = found[0].rawness.get("study_verdict")
+    verdict = meta.rawness.get("study_verdict")
     return str(verdict) if verdict else None
 
 
@@ -800,12 +830,14 @@ def build_view(
     record: SessionRecord | None = None,
     left_out: frozenset[str] = frozenset(),
     links: dict[str, Any] | None = None,
+    exports: dict[str, Any] | None = None,
 ) -> GateView:
     """The page's view of one gate report (words, facts in sentences, cards as Results shows).
 
     ``record`` (a Studio session's) adds what a person chose on each card and the agents'
     requests waiting on it; ``left_out`` are the wells the analysed design leaves out;
-    ``links`` the run files a person linked to its plates (plate -> ``RunLink``).
+    ``links`` the run files a person linked to its plates (plate -> ``RunLink``), ``exports``
+    the run files the instrument export holds for them (plate -> ``ExportRun``).
     """
     from qpilot.qpcr.gate_rules import OPTION_LABELS
 
@@ -901,7 +933,7 @@ def build_view(
         worst = next((v for v in WORST if counts[v]), "not_applicable")
         plates.append(GatePlate(plate=plate, status=status, counts=counts, worst=worst))
     n_gated = sum(1 for p in plates if p.status == "gated")
-    runs = _runs(report, links or {})
+    runs = _runs(report, links or {}, exports or {})
     return GateView(
         study_id=study_id,
         session=session,
@@ -927,8 +959,12 @@ def build_view(
     )
 
 
-def _runs(report: core_gate.GateReport, links: dict[str, Any]) -> list[GateRunFile]:
+def _runs(
+    report: core_gate.GateReport, links: dict[str, Any], exports: dict[str, Any]
+) -> list[GateRunFile]:
     """Per plate, the run file G-INSTR read (none when the pack has no G-INSTR)."""
+    from qpilot.web.routers.instruments import _without_identity
+
     found = {
         ev.scope["plate"]: ev
         for ev in report.evals
@@ -939,21 +975,19 @@ def _runs(report: core_gate.GateReport, links: dict[str, Any]) -> list[GateRunFi
         ev = found.get(plate)
         if ev is None:
             continue
-        link = links.get(plate)
-        source = str(ev.evidence.get("source") or "")
+        source = RUN_SOURCE.get(str(ev.evidence.get("source") or ""), "none")
+        link = links.get(plate) if source == "linked" else None
+        export = exports.get(plate) if source == "export" else None
         problem = ev.code == "linked_file_unreadable"
+        name = link.name if link is not None else None
+        if export is not None:
+            name = _without_identity(export.name, export.context)[:200]
         out.append(
             GateRunFile(
                 plate=plate,
-                source=(
-                    "linked"
-                    if link is not None and (problem or source == "linked run file")
-                    else "study_file"
-                    if source == "study file"
-                    else "none"
-                ),
+                source=source,  # type: ignore[arg-type]
                 kind=(str(ev.evidence["source_kind"]) if ev.evidence.get("source_kind") else None),
-                name=link.name if link is not None else None,
+                name=name,
                 linked_at=link.at if link is not None else None,
                 problem=str(ev.evidence.get("problem") or "") if problem else "",  # type: ignore
                 verdict=ev.verdict,  # type: ignore[arg-type]
@@ -999,6 +1033,7 @@ def get_gate(study_id: str, ctx: Ctx) -> GateView:
         record=_session_record(ctx, sid, study_id) if sid else None,
         left_out=_left_out(ctx.store, study_id),
         links=study_links(ctx.store, study_id),
+        exports=study_exports(ctx.store, study_id),
     )
     _keep(_views, vkey, view)
     return view
@@ -1221,7 +1256,7 @@ async def link_gate_run_file(
 
 @router.post("/studies/{study_id}/gate/run-files/unlink", response_model=GateRunLinked)
 def unlink_gate_run_file(study_id: str, body: GateRunUnlink, ctx: Ctx) -> GateRunLinked:
-    """A person removes a plate's linked run file (G-INSTR reads the study's own file again)."""
+    """A person removes a plate's linked run file (G-INSTR reads the plate's own one again)."""
     from qpilot.qpcr import run_links
 
     sid = _visible(ctx, study_id)
@@ -1229,10 +1264,15 @@ def unlink_gate_run_file(study_id: str, body: GateRunUnlink, ctx: Ctx) -> GateRu
     if gone is None:
         raise api_error(404, "not_found", "No run file is linked to this plate.")
     _changed(ctx, study_id, sid)
+    own = (
+        "this plate's run file in the instrument export"
+        if body.plate in study_exports(ctx.store, study_id)
+        else "the study's own file for this plate"
+    )
     return GateRunLinked(
         plate=body.plate,
         linked=False,
         name=gone.name,
         kind=gone.kind,
-        message="Unlinked: G-INSTR reads the study's own file for this plate again.",
+        message=f"Unlinked: G-INSTR reads {own} again.",
     )

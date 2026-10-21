@@ -3,15 +3,16 @@
  * analysed outside Studio (64 plates, three auto-decided cards, read-only) and the Studio tests'
  * mini file with an early no-template control (one open card a person decides here; the same
  * card with an agent's request waiting; and the new analysis after a person left the wells out),
- * and a file with reverse-transcription replicates and a run file a person linked to one plate
- * (G-RT and G-INSTR warn there). No number is typed in: every expectation is read from a
- * recording or formatted from it.
+ * a file with reverse-transcription replicates and a run file a person linked to one plate
+ * (G-RT and G-INSTR warn there), and an instrument export opened in Studio whose own run
+ * information G-INSTR reads. No number is typed in: every expectation is read from a recording
+ * or formatted from it.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, type Schemas } from "@/api/client";
-import { plural } from "@/lib/format";
+import { count, plural } from "@/lib/format";
 import { TooltipProvider } from "@/ui";
 import type { GateView } from "../api";
 import { GatePage } from "../index";
@@ -21,12 +22,14 @@ import {
   filterEvaluations,
   leadOption,
   plateLabel,
+  runFilesSentence,
   runSourceText,
   verdictCounts,
   wellText,
   whereText,
 } from "../words";
 import demoJson from "./recorded/gate-demo.json";
+import exportJson from "./recorded/gate-export.json";
 import leftOutJson from "./recorded/gate-mini-left-out.json";
 import miniJson from "./recorded/gate-mini.json";
 import requestJson from "./recorded/gate-mini-request.json";
@@ -37,6 +40,7 @@ const MINI = miniJson as unknown as GateView;
 const REQUEST = requestJson as unknown as GateView;
 const LEFT_OUT = leftOutJson as unknown as GateView;
 const RT = rtJson as unknown as GateView;
+const EXPORT = exportJson as unknown as GateView;
 const BANNED = /\b(valid|validated|invalid|compliant|diagnostic|QC passed)\b/i;
 /** Testing Library folds the page's narrow no-break spaces into plain ones. */
 const text = (s: string) => s.replace(/\s+/g, " ");
@@ -471,5 +475,44 @@ describe("G-RT and G-INSTR on the Controls page", { timeout: 30_000 }, () => {
       `G-INSTR reads the study's own file for every one of the ${plural(DEMO.runs.length, "plate")}.`,
     );
     expect(within(region).queryByRole("list", { name: "Linked run files" })).toBeNull();
+  });
+});
+
+describe("G-INSTR on a study opened from an instrument export", { timeout: 30_000 }, () => {
+  const run = EXPORT.runs[0]!;
+  const row = EXPORT.evaluations.find((e) => e.rule_id === "G-INSTR")!;
+
+  it("names the export's own run file, not a person's link", () => {
+    expect(EXPORT.runs.map((r) => r.source)).toEqual(["export"]);
+    expect(run.kind).toBe("cfx_run_information");
+    expect(runSourceText(run)).toBe(
+      `${run.name} (CFX run information), in the instrument export this study was opened from`,
+    );
+    expect(run.linked_at).toBeNull();
+    expect(run.evaluation).toBe(row.id);
+    expect(row.reason.plain).toMatch(/^This plate's run file in the instrument export /);
+    for (const line of [EXPORT.run_note, row.reason.plain]) expect(line).not.toMatch(BANNED);
+  });
+
+  it("says in the Run files card what each plate reads, with no link to undo", () => {
+    page(EXPORT);
+    const region = screen.getByRole("region", { name: "Run files" });
+    expect(text(region.textContent ?? "")).toContain(text(EXPORT.run_note));
+    expect(text(region.textContent ?? "")).toContain(
+      "G-INSTR reads the run file in the instrument export for the plate.",
+    );
+    expect(within(region).queryByRole("list", { name: "Linked run files" })).toBeNull();
+  });
+
+  it("counts each source of run file across plates in one sentence", () => {
+    const runs = [...RT.runs, ...EXPORT.runs];
+    const n = (source: string) => count(runs.filter((r) => r.source === source).length);
+    expect(runFilesSentence(runs)).toBe(
+      `G-INSTR reads a run file a person linked for ${n("linked")} of the ${plural(runs.length, "plate")}, the run file in the instrument export for ${n("export")}, the study's own file for ${n("study_file")}.`,
+    );
+    const twice = EXPORT.runs.concat(EXPORT.runs);
+    expect(runFilesSentence(twice)).toBe(
+      `G-INSTR reads the run file in the instrument export for every one of the ${plural(twice.length, "plate")}.`,
+    );
   });
 });
