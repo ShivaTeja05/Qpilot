@@ -230,7 +230,7 @@ def instrument_view(reg: Registry, instrument_id: str) -> InstrumentView:
     book = reg.logbook(instrument_id)
     summary = summary_of(reg, instrument)
     if summary.problems:  # a chain that does not verify is shown as broken, never replayed
-        return InstrumentView(instrument=summary, events=[], incidents=[], head=book.head())
+        return InstrumentView(instrument=summary, events=[], incidents=[], head="")
     return InstrumentView(
         instrument=summary,
         events=[_event(e) for e in book.events()],
@@ -441,6 +441,22 @@ def _read_run(path: Path) -> Any:
         raise api_error(422, "bad_file", f"This run file cannot be read: {err}") from err
 
 
+def _without_identity(name: str, run: Any) -> str:
+    """A file's name with the run's serial numbers and identity strings blanked out.
+
+    Export tools often put the instrument's serial in the file name; serials never leave the
+    registry, so they are not echoed back in the name either.
+    """
+    from qpilot.qpcr.instrument_context import LOCAL_IDENTITY
+
+    identity = getattr(run, "identity", {}) or {}
+    secret = [str(identity.get(k)) for k in LOCAL_IDENTITY if identity.get(k)]
+    for value in sorted(secret, key=len, reverse=True):
+        if len(value) >= 4:
+            name = re.sub(re.escape(value), "…", name, flags=re.IGNORECASE)
+    return name
+
+
 def run_view(ctx: AppContext, path: Path) -> RunFileView:
     """What a kept run file says, its G-INSTR lines and the instrument it names (no serial)."""
     from qpilot.explain.instrument_text import line_tokens
@@ -468,7 +484,7 @@ def run_view(ctx: AppContext, path: Path) -> RunFileView:
         instrument_id, question = None, None
     return RunFileView(
         run_id=path.stem,
-        name=views.display_name(path) or path.name,
+        name=_without_identity(views.display_name(path) or path.name, run),
         context=run.model_view(),
         gate=lines,
         instrument_id=instrument_id,

@@ -18,7 +18,7 @@ export type SheetRole = SheetColumnSet["role"];
 export type FactText = Schemas["FactText"];
 
 /** The largest sheet the server keeps (`MAX_SHEET_BYTES`). */
-export const MAX_SHEET_BYTES = 20 * 1024 * 1024;
+export const MAX_SHEET_BYTES = 5 * 1024 * 1024;
 /** What the server keeps as a sheet (`views.INPUT_SUFFIXES["sheet"]`). */
 export const SHEET_SUFFIXES = [".xlsx", ".csv"] as const;
 

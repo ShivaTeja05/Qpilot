@@ -110,7 +110,15 @@ export function JobCard({
             </p>
           ) : null}
           {job.status === "done" && children ? (
-            <div className="mt-2">{children(job.result, job)}</div>
+            // A live "done" event can arrive before the result is fetched (`live.ts` keeps the
+            // old result and refetches): wait for it rather than hand children `undefined`.
+            job.result === undefined ? (
+              <p className="mt-2 text-[13px] text-muted" aria-live="polite">
+                Reading the result…
+              </p>
+            ) : (
+              <div className="mt-2">{children(job.result, job)}</div>
+            )
           ) : null}
           {!running && onDismiss ? (
             <button

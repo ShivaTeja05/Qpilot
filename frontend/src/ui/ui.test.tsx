@@ -91,3 +91,39 @@ describe("NeedsKey", () => {
     expect(retry).toHaveBeenCalledOnce();
   });
 });
+
+describe("JobCard", () => {
+  it("waits for a done job's result before rendering it (a live event comes first)", async () => {
+    const { JobCard } = await import("./JobCard");
+    const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+    const job = {
+      id: "j1",
+      kind: "lookback.run",
+      title: "Looking back over an instrument's period",
+      key: null,
+      status: "done" as const,
+      step: "",
+      fraction: null,
+      typical_s: null,
+      elapsed_s: 1,
+      result: undefined,
+      result_type: null,
+      error: null,
+    };
+    const child = vi.fn(() => <p>the result</p>);
+    const qc = new QueryClient();
+    const { rerender } = render(
+      <QueryClientProvider client={qc}>
+        <JobCard job={job}>{child}</JobCard>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("Reading the result…")).toBeTruthy();
+    expect(child).not.toHaveBeenCalled();
+    rerender(
+      <QueryClientProvider client={qc}>
+        <JobCard job={{ ...job, result: { n: 1 } }}>{child}</JobCard>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("the result")).toBeTruthy();
+  });
+});

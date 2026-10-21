@@ -207,3 +207,28 @@ def test_the_lookback_reads_only_and_says_what_changes(walked):
         json={"instrument_id": "nope", "start": "2001-01-01", "end": "2002-01-01"},
     )
     assert unknown.status_code == 404
+
+
+def test_a_logbook_whose_chain_breaks_is_shown_broken_not_refused(client, reg):
+    from qpilot.core.instruments import log_typed
+
+    book = reg.logbook("qs-1")
+    log_typed(book, "note", actor="human", note="first")
+    log_typed(book, "note", actor="human", note="second")
+    path = next(reg.root.rglob("qs-1.jsonl"))
+    lines = path.read_text(encoding="utf-8").splitlines()
+    path.write_text("\n".join([lines[0].replace("first", "edited"), *lines[1:]]) + "\n")
+    r = client.get("/api/instruments/qs-1")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["instrument"]["chain_ok"] is False and body["instrument"]["problems"]
+    assert body["events"] == [] and body["incidents"] == []
+
+
+def test_a_serial_in_a_run_files_name_is_not_echoed(client, reg, tmp_path):
+    path = F.qs_v1_expired(tmp_path / "run.eds")
+    with path.open("rb") as fh:
+        body = client.post(
+            "/api/instruments/runs", files={"run": ("QS5_278880001_run.eds", fh, "application/zip")}
+        ).json()
+    assert "278880001" not in body["name"] and body["name"].startswith("QS5_")

@@ -1,6 +1,6 @@
 """Spreadsheet Check routes: recompute a lab's own ΔΔCq sheet and name the first step that differs.
 
-* ``POST /sheets`` (multipart ``sheet``: an ``.xlsx`` or ``.csv`` file, at most 20 MB) keeps the
+* ``POST /sheets`` (multipart ``sheet``: an ``.xlsx`` or ``.csv`` file, at most 5 MB) keeps the
   file by content next to the study store (as Open keeps an input file) and answers its id.
 * ``POST /sheets/{sheet_id}/check`` ``{study_id?, columns?, references?, confirm}`` recomputes
   it (:func:`qpilot.qpcr.sheetcheck.check_sheet`): how many of its fold changes reproduce from
@@ -41,7 +41,7 @@ from qpilot.web.contract_sheets import (
 
 router = APIRouter(tags=["sheets"])
 
-MAX_SHEET_BYTES = 20 * 1024 * 1024
+MAX_SHEET_BYTES = 5 * 1024 * 1024  # the sheet reader's own cap (qpilot.io.sheets.MAX_FILE_BYTES)
 SHEET_ID = re.compile(r"^[0-9a-f]{24}\Z")
 NEVER_EDITED = "The sheet was read only; it is never edited, and nothing here is saved."
 ROLE_WORDS: dict[str, str] = {

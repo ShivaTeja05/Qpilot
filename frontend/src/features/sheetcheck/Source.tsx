@@ -13,7 +13,7 @@ import { MAX_SHEET_BYTES, SHEET_SUFFIXES } from "./api";
 import type { SheetCheck } from "./useSheetCheck";
 
 const NO_STUDY = "none";
-/** The upload limit as the server says it ("20 MB": binary megabytes). */
+/** The upload limit as the server says it ("5 MB": binary megabytes). */
 const MAX_WORDS = `${count(MAX_SHEET_BYTES / (1024 * 1024))}${NNBSP}MB`;
 
 /** Analysed studies whose results show (one entry per study id). */
