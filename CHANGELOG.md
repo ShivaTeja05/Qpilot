@@ -8,6 +8,18 @@ research use only, not for clinical decisions.
 ## [Unreleased]
 
 ### Added
+- **The efficiency models, opt-in** (`qpilot/qpcr/axes/`, merged from `agents/numbers`, with the
+  axis registry, stage caches and grid cap): which efficiency turns each Cq into a quantity
+  (LinRegPCR's mean per assay and plate, each well's own, one per assay over its plates, an
+  assumed 2.0, the dilution series') as one more choice of the robustness grid, screened first,
+  with its own Decision Card (`numbers.efficiency_model`). Asked for in Studio (Results → "Also
+  test efficiency models": a `choice.axis` proposal the rule makes, D-AXIS checks and a person
+  accepts; `POST /api/sessions/{sid}/propose/axis`) or with `qpilot run --efficiency all|LIST`.
+  The request lives in the design (`StudyDesign.axes`; absent by default, so every existing
+  design hash, study id and the locked demo output are unchanged), so `qpilot verify` and
+  `qpilot rerun` reproduce it. Trace, the Prism export, the robustness audit's "your choices",
+  Report and History follow the model in use. Method card `methods/efficiency_model.md`; on the
+  demo it changes 6 of 58 calls (each well's own 5, an assumed 2.0 4, the dilution series 3).
 - **Instrument exports on Open** (`qpilot/io/connectors/`, `qpilot/web/intake.py`): drop a Bio-Rad
   CFX export set, a QuantStudio / StepOne / 7500 export, a LightCycler 480 raw-data text or Cp
   table, an RDES or a tidy table; qPilot sorts the files by content, reads them once into

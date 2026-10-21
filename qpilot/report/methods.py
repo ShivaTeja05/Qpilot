@@ -326,6 +326,7 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
         "cut": ("group cut-off", "group cut-offs"),
         "undetermined": ("rule for wells without a quantity", "rules for wells without a quantity"),
         "amp_call": ("amplification-call rule", "amplification-call rules"),
+        "efficiency": ("efficiency model", "efficiency models"),
     }
     dims = []
     for dim, options in opts.items():
@@ -350,6 +351,7 @@ def robustness(c: Ctx, cite: Cites) -> list[Part]:
             ("f_n_flipped_cutoff", "the group cut-off"),
             ("f_n_flipped_amp_call", "the amplification-call rule"),
             ("f_n_flipped_undetermined", "the rule for wells without a quantity"),
+            ("f_n_flipped_efficiency", "the efficiency model"),
         )
         if c.has(fid)
     ]

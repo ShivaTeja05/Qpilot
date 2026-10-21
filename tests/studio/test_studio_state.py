@@ -36,6 +36,7 @@ PAYLOADS = {
     "curve.call_rule": ("amp_call", {"rule": "cq_le_35"}),
     "curve.well_call": ("run1/A1", {"amplified": False}),
     "curve.exclude_well": ("run1/A2", {"excluded": True}),
+    "choice.axis": ("efficiency", {"options": ["linregpcr", "per_well", "assumed_2"]}),
     "prism.project": ("prism", {"template_id": "two_groups_log2", "genes": ["ODC1"]}),
     "prism.exclusion_reason": (
         "ODC1/1496",
@@ -73,6 +74,11 @@ def test_every_kind_has_plain_words():
     assert "a Cq above 35 counts as not amplified" in words["curve.call_rule"]
     assert words["curve.well_call"] == "Count well run1/A1 as not amplified (no usable curve)"
     assert words["curve.exclude_well"] == "Leave well run1/A2 out of the analysis"
+    assert words["choice.axis"] == (
+        "Also test which efficiency turns Cq into quantity: each well's own efficiency; "
+        "efficiency assumed to be 2.0 (100 %) (besides LinRegPCR's mean efficiency of the "
+        "amplicon on each plate, the analysis in use)"
+    )
     assert (
         words["stage.confirm"]
         == "Confirm the Design (blind) stage: it covers 2 accepted proposal(s)"

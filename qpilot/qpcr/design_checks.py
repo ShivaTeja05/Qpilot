@@ -21,6 +21,10 @@ rule            what it can refute
                 more than one in the assembled design.
 ``D-NGUARD``    a comparison in which a group has fewer than two biological units (the
                 p-value would be withheld).
+``D-AXIS``      a further choice to test (``choice.axis``) whose options are not the axis's
+                own, do not start with the analysis in use, or need what the file does not
+                have (each well's own efficiency, a dilution series, an amplicon on several
+                plates).
 ==============  ==============================================================================
 
 **Hard bans** (:func:`hard_ban`) are refused before a proposal is stored, whoever proposes it:
@@ -63,7 +67,7 @@ SMALL_REPLICATE_SET = 4
 ACCEPTED = ("accepted", "edited")
 SAMPLE_ROLES = ("unkn",)  # roles whose samples count as study samples (D-NTC, D-NGUARD)
 
-RULE_IDS = ("D-SERIES", "D-NTC", "D-REP", "D-SYMBOL", "D-COVER", "D-NGUARD")
+RULE_IDS = ("D-SERIES", "D-NTC", "D-REP", "D-SYMBOL", "D-COVER", "D-NGUARD", "D-AXIS")
 
 
 def _check(
@@ -970,7 +974,83 @@ def check_with_facts(
         return curve_check(proposal.subject, payload, wells)
     if kind == "curve.exclude_well":
         return exclusion_check(proposal.subject, payload, wells)
+    if kind == "choice.axis":
+        return axis_check(proposal.subject, payload, wells, accepted)
     return ProposalCheck(status="cannot_check", note="no engine check exists for this kind")
+
+
+def axis_check(
+    subject: str, payload: Mapping[str, Any], wells: pd.DataFrame, accepted: list[Proposal]
+) -> ProposalCheck:
+    """``D-AXIS``: a further choice to test, refuted when its options cannot be what they say.
+
+    The options must be the axis's own, primary first, each once
+    (:func:`qpilot.qpcr.designs.axis_options`). For the efficiency models the file must also
+    have what each option needs: study wells with their own efficiency inside LinRegPCR's
+    valid range (``per_well``), a dilution series of at least three levels (``standard_curve``;
+    standards typed in the file, named ``STD_<copies>``, or in an accepted dilution series) and
+    an amplicon measured on more than one plate (``amplicon_mean``). This reads the whole file;
+    which options apply to the analysed experiment is said again when the study is analysed.
+    """
+    from qpilot.qpcr.axes import efficiency as eff_axis
+    from qpilot.qpcr.designs import DesignError, axis_options
+
+    try:
+        options = axis_options(subject, payload.get("options"))
+    except DesignError as err:
+        return _check(
+            "contradicted",
+            "D-AXIS",
+            {"problem": str(err)},
+            "the options are not this choice's own: they start with the analysis in use and "
+            "name each of the choice's options at most once",
+        )
+    table, quantities = wells, {}
+    for p in accepted:
+        if p.kind == "design.dilution_series":
+            for sample, quantity in dict(p.effective_payload().get("samples") or {}).items():
+                quantities[str(sample)] = float(quantity)
+    if quantities:
+        series = table["sample"].astype(str).isin(set(quantities))
+        table = table.assign(sample_type=table["sample_type"].where(~series, "std"))
+    curves = eff_axis.standard_curves(table, quantities)
+    missing = set(eff_axis.unavailable(table, curves))
+    study = table[(table["sample_type"] == "unkn") & table["n0"].notna()]
+    own = pd.to_numeric(study["eff_indiv"], errors="coerce")
+    low, high = eff_axis.E_VALID
+    valid = own[np.isfinite(own) & (own > low) & (own < high)]
+    if valid.empty:
+        missing.add("per_well")
+    details: dict[str, Any] = {
+        "options": list(options),
+        "study_wells_with_a_quantity": len(study),
+        "own_efficiency_in_valid_range": len(valid),
+        "own_efficiency_outside_valid_range": len(study) - len(valid),
+        "own_efficiency_median": _num(float(valid.median())) if len(valid) else None,
+        "dilution_series_with_three_levels": len(curves),
+    }
+    refuted = [o for o in options if o in missing]
+    if refuted:
+        details["not_in_the_file"] = refuted
+        return _check(
+            "contradicted", "D-AXIS", details, "; ".join(_AXIS_MISSING[o] for o in refuted)
+        )
+    return _check(
+        "consistent",
+        "D-AXIS",
+        details,
+        "each option is the choice's own and the file has what it needs; which options apply "
+        "to the analysed experiment is said again when the study is analysed",
+    )
+
+
+#: Why the file cannot give an efficiency model, in words without digits.
+_AXIS_MISSING = {
+    "per_well": "no study well has its own efficiency inside LinRegPCR's valid range",
+    "amplicon_mean": "every amplicon is on one plate, so one efficiency per amplicon is "
+    "LinRegPCR's own",
+    "standard_curve": "no amplicon has a dilution series with at least three levels",
+}
 
 
 def curve_check(subject: str, payload: Mapping[str, Any], wells: pd.DataFrame) -> ProposalCheck:
@@ -1151,6 +1231,7 @@ __all__ = [
     "RULE_IDS",
     "DeclaredDesign",
     "assemble_roles",
+    "axis_check",
     "check_proposal",
     "check_with_facts",
     "combine",

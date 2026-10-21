@@ -84,6 +84,14 @@ def _run_arguments(parser: argparse.ArgumentParser) -> None:
         metavar="SHEET_CSV",
         help="sample sheet for --design (CSV: sample, group[, biological_unit, role, quantity])",
     )
+    parser.add_argument(
+        "--efficiency",
+        default=None,
+        metavar="MODELS",
+        help="also test efficiency models: 'all', or a comma-separated list of per_well, "
+        "amplicon_mean, assumed_2, standard_curve (LinRegPCR's mean efficiency stays the "
+        "analysis in use; models that do not apply to the study are named and left out)",
+    )
 
 
 def _design_conflicts(args: argparse.Namespace) -> list[str]:
@@ -106,6 +114,10 @@ def _run(args: argparse.Namespace) -> int:
 
     if args.samples and not args.design:
         print("qpilot run: --samples needs --design", file=sys.stderr)
+        return 1
+    if args.efficiency and args.contrast:
+        print("qpilot run: --efficiency tests a choice across the whole study; it cannot be "
+              "combined with --contrast", file=sys.stderr)  # fmt: skip
         return 1
     if args.design and _design_conflicts(args):
         options = ", ".join(_design_conflicts(args))
@@ -170,6 +182,48 @@ def _validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _efficiency_models(text: str) -> tuple[str, ...]:
+    """``--efficiency``: the efficiency models to test, LinRegPCR's mean efficiency first."""
+    from qpilot.qpcr.axes import efficiency as eff_axis
+
+    if text.strip().lower() == "all":
+        return eff_axis.OPTIONS
+    named = [t.strip() for t in text.split(",") if t.strip()]
+    unknown = [n for n in named if n not in eff_axis.OPTIONS]
+    if unknown or not named:
+        known = ", ".join(o for o in eff_axis.OPTIONS if o != eff_axis.PRIMARY)
+        raise ValueError(f"unknown efficiency model(s) {unknown or [text]}; use 'all' or {known}")
+    return (eff_axis.PRIMARY, *dict.fromkeys(n for n in named if n != eff_axis.PRIMARY))
+
+
+def _with_efficiency(args: argparse.Namespace, settings):
+    """The settings with the efficiency models as one more choice of the design.
+
+    The models live in the design (``axes``), so the study id names them: a study that tests
+    them is never mistaken for the one that does not. Without ``--design`` the design is the
+    demo analysis with this command's experiment, cut-off and control genes.
+    """
+    from qpilot.qpcr.designs import vermeulen_design
+    from qpilot.qpcr.study import StudySettings
+
+    models = _efficiency_models(args.efficiency)
+    if len(models) < 2:
+        raise ValueError("--efficiency names no model besides LinRegPCR's mean efficiency")
+    design = settings.design
+    if design is None:
+        base = vermeulen_design()
+        split = base.marker_split.model_copy(update={"cut": settings.cut})
+        design = base.model_copy(
+            update={
+                "experiment_id": settings.experiment_id,
+                "marker_split": split,
+                "reference_candidates": settings.candidates,
+            }
+        )
+    axes = {**(design.axes or {}), "efficiency": models}
+    return StudySettings.from_design(design.model_copy(update={"axes": axes}))
+
+
 def _run_study(args: argparse.Namespace) -> int:
     from qpilot.core.decisions import DecisionError
     from qpilot.io.rdml_io import RdmlLoadError
@@ -187,6 +241,8 @@ def _run_study(args: argparse.Namespace) -> int:
             from qpilot.qpcr.designs import load_design
 
             settings = StudySettings.from_design(load_design(args.design, args.samples))
+        if args.efficiency:
+            settings = _with_efficiency(args, settings)
         result, cards, grid = run_study(path, settings)
     except (
         RdmlLoadError,
@@ -203,6 +259,25 @@ def _run_study(args: argparse.Namespace) -> int:
         paths = write_outputs(result, cards, grid, args.out)
         print(f"Wrote {', '.join(paths)} to {args.out}")
     return 0
+
+
+def _print_efficiency(result) -> None:
+    """One line on the efficiency models when they were tested (facts only)."""
+    facts = result.facts
+    status = facts.get("f_axis_efficiency")
+    if status is None:
+        return
+    words = {
+        "swept": "tested as one more choice of the grid",
+        "screened_out": "tested alone first: none flips a conclusion or moves a fold change "
+        "enough to matter, so the grid holds LinRegPCR's mean efficiency",
+        "not_applicable": "none of the requested models applies to this study",
+    }
+    print(f"Efficiency models: {words.get(str(status.value), str(status.value))}")
+    prefix = "f_axis_efficiency_unavailable_"
+    for fid, fact in sorted(facts.items()):
+        if fid.startswith(prefix):
+            print(f"  {fid[len(prefix) :]} not applicable: {fact.value}")
 
 
 def _print_study(result, cards, settings) -> None:
@@ -225,6 +300,7 @@ def _print_study(result, cards, settings) -> None:
         f"below geNorm M {result.genorm.cutoff_M:g}: {', '.join(stable) or 'none'}"
     )
     print(f"Rule: {settings.rule.describe()}")
+    _print_efficiency(result)
     for gene in settings.headline:
         if gene not in result.contrasts:
             continue

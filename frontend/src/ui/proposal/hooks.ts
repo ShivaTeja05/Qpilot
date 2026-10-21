@@ -11,7 +11,7 @@ import { toast } from "../Toaster";
 import type { Payload } from "./edit";
 import type { QuoteLookup } from "./parts";
 
-export type InboxStage = "design" | "curves" | "prism" | "roundtrip";
+export type InboxStage = "design" | "curves" | "choices" | "prism" | "roundtrip";
 
 /** The server is reading the session's file for the first time since it started (503 `warming`). */
 export function isWarming(error: unknown): error is ApiError {

@@ -35,6 +35,7 @@ import statistics
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -52,6 +53,7 @@ from qpilot.qpcr.amp_call import (
     apply_rule,
     screen_amp_call,
 )
+from qpilot.qpcr.axes import efficiency as eff_axis
 from qpilot.qpcr.confidence_checks import START_LEVEL, checks_for, mde_fold, upgrade_rule
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule
 from qpilot.qpcr.curves import DEMO_EXPERIMENT, REFERENCE_TARGETS, CurveSettings, analyse_study
@@ -69,7 +71,7 @@ from qpilot.qpcr.designs import (
 from qpilot.qpcr.quant import EXCLUDED, Undetermined, excluded_cells, log2_matrix
 from qpilot.qpcr.refgenes import RefGroupEffect, genorm, group_effect
 from qpilot.qpcr.routes import ROUTES, RouteResult, compare_routes
-from qpilot.qpcr.space import DEFAULT_CUTS, DEFAULT_UNDETERMINED, QpcrSpace
+from qpilot.qpcr.space import DEFAULT_CUTS, DEFAULT_UNDETERMINED, MatrixStage, QpcrSpace
 from qpilot.schemas import (
     Autonomy,
     DecisionCard,
@@ -122,7 +124,10 @@ class StudySettings:
     ``design`` is the confirmed design for anything but the legacy demo analysis (``None``
     then); ``amp_calls`` are the options of the amplification-call dimension, primary first
     (one option: no dimension); ``studio_facts`` adds the Studio facts (the routes to Prism and
-    the amp_call screening), which the legacy output does not carry.
+    the amp_call screening), which the legacy output does not carry. ``efficiency`` are the
+    options of the efficiency-model axis, primary first (opt-in; one option: no axis, see
+    :mod:`qpilot.qpcr.axes.efficiency`); ``max_cells`` caps the grid with seeded sampling
+    (:func:`qpilot.core.robustness.run_grid`; ``None``: the full product).
     """
 
     experiment_id: str | None = DEMO_EXPERIMENT
@@ -139,6 +144,8 @@ class StudySettings:
     amp_calls: tuple[str, ...] = DEFAULT_AMP_CALLS
     design: StudyDesign | None = None
     studio_facts: bool = False
+    efficiency: tuple[str, ...] = (eff_axis.PRIMARY,)
+    max_cells: int | None = None
 
     @property
     def marker_label(self) -> str:
@@ -156,7 +163,8 @@ class StudySettings:
 
         The demo preset (:func:`qpilot.qpcr.designs.vermeulen_design`) gives exactly
         ``StudySettings()``, so its output is the legacy output byte for byte. Any other design
-        is carried in ``design`` and switches the Studio facts on. Control-gene candidates are
+        is carried in ``design`` and switches the Studio facts on; its ``axes`` give the options
+        of the opt-in axes a person asked to test (``efficiency``). Control-gene candidates are
         ``reference_candidates``, or (when that is empty) the targets whose role is ``ref``,
         sorted by name.
 
@@ -176,6 +184,7 @@ class StudySettings:
             "amp_calls": tuple(design.amp_calls),
             "design": None if legacy else design,
             "studio_facts": not legacy,
+            "efficiency": tuple((design.axes or {}).get("efficiency", (eff_axis.PRIMARY,))),
         }
         if design.mode == "marker_split" and design.marker_split is not None:
             split = design.marker_split
@@ -344,6 +353,54 @@ class StudyModel:
     screen: AmpScreen | None
     high: frozenset[str]
     rest: frozenset[str]
+    screens: dict[str, robustness.AxisScreen] = field(default_factory=dict)
+    axis_notes: dict[str, dict] = field(default_factory=dict)  # per opt-in axis, for facts
+    tables: CellTables | None = None
+
+    def cell_table(self, cell: Mapping[str, Any]) -> pd.DataFrame:
+        """The per-well table a cell's matrix is built from (see :class:`CellTables`)."""
+        if self.tables is None:
+            return self.inputs.primary_table
+        return self.tables.table(cell)
+
+    def cell_stage(self, cell: Mapping[str, Any]) -> MatrixStage:
+        """Units x genes ``log2 N0`` of a cell, with the values every well of which is left out."""
+        if self.tables is None:
+            return MatrixStage(self.matrix, self.inputs.excluded)
+        return self.tables.stage(cell)
+
+
+@dataclass(frozen=True, eq=False)
+class CellTables:
+    """The per-well table under any combination of matrix-stage options.
+
+    One arithmetic for the decision space's matrices, Trace and the Prism export: the design's
+    per-well table, the efficiency model's quantities (LinRegPCR's own for the primary, passed
+    through untouched), then the amplification rule. A cell that leaves out an option uses its
+    primary; the primaries give exactly the table the primary matrix was built from.
+    """
+
+    inputs: _Inputs
+    amp_primary: str
+    legacy: bool  # the legacy demo path: no amplification rule is applied
+    calls: Mapping[str, bool]
+    curves: Mapping[tuple[str, str], eff_axis.StdCurve]
+
+    def table(self, cell: Mapping[str, Any]) -> pd.DataFrame:
+        """The per-well table under the cell's amplification rule and efficiency model."""
+        amp = str(cell.get("amp_call", self.amp_primary))
+        efficiency = str(cell.get("efficiency", eff_axis.PRIMARY))
+        if efficiency == eff_axis.PRIMARY and amp == self.amp_primary:
+            return self.inputs.primary_table
+        table = eff_axis.universe(self.inputs.table, efficiency, self.curves).table
+        return table if self.legacy else apply_rule(table, amp, self.calls)
+
+    def stage(self, cell: Mapping[str, Any]) -> MatrixStage:
+        """Units x genes ``log2 N0`` of the cell's table, and the values left out entirely."""
+        table = self.table(cell)
+        units = self.inputs.units
+        excluded = excluded_cells(table, units) if EXCLUDED in table.columns else None
+        return MatrixStage(log2_matrix(table, units), excluded)
 
 
 def build_model(
@@ -385,17 +442,85 @@ def build_model(
         excluded=inputs.excluded,
         group_labels=labels,
     )
-    space = QpcrSpace(matrix, stability, spec, amp_alternatives=inputs.alternatives, **options)
+    efficiency, eff_notes, tables = _efficiency_axis(inputs, settings)
+    space = QpcrSpace(
+        matrix, stability, spec, amp_alternatives=inputs.alternatives, **options, **efficiency
+    )
     screen = None
     if inputs.alternatives:
         dims = space.dimensions["amp_call"]
         screen = screen_amp_call(space.evaluate, space.primary, dims, space.items)
         if not screen.admitted:  # the choice changes nothing that matters: no axis in the grid
-            space = QpcrSpace(matrix, stability, spec, **options)
+            space.hold("amp_call", "screened_out", SCREENED_REASON)
+    screens = {}
+    if "efficiency" in space.dimensions:
+        screens["efficiency"] = robustness.screen_axis(space, "efficiency")
+        if not screens["efficiency"].admitted:
+            space.hold("efficiency", "screened_out", SCREENED_REASON)
     high, rest = space.groups(settings.cut)
     if groups is None:
         _n_guard((high, rest), (settings.group_var, "rest"))
-    return StudyModel(settings, inputs, matrix, stability, space, labels, screen, high, rest)
+    notes = {"efficiency": eff_notes} if eff_notes else {}
+    return StudyModel(
+        settings,
+        inputs,
+        matrix,
+        stability,
+        space,
+        labels,
+        screen,
+        high,
+        rest,
+        screens,
+        notes,
+        tables,
+    )
+
+
+SCREENED_REASON = (
+    "no option, changed alone, flips a conclusion or moves a log2 fold change by more than 0.5"
+)
+
+
+def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, dict, CellTables]:
+    """``QpcrSpace`` keywords and notes for the efficiency axis, and the study's cell tables.
+
+    No keywords and no notes when only the primary is offered. Options that do not apply to
+    the study (no dilution series, every amplicon on one run) are not offered and are
+    reported with the reason, asked for or not. The matrix of any other option is rebuilt
+    from Cq and the per-run threshold, under the same amplification rule and design
+    (:class:`CellTables`).
+    """
+    offered = tuple(settings.efficiency)
+    legacy = settings.design is None and settings.amp_calls == DEFAULT_AMP_CALLS
+    calls = dict(settings.design.well_calls) if settings.design is not None else {}
+    if offered == (eff_axis.PRIMARY,):
+        return {}, {}, CellTables(inputs, settings.amp_calls[0], legacy, calls, {})
+    if not offered or offered[0] != eff_axis.PRIMARY:
+        raise DesignError(f"the efficiency options must start with {eff_axis.PRIMARY!r}")
+    for option in offered:
+        if option not in eff_axis.OPTIONS:
+            raise DesignError(f"unknown efficiency option {option!r}")
+    quantities = None
+    if settings.design is not None:
+        quantities = {s: d.quantity for s, d in settings.design.samples.items() if d.quantity}
+    curves = eff_axis.standard_curves(inputs.table, quantities)
+    every = eff_axis.unavailable(inputs.table, curves)  # asked for or not: said in the facts
+    missing = {k: v for k, v in every.items() if k in offered}
+    kept = [o for o in offered if o not in missing]
+    tables = CellTables(inputs, settings.amp_calls[0], legacy, calls, curves)
+    notes: dict = {"unavailable": missing}
+    if "per_well" in kept:
+        notes["n_excluded_per_well"] = eff_axis.universe(inputs.table, "per_well").n_excluded
+    if "standard_curve" in kept:
+        fallback = eff_axis.universe(inputs.table, "standard_curve", curves).fallback
+        notes["std_curve_fallback"] = list(fallback)
+    keywords = {
+        "matrix_axes": {"efficiency": kept},
+        "matrix_source": tables.stage,
+        "unavailable": {"efficiency": every},
+    }
+    return keywords, notes, tables
 
 
 def study_from_curves(
@@ -411,7 +536,7 @@ def study_from_curves(
     model = build_model(curves, settings)
     inputs, matrix, stability, space = model.inputs, model.matrix, model.stability, model.space
     labels, screen, high, rest = model.labels, model.screen, model.high, model.rest
-    grid = robustness.run_grid(space)
+    grid = robustness.run_grid(space, max_cells=settings.max_cells)
     summary = robustness.summary(grid, space)
     fragility = robustness.fragility(grid, space)
     counts = _counts(inputs.primary_table)
@@ -433,6 +558,8 @@ def study_from_curves(
     specs = _card_specs(space, stability, summary, settings, headline, counts)
     if "amp_call" in space.dimensions:
         specs.append(_amp_call_spec(space, grid, summary, headline, inputs.not_amplified))
+    if "efficiency" in space.dimensions:
+        specs.append(_efficiency_spec(space, grid, summary, headline, model.axis_notes))
     cards = build_cards(space, summary, specs, headline, settings.autonomy, grid=grid)
     ref_flips = refset_flip_counts(grid, space, summary)
     ref_effect = group_effect(matrix, settings.candidates, high, rest)
@@ -458,6 +585,9 @@ def study_from_curves(
         screen=screen if settings.studio_facts else None,
         routes=routes,
         groups=labels,
+        axis_notes=model.axis_notes,
+        axes=space.axes,
+        screens=model.screens,
     )
     facts = _facts(base, confidence, cards, space, settings, headline, counts, extras)
     result = base.model_copy(update={"confidence": confidence, "facts": facts.as_dict()})
@@ -754,6 +884,63 @@ def _card_specs(
     return specs
 
 
+def flip_counts(
+    grid: pd.DataFrame, space: QpcrSpace, summary: dict[str, GeneRobustness], dimension: str
+) -> dict[str, int]:
+    """Per option of ``dimension``: genes whose conclusion changes when only it changes."""
+    rows = _only_varying(grid, space, dimension)
+    primary = rows["item"].map({gene: s.conclusion for gene, s in summary.items()})
+    changed = rows[rows["conclusion"] != primary]
+    return {
+        str(value): int(changed.loc[changed[dimension] == value, "item"].nunique())
+        for value in space.dimensions[dimension]
+    }
+
+
+EFFICIENCY_WORDING = (
+    "The answer depends on which efficiency turns each Cq into a quantity, e.g. each well's own "
+    "efficiency or the assay's mean efficiency; none of them is the correct one by default."
+)
+
+
+def _efficiency_spec(
+    space: QpcrSpace,
+    grid: pd.DataFrame,
+    summary: dict[str, GeneRobustness],
+    headline: Sequence[str],
+    notes: Mapping[str, dict],
+) -> CardSpec:
+    """The "Which efficiency turns Cq into quantity" card (only when the axis is in the grid)."""
+    axis = space.axes["efficiency"]
+    options = list(space.dimensions["efficiency"])
+    by_value = {o.value: o for o in axis.options}
+    eff_notes = dict(notes.get("efficiency", {}))
+    slugs = [slug(str(o)) for o in options]
+    return CardSpec(
+        card_id="card_efficiency",
+        kind="numbers.efficiency_model",
+        dimension="efficiency",
+        options=[OptionSpec(id=str(o), label=by_value[o].label, value=o) for o in options],
+        recommended=str(space.primary["efficiency"]),
+        rationale_template="efficiency_v1",
+        evidence={
+            "title": axis.title,
+            "wording": EFFICIENCY_WORDING,
+            "n_flipped_by_option": flip_counts(grid, space, summary, "efficiency"),
+            "unavailable": dict(axis.unavailable),
+            **{k: v for k, v in eff_notes.items() if k != "unavailable"},
+            "method_card": eff_axis.METHOD_CARD_PATH,
+        },
+        facts=[
+            "f_n_flipped_efficiency",
+            "f_n_genes",
+            *[f"f_eff_label_{s}" for s in slugs],
+            *[f"f_n_flipped_eff_{s}" for s in slugs],
+            *_option_facts(headline, [str(o) for o in options]),
+        ],
+    )
+
+
 def _amp_call_spec(
     space: QpcrSpace,
     grid: pd.DataFrame,
@@ -803,6 +990,9 @@ class _Extras:
     screen: AmpScreen | None
     routes: Mapping[str, RouteResult] | None
     groups: tuple[str, str] | None
+    axis_notes: Mapping[str, dict] = field(default_factory=dict)
+    axes: Mapping[str, object] = field(default_factory=dict)
+    screens: Mapping[str, robustness.AxisScreen] = field(default_factory=dict)
 
 
 def _facts(
@@ -839,6 +1029,11 @@ def _facts(
         **({"f_n_flipped_cutoff": len(flipped["cut"])} if "cut" in flipped else {}),
         "f_n_flipped_undetermined": len(flipped["undetermined"]),
         **({"f_n_flipped_amp_call": len(flipped["amp_call"])} if "amp_call" in flipped else {}),
+        **(
+            {"f_n_flipped_efficiency": len(flipped["efficiency"])}
+            if "efficiency" in flipped
+            else {}
+        ),
         "f_n_hold_lt_80": sum(result.robustness[gene].holds < HOLDS_LOW for gene in items),
         **{f"f_{key}": value for key, value in counts.items()},
     }
@@ -891,6 +1086,8 @@ def _facts(
             _refset_facts(add, card)
         if card.id == "card_amp_call":
             _amp_call_facts(add, card)
+        if card.id == "card_efficiency":
+            _efficiency_card_facts(add, card)
     worst = slug(stability.order[-1])
     for gene in headline:
         source = f"f_fc_{slug(gene)}_{worst}"
@@ -898,6 +1095,7 @@ def _facts(
             path = f"cards.card_refset.{worst}_alone.{gene}.fc"
             add(f"f_fc_{slug(gene)}_worst", registry.get(source).value, FC_FMT, TIMES, path)
     _extra_facts(add, extras, settings)
+    _axis_facts(add, extras)
     return registry
 
 
@@ -943,6 +1141,53 @@ def _amp_call_facts(add: Callable[..., None], card: DecisionCard) -> None:
         wells = int(evidence["n_not_amplified_by_rule"][option.id])
         path = f"{root}.n_not_amplified_by_rule.{option.id}"
         add(f"f_n_undetermined_amp_{s}", wells, COUNT_FMT, path=path)
+
+
+def _efficiency_card_facts(add: Callable[..., None], card: DecisionCard) -> None:
+    """Facts for the efficiency-model card, read from the card itself."""
+    root = f"cards.{card.id}"
+    for option in card.options:
+        s = slug(option.id)
+        label = option.label  # inside a sentence: "each well's own …", "LinRegPCR's …"
+        if label.split(" ", 1)[0][1:].islower():
+            label = label[:1].lower() + label[1:]
+        add(f"f_eff_label_{s}", label, path=f"{root}.{option.id}.label")
+        flips = int(card.evidence["n_flipped_by_option"][option.id])
+        add(f"f_n_flipped_eff_{s}", flips, path=f"{root}.evidence.n_flipped_by_option.{option.id}")
+
+
+def _axis_facts(add: Callable[..., None], extras: _Extras) -> None:
+    """Facts for the opt-in axes a study offered: status, screening, what did not apply.
+
+    None exist in the legacy output (no opt-in axis is offered there).
+    """
+    for name, notes in extras.axis_notes.items():
+        axis = extras.axes[name]
+        base = f"axes.{name}"
+        add(f"f_axis_{name}", axis.status, path=f"{base}.status")
+        for option_id, reason in axis.unavailable:
+            add(f"f_axis_{name}_unavailable_{slug(option_id)}", reason, path=f"{base}.unavailable")
+        if "n_excluded_per_well" in notes:
+            n = int(notes["n_excluded_per_well"])
+            add("f_n_eff_excluded_per_well", n, COUNT_FMT, path=f"{base}.n_excluded_per_well")
+        if "std_curve_fallback" in notes:
+            genes = ", ".join(notes["std_curve_fallback"]) or "none"
+            add("f_eff_std_fallback", genes, path=f"{base}.std_curve_fallback")
+        screen = extras.screens.get(name)
+        if screen is not None:
+            add(
+                f"f_screen_{name}",
+                "admitted" if screen.admitted else "not admitted",
+                path=f"screen.{name}.admitted",
+            )
+            delta = screen.max_delta_log2fc
+            add(f"f_screen_{name}_dlog2fc", delta, "{:.2f}", path=f"screen.{name}.max_delta_log2fc")
+            for option, items in screen.flipped.items():
+                add(
+                    f"f_screen_{name}_flips_{slug(option)}",
+                    len(items),
+                    path=f"screen.{name}.flipped.{option}",
+                )
 
 
 def _extra_facts(add: Callable[..., None], extras: _Extras, settings: StudySettings) -> None:

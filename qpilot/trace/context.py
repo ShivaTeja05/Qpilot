@@ -236,9 +236,13 @@ def _option_text(option: Any) -> str:
 
 
 def _cell_matrix(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame:
-    """Units x genes log2(N0) under the cell's amplification rule."""
+    """Units x genes log2(N0) under the cell's amplification rule and efficiency model."""
     primary = model.space.primary.get("amp_call")
     amp = cell.get("amp_call", primary)
+    efficiency = cell.get("efficiency")
+    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+        stage = model.cell_stage(cell)
+        return stage.values.reindex(index=model.matrix.index, columns=model.matrix.columns)
     if amp is None or amp == primary:
         return model.matrix
     other = model.inputs.alternatives.get(amp)
@@ -248,7 +252,14 @@ def _cell_matrix(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame:
 
 
 def _cell_table(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame:
-    """The per-well table under the cell's amplification rule (n0 cleared where not called)."""
+    """The per-well table under the cell's amplification rule and efficiency model.
+
+    The rule clears n0 where a well is not called amplified; a model other than the primary
+    rebuilds n0 and marks the wells it leaves out as excluded.
+    """
+    efficiency = cell.get("efficiency")
+    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+        return model.cell_table(cell)
     primary = model.space.primary.get("amp_call")
     amp = cell.get("amp_call", primary)
     if amp is None or amp == primary:
@@ -260,6 +271,18 @@ def _cell_table(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame:
     return apply_rule(model.inputs.table, amp, calls)
 
 
+def _cell_excluded(model: StudyModel, cell: Mapping[str, Any]) -> pd.DataFrame | None:
+    """Units x genes left out entirely in this cell.
+
+    A person's exclusions, and the wells an efficiency model leaves out (each well's own
+    efficiency outside the valid range).
+    """
+    efficiency = cell.get("efficiency")
+    if efficiency is not None and efficiency != model.settings.efficiency[0]:
+        return model.cell_stage(cell).excluded
+    return model.inputs.excluded
+
+
 def relative_values(
     model: StudyModel, cell: Mapping[str, Any], matrix: pd.DataFrame, items: Sequence[str]
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -268,7 +291,7 @@ def relative_values(
     if cell["undetermined"] == "cap":
         with np.errstate(invalid="ignore"), _quiet():
             lowest = np.nanmin(values, axis=0)
-        excluded = model.inputs.excluded
+        excluded = _cell_excluded(model, cell)
         if excluded is None:
             values = np.where(np.isnan(values), lowest, values)
         else:

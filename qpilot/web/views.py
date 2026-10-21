@@ -234,6 +234,14 @@ def next_step(
             "when it is done.",
             section="results",
         )
+    choices = by.get("choices")
+    if choices is not None and choices.pending:
+        return NextStep(
+            title="Decide which further choices to test",
+            detail="qPilot proposes testing the efficiency models (or stopping); accept, edit "
+            "or reject it. Nothing changes until you accept.",
+            section="results",
+        )
     if undecided_cards:
         return NextStep(
             title=f"Decide {undecided_cards} analysis choice{'s' * (undecided_cards != 1)}",

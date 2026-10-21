@@ -12,6 +12,7 @@ import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
 import { isWarming, useCards, useFlips, useResults, type ResultsView } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
+import { FurtherChoices } from "./FurtherChoices";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { MapPanel } from "./MapPanel";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
@@ -111,10 +112,16 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
     );
   }
   if (!studyId) {
+    const analysing = workspace.next_step.section === "results" && workspace.results_visible;
     return (
       <div className="mx-auto max-w-3xl p-6 lg:p-10">
-        <EmptyState icon={<FlaskConical className="size-5" aria-hidden />} title="No analysis yet">
-          This workspace has no analysed study. Confirm the design and the curves to analyse it.
+        <EmptyState
+          icon={<FlaskConical className="size-5" aria-hidden />}
+          title={analysing ? workspace.next_step.title : "No analysis yet"}
+        >
+          {analysing
+            ? workspace.next_step.detail
+            : "This workspace has no analysed study. Confirm the design and the curves to analyse it."}
         </EmptyState>
       </div>
     );
@@ -169,6 +176,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
         focusCard={rest[0] === "card" ? (rest[1] ?? null) : null}
         nextAction={workspace.next_step.section === "results" ? workspace.next_step.action : null}
       />
+      {view ? <FurtherChoices view={view} workspace={workspace} /> : null}
       <ChoicesConfirm workspace={workspace} autoFocus={rest[0] === "confirm"} />
     </div>
   );

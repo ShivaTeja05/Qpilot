@@ -79,6 +79,7 @@ def cell_model(ctx: TraceContext) -> TraceCell:
         cut=cell.get("cut"),
         undetermined=str(cell["undetermined"]),
         amp_call=cell.get("amp_call"),
+        efficiency=cell.get("efficiency"),
         planned=ctx.planned,
     )
 

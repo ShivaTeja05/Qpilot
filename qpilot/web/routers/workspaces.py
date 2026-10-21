@@ -373,7 +373,14 @@ def list_proposals(
 ) -> ProposalList:
     """A stage's inbox (or every stage's): contradicted first, then cannot-check, then rest."""
     check_key(sid)
-    if stage is not None and stage not in ("design", "curves", "prism", "roundtrip", "stage"):
+    if stage is not None and stage not in (
+        "design",
+        "curves",
+        "choices",
+        "prism",
+        "roundtrip",
+        "stage",
+    ):
         raise api_error(400, "bad_stage", f"There is no stage {stage!r}.")
     if not is_session(ctx.store, sid):
         raise api_error(404, "not_found", "There is no Studio session with this id.")
@@ -390,7 +397,7 @@ def list_proposals(
         raise api_error(404, "not_found", "There is no Studio session with this id.") from err
     except StudioError as err:
         raise api_error(409, "studio", str(err)) from err
-    if stage in ("prism", "roundtrip") and not visible:
+    if stage in ("choices", "prism", "roundtrip") and not visible:
         raise api_error(
             403,
             "blind",

@@ -29,6 +29,8 @@ kind                        subject            payload
 ``curve.call_rule``         ``amp_call``       ``{"rule": AmpCallRule.id}``
 ``curve.well_call``         ``run_id/well``    ``{"amplified": bool}``
 ``curve.exclude_well``      ``run_id/well``    ``{"excluded": bool}`` (``false`` puts it back)
+``choice.axis``             axis name          ``{"options": [option id, ...]}``, primary first
+                            (``efficiency``)   (one option: the axis is not tested)
 ``prism.project``           ``prism``          ``{"template_id": str, "genes": [...], ...}``
 ``prism.exclusion_reason``  ``gene/sample``    ``{"gene", "sample", "action": "exclude"|"restore"}``
                             (``/rep n``)       + ``"well_rep"`` (0: the unit's value, n: its
@@ -97,6 +99,7 @@ ProposalKind = Literal[
     "curve.call_rule",
     "curve.well_call",
     "curve.exclude_well",
+    "choice.axis",
     "prism.project",
     "prism.exclusion_reason",
     "prism.value_edit",
@@ -180,8 +183,11 @@ class Proposal(BaseModel):
         return {**self.payload, **(self.edits or {})}
 
     @property
-    def stage(self) -> Literal["design", "curve", "prism", "stage"]:
+    def stage(self) -> Literal["design", "curve", "choice", "prism", "stage"]:
         """The Studio stage the proposal belongs to (its kind's prefix).
+
+        ``choice`` proposals belong to the choices stage (after the blind stages): which further
+        analysis choices the robustness grid tests, such as the efficiency models.
 
         ``stage.confirm`` proposals are the confirm click of a whole stage: the system proposes
         one when the stage's items are settled, naming the design hash it confirms, and a
@@ -294,7 +300,10 @@ class StudyDesign(BaseModel):
     counts as undetermined under every rule; ``True``: it counts as amplified wherever it has a
     quantity). ``excluded_wells`` are removed from the analysis altogether (a well-exclusion
     decision). ``amp_calls`` are the options of the amplification-call axis, primary first; one
-    option means no axis.
+    option means no axis. ``axes`` are the opt-in axes of the decision space a person asked to
+    test, each with its options, primary first (``{"efficiency": ("linregpcr", "per_well")}``,
+    see ``qpilot/qpcr/axes``); ``None`` (the default) is left out of :meth:`canonical`, so the
+    design hash and every existing study id stay what they were.
     """
 
     design_id: str = "custom"
@@ -310,6 +319,7 @@ class StudyDesign(BaseModel):
     well_calls: dict[str, bool] = {}
     excluded_wells: tuple[str, ...] = ()
     amp_calls: tuple[str, ...] = ("linregpcr",)
+    axes: dict[str, tuple[str, ...]] | None = None
     note: str = ""
 
     @model_validator(mode="after")
@@ -325,6 +335,12 @@ class StudyDesign(BaseModel):
                 raise ValueError(f"comparison groups without samples: {sorted(missing)}")
         if not self.amp_calls:
             raise ValueError("amp_calls needs at least one option")
+        if self.axes is not None:  # one spelling per analysis: no axis is None, not {}
+            if not self.axes:
+                raise ValueError("axes lists no axis; leave it out instead")
+            single = sorted(name for name, options in self.axes.items() if len(options) < 2)
+            if single:
+                raise ValueError(f"axes {single} offer one option; an axis not tested is left out")
         return self
 
     def canonical(self) -> str:

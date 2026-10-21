@@ -54,6 +54,10 @@ class TraceCell(BaseModel):
     cut: float | None = Field(default=None, description="The marker cut-off (marker split only).")
     undetermined: str = Field(description="What empty wells do: drop or cap.")
     amp_call: str | None = Field(default=None, description="Which curves count as amplified.")
+    efficiency: str | None = Field(
+        default=None,
+        description="Which efficiency turns Cq into quantity (when a person asked to test it).",
+    )
     planned: bool = Field(description="True when every option is the planned one.")
 
 
