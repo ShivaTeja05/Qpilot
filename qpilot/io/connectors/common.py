@@ -67,7 +67,7 @@ def plate_stem(file_stem: str) -> str:
 
 
 def well_position(label: str, index: str = "", columns: int = 12) -> tuple[int, int] | None:
-    """(row, column) of a well from its label (``A1``), else from a 1-based index on a plate.
+    """(row, column) of a well from its label (``A1``), else from its index (a label or a number).
 
     Raises:
         CaptureError: An index below 1.
@@ -77,6 +77,9 @@ def well_position(label: str, index: str = "", columns: int = 12) -> tuple[int, 
         if found is not None:
             return found
     if index:
+        found = parse_well(index)  # StepOne writes "A1" in its "Well" column
+        if found is not None:
+            return found
         try:
             position = int(float(index))
         except ValueError:
