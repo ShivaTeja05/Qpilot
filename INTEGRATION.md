@@ -71,13 +71,23 @@ enumerate the routes, so they cover these too).
   `trace_set_aside` card records the decision; the numbers stay as analysed (leaving a well out
   is Curves' or Controls' job).
 
-## 4. Gates on this branch (21 Oct 2026)
+## 4. ui/one-page merged again (b3cfdf8)
 
-ruff check + format clean (whole repository) · `pytest -m "not demo_data"` 3503 passed, 3 skipped,
-6 xfailed (the capture weak spots, strict) · `pytest -m demo_data` 419 passed (the two audit
-failures the merge caused are fixed in 79f50c4) · `sim/tests` 55 passed · `qpilot studio demo
---check` 28/28 · `scripts/demo_regression.py` PASS (17/17 locked; results.json additive) ·
-frontend typecheck, lint, prettier, `check:api` clean, vitest 373 passed, build committed ·
-e2e (Playwright + axe, fresh copy of the seeded demo store) 212 passed, 2 skipped, 0 failed,
-including `e2e/integrate.spec.ts` and the two lab sections at every width and theme.
-Nothing is pushed.
+After the first pass (198fe22), ui/one-page gained the Import Trust card (ui/import-trust 0615720:
+a confidence cap and Cq only for baseline-subtracted or unknown export curves,
+`GET/POST /api/studies/{id}/import-trust`, the Results card, `pending_human` over MCP) and the
+refusal-table fixes of e9aed03. Merged as 2fa4a08: `docs/app.md` keeps both the Evidence Ledger /
+Trace cards and Import Trust in Results; `schema.d.ts` regenerated; the page rebuilt from the
+merged source. Shiva's nine MCP tools and Import Trust's sentences all keep their refusal codes.
+Import Trust and the Evidence Ledger's raw-ness item read the same import check (`io/rawness`):
+the card decides what to do about it, the ledger says what it means.
+
+## 5. Gates on this branch (21 Oct 2026, after 2fa4a08)
+
+ruff check + format clean (whole repository) · `pytest -m "not demo_data"` 3557 passed, 3 skipped,
+6 xfailed (the capture weak spots, strict) · `pytest -m demo_data` 420 passed · `sim/tests` 55
+passed · `qpilot studio demo --check` 28/28 · `scripts/demo_regression.py` PASS (17/17 locked;
+results.json additive) · frontend typecheck, lint, prettier, `check:api` clean, vitest 381 passed,
+build committed · e2e (Playwright + axe, fresh copy of the seeded demo store) 212 passed,
+2 skipped, 0 failed, including `e2e/integrate.spec.ts` and the two lab sections at every width
+and theme. Nothing is pushed.
