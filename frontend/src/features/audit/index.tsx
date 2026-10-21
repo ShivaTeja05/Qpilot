@@ -11,6 +11,7 @@ import { Button, EmptyState, ErrorPanel, LoadingBlock, PageHeader } from "@/ui";
 import {
   attachedAudit,
   studyAudit,
+  useAttachedAudit,
   useAttachedAudits,
   useAuditStatus,
   type AuditTarget,
@@ -72,6 +73,8 @@ function AuditBody({
 }) {
   const attached = useAttachedAudits();
   const sources = attached.data ?? [];
+  // Opening one folder starts loading its views; the list alone starts nothing.
+  const opened = useAttachedAudit(place.attached);
   const switcher = (
     <AuditSources
       sources={sources}
@@ -84,7 +87,7 @@ function AuditBody({
   );
 
   if (place.attached) {
-    const info = sources.find((a) => a.name === place.attached);
+    const info = opened.data ?? sources.find((a) => a.name === place.attached);
     const back = () => go({ tab: "study", changes: {} });
     if (attached.isPending) {
       return (
@@ -129,7 +132,7 @@ function AuditBody({
       <AuditReady
         workspace={workspace}
         target={attachedAudit(workspace.key, studyId, info.name)}
-        status={{ views_ready: true }}
+        status={{ views_ready: info.views_ready, loading: info.loading }}
         attached={info}
         switcher={switcher}
         place={place}

@@ -37,7 +37,7 @@ import {
   Skeleton,
   VerdictTag,
 } from "@/ui";
-import { useAuditIssues, useAuditStudy, type AuditTarget } from "./api";
+import { type AuditTarget, shownError, useAuditIssues, useAuditStudy } from "./api";
 import { IssueQueue } from "./IssueQueue";
 import type { AuditOverview, AuditStudyView } from "./types";
 
@@ -108,7 +108,7 @@ export function StudyTab({
                 highlight={highlight}
                 onSelect={openGene}
               />
-            ) : study.isError ? (
+            ) : shownError(study.error) ? (
               <ErrorPanel compact error={study.error} onRetry={() => void study.refetch()} />
             ) : (
               <Skeleton className="h-[360px] w-full rounded-lg" />
@@ -123,7 +123,7 @@ export function StudyTab({
         />
       </div>
 
-      {study.isError ? null : (
+      {shownError(study.error) ? null : (
         <div className="grid gap-5 lg:grid-cols-2">
           <Card as="section" aria-labelledby="audit-alone">
             <CardHeader
@@ -134,7 +134,7 @@ export function StudyTab({
             <CardBody>
               {study.data ? (
                 <HBars
-                  rows={choicesAloneBars(placed(study.data))}
+                  rows={choicesAloneBars(study.data)}
                   valueHeader="Calls changed"
                   summary={aloneSummary(study.data)}
                 />
@@ -176,7 +176,8 @@ export function StudyTab({
         total={overview?.n_issues}
         loading={issues.isPending}
         error={
-          issues.isError && !(issues.error instanceof ApiError && issues.error.status === 404)
+          shownError(issues.error) &&
+          !(issues.error instanceof ApiError && issues.error.status === 404)
             ? issues.error
             : undefined
         }
@@ -200,10 +201,7 @@ function StudyMap({
   onSelect?: (gene: string) => void;
 }) {
   const label = useMemo(() => new Map(overview.verdicts.map((v) => [v.key, v.label])), [overview]);
-  const points = useMemo(
-    () => auditMapPoints(placed(study), (v) => label.get(v) ?? v),
-    [study, label],
-  );
+  const points = useMemo(() => auditMapPoints(study, (v) => label.get(v) ?? v), [study, label]);
   const legend: LegendItem[] = VERDICT_ORDER.map((v) => ({
     mark: VERDICTS[v],
     label: label.get(v) ?? VERDICTS[v].label,
@@ -330,14 +328,6 @@ function GeneList({
   );
 }
 
-/**
- * The study view with only the genes that have a fold change to place (the engine gives none for
- * a gene it cannot compute; such a gene stays in the list and the issue queue).
- */
-function placed(s: AuditStudyView) {
-  return { ...s, map: s.map.filter((p): p is typeof p & { log2: number } => p.log2 != null) };
-}
-
 /** A gene's row: a link to the Gene section, or plain when the gene is not this study's. */
 function GeneRow({ href, children }: { href: string | undefined; children: ReactNode }) {
   const cls = "grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1.5";
@@ -442,7 +432,7 @@ function Names({ names }: { names: string[] }) {
 /** The spread bars, with a note on the choices fixed in the audit's reasonable set (they change the question). */
 function spreadRows(s: AuditStudyView): BarRow[] {
   const question = new Set(s.choices.filter((c) => c.question).map((c) => c.id));
-  return choicesSpreadBars(placed(s)).map((r) =>
+  return choicesSpreadBars(s).map((r) =>
     question.has(r.key)
       ? { ...r, note: "fixed in the audit's reasonable set: it changes the question" }
       : r,

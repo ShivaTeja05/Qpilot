@@ -8,7 +8,7 @@ import { HBars, VERDICT_ORDER } from "@/charts";
 import { cn } from "@/lib/cn";
 import { count, plural, shortHash } from "@/lib/format";
 import { Badge, Card, CardBody, CardHeader, ErrorPanel, LoadingBlock, VerdictTag } from "@/ui";
-import { useAuditHow, type AuditTarget } from "./api";
+import { type AuditTarget, shownError, useAuditHow } from "./api";
 import type { AuditHow, HowDecision, ManifestLike } from "./types";
 import { AUDIT_STEPS, LIMITS, NOT_RUN_WORDS, tierOf } from "./words";
 
@@ -36,7 +36,7 @@ export function scientific(x: number | null | undefined): string {
 
 export function HowTab({ target, manifest }: { target: AuditTarget; manifest: ManifestLike }) {
   const how = useAuditHow(target);
-  if (how.isError)
+  if (shownError(how.error))
     return (
       <ErrorPanel
         error={how.error}

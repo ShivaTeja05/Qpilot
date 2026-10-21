@@ -198,7 +198,7 @@ function FilterChip({
       )}
     >
       {label}
-      <span className="tabular text-faint">{count(n)}</span>
+      <span className="tabular text-muted">{count(n)}</span>
     </button>
   );
 }

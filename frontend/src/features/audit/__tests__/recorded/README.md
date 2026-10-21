@@ -11,6 +11,8 @@ H=(-H "x-qpilot-token: qpilot-dev" -H "origin: http://127.0.0.1:7885")
 curl -s "${H[@]}" http://127.0.0.1:7885/api/studies/e300000d4f9a/audit > status-ready.json
 curl -s "${H[@]}" -X POST -H "content-type: application/json" -d '{"bind_to_record":true}' \
   http://127.0.0.1:7885/api/studies/e300000d4f9a/audit/verify > verify.json
+# right after the server started (409: the views load once per start):
+curl -s "${H[@]}" http://127.0.0.1:7885/api/studies/e300000d4f9a/audit/overview > overview-loading.json
 # while POST /api/studies/cf49ccd72052/audit was running:
 curl -s "${H[@]}" http://127.0.0.1:7885/api/studies/cf49ccd72052/audit > status-running.json
 ```

@@ -115,12 +115,32 @@ export function useSeedJob(job: JobView | null | undefined) {
   }, [qc, job]);
 }
 
+/**
+ * A view whose live data is not loaded yet answers 409 `loading` with the job that loads it
+ * (the server never makes a request wait for the load): that job, or null for any other answer.
+ */
+export function loadingJob(error: unknown): JobView | null {
+  if (!(error instanceof ApiError) || error.code !== "loading") return null;
+  const job = error.details.job;
+  return job && typeof job === "object" && "id" in job ? (job as JobView) : null;
+}
+
+/** An error worth showing: not the 409 that says the views are still loading. */
+export function shownError(error: unknown): unknown {
+  return error && !loadingJob(error) ? error : null;
+}
+
 /** Re-read every view of the audit (after a job finishes). */
 export function useInvalidateAudit(t: AuditTarget) {
   const qc = useQueryClient();
   const { workspaceKey, studyId, base } = t;
   return useCallback(
-    () => qc.invalidateQueries({ queryKey: auditKey({ workspaceKey, studyId, base }) }),
+    () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: auditKey({ workspaceKey, studyId, base }) }),
+        // an attached folder's own answer carries its load state
+        qc.invalidateQueries({ queryKey: ["audits"] }),
+      ]),
     [qc, workspaceKey, studyId, base],
   );
 }
@@ -187,6 +207,17 @@ export function useAttachedAudits() {
         throw err;
       }
     },
+  });
+}
+
+/**
+ * One attached folder; opening it starts loading its live views (`views_ready`, `loading`).
+ */
+export function useAttachedAudit(name: string | undefined) {
+  return useQuery({
+    queryKey: ["audits", name],
+    enabled: Boolean(name),
+    queryFn: () => request<AttachedAudit>("GET", `/api/audits/${encodeURIComponent(name!)}`),
   });
 }
 

@@ -20,7 +20,7 @@ import {
   SegmentedControl,
   Skeleton,
 } from "@/ui";
-import { useWhatif, type AuditTarget } from "./api";
+import { type AuditTarget, shownError, useWhatif } from "./api";
 import { ChoiceSelect } from "./ChoiceSelect";
 import type { AuditOverview, Changes, DecisionView, ManifestLike, WhatifRow } from "./types";
 import { DECISION_ORDER } from "./words";
@@ -173,7 +173,7 @@ function Lab({
         </CardBody>
       </Card>
 
-      {whatif.isError ? (
+      {shownError(whatif.error) ? (
         <ErrorPanel
           error={whatif.error}
           title="The engine could not re-run these choices"
@@ -292,18 +292,7 @@ function Outcome({
   setShow: (v: "some" | "all") => void;
   onSelect?: (gene: string) => void;
 }) {
-  // A gene whose fold the engine cannot compute under these choices has no place on the axis.
-  const rows = useMemo(
-    () =>
-      whatifRows({
-        ...data,
-        rows: data.rows.filter(
-          (r): r is typeof r & { base_log2: number; new_log2: number } =>
-            r.base_log2 != null && r.new_log2 != null,
-        ),
-      }),
-    [data],
-  );
+  const rows = useMemo(() => whatifRows(data), [data]);
   const changed = data.rows.filter((r) => r.changed);
   const shown =
     show === "all" || !moved ? rows : rows.filter((r) => r.baseCall !== r.newCall || r.headline);
@@ -354,7 +343,7 @@ function Outcome({
             ) : (
               <p className="text-sm text-muted">Every call stays as planned.</p>
             )}
-            {updating ? <span className="ml-auto text-xs text-faint">Re-running…</span> : null}
+            {updating ? <span className="ml-auto text-xs text-muted">Re-running…</span> : null}
           </div>
         ) : null}
         <div className={updating ? "opacity-60 transition-opacity" : "transition-opacity"}>

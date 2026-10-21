@@ -254,7 +254,7 @@ export function VerifyTab({
                 Export the record from{" "}
                 <Link
                   href={sectionPath(workspace, "record")}
-                  className="text-accent underline-offset-2 hover:underline"
+                  className="text-accent underline underline-offset-2 hover:decoration-2"
                 >
                   Record
                 </Link>
@@ -368,7 +368,7 @@ function Files({
                     <a
                       href={`${base}/files/${encodeURIComponent(f.name)}`}
                       download={f.name}
-                      className="text-accent underline-offset-2 hover:underline"
+                      className="text-accent underline underline-offset-2 hover:decoration-2"
                     >
                       {f.name}
                     </a>
