@@ -10,6 +10,7 @@ are read from the files by the tests, never written here. The demo RDML test is 
 import io
 import json
 import random
+import re
 import time
 import zipfile
 from pathlib import Path
@@ -38,6 +39,8 @@ DA_7500 = CORPUS / "thermofisher" / "opentrons-7500-design-analysis-csv"
 DA_SYNTH = CORPUS / "synthetic" / "quantstudio-design-analysis-rn-drn"
 DA_REAL = sorted([*DA_QS3.glob("*.csv"), *DA_7500.glob("*.csv")])
 CFX_REAL = sorted(CORPUS.glob("biorad/*/*Run Information.csv"))
+# CFX Manager's default run name: "<user>_<date time>_<serial>", then the export's own part
+CFX_MANAGER_NAME = r"[^_]+_\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}_[^_]+_Run Information\.csv"
 QS_TXT_REAL = sorted((CORPUS / "thermofisher" / "allotropy-quantstudio-rtpcr-txt").glob("*.txt"))
 SUMMARY_KEYS = {
     "source_kind",
@@ -776,11 +779,28 @@ def test_real_cfx_run_information_from_the_corpus():
     manager = read_run_context(next(p for p in CFX_REAL if "gapdh" in p.name))
     # 09/05/2016 on its own does not settle the day-month order
     assert manager.run["start"] is None and ic.NOTE_DATE_AMBIGUOUS in manager.notes
-    # CFX Manager names a run "<user>_<date time>_<serial>": the name kept locally has the
-    # serial, the name a model or an export sees has it blanked
+
+
+def test_a_cfx_manager_run_name_leaves_neither_its_user_nor_its_serial_in_the_model_view():
+    # CFX Manager names a run "<user>_<date time>_<serial>"; the user and the serial are read
+    # from the real file's name here, never written into the test
     (named,) = (c for c in map(read_run_context, CFX_REAL) if c.identity["serial"] in c.source_file)
+    assert re.fullmatch(CFX_MANAGER_NAME, named.source_file)
+    user, serial = named.source_file.split("_", 1)[0], named.identity["serial"]
+    assert len(user) >= 3 and len(serial) >= 4  # long enough to be found if it were copied
     view = named.model_view()
-    assert named.identity["serial"] not in view["source_file"] and "…" in view["source_file"]
+    assert view["source_file"] == "….csv" and view["source_kind"] == "cfx_run_information"
+    dumped = json.dumps(view, ensure_ascii=False)
+    assert user not in dumped and serial not in dumped
+    # the shape a study keeps in run_context.json and reads back for the Run Gate
+    assert RunContext.model_validate(view).source_file == "….csv"
+
+
+def test_a_model_file_name_keeps_a_run_file_suffix_only():
+    assert ic.model_file_name("run_2016-09-04 16-12-03_SERIAL_Run Information.csv") == "….csv"
+    assert ic.model_file_name("Plate 1.EDS") == "….eds"
+    assert ic.model_file_name("rdml") == "…"  # an RDML document read without a file
+    assert ic.model_file_name("run.backup") == "…"  # not a suffix qPilot reads run files from
 
 
 # ---------------------------------------------------------------------------------------------

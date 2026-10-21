@@ -2,6 +2,9 @@
 
 import inspect
 import json
+import re
+import shutil
+from pathlib import Path
 
 import anyio
 import pytest
@@ -37,6 +40,13 @@ NEW_TOOLS = (
     "qpcr_incident_log",
 )
 SERIALS = ("278880001", "BLK-1001", "HC-2001")
+CFX_RUNS = sorted(
+    (Path(__file__).resolve().parents[1] / "fixtures" / "corpus" / "biorad").glob(
+        "*/*Run Information.csv"
+    )
+)
+# CFX Manager's default run name: "<user>_<date time>_<serial>", then the export's own part
+CFX_MANAGER_NAME = r"[^_]+_\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}_[^_]+_Run Information\.csv"
 
 
 def _err(out):
@@ -183,6 +193,21 @@ def test_run_context_never_returns_serials(tools, data_root, registry):
     assert {"interrupted", "calibration_expired"} <= codes
     assert out["instrument_id"] == "qs-1" and out["question"] is None
     assert "paused" in out["text"]
+
+
+def test_run_context_never_returns_the_user_in_a_cfx_manager_run_name(tools, data_root):
+    # CFX Manager names a run "<user>_<date time>_<serial>"; the real file is read under its own
+    # name, and the user and the serial are taken from that name here, never written down
+    (source,) = (p for p in CFX_RUNS if re.fullmatch(CFX_MANAGER_NAME, p.name))
+    user, _, serial, _ = source.name.split("_")
+    assert len(user) >= 3 and len(serial) >= 4  # long enough to be found if it were copied
+    path = Path(shutil.copy(source, data_root / source.name))
+    out = tools.qpcr_run_context(str(path))
+    assert "error" not in out, out
+    assert out["context"]["source_file"] == "….csv"
+    assert out["context"]["serials_present"] == ["optical_head_serial", "serial"]
+    dumped = json.dumps(out, ensure_ascii=False)
+    assert user not in dumped and serial not in dumped
 
 
 def test_run_context_asks_which_instrument_when_unknown(tools, data_root):

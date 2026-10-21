@@ -32,6 +32,8 @@ Rules:
 * personal data is never copied: an operator's file path, user name, operator or comment field
   only leaves a fixed note ("operator path present, not read"). Log text is matched against a
   fixed vocabulary and never copied; free-text names in RDML are kept only as local aliases;
+  the file's own name (CFX Manager: ``<user>_<date time>_<serial>``) is kept locally and
+  :meth:`RunContext.model_view` keeps only its suffix (``….csv``);
 * files are untrusted: size caps and the zip compression ratio are checked from the zip
   directory before any member is read, every read is bounded, and XML goes through the same
   hardened parser as RDML (no entities, no network);
@@ -77,6 +79,8 @@ SourceKind = Literal["eds", "quantstudio_export", "cfx_run_information", "rdml"]
 SOURCE_KINDS: tuple[str, ...] = ("eds", "quantstudio_export", "cfx_run_information", "rdml")
 EDS_PREFIX = "apldbio/sds/"
 LOCAL_ONLY = "local:"  # Fact.path prefix: the fact never leaves the machine (serials, names)
+# the suffix a model view keeps of a run file's name (model_file_name); any other is dropped
+RUN_FILE_SUFFIXES = (".eds", ".csv", ".tsv", ".txt", ".rdml", ".xml")
 
 MAX_FILE_BYTES = 2 << 30  # an .eds or .rdml file on disk
 MAX_ARCHIVE_BYTES = 2 << 30  # all members of an .eds, uncompressed
@@ -239,7 +243,7 @@ class RunContext(BaseModel):
     """What one run file (or one RDML run) says about the instrument and the run.
 
     Attributes:
-        source_file: The file's name (no directories).
+        source_file: The file's name (no directories); local: a model view has ``….csv``.
         source_kind: ``eds``, ``quantstudio_export``, ``cfx_run_information`` or ``rdml``.
         run_id: The RDML run id; ``None`` for other files (their experiment names are free text).
         identity: ``model``, ``instrument_type``, ``serial``, ``block_serial``, ``cover_serial``,
@@ -330,14 +334,14 @@ class RunContext(BaseModel):
         }
 
     def model_view(self) -> dict[str, Any]:
-        """The context without anything local: no serials, aliases, local facts or raw keys.
+        """The context without anything local: no serials, aliases, local facts, raw keys or name.
 
         This is the only shape of a :class:`RunContext` that may go to a model or an export.
-        ``serials_present`` names the serial fields the file had, without their values; the
-        file's name has them blanked (:func:`without_serials`).
+        ``serials_present`` names the serial fields the file had, without their values;
+        ``source_file`` keeps the file's suffix only (``….csv``, :func:`model_file_name`).
         """
         data = self.model_dump(mode="json", exclude={"aliases", "unmapped_keys", "facts"})
-        data["source_file"] = without_serials(self.source_file, self.identity)
+        data["source_file"] = model_file_name(self.source_file)
         data["identity"] = {
             key: (None if key in LOCAL_IDENTITY else value) for key, value in self.identity.items()
         }
@@ -355,12 +359,25 @@ def is_local_only(fact: Fact) -> bool:
     return fact.path.startswith(LOCAL_ONLY)
 
 
+def model_file_name(name: str) -> str:
+    """A run file's name as a model or an export sees it: ``…`` and the suffix (``….csv``).
+
+    A file's name is typed by a person or filled in by the export tool, and either may hold
+    personal data or a serial (CFX Manager names a run ``<user>_<date time>_<serial>``), so it
+    is never copied, like an operator or comment field. Only a suffix qPilot reads run files
+    from is kept; ``source_kind`` says what the file is.
+    """
+    suffix = Path(name).suffix.lower()
+    return "…" + (suffix if suffix in RUN_FILE_SUFFIXES else "")
+
+
 def without_serials(text: str, identity: Mapping[str, str | None]) -> str:
     """``text`` (a file's name) with the run's serial numbers blanked out as ``…``.
 
     Export tools often put the instrument's serial in the file name (CFX Manager names a run
-    ``<user>_<date time>_<serial>``); serials never leave the machine, so a name that may is
-    blanked first. Values shorter than four characters are left alone.
+    ``<user>_<date time>_<serial>``); serials never leave the machine, so a name shown on the
+    page is blanked first (a model view carries no name: :func:`model_file_name`). Values
+    shorter than four characters are left alone.
     """
     secret = [str(value) for key, value in identity.items() if key in LOCAL_IDENTITY and value]
     for value in sorted(secret, key=len, reverse=True):
