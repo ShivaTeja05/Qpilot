@@ -3,11 +3,13 @@
 The rule proposes the choice in the choices stage (``POST …/propose/axis``), the engine checks
 it (D-AXIS), a person accepts it through the page's routes; the confirmed design gains the axis,
 the study is analysed again with it, and Results says what the grid did with it. The blind
-stages stay confirmed, switching it off again gives back the earlier study with its decisions,
+stages stay confirmed, a person's choices on the cards are carried across the switch both ways,
 and the Analysis Record verifies and re-runs with it.
 """
 
 from __future__ import annotations
+
+import json
 
 import pytest
 
@@ -126,30 +128,39 @@ def test_testing_twice_or_nothing_is_refused_in_words(walked):
     assert r.status_code == 422
 
 
-def test_switching_off_gives_back_the_study_with_its_decisions(walked):
-    c, sid = walked["client"], walked["sid"]
+def test_a_persons_choices_travel_with_the_switch_both_ways(walked):
+    c, sid, store, studio = walked["client"], walked["sid"], walked["store"], walked["studio"]
     first = walked["study"]
     cards = c.get(f"/api/studies/{first}/cards").json()
     card = next(k for k in cards["cards"] if any(not o["recommended"] for o in k["options"]))
+    card_id = card["card"]["id"]
     option = next(o["id"] for o in card["options"] if not o["recommended"])
     r = c.post(
-        f"/api/studies/{first}/cards/{card['card']['id']}/decide",
+        f"/api/studies/{first}/cards/{card_id}/decide",
         json={"option": option, "reason": "prespecified", "expected_head": cards["head"]},
     )
     assert r.status_code == 200, r.text
+    before = len(store.entries(first))
     _accept(c, sid, _propose(c, sid)["outcome"]["proposal"]["id"])
     tested = _study(c, sid)
     assert tested != first
-    assert c.get(f"/api/studies/{tested}/results").json()["choices"].get(card["card"]["id"]) in (
-        None,
-        card["card"]["recommended"],
-    )
+    # the person's choice was carried to the analysis that tests the models (one new entry)
+    assert c.get(f"/api/studies/{tested}/results").json()["choices"][card_id] == option
+    report = studio.carried(sid, tested)
+    assert report is not None and card_id in json.dumps(report)
+    entry = [e for e in store.entries(tested) if e.card_id == card_id][-1]
+    assert (entry.actor, entry.option) == ("human", option)
+    assert entry.reason.startswith(f"Carried from analysis {first} (entry ")
+    assert entry.reason.endswith(": prespecified")
+    assert not _stages(c, sid)["choices"]["confirmed"]  # a person confirms the new analysis
     off = _propose(c, sid, on=False)["outcome"]["proposal"]
     assert off["payload"] == {"options": ["linregpcr"]}
     _accept(c, sid, off["id"], "back to the planned grid")
     assert _study(c, sid) == first
-    assert c.get(f"/api/studies/{first}/results").json()["choices"][card["card"]["id"]] == option
-    assert c.get(f"/api/studies/{first}/results").json()["axes"][0]["status"] == "off"
+    back = c.get(f"/api/studies/{first}/results").json()
+    assert back["choices"][card_id] == option and back["axes"][0]["status"] == "off"
+    # the earlier analysis already showed that choice by a person: nothing written twice
+    assert len(store.entries(first)) == before
 
 
 def test_the_record_holds_the_choice_and_reruns_it(walked, tmp_path):

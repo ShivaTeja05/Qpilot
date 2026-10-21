@@ -1259,7 +1259,9 @@ class Studio:
 
         When it replaces another analysis whose design differs only in the wells left out (a
         person left a well out after the curves were confirmed, from Prism, Controls or the
-        Curves inbox, or put one back), what a person decided on the earlier one's Decision
+        Curves inbox, or put one back) or in the further choices the grid tests (a person
+        switched the efficiency models on or off), what a person decided on the earlier one's
+        Decision
         Cards is carried to it first (:meth:`StudyStore.carry_decisions`), so the switch is seen
         only once they are; the report is kept under ``carried``. A design changed in a blind
         stage and confirmed again is another question, so its cards start afresh. The choices
@@ -1272,7 +1274,7 @@ class Studio:
         previous = meta.get("current_study")
         if previous and previous != study_id:
             try:
-                same = _same_but_wells(self.store.design(previous), design)
+                same = _carries(self.store.design(previous), design)
                 report = self.store.carry_decisions(previous, study_id) if same else None
             except (StudyNotFound, OSError, ValueError):
                 log.warning(
@@ -1438,7 +1440,8 @@ class Studio:
                 "qPilot turns each Cq into a quantity with LinRegPCR's mean efficiency of each "
                 "assay on each plate; testing the other efficiency models shows which "
                 "conclusions depend on that choice. The analysis in use stays the same until "
-                "a person decides otherwise on the card it raises.",
+                "a person decides otherwise on the card it raises; what a person decided on the "
+                "other cards is carried to it, unless that choice matters more there.",
                 *(
                     f"not offered: {catalogue[o].label.lower()} ({why})"
                     for o, why in sorted(offer["unavailable"].items())
@@ -1448,7 +1451,7 @@ class Studio:
         else:
             reasons = [
                 "stop testing the efficiency models: the analysis goes back to the grid "
-                "without that choice, with the decisions made there"
+                "without that choice; what a person decided on the other cards is carried back"
             ]
             alternatives = [{"options": list(options)}]
         proposal = Proposal(
@@ -2003,11 +2006,17 @@ def _confirmed(
     return False
 
 
-def _same_but_wells(before: StudyDesign | None, after: StudyDesign) -> bool:
-    """Two confirmed designs that differ at most in the wells left out of the analysis."""
+def _carries(before: StudyDesign | None, after: StudyDesign) -> bool:
+    """Two confirmed designs a person's choices carry between.
+
+    They differ at most in the wells left out of the analysis and in the further choices the
+    grid tests (``axes``, the efficiency models): both are decided after the curves, and the
+    cards they share ask the same questions.
+    """
     if before is None:
         return False
-    hashes = {d.model_copy(update={"excluded_wells": ()}).design_hash() for d in (before, after)}
+    same = {"excluded_wells": (), "axes": None}
+    hashes = {d.model_copy(update=same).design_hash() for d in (before, after)}
     return len(hashes) == 1
 
 

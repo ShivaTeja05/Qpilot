@@ -34,14 +34,15 @@ research use only, not for clinical decisions.
   oracle on the demo: `validation/scientist/`.
 - **Choices carried to a new analysis** (`StudyStore.carry_decisions`, `Studio._study`): when a
   person's decision changes a Studio session's confirmed design after the curves are confirmed
-  (a Prism exclusion, a well left out or put back), what a person chose on the earlier
-  analysis's Decision Cards is carried to the new one as new chain entries by `human` whose
+  (a Prism exclusion, a well left out or put back, the efficiency models switched on or off),
+  what a person chose on the earlier analysis's Decision Cards is carried to the new one as new
+  chain entries by `human` whose
   reason names the earlier study and entry (`Carried from analysis <study> (entry <hash>): …`).
   Not carried: the system's and agents' decisions, a missing card or option, a card with an
   agent's request waiting, and a choice that matters more in the new analysis (asked again,
   with what the person chose). Only between analyses whose designs differ in the wells left out
-  (a design changed in a blind stage starts afresh). The choices stage is confirmed again by a
-  person. Results
+  or the further choices tested (a design changed in a blind stage starts afresh). The choices
+  stage is confirmed again by a person. Results
   (**Carried**, the earlier choice on a card asked again), the Record's chain and History (the
   carried step, its link checked, and what was carried or asked again) say so.
 - **Deciding a Run Gate card** (`POST /api/studies/{id}/gate/cards/{card_id}/decide`,
