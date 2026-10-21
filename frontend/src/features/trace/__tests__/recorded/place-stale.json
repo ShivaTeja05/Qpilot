@@ -1,0 +1,12 @@
+{
+ "status": 409,
+ "body": {
+  "error": {
+   "details": {
+    "head": "dfccbec9827bb6061eeb1e0e74cc482d864da6ca944c9cdf2fc433d05a64a168"
+   },
+   "code": "stale",
+   "message": "Something was decided since this trace was shown (another tab or an agent), so the places may have changed. Here is the trace again."
+  }
+ }
+}

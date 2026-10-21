@@ -3,6 +3,8 @@
  * one gene's call followed down to its samples, wells and plates; the study's overview; the
  * call recomputed with samples set aside; one plate's wells; and (Studio sessions) one well's
  * curve. Every number comes from the engine through these routes; nothing is computed here.
+ * "Where to look" (`qpilot/web/routers/where.py`) goes from a gene, a sample or a well to the
+ * places to look at the analysis in use, and a person's Decide… opens one as a Decision Card.
  *
  * Query keys start with `["w", workspace key, study id, "trace", …]`, so a live event about the
  * session or the study (a decision, the end of the `trace.load` job) re-reads them.
@@ -55,6 +57,42 @@ function fetchPlate(studyId: string, run: string) {
     }),
   );
 }
+/** What Where to look traces: exactly one gene, sample or well (`PLATE:WELL`). */
+export type WhereKind = "gene" | "sample" | "well";
+export interface WhereRoot {
+  kind: WhereKind;
+  id: string;
+}
+
+function fetchWhere(studyId: string, root: WhereRoot, top: number) {
+  return unwrap(
+    api.GET("/api/studies/{study_id}/where-to-look", {
+      params: {
+        path: { study_id: studyId },
+        query: {
+          gene: root.kind === "gene" ? root.id : undefined,
+          sample: root.kind === "sample" ? root.id : undefined,
+          well: root.kind === "well" ? root.id : undefined,
+          top,
+        },
+      },
+    }),
+  );
+}
+
+/** A person's Decide…: the place at `rank` opens as a Decision Card (sent with the view's head). */
+export function openPlace(
+  studyId: string,
+  body: { kind: WhereKind; id: string; rank: number; expected_head: string },
+) {
+  return unwrap(
+    api.POST("/api/studies/{study_id}/where-to-look/open", {
+      params: { path: { study_id: studyId } },
+      body,
+    }),
+  );
+}
+
 function fetchCurve(sid: string, well: string, target: string | null) {
   return unwrap(
     api.GET("/api/sessions/{sid}/curve", {
@@ -83,6 +121,10 @@ export type Suspect = Overview["suspects"][number];
 export type Missing = Overview["left_out"][number];
 export type Texts = GeneView["texts"];
 export type FactText = Texts[string];
+export type WhereView = Awaited<ReturnType<typeof fetchWhere>>;
+export type WherePlace = WhereView["places"][number];
+export type WhereOption = WherePlace["options"][number];
+export type PlaceOpened = Awaited<ReturnType<typeof openPlace>>;
 
 /** The `trace.load` job a 409 `loading` names (the study's model is being read). */
 export function loadingJob(error: unknown): JobView | null {
@@ -144,6 +186,25 @@ export function useTracePlate(s: TraceScope, run: string | null) {
     staleTime: 5 * 60_000,
     retry,
   });
+}
+
+/** Where to look from one gene, sample or well, at the analysis in use (read-only). */
+export function useWhere(s: TraceScope, root: WhereRoot | null, top: number) {
+  return useQuery({
+    queryKey: wkey(s, "where", root?.kind ?? null, root?.id ?? null, top),
+    enabled: Boolean(s.studyId && root),
+    queryFn: () => fetchWhere(s.studyId!, root!, top),
+    // asking for more places keeps the shown ones until the answer comes; another root does not
+    placeholderData: (prev) => (prev && root && sameRoot(prev.root, root) ? prev : undefined),
+    refetchInterval: whileLoading,
+    retry,
+  });
+}
+
+/** The API names a well `PLATE/WELL`; the person may have typed `PLATE:WELL`. */
+function sameRoot(a: Record<string, string>, b: WhereRoot): boolean {
+  const norm = (x: string | undefined) => (x ?? "").replace(":", "/");
+  return a.kind === b.kind && norm(a.id) === norm(b.id);
 }
 
 /** One well's raw curve: Studio sessions only (the curve comes from the session's file). */

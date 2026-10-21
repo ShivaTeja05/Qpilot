@@ -1,6 +1,7 @@
 /**
  * Results (docs/app.md §4): the summary, the robustness map, every gene, what one choice can flip,
- * the reference genes and the Decision Cards. Every number is the API's, for the open study.
+ * the reference genes, what the study cannot tell you (the Evidence Ledger) and the Decision
+ * Cards. Every number is the API's, for the open study.
  */
 import { FlaskConical, Lock } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -12,6 +13,7 @@ import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
 import { isWarming, useCards, useFlips, useResults, type ResultsView } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
+import { EvidencePanel } from "./EvidencePanel";
 import { FurtherChoices } from "./FurtherChoices";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { MapPanel } from "./MapPanel";
@@ -153,6 +155,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
         <FlipPanel flips={flips.data} onOpen={openGene} />
       )}
       <ReferencesPanel view={view} />
+      <EvidencePanel workspaceKey={key} studyId={studyId} />
     </>
   );
   const decisions = cards.error ? (

@@ -1,25 +1,17 @@
 /**
  * One gene's trace (`…/trace/<GENE>`): the call, the well to look at first, the dependency view
  * (result → groups → samples → wells → plates), the selected sample with the "what if I set it
- * aside?" switch (recomputed by the engine), the well's curve and plate, the places to look, the
- * fewest samples that change the call, the control genes' shares, every sample, and what was
- * checked. Selection, the open well and the samples set aside reset when the gene changes.
+ * aside?" switch (recomputed by the engine), the well's curve and plate, the places to look, Where
+ * to look from this gene (with Decide…), the fewest samples that change the call, the control
+ * genes' shares, every sample, and what was checked. Selection, the open well and the samples
+ * set aside reset when the gene changes.
  */
 import { ArrowLeft, ArrowUpRight, Microscope } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import type { Schemas } from "@/api/client";
 import { sectionPath } from "@/shell/sections";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  EmptyState,
-  ErrorPanel,
-  JobCard,
-  Select,
-  Skeleton,
-} from "@/ui";
+import { Card, CardBody, CardHeader, EmptyState, ErrorPanel, Select, Skeleton } from "@/ui";
 import { cn } from "@/lib/cn";
 import { count } from "@/lib/format";
 import { useReducedMotion } from "@/lib/hooks";
@@ -45,41 +37,12 @@ import {
   SamplesTable,
   WithoutResult,
 } from "./GenePieces";
+import { TraceWaiting } from "./Waiting";
+import { WhereToLook } from "./WhereToLook";
 import { WellCurve, WellFacts, WellPlate } from "./WellPanel";
 import { address } from "./words";
 
 type Workspace = Schemas["WorkspaceView"];
-
-/** While the study's model loads (the first trace of a study), follow its job. */
-export function TraceWaiting({
-  error,
-  onRetry,
-  what,
-}: {
-  error: unknown;
-  onRetry: () => void;
-  what: string;
-}) {
-  const job = loadingJob(error);
-  if (job) {
-    return (
-      <div className="flex flex-col gap-2" role="status">
-        <p className="text-[13px] text-muted">
-          Trace re-reads the study&rsquo;s wells from its file the first time (about a second on the
-          demo); {what} opens as soon as it is done.
-        </p>
-        <JobCard id={job.id} job={null} />
-      </div>
-    );
-  }
-  return (
-    <ErrorPanel
-      title={`${what[0]!.toUpperCase()}${what.slice(1)} could not be traced`}
-      error={error}
-      onRetry={onRetry}
-    />
-  );
-}
 
 export function GeneTracePage({
   workspace,
@@ -261,6 +224,12 @@ export function GeneTracePage({
               texts={texts}
               onWell={openWell}
               onSample={selectSample}
+            />
+            <WhereToLook
+              workspace={workspace}
+              scope={scope}
+              genes={genes}
+              initial={{ kind: "gene", id: gene }}
             />
             <FlipSet trace={trace} texts={texts} onAside={setUnits} onSample={selectSample} />
             <References trace={trace} onWell={openWell} />

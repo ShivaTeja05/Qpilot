@@ -1,0 +1,1414 @@
+{
+ "study_id": "e300000d4f9a",
+ "session": "bc1d233e3866",
+ "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+ "root": {
+  "kind": "gene",
+  "id": "CAMTA2"
+ },
+ "answer": "place_to_look",
+ "planned": true,
+ "text": [
+  {
+   "plain": "CAMTA2. No call: 1.98-fold lower in MYCN_high (p = 2.9e-05). The rule needs at least 2-fold and p below 0.05; this fold change is 1.01× short of that line.",
+   "segments": [
+    {
+     "text": "CAMTA2. No call: ",
+     "fact": null
+    },
+    {
+     "text": "1.98",
+     "fact": "f_trace_camta2_fold"
+    },
+    {
+     "text": "-fold lower in ",
+     "fact": null
+    },
+    {
+     "text": "MYCN_high",
+     "fact": "f_trace_camta2_group_hi"
+    },
+    {
+     "text": " (p = ",
+     "fact": null
+    },
+    {
+     "text": "2.9e-05",
+     "fact": "f_trace_camta2_p"
+    },
+    {
+     "text": "). The rule needs at least ",
+     "fact": null
+    },
+    {
+     "text": "2",
+     "fact": "f_trace_camta2_rule_fold"
+    },
+    {
+     "text": "-fold and p below ",
+     "fact": null
+    },
+    {
+     "text": "0.05",
+     "fact": "f_trace_camta2_rule_alpha"
+    },
+    {
+     "text": "; this fold change is ",
+     "fact": null
+    },
+    {
+     "text": "1.01×",
+     "fact": "f_trace_camta2_distance_fold"
+    },
+    {
+     "text": " short of that line.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_fold",
+     "text": "1.98",
+     "value": 1.9790770556,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.fold"
+    },
+    {
+     "id": "f_trace_camta2_group_hi",
+     "text": "MYCN_high",
+     "value": "MYCN_high",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.group_labels[0]"
+    },
+    {
+     "id": "f_trace_camta2_p",
+     "text": "2.9e-05",
+     "value": 2.92813e-05,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.p"
+    },
+    {
+     "id": "f_trace_camta2_rule_fold",
+     "text": "2",
+     "value": 2.0,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.rule.min_fold"
+    },
+    {
+     "id": "f_trace_camta2_rule_alpha",
+     "text": "0.05",
+     "value": 0.05,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.rule.alpha"
+    },
+    {
+     "id": "f_trace_camta2_distance_fold",
+     "text": "1.01×",
+     "value": 1.0105720716,
+     "unit": "×",
+     "path": "trace.gene.CAMTA2.summary"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Setting aside one sample alone changes this call for 15 different samples (largest effect of one sample: 1.05×, sample 2530).",
+   "segments": [
+    {
+     "text": "Setting aside one sample alone changes this call for ",
+     "fact": null
+    },
+    {
+     "text": "15",
+     "fact": "f_trace_camta2_n_loo_flips"
+    },
+    {
+     "text": " different samples (largest effect of one sample: ",
+     "fact": null
+    },
+    {
+     "text": "1.05×",
+     "fact": "f_trace_camta2_max_single_effect_fold"
+    },
+    {
+     "text": ", sample ",
+     "fact": null
+    },
+    {
+     "text": "2530",
+     "fact": "f_trace_camta2_max_single_effect_sample"
+    },
+    {
+     "text": ").",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_n_loo_flips",
+     "text": "15",
+     "value": 15,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.n_loo_flips"
+    },
+    {
+     "id": "f_trace_camta2_max_single_effect_fold",
+     "text": "1.05×",
+     "value": 1.0531204846,
+     "unit": "×",
+     "path": "trace.gene.CAMTA2.summary.max_single_effect_fold"
+    },
+    {
+     "id": "f_trace_camta2_max_single_effect_sample",
+     "text": "2530",
+     "value": "2530",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.max_single_effect_sample"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "There is a place to look.",
+   "segments": [
+    {
+     "text": "There is a place to look.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "Where to look first:",
+   "segments": [
+    {
+     "text": "Where to look first:",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "1. Sample 2016 · plate HMBS_20080318 · well K22: changes the call.",
+   "segments": [
+    {
+     "text": "1",
+     "fact": "f_trace_camta2_1_rank"
+    },
+    {
+     "text": ". Sample ",
+     "fact": null
+    },
+    {
+     "text": "2016",
+     "fact": "f_trace_camta2_1_sample"
+    },
+    {
+     "text": " · plate ",
+     "fact": null
+    },
+    {
+     "text": "HMBS_20080318",
+     "fact": "f_trace_camta2_1_plate"
+    },
+    {
+     "text": " · well ",
+     "fact": null
+    },
+    {
+     "text": "K22",
+     "fact": "f_trace_camta2_1_well"
+    },
+    {
+     "text": ": changes the call.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_1_rank",
+     "text": "1",
+     "value": 1,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].rank"
+    },
+    {
+     "id": "f_trace_camta2_1_sample",
+     "text": "2016",
+     "value": "2016",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].sample"
+    },
+    {
+     "id": "f_trace_camta2_1_plate",
+     "text": "HMBS_20080318",
+     "value": "HMBS_20080318",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].plate"
+    },
+    {
+     "id": "f_trace_camta2_1_well",
+     "text": "K22",
+     "value": "K22",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].well"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Its HMBS well read Cq 46.1; this plate's 15-copy standard reads 34.7.",
+   "segments": [
+    {
+     "text": "Its ",
+     "fact": null
+    },
+    {
+     "text": "HMBS",
+     "fact": "f_trace_camta2_1_target"
+    },
+    {
+     "text": " well read Cq ",
+     "fact": null
+    },
+    {
+     "text": "46.1",
+     "fact": "f_trace_camta2_1_cq"
+    },
+    {
+     "text": "; this plate's ",
+     "fact": null
+    },
+    {
+     "text": "15",
+     "fact": "f_trace_camta2_1_std_copies"
+    },
+    {
+     "text": "-copy standard reads ",
+     "fact": null
+    },
+    {
+     "text": "34.7",
+     "fact": "f_trace_camta2_1_std_cq"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_1_target",
+     "text": "HMBS",
+     "value": "HMBS",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].target"
+    },
+    {
+     "id": "f_trace_camta2_1_cq",
+     "text": "46.1",
+     "value": 46.0553,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].cq"
+    },
+    {
+     "id": "f_trace_camta2_1_std_copies",
+     "text": "15",
+     "value": 15.0,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].plate"
+    },
+    {
+     "id": "f_trace_camta2_1_std_cq",
+     "text": "34.7",
+     "value": 34.6711,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].plate"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "The sample's other 4 reference wells agree with each other.",
+   "segments": [
+    {
+     "text": "The sample's other ",
+     "fact": null
+    },
+    {
+     "text": "4",
+     "fact": "f_trace_camta2_1_n_other_refs"
+    },
+    {
+     "text": " reference wells agree with each other.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_1_n_other_refs",
+     "text": "4",
+     "value": 4,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].detail.S1"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "So all 58 values of sample 2016 read 5.55× too high.",
+   "segments": [
+    {
+     "text": "So all ",
+     "fact": null
+    },
+    {
+     "text": "58",
+     "fact": "f_trace_camta2_1_feeds"
+    },
+    {
+     "text": " values of sample ",
+     "fact": null
+    },
+    {
+     "text": "2016",
+     "fact": "f_trace_camta2_1_sample"
+    },
+    {
+     "text": " read ",
+     "fact": null
+    },
+    {
+     "text": "5.55×",
+     "fact": "f_trace_camta2_1_fold_off"
+    },
+    {
+     "text": " too high.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_1_feeds",
+     "text": "58",
+     "value": 58,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].feeds"
+    },
+    {
+     "id": "f_trace_camta2_1_sample",
+     "text": "2016",
+     "value": "2016",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].sample"
+    },
+    {
+     "id": "f_trace_camta2_1_fold_off",
+     "text": "5.55×",
+     "value": 5.5523342332,
+     "unit": "×",
+     "path": "trace.gene.CAMTA2.places[0].fold_off"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Consistent with that well: pipetting, evaporation, the seal or a failed reaction; what to check: re-run that well and look at its curve.",
+   "segments": [
+    {
+     "text": "Consistent with that well: pipetting, evaporation, the seal or a failed reaction; what to check: re-run that well and look at its curve.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "Read from the sample's other reference wells: CAMTA2 becomes down.",
+   "segments": [
+    {
+     "text": "Read from the sample's other reference wells: CAMTA2 becomes ",
+     "fact": null
+    },
+    {
+     "text": "down",
+     "fact": "f_trace_camta2_1_new_call"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_1_new_call",
+     "text": "down",
+     "value": "down",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[0].options.read_from_other_refs.new_call"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "2. Sample 1924 · plate HPRT1_20080303 · well F23: changes the call.",
+   "segments": [
+    {
+     "text": "2",
+     "fact": "f_trace_camta2_2_rank"
+    },
+    {
+     "text": ". Sample ",
+     "fact": null
+    },
+    {
+     "text": "1924",
+     "fact": "f_trace_camta2_2_sample"
+    },
+    {
+     "text": " · plate ",
+     "fact": null
+    },
+    {
+     "text": "HPRT1_20080303",
+     "fact": "f_trace_camta2_2_plate"
+    },
+    {
+     "text": " · well ",
+     "fact": null
+    },
+    {
+     "text": "F23",
+     "fact": "f_trace_camta2_2_well"
+    },
+    {
+     "text": ": changes the call.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_2_rank",
+     "text": "2",
+     "value": 2,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].rank"
+    },
+    {
+     "id": "f_trace_camta2_2_sample",
+     "text": "1924",
+     "value": "1924",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].sample"
+    },
+    {
+     "id": "f_trace_camta2_2_plate",
+     "text": "HPRT1_20080303",
+     "value": "HPRT1_20080303",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].plate"
+    },
+    {
+     "id": "f_trace_camta2_2_well",
+     "text": "F23",
+     "value": "F23",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].well"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Its HPRT1 well read Cq 34.5; this plate's 15-copy standard reads 34.7.",
+   "segments": [
+    {
+     "text": "Its ",
+     "fact": null
+    },
+    {
+     "text": "HPRT1",
+     "fact": "f_trace_camta2_2_target"
+    },
+    {
+     "text": " well read Cq ",
+     "fact": null
+    },
+    {
+     "text": "34.5",
+     "fact": "f_trace_camta2_2_cq"
+    },
+    {
+     "text": "; this plate's ",
+     "fact": null
+    },
+    {
+     "text": "15",
+     "fact": "f_trace_camta2_2_std_copies"
+    },
+    {
+     "text": "-copy standard reads ",
+     "fact": null
+    },
+    {
+     "text": "34.7",
+     "fact": "f_trace_camta2_2_std_cq"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_2_target",
+     "text": "HPRT1",
+     "value": "HPRT1",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].target"
+    },
+    {
+     "id": "f_trace_camta2_2_cq",
+     "text": "34.5",
+     "value": 34.5399,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].cq"
+    },
+    {
+     "id": "f_trace_camta2_2_std_copies",
+     "text": "15",
+     "value": 15.0,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].plate"
+    },
+    {
+     "id": "f_trace_camta2_2_std_cq",
+     "text": "34.7",
+     "value": 34.6929666667,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].plate"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "The sample's other 4 reference wells agree with each other.",
+   "segments": [
+    {
+     "text": "The sample's other ",
+     "fact": null
+    },
+    {
+     "text": "4",
+     "fact": "f_trace_camta2_2_n_other_refs"
+    },
+    {
+     "text": " reference wells agree with each other.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_2_n_other_refs",
+     "text": "4",
+     "value": 4,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].detail.S1"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "So all 58 values of sample 1924 read 2.71× too high.",
+   "segments": [
+    {
+     "text": "So all ",
+     "fact": null
+    },
+    {
+     "text": "58",
+     "fact": "f_trace_camta2_2_feeds"
+    },
+    {
+     "text": " values of sample ",
+     "fact": null
+    },
+    {
+     "text": "1924",
+     "fact": "f_trace_camta2_2_sample"
+    },
+    {
+     "text": " read ",
+     "fact": null
+    },
+    {
+     "text": "2.71×",
+     "fact": "f_trace_camta2_2_fold_off"
+    },
+    {
+     "text": " too high.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_2_feeds",
+     "text": "58",
+     "value": 58,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].feeds"
+    },
+    {
+     "id": "f_trace_camta2_2_sample",
+     "text": "1924",
+     "value": "1924",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].sample"
+    },
+    {
+     "id": "f_trace_camta2_2_fold_off",
+     "text": "2.71×",
+     "value": 2.7123100914,
+     "unit": "×",
+     "path": "trace.gene.CAMTA2.places[1].fold_off"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Consistent with that well: pipetting, evaporation, the seal or a failed reaction; what to check: re-run that well and look at its curve.",
+   "segments": [
+    {
+     "text": "Consistent with that well: pipetting, evaporation, the seal or a failed reaction; what to check: re-run that well and look at its curve.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "Read from the sample's other reference wells: CAMTA2 becomes down.",
+   "segments": [
+    {
+     "text": "Read from the sample's other reference wells: CAMTA2 becomes ",
+     "fact": null
+    },
+    {
+     "text": "down",
+     "fact": "f_trace_camta2_2_new_call"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_2_new_call",
+     "text": "down",
+     "value": "down",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[1].options.read_from_other_refs.new_call"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "3. Sample 1772 · plate UBC(2)_20080220 · well O13: changes the call.",
+   "segments": [
+    {
+     "text": "3",
+     "fact": "f_trace_camta2_3_rank"
+    },
+    {
+     "text": ". Sample ",
+     "fact": null
+    },
+    {
+     "text": "1772",
+     "fact": "f_trace_camta2_3_sample"
+    },
+    {
+     "text": " · plate ",
+     "fact": null
+    },
+    {
+     "text": "UBC(2)_20080220",
+     "fact": "f_trace_camta2_3_plate"
+    },
+    {
+     "text": " · well ",
+     "fact": null
+    },
+    {
+     "text": "O13",
+     "fact": "f_trace_camta2_3_well"
+    },
+    {
+     "text": ": changes the call.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_3_rank",
+     "text": "3",
+     "value": 3,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].rank"
+    },
+    {
+     "id": "f_trace_camta2_3_sample",
+     "text": "1772",
+     "value": "1772",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].sample"
+    },
+    {
+     "id": "f_trace_camta2_3_plate",
+     "text": "UBC(2)_20080220",
+     "value": "UBC(2)_20080220",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].plate"
+    },
+    {
+     "id": "f_trace_camta2_3_well",
+     "text": "O13",
+     "value": "O13",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].well"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Its UBC(2) well read Cq 29.5; this plate's 15-copy standard reads 35.0.",
+   "segments": [
+    {
+     "text": "Its ",
+     "fact": null
+    },
+    {
+     "text": "UBC(2)",
+     "fact": "f_trace_camta2_3_target"
+    },
+    {
+     "text": " well read Cq ",
+     "fact": null
+    },
+    {
+     "text": "29.5",
+     "fact": "f_trace_camta2_3_cq"
+    },
+    {
+     "text": "; this plate's ",
+     "fact": null
+    },
+    {
+     "text": "15",
+     "fact": "f_trace_camta2_3_std_copies"
+    },
+    {
+     "text": "-copy standard reads ",
+     "fact": null
+    },
+    {
+     "text": "35.0",
+     "fact": "f_trace_camta2_3_std_cq"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_3_target",
+     "text": "UBC(2)",
+     "value": "UBC(2)",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].target"
+    },
+    {
+     "id": "f_trace_camta2_3_cq",
+     "text": "29.5",
+     "value": 29.5307,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].cq"
+    },
+    {
+     "id": "f_trace_camta2_3_std_copies",
+     "text": "15",
+     "value": 15.0,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].plate"
+    },
+    {
+     "id": "f_trace_camta2_3_std_cq",
+     "text": "35.0",
+     "value": 35.0388,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].plate"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "The sample's other 4 reference wells agree with each other.",
+   "segments": [
+    {
+     "text": "The sample's other ",
+     "fact": null
+    },
+    {
+     "text": "4",
+     "fact": "f_trace_camta2_3_n_other_refs"
+    },
+    {
+     "text": " reference wells agree with each other.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_3_n_other_refs",
+     "text": "4",
+     "value": 4,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].detail.S1"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "So all 58 values of sample 1772 read 2.21× too high.",
+   "segments": [
+    {
+     "text": "So all ",
+     "fact": null
+    },
+    {
+     "text": "58",
+     "fact": "f_trace_camta2_3_feeds"
+    },
+    {
+     "text": " values of sample ",
+     "fact": null
+    },
+    {
+     "text": "1772",
+     "fact": "f_trace_camta2_3_sample"
+    },
+    {
+     "text": " read ",
+     "fact": null
+    },
+    {
+     "text": "2.21×",
+     "fact": "f_trace_camta2_3_fold_off"
+    },
+    {
+     "text": " too high.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_3_feeds",
+     "text": "58",
+     "value": 58,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].feeds"
+    },
+    {
+     "id": "f_trace_camta2_3_sample",
+     "text": "1772",
+     "value": "1772",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].sample"
+    },
+    {
+     "id": "f_trace_camta2_3_fold_off",
+     "text": "2.21×",
+     "value": 2.2146351532,
+     "unit": "×",
+     "path": "trace.gene.CAMTA2.places[2].fold_off"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Consistent with that well: pipetting, evaporation, the seal or a failed reaction; what to check: re-run that well and look at its curve.",
+   "segments": [
+    {
+     "text": "Consistent with that well: pipetting, evaporation, the seal or a failed reaction; what to check: re-run that well and look at its curve.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "Read from the sample's other reference wells: CAMTA2 becomes down.",
+   "segments": [
+    {
+     "text": "Read from the sample's other reference wells: CAMTA2 becomes ",
+     "fact": null
+    },
+    {
+     "text": "down",
+     "fact": "f_trace_camta2_3_new_call"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_3_new_call",
+     "text": "down",
+     "value": "down",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.places[2].options.read_from_other_refs.new_call"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "+ 12 more unusual places that change nothing here.",
+   "segments": [
+    {
+     "text": "+ ",
+     "fact": null
+    },
+    {
+     "text": "12",
+     "fact": "f_trace_camta2_n_more"
+    },
+    {
+     "text": " more unusual places that change nothing here.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_n_more",
+     "text": "12",
+     "value": 12,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.n_more"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Influential, nothing unusual: sample 2530 (1.05×), sample 1837 (1.04×), sample 111 (1.04×, setting it aside changes the call); the wells behind these values read as expected.",
+   "segments": [
+    {
+     "text": "Influential, nothing unusual: sample ",
+     "fact": null
+    },
+    {
+     "text": "2530",
+     "fact": "f_trace_camta2_infl_1_sample"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "1.05×",
+     "fact": "f_trace_camta2_infl_1_fold"
+    },
+    {
+     "text": "), sample ",
+     "fact": null
+    },
+    {
+     "text": "1837",
+     "fact": "f_trace_camta2_infl_2_sample"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "1.04×",
+     "fact": "f_trace_camta2_infl_2_fold"
+    },
+    {
+     "text": "), sample ",
+     "fact": null
+    },
+    {
+     "text": "111",
+     "fact": "f_trace_camta2_infl_3_sample"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "1.04×",
+     "fact": "f_trace_camta2_infl_3_fold"
+    },
+    {
+     "text": ", setting it aside changes the call); the wells behind these values read as expected.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_infl_1_sample",
+     "text": "2530",
+     "value": "2530",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.influential[0].sample"
+    },
+    {
+     "id": "f_trace_camta2_infl_1_fold",
+     "text": "1.05×",
+     "value": 1.0531204846,
+     "unit": "×",
+     "path": "trace.gene.CAMTA2.infl.1"
+    },
+    {
+     "id": "f_trace_camta2_infl_2_sample",
+     "text": "1837",
+     "value": "1837",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.influential[1].sample"
+    },
+    {
+     "id": "f_trace_camta2_infl_2_fold",
+     "text": "1.04×",
+     "value": 1.0444775096,
+     "unit": "×",
+     "path": "trace.gene.CAMTA2.infl.2"
+    },
+    {
+     "id": "f_trace_camta2_infl_3_sample",
+     "text": "111",
+     "value": "111",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.influential[2].sample"
+    },
+    {
+     "id": "f_trace_camta2_infl_3_fold",
+     "text": "1.04×",
+     "value": 1.0406901126,
+     "unit": "×",
+     "path": "trace.gene.CAMTA2.infl.3"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Checked, nothing found: NTCs on plates HMBS_20080318, HPRT1_20080303, SDHA(1)_20080220, UBC(2)_20080220 · whole-sample efficiency.",
+   "segments": [
+    {
+     "text": "Checked, nothing found: NTCs on plates ",
+     "fact": null
+    },
+    {
+     "text": "HMBS_20080318, HPRT1_20080303, SDHA(1)_20080220, UBC(2)_20080220",
+     "fact": "f_trace_camta2_clean_ntc_plates"
+    },
+    {
+     "text": " · whole-sample efficiency.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_clean_ntc_plates",
+     "text": "HMBS_20080318, HPRT1_20080303, SDHA(1)_20080220, UBC(2)_20080220",
+     "value": "HMBS_20080318, HPRT1_20080303, SDHA(1)_20080220, UBC(2)_20080220",
+     "unit": "",
+     "path": "trace.gene.CAMTA2.checked_nothing_found"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "19 samples are in no comparison; trace a sample to see which well left it out.",
+   "segments": [
+    {
+     "text": "19",
+     "fact": "f_trace_camta2_n_absent_study"
+    },
+    {
+     "text": " samples are in no comparison; trace a sample to see which well left it out.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_camta2_n_absent_study",
+     "text": "19",
+     "value": 19,
+     "unit": "",
+     "path": "trace.gene.CAMTA2.summary.n_absent_study"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "The data cannot show: RNA integrity · RT replicates · no-RT controls · batch annotations · a single target well that is off (cannot tell from biology without replicates).",
+   "segments": [
+    {
+     "text": "The data cannot show: RNA integrity · RT replicates · no-RT controls · batch annotations · a single target well that is off (cannot tell from biology without replicates).",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  }
+ ],
+ "places": [
+  {
+   "rank": 1,
+   "sample": "2016",
+   "plate": "HMBS_20080318",
+   "well": "K22",
+   "target": "HMBS",
+   "role": "reference_well",
+   "checks": [
+    {
+     "code": "S1",
+     "looks_like": "one reference well disagrees with the sample's other reference wells",
+     "consistent_with": "that well: pipetting, evaporation, the seal or a failed reaction",
+     "what_to_check": "re-run that well and look at its curve"
+    }
+   ],
+   "consequence": "changes_call",
+   "consequence_word": "changes the call",
+   "options": [
+    {
+     "id": "keep",
+     "label": "Keep (no change)",
+     "consequence": "changes_nothing",
+     "consequence_word": "changes nothing here",
+     "changed_calls": []
+    },
+    {
+     "id": "read_from_other_refs",
+     "label": "Read this well from the sample's other reference wells",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "CAMTA2",
+      "IGSF4"
+     ]
+    },
+    {
+     "id": "set_aside",
+     "label": "Set the sample aside (every comparison)",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "CAMTA2"
+     ]
+    }
+   ],
+   "card_id": "card_trace_2016_hmbs_20080318_k22",
+   "card_status": "open",
+   "can_decide": true
+  },
+  {
+   "rank": 2,
+   "sample": "1924",
+   "plate": "HPRT1_20080303",
+   "well": "F23",
+   "target": "HPRT1",
+   "role": "reference_well",
+   "checks": [
+    {
+     "code": "S1",
+     "looks_like": "one reference well disagrees with the sample's other reference wells",
+     "consistent_with": "that well: pipetting, evaporation, the seal or a failed reaction",
+     "what_to_check": "re-run that well and look at its curve"
+    }
+   ],
+   "consequence": "changes_call",
+   "consequence_word": "changes the call",
+   "options": [
+    {
+     "id": "keep",
+     "label": "Keep (no change)",
+     "consequence": "changes_nothing",
+     "consequence_word": "changes nothing here",
+     "changed_calls": []
+    },
+    {
+     "id": "read_from_other_refs",
+     "label": "Read this well from the sample's other reference wells",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "CAMTA2"
+     ]
+    },
+    {
+     "id": "set_aside",
+     "label": "Set the sample aside (every comparison)",
+     "consequence": "changes_nothing",
+     "consequence_word": "changes nothing here",
+     "changed_calls": [
+      "IGSF4"
+     ]
+    }
+   ],
+   "card_id": "card_trace_1924_hprt1_20080303_f23",
+   "card_status": null,
+   "can_decide": true
+  },
+  {
+   "rank": 3,
+   "sample": "1772",
+   "plate": "UBC(2)_20080220",
+   "well": "O13",
+   "target": "UBC(2)",
+   "role": "reference_well",
+   "checks": [
+    {
+     "code": "S1",
+     "looks_like": "one reference well disagrees with the sample's other reference wells",
+     "consistent_with": "that well: pipetting, evaporation, the seal or a failed reaction",
+     "what_to_check": "re-run that well and look at its curve"
+    }
+   ],
+   "consequence": "changes_call",
+   "consequence_word": "changes the call",
+   "options": [
+    {
+     "id": "keep",
+     "label": "Keep (no change)",
+     "consequence": "changes_nothing",
+     "consequence_word": "changes nothing here",
+     "changed_calls": []
+    },
+    {
+     "id": "read_from_other_refs",
+     "label": "Read this well from the sample's other reference wells",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "CAMTA2"
+     ]
+    },
+    {
+     "id": "set_aside",
+     "label": "Set the sample aside (every comparison)",
+     "consequence": "changes_nothing",
+     "consequence_word": "changes nothing here",
+     "changed_calls": []
+    }
+   ],
+   "card_id": "card_trace_1772_ubc_2_20080220_o13",
+   "card_status": null,
+   "can_decide": true
+  }
+ ],
+ "n_more": 12,
+ "checked_nothing_found": [
+  "S4",
+  "S6:HMBS_20080318",
+  "S6:HPRT1_20080303",
+  "S6:SDHA(1)_20080220",
+  "S6:UBC(2)_20080220"
+ ],
+ "cannot_show": [
+  "S8",
+  "group_wide_fault",
+  "no_rt_controls",
+  "position_confounded",
+  "rna_integrity",
+  "rt_replicates",
+  "sample_swap",
+  "single_target_well"
+ ],
+ "absent": [
+  {
+   "sample": "1542",
+   "why": "its SDHA(1) reference well is empty (plate SDHA(1)_20080220, well E1)"
+  },
+  {
+   "sample": "1803",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well N1); its MYCN(4) marker well is empty (plate MYCN(4)_20080222, well N1)"
+  },
+  {
+   "sample": "1846",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well A22)"
+  },
+  {
+   "sample": "1853",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well C8)"
+  },
+  {
+   "sample": "1854",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well C10)"
+  },
+  {
+   "sample": "1892",
+   "why": "its MYCN(4) marker well is empty (plate MYCN(4)_20080222, well B19)"
+  },
+  {
+   "sample": "1931",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well H5)"
+  },
+  {
+   "sample": "2069",
+   "why": "its MYCN(4) marker well is empty (plate MYCN(4)_20080222, well I18)"
+  },
+  {
+   "sample": "2070",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well I20); its MYCN(4) marker well is empty (plate MYCN(4)_20080222, well I20)"
+  },
+  {
+   "sample": "2661",
+   "why": "its SDHA(1) reference well is empty (plate SDHA(1)_20080220, well D18)"
+  },
+  {
+   "sample": "2709",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well D22)"
+  },
+  {
+   "sample": "2713",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well F6)"
+  },
+  {
+   "sample": "2715",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well F10)"
+  },
+  {
+   "sample": "2718",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well F12)"
+  },
+  {
+   "sample": "2746",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well F24); its SDHA(1) reference well is empty (plate SDHA(1)_20080220, well F24); its MYCN(4) marker well is empty (plate MYCN(4)_20080222, well F24)"
+  },
+  {
+   "sample": "2764",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well J14)"
+  },
+  {
+   "sample": "2770",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well J22)"
+  },
+  {
+   "sample": "2772",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well J6)"
+  },
+  {
+   "sample": "2786",
+   "why": "its HMBS reference well is empty (plate HMBS_20080318, well N2)"
+  }
+ ],
+ "n_absent": 19,
+ "decide_note": "Decide… opens that place as a Decision Card on Results. A choice that can change a conclusion is a person's, and it is kept in the decision chain with its reason; the study's numbers stay as analysed.",
+ "method_card": "methods/trace.md"
+}

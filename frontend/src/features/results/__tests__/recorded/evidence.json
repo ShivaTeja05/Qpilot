@@ -1,0 +1,656 @@
+{
+ "study_id": "e300000d4f9a",
+ "available": true,
+ "source": "rebuilt",
+ "note": "",
+ "summary": {
+  "plain": "Evidence Ledger: 3 of 11 items present, 6 absent, 1 unknown and 1 not applicable. Absent items never change a conclusion or a confidence grade; they say what this study cannot show.",
+  "segments": [
+   {
+    "text": "Evidence Ledger: ",
+    "fact": null
+   },
+   {
+    "text": "3",
+    "fact": "f_ev_n_present"
+   },
+   {
+    "text": " of ",
+    "fact": null
+   },
+   {
+    "text": "11",
+    "fact": "f_ev_n_items"
+   },
+   {
+    "text": " items present, ",
+    "fact": null
+   },
+   {
+    "text": "6",
+    "fact": "f_ev_n_absent"
+   },
+   {
+    "text": " absent, ",
+    "fact": null
+   },
+   {
+    "text": "1",
+    "fact": "f_ev_n_unknown"
+   },
+   {
+    "text": " unknown and ",
+    "fact": null
+   },
+   {
+    "text": "1",
+    "fact": "f_ev_n_not_applicable"
+   },
+   {
+    "text": " not applicable. Absent items never change a conclusion or a confidence grade; they say what this study cannot show.",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_ev_n_present",
+    "text": "3",
+    "value": 3,
+    "unit": "",
+    "path": "evidence.counts.present"
+   },
+   {
+    "id": "f_ev_n_items",
+    "text": "11",
+    "value": 11,
+    "unit": "",
+    "path": "evidence.items"
+   },
+   {
+    "id": "f_ev_n_absent",
+    "text": "6",
+    "value": 6,
+    "unit": "",
+    "path": "evidence.counts.absent"
+   },
+   {
+    "id": "f_ev_n_unknown",
+    "text": "1",
+    "value": 1,
+    "unit": "",
+    "path": "evidence.counts.unknown"
+   },
+   {
+    "id": "f_ev_n_not_applicable",
+    "text": "1",
+    "value": 1,
+    "unit": "",
+    "path": "evidence.counts.not_applicable"
+   }
+  ],
+  "source": "template"
+ },
+ "counts": {
+  "present": 3,
+  "absent": 6,
+  "not_applicable": 1,
+  "unknown": 1
+ },
+ "items": [
+  {
+   "id": "ntc",
+   "title": "NTC on every plate and target",
+   "status": "present",
+   "status_word": "present",
+   "value": null,
+   "line": {
+    "plain": "NTC on every plate and target: present. NTC wells are typed on all 64 plate × target pairs; 23 of 192 amplified, on 11 plates, and no Run Gate rule checks what that means for the samples yet.",
+    "segments": [
+     {
+      "text": "NTC on every plate and target: present. NTC wells are typed on all ",
+      "fact": null
+     },
+     {
+      "text": "64",
+      "fact": "f_ev_ntc_n_pairs"
+     },
+     {
+      "text": " plate × target pairs; ",
+      "fact": null
+     },
+     {
+      "text": "23",
+      "fact": "f_ev_ntc_n_wells_with_value"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "192",
+      "fact": "f_ev_ntc_n_wells"
+     },
+     {
+      "text": " amplified, on ",
+      "fact": null
+     },
+     {
+      "text": "11",
+      "fact": "f_ev_ntc_n_plates_with_value"
+     },
+     {
+      "text": " plates, and no Run Gate rule checks what that means for the samples yet.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_ev_ntc_n_pairs",
+      "text": "64",
+      "value": 64,
+      "unit": "",
+      "path": "evidence.ntc.n_pairs"
+     },
+     {
+      "id": "f_ev_ntc_n_wells_with_value",
+      "text": "23",
+      "value": 23,
+      "unit": "",
+      "path": "evidence.ntc.n_wells_with_value"
+     },
+     {
+      "id": "f_ev_ntc_n_wells",
+      "text": "192",
+      "value": 192,
+      "unit": "",
+      "path": "evidence.ntc.n_wells"
+     },
+     {
+      "id": "f_ev_ntc_n_plates_with_value",
+      "text": "11",
+      "value": 11,
+      "unit": "",
+      "path": "evidence.ntc.n_plates_with_value"
+     }
+    ],
+    "source": "template"
+   },
+   "cannot_tell": false,
+   "miqe": [
+    "5.5",
+    "5.6"
+   ]
+  },
+  {
+   "id": "no_rt",
+   "title": "No-RT control",
+   "status": "absent",
+   "status_word": "absent",
+   "value": null,
+   "line": {
+    "plain": "No-RT control: absent. No well is typed no-RT (RDML type nrt), so genomic DNA carry-over cannot be checked from this file.",
+    "segments": [
+     {
+      "text": "No-RT control: absent. No well is typed no-RT (RDML type nrt), so genomic DNA carry-over cannot be checked from this file.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "cannot_tell": true,
+   "miqe": [
+    "3.5"
+   ]
+  },
+  {
+   "id": "reference_genes",
+   "title": "Reference candidates with geNorm M and V",
+   "status": "present",
+   "status_word": "present",
+   "value": null,
+   "line": {
+    "plain": "Reference candidates with geNorm M and V: present. 5 reference candidates with geNorm M and V, but no reference set meets geNorm's cut-offs: 0 candidates have M below 1.5, and the lowest V is 0.33 against 0.15. Which set to use is a judgement call; the reference-set card shows what it changes.",
+    "segments": [
+     {
+      "text": "Reference candidates with geNorm M and V: present. ",
+      "fact": null
+     },
+     {
+      "text": "5",
+      "fact": "f_ev_reference_genes_n_candidates"
+     },
+     {
+      "text": " reference candidates with geNorm M and V, but no reference set meets geNorm's cut-offs: ",
+      "fact": null
+     },
+     {
+      "text": "0",
+      "fact": "f_ev_reference_genes_n_below_m"
+     },
+     {
+      "text": " candidates have M below ",
+      "fact": null
+     },
+     {
+      "text": "1.5",
+      "fact": "f_ev_reference_genes_cutoff_m"
+     },
+     {
+      "text": ", and the lowest V is ",
+      "fact": null
+     },
+     {
+      "text": "0.33",
+      "fact": "f_ev_reference_genes_v_min"
+     },
+     {
+      "text": " against ",
+      "fact": null
+     },
+     {
+      "text": "0.15",
+      "fact": "f_ev_reference_genes_cutoff_v"
+     },
+     {
+      "text": ". Which set to use is a judgement call; the reference-set card shows what it changes.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_ev_reference_genes_n_candidates",
+      "text": "5",
+      "value": 5,
+      "unit": "",
+      "path": "evidence.reference_genes.n_candidates"
+     },
+     {
+      "id": "f_ev_reference_genes_n_below_m",
+      "text": "0",
+      "value": 0,
+      "unit": "",
+      "path": "evidence.reference_genes.n_below_m"
+     },
+     {
+      "id": "f_ev_reference_genes_cutoff_m",
+      "text": "1.5",
+      "value": 1.5,
+      "unit": "",
+      "path": "evidence.reference_genes.cutoff_m"
+     },
+     {
+      "id": "f_ev_reference_genes_v_min",
+      "text": "0.33",
+      "value": 0.32702994817071,
+      "unit": "",
+      "path": "evidence.reference_genes.v_min"
+     },
+     {
+      "id": "f_ev_reference_genes_cutoff_v",
+      "text": "0.15",
+      "value": 0.15,
+      "unit": "",
+      "path": "evidence.reference_genes.cutoff_v"
+     }
+    ],
+    "source": "template"
+   },
+   "cannot_tell": false,
+   "miqe": [
+    "5.15"
+   ]
+  },
+  {
+   "id": "efficiency",
+   "title": "Efficiency source",
+   "status": "present",
+   "status_word": "present",
+   "value": "per_well_raw",
+   "line": {
+    "plain": "Efficiency source: present. Efficiency is measured per well from the raw curves (LinRegPCR) on 23,423 of 23,423 study wells and used as the plate mean per gene; gene medians run from 1.73 to 1.94. A standard series is on 64 of 64 plates; it is not used for efficiency.",
+    "segments": [
+     {
+      "text": "Efficiency source: present. Efficiency is measured per well from the raw curves (LinRegPCR) on ",
+      "fact": null
+     },
+     {
+      "text": "23,423",
+      "fact": "f_ev_efficiency_n_wells_with_eff"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "23,423",
+      "fact": "f_ev_efficiency_n_wells"
+     },
+     {
+      "text": " study wells and used as the plate mean per gene; gene medians run from ",
+      "fact": null
+     },
+     {
+      "text": "1.73",
+      "fact": "f_ev_efficiency_min"
+     },
+     {
+      "text": " to ",
+      "fact": null
+     },
+     {
+      "text": "1.94",
+      "fact": "f_ev_efficiency_max"
+     },
+     {
+      "text": ". A standard series is on ",
+      "fact": null
+     },
+     {
+      "text": "64",
+      "fact": "f_ev_efficiency_n_plates_with_series"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "64",
+      "fact": "f_ev_efficiency_n_plates"
+     },
+     {
+      "text": " plates; it is not used for efficiency.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_ev_efficiency_n_wells_with_eff",
+      "text": "23,423",
+      "value": 23423,
+      "unit": "",
+      "path": "evidence.efficiency.n_wells_with_eff"
+     },
+     {
+      "id": "f_ev_efficiency_n_wells",
+      "text": "23,423",
+      "value": 23423,
+      "unit": "",
+      "path": "evidence.efficiency.n_wells"
+     },
+     {
+      "id": "f_ev_efficiency_min",
+      "text": "1.73",
+      "value": 1.726005,
+      "unit": "",
+      "path": "evidence.efficiency.min"
+     },
+     {
+      "id": "f_ev_efficiency_max",
+      "text": "1.94",
+      "value": 1.935544,
+      "unit": "",
+      "path": "evidence.efficiency.max"
+     },
+     {
+      "id": "f_ev_efficiency_n_plates_with_series",
+      "text": "64",
+      "value": 64,
+      "unit": "",
+      "path": "evidence.efficiency.n_plates_with_series"
+     },
+     {
+      "id": "f_ev_efficiency_n_plates",
+      "text": "64",
+      "value": 64,
+      "unit": "",
+      "path": "evidence.efficiency.n_plates"
+     }
+    ],
+    "source": "template"
+   },
+   "cannot_tell": false,
+   "miqe": [
+    "5.8"
+   ]
+  },
+  {
+   "id": "rawness",
+   "title": "Raw-ness of the curves",
+   "status": "unknown",
+   "status_word": "unknown",
+   "value": "unknown",
+   "line": {
+    "plain": "Raw-ness of the curves: unknown. Not judged yet: the raw-ness detector is not built. The cheap signs are consistent with raw curves: 24,576 wells were analysed from their amplification curves and none has a baseline at or below zero.",
+    "segments": [
+     {
+      "text": "Raw-ness of the curves: unknown. Not judged yet: the raw-ness detector is not built. The cheap signs are consistent with raw curves: ",
+      "fact": null
+     },
+     {
+      "text": "24,576",
+      "fact": "f_ev_rawness_n_wells_with_curves"
+     },
+     {
+      "text": " wells were analysed from their amplification curves and none has a baseline at or below zero.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_ev_rawness_n_wells_with_curves",
+      "text": "24,576",
+      "value": 24576,
+      "unit": "",
+      "path": "evidence.rawness.n_wells_with_curves"
+     }
+    ],
+    "source": "template"
+   },
+   "cannot_tell": true,
+   "miqe": [
+    "5.3",
+    "5.1"
+   ]
+  },
+  {
+   "id": "rna_integrity",
+   "title": "RNA integrity",
+   "status": "absent",
+   "status_word": "absent",
+   "value": null,
+   "line": {
+    "plain": "RNA integrity: absent. No RNA integrity value (RIN or similar) is recorded for any of the 366 study samples, so RNA quality cannot be related to Cq.",
+    "segments": [
+     {
+      "text": "RNA integrity: absent. No RNA integrity value (RIN or similar) is recorded for any of the ",
+      "fact": null
+     },
+     {
+      "text": "366",
+      "fact": "f_ev_rna_integrity_n_samples"
+     },
+     {
+      "text": " study samples, so RNA quality cannot be related to Cq.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_ev_rna_integrity_n_samples",
+      "text": "366",
+      "value": 366,
+      "unit": "",
+      "path": "evidence.rna_integrity.n_samples"
+     }
+    ],
+    "source": "template"
+   },
+   "cannot_tell": true,
+   "miqe": [
+    "2.9"
+   ]
+  },
+  {
+   "id": "rt_replicates",
+   "title": "RT replicates or RT batch",
+   "status": "absent",
+   "status_word": "absent",
+   "value": "G-RT not_applicable",
+   "line": {
+    "plain": "RT replicates or RT batch: absent. RT variability not measured: no RT replicates or RT batches are annotated.",
+    "segments": [
+     {
+      "text": "RT replicates or RT batch: absent. RT variability not measured: no RT replicates or RT batches are annotated.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "cannot_tell": true,
+   "miqe": [
+    "5.10"
+   ]
+  },
+  {
+   "id": "biological_units",
+   "title": "Biological units",
+   "status": "absent",
+   "status_word": "absent",
+   "value": null,
+   "line": {
+    "plain": "Biological units: absent. No sample sheet names the biological units, so each of the 366 study samples counts as its own unit; that holds only if no two samples come from the same animal, patient or culture.",
+    "segments": [
+     {
+      "text": "Biological units: absent. No sample sheet names the biological units, so each of the ",
+      "fact": null
+     },
+     {
+      "text": "366",
+      "fact": "f_ev_biological_units_n_samples"
+     },
+     {
+      "text": " study samples counts as its own unit; that holds only if no two samples come from the same animal, patient or culture.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_ev_biological_units_n_samples",
+      "text": "366",
+      "value": 366,
+      "unit": "",
+      "path": "evidence.biological_units.n_samples"
+     }
+    ],
+    "source": "template"
+   },
+   "cannot_tell": true,
+   "miqe": [
+    "5.10"
+   ]
+  },
+  {
+   "id": "inter_run_calibrator",
+   "title": "Inter-run calibrator",
+   "status": "not_applicable",
+   "status_word": "not applicable",
+   "value": null,
+   "line": {
+    "plain": "Inter-run calibrator: not applicable. Each of the 64 targets is measured on a single plate, so no inter-run calibrator is needed.",
+    "segments": [
+     {
+      "text": "Inter-run calibrator: not applicable. Each of the ",
+      "fact": null
+     },
+     {
+      "text": "64",
+      "fact": "f_ev_inter_run_calibrator_n_targets"
+     },
+     {
+      "text": " targets is measured on a single plate, so no inter-run calibrator is needed.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_ev_inter_run_calibrator_n_targets",
+      "text": "64",
+      "value": 64,
+      "unit": "",
+      "path": "evidence.inter_run_calibrator.n_targets"
+     }
+    ],
+    "source": "template"
+   },
+   "cannot_tell": false,
+   "miqe": [
+    "5.12"
+   ]
+  },
+  {
+   "id": "lots",
+   "title": "Reagent and primer lots",
+   "status": "absent",
+   "status_word": "absent",
+   "value": null,
+   "line": {
+    "plain": "Reagent and primer lots: absent. No reagent or primer lot is recorded, so drift cannot be tied to a lot change later.",
+    "segments": [
+     {
+      "text": "Reagent and primer lots: absent. No reagent or primer lot is recorded, so drift cannot be tied to a lot change later.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "cannot_tell": true,
+   "miqe": [
+    "3.6",
+    "4.4"
+   ]
+  },
+  {
+   "id": "instrument",
+   "title": "Instrument and calibration dates",
+   "status": "absent",
+   "status_word": "absent",
+   "value": null,
+   "line": {
+    "plain": "Instrument and calibration dates: absent. None of the 67 runs in the file names an instrument or a run date, and RDML has no field for calibration dates, so the instrument's history cannot be checked from this file.",
+    "segments": [
+     {
+      "text": "Instrument and calibration dates: absent. None of the ",
+      "fact": null
+     },
+     {
+      "text": "67",
+      "fact": "f_ev_instrument_n_runs"
+     },
+     {
+      "text": " runs in the file names an instrument or a run date, and RDML has no field for calibration dates, so the instrument's history cannot be checked from this file.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_ev_instrument_n_runs",
+      "text": "67",
+      "value": 67,
+      "unit": "",
+      "path": "evidence.instrument.n_runs"
+     }
+    ],
+    "source": "template"
+   },
+   "cannot_tell": true,
+   "miqe": [
+    "4.6"
+   ]
+  }
+ ],
+ "rule": "Absent items never change a conclusion or a confidence grade; they say what this study cannot show.",
+ "method_card": "methods/evidence.md"
+}

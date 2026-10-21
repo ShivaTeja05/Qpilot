@@ -1,0 +1,5100 @@
+{
+ "study_id": "e300000d4f9a",
+ "head": "dfccbec9827bb6061eeb1e0e74cc482d864da6ca944c9cdf2fc433d05a64a168",
+ "cards": [
+  {
+   "card": {
+    "id": "card_refset",
+    "kind": "reference_set",
+    "rank": 1,
+    "impact": {
+     "flips": true,
+     "flips_anywhere": true,
+     "max_delta_log2fc": 0.5613286745490336,
+     "n_genes_flipped": 31,
+     "n_genes_flipped_anywhere": 51,
+     "n_genes_flipped_min3": 17,
+     "n_genes_flipped_single_only": 5
+    },
+    "evidence": {
+     "cutoff_M": 1.5,
+     "cutoff_V": 0.15,
+     "genorm_M": {
+      "ALUsq(Eurogentec)": 1.6815868417246653,
+      "HMBS": 1.9577268390849065,
+      "HPRT1": 1.6348541505971745,
+      "SDHA(1)": 1.9886431897382821,
+      "UBC(2)": 2.027457232121438
+     },
+     "genorm_V": {
+      "V2/3": 0.556137574945685,
+      "V3/4": 0.3874296046199954,
+      "V4/5": 0.32702994817071
+     },
+     "genorm_note": "geNorm M ranks stability across all samples; it cannot show whether a control gene differs between the groups. The pairwise ratios below check that.",
+     "genorm_order": [
+      "ALUsq(Eurogentec)",
+      "HPRT1",
+      "HMBS",
+      "SDHA(1)",
+      "UBC(2)"
+     ],
+     "genorm_validated": false,
+     "not_recommended": [
+      "alusq_eurogentec_alone",
+      "hmbs_alone",
+      "hprt1_alone",
+      "sdha_1_alone",
+      "ubc_2_alone"
+     ],
+     "not_recommended_note": "MIQE recommends normalising to more than one validated reference gene; a single gene is what a ΔΔCt spreadsheet does",
+     "ref_group_effect": {
+      "flag_fold": 1.4142135623730951,
+      "flag_log2": 0.5,
+      "flagged": [
+       "HMBS:UBC(2)",
+       "HMBS:HPRT1",
+       "SDHA(1):UBC(2)"
+      ],
+      "note": "10 pairs, no multiple-testing correction",
+      "pairs": [
+       {
+        "diff": 0.8121081699847252,
+        "fold": 1.7557752343077617,
+        "genes": [
+         "HMBS",
+         "UBC(2)"
+        ],
+        "label": "HMBS:UBC(2)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.05827911320778609
+       },
+       {
+        "diff": 0.7051718944458072,
+        "fold": 1.6303389050985089,
+        "genes": [
+         "HMBS",
+         "HPRT1"
+        ],
+        "label": "HMBS:HPRT1",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.04457062930054571
+       },
+       {
+        "diff": 0.5405342519702785,
+        "fold": 1.4545110452184498,
+        "genes": [
+         "SDHA(1)",
+         "UBC(2)"
+        ],
+        "label": "SDHA(1):UBC(2)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.1277752464286493
+       },
+       {
+        "diff": -0.43359797643135956,
+        "fold": 0.740412944839475,
+        "genes": [
+         "HPRT1",
+         "SDHA(1)"
+        ],
+        "label": "HPRT1:SDHA(1)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.15367903524384205
+       },
+       {
+        "diff": 0.4265167559977243,
+        "fold": 1.343984738671558,
+        "genes": [
+         "ALUsq(Eurogentec)",
+         "UBC(2)"
+        ],
+        "label": "ALUsq(Eurogentec):UBC(2)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.15068366629857258
+       },
+       {
+        "diff": -0.38559141398699737,
+        "fold": 0.7654651417847602,
+        "genes": [
+         "ALUsq(Eurogentec)",
+         "HMBS"
+        ],
+        "label": "ALUsq(Eurogentec):HMBS",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.2583403480840867
+       },
+       {
+        "diff": 0.3195804804588036,
+        "fold": 1.2479676011484355,
+        "genes": [
+         "ALUsq(Eurogentec)",
+         "HPRT1"
+        ],
+        "label": "ALUsq(Eurogentec):HPRT1",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.14214954115359332
+       },
+       {
+        "diff": 0.27157391801444586,
+        "fold": 1.207124029810351,
+        "genes": [
+         "HMBS",
+         "SDHA(1)"
+        ],
+        "label": "HMBS:SDHA(1)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.5175480782888241
+       },
+       {
+        "diff": -0.11401749597255417,
+        "fold": 0.9240113666305696,
+        "genes": [
+         "ALUsq(Eurogentec)",
+         "SDHA(1)"
+        ],
+        "label": "ALUsq(Eurogentec):SDHA(1)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.6294846143192222
+       },
+       {
+        "diff": 0.10693627553891716,
+        "fold": 1.0769388062917338,
+        "genes": [
+         "HPRT1",
+         "UBC(2)"
+        ],
+        "label": "HPRT1:UBC(2)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.745934517091589
+       }
+      ],
+      "raw": {
+       "ALUsq(Eurogentec)": {
+        "diff": -0.38521307813600814,
+        "fold": 0.7656659055456486,
+        "genes": [
+         "ALUsq(Eurogentec)"
+        ],
+        "label": "ALUsq(Eurogentec)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.022280403792892187
+       },
+       "HMBS": {
+        "diff": 0.0003783358509990009,
+        "fold": 1.0002622768169762,
+        "genes": [
+         "HMBS"
+        ],
+        "label": "HMBS",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.9991122625910315
+       },
+       "HPRT1": {
+        "diff": -0.7047935585948082,
+        "fold": 0.613530275017597,
+        "genes": [
+         "HPRT1"
+        ],
+        "label": "HPRT1",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.0071423014142437315
+       },
+       "SDHA(1)": {
+        "diff": -0.27119558216344863,
+        "fold": 0.828632561456112,
+        "genes": [
+         "SDHA(1)"
+        ],
+        "label": "SDHA(1)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.35176844945051605
+       },
+       "UBC(2)": {
+        "diff": -0.8117298341337253,
+        "fold": 0.569698363020449,
+        "genes": [
+         "UBC(2)"
+        ],
+        "label": "UBC(2)",
+        "n_hi": 53,
+        "n_lo": 294,
+        "p": 0.0009724114095198904
+       }
+      }
+     }
+    },
+    "options": [
+     {
+      "id": "recommended",
+      "label": "Recommended set (all five)",
+      "per_gene": {}
+     },
+     {
+      "id": "top3",
+      "label": "Top three by stability (ALUsq(Eurogentec), HPRT1, HMBS)",
+      "per_gene": {}
+     },
+     {
+      "id": "top2",
+      "label": "Top two by stability (ALUsq(Eurogentec), HPRT1)",
+      "per_gene": {}
+     },
+     {
+      "id": "alusq_eurogentec_alone",
+      "label": "ALUsq(Eurogentec) alone",
+      "per_gene": {}
+     },
+     {
+      "id": "hmbs_alone",
+      "label": "HMBS alone",
+      "per_gene": {}
+     },
+     {
+      "id": "hprt1_alone",
+      "label": "HPRT1 alone",
+      "per_gene": {}
+     },
+     {
+      "id": "sdha_1_alone",
+      "label": "SDHA(1) alone",
+      "per_gene": {}
+     },
+     {
+      "id": "ubc_2_alone",
+      "label": "UBC(2) alone",
+      "per_gene": {}
+     }
+    ],
+    "recommended": "recommended",
+    "rationale_template": "refset_v1",
+    "facts": [
+     "f_order_1",
+     "f_m_1",
+     "f_worst_ref",
+     "f_fc_odc1_recommended",
+     "f_fc_odc1_worst",
+     "f_n_flipped_refset",
+     "f_n_genes",
+     "f_fc_birc5_recommended",
+     "f_fc_ntrk1_recommended",
+     "f_fc_nm23a_recommended",
+     "f_fc_odc1_top3",
+     "f_fc_birc5_top3",
+     "f_fc_ntrk1_top3",
+     "f_fc_nm23a_top3",
+     "f_fc_odc1_top2",
+     "f_fc_birc5_top2",
+     "f_fc_ntrk1_top2",
+     "f_fc_nm23a_top2",
+     "f_fc_odc1_alusq_eurogentec",
+     "f_fc_birc5_alusq_eurogentec",
+     "f_fc_ntrk1_alusq_eurogentec",
+     "f_fc_nm23a_alusq_eurogentec",
+     "f_fc_odc1_hmbs",
+     "f_fc_birc5_hmbs",
+     "f_fc_ntrk1_hmbs",
+     "f_fc_nm23a_hmbs",
+     "f_fc_odc1_hprt1",
+     "f_fc_birc5_hprt1",
+     "f_fc_ntrk1_hprt1",
+     "f_fc_nm23a_hprt1",
+     "f_fc_odc1_sdha_1",
+     "f_fc_birc5_sdha_1",
+     "f_fc_ntrk1_sdha_1",
+     "f_fc_nm23a_sdha_1",
+     "f_fc_odc1_ubc_2",
+     "f_fc_birc5_ubc_2",
+     "f_fc_ntrk1_ubc_2",
+     "f_fc_nm23a_ubc_2",
+     "f_n_flipped_refset_min3",
+     "f_n_flipped_refset_single_only",
+     "f_ref_pair_top",
+     "f_ref_ratio_top",
+     "f_ref_ratio_top_p",
+     "f_n_ref_pairs_flagged",
+     "f_n_ref_pairs",
+     "f_ref_flag_fold"
+    ],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "open",
+    "decision": null,
+    "reason": null,
+    "decided_by": null,
+    "decided_at": null
+   },
+   "title": "Which control genes to normalise to",
+   "status_line": "Your decision: this choice can change a conclusion.",
+   "impact": {
+    "plain": "31 of 58 conclusions change with this choice; 17 even between sets of three or more genes",
+    "segments": [
+     {
+      "text": "31",
+      "fact": "f_n_flipped_refset"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " conclusions change with this choice; ",
+      "fact": null
+     },
+     {
+      "text": "17",
+      "fact": "f_n_flipped_refset_min3"
+     },
+     {
+      "text": " even between sets of three or more genes",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_n_flipped_refset",
+      "text": "31",
+      "value": 31,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_genes",
+      "text": "58",
+      "value": 58,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_flipped_refset_min3",
+      "text": "17",
+      "value": 17,
+      "unit": "",
+      "path": "cards.card_refset.impact.n_genes_flipped_min3"
+     }
+    ],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "geNorm's stepwise ranking keeps ALUsq(Eurogentec) and HPRT1 as the most stable and drops UBC(2) first. None of the candidates reaches geNorm's usual stability cut-off, so which control genes to use is a judgement call. With the recommended set versus UBC(2) alone: BIRC5 4× vs 5.2×, NM23A 2.2× vs 2.8×, NTRK1 0.066× vs 0.091× and ODC1 3.3× vs 4.1×. 31 genes out of 58 change their conclusion with this choice alone, so a person makes it. Even between sets of three or more control genes, 17 of 58 change. The control genes are not neutral here: the ratio HMBS:UBC(2) itself differs 1.8× between the groups (p = 0.058), and 3 of 10 pairs differ by at least 1.4×.",
+    "segments": [
+     {
+      "text": "geNorm's stepwise ranking keeps ",
+      "fact": null
+     },
+     {
+      "text": "ALUsq(Eurogentec)",
+      "fact": "f_order_1"
+     },
+     {
+      "text": " and ",
+      "fact": null
+     },
+     {
+      "text": "HPRT1",
+      "fact": "f_order_2"
+     },
+     {
+      "text": " as the most stable and drops ",
+      "fact": null
+     },
+     {
+      "text": "UBC(2)",
+      "fact": "f_worst_ref"
+     },
+     {
+      "text": " first. None of the candidates reaches geNorm's usual stability cut-off, so which control genes to use is a judgement call. With the recommended set versus ",
+      "fact": null
+     },
+     {
+      "text": "UBC(2)",
+      "fact": "f_worst_ref"
+     },
+     {
+      "text": " alone: BIRC5 ",
+      "fact": null
+     },
+     {
+      "text": "4×",
+      "fact": "f_fc_birc5_recommended"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "5.2×",
+      "fact": "f_fc_birc5_worst"
+     },
+     {
+      "text": ", NM23A ",
+      "fact": null
+     },
+     {
+      "text": "2.2×",
+      "fact": "f_fc_nm23a_recommended"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "2.8×",
+      "fact": "f_fc_nm23a_worst"
+     },
+     {
+      "text": ", NTRK1 ",
+      "fact": null
+     },
+     {
+      "text": "0.066×",
+      "fact": "f_fc_ntrk1_recommended"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "0.091×",
+      "fact": "f_fc_ntrk1_worst"
+     },
+     {
+      "text": " and ODC1 ",
+      "fact": null
+     },
+     {
+      "text": "3.3×",
+      "fact": "f_fc_odc1_recommended"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "4.1×",
+      "fact": "f_fc_odc1_worst"
+     },
+     {
+      "text": ". ",
+      "fact": null
+     },
+     {
+      "text": "31",
+      "fact": "f_n_flipped_refset"
+     },
+     {
+      "text": " genes out of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " change their conclusion with this choice alone, so a person makes it. Even between sets of three or more control genes, ",
+      "fact": null
+     },
+     {
+      "text": "17",
+      "fact": "f_n_flipped_refset_min3"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " change. The control genes are not neutral here: the ratio ",
+      "fact": null
+     },
+     {
+      "text": "HMBS:UBC(2)",
+      "fact": "f_ref_pair_top"
+     },
+     {
+      "text": " itself differs ",
+      "fact": null
+     },
+     {
+      "text": "1.8×",
+      "fact": "f_ref_ratio_top"
+     },
+     {
+      "text": " between the groups (p = ",
+      "fact": null
+     },
+     {
+      "text": "0.058",
+      "fact": "f_ref_ratio_top_p"
+     },
+     {
+      "text": "), and ",
+      "fact": null
+     },
+     {
+      "text": "3",
+      "fact": "f_n_ref_pairs_flagged"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "10",
+      "fact": "f_n_ref_pairs"
+     },
+     {
+      "text": " pairs differ by at least ",
+      "fact": null
+     },
+     {
+      "text": "1.4×",
+      "fact": "f_ref_flag_fold"
+     },
+     {
+      "text": ".",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_order_1",
+      "text": "ALUsq(Eurogentec)",
+      "value": "ALUsq(Eurogentec)",
+      "unit": "",
+      "path": "genorm.order[0]"
+     },
+     {
+      "id": "f_order_2",
+      "text": "HPRT1",
+      "value": "HPRT1",
+      "unit": "",
+      "path": "genorm.order[1]"
+     },
+     {
+      "id": "f_worst_ref",
+      "text": "UBC(2)",
+      "value": "UBC(2)",
+      "unit": "",
+      "path": "genorm.order[-1]"
+     },
+     {
+      "id": "f_fc_birc5_recommended",
+      "text": "4×",
+      "value": 4.01142868409124,
+      "unit": "×",
+      "path": "contrasts.BIRC5.fc"
+     },
+     {
+      "id": "f_fc_birc5_worst",
+      "text": "5.2×",
+      "value": 5.2101873111685375,
+      "unit": "×",
+      "path": "cards.card_refset.ubc_2_alone.BIRC5.fc"
+     },
+     {
+      "id": "f_fc_nm23a_recommended",
+      "text": "2.2×",
+      "value": 2.1878561042496822,
+      "unit": "×",
+      "path": "contrasts.NM23A.fc"
+     },
+     {
+      "id": "f_fc_nm23a_worst",
+      "text": "2.8×",
+      "value": 2.841665902782139,
+      "unit": "×",
+      "path": "cards.card_refset.ubc_2_alone.NM23A.fc"
+     },
+     {
+      "id": "f_fc_ntrk1_recommended",
+      "text": "0.066×",
+      "value": 0.0664778367884075,
+      "unit": "×",
+      "path": "contrasts.NTRK1.fc"
+     },
+     {
+      "id": "f_fc_ntrk1_worst",
+      "text": "0.091×",
+      "value": 0.09058340143794265,
+      "unit": "×",
+      "path": "cards.card_refset.ubc_2_alone.NTRK1.fc"
+     },
+     {
+      "id": "f_fc_odc1_recommended",
+      "text": "3.3×",
+      "value": 3.3186076821812986,
+      "unit": "×",
+      "path": "contrasts.ODC1.fc"
+     },
+     {
+      "id": "f_fc_odc1_worst",
+      "text": "4.1×",
+      "value": 4.146595332934086,
+      "unit": "×",
+      "path": "cards.card_refset.ubc_2_alone.ODC1.fc"
+     },
+     {
+      "id": "f_n_flipped_refset",
+      "text": "31",
+      "value": 31,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_genes",
+      "text": "58",
+      "value": 58,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_flipped_refset_min3",
+      "text": "17",
+      "value": 17,
+      "unit": "",
+      "path": "cards.card_refset.impact.n_genes_flipped_min3"
+     },
+     {
+      "id": "f_ref_pair_top",
+      "text": "HMBS:UBC(2)",
+      "value": "HMBS:UBC(2)",
+      "unit": "",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).label"
+     },
+     {
+      "id": "f_ref_ratio_top",
+      "text": "1.8×",
+      "value": 1.7557752343077617,
+      "unit": "×",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).fold"
+     },
+     {
+      "id": "f_ref_ratio_top_p",
+      "text": "0.058",
+      "value": 0.05827911320778609,
+      "unit": "",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs.HMBS:UBC(2).p"
+     },
+     {
+      "id": "f_n_ref_pairs_flagged",
+      "text": "3",
+      "value": 3,
+      "unit": "",
+      "path": "cards.card_refset.evidence.ref_group_effect.flagged"
+     },
+     {
+      "id": "f_n_ref_pairs",
+      "text": "10",
+      "value": 10,
+      "unit": "",
+      "path": "cards.card_refset.evidence.ref_group_effect.pairs"
+     },
+     {
+      "id": "f_ref_flag_fold",
+      "text": "1.4×",
+      "value": 1.4142135623730951,
+      "unit": "×",
+      "path": "cards.card_refset.evidence.ref_group_effect.flag_fold"
+     }
+    ],
+    "source": "template"
+   },
+   "needs_human": true,
+   "genes": [
+    "BIRC5",
+    "NM23A",
+    "NTRK1",
+    "ODC1"
+   ],
+   "options": [
+    {
+     "id": "recommended",
+     "label": "Recommended set (all five)",
+     "recommended": true,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.01142868409124,
+       "log2fc": 2.004116148990932,
+       "ci": [
+        2.933476511654864,
+        5.485491369580537
+       ],
+       "p": 5.043719769792568e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1878561042496822,
+       "log2fc": 1.1295178548982436,
+       "ci": [
+        1.754371668359274,
+        2.7284494039847518
+       ],
+       "p": 1.2380920536773977e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.0664778367884075,
+       "log2fc": -3.9109827526937413,
+       "ci": [
+        0.031684262938106326,
+        0.13947942524965912
+       ],
+       "p": 1.348097591946546e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.3186076821812986,
+       "log2fc": 1.730578087558588,
+       "ci": [
+        2.292871356518271,
+        4.80321624539644
+       ],
+       "p": 2.065427855257047e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "top3",
+     "label": "Top three by stability (ALUsq(Eurogentec), HPRT1, HMBS)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 3.8179940096389324,
+       "log2fc": 1.9328148391821374,
+       "ci": [
+        2.8087405194032375,
+        5.189898517480679
+       ],
+       "p": 1.1530565260052496e-13,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.0823557285475274,
+       "log2fc": 1.0582165450894498,
+       "ci": [
+        1.6268776609345161,
+        2.665354306803799
+       ],
+       "p": 1.4099925130221552e-07,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.06119171023245465,
+       "log2fc": -4.030519968500385,
+       "ci": [
+        0.02819128438434902,
+        0.13282209317328914
+       ],
+       "p": 2.040408290841923e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.2108752049018148,
+       "log2fc": 1.6829665938185847,
+       "ci": [
+        2.1542026402670853,
+        4.785863404277992
+       ],
+       "p": 2.487457729369707e-07,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "top2",
+     "label": "Top two by stability (ALUsq(Eurogentec), HPRT1)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.330725478480963,
+       "log2fc": 2.114608723920939,
+       "ci": [
+        3.0040151561648267,
+        6.243371685883427
+       ],
+       "p": 9.05442198230603e-12,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.3620023986717555,
+       "log2fc": 1.2400104298282495,
+       "ci": [
+        1.8240153587259023,
+        3.058666860803282
+       ],
+       "p": 9.118658937344123e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.06994662702722579,
+       "log2fc": -3.8376017004822085,
+       "ci": [
+        0.034021483983993794,
+        0.14380709068386432
+       ],
+       "p": 1.02897725406616e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.6245904805626865,
+       "log2fc": 1.8578180033934673,
+       "ci": [
+        2.377116793131083,
+        5.526718834239956
+       ],
+       "p": 9.572064519509019e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "alusq_eurogentec_alone",
+     "label": "ALUsq(Eurogentec) alone",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": true,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 3.876671483873009,
+       "log2fc": 1.9548184836915379,
+       "ci": [
+        2.66630315315564,
+        5.6364865248302465
+       ],
+       "p": 2.49238671800787e-10,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1143587579654675,
+       "log2fc": 1.080220189598844,
+       "ci": [
+        1.6027476728801893,
+        2.789280579239038
+       ],
+       "p": 9.153234162728334e-07,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.0633108972908331,
+       "log2fc": -3.9814023470824083,
+       "ci": [
+        0.030501347552055712,
+        0.1314128731174787
+       ],
+       "p": 5.284867313820111e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.238198480114944,
+       "log2fc": 1.6951914159992807,
+       "ci": [
+        2.1462256432163604,
+        4.885753475997234
+       ],
+       "p": 3.7528101228515605e-07,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "hmbs_alone",
+     "label": "HMBS alone",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": true,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 2.9674568870557896,
+       "log2fc": 1.5692270697045405,
+       "ci": [
+        2.0173695924935413,
+        4.364991129687125
+       ],
+       "p": 2.5480932089393243e-07,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 1.618467926449882,
+       "log2fc": 0.694628775611843,
+       "ci": [
+        1.0549388722934288,
+        2.4830238962114857
+       ],
+       "p": 0.02809934659807537,
+       "conclusion": "none",
+       "changes_call": true
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.04683216342361133,
+       "log2fc": -4.416356504536745,
+       "ci": [
+        0.01797520254904288,
+        0.12201540010199342
+       ],
+       "p": 4.2159390309113675e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 2.519720610063295,
+       "log2fc": 1.3332637746688238,
+       "ci": [
+        1.5125910583488527,
+        4.197427928542902
+       ],
+       "p": 0.0006071345037605324,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "hprt1_alone",
+     "label": "HPRT1 alone",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": true,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.837960412169554,
+       "log2fc": 2.274398964150344,
+       "ci": [
+        3.1962378497260557,
+        7.322940923099911
+       ],
+       "p": 8.2713444415353e-11,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.6386512271453646,
+       "log2fc": 1.3998006700576555,
+       "ci": [
+        1.919635447145068,
+        3.6269804815651434
+       ],
+       "p": 9.394102310605416e-08,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.07727785960781625,
+       "log2fc": -3.6938010538819968,
+       "ci": [
+        0.036740549904494095,
+        0.16254159507925275
+       ],
+       "p": 6.253883197381585e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 4.057087986564451,
+       "log2fc": 2.020444590787649,
+       "ci": [
+        2.5046288740552853,
+        6.571817126772555
+       ],
+       "p": 3.025969379326146e-07,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "sdha_1_alone",
+     "label": "SDHA(1) alone",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": true,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 3.5820885157912707,
+       "log2fc": 1.840800987718989,
+       "ci": [
+        2.218838801440795,
+        5.782915877724741
+       ],
+       "p": 1.0317751901920787e-06,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 1.953691525494989,
+       "log2fc": 0.9662026936262924,
+       "ci": [
+        1.3094502370181555,
+        2.914895479711166
+       ],
+       "p": 0.001368552884079157,
+       "conclusion": "none",
+       "changes_call": true
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.06255441916987395,
+       "log2fc": -3.9987443822939905,
+       "ci": [
+        0.02992243542102295,
+        0.13077329109819227
+       ],
+       "p": 5.250422961749262e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 2.932362365851836,
+       "log2fc": 1.5520633951206655,
+       "ci": [
+        1.762199884925275,
+        4.879553743149178
+       ],
+       "p": 8.016872332730374e-05,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "ubc_2_alone",
+     "label": "UBC(2) alone",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": true,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 5.2101873111685375,
+       "log2fc": 2.3813352396892595,
+       "ci": [
+        3.2658294248465882,
+        8.31214625324065
+       ],
+       "p": 7.152295138685866e-10,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.841665902782139,
+       "log2fc": 1.5067369455965685,
+       "ci": [
+        1.9501286410341436,
+        4.140785860543263
+       ],
+       "p": 5.921911144345357e-07,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.09058340143794265,
+       "log2fc": -3.4646094756735586,
+       "ci": [
+        0.04019849231200228,
+        0.20412090464441504
+       ],
+       "p": 2.2967652942860805e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 4.146595332934086,
+       "log2fc": 2.051927261216529,
+       "ci": [
+        2.6945463147207147,
+        6.381130938880486
+       ],
+       "p": 1.1958276075482045e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": null
+  },
+  {
+   "card": {
+    "id": "card_cutoff",
+    "kind": "group_cutoff",
+    "rank": 2,
+    "impact": {
+     "flips": true,
+     "flips_anywhere": true,
+     "max_delta_log2fc": 1.4444306021618858,
+     "n_genes_flipped": 17,
+     "n_genes_flipped_anywhere": 51
+    },
+    "evidence": {
+     "cuts": [
+      0.1,
+      0.15,
+      0.2
+     ],
+     "n_hi_by_cut": {
+      "cut_10": 35,
+      "cut_15": 53,
+      "cut_20": 70
+     }
+    },
+    "options": [
+     {
+      "id": "cut_10",
+      "label": "Top 10 % by MYCN expression",
+      "per_gene": {}
+     },
+     {
+      "id": "cut_15",
+      "label": "Top 15 % by MYCN expression",
+      "per_gene": {}
+     },
+     {
+      "id": "cut_20",
+      "label": "Top 20 % by MYCN expression",
+      "per_gene": {}
+     }
+    ],
+    "recommended": "cut_15",
+    "rationale_template": "cutoff_v1",
+    "facts": [
+     "f_n_flipped_cutoff",
+     "f_n_genes",
+     "f_fc_odc1_cut_10",
+     "f_fc_birc5_cut_10",
+     "f_fc_ntrk1_cut_10",
+     "f_fc_nm23a_cut_10",
+     "f_fc_odc1_cut_15",
+     "f_fc_birc5_cut_15",
+     "f_fc_ntrk1_cut_15",
+     "f_fc_nm23a_cut_15",
+     "f_fc_odc1_cut_20",
+     "f_fc_birc5_cut_20",
+     "f_fc_ntrk1_cut_20",
+     "f_fc_nm23a_cut_20"
+    ],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "open",
+    "decision": null,
+    "reason": null,
+    "decided_by": null,
+    "decided_at": null
+   },
+   "title": "Where to cut the comparison groups",
+   "status_line": "Your decision: this choice can change a conclusion.",
+   "impact": {
+    "plain": "17 of 58 conclusions change with this choice",
+    "segments": [
+     {
+      "text": "17",
+      "fact": "f_n_flipped_cutoff"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " conclusions change with this choice",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_n_flipped_cutoff",
+      "text": "17",
+      "value": 17,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_genes",
+      "text": "58",
+      "value": 58,
+      "unit": "",
+      "path": "study"
+     }
+    ],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "The high group is the top fraction of samples by the marker gene's expression; where to draw that line is a convention, not a measurement. Depending on the line, the high group has 35, 53 or 70 samples. BIRC5 is 4.6×, 4× or 3.4× respectively. NM23A is 2.4×, 2.2× or 1.8× respectively. NTRK1 is 0.027×, 0.066× or 0.13× respectively. ODC1 is 5×, 3.3× or 2.7× respectively. 17 genes out of 58 change their conclusion with this choice alone, so a person makes it.",
+    "segments": [
+     {
+      "text": "The high group is the top fraction of samples by the marker gene's expression; where to draw that line is a convention, not a measurement. Depending on the line, the high group has ",
+      "fact": null
+     },
+     {
+      "text": "35",
+      "fact": "f_n_hi_cut_10"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "53",
+      "fact": "f_n_hi_cut_15"
+     },
+     {
+      "text": " or ",
+      "fact": null
+     },
+     {
+      "text": "70",
+      "fact": "f_n_hi_cut_20"
+     },
+     {
+      "text": " samples. BIRC5 is ",
+      "fact": null
+     },
+     {
+      "text": "4.6×",
+      "fact": "f_fc_birc5_cut_10"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "4×",
+      "fact": "f_fc_birc5_cut_15"
+     },
+     {
+      "text": " or ",
+      "fact": null
+     },
+     {
+      "text": "3.4×",
+      "fact": "f_fc_birc5_cut_20"
+     },
+     {
+      "text": " respectively. NM23A is ",
+      "fact": null
+     },
+     {
+      "text": "2.4×",
+      "fact": "f_fc_nm23a_cut_10"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "2.2×",
+      "fact": "f_fc_nm23a_cut_15"
+     },
+     {
+      "text": " or ",
+      "fact": null
+     },
+     {
+      "text": "1.8×",
+      "fact": "f_fc_nm23a_cut_20"
+     },
+     {
+      "text": " respectively. NTRK1 is ",
+      "fact": null
+     },
+     {
+      "text": "0.027×",
+      "fact": "f_fc_ntrk1_cut_10"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "0.066×",
+      "fact": "f_fc_ntrk1_cut_15"
+     },
+     {
+      "text": " or ",
+      "fact": null
+     },
+     {
+      "text": "0.13×",
+      "fact": "f_fc_ntrk1_cut_20"
+     },
+     {
+      "text": " respectively. ODC1 is ",
+      "fact": null
+     },
+     {
+      "text": "5×",
+      "fact": "f_fc_odc1_cut_10"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "3.3×",
+      "fact": "f_fc_odc1_cut_15"
+     },
+     {
+      "text": " or ",
+      "fact": null
+     },
+     {
+      "text": "2.7×",
+      "fact": "f_fc_odc1_cut_20"
+     },
+     {
+      "text": " respectively. ",
+      "fact": null
+     },
+     {
+      "text": "17",
+      "fact": "f_n_flipped_cutoff"
+     },
+     {
+      "text": " genes out of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " change their conclusion with this choice alone, so a person makes it.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_n_hi_cut_10",
+      "text": "35",
+      "value": 35,
+      "unit": "",
+      "path": "cards.card_cutoff.evidence.n_hi_by_cut"
+     },
+     {
+      "id": "f_n_hi_cut_15",
+      "text": "53",
+      "value": 53,
+      "unit": "",
+      "path": "cards.card_cutoff.evidence.n_hi_by_cut"
+     },
+     {
+      "id": "f_n_hi_cut_20",
+      "text": "70",
+      "value": 70,
+      "unit": "",
+      "path": "cards.card_cutoff.evidence.n_hi_by_cut"
+     },
+     {
+      "id": "f_fc_birc5_cut_10",
+      "text": "4.6×",
+      "value": 4.6183656182784025,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_10.BIRC5.fc"
+     },
+     {
+      "id": "f_fc_birc5_cut_15",
+      "text": "4×",
+      "value": 4.01142868409124,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_15.BIRC5.fc"
+     },
+     {
+      "id": "f_fc_birc5_cut_20",
+      "text": "3.4×",
+      "value": 3.4276085425221767,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_20.BIRC5.fc"
+     },
+     {
+      "id": "f_fc_nm23a_cut_10",
+      "text": "2.4×",
+      "value": 2.4153098294043795,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_10.NM23A.fc"
+     },
+     {
+      "id": "f_fc_nm23a_cut_15",
+      "text": "2.2×",
+      "value": 2.1878561042496822,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_15.NM23A.fc"
+     },
+     {
+      "id": "f_fc_nm23a_cut_20",
+      "text": "1.8×",
+      "value": 1.8293959433422509,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_20.NM23A.fc"
+     },
+     {
+      "id": "f_fc_ntrk1_cut_10",
+      "text": "0.027×",
+      "value": 0.027001848636689658,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_10.NTRK1.fc"
+     },
+     {
+      "id": "f_fc_ntrk1_cut_15",
+      "text": "0.066×",
+      "value": 0.0664778367884075,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_15.NTRK1.fc"
+     },
+     {
+      "id": "f_fc_ntrk1_cut_20",
+      "text": "0.13×",
+      "value": 0.13238145315772687,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_20.NTRK1.fc"
+     },
+     {
+      "id": "f_fc_odc1_cut_10",
+      "text": "5×",
+      "value": 4.966139475840371,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_10.ODC1.fc"
+     },
+     {
+      "id": "f_fc_odc1_cut_15",
+      "text": "3.3×",
+      "value": 3.3186076821812986,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_15.ODC1.fc"
+     },
+     {
+      "id": "f_fc_odc1_cut_20",
+      "text": "2.7×",
+      "value": 2.7118583693355065,
+      "unit": "×",
+      "path": "cards.card_cutoff.cut_20.ODC1.fc"
+     },
+     {
+      "id": "f_n_flipped_cutoff",
+      "text": "17",
+      "value": 17,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_genes",
+      "text": "58",
+      "value": 58,
+      "unit": "",
+      "path": "study"
+     }
+    ],
+    "source": "template"
+   },
+   "needs_human": true,
+   "genes": [
+    "BIRC5",
+    "NM23A",
+    "NTRK1",
+    "ODC1"
+   ],
+   "options": [
+    {
+     "id": "cut_10",
+     "label": "Top 10 % by MYCN expression",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.6183656182784025,
+       "log2fc": 2.2073823902617566,
+       "ci": [
+        3.4605564172824033,
+        6.163546670580243
+       ],
+       "p": 3.426783142014602e-16,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.4153098294043795,
+       "log2fc": 1.2722082659449834,
+       "ci": [
+        1.8633701918852625,
+        3.1307367679393607
+       ],
+       "p": 2.803370884097675e-08,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.027001848636689658,
+       "log2fc": -5.210798007399138,
+       "ci": [
+        0.011570547407175615,
+        0.06301342573874585
+       ],
+       "p": 4.717339849988406e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 4.966139475840371,
+       "log2fc": 2.3121247807007217,
+       "ci": [
+        3.2523441589870687,
+        7.58300477683184
+       ],
+       "p": 4.001707758052094e-09,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "cut_15",
+     "label": "Top 15 % by MYCN expression",
+     "recommended": true,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.01142868409124,
+       "log2fc": 2.004116148990932,
+       "ci": [
+        2.933476511654864,
+        5.485491369580537
+       ],
+       "p": 5.043719769792568e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1878561042496822,
+       "log2fc": 1.1295178548982436,
+       "ci": [
+        1.754371668359274,
+        2.7284494039847518
+       ],
+       "p": 1.2380920536773977e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.0664778367884075,
+       "log2fc": -3.9109827526937413,
+       "ci": [
+        0.031684262938106326,
+        0.13947942524965912
+       ],
+       "p": 1.348097591946546e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.3186076821812986,
+       "log2fc": 1.730578087558588,
+       "ci": [
+        2.292871356518271,
+        4.80321624539644
+       ],
+       "p": 2.065427855257047e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "cut_20",
+     "label": "Top 20 % by MYCN expression",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 3.4276085425221767,
+       "log2fc": 1.7772023527379823,
+       "ci": [
+        2.51606156657512,
+        4.669400970487038
+       ],
+       "p": 9.810882560878851e-13,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 1.8293959433422509,
+       "log2fc": 0.8713673570306373,
+       "ci": [
+        1.4904469724504636,
+        2.2454267608157488
+       ],
+       "p": 7.532224760390074e-08,
+       "conclusion": "none",
+       "changes_call": true
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.13238145315772687,
+       "log2fc": -2.917227082346936,
+       "ci": [
+        0.06917397913109989,
+        0.25334452868379875
+       ],
+       "p": 2.876878088560197e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 2.7118583693355065,
+       "log2fc": 1.43928183363911,
+       "ci": [
+        1.9527770502204227,
+        3.7660089330243407
+       ],
+       "p": 4.549666635208124e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": null
+  },
+  {
+   "card": {
+    "id": "card_amp_call",
+    "kind": "amp_call",
+    "rank": 3,
+    "impact": {
+     "flips": true,
+     "flips_anywhere": true,
+     "max_delta_log2fc": 3.548397709871961,
+     "n_genes_flipped": 11,
+     "n_genes_flipped_anywhere": 48
+    },
+    "evidence": {
+     "method_card": "methods/amp_call.md",
+     "n_flipped_by_rule": {
+      "cq_le_35": 10,
+      "cq_le_38": 3,
+      "cq_le_40": 1,
+      "linregpcr": 0
+     },
+     "n_not_amplified_by_rule": {
+      "cq_le_35": 1642,
+      "cq_le_38": 663,
+      "cq_le_40": 460,
+      "linregpcr": 323
+     },
+     "recommended_rule": "linregpcr",
+     "rules": {
+      "cq_le_35": {
+       "cq_max": 35.0,
+       "id": "cq_le_35",
+       "kind": "cq_max",
+       "label": "Cq ≤ 35 (common, not recommended)",
+       "method_card": "methods/amp_call.md",
+       "note": "A common lab rule; it calls late but real wells, such as a few-copy standard, not detected.",
+       "recommended": false
+      },
+      "cq_le_38": {
+       "cq_max": 38.0,
+       "id": "cq_le_38",
+       "kind": "cq_max",
+       "label": "Cq ≤ 38 (a later Cq counts as not detected)",
+       "method_card": "methods/amp_call.md",
+       "note": "A well with Cq above the line is undetermined for every gene, controls included.",
+       "recommended": false
+      },
+      "cq_le_40": {
+       "cq_max": 40.0,
+       "id": "cq_le_40",
+       "kind": "cq_max",
+       "label": "Cq ≤ 40 (a later Cq counts as not detected)",
+       "method_card": "methods/amp_call.md",
+       "note": "A well with Cq above the line is undetermined for every gene, controls included.",
+       "recommended": false
+      },
+      "linregpcr": {
+       "id": "linregpcr",
+       "kind": "linregpcr",
+       "label": "LinRegPCR's own call (a starting quantity was found)",
+       "method_card": "methods/amp_call.md",
+       "note": "Every well with a LinRegPCR starting quantity counts; the engine's default.",
+       "recommended": true
+      }
+     },
+     "title": "Which curves count as amplified"
+    },
+    "options": [
+     {
+      "id": "linregpcr",
+      "label": "LinRegPCR's own call (a starting quantity was found)",
+      "per_gene": {}
+     },
+     {
+      "id": "cq_le_40",
+      "label": "Cq ≤ 40 (a later Cq counts as not detected)",
+      "per_gene": {}
+     },
+     {
+      "id": "cq_le_38",
+      "label": "Cq ≤ 38 (a later Cq counts as not detected)",
+      "per_gene": {}
+     },
+     {
+      "id": "cq_le_35",
+      "label": "Cq ≤ 35 (common, not recommended)",
+      "per_gene": {}
+     }
+    ],
+    "recommended": "linregpcr",
+    "rationale_template": "ampcall_v1",
+    "facts": [
+     "f_n_flipped_amp_call",
+     "f_n_genes",
+     "f_amp_primary",
+     "f_amp_label_linregpcr",
+     "f_amp_label_cq_le_40",
+     "f_amp_label_cq_le_38",
+     "f_amp_label_cq_le_35",
+     "f_n_flipped_amp_linregpcr",
+     "f_n_flipped_amp_cq_le_40",
+     "f_n_flipped_amp_cq_le_38",
+     "f_n_flipped_amp_cq_le_35",
+     "f_n_undetermined_amp_linregpcr",
+     "f_n_undetermined_amp_cq_le_40",
+     "f_n_undetermined_amp_cq_le_38",
+     "f_n_undetermined_amp_cq_le_35",
+     "f_fc_odc1_linregpcr",
+     "f_fc_birc5_linregpcr",
+     "f_fc_ntrk1_linregpcr",
+     "f_fc_nm23a_linregpcr",
+     "f_fc_odc1_cq_le_40",
+     "f_fc_birc5_cq_le_40",
+     "f_fc_ntrk1_cq_le_40",
+     "f_fc_nm23a_cq_le_40",
+     "f_fc_odc1_cq_le_38",
+     "f_fc_birc5_cq_le_38",
+     "f_fc_ntrk1_cq_le_38",
+     "f_fc_nm23a_cq_le_38",
+     "f_fc_odc1_cq_le_35",
+     "f_fc_birc5_cq_le_35",
+     "f_fc_ntrk1_cq_le_35",
+     "f_fc_nm23a_cq_le_35"
+    ],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "open",
+    "decision": null,
+    "reason": null,
+    "decided_by": null,
+    "decided_at": null
+   },
+   "title": "Which curves count as amplified",
+   "status_line": "Your decision: this choice can change a conclusion.",
+   "impact": {
+    "plain": "11 of 58 conclusions change with this choice",
+    "segments": [
+     {
+      "text": "11",
+      "fact": "f_n_flipped_amp_call"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " conclusions change with this choice",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_n_flipped_amp_call",
+      "text": "11",
+      "value": 11,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_genes",
+      "text": "58",
+      "value": 58,
+      "unit": "",
+      "path": "study"
+     }
+    ],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "Which wells count as amplified is a choice. LinRegPCR's own call counts a well when it finds a starting quantity; a Cq cut-off calls every well with a later Cq not detected, for every gene including the control genes. This analysis uses LinRegPCR's own call (a starting quantity was found), under which 323 study wells have no value. Changing only this choice: with Cq ≤ 35 (common, not recommended), 10 of 58 genes change their conclusion (1,642 study wells without a value); with Cq ≤ 38 (a later Cq counts as not detected), 3 of 58 genes change their conclusion (663 study wells without a value); with Cq ≤ 40 (a later Cq counts as not detected), 1 of 58 genes change their conclusion (460 study wells without a value). 11 genes out of 58 change their conclusion with this choice alone, so a person makes it.",
+    "segments": [
+     {
+      "text": "Which wells count as amplified is a choice. LinRegPCR's own call counts a well when it finds a starting quantity; a Cq cut-off calls every well with a later Cq not detected, for every gene including the control genes. This analysis uses ",
+      "fact": null
+     },
+     {
+      "text": "LinRegPCR's own call (a starting quantity was found)",
+      "fact": "f_amp_primary"
+     },
+     {
+      "text": ", under which ",
+      "fact": null
+     },
+     {
+      "text": "323",
+      "fact": "f_n_undetermined_amp_linregpcr"
+     },
+     {
+      "text": " study wells have no value. Changing only this choice: with ",
+      "fact": null
+     },
+     {
+      "text": "Cq ≤ 35 (common, not recommended)",
+      "fact": "f_amp_label_cq_le_35"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "10",
+      "fact": "f_n_flipped_amp_cq_le_35"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " genes change their conclusion (",
+      "fact": null
+     },
+     {
+      "text": "1,642",
+      "fact": "f_n_undetermined_amp_cq_le_35"
+     },
+     {
+      "text": " study wells without a value); with ",
+      "fact": null
+     },
+     {
+      "text": "Cq ≤ 38 (a later Cq counts as not detected)",
+      "fact": "f_amp_label_cq_le_38"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "3",
+      "fact": "f_n_flipped_amp_cq_le_38"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " genes change their conclusion (",
+      "fact": null
+     },
+     {
+      "text": "663",
+      "fact": "f_n_undetermined_amp_cq_le_38"
+     },
+     {
+      "text": " study wells without a value); with ",
+      "fact": null
+     },
+     {
+      "text": "Cq ≤ 40 (a later Cq counts as not detected)",
+      "fact": "f_amp_label_cq_le_40"
+     },
+     {
+      "text": ", ",
+      "fact": null
+     },
+     {
+      "text": "1",
+      "fact": "f_n_flipped_amp_cq_le_40"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " genes change their conclusion (",
+      "fact": null
+     },
+     {
+      "text": "460",
+      "fact": "f_n_undetermined_amp_cq_le_40"
+     },
+     {
+      "text": " study wells without a value). ",
+      "fact": null
+     },
+     {
+      "text": "11",
+      "fact": "f_n_flipped_amp_call"
+     },
+     {
+      "text": " genes out of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " change their conclusion with this choice alone, so a person makes it.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_amp_primary",
+      "text": "LinRegPCR's own call (a starting quantity was found)",
+      "value": "LinRegPCR's own call (a starting quantity was found)",
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.rules.linregpcr"
+     },
+     {
+      "id": "f_n_undetermined_amp_linregpcr",
+      "text": "323",
+      "value": 323,
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.n_not_amplified_by_rule.linregpcr"
+     },
+     {
+      "id": "f_amp_label_cq_le_35",
+      "text": "Cq ≤ 35 (common, not recommended)",
+      "value": "Cq ≤ 35 (common, not recommended)",
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.rules.cq_le_35.label"
+     },
+     {
+      "id": "f_n_flipped_amp_cq_le_35",
+      "text": "10",
+      "value": 10,
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.n_flipped_by_rule.cq_le_35"
+     },
+     {
+      "id": "f_n_genes",
+      "text": "58",
+      "value": 58,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_undetermined_amp_cq_le_35",
+      "text": "1,642",
+      "value": 1642,
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.n_not_amplified_by_rule.cq_le_35"
+     },
+     {
+      "id": "f_amp_label_cq_le_38",
+      "text": "Cq ≤ 38 (a later Cq counts as not detected)",
+      "value": "Cq ≤ 38 (a later Cq counts as not detected)",
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.rules.cq_le_38.label"
+     },
+     {
+      "id": "f_n_flipped_amp_cq_le_38",
+      "text": "3",
+      "value": 3,
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.n_flipped_by_rule.cq_le_38"
+     },
+     {
+      "id": "f_n_undetermined_amp_cq_le_38",
+      "text": "663",
+      "value": 663,
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.n_not_amplified_by_rule.cq_le_38"
+     },
+     {
+      "id": "f_amp_label_cq_le_40",
+      "text": "Cq ≤ 40 (a later Cq counts as not detected)",
+      "value": "Cq ≤ 40 (a later Cq counts as not detected)",
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.rules.cq_le_40.label"
+     },
+     {
+      "id": "f_n_flipped_amp_cq_le_40",
+      "text": "1",
+      "value": 1,
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.n_flipped_by_rule.cq_le_40"
+     },
+     {
+      "id": "f_n_undetermined_amp_cq_le_40",
+      "text": "460",
+      "value": 460,
+      "unit": "",
+      "path": "cards.card_amp_call.evidence.n_not_amplified_by_rule.cq_le_40"
+     },
+     {
+      "id": "f_n_flipped_amp_call",
+      "text": "11",
+      "value": 11,
+      "unit": "",
+      "path": "study"
+     }
+    ],
+    "source": "template"
+   },
+   "needs_human": true,
+   "genes": [
+    "BIRC5",
+    "NM23A",
+    "NTRK1",
+    "ODC1"
+   ],
+   "options": [
+    {
+     "id": "linregpcr",
+     "label": "LinRegPCR's own call (a starting quantity was found)",
+     "recommended": true,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.01142868409124,
+       "log2fc": 2.004116148990932,
+       "ci": [
+        2.933476511654864,
+        5.485491369580537
+       ],
+       "p": 5.043719769792568e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1878561042496822,
+       "log2fc": 1.1295178548982436,
+       "ci": [
+        1.754371668359274,
+        2.7284494039847518
+       ],
+       "p": 1.2380920536773977e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.0664778367884075,
+       "log2fc": -3.9109827526937413,
+       "ci": [
+        0.031684262938106326,
+        0.13947942524965912
+       ],
+       "p": 1.348097591946546e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.3186076821812986,
+       "log2fc": 1.730578087558588,
+       "ci": [
+        2.292871356518271,
+        4.80321624539644
+       ],
+       "p": 2.065427855257047e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "cq_le_40",
+     "label": "Cq ≤ 40 (a later Cq counts as not detected)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.100282426554459,
+       "log2fc": 2.035723285671329,
+       "ci": [
+        2.991887423438099,
+        5.619300995687736
+       ],
+       "p": 4.06161442627708e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1424189508781053,
+       "log2fc": 1.0992406272652189,
+       "ci": [
+        1.7182678002146854,
+        2.6712710093898973
+       ],
+       "p": 2.7926612219943405e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.2399749143203667,
+       "log2fc": -2.0590444927083325,
+       "ci": [
+        0.12824724487970876,
+        0.44903857043543305
+       ],
+       "p": 5.321884029349564e-05,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.357935725355451,
+       "log2fc": 1.7475746157429581,
+       "ci": [
+        2.3051091747979062,
+        4.891626157623103
+       ],
+       "p": 2.687534386692757e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "cq_le_38",
+     "label": "Cq ≤ 38 (a later Cq counts as not detected)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.1415228843313985,
+       "log2fc": 2.050161360401384,
+       "ci": [
+        3.0185530507675766,
+        5.682262830225592
+       ],
+       "p": 3.204630345640795e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1809380290260485,
+       "log2fc": 1.124948776632949,
+       "ci": [
+        1.7487119471909034,
+        2.7199966776076296
+       ],
+       "p": 1.4756027195468079e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.34636933331194203,
+       "log2fc": -1.5296168918356947,
+       "ci": [
+        0.19728431566077184,
+        0.6081158284536373
+       ],
+       "p": 0.0006160116111337166,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.48241426013674,
+       "log2fc": 1.8000878329418841,
+       "ci": [
+        2.3908397230721,
+        5.072363890466446
+       ],
+       "p": 1.2814219901073143e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "cq_le_35",
+     "label": "Cq ≤ 35 (common, not recommended)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 6.031928112952599,
+       "log2fc": 2.5926192350215658,
+       "ci": [
+        4.521680706032914,
+        8.046600174860524
+       ],
+       "p": 1.612540567966635e-22,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.5834521818979232,
+       "log2fc": 1.3693001806169711,
+       "ci": [
+        2.016811212817394,
+        3.309295948840719
+       ],
+       "p": 1.0530712627975548e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.7777697108141097,
+       "log2fc": -0.3625850428217803,
+       "ci": [
+        0.3852509984541399,
+        1.5702119539915325
+       ],
+       "p": 0.44289778803670327,
+       "conclusion": "none",
+       "changes_call": true
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.952838007634257,
+       "log2fc": 1.982888832877883,
+       "ci": [
+        2.6498352052121086,
+        5.896566052056527
+       ],
+       "p": 2.776269363200845e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": null
+  },
+  {
+   "card": {
+    "id": "card_undetermined",
+    "kind": "undetermined",
+    "rank": 4,
+    "impact": {
+     "flips": false,
+     "flips_anywhere": true,
+     "max_delta_log2fc": 2.306021353648834,
+     "n_genes_flipped": 0,
+     "n_genes_flipped_anywhere": 28
+    },
+    "evidence": {
+     "n_undetermined": 323,
+     "n_unknown_wells": 23423
+    },
+    "options": [
+     {
+      "id": "drop",
+      "label": "Drop empty wells",
+      "per_gene": {}
+     },
+     {
+      "id": "cap",
+      "label": "Count empty wells as very low (cap)",
+      "per_gene": {}
+     }
+    ],
+    "recommended": "drop",
+    "rationale_template": "undetermined_auto_v1",
+    "facts": [
+     "f_n_flipped_undetermined",
+     "f_n_undetermined",
+     "f_n_unknown_wells",
+     "f_pct_undetermined",
+     "f_fc_odc1_drop",
+     "f_fc_birc5_drop",
+     "f_fc_ntrk1_drop",
+     "f_fc_nm23a_drop",
+     "f_fc_odc1_cap",
+     "f_fc_birc5_cap",
+     "f_fc_ntrk1_cap",
+     "f_fc_nm23a_cap"
+    ],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "auto_decided",
+    "decision": "drop",
+    "reason": "Decided automatically: at the recommended settings no option on this card changes any conclusion. At other settings it can, so an agent must ask a person to change it.",
+    "decided_by": "system",
+    "decided_at": "2026-10-20T19:19:52Z"
+   },
+   "title": "What to do with wells that never amplified",
+   "status_line": "Decided automatically: at the recommended settings no option on this card changes any conclusion. At other settings it can, so an agent must ask a person to change it.",
+   "impact": {
+    "plain": "Changes no conclusion",
+    "segments": [
+     {
+      "text": "Changes no conclusion",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "323 of 23,423 sample wells (1.4%) never amplified. They can be dropped or counted as very low. Dropped versus counted: BIRC5 4× vs 4×, NM23A 2.2× vs 2.2×, NTRK1 0.066× vs 0.048× and ODC1 3.3× vs 3.3×. No gene changes its conclusion with this choice, so it was decided automatically and logged; you can reopen it.",
+    "segments": [
+     {
+      "text": "323",
+      "fact": "f_n_undetermined"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "23,423",
+      "fact": "f_n_unknown_wells"
+     },
+     {
+      "text": " sample wells (",
+      "fact": null
+     },
+     {
+      "text": "1.4%",
+      "fact": "f_pct_undetermined"
+     },
+     {
+      "text": ") never amplified. They can be dropped or counted as very low. Dropped versus counted: BIRC5 ",
+      "fact": null
+     },
+     {
+      "text": "4×",
+      "fact": "f_fc_birc5_drop"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "4×",
+      "fact": "f_fc_birc5_cap"
+     },
+     {
+      "text": ", NM23A ",
+      "fact": null
+     },
+     {
+      "text": "2.2×",
+      "fact": "f_fc_nm23a_drop"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "2.2×",
+      "fact": "f_fc_nm23a_cap"
+     },
+     {
+      "text": ", NTRK1 ",
+      "fact": null
+     },
+     {
+      "text": "0.066×",
+      "fact": "f_fc_ntrk1_drop"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "0.048×",
+      "fact": "f_fc_ntrk1_cap"
+     },
+     {
+      "text": " and ODC1 ",
+      "fact": null
+     },
+     {
+      "text": "3.3×",
+      "fact": "f_fc_odc1_drop"
+     },
+     {
+      "text": " vs ",
+      "fact": null
+     },
+     {
+      "text": "3.3×",
+      "fact": "f_fc_odc1_cap"
+     },
+     {
+      "text": ". No gene changes its conclusion with this choice, so it was decided automatically and logged; you can reopen it.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_n_undetermined",
+      "text": "323",
+      "value": 323,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_unknown_wells",
+      "text": "23,423",
+      "value": 23423,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_pct_undetermined",
+      "text": "1.4%",
+      "value": 1.3789864662938138,
+      "unit": "%",
+      "path": "study"
+     },
+     {
+      "id": "f_fc_birc5_drop",
+      "text": "4×",
+      "value": 4.01142868409124,
+      "unit": "×",
+      "path": "cards.card_undetermined.drop.BIRC5.fc"
+     },
+     {
+      "id": "f_fc_birc5_cap",
+      "text": "4×",
+      "value": 4.01142868409124,
+      "unit": "×",
+      "path": "cards.card_undetermined.cap.BIRC5.fc"
+     },
+     {
+      "id": "f_fc_nm23a_drop",
+      "text": "2.2×",
+      "value": 2.1878561042496822,
+      "unit": "×",
+      "path": "cards.card_undetermined.drop.NM23A.fc"
+     },
+     {
+      "id": "f_fc_nm23a_cap",
+      "text": "2.2×",
+      "value": 2.1878561042496822,
+      "unit": "×",
+      "path": "cards.card_undetermined.cap.NM23A.fc"
+     },
+     {
+      "id": "f_fc_ntrk1_drop",
+      "text": "0.066×",
+      "value": 0.0664778367884075,
+      "unit": "×",
+      "path": "cards.card_undetermined.drop.NTRK1.fc"
+     },
+     {
+      "id": "f_fc_ntrk1_cap",
+      "text": "0.048×",
+      "value": 0.04777902440696303,
+      "unit": "×",
+      "path": "cards.card_undetermined.cap.NTRK1.fc"
+     },
+     {
+      "id": "f_fc_odc1_drop",
+      "text": "3.3×",
+      "value": 3.3186076821812986,
+      "unit": "×",
+      "path": "cards.card_undetermined.drop.ODC1.fc"
+     },
+     {
+      "id": "f_fc_odc1_cap",
+      "text": "3.3×",
+      "value": 3.3186076821812986,
+      "unit": "×",
+      "path": "cards.card_undetermined.cap.ODC1.fc"
+     }
+    ],
+    "source": "template"
+   },
+   "needs_human": true,
+   "genes": [
+    "BIRC5",
+    "NM23A",
+    "NTRK1",
+    "ODC1"
+   ],
+   "options": [
+    {
+     "id": "drop",
+     "label": "Drop empty wells",
+     "recommended": true,
+     "chosen": true,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.01142868409124,
+       "log2fc": 2.004116148990932,
+       "ci": [
+        2.933476511654864,
+        5.485491369580537
+       ],
+       "p": 5.043719769792568e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1878561042496822,
+       "log2fc": 1.1295178548982436,
+       "ci": [
+        1.754371668359274,
+        2.7284494039847518
+       ],
+       "p": 1.2380920536773977e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.0664778367884075,
+       "log2fc": -3.9109827526937413,
+       "ci": [
+        0.031684262938106326,
+        0.13947942524965912
+       ],
+       "p": 1.348097591946546e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.3186076821812986,
+       "log2fc": 1.730578087558588,
+       "ci": [
+        2.292871356518271,
+        4.80321624539644
+       ],
+       "p": 2.065427855257047e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "cap",
+     "label": "Count empty wells as very low (cap)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "BIRC5",
+       "fc": 4.01142868409124,
+       "log2fc": 2.004116148990932,
+       "ci": [
+        2.933476511654864,
+        5.485491369580537
+       ],
+       "p": 5.043719769792568e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1878561042496822,
+       "log2fc": 1.1295178548982436,
+       "ci": [
+        1.754371668359274,
+        2.7284494039847518
+       ],
+       "p": 1.2380920536773977e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.04777902440696303,
+       "log2fc": -4.387478793862561,
+       "ci": [
+        0.022087240805171313,
+        0.1033553803038488
+       ],
+       "p": 1.032536132734826e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.3186076821812986,
+       "log2fc": 1.730578087558588,
+       "ci": [
+        2.292871356518271,
+        4.80321624539644
+       ],
+       "p": 2.065427855257047e-08,
+       "conclusion": "up",
+       "changes_call": false
+      }
+     ]
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": null
+  },
+  {
+   "card": {
+    "id": "card_trace_2016_hmbs_20080318_k22",
+    "kind": "trace_set_aside",
+    "rank": 0,
+    "impact": {
+     "by_option": {
+      "read_from_other_refs": {
+       "changed_calls": [
+        "CAMTA2",
+        "IGSF4"
+       ],
+       "class": "changes_call",
+       "max_abs_delta": 0.0504713146,
+       "n_changed": 2,
+       "root": null,
+       "root_delta": null
+      },
+      "set_aside": {
+       "changed_calls": [
+        "CAMTA2"
+       ],
+       "class": "changes_call",
+       "max_abs_delta": 0.1356557658,
+       "n_changed": 1,
+       "root": null,
+       "root_delta": null
+      }
+     },
+     "flipped_genes": [
+      "CAMTA2",
+      "IGSF4"
+     ],
+     "flips": true,
+     "flips_anywhere": true,
+     "max_delta_log2fc": 0.1356557658,
+     "n_genes_flipped": 2,
+     "n_genes_flipped_anywhere": 2
+    },
+    "evidence": {
+     "checks": [
+      "S1"
+     ],
+     "cq": 46.0553,
+     "feeds": 58,
+     "fold_off": 5.5523342332,
+     "groups": "held fixed",
+     "plate": "HMBS_20080318",
+     "pull_log2": -2.4730944163,
+     "role": "reference_well",
+     "sample": "2016",
+     "target": "HMBS",
+     "values_read": "high",
+     "well": "K22",
+     "what_to_check": [
+      "re-run that well and look at its curve"
+     ],
+     "z": -9.2424459315
+    },
+    "options": [
+     {
+      "id": "keep",
+      "label": "Keep (no change)",
+      "per_gene": {}
+     },
+     {
+      "id": "read_from_other_refs",
+      "label": "Read this well from the sample's other reference wells",
+      "per_gene": {}
+     },
+     {
+      "id": "set_aside",
+      "label": "Set the sample aside (every comparison)",
+      "per_gene": {}
+     }
+    ],
+    "recommended": "keep",
+    "rationale_template": "trace_set_aside_v1",
+    "facts": [],
+    "autonomy": "suggest",
+    "effective_autonomy": "suggest",
+    "status": "open",
+    "decision": null,
+    "reason": null,
+    "decided_by": null,
+    "decided_at": null
+   },
+   "title": "What to do with one unusual well",
+   "status_line": "Your decision: this choice can change a conclusion.",
+   "impact": {
+    "plain": "Can change a conclusion",
+    "segments": [
+     {
+      "text": "Can change a conclusion",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "explanation": {
+    "plain": "Trace found this place unusual. Keep it, read the well from the sample's other reference wells, or set it aside; the groups stay as they are. An option that changes a conclusion is a decision for a person, and it is logged.",
+    "segments": [
+     {
+      "text": "Trace found this place unusual. Keep it, read the well from the sample's other reference wells, or set it aside; the groups stay as they are. An option that changes a conclusion is a decision for a person, and it is logged.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "needs_human": true,
+   "genes": [
+    "AHCY",
+    "AKR1C1",
+    "ARHGEF7",
+    "BIRC5",
+    "CAMTA1",
+    "CAMTA2",
+    "CD44",
+    "CDCA5",
+    "CDH5",
+    "CDKN3",
+    "CLSTN1",
+    "CPSG3",
+    "DDC",
+    "DPYSL3",
+    "ECEL1",
+    "ELAVL4",
+    "EPB41L3",
+    "EPHA5",
+    "EPN2",
+    "FYN",
+    "GNB1",
+    "HIVEP2",
+    "IGSF4",
+    "INPP1",
+    "MAP2K4",
+    "MAP7",
+    "MAPT",
+    "MCM2",
+    "MRPL3",
+    "MTSS1",
+    "NHLH2",
+    "NM23A",
+    "NRCAM",
+    "NTRK1",
+    "ODC1",
+    "PAICS",
+    "PDE4DIP",
+    "PIK3R1",
+    "PLAGL1",
+    "PLAT",
+    "PMP22",
+    "PRAME",
+    "PRDM2",
+    "PRKACB_bis",
+    "PRKCZ",
+    "PTN",
+    "PTPRF",
+    "PTPRH",
+    "PTPRN2",
+    "QPCT",
+    "SCG2",
+    "SLC25A5",
+    "SLC6A8",
+    "SNAPC1",
+    "TNFRSF",
+    "TYMS",
+    "ULK2",
+    "WSB1"
+   ],
+   "options": [
+    {
+     "id": "keep",
+     "label": "Keep (no change)",
+     "recommended": true,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "AHCY",
+       "fc": 2.614162762583152,
+       "log2fc": 1.3863489687773178,
+       "ci": [
+        2.118827876629596,
+        3.2252959405777344
+       ],
+       "p": 3.4236708518096045e-13,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "AKR1C1",
+       "fc": 0.29441754496147543,
+       "log2fc": -1.764064447695223,
+       "ci": [
+        0.18522385606844702,
+        0.4679834046274814
+       ],
+       "p": 1.99122253227859e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ARHGEF7",
+       "fc": 0.8983852933629127,
+       "log2fc": -0.1545937839855095,
+       "ci": [
+        0.6646011100404159,
+        1.214406842145788
+       ],
+       "p": 0.4806758149773522,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "BIRC5",
+       "fc": 4.01142868409124,
+       "log2fc": 2.004116148990932,
+       "ci": [
+        2.933476511654864,
+        5.485491369580537
+       ],
+       "p": 5.043719769792568e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CAMTA1",
+       "fc": 0.35902992696506975,
+       "log2fc": -1.477823989879155,
+       "ci": [
+        0.25943610672182876,
+        0.49685639398973275
+       ],
+       "p": 3.450060869749911e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CAMTA2",
+       "fc": 0.5052860358240974,
+       "log2fc": -0.9848277849605926,
+       "ci": [
+        0.3729941314882647,
+        0.6844986460781991
+       ],
+       "p": 2.9281255987049988e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "CD44",
+       "fc": 0.2867377358149505,
+       "log2fc": -1.8021963134669554,
+       "ci": [
+        0.18799269988205036,
+        0.4373495842757169
+       ],
+       "p": 1.8895090302137064e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CDCA5",
+       "fc": 2.4688648233346555,
+       "log2fc": 1.3038478473986674,
+       "ci": [
+        1.7478711705167052,
+        3.4872670358750586
+       ],
+       "p": 1.1866626750995467e-06,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CDH5",
+       "fc": 0.10000855498728381,
+       "log2fc": -3.3218046777891534,
+       "ci": [
+        0.04428513625465048,
+        0.22584803653154095
+       ],
+       "p": 5.762468404506528e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CDKN3",
+       "fc": 2.3799262029722064,
+       "log2fc": 1.2509168389715897,
+       "ci": [
+        1.776316334808264,
+        3.188648677379349
+       ],
+       "p": 8.421267801514294e-08,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CLSTN1",
+       "fc": 0.45265275320143966,
+       "log2fc": -1.1435233654590808,
+       "ci": [
+        0.2717398232627009,
+        0.7540098927007999
+       ],
+       "p": 0.002866714132671344,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CPSG3",
+       "fc": 21.192506885141203,
+       "log2fc": 4.405482350688189,
+       "ci": [
+        11.036389134849989,
+        40.69468216362073
+       ],
+       "p": 5.196245183671858e-15,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "DDC",
+       "fc": 0.27065052237833925,
+       "log2fc": -1.8854969223089908,
+       "ci": [
+        0.15972141635637435,
+        0.4586216860250408
+       ],
+       "p": 6.636317354816448e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "DPYSL3",
+       "fc": 0.492509681830066,
+       "log2fc": -1.0217760093215358,
+       "ci": [
+        0.3787158364629058,
+        0.6404954938294785
+       ],
+       "p": 1.1174235683245727e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ECEL1",
+       "fc": 0.10955294796571945,
+       "log2fc": -3.190299788484363,
+       "ci": [
+        0.054947490418949106,
+        0.2184239592467483
+       ],
+       "p": 2.9507999637065108e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ELAVL4",
+       "fc": 0.8401224289185042,
+       "log2fc": -0.2513285113730884,
+       "ci": [
+        0.6473208195082375,
+        1.0903491349283652
+       ],
+       "p": 0.18732783934944833,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "EPB41L3",
+       "fc": 0.2326851116799643,
+       "log2fc": -2.1035491918047926,
+       "ci": [
+        0.14078993805520887,
+        0.3845612971026826
+       ],
+       "p": 2.4486787522165165e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "EPHA5",
+       "fc": 0.13480994236757224,
+       "log2fc": -2.8910011942470923,
+       "ci": [
+        0.06376530834604668,
+        0.28500952998645507
+       ],
+       "p": 1.4988470486403196e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "EPN2",
+       "fc": 0.4169309307175766,
+       "log2fc": -1.262119690029187,
+       "ci": [
+        0.24680838066686464,
+        0.7043172542169776
+       ],
+       "p": 0.0014331518213457838,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "FYN",
+       "fc": 0.6612568977752792,
+       "log2fc": -0.596717228383897,
+       "ci": [
+        0.5278443064213526,
+        0.8283895071633907
+       ],
+       "p": 0.00047971805726823325,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "GNB1",
+       "fc": 0.5854419792973072,
+       "log2fc": -0.7724018965396785,
+       "ci": [
+        0.45977555257538105,
+        0.7454557102997672
+       ],
+       "p": 3.8876339822804274e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "HIVEP2",
+       "fc": 0.41840580759135987,
+       "log2fc": -1.257025218146902,
+       "ci": [
+        0.2958278069721716,
+        0.5917747273928384
+       ],
+       "p": 4.381504200226157e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "IGSF4",
+       "fc": 0.5149866336369241,
+       "log2fc": -0.9573931069332009,
+       "ci": [
+        0.3912336355009731,
+        0.6778845394647359
+       ],
+       "p": 8.141417850125559e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "INPP1",
+       "fc": 0.42230347301164417,
+       "log2fc": -1.243647983016741,
+       "ci": [
+        0.30360133769063347,
+        0.587415802164295
+       ],
+       "p": 2.1410174987499563e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MAP2K4",
+       "fc": 0.5439324966237257,
+       "log2fc": -0.8785004743472542,
+       "ci": [
+        0.4191576636665613,
+        0.7058502957938927
+       ],
+       "p": 1.7098607113484104e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "MAP7",
+       "fc": 0.3502710330094385,
+       "log2fc": -1.513456410948352,
+       "ci": [
+        0.20579011766604116,
+        0.5961889616322672
+       ],
+       "p": 0.0001994065514041904,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MAPT",
+       "fc": 0.36827162102418615,
+       "log2fc": -1.44115786730796,
+       "ci": [
+        0.2542248132597999,
+        0.5334805250232738
+       ],
+       "p": 7.239595450189097e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MCM2",
+       "fc": 2.667344479006346,
+       "log2fc": 1.415404156370352,
+       "ci": [
+        2.0805971711514535,
+        3.419559859224538
+       ],
+       "p": 1.0936015460338844e-11,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "MRPL3",
+       "fc": 1.775650542531332,
+       "log2fc": 0.8283476795683489,
+       "ci": [
+        1.4931386099734336,
+        2.111615645146241
+       ],
+       "p": 6.655210806036502e-09,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "MTSS1",
+       "fc": 0.5315585500141006,
+       "log2fc": -0.9116994846686433,
+       "ci": [
+        0.4057117032805626,
+        0.6964415613559406
+       ],
+       "p": 1.538488151078706e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "NHLH2",
+       "fc": 14.956615437827042,
+       "log2fc": 3.9027118367238485,
+       "ci": [
+        6.49761643122277,
+        34.42806261694776
+       ],
+       "p": 6.192153321840656e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1878561042496822,
+       "log2fc": 1.1295178548982436,
+       "ci": [
+        1.754371668359274,
+        2.7284494039847518
+       ],
+       "p": 1.2380920536773977e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NRCAM",
+       "fc": 0.2850459501718257,
+       "log2fc": -1.8107335905520783,
+       "ci": [
+        0.20509063516512274,
+        0.3961721296730196
+       ],
+       "p": 2.001432741169379e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.0664778367884075,
+       "log2fc": -3.9109827526937413,
+       "ci": [
+        0.031684262938106326,
+        0.13947942524965912
+       ],
+       "p": 1.348097591946546e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.3186076821812986,
+       "log2fc": 1.730578087558588,
+       "ci": [
+        2.292871356518271,
+        4.80321624539644
+       ],
+       "p": 2.065427855257047e-08,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "PAICS",
+       "fc": 1.9431226046145078,
+       "log2fc": 0.9583769330843063,
+       "ci": [
+        1.5656099291641246,
+        2.411664225060018
+       ],
+       "p": 5.0286315078556e-08,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PDE4DIP",
+       "fc": 0.4682536760365976,
+       "log2fc": -1.0946377744629237,
+       "ci": [
+        0.3483342014584725,
+        0.629457297628946
+       ],
+       "p": 2.956480800265039e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PIK3R1",
+       "fc": 0.4464072514039836,
+       "log2fc": -1.1635676325061093,
+       "ci": [
+        0.3399113806855774,
+        0.5862687907187065
+       ],
+       "p": 1.2515643771323066e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PLAGL1",
+       "fc": 0.44039399666922174,
+       "log2fc": -1.1831332922761213,
+       "ci": [
+        0.27145194806339434,
+        0.7144795743259743
+       ],
+       "p": 0.0012126577940036558,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PLAT",
+       "fc": 0.29429341653985097,
+       "log2fc": -1.7646728259068603,
+       "ci": [
+        0.13779976852996356,
+        0.6285105986942628
+       ],
+       "p": 0.002068187100858995,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PMP22",
+       "fc": 0.2798306291549031,
+       "log2fc": -1.8373742120435734,
+       "ci": [
+        0.18398305879455282,
+        0.4256108226826984
+       ],
+       "p": 1.026739755092622e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PRAME",
+       "fc": 4.242697905168655,
+       "log2fc": 2.0849819573863626,
+       "ci": [
+        2.3051405732875234,
+        7.80884503232301
+       ],
+       "p": 1.055223667113932e-05,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "PRDM2",
+       "fc": 0.5684374556765188,
+       "log2fc": -0.8149264746162899,
+       "ci": [
+        0.4466449668555884,
+        0.723440685542232
+       ],
+       "p": 1.6228997132393396e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PRKACB_bis",
+       "fc": 0.521035776584316,
+       "log2fc": -0.9405456572613389,
+       "ci": [
+        0.3613219105804224,
+        0.7513474066511006
+       ],
+       "p": 0.0007318234961211441,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PRKCZ",
+       "fc": 0.535666450590877,
+       "log2fc": -0.9005931536587402,
+       "ci": [
+        0.39338777254036567,
+        0.7294038257358026
+       ],
+       "p": 0.0001476490606814073,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PTN",
+       "fc": 0.3599115617685497,
+       "log2fc": -1.474285646866921,
+       "ci": [
+        0.20822999747298565,
+        0.6220829557061379
+       ],
+       "p": 0.00042552294714856835,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRF",
+       "fc": 0.4070567756595782,
+       "log2fc": -1.2966980614525658,
+       "ci": [
+        0.2965185060646894,
+        0.5588022845839632
+       ],
+       "p": 3.567628327633765e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRH",
+       "fc": 0.087399034772291,
+       "log2fc": -3.5162388429655396,
+       "ci": [
+        0.038677382052249666,
+        0.1974950442304776
+       ],
+       "p": 1.6370175456028043e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRN2",
+       "fc": 0.40538437091030494,
+       "log2fc": -1.3026376263214412,
+       "ci": [
+        0.27215941335289806,
+        0.603824376874502
+       ],
+       "p": 2.3574163320478413e-05,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "QPCT",
+       "fc": 0.2807548196924883,
+       "log2fc": -1.8326173054341757,
+       "ci": [
+        0.18281527857790644,
+        0.43116346398242184
+       ],
+       "p": 1.6674784613007443e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "SCG2",
+       "fc": 0.25213009455013036,
+       "log2fc": -1.9877597646045955,
+       "ci": [
+        0.16571446648509264,
+        0.3836091436445368
+       ],
+       "p": 1.0451199143928834e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "SLC25A5",
+       "fc": 1.824123431287931,
+       "log2fc": 0.8672033543283552,
+       "ci": [
+        1.5120438503571938,
+        2.200614943665562
+       ],
+       "p": 1.4841903400360044e-08,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "SLC6A8",
+       "fc": 1.5356418750136271,
+       "log2fc": 0.6188418063047925,
+       "ci": [
+        1.1484308986995966,
+        2.0534069319848727
+       ],
+       "p": 0.004408845611003432,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "SNAPC1",
+       "fc": 1.7109675394508148,
+       "log2fc": 0.7748123892150716,
+       "ci": [
+        1.2785435316886136,
+        2.2896443089333465
+       ],
+       "p": 0.0004405978733133076,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "TNFRSF",
+       "fc": 0.37804054974085244,
+       "log2fc": -1.4033871044292812,
+       "ci": [
+        0.22807651729601147,
+        0.6266083810061106
+       ],
+       "p": 0.00028924703252839,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "TYMS",
+       "fc": 2.308879422758717,
+       "log2fc": 1.2071928328217532,
+       "ci": [
+        1.7409606111621418,
+        3.0620590464020196
+       ],
+       "p": 7.7289761156205e-08,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "ULK2",
+       "fc": 0.6505530811812227,
+       "log2fc": -0.6202613179864134,
+       "ci": [
+        0.49574725506856854,
+        0.853699757502128
+       ],
+       "p": 0.002407178719607032,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "WSB1",
+       "fc": 0.5927740136012587,
+       "log2fc": -0.7544458916267928,
+       "ci": [
+        0.44130147774603906,
+        0.796238057020871
+       ],
+       "p": 0.0007444279712865687,
+       "conclusion": "none",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "read_from_other_refs",
+     "label": "Read this well from the sample's other reference wells",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "AHCY",
+       "fc": 2.5309636895420193,
+       "log2fc": 1.339686809979838,
+       "ci": [
+        2.0386638428686292,
+        3.1421449005376494
+       ],
+       "p": 3.5418010078610393e-12,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "AKR1C1",
+       "fc": 0.2848700871700821,
+       "log2fc": -1.8116239557003468,
+       "ci": [
+        0.1810258081800176,
+        0.44828396227123146
+       ],
+       "p": 7.419202114813723e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ARHGEF7",
+       "fc": 0.8697930325016486,
+       "log2fc": -0.20125594278298925,
+       "ci": [
+        0.6488887274985065,
+        1.165900850681915
+       ],
+       "p": 0.3457096133211749,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "BIRC5",
+       "fc": 3.883759836204654,
+       "log2fc": 1.9574539901934516,
+       "ci": [
+        2.7988387479846866,
+        5.38923168624037
+       ],
+       "p": 1.2782505270132783e-12,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CAMTA1",
+       "fc": 0.3476033403940015,
+       "log2fc": -1.5244861486766348,
+       "ci": [
+        0.2557698257128666,
+        0.47240944828539927
+       ],
+       "p": 3.1762089053920974e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CAMTA2",
+       "fc": 0.4892046615489716,
+       "log2fc": -1.0314899437580758,
+       "ci": [
+        0.3603847286991943,
+        0.6640714265143025
+       ],
+       "p": 1.5230128167310744e-05,
+       "conclusion": "down",
+       "changes_call": true
+      },
+      {
+       "gene": "CD44",
+       "fc": 0.2776119406781,
+       "log2fc": -1.848858472264435,
+       "ci": [
+        0.18338916803853936,
+        0.4202450473566953
+       ],
+       "p": 6.887267973724002e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CDCA5",
+       "fc": 2.390290043024369,
+       "log2fc": 1.2571856886011878,
+       "ci": [
+        1.6805969915426873,
+        3.3996767330499638
+       ],
+       "p": 3.913569483871165e-06,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CDH5",
+       "fc": 0.09657034270788813,
+       "log2fc": -3.3722759924068355,
+       "ci": [
+        0.04312403837762054,
+        0.21625597790856846
+       ],
+       "p": 3.350243068934222e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CDKN3",
+       "fc": 2.304182007994106,
+       "log2fc": 1.2042546801741105,
+       "ci": [
+        1.7107865278220975,
+        3.1033998921669403
+       ],
+       "p": 3.295977176571968e-07,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CLSTN1",
+       "fc": 0.4382465004558524,
+       "log2fc": -1.1901855242565595,
+       "ci": [
+        0.263396658182557,
+        0.729166408135243
+       ],
+       "p": 0.0019280292843719933,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CPSG3",
+       "fc": 20.47824907124342,
+       "log2fc": 4.35602046236286,
+       "ci": [
+        10.721732561803062,
+        39.11295889974698
+       ],
+       "p": 5.445571729175046e-15,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "DDC",
+       "fc": 0.26134577890329974,
+       "log2fc": -1.9359682369266729,
+       "ci": [
+        0.15441831942232104,
+        0.44231549991017133
+       ],
+       "p": 3.9321818700976094e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "DPYSL3",
+       "fc": 0.4768349313598412,
+       "log2fc": -1.0684381681190154,
+       "ci": [
+        0.3718922353418757,
+        0.6113909626425105
+       ],
+       "p": 1.1741953358180393e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ECEL1",
+       "fc": 0.10600033310113235,
+       "log2fc": -3.2378592964894852,
+       "ci": [
+        0.053742384118791606,
+        0.20907279797477762
+       ],
+       "p": 1.3624127353006641e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ELAVL4",
+       "fc": 0.8133844582276448,
+       "log2fc": -0.29799067017056813,
+       "ci": [
+        0.6342798450194496,
+        1.0430636919670564
+       ],
+       "p": 0.10234960788484813,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "EPB41L3",
+       "fc": 0.2252796104314054,
+       "log2fc": -2.150211350602273,
+       "ci": [
+        0.1374953383849514,
+        0.369109989271319
+       ],
+       "p": 9.790218226095367e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "EPHA5",
+       "fc": 0.13043828634149207,
+       "log2fc": -2.938560702252216,
+       "ci": [
+        0.062162433460538354,
+        0.2737046411560756
+       ],
+       "p": 8.748657898046502e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "EPN2",
+       "fc": 0.40366157065538877,
+       "log2fc": -1.3087818488266674,
+       "ci": [
+        0.24208773834532335,
+        0.6730727658397455
+       ],
+       "p": 0.0007401284311414558,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "FYN",
+       "fc": 0.640211551355229,
+       "log2fc": -0.6433793871813765,
+       "ci": [
+        0.5169996053539788,
+        0.7927875113328935
+       ],
+       "p": 8.534605144740262e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "GNB1",
+       "fc": 0.5668095396137232,
+       "log2fc": -0.8190640553371583,
+       "ci": [
+        0.4504800730127831,
+        0.7131792801587566
+       ],
+       "p": 5.986748551566361e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "HIVEP2",
+       "fc": 0.40508950768651764,
+       "log2fc": -1.3036873769443824,
+       "ci": [
+        0.29112609254268684,
+        0.5636647261826735
+       ],
+       "p": 7.850451746375391e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "IGSF4",
+       "fc": 0.49859652543079724,
+       "log2fc": -1.0040552657306807,
+       "ci": [
+        0.37997810434653795,
+        0.6542442638877507
+       ],
+       "p": 2.635074312663451e-06,
+       "conclusion": "down",
+       "changes_call": true
+      },
+      {
+       "gene": "INPP1",
+       "fc": 0.40886312492027227,
+       "log2fc": -1.290310141814221,
+       "ci": [
+        0.2961852701775879,
+        0.5644070510979102
+       ],
+       "p": 6.143368912975463e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MAP2K4",
+       "fc": 0.5266211493106283,
+       "log2fc": -0.925162633144734,
+       "ci": [
+        0.40990692028489295,
+        0.6765678283950357
+       ],
+       "p": 3.3310306563907064e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "MAP7",
+       "fc": 0.3391232094398195,
+       "log2fc": -1.560118569745831,
+       "ci": [
+        0.19982591704507344,
+        0.5755237002356548
+       ],
+       "p": 0.0001219025920421125,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MAPT",
+       "fc": 0.35655090572094655,
+       "log2fc": -1.4878200261054395,
+       "ci": [
+        0.2506774240341708,
+        0.507139998187862
+       ],
+       "p": 9.468296908967311e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MCM2",
+       "fc": 2.58245282982861,
+       "log2fc": 1.3687419975728723,
+       "ci": [
+        2.0095248685875613,
+        3.3187260941822996
+       ],
+       "p": 5.2949668295324175e-11,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "MRPL3",
+       "fc": 1.7191381932246608,
+       "log2fc": 0.781685520770869,
+       "ci": [
+        1.4430766002130861,
+        2.0480105678155605
+       ],
+       "p": 4.040909897885848e-08,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "MTSS1",
+       "fc": 0.5146410193762757,
+       "log2fc": -0.9583616434661228,
+       "ci": [
+        0.39938752377853826,
+        0.66315386199073
+       ],
+       "p": 1.8004776745309246e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "NHLH2",
+       "fc": 14.44241923868113,
+       "log2fc": 3.852240522106166,
+       "ci": [
+        6.158460942843787,
+        33.869415654605
+       ],
+       "p": 1.7718534279035442e-08,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.1182247857922607,
+       "log2fc": 1.0828556961007632,
+       "ci": [
+        1.703591357197781,
+        2.633774950892615
+       ],
+       "p": 2.726490629726243e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NRCAM",
+       "fc": 0.2759739982766076,
+       "log2fc": -1.857395749349558,
+       "ci": [
+        0.20058410389362658,
+        0.37969931936962936
+       ],
+       "p": 3.241306768368225e-11,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.0641923831611391,
+       "log2fc": -3.9614540673114225,
+       "ci": [
+        0.03096510283691718,
+        0.13307438627311008
+       ],
+       "p": 5.958103459839358e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.2109909069107734,
+       "log2fc": 1.6830185795534651,
+       "ci": [
+        2.1969698423297275,
+        4.693037840396649
+       ],
+       "p": 7.761341820463478e-08,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "PAICS",
+       "fc": 1.8812802427604018,
+       "log2fc": 0.9117147742868269,
+       "ci": [
+        1.508133576925173,
+        2.3467519097456155
+       ],
+       "p": 2.902455464806605e-07,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PDE4DIP",
+       "fc": 0.4533509039705418,
+       "log2fc": -1.1412999332604032,
+       "ci": [
+        0.3423590179978484,
+        0.6003260651139006
+       ],
+       "p": 4.0891042159435097e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PIK3R1",
+       "fc": 0.4321997697401598,
+       "log2fc": -1.2102297913035889,
+       "ci": [
+        0.33681370469347016,
+        0.5545992884507129
+       ],
+       "p": 3.893496364727284e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PLAGL1",
+       "fc": 0.4252536114560491,
+       "log2fc": -1.2336046068938025,
+       "ci": [
+        0.2628314364036207,
+        0.6880479615790783
+       ],
+       "p": 0.0007238041249525608,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PLAT",
+       "fc": 0.28456598479635287,
+       "log2fc": -1.8131648732846335,
+       "ci": [
+        0.13415697642431013,
+        0.6036048356292891
+       ],
+       "p": 0.0014505703404298635,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PMP22",
+       "fc": 0.2709246615206616,
+       "log2fc": -1.8840363708410532,
+       "ci": [
+        0.17826542627618905,
+        0.41174653859332866
+       ],
+       "p": 5.455022726691637e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PRAME",
+       "fc": 4.107668618562649,
+       "log2fc": 2.0383197985888826,
+       "ci": [
+        2.2459164195157943,
+        7.512720123201238
+       ],
+       "p": 1.301043332428434e-05,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "PRDM2",
+       "fc": 0.5503462067034007,
+       "log2fc": -0.8615886334137695,
+       "ci": [
+        0.4358502192167187,
+        0.6949198001486381
+       ],
+       "p": 3.264313125383888e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PRKACB_bis",
+       "fc": 0.5044531466679422,
+       "log2fc": -0.9872078160588186,
+       "ci": [
+        0.3528320310929315,
+        0.721229805567634
+       ],
+       "p": 0.0003117253750849142,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PRKCZ",
+       "fc": 0.5186181807638077,
+       "log2fc": -0.9472553124562197,
+       "ci": [
+        0.3846465428018474,
+        0.6992518779957425
+       ],
+       "p": 4.370561426373644e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PTN",
+       "fc": 0.34845691604238205,
+       "log2fc": -1.5209478056644008,
+       "ci": [
+        0.203542174166704,
+        0.5965457666690793
+       ],
+       "p": 0.0002316034101372991,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRF",
+       "fc": 0.3941016732096741,
+       "log2fc": -1.3433602202500454,
+       "ci": [
+        0.28696800841037956,
+        0.5412315110907917
+       ],
+       "p": 1.6509347257394246e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRH",
+       "fc": 0.08451018949946475,
+       "log2fc": -3.56473089034331,
+       "ci": [
+        0.03781882124140769,
+        0.18884703157843855
+       ],
+       "p": 8.704239063405517e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRN2",
+       "fc": 0.39248249488030124,
+       "log2fc": -1.3492997851189208,
+       "ci": [
+        0.2661446658632092,
+        0.5787923958116792
+       ],
+       "p": 8.034199963555267e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "QPCT",
+       "fc": 0.27165042073047985,
+       "log2fc": -1.8801768134393004,
+       "ci": [
+        0.17914829306787897,
+        0.41191545740871965
+       ],
+       "p": 4.383913242885922e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "SCG2",
+       "fc": 0.24410573185451312,
+       "log2fc": -2.0344219234020753,
+       "ci": [
+        0.16310833101066263,
+        0.3653253512865148
+       ],
+       "p": 1.7081025803338092e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "SLC25A5",
+       "fc": 1.76606837030703,
+       "log2fc": 0.8205411955308753,
+       "ci": [
+        1.4573014666839932,
+        2.1402555064299977
+       ],
+       "p": 1.140666201450206e-07,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "SLC6A8",
+       "fc": 1.4867681084857793,
+       "log2fc": 0.572179647507312,
+       "ci": [
+        1.1209520840773686,
+        1.9719660097958425
+       ],
+       "p": 0.006598718184943236,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "SNAPC1",
+       "fc": 1.6565138094370375,
+       "log2fc": 0.7281502304175924,
+       "ci": [
+        1.2428023263559012,
+        2.207944049237156
+       ],
+       "p": 0.0007757618401671445,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "TNFRSF",
+       "fc": 0.3660089257882109,
+       "log2fc": -1.4500492632267608,
+       "ci": [
+        0.2234429876556239,
+        0.599537873898762
+       ],
+       "p": 0.00013738866728989547,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "TYMS",
+       "fc": 2.2353963824190815,
+       "log2fc": 1.1605306740242733,
+       "ci": [
+        1.6859793469219753,
+        2.9638542107026
+       ],
+       "p": 1.9846686537125927e-07,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "ULK2",
+       "fc": 0.6298483974128537,
+       "log2fc": -0.666923476783893,
+       "ci": [
+        0.48099510282859037,
+        0.8247672406446789
+       ],
+       "p": 0.0010770001987186052,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "WSB1",
+       "fc": 0.5739082225493798,
+       "log2fc": -0.8011080504242725,
+       "ci": [
+        0.4306805885285385,
+        0.764767803989297
+       ],
+       "p": 0.00025810726415843817,
+       "conclusion": "none",
+       "changes_call": false
+      }
+     ]
+    },
+    {
+     "id": "set_aside",
+     "label": "Set the sample aside (every comparison)",
+     "recommended": false,
+     "chosen": false,
+     "requested": false,
+     "not_recommended": false,
+     "effects": [
+      {
+       "gene": "AHCY",
+       "fc": 2.598585227247252,
+       "log2fc": 1.3777263766546874,
+       "ci": [
+        2.098947564298027,
+        3.2171576356296505
+       ],
+       "p": 9.455607048293297e-13,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "AKR1C1",
+       "fc": 0.27974134860887956,
+       "log2fc": -1.837834580350806,
+       "ci": [
+        0.17650580837893304,
+        0.4433577729833784
+       ],
+       "p": 7.984981994631243e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ARHGEF7",
+       "fc": 0.8671328090025285,
+       "log2fc": -0.20567512310605152,
+       "ci": [
+        0.6437221204554198,
+        1.1680805809759165
+       ],
+       "p": 0.343143301301292,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "BIRC5",
+       "fc": 4.092381130424321,
+       "log2fc": 2.0329405119864283,
+       "ci": [
+        2.9868938520730923,
+        5.607023264328315
+       ],
+       "p": 4.24754262887415e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CAMTA1",
+       "fc": 0.3380828893596622,
+       "log2fc": -1.5645510927365982,
+       "ci": [
+        0.24867518550513007,
+        0.4596358894660184
+       ],
+       "p": 1.722819976294296e-09,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CAMTA2",
+       "fc": 0.4995678559865754,
+       "log2fc": -1.0012474432030336,
+       "ci": [
+        0.36711382475412296,
+        0.6798110719534293
+       ],
+       "p": 2.9132760252546282e-05,
+       "conclusion": "down",
+       "changes_call": true
+      },
+      {
+       "gene": "CD44",
+       "fc": 0.27537518749453305,
+       "log2fc": -1.8605295226739922,
+       "ci": [
+        0.18054284808895468,
+        0.42001937318661625
+       ],
+       "p": 9.662409792483524e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CDCA5",
+       "fc": 2.4747894488899456,
+       "log2fc": 1.3073057882372114,
+       "ci": [
+        1.7431604021702871,
+        3.5134935423680513
+       ],
+       "p": 1.603941577129749e-06,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CDH5",
+       "fc": 0.09364681601896806,
+       "log2fc": -3.4166262459389043,
+       "ci": [
+        0.041235960318500985,
+        0.2126718059372032
+       ],
+       "p": 3.8920447680561574e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CDKN3",
+       "fc": 2.3698116078514007,
+       "log2fc": 1.2447723742199321,
+       "ci": [
+        1.7606558722196441,
+        3.1897244346944347
+       ],
+       "p": 1.4868005172731694e-07,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "CLSTN1",
+       "fc": 0.4433734610994792,
+       "log2fc": -1.173405677154026,
+       "ci": [
+        0.2641511087645527,
+        0.7441953468480429
+       ],
+       "p": 0.002605641566193754,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "CPSG3",
+       "fc": 20.31194147683773,
+       "log2fc": 4.344256238270294,
+       "ci": [
+        10.534292581333743,
+        39.16494281633526
+       ],
+       "p": 1.6094798773600247e-14,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "DDC",
+       "fc": 0.2647528740597378,
+       "log2fc": -1.9172817492184757,
+       "ci": [
+        0.15490151243913494,
+        0.45250742371178126
+       ],
+       "p": 6.825234405029571e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "DPYSL3",
+       "fc": 0.47131467060688675,
+       "log2fc": -1.0852375060815311,
+       "ci": [
+        0.3663680288028817,
+        0.606323426897044
+       ],
+       "p": 1.1820592768432507e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ECEL1",
+       "fc": 0.10193307162178714,
+       "log2fc": -3.294305893001703,
+       "ci": [
+        0.051247394060701376,
+        0.20274886715108378
+       ],
+       "p": 1.3018880871593141e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ELAVL4",
+       "fc": 0.8074372063231896,
+       "log2fc": -0.3085780278345792,
+       "ci": [
+        0.6274409553303344,
+        1.0390696313595862
+       ],
+       "p": 0.0953703727334695,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "EPB41L3",
+       "fc": 0.22148660391947037,
+       "log2fc": -2.1747086513819793,
+       "ci": [
+        0.13412378635500657,
+        0.36575403251691124
+       ],
+       "p": 1.1573313711156807e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "EPHA5",
+       "fc": 0.12713912309357375,
+       "log2fc": -2.975520051893394,
+       "ci": [
+        0.05985063682089353,
+        0.2700782728406996
+       ],
+       "p": 9.940336356021852e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "EPN2",
+       "fc": 0.3895166944847219,
+       "log2fc": -1.360242932109597,
+       "ci": [
+        0.23265634753338113,
+        0.6521346049264148
+       ],
+       "p": 0.0005250906314339631,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "FYN",
+       "fc": 0.6380469423762676,
+       "log2fc": -0.6482655250631888,
+       "ci": [
+        0.5134694357334332,
+        0.7928493350226428
+       ],
+       "p": 9.847853172038256e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "GNB1",
+       "fc": 0.5637525243367453,
+       "log2fc": -0.8268661064928243,
+       "ci": [
+        0.44631270385619276,
+        0.7120946949304336
+       ],
+       "p": 7.067250111512598e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "HIVEP2",
+       "fc": 0.3945815084826683,
+       "log2fc": -1.3416047471519121,
+       "ci": [
+        0.2831288340412565,
+        0.5499071380831908
+       ],
+       "p": 4.902291749516387e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "IGSF4",
+       "fc": 0.5033804665442724,
+       "log2fc": -0.9902788604434456,
+       "ci": [
+        0.38210523306792554,
+        0.6631468825062773
+       ],
+       "p": 4.721484528986826e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "INPP1",
+       "fc": 0.4076759850353721,
+       "log2fc": -1.2945051203783153,
+       "ci": [
+        0.2936221510931523,
+        0.5660325971858768
+       ],
+       "p": 8.768093878441304e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MAP2K4",
+       "fc": 0.5247758012879822,
+       "log2fc": -0.9302268996393237,
+       "ci": [
+        0.40662587722416876,
+        0.6772555733476455
+       ],
+       "p": 4.363760658886324e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "MAP7",
+       "fc": 0.340555602613441,
+       "log2fc": -1.5540377281750128,
+       "ci": [
+        0.1988189682842273,
+        0.5833352796882243
+       ],
+       "p": 0.0001661747814340095,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MAPT",
+       "fc": 0.34437342274733906,
+       "log2fc": -1.5379542888254998,
+       "ci": [
+        0.24253087477077423,
+        0.4889812664338288
+       ],
+       "p": 3.65360755431242e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "MCM2",
+       "fc": 2.63675851426528,
+       "log2fc": 1.3987654490086991,
+       "ci": [
+        2.051050500296563,
+        3.3897241738051695
+       ],
+       "p": 2.8730628119830887e-11,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "MRPL3",
+       "fc": 1.7512856900173859,
+       "log2fc": 0.8084144521044443,
+       "ci": [
+        1.4715794673051301,
+        2.0841562662437805
+       ],
+       "p": 1.5298039452110954e-08,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "MTSS1",
+       "fc": 0.5058149451856252,
+       "log2fc": -0.9833184303127636,
+       "ci": [
+        0.39174905444192554,
+        0.653093494093079
+       ],
+       "p": 1.3017236445535665e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "NHLH2",
+       "fc": 16.431218916231927,
+       "log2fc": 4.038367602514071,
+       "ci": [
+        7.201264234939225,
+        37.491327392656984
+       ],
+       "p": 1.6812898642467542e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NM23A",
+       "fc": 2.142005067656453,
+       "log2fc": 1.0989618932880685,
+       "ci": [
+        1.7180647179289321,
+        2.6705546432481455
+       ],
+       "p": 2.8011772572095573e-09,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "NRCAM",
+       "fc": 0.2734910550645344,
+       "log2fc": -1.8704344466047065,
+       "ci": [
+        0.19771959565776234,
+        0.3783001727850018
+       ],
+       "p": 5.096187284438453e-11,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "NTRK1",
+       "fc": 0.061367013684187253,
+       "log2fc": -4.026392810761429,
+       "ci": [
+        0.029327423660111235,
+        0.12840917811806665
+       ],
+       "p": 6.107903541128721e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "ODC1",
+       "fc": 3.3554571765582293,
+       "log2fc": 1.7465093450897837,
+       "ci": [
+        2.3035652608056263,
+        4.8876813065753915
+       ],
+       "p": 2.722843645442882e-08,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "PAICS",
+       "fc": 1.9282660886480831,
+       "log2fc": 0.9473041481887047,
+       "ci": [
+        1.5486166849521779,
+        2.400988020315045
+       ],
+       "p": 1.0232839067065222e-07,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PDE4DIP",
+       "fc": 0.44564170034871053,
+       "log2fc": -1.166043857560716,
+       "ci": [
+        0.3355861481751675,
+        0.5917899954143148
+       ],
+       "p": 3.337004116556176e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PIK3R1",
+       "fc": 0.41928183043372136,
+       "log2fc": -1.254007782497312,
+       "ci": [
+        0.327878074126704,
+        0.5361665423956267
+       ],
+       "p": 9.597489191280913e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PLAGL1",
+       "fc": 0.4287668033599207,
+       "log2fc": -1.2217348833127053,
+       "ci": [
+        0.2627057956689173,
+        0.6997979286881661
+       ],
+       "p": 0.000991293204858952,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PLAT",
+       "fc": 0.27859655384556553,
+       "log2fc": -1.8437506825356413,
+       "ci": [
+        0.12959447429865834,
+        0.598914731779028
+       ],
+       "p": 0.0014750482177990987,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PMP22",
+       "fc": 0.27465712286581945,
+       "log2fc": -1.8642963881758872,
+       "ci": [
+        0.17945764829282815,
+        0.4203584291812242
+       ],
+       "p": 1.0972465182821193e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PRAME",
+       "fc": 4.05332987013787,
+       "log2fc": 2.01910759029876,
+       "ci": [
+        2.1956400540198806,
+        7.482776152708644
+       ],
+       "p": 2.0534538269616735e-05,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "PRDM2",
+       "fc": 0.5513478053616836,
+       "log2fc": -0.8589653971983415,
+       "ci": [
+        0.43478713592317614,
+        0.6991568456405686
+       ],
+       "p": 5.0271668244010445e-06,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PRKACB_bis",
+       "fc": 0.5006189007675257,
+       "log2fc": -0.9982153341671062,
+       "ci": [
+        0.34793320627308133,
+        0.7203086089143872
+       ],
+       "p": 0.0003420706431245325,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PRKCZ",
+       "fc": 0.5150680215040632,
+       "log2fc": -0.9571651231617215,
+       "ci": [
+        0.3800774258939073,
+        0.6980026928780642
+       ],
+       "p": 4.931994306536497e-05,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "PTN",
+       "fc": 0.34029217533136286,
+       "log2fc": -1.5551541164919442,
+       "ci": [
+        0.19719364708778445,
+        0.5872337486623037
+       ],
+       "p": 0.00021297926532227172,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRF",
+       "fc": 0.40091259197741197,
+       "log2fc": -1.31864036410839,
+       "ci": [
+        0.29083324769710744,
+        0.552656574441731
+       ],
+       "p": 3.4584821711150996e-07,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRH",
+       "fc": 0.08039962312607983,
+       "log2fc": -3.6366674509999983,
+       "ci": [
+        0.035639889074541346,
+        0.1813726015054624
+       ],
+       "p": 7.683800993635291e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "PTPRN2",
+       "fc": 0.3869967512475626,
+       "log2fc": -1.369606639573758,
+       "ci": [
+        0.2610028390292078,
+        0.5738117103753346
+       ],
+       "p": 8.133054555034831e-06,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "QPCT",
+       "fc": 0.2652233717569662,
+       "log2fc": -1.9147201820606101,
+       "ci": [
+        0.17404421263574724,
+        0.40416992820872427
+       ],
+       "p": 4.028956290094987e-08,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "SCG2",
+       "fc": 0.23548176118184064,
+       "log2fc": -2.08631277208327,
+       "ci": [
+        0.15726777390406704,
+        0.3525939133793984
+       ],
+       "p": 9.264296694564394e-10,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "SLC25A5",
+       "fc": 1.8067774468916777,
+       "log2fc": 0.8534188105525533,
+       "ci": [
+        1.4943791035899485,
+        2.184482327646466
+       ],
+       "p": 3.283939109425319e-08,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "SLC6A8",
+       "fc": 1.4842125669405966,
+       "log2fc": 0.5696977276121027,
+       "ci": [
+        1.1135586386569993,
+        1.9782406308851175
+       ],
+       "p": 0.007800593333017834,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "SNAPC1",
+       "fc": 1.6686262078060587,
+       "log2fc": 0.7386608099783643,
+       "ci": [
+        1.2465602672488787,
+        2.233597118831747
+       ],
+       "p": 0.0007863987396718172,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "TNFRSF",
+       "fc": 0.35548922524262694,
+       "log2fc": -1.4921222619754526,
+       "ci": [
+        0.2158064456350626,
+        0.5855830157978892
+       ],
+       "p": 0.0001098015450916357,
+       "conclusion": "down",
+       "changes_call": false
+      },
+      {
+       "gene": "TYMS",
+       "fc": 2.2705907106801986,
+       "log2fc": 1.183067673949801,
+       "ci": [
+        1.707958151614941,
+        3.0185646940777824
+       ],
+       "p": 1.6523708763386184e-07,
+       "conclusion": "up",
+       "changes_call": false
+      },
+      {
+       "gene": "ULK2",
+       "fc": 0.6372816324726277,
+       "log2fc": -0.6499970144331142,
+       "ci": [
+        0.4848221881489693,
+        0.8376841840460242
+       ],
+       "p": 0.0016327855657803534,
+       "conclusion": "none",
+       "changes_call": false
+      },
+      {
+       "gene": "WSB1",
+       "fc": 0.572942837617251,
+       "log2fc": -0.8035368860969486,
+       "ci": [
+        0.4277863674117614,
+        0.7673538012980692
+       ],
+       "p": 0.0003143490642682375,
+       "conclusion": "none",
+       "changes_call": false
+      }
+     ]
+    }
+   ],
+   "pending": [],
+   "undo_option": null,
+   "undo_label": null,
+   "carried": null,
+   "asked_again": null,
+   "place": {
+    "sample": "2016",
+    "plate": "HMBS_20080318",
+    "well": "K22",
+    "target": "HMBS",
+    "what_to_check": [
+     "re-run that well and look at its curve"
+    ],
+    "note": "Opened from Trace. Deciding it is a person's choice, kept in the decision chain with the reason; the study's numbers stay as analysed (to leave a well out of the analysis, leave it out in a Studio session's Curves, or from Controls)."
+   }
+  }
+ ],
+ "next_card": "card_refset",
+ "counter": "4 decisions could change a conclusion · 1 made automatically",
+ "pending_requests": 0
+}

@@ -1,0 +1,172 @@
+{
+ "study_id": "e300000d4f9a",
+ "session": "bc1d233e3866",
+ "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+ "root": {
+  "kind": "sample",
+  "id": "1542"
+ },
+ "answer": "absent",
+ "planned": true,
+ "text": [
+  {
+   "plain": "Sample 1542 is in no comparison.",
+   "segments": [
+    {
+     "text": "Sample ",
+     "fact": null
+    },
+    {
+     "text": "1542",
+     "fact": "f_trace_sample_1542_sample"
+    },
+    {
+     "text": " is in no comparison.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_sample_1542_sample",
+     "text": "1542",
+     "value": "1542",
+     "unit": "",
+     "path": "trace.sample.1542.summary.sample"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Its SDHA(1) reference well E1 on plate SDHA(1)_20080220 has no value: LinRegPCR found no amplification.",
+   "segments": [
+    {
+     "text": "Its ",
+     "fact": null
+    },
+    {
+     "text": "SDHA(1)",
+     "fact": "f_trace_sample_1542_absent_1_1_target"
+    },
+    {
+     "text": " reference well ",
+     "fact": null
+    },
+    {
+     "text": "E1",
+     "fact": "f_trace_sample_1542_absent_1_1_well"
+    },
+    {
+     "text": " on plate ",
+     "fact": null
+    },
+    {
+     "text": "SDHA(1)_20080220",
+     "fact": "f_trace_sample_1542_absent_1_1_plate"
+    },
+    {
+     "text": " has no value: LinRegPCR found no amplification.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_sample_1542_absent_1_1_target",
+     "text": "SDHA(1)",
+     "value": "SDHA(1)",
+     "unit": "",
+     "path": "trace.sample.1542.absent.1.1"
+    },
+    {
+     "id": "f_trace_sample_1542_absent_1_1_well",
+     "text": "E1",
+     "value": "E1",
+     "unit": "",
+     "path": "trace.sample.1542.absent.1.1"
+    },
+    {
+     "id": "f_trace_sample_1542_absent_1_1_plate",
+     "text": "SDHA(1)_20080220",
+     "value": "SDHA(1)_20080220",
+     "unit": "",
+     "path": "trace.sample.1542.absent.1.1"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "With that well read from the sample's other reference wells, it would be in group MYCN_high, and the call of PAICS changes.",
+   "segments": [
+    {
+     "text": "With that well read from the sample's other reference wells, it would be in group ",
+     "fact": null
+    },
+    {
+     "text": "MYCN_high",
+     "fact": "f_trace_sample_1542_restore_group"
+    },
+    {
+     "text": ", and the call of ",
+     "fact": null
+    },
+    {
+     "text": "PAICS",
+     "fact": "f_trace_sample_1542_restore_changed_calls"
+    },
+    {
+     "text": " changes.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_sample_1542_restore_group",
+     "text": "MYCN_high",
+     "value": "MYCN_high",
+     "unit": "",
+     "path": "trace.sample.1542.summary.restore.group"
+    },
+    {
+     "id": "f_trace_sample_1542_restore_changed_calls",
+     "text": "PAICS",
+     "value": "PAICS",
+     "unit": "",
+     "path": "trace.sample.1542.restore"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "The data cannot show: RNA integrity · RT replicates · no-RT controls · batch annotations · a single target well that is off (cannot tell from biology without replicates).",
+   "segments": [
+    {
+     "text": "The data cannot show: RNA integrity · RT replicates · no-RT controls · batch annotations · a single target well that is off (cannot tell from biology without replicates).",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  }
+ ],
+ "places": [],
+ "n_more": 0,
+ "checked_nothing_found": [],
+ "cannot_show": [
+  "S8",
+  "group_wide_fault",
+  "no_rt_controls",
+  "position_confounded",
+  "rna_integrity",
+  "rt_replicates",
+  "sample_swap",
+  "single_target_well"
+ ],
+ "absent": [
+  {
+   "sample": "1542",
+   "why": "its SDHA(1) reference well is empty (plate SDHA(1)_20080220, well E1)"
+  }
+ ],
+ "n_absent": 1,
+ "decide_note": "Decide… opens that place as a Decision Card on Results. A choice that can change a conclusion is a person's, and it is kept in the decision chain with its reason; the study's numbers stay as analysed.",
+ "method_card": "methods/trace.md"
+}

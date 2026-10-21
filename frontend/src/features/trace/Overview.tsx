@@ -3,6 +3,7 @@
  * call, checked exhaustively for one and two), the samples behind the most calls with their
  * plates and unusual wells, the control-gene wells that disagree with their sample's others,
  * and the samples in no comparison with the empty well behind each. Every row opens a trace.
+ * "Where to look" goes from any gene, sample or well to the places to look, with Decide….
  */
 import { useMemo } from "react";
 import { Link, useLocation } from "wouter";
@@ -30,7 +31,8 @@ import { asConclusion } from "@/lib/vocab";
 import type { GeneRow, Missing, Overview, Suspect, TraceScope } from "./api";
 import { useTraceStudy } from "./api";
 import { FactText } from "./FactText";
-import { TraceWaiting } from "./GeneTrace";
+import { TraceWaiting } from "./Waiting";
+import { WhereToLook } from "./WhereToLook";
 import { CALL_WORD, SAMPLE_FLAG, address, effectPercent } from "./words";
 
 type Workspace = Schemas["WorkspaceView"];
@@ -73,6 +75,13 @@ export function OverviewPage({ workspace, scope }: { workspace: Workspace; scope
         <FactText text={view.texts.summary} />
       </p>
       <Ladder trace={view.trace} />
+      <div className="mt-5">
+        <WhereToLook
+          workspace={workspace}
+          scope={scope}
+          genes={view.trace.genes.map((g) => g.gene).sort((a, b) => a.localeCompare(b))}
+        />
+      </div>
       <div className="mt-5 grid min-w-0 gap-5 2xl:grid-cols-2 [&>*]:min-w-0">
         <FragileGenes workspace={workspace} trace={view.trace} />
         <Suspects workspace={workspace} trace={view.trace} />

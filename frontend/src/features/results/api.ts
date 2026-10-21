@@ -1,7 +1,8 @@
 /**
  * The Results section's data (qpilot/web/routers/results.py): the ResultsView, the flip matrix,
  * the Decision Cards with their view fields, and the writes on a card (decide, undo, turn down an
- * agent's request, explain with the model). Every query key starts with `["w", key]` so a live
+ * agent's request, explain with the model), and the Evidence Ledger (`routers/evidence.py`: what
+ * the study cannot tell you). Every query key starts with `["w", key]` so a live
  * event refreshes it; every write carries the head the view showed.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ const cardPath = (study_id: string, card_id: string) => ({
 const getResults = (id: string) => unwrap(api.GET("/api/studies/{study_id}/results", path(id)));
 const getFlips = (id: string) => unwrap(api.GET("/api/studies/{study_id}/flips", path(id)));
 const getCards = (id: string) => unwrap(api.GET("/api/studies/{study_id}/cards", path(id)));
+const getEvidence = (id: string) => unwrap(api.GET("/api/studies/{study_id}/evidence", path(id)));
 
 // The types are the API's answers as the typed client returns them.
 export type ResultsView = Awaited<ReturnType<typeof getResults>>;
@@ -23,6 +25,10 @@ export type CardsView = Awaited<ReturnType<typeof getCards>>;
 export type CardView = CardsView["cards"][number];
 export type FlipsView = Awaited<ReturnType<typeof getFlips>>;
 export type FactText = CardView["impact"];
+/** A card opened from Trace: the place it is about (null on every other card). */
+export type CardPlace = NonNullable<CardView["place"]>;
+export type EvidenceView = Awaited<ReturnType<typeof getEvidence>>;
+export type EvidenceItem = NonNullable<EvidenceView["items"]>[number];
 /** What a write answers (the outcome, a sentence, the new head). */
 export interface DecisionDone {
   outcome: { status: string };
@@ -72,6 +78,16 @@ export function useCards(key: string, studyId: string | null | undefined) {
     enabled: Boolean(studyId),
     ...warmingRetry,
     queryFn: () => getCards(studyId!),
+  });
+}
+
+/** The Evidence Ledger: what the study can and cannot tell you (read-only). */
+export function useEvidence(key: string, studyId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["w", key, "evidence", studyId],
+    enabled: Boolean(studyId),
+    ...warmingRetry,
+    queryFn: () => getEvidence(studyId!),
   });
 }
 

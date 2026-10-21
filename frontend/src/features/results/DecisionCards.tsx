@@ -1,6 +1,8 @@
 /**
  * The Decision Cards: the choices that can change a conclusion, ranked by impact. A person picks
  * an option, says why, and decides; an agent's request waits here for Approve or Turn down.
+ * A card opened from Trace (Where to look → Decide…) says so, names its place (sample · plate ·
+ * well) and what to check there, and its options show only the calls they change.
  * `j`/`k` move between cards, `Enter` goes to the reason, `⌘Enter` decides.
  */
 import {
@@ -10,6 +12,8 @@ import {
   ChevronDown,
   CircleCheck,
   History,
+  MapPin,
+  Route,
   Sparkles,
   Undo2,
 } from "lucide-react";
@@ -26,6 +30,7 @@ import {
   useCardWrite,
   useExplain,
   useModelAnswers,
+  type CardPlace,
   type CardView,
   type CardsView,
   type DecisionDone,
@@ -161,6 +166,37 @@ const STATUS_BADGE: Record<
 
 type Explanation = Schemas["Explanation"];
 
+/** "Sample 2016 · plate P · well K22": where a card opened from Trace points, as text. */
+export function placeAddress(place: Pick<CardPlace, "sample" | "plate" | "well">): string {
+  return [
+    `Sample ${place.sample}`,
+    place.plate ? `plate ${place.plate}` : null,
+    place.well ? `well ${place.well}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** What to check at the place, and what deciding does (the study's numbers stay as analysed). */
+function TracePlace({ place }: { place: CardPlace }) {
+  const checks = place.what_to_check ?? [];
+  return (
+    <div className="space-y-2 rounded-lg border border-line bg-sunken/60 p-3 text-[13px]">
+      {checks.length > 0 && (
+        <div>
+          <p className="text-[12px] font-medium text-muted">What to check</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-fg">
+            {checks.map((c) => (
+              <li key={c}>{c[0]!.toUpperCase() + c.slice(1)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-[12px] leading-relaxed text-muted">{place.note}</p>
+    </div>
+  );
+}
+
 function DecisionCardItem({
   ref,
   view,
@@ -205,6 +241,23 @@ function DecisionCardItem({
   const explanation = job.data?.status === "done" ? (job.data.result as Explanation | null) : null;
 
   const labels = useMemo(() => new Map(view.options.map((o) => [o.id, o.label])), [view.options]);
+  // a card opened from Trace weighs every gene: show only the calls an option changes
+  const changingGenes = useMemo(
+    () =>
+      view.place
+        ? [
+            ...new Set(
+              view.options.flatMap((o) =>
+                o.effects.filter((e) => e.changes_call).map((e) => e.gene),
+              ),
+            ),
+          ]
+        : null,
+    [view.place, view.options],
+  );
+  const effectsOf = (o: CardView["options"][number]) =>
+    changingGenes ? o.effects.filter((e) => changingGenes.includes(e.gene)) : o.effects;
+  const legendGenes = changingGenes ?? view.genes;
   const keyIds = new Set(
     [card.recommended, chosen, request?.option, option].filter(Boolean) as string[],
   );
@@ -266,7 +319,7 @@ function DecisionCardItem({
     >
       <div className="flex items-start gap-3 p-4 pb-3">
         <span className="tabular mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-sunken text-[12px] font-semibold text-muted">
-          {card.rank}
+          {view.place ? <Route className="size-3.5" aria-hidden /> : card.rank}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -281,7 +334,23 @@ function DecisionCardItem({
                 Carried
               </Badge>
             )}
+            {view.place && (
+              <Badge tone="info" icon={<Route aria-hidden />}>
+                Opened from Trace
+              </Badge>
+            )}
           </div>
+          {view.place && (
+            <p className="mt-1 flex items-start gap-1.5 text-[13px] text-fg">
+              <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted" aria-hidden />
+              <span>
+                <span className="font-medium">{placeAddress(view.place)}</span>
+                {view.place.target ? (
+                  <span className="text-muted"> ({view.place.target})</span>
+                ) : null}
+              </span>
+            </p>
+          )}
           <p
             className={cn(
               "mt-1 flex items-start gap-1.5 text-[13px]",
@@ -338,6 +407,7 @@ function DecisionCardItem({
                   </span>
                 </p>
               )}
+              {view.place && <TracePlace place={view.place} />}
               {request && (
                 <div className="flex items-start gap-2 rounded-lg border border-warn/40 bg-warn-soft p-3 text-[13px] text-fg">
                   <Bot className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />
@@ -352,7 +422,8 @@ function DecisionCardItem({
               <fieldset className="min-w-0">
                 <legend className="mb-1.5 text-[12px] font-medium text-muted">
                   Options
-                  {view.genes.length ? ` · what each gives for ${view.genes.join(", ")}` : ""}
+                  {legendGenes.length ? ` · what each gives for ${legendGenes.join(", ")}` : ""}
+                  {changingGenes ? " (the calls an option here changes)" : ""}
                 </legend>
                 <div
                   role="radiogroup"
@@ -395,9 +466,9 @@ function DecisionCardItem({
                             )}
                           </span>
                         </span>
-                        {o.effects.length > 0 && (
+                        {effectsOf(o).length > 0 && (
                           <span className="flex flex-wrap gap-x-3 gap-y-1 pl-6">
-                            {o.effects.map((e) => {
+                            {effectsOf(o).map((e) => {
                               const c =
                                 (e.conclusion as CallKey) in CALLS
                                   ? (e.conclusion as CallKey)

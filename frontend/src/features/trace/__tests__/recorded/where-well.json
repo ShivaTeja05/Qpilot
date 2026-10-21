@@ -1,0 +1,513 @@
+{
+ "study_id": "e300000d4f9a",
+ "session": "bc1d233e3866",
+ "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+ "root": {
+  "kind": "well",
+  "id": "HMBS_20080318/K22"
+ },
+ "answer": "place_to_look",
+ "planned": true,
+ "text": [
+  {
+   "plain": "Well K22 on plate HMBS_20080318 (HMBS, sample 2016).",
+   "segments": [
+    {
+     "text": "Well ",
+     "fact": null
+    },
+    {
+     "text": "K22",
+     "fact": "f_trace_well_hmbs_20080318_k22_well"
+    },
+    {
+     "text": " on plate ",
+     "fact": null
+    },
+    {
+     "text": "HMBS_20080318",
+     "fact": "f_trace_well_hmbs_20080318_k22_plate"
+    },
+    {
+     "text": " (",
+     "fact": null
+    },
+    {
+     "text": "HMBS",
+     "fact": "f_trace_well_hmbs_20080318_k22_target"
+    },
+    {
+     "text": ", sample ",
+     "fact": null
+    },
+    {
+     "text": "2016",
+     "fact": "f_trace_well_hmbs_20080318_k22_sample"
+    },
+    {
+     "text": ").",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_well",
+     "text": "K22",
+     "value": "K22",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.summary.well"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_plate",
+     "text": "HMBS_20080318",
+     "value": "HMBS_20080318",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.summary.plate"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_target",
+     "text": "HMBS",
+     "value": "HMBS",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.summary.target"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_sample",
+     "text": "2016",
+     "value": "2016",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.summary.sample"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "It feeds all 58 values of sample 2016.",
+   "segments": [
+    {
+     "text": "It feeds all ",
+     "fact": null
+    },
+    {
+     "text": "58",
+     "fact": "f_trace_well_hmbs_20080318_k22_feeds"
+    },
+    {
+     "text": " values of sample ",
+     "fact": null
+    },
+    {
+     "text": "2016",
+     "fact": "f_trace_well_hmbs_20080318_k22_sample"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_feeds",
+     "text": "58",
+     "value": 58,
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.summary.feeds"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_sample",
+     "text": "2016",
+     "value": "2016",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.summary.sample"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "There is a place to look.",
+   "segments": [
+    {
+     "text": "There is a place to look.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "1. Sample 2016 · plate HMBS_20080318 · well K22: changes the call.",
+   "segments": [
+    {
+     "text": "1",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_rank"
+    },
+    {
+     "text": ". Sample ",
+     "fact": null
+    },
+    {
+     "text": "2016",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_sample"
+    },
+    {
+     "text": " · plate ",
+     "fact": null
+    },
+    {
+     "text": "HMBS_20080318",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_plate"
+    },
+    {
+     "text": " · well ",
+     "fact": null
+    },
+    {
+     "text": "K22",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_well"
+    },
+    {
+     "text": ": changes the call.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_rank",
+     "text": "1",
+     "value": 1,
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].rank"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_sample",
+     "text": "2016",
+     "value": "2016",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].sample"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_plate",
+     "text": "HMBS_20080318",
+     "value": "HMBS_20080318",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].plate"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_well",
+     "text": "K22",
+     "value": "K22",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].well"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Its HMBS well read Cq 46.1; this plate's 15-copy standard reads 34.7.",
+   "segments": [
+    {
+     "text": "Its ",
+     "fact": null
+    },
+    {
+     "text": "HMBS",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_target"
+    },
+    {
+     "text": " well read Cq ",
+     "fact": null
+    },
+    {
+     "text": "46.1",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_cq"
+    },
+    {
+     "text": "; this plate's ",
+     "fact": null
+    },
+    {
+     "text": "15",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_std_copies"
+    },
+    {
+     "text": "-copy standard reads ",
+     "fact": null
+    },
+    {
+     "text": "34.7",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_std_cq"
+    },
+    {
+     "text": ".",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_target",
+     "text": "HMBS",
+     "value": "HMBS",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].target"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_cq",
+     "text": "46.1",
+     "value": 46.0553,
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].cq"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_std_copies",
+     "text": "15",
+     "value": 15.0,
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].plate"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_std_cq",
+     "text": "34.7",
+     "value": 34.6711,
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].plate"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "The sample's other 4 reference wells agree with each other.",
+   "segments": [
+    {
+     "text": "The sample's other ",
+     "fact": null
+    },
+    {
+     "text": "4",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_n_other_refs"
+    },
+    {
+     "text": " reference wells agree with each other.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_n_other_refs",
+     "text": "4",
+     "value": 4,
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].detail.S1"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "So all 58 values of sample 2016 read 5.55× too high.",
+   "segments": [
+    {
+     "text": "So all ",
+     "fact": null
+    },
+    {
+     "text": "58",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_feeds"
+    },
+    {
+     "text": " values of sample ",
+     "fact": null
+    },
+    {
+     "text": "2016",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_sample"
+    },
+    {
+     "text": " read ",
+     "fact": null
+    },
+    {
+     "text": "5.55×",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_fold_off"
+    },
+    {
+     "text": " too high.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_feeds",
+     "text": "58",
+     "value": 58,
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].feeds"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_sample",
+     "text": "2016",
+     "value": "2016",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].sample"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_fold_off",
+     "text": "5.55×",
+     "value": 5.5523342332,
+     "unit": "×",
+     "path": "trace.well.HMBS_20080318/K22.places[0].fold_off"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Consistent with that well: pipetting, evaporation, the seal or a failed reaction; what to check: re-run that well and look at its curve.",
+   "segments": [
+    {
+     "text": "Consistent with that well: pipetting, evaporation, the seal or a failed reaction; what to check: re-run that well and look at its curve.",
+     "fact": null
+    }
+   ],
+   "facts": [],
+   "source": "template"
+  },
+  {
+   "plain": "Read from the sample's other reference wells: 2 calls change (CAMTA2, IGSF4).",
+   "segments": [
+    {
+     "text": "Read from the sample's other reference wells: ",
+     "fact": null
+    },
+    {
+     "text": "2",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_n_changed"
+    },
+    {
+     "text": " calls change (",
+     "fact": null
+    },
+    {
+     "text": "CAMTA2, IGSF4",
+     "fact": "f_trace_well_hmbs_20080318_k22_1_changed_calls"
+    },
+    {
+     "text": ").",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_n_changed",
+     "text": "2",
+     "value": 2,
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0].options"
+    },
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_1_changed_calls",
+     "text": "CAMTA2, IGSF4",
+     "value": "CAMTA2, IGSF4",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.places[0]"
+    }
+   ],
+   "source": "template"
+  },
+  {
+   "plain": "Checked, nothing found: NTCs on plates HMBS_20080318 · curve notes.",
+   "segments": [
+    {
+     "text": "Checked, nothing found: NTCs on plates ",
+     "fact": null
+    },
+    {
+     "text": "HMBS_20080318",
+     "fact": "f_trace_well_hmbs_20080318_k22_clean_ntc_plates"
+    },
+    {
+     "text": " · curve notes.",
+     "fact": null
+    }
+   ],
+   "facts": [
+    {
+     "id": "f_trace_well_hmbs_20080318_k22_clean_ntc_plates",
+     "text": "HMBS_20080318",
+     "value": "HMBS_20080318",
+     "unit": "",
+     "path": "trace.well.HMBS_20080318/K22.checked_nothing_found"
+    }
+   ],
+   "source": "template"
+  }
+ ],
+ "places": [
+  {
+   "rank": 1,
+   "sample": "2016",
+   "plate": "HMBS_20080318",
+   "well": "K22",
+   "target": "HMBS",
+   "role": "reference_well",
+   "checks": [
+    {
+     "code": "S1",
+     "looks_like": "one reference well disagrees with the sample's other reference wells",
+     "consistent_with": "that well: pipetting, evaporation, the seal or a failed reaction",
+     "what_to_check": "re-run that well and look at its curve"
+    }
+   ],
+   "consequence": "changes_call",
+   "consequence_word": "changes the call",
+   "options": [
+    {
+     "id": "keep",
+     "label": "Keep (no change)",
+     "consequence": "changes_nothing",
+     "consequence_word": "changes nothing here",
+     "changed_calls": []
+    },
+    {
+     "id": "read_from_other_refs",
+     "label": "Read this well from the sample's other reference wells",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "CAMTA2",
+      "IGSF4"
+     ]
+    },
+    {
+     "id": "set_aside",
+     "label": "Set the sample aside (every comparison)",
+     "consequence": "changes_call",
+     "consequence_word": "changes the call",
+     "changed_calls": [
+      "CAMTA2"
+     ]
+    }
+   ],
+   "card_id": "card_trace_2016_hmbs_20080318_k22",
+   "card_status": null,
+   "can_decide": true
+  }
+ ],
+ "n_more": 0,
+ "checked_nothing_found": [
+  "S5",
+  "S6",
+  "S6:HMBS_20080318"
+ ],
+ "cannot_show": [
+  "S8",
+  "group_wide_fault",
+  "no_rt_controls",
+  "position_confounded",
+  "rna_integrity",
+  "rt_replicates",
+  "sample_swap",
+  "single_target_well"
+ ],
+ "absent": [],
+ "n_absent": 0,
+ "decide_note": "Decide… opens that place as a Decision Card on Results. A choice that can change a conclusion is a person's, and it is kept in the decision chain with its reason; the study's numbers stay as analysed.",
+ "method_card": "methods/trace.md"
+}
