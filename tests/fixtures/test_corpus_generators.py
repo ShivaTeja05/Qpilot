@@ -33,12 +33,33 @@ def _truth(folder: Path) -> list[dict]:
     return list(csv.DictReader(io.StringIO((folder / "truth.csv").read_text(encoding="utf-8"))))
 
 
-def test_generator_reproduces_committed_files_byte_for_byte(tmp_path):
+def _same_file(committed: Path, fresh: Path) -> None:
+    """Text identical; every number equal to within one unit of its last printed digit.
+
+    The generator uses the standard library's math, whose last bit can differ between platforms
+    (macOS libm vs glibc), so a value on a rounding boundary may print one digit differently.
+    """
+    old, new = committed.read_text(encoding="utf-8"), fresh.read_text(encoding="utf-8")
+    old_rows, new_rows = list(csv.reader(io.StringIO(old))), list(csv.reader(io.StringIO(new)))
+    assert len(old_rows) == len(new_rows), committed.name
+    for row_old, row_new in zip(old_rows, new_rows, strict=True):
+        assert len(row_old) == len(row_new), (committed.name, row_old[:3])
+        for a, b in zip(row_old, row_new, strict=True):
+            if a == b:
+                continue
+            try:
+                x, y = float(a), float(b)
+            except ValueError:
+                raise AssertionError((committed.name, a, b)) from None
+            decimals = len(a.split(".", 1)[1]) if "." in a and "e" not in a.lower() else 0
+            assert abs(x - y) <= 10.0**-decimals * 1.000001 + 1e-12 * abs(x), (committed.name, a, b)
+
+
+def test_generator_reproduces_committed_files(tmp_path):
     written = _generator().generate(tmp_path)
     assert len(written) == 8
     for path in written:
-        committed = CORPUS / "synthetic" / path.relative_to(tmp_path)
-        assert committed.read_bytes() == path.read_bytes(), committed.name
+        _same_file(CORPUS / "synthetic" / path.relative_to(tmp_path), path)
 
 
 def test_cfx_raw_and_baselined_are_the_same_curves():
