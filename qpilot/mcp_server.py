@@ -1090,7 +1090,14 @@ _STUDIO_CODES: tuple[tuple[tuple[str, ...], Code], ...] = (
         ),
         Code.NOT_READY,
     ),
-    (("no well of this target ", "no curve for this well "), Code.UNKNOWN_ITEM),
+    (
+        (
+            "no well of this target ",
+            "no curve for this well ",
+            "there is no further choice called ",
+        ),
+        Code.UNKNOWN_ITEM,
+    ),
     (
         (
             "this bundle was not sent to prism ",
