@@ -32,6 +32,7 @@ import { useSystem, useWorkspaceFrame, useWorkspaces, type WorkspaceView } from 
 import { LockedSection } from "./Guard";
 import { sectionStates, type SectionState } from "./nav";
 import { NeedsKey } from "./NeedsKey";
+import { HostedBanner } from "./HostedBanner";
 import { NextStepBanner } from "./NextStep";
 import { G_KEY, Palette } from "./Palette";
 import { BottomBar, Rail } from "./Rail";
@@ -319,6 +320,7 @@ function Shell() {
               </span>
             </div>
           ) : null}
+          {system.data?.hosted ? <HostedBanner /> : null}
           {showBanner && frame ? <NextStepBanner frame={frame} route={route} /> : null}
           <main
             id="main"

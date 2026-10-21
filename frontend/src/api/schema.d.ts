@@ -10209,6 +10209,12 @@ export type components = {
             autonomy: "suggest" | "decide_and_tell";
             demo: components["schemas"]["DemoInfo"];
             /**
+             * Hosted
+             * @description A public sandbox (QPILOT_HOSTED=1): shared by every visitor, reset when the server restarts; the page says so.
+             * @default false
+             */
+            hosted: boolean;
+            /**
              * Method
              * @description The vendored curve method and its commit.
              */

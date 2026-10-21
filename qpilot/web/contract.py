@@ -125,6 +125,11 @@ class SystemView(BaseModel):
     demo: DemoInfo
     policy: list[str] = Field(description="What qPilot does and never does, one line each.")
     never: list[str] = Field(description="The never-does footer lines.")
+    hosted: bool = Field(
+        default=False,
+        description="A public sandbox (QPILOT_HOSTED=1): shared by every visitor, reset when the "
+        "server restarts; the page says so.",
+    )
 
 
 class Settings(BaseModel):

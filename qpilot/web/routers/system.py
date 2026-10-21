@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from qpilot import __version__
 from qpilot.web.context import AppContext, Ctx, api_error
 from qpilot.web.contract import DemoInfo, JobView, ModelStatus, Settings, SystemView
+from qpilot.web.security import Hosting
 
 router = APIRouter(tags=["system"])
 
@@ -79,6 +80,7 @@ def system(ctx: Ctx) -> SystemView:
         demo=demo_info(),
         policy=list(autonomy_policy()),
         never=list(FOOTER),
+        hosted=Hosting.from_env().hosted,
     )
 
 
