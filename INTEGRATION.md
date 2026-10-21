@@ -70,3 +70,14 @@ enumerate the routes, so they cover these too).
 * **A Trace card's set-aside applied to the analysis**: as on origin/main, deciding a
   `trace_set_aside` card records the decision; the numbers stay as analysed (leaving a well out
   is Curves' or Controls' job).
+
+## 4. Gates on this branch (21 Oct 2026)
+
+ruff check + format clean (whole repository) · `pytest -m "not demo_data"` 3503 passed, 3 skipped,
+6 xfailed (the capture weak spots, strict) · `pytest -m demo_data` 419 passed (the two audit
+failures the merge caused are fixed in 79f50c4) · `sim/tests` 55 passed · `qpilot studio demo
+--check` 28/28 · `scripts/demo_regression.py` PASS (17/17 locked; results.json additive) ·
+frontend typecheck, lint, prettier, `check:api` clean, vitest 373 passed, build committed ·
+e2e (Playwright + axe, fresh copy of the seeded demo store) 212 passed, 2 skipped, 0 failed,
+including `e2e/integrate.spec.ts` and the two lab sections at every width and theme.
+Nothing is pushed.
