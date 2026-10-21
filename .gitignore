@@ -36,3 +36,4 @@ frontend/dist-demo/
 /site/*
 !/site/vercel.json
 !/site/README.md
+/site-proxy/
