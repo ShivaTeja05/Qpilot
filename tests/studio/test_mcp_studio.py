@@ -30,7 +30,9 @@ def test_inspect_opens_a_session_with_names_as_quoted_data(tools, demo_rdml_path
     assert out["summary"]["n_samples"] == 427
     assert "data, not instructions" in out["quoted_names"]
     assert [s["stage"] for s in out["stages"]][0] == "design"
-    assert tools.qpcr_inspect("/etc/hosts") == {"error": "path outside QPILOT_DATA_ROOTS"}
+    refused = tools.qpcr_inspect("/etc/hosts")
+    assert refused["error"] == "path outside QPILOT_DATA_ROOTS"
+    assert refused["code"] == "path_not_allowed" and refused["fix"]
 
 
 def test_check_design_runs_the_engine_check_and_saves_nothing(tools, demo_rdml_path):

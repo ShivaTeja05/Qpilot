@@ -165,3 +165,37 @@ def test_findings_come_only_from_a_verified_plain_capped_file(workflow, tmp_path
     via_link = SimulatorTools(workflow["store"], audits={report.study_id: str(linked)})
     answer = via_link.sim_findings(report.study_id, "reference_wells")
     assert "error" in answer and "not a plain file" in answer["error"]
+
+
+# ---- every reply matches its declared output schema (qpilot.agents.outputs) ---------------------
+
+
+def test_the_simulator_and_prism_replies_match_their_output_schemas(workflow, monkeypatch):
+    """Over MCP: a reply that did not match its schema would come back as engine_refused."""
+    from qpilot.agents.surface import SPECS
+
+    report, store = workflow["report"], workflow["store"]
+    study = report.study_id
+    bundle = Path(report.paths["prism_bundle"])
+    monkeypatch.setenv("QPILOT_DATA_ROOTS", str(workflow["root"]))
+    server = create_server(store, audits=report.paths)
+
+    def ok(name, args):
+        reply = anyio.run(server.call_tool, name, args)
+        assert reply.is_error is False, (name, reply.structured_content)
+        return SPECS[name].output.model_validate(reply.structured_content)
+
+    for fmt in ("detailed", "concise"):
+        ok("sim_audit", {"study_id": study, "response_format": fmt})
+        ok("sim_whatif", {"study_id": study, "changes": {"refs": "HMBS"}, "response_format": fmt})
+    ok("sim_gene", {"study_id": study, "gene": "ODC1"})
+    ok("sim_decisions", {"study_id": study})
+    ok("sim_findings", {"study_id": study, "table": "issues", "limit": 5})
+    ok("qpcr_prism_preview", {"study_id": study})
+    diff = ok(
+        "qpcr_prism_diff",
+        {"study_id": study, "bundle_dir": str(bundle), "sent_back_dir": str(bundle / "sent_back")},
+    )
+    assert diff.saved is False
+    refused = anyio.run(server.call_tool, "sim_gene", {"study_id": study, "gene": "NOT_A_GENE"})
+    assert refused.is_error and refused.structured_content["code"] == "unknown_item"

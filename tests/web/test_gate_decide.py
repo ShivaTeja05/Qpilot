@@ -260,7 +260,7 @@ def test_a_study_analysed_outside_studio_says_where_wells_are_left_out(tainted):
     assert r.status_code == 409 and r.json()["error"]["code"] == "studio"
     assert "open its file in Studio" in r.json()["error"]["message"].replace("Open", "open")
     out = QpilotTools(store).qpcr_decide(other, card_id, "exclude_flagged", "the NTC failed")
-    assert "error" in out and "Studio" in out["error"]
+    assert "error" in out and "Studio" in out["error"] and out["code"] == "human_only"
     assert not store.proposals(sid).proposals(kind_prefix=EXCLUDE_KIND)
 
 
@@ -272,6 +272,52 @@ def test_the_gate_tool_reads_the_cards_for_an_agent(tainted):
     assert card["needs_human"] and card["status"] == "open"
     assert [o["id"] for o in card["options"]] == ["keep", "exclude_flagged"]
     assert "pending_human" in out["how_to_decide"]
+
+
+def test_an_agents_gate_request_is_typed_keyed_and_matches_its_schema(tainted):
+    """qpcr_gate and a gate request over MCP: the agent surface's codes, keys and schemas."""
+    import anyio
+
+    from qpilot.mcp_server import create_server
+
+    c, study, sid, store = tainted["client"], tainted["study"], tainted["sid"], tainted["store"]
+    card_id = ntc_card(ready(c, study).json())["card_id"]
+    server = create_server(store, simulator=False)
+    gate = anyio.run(server.call_tool, "qpcr_gate", {"study_id": study})
+    assert gate.is_error is False and gate.structured_content["cards"]  # matched GateOut
+    args = {
+        "study_id": study,
+        "card_id": card_id,
+        "option": "exclude_flagged",
+        "reason": "the NTC failed",
+        "idempotency_key": "gate-request-1",
+    }
+    first = anyio.run(server.call_tool, "qpcr_decide", args)
+    assert first.is_error is False  # pending_human waits for a person; matched DecideOut
+    out = first.structured_content
+    assert (out["status"], out["code"], out["applied"]) == (
+        "pending_human",
+        "needs_human_decision",
+        False,
+    )
+    head = store.proposals(sid).head()
+    again = anyio.run(server.call_tool, "qpcr_decide", args).structured_content
+    assert again == {**out, "idempotent_replay": True}
+    assert store.proposals(sid).head() == head  # the retry filed nothing
+    tools = QpilotTools(store)
+    reused = tools.qpcr_decide(study, card_id, "keep", "x", idempotency_key="gate-request-1")
+    assert reused["code"] == "idempotency_key_reused"
+    refusals = {
+        "unknown_item:option": tools.qpcr_decide(study, card_id, "drop_everything", "x"),
+        "unknown_item:card_id": tools.qpcr_decide(study, "card_gate_000000000000", "keep", "x"),
+        "invalid_argument:reason": tools.qpcr_decide(study, card_id, "exclude_flagged", "  "),
+    }
+    for want, got in refusals.items():
+        assert f"{got.get('code')}:{got.get('field')}" == want, got
+        assert got["error"] and got["fix"]
+    stale = tools.qpcr_decide(study, card_id, "keep", "x", expected_head="0" * 64)
+    assert (stale["status"], stale["code"]) == ("stale", "stale_head") and stale["error"]
+    assert store.proposals(sid).head() == head
 
 
 def test_nothing_is_decided_or_read_while_the_session_is_blind_again(tainted):
@@ -287,8 +333,9 @@ def test_nothing_is_decided_or_read_while_the_session_is_blind_again(tainted):
     r = decide(c, study, card_id, "exclude_flagged")
     assert r.status_code == 403 and r.json()["error"]["code"] == "blind", r.text
     assert "1-Mar" not in r.text and "flagged" not in r.text
-    assert "error" in tools.qpcr_gate(study)
-    assert "error" in tools.qpcr_decide(study, card_id, "exclude_flagged", "the NTC failed")
+    assert tools.qpcr_gate(study)["code"] == "results_hidden"
+    asked = tools.qpcr_decide(study, card_id, "exclude_flagged", "the NTC failed")
+    assert asked["code"] == "results_hidden" and "error" in asked
     assert store.proposals(sid).head() == before
 
 
