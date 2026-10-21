@@ -147,7 +147,8 @@ def compute(store: Any, study_id: str, choice: dict[str, str] | None) -> core_ga
 
     The study's model is rebuilt from its input file and must give its stored results again
     (:func:`qpilot.trace.model_for_study`); the standards' declared quantities come from the
-    file. ``rawness`` is not known here yet (the import's verdict is wired later).
+    file, and the raw-ness verdict from the session's import record when the study was opened
+    from an instrument export (:mod:`qpilot.web.intake`; ``None`` for an RDML file).
 
     Raises:
         JobError: The file is missing or changed, or the rebuilt numbers differ.
@@ -170,7 +171,27 @@ def compute(store: Any, study_id: str, choice: dict[str, str] | None) -> core_ga
     curves = analyse_study(source, settings.experiment_id, settings.candidates, settings.curves)
     typed = design_curves(curves, settings.design) if settings.design is not None else curves
     quantities = study_quantities(source) if (typed["sample_type"] == "std").any() else {}
-    return run_gate(curves, settings, quantities=quantities, rawness=None, model=model, cell=cell)
+    return run_gate(
+        curves,
+        settings,
+        quantities=quantities,
+        rawness=import_rawness(store, study_id),
+        model=model,
+        cell=cell,
+    )
+
+
+def import_rawness(store: Any, study_id: str) -> str | None:
+    """The import's raw-ness verdict for a study opened from an instrument export, else None."""
+    from qpilot.web import intake
+    from qpilot.web.results_views import session_of_study
+
+    sid = session_of_study(store, study_id)
+    found = intake.load(store, sid) if sid else None
+    if found is None or not found[0].rawness:
+        return None
+    verdict = found[0].rawness.get("study_verdict")
+    return str(verdict) if verdict else None
 
 
 def _report(ctx: AppContext, study_id: str, choice: dict[str, str] | None) -> core_gate.GateReport:

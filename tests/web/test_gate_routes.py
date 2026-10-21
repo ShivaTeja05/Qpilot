@@ -213,6 +213,36 @@ def test_reading_the_gate_writes_nothing(walked):
     assert not any(card.kind.startswith("gate.") for card in store.cards(study))
 
 
+def test_the_imports_rawness_verdict_reaches_the_gate(walked, monkeypatch):
+    """A study opened from an instrument export is gated with the import's raw-ness verdict."""
+    from qpilot.io.connectors.base import CaptureMeta, ConnectorInfo, Layers
+    from qpilot.qpcr import gate_rules
+    from qpilot.web import intake
+
+    store, sid, study = walked["store"], walked["sid"], walked["study"]
+    assert gate_router.import_rawness(store, study) is None  # opened from an RDML file
+    meta = CaptureMeta(
+        connector=ConnectorInfo(id="cfx", version="1", label="Bio-Rad CFX export"),
+        dialect="cfx.amplification",
+        sources=[],
+        experiment_id="qpilot_import",
+        layers=Layers(),
+        rawness={"study_verdict": "baseline_subtracted"},
+    )
+    intake.save(store, sid, meta, [])
+    assert gate_router.import_rawness(store, study) == "baseline_subtracted"
+    seen: dict = {}
+    real = gate_rules.run_gate
+
+    def spy(*args, **kwargs):
+        seen.update(kwargs)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(gate_rules, "run_gate", spy)
+    gate_router.compute(store, study, None)
+    assert seen["rawness"] == "baseline_subtracted"
+
+
 def test_names_that_are_not_studies_and_a_missing_file(walked, monkeypatch):
     c, study, store = walked["client"], walked["study"], walked["store"]
     assert c.get("/api/studies/0123456789ab/gate").status_code == 404
