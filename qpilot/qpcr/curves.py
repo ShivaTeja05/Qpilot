@@ -31,6 +31,15 @@ Every well-level decision (an exclusion, a well role, a person's amplification c
 ``run_id/well``, so the table never holds two rows with the same key: a table where they would
 collide is refused.
 
+**Cq only** (``CurveSettings(quantities="instrument_cq")``, the Import Trust card's
+``cq_only``): the curves are not used. Each well keeps its row, but its Cq is the one the
+instrument software exported (RDML ``<cq>``, which LinRegPCR ignores), its quantity is ``2^-Cq``
+(every cycle assumed to double the product: ``eff_target`` 2, the 2^-ΔΔCq assumption), and a
+well without an instrument Cq is undetermined. What only a fit of the curve gives (baseline,
+the well's own efficiency, R², LinRegPCR's exclusion notes) is left empty, and amplification
+and plateau mean "the instrument gave a Cq". Every caller passes the study's ``settings.curves``,
+so the results, Trace, the Run Gate and the Prism export read the same table.
+
 Results are cached as CSV in the cache directory, keyed by the input file's SHA-256, the
 experiment, the reference genes and the analysis settings, so a second analysis of the same file
 takes about a second. Cache files are written to a temporary name and renamed into place.
@@ -46,9 +55,11 @@ import os
 import re
 import tempfile
 from collections.abc import Iterable, Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
+from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from qpilot.io.datasets import default_cache_dir
@@ -117,6 +128,11 @@ _DATE_TOKEN = re.compile(r"_20\d{6}(?=_|$)")
 _WELL_LABEL = re.compile(r"^[A-Z]+[1-9][0-9]*$")
 _LINREGPCR_WELL = re.compile(r"^(.)([1-9][0-9]*)$", re.DOTALL)
 WELL_KEY = ("run_id", "well")
+LINREGPCR = "linregpcr"  # quantities from LinRegPCR's fit of every curve (the default)
+INSTRUMENT_CQ = "instrument_cq"  # quantities from the instrument's Cq, efficiency assumed 2
+QUANTITIES = (LINREGPCR, INSTRUMENT_CQ)
+ASSUMED_EFFICIENCY = 2.0
+INSTRUMENT_NOTE = "the instrument's Cq; the curve is not used"
 
 
 class CurveAnalysisError(Exception):
@@ -125,17 +141,41 @@ class CurveAnalysisError(Exception):
 
 @dataclass(frozen=True)
 class CurveSettings:
-    """LinRegPCR analysis settings: the library defaults, exactly as the validation oracle used."""
+    """LinRegPCR analysis settings: the library defaults, exactly as the validation oracle used.
+
+    ``quantities`` is not a LinRegPCR setting: where each well's Cq and quantity come from,
+    LinRegPCR's fit (``linregpcr``) or the instrument's Cq (``instrument_cq``, Cq only; see the
+    module docstring). The default is left out of :meth:`fields`, so every cache key is what it
+    was before the setting existed.
+    """
 
     pcrEfficiencyExl: float = 0.05  # noqa: N815 (vendored keyword name)
     excludeNoPlateau: bool = True  # noqa: N815
     excludeEfficiency: str = "outlier"  # noqa: N815
     maxCycExpPhase: int = 9  # noqa: N815
     ignoreExclusion: bool = False  # noqa: N815
+    quantities: str = LINREGPCR
+
+    def __post_init__(self) -> None:
+        if self.quantities not in QUANTITIES:
+            raise ValueError(f"quantities must be one of {', '.join(QUANTITIES)}")
+
+    def linregpcr(self) -> dict[str, Any]:
+        """The keyword arguments LinRegPCR takes (every setting but ``quantities``)."""
+        out = asdict(self)
+        out.pop("quantities")
+        return out
+
+    def fields(self) -> dict[str, Any]:
+        """The settings as they are hashed: ``quantities`` only when it is not the default."""
+        out = self.linregpcr()
+        if self.quantities != LINREGPCR:
+            out["quantities"] = self.quantities
+        return out
 
     def key(self) -> str:
         """Short stable hash of the settings, used in cache file names and records."""
-        payload = json.dumps(asdict(self), sort_keys=True).encode()
+        payload = json.dumps(self.fields(), sort_keys=True).encode()
         return hashlib.sha256(payload).hexdigest()[:12]
 
 
@@ -245,7 +285,7 @@ def analyse_run(run: rdml.Run, settings: CurveSettings | None = None) -> pd.Data
     settings = settings or CurveSettings()
     run_id = safe_name(str(run["id"]), "run")
     try:
-        result = run.linRegPCR(**asdict(settings), updateRDML=False, saveResultsCSV=True)
+        result = run.linRegPCR(**settings.linregpcr(), updateRDML=False, saveResultsCSV=True)
     except rdml.RdmlError as err:
         raise CurveAnalysisError(f"run {run_id}: {err}") from err
     table = pd.read_csv(
@@ -301,7 +341,7 @@ def cache_path(
         {
             "experiment": experiment_id,
             "refs": sorted(reference_targets),
-            "settings": asdict(settings),
+            "settings": settings.fields(),
         },
         sort_keys=True,
     )
@@ -362,6 +402,8 @@ def analyse_study(
     """
     settings = settings or CurveSettings()
     references = tuple(reference_targets)
+    if settings.quantities == INSTRUMENT_CQ:
+        return _instrument_study(source, experiment_id, references, settings, cache_dir, use_cache)
     cached: Path | None = None
     if isinstance(source, rdml.Rdml):
         doc = source
@@ -388,3 +430,82 @@ def analyse_study(
     if cached is not None:
         _write_cache(table, cached)
     return table
+
+
+def _instrument_study(
+    source: str | Path | rdml.Rdml,
+    experiment_id: str,
+    references: tuple[str, ...],
+    settings: CurveSettings,
+    cache_dir: str | Path | None,
+    use_cache: bool,
+) -> pd.DataFrame:
+    """:func:`analyse_study` with the instrument's Cq (cached under its own key)."""
+    cached: Path | None = None
+    if not isinstance(source, rdml.Rdml) and use_cache:
+        directory = Path(cache_dir) if cache_dir is not None else default_cache_dir()
+        cached = cache_path(file_sha256(source), experiment_id, references, settings, directory)
+        if cached.exists():
+            return _read_cache(cached)
+    fitted = replace(settings, quantities=LINREGPCR)
+    table = analyse_study(
+        source, experiment_id, references, fitted, cache_dir=cache_dir, use_cache=use_cache
+    )
+    doc = source if isinstance(source, rdml.Rdml) else load(Path(source))
+    table = instrument_quantities(table, instrument_cq(doc, experiment_id))
+    if cached is not None:
+        _write_cache(table, cached)
+    return table
+
+
+def _cq_value(text: Any) -> float | None:
+    """An instrument Cq as a number; ``None`` for none (empty, not a number, zero or below)."""
+    try:
+        value = float(text)
+    except (TypeError, ValueError):
+        return None
+    return value if np.isfinite(value) and value > 0 else None
+
+
+def instrument_cq(doc: rdml.Rdml, experiment_id: str | None) -> dict[tuple[str, str, str], float]:
+    """The Cq each well's instrument software exported (RDML ``<cq>``), by run, well and target.
+
+    Keys are ``(run_id, well, target_raw)`` named as the per-well table names them; a well and
+    target without a Cq (or with zero or a negative number, which vendors write for "none")
+    has no entry.
+    """
+    out: dict[tuple[str, str, str], float] = {}
+    for run in runs(doc, experiment_id):
+        run_id = safe_name(str(run["id"]), "run")
+        n_columns = int(run["pcrFormat_columns"])
+        for react in run.getreactjson(curves=False).get("reacts", []):
+            well = react_well_label(react["id"], n_columns)
+            for data in react.get("datas", []):
+                value = _cq_value(data.get("cq"))
+                if value is not None:
+                    out[(run_id, well, safe_name(str(data.get("tar", "")), "target"))] = value
+    return out
+
+
+def instrument_quantities(
+    table: pd.DataFrame, cqs: Mapping[tuple[str, str, str], float]
+) -> pd.DataFrame:
+    """The per-well table with the instrument's Cq and ``2^-Cq`` as every well's quantity.
+
+    The rows (wells, samples, types, targets) are LinRegPCR's; what only a fit of the curve
+    gives is emptied (see the module docstring).
+    """
+    out = table.copy()
+    keys = zip(out["run_id"], out["well"], out["target_raw"], strict=True)
+    cq = pd.Series([cqs.get(key, np.nan) for key in keys], index=out.index, dtype=float)
+    found = cq.notna()
+    out["cq"] = cq
+    out["n0"] = np.exp2(-cq)
+    out["eff_target"] = ASSUMED_EFFICIENCY
+    for column in ("baseline", "eff_indiv", "r2", "eff_target_sd"):
+        out[column] = np.nan
+    out["amplification"] = found
+    out["plateau"] = found
+    out["excluded"] = ""
+    out["note"] = INSTRUMENT_NOTE
+    return out[list(COLUMN_ORDER)]

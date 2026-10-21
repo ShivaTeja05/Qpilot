@@ -517,6 +517,12 @@ def _apply(
         current = set(data["excluded_wells"])
         current = current | {subject} if excluded else current - {subject}
         data["excluded_wells"] = tuple(sorted(current))
+    elif kind == "curve.import_trust":  # Studio.assemble adds the import's verdict
+        from qpilot.io.trust import analysis_for
+
+        analysis = analysis_for(str(payload["option"]))
+        if data.get("import_trust"):
+            data["import_trust"] = {**data["import_trust"], "analysis": analysis}
     elif kind == "prism.exclusion_reason":
         _exclusion(data, payload, curves)
     return data  # prism.project and prism.value_edit do not change the design
