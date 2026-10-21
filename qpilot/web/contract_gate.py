@@ -16,7 +16,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from qpilot.web.contract import CardView, FactText
+from qpilot.web.contract import CardView, FactText, JobView
 
 Verdict = Literal["pass", "warn", "fail", "not_applicable"]
 ConsequenceClass = Literal["none", "magnitude", "flip", "unknown"]
@@ -97,6 +97,43 @@ class GateOption(BaseModel):
     flipped_elsewhere: list[str]
     max_delta_log2fc: float = Field(description="The largest fold-change move (log2).")
     text: FactText = Field(description="What leaving the wells out changes, in words.")
+    code: Literal["", "already_left_out", "not_study_samples", "cannot_rerun"] = Field(
+        default="",
+        description="Why the option was answered without a re-run: its wells are already left "
+        "out of the analysis, are not study samples, or the analysis cannot run without them.",
+    )
+    left_out: list[str] = Field(
+        default=[], description="Its wells that the analysis already leaves out (a decision)."
+    )
+
+
+class GateDecisionView(BaseModel):
+    """What a person last chose on a Run Gate card (the session's record) and what is in use.
+
+    ``option`` is the option the wells are in now (from the analysed design), ``None`` when
+    they match no option (some left out another way). ``action`` is what the latest decision
+    did; ``reason``, ``decided_at`` and ``decided_by`` are from the record.
+    """
+
+    option: str | None
+    label: str
+    action: Literal["left_out", "put_back", "kept"]
+    left_out: list[str] = Field(description="The card's wells the analysis leaves out now.")
+    reason: str
+    decided_at: str
+    decided_by: Literal["human"] = "human"
+
+
+class GateRequestView(BaseModel):
+    """An agent's request on a Run Gate card, waiting for a person (curve exclusions)."""
+
+    option: str
+    option_label: str
+    wells: list[str] = Field(description="The wells it asks to leave out or put back.")
+    left_out: bool = Field(description="True: it asks to leave them out; False: to put back.")
+    reason: str
+    agent: str | None = None
+    at: str
 
 
 class GateConsequence(BaseModel):
@@ -115,6 +152,17 @@ class GateConsequence(BaseModel):
     rescue_option: str | None = None
     options: list[GateOption]
     card_id: str | None = Field(default=None, description="Its `gate.rule` Decision Card.")
+    decision_id: str = Field(
+        default="",
+        description="The id to decide it by (`card_gate_<id>`), whether or not it is a card now.",
+    )
+    can_decide: bool = Field(
+        default=False,
+        description="A person can choose an option here: a Studio session's card, or wells a "
+        "person left out through it (to put back).",
+    )
+    decision: GateDecisionView | None = None
+    requests: list[GateRequestView] = []
 
 
 class GateView(BaseModel):
@@ -142,7 +190,46 @@ class GateView(BaseModel):
     evaluations: list[GateEvaluation]
     consequences: list[GateConsequence]
     cards: list[CardView] = Field(
-        description="The `gate.rule` cards: options with their per-gene calls. Read-only here."
+        description="The `gate.rule` cards: options with their per-gene calls, and what a "
+        "person chose (a Studio session decides them here; a study analysed outside Studio "
+        "cannot)."
+    )
+    can_decide: bool = Field(
+        default=False,
+        description="A person decides the cards here (a Studio session whose results show).",
+    )
+    inbox_head: str | None = Field(
+        default=None,
+        description="The session's proposal chain head the view was read at (send it back as "
+        "`expected_inbox`).",
+    )
+    decide_note: str = Field(default="", description="What deciding a card here does, in words.")
+
+
+class GateDecide(BaseModel):
+    """``POST /studies/{id}/gate/cards/{card_id}/decide``: a person's choice on a gate card."""
+
+    option: str = Field(max_length=64)
+    reason: str = Field(default="", max_length=2000)
+    expected_head: str | None = Field(
+        default=None, max_length=64, description="The study's chain head the view showed."
+    )
+    expected_inbox: str | None = Field(
+        default=None, max_length=64, description="The session's inbox head the view showed."
+    )
+
+
+class GateDecided(BaseModel):
+    """What the choice did: wells left out or put back (the study is analysed again) or kept."""
+
+    status: Literal["left_out", "put_back", "kept"]
+    message: str
+    study_id: str = Field(description="The analysis the choice was made at.")
+    left_out: list[str]
+    put_back: list[str]
+    inbox_head: str
+    job: JobView | None = Field(
+        default=None, description="The analysis of the changed design, when it changed."
     )
 
 

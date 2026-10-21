@@ -18,8 +18,22 @@ research use only, not for clinical decisions.
   `qpilot/qpcr/gate_rules.py`, `packs/research-default.yaml`, `GET /api/studies/{id}/gate`): every
   plate's controls checked against a rule pack (G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD,
   G-REP), and for each rule that warns or fails, whether leaving out the wells it points at would
-  change a conclusion. Rules label; nothing is applied. Agreement with an independent oracle on
-  the demo: `validation/scientist/`.
+  change a conclusion. Rules label; a person decides (below). Agreement with an independent
+  oracle on the demo: `validation/scientist/`.
+- **Deciding a Run Gate card** (`POST /api/studies/{id}/gate/cards/{card_id}/decide`,
+  `Studio.decide_gate`): in a Studio session a person chooses an option of a `gate.rule` card
+  with a reason. Leaving wells out becomes one `curve.exclude_well` proposal per well (a new
+  Curves kind: a well left out of, or put back into, the analysis; accepted only with a reason),
+  proposed by Run Gate's rule and accepted by the person in one write to the session's
+  hash-chained inbox; the study is analysed again and the gate reads the new analysis ("already
+  left out", who decided and why, Put the wells back). Keeping every well is recorded. A study
+  analysed outside Studio says its wells are left out by opening its file in Studio. History
+  names the click that made each analysis.
+- MCP `qpcr_gate` (read-only): the controls, the consequence tests and the `card_gate_*` cards;
+  `qpcr_decide` on a gate card is always `pending_human`, filed as the agent's exclusions for a
+  person to approve or turn down on the card.
+- `ProposalStore.decide_together`: one click of a person that proposes and decides several
+  proposals in one locked write, all or nothing.
 - Open Decision Card kinds (`qpilot/core/card_kinds.py`): a validated registry; a kind this build
   does not know is a human decision (fail closed).
 - Public instrument-export corpus for tests (`tests/fixtures/corpus/`, 18 real sets with

@@ -38,6 +38,7 @@ KIND_TITLE = {
     "design.dilution_series": "Dilution series",
     "curve.call_rule": "Amplification rule",
     "curve.well_call": "Well call",
+    "curve.exclude_well": "Well exclusion",
     "prism.project": "Prism project",
     "prism.exclusion_reason": "Exclusion in Prism",
     "prism.value_edit": "Value changed in Prism",
@@ -51,8 +52,9 @@ STAGE_WORD = {
     "other": "Studio",
 }
 # Accepted proposals that make (or re-make) the session's analysis: the curves confirmation,
-# and a change after it that a person accepted from a Prism round trip.
-PRODUCES = {"prism.exclusion_reason", "prism.value_edit"}
+# and a change after it that a person accepted from a Prism round trip or the Controls section
+# (a well left out of, or put back into, the analysis).
+PRODUCES = {"prism.exclusion_reason", "prism.value_edit", "curve.exclude_well"}
 MAX_LISTED = 3
 MAX_TEXT = 160
 MAX_CACHED = 8
@@ -182,14 +184,39 @@ def _milestone(
     )
 
 
+def _click_words(entry: ProposalEntry, proposals: list[Proposal]) -> str:
+    """One producing click in words: what was accepted (its subjects) and the person's reason."""
+    first = proposals[0]
+    if first.kind == "stage.confirm":
+        return f"{STAGE_WORD[_stage(first)]} confirmed"
+    subjects = [_short(p.subject) for p in proposals]
+    shown = ", ".join(subjects[:MAX_LISTED]) + (", …" if len(subjects) > MAX_LISTED else "")
+    if first.kind == "curve.exclude_well":
+        n = len(proposals)
+        wells = "1 well" if n == 1 else f"{n} wells"
+        out = (first.edits or first.payload).get("excluded") is True
+        what = f"Left out {wells} ({shown})" if out else f"Put {wells} back ({shown})"
+    else:
+        what = f"{KIND_TITLE.get(first.kind, first.kind)} accepted ({shown})"
+    reason = _short(entry.reason)
+    return f"{what}: {reason}" if reason else what
+
+
 def milestones(
     folder: Path,
-) -> tuple[list[StudioMilestone], list[tuple[str, int]], bool]:
-    """The session's log by stage run, the producing acceptances (at, run index), and intact."""
+) -> tuple[list[StudioMilestone], list[tuple[str, int, str, Any]], bool]:
+    """The session's log by stage run, the producing clicks, and whether it is intact.
+
+    Each producing click is ``(at, run index, words, wells)``; ``wells`` says what a
+    well-exclusion click left out or put back (else None).
+
+    A click is the producing acceptances of one moment with one reason and one kind (a person
+    leaving several wells out at once is one click).
+    """
     entries, broken = read_log(folder)
     proposals: dict[str, Proposal] = {}
     runs: list[tuple[str, list[tuple[ProposalEntry, Proposal | None]]]] = []
-    producing: list[tuple[str, int]] = []
+    clicks: list[tuple[ProposalEntry, int, list[Proposal]]] = []
     for entry in entries:
         if entry.proposal is not None:
             proposals[entry.proposal_id] = entry.proposal
@@ -199,8 +226,45 @@ def milestones(
             runs.append((stage, []))
         runs[-1][1].append((entry, proposal))
         if _produces(entry, proposal):
-            producing.append((entry.at, len(runs) - 1))
+            assert proposal is not None
+            last = clicks[-1] if clicks else None
+            if (
+                last is not None
+                and last[0].at == entry.at
+                and last[0].reason == entry.reason
+                and last[2][0].kind == proposal.kind
+                and last[1] == len(runs) - 1
+            ):
+                last[2].append(proposal)
+            else:
+                clicks.append((entry, len(runs) - 1, [proposal]))
+    producing = [(e.at, run, _click_words(e, ps), _click_wells(ps)) for e, run, ps in clicks]
     return [_milestone(run, stage, broken) for stage, run in runs], producing, broken is None
+
+
+def _click_wells(proposals: list[Proposal]) -> tuple[frozenset[str], bool] | None:
+    """The wells a well-exclusion click left out (True) or put back (False); else None."""
+    first = proposals[0]
+    if first.kind != "curve.exclude_well":
+        return None
+    out = (first.edits or first.payload).get("excluded") is True
+    return frozenset(p.subject for p in proposals), out
+
+
+def _fits(store: StudyStore, study_id: str, wells: tuple[frozenset[str], bool] | None) -> bool:
+    """Whether a study's design has a well-exclusion click's wells left out (or in).
+
+    Times have one-second steps, so on a fast analysis time alone can tie two clicks.
+    """
+    if wells is None:
+        return True
+    try:
+        design = store.design(study_id)
+    except (StudyNotFound, OSError, ValueError):
+        return True
+    excluded = set(design.excluded_wells) if design is not None else set()
+    keys, out = wells
+    return keys <= excluded if out else not (keys & excluded)
 
 
 def _workspace_info(folder: Path) -> tuple[str, str] | None:
@@ -299,7 +363,7 @@ def studio_context(
         except StudyNotFound:
             folder = None
     runs: list[StudioMilestone] = []
-    producing: list[tuple[str, int]] = []
+    producing: list[tuple[str, int, str, Any]] = []
     intact = True
     meta: dict[str, Any] = {}
     if folder is not None:
@@ -309,14 +373,19 @@ def studio_context(
     others = same_input(store, input_sha256)
     studies = {s: created_at(store, s) for s in others}
     designs = meta.get("studies") or {}
-    # each study is tied to the latest producing acceptance at or before it was made
+    # each study is tied to the latest producing click at or before it was made
     led: dict[str, int] = {}
+    words: dict[str, str] = {}
     for sid_study, made in studies.items():
         if made is None or (designs and sid_study not in designs):
             continue
-        hits = [run for at, run in producing if at <= made]
+        hits = [
+            (run, said)
+            for at, run, said, wells in producing
+            if at <= made and _fits(store, sid_study, wells)
+        ]
         if hits:
-            led[sid_study] = hits[-1]
+            led[sid_study], words[sid_study] = hits[-1]
     for study, run in led.items():
         runs[run] = runs[run].model_copy(update={"led_to": study})
 
@@ -348,7 +417,8 @@ def studio_context(
                 created_at=studies.get(other),
                 design_hash=designs.get(other),
                 current=meta.get("current_study") == other,
-                after=_after_words(runs[run_index]) if run_index is not None else None,
+                after=words.get(other)
+                or (_after_words(runs[run_index]) if run_index is not None else None),
                 n_entries=n_entries,
             )
         )

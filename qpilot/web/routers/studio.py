@@ -20,7 +20,7 @@ from fastapi import APIRouter, Query
 
 from qpilot.core.store import StudyNotFound
 from qpilot.schemas_studio import Proposal, ProposalCheck, ProposalOutcome
-from qpilot.studio_service import StudioError
+from qpilot.studio_service import REASON_KINDS, StudioError
 from qpilot.web import studio_views as sv
 from qpilot.web.context import AppContext, Ctx, api_error, check_key, is_session
 from qpilot.web.contract import (
@@ -377,8 +377,8 @@ def accept(sid: str, pid: str, body: ProposalAction, ctx: Ctx) -> ProposalDecide
     proposal = proposal_of(ctx, sid, pid)
     not_a_confirm(proposal)
     reason = body.reason.strip()
-    if proposal.kind == "prism.exclusion_reason" and not reason:
-        raise api_error(422, "bad_request", sv.WORDS["exclusion_reason"])
+    if proposal.kind in REASON_KINDS and not reason:
+        raise api_error(422, "bad_request", sv.WORDS[f"reason:{proposal.kind}"])
     outcome = call(
         ctx.studio.accept, sid, pid, HUMAN, reason=reason, expected_head=body.expected_head
     )
@@ -398,7 +398,7 @@ def edit(sid: str, pid: str, body: ProposalAction, ctx: Ctx) -> ProposalDecided:
     if not edits:
         raise api_error(422, "bad_request", sv.WORDS["edit_nothing"])
     reason = body.reason.strip()
-    if proposal.kind == "prism.exclusion_reason" and not reason:
+    if proposal.kind in REASON_KINDS and not reason:
         raise api_error(422, "bad_request", "Say why (the reason is kept in the record).")
     outcome = call(
         ctx.studio.edit, sid, pid, HUMAN, edits=edits, reason=reason,

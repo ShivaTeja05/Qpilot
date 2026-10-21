@@ -158,6 +158,8 @@ class OptionConsequence(BaseModel):
     excluded: list[str]
     consequence: ConsequenceClass
     reason: str = ""
+    #: Why it was answered without a re-run (the plugin's machine reason), else empty.
+    code: str = ""
     n_flipped: int = 0
     flipped: list[str] = []
     n_flipped_anywhere: int = 0
@@ -271,17 +273,23 @@ def elsewhere(option: OptionConsequence) -> list[str]:
     return [item for item in option.flipped_anywhere if item not in primary]
 
 
-def unknown(option: str, excluded: Iterable[str], reason: str) -> OptionConsequence:
+def unknown(option: str, excluded: Iterable[str], reason: str, code: str = "") -> OptionConsequence:
     """An option that could not be evaluated, with the reason in plain words."""
     return OptionConsequence(
-        option=option, excluded=sorted(set(excluded)), consequence="unknown", reason=reason
+        option=option,
+        excluded=sorted(set(excluded)),
+        consequence="unknown",
+        reason=reason,
+        code=code,
     )
 
 
-def unchanged(option: str, excluded: Iterable[str], reason: str) -> OptionConsequence:
-    """An option that leaves the analysis exactly as it is (e.g. the items are not analysed)."""
+def unchanged(
+    option: str, excluded: Iterable[str], reason: str, code: str = ""
+) -> OptionConsequence:
+    """An option that leaves the analysis as it is (items not analysed, or already left out)."""
     return OptionConsequence(
-        option=option, excluded=sorted(set(excluded)), consequence="none", reason=reason
+        option=option, excluded=sorted(set(excluded)), consequence="none", reason=reason, code=code
     )
 
 

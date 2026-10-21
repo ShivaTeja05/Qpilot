@@ -7,7 +7,7 @@
  * The query key starts with `["w", workspace key, study id, "gate"]`, so a live event about the
  * session or the study (a decision, the end of the `gate.run` job) re-reads it.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError, unwrap, type JobView, type Schemas } from "@/api/client";
 
 export interface GateScope {
@@ -43,6 +43,9 @@ export type RuleInfo = GateView["pack"]["rules"][number];
 export type FactText = GateView["headline"];
 export type Verdict = Evaluation["verdict"];
 export type ConsequenceClass = Consequence["consequence"];
+export type GateDecision = NonNullable<Consequence["decision"]>;
+export type GateRequest = Consequence["requests"][number];
+export type GateDecided = Schemas["GateDecided"];
 
 /** The `gate.run` job a 409 `loading` names (the controls are being checked). */
 export function loadingJob(error: unknown): JobView | null {
@@ -65,5 +68,36 @@ export function useGate(s: GateScope) {
     queryFn: () => fetchGate(s.studyId!),
     refetchInterval: whileLoading,
     retry,
+  });
+}
+
+export interface GateChoice {
+  /** The consequence's `decision_id` (`card_gate_<id>`). */
+  card: string;
+  option: string;
+  reason: string;
+}
+
+/**
+ * A person's choice on a gate card (a Studio session only; the server sets the actor). Leaving
+ * wells out, or putting them back, starts the analysis of the changed design (`job`); every
+ * query of the workspace is read again when it settles.
+ */
+export function useGateDecide(s: GateScope, view: GateView | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (c: GateChoice) =>
+      unwrap(
+        api.POST("/api/studies/{study_id}/gate/cards/{card_id}/decide", {
+          params: { path: { study_id: s.studyId!, card_id: c.card } },
+          body: {
+            option: c.option,
+            reason: c.reason,
+            expected_head: view?.head ?? null,
+            expected_inbox: view?.inbox_head ?? null,
+          },
+        }),
+      ),
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["w", s.key] }),
   });
 }

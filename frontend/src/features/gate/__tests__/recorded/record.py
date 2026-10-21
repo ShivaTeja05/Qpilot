@@ -4,14 +4,19 @@ Run from the repository root (the demo must be cached: ``qpilot fetch-demo``):
 
     python frontend/src/features/gate/__tests__/recorded/record.py
 
-It asks the real route (an in-process server over a throwaway store, read-only) and writes,
+It asks the real route (an in-process server over a throwaway store) and writes,
 next to this file, exactly what it answers:
 
 * ``gate-demo.json`` -- ``GET /api/studies/{id}/gate`` for the demo study analysed outside
   Studio (Vermeulen 2013: 64 plates; three auto-decided cards, no call changes at the analysis);
 * ``gate-mini.json`` -- the same route for the Studio tests' mini file walked through Studio,
   with a no-template control that amplifies early on ``1-Mar`` (one open card: leaving the
-  tainted wells out leaves the gene without a call).
+  tainted wells out leaves the gene without a call; a person decides it here);
+* ``gate-mini-request.json`` -- the same, after an agent asked through MCP to leave the wells
+  out (``qpcr_decide``: the request waits on the card for a person);
+* ``gate-mini-left-out.json`` -- the gate of the new analysis after a person left the wells out
+  (``POST .../gate/cards/{card}/decide``): no card any more, the wells listed as left out, with
+  who decided and why.
 """
 
 from __future__ import annotations
@@ -47,8 +52,12 @@ def write(name: str, body: dict) -> None:
     print(f"wrote {name} ({len(text):,} bytes)")
 
 
-def record(store, studio, study: str, name: str) -> None:
-    """Record ``/gate`` of one study of ``store`` (an in-process server, read-only)."""
+def record(store, studio, study: str, name: str, then=None) -> None:
+    """Record ``/gate`` of one study of ``store`` (an in-process server).
+
+    ``then(client, body)``, when given, acts after the recording (as a person or an agent would)
+    and returns more ``(study, name)`` pairs to record.
+    """
     from fastapi.testclient import TestClient
 
     from qpilot.web.context import make_context
@@ -59,9 +68,40 @@ def record(store, studio, study: str, name: str) -> None:
         with TestClient(create_app(ctx), base_url=BASE) as client:
             client.headers["x-qpilot-token"] = TOKEN
             client.headers["origin"] = BASE
-            write(name, get(client, f"/api/studies/{study}/gate"))
+            body = get(client, f"/api/studies/{study}/gate")
+            write(name, body)
+            for more_study, more_name in then(client, body) if then else []:
+                write(more_name, get(client, f"/api/studies/{more_study}/gate"))
     finally:
         ctx.close()
+
+
+def mini_steps(store, sid: str, study: str):
+    """An agent asks to leave the tainted wells out; then a person does (a new analysis)."""
+    from qpilot.mcp_server import QpilotTools
+
+    def then(client, body):
+        card = body["cards"][0]["card"]["id"]
+        out = QpilotTools(store).qpcr_decide(
+            study, card, "exclude_flagged", "the no-template control amplified"
+        )
+        assert out["status"] == "pending_human", out
+        yield study, "gate-mini-request.json"
+        r = client.post(
+            f"/api/studies/{study}/gate/cards/{card}/decide",
+            json={"option": "exclude_flagged", "reason": "the NTC amplified on this plate"},
+        )
+        r.raise_for_status()
+        job = r.json()["job"]
+        for _ in range(3000):
+            if client.get(f"/api/jobs/{job['id']}").json()["status"] in ("done", "failed"):
+                break
+            time.sleep(0.1)
+        new = client.get(f"/api/sessions/{sid}").json()["study_id"]
+        assert new and new != study, new
+        yield new, "gate-mini-left-out.json"
+
+    return then
 
 
 def main() -> None:
@@ -86,8 +126,8 @@ def main() -> None:
     mini = studio_mini.write_studio_mini(data / "mini.rdml")
     store = StudyStore(base / "mini")
     studio = Studio(store, client=ModelClient(backend=NoneBackend()))
-    _, study = walk_mini(studio, mini)
-    record(store, studio, study, "gate-mini.json")
+    sid, study = walk_mini(studio, mini)
+    record(store, studio, study, "gate-mini.json", mini_steps(store, sid, study))
 
 
 if __name__ == "__main__":

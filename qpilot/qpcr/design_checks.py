@@ -968,6 +968,8 @@ def check_with_facts(
         )
     if kind == "curve.well_call":
         return curve_check(proposal.subject, payload, wells)
+    if kind == "curve.exclude_well":
+        return exclusion_check(proposal.subject, payload, wells)
     return ProposalCheck(status="cannot_check", note="no engine check exists for this kind")
 
 
@@ -1007,6 +1009,31 @@ def curve_check(subject: str, payload: Mapping[str, Any], wells: pd.DataFrame) -
         )
         return _check("contradicted", "D-CURVE", details, note)
     return _check("consistent", "D-CURVE", details, "the curve itself has to be looked at")
+
+
+def exclusion_check(subject: str, payload: Mapping[str, Any], wells: pd.DataFrame) -> ProposalCheck:
+    """``D-COVER`` for a well left out of (or put back into) the analysis.
+
+    The engine can refute only the form: no such well in the file, or an answer that is not
+    true or false. Whether a well should be left out is a person's decision on the evidence the
+    proposal cites (a Run Gate rule, a curve); the best this check says is ``consistent``.
+    """
+    if "/" not in subject:
+        return _check("contradicted", "D-COVER", {}, "a well is named as run/well")
+    rows = _subject_wells(subject, wells)
+    if rows.empty:
+        return _check("contradicted", "D-COVER", {}, "no well in the file has this position")
+    excluded = payload.get("excluded")
+    if not isinstance(excluded, bool):
+        return _check("contradicted", "D-COVER", {}, "a well is left out: true or false")
+    details = {
+        "well_found": True,
+        "targets": sorted({str(t) for t in rows["target"]}),
+        "declared_type": str(rows.iloc[0]["sample_type"]),
+    }
+    return _check(
+        "consistent", "D-COVER", details, "the well is in the file; leaving it out is a decision"
+    )
 
 
 def _sample_roles(facts: FileFacts, accepted: list[Proposal]) -> dict[str, str]:

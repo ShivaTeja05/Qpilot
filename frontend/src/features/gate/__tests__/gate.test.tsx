@@ -1,12 +1,14 @@
 /**
  * The Controls section on JSON recorded from the real route (`recorded/record.py`): the demo study
- * analysed outside Studio (64 plates, three auto-decided cards) and the Studio tests' mini file
- * with an early no-template control (one open card). No number is typed in: every expectation is
- * read from a recording or formatted from it.
+ * analysed outside Studio (64 plates, three auto-decided cards, read-only) and the Studio tests'
+ * mini file with an early no-template control (one open card a person decides here; the same
+ * card with an agent's request waiting; and the new analysis after a person left the wells out).
+ * No number is typed in: every expectation is read from a recording or formatted from it.
  */
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Schemas } from "@/api/client";
+import { api, type Schemas } from "@/api/client";
 import { TooltipProvider } from "@/ui";
 import type { GateView } from "../api";
 import { GatePage } from "../index";
@@ -21,10 +23,14 @@ import {
   whereText,
 } from "../words";
 import demoJson from "./recorded/gate-demo.json";
+import leftOutJson from "./recorded/gate-mini-left-out.json";
 import miniJson from "./recorded/gate-mini.json";
+import requestJson from "./recorded/gate-mini-request.json";
 
 const DEMO = demoJson as unknown as GateView;
 const MINI = miniJson as unknown as GateView;
+const REQUEST = requestJson as unknown as GateView;
+const LEFT_OUT = leftOutJson as unknown as GateView;
 const BANNED = /\b(valid|validated|invalid|compliant|diagnostic|QC passed)\b/i;
 /** Testing Library folds the page's narrow no-break spaces into plain ones. */
 const text = (s: string) => s.replace(/\s+/g, " ");
@@ -38,12 +44,44 @@ function workspace(view: GateView): Schemas["WorkspaceView"] {
 }
 
 function page(view: GateView) {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return render(
-    <TooltipProvider>
-      <GatePage view={view} workspace={workspace(view)} />
-    </TooltipProvider>,
+    <QueryClientProvider client={qc}>
+      <TooltipProvider>
+        <GatePage view={view} workspace={workspace(view)} />
+      </TooltipProvider>
+    </QueryClientProvider>,
   );
 }
+
+/** Answer every POST with what the route answers to a person's choice (no network). */
+function answering() {
+  const done = {
+    status: "left_out",
+    message: "Left out 3 wells: the study is being analysed again without them.",
+    study_id: MINI.study_id,
+    left_out: [],
+    put_back: [],
+    inbox_head: MINI.inbox_head,
+    job: null,
+  };
+  return vi
+    .spyOn(api, "POST")
+    .mockImplementation((() =>
+      Promise.resolve({ data: done, response: new Response(null, { status: 200 }) })) as never);
+}
+
+type Sent = [
+  string,
+  {
+    params: { path: { study_id: string; card_id: string } };
+    body: { option: string; reason: string; expected_head: string; expected_inbox: string };
+  },
+];
+
+const cardsRegion = () => screen.getByRole("region", { name: "Decision Cards from the controls" });
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -64,6 +102,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("the gate's words", () => {
@@ -78,6 +117,10 @@ describe("the gate's words", () => {
         ...view.cards.map((c) => c.status_line),
       ];
       for (const line of lines) expect(line).not.toMatch(BANNED);
+    }
+    for (const view of [REQUEST, LEFT_OUT]) {
+      for (const c of view.cards) expect(c.status_line).not.toMatch(BANNED);
+      for (const c of view.consequences) expect(c.triage_text).not.toMatch(BANNED);
     }
   });
 
@@ -206,21 +249,94 @@ describe("the Controls page", { timeout: 30_000 }, () => {
     expect(within(cards).queryByRole("textbox")).toBeNull();
   });
 
-  it("shows an open card: a person decides, and a gene that can no longer be compared", () => {
+  it("shows an open card a person decides here: an option, a reason, then Decide", async () => {
+    const post = answering();
     page(MINI);
     const [card] = MINI.cards;
+    const conseq = MINI.consequences.find((c) => c.card_id === card!.card.id)!;
     expect(card!.card.status).toBe("open");
-    const article = within(
-      screen.getByRole("region", { name: "Decision Cards from the controls" }),
-    ).getByRole("article");
+    expect(MINI.can_decide && conseq.can_decide).toBe(true);
+    const region = cardsRegion();
+    expect(text(region.textContent ?? "")).toContain(MINI.decide_note);
+    const article = within(region).getByRole("article");
     expect(text(article.textContent ?? "")).toContain("A person decides");
     const leaveOut = card!.options.find((o) => o.id !== "keep")!;
     expect(leaveOut.effects).toHaveLength(0);
     expect(text(article.textContent ?? "")).toContain(
       `${card!.genes[0]}no call: it can no longer be compared`,
     );
-    const link = within(article).getByRole("link", { name: "Leave wells out in Curves" });
-    expect(link.getAttribute("href")).toBe(`/s/${MINI.session}/curves`);
+    const radios = within(article).getAllByRole("radio");
+    expect(radios.map((r) => (r as HTMLInputElement).value)).toEqual(
+      card!.options.map((o) => o.id),
+    );
+    expect((radios[0] as HTMLInputElement).checked).toBe(true); // the recommended option
+    fireEvent.click(radios[1]!);
+    const decide = within(article).getByRole("button", { name: `Decide: ${leaveOut.label}` });
+    expect((decide as HTMLButtonElement).disabled).toBe(true); // a reason first
+    fireEvent.change(within(article).getByRole("textbox"), {
+      target: { value: "The NTC amplified on this plate" },
+    });
+    fireEvent.click(decide);
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    const [route, init] = post.mock.calls[0] as unknown as Sent;
+    expect(route).toBe("/api/studies/{study_id}/gate/cards/{card_id}/decide");
+    expect(init.params.path).toEqual({ study_id: MINI.study_id, card_id: conseq.decision_id });
+    expect(init.body).toEqual({
+      option: leaveOut.id,
+      reason: "The NTC amplified on this plate",
+      expected_head: MINI.head,
+      expected_inbox: MINI.inbox_head,
+    });
+    expect(within(article).queryByRole("link", { name: /Trace/ })).toBeNull();
     expect(text(document.body.textContent ?? "")).toContain(text(MINI.headline.plain));
+  });
+
+  it("shows an agent's request on its card: Approve or Turn down, with a reason", async () => {
+    const post = answering();
+    page(REQUEST);
+    const conseq = REQUEST.consequences.find((c) => c.card_id)!;
+    const [request] = conseq.requests;
+    expect(request!.left_out).toBe(true);
+    const article = within(cardsRegion()).getByRole("article");
+    expect(text(article.textContent ?? "")).toContain("Agent request");
+    expect(text(article.textContent ?? "")).toContain(`“${request!.reason}”`);
+    expect(within(article).getByText("Agent asked")).toBeTruthy();
+    expect(within(article).queryByRole("radio")).toBeNull();
+    fireEvent.change(within(article).getByRole("textbox"), {
+      target: { value: "Not before the repeat plate" },
+    });
+    fireEvent.click(within(article).getByRole("button", { name: "Turn down" }));
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    const [, init] = post.mock.calls[0] as unknown as Sent;
+    expect(init.body.option).toBe("keep"); // turning it down keeps every well
+    expect(init.body.reason).toBe("Not before the repeat plate");
+    const approve = within(article).getByRole("button", {
+      name: `Approve: ${request!.option_label}`,
+    });
+    expect(approve).toBeTruthy();
+  });
+
+  it("lists the wells a person left out, with why, and puts them back with a reason", async () => {
+    const post = answering();
+    page(LEFT_OUT);
+    expect(LEFT_OUT.cards).toHaveLength(0);
+    const conseq = LEFT_OUT.consequences.find((c) => c.decision)!;
+    const decision = conseq.decision!;
+    expect(decision.action).toBe("left_out");
+    expect(conseq.options[0]!.code).toBe("already_left_out");
+    const article = within(cardsRegion()).getByRole("article");
+    expect(text(article.textContent ?? "")).toContain("Decided by a person");
+    expect(text(article.textContent ?? "")).toContain(`Why: ${decision.reason}`);
+    for (const w of decision.left_out) expect(article.textContent).toContain(wellText(w));
+    fireEvent.click(within(article).getByRole("button", { name: "Put the wells back" }));
+    fireEvent.change(within(article).getByRole("textbox"), {
+      target: { value: "The repeat plate's NTC stayed flat" },
+    });
+    fireEvent.click(within(article).getByRole("button", { name: "Put the wells back" }));
+    await waitFor(() => expect(post).toHaveBeenCalled());
+    const [, init] = post.mock.calls[0] as unknown as Sent;
+    expect(init.params.path.card_id).toBe(conseq.decision_id);
+    expect(init.body.option).toBe("keep");
+    expect(init.body.expected_head).toBe(LEFT_OUT.head);
   });
 });
