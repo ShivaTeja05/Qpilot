@@ -192,6 +192,15 @@ def _d_well(subject: str, d: Mapping[str, Any]) -> str:
     return f"Count well {subject} as {words}"
 
 
+def _d_exclude(subject: str, d: Mapping[str, Any]) -> str:
+    excluded = d["excluded"]
+    if not isinstance(excluded, bool):
+        raise TypeError("excluded must be true or false")
+    if excluded:
+        return f"Leave well {subject} out of the analysis"
+    return f"Put well {subject} back into the analysis"
+
+
 def _d_project(subject: str, d: Mapping[str, Any]) -> str:
     genes = ", ".join(str(g) for g in d.get("genes") or []) or "the headline genes"
     template = d.get("template_id") or "two_groups_log2"
@@ -236,6 +245,7 @@ _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
     "design.dilution_series": _d_series,
     "curve.call_rule": _d_rule,
     "curve.well_call": _d_well,
+    "curve.exclude_well": _d_exclude,
     "prism.project": _d_project,
     "prism.exclusion_reason": _d_exclusion,
     "prism.value_edit": _d_value_edit,

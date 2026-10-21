@@ -35,6 +35,7 @@ PAYLOADS = {
     "design.dilution_series": ("STD", {"experiment_id": "e1", "samples": {"S_1": 1, "S_10": 10}}),
     "curve.call_rule": ("amp_call", {"rule": "cq_le_35"}),
     "curve.well_call": ("run1/A1", {"amplified": False}),
+    "curve.exclude_well": ("run1/A2", {"excluded": True}),
     "prism.project": ("prism", {"template_id": "two_groups_log2", "genes": ["ODC1"]}),
     "prism.exclusion_reason": (
         "ODC1/1496",
@@ -71,6 +72,7 @@ def test_every_kind_has_plain_words():
     assert words["design.comparison"].startswith("Compare group “LPS” with group “PBS”")
     assert "a Cq above 35 counts as not amplified" in words["curve.call_rule"]
     assert words["curve.well_call"] == "Count well run1/A1 as not amplified (no usable curve)"
+    assert words["curve.exclude_well"] == "Leave well run1/A2 out of the analysis"
     assert (
         words["stage.confirm"]
         == "Confirm the Design (blind) stage: it covers 2 accepted proposal(s)"
