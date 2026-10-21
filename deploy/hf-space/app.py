@@ -49,6 +49,25 @@ def _no_gpu_needed() -> None:
     return None
 
 
+def _report_ready_to_zerogpu() -> None:
+    """Tell ZeroGPU the app has started (Gradio's ``launch`` does this; qPilot never calls it).
+
+    Without the report the platform stops the container shortly after start.
+    """
+    try:
+        import spaces.zero as zero
+    except ImportError:  # not on ZeroGPU (local runs)
+        return
+    startup = getattr(zero, "startup", None)
+    if startup is None:
+        return
+    try:
+        startup()
+        print("ZeroGPU startup reported", flush=True)
+    except Exception as err:  # keep serving; the platform log shows why
+        print("ZeroGPU startup report failed:", err, flush=True)
+
+
 def _prepare_demo() -> None:
     """Download, walk and audit the public demo study (about 3 minutes), then log what exists."""
     cli = [sys.executable, "-c", "import sys; from qpilot.cli import main; sys.exit(main())"]
@@ -88,6 +107,7 @@ def main() -> None:
     with gr.Blocks(title="qPilot") as stub:  # the Space SDK's app; qPilot itself is at /
         gr.Markdown("qPilot runs at the root of this Space.")
     app = gr.mount_gradio_app(app, stub, path="/gradio", ssr_mode=False)
+    _report_ready_to_zerogpu()
     threading.Thread(target=_prepare_demo, name="qpilot-demo", daemon=True).start()
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "7860")), log_level="info")
 
