@@ -51,9 +51,16 @@ and the script refuses to write the site if a user name or home path is left any
 
 ## Deploy
 
+From inside this folder (from the repository root the CLI mistakes the `deploy/` folder for a
+target):
+
 ```bash
-npx vercel@latest deploy site --temporary --prod --yes --verify
+cd site
+npx vercel@latest deploy --prod --yes --verify
 ```
 
-`--temporary` needs no Vercel account. The command prints the URL and a link to claim the
-deployment into an account; once claimed it can be given a project name and a domain.
+`--temporary` deploys without a Vercel account and prints a link to claim the deployment later,
+but Vercel can refuse it (on 21 Oct 2026, from the machine that recorded this site, its anonymous
+endpoint answered 403 and the CLI asked to log in). Otherwise log in first
+(`npx vercel@latest login`, by the account's owner) and deploy as above; the project can then be
+renamed and given a domain in Vercel's dashboard.

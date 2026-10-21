@@ -479,6 +479,35 @@ const STEPS = [
   },
 ];
 
+/**
+ * Verify only: the well curves come from their plates' packs (the walk's own clicks were also
+ * recorded one by one, so ask for wells it never clicked: three per plate, with and without the
+ * gene, as Curves, Gene and Trace ask for them).
+ */
+STEPS.push({
+  name: "packs",
+  run: async ({ page, mode, sid, log }) => {
+    if (mode !== "verify") return;
+    const plate = await apiGet(page, `/api/sessions/${sid}/plate`);
+    const paths = [];
+    for (const run of plate.runs) {
+      const p = await apiGet(
+        page,
+        `/api/sessions/${sid}/plate?run=${encodeURIComponent(run.run_id)}`,
+      );
+      const wells = p.wells.filter((w) => w.target && w.sample);
+      for (const w of [wells[1], wells[Math.floor(wells.length / 2)], wells.at(-1)]) {
+        if (!w) continue;
+        const well = `${run.run_id}/${w.well}`;
+        paths.push(`/api/sessions/${sid}/curve?${new URLSearchParams({ well })}`);
+        paths.push(`/api/sessions/${sid}/curve?${new URLSearchParams({ well, target: w.target })}`);
+      }
+    }
+    const ok = await fetchAll(page, paths);
+    log(`  ${ok}/${paths.length} curves answered from the plates' packs`);
+  },
+});
+
 /** Click the download links in <main> whose files are small enough to publish. */
 async function clickDownloads(page, sizes, maxBytes = 5e6) {
   const links = page.locator('main a[download][href^="/api/"]');
