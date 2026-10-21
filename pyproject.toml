@@ -70,5 +70,9 @@ qsim = "qsim.cli:main"
 # and are found relative to the source tree, so run qsim from an editable install or a clone.
 packages = ["qpilot", "sim/src/qsim"]
 
+[tool.hatch.build.targets.wheel.force-include]
+# Run Gate's rule packs: qpilot.qpcr.gate_rules.PACKS_DIR_CANDIDATES looks in qpilot/_packs first.
+"packs" = "qpilot/_packs"
+
 [tool.hatch.build.targets.sdist]
 exclude = ["tests/fixtures/*.rdml", "demo/*.mp4", "frontend/node_modules"]
