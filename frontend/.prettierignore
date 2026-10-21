@@ -5,6 +5,7 @@
 src/api/schema.d.ts
 # Build output and reports.
 dist
+dist-demo
 playwright-report
 test-results
 e2e/screenshots

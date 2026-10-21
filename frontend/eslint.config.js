@@ -5,7 +5,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["node_modules", "src/api/schema.d.ts", "../qpilot/web/static"] },
+  { ignores: ["node_modules", "src/api/schema.d.ts", "../qpilot/web/static", "dist-demo"] },
   {
     files: ["**/*.{ts,tsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

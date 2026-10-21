@@ -18,7 +18,9 @@
  * 4. Serves site/ as Vercel will (serve.mjs, the headers of site/vercel.json) and walks it again:
  *    fails on any request without a recording, any request leaving the site, any console error.
  *
- * Options: --port N (the server, default 7960) · --verify (step 4 only) · --keep (keep the
+ * Options: --port N (the server, default 7960) · --verify (step 4 only) · --repage (copy a
+ * rebuilt page into site/, keep the recordings, then step 4) · --assemble DIR (write site/ from
+ * a kept snapshot of the raw answers, then step 4) · --keep (keep the
  * scratch store) · --no-curves (skip the 25,000 well curves) · --only a,b (walk only these steps,
  * for development; nothing is written unless --write is given).
  */
@@ -29,6 +31,7 @@ import {
   createWriteStream,
   existsSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   realpathSync,
   rmSync,
@@ -293,32 +296,32 @@ async function record(base) {
 /** Answers that were still loading (409 "loading", a warming frame, running jobs): ask again. */
 async function settleRecordings(base, recordings) {
   await serverQuiet(base);
+  const text = (x) => (x.type.startsWith("application/json") ? x.data.toString("utf8") : "");
+  // 409 "loading" / 503 "warming" mean "a job is preparing this, ask again"; any other refusal
+  // (a 409 "this gene is not in the design") is the server's real answer and is kept.
+  const pending = (x) =>
+    ((x.status === 409 || x.status === 503) && /"code":\s*"(loading|warming)"/.test(text(x))) ||
+    x.status >= 500 ||
+    /"warming":\s*true/.test(text(x));
   let refreshed = 0;
   const problems = [];
   for (const [key, r] of recordings) {
-    const loading =
-      r.status === 409 ||
-      r.status >= 500 ||
-      /^\/api\/(jobs(\/[^/]+)?|workspaces|system|sessions\/[^/]+)$/.test(r.path) ||
-      (r.type.startsWith("application/json") && /"warming":\s*true/.test(r.data.toString("utf8")));
-    if (!loading) continue;
-    if (r.method !== "GET" && r.status !== 409) continue;
+    const live = /^\/api\/(jobs(\/[^/]+)?|workspaces|system|sessions\/[^/]+)$/.test(r.path);
+    if (!pending(r) && !live) continue;
+    if (r.method !== "GET" && !pending(r)) continue;
     let fresh = null;
     for (let i = 0; i < 60; i += 1) {
       fresh = await api(base, `${r.path}${r.query}`, {
         method: r.method,
         ...(r.body != null ? { body: r.body } : {}),
       });
-      const warming =
-        fresh.type.startsWith("application/json") &&
-        /"warming":\s*true/.test(fresh.data.toString("utf8"));
-      if (fresh.status !== 409 && !warming) break;
+      if (!pending(fresh)) break;
       await sleep(2000);
     }
     if (fresh.status >= 200 && fresh.status < 300) {
       recordings.set(key, { ...r, status: fresh.status, type: fresh.type, data: fresh.data });
       refreshed += 1;
-    } else if (r.status === 409 || r.status >= 500) {
+    } else if (pending(r)) {
       problems.push(`${fresh.status} ${r.method} ${r.path}${r.query}`);
     }
   }
@@ -351,6 +354,7 @@ async function recordCurves(base, sid) {
     await Promise.all(Array.from({ length: 6 }, worker));
     packs.set(run.run_id, pack);
     wells += Object.keys(pack).length;
+    if (packs.size % 8 === 0) log(`  curves: ${packs.size}/${plate0.runs.length} plates`);
   }
   log(`curves: ${wells} wells on ${packs.size} plates`);
   return { [sid]: packs };
@@ -377,7 +381,12 @@ function scrubber(work) {
     [REPO, "~/qpilot"],
     [homedir(), "~"],
   ];
-  return (text) => roots.reduce((t, [from, to]) => t.split(from).join(to), text);
+  return (text) =>
+    roots
+      .reduce((t, [from, to]) => t.split(from).join(to), text)
+      // Any other temporary folder of this computer (a bundle written by Prism's send, …).
+      .replace(/(\/private)?\/var\/folders\/[^/"'\s]+\/[^/"'\s]+\/[A-Z]\//g, "/tmp/")
+      .replace(/\/private\/tmp\//g, "/tmp/");
 }
 
 const TEXT = /^(application\/(json|xml|javascript|x-ndjson)|text\/)/;
@@ -419,7 +428,10 @@ function assemble(recordings, curves, work) {
       let text = scrub(data.toString("utf8"));
       if (type === "application/json" && text) text = JSON.stringify(JSON.parse(text));
       const found = leaks(text);
-      if (found.length) throw new Error(`private text left in ${r.method} ${r.path}: ${found}`);
+      if (found.length) {
+        dropped.push(`${r.method} ${r.path}${r.query} (${type})`);
+        continue;
+      }
       data = Buffer.from(text, "utf8");
     } else {
       const inside = data.subarray(0, 4).equals(Buffer.from("PK\x03\x04", "latin1"))
@@ -451,7 +463,10 @@ function assemble(recordings, curves, work) {
       const name = createHash("sha256").update(`${sid}/${run}`).digest("hex").slice(0, 24);
       const text = scrub(JSON.stringify(pack));
       const found = leaks(text);
-      if (found.length) throw new Error(`private text left in the curves of ${run}: ${found}`);
+      if (found.length) {
+        dropped.push(`the curves of ${run}`);
+        continue;
+      }
       const packed = gz(Buffer.from(text, "utf8"));
       writeFileSync(join(API_DIR, "curves", `${name}.gz`), packed);
       raw += text.length;
@@ -470,7 +485,7 @@ function assemble(recordings, curves, work) {
   if (leaks(indexText).length)
     throw new Error(`private text left in index.json: ${leaks(indexText)}`);
   writeFileSync(join(API_DIR, "index.json"), indexText);
-  for (const d of dropped) log("  not published (a local path inside the file):", d);
+  for (const d of dropped) log("  NOT PUBLISHED (a local path or name left inside):", d);
   log(
     `site/ assembled: ${Object.keys(entries).length} answers + ${curveFiles} curve packs, ` +
       `${(raw / 1e6).toFixed(1)} MB of answers stored as ${(stored / 1e6).toFixed(1)} MB gzipped`,
@@ -525,8 +540,53 @@ async function verify() {
 
 // ---------------------------------------------------------------------------------------------
 
+/** Put the current build (dist-demo/) in site/, keeping the recordings (a page change only). */
+function repage() {
+  if (!existsSync(join(DIST, "index.html"))) throw new Error("run `npm run build:demo` first");
+  if (!existsSync(join(API_DIR, "index.json"))) throw new Error("site/ has no recordings yet");
+  for (const name of readdirSync(SITE)) {
+    if (!KEEP_IN_SITE.has(name) && name !== "demo-api")
+      rmSync(join(SITE, name), { recursive: true, force: true });
+  }
+  cpSync(DIST, SITE, { recursive: true });
+  log("site/: the page replaced by the current dist-demo/ (recordings kept)");
+}
+
+/** The raw answers on disk, so the site can be assembled again without recording again. */
+function saveSnapshot(dir, recordings, curves) {
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(join(dir, "bodies"), { recursive: true });
+  const meta = [];
+  for (const [key, r] of recordings) {
+    writeFileSync(join(dir, "bodies", key), r.data);
+    meta.push([key, { ...r, data: undefined }]);
+  }
+  const packs = Object.fromEntries(
+    Object.entries(curves).map(([sid, plates]) => [sid, Object.fromEntries(plates)]),
+  );
+  writeFileSync(join(dir, "recordings.json"), JSON.stringify(meta));
+  writeFileSync(join(dir, "curves.json"), JSON.stringify(packs));
+  log(`snapshot of the raw answers: ${dir}`);
+}
+
+function loadSnapshot(dir) {
+  const recordings = new Map();
+  for (const [key, r] of JSON.parse(readFileSync(join(dir, "recordings.json"), "utf8")))
+    recordings.set(key, { ...r, data: readFileSync(join(dir, "bodies", key)) });
+  const packs = JSON.parse(readFileSync(join(dir, "curves.json"), "utf8"));
+  const curves = Object.fromEntries(
+    Object.entries(packs).map(([sid, plates]) => [sid, new Map(Object.entries(plates))]),
+  );
+  return { recordings, curves };
+}
+
 async function main() {
-  if (!flag("--verify")) {
+  const snapshot = option("--assemble", "");
+  if (snapshot) {
+    const { recordings, curves } = loadSnapshot(snapshot);
+    assemble(recordings, curves, dirname(snapshot));
+  } else if (flag("--repage")) repage();
+  else if (!flag("--verify")) {
     const seed = process.env.QPILOT_DEMO_SEED;
     if (!seed || !existsSync(seed)) throw new Error("set QPILOT_DEMO_SEED to the seeded store");
     if (!existsSync(join(DIST, "index.html"))) throw new Error("run `npm run build:demo` first");
@@ -537,6 +597,7 @@ async function main() {
     cpSync(seed, store, { recursive: true });
     log(`store copied from ${seed}`);
     const { child, base } = await startServer(store, PORT);
+    let done = false;
     try {
       await serverQuiet(base);
       const { recordings, stats } = await record(base);
@@ -546,12 +607,15 @@ async function main() {
         return;
       }
       const curves = flag("--no-curves") ? {} : await recordCurves(base, stats.sid);
+      saveSnapshot(join(work, "snapshot"), recordings, curves);
       assemble(recordings, curves, work);
       if (problems.length) log(`${problems.length} answers were still loading (see above)`);
+      done = true;
     } finally {
       child.kill("SIGTERM");
       log(`qpilot app stopped (pid ${child.pid})`);
-      if (!flag("--keep")) rmSync(work, { recursive: true, force: true });
+      if (done && !flag("--keep")) rmSync(work, { recursive: true, force: true });
+      else log(`kept ${work} (re-assemble: --assemble ${join(work, "snapshot")})`);
     }
   }
   const { failures } = await verify();

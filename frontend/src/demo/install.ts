@@ -48,11 +48,17 @@ function loadManifest(): Promise<Manifest> {
   return manifest;
 }
 
-/** A recorded body: gzipped on the site, unpacked here. */
+/**
+ * A recorded body: gzipped on the site, unpacked here (unless a CDN already sent it with
+ * `Content-Encoding: gzip` and the browser unpacked it: then it no longer starts with gzip's magic).
+ */
 async function gunzip(path: string): Promise<Blob | null> {
   const file = await realFetch(path);
-  if (!file.ok || !file.body) return null;
-  return new Response(file.body.pipeThrough(new DecompressionStream("gzip"))).blob();
+  if (!file.ok) return null;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const blob = new Blob([bytes]);
+  if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return blob;
+  return new Response(blob.stream().pipeThrough(new DecompressionStream("gzip"))).blob();
 }
 
 const packs = new Map<string, Promise<Record<string, unknown> | null>>();
@@ -149,9 +155,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     const curve = method === "GET" ? await packedCurve(m, url) : null;
     if (curve) return curve;
     misses.push(`${method} ${url.pathname}${url.search}`);
-    return method === "GET"
-      ? refusal(404, "not_recorded", NOT_RECORDED)
-      : refusal(403, "read_only", READ_ONLY);
+    // A read nobody recorded (another what-if, a question of your own): say so, not "read-only".
+    return refusal(404, "not_recorded", NOT_RECORDED);
   }
   const empty = entry.s === 204 || entry.s === 304;
   const body = empty ? null : await gunzip(`${DEMO_API}/${key}.gz`);

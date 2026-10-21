@@ -10,4 +10,10 @@ export const STUDY =
 
 export const READ_ONLY = `This online demo is read-only. Install qPilot to analyse your own files: ${QUICKSTART}`;
 
-export const NOT_RECORDED = `This online demo shows what was recorded from qPilot on ${STUDY}; this view was not part of it. Install qPilot to explore everything: ${QUICKSTART}`;
+export const NOT_RECORDED = `This online demo answers what was recorded from qPilot on ${STUDY}, and this was not part of the recording. Install qPilot to try anything on your own data: ${QUICKSTART}`;
+
+/** Error panels' headings for the demo's own refusals. */
+export const DEMO_HEADING: Record<string, string> = {
+  read_only: "Read-only online demo",
+  not_recorded: "Not in the online demo",
+};

@@ -1,6 +1,7 @@
 import { AlertTriangle, KeyRound, RefreshCw, WifiOff } from "lucide-react";
 import type { ReactNode } from "react";
 import { ApiError } from "@/api/client";
+import { DEMO_HEADING } from "@/demo/words";
 import { cn } from "@/lib/cn";
 import { Button } from "./Button";
 
@@ -26,6 +27,8 @@ const HEADING: Record<string, string> = {
 
 /** A heading for an error, from its code (a refusal reads differently from a failure). */
 export function errorHeading(error: unknown): string {
+  if (__QPILOT_STATIC_DEMO__ && error instanceof ApiError && DEMO_HEADING[error.code])
+    return DEMO_HEADING[error.code]!;
   if (error instanceof ApiError && HEADING[error.code]) return HEADING[error.code]!;
   return "Something went wrong";
 }

@@ -420,9 +420,13 @@ const STEPS = [
           break;
       for (let i = 0; i <= seqs.length; i += 1)
         if (!(await click(role(page, "button", /^Next point/), "Next", { quiet: true }))) break;
+      // The earlier analysis the timeline links to: its history, results and gene pages.
       for (const r of history.related ?? []) {
         await go(`/r/${r.study_id}/history`);
         await go(`/r/${r.study_id}/results`);
+        const earlier = await apiGet(page, `/api/studies/${r.study_id}/results`);
+        for (const g of earlier.genes ?? [])
+          await go(`/r/${r.study_id}/gene/${encodeURIComponent(g.gene)}`);
       }
       await go(S("history"));
     },
