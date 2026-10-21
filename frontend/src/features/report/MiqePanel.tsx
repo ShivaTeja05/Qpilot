@@ -150,7 +150,7 @@ export function MiqePanel({ miqe, facts }: { miqe: ReportView["miqe"]; facts: Fa
           </section>
         ))
       )}
-      <p className="text-[12px] text-faint">
+      <p className="text-[12px] text-muted">
         Item list: {miqe.pack.citation} Items only a person can attest are never answered by qPilot.
       </p>
     </div>
@@ -161,7 +161,7 @@ function Item({ item, facts }: { item: MiqeItem; facts: Facts }) {
   const s = MIQE[item.status];
   return (
     <li className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-2 px-4 py-3">
-      <span className="pt-0.5 font-mono text-[12px] text-faint tabular">{item.id}</span>
+      <span className="pt-0.5 font-mono text-[12px] text-muted tabular">{item.id}</span>
       <div className="min-w-0">
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
           <p className="min-w-0 flex-1 basis-56 text-[13.5px] font-medium text-fg">{item.label}</p>

@@ -29,7 +29,7 @@ export function MethodsPanel({ methods, facts }: { methods: ReportView["methods"
       {methods.citations.length ? (
         <div>
           <h3 className="text-[13px] font-semibold text-fg">References</h3>
-          <ol className="mt-1.5 flex list-decimal flex-col gap-1 pl-5 text-[12.5px] leading-relaxed text-muted marker:text-faint">
+          <ol className="mt-1.5 flex list-decimal flex-col gap-1 pl-5 text-[12.5px] leading-relaxed text-muted marker:text-muted">
             {methods.citations.map((c) => (
               <li key={c.id}>{c.text}</li>
             ))}

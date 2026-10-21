@@ -178,7 +178,7 @@ function Document({
   return (
     <div className="grid items-start gap-8 xl:grid-cols-[176px_minmax(0,1fr)]">
       <nav aria-label="Contents" className="sticky top-4 hidden self-start xl:block">
-        <p className="mb-2 text-[11.5px] font-semibold tracking-wider text-faint uppercase">Contents</p>
+        <p className="mb-2 text-[11.5px] font-semibold tracking-wider text-muted uppercase">Contents</p>
         <ol className="flex flex-col gap-0.5 border-l border-line">
           {PARTS.map((p) => (
             <li key={p.id}>
@@ -201,7 +201,7 @@ function Document({
       </nav>
 
       <div className="flex min-w-0 max-w-[860px] flex-col gap-10">
-        <nav aria-label="Jump to" className="-mt-4 flex gap-1.5 overflow-x-auto pb-1 qp-scroll xl:hidden">
+        <nav aria-label="Jump to" className="relative -mt-4 flex gap-1.5 overflow-x-auto pb-1 qp-scroll xl:hidden">
           {PARTS.map((p) => (
             <button
               key={p.id}
@@ -322,7 +322,12 @@ function FactsTable({ view }: { view: ReportView }) {
         {open ? "Hide" : "Show"} the {count(facts.length)} facts this report cites
       </Button>
       {open ? (
-        <div className="max-h-[480px] overflow-auto rounded-lg border border-line qp-scroll">
+        <div
+          className="relative max-h-[480px] overflow-auto rounded-lg border border-line qp-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Facts the report cites (scrolls)"
+        >
           <Table caption="Every fact the report cites, its value and where it comes from">
             <THead>
               <TR>
