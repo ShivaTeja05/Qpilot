@@ -30,3 +30,9 @@ sbom.json
 .DS_Store
 .idea/
 .vscode/
+
+# The online demo: its build (npm run build:demo) and the assembled site
+frontend/dist-demo/
+/site/*
+!/site/vercel.json
+!/site/README.md

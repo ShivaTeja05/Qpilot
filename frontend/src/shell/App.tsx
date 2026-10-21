@@ -273,7 +273,7 @@ function Shell() {
     ...gBindings,
   });
 
-  if (system.error instanceof ApiError && system.error.needsKey) {
+  if (!__QPILOT_STATIC_DEMO__ && system.error instanceof ApiError && system.error.needsKey) {
     return <NeedsKey onRetry={() => void system.refetch()} retrying={system.isFetching} />;
   }
 

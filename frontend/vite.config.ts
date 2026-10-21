@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
 // The build goes straight into the Python package, which serves it (qpilot/web/static).
@@ -11,11 +12,31 @@ import { defineConfig } from "vitest/config";
 const api = process.env.QPILOT_API ?? "http://127.0.0.1:7860";
 const devKey = process.env.QPILOT_APP_TOKEN;
 
+// `VITE_STATIC_DEMO=1` (npm run build:demo) builds the read-only online demo instead: the same
+// page, answered from recordings of the real server (src/demo, scripts/static-demo), into
+// dist-demo/. The flag only adds code paths: without it the build is byte-identical.
+const staticDemo = process.env.VITE_STATIC_DEMO === "1";
+
+/** The demo's entry installs the recordings' network layer before the page loads. */
+const demoEntry: Plugin = {
+  name: "qpilot-static-demo-entry",
+  transformIndexHtml: {
+    order: "pre",
+    handler: (html) => {
+      if (!html.includes('src="/src/main.tsx"')) throw new Error("index.html entry not found");
+      return html
+        .replace('src="/src/main.tsx"', 'src="/src/demo/entry.ts"')
+        .replace("<title>qPilot</title>", "<title>qPilot — read-only online demo</title>");
+    },
+  },
+};
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), ...(staticDemo ? [demoEntry] : [])],
   resolve: { alias: { "@": resolve(__dirname, "src") } },
+  define: { __QPILOT_STATIC_DEMO__: JSON.stringify(staticDemo) },
   build: {
-    outDir: "../qpilot/web/static",
+    outDir: staticDemo ? "dist-demo" : "../qpilot/web/static",
     emptyOutDir: true,
     assetsDir: "assets",
     // Never inline assets as data: URIs; the CSP allows fonts from this server only.

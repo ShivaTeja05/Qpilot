@@ -5,6 +5,7 @@
  */
 import { BookCheck, Cpu, Sparkles, UserCheck } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";
+import { DemoOpenFile } from "@/demo/DemoOpenFile";
 import { useSystem, useWorkspaces } from "@/shell/data";
 import type { SectionProps } from "@/shell/sections";
 import { DemoCard } from "./DemoCard";
@@ -161,7 +162,11 @@ export default function Section(_: SectionProps) {
 
         <div className="mt-8 grid items-stretch gap-4 lg:mt-10 lg:grid-cols-12">
           <div className="lg:col-span-7">
-            <OpenFile intake={intake} dragging={dragging} />
+            {__QPILOT_STATIC_DEMO__ ? (
+              <DemoOpenFile />
+            ) : (
+              <OpenFile intake={intake} dragging={dragging} />
+            )}
           </div>
           <div className="lg:col-span-5">
             <DemoCard

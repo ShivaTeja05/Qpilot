@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:demo": "tsc -b && VITE_STATIC_DEMO=1 vite build",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",

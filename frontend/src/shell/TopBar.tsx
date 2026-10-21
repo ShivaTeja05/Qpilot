@@ -19,6 +19,7 @@ import {
 import { Link, useLocation } from "wouter";
 import type { JobView } from "@/api/client";
 import { useLiveState } from "@/api/live";
+import { DemoBanner, DemoDot } from "@/demo/DemoBanner";
 import { cn } from "@/lib/cn";
 import { count, duration, shortHash } from "@/lib/format";
 import { MOD } from "@/lib/hooks";
@@ -198,6 +199,8 @@ function ThemeMenu() {
 
 function LiveDot() {
   const state = useLiveState();
+  // The online demo is a recording: nothing arrives live.
+  if (__QPILOT_STATIC_DEMO__) return <DemoDot />;
   const words =
     state === "live"
       ? "Live: changes by agents and other tabs appear within a second"
@@ -240,7 +243,7 @@ export function TopBar({
     frame?.title ?? (route.key ? "" : route.section === "settings" ? "Settings" : "Open a study");
   const sha = frame?.facts?.input_sha256 ?? frame?.summary?.input_sha256 ?? null;
   const head = frame?.decisions_head ?? null;
-  return (
+  const bar = (
     <header className="sticky top-0 z-30 flex h-[52px] shrink-0 items-center gap-2 border-b border-line bg-surface/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-surface/75 sm:px-4">
       <Link href="/" aria-label="qPilot: Open" className="shrink-0 rounded-md md:hidden">
         <Mark className="size-6" />
@@ -376,4 +379,13 @@ export function TopBar({
       </div>
     </header>
   );
+  // The online demo says what it is above the bar, on every section.
+  if (__QPILOT_STATIC_DEMO__)
+    return (
+      <div className="sticky top-0 z-30">
+        <DemoBanner />
+        {bar}
+      </div>
+    );
+  return bar;
 }
