@@ -73,5 +73,6 @@ export function pointTitle(point: Point): string {
           ? "undid back to"
           : "chose";
   const when = s.at ? `, ${dateTime(s.at)}` : "";
-  return `Step ${s.seq}: ${who} ${verb} ${what}${when}`;
+  const carried = s.carried ? ` (carried from the earlier analysis ${s.carried.study_id})` : "";
+  return `Step ${s.seq}: ${who} ${verb} ${what}${carried}${when}`;
 }

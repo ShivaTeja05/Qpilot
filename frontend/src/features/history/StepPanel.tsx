@@ -14,6 +14,62 @@ import { ACTOR_LOWER, ACTOR_WORD, STATUS_WORD, pointTitle } from "./words";
 
 const SHOWN = 6;
 
+/** What a person had decided in the session's analysis before this one: carried, or asked again. */
+function CarryNote({
+  carry,
+  onOpenStudy,
+}: {
+  carry: NonNullable<HistoryView["carry"]>;
+  onOpenStudy: (studyId: string) => void;
+}) {
+  const label = (c: (typeof carry.carried)[number]) => c.option_label ?? c.option ?? "";
+  return (
+    <section aria-label="Choices from the earlier analysis" className="space-y-2 text-[13px]">
+      <h3 className="flex flex-wrap items-center gap-2 font-semibold text-fg">
+        Choices from the earlier analysis
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<ArrowRight />}
+          onClick={() => onOpenStudy(carry.from_study)}
+        >
+          <span className="font-mono">{carry.from_study}</span>
+        </Button>
+      </h3>
+      {carry.carried.length ? (
+        <p className="text-muted">
+          Carried here as new entries, each naming the entry it came from:{" "}
+          {carry.carried.map((c, i) => (
+            <span key={c.card_id}>
+              {i ? "; " : ""}
+              <span className="text-fg">{c.card_title}</span>: {label(c)}
+            </span>
+          ))}
+          .
+        </p>
+      ) : null}
+      {carry.asked_again.length ? (
+        <ul className="space-y-1">
+          {carry.asked_again.map((c) => (
+            <li key={c.card_id} className="text-muted">
+              Asked again: <span className="text-fg">{c.card_title}</span> (a person had chosen{" "}
+              {label(c)}): {c.why}.
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {carry.gone.length ? (
+        <p className="text-muted">
+          Not in this analysis: {carry.gone.map((c) => `${c.card_title} (${label(c)})`).join("; ")}.
+        </p>
+      ) : null}
+      <p className="text-[12px] text-faint">
+        The choices stage is never carried: a person confirms this analysis&apos;s choices.
+      </p>
+    </section>
+  );
+}
+
 function Choices({ choices }: { choices: ChoiceInForce[] }) {
   return (
     <ul className="divide-y divide-line rounded-lg border border-line">
@@ -213,6 +269,7 @@ export function StepPanel({
   }
 
   const step = point.step;
+  const carried = step.carried;
   const status = step.status ? STATUS_WORD[step.status] : null;
   const fromEarlier = previous?.kind === "earlier" ? previous.study.study_id : null;
   return (
@@ -242,11 +299,39 @@ export function StepPanel({
               </span>
               <span className="font-medium text-fg">{step.option_label ?? step.option}</span>
               {status ? <Badge tone={status.tone}>{status.word}</Badge> : null}
+              {step.carried ? <Badge tone="info">Carried</Badge> : null}
             </p>
             {step.reason ? (
               <blockquote className="border-l-2 border-line-strong pl-3 text-muted">
                 “{step.reason}”
               </blockquote>
+            ) : null}
+            {step.carried ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted">
+                <span>
+                  Carried from the earlier analysis{" "}
+                  <span className="font-mono text-fg">{step.carried.study_id}</span>
+                  {step.carried.decided_at
+                    ? `, where it was decided ${dateTime(step.carried.decided_at)}`
+                    : ""}
+                  :
+                </span>
+                <Hash value={step.carried.entry_hash} prefix="entry" />
+                <Badge
+                  tone={step.carried.found ? "ok" : "danger"}
+                  icon={step.carried.found ? <Link2 /> : <Unlink />}
+                >
+                  {step.carried.found ? "found there" : "not found there"}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<ArrowRight />}
+                  onClick={() => carried && onOpenStudy(carried.study_id)}
+                >
+                  Open its history
+                </Button>
+              </div>
             ) : null}
             {step.at ? <p className="text-[12px] text-faint">{dateTime(step.at)}</p> : null}
           </div>
@@ -296,6 +381,10 @@ export function StepPanel({
             </p>
           )}
         </section>
+
+        {step.kind === "start" && view.carry ? (
+          <CarryNote carry={view.carry} onOpenStudy={onOpenStudy} />
+        ) : null}
 
         <section aria-label="Choices in force" className="space-y-2">
           <h3 className="text-[13px] font-semibold text-fg">Choices in force at this point</h3>

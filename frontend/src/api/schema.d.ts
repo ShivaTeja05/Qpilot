@@ -2492,6 +2492,29 @@ export type components = {
             source: "auto" | "study" | "audit";
         };
         /**
+         * AskedAgain
+         * @description A person's decision in the earlier analysis that was not carried to this one.
+         */
+        AskedAgain: {
+            /**
+             * Option
+             * @description What the person had chosen there.
+             */
+            option?: string | null;
+            /** Option Label */
+            option_label?: string | null;
+            /**
+             * Study Id
+             * @description The earlier analysis.
+             */
+            study_id: string;
+            /**
+             * Why
+             * @description Why it is asked again, in words.
+             */
+            why: string;
+        };
+        /**
          * AtChoices
          * @description A gene's result at the options a person chose on the Decision Cards (from the grid).
          */
@@ -4241,7 +4264,11 @@ export type components = {
          * @description One Decision Card with its words, options and what each option changes.
          */
         CardView: {
+            /** @description A person decided this card in the earlier analysis; asked again here. */
+            asked_again?: components["schemas"]["AskedAgain"] | null;
             card: components["schemas"]["DecisionCard"];
+            /** @description The decision in force was carried from an earlier analysis. */
+            carried?: components["schemas"]["CarriedFrom"] | null;
             explanation: components["schemas"]["FactText"];
             /**
              * Genes
@@ -4269,6 +4296,87 @@ export type components = {
              * @description What Undo would restore.
              */
             undo_option?: string | null;
+        };
+        /**
+         * CarriedFrom
+         * @description Where a carried decision came from: a person's decision in an earlier analysis.
+         */
+        CarriedFrom: {
+            /**
+             * Decided At
+             * @description When that entry was written.
+             */
+            decided_at?: string | null;
+            /**
+             * Entry Hash
+             * @description The entry there that made the decision.
+             */
+            entry_hash: string;
+            /**
+             * Found
+             * @description That entry is in that study's chain: same card, same option, by a person.
+             */
+            found: boolean;
+            /**
+             * Reason
+             * @description The person's own words (quoted text).
+             */
+            reason: string;
+            /**
+             * Study Id
+             * @description The earlier analysis of the same file.
+             */
+            study_id: string;
+        };
+        /**
+         * CarryCard
+         * @description One card a person had decided in the earlier analysis, and what became of it here.
+         */
+        CarryCard: {
+            /** Card Id */
+            card_id: string;
+            /** Card Title */
+            card_title: string;
+            /**
+             * Option
+             * @description What the person had chosen there.
+             */
+            option?: string | null;
+            /** Option Label */
+            option_label?: string | null;
+            /**
+             * Why
+             * @description Why it is asked again, in words.
+             */
+            why?: string | null;
+        };
+        /**
+         * CarryNote
+         * @description What a person had decided in the analysis before this one, carried here or asked again.
+         *
+         *     The choices stage is never carried: a person confirms the new analysis's choices again.
+         */
+        CarryNote: {
+            /**
+             * Asked Again
+             * @description Not carried: the choice matters more here.
+             */
+            asked_again: components["schemas"]["CarryCard"][];
+            /**
+             * Carried
+             * @description Carried as new entries (see the steps).
+             */
+            carried: components["schemas"]["CarryCard"][];
+            /**
+             * From Study
+             * @description The session's analysis before this one.
+             */
+            from_study: string;
+            /**
+             * Gone
+             * @description The card or the option is not in this analysis.
+             */
+            gone: components["schemas"]["CarryCard"][];
         };
         /**
          * Check
@@ -5125,6 +5233,8 @@ export type components = {
         DecisionEntryView: {
             /** Card Title */
             card_title: string;
+            /** @description Carried from an earlier analysis when the design changed. */
+            carried?: components["schemas"]["CarriedFrom"] | null;
             entry: components["schemas"]["DecisionEntry"];
             /** Option Label */
             option_label: string;
@@ -6468,6 +6578,8 @@ export type components = {
             card_id?: string | null;
             /** Card Title */
             card_title?: string | null;
+            /** @description A person's decision carried from an earlier analysis (reason: their words). */
+            carried?: components["schemas"]["CarriedFrom"] | null;
             /**
              * Chain Intact
              * @description Every entry up to this one verifies.
@@ -6536,6 +6648,8 @@ export type components = {
              * @description The first entry that fails.
              */
             broken_at?: number | null;
+            /** @description A person's decisions from the session's analysis before this one. */
+            carry?: components["schemas"]["CarryNote"] | null;
             /** Chain Intact */
             chain_intact: boolean;
             /**
