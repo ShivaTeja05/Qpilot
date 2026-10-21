@@ -3,9 +3,12 @@
 Every tool reply that is not the thing asked for carries ``code`` (one of :class:`Code`) and
 ``fix`` (what the agent, or a person, does next). Two kinds:
 
-- **Refusals** (``error`` in the reply; MCP ``isError: true``): nothing was done or recorded,
-  because the request itself cannot be served (an unknown study, a path outside the data roots,
-  a choice only a person makes, a stale head, a proposal the engine's rules refuse, ...).
+- **Refusals** (``error``, ``code`` and ``fix`` in the reply; MCP ``isError: true``): nothing
+  was decided, proposed or opened, because the request itself cannot be served (an unknown
+  study, a path outside the data roots, a choice only a person makes, a stale head, a proposal
+  the engine's rules refuse, ...). ``error`` is one plain sentence. A stale ``qpcr_decide`` and a
+  refused ``qpcr_propose`` also keep their ``status`` (``stale``, ``refused``) and ``reason``; a
+  stale attempt is noted outside the decision chain, so it never moves the head.
 - **Waiting for a person** (``status: "pending_human"``; not an error): the request *was*
   recorded and waits in the scientist's queue; ``code`` says why it waits.
 
@@ -160,8 +163,15 @@ def refuse(code: Code, error: str, **details: Any) -> dict[str, Any]:
 
 
 def mark(out: dict[str, Any], code: Code) -> dict[str, Any]:
-    """``out`` with ``code`` and ``fix`` added (for an outcome that is not an error reply)."""
-    return {**out, "code": code.value, "fix": REFUSALS[code].fix}
+    """``out`` with ``code`` and ``fix`` added; an outcome that did nothing also gets ``error``.
+
+    ``error`` is the outcome's own ``reason`` (or the code's meaning), so every reply MCP marks
+    ``isError`` carries the same three fields as :func:`refuse`.
+    """
+    marked = {**out, "code": code.value, "fix": REFUSALS[code].fix}
+    if out.get("status") in ERROR_STATUSES and "error" not in out:
+        marked["error"] = str(out.get("reason") or REFUSALS[code].meaning)
+    return marked
 
 
 def is_error(out: Any) -> bool:

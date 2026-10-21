@@ -93,7 +93,7 @@ def _study(out: dict[str, Any]) -> dict[str, Any]:
         for c in out["open_cards"]
     ]
     return {
-        **{k: out[k] for k in keep if k in out},
+        **{k: out[k] for k in (*keep, "imported") if k in out},
         "contrasts": contrasts,
         "open_cards": cards,
         "n_decided_cards": len(out.get("decided_cards") or []),
@@ -131,12 +131,15 @@ def _proposals(out: dict[str, Any]) -> dict[str, Any]:
 def _inspect(out: dict[str, Any]) -> dict[str, Any]:
     summary = out.get("summary") or {}
     counts = {k: v for k, v in summary.items() if k.startswith("n_") and isinstance(v, int)}
-    return {
+    concise = {
         "session_id": out["session_id"],
         "counts": counts,
         "n_quoted": out["n_quoted"],
         "stages": out["stages"],
     }
+    if "imported" in out:
+        concise["imported"] = out["imported"]
+    return concise
 
 
 def _curve_calls(out: dict[str, Any]) -> dict[str, Any]:

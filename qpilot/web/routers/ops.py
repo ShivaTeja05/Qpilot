@@ -73,8 +73,9 @@ MODEL_TEST_TYPICAL_S = 3.5  # nine questions
 TOOL_ACCESS: dict[str, tuple[ToolAccess, str]] = {
     "qpcr_study": (
         "open",
-        "Analyses a file into a study with the default design, or reopens one. It decides no "
-        "Decision Card, and a Studio session's design is used only once a person confirmed it.",
+        "Analyses a file into a study with the default design, or reopens one; an instrument "
+        "export only with the design a person confirmed. It decides no Decision Card, and a "
+        "Studio session's design is used only once a person confirmed it.",
     ),
     "qpcr_robustness": ("read", "Nothing."),
     "qpcr_decide": (
@@ -92,8 +93,9 @@ TOOL_ACCESS: dict[str, tuple[ToolAccess, str]] = {
     "qpcr_proposals": ("read", "Nothing."),
     "qpcr_inspect": (
         "open",
-        "Opens a Studio session for a file: nothing is analysed or proposed, and a session a "
-        "person opened keeps its file and sample sheet.",
+        "Opens a Studio session for a file or an instrument export (converted once into the "
+        "study store, the import kept with the session): nothing is analysed or proposed, and a "
+        "session a person opened keeps its file and sample sheet.",
     ),
     "qpcr_check_design": ("read", "Nothing: the check is not saved."),
     "qpcr_curve_calls": ("read", "Nothing."),

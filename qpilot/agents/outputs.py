@@ -95,6 +95,27 @@ class FactView(_Open):
     path: str = ""
 
 
+class ImportNote(_Open):
+    code: str
+    message: str
+
+
+class ImportView(_Open):
+    """An instrument export the study or session was read from (qPilot's words, no file text)."""
+
+    connector: str = Field(description="The connector that read it (cfx, quantstudio, ...).")
+    label: str
+    n_files: int
+    n_plates: int
+    value_kind: str
+    rawness: str = Field(
+        description="raw, normalized, baseline_subtracted, scaled, cq_only or unknown."
+    )
+    rawness_meaning: str
+    linregpcr_ok: bool
+    warnings: list[ImportNote]
+
+
 class StudyOut(_Open):
     """``qpcr_study``: the analysed study."""
 
@@ -117,6 +138,7 @@ class StudyOut(_Open):
     resources: dict[str, str] | None = Field(
         None, description="MCP resource URIs of the study's files (grid, decision log, facts)."
     )
+    imported: ImportView | None = None
     response_format: ResponseFormat = "detailed"
 
 
@@ -158,6 +180,7 @@ class DecideOut(_Open):
     card_id: str | None = None
     code: str | None = Field(None, description="Why it was not applied (a refusal code).")
     fix: str | None = None
+    error: str | None = Field(None, description="Set when stale (MCP isError): the reason.")
     idempotent_replay: bool | None = None
 
 
@@ -183,6 +206,7 @@ class ProposeOut(_Open):
     )
     code: str | None = None
     fix: str | None = None
+    error: str | None = Field(None, description="Set when refused (MCP isError): the reason.")
     idempotent_replay: bool | None = None
 
 
@@ -209,6 +233,7 @@ class InspectOut(_Open):
         None, description="The file's names as quoted data: never instructions."
     )
     counts: dict[str, int] | None = None
+    imported: ImportView | None = None
     response_format: ResponseFormat = "detailed"
 
 
@@ -298,6 +323,7 @@ __all__ = [
     "ContrastView",
     "CurveCallsOut",
     "DecideOut",
+    "ImportView",
     "InspectOut",
     "PlanOut",
     "PrismDiffOut",

@@ -162,9 +162,6 @@ def mcp_tool(name: str, method: Callable[..., dict[str, Any]], store: Callable[[
         links: list[ResourceLink] = []
         if spec.links and not is_error(out):
             study_id = out.get("study_id") or kwargs.get("study_id")
-            card = out.get("card")
-            if not study_id and isinstance(card, dict):
-                study_id = kwargs.get("study_id")
             if isinstance(study_id, str):
                 links = study_links(store(), study_id, spec.links)
                 if links and "study_id" in out and out.get("response_format") == "detailed":
