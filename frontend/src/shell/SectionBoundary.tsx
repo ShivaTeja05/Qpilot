@@ -30,6 +30,9 @@ export class SectionBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
+    // qPilot was updated (or rebuilt) while this tab was open: the section's code file has a new
+    // name. Reload once to fetch the new page; a second failure within a minute shows the panel.
+    if (isStaleCode(error) && reloadOnce()) return;
     // For whoever opens the console: the component stack names the part that failed.
     console.error(
       `qPilot: the ${this.props.label} section failed to show`,
@@ -61,4 +64,25 @@ export class SectionBoundary extends Component<Props, State> {
       </div>
     );
   }
+}
+
+/** True for a failed lazy import: the build this tab loaded is no longer on the server. */
+function isStaleCode(error: Error): boolean {
+  return /dynamically imported module|Importing a module script failed|error loading dynamically/i.test(
+    error.message,
+  );
+}
+
+/** Reload the page unless it already reloaded for this in the last minute. */
+function reloadOnce(): boolean {
+  const KEY = "qpilot.staleReloadAt";
+  try {
+    const last = Number(sessionStorage.getItem(KEY) ?? 0);
+    if (Date.now() - last < 60_000) return false;
+    sessionStorage.setItem(KEY, String(Date.now()));
+  } catch {
+    return false; // no storage: show the panel and its "Reload the page" button instead
+  }
+  window.location.reload();
+  return true;
 }
