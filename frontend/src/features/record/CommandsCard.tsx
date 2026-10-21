@@ -3,7 +3,11 @@ import { Terminal } from "lucide-react";
 import { Card, CardBody, CardHeader, CommandLine } from "@/ui";
 
 /** The commands for the latest export (named after its zip), or for a record zip in general. */
-export function CommandsCard({ commands }: { commands?: { verify: string; rerun: string } | null }) {
+export function CommandsCard({
+  commands,
+}: {
+  commands?: { verify: string; rerun: string } | null;
+}) {
   const file = "record.zip";
   return (
     <Card as="section" aria-labelledby="commands-title">
@@ -22,11 +26,15 @@ export function CommandsCard({ commands }: { commands?: { verify: string; rerun:
       />
       <CardBody className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
-          <p className="text-[13px] text-muted">Checksums, the decision chain and the proposal chain:</p>
+          <p className="text-[13px] text-muted">
+            Checksums, the decision chain and the proposal chain:
+          </p>
           <CommandLine command={commands?.verify ?? `qpilot verify ${file}`} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <p className="text-[13px] text-muted">Re-run the analysis from the record and compare every result, byte for byte:</p>
+          <p className="text-[13px] text-muted">
+            Re-run the analysis from the record and compare every result, byte for byte:
+          </p>
           <CommandLine command={commands?.rerun ?? `qpilot rerun ${file}`} />
         </div>
       </CardBody>

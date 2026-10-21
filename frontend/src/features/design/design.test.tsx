@@ -26,7 +26,9 @@ describe("which wells a proposal is about", () => {
   });
 
   it("outlines only its own sample's wells for a sample role", () => {
-    const role = all.find((p) => p.kind === "design.well_role" && wells.some((w) => w.sample === p.subject))!;
+    const role = all.find(
+      (p) => p.kind === "design.well_role" && wells.some((w) => w.sample === p.subject),
+    )!;
     const lit = wells.filter((w) => concerns(role, w));
     expect(lit.length).toBeGreaterThan(0);
     expect(new Set(lit.map((w) => w.sample))).toEqual(new Set([role.subject]));
@@ -36,9 +38,14 @@ describe("which wells a proposal is about", () => {
 describe("the design's blockers", () => {
   it("says what is missing and where groups can come from when none is waiting", () => {
     const open = vi.fn();
-    render(<DesignNeeds blockers={design.blockers} proposals={all} onOpen={open} onSettings={vi.fn()} />);
-    for (const b of design.blockers) expect(screen.getByText(new RegExp(b.slice(1, 30)))).toBeTruthy();
-    expect(screen.getByText(/No proposal for the groups or the reference genes is waiting/)).toBeTruthy();
+    render(
+      <DesignNeeds blockers={design.blockers} proposals={all} onOpen={open} onSettings={vi.fn()} />,
+    );
+    for (const b of design.blockers)
+      expect(screen.getByText(new RegExp(b.slice(1, 30)))).toBeTruthy();
+    expect(
+      screen.getByText(/No proposal for the groups or the reference genes is waiting/),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Open with a sample sheet" }));
     expect(open).toHaveBeenCalled();
   });

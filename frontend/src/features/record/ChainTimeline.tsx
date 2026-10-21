@@ -108,14 +108,22 @@ export function ChainTimeline({
                   </Badge>
                 ) : (
                   <Badge tone="danger" icon={<Unlink />}>
-                    {brokenAt != null ? `Broken at entry ${brokenAt}: a line was changed` : "Broken: a line was changed"}
+                    {brokenAt != null
+                      ? `Broken at entry ${brokenAt}: a line was changed`
+                      : "Broken: a line was changed"}
                   </Badge>
                 )}
               </dd>
             </div>
           ) : null}
         </dl>
-        <SegmentedControl label="Show entries by" size="sm" value={filter} onValueChange={setFilter} options={options} />
+        <SegmentedControl
+          label="Show entries by"
+          size="sm"
+          value={filter}
+          onValueChange={setFilter}
+          options={options}
+        />
       </div>
 
       <ol className="px-4 pt-4" aria-label="Decision chain entries, newest first">
@@ -125,7 +133,9 @@ export function ChainTimeline({
             entry={entry}
             link={linkOf(entry, previous, root)}
             isHead={entry.hash === head}
-            answered={entry.status === "pending_human" && waiting != null && !waiting.includes(entry.hash)}
+            answered={
+              entry.status === "pending_human" && waiting != null && !waiting.includes(entry.hash)
+            }
             now={now}
           />
         ))}
@@ -142,7 +152,8 @@ export function ChainTimeline({
           <div className="min-w-0 pt-1.5 text-[13px]">
             <p className="font-medium text-fg">Start of the chain: the input file</p>
             <p className="mt-0.5 flex flex-wrap items-center gap-1 text-muted">
-              The first entry links to the file's SHA-256 <Hash value={root ?? ordered[0]?.prev_hash} prefix="sha256" />
+              The first entry links to the file's SHA-256{" "}
+              <Hash value={root ?? ordered[0]?.prev_hash} prefix="sha256" />
             </p>
           </div>
         </li>
@@ -163,17 +174,22 @@ function Attempts({ attempts, now }: { attempts: StaleAttempt[]; now: number }) 
   return (
     <details className="group border-t border-line px-4 py-3">
       <summary className="cursor-pointer text-[13px] font-medium text-fg outline-offset-2">
-        {attempts.length === 1 ? "1 attempt" : `${count(attempts.length)} attempts`} did not change the study
+        {attempts.length === 1 ? "1 attempt" : `${count(attempts.length)} attempts`} did not change
+        the study
         <span className="ml-1.5 font-normal text-muted">(stale: something was decided first)</span>
       </summary>
       <p className="mt-1.5 text-xs text-muted">
-        They are logged beside the chain, not in it, so they never moved the head; the record keeps them.
+        They are logged beside the chain, not in it, so they never moved the head; the record keeps
+        them.
       </p>
       <ol className="mt-2 flex flex-col divide-y divide-line rounded-lg border border-line">
         {[...attempts].reverse().map((a, i) => (
           <li key={`${a.at}-${i}`} className="px-3 py-2 text-[13px]">
             <p className="text-fg">
-              <span className="text-muted">{ACTOR[a.actor as Actor]?.word ?? a.actor} tried to {ATTEMPTED[a.attempted] ?? a.attempted} </span>
+              <span className="text-muted">
+                {ACTOR[a.actor as Actor]?.word ?? a.actor} tried to{" "}
+                {ATTEMPTED[a.attempted] ?? a.attempted}{" "}
+              </span>
               <span className="font-medium">{a.card_title}</span>
               <span className="text-muted"> → </span>
               <span className="font-medium">{a.option_label}</span>
@@ -220,7 +236,9 @@ function TimelineEntry({
   answered: boolean;
   now: number;
 }) {
-  const status = answered ? ANSWERED : (STATUS[entry.status] ?? { word: entry.status, tone: "neutral" as const, meaning: "" });
+  const status = answered
+    ? ANSWERED
+    : (STATUS[entry.status] ?? { word: entry.status, tone: "neutral" as const, meaning: "" });
   const actor = ACTOR[entry.actor] ?? { word: entry.actor, long: entry.actor };
   const settled = entry.status === "rejected" || entry.status === "stale";
   return (
@@ -236,17 +254,24 @@ function TimelineEntry({
             entry.actor === "human" && "border-accent/40 text-accent-strong",
             entry.actor === "agent" && "border-info/40 text-info",
             entry.actor === "system" && "border-line-strong text-muted",
-            entry.status === "pending_human" && !answered && "ring-2 ring-warn/40 ring-offset-2 ring-offset-surface",
+            entry.status === "pending_human" &&
+              !answered &&
+              "ring-2 ring-warn/40 ring-offset-2 ring-offset-surface",
           )}
         >
           {ACTOR_ICON[entry.actor]}
         </span>
       </Tooltip>
 
-      <article className={cn("min-w-0 flex-1 rounded-lg pt-1", settled && "opacity-80")} aria-label={`Entry ${entry.seq}`}>
+      <article
+        className={cn("min-w-0 flex-1 rounded-lg pt-1", settled && "opacity-80")}
+        aria-label={`Entry ${entry.seq}`}
+      >
         <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
           <h3 className="min-w-0 text-sm font-semibold text-fg">
-            <span className="mr-1.5 font-mono text-[12px] font-medium text-faint tabular">#{entry.seq}</span>
+            <span className="mr-1.5 font-mono text-[12px] font-medium text-faint tabular">
+              #{entry.seq}
+            </span>
             {cardTitle(entry)}
           </h3>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -275,7 +300,9 @@ function TimelineEntry({
         </p>
 
         {entry.reason ? (
-          <blockquote className="mt-2 border-l-2 border-line-strong pl-3 text-[13px] text-fg">{entry.reason}</blockquote>
+          <blockquote className="mt-2 border-l-2 border-line-strong pl-3 text-[13px] text-fg">
+            {entry.reason}
+          </blockquote>
         ) : null}
 
         <footer className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">

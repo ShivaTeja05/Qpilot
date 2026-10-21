@@ -7,14 +7,26 @@ import { useRef } from "react";
 import { bytes, count, dateTime, relativeTime } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { useFocusTarget } from "@/shell/actions";
-import { Button, Card, CardBody, CardHeader, CopyButton, Hash, JobCard, KeyValues, Tooltip } from "@/ui";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CopyButton,
+  Hash,
+  JobCard,
+  KeyValues,
+  Tooltip,
+} from "@/ui";
 import { useExportRecord } from "./api";
 import type { RecordExport } from "./types";
 
 /** The export job's result, if it has the shape of one. */
 export function asRecordExport(result: unknown): RecordExport | null {
   const r = result as Partial<RecordExport> | null | undefined;
-  return r && typeof r.record_id === "string" && typeof r.download?.url === "string" ? (r as RecordExport) : null;
+  return r && typeof r.record_id === "string" && typeof r.download?.url === "string"
+    ? (r as RecordExport)
+    : null;
 }
 
 function DownloadButton({ record, primary }: { record: RecordExport; primary?: boolean }) {
@@ -93,14 +105,23 @@ export function ExportCard({
         {latest ? <LatestRecord record={latest} head={head} now={now} /> : null}
         {earlier.length ? (
           <div>
-            <h3 className="text-[13px] font-medium text-fg">Exported earlier since qPilot started</h3>
+            <h3 className="text-[13px] font-medium text-fg">
+              Exported earlier since qPilot started
+            </h3>
             <ul className="mt-1.5 flex flex-col divide-y divide-line rounded-lg border border-line">
               {earlier.map((r) => (
-                <li key={r.record_id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 text-[13px]">
+                <li
+                  key={r.record_id}
+                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 text-[13px]"
+                >
                   <span className="flex min-w-0 items-center gap-2">
                     <Hash value={r.record_id} length={12} />
                     {r.written_at ? (
-                      <time className="text-xs text-muted" dateTime={r.written_at} title={dateTime(r.written_at)}>
+                      <time
+                        className="text-xs text-muted"
+                        dateTime={r.written_at}
+                        title={dateTime(r.written_at)}
+                      >
                         {relativeTime(r.written_at, now)}
                       </time>
                     ) : null}
@@ -116,14 +137,26 @@ export function ExportCard({
   );
 }
 
-function LatestRecord({ record, head, now }: { record: RecordExport; head: string | null | undefined; now: number }) {
+function LatestRecord({
+  record,
+  head,
+  now,
+}: {
+  record: RecordExport;
+  head: string | null | undefined;
+  now: number;
+}) {
   const current = !head || record.chain_head === head;
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-line bg-sunken/50 p-3">
       <p className="text-[13px] font-medium text-fg">
         Latest record
         {record.written_at ? (
-          <time className="ml-1.5 font-normal text-muted" dateTime={record.written_at} title={dateTime(record.written_at)}>
+          <time
+            className="ml-1.5 font-normal text-muted"
+            dateTime={record.written_at}
+            title={dateTime(record.written_at)}
+          >
             {relativeTime(record.written_at, now)}
           </time>
         ) : null}
@@ -131,7 +164,12 @@ function LatestRecord({ record, head, now }: { record: RecordExport; head: strin
       <KeyValues
         rows={[
           ["Record", <Hash key="r" value={record.record_id} length={12} />],
-          ["File", <span key="n" className="font-mono text-[12px] [overflow-wrap:anywhere]">{record.download.name}</span>],
+          [
+            "File",
+            <span key="n" className="font-mono text-[12px] [overflow-wrap:anywhere]">
+              {record.download.name}
+            </span>,
+          ],
           [
             "Chain head",
             <span key="h" className="inline-flex flex-wrap items-center gap-1.5">
@@ -139,11 +177,23 @@ function LatestRecord({ record, head, now }: { record: RecordExport; head: strin
               {current ? <span className="text-xs text-muted">same as the timeline</span> : null}
             </span>,
           ],
-          ["Files", <span key="f" className="font-mono">{count(record.n_files)}</span>],
-          ["Input file", record.input_included ? "included" : "not included (it can be verified, not re-run)"],
+          [
+            "Files",
+            <span key="f" className="font-mono">
+              {count(record.n_files)}
+            </span>,
+          ],
+          [
+            "Input file",
+            record.input_included ? "included" : "not included (it can be verified, not re-run)",
+          ],
         ]}
       />
-      {!current ? <Warning>Decisions were made after this record was exported; export again to include them.</Warning> : null}
+      {!current ? (
+        <Warning>
+          Decisions were made after this record was exported; export again to include them.
+        </Warning>
+      ) : null}
       {record.warnings.map((w) => (
         <Warning key={w}>{w}</Warning>
       ))}
@@ -153,7 +203,10 @@ function LatestRecord({ record, head, now }: { record: RecordExport; head: strin
       {record.download.path ? (
         <div className="flex items-start gap-1 text-xs text-muted">
           <p className="min-w-0 pt-1">
-            Also kept on this computer: <span className="break-all font-mono text-[11.5px] text-fg">{record.download.path}</span>
+            Also kept on this computer:{" "}
+            <span className="break-all font-mono text-[11.5px] text-fg">
+              {record.download.path}
+            </span>
           </p>
           <CopyButton text={record.download.path} label="Copy the file's path" />
         </div>

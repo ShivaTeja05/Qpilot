@@ -15,7 +15,15 @@ import samplesODC1 from "@/test/recorded/audit-samples-ODC1.json";
 import { TooltipProvider } from "@/ui";
 import { ci, fold, ofTotal, percent, pValue } from "@/lib/format";
 import { effectChoiceRows, geneCardRefs, gridDots } from "../adapters";
-import type { AuditAnalyses, AuditEffects, AuditGeneCard, AuditLab, AuditSamples, GeneView, ResultsView } from "../api";
+import type {
+  AuditAnalyses,
+  AuditEffects,
+  AuditGeneCard,
+  AuditLab,
+  AuditSamples,
+  GeneView,
+  ResultsView,
+} from "../api";
 import { AuditInvite, AuditReading, OneChoice, WhatHolds, YourSamples } from "../AuditParts";
 import { GeneHeader } from "../GeneHeader";
 import { neighbours, resolveGene } from "../nav";
@@ -102,7 +110,9 @@ describe("Decision Cards that move a gene", () => {
     const links = screen.getAllByRole("link");
     expect(links).toHaveLength(refs.length);
     expect(links[0]!.getAttribute("href")).toContain(`/results/card/${refs[0]!.id}`);
-    expect(screen.getAllByText("Can change the call alone")).toHaveLength(refs.filter((c) => c.flips).length);
+    expect(screen.getAllByText("Can change the call alone")).toHaveLength(
+      refs.filter((c) => c.flips).length,
+    );
   });
 });
 
@@ -123,7 +133,8 @@ describe("the header", () => {
     expect(screen.getByText(card.label)).toBeTruthy();
     expect(screen.getByText(card.result.verdict_sentence)).toBeTruthy();
     // Each reason is said once in the list and once in the (collapsed) list of every check.
-    for (const reason of row.reasons ?? []) expect(screen.getAllByText(reason).length).toBeGreaterThan(0);
+    for (const reason of row.reasons ?? [])
+      expect(screen.getAllByText(reason).length).toBeGreaterThan(0);
   });
 
   it("without the audit's card, shows the verdict the results carry", () => {
@@ -142,28 +153,65 @@ describe("what holds and one choice at a time", () => {
     const dots = gridDots(NM23A);
     const same = dots.filter((d) => d.same).length;
     const onSource = vi.fn();
-    const props = { gene: "NM23A", holds: NM23A.row.holds, nCells: NM23A.row.n_cells, dots, line: results.rule.min_log2fc, labels: LABELS, onSource };
+    const props = {
+      gene: "NM23A",
+      holds: NM23A.row.holds,
+      nCells: NM23A.row.n_cells,
+      dots,
+      line: results.rule.min_log2fc,
+      labels: LABELS,
+      onSource,
+    };
     render(<WhatHolds {...props} card={null} analyses={null} source="qpilot" />);
     expect(screen.getByText(text(percent(NM23A.row.holds)))).toBeTruthy();
-    expect(screen.getByRole("img", { name: new RegExp(`qPilot's choice grid, on the fold axis: ${text(ofTotal(same, dots.length))}`) })).toBeTruthy();
+    expect(
+      screen.getByRole("img", {
+        name: new RegExp(
+          `qPilot's choice grid, on the fold axis: ${text(ofTotal(same, dots.length))}`,
+        ),
+      }),
+    ).toBeTruthy();
     cleanup();
 
     const a = analysesNM23A as unknown as AuditAnalyses;
-    render(<WhatHolds {...props} card={auditGeneNM23A as unknown as AuditGeneCard} analyses={q(a)} source="audit" />);
+    render(
+      <WhatHolds
+        {...props}
+        card={auditGeneNM23A as unknown as AuditGeneCard}
+        analyses={q(a)}
+        source="audit"
+      />,
+    );
     expect(screen.getByText(text(percent(a.n_same / a.n)))).toBeTruthy();
-    expect(screen.getByText(new RegExp(`^${text(ofTotal(a.n_same, a.n))} of the audit's reasonable analyses`))).toBeTruthy();
-    expect(screen.getByRole("img", { name: /reasonable analyses of NM23A on the fold axis/ })).toBeTruthy();
+    expect(
+      screen.getByText(
+        new RegExp(`^${text(ofTotal(a.n_same, a.n))} of the audit's reasonable analyses`),
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("img", { name: /reasonable analyses of NM23A on the fold axis/ }),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: "qPilot's choice grid" }));
     expect(onSource).toHaveBeenCalledWith("qpilot");
   }, 20_000); // 744 + 144 dots laid out in jsdom
 
   it("one choice at a time from qPilot's decisions, or from the audit's", () => {
     const rows = effectChoiceRows(ODC1);
-    const props = { gene: "ODC1", rows, line: results.rule.min_log2fc, onSource: noop, labels: LABELS };
+    const props = {
+      gene: "ODC1",
+      rows,
+      line: results.rule.min_log2fc,
+      onSource: noop,
+      labels: LABELS,
+    };
     render(<OneChoice {...props} effects={null} source="qpilot" />);
-    expect(screen.getByRole("img", { name: /ODC1, one Decision Card choice at a time/ })).toBeTruthy();
+    expect(
+      screen.getByRole("img", { name: /ODC1, one Decision Card choice at a time/ }),
+    ).toBeTruthy();
     cleanup();
-    render(<OneChoice {...props} effects={q(effectsODC1 as unknown as AuditEffects)} source="audit" />);
+    render(
+      <OneChoice {...props} effects={q(effectsODC1 as unknown as AuditEffects)} source="audit" />,
+    );
     expect(screen.getByRole("img", { name: /of the audit's/ })).toBeTruthy();
   });
 });
@@ -191,10 +239,15 @@ describe("the audit's parts", () => {
     const lab = labODC1 as unknown as AuditLab;
     render(<AssayWells lab={lab} efficiency={ODC1.row.efficiency} />);
     expect(screen.queryByText("p-value, planned analysis")).toBeNull();
-    for (const r of lab.rows.filter((r) => r.label.startsWith("Cq"))) expect(screen.getByText(r.value)).toBeTruthy();
+    for (const r of lab.rows.filter((r) => r.label.startsWith("Cq")))
+      expect(screen.getByText(r.value)).toBeTruthy();
     cleanup();
     render(<ReferenceStability gene="ODC1" genorm={results.references} lab={lab} />);
-    expect(screen.getByText(new RegExp(`normalised to the mean of ${results.references.used.length} reference genes`))).toBeTruthy();
+    expect(
+      screen.getByText(
+        new RegExp(`normalised to the mean of ${results.references.used.length} reference genes`),
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole("img", { name: /geNorm M for/ })).toBeTruthy();
   });
 });
@@ -209,7 +262,14 @@ describe("without an audit", () => {
 
   it("says why it cannot run, with no button", () => {
     const reason = "The design has technical replicates the audit cannot model.";
-    render(<AuditInvite workspace={WS} status={{ status: "not_applicable", reason }} job={null} onRun={vi.fn()} />);
+    render(
+      <AuditInvite
+        workspace={WS}
+        status={{ status: "not_applicable", reason }}
+        job={null}
+        onRun={vi.fn()}
+      />,
+    );
     expect(screen.getByText(reason)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Run the audit" })).toBeNull();
   });
@@ -219,7 +279,13 @@ describe("copy summary", () => {
   it("says the result, the confidence, what holds and the audit's verdict in plain text", () => {
     const card = auditGeneODC1 as unknown as AuditGeneCard;
     const row = ODC1.row;
-    const summary = geneSummary({ gene: row, labels: LABELS, audit: card, studyId: results.study_id, chainHead: results.head });
+    const summary = geneSummary({
+      gene: row,
+      labels: LABELS,
+      audit: card,
+      studyId: results.study_id,
+      chainHead: results.head,
+    });
     expect(summary).toContain("ODC1: called up with the planned analysis");
     expect(summary).toContain(`Fold ${fold(row.fc)} (95 % CI ${ci(row.ci[0], row.ci[1])})`);
     expect(summary).toContain(`Confidence: ${row.level}`);

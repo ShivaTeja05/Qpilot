@@ -29,18 +29,29 @@ function tally(values: string[]): [string, number][] {
 
 /** The design the accepted design proposals give (rows for a definition list). */
 function designRows(accepted: Proposal[]): [string, ReactNode][] {
-  const of = (kind: Proposal["kind"]) => accepted.filter((p) => p.kind === kind).map((p) => ({ p, d: effectivePayload(p) as Dict }));
+  const of = (kind: Proposal["kind"]) =>
+    accepted.filter((p) => p.kind === kind).map((p) => ({ p, d: effectivePayload(p) as Dict }));
   const rows: [string, ReactNode][] = [];
   const preset = of("design.preset")[0];
   if (preset) {
     const id = String(preset.d.preset);
-    rows.push(["Design", <>Built-in design “{id}”{PRESET_WORDS[id] ? `: ${PRESET_WORDS[id]}` : ""}</>]);
+    rows.push([
+      "Design",
+      <>
+        Built-in design “{id}”{PRESET_WORDS[id] ? `: ${PRESET_WORDS[id]}` : ""}
+      </>,
+    ]);
   }
   const comparison = of("design.comparison")[0];
   if (comparison) {
     const a = String(comparison.d.group_a);
     const b = String(comparison.d.group_b);
-    rows.push(["Comparison", <>“{a}” compared with “{b}” (fold change = {a} relative to {b})</>]);
+    rows.push([
+      "Comparison",
+      <>
+        “{a}” compared with “{b}” (fold change = {a} relative to {b})
+      </>,
+    ]);
   }
   const groups = tally(of("design.group").map(({ d }) => String(d.group)));
   if (groups.length) {
@@ -49,7 +60,10 @@ function designRows(accepted: Proposal[]): [string, ReactNode][] {
   const units = of("design.bio_unit");
   if (units.length) {
     const distinct = new Set(units.map(({ d }) => String(d.biological_unit))).size;
-    rows.push(["Biological units", `${plural(units.length, "sample")} grouped into ${plural(distinct, "unit")} (technical replicates are never counted as n)`]);
+    rows.push([
+      "Biological units",
+      `${plural(units.length, "sample")} grouped into ${plural(distinct, "unit")} (technical replicates are never counted as n)`,
+    ]);
   }
   const targets = of("design.target_role");
   const refs = targets.filter(({ d }) => d.role === "ref").map(({ p }) => p.subject);
@@ -69,14 +83,16 @@ function designRows(accepted: Proposal[]): [string, ReactNode][] {
       "Dilution series",
       series
         .map(({ p, d }) => {
-          const n = d.samples && typeof d.samples === "object" ? Object.keys(d.samples as Dict).length : 0;
+          const n =
+            d.samples && typeof d.samples === "object" ? Object.keys(d.samples as Dict).length : 0;
           return `${p.subject} (${plural(n, "sample")})`;
         })
         .join(" · "),
     ]);
   }
   const symbols = of("design.gene_symbol").length;
-  if (symbols) rows.push(["Gene symbols", `${plural(symbols, "target")} named by an approved HGNC symbol`]);
+  if (symbols)
+    rows.push(["Gene symbols", `${plural(symbols, "target")} named by an approved HGNC symbol`]);
   return rows;
 }
 
@@ -84,8 +100,14 @@ function designRows(accepted: Proposal[]): [string, ReactNode][] {
 function curveRows(accepted: Proposal[]): [string, ReactNode][] {
   const rows: [string, ReactNode][] = [];
   const rule = accepted.find((p) => p.kind === "curve.call_rule");
-  if (rule) rows.push(["Amplification call", `A well counts as amplified by ${ruleWords(effectivePayload(rule).rule)}`]);
-  const calls = accepted.filter((p) => p.kind === "curve.well_call").map((p) => effectivePayload(p).amplified === true);
+  if (rule)
+    rows.push([
+      "Amplification call",
+      `A well counts as amplified by ${ruleWords(effectivePayload(rule).rule)}`,
+    ]);
+  const calls = accepted
+    .filter((p) => p.kind === "curve.well_call")
+    .map((p) => effectivePayload(p).amplified === true);
   if (calls.length) {
     const yes = calls.filter(Boolean).length;
     rows.push([
@@ -111,7 +133,11 @@ export function StageSummary({
   const rows = stage === "design" ? designRows(accepted) : curveRows(accepted);
   if (!rows.length) return <p className="text-[13px] text-muted">No accepted proposal yet.</p>;
   return (
-    <dl className={className ?? "grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]"}>
+    <dl
+      className={
+        className ?? "grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]"
+      }
+    >
       {rows.map(([label, value]) => (
         <Row key={label} label={label}>
           {value}

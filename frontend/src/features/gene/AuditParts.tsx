@@ -24,7 +24,14 @@ import { sectionPath } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, JobCard, LoadingBlock, SegmentedControl } from "@/ui";
 import { cn } from "@/lib/cn";
 import { count, ofTotal, percent } from "@/lib/format";
-import { loadingJob, type AuditAnalyses, type AuditEffects, type AuditGeneCard, type AuditSamples, type AuditStatus } from "./api";
+import {
+  loadingJob,
+  type AuditAnalyses,
+  type AuditEffects,
+  type AuditGeneCard,
+  type AuditSamples,
+  type AuditStatus,
+} from "./api";
 import { chartAnalyses, chartEffects, chartSamples } from "./chart";
 import { Panel, Sentences, Stat } from "./Panel";
 
@@ -51,7 +58,8 @@ function Loaded<T>({
   if (query.data) return <>{children(query.data)}</>;
   const loading = loadingJob(query.error);
   if (loading) return <LoadJob job={loading} onDone={() => void query.refetch()} />;
-  if (query.error) return <ErrorPanel compact error={query.error} onRetry={() => void query.refetch()} />;
+  if (query.error)
+    return <ErrorPanel compact error={query.error} onRetry={() => void query.refetch()} />;
   if (warming) return <JobCard id={warming.id} />;
   return <LoadingBlock label={label} lines={4} />;
 }
@@ -76,13 +84,20 @@ function LoadJob({ job, onDone }: { job: JobView; onDone: () => void }) {
 export type Source = "qpilot" | "audit";
 
 /** What qPilot's choice grid holds (docs/app.md wording, #0254). */
-export const QPILOT_GRID = "Every control-gene set, cut-off, empty-well rule and amplification-call rule";
+export const QPILOT_GRID =
+  "Every control-gene set, cut-off, empty-well rule and amplification-call rule";
 /** What the audit's reasonable set holds. */
 export const AUDIT_SET =
   "No shortcuts such as single or paired control genes; groups and multiplicity as planned";
 
 /** qPilot's choice grid or the audit's reasonable set (shown when both exist). */
-export function SourceSwitch({ value, onChange }: { value: Source; onChange: (v: Source) => void }) {
+export function SourceSwitch({
+  value,
+  onChange,
+}: {
+  value: Source;
+  onChange: (v: Source) => void;
+}) {
   return (
     <SegmentedControl
       size="sm"
@@ -141,7 +156,9 @@ export function WhatHolds({
       id="gene-holds"
       title="What holds"
       hint="How often the same call comes out when the analysis is done another way. Each share says which analyses it counts."
-      actions={analyses && dots.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined}
+      actions={
+        analyses && dots.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined
+      }
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-line bg-sunken/40 p-3">
@@ -166,15 +183,20 @@ export function WhatHolds({
             <Stat
               label="Same call, the audit's reasonable set"
               value={analyses ? "…" : "—"}
-              sub={analyses ? "Reading the audit…" : "Not audited: the audit counts its own reasonable analyses (no shortcuts)."}
+              sub={
+                analyses
+                  ? "Reading the audit…"
+                  : "Not audited: the audit counts its own reasonable analyses (no shortcuts)."
+              }
             />
           )}
         </div>
       </div>
       {a ? (
         <p className="mt-2 text-xs text-muted">
-          The two shares count different analyses: qPilot's choice grid includes shortcuts such as a single control
-          gene or a Cq cut-off, which the audit's reasonable set leaves out, so the audit's share can be higher.
+          The two shares count different analyses: qPilot's choice grid includes shortcuts such as a
+          single control gene or a Cq cut-off, which the audit's reasonable set leaves out, so the
+          audit's share can be higher.
         </p>
       ) : null}
       <div className="mt-4">
@@ -187,7 +209,9 @@ export function WhatHolds({
                 lineLabel={`${data.line} line`}
                 {...sideWords(labels.hi)}
                 summary={`Each of the audit's ${count(data.n)} reasonable analyses of ${data.gene} on the fold axis: ${ofTotal(data.n_same, data.n)} give the planned call (${data.base_call}); the planned analysis is ringed.`}
-                caption={card?.holds.lines.length ? <Sentences items={card.holds.lines} /> : undefined}
+                caption={
+                  card?.holds.lines.length ? <Sentences items={card.holds.lines} /> : undefined
+                }
               />
             )}
           </Loaded>
@@ -199,7 +223,9 @@ export function WhatHolds({
             summary={`Every analysis of ${gene} in qPilot's choice grid, on the fold axis: ${ofTotal(sameQ, dots.length)} give the planned call; the planned analysis is ringed.`}
           />
         ) : (
-          <p className="text-[13px] text-muted">qPilot's choice grid for this study is not available.</p>
+          <p className="text-[13px] text-muted">
+            qPilot's choice grid for this study is not available.
+          </p>
         )}
       </div>
       {invite ? <div className="mt-4">{invite}</div> : null}
@@ -212,7 +238,10 @@ function HoldsBar({ share }: { share: number | null }) {
   if (share == null || !Number.isFinite(share)) return null;
   return (
     <div aria-hidden className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-bg-subtle">
-      <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%` }} />
+      <div
+        className="h-full rounded-full bg-accent"
+        style={{ width: `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%` }}
+      />
     </div>
   );
 }
@@ -246,7 +275,9 @@ export function OneChoice({
       id="gene-choices"
       title="One choice at a time"
       hint="Each option of each decision, with every other choice as planned. A ringed dot changes the call on its own."
-      actions={effects && rows.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined}
+      actions={
+        effects && rows.length ? <SourceSwitch value={source} onChange={onSource} /> : undefined
+      }
     >
       {showAudit && effects ? (
         <Loaded query={effects} label="Reading one choice at a time" warming={warming}>
@@ -355,7 +386,15 @@ export function YourSamples({
 
 // ---- The audit's reading ----------------------------------------------------------------------
 
-function Block({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+function Block({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn("min-w-0", className)}>
       <h3 className="mb-2 text-[13px] font-semibold text-fg">{title}</h3>
@@ -392,14 +431,19 @@ export function AuditReading({
               ))}
             </ul>
           ) : (
-            <p className="text-[13px] text-muted">{card.no_changes ?? "No reasonable choice changes it."}</p>
+            <p className="text-[13px] text-muted">
+              {card.no_changes ?? "No reasonable choice changes it."}
+            </p>
           )}
           {card.shortcut ? <p className="mt-2 text-xs text-muted">{card.shortcut}</p> : null}
         </Block>
         <Block title="What it leans on">
           <Sentences items={card.leans} />
           {card.singles.length ? (
-            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Samples that change the call on their own">
+            <ul
+              className="mt-2 flex flex-wrap gap-1.5"
+              aria-label="Samples that change the call on their own"
+            >
               {card.singles.map((s) => (
                 <li key={`${s.sample}:${s.well}`}>
                   <button
@@ -454,7 +498,12 @@ export function AuditInvite({
   }
   if (status?.status === "failed") {
     return (
-      <ErrorPanel title="The audit stopped before finishing" error={new Error(status.reason ?? status.job?.error?.message ?? "It stopped before finishing.")}>
+      <ErrorPanel
+        title="The audit stopped before finishing"
+        error={
+          new Error(status.reason ?? status.job?.error?.message ?? "It stopped before finishing.")
+        }
+      >
         {onRun ? (
           <Button size="sm" className="mt-3" loading={running} onClick={onRun}>
             Run the audit again
@@ -488,9 +537,10 @@ export function AuditInvite({
         </>
       }
     >
-      The robustness audit re-runs your confirmed study under every combination of eight analysis decisions
-      (about 50 s on the demo) and gives each gene a verdict. Here it adds its reasonable analyses (no shortcuts),
-      one choice at a time across eight decisions, each sample's value and what to do.
+      The robustness audit re-runs your confirmed study under every combination of eight analysis
+      decisions (about 50 s on the demo) and gives each gene a verdict. Here it adds its reasonable
+      analyses (no shortcuts), one choice at a time across eight decisions, each sample's value and
+      what to do.
       {error ? <ErrorPanel compact className="mt-3 text-left" error={error} /> : null}
     </EmptyState>
   );

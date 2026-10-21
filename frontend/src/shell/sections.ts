@@ -16,6 +16,7 @@ import {
   FolderOpen,
   GitBranch,
   LayoutGrid,
+  ListChecks,
   Microscope,
   Send,
   Settings as SettingsIcon,
@@ -30,6 +31,7 @@ export type SectionId =
   | "design"
   | "curves"
   | "results"
+  | "gate"
   | "gene"
   | "audit"
   | "trace"
@@ -105,6 +107,15 @@ export const SECTIONS: Section[] = [
     scope: "workspace",
     needsResults: true,
     component: lazy(() => import("@/features/results")),
+  },
+  {
+    id: "gate",
+    label: "Controls",
+    hint: "What the controls on each plate say, and whether it changes a call",
+    icon: ListChecks,
+    scope: "workspace",
+    needsResults: true,
+    component: lazy(() => import("@/features/gate")),
   },
   {
     id: "gene",

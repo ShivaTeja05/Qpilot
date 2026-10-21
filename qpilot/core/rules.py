@@ -67,6 +67,7 @@ RULE_ID = re.compile(r"^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$")
 NAME = re.compile(r"^[a-z][a-z0-9_]*(-[a-z0-9_]+)*$")
 VERSION = re.compile(r"^\d+(\.\d+){0,2}([-+][0-9A-Za-z.]+)?$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
+FACT_TOKEN = re.compile(r"\{\{([a-z0-9_]+)\}\}")  # core/validator.py's TOKEN
 BANNER = "research use"  # every pack's label must say so (W2 spec F.2)
 
 ParamValue = float | int | str | bool | list[float | int | str | bool]
@@ -499,6 +500,9 @@ class Finding(BaseModel):
     def _na_has_code(self) -> Finding:
         if self.outcome == NOT_APPLICABLE and not self.code:
             raise ValueError("a not_applicable finding needs a machine reason (code)")
+        missing = sorted(set(FACT_TOKEN.findall(self.reason)) - set(self.facts))
+        if missing:
+            raise ValueError(f"the reason cites facts the finding does not list: {missing}")
         return self
 
 

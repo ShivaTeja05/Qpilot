@@ -22,11 +22,18 @@ export function DesignNeeds({
   onSettings: () => void;
 }) {
   if (!blockers.length) return null;
-  const waiting = (kinds: Proposal["kind"][]) => proposals.some((p) => p.status === "proposed" && kinds.includes(p.kind));
-  const groupsMissing = blockers.some((b) => /comparison|group/i.test(b)) && !waiting(["design.group", "design.comparison", "design.preset"]);
-  const refsMissing = blockers.some((b) => /reference/i.test(b)) && !waiting(["design.target_role", "design.preset"]);
+  const waiting = (kinds: Proposal["kind"][]) =>
+    proposals.some((p) => p.status === "proposed" && kinds.includes(p.kind));
+  const groupsMissing =
+    blockers.some((b) => /comparison|group/i.test(b)) &&
+    !waiting(["design.group", "design.comparison", "design.preset"]);
+  const refsMissing =
+    blockers.some((b) => /reference/i.test(b)) && !waiting(["design.target_role", "design.preset"]);
   return (
-    <section aria-labelledby="design-needs" className="flex gap-3 rounded-xl border border-info/30 bg-info-soft/40 p-4">
+    <section
+      aria-labelledby="design-needs"
+      className="flex gap-3 rounded-xl border border-info/30 bg-info-soft/40 p-4"
+    >
       <ListChecks className="mt-0.5 size-5 shrink-0 text-info" aria-hidden />
       <div className="min-w-0 flex-1">
         <h2 id="design-needs" className="text-sm font-semibold text-fg">
@@ -40,10 +47,15 @@ export function DesignNeeds({
         {groupsMissing || refsMissing ? (
           <>
             <p className="mt-2 text-[13px] text-muted">
-              No proposal for {groupsMissing && refsMissing ? "the groups or the reference genes" : groupsMissing ? "the groups" : "the reference genes"} is
-              waiting. qPilot's rules read groups from a sample sheet's group column, and a model can read them from the
-              names; neither had them for this file. Open the file again with a sample sheet, or connect a model, then
-              propose again.
+              No proposal for{" "}
+              {groupsMissing && refsMissing
+                ? "the groups or the reference genes"
+                : groupsMissing
+                  ? "the groups"
+                  : "the reference genes"}{" "}
+              is waiting. qPilot's rules read groups from a sample sheet's group column, and a model
+              can read them from the names; neither had them for this file. Open the file again with
+              a sample sheet, or connect a model, then propose again.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button size="sm" variant="secondary" onClick={onOpen}>

@@ -64,7 +64,8 @@ export default function RecordSection({ workspace }: SectionProps) {
                 ) : null
               }
             >
-              {notYet} Every decision made after that is added here, each linked to the one before it.
+              {notYet} Every decision made after that is added here, each linked to the one before
+              it.
             </EmptyState>
           ) : decisions.isPending ? (
             <Card>
@@ -73,7 +74,11 @@ export default function RecordSection({ workspace }: SectionProps) {
               </CardBody>
             </Card>
           ) : decisions.error ? (
-            <ErrorPanel error={decisions.error} title="The decision chain could not be read" onRetry={() => void decisions.refetch()} />
+            <ErrorPanel
+              error={decisions.error}
+              title="The decision chain could not be read"
+              onRetry={() => void decisions.refetch()}
+            />
           ) : decisions.data.entries.length === 0 ? (
             <EmptyState
               icon={<BookCheck />}
@@ -87,7 +92,8 @@ export default function RecordSection({ workspace }: SectionProps) {
                 </Button>
               }
             >
-              The chain starts at the input file. Each choice you make on a Decision Card, and each one qPilot or an agent makes, is added here.
+              The chain starts at the input file. Each choice you make on a Decision Card, and each
+              one qPilot or an agent makes, is added here.
             </EmptyState>
           ) : (
             <ChainTimeline

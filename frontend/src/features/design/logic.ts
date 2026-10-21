@@ -16,10 +16,15 @@ export function concerns(p: Proposal, w: Pick<PlateWell, "sample" | "target" | "
 export function comparisonState(all: Proposal[]) {
   const settled = all.filter((p) => p.status === "accepted" || p.status === "edited");
   const groups = new Set(
-    settled.filter((p) => p.kind === "design.group").map((p) => String({ ...p.payload, ...(p.edits ?? {}) }.group)),
+    settled
+      .filter((p) => p.kind === "design.group")
+      .map((p) => String({ ...p.payload, ...(p.edits ?? {}) }.group)),
   );
   const has = all.some(
-    (p) => (p.kind === "design.comparison" || p.kind === "design.preset") && p.status !== "rejected" && p.status !== "superseded",
+    (p) =>
+      (p.kind === "design.comparison" || p.kind === "design.preset") &&
+      p.status !== "rejected" &&
+      p.status !== "superseded",
   );
   return { groups: [...groups], ready: groups.size === 2 && !has };
 }

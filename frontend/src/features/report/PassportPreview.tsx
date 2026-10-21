@@ -17,7 +17,20 @@ import {
 } from "@/charts";
 import { ci, count, dateTime, fold, percent, pValue } from "@/lib/format";
 import { sectionPath, type SectionProps } from "@/shell/sections";
-import { Button, CommandLine, ConclusionTag, Hash, KeyValues, LevelTag, Table, TBody, TD, TH, THead, TR } from "@/ui";
+import {
+  Button,
+  CommandLine,
+  ConclusionTag,
+  Hash,
+  KeyValues,
+  LevelTag,
+  Table,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+} from "@/ui";
 import type { ReportExported, ReportGene, ReportView } from "./api";
 import { Cited } from "./Cited";
 
@@ -41,13 +54,22 @@ export function PassportPreview({
       className="overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-sm"
     >
       <header className="border-b border-line bg-sunken/60 px-5 py-4 sm:px-7">
-        <p className="text-[11.5px] font-semibold tracking-wider text-accent-strong uppercase">qPilot · Study passport</p>
-        <h3 className="mt-1 text-[18px] leading-snug font-semibold text-fg [text-wrap:balance]">{h.title}</h3>
+        <p className="text-[11.5px] font-semibold tracking-wider text-accent-strong uppercase">
+          qPilot · Study passport
+        </p>
+        <h3 className="mt-1 text-[18px] leading-snug font-semibold text-fg [text-wrap:balance]">
+          {h.title}
+        </h3>
         <p className="mt-0.5 text-[12.5px] text-muted">{h.research_use}</p>
         <KeyValues
           className="mt-3"
           rows={[
-            ["Study", <span key="s" className="font-mono text-[12.5px]">{h.study_id}</span>],
+            [
+              "Study",
+              <span key="s" className="font-mono text-[12.5px]">
+                {h.study_id}
+              </span>,
+            ],
             ...(h.source_name ? [["Input file", h.source_name] as [string, string]] : []),
             ["Input SHA-256", <Hash key="i" value={h.input_sha256} length={16} />],
             ["Decision log head", <Hash key="c" value={h.chain_head} length={16} />],
@@ -56,7 +78,9 @@ export function PassportPreview({
               bound?.record ? (
                 <Hash key="r" value={bound.record.record_id} length={16} />
               ) : (
-                <span key="r" className="text-muted">written with the passport</span>
+                <span key="r" className="text-muted">
+                  written with the passport
+                </span>
               ),
             ],
           ]}
@@ -74,7 +98,11 @@ export function PassportPreview({
             {view.key_numbers.map((k) => {
               const f = view.facts[k.fact];
               return f ? (
-                <li key={k.label} className="rounded-lg border border-line px-3 py-2" title={`${f.id}: ${f.path}`}>
+                <li
+                  key={k.label}
+                  className="rounded-lg border border-line px-3 py-2"
+                  title={`${f.id}: ${f.path}`}
+                >
                   <p className="tabular text-[18px] font-semibold text-fg">{f.text}</p>
                   <p className="text-[11.5px] text-muted">{k.label}</p>
                 </li>
@@ -90,7 +118,9 @@ export function PassportPreview({
             <h4 id="pp-verdicts" className="mb-2 text-[13px] font-semibold text-fg">
               The audit's verdicts
               <span className="ml-1.5 font-normal text-muted">
-                {view.audit.reasonable ? `in its reasonable set of ${count(view.audit.reasonable)} analyses` : null}
+                {view.audit.reasonable
+                  ? `in its reasonable set of ${count(view.audit.reasonable)} analyses`
+                  : null}
                 {view.audit.current ? "" : " · run at an earlier decision log"}
               </span>
             </h4>
@@ -109,8 +139,9 @@ export function PassportPreview({
         <DecisionsPreview view={view} />
 
         <p className="text-[12px] text-muted">
-          The file also carries the reviewer's report, the Methods with their references, the MIQE 2.0 checklist, the
-          limitations and every number with where it comes from, exactly as on this page.
+          The file also carries the reviewer's report, the Methods with their references, the MIQE
+          2.0 checklist, the limitations and every number with where it comes from, exactly as on
+          this page.
         </p>
       </div>
     </article>
@@ -121,9 +152,9 @@ function Verify({ passport }: { passport: ReportExported | null }) {
   if (!passport?.record) {
     return (
       <div className="rounded-xl border border-line bg-sunken/50 px-4 py-3 text-[13px] leading-relaxed text-muted">
-        <span className="font-medium text-fg">How it is verified.</span> Writing the passport also writes a fresh
-        Analysis Record beside it; the passport names that record's id, and <code className="font-mono">qpilot verify</code>{" "}
-        checks the record anywhere.
+        <span className="font-medium text-fg">How it is verified.</span> Writing the passport also
+        writes a fresh Analysis Record beside it; the passport names that record's id, and{" "}
+        <code className="font-mono">qpilot verify</code> checks the record anywhere.
       </div>
     );
   }
@@ -136,7 +167,8 @@ function Verify({ passport }: { passport: ReportExported | null }) {
       </p>
       <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-muted marker:text-muted">
         <li>
-          Get <span className="font-mono text-[12.5px] text-fg">{r.download.name}</span>, written with it.
+          Get <span className="font-mono text-[12.5px] text-fg">{r.download.name}</span>, written
+          with it.
         </li>
         <li>
           Check every checksum and both hash chains:
@@ -156,7 +188,8 @@ function Verify({ passport }: { passport: ReportExported | null }) {
 
 function MapPreview({ view }: { view: ReportView }) {
   const genes = useMemo(
-    () => view.genes.filter((g): g is ReportGene & { holds: number } => g.holds != null && g.fc > 0),
+    () =>
+      view.genes.filter((g): g is ReportGene & { holds: number } => g.holds != null && g.fc > 0),
     [view.genes],
   );
   const cells = genes[0]?.n_cells ?? 0;
@@ -172,7 +205,9 @@ function MapPreview({ view }: { view: ReportView }) {
     [genes],
   );
   if (!genes.length) return null;
-  const setWords = cells ? `of the ${count(cells)} analyses qPilot checks` : "of the analyses qPilot checks";
+  const setWords = cells
+    ? `of the ${count(cells)} analyses qPilot checks`
+    : "of the analyses qPilot checks";
   return (
     <section aria-labelledby="pp-map">
       <h4 id="pp-map" className="mb-1 text-[13px] font-semibold text-fg">
@@ -184,7 +219,11 @@ function MapPreview({ view }: { view: ReportView }) {
         lineLabel="2-fold line"
         legend={legend}
         setWords={setWords}
-        yLabel={cells ? `Same call in qPilot's choice grid (${count(cells)} analyses)` : "Same call in qPilot's choice grid"}
+        yLabel={
+          cells
+            ? `Same call in qPilot's choice grid (${count(cells)} analyses)`
+            : "Same call in qPilot's choice grid"
+        }
         summary={`Robustness map of ${count(genes.length)} genes: fold change across, and up, the share ${setWords} that give the same call.`}
       />
     </section>
@@ -231,7 +270,10 @@ function GenesPreview({
               <TR key={g.gene} className={g.headline ? "bg-accent-soft/40" : undefined}>
                 <TD>
                   {workspace ? (
-                    <Link href={sectionPath(workspace, "gene", g.gene)} className="font-medium text-fg hover:underline">
+                    <Link
+                      href={sectionPath(workspace, "gene", g.gene)}
+                      className="font-medium text-fg hover:underline"
+                    >
                       {g.gene}
                     </Link>
                   ) : (
@@ -265,14 +307,21 @@ function GenesPreview({
   );
 }
 
-const ACTOR: Record<string, string> = { human: "a person", agent: "an agent", system: "automatically" };
+const ACTOR: Record<string, string> = {
+  human: "a person",
+  agent: "an agent",
+  system: "automatically",
+};
 
 function DecisionsPreview({ view }: { view: ReportView }) {
   if (!view.decisions.length) return null;
   return (
     <section aria-labelledby="pp-decisions">
       <h4 id="pp-decisions" className="text-[13px] font-semibold text-fg">
-        Decisions <span className="font-normal text-muted">· the hash-chained log, then the choices still open</span>
+        Decisions{" "}
+        <span className="font-normal text-muted">
+          · the hash-chained log, then the choices still open
+        </span>
       </h4>
       <div
         className="relative mt-2 overflow-x-auto rounded-lg border border-line qp-scroll"
@@ -301,7 +350,9 @@ function DecisionsPreview({ view }: { view: ReportView }) {
                 <TD>{d.option_label ?? d.option ?? "—"}</TD>
                 <TD className="text-muted">{d.actor ? (ACTOR[d.actor] ?? d.actor) : "—"}</TD>
                 <TD>
-                  <span className={d.seq == null && d.can_flip ? "font-medium text-warn" : "text-muted"}>
+                  <span
+                    className={d.seq == null && d.can_flip ? "font-medium text-warn" : "text-muted"}
+                  >
                     {d.status}
                     {d.seq == null && d.can_flip ? " · can change a call" : ""}
                   </span>

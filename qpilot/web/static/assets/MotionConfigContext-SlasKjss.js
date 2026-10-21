@@ -1,0 +1,1 @@
+import{Fr as e,Nr as t}from"./sections-DKIq2GzA.js";var n=e(t(),1);function r(e){let t=(0,n.useRef)(null);return t.current===null&&(t.current=e()),t.current}function i(e,t){if(e?.inherit&&t){let{inherit:n,...r}=e;return{...t,...r}}return e}var a=(0,n.createContext)({transformPagePoint:e=>e,isStatic:!1,reducedMotion:`never`});export{i as n,r,a as t};

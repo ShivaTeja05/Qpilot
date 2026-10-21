@@ -34,7 +34,9 @@ describe("RequestItem", () => {
     expect((confirm as HTMLButtonElement).disabled).toBe(true);
     fireEvent.change(screen.getByLabelText(/Why you approve it/), { target: { value: "   " } });
     expect((confirm as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText(/Why you approve it/), { target: { value: "Matches our SOP" } });
+    fireEvent.change(screen.getByLabelText(/Why you approve it/), {
+      target: { value: "Matches our SOP" },
+    });
     expect((confirm as HTMLButtonElement).disabled).toBe(false);
   });
 

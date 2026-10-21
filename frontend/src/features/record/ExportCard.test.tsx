@@ -50,8 +50,13 @@ describe("ExportCard", () => {
   });
 
   it("cannot export before the study is analysed, and says why", () => {
-    show(null, "The record starts when this study is analysed: confirm the design and the curves first.");
-    expect((screen.getByRole("button", { name: "Export again" }) as HTMLButtonElement).disabled).toBe(true);
+    show(
+      null,
+      "The record starts when this study is analysed: confirm the design and the curves first.",
+    );
+    expect(
+      (screen.getByRole("button", { name: "Export again" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
     expect(screen.getByText(/confirm the design and the curves first/)).toBeTruthy();
   });
 });

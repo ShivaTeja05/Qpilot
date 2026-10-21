@@ -46,6 +46,7 @@ One hash-routed page. Global routes: `#/` (Open), `#/settings`. A workspace is e
 | Design (blind) | `…/design` | session | `GET /api/sessions/{sid}` (incl. `capture`: what an export was read as), `…/proposals?stage=design`, `…/plate`, propose/accept/edit/reject/bulk/confirm → `Studio.*` |
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
 | Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence), `/flips`, `/cards`, decide/undo/turn down/explain → store + `core.decisions` + `ai.explain` |
+| Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test) |
 | Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
 | Prism | `…/prism` | session, results visible | `/prism/preview|routes|bundles`, `POST /prism/draft|send|roundtrip` → `Studio.preview_prism/propose_prism/send_to_prism/launch_prism/round_trip` |
@@ -60,7 +61,7 @@ audited study the audit's `Asker` — the answer shows which tool answered, who 
 ## 3. The shell
 
 * **Rail (left, 248 px; icons only below 1024 px; bottom bar on phones).** The workflow in order
-  (Design → Curves → Results → Audit → Prism → Record), each with its live state: a check when
+  (Design → Curves → Results → Controls → Audit → Prism → Record), each with its live state: a check when
   confirmed, a count of proposals waiting, a lock with the reason when not reachable yet
   ("Confirm the design first"). Below: Agents (with the pending-request count), Settings. The
   workspace switcher sits at the top (recent workspaces, ⌘O opens a file).
@@ -155,6 +156,31 @@ No group labels here.
   waiting for a person show first, with **Approve** / **Turn down**. **Explain with the model**
   (only when a model answers; numbers in the explanation are facts, cited).
 * `j`/`k` move between cards, `Enter` focuses the reason, `⌘Enter` decides.
+
+### Controls (`features/gate`) — Run Gate
+What the controls on each plate say, and whether any of it changes a call. The shipped rule pack
+(`research-default`: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP; thresholds and sources
+in `packs/research-default.yaml`, science in `agent-bus/contracts/scientist-spec-gate.md`) is
+evaluated on the study's wells; every rule that warns or fails and points at wells gets the
+consequence test: the whole analysis grid is re-run without those wells and compared at the
+analysis in use (each card's applied option, the planned one elsewhere).
+* Header with the pack (name, version, hash); **In one line**: the headline (every number a fact),
+  the verdict counts (Fail / Warn / Pass / Not applicable: status words only, no claim about the
+  run as a whole) and what to do (Curves in a session, Trace for a study analysed outside Studio).
+* **Plates**: one button per plate, gated or ungated (no wells typed as controls, dashed), its
+  worst verdict as glyph + colour; pressing one filters the rule checks to it.
+* **Rule checks**: warn and fail first (filters: verdict, rule, plate); each row opens to the
+  reason in words, the wells it points at and **What leaving the wells out changes** (class,
+  triage in words, each option's sentence: "Leaving these 2 wells out changes no call").
+* **What leaving the wells out would change**: one line per tested finding; "Show the check" opens
+  its row.
+* **Decision Cards from the controls**: the `gate.rule` cards (only when leaving the wells out can
+  change a conclusion: open when it changes a call at the analysis in use, decided automatically
+  to keep when it changes one only at other settings; either way an agent must ask a person),
+  read-only in the Decision Card language, with a link to Curves (session) or Trace (study).
+  Deciding a gate card is not wired to the store: a gate card has no grid dimension; wells are
+  left out in Curves, which analyses the study again.
+* **The rules and where their thresholds come from**: each rule's statement and its sources.
 
 ### Gene (`features/gene`) — the merge
 Header: gene, call (arrow + word), fold [95 % CI], p, n per group, confidence level + reasons,
@@ -284,6 +310,7 @@ API modules each define their own response models in `qpilot/web/contract_<area>
 | **history** | `qpilot/web/routers/history.py`, `qpilot/web/contract_history.py`, `qpilot/history/**`, `tests/web/test_history*.py`, `frontend/src/features/history/**` |
 | **planner** | `qpilot/web/routers/planner.py`, `qpilot/web/contract_planner.py`, `qpilot/qpcr/layout.py` (new), additive changes to `qpilot/qpcr/plan.py`, `tests/web/test_planner*.py`, `frontend/src/features/planner/**` |
 | **ux-review** | nothing in the repo: reviews merged builds in a browser and files issues to owners |
+| **gate** | `qpilot/core/{rules,gate,card_kinds}.py`, `qpilot/qpcr/gate_rules.py`, `packs/`, `qpilot/web/routers/gate.py`, `qpilot/web/contract_gate.py`, `tests/gate/**`, `tests/web/test_gate*.py`, `frontend/src/features/gate/**` |
 | **coordinator** | `docs/app.md`, `frontend/src/shell/sections.ts`, `frontend/src/api/{client,live,jobs}.ts`, `qpilot/web/routers/__init__.py`, `qpilot/web/static/` (built on merge), CI, merges |
 
 Reusable UI primitives live in `src/ui/` (barrel `src/ui/index.ts`), charts in `src/charts/`

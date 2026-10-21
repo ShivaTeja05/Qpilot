@@ -39,7 +39,13 @@ function renderWell(kind: "session" | "study" = "session") {
   qc.setQueryData(["w", WS.key, "curve", `${curve.run_id}/${curve.well}`, curve.target], curve);
   return render(
     <QueryClientProvider client={qc}>
-      <WellCurve workspace={{ ...WS, kind }} scope={{ ...SCOPE, kind }} plate={curve.run_id} well={curve.well} gene={curve.target} />
+      <WellCurve
+        workspace={{ ...WS, kind }}
+        scope={{ ...SCOPE, kind }}
+        plate={curve.run_id}
+        well={curve.well}
+        gene={curve.target}
+      />
     </QueryClientProvider>,
   );
 }
@@ -47,7 +53,9 @@ function renderWell(kind: "session" | "study" = "session") {
 describe("a sample's well", () => {
   it("draws its curve, links it to Curves and gives LinRegPCR's numbers", () => {
     renderWell();
-    expect(screen.getByRole("link", { name: /Open in Curves/ }).getAttribute("href")).toContain(`/curves/${curve.run_id}/${curve.well}`);
+    expect(screen.getByRole("link", { name: /Open in Curves/ }).getAttribute("href")).toContain(
+      `/curves/${curve.run_id}/${curve.well}`,
+    );
     expect(screen.getByText(fixed(curve.cq, 2))).toBeTruthy();
     expect(screen.getByText(fixed(curve.efficiency, 2))).toBeTruthy();
   });

@@ -116,7 +116,15 @@ export function sectionStates(
 }
 
 /** The workflow sections shown in the rail for a workspace, in order. */
-export const WORKFLOW: SectionId[] = ["design", "curves", "results", "audit", "prism", "record"];
+export const WORKFLOW: SectionId[] = [
+  "design",
+  "curves",
+  "results",
+  "gate",
+  "audit",
+  "prism",
+  "record",
+];
 
 /** The tools on a study's results, shown in the rail under the workflow. */
 export const TOOLS: SectionId[] = ["trace", "claims", "history", "report", "planner"];

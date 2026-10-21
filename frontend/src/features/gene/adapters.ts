@@ -19,10 +19,14 @@ export function optionWords(dimension: string, value: string): string {
 }
 
 /** Each dimension's option labels by index (the cards' words where a card names the option). */
-function optionLabels(view: Pick<GeneView, "grid" | "effects">): (dim: string, idx: number) => string {
+function optionLabels(
+  view: Pick<GeneView, "grid" | "effects">,
+): (dim: string, idx: number) => string {
   const byDim = new Map(view.effects.map((r) => [r.dimension, r]));
   return (dim, idx) => {
-    const label = byDim.get(dim)?.options[idx]?.label ?? optionWords(dim, view.grid?.options[dim]?.[idx] ?? String(idx));
+    const label =
+      byDim.get(dim)?.options[idx]?.label ??
+      optionWords(dim, view.grid?.options[dim]?.[idx] ?? String(idx));
     const short = DIMENSION[dim]?.short;
     return short ? `${short}: ${label}` : label;
   };
@@ -37,7 +41,9 @@ export function gridDots(view: Pick<GeneView, "grid" | "effects" | "row">): Anal
   const label = optionLabels(view);
   const planned = asConclusion(view.row.conclusion);
   return g.cells.map((cell, k) => {
-    const choices = cell.flatMap((idx, d) => (idx === g.planned[d] ? [] : [label(g.dimensions[d] ?? String(d), idx)]));
+    const choices = cell.flatMap((idx, d) =>
+      idx === g.planned[d] ? [] : [label(g.dimensions[d] ?? String(d), idx)],
+    );
     const log2 = g.log2fc[k] ?? 0;
     const call = asConclusion(g.conclusion[k]);
     return {
@@ -98,7 +104,10 @@ export function geneCardRefs(view: Pick<GeneView, "gene" | "effects" | "cards">)
       statusLine: card?.status_line ?? null,
       flips: Boolean(r.flips[0]),
       maxDeltaLog2: r.max_delta_log2fc[0] ?? null,
-      chosenLabel: r.options.find((o) => o.chosen)?.label ?? card?.options.find((o) => o.chosen)?.label ?? null,
+      chosenLabel:
+        r.options.find((o) => o.chosen)?.label ??
+        card?.options.find((o) => o.chosen)?.label ??
+        null,
     });
   }
   for (const card of view.cards) {
@@ -108,24 +117,32 @@ export function geneCardRefs(view: Pick<GeneView, "gene" | "effects" | "cards">)
       title: card.title,
       status: card.card.status,
       statusLine: card.status_line,
-      flips: card.options.some((o) => o.effects?.some((e) => e.gene === view.gene && e.changes_call)),
+      flips: card.options.some((o) =>
+        o.effects?.some((e) => e.gene === view.gene && e.changes_call),
+      ),
       maxDeltaLog2: null,
       chosenLabel: card.options.find((o) => o.chosen)?.label ?? null,
     });
   }
   return refs.sort(
-    (a, b) => Number(b.flips) - Number(a.flips) || Math.abs(b.maxDeltaLog2 ?? 0) - Math.abs(a.maxDeltaLog2 ?? 0),
+    (a, b) =>
+      Number(b.flips) - Number(a.flips) ||
+      Math.abs(b.maxDeltaLog2 ?? 0) - Math.abs(a.maxDeltaLog2 ?? 0),
   );
 }
 
 /** A card's status in words: the server's line, else from its status. */
-export function cardStatusWords(card: Pick<GeneCardRef, "status" | "statusLine" | "chosenLabel">): string {
+export function cardStatusWords(
+  card: Pick<GeneCardRef, "status" | "statusLine" | "chosenLabel">,
+): string {
   if (card.statusLine) return card.statusLine;
   switch (card.status) {
     case "decided":
       return card.chosenLabel ? `Decided: ${card.chosenLabel}` : "Decided";
     case "auto_decided":
-      return card.chosenLabel ? `Decided automatically: ${card.chosenLabel}` : "Decided automatically";
+      return card.chosenLabel
+        ? `Decided automatically: ${card.chosenLabel}`
+        : "Decided automatically";
     case "pending_human":
       return "An agent's request waits for a person";
     default:
