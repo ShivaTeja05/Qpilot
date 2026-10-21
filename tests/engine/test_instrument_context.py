@@ -37,6 +37,7 @@ DA_QS3 = CORPUS / "thermofisher" / "securebio-qs3-design-analysis-2.7"
 DA_7500 = CORPUS / "thermofisher" / "opentrons-7500-design-analysis-csv"
 DA_SYNTH = CORPUS / "synthetic" / "quantstudio-design-analysis-rn-drn"
 DA_REAL = sorted([*DA_QS3.glob("*.csv"), *DA_7500.glob("*.csv")])
+CFX_REAL = sorted(CORPUS.glob("biorad/*/*Run Information.csv"))
 QS_TXT_REAL = sorted((CORPUS / "thermofisher" / "allotropy-quantstudio-rtpcr-txt").glob("*.txt"))
 SUMMARY_KEYS = {
     "source_kind",
@@ -758,6 +759,28 @@ def test_cfx_day_first_dates(tmp_path):
         F.cfx_run_information(tmp_path / "ri.csv", started="27/02/2020 10:36:22 UTC")
     )
     assert ctx.run["start"] == "2020-02-27T10:36:22Z"
+
+
+def test_real_cfx_run_information_from_the_corpus():
+    assert len(CFX_REAL) == 4  # CFX Manager 3.1 (3 runs) and CFX Maestro 4.0
+    for path in CFX_REAL:
+        ctx = read_run_context(path)
+        assert ctx.source_kind == "cfx_run_information", path.name
+        assert ctx.checked == ["identity"], path.name  # no run status key in a real file
+        assert ctx.model_view()["serials_present"] == ["optical_head_serial", "serial"]
+        view = json.dumps(ctx.model_view(), ensure_ascii=False)
+        assert not any(v and v in view for k, v in ctx.identity.items() if k in ic.LOCAL_IDENTITY)
+        assert ic.NOTE_USER_NAME in ctx.notes, path.name
+    maestro = read_run_context(next(p for p in CFX_REAL if "covmatic" in str(p)))
+    assert maestro.run["start"] == "2020-10-21T20:33:35Z"  # 10/21/2020: month first
+    manager = read_run_context(next(p for p in CFX_REAL if "gapdh" in p.name))
+    # 09/05/2016 on its own does not settle the day-month order
+    assert manager.run["start"] is None and ic.NOTE_DATE_AMBIGUOUS in manager.notes
+    # CFX Manager names a run "<user>_<date time>_<serial>": the name kept locally has the
+    # serial, the name a model or an export sees has it blanked
+    (named,) = (c for c in map(read_run_context, CFX_REAL) if c.identity["serial"] in c.source_file)
+    view = named.model_view()
+    assert named.identity["serial"] not in view["source_file"] and "…" in view["source_file"]
 
 
 # ---------------------------------------------------------------------------------------------

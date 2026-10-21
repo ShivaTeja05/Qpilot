@@ -333,9 +333,11 @@ class RunContext(BaseModel):
         """The context without anything local: no serials, aliases, local facts or raw keys.
 
         This is the only shape of a :class:`RunContext` that may go to a model or an export.
-        ``serials_present`` names the serial fields the file had, without their values.
+        ``serials_present`` names the serial fields the file had, without their values; the
+        file's name has them blanked (:func:`without_serials`).
         """
         data = self.model_dump(mode="json", exclude={"aliases", "unmapped_keys", "facts"})
+        data["source_file"] = without_serials(self.source_file, self.identity)
         data["identity"] = {
             key: (None if key in LOCAL_IDENTITY else value) for key, value in self.identity.items()
         }
@@ -351,6 +353,20 @@ class RunContext(BaseModel):
 def is_local_only(fact: Fact) -> bool:
     """True for a fact that must never leave the machine (a serial or an instrument name)."""
     return fact.path.startswith(LOCAL_ONLY)
+
+
+def without_serials(text: str, identity: Mapping[str, str | None]) -> str:
+    """``text`` (a file's name) with the run's serial numbers blanked out as ``…``.
+
+    Export tools often put the instrument's serial in the file name (CFX Manager names a run
+    ``<user>_<date time>_<serial>``); serials never leave the machine, so a name that may is
+    blanked first. Values shorter than four characters are left alone.
+    """
+    secret = [str(value) for key, value in identity.items() if key in LOCAL_IDENTITY and value]
+    for value in sorted(secret, key=len, reverse=True):
+        if len(value) >= 4:
+            text = re.sub(re.escape(value), "…", text, flags=re.IGNORECASE)
+    return text
 
 
 def model_facts(ctx: RunContext) -> dict[str, Fact]:
