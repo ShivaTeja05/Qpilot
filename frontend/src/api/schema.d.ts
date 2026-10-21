@@ -1703,6 +1703,32 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/gate/cards/{card_id}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide Gate Card
+         * @description A person chooses an option of a gate card, with a reason (a Studio session only).
+         *
+         *     Leaving wells out (or putting them back) becomes curve exclusions accepted by the person in
+         *     one write to the session's record, and the study is analysed again (the ``analyse`` job);
+         *     keeping every well is recorded. Blind like every result; ``studio`` (409) for a study
+         *     analysed outside Studio, ``stale`` (409) when the analysis or the record changed since the
+         *     view, ``loading`` (409) while the gate is still being checked.
+         */
+        post: operations["decide_gate_card"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/genes/{gene}": {
         parameters: {
             query?: never;
@@ -5487,6 +5513,12 @@ export type components = {
          */
         GateConsequence: {
             /**
+             * Can Decide
+             * @description A person can choose an option here: a Studio session's card, or wells a person left out through it (to put back).
+             * @default false
+             */
+            can_decide: boolean;
+            /**
              * Card Id
              * @description Its `gate.rule` Decision Card.
              */
@@ -5497,6 +5529,13 @@ export type components = {
              * @enum {string}
              */
             consequence: "none" | "magnitude" | "flip" | "unknown";
+            decision?: components["schemas"]["GateDecisionView"] | null;
+            /**
+             * Decision Id
+             * @description The id to decide it by (`card_gate_<id>`), whether or not it is a card now.
+             * @default
+             */
+            decision_id: string;
             /**
              * Id
              * @description The evaluation's id.
@@ -5506,6 +5545,11 @@ export type components = {
             options: components["schemas"]["GateOption"][];
             /** Plate */
             plate?: string | null;
+            /**
+             * Requests
+             * @default []
+             */
+            requests: components["schemas"]["GateRequestView"][];
             /** Rescue Option */
             rescue_option?: string | null;
             /** Rule Id */
@@ -5531,6 +5575,89 @@ export type components = {
              * @enum {string}
              */
             verdict: "pass" | "warn" | "fail" | "not_applicable";
+        };
+        /**
+         * GateDecide
+         * @description ``POST /studies/{id}/gate/cards/{card_id}/decide``: a person's choice on a gate card.
+         */
+        GateDecide: {
+            /**
+             * Expected Head
+             * @description The study's chain head the view showed.
+             */
+            expected_head?: string | null;
+            /**
+             * Expected Inbox
+             * @description The session's inbox head the view showed.
+             */
+            expected_inbox?: string | null;
+            /** Option */
+            option: string;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
+        /**
+         * GateDecided
+         * @description What the choice did: wells left out or put back (the study is analysed again) or kept.
+         */
+        GateDecided: {
+            /** Inbox Head */
+            inbox_head: string;
+            /** @description The analysis of the changed design, when it changed. */
+            job?: components["schemas"]["JobView"] | null;
+            /** Left Out */
+            left_out: string[];
+            /** Message */
+            message: string;
+            /** Put Back */
+            put_back: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "left_out" | "put_back" | "kept";
+            /**
+             * Study Id
+             * @description The analysis the choice was made at.
+             */
+            study_id: string;
+        };
+        /**
+         * GateDecisionView
+         * @description What a person last chose on a Run Gate card (the session's record) and what is in use.
+         *
+         *     ``option`` is the option the wells are in now (from the analysed design), ``None`` when
+         *     they match no option (some left out another way). ``action`` is what the latest decision
+         *     did; ``reason``, ``decided_at`` and ``decided_by`` are from the record.
+         */
+        GateDecisionView: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "left_out" | "put_back" | "kept";
+            /** Decided At */
+            decided_at: string;
+            /**
+             * Decided By
+             * @default human
+             * @constant
+             */
+            decided_by: "human";
+            /** Label */
+            label: string;
+            /**
+             * Left Out
+             * @description The card's wells the analysis leaves out now.
+             */
+            left_out: string[];
+            /** Option */
+            option: string | null;
+            /** Reason */
+            reason: string;
         };
         /**
          * GateEvaluation
@@ -5608,6 +5735,13 @@ export type components = {
          */
         GateOption: {
             /**
+             * Code
+             * @description Why the option was answered without a re-run: its wells are already left out of the analysis, are not study samples, or the analysis cannot run without them.
+             * @default
+             * @enum {string}
+             */
+            code: "" | "already_left_out" | "not_study_samples" | "cannot_rerun";
+            /**
              * Consequence
              * @enum {string}
              */
@@ -5625,6 +5759,12 @@ export type components = {
             id: string;
             /** Label */
             label: string;
+            /**
+             * Left Out
+             * @description Its wells that the analysis already leaves out (a decision).
+             * @default []
+             */
+            left_out: string[];
             /**
              * Max Delta Log2Fc
              * @description The largest fold-change move (log2).
@@ -5689,6 +5829,32 @@ export type components = {
             worst: "pass" | "warn" | "fail" | "not_applicable";
         };
         /**
+         * GateRequestView
+         * @description An agent's request on a Run Gate card, waiting for a person (curve exclusions).
+         */
+        GateRequestView: {
+            /** Agent */
+            agent?: string | null;
+            /** At */
+            at: string;
+            /**
+             * Left Out
+             * @description True: it asks to leave them out; False: to put back.
+             */
+            left_out: boolean;
+            /** Option */
+            option: string;
+            /** Option Label */
+            option_label: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Wells
+             * @description The wells it asks to leave out or put back.
+             */
+            wells: string[];
+        };
+        /**
          * GateRuleInfo
          * @description One rule of the pack, as a scientist reads it.
          */
@@ -5734,8 +5900,14 @@ export type components = {
              */
             analysis: "planned" | "your_choices";
             /**
+             * Can Decide
+             * @description A person decides the cards here (a Studio session whose results show).
+             * @default false
+             */
+            can_decide: boolean;
+            /**
              * Cards
-             * @description The `gate.rule` cards: options with their per-gene calls. Read-only here.
+             * @description The `gate.rule` cards: options with their per-gene calls, and what a person chose (a Studio session decides them here; a study analysed outside Studio cannot).
              */
             cards: components["schemas"]["CardView"][];
             /** Consequences */
@@ -5747,6 +5919,12 @@ export type components = {
             counts: {
                 [key: string]: number;
             };
+            /**
+             * Decide Note
+             * @description What deciding a card here does, in words.
+             * @default
+             */
+            decide_note: string;
             /** Evaluations */
             evaluations: components["schemas"]["GateEvaluation"][];
             /**
@@ -5767,6 +5945,11 @@ export type components = {
              * @description What to do about a finding, in words.
              */
             how_to_apply: string;
+            /**
+             * Inbox Head
+             * @description The session's proposal chain head the view was read at (send it back as `expected_inbox`).
+             */
+            inbox_head?: string | null;
             /** N Gated */
             n_gated: number;
             /** N Ungated */
@@ -8351,7 +8534,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
+            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
             /**
              * Level
              * @default Low
@@ -13542,6 +13725,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GateView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_gate_card: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: string;
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GateDecide"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateDecided"];
                 };
             };
             /** @description Validation Error */
