@@ -44,10 +44,10 @@ export function consequenceWords(on: boolean): string {
   return on
     ? "Accepting analyses the study again with the efficiency models as one more choice of the " +
         "grid. The analysis in use stays LinRegPCR's mean efficiency until you decide its card. " +
-        "The cards of that analysis start undecided; your decisions here stay with this analysis " +
-        "and come back if you stop testing."
-    : "Accepting goes back to the analysis without the efficiency models, with the decisions " +
-        "you made there.";
+        "What you decided on the other cards is carried over, unless that choice matters more in " +
+        "the new analysis: then its card asks you again. Confirm the choices again afterwards."
+    : "Accepting goes back to the analysis without the efficiency models; what you decided on " +
+        "the cards is carried back the same way.";
 }
 
 /** Whether a choice.axis payload asks to test the axis (more than the primary option). */

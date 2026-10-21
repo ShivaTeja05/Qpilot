@@ -160,8 +160,9 @@ wells left out) and makes a new analysis, like an accepted Prism exclusion.
   waiting for a person show first, with **Approve** / **Turn down**.
 * **Choices carried to a new analysis.** When a person's decision changes a session's confirmed
   design after the curves are confirmed (an accepted Prism exclusion, a well left out or put
-  back), the session moves to another analysis of the file (`Studio._study`), whose design
-  differs only in the wells left out. What a person decided on the earlier analysis's cards is
+  back, the efficiency models switched on or off), the session moves to another analysis of the
+  file (`Studio._study`), whose design differs only in the wells left out or the further
+  choices tested. What a person decided on the earlier analysis's cards is
   carried to it (`StudyStore.carry_decisions`): one new
   chain entry per card, `actor` human, `applied`, reason `Carried from analysis <study> (entry
   <hash>): <the person's words>`, so the hashed entry names where it came from; the card shows
@@ -184,7 +185,8 @@ wells left out) and makes a new analysis, like an accepted Prism exclusion.
   **Propose testing the efficiency models** (`POST /api/sessions/{sid}/propose/axis`) adds a
   `choice.axis` proposal to the choices stage (the rule proposes, D-AXIS checks, a person accepts,
   edits the models with one switch each, or rejects); accepting analyses the study again with it,
-  and **Propose to stop testing them** goes back to the earlier analysis with its decisions. A
+  and **Propose to stop testing them** goes back to the earlier analysis; either way a person's
+  choices on the other cards are carried (above). A
   study analysed outside Studio shows `qpilot run --efficiency all` instead. Method card:
   `methods/efficiency_model.md`.
 

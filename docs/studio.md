@@ -79,7 +79,8 @@ or an agent), the page says so and shows the current inbox instead of acting on 
 After both blind stages are confirmed the page shows the results, the Decision Cards (the Choices
 stage; **Also test efficiency models** asks qPilot to propose one more choice of the grid, which
 efficiency turns each Cq into a quantity: accepting it analyses the study again with that choice,
-whose own card says what each model changes, and the design, so the record, names it; see
+whose own card says what each model changes, your choices on the other cards are carried to it,
+and the design, so the record, names it; see
 `methods/efficiency_model.md`), and the Prism project with a preview of its tables, test and graph (every biological unit
 with the group mean and its 95 % confidence interval, an approximation of what Prism draws), then
 **Send to Prism** and the round trip.
