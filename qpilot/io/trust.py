@@ -68,8 +68,8 @@ LABELS: dict[str, str] = {
 #: What each option does, in words (no numbers: the caps are levels).
 EFFECTS: dict[str, str] = {
     "reexport_raw": (
-        "Nothing here is analysed differently: this analysis stays the curves as imported, with "
-        "confidence capped at Moderate. Export the raw fluorescence and open it as a new study."
+        "Export the raw fluorescence and open it as a new study (how, below). Until then the "
+        "analysis here is the curves as imported, with confidence capped at Moderate."
     ),
     "analyse_as_is": (
         "LinRegPCR analyses the curves as they were exported. Confidence is capped at Moderate."
@@ -77,11 +77,10 @@ EFFECTS: dict[str, str] = {
     "cq_only": (
         "The curves are not used: each well's Cq is the instrument's and every cycle is assumed "
         "to double the product (the 2^-ΔΔCq assumption, efficiency not measured). Confidence is "
-        "capped at Low. The study is analysed again, and its Decision Cards start at their "
-        "recommended options."
+        "capped at Low."
     ),
 }
-QUESTION = "Whether the imported curves can be analysed as they are"
+QUESTION = "Can the imported curves be analysed as they are?"
 
 _AS_IS_REASON = {
     "baseline_subtracted": (

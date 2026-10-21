@@ -128,3 +128,58 @@ export function useModelAnswers(): boolean {
   });
   return Boolean(q.data?.answers);
 }
+
+// ---- the Import Trust card (qpilot/web/routers/trust.py) -----------------------------------
+
+const getTrust = (id: string) => unwrap(api.GET("/api/studies/{study_id}/import-trust", path(id)));
+
+export type TrustView = Awaited<ReturnType<typeof getTrust>>;
+export type TrustOption = TrustView["options"][number];
+export type TrustRequest = TrustView["requests"][number];
+export type TrustDecided = Awaited<ReturnType<typeof postTrust>>;
+
+const postTrust = (id: string, option: string, reason: string, inbox: string | null) =>
+  unwrap(
+    api.POST("/api/studies/{study_id}/import-trust/decide", {
+      ...path(id),
+      body: { option, reason, expected_inbox: inbox },
+    }),
+  );
+
+/** Whether the study's imported curves can be trusted as they are (Import Trust card). */
+export function useImportTrust(key: string, studyId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["w", key, "import-trust", studyId],
+    enabled: Boolean(studyId),
+    ...warmingRetry,
+    queryFn: () => getTrust(studyId!),
+  });
+}
+
+export type TrustWrite =
+  | { kind: "decide"; option: string; reason: string }
+  | { kind: "turn_down"; proposal: string; reason: string };
+
+/**
+ * A person's choice on the Import Trust card, or turning an agent's request down (a Studio
+ * session only; the server sets the actor). Cq only, or leaving it, starts the analysis of the
+ * changed design (`job`); every query of the workspace is read again when it settles.
+ */
+export function useTrustWrite(key: string, studyId: string, view: TrustView | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (w: TrustWrite): Promise<{ message: string }> => {
+      const inbox = view?.inbox_head ?? null;
+      if (w.kind === "decide") return postTrust(studyId, w.option, w.reason, inbox);
+      if (!inbox) throw new Error("Read the card again before turning the request down.");
+      const done = await unwrap(
+        api.POST("/api/sessions/{sid}/proposals/{pid}/reject", {
+          params: { path: { sid: key, pid: w.proposal } },
+          body: { reason: w.reason, expected_head: inbox },
+        }),
+      );
+      return { message: done.message };
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ["w", key] }),
+  });
+}

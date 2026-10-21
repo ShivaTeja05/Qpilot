@@ -275,6 +275,13 @@ export function ruleLabel(rule: unknown): string {
   return m ? `Cq ≤ ${m[1]}` : r;
 }
 
+/** The Import Trust card's options in words (`qpilot/io/trust.py` LABELS, lower-cased). */
+export const TRUST_WORDS: Record<string, string> = {
+  reexport_raw: "re-export the raw curves",
+  analyse_as_is: "analyse the curves as they are",
+  cq_only: "use the instrument's Cq values only",
+};
+
 type Payload = Record<string, unknown>;
 const str = (v: unknown) => String(v ?? "?");
 
@@ -323,6 +330,11 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     return d.excluded
       ? `Leave well ${s} out of the analysis`
       : `Put well ${s} back into the analysis`;
+  },
+  "curve.import_trust": (_s, d) => {
+    const words = TRUST_WORDS[String(d.option)];
+    if (!words) throw new Error("not an option of the Import Trust card");
+    return `Import Trust: ${words}`;
   },
   "prism.project": (_s, d) => {
     const genes =
@@ -394,6 +406,7 @@ export const KIND_TITLE: Record<Proposal["kind"], string> = {
   "curve.call_rule": "Amplification rule",
   "curve.well_call": "Well call",
   "curve.exclude_well": "Well exclusion",
+  "curve.import_trust": "Import Trust",
   "prism.project": "Prism project",
   "prism.exclusion_reason": "Exclusion in Prism",
   "prism.value_edit": "Value changed in Prism",

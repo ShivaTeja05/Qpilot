@@ -1809,6 +1809,52 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/import-trust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Import Trust
+         * @description Whether the study's imported curves can be trusted as they are, and who decided it.
+         */
+        get: operations["get_import_trust"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/import-trust/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide Import Trust
+         * @description A person chooses an option of the Import Trust card, with a reason (a Studio session).
+         *
+         *     Recorded in the session's inbox in one write; ``cq_only`` (or leaving it) analyses the
+         *     study again (the ``analyse`` job). Blind like every result; ``studio`` (409) for a study
+         *     analysed outside Studio, one whose curves call for no card, an option already chosen and
+         *     Cq only without instrument Cq values; ``stale`` (409) when the analysis or the inbox
+         *     changed since the view.
+         */
+        post: operations["decide_import_trust"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/planner": {
         parameters: {
             query?: never;
@@ -4107,6 +4153,12 @@ export type components = {
          * @description Were the curves processed before export, and what that means for the analysis.
          */
         CaptureRawness: {
+            /**
+             * Import Trust
+             * @description The verdict calls for the Import Trust card: a person decides on Results, once the blind is lifted, what it means for the analysis.
+             * @default false
+             */
+            import_trust: boolean;
             /**
              * Linregpcr Ok
              * @description The curves suit LinRegPCR's per-well efficiency.
@@ -6609,6 +6661,123 @@ export type components = {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * ImportTrustView
+         * @description ``GET /studies/{id}/import-trust``: the Import Trust card of a study, when it has one.
+         *
+         *     ``applies`` is false for every study whose curves call for no card (raw, normalised to a
+         *     passive reference, an RDML file, a study analysed outside Studio); ``why`` says so and the
+         *     other fields are empty. ``in_use`` is the option the analysis follows (the curves as
+         *     imported until a person decides), ``cap`` and ``cap_reason`` the cap on every gene's grade
+         *     at this analysis.
+         */
+        ImportTrustView: {
+            /** Applies */
+            applies: boolean;
+            /**
+             * Can Decide
+             * @description A person can decide it here (the session's analysis in use).
+             * @default false
+             */
+            can_decide: boolean;
+            /** Cap */
+            cap?: ("High" | "Moderate" | "Low" | "Very low") | null;
+            /**
+             * Cap Reason
+             * @default
+             */
+            cap_reason: string;
+            /**
+             * Card Id
+             * @default
+             */
+            card_id: string;
+            /**
+             * Connector Label
+             * @default
+             */
+            connector_label: string;
+            /**
+             * Decide Note
+             * @default
+             */
+            decide_note: string;
+            decision?: components["schemas"]["TrustDecisionView"] | null;
+            /** In Use */
+            in_use?: ("reexport_raw" | "analyse_as_is" | "cq_only") | null;
+            /**
+             * Inbox Head
+             * @description The session's inbox head (send it back as expected_inbox).
+             */
+            inbox_head?: string | null;
+            /**
+             * Kind
+             * @default
+             */
+            kind: string;
+            /**
+             * N Instrument Cq
+             * @description Wells with a Cq from the instrument.
+             * @default 0
+             */
+            n_instrument_cq: number;
+            /**
+             * N Wells
+             * @default 0
+             */
+            n_wells: number;
+            /**
+             * Options
+             * @default []
+             */
+            options: components["schemas"]["TrustOptionView"][];
+            /**
+             * Plates
+             * @default []
+             */
+            plates: components["schemas"]["TrustPlateView"][];
+            /**
+             * Question
+             * @default
+             */
+            question: string;
+            /**
+             * Recipe
+             * @description How to export the raw curves from this software.
+             * @default
+             */
+            recipe: string;
+            /**
+             * Requests
+             * @default []
+             */
+            requests: components["schemas"]["TrustRequestView"][];
+            /**
+             * Status
+             * @default none
+             * @enum {string}
+             */
+            status: "open" | "decided" | "pending_human" | "none";
+            /** Study Id */
+            study_id: string;
+            /** Verdict */
+            verdict?: string | null;
+            /**
+             * Verdict Meaning
+             * @default
+             */
+            verdict_meaning: string;
+            /**
+             * Verdict Title
+             * @default
+             */
+            verdict_title: string;
+            /**
+             * Why
+             * @default
+             */
+            why: string;
+        };
+        /**
          * InspectRun
          * @description One plate.
          */
@@ -8534,7 +8703,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
+            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
             /**
              * Level
              * @default Low
@@ -10615,6 +10784,159 @@ export type components = {
             result: components["schemas"]["TraceWithout"];
             /** Study Id */
             study_id: string;
+        };
+        /**
+         * TrustDecide
+         * @description ``POST /studies/{id}/import-trust/decide``: a person's choice on the card, with a reason.
+         */
+        TrustDecide: {
+            /**
+             * Expected Inbox
+             * @description The session's inbox head the view showed.
+             */
+            expected_inbox?: string | null;
+            /** Option */
+            option: string;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
+        /**
+         * TrustDecided
+         * @description What the choice did: recorded, and (for a new analysis) the study analysed again.
+         */
+        TrustDecided: {
+            /**
+             * Changed
+             * @description The analysis changed: the study is analysed again.
+             */
+            changed: boolean;
+            /** Inbox Head */
+            inbox_head: string;
+            /** @description The analysis of the changed design, when it changed. */
+            job?: components["schemas"]["JobView"] | null;
+            /** Message */
+            message: string;
+            /**
+             * Option
+             * @enum {string}
+             */
+            option: "reexport_raw" | "analyse_as_is" | "cq_only";
+            /**
+             * Status
+             * @constant
+             */
+            status: "decided";
+            /**
+             * Study Id
+             * @description The analysis the choice was made at.
+             */
+            study_id: string;
+        };
+        /**
+         * TrustDecisionView
+         * @description What a person last chose on the card (the session's record).
+         */
+        TrustDecisionView: {
+            /** Decided At */
+            decided_at: string;
+            /**
+             * Decided By
+             * @default human
+             * @constant
+             */
+            decided_by: "human";
+            /** Label */
+            label: string;
+            /**
+             * Option
+             * @enum {string}
+             */
+            option: "reexport_raw" | "analyse_as_is" | "cq_only";
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * TrustOptionView
+         * @description One option of the Import Trust card: what it does to the analysis and its cap.
+         */
+        TrustOptionView: {
+            /** Available */
+            available: boolean;
+            /**
+             * Cap
+             * @description The highest confidence any gene has under it.
+             * @enum {string}
+             */
+            cap: "High" | "Moderate" | "Low" | "Very low";
+            /**
+             * Cap Reason
+             * @description The cap's reason, as the genes' reasons say it.
+             */
+            cap_reason: string;
+            /**
+             * Effect
+             * @description What choosing it does to the analysis, in words.
+             */
+            effect: string;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "reexport_raw" | "analyse_as_is" | "cq_only";
+            /**
+             * In Use
+             * @description The option the analysis in use follows.
+             */
+            in_use: boolean;
+            /** Label */
+            label: string;
+            /**
+             * New Analysis
+             * @description Choosing it analyses the study again (its Decision Cards start over).
+             */
+            new_analysis: boolean;
+            /** Recommended */
+            recommended: boolean;
+            /**
+             * Why Not
+             * @description Why it cannot be chosen, when it cannot.
+             * @default
+             */
+            why_not: string;
+        };
+        /**
+         * TrustPlateView
+         * @description One plate of the import and its raw-ness verdict.
+         */
+        TrustPlateView: {
+            /** Run Id */
+            run_id: string;
+            /** Verdict */
+            verdict: string;
+        };
+        /**
+         * TrustRequestView
+         * @description An agent's request on the card, waiting for a person (asked over MCP).
+         */
+        TrustRequestView: {
+            /** Agent */
+            agent?: string | null;
+            /** At */
+            at: string;
+            /**
+             * Option
+             * @enum {string}
+             */
+            option: "reexport_raw" | "analyse_as_is" | "cq_only";
+            /** Option Label */
+            option_label: string;
+            /** Proposal Id */
+            proposal_id: string;
+            /** Reason */
+            reason: string;
         };
         /**
          * TurnDownBody
@@ -13894,6 +14216,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HistoryDiff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_import_trust: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportTrustView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_import_trust: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrustDecide"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrustDecided"];
                 };
             };
             /** @description Validation Error */

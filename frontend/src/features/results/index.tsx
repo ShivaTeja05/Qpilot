@@ -13,6 +13,7 @@ import { isWarming, useCards, useFlips, useResults, type ResultsView } from "./a
 import { ChoicesConfirm } from "./ChoicesConfirm";
 import { DecisionCards } from "./DecisionCards";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
+import { ImportTrustCard } from "./ImportTrust";
 import { MapPanel } from "./MapPanel";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
@@ -111,10 +112,16 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
     );
   }
   if (!studyId) {
+    // a confirmed session between analyses (a person's decision changed the design) says so
+    const step = workspace.next_step.section === "results" ? workspace.next_step : null;
     return (
       <div className="mx-auto max-w-3xl p-6 lg:p-10">
-        <EmptyState icon={<FlaskConical className="size-5" aria-hidden />} title="No analysis yet">
-          This workspace has no analysed study. Confirm the design and the curves to analyse it.
+        <EmptyState
+          icon={<FlaskConical className="size-5" aria-hidden />}
+          title={step?.title ?? "No analysis yet"}
+        >
+          {step?.detail ??
+            "This workspace has no analysed study. Confirm the design and the curves to analyse it."}
         </EmptyState>
       </div>
     );
@@ -162,6 +169,11 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
     </div>
   ) : (
     <div className="space-y-3">
+      <ImportTrustCard
+        workspaceKey={key}
+        studyId={studyId}
+        isSession={workspace.kind === "session"}
+      />
       <DecisionCards
         view={cards.data}
         workspaceKey={key}

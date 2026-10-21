@@ -139,6 +139,14 @@ export function ImportCard({ capture }: { capture: Capture | null | undefined })
             {capture.rawness.title}
           </p>
           <p className="mt-1 text-[13px] leading-relaxed text-fg">{capture.rawness.meaning}</p>
+          {capture.rawness.import_trust ? (
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">
+              Until a person decides what this means for the analysis, every gene's confidence is
+              capped at Moderate. That choice (re-export, analyse as they are, or the instrument's
+              Cq values only) is the Import Trust card on Results, once the design and the curves
+              are confirmed.
+            </p>
+          ) : null}
         </div>
 
         <KeyValues

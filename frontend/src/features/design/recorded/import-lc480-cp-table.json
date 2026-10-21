@@ -28,15 +28,25 @@
       "n_wells": 384,
       "n_reactions": 384,
       "n_cycles": 0,
-      "targets": ["465-510"],
-      "dyes": ["465-510"],
+      "targets": [
+        "465-510"
+      ],
+      "dyes": [
+        "465-510"
+      ],
       "sample_types": {
         "std": 21,
         "unkn": 363
       },
       "n_unmapped_types": 0,
       "n_with_vendor_cq": 370,
-      "vendor_omitted": ["D1", "F1", "H3", "L3", "N3"],
+      "vendor_omitted": [
+        "D1",
+        "F1",
+        "H3",
+        "L3",
+        "N3"
+      ],
       "value_kind": "unknown",
       "verdict": "cq_only"
     }
@@ -45,7 +55,8 @@
     "verdict": "cq_only",
     "title": "Cq values only",
     "meaning": "There are no curves to check: only the instrument's Cq values. Efficiency is assumed, not measured, so confidence is capped at Low.",
-    "linregpcr_ok": false
+    "linregpcr_ok": false,
+    "import_trust": false
   },
   "warnings": [
     {

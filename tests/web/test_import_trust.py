@@ -281,3 +281,21 @@ def test_the_decide_route_is_in_the_blind_sweep():
     from tests.web.test_redteam_blind import BODIES
 
     TrustDecide.model_validate(BODIES["decide"])  # a valid body: the gate answers, not a 422
+
+
+def test_an_agents_request_accepted_in_the_curves_inbox_needs_a_reason(trusted):
+    c, study, sid, store = trusted["client"], trusted["study"], trusted["sid"], trusted["store"]
+    out = QpilotTools(store).qpcr_decide(study, "card_import_trust", "cq_only", "Delta Rn")
+    (pid,) = (p["id"] for p in out["proposals"])
+    url = f"/api/sessions/{sid}/proposals/{pid}/accept"
+    head = trusted["studio"].head(sid)
+    r = c.post(url, json={"reason": "", "expected_head": head})
+    assert r.status_code == 422 and "imported curves" in r.json()["error"]["message"]
+    r = c.post(url, json={"reason": REASON, "expected_head": head})
+    assert r.status_code == 200, r.text
+    assert "Import Trust: use the instrument's Cq values only" in r.json()["message"]
+    listed = c.get(f"/api/sessions/{sid}/proposals", params={"stage": "curves"}).json()
+    (mine,) = (p for p in listed["proposals"] if p["id"] == pid)
+    assert mine["status"] == "accepted"
+    frame = c.get(f"/api/sessions/{sid}").json()
+    assert frame["results_visible"]  # accepting it never re-opens the blind stages
