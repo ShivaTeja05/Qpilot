@@ -82,7 +82,13 @@ TOOL_ACCESS: dict[str, tuple[ToolAccess, str]] = {
         "request",
         "Asks to decide a Decision Card, recorded as the agent's. A choice that can change a "
         "conclusion always waits for a person; any other choice is applied only when the "
-        "study lets agents decide and tell, and otherwise waits too.",
+        "study lets agents decide and tell, and otherwise waits too. On a card from the "
+        "controls (Run Gate) the request is filed as well exclusions in the Studio inbox, for a "
+        "person to approve or turn down.",
+    ),
+    "qpcr_gate": (
+        "read",
+        "Nothing: the controls are checked and the answer is not stored.",
     ),
     "qpcr_plan": ("read", "Nothing."),
     "qpcr_propose": (

@@ -51,6 +51,13 @@ WORDS = {
     "exclusion_reason": (
         "Say why this value was excluded in Prism (the reason is kept in the record)."
     ),
+    "reason:prism.exclusion_reason": (
+        "Say why this value was excluded in Prism (the reason is kept in the record)."
+    ),
+    "reason:curve.exclude_well": (
+        "Say why this well is left out of the analysis, or put back (the reason is kept in "
+        "the record)."
+    ),
     "edit_nothing": "Nothing was changed; use Accept to accept the proposal as it is.",
     "edit_not_object": "The edited payload must be a JSON object; nothing was changed.",
     "stale": (

@@ -305,9 +305,8 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
   const pending = p.status === "proposed";
   const contradicted = p.check.status === "contradicted";
   // The server refuses an exclusion accepted without a reason; ask for it here.
-  const needs = new Set<ProposalAction>(
-    requireReason ?? (p.kind === "prism.exclusion_reason" ? ["accept", "edit"] : []),
-  );
+  const exclusion = p.kind === "prism.exclusion_reason" || p.kind === "curve.exclude_well";
+  const needs = new Set<ProposalAction>(requireReason ?? (exclusion ? ["accept", "edit"] : []));
   const acceptNeedsReason = needs.has("accept");
   const labels: Partial<Record<ProposalAction, string>> = {
     ...(p.kind === "prism.exclusion_reason"
@@ -315,7 +314,12 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
           accept: "Say why this value was excluded in Prism (kept in the record).",
           edit: "Say why (kept in the record).",
         }
-      : {}),
+      : p.kind === "curve.exclude_well"
+        ? {
+            accept: "Say why this well is left out, or put back (kept in the record).",
+            edit: "Say why (kept in the record).",
+          }
+        : {}),
     ...reasonLabels,
   };
   const blind = isBlindKind(p);

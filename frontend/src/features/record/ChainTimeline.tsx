@@ -277,6 +277,7 @@ function TimelineEntry({
           <div className="flex shrink-0 items-center gap-1.5">
             {isHead ? <Badge tone="accent">Head</Badge> : null}
             {entry.undo ? <Badge tone="info">Undo</Badge> : null}
+            {entry.carried ? <Badge tone="info">Carried</Badge> : null}
             <Tooltip content={status.meaning}>
               <Badge tone={status.tone} tabIndex={0}>
                 {status.word}
@@ -303,6 +304,26 @@ function TimelineEntry({
           <blockquote className="mt-2 border-l-2 border-line-strong pl-3 text-[13px] text-fg">
             {entry.reason}
           </blockquote>
+        ) : null}
+
+        {entry.carried ? (
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted">
+            <span>
+              Carried from analysis{" "}
+              <span className="font-mono text-fg">{entry.carried.study_id}</span>, where a person
+              decided it:
+            </span>
+            <Hash value={entry.carried.entry_hash} prefix="entry" />
+            {entry.carried.found ? (
+              <span className="inline-flex items-center gap-1 text-ok">
+                <Link2 className="size-3" aria-hidden /> found there
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-danger">
+                <Unlink className="size-3" aria-hidden /> not found there
+              </span>
+            )}
+          </p>
         ) : null}
 
         <footer className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">

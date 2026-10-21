@@ -318,6 +318,12 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     if (typeof d.amplified !== "boolean") throw new Error("amplified must be boolean");
     return `Count well ${s} as ${d.amplified ? "amplified" : "not amplified (no usable curve)"}`;
   },
+  "curve.exclude_well": (s, d) => {
+    if (typeof d.excluded !== "boolean") throw new Error("excluded must be boolean");
+    return d.excluded
+      ? `Leave well ${s} out of the analysis`
+      : `Put well ${s} back into the analysis`;
+  },
   "prism.project": (_s, d) => {
     const genes =
       Array.isArray(d.genes) && d.genes.length
@@ -387,6 +393,7 @@ export const KIND_TITLE: Record<Proposal["kind"], string> = {
   "design.dilution_series": "Dilution series",
   "curve.call_rule": "Amplification rule",
   "curve.well_call": "Well call",
+  "curve.exclude_well": "Well exclusion",
   "prism.project": "Prism project",
   "prism.exclusion_reason": "Exclusion in Prism",
   "prism.value_edit": "Value changed in Prism",

@@ -2,8 +2,9 @@
  * Controls (Run Gate, docs/app.md §4): every plate's controls checked against the rule pack, and
  * whether leaving out the wells a rule points at would change any conclusion. The headline, the
  * plate strip (gated / ungated, worst verdict), the rule checks (verdict chip, reason, wells,
- * consequence), what leaving wells out changes, and the `gate.rule` Decision Cards, read-only.
- * Rules label; nothing on this page changes the analysis.
+ * consequence), what leaving wells out changes, and the `gate.rule` Decision Cards. Rules label;
+ * in a Studio session a person decides the cards here (the wells become curve exclusions and the
+ * study is analysed again); a study analysed outside Studio is read-only.
  */
 import { ListChecks } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
@@ -23,7 +24,7 @@ import {
   PageHeader,
   Skeleton,
 } from "@/ui";
-import { scopeOf, useGate, loadingJob, type GateView } from "./api";
+import { scopeOf, useGate, loadingJob, type GateScope, type GateView } from "./api";
 import { GateCards } from "./Cards";
 import { ClassChip, PlateStrip, VerdictCounts } from "./Pieces";
 import { RuleList } from "./Rules";
@@ -40,7 +41,7 @@ function Header({ view }: { view?: GateView }) {
     <PageHeader
       eyebrow="Controls"
       title="What the controls on each plate say"
-      hint="Every plate's controls checked against a rule pack, and whether leaving out the wells a rule points at would change any conclusion. Rules label; nothing here changes your analysis."
+      hint="Every plate's controls checked against a rule pack, and whether leaving out the wells a rule points at would change any conclusion. Rules label; only a person decides what a finding means for the analysis."
       actions={
         view ? (
           <span className="text-[12px] text-muted">
@@ -158,7 +159,15 @@ function PackRules({ view }: { view: GateView }) {
   );
 }
 
-export function GatePage({ view, workspace }: { view: GateView; workspace: Workspace }) {
+export function GatePage({
+  view,
+  workspace,
+  scope,
+}: {
+  view: GateView;
+  workspace: Workspace;
+  scope?: GateScope;
+}) {
   const [filter, setFilter] = useState<RuleFilter>(DEFAULT_FILTER);
   const [focus, setFocus] = useState<string | null>(null);
   const open = (id: string) => {
@@ -182,7 +191,7 @@ export function GatePage({ view, workspace }: { view: GateView; workspace: Works
                 href={sectionPath(workspace, "curves")}
                 className="font-medium text-accent hover:underline"
               >
-                Go to Curves
+                See the exclusions in Curves
               </Link>
             ) : (
               <Link
@@ -215,7 +224,7 @@ export function GatePage({ view, workspace }: { view: GateView; workspace: Works
           <Consequences view={view} onOpen={open} />
         </div>
         <div className="flex min-w-0 flex-col gap-5">
-          <GateCards view={view} workspace={workspace} />
+          <GateCards view={view} workspace={workspace} scope={scope} />
           <PackRules view={view} />
         </div>
       </div>
@@ -227,6 +236,22 @@ export default function GateSection({ workspace }: SectionProps) {
   const scope = useMemo(() => (workspace ? scopeOf(workspace) : null), [workspace]);
   const q = useGate(scope ?? { key: "", studyId: null, kind: "study" });
   if (!workspace || !scope) return null;
+  if (!scope.studyId && workspace.results_visible) {
+    // A person's decision changed the design: the study is analysed again before it is gated.
+    const job = workspace.active_jobs.find((j) => j.kind === "analyse");
+    return (
+      <Page>
+        <Header />
+        <div className="flex flex-col gap-2" role="status">
+          <p className="text-[13px] text-muted">
+            The study is being analysed again with the decision you made; its controls are checked
+            at the new analysis as soon as it is done.
+          </p>
+          {job && <JobCard id={job.id} job={null} />}
+        </div>
+      </Page>
+    );
+  }
   if (!scope.studyId) {
     return (
       <Page>
@@ -256,7 +281,7 @@ export default function GateSection({ workspace }: SectionProps) {
   }
   return (
     <Page>
-      <GatePage view={q.data} workspace={workspace} />
+      <GatePage view={q.data} workspace={workspace} scope={scope} />
     </Page>
   );
 }

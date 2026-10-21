@@ -24,6 +24,8 @@ export interface ChainEntry {
   at: string;
   /** Written by Undo (a new entry restoring the option before). */
   undo?: boolean;
+  /** A person's decision carried from an earlier analysis of the file (its entry there, checked). */
+  carried?: Schemas["CarriedFrom"] | null;
 }
 
 /** `GET /api/studies/{id}/decisions` as the server sends it (`qpilot/web/contract.py`). */
@@ -54,6 +56,7 @@ export function fromApi(view: DecisionsApi): DecisionsView {
     card_title: e.card_title,
     option_label: e.option_label,
     undo: e.undo,
+    carried: e.carried ?? null,
   }));
   return {
     study_id: view.study_id,

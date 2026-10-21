@@ -93,6 +93,7 @@ SPECS: dict[str, ToolSpec] = {
         idempotent=False,
         links=("decisions.jsonl",),
     ),
+    "qpcr_gate": _read("Read what the controls say (Run Gate)", o.GateOut),
     "qpcr_plan": _read("Plan samples per group", o.PlanOut),
     "qpcr_propose": ToolSpec(
         "Propose a design item for a person", o.ProposeOut, read_only=False, idempotent=False

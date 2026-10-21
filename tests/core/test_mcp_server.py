@@ -162,7 +162,7 @@ def test_server_registers_every_served_tool(tmp_studies_dir):
 
 
 def test_the_simulator_tools_follow_the_simulator(tmp_studies_dir, monkeypatch):
-    """Without qsim the server lists the eleven qpcr_* tools and nothing breaks; with it, sim_*."""
+    """Without qsim the server lists the twelve qpcr_* tools and nothing breaks; with it, sim_*."""
     from qpilot.integration import simulator as sim
     from qpilot.integration.mcp_tools import SIM_TOOL_NAMES
 
@@ -186,7 +186,7 @@ def test_serve_list_tools_prints_what_is_served(capsys, monkeypatch):
     assert main(["serve", "--list-tools"]) == 0
     out = capsys.readouterr()
     assert out.out.split() == list(TOOL_NAMES)
-    assert "11 tools" in out.err and "not installed" in out.err
+    assert "12 tools" in out.err and "not installed" in out.err
 
 
 # ---- real stdio round trip ---------------------------------------------------------------
@@ -269,7 +269,7 @@ def test_an_unknown_card_is_named_exactly(tmp_studies_dir, fixture_result, fixtu
 
 
 def test_stdio_without_the_simulator_lists_the_qpcr_tools_and_says_why(tmp_studies_dir, tmp_path):
-    """`import qsim` fails in the served process: eleven tools, no crash, a note on stderr."""
+    """`import qsim` fails in the served process: twelve tools, no crash, a note on stderr."""
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
 

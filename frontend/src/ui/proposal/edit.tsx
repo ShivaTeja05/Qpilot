@@ -350,6 +350,20 @@ export function PayloadEditor({
         </Field>
       );
     }
+    case "curve.exclude_well":
+      return (
+        <Field label={`Well ${s}`}>
+          <SegmentedControl
+            label={`Well ${s} in the analysis`}
+            value={value.excluded === true ? "out" : "in"}
+            onValueChange={(v) => set("excluded", v === "out")}
+            options={[
+              { value: "out", label: "Left out" },
+              { value: "in", label: "In the analysis" },
+            ]}
+          />
+        </Field>
+      );
     case "curve.well_call":
       return (
         <Field label={`Well ${s}`}>
@@ -448,6 +462,8 @@ function shortReading(p: Pick<Proposal, "kind">, d: Payload): string {
       return ruleLabel(d.rule);
     case "curve.well_call":
       return d.amplified ? "Amplified" : "Not amplified";
+    case "curve.exclude_well":
+      return d.excluded ? "Left out" : "In the analysis";
     case "design.comparison":
       return `${String(d.group_a)} vs ${String(d.group_b)}`;
     case "design.group":

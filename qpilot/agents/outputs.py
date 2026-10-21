@@ -181,7 +181,36 @@ class DecideOut(_Open):
     code: str | None = Field(None, description="Why it was not applied (a refusal code).")
     fix: str | None = None
     error: str | None = Field(None, description="Set when stale (MCP isError): the reason.")
+    proposals: list[dict[str, Any]] | None = Field(
+        None, description="On a Run Gate card: the agent's curve.exclude_well proposals filed."
+    )
     idempotent_replay: bool | None = None
+
+
+class GateCheck(_Open):
+    """One rule check that warns or fails, with what leaving its wells out changes."""
+
+    id: str
+    card_id: str
+    rule_id: str
+    verdict: str
+    consequence: str
+    triage: str
+    scope: dict[str, str]
+    options: list[dict[str, Any]]
+
+
+class GateOut(_Open):
+    """``qpcr_gate``: what each plate's controls say, and the cards only a person decides."""
+
+    study_id: str
+    studio_session: str | None
+    pack: dict[str, str]
+    counts: dict[str, int]
+    plates: dict[str, str] = Field(description="Plate -> gated or ungated.")
+    checks: list[GateCheck]
+    cards: list[CardView]
+    how_to_decide: str
 
 
 class PlanOut(_Open):
@@ -323,6 +352,8 @@ __all__ = [
     "ContrastView",
     "CurveCallsOut",
     "DecideOut",
+    "GateCheck",
+    "GateOut",
     "ImportView",
     "InspectOut",
     "PlanOut",

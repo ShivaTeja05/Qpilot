@@ -508,6 +508,15 @@ def _apply(
         if not isinstance(amplified, bool):
             raise DesignError(f"amplified must be true or false, not {amplified!r}")
         data["well_calls"][subject] = amplified
+    elif kind == "curve.exclude_well":
+        excluded = payload["excluded"]
+        if not isinstance(excluded, bool):
+            raise DesignError(f"excluded must be true or false, not {excluded!r}")
+        if not _WELL_KEY.match(subject):
+            raise DesignError(f"a well is named '<run_id>/<well>', not {subject!r}")
+        current = set(data["excluded_wells"])
+        current = current | {subject} if excluded else current - {subject}
+        data["excluded_wells"] = tuple(sorted(current))
     elif kind == "prism.exclusion_reason":
         _exclusion(data, payload, curves)
     return data  # prism.project and prism.value_edit do not change the design

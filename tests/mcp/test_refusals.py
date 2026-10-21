@@ -438,6 +438,8 @@ STUDIO_SENTENCES = [
     ("no well of this target in the analysed experiment", "unknown_item"),
     ("no curve for this well in the analysed experiment", "unknown_item"),
     ("this bundle was not sent to Prism from this session", "invalid_argument"),
+    ("these wells are already left out of the analysis", "invalid_argument"),
+    ("nothing to decide: none of these wells is in the analysis", "invalid_argument"),
     ("a sentence qPilot Studio does not say yet", "engine_refused"),
 ]
 

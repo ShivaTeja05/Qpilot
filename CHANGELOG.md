@@ -18,8 +18,34 @@ research use only, not for clinical decisions.
   `qpilot/qpcr/gate_rules.py`, `packs/research-default.yaml`, `GET /api/studies/{id}/gate`): every
   plate's controls checked against a rule pack (G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD,
   G-REP), and for each rule that warns or fails, whether leaving out the wells it points at would
-  change a conclusion. Rules label; nothing is applied. Agreement with an independent oracle on
-  the demo: `validation/scientist/`.
+  change a conclusion. Rules label; a person decides (below). Agreement with an independent
+  oracle on the demo: `validation/scientist/`.
+- **Choices carried to a new analysis** (`StudyStore.carry_decisions`, `Studio._study`): when a
+  person's decision changes a Studio session's confirmed design after the curves are confirmed
+  (a Prism exclusion, a well left out or put back), what a person chose on the earlier
+  analysis's Decision Cards is carried to the new one as new chain entries by `human` whose
+  reason names the earlier study and entry (`Carried from analysis <study> (entry <hash>): …`).
+  Not carried: the system's and agents' decisions, a missing card or option, a card with an
+  agent's request waiting, and a choice that matters more in the new analysis (asked again,
+  with what the person chose). Only between analyses whose designs differ in the wells left out
+  (a design changed in a blind stage starts afresh). The choices stage is confirmed again by a
+  person. Results
+  (**Carried**, the earlier choice on a card asked again), the Record's chain and History (the
+  carried step, its link checked, and what was carried or asked again) say so.
+- **Deciding a Run Gate card** (`POST /api/studies/{id}/gate/cards/{card_id}/decide`,
+  `Studio.decide_gate`): in a Studio session a person chooses an option of a `gate.rule` card
+  with a reason. Leaving wells out becomes one `curve.exclude_well` proposal per well (a new
+  Curves kind: a well left out of, or put back into, the analysis; accepted only with a reason),
+  proposed by Run Gate's rule and accepted by the person in one write to the session's
+  hash-chained inbox; the study is analysed again and the gate reads the new analysis ("already
+  left out", who decided and why, Put the wells back). Keeping every well is recorded. A study
+  analysed outside Studio says its wells are left out by opening its file in Studio. History
+  names the click that made each analysis.
+- MCP `qpcr_gate` (read-only): the controls, the consequence tests and the `card_gate_*` cards;
+  `qpcr_decide` on a gate card is always `pending_human`, filed as the agent's exclusions for a
+  person to approve or turn down on the card.
+- `ProposalStore.decide_together`: one click of a person that proposes and decides several
+  proposals in one locked write, all or nothing.
 - **The MCP tools' contract for agents** (`qpilot/agents/`): every refusal carries `error`, a
   stable `code` and a `fix` and is marked `isError` (a stale decide and a refused proposal too);
   `pending_human` says why it waits (`needs_human_decision`, `autonomy_forbids`) and is not an
@@ -27,7 +53,8 @@ research use only, not for clinical decisions.
   back and is never logged twice. Every tool has a title, honest annotations and an output schema
   each successful reply is checked against; `response_format="concise"` on the reading tools;
   `fact_ids` on the study's numbers; the study's files as read-only MCP resources. The human-only
-  rule is unchanged. See `docs/agents.md`.
+  rule is unchanged, and a request on a Run Gate card gets the same codes and keys. See
+  `docs/agents.md`.
 - `qpcr_inspect` and `qpcr_study` read instrument exports (a file, or the folder of one export
   set) inside `QPILOT_DATA_ROOTS`, as the page's Open does: converted once into the study store,
   the import kept with the session, `imported` in the reply (reader, raw-ness, warnings). An
