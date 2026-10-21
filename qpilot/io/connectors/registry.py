@@ -411,6 +411,7 @@ def _plate_meta(plate: PlateData, box: TextBox, origin: str) -> PlateMeta:
         n_with_melt=sum(1 for r in reactions if r.melt is not None),
         vendor_omitted=[builder.well_name(r, c) for r, c in omitted],
         value_kind=plate.value_kind,
+        sources=list(dict.fromkeys(name for name, _ in plate.sources)),
     )
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import tomllib
 from pathlib import Path
@@ -61,19 +62,31 @@ def minimal(**replace: str) -> str:
 # ---------- the shipped pack ----------
 
 
+#: The rules of research-default 1.0.0 (before G-RT and G-INSTR joined the pack in 1.1.0).
+RULES_1_0 = ("G-TYPED", "G-NTC-1", "G-NAC", "G-NRT", "G-POS", "G-STD", "G-REP")
+#: sha256 of those rules, the sources they cite and the consequence thresholds, taken from the
+#: 1.0.0 pack: 1.1.0 adds rules and sources and changes none of these.
+RULES_1_0_HASH = "1d97abd5a41d362c115e45b293583cb484580d8fa8fe603795dcd80faf0c4368"
+
+
+def rules_part_hash(pack, ids) -> str:
+    rules = [r.model_dump(mode="json") for r in pack.rules if r.id in ids]
+    cited = {s for r in rules for s in r["sources"]}
+    data = {
+        "rules": rules,
+        "sources": {k: v.model_dump(mode="json") for k, v in pack.sources.items() if k in cited},
+        "consequence": pack.consequence.model_dump(mode="json"),
+    }
+    text = json.dumps(data, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def test_the_shipped_pack_loads_and_matches_this_builds_evaluators():
     pack = resolve_pack()
-    assert pack.pack == "research-default" and pack.version == "1.0.0"
+    assert pack.pack == "research-default" and pack.version == "1.1.0"
     assert "research use" in pack.label.lower()
-    assert [r.id for r in pack.rules] == [
-        "G-TYPED",
-        "G-NTC-1",
-        "G-NAC",
-        "G-NRT",
-        "G-POS",
-        "G-STD",
-        "G-REP",
-    ]
+    assert [r.id for r in pack.rules] == [*RULES_1_0, "G-RT", "G-INSTR"]
+    assert rules_part_hash(pack, RULES_1_0) == RULES_1_0_HASH
     assert check_pack_against(pack, CHECKS) == []
     for rule in pack.rules:
         assert rule.sources and all(s in pack.sources for s in rule.sources)
@@ -93,7 +106,7 @@ def test_the_pack_hash_is_of_its_content_not_its_bytes():
     # a threshold does
     edited = override(pack, "1.0.1", params={"G-NTC-1": {"k_cycles": 4}})
     assert edited.hash != pack.hash
-    assert pack.ref() == {"pack": "research-default", "version": "1.0.0", "hash": pack.hash}
+    assert pack.ref() == {"pack": "research-default", "version": "1.1.0", "hash": pack.hash}
     # the canonical JSON a record keeps loads back to the same pack
     assert pack_from_json(core_rules.canonical_pack_json(pack)).hash == pack.hash
     # and the YAML a lab saves loads back too

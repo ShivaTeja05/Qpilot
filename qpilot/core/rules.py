@@ -55,7 +55,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 Verdict = Literal["pass", "warn", "fail", "not_applicable"]
 Severity = Literal["pass", "warn", "fail"]
 Action = Literal["log", "card", "invalidate_plate"]
-Scope = Literal["study", "plate", "target", "sample", "well"]
+Scope = Literal["study", "plate", "target", "sample", "unit", "well"]
 
 VERDICTS: tuple[str, ...] = ("pass", "warn", "fail", "not_applicable")
 NOT_APPLICABLE = "not_applicable"

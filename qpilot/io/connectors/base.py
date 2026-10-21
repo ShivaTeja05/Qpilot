@@ -257,6 +257,9 @@ class PlateMeta(BaseModel):
     n_with_melt: int = 0
     vendor_omitted: list[str] = []
     value_kind: str = "unknown"
+    sources: list[str] = Field(
+        default=[], description="The names of the input files this plate was read from."
+    )
 
 
 class HeaderItem(BaseModel):

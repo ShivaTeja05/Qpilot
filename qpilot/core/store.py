@@ -1146,8 +1146,9 @@ class StudyStore:
 
         The Evidence Ledger (``qpcr.evidence.evidence_store``) and one run context per RDML run
         (``qpcr.instrument_context.run_contexts_from_rdml``, in its ``model_view()`` shape: no
-        serial, alias or local fact ever enters the file). Neither touches the analysis outputs,
-        and a failure only skips that file, with a logged note: the analysis stands.
+        serial, alias, local fact or file name ever enters the file). Neither touches the
+        analysis outputs, and a failure only skips that file, with a logged note: the analysis
+        stands.
         """
         try:
             from qpilot.qpcr.evidence import evidence_store  # documented lazy import

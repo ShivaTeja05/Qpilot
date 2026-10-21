@@ -13,19 +13,26 @@ standards' declared quantities. A well "amplified" when LinRegPCR says so and gi
 (the engine's primary call, never the vendor's "Undetermined").
 
 Checks in this module: ``typed_controls`` (G-TYPED), ``ntc_gap`` (G-NTC-1), ``nac_amplified``
-(G-NAC), ``nrt_gdna`` (G-NRT), ``pos_window`` (G-POS), ``std_curve`` (G-STD) and
-``replicate_spread`` (G-REP). Rules label; they never drop a well. What leaving wells out would
-do is the consequence test (:func:`run_gate`).
+(G-NAC), ``nrt_gdna`` (G-NRT), ``pos_window`` (G-POS), ``std_curve`` (G-STD),
+``replicate_spread`` (G-REP), and two gate lines of origin/main read as rules of the pack:
+``rt_replicate_spread`` (G-RT: the Cq range between reverse-transcription replicates of one
+biological unit, from the design's ``rt_replicate`` labels; ranges as :mod:`qpilot.qpcr.gate_rt`
+computes them) and ``instrument_run`` (G-INSTR: what each plate's run file says about the run
+and the instrument, the lines of :mod:`qpilot.qpcr.gate_instr`, read from a run file a person
+linked to the plate, else the plate's run file in the instrument export the study was opened
+from, else the study's own file). Rules label; they never drop a well. What leaving wells out
+would do is the consequence test (:func:`run_gate`).
 """
 
 from __future__ import annotations
 
 import hashlib
 import math
+import re
 from collections.abc import Collection, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -40,10 +47,15 @@ from qpilot.core.rules import (
     Rule,
     RuleEval,
     RulePack,
+    Severity,
     evaluate_pack,
     load_pack,
     pack_from_json,
 )
+from qpilot.core.validator import TOKEN
+from qpilot.qpcr.gate_instr import DEFAULT_HOLD_LIMIT_C
+from qpilot.qpcr.gate_rt import RT_RANGE_LIMIT
+from qpilot.qpcr.instrument_context import RunContext
 from qpilot.qpcr.quant import EXCLUDED
 from qpilot.schemas import Fact
 
@@ -61,14 +73,49 @@ ALREADY_LEFT_OUT = "These wells are already left out of the analysis."
 # ---------- context ----------
 
 
+#: Where a plate's run file comes from (G-INSTR), in the order one takes another's place.
+RunSource = Literal["study_file", "export", "linked"]
+
+
+@dataclass(frozen=True)
+class RunFile:
+    """What one plate's run file says (G-INSTR), and where qPilot read it.
+
+    ``source`` is ``linked`` for a run file a person linked to the plate (an ``.eds`` or an
+    export the instrument wrote), ``export`` for the plate's own run file in the instrument
+    export a Studio session was opened from (a QuantStudio results export, CFX run information:
+    :mod:`qpilot.qpcr.export_runs`), ``study_file`` for the study's own file (RDML: the
+    instrument and the run date at most). ``study_date`` is the plate's run date in the file a
+    linked one takes the place of, when known, so a linked file whose run date differs is said.
+    A linked file that cannot be read has no ``context`` and says why (``problem``:
+    ``missing``, ``changed`` or ``unreadable``).
+    """
+
+    context: RunContext | None
+    source: RunSource = "study_file"
+    study_date: str | None = None
+    problem: str = ""
+
+    @property
+    def linked(self) -> bool:
+        """Whether a person linked this run file to the plate."""
+        return self.source == "linked"
+
+
 @dataclass
 class GateContext:
-    """What the evaluators read. ``facts`` collects every number they show."""
+    """What the evaluators read. ``facts`` collects every number they show.
+
+    ``design`` is the confirmed design (its ``rt_replicate`` labels, for G-RT); ``runs`` maps a
+    plate to its :class:`RunFile` (for G-INSTR), ``None`` when no run context was given.
+    """
 
     table: pd.DataFrame
     quantities: Mapping[tuple[str, str], float] = field(default_factory=dict)
     rawness: str | None = None
     confirmed_no_controls: frozenset[str] = frozenset()
+    design: Any = None
+    runs: Mapping[str, RunFile] | None = None
     facts: FactRegistry = field(default_factory=FactRegistry)
     _std_fits: dict[tuple[str, str], dict[str, Any]] = field(default_factory=dict)
 
@@ -696,6 +743,324 @@ def replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
             )
 
 
+# ---------- G-RT ----------
+
+RT_OUTCOMES: dict[str, Severity] = {"rt_within_limit": "pass", "rt_over_limit": "warn"}
+
+
+def rt_replicate_spread(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
+    """RT-replicate Cq range per biological unit and target (G-RT; ranges of ``qpcr.gate_rt``).
+
+    Every study well of an RT-labelled sample counts, including wells a person left out, so the
+    check stays where the decision was made (its option then says the wells are already left
+    out); the Evidence Ledger's G-RT line counts only the wells in use.
+    """
+    from qpilot.qpcr.gate_rt import rt_labels, rt_means, rt_ranges, rt_replicate_wells
+
+    limit = _param(rule, "limit_cycles", RT_RANGE_LIMIT)
+    if not math.isfinite(limit) or limit <= 0:
+        raise ValueError(f"rule {rule.id}: limit_cycles must be a positive number of cycles")
+    if not rt_labels(ctx.design):
+        yield _na(
+            {},
+            "rt_not_annotated",
+            "No reverse-transcription replicates are annotated in the design, so the spread of "
+            "reverse transcription is not measured. Samples of one biological unit that were "
+            "reverse-transcribed separately from the same RNA are marked in the sample sheet's "
+            "rt_replicate column.",
+        )
+        return
+    wells = rt_replicate_wells(ctx.table, ctx.design, include_excluded=True)
+    ranges = rt_ranges(wells)
+    if ranges.empty:
+        yield _na(
+            {},
+            "rt_not_measurable",
+            "Reverse-transcription replicates are annotated, but no biological unit has two of "
+            "them with study wells for one target.",
+        )
+        return
+    means = rt_means(wells)
+    cycles = "cycle" if limit == 1 else "cycles"
+    for row in ranges.itertuples(index=False):
+        unit, target = str(row.unit), str(row.target)
+        scope = {"unit": unit, "target": target}
+        mine = wells[(wells["unit"] == unit) & (wells["target"] == target)]
+        keys = sorted(mine["key"])
+        if not math.isfinite(row.range):
+            yield _na(
+                scope,
+                "too_few_measured",
+                "Fewer than two of this unit's reverse-transcription replicates have a Cq for "
+                "this target.",
+            )
+            continue
+        f_n = ctx.fact(rule, scope, "nrt", int(row.n_measured))
+        f_r = ctx.fact(rule, scope, "rtrange", float(row.range), "{:.2f}")
+        f_l = ctx.fact(rule, scope, "rtlimit", limit, "{:g}")
+        over = bool(row.range >= limit)
+        reason = (
+            f"The {{{{{f_n}}}}} reverse-transcription replicates of this unit span "
+            f"{{{{{f_r}}}}} cycles for this target (each the mean Cq of its wells); the limit is "
+            f"{{{{{f_l}}}}} {cycles}."
+        )
+        if over:
+            reason += (
+                " At or above the limit, reverse transcription differed between them more than "
+                "the criterion allows; whether it matters is the consequence test's answer."
+            )
+        options = {"exclude_unit_target": keys}
+        farthest = ""
+        if row.n_measured >= 3:
+            rts = means.loc[(unit, target)].dropna()
+            gap = (rts - float(rts.median())).abs()
+            farthest = str(gap.sort_values(ascending=False, kind="stable").index[0])
+            options["drop_rt_replicate"] = sorted(mine.loc[mine["rt"] == farthest, "key"])
+        yield Finding(
+            scope=scope,
+            outcome="rt_over_limit" if over else "rt_within_limit",
+            reason=reason,
+            facts=[f_n, f_r, f_l],
+            evidence={
+                "range": float(row.range),
+                "limit_cycles": limit,
+                "n_rt": int(row.n_rt),
+                "n_measured": int(row.n_measured),
+                "cq_min": float(row.cq_min),
+                "cq_max": float(row.cq_max),
+                "farthest_rt": farthest,
+            },
+            flagged=keys if over else [],
+            options=options if over else {},
+        )
+
+
+# ---------- G-INSTR ----------
+
+#: G-INSTR's codes that give a verdict. Its information lines are warnings here (an expired
+#: calibration is a fact to weigh, so the consequence test prices it); "calibration date not in
+#: the file" and "nothing to check" give none.
+INSTR_OUTCOMES: dict[str, Severity] = {
+    "run_complete": "pass",
+    "run_not_complete": "warn",
+    "interrupted": "warn",
+    "aborted_in_log": "warn",
+    "power_event": "warn",
+    "no_interruptions": "pass",
+    "calibration_expired": "warn",
+    "calibrations_in_date": "pass",
+    "hold_off_setpoint": "warn",
+    "hold_on_setpoint": "pass",
+}
+_SEVERITY_RANK = {"pass": 0, "warn": 1, "fail": 2}
+LINK_PROBLEMS = {
+    "missing": "The run file a person linked to this plate is no longer where qPilot kept it: "
+    "link it again to check the run.",
+    "changed": "The run file a person linked to this plate has changed since it was linked, so "
+    "it is not read: link it again to check the run.",
+    "unreadable": "The run file a person linked to this plate cannot be read any more: link it "
+    "again to check the run.",
+}
+RDML_SAYS_LITTLE = (
+    "RDML has no field for the run state, pauses or calibrations: link the run file the "
+    "instrument wrote for this plate (an .eds file or a QuantStudio or CFX export) to check them."
+)
+#: Per run file source: the evidence's ``source``, the reason's lead, and the file in a sentence.
+RUN_SOURCES: dict[str, tuple[str, str, str]] = {
+    "linked": (
+        "linked run file",
+        "From the run file a person linked to this plate:",
+        "The run file a person linked to this plate",
+    ),
+    "export": (
+        "export run file",
+        "From this plate's run file in the instrument export:",
+        "This plate's run file in the instrument export",
+    ),
+    "study_file": ("study file", "From the study's file:", "The study's file"),
+}
+
+
+def instrument_run(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
+    """What each plate's run file says about the run and the instrument (G-INSTR).
+
+    The lines are :func:`qpilot.qpcr.gate_instr.g_instr`'s, worded by
+    :mod:`qpilot.explain.instrument_text`; each number they cite is registered again as this
+    rule's fact (serials and instrument names never are: G-INSTR leaves them out). The verdict
+    is the worst line's under the pack's severity; a warning or a failure points at the run's
+    study wells, and the consequence test leaves them out. The reason says which file it read.
+    """
+    hold = _param(rule, "hold_limit_c", DEFAULT_HOLD_LIMIT_C)
+    for plate in ctx.plates():
+        found = (ctx.runs or {}).get(plate)
+        if found is None:
+            yield _na(
+                {"plate": plate},
+                "no_run_file",
+                "qPilot has no run context for this plate. " + RDML_SAYS_LITTLE,
+            )
+            continue
+        if found.context is None:
+            problem = found.problem if found.problem in LINK_PROBLEMS else "unreadable"
+            yield Finding(
+                scope={"plate": plate},
+                outcome=NOT_APPLICABLE,
+                code="linked_file_unreadable",
+                reason=LINK_PROBLEMS[problem],
+                evidence={"source": "linked run file", "problem": problem},
+            )
+            continue
+        yield _run_finding(rule, ctx, plate, found, hold)
+
+
+def _run_finding(rule: Rule, ctx: GateContext, plate: str, found: RunFile, hold: float) -> Finding:
+    """One plate's G-INSTR finding from its run file's lines."""
+    from qpilot.explain.instrument_text import line_tokens
+    from qpilot.qpcr.gate_instr import g_instr
+
+    scope = {"plate": plate}
+    run = found.context
+    assert run is not None  # instrument_run says the plates without one
+    prefix = run.fact_id("")
+    cited: dict[str, str] = {}
+
+    def cite(fid: str, facts: Mapping[str, Fact]) -> str:
+        if fid not in cited:
+            fact = facts[fid]
+            name = re.sub(r"[^a-z0-9_]+", "_", fid.removeprefix(prefix).lower()).strip("_")
+            value = fact.value
+            if isinstance(value, bool) or not isinstance(value, int | float | str):
+                value = str(value)
+            cited[fid] = ctx.fact(
+                rule, scope, f"instr_{name or 'value'}", value, fact.fmt, fact.unit
+            )
+        return cited[fid]
+
+    lines = g_instr(run, hold_limit_c=hold)
+    sentences: list[str] = []
+    worst: tuple[int, str] | None = None
+    cycles: list[int] = []
+    for line in lines:
+        try:
+            tokens = line_tokens(line)
+            sentences.append(
+                TOKEN.sub(lambda m, f=line.facts: "{{" + cite(m.group(1), f) + "}}", tokens)
+            )
+        except KeyError:  # a line without wording or a fact: said by its status alone
+            sentences.append(f"A {line.status} line the wording does not cover.")
+        cycles += [c for c in line.cycles if c not in cycles]
+        if line.code in INSTR_OUTCOMES:
+            rank = _SEVERITY_RANK[rule.verdict_for(line.code, INSTR_OUTCOMES)]
+            if worst is None or rank > worst[0]:
+                worst = (rank, line.code)
+    day = run.run.get("date")
+    if found.linked and found.study_date and day and str(day) != str(found.study_date):
+        f_a = ctx.fact(rule, scope, "instr_linked_date", str(day))
+        f_b = ctx.fact(rule, scope, "instr_study_date", str(found.study_date))
+        cited.update({"linked date": f_a, "study date": f_b})
+        sentences.append(
+            f"The linked file's run date ({{{{{f_a}}}}}) is not this plate's date in the "
+            f"study's file ({{{{{f_b}}}}}): check that it is this plate's run file."
+        )
+    source, lead, which = RUN_SOURCES[found.source]
+    evidence: dict[str, Any] = {
+        "source": source,
+        "source_kind": run.source_kind,
+        "run_state": run.run.get("state"),
+        "cycles": ",".join(str(c) for c in cycles),
+    }
+    if worst is None:
+        codes = {line.code for line in lines}
+        said = [f"{which} {t[9:]}" if t.startswith("The file ") else t for t in sentences]
+        hint = [RDML_SAYS_LITTLE] if found.source == "study_file" else []
+        return Finding(
+            scope=scope,
+            outcome=NOT_APPLICABLE,
+            code="nothing_in_file" if "nothing_in_file" in codes else "nothing_to_check",
+            reason=" ".join([*said, *hint]),
+            facts=list(cited.values()),
+            evidence=evidence,
+        )
+    verdict = rule.verdict_for(worst[1], INSTR_OUTCOMES)
+    study = ctx.table[(ctx.table["run_id"] == plate) & (ctx.table["sample_type"] == ANALYSED)]
+    keys = sorted(study["key"])
+    return Finding(
+        scope=scope,
+        outcome=worst[1],
+        reason=" ".join([lead, *sentences]),
+        facts=list(cited.values()),
+        evidence=evidence,
+        flagged=keys if verdict in ("warn", "fail") else [],
+        options={"exclude_run": keys},
+    )
+
+
+def file_runs(rdml_path: str | Path) -> dict[str, RunFile]:
+    """Each run of an RDML file as the study's own :class:`RunFile` (``{}`` when unreadable)."""
+    from qpilot.qpcr.instrument_context import InstrumentFileError, run_contexts_from_rdml
+
+    try:
+        contexts = run_contexts_from_rdml(rdml_path)
+    except (InstrumentFileError, OSError, ValueError):
+        return {}
+    return {c.run_id: RunFile(context=c) for c in contexts if c.run_id}
+
+
+def stored_runs(data: Any) -> dict[str, RunFile] | None:
+    """The study's own run files from a stored ``run_context.json`` (``None`` if unusable).
+
+    The file holds each run's :meth:`RunContext.model_view` (no serial, alias or local fact).
+    """
+    from pydantic import ValidationError
+
+    views = data.get("runs") if isinstance(data, Mapping) else None
+    if not isinstance(views, list):
+        return None
+    out: dict[str, RunFile] = {}
+    for view in views:
+        try:
+            context = RunContext.model_validate(view)
+        except ValidationError:
+            return None
+        if context.run_id:
+            out[context.run_id] = RunFile(context=context)
+    return out
+
+
+def with_export(
+    own: Mapping[str, RunFile], exported: Mapping[str, RunContext]
+) -> dict[str, RunFile]:
+    """The study's own run files, with each plate's run file in the instrument export in its place.
+
+    ``exported`` is what :func:`qpilot.qpcr.export_runs.export_runs` read (plate -> context);
+    a run file a person links goes on top of both (:func:`with_linked`).
+    """
+    out = dict(own)
+    for plate, context in exported.items():
+        out[plate] = RunFile(context=context, source="export")
+    return out
+
+
+def with_linked(
+    own: Mapping[str, RunFile],
+    linked: Mapping[str, RunContext],
+    problems: Mapping[str, str] | None = None,
+) -> dict[str, RunFile]:
+    """The plates' run files (``own``), with the run files a person linked in their place.
+
+    ``problems`` names the plates whose linked file cannot be read (``missing``, ``changed``,
+    ``unreadable``): G-INSTR says so for them instead of reading the file in ``own``.
+    """
+    out = dict(own)
+    for plate, context in linked.items():
+        mine = own.get(plate)
+        day = mine.context.run.get("date") if mine is not None and mine.context else None
+        out[plate] = RunFile(context=context, source="linked", study_date=str(day) if day else None)
+    for plate, problem in (problems or {}).items():
+        out[plate] = RunFile(context=None, source="linked", problem=str(problem))
+    return out
+
+
 # ---------- registry ----------
 
 CHECKS: dict[str, Check] = {
@@ -748,6 +1113,18 @@ CHECKS: dict[str, Check] = {
             outcomes={"within": "pass", "outside": "warn", "many_outside": "warn"},
             options=("drop_outlier_well", "drop_sample"),
         ),
+        Check(
+            name="rt_replicate_spread",
+            evaluate=rt_replicate_spread,
+            outcomes=RT_OUTCOMES,
+            options=("exclude_unit_target", "drop_rt_replicate"),
+        ),
+        Check(
+            name="instrument_run",
+            evaluate=instrument_run,
+            outcomes=INSTR_OUTCOMES,
+            options=("exclude_run",),
+        ),
     )
 }
 
@@ -757,6 +1134,9 @@ OPTION_LABELS = {
     "exclude_sample_target": "Leave out this sample for this target",
     "drop_outlier_well": "Leave out the replicate farthest from the others",
     "drop_sample": "Leave out this sample's replicate wells",
+    "exclude_unit_target": "Leave out this unit's wells for this target",
+    "drop_rt_replicate": "Leave out the reverse-transcription replicate farthest from the others",
+    "exclude_run": "Leave out this run's study wells",
 }
 
 
@@ -815,6 +1195,7 @@ def run_gate(
     confirmed_no_controls: Collection[str] = (),
     model: Any = None,
     cell: Mapping[str, Any] | None = None,
+    runs: Mapping[str, RunFile] | None = None,
 ) -> core_gate.GateReport:
     """Evaluate ``pack`` on a study's wells and run the consequence test on every hit.
 
@@ -829,6 +1210,10 @@ def run_gate(
         model: The study's :class:`qpilot.qpcr.study.StudyModel` when already built.
         cell: The analysis in use when a person's decisions moved it off the planned one (one
             option per decision-space dimension); every option is then compared at that cell.
+        runs: Plate -> its run file (G-INSTR): the study's own (:func:`file_runs`,
+            :func:`stored_runs`), the instrument export's (:func:`with_export`), with any a
+            person linked on top (:func:`with_linked`); ``None`` when none was read (G-INSTR is
+            then not applicable on every plate).
 
     Returns:
         The report; deterministic for the same inputs.
@@ -844,6 +1229,8 @@ def run_gate(
         quantities=dict(quantities or {}),
         rawness=rawness,
         confirmed_no_controls=frozenset(confirmed_no_controls),
+        design=settings.design,
+        runs=runs,
     )
     evals = evaluate(rule_pack, ctx)
     model = model or build_model(curves, settings)
@@ -908,7 +1295,10 @@ def gate_file(
     rawness: str | None = None,
     confirmed_no_controls: Collection[str] = (),
 ) -> core_gate.GateReport:
-    """:func:`run_gate` on an RDML file with the study's settings (curves from the cache)."""
+    """:func:`run_gate` on an RDML file with the study's settings (curves from the cache).
+
+    G-INSTR reads the file's own runs (:func:`file_runs`: the instrument and the run date).
+    """
     from qpilot.qpcr.curves import analyse_study
     from qpilot.qpcr.study import StudySettings
 
@@ -924,4 +1314,5 @@ def gate_file(
         quantities=quantities,
         rawness=rawness,
         confirmed_no_controls=confirmed_no_controls,
+        runs=file_runs(rdml_path),
     )

@@ -10,13 +10,14 @@ import { FactText } from "@/features/results/FactText";
 import { cn } from "@/lib/cn";
 import { count, plural } from "@/lib/format";
 import { Badge, Button, Card, CardHeader, SegmentedControl, Select } from "@/ui";
-import type { Consequence, Evaluation, GateView } from "./api";
+import type { Consequence, Evaluation, GateView, RunFile } from "./api";
 import { ClassChip, VerdictChip } from "./Pieces";
 import {
   VERDICT_WORD,
   filterEvaluations,
   leadOption,
   plateLabel,
+  runSourceText,
   verdictCounts,
   wellText,
   whereText,
@@ -25,6 +26,33 @@ import {
 } from "./words";
 
 const PAGE = 60;
+/** Wells shown as chips before the rest fold away (a whole run can be hundreds of wells). */
+const WELLS_SHOWN = 24;
+
+function WellChips({ wells }: { wells: readonly string[] }) {
+  const chip = (w: string) => (
+    <li
+      key={w}
+      className="rounded border border-line bg-surface px-1.5 font-mono text-[11px] text-fg"
+    >
+      {wellText(w)}
+    </li>
+  );
+  if (wells.length <= WELLS_SHOWN) {
+    return <ul className="mt-1 flex flex-wrap gap-1">{wells.map(chip)}</ul>;
+  }
+  return (
+    <>
+      <ul className="mt-1 flex flex-wrap gap-1">{wells.slice(0, WELLS_SHOWN).map(chip)}</ul>
+      <details className="mt-1 text-[12px] text-muted">
+        <summary className="cursor-pointer select-none hover:text-fg">
+          and {plural(wells.length - WELLS_SHOWN, "more well")}
+        </summary>
+        <ul className="mt-1 flex flex-wrap gap-1">{wells.slice(WELLS_SHOWN).map(chip)}</ul>
+      </details>
+    </>
+  );
+}
 
 export function ConsequenceBlock({
   consequence,
@@ -56,16 +84,7 @@ export function ConsequenceBlock({
                 <summary className="cursor-pointer select-none hover:text-fg">
                   The {plural(o.excluded.length, "well")} it leaves out
                 </summary>
-                <ul className="mt-1 flex flex-wrap gap-1">
-                  {o.excluded.map((w) => (
-                    <li
-                      key={w}
-                      className="rounded border border-line bg-surface px-1.5 font-mono text-[11px] text-fg"
-                    >
-                      {wellText(w)}
-                    </li>
-                  ))}
-                </ul>
+                <WellChips wells={o.excluded} />
               </details>
             )}
           </li>
@@ -78,12 +97,17 @@ export function ConsequenceBlock({
 function RuleRow({
   evaluation: e,
   consequence,
+  run,
+  onLinkRun,
   open,
   onToggle,
   focus,
 }: {
   evaluation: Evaluation;
   consequence: Consequence | undefined;
+  /** For a G-INSTR check: the run file it read for its plate. */
+  run?: RunFile;
+  onLinkRun?: (plate: string) => void;
   open: boolean;
   onToggle: () => void;
   focus: boolean;
@@ -146,16 +170,18 @@ function RuleRow({
               <h3 className="text-[12px] font-medium text-muted">
                 The {plural(e.flagged.length, "well")} this rule points at
               </h3>
-              <ul className="mt-1 flex flex-wrap gap-1">
-                {e.flagged.map((w) => (
-                  <li
-                    key={w}
-                    className="rounded border border-line bg-surface px-1.5 font-mono text-[11px] text-fg"
-                  >
-                    {wellText(w)}
-                  </li>
-                ))}
-              </ul>
+              <WellChips wells={e.flagged} />
+            </div>
+          )}
+          {run && (
+            <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted">
+              <span>Run file read: {runSourceText(run)}.</span>
+              {onLinkRun && (
+                <Button size="sm" variant="secondary" onClick={() => onLinkRun(run.plate)}>
+                  {run.source === "linked" ? "Link another run file" : "Link a run file"} for this
+                  plate
+                </Button>
+              )}
             </div>
           )}
           {consequence && <ConsequenceBlock consequence={consequence} />}
@@ -170,12 +196,15 @@ export function RuleList({
   filter,
   onFilter,
   focusId,
+  onLinkRun,
 }: {
   view: GateView;
   filter: RuleFilter;
   onFilter: (f: RuleFilter) => void;
   /** An evaluation to open, scroll to and focus (from the consequences list). */
   focusId: string | null;
+  /** Link a run file to a plate (G-INSTR's checks offer it). */
+  onLinkRun?: (plate: string) => void;
 }) {
   /** Rows a person opened or closed; the row asked for from elsewhere starts open. */
   const [toggled, setToggled] = useState<ReadonlyMap<string, boolean>>(() => new Map());
@@ -187,6 +216,10 @@ export function RuleList({
   const consequences = useMemo(
     () => new Map(view.consequences.map((c) => [c.id, c])),
     [view.consequences],
+  );
+  const runs = useMemo(
+    () => new Map(view.runs.filter((r) => r.evaluation).map((r) => [r.evaluation!, r])),
+    [view.runs],
   );
   const rows = useMemo(
     () => filterEvaluations(view.evaluations, filter),
@@ -261,6 +294,8 @@ export function RuleList({
               key={e.id}
               evaluation={e}
               consequence={e.consequence ? consequences.get(e.consequence) : undefined}
+              run={runs.get(e.id)}
+              onLinkRun={onLinkRun}
               open={isOpen(e.id)}
               onToggle={() => toggle(e.id)}
               focus={focusId === e.id}
