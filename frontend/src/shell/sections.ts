@@ -6,7 +6,9 @@
 import {
   Activity,
   CalendarRange,
+  FileSpreadsheet,
   FileText,
+  Gauge,
   History,
   Quote,
   Route,
@@ -42,6 +44,8 @@ export type SectionId =
   | "history"
   | "planner"
   | "agents"
+  | "sheetcheck"
+  | "instruments"
   | "settings";
 
 export interface SectionProps {
@@ -207,6 +211,22 @@ export const SECTIONS: Section[] = [
     icon: Bot,
     scope: "workspace",
     component: lazy(() => import("@/features/agents")),
+  },
+  {
+    id: "sheetcheck",
+    label: "Sheet check",
+    hint: "Recompute your own ΔΔCq spreadsheet and find the first step that differs",
+    icon: FileSpreadsheet,
+    scope: "global",
+    component: lazy(() => import("@/features/sheetcheck")),
+  },
+  {
+    id: "instruments",
+    label: "Instruments",
+    hint: "Each instrument's logbook, incidents to confirm, and which conclusions used a period",
+    icon: Gauge,
+    scope: "global",
+    component: lazy(() => import("@/features/instruments")),
   },
   {
     id: "settings",

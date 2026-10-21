@@ -305,6 +305,22 @@ export function Palette({
             All studies and the demo
           </Item>
           <Item
+            value="Sheet check"
+            keywords={["spreadsheet", "excel", "ddcq", "sheet", "check"]}
+            icon={<SECTION.sheetcheck.icon />}
+            onSelect={run(() => navigate("/sheetcheck"))}
+          >
+            Check a spreadsheet
+          </Item>
+          <Item
+            value="Instruments"
+            keywords={["instrument", "logbook", "calibration", "incident", "lookback"]}
+            icon={<SECTION.instruments.icon />}
+            onSelect={run(() => navigate("/instruments"))}
+          >
+            Instruments and their logbooks
+          </Item>
+          <Item
             value="Settings"
             keywords={["model", "autonomy", "theme"]}
             icon={<SECTION.settings.icon />}

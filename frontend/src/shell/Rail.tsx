@@ -31,7 +31,7 @@ import {
 import { requestOpenFile } from "./actions";
 import { Brand, Mark } from "./Brand";
 import type { WorkspaceSummary, WorkspaceView } from "./data";
-import { TOOLS, WORKFLOW, type SectionState } from "./nav";
+import { LAB, TOOLS, WORKFLOW, type SectionState } from "./nav";
 import { pathOf, type Route } from "./route";
 import { SECTION, type SectionId } from "./sections";
 import { MOD } from "@/lib/hooks";
@@ -371,7 +371,20 @@ export function Rail({ route, frame, states, workspaces }: RailProps) {
           <RecentList workspaces={workspaces} />
         )}
         <div className="mt-auto pt-3 pb-3">
+          <p className="mb-1.5 hidden px-3 text-[11px] font-semibold tracking-wider text-muted uppercase lg:block">
+            Lab
+          </p>
           <ul className="flex flex-col gap-0.5">
+            {LAB.map((id) => (
+              <NavItem
+                key={id}
+                href={`/${id}`}
+                icon={SECTION[id].icon}
+                label={SECTION[id].label}
+                hint={SECTION[id].hint}
+                active={route.section === id}
+              />
+            ))}
             <NavItem
               href="/settings"
               icon={SECTION.settings.icon}
@@ -522,7 +535,7 @@ export function BottomBar({ route, frame, states, workspaces }: RailProps) {
       </nav>
       <Sheet open={more} onOpenChange={setMore} side="bottom" title="More">
         <ul className="flex flex-col p-2">
-          {[...rest, "home" as SectionId, "settings" as SectionId].map((id) => {
+          {[...rest, "home" as SectionId, ...LAB, "settings" as SectionId].map((id) => {
             const st = states[id];
             return (
               <li key={id}>
@@ -530,9 +543,7 @@ export function BottomBar({ route, frame, states, workspaces }: RailProps) {
                   type="button"
                   onClick={() => {
                     setMore(false);
-                    navigate(
-                      id === "home" || id === "settings" ? pathOf(null, null, id) : href(id),
-                    );
+                    navigate(SECTION[id].scope === "global" ? pathOf(null, null, id) : href(id));
                   }}
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm hover:bg-bg-subtle"
                 >

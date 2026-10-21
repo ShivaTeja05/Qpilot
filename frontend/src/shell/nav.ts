@@ -128,3 +128,6 @@ export const WORKFLOW: SectionId[] = [
 
 /** The tools on a study's results, shown in the rail under the workflow. */
 export const TOOLS: SectionId[] = ["trace", "claims", "history", "report", "planner"];
+
+/** Lab-wide sections (no study needed), listed above Settings. */
+export const LAB: SectionId[] = ["sheetcheck", "instruments"];

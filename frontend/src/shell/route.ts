@@ -34,7 +34,8 @@ export function parseRoute(path: string): Route {
     });
   const base = { kind: null, key: null, rest: [], bare: false, path };
   if (parts.length === 0) return { ...base, section: "home" };
-  if (parts[0] === "settings") return { ...base, section: "settings" };
+  if (parts[0] && parts[0] !== "home" && SECTION[parts[0] as SectionId]?.scope === "global")
+    return { ...base, section: parts[0] as SectionId, rest: parts.slice(1) };
   if ((parts[0] === "s" || parts[0] === "r") && parts[1] && /^[0-9a-f]{6,64}$/i.test(parts[1])) {
     const [, key, section, ...rest] = parts;
     const known =
