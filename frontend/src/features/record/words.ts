@@ -13,12 +13,14 @@ export const STATUS: Record<EntryStatus, { word: string; tone: Tone; meaning: st
   auto: {
     word: "Decided automatically",
     tone: "neutral",
-    meaning: "No option changes any conclusion at the recommended settings, so qPilot took the recommended one.",
+    meaning:
+      "No option changes any conclusion at the recommended settings, so qPilot took the recommended one.",
   },
   pending_human: {
     word: "Waiting for a person",
     tone: "warn",
-    meaning: "An agent asked for this; it can change a conclusion, so a person approves or turns it down.",
+    meaning:
+      "An agent asked for this; it can change a conclusion, so a person approves or turns it down.",
   },
   rejected: { word: "Turned down", tone: "danger", meaning: "A person turned this request down." },
   stale: {

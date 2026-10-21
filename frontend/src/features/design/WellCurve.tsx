@@ -11,17 +11,36 @@ import { fixed } from "@/lib/format";
 import { ROLE_WORDS } from "@/lib/vocab";
 import { Dialog, ErrorPanel, KeyValues, LoadingBlock } from "@/ui";
 
-export function WellCurveDialog({ sid, well, onClose }: { sid: string; well: string | null; onClose: () => void }) {
+export function WellCurveDialog({
+  sid,
+  well,
+  onClose,
+}: {
+  sid: string;
+  well: string | null;
+  onClose: () => void;
+}) {
   const curve = useQuery({
     queryKey: ["w", sid, "curve", well],
     enabled: Boolean(well),
-    queryFn: () => unwrap(api.GET("/api/sessions/{sid}/curve", { params: { path: { sid }, query: { well: well! } } })),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/sessions/{sid}/curve", { params: { path: { sid }, query: { well: well! } } }),
+      ),
   });
   const c = curve.data;
   return (
-    <Dialog open={Boolean(well)} onOpenChange={(o) => !o && onClose()} size="lg" title={`Curve of well ${well ?? ""}`} description={c?.note}>
+    <Dialog
+      open={Boolean(well)}
+      onOpenChange={(o) => !o && onClose()}
+      size="lg"
+      title={`Curve of well ${well ?? ""}`}
+      description={c?.note}
+    >
       {curve.isPending ? <LoadingBlock label="Reading the curve" lines={5} /> : null}
-      {curve.error ? <ErrorPanel error={curve.error} compact onRetry={() => void curve.refetch()} /> : null}
+      {curve.error ? (
+        <ErrorPanel error={curve.error} compact onRetry={() => void curve.refetch()} />
+      ) : null}
       {c ? (
         <div className="flex flex-col gap-3">
           <KeyValues
@@ -32,7 +51,10 @@ export function WellCurveDialog({ sid, well, onClose }: { sid: string; well: str
               ...(c.numbers_shown
                 ? ([
                     ["Cq (LinRegPCR)", c.cq != null ? fixed(c.cq, 2) : "none"],
-                    ["Amplified (LinRegPCR)", c.amplified == null ? "—" : c.amplified ? "yes" : "no"],
+                    [
+                      "Amplified (LinRegPCR)",
+                      c.amplified == null ? "—" : c.amplified ? "yes" : "no",
+                    ],
                   ] as [string, string][])
                 : []),
             ]}

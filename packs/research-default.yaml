@@ -1,0 +1,155 @@
+# Research use only. Rules are lab-editable examples with sources; they are not clinical run-validity rules.
+#
+# qPilot Run Gate v0 rule pack for academic gene-expression work. Thresholds and their sources come
+# from agent-bus/contracts/scientist-spec-gate.md (scientist, 18 Oct 2026); quotes marked verified
+# there were re-read on that date. Edit a copy: change the version, set based_on to this pack's
+# hash (qpilot gate rules diff shows what changed), and point qpilot gate --pack at it.
+pack: research-default
+version: 1.0.0
+label: >-
+  Research use only. Rules are lab-editable examples with sources; they are not clinical
+  run-validity rules.
+consequence: {magnitude_log2: 0.5, magnitude_agreement: 0.10}
+sources:
+  miqe2:
+    citation: >-
+      Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0: revision of the Minimum
+      Information for Publication of Quantitative Real-Time PCR Experiments guidelines.
+      Clin Chem 2025;71(6):634-651.
+    url: https://doi.org/10.1093/clinchem/hvaf043
+  ruiz_villalba_2021:
+    citation: >-
+      Ruiz-Villalba A, Ruijter JM, van den Hoff MJB. Use and misuse of Cq in qPCR data analysis
+      and reporting. Life 2021;11(6):496.
+    url: https://doi.org/10.3390/life11060496
+  bar_2003:
+    citation: >-
+      Bar T, Stahlberg A, Muszta A, Kubista M. Kinetic Outlier Detection (KOD) in real-time PCR.
+      Nucleic Acids Res 2003;31(17):e105.
+    url: https://doi.org/10.1093/nar/gng106
+  ma_2021:
+    citation: >-
+      Ma H, Bell KN, Loker RN. qPCR and qRT-PCR analysis: regulatory points to consider when
+      conducting biodistribution and vector shedding studies. Mol Ther Methods Clin Dev
+      2021;20:152-168 (Table 4).
+    url: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7786041/
+  laurell_2012:
+    citation: >-
+      Laurell H, Iacovoni JS, Abot A, et al. Correction of RT-qPCR data for genomic DNA-derived
+      signals with ValidPrime. Nucleic Acids Res 2012;40(7):e51. Grade cut-offs applied here to
+      a no-RT estimate (a qPilot adaptation, not the ValidPrime method).
+    url: https://doi.org/10.1093/nar/gkr1259
+  biorad_5279:
+    citation: Bio-Rad. Real-Time PCR Applications Guide, Bulletin 5279 (R2 > 0.980).
+  primepcr_6262:
+    citation: >-
+      Hellemans J, Vandesompele J, et al. PrimePCR assays: meeting the MIQE guidelines by full
+      wet-lab validation. Bio-Rad Bulletin 6262 (efficiency 90-110 %).
+  run_validity_analogy:
+    citation: >-
+      By analogy with clinical run-validity practice (e.g. the CDC 2019-nCoV RT-PCR panel
+      instructions). Cited to explain the rule; research-default does not copy clinical rules.
+  lab_default:
+    citation: Unsourced, lab-editable default (qPilot project convention).
+rules:
+  - id: G-TYPED
+    name: Typed controls on the plate
+    check: typed_controls
+    statement: >-
+      A plate with no wells typed as controls (no-template, no-RT, no-amplification, positive,
+      standard) cannot be gated; it is shown as ungated, loudly, until its controls are typed.
+    applies_to: {sample_types: [ntc, nac, ntp, nrt, pos, std], per: [plate]}
+    needs: [sample_type]
+    severity: {typed: pass, untyped: fail, no_controls_confirmed: warn}
+    default_action: log
+    sources: [miqe2]
+  - id: G-NTC-1
+    name: No-template control amplification near the study samples
+    check: ntc_gap
+    statement: >-
+      When a negative control shows amplification, a study sample counts as positive only if its
+      Cq precedes the earliest amplifying control's by at least k cycles; samples closer than
+      that are flagged, with the share of their signal such contamination could contribute.
+    applies_to: {sample_types: [ntc, ntp], per: [plate, target]}
+    needs: [engine_call, cq, eff_target]
+    params: {k_cycles: 5}
+    severity: {clean: pass, amplified_clear: warn, tainted_dimer: warn, tainted: fail}
+    consequence_scope: [exclude_flagged]
+    default_action: card
+    sources: [miqe2]
+  - id: G-NAC
+    name: Amplification in a no-amplification control
+    check: nac_amplified
+    statement: >-
+      Signal in a no-amplification control means the target's signal on this plate may not
+      depend on amplification; every study well of that target on the plate is flagged.
+    applies_to: {sample_types: [nac], per: [plate, target]}
+    needs: [engine_call]
+    severity: {clean: pass, amplified: fail}
+    consequence_scope: [exclude_target_plate]
+    default_action: card
+    sources: [run_validity_analogy]
+  - id: G-NRT
+    name: Genomic DNA share from the no-RT control
+    check: nrt_gdna
+    statement: >-
+      The genomic-DNA share of a sample's signal is estimated as E^-(Cq no-RT - Cq RT) and graded
+      A (< 3 %), B (3-25 %), C (25-60 %) or F (> 60 %). No correction is applied.
+    applies_to: {sample_types: [nrt], per: [plate, target, sample]}
+    needs: [engine_call, cq, eff_target]
+    params: {grade_a_max: 0.03, grade_b_max: 0.25, grade_c_max: 0.60}
+    severity: {grade_a: pass, grade_b: warn, grade_c: fail, grade_f: fail}
+    consequence_scope: [exclude_sample_target]
+    default_action: card
+    sources: [laurell_2012, miqe2]
+  - id: G-POS
+    name: Positive control inside its window
+    check: pos_window
+    statement: >-
+      A positive control is checked against a Cq window the lab sets for that control; without a
+      mapped control and window the rule is not applicable.
+    applies_to: {sample_types: [pos], per: [plate, target]}
+    needs: [cq, control_window]
+    severity: {inside: pass, outside: fail}
+    default_action: card
+    sources: [lab_default]
+  - id: G-STD
+    name: Standard curve
+    check: std_curve
+    statement: >-
+      Cq is regressed on log10 quantity over the amplified standard wells; efficiency
+      10^(-1/slope) with its 95 % confidence interval must fall inside the window and R2 above
+      the minimum, with at least three levels. In relative quantification a failure does not
+      taint study samples; it marks the curve as an efficiency source.
+    applies_to: {sample_types: [std], per: [plate, target]}
+    needs: [cq, template_quantity]
+    params:
+      efficiency_min_pct: 90
+      efficiency_max_pct: 110
+      r2_min: 0.980
+      min_levels: 3
+      min_replicates: 3
+    severity: {ok: pass, few_replicates: warn, efficiency_out: fail, r2_low: fail}
+    default_action: log
+    sources: [ma_2021, primepcr_6262, biorad_5279, miqe2]
+  - id: G-REP
+    name: Technical replicate spread
+    check: replicate_spread
+    statement: >-
+      The Cq range of n replicate wells is compared with the 95th percentile of the range of n
+      normal values whose SD combines pipetting (CV c) and Poisson sampling (1/N copies):
+      sqrt(c^2 + 1/N) / ln(E). Copies come from a standard curve on the plate; without one, only
+      pipetting counts up to Cq 30, a two-cycle floor applies up to Cq 35, and later groups are
+      not evaluated. Outside the range is a warning; the consequence test decides.
+    applies_to: {sample_types: [unkn, pos, std], per: [plate, target, sample]}
+    needs: [cq, eff_target]
+    params:
+      pipetting_cv: 0.15
+      low_copy_tolerance_cycles: 2.0
+      copies_unknown_max_cq: 30
+      stochastic_min_cq: 35
+      plate_share_max: 0.10
+    severity: {within: pass, outside: warn, many_outside: warn}
+    consequence_scope: [drop_outlier_well, drop_sample]
+    default_action: card
+    sources: [ruiz_villalba_2021, bar_2003, lab_default]

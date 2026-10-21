@@ -12,7 +12,17 @@ import { api, unwrap, type Schemas } from "@/api/client";
 import { PlateMap, plateWells } from "@/charts/plate";
 import { count } from "@/lib/format";
 import { ROLE_WORDS } from "@/lib/vocab";
-import { Badge, Button, Card, CardBody, CardHeader, ErrorPanel, IconButton, LoadingBlock, Select } from "@/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  ErrorPanel,
+  IconButton,
+  LoadingBlock,
+  Select,
+} from "@/ui";
 import { Quote, Warming, isWarming, visibleText, type QuoteLookup } from "@/ui/proposal";
 
 export type PlateWell = Schemas["PlateWell"];
@@ -21,7 +31,12 @@ type PlateView = Schemas["PlateView"];
 export function usePlate(sid: string, run: string | null) {
   return useQuery({
     queryKey: ["w", sid, "plate", run ?? ""],
-    queryFn: () => unwrap(api.GET("/api/sessions/{sid}/plate", { params: { path: { sid }, query: run ? { run } : {} } })),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/sessions/{sid}/plate", {
+          params: { path: { sid }, query: run ? { run } : {} },
+        }),
+      ),
     placeholderData: (prev) => prev,
   });
 }
@@ -40,7 +55,10 @@ function WellDetail({
   const sampleQuote = well.sample_text_id ? quotes(well.sample_text_id) : null;
   const targetQuote = well.target_text_id ? quotes(well.target_text_id) : null;
   return (
-    <div className="flex flex-col gap-2.5 rounded-lg border border-line bg-surface-2 p-3 text-[13px]" aria-live="polite">
+    <div
+      className="flex flex-col gap-2.5 rounded-lg border border-line bg-surface-2 p-3 text-[13px]"
+      aria-live="polite"
+    >
       <div className="flex items-center justify-between gap-2">
         <p className="font-medium text-fg">
           Well <span className="font-mono">{well.well}</span>
@@ -51,9 +69,21 @@ function WellDetail({
       </div>
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5">
         <dt className="text-muted">Sample</dt>
-        <dd className="min-w-0">{sampleQuote ? <Quote entry={sampleQuote} /> : <span className="font-mono">{well.sample}</span>}</dd>
+        <dd className="min-w-0">
+          {sampleQuote ? (
+            <Quote entry={sampleQuote} />
+          ) : (
+            <span className="font-mono">{well.sample}</span>
+          )}
+        </dd>
         <dt className="text-muted">Target</dt>
-        <dd className="min-w-0">{targetQuote ? <Quote entry={targetQuote} /> : <span className="font-mono">{well.target}</span>}</dd>
+        <dd className="min-w-0">
+          {targetQuote ? (
+            <Quote entry={targetQuote} />
+          ) : (
+            <span className="font-mono">{well.target}</span>
+          )}
+        </dd>
         <dt className="text-muted">Declared</dt>
         <dd>{ROLE_WORDS[well.declared_type] ?? well.declared_type}</dd>
         {well.role && well.role !== well.declared_type ? (
@@ -70,7 +100,12 @@ function WellDetail({
         ) : null}
       </dl>
       {onShowProposals ? (
-        <Button size="sm" variant="secondary" onClick={() => onShowProposals(well)} className="self-start">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => onShowProposals(well)}
+          className="self-start"
+        >
           Show proposals about this sample
         </Button>
       ) : null}
@@ -102,10 +137,16 @@ export function DesignPlate({
   const byLabel = useMemo(() => new Map(apiWells.map((w) => [w.well, w])), [apiWells]);
   const wells = useMemo(() => {
     if (!data) return [];
-    const instructionLike = (id: string | null | undefined) => Boolean(id && quotes(id)?.flags.includes("instruction_like"));
-    return plateWells(data, { flagged: (w) => instructionLike(w.sample_text_id) || instructionLike(w.target_text_id) });
+    const instructionLike = (id: string | null | undefined) =>
+      Boolean(id && quotes(id)?.flags.includes("instruction_like"));
+    return plateWells(data, {
+      flagged: (w) => instructionLike(w.sample_text_id) || instructionLike(w.target_text_id),
+    });
   }, [data, quotes]);
-  const lit = useMemo(() => (highlight ? apiWells.filter(highlight).map((w) => w.well) : []), [apiWells, highlight]);
+  const lit = useMemo(
+    () => (highlight ? apiWells.filter(highlight).map((w) => w.well) : []),
+    [apiWells, highlight],
+  );
   const chosen = clicked ? (byLabel.get(clicked) ?? null) : null;
 
   const options = runs.map((r) => ({
@@ -113,11 +154,17 @@ export function DesignPlate({
     label: r.run_id,
     hint: `${r.experiment_id} · ${count(r.n_wells)} wells · ${r.targets.join(", ")}`,
   }));
-  const roleWords = apiWells.some((w) => w.role) ? "as the design assembled so far has them" : "as declared in the file";
+  const roleWords = apiWells.some((w) => w.role)
+    ? "as the design assembled so far has them"
+    : "as declared in the file";
 
   return (
     <Card as="section" aria-labelledby={`plate-${sid}`}>
-      <CardHeader id={`plate-${sid}`} title="Plate map" hint={`Wells by sample type, ${roleWords}.`} />
+      <CardHeader
+        id={`plate-${sid}`}
+        title="Plate map"
+        hint={`Wells by sample type, ${roleWords}.`}
+      />
       <CardBody className="flex flex-col gap-3">
         {runs.length > 1 ? (
           <Select
@@ -178,7 +225,12 @@ export function DesignPlate({
               }
             />
             {chosen ? (
-              <WellDetail well={chosen} quotes={quotes} onShowProposals={onShowProposals} onClose={() => setClicked(null)} />
+              <WellDetail
+                well={chosen}
+                quotes={quotes}
+                onShowProposals={onShowProposals}
+                onClose={() => setClicked(null)}
+              />
             ) : null}
           </>
         ) : null}

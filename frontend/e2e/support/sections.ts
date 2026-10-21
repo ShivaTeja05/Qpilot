@@ -23,6 +23,7 @@ export const SECTIONS: SectionUnderTest[] = [
   { id: "design", label: "Design", owner: "design", scope: "workspace", sessionOnly: true },
   { id: "curves", label: "Curves", owner: "curves", scope: "workspace", sessionOnly: true },
   { id: "results", label: "Results", owner: "insight", scope: "workspace" },
+  { id: "gate", label: "Controls", owner: "gate", scope: "workspace" },
   { id: "gene", label: "Gene", owner: "gene", scope: "workspace", hidden: true },
   { id: "audit", label: "Audit", owner: "audit", scope: "workspace" },
   { id: "prism", label: "Prism", owner: "prism", scope: "workspace", sessionOnly: true },
@@ -64,6 +65,8 @@ export const LANDED = {
   results: true,
   /** insight: deciding a card, then Undo (writes to the store). */
   decide: true,
+  /** gate: the Controls section (Run Gate: rule checks, consequences, gate cards). */
+  gate: true,
   /** gene: the Gene section. */
   gene: true,
   /** audit: the Audit section (seeded audit, gene rows). */
@@ -100,6 +103,7 @@ export const OWNER: Record<Feature, string> = {
   curves: "curves",
   results: "insight",
   decide: "insight",
+  gate: "gate",
   gene: "gene",
   audit: "audit",
   prism: "prism",

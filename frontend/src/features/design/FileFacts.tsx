@@ -21,14 +21,20 @@ export function FileFacts({
   if (!facts && warming) {
     return (
       <Card as="section">
-        <CardHeader title="The file" hint="Being read for the first time since qPilot started; its facts appear here when that is done." />
+        <CardHeader
+          title="The file"
+          hint="Being read for the first time since qPilot started; its facts appear here when that is done."
+        />
       </Card>
     );
   }
   if (!facts) {
     return (
       <Card as="section">
-        <CardHeader title="The file" hint="The input file cannot be read now: it is missing or has changed since it was opened." />
+        <CardHeader
+          title="The file"
+          hint="The input file cannot be read now: it is missing or has changed since it was opened."
+        />
       </Card>
     );
   }
@@ -36,9 +42,19 @@ export function FileFacts({
   const experiments = Object.entries(summary?.experiments ?? {});
   const rows: [string, ReactNode][] = [
     ["File", <span className="font-mono break-all">{facts.file_name ?? "—"}</span>],
-    ["Sample sheet", facts.sheet_name ? <span className="font-mono break-all">{facts.sheet_name}</span> : <span className="text-muted">none</span>],
+    [
+      "Sample sheet",
+      facts.sheet_name ? (
+        <span className="font-mono break-all">{facts.sheet_name}</span>
+      ) : (
+        <span className="text-muted">none</span>
+      ),
+    ],
     ["SHA-256", <Hash value={facts.input_sha256} length={12} />],
-    ["Contents", `${plural(facts.n_plates, "plate")} · ${count(facts.n_wells)} wells · ${plural(facts.n_samples, "sample")} · ${plural(facts.n_targets, "target")}`],
+    [
+      "Contents",
+      `${plural(facts.n_plates, "plate")} · ${count(facts.n_wells)} wells · ${plural(facts.n_samples, "sample")} · ${plural(facts.n_targets, "target")}`,
+    ],
   ];
   if (experiments.length) {
     rows.push([
@@ -46,7 +62,8 @@ export function FileFacts({
       <span className="flex flex-col gap-0.5">
         {experiments.map(([e, n]) => (
           <span key={e}>
-            <span className="font-mono">{e}</span> <span className="text-muted">· {plural(n, "plate")}</span>
+            <span className="font-mono">{e}</span>{" "}
+            <span className="text-muted">· {plural(n, "plate")}</span>
           </span>
         ))}
       </span>,
@@ -54,7 +71,11 @@ export function FileFacts({
   }
   return (
     <Card as="section" aria-labelledby="file-facts">
-      <CardHeader id="file-facts" title="The file" hint={analysed ? "What it declares." : "What it declares. Nothing is analysed yet."} />
+      <CardHeader
+        id="file-facts"
+        title="The file"
+        hint={analysed ? "What it declares." : "What it declares. Nothing is analysed yet."}
+      />
       <CardBody className="flex flex-col gap-3">
         <KeyValues rows={rows} />
         {types.length ? (

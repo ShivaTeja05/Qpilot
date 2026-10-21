@@ -32,7 +32,7 @@ import hashlib
 import logging
 import re
 import statistics
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -223,12 +223,17 @@ class _Inputs:
     not_amplified: dict[str, int]  # study wells without a value, per amplification rule
 
 
-def _inputs(curves: pd.DataFrame, settings: StudySettings) -> _Inputs:
+def _inputs(
+    curves: pd.DataFrame, settings: StudySettings, extra_excluded: Collection[str] = ()
+) -> _Inputs:
     design = settings.design
-    if design is None and settings.amp_calls == DEFAULT_AMP_CALLS:  # the legacy path, untouched
+    legacy = design is None and settings.amp_calls == DEFAULT_AMP_CALLS
+    if legacy and not extra_excluded:  # the legacy path, untouched
         matrix = log2_matrix(curves)
         return _Inputs(curves, curves, None, matrix, {}, None, {})
     table = design_curves(curves, design) if design is not None else curves
+    if extra_excluded:
+        table = _with_excluded(table, extra_excluded)
     units = (design_units(design) or None) if design is not None else None
     calls = dict(design.well_calls) if design is not None else {}
     tables = {rule_id: apply_rule(table, rule_id, calls) for rule_id in settings.amp_calls}
@@ -243,6 +248,15 @@ def _inputs(curves: pd.DataFrame, settings: StudySettings) -> _Inputs:
         excluded=excluded_cells(table, units) if has_exclusions else None,
         not_amplified={rule_id: _counts(t)["n_undetermined"] for rule_id, t in tables.items()},
     )
+
+
+def _with_excluded(table: pd.DataFrame, keys: Collection[str]) -> pd.DataFrame:
+    """A copy of ``table`` with the wells ``run_id/well`` in ``keys`` also marked excluded."""
+    out = table.copy()
+    hit = (out["run_id"] + "/" + out["well"]).isin(set(keys)).to_numpy()
+    already = out[EXCLUDED].astype(bool).to_numpy() if EXCLUDED in out.columns else False
+    out[EXCLUDED] = hit | already
+    return out
 
 
 def _counts(table: pd.DataFrame) -> dict[str, int]:
@@ -332,8 +346,17 @@ class StudyModel:
     rest: frozenset[str]
 
 
-def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> StudyModel:
+def build_model(
+    curves: pd.DataFrame,
+    settings: StudySettings | None = None,
+    *,
+    extra_excluded: Collection[str] = (),
+) -> StudyModel:
     """The study's decision space from the per-well table and the settings.
+
+    ``extra_excluded`` are well keys (``run_id/well``) to leave out as a person's exclusion
+    would, on top of the design's; Run Gate's consequence test uses it to ask "what if these
+    wells were excluded?". Empty (the default) changes nothing.
 
     Raises:
         NGuardError: A comparison group has fewer than two biological units.
@@ -342,7 +365,7 @@ def build_model(curves: pd.DataFrame, settings: StudySettings | None = None) -> 
     settings = settings or StudySettings()
     if not settings.candidates:
         raise DesignError("no control genes: set reference_candidates or mark targets as ref")
-    inputs = _inputs(curves, settings)
+    inputs = _inputs(curves, settings, extra_excluded)
     matrix = inputs.matrix
     stability = _stability(matrix, settings.candidates)
     groups = labels = None

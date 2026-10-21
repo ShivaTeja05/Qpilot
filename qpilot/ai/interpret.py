@@ -163,7 +163,7 @@ NOT_PSEUDONYMISED = (
     "written into other text), so they were not sent to the remote model."
 )
 PROMPT_SHA256 = hashlib.sha256(SYSTEM_INTERPRET.encode("utf-8")).hexdigest()
-_LABEL = re.compile(r"^[A-Za-z0-9 _\-.()]{1,64}$")
+_LABEL = re.compile(r"^[A-Za-z0-9 _\-.()]{1,64}\Z")
 _SYMBOL = re.compile(r"^[A-Z0-9][A-Za-z0-9\-]{0,19}$")
 _SQUASH = re.compile(r"[^a-z0-9]+")
 _LEADING_ZEROS = re.compile(r"(?<!\d)0+(?=\d)")

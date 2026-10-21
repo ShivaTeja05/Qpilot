@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import recorded from "./recorded/workspaces.json";
 import {
+  MAX_FILES,
+  addFiles,
   asSection,
   countsLine,
-  sortFiles,
+  guessFile,
+  isAccepted,
+  planUpload,
+  refusalReason,
   stageChip,
   workspaceSection,
   type WorkspaceSummary,
@@ -13,26 +18,94 @@ const workspaces = recorded.workspaces as WorkspaceSummary[];
 const demo = workspaces.find((w) => w.is_demo)!;
 const fresh = workspaces.find((w) => !w.is_demo)!;
 
-describe("sortFiles", () => {
-  it("takes the first RDML file and the first sheet, and names the rest", () => {
-    const files = [
-      { name: "notes.pdf" },
-      { name: "run.RDML" },
-      { name: "samples.xlsx" },
-      { name: "other.xml" },
-      { name: "b.csv" },
-    ];
-    const sorted = sortFiles(files);
-    expect(sorted.rdml?.name).toBe("run.RDML");
-    expect(sorted.sheet?.name).toBe("samples.xlsx");
-    expect(sorted.ignored.map((f) => f.name)).toEqual(["notes.pdf", "other.xml", "b.csv"]);
+describe("addFiles", () => {
+  const f = (name: string, size = 10) => ({ name, size });
+
+  it("keeps RDML files, exports and sheets, and names back what the server does not take", () => {
+    const picked = addFiles(
+      [],
+      [f("run.RDML"), f("run1 -  Quantification Cq Results.csv"), f("notes.pdf"), f("run.pcrd")],
+    );
+    expect(picked.files.map((x) => x.name)).toEqual([
+      "run.RDML",
+      "run1 -  Quantification Cq Results.csv",
+    ]);
+    expect(picked.ignored.map((i) => i.file.name)).toEqual(["notes.pdf", "run.pcrd"]);
+    expect(picked.ignored[0]!.reason).toMatch(/qPilot opens RDML files and instrument exports/);
+    expect(picked.ignored[1]!.reason).toMatch(/CFX Manager project: export it with Export/);
   });
 
-  it("accepts an .xml export as the RDML file and a .csv sheet", () => {
-    const sorted = sortFiles([{ name: "sheet.csv" }, { name: "export.xml" }]);
-    expect(sorted.rdml?.name).toBe("export.xml");
-    expect(sorted.sheet?.name).toBe("sheet.csv");
-    expect(sorted.ignored).toEqual([]);
+  it("keeps the same file once and stops at 64 files", () => {
+    const first = addFiles([], [f("a.csv"), f("a.csv")]);
+    expect(first.files).toHaveLength(1);
+    const many = Array.from({ length: MAX_FILES + 2 }, (_, i) => f(`plate${i}.txt`));
+    const picked = addFiles(first.files, many);
+    expect(picked.files).toHaveLength(MAX_FILES);
+    expect(picked.ignored).toHaveLength(3);
+    expect(picked.ignored[0]!.reason).toMatch(/at most 64 files/);
+  });
+});
+
+describe("planUpload", () => {
+  const f = (name: string) => ({ name });
+
+  it("sends one RDML file (and a sheet next to it) in the rdml and sheet fields, as before", () => {
+    const rdml = f("run.rdml");
+    expect(planUpload([rdml], null)).toEqual({ mode: "rdml", rdml, sheet: null });
+    const sheet = f("samples.xlsx");
+    expect(planUpload([sheet, rdml], null)).toEqual({ mode: "rdml", rdml, sheet });
+    const added = f("design.csv");
+    expect(planUpload([rdml], added)).toEqual({ mode: "rdml", rdml, sheet: added });
+  });
+
+  it("sends an export set, and anything else, as files for the server to sort", () => {
+    const set = [
+      f("run1 -  Quantification Amplification Results_SYBR.csv"),
+      f("run1 -  Quantification Cq Results.csv"),
+      f("samples.csv"),
+    ];
+    expect(planUpload(set, null)).toEqual({ mode: "files", files: set, sheet: null });
+    const one = [f("export.txt")];
+    expect(planUpload(one, null)).toEqual({ mode: "files", files: one, sheet: null });
+    const two = [f("a.rdml"), f("b.rdml")];
+    expect(planUpload(two, null)?.mode).toBe("files"); // the server says why
+    expect(planUpload([], null)).toBeNull();
+  });
+});
+
+describe("guessFile", () => {
+  it("names a CFX export set's sheets, with the dye", () => {
+    expect(guessFile("run1 -  Quantification Amplification Results_SYBR.csv")).toEqual({
+      kind: "export",
+      label: "CFX amplification curves (SYBR)",
+    });
+    expect(guessFile("run1 -  Quantification Cq Results_0.csv").label).toBe("CFX Cq results");
+    expect(guessFile("run1 - Run Information.csv").label).toBe("CFX run information");
+    expect(guessFile("run1 -  End Point Results_SYBR.csv").label).toBe(
+      "CFX sheet qPilot does not read",
+    );
+  });
+
+  it("names QuantStudio sections, RDML files, text exports and tables", () => {
+    expect(guessFile("2023-11-14_Cov2_Amplification Data_20240422.csv").label).toBe(
+      "QuantStudio amplification data",
+    );
+    expect(guessFile("sample_setup.txt").label).toBe("QuantStudio sample setup");
+    expect(guessFile("results.txt").label).toBe("Results table");
+    expect(guessFile("plate.lc96p")).toEqual({ kind: "rdml", label: "RDML file" });
+    expect(guessFile("CP1.txt")).toEqual({ kind: "export", label: "Text export" });
+    expect(guessFile("samples.xlsx").kind).toBe("table");
+  });
+});
+
+describe("refusalReason and isAccepted", () => {
+  it("accepts what the server keeps and says how to export a project file", () => {
+    for (const name of ["a.rdml", "a.xml", "a.csv", "a.tsv", "a.txt", "a.xlsx", "a.lc96p"]) {
+      expect(isAccepted(name)).toBe(true);
+    }
+    expect(isAccepted("a.eds")).toBe(false);
+    expect(refusalReason("run.eds")).toMatch(/QuantStudio experiment: export Results/);
+    expect(refusalReason("old.xls")).toMatch(/save it as .xlsx or .csv/);
   });
 });
 

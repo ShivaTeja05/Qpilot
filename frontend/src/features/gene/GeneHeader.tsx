@@ -9,7 +9,17 @@ import { Link } from "wouter";
 import type { Schemas } from "@/api/client";
 import { sectionPath } from "@/shell/sections";
 import { TraceLink } from "@/features/trace/TraceLink";
-import { Badge, Button, ConclusionTag, CopyButton, Kbd, LevelTag, Select, Tooltip, VerdictTag } from "@/ui";
+import {
+  Badge,
+  Button,
+  ConclusionTag,
+  CopyButton,
+  Kbd,
+  LevelTag,
+  Select,
+  Tooltip,
+  VerdictTag,
+} from "@/ui";
 import { cn } from "@/lib/cn";
 import { ci, count, fold, pValue } from "@/lib/format";
 import { asConclusion, asLevel } from "@/lib/vocab";
@@ -34,7 +44,10 @@ export function GeneNav({
   onGo: (gene: string) => void;
 }) {
   return (
-    <nav aria-label="Genes" className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+    <nav
+      aria-label="Genes"
+      className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2"
+    >
       <Link
         href={sectionPath(workspace, "results")}
         className="inline-flex items-center gap-1.5 rounded-md text-[13px] text-muted hover:text-fg"
@@ -46,10 +59,20 @@ export function GeneNav({
         {gene ? <TraceLink gene={gene} className="mr-2" /> : null}
         {near.total ? (
           <span className="text-xs text-muted tabular" aria-live="polite">
-            {near.position ? `${count(near.position)} of ${count(near.total)}` : `${count(near.total)} genes`}
+            {near.position
+              ? `${count(near.position)} of ${count(near.total)}`
+              : `${count(near.total)} genes`}
           </span>
         ) : null}
-        <Tooltip content={near.prev ? <>Previous gene <Kbd className="ml-1">[</Kbd></> : null}>
+        <Tooltip
+          content={
+            near.prev ? (
+              <>
+                Previous gene <Kbd className="ml-1">[</Kbd>
+              </>
+            ) : null
+          }
+        >
           <Button
             size="sm"
             variant="secondary"
@@ -62,7 +85,15 @@ export function GeneNav({
             <span className="max-w-[9rem] truncate">{near.prev ?? "Previous"}</span>
           </Button>
         </Tooltip>
-        <Tooltip content={near.next ? <>Next gene <Kbd className="ml-1">]</Kbd></> : null}>
+        <Tooltip
+          content={
+            near.next ? (
+              <>
+                Next gene <Kbd className="ml-1">]</Kbd>
+              </>
+            ) : null
+          }
+        >
           <Button
             size="sm"
             variant="secondary"
@@ -91,7 +122,17 @@ export function GeneNav({
   );
 }
 
-function Fact({ label, children, hint, className }: { label: string; children: ReactNode; hint?: ReactNode; className?: string }) {
+function Fact({
+  label,
+  children,
+  hint,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  hint?: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn("min-w-0", className)}>
       <dt className="text-xs font-medium text-muted">{label}</dt>
@@ -136,14 +177,19 @@ export function GeneHeader({
   const reasons = gene.reasons?.length ? gene.reasons : (view.confidence?.reasons ?? []);
   const verdict = audit?.verdict ?? view.audit_verdict ?? gene.verdict ?? null;
   const yours = gene.at_your_choices;
-  const yoursMoved = yours && (yours.differs || Math.abs(yours.log2fc - (gene.log2fc ?? Math.log2(gene.fc))) > 1e-9);
+  const yoursMoved =
+    yours && (yours.differs || Math.abs(yours.log2fc - (gene.log2fc ?? Math.log2(gene.fc))) > 1e-9);
   const ruleWords =
     ruleText ??
-    (alpha != null && minLog2fc != null ? `A call needs p below ${alpha} and at least ${fold(2 ** minLog2fc)}.` : undefined);
+    (alpha != null && minLog2fc != null
+      ? `A call needs p below ${alpha} and at least ${fold(2 ** minLog2fc)}.`
+      : undefined);
   return (
     <header className="mb-6">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="text-[32px] leading-tight font-semibold tracking-tight text-fg">{gene.gene}</h1>
+        <h1 className="text-[32px] leading-tight font-semibold tracking-tight text-fg">
+          {gene.gene}
+        </h1>
         <ConclusionTag conclusion={conclusion} long className="text-lg" />
         {gene.headline ? (
           <Tooltip content="One of the study's headline genes: its Decision Cards show what each option does to it.">
@@ -152,7 +198,9 @@ export function GeneHeader({
             </span>
           </Tooltip>
         ) : null}
-        {summary ? <CopyButton text={summary} label="Copy summary" showLabel className="ml-auto" /> : null}
+        {summary ? (
+          <CopyButton text={summary} label="Copy summary" showLabel className="ml-auto" />
+        ) : null}
       </div>
       <p className="mt-1 text-sm text-muted">
         {callSentence(gene)}
@@ -160,14 +208,23 @@ export function GeneHeader({
       </p>
       {yours && yoursMoved ? (
         <p className={cn("mt-1 text-[13px]", yours.differs ? "text-warn" : "text-muted")}>
-          With the options chosen on the Decision Cards: <span className="tabular">{fold(yours.fc)}</span>, p{" "}
-          <span className="tabular">{pValue(yours.p)}</span>, <ConclusionTag conclusion={yours.conclusion} long />
+          With the options chosen on the Decision Cards:{" "}
+          <span className="tabular">{fold(yours.fc)}</span>, p{" "}
+          <span className="tabular">{pValue(yours.p)}</span>,{" "}
+          <ConclusionTag conclusion={yours.conclusion} long />
           {yours.differs ? " — a different call from the planned analysis." : "."}
         </p>
       ) : null}
 
       <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 rounded-xl border border-line bg-surface p-4 sm:grid-cols-4 xl:grid-cols-[repeat(4,minmax(0,auto))_minmax(0,1.6fr)]">
-        <Fact label="Fold change" hint={<>95&nbsp;% CI <span className="tabular">{ci(lo, hi)}</span></>}>
+        <Fact
+          label="Fold change"
+          hint={
+            <>
+              95&nbsp;% CI <span className="tabular">{ci(lo, hi)}</span>
+            </>
+          }
+        >
           <span className="font-mono text-2xl font-semibold tabular">{fold(gene.fc)}</span>
         </Fact>
         <Fact label="p-value">
@@ -188,7 +245,11 @@ export function GeneHeader({
           </span>
         </Fact>
         <Fact label="Confidence">
-          {level ? <LevelTag level={level} className="text-base" /> : <span className="text-faint">Not graded</span>}
+          {level ? (
+            <LevelTag level={level} className="text-base" />
+          ) : (
+            <span className="text-faint">Not graded</span>
+          )}
         </Fact>
         <Fact label="Audit verdict" className="col-span-2 sm:col-span-4 xl:col-span-1">
           {verdict ? (
@@ -199,7 +260,8 @@ export function GeneHeader({
               ) : null}
               {auditOutdated > 0 ? (
                 <p className="mt-1 text-xs text-warn">
-                  Audited before the last {auditOutdated === 1 ? "decision" : `${count(auditOutdated)} decisions`}: run it
+                  Audited before the last{" "}
+                  {auditOutdated === 1 ? "decision" : `${count(auditOutdated)} decisions`}: run it
                   again in Audit to bring this verdict up to date.
                 </p>
               ) : null}
@@ -225,7 +287,9 @@ export function GeneHeader({
           </ul>
         </div>
       ) : null}
-      {view.confidence_text?.plain ? <p className="mt-2 text-[13px] text-muted">{view.confidence_text.plain}</p> : null}
+      {view.confidence_text?.plain ? (
+        <p className="mt-2 text-[13px] text-muted">{view.confidence_text.plain}</p>
+      ) : null}
       {checks.length ? (
         <details className="group mt-2 text-[13px]">
           <summary className="cursor-pointer text-muted hover:text-fg">
@@ -233,7 +297,10 @@ export function GeneHeader({
           </summary>
           <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
             {checks.map((c) => (
-              <li key={c.id} className="flex gap-2 rounded-lg border border-line bg-surface px-3 py-2">
+              <li
+                key={c.id}
+                className="flex gap-2 rounded-lg border border-line bg-surface px-3 py-2"
+              >
                 <span aria-hidden className={c.passed ? "text-ok" : "text-warn"}>
                   {c.passed ? "✓" : "!"}
                 </span>

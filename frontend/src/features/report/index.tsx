@@ -129,11 +129,18 @@ export default function ReportSection({ workspace }: SectionProps) {
       {report.isPending ? (
         <Card>
           <CardBody className="pt-4">
-            <LoadingBlock label="Writing the report from the study's numbers (the first time takes a few seconds)" lines={8} />
+            <LoadingBlock
+              label="Writing the report from the study's numbers (the first time takes a few seconds)"
+              lines={8}
+            />
           </CardBody>
         </Card>
       ) : report.error ? (
-        <ErrorPanel error={report.error} title="The report could not be written" onRetry={() => void report.refetch()} />
+        <ErrorPanel
+          error={report.error}
+          title="The report could not be written"
+          onRetry={() => void report.refetch()}
+        />
       ) : (
         <Document
           view={report.data}
@@ -178,7 +185,9 @@ function Document({
   return (
     <div className="grid items-start gap-8 xl:grid-cols-[176px_minmax(0,1fr)]">
       <nav aria-label="Contents" className="sticky top-4 hidden self-start xl:block">
-        <p className="mb-2 text-[11.5px] font-semibold tracking-wider text-muted uppercase">Contents</p>
+        <p className="mb-2 text-[11.5px] font-semibold tracking-wider text-muted uppercase">
+          Contents
+        </p>
         <ol className="flex flex-col gap-0.5 border-l border-line">
           {PARTS.map((p) => (
             <li key={p.id}>
@@ -201,7 +210,10 @@ function Document({
       </nav>
 
       <div className="flex min-w-0 max-w-[860px] flex-col gap-10">
-        <nav aria-label="Jump to" className="relative -mt-4 flex gap-1.5 overflow-x-auto pb-1 qp-scroll xl:hidden">
+        <nav
+          aria-label="Jump to"
+          className="relative -mt-4 flex gap-1.5 overflow-x-auto pb-1 qp-scroll xl:hidden"
+        >
           {PARTS.map((p) => (
             <button
               key={p.id}
@@ -222,7 +234,11 @@ function Document({
               {view.key_numbers.map((k) => {
                 const f = view.facts[k.fact];
                 return f ? (
-                  <li key={k.label} className="rounded-xl border border-line bg-surface px-3.5 py-2.5" title={`${f.id}: ${f.path}`}>
+                  <li
+                    key={k.label}
+                    className="rounded-xl border border-line bg-surface px-3.5 py-2.5"
+                    title={`${f.id}: ${f.path}`}
+                  >
                     <p className="tabular text-[20px] font-semibold text-fg">{f.text}</p>
                     <p className="text-[12px] text-muted">{k.label}</p>
                   </li>
@@ -267,7 +283,11 @@ function Document({
           <MiqePanel miqe={view.miqe} facts={view.facts} />
         </Part>
 
-        <Part id="limitations" title="Limitations" hint="In plain words, for the discussion section.">
+        <Part
+          id="limitations"
+          title="Limitations"
+          hint="In plain words, for the discussion section."
+        >
           <ul className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-5 py-4">
             {view.limitations.map((l) => (
               <li key={l.id} className="flex gap-2.5 text-[14px] leading-relaxed text-muted">
@@ -301,13 +321,32 @@ function Document({
   );
 }
 
-function Part({ id, title, hint, children }: { id: PartId; title: string; hint?: string; children: ReactNode }) {
+function Part({
+  id,
+  title,
+  hint,
+  children,
+}: {
+  id: PartId;
+  title: string;
+  hint?: string;
+  children: ReactNode;
+}) {
   return (
-    <section id={anchor(id)} tabIndex={-1} aria-labelledby={`${anchor(id)}-title`} className="scroll-mt-4 outline-none">
+    <section
+      id={anchor(id)}
+      tabIndex={-1}
+      aria-labelledby={`${anchor(id)}-title`}
+      className="scroll-mt-4 outline-none"
+    >
       <h2 id={`${anchor(id)}-title`} className="text-[18px] font-semibold tracking-tight text-fg">
         {title}
       </h2>
-      {hint ? <p className="mt-0.5 mb-4 text-[13px] text-muted">{hint}</p> : <div className="mb-4" />}
+      {hint ? (
+        <p className="mt-0.5 mb-4 text-[13px] text-muted">{hint}</p>
+      ) : (
+        <div className="mb-4" />
+      )}
       {children}
     </section>
   );
@@ -318,7 +357,13 @@ function FactsTable({ view }: { view: ReportView }) {
   const facts = useMemo(() => Object.values(view.facts), [view.facts]);
   return (
     <div className="flex flex-col gap-2">
-      <Button size="sm" variant="secondary" className="self-start" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+      <Button
+        size="sm"
+        variant="secondary"
+        className="self-start"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
         {open ? "Hide" : "Show"} the {count(facts.length)} facts this report cites
       </Button>
       {open ? (
@@ -357,7 +402,9 @@ function useActivePart(): PartId {
   const [active, setActive] = useState<PartId>("summary");
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined") return;
-    const els = PARTS.map((p) => document.getElementById(anchor(p.id))).filter((e): e is HTMLElement => Boolean(e));
+    const els = PARTS.map((p) => document.getElementById(anchor(p.id))).filter(
+      (e): e is HTMLElement => Boolean(e),
+    );
     const seen = new Map<string, boolean>();
     const io = new IntersectionObserver(
       (entries) => {

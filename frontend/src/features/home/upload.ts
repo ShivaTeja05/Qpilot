@@ -1,7 +1,8 @@
 /**
  * Opening a file: `POST /api/workspaces` as a multipart form, with upload progress (fetch has
- * none, so this one request uses XMLHttpRequest). Errors come back as {@link ApiError} in the
- * server's own words, like every other request.
+ * none, so this one request uses XMLHttpRequest). One RDML file goes in `rdml` (and a sheet in
+ * `sheet`) as before; instrument exports go in `files`, where the server sorts them by content.
+ * Errors come back as {@link ApiError} in the server's own words, like every other request.
  */
 import { ApiError, type Schemas } from "@/api/client";
 
@@ -11,9 +12,23 @@ export interface UploadProgress {
 }
 
 export interface OpenFileInput {
-  rdml: File;
+  /** One RDML file, opened as it is. */
+  rdml?: File | null;
+  /** What the instrument wrote (and an RDML file or a sample sheet among them). */
+  files?: readonly File[];
   sheet?: File | null;
   sentence?: string;
+}
+
+/** The multipart form for an open: `rdml` + `sheet`, or `files` (+ `sheet`), and the sentence. */
+export function openForm(input: OpenFileInput): FormData {
+  const form = new FormData();
+  if (input.files?.length) for (const f of input.files) form.append("files", f, f.name);
+  else if (input.rdml) form.append("rdml", input.rdml, input.rdml.name);
+  if (input.sheet) form.append("sheet", input.sheet, input.sheet.name);
+  const sentence = input.sentence?.trim();
+  if (sentence) form.append("sentence", sentence);
+  return form;
 }
 
 interface ErrorShape {
@@ -27,12 +42,7 @@ export function openFile(
   input: OpenFileInput,
   onProgress: (p: UploadProgress) => void,
 ): { done: Promise<Schemas["JobStarted"]>; abort: () => void } {
-  const form = new FormData();
-  form.append("rdml", input.rdml, input.rdml.name);
-  if (input.sheet) form.append("sheet", input.sheet, input.sheet.name);
-  const sentence = input.sentence?.trim();
-  if (sentence) form.append("sentence", sentence);
-
+  const form = openForm(input);
   const xhr = new XMLHttpRequest();
   const done = new Promise<Schemas["JobStarted"]>((resolve, reject) => {
     xhr.open("POST", "/api/workspaces");

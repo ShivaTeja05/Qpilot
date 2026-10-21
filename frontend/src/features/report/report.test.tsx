@@ -70,7 +70,8 @@ describe("MethodsPanel", () => {
     show(<MethodsPanel methods={view.methods} facts={view.facts} />);
     expect(screen.getByRole("button", { name: "Copy as plain text" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Copy with citations" })).toBeTruthy();
-    for (const p of view.methods.paragraphs) expect(screen.getByRole("heading", { name: p.title })).toBeTruthy();
+    for (const p of view.methods.paragraphs)
+      expect(screen.getByRole("heading", { name: p.title })).toBeTruthy();
     expect(screen.getAllByRole("listitem").length).toBe(view.methods.citations.length);
     expect(view.methods.with_citations).toContain("References");
   });
@@ -80,13 +81,16 @@ describe("MiqePanel", () => {
   it("counts the items by status and filters them", () => {
     show(<MiqePanel miqe={view.miqe} facts={view.facts} />);
     expect(screen.getByRole("img", { name: /MIQE 2.0 items by status/ })).toBeTruthy();
-    const items = () => screen.getAllByRole("listitem").filter((li) => li.querySelector(".font-mono"));
+    const items = () =>
+      screen.getAllByRole("listitem").filter((li) => li.querySelector(".font-mono"));
     expect(items().length).toBe(view.miqe.n_items);
     fireEvent.click(screen.getByRole("radio", { name: `Not met ${view.miqe.counts.not_met}` }));
     expect(items().length).toBe(view.miqe.counts.not_met);
     for (const li of items()) expect(within(li).getByText("Not met")).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: `All ${view.miqe.n_items}` }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Find a MIQE item" }), { target: { value: "efficiency" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Find a MIQE item" }), {
+      target: { value: "efficiency" },
+    });
     expect(items().length).toBeGreaterThan(0);
     expect(items().length).toBeLessThan(view.miqe.n_items);
   });
@@ -95,7 +99,8 @@ describe("MiqePanel", () => {
 describe("ReviewPanel", () => {
   it("lists the findings most severe first and filters by severity", () => {
     show(<ReviewPanel review={view.review} facts={view.facts} workspace={null} />);
-    const findings = () => within(screen.getByRole("list", { name: "Findings" })).getAllByRole("heading");
+    const findings = () =>
+      within(screen.getByRole("list", { name: "Findings" })).getAllByRole("heading");
     expect(findings().length).toBe(view.review.findings.length);
     expect(findings()[0]!.textContent).toContain("Major");
     fireEvent.click(screen.getByRole("radio", { name: `Minor ${view.review.counts.minor}` }));

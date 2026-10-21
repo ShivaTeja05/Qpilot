@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "qpilot"
 version = "0.1.0"
-description = "Open, validated qPCR analysis that shows which of your choices could change the conclusion. Research use only."
+description = "Open qPCR analysis, benchmarked against published results, that shows which of your choices could change the conclusion. Research use only."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
@@ -69,6 +69,10 @@ qsim = "qsim.cli:main"
 # sim/src/qsim installs as the top-level package `qsim`. Its data/ and results/ stay in sim/
 # and are found relative to the source tree, so run qsim from an editable install or a clone.
 packages = ["qpilot", "sim/src/qsim"]
+
+[tool.hatch.build.targets.wheel.force-include]
+# Run Gate's rule packs: qpilot.qpcr.gate_rules.PACKS_DIR_CANDIDATES looks in qpilot/_packs first.
+"packs" = "qpilot/_packs"
 
 [tool.hatch.build.targets.sdist]
 exclude = ["tests/fixtures/*.rdml", "demo/*.mp4", "frontend/node_modules"]

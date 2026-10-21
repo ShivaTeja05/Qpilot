@@ -48,7 +48,13 @@ const isScalar = (v: unknown) => v === null || ["string", "number", "boolean"].i
 /** While the server reads the file for the first time: what is happening; it fills in by itself. */
 export function Warming({ message, className }: { message: string; className?: string }) {
   return (
-    <div role="status" className={cn("flex items-start gap-3 rounded-xl border border-line bg-surface p-4", className)}>
+    <div
+      role="status"
+      className={cn(
+        "flex items-start gap-3 rounded-xl border border-line bg-surface p-4",
+        className,
+      )}
+    >
       <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-accent" aria-hidden />
       <div className="min-w-0">
         <p className="text-sm font-medium text-fg">Reading the file</p>
@@ -134,7 +140,9 @@ export function Quote({ entry }: { entry: QuarantineEntry }) {
   const text = visibleText(entry.value);
   const long = text.length > LONG_QUOTE;
   const instruction = entry.flags.includes("instruction_like");
-  const others = entry.flags.filter((f) => f !== "instruction_like").map((f) => FLAG_WORDS[f] ?? f.replace(/_/g, " "));
+  const others = entry.flags
+    .filter((f) => f !== "instruction_like")
+    .map((f) => FLAG_WORDS[f] ?? f.replace(/_/g, " "));
   return (
     <figure className="min-w-0">
       <blockquote
@@ -146,7 +154,11 @@ export function Quote({ entry }: { entry: QuarantineEntry }) {
         {long && !all ? `${text.slice(0, LONG_QUOTE)}…` : text}
       </blockquote>
       {long ? (
-        <button type="button" className="mt-1 text-xs text-accent hover:underline" onClick={() => setAll((a) => !a)}>
+        <button
+          type="button"
+          className="mt-1 text-xs text-accent hover:underline"
+          onClick={() => setAll((a) => !a)}
+        >
           {all ? "Show less" : `Show all ${count(text.length)} characters`}
         </button>
       ) : null}
@@ -228,7 +240,8 @@ function EvidenceItem({
         <span className="text-muted">Reading the quoted text…</span>
       ) : entry === null ? (
         <span className="text-muted">
-          Text <code className="font-mono text-xs">{item.ref}</code> is not in this session's quarantine.
+          Text <code className="font-mono text-xs">{item.ref}</code> is not in this session's
+          quarantine.
         </span>
       ) : (
         <Quote entry={entry} />
@@ -257,7 +270,12 @@ function EvidenceItem({
         <span className="text-muted">{item.kind === "curve" ? "Curve of well" : "Well"}</span>
         <code className="font-mono text-xs text-fg">{item.ref}</code>
         {onOpenWell ? (
-          <Button size="sm" variant="secondary" icon={<Activity />} onClick={() => onOpenWell(item.ref)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<Activity />}
+            onClick={() => onOpenWell(item.ref)}
+          >
             Open the curve
           </Button>
         ) : null}
@@ -300,11 +318,21 @@ export function EvidenceList({
     <div>
       <ul className="flex flex-col gap-2.5">
         {shown.map((item, i) => (
-          <EvidenceItem key={`${item.kind}:${item.ref}:${i}`} item={item} quotes={quotes} sheetCells={sheetCells} onOpenWell={onOpenWell} />
+          <EvidenceItem
+            key={`${item.kind}:${item.ref}:${i}`}
+            item={item}
+            quotes={quotes}
+            sheetCells={sheetCells}
+            onOpenWell={onOpenWell}
+          />
         ))}
       </ul>
       {evidence.length > EVIDENCE_SHOWN ? (
-        <button type="button" className="mt-2 text-xs font-medium text-accent hover:underline" onClick={() => setAll((a) => !a)}>
+        <button
+          type="button"
+          className="mt-2 text-xs font-medium text-accent hover:underline"
+          onClick={() => setAll((a) => !a)}
+        >
           {all ? "Show fewer" : `Show all ${count(evidence.length)} sources`}
         </button>
       ) : null}
@@ -365,11 +393,20 @@ const COLUMN_ORDER = [
 ];
 
 /** A list of records (wells with a signal, replicate sets, fits) as a small table. */
-function DetailTable({ rows, label, onOpenWell }: { rows: Dict[]; label: string; onOpenWell?: (well: string) => void }) {
+function DetailTable({
+  rows,
+  label,
+  onOpenWell,
+}: {
+  rows: Dict[];
+  label: string;
+  onOpenWell?: (well: string) => void;
+}) {
   const [all, setAll] = useState(false);
   const columns: string[] = [];
   for (const r of rows.slice(0, 50)) {
-    for (const [k, v] of Object.entries(r)) if (!columns.includes(k) && isScalar(v)) columns.push(k);
+    for (const [k, v] of Object.entries(r))
+      if (!columns.includes(k) && isScalar(v)) columns.push(k);
   }
   // Where a row is (plate, well, sample, target) first, then what was found, then the rest.
   const rank = (k: string) => {
@@ -386,7 +423,11 @@ function DetailTable({ rows, label, onOpenWell }: { rows: Dict[]; label: string;
           <thead className="bg-surface-2">
             <tr>
               {cols.map((c) => (
-                <th key={c} scope="col" className="px-2 py-1.5 text-left font-medium whitespace-nowrap text-muted">
+                <th
+                  key={c}
+                  scope="col"
+                  className="px-2 py-1.5 text-left font-medium whitespace-nowrap text-muted"
+                >
                   {detailLabel(c)}
                 </th>
               ))}
@@ -406,7 +447,8 @@ function DetailTable({ rows, label, onOpenWell }: { rows: Dict[]; label: string;
                   const text =
                     c === "class" && typeof v === "string"
                       ? (SIGNAL_CLASS[v] ?? detailValue(v))
-                      : c === "status" && (v === "consistent" || v === "contradicted" || v === "cannot_check")
+                      : c === "status" &&
+                          (v === "consistent" || v === "contradicted" || v === "cannot_check")
                         ? CHECK[v].word.toLowerCase()
                         : detailValue(v);
                   return (
@@ -414,7 +456,11 @@ function DetailTable({ rows, label, onOpenWell }: { rows: Dict[]; label: string;
                       key={c}
                       className={cn(
                         "px-2 py-1 whitespace-nowrap",
-                        numeric ? "text-right font-mono tabular" : c === "run_id" || c === "well" ? "font-mono" : "",
+                        numeric
+                          ? "text-right font-mono tabular"
+                          : c === "run_id" || c === "well"
+                            ? "font-mono"
+                            : "",
                       )}
                     >
                       {text}
@@ -440,7 +486,11 @@ function DetailTable({ rows, label, onOpenWell }: { rows: Dict[]; label: string;
         </table>
       </div>
       {rows.length > TABLE_ROWS ? (
-        <button type="button" className="mt-1 text-xs font-medium text-accent hover:underline" onClick={() => setAll((a) => !a)}>
+        <button
+          type="button"
+          className="mt-1 text-xs font-medium text-accent hover:underline"
+          onClick={() => setAll((a) => !a)}
+        >
           {all ? "Show fewer" : `Show all ${count(rows.length)}`}
         </button>
       ) : null}
@@ -460,7 +510,10 @@ function Nested({ label, children }: { label: string; children: ReactNode }) {
         onClick={() => setOpen((o) => !o)}
         className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-fg"
       >
-        <ChevronRight aria-hidden className={cn("size-3.5 transition-transform duration-150", open && "rotate-90")} />
+        <ChevronRight
+          aria-hidden
+          className={cn("size-3.5 transition-transform duration-150", open && "rotate-90")}
+        />
         {label}
       </button>
       {open ? (
@@ -488,9 +541,14 @@ export function DetailsView({
   hide?: string[];
 }) {
   const entries = Object.entries(details).filter(([k]) => !hide.includes(k));
-  const scalars = entries.filter(([, v]) => isScalar(v) || (Array.isArray(v) && v.every(isScalar) && v.length > 0));
+  const scalars = entries.filter(
+    ([, v]) => isScalar(v) || (Array.isArray(v) && v.every(isScalar) && v.length > 0),
+  );
   const checks = entries.find(([k, v]) => k === "checks" && isDict(v))?.[1] as Dict | undefined;
-  const tables = entries.filter(([, v]) => Array.isArray(v) && v.length > 0 && v.every(isDict)) as [string, Dict[]][];
+  const tables = entries.filter(([, v]) => Array.isArray(v) && v.length > 0 && v.every(isDict)) as [
+    string,
+    Dict[],
+  ][];
   const nested = entries.filter(([k, v]) => k !== "checks" && isDict(v)) as [string, Dict][];
   const empties = entries.filter(([, v]) => Array.isArray(v) && v.length === 0);
   return (
@@ -500,7 +558,12 @@ export function DetailsView({
           {[...scalars, ...empties].map(([k, v]) => (
             <div key={k} className="contents">
               <dt className="text-muted">{detailLabel(k)}</dt>
-              <dd className={cn("min-w-0 break-words text-fg", typeof v === "number" && "font-mono tabular")}>
+              <dd
+                className={cn(
+                  "min-w-0 break-words text-fg",
+                  typeof v === "number" && "font-mono tabular",
+                )}
+              >
                 {Array.isArray(v) && v.length === 0
                   ? "none"
                   : k.endsWith("_range") && Array.isArray(v) && v.length === 2
@@ -515,13 +578,17 @@ export function DetailsView({
         <ul className="flex flex-col gap-2">
           {Object.entries(checks).map(([rule, sub]) => {
             const s = isDict(sub) ? sub : {};
-            const status = (["consistent", "contradicted", "cannot_check"] as const).find((x) => x === s.status);
+            const status = (["consistent", "contradicted", "cannot_check"] as const).find(
+              (x) => x === s.status,
+            );
             return (
               <li key={rule} className="rounded-lg border border-line px-3 py-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <RuleChip rule={rule} />
                   {status ? <CheckTag status={status} /> : null}
-                  {typeof s.note === "string" && s.note ? <span className="text-[13px] text-fg">{s.note}</span> : null}
+                  {typeof s.note === "string" && s.note ? (
+                    <span className="text-[13px] text-fg">{s.note}</span>
+                  ) : null}
                 </div>
                 {isDict(s.details) && Object.keys(s.details).length ? (
                   <div className="mt-1.5">
@@ -572,7 +639,11 @@ export function RuleChip({ rule }: { rule: string }) {
       <span className="font-mono">{rule}</span>
     </span>
   );
-  return words ? <Tooltip content={<span className="block max-w-xs">{words}</span>}>{chip}</Tooltip> : chip;
+  return words ? (
+    <Tooltip content={<span className="block max-w-xs">{words}</span>}>{chip}</Tooltip>
+  ) : (
+    chip
+  );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -592,7 +663,13 @@ export function CheckSummary({ check }: { check: ProposalCheck }) {
 }
 
 /** The check's fold-out: what the status means, then its numbers. */
-export function CheckDetails({ check, onOpenWell }: { check: ProposalCheck; onOpenWell?: (well: string) => void }) {
+export function CheckDetails({
+  check,
+  onOpenWell,
+}: {
+  check: ProposalCheck;
+  onOpenWell?: (well: string) => void;
+}) {
   const details = (check.details ?? {}) as Dict;
   const rules = check.rule_ids.filter((r) => RULE_WORDS[r]);
   return (
@@ -607,7 +684,9 @@ export function CheckDetails({ check, onOpenWell }: { check: ProposalCheck; onOp
           ))}
         </ul>
       ) : null}
-      {Object.keys(details).length ? <DetailsView details={details} onOpenWell={onOpenWell} /> : null}
+      {Object.keys(details).length ? (
+        <DetailsView details={details} onOpenWell={onOpenWell} />
+      ) : null}
     </div>
   );
 }
@@ -619,8 +698,10 @@ export const MATTERS_TEXT = "This matters for at least one conclusion; decide on
 export const NOT_MATTERS_TEXT = "Neither reading changes any conclusion.";
 export const CANNOT_TELL_TEXT =
   "This cannot be answered yet: the rest of the design does not run. Settle the other proposals, then ask again.";
-export const BLIND_TEXT = "Hidden until the design and the curves are confirmed (blind): no gene, direction or number.";
-export const HIDDEN_TEXT = "Hidden: the design or the curves are not confirmed (again) yet, so no result is shown.";
+export const BLIND_TEXT =
+  "Hidden until the design and the curves are confirmed (blind): no gene, direction or number.";
+export const HIDDEN_TEXT =
+  "Hidden: the design or the curves are not confirmed (again) yet, so no result is shown.";
 
 /** The blind answer, as one line with an icon. */
 export function MattersLine({ matters }: { matters: boolean | null | undefined }) {
@@ -652,10 +733,20 @@ export function MattersLine({ matters }: { matters: boolean | null | undefined }
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 function units(v: unknown): string {
-  return Array.isArray(v) ? v.map((x) => (typeof x === "number" ? count(x) : MISSING)).join(" and ") : detailValue(v);
+  return Array.isArray(v)
+    ? v.map((x) => (typeof x === "number" ? count(x) : MISSING)).join(" and ")
+    : detailValue(v);
 }
 
-function Before({ label, before, after }: { label: ReactNode; before: ReactNode; after: ReactNode }) {
+function Before({
+  label,
+  before,
+  after,
+}: {
+  label: ReactNode;
+  before: ReactNode;
+  after: ReactNode;
+}) {
   return (
     <div className="contents">
       <dt className="text-muted">{label}</dt>
@@ -670,7 +761,11 @@ function Before({ label, before, after }: { label: ReactNode; before: ReactNode;
   );
 }
 
-function changedLine(changed: number, nGenes: unknown, together?: { n: unknown; alone: number }): string {
+function changedLine(
+  changed: number,
+  nGenes: unknown,
+  together?: { n: unknown; alone: number },
+): string {
   const of = typeof nGenes === "number" ? count(nGenes) : "?";
   if (!together) {
     return changed
@@ -680,7 +775,8 @@ function changedLine(changed: number, nGenes: unknown, together?: { n: unknown; 
   const n = typeof together.n === "number" ? count(together.n) : "?";
   if (changed && !together.alone)
     return `On its own it changes no conclusion, but together with the other exclusions found in this round trip (${n} in all) ${count(changed)} of ${of} conclusions change.`;
-  if (changed) return `Together with the other exclusions found in this round trip (${n} in all), ${count(changed)} of ${of} conclusions change.`;
+  if (changed)
+    return `Together with the other exclusions found in this round trip (${n} in all), ${count(changed)} of ${of} conclusions change.`;
   return `Together with the other exclusions found in this round trip (${n} in all), no conclusion changes (0 of ${of}).`;
 }
 
@@ -694,16 +790,26 @@ export function ExclusionConsequence({ c }: { c: Dict }) {
   const wGenes = w && Array.isArray(w.changed_genes) ? w.changed_genes.map(String) : [];
   return (
     <div className="flex flex-col gap-3">
-      <p className={cn("text-[13px]", changed ? "font-medium text-warn" : "text-fg")}>{changedLine(changed, c.n_genes)}</p>
+      <p className={cn("text-[13px]", changed ? "font-medium text-warn" : "text-fg")}>
+        {changedLine(changed, c.n_genes)}
+      </p>
       <dl className="grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-1 text-[13px]">
-        <Before label={`Fold change of ${gene}`} before={fold(num(c.fc_before))} after={fold(num(c.fc_after))} />
+        <Before
+          label={`Fold change of ${gene}`}
+          before={fold(num(c.fc_before))}
+          after={fold(num(c.fc_after))}
+        />
         <Before label="p-value" before={pValue(num(c.p_before))} after={pValue(num(c.p_after))} />
         <Before
           label={`Conclusion for ${gene}`}
           before={<ConclusionTag conclusion={asConclusion(c.conclusion_before)} />}
           after={<ConclusionTag conclusion={asConclusion(c.conclusion_after)} />}
         />
-        <Before label="Biological units per group" before={units(c.n_units_before)} after={units(c.n_units_after)} />
+        <Before
+          label="Biological units per group"
+          before={units(c.n_units_before)}
+          after={units(c.n_units_after)}
+        />
         {genes.length ? (
           <div className="contents">
             <dt className="text-muted">Genes whose conclusion changes</dt>
@@ -717,7 +823,11 @@ export function ExclusionConsequence({ c }: { c: Dict }) {
             {changedLine(wChanged, c.n_genes, { n: w.n_exclusions, alone: changed })}
           </p>
           <dl className="mt-2 grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 gap-y-1 text-[13px]">
-            <Before label={`Fold change of ${gene}, all together`} before={fold(num(w.fc_before))} after={fold(num(w.fc_after))} />
+            <Before
+              label={`Fold change of ${gene}, all together`}
+              before={fold(num(w.fc_before))}
+              after={fold(num(w.fc_after))}
+            />
             <Before
               label={`Conclusion for ${gene}, all together`}
               before={<ConclusionTag conclusion={asConclusion(w.conclusion_before)} />}

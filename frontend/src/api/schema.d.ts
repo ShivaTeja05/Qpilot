@@ -1683,6 +1683,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/gate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Gate
+         * @description The controls on every plate, by rule, and whether leaving their wells out changes a call.
+         */
+        get: operations["get_gate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/genes/{gene}": {
         parameters: {
             query?: never;
@@ -2063,6 +2083,10 @@ export type paths = {
         /**
          * Open File
          * @description Open a file (and optional sample sheet) as a Studio session; nothing is analysed yet.
+         *
+         *     Send ``rdml`` (one RDML file) or ``files`` (instrument exports), not both. A vendor export
+         *     is read once into a deterministic RDML file; what was read is shown in the session's
+         *     ``capture``.
          */
         post: operations["open_file"];
         delete?: never;
@@ -3878,10 +3902,15 @@ export type components = {
         /** Body_open_file */
         Body_open_file: {
             /**
-             * Rdml
-             * @description The instrument's RDML export (.rdml, .xml).
+             * Files
+             * @description What the instrument wrote, instead of `rdml`: one export or a whole export set (CFX amplification per dye + Cq results + run information; QuantStudio / StepOne / 7500; LightCycler 480; RDES or a tidy table), at most 64 files. Sorted by content: an RDML file, the export, and a sample sheet among them.
              */
-            rdml: string;
+            files?: string[] | null;
+            /**
+             * Rdml
+             * @description An RDML file (.rdml, .xml), opened as it is.
+             */
+            rdml?: string | null;
             /**
              * Sentence
              * @default
@@ -3985,6 +4014,143 @@ export type components = {
             reason: string;
             /** Stage */
             stage: string;
+        };
+        /**
+         * CaptureNote
+         * @description A warning from the import, in qPilot's words (never file text).
+         */
+        CaptureNote: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * CapturePlate
+         * @description What was read for one plate (one RDML run).
+         */
+        CapturePlate: {
+            /** Columns */
+            columns: number;
+            /** Dyes */
+            dyes: string[];
+            /**
+             * N Cycles
+             * @description Cycles per amplification curve (0: no curves).
+             */
+            n_cycles: number;
+            /** N Reactions */
+            n_reactions: number;
+            /**
+             * N Unmapped Types
+             * @description Wells whose vendor sample type qPilot does not know (treated as unknowns).
+             */
+            n_unmapped_types: number;
+            /** N Wells */
+            n_wells: number;
+            /** N With Vendor Cq */
+            n_with_vendor_cq: number;
+            /** Rows */
+            rows: number;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Sample Types
+             * @description Wells per declared RDML sample type.
+             */
+            sample_types: {
+                [key: string]: number;
+            };
+            /** Targets */
+            targets: string[];
+            /** Value Kind */
+            value_kind: string;
+            /**
+             * Vendor Omitted
+             * @description Wells the vendor software marked omitted: recorded, never applied.
+             */
+            vendor_omitted: string[];
+            /**
+             * Verdict
+             * @description This plate's raw-ness verdict.
+             */
+            verdict: string;
+        };
+        /**
+         * CaptureRawness
+         * @description Were the curves processed before export, and what that means for the analysis.
+         */
+        CaptureRawness: {
+            /**
+             * Linregpcr Ok
+             * @description The curves suit LinRegPCR's per-well efficiency.
+             */
+            linregpcr_ok: boolean;
+            /** Meaning */
+            meaning: string;
+            /** Title */
+            title: string;
+            /**
+             * Verdict
+             * @description raw | normalized | baseline_subtracted | scaled | cq_only | unknown
+             */
+            verdict: string;
+        };
+        /**
+         * CaptureSource
+         * @description One file qPilot read, by the name it had on the person's computer.
+         */
+        CaptureSource: {
+            /** Bytes */
+            bytes: number;
+            /** Name */
+            name: string;
+            /**
+             * Role
+             * @description amplification, cq, melt, setup, plate (all in one) or ignored
+             */
+            role: string;
+        };
+        /**
+         * CaptureSummary
+         * @description An instrument export as qPilot read it into the session's RDML file.
+         */
+        CaptureSummary: {
+            /** Connector */
+            connector: string;
+            /** Dialect */
+            dialect: string;
+            /**
+             * Label
+             * @description The export family, e.g. 'Bio-Rad CFX Manager / Maestro'.
+             */
+            label: string;
+            /** Layers */
+            layers: {
+                [key: string]: boolean;
+            };
+            /**
+             * N Quarantined
+             * @description Free-text values kept in quarantine.
+             */
+            n_quarantined: number;
+            /** Plates */
+            plates: components["schemas"]["CapturePlate"][];
+            rawness: components["schemas"]["CaptureRawness"];
+            /** Sources */
+            sources: components["schemas"]["CaptureSource"][];
+            /**
+             * Unused
+             * @description Files dropped with the export that qPilot did not read.
+             * @default []
+             */
+            unused: string[];
+            /** Value Kind */
+            value_kind: string;
+            /** Value Words */
+            value_words: string;
+            /** Warnings */
+            warnings: components["schemas"]["CaptureNote"][];
         };
         /**
          * CardOption
@@ -4860,11 +5026,8 @@ export type components = {
             impact: {
                 [key: string]: unknown;
             };
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "reference_set" | "group_cutoff" | "undetermined" | "amp_call";
+            /** Kind */
+            kind: string;
             /** Options */
             options: components["schemas"]["CardOption"][];
             /** Rank */
@@ -5317,6 +5480,314 @@ export type components = {
             message: string;
             /** Moved */
             moved: string[];
+        };
+        /**
+         * GateConsequence
+         * @description The consequence test of one warn/fail evaluation: every option, the class, the triage.
+         */
+        GateConsequence: {
+            /**
+             * Card Id
+             * @description Its `gate.rule` Decision Card.
+             */
+            card_id?: string | null;
+            /**
+             * Consequence
+             * @description The worst class over the options.
+             * @enum {string}
+             */
+            consequence: "none" | "magnitude" | "flip" | "unknown";
+            /**
+             * Id
+             * @description The evaluation's id.
+             */
+            id: string;
+            /** Options */
+            options: components["schemas"]["GateOption"][];
+            /** Plate */
+            plate?: string | null;
+            /** Rescue Option */
+            rescue_option?: string | null;
+            /** Rule Id */
+            rule_id: string;
+            /** Sample */
+            sample?: string | null;
+            /** Target */
+            target?: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Triage
+             * @enum {string}
+             */
+            triage: "ignore" | "rescue" | "human" | "defer";
+            /**
+             * Triage Text
+             * @description What happens to the finding, in words.
+             */
+            triage_text: string;
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "pass" | "warn" | "fail" | "not_applicable";
+        };
+        /**
+         * GateEvaluation
+         * @description One verdict of one rule on one plate, plate x target or sample.
+         */
+        GateEvaluation: {
+            /**
+             * Code
+             * @description Why a rule is not applicable (machine reason), else empty.
+             */
+            code: string;
+            /**
+             * Consequence
+             * @description The id of its consequence test, when it has one.
+             */
+            consequence?: string | null;
+            /**
+             * Flagged
+             * @description The wells the rule points at (`plate/well`).
+             */
+            flagged: string[];
+            /**
+             * Id
+             * @description A stable id of the evaluation (12 hex).
+             */
+            id: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "plate" | "target" | "sample" | "study";
+            /**
+             * Outcome
+             * @description The evaluator's outcome before the pack's severity.
+             */
+            outcome: string;
+            /** Plate */
+            plate?: string | null;
+            reason: components["schemas"]["FactText"];
+            /** Rule Id */
+            rule_id: string;
+            /** Sample */
+            sample?: string | null;
+            /** Target */
+            target?: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "pass" | "warn" | "fail" | "not_applicable";
+        };
+        /**
+         * GateLoaded
+         * @description The result of the ``gate.run`` job: the gate is ready to read.
+         */
+        GateLoaded: {
+            /** Head */
+            head: string;
+            /** N Cards */
+            n_cards: number;
+            /** N Consequences */
+            n_consequences: number;
+            /** N Evaluations */
+            n_evaluations: number;
+            /** Seconds */
+            seconds: number;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * GateOption
+         * @description What one option (leaving some wells out) would change.
+         */
+        GateOption: {
+            /**
+             * Consequence
+             * @enum {string}
+             */
+            consequence: "none" | "magnitude" | "flip" | "unknown";
+            /**
+             * Excluded
+             * @description The wells this option leaves out (`plate/well`).
+             */
+            excluded: string[];
+            /** Flipped */
+            flipped: string[];
+            /** Flipped Elsewhere */
+            flipped_elsewhere: string[];
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Max Delta Log2Fc
+             * @description The largest fold-change move (log2).
+             */
+            max_delta_log2fc: number;
+            /**
+             * N Flipped
+             * @description Calls that change at the analysis in use.
+             */
+            n_flipped: number;
+            /**
+             * N Flipped Elsewhere
+             * @description Calls that change only at other settings of the analysis grid.
+             */
+            n_flipped_elsewhere: number;
+            /** @description What leaving the wells out changes, in words. */
+            text: components["schemas"]["FactText"];
+        };
+        /**
+         * GatePack
+         * @description The rule pack the gate used (a record names it by its hash).
+         */
+        GatePack: {
+            /** Hash */
+            hash: string;
+            /**
+             * Label
+             * @description The pack's banner: research use, not clinical rules.
+             */
+            label: string;
+            /** Name */
+            name: string;
+            /** Rules */
+            rules: components["schemas"]["GateRuleInfo"][];
+            /** Version */
+            version: string;
+        };
+        /**
+         * GatePlate
+         * @description One plate: gated (its controls could be checked) or ungated, and its verdicts.
+         */
+        GatePlate: {
+            /**
+             * Counts
+             * @description Rule evaluations on this plate, per verdict.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /** Plate */
+            plate: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "gated" | "ungated";
+            /**
+             * Worst
+             * @description fail > warn > pass > not_applicable.
+             * @enum {string}
+             */
+            worst: "pass" | "warn" | "fail" | "not_applicable";
+        };
+        /**
+         * GateRuleInfo
+         * @description One rule of the pack, as a scientist reads it.
+         */
+        GateRuleInfo: {
+            /**
+             * Informational
+             * @description The rule offers nothing to leave out: its findings are logged, not tested.
+             */
+            informational: boolean;
+            /** Rule Id */
+            rule_id: string;
+            /** Sources */
+            sources: components["schemas"]["GateSource"][];
+            /**
+             * Statement
+             * @description What the rule checks, in words (from the pack).
+             */
+            statement: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * GateSource
+         * @description Where a rule's threshold comes from.
+         */
+        GateSource: {
+            /** Citation */
+            citation: string;
+            /** Key */
+            key: string;
+            /** Url */
+            url?: string | null;
+        };
+        /**
+         * GateView
+         * @description ``GET /studies/{id}/gate``: the controls on every plate, and whether they matter.
+         */
+        GateView: {
+            /**
+             * Analysis
+             * @description The analysis the consequences were measured at: the planned one, or the options a person chose on the Decision Cards.
+             * @enum {string}
+             */
+            analysis: "planned" | "your_choices";
+            /**
+             * Cards
+             * @description The `gate.rule` cards: options with their per-gene calls. Read-only here.
+             */
+            cards: components["schemas"]["CardView"][];
+            /** Consequences */
+            consequences: components["schemas"]["GateConsequence"][];
+            /**
+             * Counts
+             * @description Rule evaluations per verdict (all four keys).
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /** Evaluations */
+            evaluations: components["schemas"]["GateEvaluation"][];
+            /**
+             * Exclude In
+             * @description Where wells are left out: the Curves section of the Studio session, or nowhere on this page (a study analysed outside Studio).
+             * @enum {string}
+             */
+            exclude_in: "curves" | "none";
+            /**
+             * Head
+             * @description The decision chain head the gate was read at.
+             */
+            head: string;
+            /** @description One line in plain words. */
+            headline: components["schemas"]["FactText"];
+            /**
+             * How To Apply
+             * @description What to do about a finding, in words.
+             */
+            how_to_apply: string;
+            /** N Gated */
+            n_gated: number;
+            /** N Ungated */
+            n_ungated: number;
+            pack: components["schemas"]["GatePack"];
+            /** Plates */
+            plates: components["schemas"]["GatePlate"][];
+            /**
+             * Session
+             * @description The Studio session the study came from, if any.
+             */
+            session: string | null;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Triage
+             * @description Consequence tests per triage (all four keys).
+             */
+            triage: {
+                [key: string]: number;
+            };
         };
         /**
          * GeneChange
@@ -6440,6 +6911,12 @@ export type components = {
         OpenDone: {
             /** Key */
             key: string;
+            /**
+             * Unused
+             * @description Dropped files qPilot did not read (named back to the person).
+             * @default []
+             */
+            unused: string[];
         };
         /**
          * OptionEffect
@@ -10216,6 +10693,8 @@ export type components = {
              * @description What agents may do in this study (None: no study yet).
              */
             autonomy?: ("suggest" | "decide_and_tell") | null;
+            /** @description What qPilot read from the instrument export this session was opened from (None: opened from an RDML file). */
+            capture?: components["schemas"]["CaptureSummary"] | null;
             /** Decisions Head */
             decisions_head?: string | null;
             facts?: components["schemas"]["FileFacts"] | null;
@@ -13045,6 +13524,37 @@ export interface operations {
             };
         };
     };
+    get_gate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_gene: {
         parameters: {
             query?: never;
@@ -13695,7 +14205,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_open_file"];
             };

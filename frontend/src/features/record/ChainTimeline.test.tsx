@@ -13,12 +13,21 @@ const decided = fromApi(humanChain as unknown as DecisionsApi);
 afterEach(cleanup);
 
 function entries() {
-  return within(screen.getByRole("list", { name: /decision chain entries/i })).getAllByRole("article");
+  return within(screen.getByRole("list", { name: /decision chain entries/i })).getAllByRole(
+    "article",
+  );
 }
 
 describe("ChainTimeline", () => {
   it("lists every entry newest first, each linked to the one before it", () => {
-    renderWithProviders(<ChainTimeline entries={decided.entries} root={decided.root} head={decided.head} intact={decided.chain_intact} />);
+    renderWithProviders(
+      <ChainTimeline
+        entries={decided.entries}
+        root={decided.root}
+        head={decided.head}
+        intact={decided.chain_intact}
+      />,
+    );
     const shown = entries();
     expect(shown).toHaveLength(decided.entries.length);
     const seqs = shown.map((a) => Number(/#(\d+)/.exec(a.textContent ?? "")?.[1]));
@@ -28,17 +37,23 @@ describe("ChainTimeline", () => {
     expect(within(shown[0]!).getByText(`links to #${decided.entries.length - 1}`)).toBeTruthy();
     expect(screen.queryByText(/does not link/)).toBeNull();
     // the server's own check of every hash shows only when it sends one
-    expect(Boolean(screen.queryByText(/Intact: every hash checks out/))).toBe(decided.chain_intact === true);
+    expect(Boolean(screen.queryByText(/Intact: every hash checks out/))).toBe(
+      decided.chain_intact === true,
+    );
   });
 
   it("says who decided, the card's question and the option in words", () => {
-    renderWithProviders(<ChainTimeline entries={decided.entries} root={decided.root} head={decided.head} />);
+    renderWithProviders(
+      <ChainTimeline entries={decided.entries} root={decided.root} head={decided.head} />,
+    );
     for (const e of decided.entries) {
       expect(screen.getAllByText(e.card_title!).length).toBeGreaterThan(0);
       expect(screen.getAllByText(e.option_label!).length).toBeGreaterThan(0);
     }
     expect(screen.getByText("Decided automatically")).toBeTruthy();
-    expect(screen.getAllByText("Applied")).toHaveLength(decided.entries.filter((e) => e.status === "applied").length);
+    expect(screen.getAllByText("Applied")).toHaveLength(
+      decided.entries.filter((e) => e.status === "applied").length,
+    );
   });
 
   it("shows which agent requests still wait, and filters by actor", () => {
@@ -63,22 +78,37 @@ describe("ChainTimeline", () => {
 
   it("lists the attempts that did not change the study beside the chain", () => {
     renderWithProviders(
-      <ChainTimeline entries={withAgents.entries} root={withAgents.root} head={withAgents.head} attempts={withAgents.attempts} />,
+      <ChainTimeline
+        entries={withAgents.entries}
+        root={withAgents.root}
+        head={withAgents.head}
+        attempts={withAgents.attempts}
+      />,
     );
     expect(withAgents.attempts.length).toBeGreaterThan(0);
-    expect(screen.getByText(new RegExp(`${withAgents.attempts.length} attempts? did not change the study`))).toBeTruthy();
+    expect(
+      screen.getByText(
+        new RegExp(`${withAgents.attempts.length} attempts? did not change the study`),
+      ),
+    ).toBeTruthy();
     for (const a of withAgents.attempts) expect(screen.getByText(`“${a.reason}”`)).toBeTruthy();
   });
 
   it("marks a link that does not match its predecessor", () => {
-    const changed = decided.entries.map((e, i) => (i === 1 ? { ...e, prev_hash: decided.entries[2]!.hash } : e));
-    renderWithProviders(<ChainTimeline entries={changed} root={decided.root} head={decided.head} intact={false} />);
+    const changed = decided.entries.map((e, i) =>
+      i === 1 ? { ...e, prev_hash: decided.entries[2]!.hash } : e,
+    );
+    renderWithProviders(
+      <ChainTimeline entries={changed} root={decided.root} head={decided.head} intact={false} />,
+    );
     expect(screen.getByText("does not link to #1")).toBeTruthy();
     expect(screen.getByText(/Broken: a line was changed/)).toBeTruthy();
   });
 
   it("puts the head first and marks it", () => {
-    renderWithProviders(<ChainTimeline entries={decided.entries} root={decided.root} head={decided.head} />);
+    renderWithProviders(
+      <ChainTimeline entries={decided.entries} root={decided.root} head={decided.head} />,
+    );
     expect(within(entries()[0]!).getByText("Head")).toBeTruthy();
   });
 });

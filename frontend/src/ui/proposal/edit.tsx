@@ -5,7 +5,15 @@
  */
 import { ArrowLeftRight } from "lucide-react";
 import { useId, type ReactNode } from "react";
-import { PRESET_WORDS, ROLE_SHORT, ROLE_WORDS, describeProposal, ruleLabel, ruleWords, type Proposal } from "@/lib/vocab";
+import {
+  PRESET_WORDS,
+  ROLE_SHORT,
+  ROLE_WORDS,
+  describeProposal,
+  ruleLabel,
+  ruleWords,
+  type Proposal,
+} from "@/lib/vocab";
 import { Button } from "../Button";
 import { Field, Input, SegmentedControl, Select, Switch, Textarea } from "../controls";
 
@@ -78,7 +86,9 @@ function TextField({
 }
 
 function SeriesEditor({ value, onChange }: { value: Payload; onChange: (v: Payload) => void }) {
-  const samples = (value.samples && typeof value.samples === "object" ? value.samples : {}) as Record<string, unknown>;
+  const samples = (
+    value.samples && typeof value.samples === "object" ? value.samples : {}
+  ) as Record<string, unknown>;
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[13px] text-muted">
@@ -131,10 +141,20 @@ function GenericEditor({ value, onChange }: { value: Payload; onChange: (v: Payl
     if (typeof v === "string") {
       return v.length > 80 ? (
         <Field key={key} label={label}>
-          <Textarea value={v} onChange={(e) => onChange({ ...value, [key]: e.target.value })} rows={4} aria-label={label} />
+          <Textarea
+            value={v}
+            onChange={(e) => onChange({ ...value, [key]: e.target.value })}
+            rows={4}
+            aria-label={label}
+          />
         </Field>
       ) : (
-        <TextField key={key} label={label} value={v} onChange={(s) => onChange({ ...value, [key]: s })} />
+        <TextField
+          key={key}
+          label={label}
+          value={v}
+          onChange={(s) => onChange({ ...value, [key]: s })}
+        />
       );
     }
     if (typeof v === "number") {
@@ -149,7 +169,14 @@ function GenericEditor({ value, onChange }: { value: Payload; onChange: (v: Payl
       );
     }
     if (typeof v === "boolean") {
-      return <Switch key={key} label={label} checked={v} onCheckedChange={(c) => onChange({ ...value, [key]: c })} />;
+      return (
+        <Switch
+          key={key}
+          label={label}
+          checked={v}
+          onCheckedChange={(c) => onChange({ ...value, [key]: c })}
+        />
+      );
     }
     if (Array.isArray(v) && v.every((x) => typeof x === "string")) {
       return (
@@ -175,7 +202,9 @@ function GenericEditor({ value, onChange }: { value: Payload; onChange: (v: Payl
   return (
     <div className="flex flex-col gap-3">
       {fields}
-      {kept.length ? <p className="text-xs text-muted">Kept as proposed: {kept.join(", ")}.</p> : null}
+      {kept.length ? (
+        <p className="text-xs text-muted">Kept as proposed: {kept.join(", ")}.</p>
+      ) : null}
     </div>
   );
 }
@@ -202,12 +231,23 @@ export function PayloadEditor({
             label={`Role of sample ${s}`}
             value={String(value.role ?? "")}
             onValueChange={(v) => set("role", v)}
-            options={ROLES.map((r) => ({ value: r, label: ROLE_SHORT[r] ?? r, hint: ROLE_WORDS[r] }))}
+            options={ROLES.map((r) => ({
+              value: r,
+              label: ROLE_SHORT[r] ?? r,
+              hint: ROLE_WORDS[r],
+            }))}
           />
         </Field>
       );
     case "design.group":
-      return <TextField label={`Group of sample ${s}`} value={value.group} onChange={(v) => set("group", v)} suggestions={options?.groups} />;
+      return (
+        <TextField
+          label={`Group of sample ${s}`}
+          value={value.group}
+          onChange={(v) => set("group", v)}
+          suggestions={options?.groups}
+        />
+      );
     case "design.bio_unit":
       return (
         <TextField
@@ -246,7 +286,12 @@ export function PayloadEditor({
       return (
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
-            <TextField label="Group (numerator)" value={value.group_a} onChange={(v) => set("group_a", v)} suggestions={options?.groups} />
+            <TextField
+              label="Group (numerator)"
+              value={value.group_a}
+              onChange={(v) => set("group_a", v)}
+              suggestions={options?.groups}
+            />
             <Button
               variant="ghost"
               size="md"
@@ -256,15 +301,24 @@ export function PayloadEditor({
             >
               <ArrowLeftRight className="size-4" aria-hidden />
             </Button>
-            <TextField label="Reference group" value={value.group_b} onChange={(v) => set("group_b", v)} suggestions={options?.groups} />
+            <TextField
+              label="Reference group"
+              value={value.group_b}
+              onChange={(v) => set("group_b", v)}
+              suggestions={options?.groups}
+            />
           </div>
-          <p className="text-xs text-muted">Fold change = the first group relative to the reference group.</p>
+          <p className="text-xs text-muted">
+            Fold change = the first group relative to the reference group.
+          </p>
         </div>
       );
     case "design.dilution_series":
       return <SeriesEditor value={value} onChange={onChange} />;
     case "design.preset": {
-      const presets = [...new Set([String(value.preset ?? ""), ...Object.keys(PRESET_WORDS)])].filter(Boolean);
+      const presets = [
+        ...new Set([String(value.preset ?? ""), ...Object.keys(PRESET_WORDS)]),
+      ].filter(Boolean);
       return (
         <Field label="Built-in design">
           <Select
@@ -356,13 +410,24 @@ export function AlternativeStarts({
     <div className="flex flex-col gap-1.5">
       <p className="text-xs font-medium text-muted">Start from a reading the proposer considered</p>
       <div className="flex flex-wrap gap-1.5">
-        <Button size="sm" variant="secondary" onClick={() => onPick({ ...(proposal.payload as Payload) })}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => onPick({ ...(proposal.payload as Payload) })}
+        >
           As proposed
         </Button>
         {proposal.alternatives.slice(0, 6).map((alt, i) => {
           const merged = { ...(proposal.payload as Payload), ...alt };
           return (
-            <Button key={i} size="sm" variant="secondary" className="max-w-full" onClick={() => onPick(merged)} title={describeProposal(proposal, merged)}>
+            <Button
+              key={i}
+              size="sm"
+              variant="secondary"
+              className="max-w-full"
+              onClick={() => onPick(merged)}
+              title={describeProposal(proposal, merged)}
+            >
               <span className="truncate">{shortReading(proposal, merged)}</span>
             </Button>
           );

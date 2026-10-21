@@ -10,7 +10,13 @@ import { bytes, dateTime, relativeTime } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { useFocusTarget } from "@/shell/actions";
 import { Button, Card, CardBody, CardHeader, CommandLine, Hash, JobCard } from "@/ui";
-import { asExported, useExportReport, useRefreshExports, type ReportExported, type ReportFormat } from "./api";
+import {
+  asExported,
+  useExportReport,
+  useRefreshExports,
+  type ReportExported,
+  type ReportFormat,
+} from "./api";
 
 export const FORMATS: { format: ReportFormat; title: string; hint: string; icon: ReactNode }[] = [
   {
@@ -64,7 +70,10 @@ export function ExportPanel({
       <CardBody className="@container flex flex-col gap-4">
         <ul className="grid gap-3 @2xl:grid-cols-3">
           {FORMATS.map((f) => (
-            <li key={f.format} className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3.5">
+            <li
+              key={f.format}
+              className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3.5"
+            >
               <p className="flex items-center gap-2 text-[14px] font-semibold text-fg [&_svg]:size-4 [&_svg]:text-accent-strong">
                 {f.icon}
                 {f.title}
@@ -78,7 +87,9 @@ export function ExportPanel({
                 loading={start.isPending && start.variables?.format === f.format}
                 onClick={() => start.mutate({ format: f.format, head })}
               >
-                {f.format === "passport" ? "Write the passport" : `Write the ${f.title.toLowerCase()}`}
+                {f.format === "passport"
+                  ? "Write the passport"
+                  : `Write the ${f.title.toLowerCase()}`}
               </Button>
             </li>
           ))}
@@ -163,7 +174,15 @@ function DownloadLinks({ file }: { file: ReportExported }) {
   );
 }
 
-function WrittenFile({ file, head, now }: { file: ReportExported; head: string | null | undefined; now: number }) {
+function WrittenFile({
+  file,
+  head,
+  now,
+}: {
+  file: ReportExported;
+  head: string | null | undefined;
+  now: number;
+}) {
   const current = !head || file.chain_head === head;
   return (
     <li className="flex flex-col gap-2 px-3 py-2.5">
@@ -171,7 +190,11 @@ function WrittenFile({ file, head, now }: { file: ReportExported; head: string |
         <span className="flex min-w-0 items-center gap-2 text-[13px]">
           <FileText className="size-3.5 shrink-0 text-faint" aria-hidden />
           <span className="font-medium text-fg">{file.title}</span>
-          <time className="text-xs text-muted" dateTime={file.written_at} title={dateTime(file.written_at)}>
+          <time
+            className="text-xs text-muted"
+            dateTime={file.written_at}
+            title={dateTime(file.written_at)}
+          >
             {relativeTime(file.written_at, now)}
           </time>
           {!current ? <span className="text-xs text-warn">decisions were made since</span> : null}

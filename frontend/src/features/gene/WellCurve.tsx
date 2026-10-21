@@ -34,10 +34,12 @@ export function WellCurve({
       </p>
     );
   }
-  if (curve.error) return <ErrorPanel compact error={curve.error} onRetry={() => void curve.refetch()} />;
+  if (curve.error)
+    return <ErrorPanel compact error={curve.error} onRetry={() => void curve.refetch()} />;
   if (!curve.data) return <LoadingBlock lines={3} label="Reading the well's curve" />;
   const c = curve.data;
-  const amplified = c.amplified == null ? "not called" : c.amplified ? "yes" : "no (no usable curve)";
+  const amplified =
+    c.amplified == null ? "not called" : c.amplified ? "yes" : "no (no usable curve)";
   return (
     <div>
       <CurveViewer
@@ -45,7 +47,11 @@ export function WellCurve({
         yLabel="Fluorescence (raw)"
         label={`Well ${c.well} of plate ${c.run_id}, sample ${c.sample}, ${c.target}`}
         height={220}
-        caption={c.replicates.length ? `The other ${count(c.replicates.length)} wells of this sample on the plate are drawn faint.` : undefined}
+        caption={
+          c.replicates.length
+            ? `The other ${count(c.replicates.length)} wells of this sample on the plate are drawn faint.`
+            : undefined
+        }
         controls={
           <Link
             href={sectionPath(workspace, "curves", c.run_id, c.well)}

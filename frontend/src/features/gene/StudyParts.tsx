@@ -28,7 +28,17 @@ function moveWords(maxDeltaLog2: number | null | undefined): string | null {
   return `moves it by up to ${fold(2 ** Math.abs(maxDeltaLog2))}`;
 }
 
-export function GeneCards({ workspace, gene, cards, loading }: { workspace: Workspace; gene: string; cards: GeneCardRef[]; loading?: boolean }) {
+export function GeneCards({
+  workspace,
+  gene,
+  cards,
+  loading,
+}: {
+  workspace: Workspace;
+  gene: string;
+  cards: GeneCardRef[];
+  loading?: boolean;
+}) {
   const flipping = cards.filter((c) => c.flips).length;
   return (
     <Panel
@@ -54,7 +64,10 @@ export function GeneCards({ workspace, gene, cards, loading }: { workspace: Work
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-[13px] font-medium text-fg">{c.title}</span>
-                  <ArrowUpRight aria-hidden className="mt-0.5 size-3.5 shrink-0 text-faint group-hover:text-fg" />
+                  <ArrowUpRight
+                    aria-hidden
+                    className="mt-0.5 size-3.5 shrink-0 text-faint group-hover:text-fg"
+                  />
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   {c.flips ? (
@@ -66,14 +79,18 @@ export function GeneCards({ workspace, gene, cards, loading }: { workspace: Work
                 </div>
                 <p className="mt-1.5 text-xs text-muted">{cardStatusWords(c)}</p>
                 {moveWords(c.maxDeltaLog2) ? (
-                  <p className="mt-1 text-xs text-fg">Across its options this choice {moveWords(c.maxDeltaLog2)}.</p>
+                  <p className="mt-1 text-xs text-fg">
+                    Across its options this choice {moveWords(c.maxDeltaLog2)}.
+                  </p>
                 ) : null}
               </Link>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-[13px] text-muted">No Decision Card moves {gene}: the study's choices leave this gene where it is.</p>
+        <p className="text-[13px] text-muted">
+          No Decision Card moves {gene}: the study's choices leave this gene where it is.
+        </p>
       )}
     </Panel>
   );
@@ -88,7 +105,13 @@ function efficiencyWords(eff: number | null | undefined): string | null {
 /** Rows of the audit's lab view that the header already shows. */
 const SHOWN_ABOVE = new Set(["p-value, planned analysis", "Samples in each group"]);
 
-export function AssayWells({ efficiency, lab }: { efficiency?: number | null; lab?: AuditLab | null }) {
+export function AssayWells({
+  efficiency,
+  lab,
+}: {
+  efficiency?: number | null;
+  lab?: AuditLab | null;
+}) {
   const rows: [string, string][] = [];
   if (lab) {
     for (const r of lab.rows) if (!SHOWN_ABOVE.has(r.label)) rows.push([r.label, r.value]);
@@ -97,7 +120,11 @@ export function AssayWells({ efficiency, lab }: { efficiency?: number | null; la
     if (eff) rows.push(["Efficiency, LinRegPCR assay mean", eff]);
   }
   return (
-    <Panel id="gene-assay" title="Assay and wells" hint={lab ? "From the audit's reading of every well of this assay." : undefined}>
+    <Panel
+      id="gene-assay"
+      title="Assay and wells"
+      hint={lab ? "From the audit's reading of every well of this assay." : undefined}
+    >
       {rows.length ? <FactRows rows={rows} /> : null}
       {!lab ? (
         <p className={rows.length ? "mt-3 text-xs text-muted" : "text-[13px] text-muted"}>
@@ -136,12 +163,19 @@ export function ReferenceStability({
         <>
           {/* One chart only: keep it full width (GenormBars lays M and V side by side from lg). */}
           <div className="lg:[&>div]:grid-cols-1">
-            <GenormBars m={genorm.m} order={genorm.order} cutoffM={genorm.cutoff_m} used={used} differs={differs} only="m" />
+            <GenormBars
+              m={genorm.m}
+              order={genorm.order}
+              cutoffM={genorm.cutoff_m}
+              used={used}
+              differs={differs}
+              only="m"
+            />
           </div>
           {differs.size ? (
             <p className="mt-3 text-xs text-muted">
-              Marked “differs between groups”: the audit found this reference gene's level differs between the
-              groups, which can shift every gene normalised to it.
+              Marked “differs between groups”: the audit found this reference gene's level differs
+              between the groups, which can shift every gene normalised to it.
             </p>
           ) : null}
         </>
@@ -176,7 +210,10 @@ export function PrismCard({ workspace, gene }: { workspace: Workspace; gene: str
       title="Prism figure"
       hint="Every biological unit, the group means and their 95 % CI, as the Prism bundle will hold them."
       actions={
-        <Link href={sectionPath(workspace, "prism")} className="inline-flex items-center gap-1 text-xs text-accent underline-offset-4 hover:underline">
+        <Link
+          href={sectionPath(workspace, "prism")}
+          className="inline-flex items-center gap-1 text-xs text-accent underline-offset-4 hover:underline"
+        >
           Open Prism
           <ArrowUpRight className="size-3" aria-hidden />
         </Link>

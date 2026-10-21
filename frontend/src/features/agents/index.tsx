@@ -9,7 +9,18 @@ import { Link } from "wouter";
 import { count, plural } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { sectionPath, type SectionProps } from "@/shell/sections";
-import { Badge, Button, Card, CardBody, CardHeader, EmptyState, ErrorPanel, LoadingBlock, PageHeader, SegmentedControl } from "@/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  ErrorPanel,
+  LoadingBlock,
+  PageHeader,
+  SegmentedControl,
+} from "@/ui";
 import { ActivityList, requestKey } from "./ActivityList";
 import { useAgents } from "./api";
 import { RequestItem } from "./RequestItem";
@@ -30,13 +41,18 @@ export default function AgentsSection({ workspace }: SectionProps) {
   const isHere = (item: { key: string; study_id?: string }) =>
     item.key === key || (Boolean(studyId) && item.study_id === studyId);
   const elsewhere = (title: string, k: string, kind: "session" | "study") => (
-    <Link href={sectionPath(place(k, kind), "agents")} className="text-muted underline-offset-2 hover:text-fg hover:underline">
+    <Link
+      href={sectionPath(place(k, kind), "agents")}
+      className="text-muted underline-offset-2 hover:text-fg hover:underline"
+    >
       in {title}
     </Link>
   );
 
   const data = agents.data;
-  const pending = data ? [...data.pending.filter(isHere), ...data.pending.filter((r) => !isHere(r))] : [];
+  const pending = data
+    ? [...data.pending.filter(isHere), ...data.pending.filter((r) => !isHere(r))]
+    : [];
   const activity = (data?.activity ?? []).filter((a) => scope === "all" || isHere(a));
   const waiting = new Set((data?.pending ?? []).map(requestKey));
 
@@ -49,7 +65,11 @@ export default function AgentsSection({ workspace }: SectionProps) {
       />
 
       {agents.error ? (
-        <ErrorPanel error={agents.error} title="The agents' requests could not be read" onRetry={() => void agents.refetch()} />
+        <ErrorPanel
+          error={agents.error}
+          title="The agents' requests could not be read"
+          onRetry={() => void agents.refetch()}
+        />
       ) : !data ? (
         <Card>
           <CardBody className="pt-4">
@@ -61,18 +81,22 @@ export default function AgentsSection({ workspace }: SectionProps) {
           <div className="flex min-w-0 flex-col gap-6">
             <section aria-labelledby="waiting-title">
               <div className="mb-3">
-                <h2 id="waiting-title" className="flex items-center gap-2 text-base font-semibold tracking-tight text-fg">
+                <h2
+                  id="waiting-title"
+                  className="flex items-center gap-2 text-base font-semibold tracking-tight text-fg"
+                >
                   Waiting for you
                   {pending.length ? <Badge tone="warn">{count(pending.length)}</Badge> : null}
                 </h2>
                 <p className="mt-0.5 text-[13px] text-muted">
-                  An agent asked for these choices; you approve or turn each down, with your reason. Both go into the record.
+                  An agent asked for these choices; you approve or turn each down, with your reason.
+                  Both go into the record.
                 </p>
               </div>
               {pending.length === 0 ? (
                 <EmptyState compact icon={<Inbox />} title="No requests waiting">
-                  When an agent asks for a choice that can change a conclusion, it waits here (and in the bell) until you
-                  approve or turn it down.
+                  When an agent asks for a choice that can change a conclusion, it waits here (and
+                  in the bell) until you approve or turn it down.
                 </EmptyState>
               ) : (
                 <ul className="flex flex-col gap-3" aria-label="Requests waiting for a person">
@@ -97,8 +121,8 @@ export default function AgentsSection({ workspace }: SectionProps) {
               {data.hidden_blind ? (
                 <p className="mt-3 flex items-start gap-2 text-xs text-muted">
                   <EyeOff className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                  {plural(data.hidden_blind, "agent entry", "agent entries")} in sessions still blind are not shown until their
-                  design and curves are confirmed.
+                  {plural(data.hidden_blind, "agent entry", "agent entries")} in sessions still
+                  blind are not shown until their design and curves are confirmed.
                 </p>
               ) : null}
             </section>
@@ -128,7 +152,9 @@ export default function AgentsSection({ workspace }: SectionProps) {
                       items={activity}
                       waiting={waiting}
                       now={now}
-                      where={(a) => (isHere(a) ? null : elsewhere(a.title, a.key, a.workspace_kind))}
+                      where={(a) =>
+                        isHere(a) ? null : elsewhere(a.title, a.key, a.workspace_kind)
+                      }
                     />
                     {scope === "all" && data.activity_total > data.activity.length ? (
                       <p className="mt-3 text-xs text-faint">
@@ -140,9 +166,14 @@ export default function AgentsSection({ workspace }: SectionProps) {
                   <EmptyState
                     compact
                     icon={<Bot />}
-                    title={scope === "this" ? "No agent has worked on this study yet" : "No agent activity yet"}
+                    title={
+                      scope === "this"
+                        ? "No agent has worked on this study yet"
+                        : "No agent activity yet"
+                    }
                   >
-                    Connect an agent with the command on this page; what it asks and proposes shows up here as it happens.
+                    Connect an agent with the command on this page; what it asks and proposes shows
+                    up here as it happens.
                   </EmptyState>
                 )}
               </CardBody>
@@ -150,7 +181,11 @@ export default function AgentsSection({ workspace }: SectionProps) {
           </div>
 
           <aside className="flex min-w-0 flex-col gap-6" aria-label="Connect an agent">
-            <ConnectCard command={data.connect} note={data.connect_note} storeNote={data.store_note} />
+            <ConnectCard
+              command={data.connect}
+              note={data.connect_note}
+              storeNote={data.store_note}
+            />
             <RulesCard rules={data.rules} />
             <ToolsCard tools={data.tools} simulator={data.simulator} />
           </aside>

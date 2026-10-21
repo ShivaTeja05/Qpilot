@@ -27,7 +27,11 @@ export function useStageProposals(sid: string | null | undefined, stage: InboxSt
     queryKey: ["w", sid, "proposals", stage],
     enabled: Boolean(sid),
     queryFn: () =>
-      unwrap(api.GET("/api/sessions/{sid}/proposals", { params: { path: { sid: sid! }, query: { stage } } })),
+      unwrap(
+        api.GET("/api/sessions/{sid}/proposals", {
+          params: { path: { sid: sid! }, query: { stage } },
+        }),
+      ),
   });
 }
 
@@ -36,12 +40,16 @@ export function useQuotes(sid: string | null | undefined) {
   const query = useQuery({
     queryKey: ["w", sid, "quarantine"],
     enabled: Boolean(sid),
-    queryFn: () => unwrap(api.GET("/api/sessions/{sid}/quarantine", { params: { path: { sid: sid! } } })),
+    queryFn: () =>
+      unwrap(api.GET("/api/sessions/{sid}/quarantine", { params: { path: { sid: sid! } } })),
     staleTime: 60_000,
   });
   const data = query.data;
   const byId = useMemo(() => new Map((data?.entries ?? []).map((e) => [e.text_id, e])), [data]);
-  const lookup: QuoteLookup = useCallback((id: string) => (data ? (byId.get(id) ?? null) : undefined), [data, byId]);
+  const lookup: QuoteLookup = useCallback(
+    (id: string) => (data ? (byId.get(id) ?? null) : undefined),
+    [data, byId],
+  );
   return { lookup, sheetCells: data?.sheet_cells, nFlagged: data?.n_flagged ?? 0, query };
 }
 
@@ -54,7 +62,11 @@ function path(sid: string, pid: string) {
  * shown; a refusal rejects with the server's words (the card shows them). A `stale` answer
  * re-reads the views and says so.
  */
-export function useProposalActions(sid: string, head: string | null | undefined, stage: InboxStage) {
+export function useProposalActions(
+  sid: string,
+  head: string | null | undefined,
+  stage: InboxStage,
+) {
   const qc = useQueryClient();
   // Every write names the head the view showed; without one (not read yet), read it first.
   const headNow = useCallback(async () => {
@@ -62,7 +74,9 @@ export function useProposalActions(sid: string, head: string | null | undefined,
     const list = await qc.fetchQuery({
       queryKey: ["w", sid, "proposals", stage],
       queryFn: () =>
-        unwrap(api.GET("/api/sessions/{sid}/proposals", { params: { path: { sid }, query: { stage } } })),
+        unwrap(
+          api.GET("/api/sessions/{sid}/proposals", { params: { path: { sid }, query: { stage } } }),
+        ),
     });
     return list.head;
   }, [qc, sid, head, stage]);
@@ -83,17 +97,36 @@ export function useProposalActions(sid: string, head: string | null | undefined,
   return {
     accept: async (pid: string, reason: string) => {
       const expected_head = await headNow();
-      return after(unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/accept", { ...path(sid, pid), body: { reason, expected_head } })));
+      return after(
+        unwrap(
+          api.POST("/api/sessions/{sid}/proposals/{pid}/accept", {
+            ...path(sid, pid),
+            body: { reason, expected_head },
+          }),
+        ),
+      );
     },
     edit: async (pid: string, edits: Payload, reason: string) => {
       const expected_head = await headNow();
       return after(
-        unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/edit", { ...path(sid, pid), body: { reason, edits, expected_head } })),
+        unwrap(
+          api.POST("/api/sessions/{sid}/proposals/{pid}/edit", {
+            ...path(sid, pid),
+            body: { reason, edits, expected_head },
+          }),
+        ),
       );
     },
     reject: async (pid: string, reason: string) => {
       const expected_head = await headNow();
-      return after(unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/reject", { ...path(sid, pid), body: { reason, expected_head } })));
+      return after(
+        unwrap(
+          api.POST("/api/sessions/{sid}/proposals/{pid}/reject", {
+            ...path(sid, pid),
+            body: { reason, expected_head },
+          }),
+        ),
+      );
     },
   };
 }
@@ -102,7 +135,12 @@ export function useProposalActions(sid: string, head: string | null | undefined,
 export function useCheckEdit(sid: string) {
   return useCallback(
     (pid: string, edits: Payload) =>
-      unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/check", { ...path(sid, pid), body: { edits } })),
+      unwrap(
+        api.POST("/api/sessions/{sid}/proposals/{pid}/check", {
+          ...path(sid, pid),
+          body: { edits },
+        }),
+      ),
     [sid],
   );
 }
@@ -132,10 +170,14 @@ export function useMattersJobs(sid: string) {
   const ask = useCallback(
     async (pid: string) => {
       try {
-        const started = await unwrap(api.POST("/api/sessions/{sid}/proposals/{pid}/matters", path(sid, pid)));
+        const started = await unwrap(
+          api.POST("/api/sessions/{sid}/proposals/{pid}/matters", path(sid, pid)),
+        );
         rememberMatters(sid, pid, started.job.id);
       } catch (err) {
-        toast.error("Could not ask", { description: err instanceof Error ? err.message : String(err) });
+        toast.error("Could not ask", {
+          description: err instanceof Error ? err.message : String(err),
+        });
       }
     },
     [sid],

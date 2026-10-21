@@ -59,7 +59,8 @@ export function ReviewPanel({
               <li key={p.id} className="flex gap-2 text-[13px] leading-relaxed text-muted">
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" aria-hidden />
                 <span>
-                  <span className="font-medium text-fg">{p.title}.</span> <Cited text={p.text} facts={facts} />
+                  <span className="font-medium text-fg">{p.title}.</span>{" "}
+                  <Cited text={p.text} facts={facts} />
                 </span>
               </li>
             ))}

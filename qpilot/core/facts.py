@@ -18,7 +18,7 @@ from pathlib import Path
 
 from qpilot.schemas import Fact
 
-FACT_ID = re.compile(r"^f_[a-z0-9_]+$")
+FACT_ID = re.compile(r"^f_[a-z0-9_]+\Z")
 LARGE_EXPONENT = re.compile(r"-?\d+(\.\d+)?e\+\d+")
 
 

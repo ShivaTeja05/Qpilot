@@ -63,4 +63,5 @@ Flip the flag when the coordinator announces the merge.
 | `history-report.spec.ts` | History = /history (timeline, Studio log, Intact); Report = /report (summary, findings, methods, MIQE), passport download                | history, report      |
 | `claims.spec.ts`         | a pasted paragraph's verdicts and counts = POST /claims; Try an example                                                                  | claims               |
 | `trace.spec.ts`          | overview = /trace, a gene's trace = /trace/{gene}, the link from Gene                                                                    | trace                |
+| `gate.spec.ts`           | Controls = /gate: headline, plates, Decision Cards from the controls, a check opens to its reason, axe                                   | gate                 |
 | `walk.spec.ts`           | `E2E_WALK=1` only: fresh demo → design → curves → results equal the seeded walk's (moves the demo aside; reset after)                    | design, curves, home |
