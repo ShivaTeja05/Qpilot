@@ -24,7 +24,8 @@ import hmac
 import os
 import secrets
 import traceback
-from collections.abc import Awaitable, Callable, MutableMapping
+from collections.abc import Awaitable, Callable, Mapping, MutableMapping
+from dataclasses import dataclass
 from http.cookies import SimpleCookie
 from typing import Any
 from urllib.parse import parse_qs, urlencode, urlsplit
@@ -66,6 +67,53 @@ SECURITY_HEADERS: tuple[tuple[bytes, bytes], ...] = (
     (b"cross-origin-resource-policy", b"same-origin"),
     (b"permissions-policy", b"camera=(), microphone=(), geolocation=(), interest-cohort=()"),
 )
+
+
+@dataclass(frozen=True)
+class Hosting:
+    """Where this server is reachable from (environment; local by default).
+
+    Local (the default): ``127.0.0.1`` / ``localhost`` only, a launch key, no framing.
+    Hosted (``QPILOT_HOSTED=1``, a public sandbox such as a Hugging Face Space): the extra host
+    names in ``QPILOT_ALLOWED_HOSTS``, writes also from the sites in ``QPILOT_ALLOWED_ORIGINS``
+    (e.g. a frontend that proxies ``/api``), framing by ``QPILOT_FRAME_ANCESTORS``, and no launch
+    key (nothing private lives there: the page says so). Comma-separated lists.
+    """
+
+    hosted: bool = False
+    hosts: frozenset[str] = LOCAL_HOSTS
+    origins: frozenset[str] = frozenset()
+    frame_ancestors: tuple[str, ...] = ()
+
+    @classmethod
+    def from_env(cls, env: Mapping[str, str] | None = None) -> Hosting:
+        """Read the hosting settings (local unless ``QPILOT_HOSTED=1``)."""
+        env = os.environ if env is None else env
+        if (env.get("QPILOT_HOSTED") or "").strip() != "1":
+            return cls()
+
+        def items(name: str) -> list[str]:
+            return [x.strip() for x in (env.get(name) or "").split(",") if x.strip()]
+
+        return cls(
+            hosted=True,
+            hosts=LOCAL_HOSTS | {host_name(h) for h in items("QPILOT_ALLOWED_HOSTS")},
+            origins=frozenset(o.rstrip("/").lower() for o in items("QPILOT_ALLOWED_ORIGINS")),
+            frame_ancestors=tuple(items("QPILOT_FRAME_ANCESTORS")),
+        )
+
+    def headers(self) -> tuple[tuple[bytes, bytes], ...]:
+        """The security headers; framing allowed only to the configured ancestors."""
+        if not self.frame_ancestors:
+            return SECURITY_HEADERS
+        csp = CSP.replace(
+            "frame-ancestors 'none'", "frame-ancestors " + " ".join(self.frame_ancestors)
+        )
+        out = [(k, v) for k, v in SECURITY_HEADERS if k != b"x-frame-options"]
+        return tuple(
+            (k, csp.encode()) if k == b"content-security-policy" else (k, v) for k, v in out
+        )
+
 
 Scope = MutableMapping[str, Any]
 Message = MutableMapping[str, Any]
@@ -136,9 +184,11 @@ def _cookie_token(headers: dict[str, str], name: str = TOKEN_COOKIE) -> str | No
 class Guard:
     """ASGI middleware enforcing the rules in the module docstring."""
 
-    def __init__(self, app: ASGIApp, token: str) -> None:
+    def __init__(self, app: ASGIApp, token: str, hosting: Hosting | None = None) -> None:
         self.app = app
         self.token = token
+        self.hosting = hosting if hosting is not None else Hosting.from_env()
+        self.headers = self.hosting.headers()
 
     def _token_ok(self, candidate: str | None) -> bool:
         return bool(candidate) and hmac.compare_digest(candidate.encode(), self.token.encode())
@@ -156,7 +206,7 @@ class Guard:
         path: str = scope.get("path", "")
         method: str = scope.get("method", "GET").upper()
 
-        if host_name(host) not in LOCAL_HOSTS:
+        if host_name(host) not in self.hosting.hosts:
             await _plain(send, 400, "This page answers on 127.0.0.1 and localhost only.")
             return
 
@@ -164,7 +214,8 @@ class Guard:
             origin = headers.get("origin")
             referer = headers.get("referer")
             if origin is not None and origin != "null":
-                if not same_site(origin, host):
+                allowed = origin.rstrip("/").lower() in self.hosting.origins
+                if not (same_site(origin, host) or allowed):
                     await _json(send, 403, "cross_origin", CROSS_ORIGIN)
                     return
             elif origin == "null" or (referer and not same_site(referer, host)):
@@ -203,9 +254,13 @@ class Guard:
             return
 
         is_api = path.startswith("/api")
-        if is_api and not (
-            self._token_ok(_cookie_token(headers, cookie_name(host)))
-            or self._token_ok(headers.get(TOKEN_HEADER))
+        if (
+            is_api
+            and not self.hosting.hosted
+            and not (
+                self._token_ok(_cookie_token(headers, cookie_name(host)))
+                or self._token_ok(headers.get(TOKEN_HEADER))
+            )
         ):
             await _json(
                 send,
@@ -221,7 +276,7 @@ class Guard:
             nonlocal started
             if message["type"] == "http.response.start":
                 started = True
-                extra = list(SECURITY_HEADERS)
+                extra = list(self.headers)
                 if is_api:
                     extra.append((b"cache-control", b"no-store"))
                 message["headers"] = [*message.get("headers", []), *extra]
@@ -255,12 +310,22 @@ class Guard:
 def _body_cap(headers: dict[str, str]) -> int:
     """Uploads (multipart) may be large; every other body (JSON) is small."""
     kind = headers.get("content-type", "").split(";", 1)[0].strip().lower()
-    return MAX_UPLOAD_BYTES if kind == "multipart/form-data" else MAX_BODY_BYTES
+    return upload_cap() if kind == "multipart/form-data" else MAX_BODY_BYTES
+
+
+def upload_cap() -> int:
+    """The largest upload: ``QPILOT_MAX_UPLOAD_MB`` when set (a hosted sandbox), else 200 MB."""
+    try:
+        mb = int(os.environ.get("QPILOT_MAX_UPLOAD_MB", "") or 0)
+    except ValueError:
+        mb = 0
+    return mb * 1024 * 1024 if 0 < mb * 1024 * 1024 < MAX_UPLOAD_BYTES else MAX_UPLOAD_BYTES
 
 
 def _too_large(headers: dict[str, str]) -> str:
-    if _body_cap(headers) == MAX_UPLOAD_BYTES:
-        return f"The upload is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
+    cap = _body_cap(headers)
+    if cap != MAX_BODY_BYTES:
+        return f"The upload is larger than {cap // (1024 * 1024)} MB."
     return "This request is larger than qPilot accepts."
 
 

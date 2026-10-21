@@ -107,7 +107,7 @@ def create_app(ctx: AppContext) -> FastAPI:
             return Response(status_code=404)
         return FileResponse(path, headers={"cache-control": "public, max-age=31536000, immutable"})
 
-    @app.get("/{name:path}", include_in_schema=False)
+    @app.api_route("/{name:path}", methods=["GET", "HEAD"], include_in_schema=False)
     async def page(name: str) -> Response:
         # Files at the root of the build (favicon, fonts manifest); everything else is the page,
         # whose hash router shows the right section. A NUL is no name of anything.
