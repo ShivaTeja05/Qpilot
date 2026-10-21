@@ -36,6 +36,9 @@ ENV = {
 }
 for key, value in ENV.items():
     os.environ.setdefault(key, value)
+# Spaces turn on Gradio's server-side rendering, whose Node server takes port 7860; qPilot serves
+# its own page, so the Gradio stub must not render (or listen) itself.
+os.environ["GRADIO_SSR_MODE"] = "False"
 
 import spaces  # noqa: E402  (before anything that could touch CUDA)
 
@@ -84,7 +87,7 @@ def main() -> None:
     app = create_app(ctx)
     with gr.Blocks(title="qPilot") as stub:  # the Space SDK's app; qPilot itself is at /
         gr.Markdown("qPilot runs at the root of this Space.")
-    app = gr.mount_gradio_app(app, stub, path="/gradio")
+    app = gr.mount_gradio_app(app, stub, path="/gradio", ssr_mode=False)
     threading.Thread(target=_prepare_demo, name="qpilot-demo", daemon=True).start()
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "7860")), log_level="info")
 
