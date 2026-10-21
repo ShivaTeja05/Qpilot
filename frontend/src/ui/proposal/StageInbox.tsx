@@ -333,8 +333,9 @@ export function StageInbox({
                 <motion.li
                   key={p.id}
                   layout="position"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  // No fade-in: a card is readable at full contrast from its first frame (axe
+                  // measured cards still fading in). Only a card that leaves is animated.
+                  initial={false}
                   exit={{ opacity: 0, height: 0, marginTop: 0, transition: { duration: 0.18 } }}
                   transition={{ duration: 0.16, ease: "easeOut" }}
                 >

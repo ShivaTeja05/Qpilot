@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { describeProposal, type Proposal } from "@/lib/vocab";
 import { TooltipProvider } from "../overlay";
-import { ProposalCard } from "./ProposalCard";
+import { ProposalCard, sameDecimals } from "./ProposalCard";
 import { diffPayload } from "./edit";
 import { BLIND_TEXT, MATTERS_TEXT } from "./parts";
 import { INSTRUCTION_TEXT, visibleText, type QuarantineEntry } from "./words";
@@ -64,8 +64,13 @@ describe("ProposalCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Accept anyway…" }));
     expect(onAccept).not.toHaveBeenCalled();
     const submit = screen.getByRole("button", { name: "Accept anyway" });
-    expect((submit as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText(/Say why you accept it anyway/), { target: { value: "the series is a standard curve" } });
+    // Pressed without a reason: nothing is sent, and the card says what is missing.
+    fireEvent.click(submit);
+    expect(onAccept).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toMatch(/Give a reason first/);
+    fireEvent.change(screen.getByLabelText(/Say why you accept it anyway/), {
+      target: { value: "the series is a standard curve" },
+    });
     await act(async () => fireEvent.click(submit));
     expect(onAccept).toHaveBeenCalledWith("the series is a standard curve");
   });
@@ -84,8 +89,15 @@ describe("ProposalCard", () => {
     wrap(<ProposalCard proposal={p} quotes={quotes} onAccept={vi.fn()} onReject={onReject} />);
     fireEvent.click(screen.getByRole("button", { name: "Reject…" }));
     const submit = screen.getByRole("button", { name: "Reject" }) as HTMLButtonElement;
-    expect(submit.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText("Why do you reject it?"), { target: { value: "wrong assay" } });
+    expect(submit.disabled).toBe(false);
+    fireEvent.click(submit);
+    expect(onReject).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Why do you reject it?").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    fireEvent.change(screen.getByLabelText("Why do you reject it?"), {
+      target: { value: "wrong assay" },
+    });
     await act(async () => fireEvent.click(submit));
     expect(onReject).toHaveBeenCalledWith("wrong assay");
     expect(screen.getByText("this proposal is already accepted")).toBeTruthy();
@@ -94,14 +106,24 @@ describe("ProposalCard", () => {
   it("edits send only the fields that changed", async () => {
     const p = pending(find("design.well_role", "contradicted"));
     const onEdit = vi.fn().mockResolvedValue(undefined);
-    wrap(<ProposalCard proposal={p} quotes={quotes} onAccept={vi.fn()} onEdit={onEdit} onReject={vi.fn()} />);
+    wrap(
+      <ProposalCard
+        proposal={p}
+        quotes={quotes}
+        onAccept={vi.fn()}
+        onEdit={onEdit}
+        onReject={vi.fn()}
+      />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Edit…" }));
     const alt = p.alternatives[0] as Record<string, unknown>;
     // The proposer's other reading, loaded into the fields with one click.
     fireEvent.click(screen.getByRole("button", { name: "Sample" }));
     const form = screen.getByRole("group", { name: "Edit the proposal" });
     expect(within(form).getByText(describeProposal(p, { ...p.payload, ...alt }))).toBeTruthy();
-    fireEvent.change(screen.getByLabelText(/Say why you accept your edit/), { target: { value: "a study sample" } });
+    fireEvent.change(screen.getByLabelText(/Say why you accept your edit/), {
+      target: { value: "a study sample" },
+    });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Accept the edit" })));
     expect(onEdit).toHaveBeenCalledWith(alt, "a study sample");
   });
@@ -160,5 +182,13 @@ describe("diffPayload", () => {
   it("keeps only changed fields", () => {
     const p = find("design.dilution_series");
     expect(diffPayload(p.payload, { ...p.payload })).toEqual({});
+  });
+});
+
+describe("sameDecimals", () => {
+  it("writes the exported value to the returned value's decimals", () => {
+    expect(sameDecimals(1.5563229036983888, 2.5563)).toBe("1.5563");
+    expect(sameDecimals(3.2, 2)).toBe("3.2000");
+    expect(sameDecimals(null, 2.5)).toBe("—");
   });
 });

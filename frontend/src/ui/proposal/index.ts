@@ -36,6 +36,7 @@
  */
 export {
   MAX_REASON,
+  sameDecimals,
   ProposalCard,
   type ProposalAction,
   type ProposalCardHandle,
