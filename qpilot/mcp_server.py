@@ -1103,6 +1103,8 @@ _STUDIO_CODES: tuple[tuple[tuple[str, ...], Code], ...] = (
             "this bundle was not sent to prism ",
             "these wells are already left out ",
             "nothing to decide: ",
+            "no other option of this choice applies ",
+            "this choice is ",
         ),
         Code.INVALID_ARGUMENT,
     ),
