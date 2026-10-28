@@ -166,7 +166,7 @@ describe("the efficiency models, tested", () => {
     expect(link.getAttribute("href")).toContain(`/results/card/${sweptAxis.card_id}`);
     await within(panel).findByRole("button", { name: "Propose to stop testing them" });
     fireEvent.click(within(panel).getByRole("button", { name: /Show what was decided \(1\)/ }));
-    expect(panel.textContent).toContain("Accepted by a person");
+    expect(panel.textContent).toContain("Accepted by you");
   });
 
   it("outside Studio, give the command instead of a proposal", () => {
