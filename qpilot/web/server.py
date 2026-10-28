@@ -216,8 +216,10 @@ def main(
     ctx.facts_wait = FACTS_WAIT_S
     from qpilot.web.warm import warm_all
 
-    warm_all(ctx)  # imports, then every session's file, in the background
     app = create_app(ctx)
+    # Imports, then every session's file, then the views a person opens next (all in the
+    # background; the page answers meanwhile).
+    warm_all(ctx, app)
     port = port or free_port()
     url = f"http://{HOST}:{port}/?token={token}" + (f"#/{section}" if section else "")
     print(f"qPilot {__version__} — research use only, not for clinical or diagnostic use.")

@@ -23,6 +23,7 @@ from __future__ import annotations
 import hashlib
 import re
 import threading
+import time
 from collections import OrderedDict
 from collections.abc import Callable, Hashable
 from typing import Any, TypeVar
@@ -36,6 +37,38 @@ TAB = re.compile(r"^[A-Za-z0-9_-]{1,40}\Z")
 #: Bodies above this are passed through without an ETag (none of the JSON views is near it).
 MAX_TAGGED = 64 * 1024 * 1024
 SOFT_WAIT = {(409, "loading"), (503, "warming")}
+#: A request the server makes to itself to prepare a view (qpilot.web.warm) carries this header;
+#: it does not count as the page being busy.
+INTERNAL = b"x-qpilot-internal"
+
+
+class Activity:
+    """How busy the page keeps the server: requests in flight and when the last one ended."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._active = 0
+        self._last = 0.0
+
+    def begin(self) -> None:
+        """A page request starts."""
+        with self._lock:
+            self._active += 1
+
+    def end(self) -> None:
+        """A page request ends."""
+        with self._lock:
+            self._active -= 1
+            self._last = time.monotonic()
+
+    def idle_for(self) -> float:
+        """Seconds since the page's last request ended (0 while one is in flight)."""
+        with self._lock:
+            return 0.0 if self._active > 0 else time.monotonic() - self._last
+
+
+#: The page's activity on this server (background preparation waits for quiet moments).
+ACTIVITY = Activity()
 
 
 def _header(scope: Scope, name: bytes) -> str | None:
@@ -75,6 +108,9 @@ class ApiCache:
         seq = str(self.bus.store_seq).encode()
         soft = "respond-async" in (_header(scope, b"prefer") or "").lower()
         method = scope.get("method", "GET").upper()
+        page = _header(scope, INTERNAL) is None
+        if page:
+            ACTIVITY.begin()
         try:
             if method != "GET":
                 await self.app(scope, receive, _stamped(send, seq, soft))
@@ -82,6 +118,8 @@ class ApiCache:
             await self._get(scope, receive, send, seq, soft)
         finally:
             ORIGIN.reset(token)
+            if page:
+                ACTIVITY.end()
 
     async def _get(
         self, scope: Scope, receive: Receive, send: Send, seq: bytes, soft: bool

@@ -9,7 +9,13 @@ it, the facts are kept in memory. So:
 * a request about a session whose facts are still cold starts (or joins) that session's ``warm``
   job and waits a moment (:attr:`AppContext.facts_wait`); if the facts are still not there, the
   frame answers what is cheap (``warming``) and anything else answers ``503 warming`` with the
-  job, and the page fills in by itself when the job's ``done`` event arrives.
+  job, and the page fills in by itself when the job's ``done`` event arrives;
+* then the views a person opens next are prepared the same way (:func:`prepare_views`): each
+  recent session's current study is read once through the API itself (Results, the controls,
+  the report, the Evidence Ledger, Trace, the audit…), so its first visit answers from what the
+  routes keep in memory instead of computing for seconds (the controls: ~20 s on the demo). A
+  study analysed while the server runs (after a confirm) is prepared as soon as it exists. The
+  preparation reads only (``GET``), one view at a time, and waits for quiet moments of the page.
 
 A bound file that is not a regular file (a pipe, a device) is never read: the session is shown
 as having no file.
@@ -25,7 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from qpilot.core.store import StudyNotFound, StudyStore, sha256_file
-from qpilot.web.context import AppContext, api_error
+from qpilot.web.context import KEY, AppContext, api_error
 from qpilot.web.contract import JobView
 
 WARM_S = 6.0  # one 64-plate file, idle machine (19 Oct: 3.7 s facts + imports)
@@ -180,8 +186,12 @@ def require(ctx: AppContext, sid: str) -> None:
     raise api_error(503, "warming", COLD_MESSAGE, **details)
 
 
-def warm_all(ctx: AppContext) -> Any:
-    """At start: import the analysis modules, then read every session's file, newest first."""
+def warm_all(ctx: AppContext, app: Any = None) -> Any:
+    """At start: import the analysis modules, then read every session's file, newest first.
+
+    With ``app`` (the server's ASGI app), the views of the recent sessions' studies are prepared
+    afterwards (:func:`prepare_views`), and every study analysed later as soon as it exists.
+    """
     import importlib
 
     sessions = ctx.store.root / "sessions"
@@ -216,6 +226,254 @@ def warm_all(ctx: AppContext) -> Any:
             done += 1
             _publish_warm(ctx, sid)
             _prepare_results(ctx, sid)
+        if app is not None:
+            studies = [s for s in (_current_study(ctx, f.name[:12]) for f in folders) if s]
+            prepare_views(ctx, app, studies[:PREPARE_RECENT])
         return {"sessions": done}
 
+    if app is not None:
+        follow_new_studies(ctx, app)
     return ctx.jobs.submit("warm.all", work, title="Getting ready", typical_s=WARM_S * 2)
+
+
+# ---- preparing the views a person opens next ---------------------------------------------------
+
+#: A study's views in the order a person usually opens them (each a GET under its route).
+STUDY_VIEWS: tuple[tuple[str, str], ...] = (
+    ("results", "the results"),
+    ("cards", "the results"),
+    ("flips", "the results"),
+    ("gate", "the controls on every plate"),
+    ("report", "the report"),
+    ("evidence", "the Evidence Ledger"),
+    ("review", "the run review"),
+    ("trace", "Trace"),
+    ("audit", "the audit"),
+    ("audit/overview", "the audit"),
+    ("planner", "the next-experiment planner"),
+    ("claims/examples", "the claim checker"),
+)
+#: Views about every workspace, prepared once at start.
+GLOBAL_VIEWS: tuple[tuple[str, str], ...] = (("/api/agents", "what agents did"),)
+PREPARE_RECENT = 2  # sessions whose current study is prepared at start
+PREPARE_S = 40.0  # the demo's views, measured (the controls are most of it)
+IDLE_S = 0.4  # a step starts once the page has been quiet this long…
+IDLE_MAX_S = 8.0  # …or after this long at the latest
+VIEW_WAIT_S = 600.0  # the longest a view's own job is followed
+_prepared: set[tuple[str, str]] = set()  # (store root, study id) prepared in this process
+_prepared_lock = threading.Lock()
+
+
+def _current_study(ctx: AppContext, sid: str) -> str | None:
+    from qpilot.web.views import session_meta
+
+    try:
+        study = session_meta(ctx.store, sid).get("current_study")
+    except Exception:  # an unreadable session prepares nothing
+        return None
+    return study if isinstance(study, str) and KEY.match(study) else None
+
+
+def prepare_views(ctx: AppContext, app: Any, study_ids: list[str]) -> Any:
+    """Read each study's views once, in the background (a ``prepare`` job); None if nothing to do.
+
+    Each view is read through the API (``GET``), exactly as the page reads it, so whatever the
+    route keeps in memory is kept; a view still being prepared by its own job is followed until
+    that job is done. Nothing is written. Studies already prepared in this process are skipped.
+    """
+    from qpilot.web.cache import ACTIVITY
+
+    root = str(ctx.store.root)
+    with _prepared_lock:
+        todo = [s for s in dict.fromkeys(study_ids) if (root, s) not in _prepared]
+        _prepared.update((root, s) for s in todo)
+    first = (root, "") not in _prepared
+    if first:
+        with _prepared_lock:
+            _prepared.add((root, ""))
+    if not todo and not first:
+        return None
+    steps = [
+        (study, f"/api/studies/{study}/{view}", words)
+        for study in todo
+        for view, words in STUDY_VIEWS
+    ]
+    if first:
+        steps += [("", path, words) for path, words in GLOBAL_VIEWS]
+
+    def work(progress: Any) -> dict[str, Any]:
+        read = 0
+        for i, (study, path, words) in enumerate(steps):
+            if study and not _is_study(ctx, study):
+                continue
+            waited = 0.0
+            while ACTIVITY.idle_for() < IDLE_S and waited < IDLE_MAX_S:
+                time.sleep(0.1)
+                waited += 0.1
+            progress(f"Preparing {words}", i / len(steps))
+            if _read_view(ctx, app, path):
+                read += 1
+        progress("Ready", 1.0)
+        return {"studies": todo, "views": read}
+
+    return ctx.jobs.submit(
+        "prepare",
+        work,
+        title="Preparing what the page shows next",
+        typical_s=PREPARE_S * len(todo),
+        dedupe=False,
+    )
+
+
+def follow_new_studies(ctx: AppContext, app: Any) -> None:
+    """Prepare each study the moment it is analysed (told by its ``study.changed`` event)."""
+    from qpilot.web.views import session_meta
+
+    pending: set[str] = set()
+    lock = threading.Lock()
+    timer: list[threading.Timer] = []
+
+    def run() -> None:
+        with lock:
+            keys = list(pending)
+            pending.clear()
+            timer.clear()
+        studies: list[str] = []
+        for key in keys:
+            try:
+                if _is_study(ctx, key):
+                    studies.append(key)
+                elif ctx.store.find_session(key):
+                    found = session_meta(ctx.store, key).get("current_study")
+                    if isinstance(found, str) and KEY.match(found):
+                        studies.append(found)
+            except Exception:  # a key that is neither: nothing to prepare
+                continue
+        if studies:
+            prepare_views(ctx, app, studies)
+
+    def hook(event: dict[str, Any]) -> None:
+        key = event.get("key")
+        if event.get("type") != "study.changed":
+            return
+        if key is None:  # everything may have changed (a fresh demo): prepare again on change
+            forget_prepared(ctx)
+            return
+        if not isinstance(key, str):
+            return
+        if event.get("source") in ("warm", "prepare") or not KEY.match(key):
+            return
+        with lock:
+            pending.add(key)
+            if not timer:
+                t = threading.Timer(2.0, run)
+                t.daemon = True
+                timer.append(t)
+                t.start()
+
+    ctx.bus.on_publish(hook)
+
+
+def forget_prepared(ctx: AppContext) -> None:
+    """Prepare this store's studies again when they next change (tests; a fresh demo)."""
+    root = str(ctx.store.root)
+    with _prepared_lock:
+        for item in [p for p in _prepared if p[0] == root]:
+            _prepared.discard(item)
+
+
+def _is_study(ctx: AppContext, key: str) -> bool:
+    try:
+        ctx.store.workspace(key)
+    except (StudyNotFound, OSError, ValueError):
+        return False
+    return True
+
+
+def _read_view(ctx: AppContext, app: Any, path: str) -> bool:
+    """GET ``path`` from the app itself; follow a ``loading`` answer's job, then read again."""
+    deadline = time.monotonic() + VIEW_WAIT_S
+    for _ in range(4):
+        status, body = _asgi_get(app, ctx.token, path)
+        if status == 200:
+            return True
+        job = _waiting_job(status, body)
+        if job is None:
+            return False
+        found = ctx.jobs.get(job)
+        while found is not None and found.status in ("queued", "running"):
+            if time.monotonic() > deadline:
+                return False
+            time.sleep(0.2)
+    return False
+
+
+def _waiting_job(status: int, body: bytes) -> str | None:
+    import json
+
+    if status not in (409, 503):
+        return None
+    try:
+        error = json.loads(body).get("error") or {}
+    except (ValueError, AttributeError):
+        return None
+    if error.get("code") not in ("loading", "warming"):
+        return None
+    job = (error.get("details") or {}).get("job") or {}
+    return job.get("id") if isinstance(job, dict) and isinstance(job.get("id"), str) else None
+
+
+def _asgi_get(app: Any, token: str, path: str) -> tuple[int, bytes]:
+    """One ``GET`` through the app in-process (no socket), as the page would send it."""
+    import asyncio
+
+    from qpilot.web.cache import INTERNAL
+    from qpilot.web.security import TOKEN_HEADER
+
+    route, _, query = path.partition("?")
+
+    async def go() -> tuple[int, bytes]:
+        status = 0
+        chunks: list[bytes] = []
+        asked = False
+
+        async def receive() -> dict[str, Any]:
+            nonlocal asked
+            if not asked:
+                asked = True
+                return {"type": "http.request", "body": b"", "more_body": False}
+            await asyncio.sleep(3600)  # nothing else arrives; a reply never waits on this
+            return {"type": "http.disconnect"}
+
+        async def send(message: dict[str, Any]) -> None:
+            nonlocal status
+            if message["type"] == "http.response.start":
+                status = int(message["status"])
+            elif message["type"] == "http.response.body":
+                chunks.append(message.get("body", b""))
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": "GET",
+            "scheme": "http",
+            "path": route,
+            "raw_path": route.encode(),
+            "query_string": query.encode(),
+            "root_path": "",
+            "headers": [
+                (b"host", b"127.0.0.1"),
+                (TOKEN_HEADER.encode(), token.encode()),
+                (INTERNAL, b"1"),
+            ],
+            "client": ("127.0.0.1", 0),
+            "server": ("127.0.0.1", 0),
+        }
+        await app(scope, receive, send)
+        return status, b"".join(chunks)
+
+    try:
+        return asyncio.run(go())
+    except Exception:  # a view that fails says so when the page opens it
+        return 0, b""
