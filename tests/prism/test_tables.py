@@ -18,7 +18,7 @@ from qpilot.prism.tables import (
     sequential_pseudonyms,
 )
 from qpilot.qpcr.quant import log2_matrix, relative
-from tests.prism.conftest import TOY_CHAIN, toy_inputs
+from tests.prism.conftest import TOY_CHAIN, TOY_GROUPS, toy_inputs
 from tests.prism.test_export_table import COLUMN_T, NESTED_T
 
 HEADLINE = ["ODC1", "BIRC5", "NTRK1", "NM23A"]
@@ -258,3 +258,19 @@ def test_csv_text_quotes_nothing_for_plain_names():
     text = tables.csv_text([["Sample", "A"], ["x 1", "1.5"]])
     assert text == "Sample,A\nx 1,1.5\n"
     assert list(csv.reader(io.StringIO(text))) == [["Sample", "A"], ["x 1", "1.5"]]
+
+
+@pytest.mark.parametrize("bad", ["+/+", "=HYPERLINK(A1)", "@SUM(1)"])
+def test_a_formula_like_group_is_refused_in_words_for_prism(bad):
+    """Prism's CSVs carry names as they are (it reads them back): a group or unit that starts
+    like a formula is refused there, in words; a lab's other names go in as they are."""
+    groups = {s: (bad if g == "A" else g) for s, g in TOY_GROUPS.items()}
+    inputs = toy_inputs(groups=groups, group_order=(bad, "B"))
+    with pytest.raises(PrismExportError, match="starts with =, \\+ or @"):
+        render_tables(inputs, ["T"], "two_groups_log2", record_ref="r1", chain_head=TOY_CHAIN)
+    fine = {s: ("LPS + inhibitor" if g == "A" else "-/-") for s, g in TOY_GROUPS.items()}
+    inputs = toy_inputs(groups=fine, group_order=("LPS + inhibitor", "-/-"))
+    (table, text), *_ = render_tables(
+        inputs, ["T"], "two_groups_log2", record_ref="r1", chain_head=TOY_CHAIN
+    )
+    assert text.splitlines()[0].split(",")[1:] == ["LPS + inhibitor", "-/-"]

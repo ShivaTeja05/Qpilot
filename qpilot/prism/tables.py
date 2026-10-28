@@ -59,6 +59,7 @@ NOT_AFFILIATED = (
     "Works with GraphPad Prism. Not affiliated with or endorsed by GraphPad Software or Dotmatics."
 )
 RECORD_REF = re.compile(r"^[A-Za-z0-9_.-]{1,40}\Z")
+FORMULA_FIRST = ("=", "+", "@", "\t", "\r")  # a leading "-" is kept (RT-EX-014)
 CHAIN_HEAD = re.compile(r"^[0-9a-f]{64}\Z")
 
 
@@ -142,6 +143,22 @@ def file_stem(gene: str) -> str:
     return file_part(gene, "gene")
 
 
+def check_formula_free(names: Sequence[str]) -> None:
+    """Refuse a group or unit name that starts like a formula (``=``, ``+``, ``@``, a tab).
+
+    Prism reads the bundle's CSVs back by name, so they carry names as they are (no defusing
+    apostrophe, THREAT_MODEL row 46); a name a spreadsheet would run (``=HYPERLINK(...)``,
+    ``+/+``) is refused here in words instead. A leading ``-`` (``-RT``) stays, as it always has.
+    """
+    for name in names:
+        if str(name).startswith(FORMULA_FIRST):
+            raise PrismExportError(
+                "a group or unit whose name starts with =, + or @ cannot go into a Prism table "
+                "(a spreadsheet would read it as a formula): give it a name that starts with a "
+                "letter or a digit, such as “WT (+/+)”"
+            )
+
+
 def sequential_pseudonyms(units: Sequence[str]) -> dict[str, str]:
     """``U001``, ``U002``, ... over the sorted units (the fallback when no HMAC is given)."""
     width = max(3, len(str(len(units))))
@@ -220,6 +237,7 @@ def render_tables(
     if len({s.lower() for s in stems.values()}) != len(stems):
         raise PrismExportError("two genes would share a file name")
     titles = row_titles(inputs, share, pseudonym)
+    check_formula_free([*inputs.group_order, *titles.values()])
     table = inputs.table(spec.layout, genes)
     if (
         spec.layout == "nested"
