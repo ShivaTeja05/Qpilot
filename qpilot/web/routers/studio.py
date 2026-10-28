@@ -72,6 +72,12 @@ ANALYSE_S = 30.0  # the demo's first analysis after the curves are confirmed (gr
 MAX_IDS = 200
 
 
+NO_CURVE_CQ_ONLY = (
+    "This file has Cq values only: there is no amplification curve to show. The Curves page "
+    "lists each well's Cq instead."
+)
+
+
 # ---- helpers ---------------------------------------------------------------------------------
 
 
@@ -234,6 +240,8 @@ def get_curve(
     try:
         return call(sv.curve_view, ctx.studio, sid, well, target)
     except KeyError as err:
+        if call(ctx.studio.cq_only, sid):
+            raise api_error(404, "not_found", NO_CURVE_CQ_ONLY) from err
         raise api_error(404, "not_found", "There is no curve for this well in the file.") from err
     except ValueError as err:
         raise api_error(422, "bad_request", sv.sentence(err)) from err
@@ -243,15 +251,20 @@ def get_curve(
 def get_curve_calls(sid: str, ctx: Ctx, gene: str = Query(min_length=1, max_length=128)):
     """Each well of one target called under every rule (and the Curve Judge where validated)."""
     from qpilot.qpcr.amp_call import get_rule
+    from qpilot.qpcr.cq_only import CQ_RULE_LABEL, NOT_APPLICABLE
 
     session(ctx, sid)
     data = call(ctx.studio.curve_calls, sid, gene)
+    cq_only = call(ctx.studio.cq_only, sid)
     labels: dict[str, str] = {}
     for rule in data["rules"]:
         try:
             labels[rule] = get_rule(rule).label
         except Exception:  # a rule this build does not describe keeps its id
             labels[rule] = rule
+    if cq_only:  # a file of Cq values only: the same rule, read from the file's Cq
+        labels = {r: CQ_RULE_LABEL if r == "linregpcr" else w for r, w in labels.items()}
+        data["curve_judge"] = NOT_APPLICABLE["curve_judge"]
     return CurveCallsView(**data, rule_labels=labels)
 
 
@@ -320,8 +333,15 @@ def propose_curves(sid: str, ctx: Ctx) -> JobStarted:
     if call(studio.confirmed_assembly, sid, "design") is None:
         raise api_error(409, "studio", "Confirm the design first: the curves stage follows it.")
 
+    cq_only = call(studio.cq_only, sid)
+
     def work(progress: Progress) -> dict[str, Any]:
-        progress("Fitting every curve, asking the Curve Judge, and testing what its calls change")
+        if cq_only:
+            progress("Reading the Cq table: this file has Cq values only, no curve to fit")
+        else:
+            progress(
+                "Fitting every curve, asking the Curve Judge, and testing what its calls change"
+            )
         try:
             report = studio.propose_curves(sid)
         except Exception as err:  # every failure is a sentence on the page

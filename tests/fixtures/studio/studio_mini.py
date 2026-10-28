@@ -79,7 +79,11 @@ def _curve(rng: np.random.Generator, crossing: float | None) -> list[float]:
 
 
 def write_studio_mini(
-    path: str | Path, rename: dict[str, str] | None = None, *, instrument_cq: bool = False
+    path: str | Path,
+    rename: dict[str, str] | None = None,
+    *,
+    instrument_cq: bool = False,
+    curves: bool = True,
 ) -> Path:
     """Write the synthetic RDML file to ``path`` and return the path.
 
@@ -87,8 +91,10 @@ def write_studio_mini(
     can compare two files that differ only in one sample's name. ``instrument_cq`` also writes
     each amplifying well's Cq as an instrument would (``<cq>``: the cycle its curve reaches
     fluorescence 1, the model's crossing point; none for a flat well), as an instrument
-    export's RDML carries it.
+    export's RDML carries it. ``curves=False`` writes those Cq values and no curve at all: a
+    file of Cq values only (``docs/cq-tables.md``), with the same wells, samples and series.
     """
+    instrument_cq = instrument_cq or not curves
     rng = np.random.default_rng(7)
     rename = rename or {}
     parts = ['<rdml xmlns:rdml="http://www.rdml.org" xmlns="http://www.rdml.org" version="1.4">']
@@ -119,7 +125,8 @@ def write_studio_mini(
                 if instrument_cq and crossing is not None:
                     parts.append(f"<cq>{crossing:.2f}</cq>")
                 for cycle, fluor in enumerate(_curve(rng, crossing), start=1):
-                    parts.append(f"<adp><cyc>{cycle}</cyc><fluor>{fluor:.4f}</fluor></adp>")
+                    if curves:
+                        parts.append(f"<adp><cyc>{cycle}</cyc><fluor>{fluor:.4f}</fluor></adp>")
                 parts.append("</data></react>")
         parts.append("</run>")
     parts.append("</experiment></rdml>")

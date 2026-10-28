@@ -536,6 +536,11 @@ class PlateView(BaseModel):
     curve_judge: str = Field(description="The Curve Judge's status in words.")
     results_visible: bool
     wells: list[PlateWell]
+    cq_only: bool = Field(
+        default=False,
+        description="The file has Cq values only (no curves): the Cq per well is the file's, "
+        "and no efficiency, R² or baseline exists (`docs/cq-tables.md`).",
+    )
 
 
 class CurveSeries(BaseModel):

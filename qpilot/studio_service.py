@@ -104,6 +104,11 @@ CURVE_JUDGE_LISTED = (
     "Curve Judge disagreements that could change a conclusion are listed one well each; "
     "the others change no conclusion and are not listed"
 )
+#: The curves round's note for a file of Cq values only (the Curves page shows its Cq table).
+CQ_TABLE_LISTED = (
+    "Confirm the Cq table instead: each sample's Cq per well, the wells without a Cq and the "
+    "replicates whose spread is wider than expected are on the Curves page"
+)
 EXCLUSION_KIND = "prism.exclusion_reason"
 EXCLUDE_KIND = "curve.exclude_well"  # a well left out of (or put back into) the analysis
 TRUST_KIND = "curve.import_trust"  # a person's option on the Import Trust card (qpilot/io/trust.py)
@@ -1196,7 +1201,8 @@ class Studio:
         direction, no number. Needs the design stage confirmed.
         """
         from qpilot.qpcr.amp_call import amplified
-        from qpilot.qpcr.curves import analyse_study
+        from qpilot.qpcr.cq_only import NOT_APPLICABLE
+        from qpilot.qpcr.curves import analyse_study, without_curves
         from qpilot.qpcr.designs import design_curves
         from qpilot.qpcr.study import StudySettings
 
@@ -1208,6 +1214,11 @@ class Studio:
         settings = StudySettings.from_design(design)
         path = self.source(session_id)
         curves = analyse_study(path, settings.experiment_id, settings.candidates, settings.curves)
+        if without_curves(curves):  # a file of Cq values only: no curve to fit or to judge
+            notes = [NOT_APPLICABLE["linregpcr"], NOT_APPLICABLE["curve_judge"], CQ_TABLE_LISTED]
+            report = _report([self._propose_rule(session_id, cq_values=True)], notes=notes)
+            report["cq_only"] = True
+            return report
         table = design_curves(curves, design)
         study = table[table["sample_type"] == "unkn"]
         keys = study["run_id"].astype(str) + "/" + study["well"].astype(str)
@@ -1255,22 +1266,56 @@ class Studio:
         report["targets_that_matter"] = mattering
         return report
 
-    def _propose_rule(self, session_id: str) -> ProposalOutcome:
+    def _propose_rule(self, session_id: str, cq_values: bool = False) -> ProposalOutcome:
+        """The call rule (``linregpcr``, the engine's default) as the curves stage's proposal.
+
+        ``cq_values`` (a file of Cq values only) says so in the payload (``basis: "cq"``, which
+        the engine does not read: the rule is the same, a well counts when it has a quantity)
+        and in the words: a well counts when the file gives it a Cq.
+        """
+        payload: dict[str, Any] = {"rule": "linregpcr"}
+        note, reason = (
+            "the engine's default call",
+            (
+                "LinRegPCR calls a well amplified when it finds an exponential phase and a "
+                "quantity; the Cq cut-offs are kept as choices whose consequences are shown later"
+            ),
+        )
+        if cq_values:
+            payload["basis"] = "cq"
+            note = "the engine's default call: a well counts when the file gives it a Cq"
+            reason = (
+                "This file has Cq values only, so a well counts as amplified when the file "
+                "gives it a Cq (the instrument software's call); the Cq cut-offs are kept as "
+                "choices whose consequences are shown later"
+            )
         proposal = Proposal(
             study_id=session_id,
             kind="curve.call_rule",
             subject="amp_call",
-            payload={"rule": "linregpcr"},
-            evidence=[Evidence(kind="rule", ref="linregpcr", note="the engine's default call")],
+            payload=payload,
+            evidence=[Evidence(kind="rule", ref="linregpcr", note=note)],
             alternatives=[{"rule": "cq_le_40"}, {"rule": "cq_le_38"}, {"rule": "cq_le_35"}],
             level="High",
-            reasons=[
-                "LinRegPCR calls a well amplified when it finds an exponential phase and a "
-                "quantity; the Cq cut-offs are kept as choices whose consequences are shown later"
-            ],
+            reasons=[reason],
             made_by=MadeBy(kind="rule"),
         )
         return self.store.proposals(session_id).propose(proposal, "system")
+
+    def cq_only(self, session_id: str) -> bool:
+        """True when the session's file holds Cq values only (no curve) for its design's plates.
+
+        Read from the file's facts (the design's experiment once a design is assembled), so it
+        needs no analysis; ``docs/cq-tables.md``.
+        """
+        from qpilot.qpcr.curves import safe_name, without_curves
+
+        wells = self.facts(session_id).wells
+        design = self.assemble(session_id).design
+        if design is not None and design.experiment_id is not None:
+            mine = wells[wells["experiment_id"] == safe_name(design.experiment_id, "experiment")]
+            wells = mine if len(mine) else wells
+        return without_curves(wells)
 
     def _propose_well_call(
         self, session_id: str, key: str, amplified: bool, target: str
@@ -1523,6 +1568,8 @@ class Studio:
             from qpilot import studio_axes
 
             return {"axis": axis, "tested": tested, **studio_axes.offer(axis, settings, curves)}
+        from qpilot.qpcr import cq_only
+
         table = design_curves(curves, design)
         quantities = {s: d.quantity for s, d in design.samples.items() if d.quantity}
         std = eff_axis.standard_curves(table, quantities)
@@ -1533,6 +1580,8 @@ class Studio:
         valid = own[own.notna() & (own > low) & (own < high)]
         if valid.empty:
             unavailable["per_well"] = "no study well has its own efficiency inside (1.0, 2.3)"
+        plan = cq_only.efficiency_plan(table, design)  # a file of Cq values only (else empty)
+        unavailable.update(cq_only.not_measured(plan))
         options = tuple(o for o in eff_axis.OPTIONS if o not in unavailable)
         assay = study["eff_target"].astype(float).dropna()
         evidence = {
@@ -1545,6 +1594,7 @@ class Studio:
             "assay_min": float(assay.min()) if len(assay) else None,
             "assay_max": float(assay.max()) if len(assay) else None,
             "dilution_series": len(std),
+            "cq_only": bool(plan.assays),
         }
         return {
             "axis": axis,
@@ -1617,20 +1667,33 @@ class Studio:
                     "LinRegPCR's valid range (1.0, 2.3)",
                 )
             )
+        cq_values = bool(numbers.get("cq_only"))
         if numbers["assay_min"] is not None:
+            source = (
+                "each assay's efficiency (its dilution series, else assumed 2.0; Cq values only)"
+                if cq_values
+                else "LinRegPCR's mean efficiency per assay and plate"
+            )
             evidence.append(
                 Evidence(
                     kind="pattern",
                     ref="each assay's mean efficiency",
-                    note=f"LinRegPCR's mean efficiency per assay and plate: "
-                    f"{numbers['assay_min']:.3f} to {numbers['assay_max']:.3f}",
+                    note=f"{source}: {numbers['assay_min']:.3f} to {numbers['assay_max']:.3f}",
                 )
             )
         if on:
+            in_use = (
+                "This file has Cq values only, so qPilot turns each Cq into a quantity with "
+                "each assay's efficiency from its dilution series where it has one, else 2.0; "
+                "testing an efficiency of 2.0 for every assay shows which conclusions depend on "
+                "the dilution series."
+                if cq_values
+                else "qPilot turns each Cq into a quantity with LinRegPCR's mean efficiency of "
+                "each assay on each plate; testing the other efficiency models shows which "
+                "conclusions depend on that choice."
+            )
             reasons = [
-                "qPilot turns each Cq into a quantity with LinRegPCR's mean efficiency of each "
-                "assay on each plate; testing the other efficiency models shows which "
-                "conclusions depend on that choice. The analysis in use stays the same until "
+                in_use + " The analysis in use stays the same until "
                 "a person decides otherwise on the card it raises; what a person decided on the "
                 "other cards is carried to it, unless that choice matters more there.",
                 *(

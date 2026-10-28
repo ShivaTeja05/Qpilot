@@ -346,7 +346,10 @@ export function PayloadEditor({
             label="Count a well as amplified by"
             value={String(value.rule ?? "")}
             onValueChange={(v) => set("rule", v)}
-            options={rules.map((r) => ({ value: r, label: ruleLabel(r), hint: ruleWords(r) }))}
+            options={rules.map((r) => {
+              const cq = proposal.payload.basis === "cq"; // a file of Cq values only
+              return { value: r, label: ruleLabel(r, cq), hint: ruleWords(r, cq) };
+            })}
           />
         </Field>
       );
