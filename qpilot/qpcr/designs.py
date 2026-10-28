@@ -685,6 +685,8 @@ def design_curves(curves: pd.DataFrame, design: StudyDesign) -> pd.DataFrame:
       from ``"unkn"`` leaves the matrix of study samples.
     * ``excluded_wells`` are marked in the boolean column ``design_excluded``: they still show
       that the sample was measured, but their values are never used.
+    * targets a person left out of the study (role ``"ignore"``) are dropped, every well of
+      them, before anything else: the engine never sees them.
 
     ``well_calls`` are applied with the amplification rule
     (:func:`qpilot.qpcr.amp_call.apply_rule`), not here.
@@ -694,11 +696,14 @@ def design_curves(curves: pd.DataFrame, design: StudyDesign) -> pd.DataFrame:
             into another role, or names a well that is not in the table.
     """
     out = curves.copy()
-    keys = well_keys(out)
     named = [*design.well_roles, *design.well_calls, *design.excluded_wells]
-    unknown = sorted(set(named) - set(keys))
+    unknown = sorted(set(named) - set(well_keys(out)))
     if unknown:
         raise DesignError(f"wells named in the design but not in the data: {unknown[:5]}")
+    ignored = {t for t, d in design.targets.items() if d.role == "ignore"}
+    if ignored and "target" in out.columns:
+        out = out[~out["target"].isin(ignored)].copy()
+    keys = well_keys(out)
     declared = out["sample_type"]
     roles = {s: d.role for s, d in design.samples.items() if d.role != "unkn"}
     sample_type = out["sample"].map(roles).fillna(declared)

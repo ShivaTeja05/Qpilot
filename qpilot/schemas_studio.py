@@ -22,7 +22,7 @@ kind                        subject            payload
 ``design.well_role``        sample id          ``{"role": WellRole}``
 ``design.group``            sample id          ``{"group": str}``
 ``design.bio_unit``         sample id          ``{"biological_unit": str}``
-``design.target_role``      target             ``{"role": "ref" | "toi"}``
+``design.target_role``      target             ``{"role": "ref" | "toi" | "ignore"}``
 ``design.gene_symbol``      target             ``{"symbol": str}`` (HGNC)
 ``design.comparison``       ``comparison``     ``{"group_a": str, "group_b": str}``
 ``design.dilution_series``  series name        ``{"experiment_id": str, "samples": {id: qty}}``
@@ -143,9 +143,14 @@ class ProposalCheck(BaseModel):
 
 
 class MadeBy(BaseModel):
-    """Who produced a proposal: a language model, an MCP agent or a deterministic rule."""
+    """Who produced a proposal: a language model, an MCP agent, a deterministic rule or a person.
 
-    kind: Literal["model", "agent", "rule"]
+    ``person``: a person made the proposal on the Design page and accepted it in the same act
+    (a design item the rules and the model did not propose). Only ``actor="human"`` may propose
+    one (``core/proposals.py``); the engine still checks it like any other proposal.
+    """
+
+    kind: Literal["model", "agent", "rule", "person"]
     provider: str | None = None
     model: str | None = None
     prompt_sha256: str | None = None
@@ -244,7 +249,12 @@ class ProposalOutcome(BaseModel):
 
 WellRole = Literal["unkn", "std", "ntc", "nrt", "nac", "pos", "opt", "ntp"]  # RDML sample types
 CONTROL_ROLES: frozenset[str] = frozenset({"ntc", "nrt", "nac"})  # never demoted (hard ban)
-TargetRole = Literal["toi", "ref"]
+# ---- added by the Design page's person-made proposals (agent design; see docs/studio.md) ----
+#: ``ignore``: a target a person leaves out of the study (a spike-in, an empty channel, an
+#: assay not part of this experiment); :func:`qpilot.qpcr.designs.design_curves` drops its
+#: wells before anything is computed. Absent unless a person chose it, so no hash changes.
+TargetRole = Literal["toi", "ref", "ignore"]
+# ---- end of the Design page's additions ------------------------------------------------------
 
 
 class SampleDesign(BaseModel):

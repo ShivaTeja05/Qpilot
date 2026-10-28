@@ -196,6 +196,8 @@ def _step(state: Replay, entry: ProposalEntry, study_id: str | None) -> str | No
             return "a propose line with fields its action does not use"
         if study_id is not None and proposal.study_id != study_id:
             return "a proposal for another study"
+        if proposal.made_by.kind == "person" and entry.actor != "human":
+            return f"a proposal made by a person but proposed by {entry.actor}"
         state.proposals[pid] = proposal
         state.proposed_at[pid] = entry.seq
         return None
@@ -362,9 +364,14 @@ def _require_human(actor: Any) -> None:
 
 
 def _check_maker(proposal: Proposal, actor: str) -> None:
-    """An agent's proposal is an agent's; only the system proposes a confirm step, as the rule."""
+    """Who may propose what: an agent's proposal is an agent's, a person's only a person's.
+
+    Only the system proposes a confirm step, as the rule.
+    """
     if actor == "agent" and proposal.made_by.kind != "agent":
         raise ProposalError("an agent's proposal is always recorded as made by an agent")
+    if proposal.made_by.kind == "person" and actor != "human":
+        raise ProposalError("only a person makes a proposal recorded as made by a person")
     if proposal.kind in SYSTEM_ONLY_KINDS and (
         actor != "system" or proposal.made_by.kind != "rule"
     ):

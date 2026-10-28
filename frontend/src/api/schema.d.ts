@@ -875,6 +875,86 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{sid}/design/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Design
+         * @description What recording these items would do, with the engine's check of each (writes nothing).
+         */
+        post: operations["check_design"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/design/editor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Editor
+         * @description The design editor: every sample and target, the design so far, what it still needs.
+         */
+        get: operations["get_editor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/design/set": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Design
+         * @description Record design items as the person's own decisions (each checked; one reason for all).
+         */
+        post: operations["set_design"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/design/template.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Template
+         * @description A sample sheet pre-filled with this plate's samples and targets (CSV, opens in Excel).
+         */
+        get: operations["get_template"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{sid}/model-seen": {
         parameters: {
             query?: never;
@@ -1294,6 +1374,28 @@ export type paths = {
         get: operations["get_quarantine"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/sheet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach Sheet
+         * @description Attach a sample sheet to this session (no need to open the files again).
+         *
+         *     The rules then propose again from it (a job). Nothing is decided.
+         */
+        post: operations["attach_sheet"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4485,6 +4587,14 @@ export type components = {
             /** Title */
             title: string;
         };
+        /** Body_attach_sheet */
+        Body_attach_sheet: {
+            /**
+             * Sheet
+             * @description The sample sheet (.csv, .tsv, .xlsx or .xlsm).
+             */
+            sheet: string;
+        };
         /** Body_link_gate_run_file */
         Body_link_gate_run_file: {
             /** Plate */
@@ -5980,6 +6090,205 @@ export type components = {
             title: string;
         };
         /**
+         * DesignCheckRequest
+         * @description ``POST …/design/check``: what recording these items would do (nothing is written).
+         */
+        DesignCheckRequest: {
+            /** Items */
+            items: components["schemas"]["DesignEditItem"][];
+        };
+        /**
+         * DesignEditItem
+         * @description One design item a person sets: the proposal kind, its subject and its payload.
+         *
+         *     Payloads: ``design.target_role`` ``{"role": "ref"|"toi"|"ignore"}`` (subject: a target);
+         *     ``design.well_role`` ``{"role": "unkn"|"ntc"|"nrt"|"nac"|"pos"|"ntp"|"opt"}`` (a sample);
+         *     ``design.group`` ``{"group": str | null}`` (a sample; null takes it out of every group);
+         *     ``design.bio_unit`` ``{"biological_unit": str | null}`` (a sample; null: its own unit);
+         *     ``design.dilution_series`` ``{"experiment_id": str, "samples": {sample: quantity}}``
+         *     (subject: the series' name; its samples become standards with these quantities);
+         *     ``design.comparison`` ``{"group_a": str, "group_b": str}`` (subject ``comparison``;
+         *     fold change = group_a relative to group_b, the reference group).
+         */
+        DesignEditItem: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "design.target_role" | "design.well_role" | "design.group" | "design.bio_unit" | "design.dilution_series" | "design.comparison";
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+            /** Subject */
+            subject: string;
+        };
+        /**
+         * DesignEditorView
+         * @description ``GET …/design/editor``: the editor's whole view at one head of the inbox.
+         */
+        DesignEditorView: {
+            /** Comparison */
+            comparison?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Confirmed
+             * @description The design stage is confirmed (a change re-opens it).
+             */
+            confirmed: boolean;
+            /** Experiments */
+            experiments: string[];
+            /**
+             * Groups
+             * @description Group -> study samples in it.
+             */
+            groups: {
+                [key: string]: number;
+            };
+            /**
+             * Has Sheet
+             * @description A sample sheet is attached to this session.
+             */
+            has_sheet: boolean;
+            /** Head */
+            head: string;
+            /**
+             * Membership
+             * @description Each sample's group and unit (one entry per sample, in the same order).
+             */
+            membership: components["schemas"]["EditorMembership"][];
+            /** Needs */
+            needs: components["schemas"]["DesignNeed"][];
+            /**
+             * Preset
+             * @description A built-in design a person accepted (the demo's).
+             */
+            preset?: string | null;
+            /** Sample Types */
+            sample_types: components["schemas"]["EditorOption"][];
+            /** Samples */
+            samples: components["schemas"]["EditorSample"][];
+            /** Sheet Name */
+            sheet_name?: string | null;
+            /** Target Roles */
+            target_roles: components["schemas"]["EditorOption"][];
+            /** Targets */
+            targets: components["schemas"]["EditorTarget"][];
+            /**
+             * Template Url
+             * @description The pre-filled sample-sheet template (CSV).
+             */
+            template_url: string;
+            /**
+             * Units
+             * @description Biological unit -> samples in it.
+             */
+            units: {
+                [key: string]: number;
+            };
+            /** Waiting */
+            waiting: number;
+        };
+        /**
+         * DesignNeed
+         * @description One thing the design still needs, and which control on the page gives it.
+         */
+        DesignNeed: {
+            /** Code */
+            code: string;
+            /**
+             * Where
+             * @enum {string}
+             */
+            where: "targets" | "samples" | "comparison" | "inbox" | "engine";
+            /** Words */
+            words: string;
+        };
+        /**
+         * DesignPlanView
+         * @description The plan of one act on the inbox at ``head`` (``POST …/design/check``).
+         */
+        DesignPlanView: {
+            /**
+             * Counts
+             * @description Items per action.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /** Head */
+            head: string;
+            /** Items */
+            items: components["schemas"]["PlannedItemView"][];
+            /** Message */
+            message: string;
+            /** N Contradicted */
+            n_contradicted: number;
+            /**
+             * N Rejects
+             * @description Waiting proposals the act rejects (they say otherwise).
+             */
+            n_rejects: number;
+        };
+        /**
+         * DesignSetRequest
+         * @description ``POST …/design/set``: record these items as the person's decisions, with one reason.
+         */
+        DesignSetRequest: {
+            /**
+             * Accept Contradicted
+             * @description Record items the engine's check contradicts (the person read why).
+             * @default false
+             */
+            accept_contradicted: boolean;
+            /**
+             * Expected Head
+             * @description The inbox head the page showed (409 stale when it moved).
+             */
+            expected_head?: string | null;
+            /** Items */
+            items: components["schemas"]["DesignEditItem"][];
+            /**
+             * Reason
+             * @description Why (kept with every item in the record); required.
+             * @default
+             */
+            reason: string;
+        };
+        /**
+         * DesignSetView
+         * @description What one act recorded (``POST …/design/set``).
+         */
+        DesignSetView: {
+            /** Head */
+            head: string;
+            job?: components["schemas"]["JobView"] | null;
+            /** Message */
+            message: string;
+            /**
+             * Outcomes
+             * @default []
+             */
+            outcomes: components["schemas"]["ProposalOutcome"][];
+            /**
+             * Recorded
+             * @description Proposals accepted (yours, and waiting ones that agree).
+             */
+            recorded: number;
+            /**
+             * Rejected
+             * @description Waiting proposals rejected because you set otherwise.
+             */
+            rejected: number;
+            /** Results Visible */
+            results_visible: boolean;
+            /** Stages */
+            stages: components["schemas"]["StageView"][];
+            /** Unchanged */
+            unchanged: number;
+        };
+        /**
          * DownloadLink
          * @description A file qPilot wrote into its export folder (beside the store), offered for download.
          */
@@ -6006,6 +6315,101 @@ export type components = {
              * @description `/api/downloads/<id>` (served as an attachment).
              */
             url: string;
+        };
+        /**
+         * EditorMembership
+         * @description A sample's group and biological unit in the design so far.
+         *
+         *     Kept apart from :class:`EditorSample` (which carries counts and a standard's quantity), so
+         *     no object of this API ever holds a group next to a number, even a count.
+         */
+        EditorMembership: {
+            /** Group */
+            group?: string | null;
+            /** Sample */
+            sample: string;
+            /** Unit */
+            unit?: string | null;
+        };
+        /**
+         * EditorOption
+         * @description One choice of a control, in a scientist's words.
+         */
+        EditorOption: {
+            /** Hint */
+            hint: string;
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
+        /**
+         * EditorSample
+         * @description One sample as the editor shows it: names, wells and the design so far; no number.
+         */
+        EditorSample: {
+            /** Declared Type */
+            declared_type: string;
+            /** Experiments */
+            experiments: string[];
+            /**
+             * Locked
+             * @description Why its type cannot change (a declared control).
+             */
+            locked?: string | null;
+            /** N Wells */
+            n_wells: number;
+            /**
+             * Quantity
+             * @description A standard's known quantity, as a person or a sheet set it.
+             */
+            quantity?: number | null;
+            /**
+             * Role
+             * @description Its type in the design so far (the file's when undecided).
+             */
+            role: string;
+            /** Sample */
+            sample: string;
+            /** Series */
+            series?: string | null;
+            /** Targets */
+            targets: string[];
+            /** Text Id */
+            text_id?: string | null;
+            /**
+             * Waiting
+             * @description Kinds of the proposals about it that wait.
+             */
+            waiting: string[];
+            /**
+             * Wells
+             * @description `run_id/well` of every well of the sample.
+             */
+            wells: string[];
+        };
+        /**
+         * EditorTarget
+         * @description One target as the editor shows it.
+         */
+        EditorTarget: {
+            /** Declared Type */
+            declared_type: string;
+            /** N Wells */
+            n_wells: number;
+            /**
+             * Role
+             * @description What a person decided (null: not yet).
+             */
+            role?: string | null;
+            /** Runs */
+            runs: string[];
+            /** Target */
+            target: string;
+            /** Text Id */
+            text_id?: string | null;
+            /** Waiting */
+            waiting: string[];
         };
         /**
          * EventBody
@@ -8052,7 +8456,11 @@ export type components = {
         };
         /**
          * MadeBy
-         * @description Who produced a proposal: a language model, an MCP agent or a deterministic rule.
+         * @description Who produced a proposal: a language model, an MCP agent, a deterministic rule or a person.
+         *
+         *     ``person``: a person made the proposal on the Design page and accepted it in the same act
+         *     (a design item the rules and the model did not propose). Only ``actor="human"`` may propose
+         *     one (``core/proposals.py``); the engine still checks it like any other proposal.
          */
         MadeBy: {
             /** Agent */
@@ -8061,7 +8469,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "model" | "agent" | "rule";
+            kind: "model" | "agent" | "rule" | "person";
             /** Model */
             model?: string | null;
             /** Prompt Sha256 */
@@ -8836,6 +9244,49 @@ export type components = {
             type: "unkn" | "std" | "ntc" | "nrt" | "pos";
             /** Well */
             well: string;
+        };
+        /**
+         * PlannedItemView
+         * @description What recording one item does, with the engine's check, before anything is written.
+         */
+        PlannedItemView: {
+            /** Accept Id */
+            accept_id?: string | null;
+            /**
+             * Action
+             * @description new: your own proposal, accepted · accept: a waiting proposal that says the same is accepted · keep: the design already says so (waiting proposals that say otherwise are rejected) · unchanged: nothing to record · refused: see refusal.
+             * @enum {string}
+             */
+            action: "new" | "accept" | "keep" | "unchanged" | "refused";
+            /**
+             * Also Accept
+             * @default []
+             */
+            also_accept: string[];
+            check?: components["schemas"]["ProposalCheck"] | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "design.target_role" | "design.well_role" | "design.group" | "design.bio_unit" | "design.dilution_series" | "design.comparison";
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Refusal */
+            refusal?: string | null;
+            /**
+             * Rejects
+             * @default []
+             */
+            rejects: string[];
+            /** Subject */
+            subject: string;
+            /**
+             * Words
+             * @description The item in plain words.
+             */
+            words: string;
         };
         /**
          * PlannerBody
@@ -11181,6 +11632,17 @@ export type components = {
              * @enum {string}
              */
             autonomy: "suggest" | "decide_and_tell";
+        };
+        /**
+         * SheetAttached
+         * @description ``POST …/sheet``: the sheet is bound to this session; the rules propose again (a job).
+         */
+        SheetAttached: {
+            job: components["schemas"]["JobView"];
+            /** Message */
+            message: string;
+            /** Sheet Name */
+            sheet_name: string;
         };
         /**
          * SheetCell
@@ -14522,6 +14984,138 @@ export interface operations {
             };
         };
     };
+    check_design: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignPlanView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_editor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignEditorView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_design: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignSetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignSetView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The sample-sheet template. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_model_seen: {
         parameters: {
             query?: {
@@ -15206,6 +15800,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuarantineView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_sheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_attach_sheet"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SheetAttached"];
                 };
             };
             /** @description Validation Error */

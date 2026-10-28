@@ -964,9 +964,11 @@ class Studio:
         accepted = self.store.proposals(session_id).accepted("design.")
         if any(p.kind in ("design.comparison", "design.preset") for p in accepted):
             return None
-        groups = sorted(
-            {str(p.effective_payload().get("group")) for p in accepted if p.kind == "design.group"}
-        )
+        latest: dict[str, Any] = {}  # a later decision on a sample wins (None: no group)
+        for p in accepted:
+            if p.kind == "design.group":
+                latest[p.subject] = p.effective_payload().get("group")
+        groups = sorted({str(g) for g in latest.values() if g is not None})
         if len(groups) != 2:
             return None
         controls = [g for g in groups if _CONTROL_GROUP.search(g)]
@@ -2325,7 +2327,8 @@ def _with_lab_defaults(design: StudyDesign, summary: InspectSummary) -> StudyDes
             update["experiment_id"] = common.pop()
     if not design.headline:
         refs = set(design.reference_candidates)
-        targets = sorted(t.target for t in summary.targets if t.target not in refs)
+        ignored = {t for t, d in design.targets.items() if d.role == "ignore"}
+        targets = sorted(t.target for t in summary.targets if t.target not in refs | ignored)
         if 0 < len(targets) <= 12:
             update["headline"] = tuple(targets)
     return design.model_copy(update=update) if update else design
