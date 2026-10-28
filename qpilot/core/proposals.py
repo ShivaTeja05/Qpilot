@@ -52,6 +52,8 @@ import hashlib
 import json
 import os
 import re
+import threading
+from collections import OrderedDict
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -154,6 +156,44 @@ def chain_lines(path: Path) -> list[str]:
     if not path.exists():
         return []
     return [line for line in _lines(path) if line.strip()]
+
+
+# Chains verified in this process, by (root, study id, digest of the exact text) — see _load.
+_VERIFIED: OrderedDict[tuple[str, str, bytes], tuple[tuple[ProposalEntry, ...], Replay]] = (
+    OrderedDict()
+)
+_VERIFIED_LOCK = threading.Lock()
+VERIFIED_KEPT = 64
+
+
+def _verified(key: tuple[str, str, bytes]) -> tuple[list[ProposalEntry], Replay] | None:
+    with _VERIFIED_LOCK:
+        found = _VERIFIED.get(key)
+        if found is None:
+            return None
+        _VERIFIED.move_to_end(key)
+    entries, state = found
+    return list(entries), _copy_replay(state)
+
+
+def _keep_verified(
+    key: tuple[str, str, bytes], entries: list[ProposalEntry], state: Replay
+) -> None:
+    with _VERIFIED_LOCK:
+        _VERIFIED[key] = (tuple(entries), _copy_replay(state))
+        while len(_VERIFIED) > VERIFIED_KEPT:
+            _VERIFIED.popitem(last=False)
+
+
+def _copy_replay(state: Replay) -> Replay:
+    """A replay whose maps and lists are its own (writes apply their entry to the copy)."""
+    return Replay(
+        proposals=dict(state.proposals),
+        proposed_at=dict(state.proposed_at),
+        decided=list(state.decided),
+        problems=list(state.problems),
+        agent_bytes=state.agent_bytes,
+    )
 
 
 # ---- replay ------------------------------------------------------------------------------------
@@ -451,8 +491,22 @@ class ProposalStore:
             yield
 
     def _load(self) -> tuple[list[ProposalEntry], Replay]:
-        """The chain and its replay; :class:`ProposalError` when it does not verify."""
-        lines = chain_lines(self.path)
+        """The chain and its replay; :class:`ProposalError` when it does not verify.
+
+        A chain whose exact text was verified before (same root, same bytes) is not parsed and
+        verified again: its entries and replay are reused (a fresh copy of the replay's lists and
+        maps each time; proposals themselves are only ever replaced, never changed in place).
+        """
+        text = self.path.read_text(encoding="utf-8") if self.path.exists() else ""
+        key = (self.root, self.study_id, hashlib.blake2b(text.encode("utf-8")).digest())
+        known = _verified(key)
+        if known is not None:
+            return known
+        entries, state = self._verify([line for line in text.split("\n") if line.strip()])
+        _keep_verified(key, entries, state)
+        return entries, state
+
+    def _verify(self, lines: list[str]) -> tuple[list[ProposalEntry], Replay]:
         try:
             entries = [ProposalEntry.model_validate_json(line) for line in lines]
         except (ValueError, RecursionError) as err:
