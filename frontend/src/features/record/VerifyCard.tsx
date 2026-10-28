@@ -32,13 +32,19 @@ export function verifyRows(
   r: VerifyReport,
   result?: Pick<VerifyResult, "audit" | "audit_note">,
 ): CheckRow[] {
-  const fileProblems = r.changed.length + r.missing.length + r.unlisted.length;
+  const damaged = r.damaged ?? [];
+  const fileProblems = damaged.length + r.changed.length + r.missing.length + r.unlisted.length;
   const rows: CheckRow[] = [
     {
       title: "Checksums",
       state: fileProblems ? "fail" : "pass",
       detail: fileProblems ? (
         <ul className="flex flex-col gap-0.5">
+          {damaged.length ? (
+            <li>
+              Altered or damaged after export (its bytes fail the zip’s own check): {names(damaged)}
+            </li>
+          ) : null}
           {r.changed.length ? <li>Changed since export: {names(r.changed)}</li> : null}
           {r.missing.length ? <li>Missing: {names(r.missing)}</li> : null}
           {r.unlisted.length ? <li>Not in the checksum list: {names(r.unlisted)}</li> : null}
@@ -50,8 +56,9 @@ export function verifyRows(
     {
       title: "Decision chain",
       state: r.chain_broken_at != null ? "fail" : "pass",
-      detail:
-        r.chain_broken_at != null
+      detail: damaged.includes("decisions.jsonl")
+        ? "Not readable: the decision log (decisions.jsonl) was altered or damaged after export."
+        : r.chain_broken_at != null
           ? `Broken at entry ${r.chain_broken_at}: that line (or one before it) was changed after it was written.`
           : `${plural(r.n_entries, "entry", "entries")}, every hash links to the one before it.`,
     },
@@ -117,9 +124,24 @@ const STATE_WORD: Record<CheckState, string> = {
   absent: "not checked",
 };
 
+/** The banner's title for each way a record can come out. */
+const OUTCOME_TITLE: Record<NonNullable<VerifyResult["outcome"]>, string> = {
+  verified: "This record checks out",
+  altered: "This record was altered or damaged after export",
+  chain_broken: "This record’s hash chain is broken",
+  inconsistent: "This record’s files disagree with its decision chain",
+};
+
 export function VerifyResultView({ result, size }: { result: VerifyResult; size?: number | null }) {
   const rows = verifyRows(result.report, result);
   const facts = result.record;
+  const outcome = result.outcome ?? (result.ok ? "verified" : "altered");
+  // the audit can fail on its own (the record's checks pass): say the record does not check out
+  const title = result.ok
+    ? OUTCOME_TITLE.verified
+    : outcome === "verified"
+      ? "This record does not check out"
+      : OUTCOME_TITLE[outcome];
   return (
     <div className="flex flex-col gap-3" aria-live="polite">
       <div
@@ -130,13 +152,11 @@ export function VerifyResultView({ result, size }: { result: VerifyResult; size?
       >
         <div className="mt-0.5 [&_svg]:size-5">{result.ok ? STATE_ICON.pass : STATE_ICON.fail}</div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-fg">
-            {result.ok ? "This record checks out" : "This record does not check out"}
-          </p>
+          <p className="text-sm font-semibold text-fg">{title}</p>
           <p className="mt-0.5 text-[13px] text-muted">
             {result.ok
               ? "Nothing in it was altered since qPilot wrote it."
-              : "Something in it changed after it was written. Do not rely on it; ask its author for the original zip."}{" "}
+              : `${result.headline || "Something in it changed after it was written."} Do not rely on it; ask its author for the original zip.`}{" "}
             <span className="font-mono text-[12px] [overflow-wrap:anywhere]">
               {result.file_name}
             </span>
@@ -195,7 +215,10 @@ export function VerifyResultView({ result, size }: { result: VerifyResult; size?
   );
 }
 
-export function VerifyCard() {
+/** Refusals that mean the file is not a record at all (not a zip, no checksum list in it). */
+const NOT_A_RECORD = new Set(["not_zip", "not_record"]);
+
+export function VerifyCard({ onFile }: { onFile?: (name: string) => void } = {}) {
   const inputId = useId();
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -206,8 +229,13 @@ export function VerifyCard() {
   const check = (picked: File | null | undefined) => {
     if (!picked) return;
     setFile(picked);
+    onFile?.(picked.name);
     verify.mutate(picked);
   };
+  const errorTitle =
+    verify.error instanceof ApiError && NOT_A_RECORD.has(verify.error.code)
+      ? "This is not a qPilot record"
+      : "This file could not be checked";
   const onDrop = (e: DragEvent<HTMLElement>) => {
     e.preventDefault();
     setOver(false);
@@ -274,7 +302,7 @@ export function VerifyCard() {
             Checking {file?.name}…
           </p>
         ) : verify.error ? (
-          <ErrorPanel compact error={verify.error} title="This file could not be checked">
+          <ErrorPanel compact error={verify.error} title={errorTitle}>
             {/* A refusal (not a zip, not a record, too large) will not change on a retry. */}
             {file &&
             !(

@@ -294,10 +294,17 @@ function TimelineEntry({
               : entry.undo
                 ? "Back to "
                 : "Chose "}
-          <span className="font-medium text-fg">{optionLabel(entry)}</span>
-          {entry.option_label && entry.option_label !== entry.option ? (
-            <span className="ml-1.5 font-mono text-[11.5px] text-faint">{entry.option}</span>
-          ) : null}
+          {/* the label only; the option's id is in its tooltip (an id is not a word) */}
+          <span
+            className="font-medium text-fg"
+            title={
+              entry.option_label && entry.option_label !== entry.option
+                ? `Option id: ${entry.option}`
+                : undefined
+            }
+          >
+            {optionLabel(entry)}
+          </span>
         </p>
 
         {entry.reason ? (

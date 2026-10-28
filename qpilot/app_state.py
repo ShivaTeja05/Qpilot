@@ -132,6 +132,14 @@ class CardView:
     where_html: str = ""  # a Trace card: the place it is about and what to check
 
 
+DECIDER_WORDS = {"human": "you", "agent": "an agent", "system": "qPilot"}
+
+
+def decider_words(actor: str | None) -> str:
+    """Who decided a card, as the page says it to the person using it ("Decided by you")."""
+    return DECIDER_WORDS.get(actor or "", actor or "someone")
+
+
 def _status_line(
     card: DecisionCard, labels: Mapping[str, str], pending_option: str | None = None
 ) -> str:
@@ -145,7 +153,7 @@ def _status_line(
         )
     if card.status == "decided":
         reason = f" Reason: {card.reason}" if card.reason else ""
-        return f"Decided by {card.decided_by or 'someone'}: {chosen}.{reason}"
+        return f"Decided by {decider_words(card.decided_by)}: {chosen}.{reason}"
     if card.status == "pending_human":
         # The request lives in the store's pending list; card.decision is the earlier choice.
         asked = labels.get(pending_option or "", pending_option or "another option")

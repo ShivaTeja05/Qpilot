@@ -155,6 +155,18 @@ class RecordError(ValueError):
     """A record that cannot be written, unpacked or re-run safely."""
 
 
+class RecordDamaged(RecordError):
+    """A zip member whose bytes fail the zip's own check: altered or damaged after export."""
+
+    def __init__(self, member: str, cause: BaseException | None = None) -> None:
+        self.member = member
+        detail = f" ({cause})" if cause is not None else ""
+        super().__init__(
+            f"this record was altered or damaged after export: {member} fails the zip's own "
+            f"check{detail}"
+        )
+
+
 class RecordInfo(BaseModel):
     """What :func:`write_record` produced."""
 
@@ -166,18 +178,81 @@ class RecordInfo(BaseModel):
 
 
 class VerifyReport(BaseModel):
-    """Outcome of :func:`verify`; ``ok`` only when nothing failed."""
+    """Outcome of :func:`verify`; ``ok`` only when nothing failed.
+
+    ``damaged`` lists the zip members whose bytes fail the zip's own check (a CRC or a deflate
+    stream that does not decode): the file was altered or damaged after the zip was written, so
+    its contents cannot be trusted (see :meth:`with_damaged`).
+    """
 
     ok: bool
     changed: list[str] = []
     missing: list[str] = []
     unlisted: list[str] = []
+    damaged: list[str] = []
     chain_broken_at: int | None = None
     inconsistent: list[str] = []
     n_entries: int = 0
     has_proposals: bool = False
     proposal_chain_broken_at: int | None = None
     n_proposal_entries: int = 0
+
+    def with_damaged(self, damaged: list[str]) -> VerifyReport:
+        """This report for a zip whose members ``damaged`` failed the zip's own check.
+
+        They were left out when unpacking, so they read as missing; they are reported as
+        altered or damaged instead, and the record does not verify.
+        """
+        if not damaged:
+            return self
+        names = sorted(set(damaged))
+        return self.model_copy(
+            update={
+                "ok": False,
+                "damaged": names,
+                "missing": [n for n in self.missing if n not in names],
+                "changed": [n for n in self.changed if n not in names],
+            }
+        )
+
+    def outcome(self) -> str:
+        """What the checks found, in one word.
+
+        ``verified``, ``altered`` (a file changed, damaged, missing or added), ``chain_broken``
+        (the files match their checksums, but a chain does not link) or ``inconsistent`` (the
+        files disagree with the chain).
+        """
+        if self.ok:
+            return "verified"
+        if self.damaged or self.changed or self.missing or self.unlisted:
+            return "altered"
+        if self.chain_broken_at is not None or self.proposal_chain_broken_at is not None:
+            return "chain_broken"
+        return "inconsistent"
+
+    def headline(self) -> str:
+        """The outcome in one plain sentence, naming the file or entry it is about."""
+        outcome = self.outcome()
+        if outcome == "verified":
+            return "This record checks out: nothing in it was altered since qPilot wrote it."
+        if outcome == "altered":
+            files = [*self.damaged, *self.changed, *self.missing, *self.unlisted]
+            shown = ", ".join(files[:3]) + (f" and {len(files) - 3} more" if len(files) > 3 else "")
+            return f"This record was altered or damaged after export: {shown}."
+        if outcome == "chain_broken":
+            which, at = (
+                ("decision", self.chain_broken_at)
+                if self.chain_broken_at is not None
+                else ("proposal", self.proposal_chain_broken_at)
+            )
+            return (
+                f"This record's {which} chain is broken at entry {at}: an entry was changed "
+                "after it was written, and the checksums were rewritten to match."
+            )
+        return (
+            "This record's files disagree with its decision chain: "
+            f"{self.inconsistent[0] if self.inconsistent else 'see the checks below'}."
+        )
 
     def summary(self) -> str:
         """One human-readable line per problem, or ``OK``."""
@@ -186,7 +261,11 @@ class VerifyReport(BaseModel):
             if self.has_proposals:
                 text += f"; proposal chain: {self.n_proposal_entries} entries, intact"
             return text
-        lines = [f"changed: {name}" for name in self.changed]
+        lines = [
+            f"altered or damaged after export (fails the zip's own check): {name}"
+            for name in self.damaged
+        ]
+        lines += [f"changed: {name}" for name in self.changed]
         lines += [f"missing: {name}" for name in self.missing]
         lines += [f"not in checksums: {name}" for name in self.unlisted]
         if self.chain_broken_at is not None:
@@ -803,8 +882,16 @@ def zip_record(record_dir: str | Path, zip_path: str | Path | None = None) -> Pa
     return target
 
 
-def unzip_record(zip_path: str | Path, target_dir: str | Path) -> Path:
-    """Unpack a record zip defensively: no absolute paths, ``..``, links, or zip bombs."""
+def unzip_record(
+    zip_path: str | Path, target_dir: str | Path, *, damaged: list[str] | None = None
+) -> Path:
+    """Unpack a record zip defensively: no absolute paths, ``..``, links, or zip bombs.
+
+    A member whose bytes fail the zip's own check (a bad CRC-32, a deflate stream that does not
+    decode) raises :class:`RecordDamaged`; when ``damaged`` is a list, its name is added there
+    instead, the member is left out and the rest is unpacked, so the record can still be
+    verified (:meth:`VerifyReport.with_damaged`).
+    """
     target = Path(target_dir).resolve()
     target.mkdir(parents=True, exist_ok=True)
     try:
@@ -838,13 +925,29 @@ def unzip_record(zip_path: str | Path, target_dir: str | Path) -> Path:
                 with zf.open(member) as src, open(dest, "wb") as out:
                     shutil.copyfileobj(src, out)
             except (zipfile.BadZipFile, zlib.error, EOFError, NotImplementedError) as err:
-                raise RecordError(f"damaged record zip ({member.filename}): {err}") from err
+                dest.unlink(missing_ok=True)
+                if damaged is None:
+                    raise RecordDamaged(member.filename, err) from err
+                damaged.append(member.filename)
             except OSError as err:  # a file and a folder of one name, a '.' member, ...
                 raise RecordError(f"unsafe path in record zip: {member.filename!r}") from err
     children = [c for c in target.iterdir() if c.name != "__MACOSX"]
     if not (target / CHECKSUMS).exists() and len(children) == 1 and children[0].is_dir():
         return children[0]  # a zip made of the record folder itself (zip -r rec.zip rec)
     return target
+
+
+def member_names(damaged: list[str], record_dir: Path, unpacked: Path) -> list[str]:
+    """Damaged zip members as the record names its files (without the record's own folder).
+
+    A zip made of the record folder itself (``zip -r rec.zip rec``) names ``rec/results.json``;
+    the record calls it ``results.json``.
+    """
+    record_dir, unpacked = Path(record_dir).resolve(), Path(unpacked).resolve()
+    if not damaged or record_dir == unpacked or not record_dir.is_relative_to(unpacked):
+        return list(damaged)
+    prefix = f"{record_dir.relative_to(unpacked).as_posix()}/"
+    return [d.removeprefix(prefix) for d in damaged]
 
 
 class RerunReport(BaseModel):

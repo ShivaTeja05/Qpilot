@@ -1,4 +1,5 @@
 import { ArrowRight, Bot, FileText, ShieldAlert, Wrench } from "lucide-react";
+import { useId } from "react";
 import { Badge, Table, TBody, TD, TH, THead, TR } from "@/ui";
 import { cardFocus, type AskAnswer } from "./types";
 
@@ -25,6 +26,7 @@ const capitalise = (s: string) =>
  * from the answer or its facts; every label about how it was made is the server's own words.
  */
 export function Answer({ answer, links }: { answer: AskAnswer; links: AnswerLinks }) {
+  const factsTitle = useId();
   const gene = typeof answer.args?.gene === "string" ? answer.args.gene : null;
   const card = cardFocus(answer);
   return (
@@ -99,11 +101,12 @@ export function Answer({ answer, links }: { answer: AskAnswer; links: AnswerLink
 
       {answer.facts.length ? (
         <div>
-          <p className="pb-1.5 text-xs font-medium text-muted" aria-hidden>
+          {/* the visible line names the table (once: no second, hidden caption) */}
+          <p id={factsTitle} className="pb-1.5 text-xs font-medium text-muted">
             The numbers in this answer, from the study's facts
           </p>
           <div className="overflow-hidden rounded-lg border border-line">
-            <Table caption="The numbers in this answer, from the study's facts">
+            <Table aria-labelledby={factsTitle}>
               <THead>
                 <TR>
                   <TH>Meaning</TH>

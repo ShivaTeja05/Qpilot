@@ -10,8 +10,8 @@ It writes, next to this file, exactly what the page reads:
 * ``session.json`` -- ``GET /api/sessions/{sid}`` (the workspace frame), with the file facts and
   inspect summary left out (``null``; the section does not read them);
 * ``planner.json`` -- ``GET /api/studies/{id}/planner`` (the study's noise, groups, plates);
-* ``plan.json`` -- ``POST /api/studies/{id}/planner`` with the planner's defaults (a 2-fold change,
-  80 % power, the headline genes, the study's plate size);
+* ``plan.json`` -- ``POST /api/studies/{id}/planner`` with the planner's defaults (a 2.5-fold
+  change, above the 2-fold call line, 80 % power, the headline genes, the study's plate size);
 * ``plan-fold3.json`` -- the same at a 3-fold change;
 * ``layout.json`` -- ``POST /api/studies/{id}/planner/layout`` for 6 per group of the headline genes
   on 96-well plates, seed 1 (small enough to keep).

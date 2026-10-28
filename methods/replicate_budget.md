@@ -4,7 +4,7 @@
 
 **References.** The variance of a balanced nested (hierarchical) mean is a textbook result. For qPCR it is the design of Tichopad A, Kitchen R, Riedmaier I, Becker C, Ståhlberg A, Kubista M. *Design and optimization of reverse-transcription quantitative PCR experiments.* Clinical Chemistry 55(10): 1816–1823 (2009). That paper was not re-read for this card, and none of its variance components is used as a default (see "What we changed"). The six-technical-replicate example is from Bustin 2025, *Int J Mol Sci* 26: 7796, as cited in the planning notes; the paper could not be read offline (see the Bustin section below).
 
-**Implementation.** `qpilot/qpcr/plan.py`: `effective_sd`, `group_mean_se`, `design_cost`, `cheapest_design`, and the keyword-only arguments of `plan` (`sd_rt`, `sd_well`, `n_rt`, `n_tech`, `cost_subject`, `cost_rt`, `cost_well`, `expected_cq`), which fill `PlanResult.budget`. CLI: `qpilot plan --sd-rt --sd-well --n-rt --n-tech --cost-subject --cost-rt --cost-well --cq`.
+**Implementation.** `qpilot/qpcr/plan.py`: `effective_sd`, `group_mean_se`, `design_cost`, `cheapest_design`, and the keyword-only arguments of `plan` (`sd_rt`, `sd_well`, `n_rt`, `n_tech`, `cost_subject`, `cost_rt`, `cost_well`, `expected_cq`), which fill `PlanResult.budget`. CLI: `qpilot plan --sd-rt --sd-well --n-rt --n-tech --cost-subject --cost-rt --cost-well --cq` (also `--expected-cq`) `--cq-one-copy`.
 
 | Quantity | Definition | Rule |
 |---|---|---|
@@ -19,7 +19,9 @@
 | Cost per group | n_bio·(c_subject + n_RT·(c_RT + n_tech·c_well)); both groups cost twice that | Costs 0 to 10⁹ each; all three are needed |
 | Cheapest design | For each n_RT and n_tech searched, n_bio = the subjects needed; the lowest cost wins | A level is searched from 1 to 10 only when its SD was given; otherwise the planned count is kept |
 | Ties | Equal cost → smaller detectable fold → fewer subjects → fewer RT reactions → fewer wells | Costs are compared exactly, as the decimals written (0.1 is one tenth) |
-| Expected Cq (`expected_cq`) | Accepted and echoed | The claim-floor check needs add_plan 1.4's floor pack, which does not exist; the budget says `claim_floor: "not_built"` and applies no floor |
+| Expected Cq (`expected_cq`, `--cq` / `--expected-cq`) | Copies per well N = 2^(Cq₁ − Cq), with Cq₁ the Cq of one copy (`cq_one_copy`, `--cq-one-copy`: your standard curve's intercept; default 35, an unsourced lab-editable assumption). Poisson sampling floor of the well SD: 1 / (ln 2 · √N) log2 units | The plan uses max(σ_well given, floor) as σ_well (`budget.cq_noise`); below 3 copies per well the target is in `cannot_detect` |
+
+**Expected Cq: the Poisson floor of the well SD.** A cDNA that holds on average N template copies per well puts a Poisson number of copies into each well: SD √N, coefficient of variation 1/√N, so on the log2 scale (delta method) wells scatter by at least 1/(ln 2 · √N), whatever the pipetting and the instrument. At perfect doubling a target that crosses k cycles before the one-copy Cq holds 2^k copies: with Cq₁ = 35, a target at Cq 31 holds 16 copies (floor 0.36 log2 units), one at Cq 33 holds 4 (0.72), one at Cq 25 about 1000 (0.05). The plan takes the larger of this floor and the well SD given: a well SD measured in a pilot at a lower Cq already holds that pilot's smaller sampling noise, so the larger of the two never counts it twice. Below 3 copies per well, MIQE's limit (with Poisson sampling, 3 copies per reaction is the lowest load that puts at least one copy in 95 % of reactions), many wells hold no template at all: the plan lists the target as one no replicate count makes measurable. Sources: Bustin SA et al. *The MIQE guidelines.* Clin Chem 55(4): 611–622 (2009) (the 3-copy limit); Ståhlberg A, Kubista M. *The workflow of single-cell expression profiling using quantitative real-time PCR.* Expert Rev Mol Diagn 14(3): 323–331 (2014) (sampling noise at low copy numbers). The delta-method floor under-states the spread below about 3 copies; the one-copy Cq is the assumption to check, and the standard curve's intercept (the Cq at log₁₀ copies = 0) is the value to give.
 
 **What we changed from the published method.** Nothing in the formula. Four choices are ours:
 - **No assumed variance components.** Every SD is an input. When σ_RT or σ_well is missing the budget says so and gives that replicate no effect, instead of filling in a literature range; the planner never recommends a replicate whose noise it was not told.
@@ -51,7 +53,7 @@ A two-group comparison needs about twice the replicates of a one-sample one at t
 - The formula holds for balanced designs. Unequal replicate counts, or wells lost to undetermined values, change the weights: `quant` averages wells, not RT means.
 - It is a design check, never the power of a study already run.
 - Costs are linear per item. Plate capacity, batch effects and fixed costs are not modelled.
-- No claim-floor or limit-of-detection check is made for an expected Cq.
+- An expected Cq sets only the Poisson floor of the well SD and the 3-copy detection limit; it assumes one copy crosses at the Cq given (default 35) at perfect doubling, and it does not model the RT's own sampling of rare transcripts, inhibition, or a smallest fold change a Cq supports (no claim floor).
 
 **Validation.** `tests/core/test_plan.py`:
 - With σ_RT = σ_well = 0 (or not given), the numbers are exactly the single-SD planner's at 6 designs × 5 argument sets: `mde_fold`, `n_needed`, the message and the "cannot detect" list.

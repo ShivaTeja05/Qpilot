@@ -334,6 +334,13 @@ class RecordVerified(BaseModel):
 
     ok: bool = Field(description="The record verifies (and its audit, when one is bound).")
     file_name: str
+    outcome: Literal["verified", "altered", "chain_broken", "inconsistent"] = Field(
+        default="verified",
+        description="verified; altered (a file changed, damaged, missing or added after "
+        "export); chain_broken (the files match their checksums but a hash chain does not "
+        "link); inconsistent (the files disagree with the chain).",
+    )
+    headline: str = Field(default="", description="The outcome in one plain sentence.")
     summary: list[str] = Field(description="One line per problem, or one OK line.")
     report: VerifyReport
     record: RecordFacts

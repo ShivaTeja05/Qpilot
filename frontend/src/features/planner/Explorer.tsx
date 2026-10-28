@@ -92,6 +92,7 @@ export function Explorer({
               onIndexChange={(i) => onChange({ foldIndex: i })}
               format={(v) => fold(v)}
               valueText={changeWords(magnitude, state.direction)}
+              hint={view.fold_note || undefined}
             />
             <SegmentedControl
               label="Direction"

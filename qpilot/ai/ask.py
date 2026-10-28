@@ -201,14 +201,38 @@ class _Context:
         self.names |= set(self.result.design.group_var.split("_"))
         self.names |= set(METHOD_PHRASES)  # the grader's thresholds, as its notes word them
 
+        self.alias: tuple[str, str] | None = None  # (as written, the study's name) of an alias
+
     def gene(self, text: str) -> str | None:
-        lowered = text.lower()
-        hits = [
-            g
-            for g in self.result.contrasts
-            if re.search(rf"(?<![\w(]){re.escape(g.lower())}(?![\w)])", lowered)
-        ]
-        return max(hits, key=len) if hits else None
+        """The compared gene a question names, by name, assay name or HGNC alias (survivin).
+
+        The same resolver as the Claim Auditor (:func:`qpilot.claims.lexicon.find_genes`); the
+        longest name written wins. A gene found by an alias is remembered, so the answer can say
+        which gene it is about.
+        """
+        from qpilot.claims.lexicon import find_genes
+
+        hits = find_genes(text, self.result.contrasts)
+        if not hits:
+            return None
+        hit = max(hits, key=lambda f: len(f.written))
+        self.alias = (hit.written, hit.gene) if hit.via == "alias" else None
+        return hit.gene
+
+    def other_groups(self, text: str) -> str | None:
+        """A sentence when the question names groups the study does not compare, else None."""
+        from qpilot.claims.lexicon import Lexicon
+
+        lex = Lexicon.from_study(self.result)
+        other = next((g for g in lex.groups(text) if g.which == "other"), None)
+        if other is None or any(g.which != "other" for g in lex.groups(text)):
+            return None
+        if lex.basis and lex.group_b == "rest":
+            short = lex.basis.removesuffix(" expression")
+            ours = f"{lex.group_a} against {short}-low expression (the rest)"
+        else:
+            ours = f"{lex.group_a} against {lex.group_b}"
+        return f"This study compares {ours}, not {other.what}; for its own groups: "
 
 
 # ---- running a tool and turning its numbers into facts ------------------------------------
@@ -780,6 +804,8 @@ def ask(
     facts = {**ctx.result.facts, **extra}
     status = out.get("status")
     fallback_text = template_answer(ctx, tool, out, view)
+    if tool in ("qpcr_robustness", "qpcr_trace") and "error" not in out:
+        fallback_text = _about(ctx, question) + fallback_text
 
     text, validated, fallback, rejected = fallback_text, True, True, 0
     # Whatever happened to a change request (applied, waiting, stale or refused) is always
@@ -830,6 +856,18 @@ def ask(
                 entry["validated"] = entry["fallback"] = None
             store.append_ai_call(study_id, entry)
     return result
+
+
+def _about(ctx: _Context, question: str) -> str:
+    """Words before a gene's answer: the alias it was asked by, the groups it was asked about."""
+    gene = ctx.gene(question)
+    lead = ""
+    if gene and ctx.alias:
+        lead = f"{ctx.alias[0][:1].upper()}{ctx.alias[0][1:]} is {gene} in this study. "
+    groups = ctx.other_groups(question)
+    if groups:
+        lead += groups
+    return lead
 
 
 def _tool_prompt(ctx: _Context, question: str, profile: Profile) -> str:

@@ -42,6 +42,22 @@ describe("ChainTimeline", () => {
     );
   });
 
+  it("shows option labels only, with the id in a tooltip, and calls the person 'You'", () => {
+    renderWithProviders(
+      <ChainTimeline entries={decided.entries} root={decided.root} head={decided.head} />,
+    );
+    const text = screen.getByRole("list", { name: /decision chain entries/i }).textContent ?? "";
+    for (const e of decided.entries) {
+      if (!e.option_label || e.option_label === e.option) continue;
+      expect(text).not.toContain(`${e.option_label}${e.option}`); // "…was found)linregpcr"
+      const label = screen.getAllByText(e.option_label)[0]!;
+      expect(label.getAttribute("title")).toBe(`Option id: ${e.option}`);
+    }
+    if (decided.entries.some((e) => e.actor === "human"))
+      expect(screen.getAllByRole("img", { name: "You" }).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/human/i)).toBeNull();
+  });
+
   it("says who decided, the card's question and the option in words", () => {
     renderWithProviders(
       <ChainTimeline entries={decided.entries} root={decided.root} head={decided.head} />,

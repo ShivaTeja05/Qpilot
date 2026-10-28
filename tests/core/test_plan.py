@@ -398,18 +398,35 @@ def test_the_cheapest_design_needs_every_cost(costs, says):
     assert budget["cheapest"] is None and any(says in note for note in budget["notes"])
 
 
-def test_an_expected_cq_is_accepted_but_no_floor_is_invented():
+def test_an_expected_cq_sets_the_well_noise_floor():
+    """At Cq 31 a well holds 2 ** (35 - 31) = 16 copies: Poisson sampling alone scatters wells by
+    1 / (ln 2 · 4) log2 units, and the plan uses that as the well SD when none larger is given."""
+    from qpilot.qpcr.plan import cq_well_noise, poisson_sd_log2
+
     out = plan(1.5, 0.5, 6, expected_cq=31)
-    budget = out.budget
-    assert budget["claim_floor"] == "not_built" and budget["inputs"]["expected_cq"] == 31
-    assert any("not built yet, so no floor is applied" in note for note in budget["notes"])
-    assert out.mde_fold == plan(1.5, 0.5, 6).mde_fold
-    # Nothing else moves: the same budget as without a Cq, apart from the input and the note.
-    plain = plan(1.5, 0.5, 6, n_tech=1, sd_rt=None, cost_subject=None, n_rt=2).budget
-    with_cq = plan(1.5, 0.5, 6, n_rt=2, expected_cq=31).budget
-    with_cq["inputs"]["expected_cq"], with_cq["claim_floor"] = None, None
-    with_cq["notes"] = [n for n in with_cq["notes"] if "claim-floor" not in n]
-    assert with_cq == plain
+    noise = out.budget["cq_noise"]
+    floor = 1 / (math.log(2) * 4)
+    assert noise["copies_per_well"] == 16 and noise["sd_well_poisson"] == pytest.approx(floor)
+    assert noise["sd_well_used"] == pytest.approx(floor) and not noise["below_lod"]
+    assert out.mde_fold == plan(1.5, 0.5, 6, sd_well=floor).mde_fold
+    assert out.mde_fold > plan(1.5, 0.5, 6).mde_fold  # rarer template, noisier wells
+    assert (
+        "Poisson sampling" in out.budget["sentences"][0]
+        and "16 copies" in out.budget["sentences"][0]
+    )
+    # a larger measured well SD is used as it is (it already holds its own sampling noise)
+    big = plan(1.5, 0.5, 6, sd_well=0.6, expected_cq=31)
+    assert big.budget["cq_noise"]["sd_well_used"] == 0.6
+    assert big.mde_fold == plan(1.5, 0.5, 6, sd_well=0.6).mde_fold
+    # the one-copy Cq is the standard curve's intercept: 3 cycles later, 8 times the copies
+    assert cq_well_noise(31, None, cq_one_copy=38)["copies_per_well"] == 128
+    assert poisson_sd_log2(128) < poisson_sd_log2(16)
+    # below 3 copies per well (MIQE's detection limit) no replicate count makes it measurable
+    rare = plan(1.5, 0.5, 6, expected_cq=34)
+    assert rare.budget["cq_noise"]["below_lod"]
+    assert any("fewer than the 3" in line for line in rare.cannot_detect)
+    with pytest.raises(ValueError):
+        plan(1.5, 0.5, 6, expected_cq=31, cq_one_copy=0)
 
 
 @pytest.mark.parametrize(
@@ -470,15 +487,18 @@ def test_plan_cli_budget_flags(capsys):
                 "--n-tech",
                 "1",
                 "--cq",
-                "31",
+                "25",
                 "--json",
             ]
         )
         == 0
     )
     data = json.loads(capsys.readouterr().out)
+    # at Cq 25 a well holds about 1000 copies: their sampling noise is below the 0.3 given
     assert data["budget"]["cheapest"]["cost_per_group"] == 762
-    assert data["budget"]["claim_floor"] == "not_built"
+    assert data["budget"]["cq_noise"]["sd_well_used"] == 0.3
+    assert main([*args, "--expected-cq", "33", "--cq-one-copy", "35"]) == 0
+    assert "a well holds about 4 copies" in capsys.readouterr().out
     assert main(["plan", "--sd", "1", "--n-tech", "0"]) == 2
     assert "n_tech must be a whole number" in capsys.readouterr().err
     assert main(["plan", "--sd", "1", "--json"]) == 0
