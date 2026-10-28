@@ -548,13 +548,15 @@ def symbol_check(target_name: str, symbol: str) -> ProposalCheck:
     # does not name the proposed gene by itself, so the lookup that made the proposal cannot
     # also confirm it (``SymbolFinding.identifies``, io/symbols.py; absent in older builds).
     if symbol != target_name and getattr(named, "identifies", None) is False:
-        listed = ", ".join(named.candidates[:5]) or "no gene"
+        # The genes HGNC lists for the name go in the details (symbols hold digits; notes don't).
+        details = {**details, "name_candidates": list(named.candidates[:5])}
         return _check(
             "cannot_check",
             "D-SYMBOL",
             details,
-            "the target's name is an alias, or matches only when letter case is ignored; HGNC "
-            f"lists it for {listed}; confirm the gene",
+            "the target's name does not by itself name this gene (it is an alias, fits several "
+            "genes, matches only when letter case is ignored, or is not a gene name); a person "
+            "confirms the gene",
         )
     if named.candidates and symbol not in named.candidates:
         return _check(
