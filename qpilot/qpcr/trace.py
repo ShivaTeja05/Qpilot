@@ -504,7 +504,7 @@ def build_context(
             if absz[i, r] > TRACE_THRESHOLDS["z"]:
                 s1_flag[int(i)] = r
     shift_log2fc, shift_call = _shift(rel, valid, in_hi, in_lo, dev / max(len(refs), 1), space)
-    if (space.comparisons and space.correction != "none") or capped is not None:
+    if not _closed_form(space) or capped is not None:
         _corrected(
             space, values, ref_values, in_hi, in_lo, used, expected, loo_log2fc, loo_call, capped
         )
@@ -656,6 +656,20 @@ def _matrix_cell(cell: Mapping[str, Any], space: QpcrSpace) -> bool:
     )
 
 
+def _closed_form(space: QpcrSpace) -> bool:
+    """Whether a unit's what-if is the one-comparison Welch update the closed forms compute.
+
+    Not for a paired comparison (it tests within-pair differences, and a unit set aside takes
+    its pair with it), nor with a correction over several comparisons (the call uses the
+    corrected p, which moves when a unit leaves its group in any of them): those are evaluated
+    exactly, unit by unit (:func:`_corrected`, :func:`_corrected_shift`).
+    """
+    specs = space.comparisons
+    if not specs:
+        return True
+    return not (specs[0].paired or (space.correction != "none" and len(specs) > 1))
+
+
 def _loo(
     rel: np.ndarray,
     valid: np.ndarray,
@@ -671,7 +685,8 @@ def _loo(
 
     Dropping x from a group of n with mean m and squared deviations D: mean m - e/(n-1),
     deviations D - e^2 n/(n-1), with e = x - m. Units not used for an item get NaN and the
-    baseline call. Results within ``boundary_tol`` of the call rule are recomputed exactly.
+    baseline call. Results within ``boundary_tol`` of the call rule are recomputed exactly; a
+    paired or corrected study is then evaluated exactly throughout (:func:`_closed_form`).
     """
     mask_hi, mask_lo = valid & in_hi[:, None], valid & in_lo[:, None]
     hi = group_stats(rel, mask_hi)
@@ -712,7 +727,8 @@ def _corrected(
     """Each unit set aside, exactly: with a correction a call depends on every comparison.
 
     The closed form above is one Welch test; with several comparisons and a correction the
-    traced call uses the corrected p, which moves when a unit leaves its group in any of them.
+    traced call uses the corrected p, which moves when a unit leaves its group in any of them,
+    and a paired comparison tests within-pair differences (the unit's pair leaves with it).
     Each traced unit is set aside in every comparison and the space evaluates it (in place).
     """
     del expected
@@ -786,7 +802,8 @@ def _shift(
     Replacing reference r of unit u by its expected value moves every relative value of u by
     ``pull[u, r]`` (deviation / k). Changing x by d in a group of n with mean m and squared
     deviations D: mean m + d/n, deviations D + 2d(x - m) + d^2 (1 - 1/n). Shape units x refs x
-    items; NaN where the unit is not in the S1 population or has no value.
+    items; NaN where the unit is not in the S1 population or has no value. A paired or
+    corrected study is then evaluated exactly (:func:`_closed_form`).
     """
     n_units, n_items = rel.shape
     out = np.full((n_units, pull.shape[1], n_items), np.nan)

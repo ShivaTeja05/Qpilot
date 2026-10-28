@@ -566,8 +566,9 @@ RAWNESS_WORDS: dict[str, tuple[str, str]] = {
     ),
     "cq_only": (
         "Cq values only",
-        "There are no curves to check: only the instrument's Cq values. Efficiency is assumed, "
-        "not measured, so confidence is capped at Low.",
+        "There are no curves to check: only the Cq values in the file. Each assay's efficiency "
+        "comes from its dilution series when the design has one, else it is assumed to be 2.0, "
+        "and confidence is capped (at Low while an efficiency is assumed).",
     ),
     "unknown": (
         "Not clear",
