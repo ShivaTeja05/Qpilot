@@ -1,24 +1,32 @@
 [build-system]
-requires = ["hatchling>=1.25"]
+requires = ["hatchling>=1.25", "hatch-fancy-pypi-readme>=24.1"]
 build-backend = "hatchling.build"
 
 [project]
 name = "qpilot"
-version = "0.1.0"
+# One source of truth: qpilot/__init__.py (`qpilot --version`, the record, the report). Bump it there.
+dynamic = ["version", "readme"]
 description = "Open qPCR analysis, benchmarked against published results, that shows which of your choices could change the conclusion. Research use only."
-readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.11"
 authors = [{ name = "qPilot contributors" }]
+keywords = ["qPCR", "RT-qPCR", "RDML", "LinRegPCR", "geNorm", "reproducibility", "robustness"]
 classifiers = [
   "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Environment :: Web Environment",
   "Intended Audience :: Science/Research",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-# Every dependency for both development tracks is declared here at T0 so that
-# nobody needs to edit this file during the build (see team/00-TEAM-PLAN-OVERVIEW.md).
+
 dependencies = [
   "lxml>=6.1.3",
   "numpy",
@@ -34,12 +42,22 @@ dependencies = [
   "plotly",
   "pyyaml",
   "filelock",
+  # Sample sheets (Studio), Sheet Check and the Excel export read and write .xlsx. Core, so that
+  # `pipx install qpilot` needs no extras for the scientist's everyday files.
+  "openpyxl>=3.1",
   # Imported at module level by the vendored rdmlpython (melt-curve plots qPilot never calls).
   "matplotlib",
   # The Decision Simulator (sim/, installed as qsim) writes its analysis grid as parquet.
   # Core, so that "Decision Simulator installed" always means an audit can run.
   "pyarrow",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ShivaTeja05/Qpilot"
+Documentation = "https://github.com/ShivaTeja05/Qpilot/blob/main/docs/user-guide.md"
+Source = "https://github.com/ShivaTeja05/Qpilot"
+Issues = "https://github.com/ShivaTeja05/Qpilot/issues"
+Changelog = "https://github.com/ShivaTeja05/Qpilot/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -50,29 +68,74 @@ dev = [
   "pre-commit",
   "pip-licenses",
   "cyclonedx-bom",
+  # `python -m build` and `twine check`: the release workflow and docs/release.md use them.
+  "build",
+  "twine",
 ]
+# An AI model provider (optional; qPilot never needs one to analyse).
 ai = ["anthropic", "httpx"]
+# The three below are kept so every install line ever written still works: pyarrow and openpyxl
+# are core dependencies now, and qsim (the Decision Simulator) ships in the same wheel.
 parquet = ["pyarrow"]
 xlsx = ["openpyxl"]
-# qPilot Studio: sample sheets. The Curve Judge model ships as JSON and runs on numpy;
-# xgboost is needed only to retrain it (training/curve_judge/requirements.txt).
+# xgboost is needed only to retrain the Curve Judge (training/curve_judge/requirements.txt).
 studio = ["openpyxl"]
-# Decision Simulator (qsim, merged into sim/ with its history at dad5a15). Kept so that
-# `pip install -e '.[sim]'` keeps working; pyarrow is now a core dependency.
+# Decision Simulator (qsim, merged into sim/ with its history at dad5a15).
 sim = ["pyarrow"]
 
 [project.scripts]
 qpilot = "qpilot.cli:main"
 qsim = "qsim.cli:main"
 
+[tool.hatch.version]
+path = "qpilot/__init__.py"
+
+# The README links to docs/ and shows docs/threshold.gif by relative path, which GitHub resolves and
+# PyPI does not: the page on PyPI gets the same links, made absolute (images from raw.githubusercontent).
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '\]\((?!https?://|#|mailto:)(?:\./)?([^)\s]+)\)'
+replacement = '](https://github.com/ShivaTeja05/Qpilot/blob/main/\1)'
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = 'src="(?!https?://)(?:\./)?([^"]+)"'
+replacement = 'src="https://raw.githubusercontent.com/ShivaTeja05/Qpilot/main/\1"'
+
 [tool.hatch.build.targets.wheel]
-# sim/src/qsim installs as the top-level package `qsim`. Its data/ and results/ stay in sim/
-# and are found relative to the source tree, so run qsim from an editable install or a clone.
+# sim/src/qsim installs as the top-level package `qsim` (the Decision Simulator the page, the MCP
+# server and `qpilot app --audit` use). What stays in the repository: sim/data (the validation
+# corpora, 6 MB) and sim/results: `qsim validate` and `qsim external` need a clone and say so.
+# The prebuilt page (qpilot/web/static) and the model JSON (qpilot/models) are inside the package.
 packages = ["qpilot", "sim/src/qsim"]
 
 [tool.hatch.build.targets.wheel.force-include]
 # Run Gate's rule packs: qpilot.qpcr.gate_rules.PACKS_DIR_CANDIDATES looks in qpilot/_packs first.
 "packs" = "qpilot/_packs"
+# The method cards the page and the reports cite as `methods/<name>.md`, readable on disk.
+"methods" = "qpilot/_methods"
 
 [tool.hatch.build.targets.sdist]
-exclude = ["tests/fixtures/*.rdml", "demo/*.mp4", "frontend/node_modules"]
+# Enough to build the wheel and to read what it was built from; the tests, the page's source
+# (frontend/), the training and validation material stay in the repository.
+include = [
+  "/qpilot",
+  "/sim/src",
+  "/sim/README.md",
+  "/packs",
+  "/methods",
+  "/docs/*.md",
+  "/CHANGELOG.md",
+  "/CITATION.cff",
+  "/CONTRIBUTING.md",
+  "/LICENSE",
+  "/README.md",
+  "/SECURITY.md",
+  "/THIRD_PARTY_NOTICES.md",
+  "/THREAT_MODEL.md",
+  "/qpilot_profile.example.yaml",
+]
