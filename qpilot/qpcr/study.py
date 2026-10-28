@@ -23,6 +23,16 @@ replicates per biological unit, exclude or re-type wells, offer several amplific
 rules (the ``amp_call`` dimension, screened before it enters the grid) and adds the Studio facts:
 the usual route to Prism (:mod:`qpilot.qpcr.routes`) and the amp_call screening result.
 
+A design with several comparisons, or a paired one (:class:`~qpilot.schemas_studio.
+ComparisonPlan`), evaluates every comparison in every cell of the grid; the result's
+``contrasts``, cards and grades stay the primary comparison's (with Holm's correction their calls
+use the corrected p), and ``StudyResult.comparisons`` adds each comparison's results, corrected
+p-values, q-values, robustness and grades. Each comparison's own grid travels with the primary
+grid (:func:`comparison_grid_of`) and is written as ``grid_comparisons.csv``.
+
+A biological unit with no well of some gene is left out of that gene only (``f_not_measured_*``
+facts say which); before, it was left out of every gene.
+
 Deterministic: the same file and settings give byte-identical output, which ``qpilot rerun``
 relies on. No model is called and nothing touches the network.
 """
@@ -38,6 +48,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from qpilot.core import robustness
@@ -57,7 +68,14 @@ from qpilot.qpcr.amp_call import (
 )
 from qpilot.qpcr.axes import efficiency as eff_axis
 from qpilot.qpcr.confidence_checks import START_LEVEL, checks_for, mde_fold, upgrade_rule
-from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule
+from qpilot.qpcr.contrast import (
+    CORRECTION_WORDS,
+    DEFAULT_RULE,
+    TEST_WORDS,
+    ConclusionRule,
+    bh,
+    welch_anova,
+)
 from qpilot.qpcr.curves import (
     DEMO_EXPERIMENT,
     INSTRUMENT_CQ,
@@ -73,21 +91,34 @@ from qpilot.qpcr.designs import (
     design_curves,
     design_units,
     is_legacy_design,
+    pairs_for,
     study_key,
     unit_groups,
 )
-from qpilot.qpcr.quant import EXCLUDED, Undetermined, excluded_cells, log2_matrix
+from qpilot.qpcr.quant import EXCLUDED, Undetermined, left_out_cells, log2_matrix
+from qpilot.qpcr.quant import not_measured as units_not_measured
 from qpilot.qpcr.refgenes import RefGroupEffect, genorm, group_effect
 from qpilot.qpcr.routes import ROUTES, RouteResult, compare_routes
-from qpilot.qpcr.space import DEFAULT_CUTS, DEFAULT_UNDETERMINED, MatrixStage, QpcrSpace
+from qpilot.qpcr.space import (
+    DEFAULT_CUTS,
+    DEFAULT_UNDETERMINED,
+    ComparisonSpec,
+    MatrixStage,
+    QpcrSpace,
+    comparison_grid,
+    group_stats,
+)
 from qpilot.schemas import (
     Autonomy,
+    ComparisonOutcome,
+    ComparisonsResult,
     DecisionCard,
     DesignSummary,
     Fact,
     GeneRobustness,
     GenormResult,
     Grade,
+    Omnibus,
     StudyResult,
 )
 from qpilot.schemas_studio import StudyDesign
@@ -123,6 +154,29 @@ _REFSET_EXTRA_FACTS = (
 
 class NGuardError(ValueError):
     """A comparison group has fewer than two biological units, so no p-value can be given."""
+
+
+#: Where a study's per-comparison grid travels with the primary grid (``DataFrame.attrs``).
+COMPARISON_GRID_ATTR = "qpilot_comparison_grid"
+COMPARISON_GRID_FILE = "grid_comparisons.csv"
+
+
+def comparison_grid_of(grid: pd.DataFrame | None) -> pd.DataFrame | None:
+    """Every comparison's grid of a study with several comparisons (``None`` otherwise).
+
+    :func:`study_from_curves` attaches it to the primary grid it returns, so every caller that
+    stores a grid can store this one too (``grid_comparisons.csv``) without a new return value.
+    """
+    if grid is None or not isinstance(grid, pd.DataFrame):
+        return None
+    return grid.attrs.get(COMPARISON_GRID_ATTR)
+
+
+def comparison_grid_csv(frame: pd.DataFrame) -> str:
+    """CSV text of a comparison grid, written exactly as ``grid.csv`` is."""
+    return robustness.to_csv_frame(frame).to_csv(
+        index=False, float_format="%.10g", lineterminator="\n"
+    )
 
 
 @dataclass(frozen=True)
@@ -239,8 +293,9 @@ class _Inputs:
     units: dict[str, str] | None
     matrix: pd.DataFrame
     alternatives: dict[str, pd.DataFrame]
-    excluded: pd.DataFrame | None
+    excluded: pd.DataFrame | None  # values left out under every option (excluded / not measured)
     not_amplified: dict[str, int]  # study wells without a value, per amplification rule
+    not_measured: dict[str, list[str]] = field(default_factory=dict)  # gene -> units without it
 
 
 def _inputs(
@@ -248,9 +303,11 @@ def _inputs(
 ) -> _Inputs:
     design = settings.design
     legacy = design is None and settings.amp_calls == DEFAULT_AMP_CALLS
-    if legacy and not extra_excluded:  # the legacy path, untouched
+    if legacy and not extra_excluded:  # the legacy path (the demo: every unit has every gene)
         matrix = log2_matrix(curves)
-        return _Inputs(curves, curves, None, matrix, {}, None, {})
+        missing = units_not_measured(curves)
+        left_out = left_out_cells(curves) if missing else None
+        return _Inputs(curves, curves, None, matrix, {}, left_out, {}, missing)
     table = design_curves(curves, design) if design is not None else curves
     if extra_excluded:
         table = _with_excluded(table, extra_excluded)
@@ -258,15 +315,15 @@ def _inputs(
     calls = dict(design.well_calls) if design is not None else {}
     tables = {rule_id: apply_rule(table, rule_id, calls) for rule_id in settings.amp_calls}
     primary, *others = settings.amp_calls
-    has_exclusions = EXCLUDED in table.columns
     return _Inputs(
         table=table,
         primary_table=tables[primary],
         units=units,
         matrix=log2_matrix(tables[primary], units),
         alternatives={rule_id: log2_matrix(tables[rule_id], units) for rule_id in others},
-        excluded=excluded_cells(table, units) if has_exclusions else None,
+        excluded=left_out_cells(table, units),
         not_amplified={rule_id: _counts(t)["n_undetermined"] for rule_id, t in tables.items()},
+        not_measured=units_not_measured(table, units),
     )
 
 
@@ -306,14 +363,21 @@ def _stability(matrix: pd.DataFrame, candidates: tuple[str, ...]) -> GenormResul
 def _design_groups(
     design: StudyDesign, table: pd.DataFrame, matrix: pd.DataFrame
 ) -> tuple[tuple[frozenset[str], frozenset[str]], tuple[str, str]]:
-    """The compared units of a groups design, measured for every gene.
+    """The compared units of a groups design's primary comparison (see :func:`_units_of`)."""
+    comparison = design.comparison
+    names = (comparison.group_a, comparison.group_b)
+    return _units_of(design, table, matrix, names), names
+
+
+def _units_of(
+    design: StudyDesign, table: pd.DataFrame, matrix: pd.DataFrame, names: Sequence[str]
+) -> tuple[frozenset[str], ...]:
+    """The units of each named group that are study units of the matrix, in ``names`` order.
 
     ``table`` is the per-well table as the design says (:func:`design_curves`). A sample of the
     groups with no study well there (the file types it otherwise, and no accepted decision
     re-typed it) is not a study sample, so it is left out of n; the log names it and its type.
     """
-    comparison = design.comparison
-    names = (comparison.group_a, comparison.group_b)
     by_unit = unit_groups(design)
     compared = {s for s, d in design.samples.items() if d.group in names}
     absent = sorted(compared - set(table["sample"]))
@@ -328,10 +392,63 @@ def _design_groups(
             "; ".join(left_out),
         )
     present = set(matrix.index)
-    group_a, group_b = (
+    return tuple(
         frozenset(u for u, g in by_unit.items() if g == name and u in present) for name in names
     )
-    return (group_a, group_b), names
+
+
+def _design_comparisons(
+    design: StudyDesign, table: pd.DataFrame, matrix: pd.DataFrame
+) -> tuple[ComparisonSpec, ...]:
+    """Every comparison of a design with a :class:`ComparisonPlan`, primary first.
+
+    Each group needs two biological units; a paired plan needs every compared unit to have its
+    pair key and each pair one unit in each group of a comparison (:func:`pairs_for`).
+
+    Raises:
+        NGuardError: A group has fewer than two units, or a comparison fewer than two pairs.
+        DesignError: A paired comparison whose units do not pair up.
+    """
+    plan = design.comparisons
+    assert plan is not None
+    names = plan.groups()
+    units = dict(zip(names, _units_of(design, table, matrix, names), strict=True))
+    specs = []
+    for comparison in plan.comparisons:
+        a, b = comparison.group_a, comparison.group_b
+        _n_guard((units[a], units[b]), (a, b))
+        pairs = keys = None
+        if plan.pair_by is not None:
+            pairs, keys = pairs_for(design, units[a], units[b], (a, b), plan.pair_by)
+            if len(pairs) < 2:
+                raise NGuardError(
+                    f"the p-value of {comparison.title()} is withheld: it has "
+                    f"{len(pairs)} complete pair(s) of {plan.pair_by}; a paired test needs two"
+                )
+        specs.append(
+            ComparisonSpec(
+                id=comparison.key(),
+                labels=(a, b),
+                group_a=units[a],
+                group_b=units[b],
+                pairs=pairs,
+                pair_keys=keys or (),
+            )
+        )
+    return tuple(specs)
+
+
+def comparison_units(model: StudyModel) -> dict[str, tuple[frozenset, frozenset, tuple | None]]:
+    """Per comparison id: ``(units of A, units of B, pairs or None)``, the primary first.
+
+    One entry (the primary, ``"primary"`` for a study without a plan) when the study has one
+    comparison. Pairs are ``(unit in A, unit in B)`` in pair-key order, for per-unit tables.
+    """
+    if model.space.comparisons:
+        return {s.id: (s.group_a, s.group_b, s.pairs) for s in model.space.comparisons}
+    design = model.settings.design
+    key = design.comparison.key() if design is not None and design.comparison else "primary"
+    return {key: (model.high, model.rest, None)}
 
 
 def _n_guard(groups: tuple[frozenset[str], frozenset[str]], labels: tuple[str, str]) -> None:
@@ -410,8 +527,7 @@ class CellTables:
         """Units x genes ``log2 N0`` of the cell's table, and the values left out entirely."""
         table = self.table(cell)
         units = self.inputs.units
-        excluded = excluded_cells(table, units) if EXCLUDED in table.columns else None
-        return MatrixStage(log2_matrix(table, units), excluded)
+        return MatrixStage(log2_matrix(table, units), left_out_cells(table, units))
 
 
 def build_model(
@@ -437,9 +553,12 @@ def build_model(
     matrix = inputs.matrix
     stability = _stability(matrix, settings.candidates)
     groups = labels = None
+    specs: tuple[ComparisonSpec, ...] = ()
     if settings.groups_mode:
         groups, labels = _design_groups(settings.design, inputs.table, matrix)
         _n_guard(groups, labels)
+        if settings.design.comparisons is not None:
+            specs = _design_comparisons(settings.design, inputs.table, matrix)
     spec = None
     if groups is None:
         spec = GroupSpec(settings.marker, settings.cut, settings.candidates, settings.group_var)
@@ -453,6 +572,8 @@ def build_model(
         excluded=inputs.excluded,
         group_labels=labels,
     )
+    if specs:
+        options.update(comparisons=specs, correction=settings.design.comparisons.correction)
     efficiency, eff_notes, tables = _efficiency_axis(inputs, settings)
     space = QpcrSpace(
         matrix, stability, spec, amp_alternatives=inputs.alternatives, **options, **efficiency
@@ -569,6 +690,12 @@ def study_from_curves(
     )
     cap = cap_for(settings.design.import_trust if settings.design is not None else None)
     confidence = {gene: _grade(gene, base, fragility, cap) for gene in space.items}
+    outcomes = None
+    if space.comparisons:
+        every = comparison_grid(space, grid)
+        grid.attrs[COMPARISON_GRID_ATTR] = every
+        primary = (base.contrasts, summary, confidence)
+        outcomes = _comparison_outcomes(space, every, base, primary, settings, cap)
     headline = [gene for gene in settings.headline if gene in space.items]
     specs = _card_specs(space, stability, summary, settings, headline, counts)
     if "amp_call" in space.dimensions:
@@ -603,16 +730,142 @@ def study_from_curves(
         axis_notes=model.axis_notes,
         axes=space.axes,
         screens=model.screens,
+        not_measured=_not_measured_words(inputs.not_measured, settings.candidates),
+        comparisons=outcomes,
     )
     facts = _facts(base, confidence, cards, space, settings, headline, counts, extras)
-    result = base.model_copy(update={"confidence": confidence, "facts": facts.as_dict()})
+    update: dict[str, Any] = {"confidence": confidence, "facts": facts.as_dict()}
+    if outcomes is not None:
+        update["comparisons"] = outcomes
+    result = base.model_copy(update=update)
     return result, cards, grid
+
+
+def _comparison_outcomes(
+    space: QpcrSpace,
+    every: pd.DataFrame,
+    base: StudyResult,
+    primary: tuple[dict, dict, dict],
+    settings: StudySettings,
+    cap: Cap | None,
+) -> ComparisonsResult:
+    """Each comparison's results, corrected p-values, q-values, robustness and grades.
+
+    The primary's are the study's own (``primary``: contrasts, robustness, grades). A gene a
+    comparison cannot test in the primary cell (fewer than two values or pairs) is listed in
+    ``not_tested`` only.
+    """
+    plan = settings.design.comparisons  # type: ignore[union-attr]
+    arrays = space.evaluate_all_arrays(space.primary)
+    out = []
+    for i, spec in enumerate(space.comparisons):
+        a = arrays[spec.id]
+        view = space.comparison_view(spec.id)
+        p_call = a.p if a.p_call is None else a.p_call
+        tested = [g for j, g in enumerate(space.items) if np.isfinite(a.p[j])]
+        index = {g: j for j, g in enumerate(space.items)}
+        if i == 0:
+            contrasts, summary, confidence = primary
+        else:
+            rows = every[every["comparison"] == spec.id]
+            summary = robustness.summary(rows, view)
+            fragility = robustness.fragility(rows, view)
+            contrasts = a.results()
+            graded = base.model_copy(update={"contrasts": contrasts, "robustness": summary})
+            confidence = {g: _grade(g, graded, fragility, cap) for g in tested}
+        q = bh(np.array([a.p[index[g]] for g in tested], dtype=float))
+        reason = (
+            "fewer than two complete pairs (a value in both groups)"
+            if spec.paired
+            else f"fewer than two biological units with a value in {spec.labels[0]} or "
+            f"{spec.labels[1]}"
+        )
+        out.append(
+            ComparisonOutcome(
+                id=spec.id,
+                group_a=spec.labels[0],
+                group_b=spec.labels[1],
+                label=_comparison_label(settings.design, spec.id),
+                primary=i == 0,
+                n_a=len(spec.group_a) if not spec.paired else len(spec.pairs or ()),
+                n_b=len(spec.group_b) if not spec.paired else len(spec.pairs or ()),
+                n_pairs=len(spec.pairs) if spec.paired else None,
+                contrasts={g: contrasts[g] for g in tested},
+                p_adjusted={g: float(p_call[index[g]]) for g in tested},
+                q_value={g: float(v) for g, v in zip(tested, q, strict=True)},
+                robustness={g: summary[g] for g in tested},
+                confidence={g: confidence[g] for g in tested if g in confidence},
+                not_tested={g: reason for g in space.items if g not in set(tested)},
+            )
+        )
+    groups, omnibus = _omnibus(space, plan.pair_by is None)
+    return ComparisonsResult(
+        test="paired_t" if plan.pair_by is not None else "welch",
+        correction=space.correction,  # type: ignore[arg-type]
+        pattern=plan.pattern,
+        control=plan.control,
+        pair_by=plan.pair_by,
+        comparisons=out,
+        omnibus_groups=groups,
+        omnibus=omnibus,
+    )
+
+
+def _omnibus(space: QpcrSpace, unpaired: bool) -> tuple[list[str], dict[str, Omnibus]]:
+    """Welch's ANOVA per gene across the compared groups, at the planned analysis.
+
+    Only for an unpaired plan comparing three or more groups (a paired design would need a
+    repeated-measures model, which qPilot does not claim). Genes without a result (fewer than
+    two groups with two values) are left out.
+    """
+    units: dict[str, frozenset[str]] = {}
+    for spec in space.comparisons:
+        units.setdefault(spec.labels[0], spec.group_a)
+        units.setdefault(spec.labels[1], spec.group_b)
+    if not unpaired or len(units) < 3:
+        return [], {}
+    values, ref_values = space.cell_arrays(space.primary)
+    relative = values - ref_values.mean(axis=1)[:, None]
+    valid = ~np.isnan(ref_values).any(axis=1)[:, None] & ~np.isnan(relative)
+    masks = [space.units.isin(members) for members in units.values()]
+    f, df1, df2, p = welch_anova([group_stats(relative, valid & m[:, None]) for m in masks])
+    found = {
+        gene: Omnibus(f=float(f[i]), df1=float(df1[i]), df2=float(df2[i]), p=float(p[i]))
+        for i, gene in enumerate(space.items)
+        if np.isfinite(p[i])
+    }
+    return list(units), found
+
+
+def _comparison_label(design: StudyDesign | None, comparison_id: str) -> str:
+    """The comparison's words: its label, else ``"<group a> vs <group b>"``."""
+    for comparison in design.comparison_list() if design is not None else ():
+        if comparison.key() == comparison_id:
+            return comparison.title()
+    return comparison_id
+
+
+def _not_measured_words(
+    missing: Mapping[str, list[str]], candidates: Sequence[str]
+) -> dict[str, str]:
+    """Gene -> the units it was not measured in, in words (a control gene says what follows)."""
+    out = {}
+    for gene, units in missing.items():
+        listed = ", ".join(units[:10]) + (f" and {len(units) - 10} more" if len(units) > 10 else "")
+        if gene in candidates:
+            out[gene] = f"{listed} (a control gene: without it the unit has no normaliser)"
+        else:
+            out[gene] = listed
+    return out
 
 
 def write_outputs(
     result: StudyResult, cards: list[DecisionCard], grid: pd.DataFrame, out_dir: str | Path
 ) -> dict[str, Path]:
-    """Write ``results.json``, ``cards.json``, ``facts.json`` and ``grid.csv`` atomically."""
+    """Write ``results.json``, ``cards.json``, ``facts.json`` and ``grid.csv`` atomically.
+
+    A study with several comparisons also gets ``grid_comparisons.csv``.
+    """
     directory = Path(out_dir)
     directory.mkdir(parents=True, exist_ok=True)
     texts = {
@@ -625,6 +878,9 @@ def write_outputs(
             index=False, float_format="%.10g", lineterminator="\n"
         ),
     }
+    every = comparison_grid_of(grid)
+    if every is not None:  # a study with several comparisons
+        texts[COMPARISON_GRID_FILE] = comparison_grid_csv(every)
     paths = {}
     for name, text in texts.items():
         paths[name] = directory / name
@@ -1011,6 +1267,8 @@ class _Extras:
     axis_notes: Mapping[str, dict] = field(default_factory=dict)
     axes: Mapping[str, object] = field(default_factory=dict)
     screens: Mapping[str, robustness.AxisScreen] = field(default_factory=dict)
+    not_measured: Mapping[str, str] = field(default_factory=dict)
+    comparisons: ComparisonsResult | None = None
 
 
 def _facts(
@@ -1114,7 +1372,48 @@ def _facts(
             add(f"f_fc_{slug(gene)}_worst", registry.get(source).value, FC_FMT, TIMES, path)
     _extra_facts(add, extras, settings)
     _axis_facts(add, extras)
+    _comparison_facts(add, extras)
     return registry
+
+
+def _comparison_facts(add: Callable[..., None], extras: _Extras) -> None:
+    """Facts for units not measured for a gene and for a study's several comparisons.
+
+    None exist in a study where every unit has every gene and the design has one comparison
+    (every existing study). Comparison facts are numbered ``f_cmp<i>_*`` in the plan's order
+    (1 = the primary), so a gene or group name can never collide with another fact.
+    """
+    if extras.not_measured:
+        add("f_n_not_measured", len(extras.not_measured), path="not_measured")
+        for gene, words in extras.not_measured.items():
+            add(f"f_not_measured_{slug(gene)}", words, path=f"not_measured.{gene}")
+    found = extras.comparisons
+    if found is None:
+        return
+    add("f_n_comparisons", len(found.comparisons), path="comparisons.comparisons")
+    for gene, result in found.omnibus.items():
+        add(f"f_anova_p_{slug(gene)}", result.p, "{:.2g}", "", f"comparisons.omnibus.{gene}.p")
+    add("f_cmp_test", TEST_WORDS[found.test], path="comparisons.test")
+    add("f_cmp_correction", CORRECTION_WORDS[found.correction], path="comparisons.correction")
+    if found.pair_by is not None:
+        add("f_cmp_pair_by", found.pair_by, path="comparisons.pair_by")
+    for i, outcome in enumerate(found.comparisons, start=1):
+        root = f"comparisons.{outcome.id}"
+        add(f"f_cmp{i}_label", outcome.label, path=f"{root}.label")
+        add(f"f_cmp{i}_n_a", outcome.n_a, path=f"{root}.n_a")
+        add(f"f_cmp{i}_n_b", outcome.n_b, path=f"{root}.n_b")
+        calls = [c.conclusion for c in outcome.contrasts.values()]
+        add(f"f_cmp{i}_n_up", calls.count("up"), path=f"{root}.contrasts")
+        add(f"f_cmp{i}_n_down", calls.count("down"), path=f"{root}.contrasts")
+        for gene, contrast in outcome.contrasts.items():
+            s, path = slug(gene), f"{root}.contrasts.{gene}"
+            add(f"f_cmp{i}_fc_{s}", contrast.fc, FC_FMT, TIMES, f"{path}.fc")
+            add(f"f_cmp{i}_p_{s}", contrast.p, "{:.2g}", "", f"{path}.p")
+            padj = outcome.p_adjusted[gene]
+            add(f"f_cmp{i}_padj_{s}", padj, "{:.2g}", "", f"{root}.p_adjusted.{gene}")
+            add(f"f_cmp{i}_q_{s}", outcome.q_value[gene], "{:.2g}", "", f"{root}.q_value.{gene}")
+            holds = outcome.robustness[gene].holds
+            add(f"f_cmp{i}_holds_{s}", holds, "{:.0%}", "", f"{root}.robustness.{gene}.holds")
 
 
 def _refset_facts(add: Callable[..., None], card: DecisionCard) -> None:

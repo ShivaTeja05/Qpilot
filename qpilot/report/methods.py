@@ -51,6 +51,14 @@ REFERENCES: dict[str, str] = {
         "Welch BL. The generalization of 'Student's' problem when several different population "
         "variances are involved. Biometrika. 1947;34(1–2):28–35."
     ),
+    "holm1979": (
+        "Holm S. A simple sequentially rejective multiple test procedure. Scand J Stat. "
+        "1979;6(2):65–70."
+    ),
+    "bh1995": (
+        "Benjamini Y, Hochberg Y. Controlling the false discovery rate: a practical and powerful "
+        "approach to multiple testing. J R Stat Soc B. 1995;57(1):289–300."
+    ),
     "miqe2": (
         "Bustin SA, Ruijter JM, van den Hoff MJB, et al. MIQE 2.0: revision of the Minimum "
         "Information for Publication of Quantitative Real-Time PCR Experiments guidelines. "
@@ -286,6 +294,8 @@ def comparison(c: Ctx, cite: Cites) -> list[Part]:
         if lo:
             parts.append(f" ({lo} units)")
         parts.append("; the groups are defined from the data, not by a clinical call. ")
+    elif r.comparisons is not None and len(r.comparisons.comparisons) > 1:
+        parts.append("The groups come from the confirmed design. ")
     else:
         parts += ["The groups come from the confirmed design: ", Q(a)]
         if hi:
@@ -294,6 +304,10 @@ def comparison(c: Ctx, cite: Cites) -> list[Part]:
         if lo:
             parts.append(f" ({lo} units)")
         parts.append(". ")
+    found = r.comparisons
+    if found is not None:  # several comparisons, or a paired one (StudyDesign.comparisons)
+        parts += _several(c, cite, found, alpha, fold)
+        return parts
     parts += [
         "Technical replicates were averaged within each biological unit (mean log2 N0) and "
         "never counted as n. Each gene was compared between the groups with Welch's t-test ",
@@ -313,6 +327,66 @@ def comparison(c: Ctx, cite: Cites) -> list[Part]:
     if c.has("f_n_withheld") and int(c.facts.value("f_n_withheld") or 0) > 0:
         parts.append(f"; {tok('f_n_withheld')} genes were withheld (too few values in a group)")
     parts.append(".")
+    return parts
+
+
+def _several(c: Ctx, cite: Cites, found, alpha: str, fold: str) -> list[Part]:  # noqa: ANN001
+    """The test, the correction and each comparison's calls, for a study with a plan."""
+    n = len(found.comparisons)
+    parts: list[Part] = []
+    if n > 1:
+        parts.append(f"The study has {tok('f_n_comparisons')} comparisons: ")
+        for i in range(1, n + 1):
+            parts.append(
+                f"{tok(f'f_cmp{i}_label')} ({tok(f'f_cmp{i}_n_a')} vs {tok(f'f_cmp{i}_n_b')})"
+            )
+            parts.append("; " if i < n else ". ")
+        parts.append(f"The first, {tok('f_cmp1_label')}, is the one the choices describe. ")
+    parts.append(
+        "Technical replicates were averaged within each biological unit (mean log2 N0) and "
+        "never counted as n. "
+    )
+    if found.pair_by is not None:
+        parts += [
+            f"Units were paired by {tok('f_cmp_pair_by')}: each comparison is a paired t-test on "
+            "the within-pair differences of per-unit log2 normalised quantities (n = complete "
+            "pairs); "
+        ]
+    else:
+        parts += ["Each comparison is a Welch's t-test ", cite("welch1947")]
+        parts.append(" on per-unit log2 normalised quantities; ")
+    parts.append("fold changes are reported with 95 % confidence intervals for each comparison. ")
+    if n > 1 and found.correction == "holm":
+        parts += [
+            "Each gene's p-values were corrected across its comparisons with Holm's step-down "
+            "method ",
+            cite("holm1979"),
+            f"; a gene is called up or down in a comparison only if its corrected p < {alpha} "
+            f"and the change is at least {fold}-fold; otherwise it has no call.",
+        ]
+    else:
+        if n > 1:
+            parts.append("No correction for the several comparisons per gene was chosen; ")
+        parts.append(
+            f"a gene is called up or down only if p < {alpha} and the change is at least "
+            f"{fold}-fold; otherwise it has no call."
+        )
+    parts += [
+        " Benjamini–Hochberg q-values ",
+        cite("bh1995"),
+        " across the genes of each comparison are reported; they do not enter the calls.",
+    ]
+    if found.omnibus_groups:
+        parts.append(
+            f" Welch's one-way ANOVA across the {len(found.omnibus_groups)} groups is reported "
+            "per gene for orientation; it does not enter the calls."
+        )
+    for i in range(1, n + 1):
+        if c.has(f"f_cmp{i}_label", f"f_cmp{i}_n_up", f"f_cmp{i}_n_down"):
+            parts.append(
+                f" {tok(f'f_cmp{i}_label')}: {tok(f'f_cmp{i}_n_up')} up and "
+                f"{tok(f'f_cmp{i}_n_down')} down."
+            )
     return parts
 
 

@@ -6,6 +6,7 @@ module under a file lock, with an optimistic version check (``expected_head``)::
 
     $QPILOT_STUDIES_DIR/<input_sha256>/
         results.json  cards.json  facts.json  grid.csv   written atomically (temp -> rename)
+        grid_comparisons.csv                             only for a study with several comparisons
         decisions.jsonl   hash-chained log, append-only, one DecisionEntry per line
         pending.jsonl     agent requests waiting for a human
         study_design.json the confirmed StudyDesign (designed studies only)
@@ -658,6 +659,7 @@ class StudyStore:
             atomic_write(workspace / "facts.json", dump_json(facts))
             if grid is not None:
                 atomic_write(workspace / "grid.csv", _grid_csv(grid))
+                _put_comparison_grid(workspace, grid)
             if design is not None:
                 atomic_write(workspace / DESIGN_FILE, design.canonical())
             atomic_write(workspace / "format.json", dump_json({"cards": CARDS_FORMAT}))
@@ -1356,6 +1358,25 @@ class StudyStore:
         from qpilot.core.pseudonym import Pseudonymiser
 
         return Pseudonymiser(self.proposal_home(study_id)[0])
+
+
+COMPARISON_GRID_FILE = "grid_comparisons.csv"
+
+
+def _put_comparison_grid(workspace: Path, grid: Any) -> None:
+    """Write (or remove) ``grid_comparisons.csv``: every comparison's grid, when there are several.
+
+    The qPCR plugin attaches it to the primary grid (``qpilot.qpcr.study.comparison_grid_of``);
+    a study with one comparison has none, and a stale file from an earlier analysis is removed.
+    """
+    from qpilot.qpcr.study import comparison_grid_csv, comparison_grid_of  # documented lazy import
+
+    path = workspace / COMPARISON_GRID_FILE
+    frame = comparison_grid_of(grid)
+    if frame is not None:
+        atomic_write(path, comparison_grid_csv(frame))
+    elif path.exists():
+        path.unlink()
 
 
 def _grid_csv(grid: Any) -> str:

@@ -94,6 +94,7 @@ WORKSPACE_FILES = (
     "cards.json",
     "facts.json",
     "grid.csv",
+    "grid_comparisons.csv",
     "decisions.jsonl",
     "pending.jsonl",
     "ai_calls.jsonl",
@@ -975,7 +976,8 @@ def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> 
 
     Lazily imports ``qpilot.qpcr.study`` (documented exception to the core/plugin rule).
     ``results.json`` and ``facts.json`` must match byte for byte, ``grid.csv`` too when the
-    record has one, and the cards must match apart from decisions.
+    record has one (and ``grid_comparisons.csv``, every comparison's grid, for a study with
+    several comparisons), and the cards must match apart from decisions.
     """
     record_dir = Path(record_dir)
     results_path = rerun(record_dir, out_dir)
@@ -989,14 +991,25 @@ def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> 
     atomic_write(out / "facts.json", dump_json(facts))
     if grid is not None:
         atomic_write(out / "grid.csv", _grid_csv(grid))
+        from qpilot.qpcr.study import comparison_grid_csv, comparison_grid_of  # lazy, as above
+
+        every = comparison_grid_of(grid)
+        if every is not None:
+            atomic_write(out / "grid_comparisons.csv", comparison_grid_csv(every))
     atomic_write(out / "cards.json", dump_json([c.model_dump(mode="json") for c in cards]))
     compared, differs = [], []
     absent = [n for n in ("facts.json", "grid.csv") if not (record_dir / n).exists()]
-    for name in ("results.json", "facts.json", "grid.csv"):
+    names = ["results.json", "facts.json", "grid.csv"]
+    if (record_dir / "grid_comparisons.csv").exists() or (out / "grid_comparisons.csv").exists():
+        names.append("grid_comparisons.csv")  # a study with several comparisons
+    for name in names:
         if (record_dir / name).exists() and (out / name).exists():
             compared.append(name)
             if (record_dir / name).read_bytes() != (out / name).read_bytes():
                 differs.append(name)
+        elif name == "grid_comparisons.csv":  # one side has several comparisons, the other not
+            compared.append(name)
+            differs.append(name)
     compared.append("cards.json (structure)")
     try:
         mine = _card_structure(json.loads((record_dir / "cards.json").read_text()))

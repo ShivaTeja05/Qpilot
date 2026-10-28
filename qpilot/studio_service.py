@@ -1012,6 +1012,8 @@ class Studio:
         groups = sorted(
             {str(p.effective_payload().get("group")) for p in accepted if p.kind == "design.group"}
         )
+        if len(groups) > 2:
+            return self._propose_plan(session_id, groups, accepted)
         if len(groups) != 2:
             return None
         controls = [g for g in groups if _CONTROL_GROUP.search(g)]
@@ -1034,6 +1036,54 @@ class Studio:
             alternatives=[{"group_a": reference, "group_b": other}],
             level=level,
             reasons=[f"exactly two groups were accepted; {why}"],
+            made_by=MadeBy(kind="rule"),
+        )
+        return self.store.proposals(session_id).propose(proposal, "system")
+
+    def _propose_plan(
+        self, session_id: str, groups: Sequence[str], accepted: Sequence[Proposal]
+    ) -> ProposalOutcome | None:
+        """Three or more groups: the rule proposes several comparisons, a person decides.
+
+        With exactly one control-like group name (control, vehicle, untreated, WT, mock, 0 h,
+        day 0...) every other group is compared with it ("each group vs <control>", Moderate);
+        otherwise every pair of groups (up to five groups; Low, with "each vs the first group"
+        as the alternative). Holm's correction across each gene's comparisons is proposed either
+        way. When a person accepted pairings (``design.pair``) for the grouped samples, the
+        comparisons are paired by them. A person may edit the list, the control, the correction
+        or the pairing before accepting.
+        """
+        controls = [g for g in groups if _CONTROL_GROUP.search(g) or _TIME_ZERO.search(g)]
+        cites = [e.ref for p in accepted if p.kind == "design.group" for e in p.evidence if e.ref][
+            :20
+        ]
+        pairing = _accepted_pairing(accepted)
+        if len(controls) == 1:
+            control = controls[0]
+            payload = _vs_control(groups, control)
+            alternative = _all_pairs(groups)
+            level, why = "Moderate", f"one group has a control-like name ({control})"
+        elif len(groups) <= MAX_ALL_PAIRS_GROUPS:
+            payload = _all_pairs(groups)
+            alternative = _vs_control(groups, groups[0])
+            level = "Low"
+            why = "no single group name says which is the control, so every pair is compared"
+        else:
+            return None  # too many groups to guess: a person writes the list
+        reasons = [f"{len(groups)} groups were accepted; {why}"]
+        reasons.append("Holm's correction across each gene's comparisons is proposed")
+        if pairing:
+            payload["pair_by"] = alternative["pair_by"] = pairing
+            reasons.append(f"accepted pairings ({pairing}): each comparison is a paired test")
+        proposal = Proposal(
+            study_id=session_id,
+            kind="design.comparison",
+            subject="comparison",
+            payload=payload,
+            evidence=_evidence(cites),
+            alternatives=[alternative],
+            level=level,
+            reasons=reasons,
             made_by=MadeBy(kind="rule"),
         )
         return self.store.proposals(session_id).propose(proposal, "system")
@@ -1105,6 +1155,13 @@ class Studio:
             model = build_model(curves, settings)
         except (DesignError, CurveAnalysisError, ValueError):
             return None
+        if model.space.comparisons:  # several comparisons: every one's calls count
+            every = model.space.evaluate_all(model.space.primary)
+            return {
+                f"{cid}/{gene}": r.conclusion
+                for cid, found in every.items()
+                for gene, r in found.items()
+            }
         results = model.space.evaluate(model.space.primary)
         return {gene: r.conclusion for gene, r in results.items()}
 
@@ -2698,6 +2755,47 @@ def _caption_facts(payload: dict[str, Any]) -> list[str]:
 
     text = json.dumps(payload)
     return sorted(set(re.findall(r"\{\{(f_[a-z0-9_]+)\}\}", text)))[:50]
+
+
+_TIME_ZERO = re.compile(  # a time course's start: "0 h", "0h", "day 0", "t0", "time 0", "0 min"
+    r"(^|[^a-z0-9.])(0\s*(h|hr|hrs|hours?|min|mins|minutes?|d|days?)|day\s*0|t\s*=?\s*0|time\s*0)"
+    r"([^a-z0-9]|$)",
+    re.IGNORECASE,
+)
+MAX_ALL_PAIRS_GROUPS = 5  # 10 comparisons; more groups and a person writes the list
+
+
+def _vs_control(groups: Sequence[str], control: str) -> dict[str, Any]:
+    """Each other group compared with ``control`` (the first, alphabetically, is the primary)."""
+    others = [g for g in groups if g != control]
+    return {
+        "group_a": others[0],
+        "group_b": control,
+        "comparisons": [{"group_a": g, "group_b": control} for g in others],
+        "pattern": "vs_control",
+        "control": control,
+        "correction": "holm",
+    }
+
+
+def _all_pairs(groups: Sequence[str]) -> dict[str, Any]:
+    """Every pair of groups, each later group against each earlier one (sorted names)."""
+    pairs = [{"group_a": b, "group_b": a} for i, a in enumerate(groups) for b in groups[i + 1 :]]
+    return {
+        **pairs[0],
+        "comparisons": pairs,
+        "pattern": "all_pairs",
+        "correction": "holm",
+    }
+
+
+def _accepted_pairing(accepted: Sequence[Proposal]) -> str | None:
+    """The pairing's name when a person accepted ``design.pair`` proposals (else ``None``)."""
+    found = [p for p in accepted if p.kind == "design.pair" and p.effective_payload().get("pair")]
+    if not found:
+        return None
+    names = {str(p.effective_payload().get("by") or "pair") for p in found}
+    return sorted(names)[0] if len(names) == 1 else "pair"
 
 
 _CONTROL_GROUP = re.compile(

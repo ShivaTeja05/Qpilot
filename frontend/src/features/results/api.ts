@@ -13,8 +13,17 @@ const cardPath = (study_id: string, card_id: string) => ({
   params: { path: { study_id, card_id } },
 });
 
-const getResults = (id: string) => unwrap(api.GET("/api/studies/{study_id}/results", path(id)));
-const getFlips = (id: string) => unwrap(api.GET("/api/studies/{study_id}/flips", path(id)));
+/** A study's path, and the comparison to show when the study has several (none: the first). */
+const shown = (study_id: string, comparison?: string | null) => ({
+  params: { path: { study_id }, query: comparison ? { comparison } : {} },
+});
+
+const getResults = (id: string, comparison?: string | null) =>
+  unwrap(api.GET("/api/studies/{study_id}/results", shown(id, comparison)));
+const getFlips = (id: string, comparison?: string | null) =>
+  unwrap(api.GET("/api/studies/{study_id}/flips", shown(id, comparison)));
+const getComparisons = (id: string) =>
+  unwrap(api.GET("/api/studies/{study_id}/comparisons", path(id)));
 const getCards = (id: string) => unwrap(api.GET("/api/studies/{study_id}/cards", path(id)));
 const getEvidence = (id: string) => unwrap(api.GET("/api/studies/{study_id}/evidence", path(id)));
 
@@ -28,6 +37,12 @@ export type FactText = CardView["impact"];
 /** A card opened from Trace: the place it is about (null on every other card). */
 export type CardPlace = NonNullable<CardView["place"]>;
 export type EvidenceView = Awaited<ReturnType<typeof getEvidence>>;
+/** Every comparison of a study side by side (one for a study without a comparison plan). */
+export type ComparisonsView = Awaited<ReturnType<typeof getComparisons>>;
+export type ComparisonInfo = ComparisonsView["comparisons"][number];
+export type ComparisonGeneRow = ComparisonsView["genes"][number];
+export type ComparisonCell = NonNullable<ComparisonGeneRow["cells"][number]>;
+export type ComparisonTab = ResultsView["comparisons"][number];
 export type EvidenceItem = NonNullable<EvidenceView["items"]>[number];
 /** What a write answers (the outcome, a sentence, the new head). */
 export interface DecisionDone {
@@ -54,21 +69,44 @@ export function isWarming(q: { failureReason: Error | null; isFetching: boolean 
   return q.failureReason instanceof ApiError && q.failureReason.code === "warming";
 }
 
-export function useResults(key: string, studyId: string | null | undefined) {
+export function useResults(
+  key: string,
+  studyId: string | null | undefined,
+  comparison: string | null = null,
+) {
   return useQuery({
-    queryKey: ["w", key, "results", studyId],
+    queryKey: ["w", key, "results", studyId, comparison],
     enabled: Boolean(studyId),
     ...warmingRetry,
-    queryFn: () => getResults(studyId!),
+    queryFn: () => getResults(studyId!, comparison),
+    // switching comparisons keeps the page (not a skeleton) until the other one arrives
+    placeholderData: <T>(prev: T | undefined, query?: { queryKey: readonly unknown[] }) =>
+      query?.queryKey[3] === studyId ? prev : undefined,
   });
 }
 
-export function useFlips(key: string, studyId: string | null | undefined) {
+export function useFlips(
+  key: string,
+  studyId: string | null | undefined,
+  comparison: string | null = null,
+) {
   return useQuery({
-    queryKey: ["w", key, "flips", studyId],
+    queryKey: ["w", key, "flips", studyId, comparison],
     enabled: Boolean(studyId),
     ...warmingRetry,
-    queryFn: () => getFlips(studyId!),
+    queryFn: () => getFlips(studyId!, comparison),
+    placeholderData: <T>(prev: T | undefined, query?: { queryKey: readonly unknown[] }) =>
+      query?.queryKey[3] === studyId ? prev : undefined,
+  });
+}
+
+/** Every comparison side by side (asked for only when the study has several). */
+export function useComparisons(key: string, studyId: string | null | undefined, several: boolean) {
+  return useQuery({
+    queryKey: ["w", key, "comparisons", studyId],
+    enabled: Boolean(studyId) && several,
+    ...warmingRetry,
+    queryFn: () => getComparisons(studyId!),
   });
 }
 

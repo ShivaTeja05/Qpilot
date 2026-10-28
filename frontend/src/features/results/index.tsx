@@ -10,8 +10,9 @@ import { type MapEncoding } from "@/charts";
 import { useMediaQuery } from "@/lib/hooks";
 import { sectionPath, type SectionProps } from "@/shell/sections";
 import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
-import { isWarming, useCards, useFlips, useResults, type ResultsView } from "./api";
+import { isWarming, useCards, useComparisons, useFlips, useResults, type ResultsView } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
+import { ComparisonPicker, ComparisonsPanel } from "./ComparisonsPanel";
 import { DecisionCards } from "./DecisionCards";
 import { EvidencePanel } from "./EvidencePanel";
 import { FurtherChoices } from "./FurtherChoices";
@@ -63,9 +64,18 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
   const [, navigate] = useLocation();
   const key = workspace?.key ?? "";
   const studyId = workspace?.results_visible ? workspace.study_id : null;
-  const results = useResults(key, studyId);
+  // The comparison the page shows, in a study with several (null: the first, as the API says).
+  const [picked, setPicked] = useState<{ study: string; id: string } | null>(null);
+  const comparison = picked && picked.study === studyId ? picked.id : null;
+  const results = useResults(key, studyId, comparison);
   const cards = useCards(key, studyId);
-  const flips = useFlips(key, studyId);
+  const flips = useFlips(key, studyId, comparison);
+  const several = (results.data?.comparisons.length ?? 0) > 1;
+  const comparisons = useComparisons(key, studyId, several);
+  const show = useCallback(
+    (id: string) => (studyId ? setPicked({ study: studyId, id }) : undefined),
+    [studyId],
+  );
   const [by, setBy] = useState<MapEncoding>("conclusion");
   const [filter, setFilter] = useState<GeneFilter>(NO_FILTER);
 
@@ -140,6 +150,19 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
       onOpen={openGene}
     />
   );
+  const shownId = view?.comparison ?? view?.comparisons[0]?.id ?? "";
+  const shownLabel = view?.comparisons.find((c) => c.id === shownId)?.label;
+  const compare = view && several && (
+    <>
+      {comparisons.error ? (
+        <ErrorPanel error={comparisons.error} title="The comparisons could not be read" compact />
+      ) : comparisons.data ? (
+        <ComparisonsPanel view={comparisons.data} shown={shownId} onShow={show} onOpen={openGene} />
+      ) : (
+        <Skeleton className="h-48 w-full rounded-xl" />
+      )}
+    </>
+  );
   const rest_ = view && (
     <>
       <GenesPanel
@@ -210,11 +233,23 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
         </>
       ) : (
         <div className="space-y-6">
+          {several && (
+            <div className="space-y-1">
+              <ComparisonPicker tabs={view.comparisons} value={shownId} onChange={show} />
+              <p className="text-[12.5px] text-muted" role="status">
+                Showing {shownLabel ?? "the first comparison"}: the summary, the map, every gene and
+                the flip matrix below are this comparison&apos;s. The Decision Cards, Trace and a
+                gene&apos;s own page describe the first comparison; a choice on a card applies to
+                every comparison.
+              </p>
+            </div>
+          )}
           <Summary view={view} auditHref={sectionPath(workspace, "audit")} />
           <Withheld view={view} />
           {wide ? (
             <div className="grid grid-cols-[minmax(0,1fr)_420px] gap-6">
               <div className="min-w-0 space-y-6">
+                {compare}
                 {map}
                 {rest_}
               </div>
@@ -224,6 +259,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
             </div>
           ) : (
             <div className="space-y-6">
+              {compare}
               {map}
               {decisions}
               {rest_}
