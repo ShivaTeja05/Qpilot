@@ -29,9 +29,12 @@ def test_every_tool_qpilot_serve_registers_says_what_it_can_change():
         assert name in TOOL_ACCESS, f"{name}: add it to ops.TOOL_ACCESS"
     for name in served_tool_names():
         assert name in TOOL_ACCESS or name.startswith("sim_"), name
-    assert {TOOL_ACCESS[n][0] for n in TOOL_NAMES} == {"read", "open", "propose", "request"}
+    kinds = {"read", "open", "propose", "request", "export"}
+    assert {TOOL_ACCESS[n][0] for n in TOOL_NAMES} == kinds
     assert TOOL_ACCESS["qpcr_decide"][0] == "request"
     assert TOOL_ACCESS["qpcr_propose"][0] == "propose"
+    assert TOOL_ACCESS["qpcr_request_set_aside"][0] == "request"
+    assert TOOL_ACCESS["qpcr_export"][0] == "export"
 
 
 def test_the_default_store_connects_with_the_plain_command(tmp_path, monkeypatch):

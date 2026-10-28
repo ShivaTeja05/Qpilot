@@ -466,6 +466,181 @@ class CheckSheetOut(_Open):
     saved: bool
 
 
+# ---- comparisons, per-unit values, melt curves, the repeat plan, exports, set-aside requests -----
+
+
+class StudyComparisonsOut(ComparisonsOut):
+    """``qpcr_comparisons``: every comparison of a study with several (or a paired one)."""
+
+    study_id: str
+    n_comparisons: int
+    omnibus_groups: list[str] | None = None
+    omnibus: dict[str, Any] | None = Field(
+        None, description="Welch's one-way ANOVA per gene across the groups (orientation only)."
+    )
+    response_format: ResponseFormat = "detailed"
+
+
+class UnitWellView(_Open):
+    """One well behind a unit's value (one technical replicate)."""
+
+    plate: str
+    well: str
+    sample: str
+    cq: Num = None
+    log2: Num = Field(
+        None, description="The well's log2 relative amount, relative to the second group's mean."
+    )
+    state: Literal["used", "no_value", "excluded"]
+    late: bool
+    flagged: bool
+
+
+class UnitView(_Open):
+    """One biological unit: its value of the gene and the wells behind it."""
+
+    unit: str
+    group: str
+    samples: list[str]
+    log2: Num = Field(
+        description="The unit's log2 relative amount of the gene (the engine's normalisation), "
+        "relative to the second group's mean."
+    )
+    n_wells: int = Field(description="Wells used in the value.")
+    cq_range: Num = Field(None, description="Highest minus lowest Cq of the used wells.")
+    capped: bool
+    wells: list[UnitWellView] | None = None
+
+
+class UnitGroupView(_Open):
+    """One group of a gene's units: its label, how many units, and its mean with its 95 % CI."""
+
+    label: str
+    n: int
+    missing: int
+    mean: Num = None
+    ci: list[Num] | None = Field(None, description="95 % CI of the mean (log2, Student's t).")
+
+
+class UnitsOut(_Open):
+    """``qpcr_units``: each biological unit's value of one gene, with the wells behind it."""
+
+    study_id: str
+    gene: str
+    comparison: str | None = None
+    groups: list[UnitGroupView]
+    units: list[UnitView]
+    fold_log2: Num = None
+    fold_ci_log2: list[Num] | None = None
+    p: Num = None
+    refs: list[str]
+    undetermined: str
+    replicates: bool
+    most_wells: int
+    late_cq: Num = None
+    at_plan: bool
+    line_log2: Num = None
+    how: list[str] | None = None
+    saved: bool
+    response_format: ResponseFormat = "detailed"
+
+
+class MeltOut(_Open):
+    """``qpcr_melt``: each well's melt call, each assay's expected Tm, some wells' peaks."""
+
+    study_id: str
+    has_melt: bool
+    message: str = ""
+    run: str | None = None
+    plates: list[str]
+    params: dict[str, Any]
+    pack: str
+    method: str
+    caveat: str
+    assays: list[dict[str, Any]]
+    targets: list[dict[str, Any]]
+    calls: list[dict[str, Any]] | None = None
+    n_calls: int | None = None
+    flagged: list[str] | None = None
+    wells: list[dict[str, Any]] | None = None
+    saved: bool
+    response_format: ResponseFormat = "detailed"
+
+
+class RepeatPlanOut(_Open):
+    """``qpcr_repeat_plan``: what to repeat and why, ranked, and the repeat plate."""
+
+    study_id: str
+    include: Literal["consequential", "all"]
+    items: list[dict[str, Any]]
+    counts: dict[str, int]
+    gate_lines: list[dict[str, Any]]
+    calibrator: str | None = None
+    replicates: int
+    plate_size: int
+    n_samples: int
+    n_reactions: int
+    n_wells: int
+    n_plates: int
+    notes: list[str]
+    warnings: list[str]
+    not_repeated: list[dict[str, Any]] | None = None
+    wells: list[dict[str, Any]] | None = None
+    csv: str | None = Field(None, description="The repeat plate as the planner's CSV.")
+    decision: str = Field(description="Re-running is a person's call; nothing here decides it.")
+    saved: bool
+    response_format: ResponseFormat = "detailed"
+
+
+class ExportFile(_Open):
+    """A file the export wrote (new; nothing is ever overwritten)."""
+
+    name: str
+    path: str
+    bytes: int
+    sha256: str
+
+
+class ExportOut(_Open):
+    """``qpcr_export``: the file written from the study's own engine output."""
+
+    status: Literal["written"]
+    study_id: str
+    format: Literal["xlsx", "csv", "figures", "supplement"]
+    title: str
+    file: ExportFile
+    copied_to: ExportFile | None = Field(
+        None, description="The same file, copied into the out_dir asked for."
+    )
+    chain_head: str
+    written_at: str
+    bases: list[str]
+    genes: list[str]
+    warnings: list[str]
+    record: dict[str, Any] | None = None
+    listed_on_page: bool
+    next: str
+    idempotent_replay: bool | None = None
+
+
+class SetAsideOut(_Open):
+    """``qpcr_request_set_aside``: a request that waits for a person (nothing is set aside)."""
+
+    status: Literal["pending_human"]
+    applied: bool = Field(description="Always false: only a person sets wells aside.")
+    chain_head: str
+    reason: str | None = None
+    code: str | None = None
+    fix: str | None = None
+    card_id: str
+    option: str
+    place: dict[str, Any]
+    wells: list[str]
+    proposals: list[dict[str, Any]]
+    next: str
+    idempotent_replay: bool | None = None
+
+
 # ---- the Decision Simulator's tools -------------------------------------------------------------
 
 
@@ -520,6 +695,8 @@ __all__ = [
     "CardView",
     "CheckDesignOut",
     "CheckSheetOut",
+    "ExportFile",
+    "ExportOut",
     "ContrastView",
     "CurveCallsOut",
     "DecideOut",
@@ -532,6 +709,7 @@ __all__ = [
     "InstrumentHistoryOut",
     "InstrumentStatusOut",
     "LookbackOut",
+    "MeltOut",
     "PlanOut",
     "PrismDiffOut",
     "PrismPreviewOut",
@@ -541,12 +719,19 @@ __all__ = [
     "ResponseFormat",
     "RobustnessOut",
     "RunContextOut",
+    "RepeatPlanOut",
     "RunReviewOut",
+    "SetAsideOut",
     "SimAuditOut",
     "SimDecisionsOut",
     "SimFindingsOut",
     "SimGeneOut",
     "SimWhatifOut",
+    "StudyComparisonsOut",
     "StudyOut",
     "TraceOut",
+    "UnitGroupView",
+    "UnitView",
+    "UnitWellView",
+    "UnitsOut",
 ]

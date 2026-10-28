@@ -57,6 +57,7 @@ class ToolSpec:
     idempotent: bool = True
     open_world: bool = False
     links: tuple[str, ...] = ()  # study files linked from a successful reply
+    kind: str | None = None  # TOOL_META's access word, when read / write / propose do not say it
 
     def annotations(self) -> ToolAnnotations:
         """The MCP annotations of this tool."""
@@ -123,6 +124,30 @@ SPECS: dict[str, ToolSpec] = {
     ),
     "qpcr_trace": _read("Trace a result to the wells to look at", o.TraceOut),
     "qpcr_check_sheet": _read("Recompute a lab's analysis spreadsheet", o.CheckSheetOut),
+    "qpcr_comparisons": _read("Read every comparison of a study", o.StudyComparisonsOut),
+    "qpcr_units": _read("Read each unit's value, with its wells", o.UnitsOut),
+    "qpcr_melt": _read("Read the melt-curve calls", o.MeltOut),
+    "qpcr_repeat_plan": _read("Read what to repeat and why", o.RepeatPlanOut),
+    # Writes a new file (never over one) from the engine's output into the study's export folder
+    # and, when asked, a copy into a folder inside the data roots. It changes no result and
+    # decides nothing; each call writes another file, so it is not idempotent without a key.
+    "qpcr_export": ToolSpec(
+        "Write the study's numbers, figures or supplement",
+        o.ExportOut,
+        read_only=False,
+        idempotent=False,
+        kind="export",
+    ),
+    # Files the agent's well exclusions as proposals that wait for a person; nothing is set
+    # aside. Asking again for the same wells replaces the waiting request, but the log gains an
+    # entry each time, so it is not idempotent without a key.
+    "qpcr_request_set_aside": ToolSpec(
+        "Ask a person to set wells aside (a request)",
+        o.SetAsideOut,
+        read_only=False,
+        idempotent=False,
+        kind="request",
+    ),
     "sim_audit": _read("Read the Decision Simulator audit", o.SimAuditOut),
     "sim_gene": _read("Read one gene in the audit", o.SimGeneOut),
     "sim_whatif": _read("Recompute under other choices", o.SimWhatifOut),
