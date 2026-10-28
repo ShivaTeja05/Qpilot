@@ -692,8 +692,14 @@ def build_plan(
         )
         try:
             built = plates.make_repeat_layout(spec)
-        except plates.LayoutError as err:
-            raise RepeatError(str(err)) from err
+        except plates.LayoutError as err:  # the list stands; only the plate cannot be drawn
+            built = None
+            for item in plated:
+                item.on_plate = False
+            cautions.append(f"The repeat plate could not be laid out: {err}.")
+    else:
+        built = None
+    if built is not None:
         wells = [
             RepeatPlateWell(
                 plate=x.plate,
@@ -720,6 +726,8 @@ def build_plan(
                 "value for every repeated gene, nothing points at it); any sample of the original "
                 "plates works."
             )
+    elif reactions:
+        pass  # said in the warnings
     elif any(i.repeat for i in items):
         notes.append(
             "No item changes a call or lacks a value, so the plate is empty: put every item on "
@@ -727,7 +735,7 @@ def build_plan(
         )
     else:
         notes.append("Nothing points at a reaction to re-run.")
-    left = [i for i in items if i.repeat and not i.on_plate]
+    left = [i for i in plated_out(items) if i.consequence == "changes_nothing"]
     if left:
         notes.append(
             f"{len(left)} item(s) change no call: they are listed but not on the plate (put "
@@ -757,6 +765,11 @@ def build_plan(
         warnings=cautions,
         counts=counts,
     )
+
+
+def plated_out(items: Iterable[RepeatItem]) -> list[RepeatItem]:
+    """Items with a reaction to re-run that are not on the repeat plate."""
+    return [i for i in items if i.repeat and not i.on_plate]
 
 
 def left_out_from_inbox(

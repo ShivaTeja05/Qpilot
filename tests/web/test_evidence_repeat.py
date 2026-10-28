@@ -148,6 +148,26 @@ def test_the_run_gate_lines_per_plate_and_no_more_not_built(called):
     assert "not built" not in str(review).lower()
 
 
+def test_a_plate_that_cannot_be_laid_out_leaves_the_list(called, monkeypatch):
+    from qpilot.qpcr import repeat as repeat_module
+
+    def refuse(spec):
+        raise lay.LayoutError("a name a CSV cannot carry")
+
+    monkeypatch.setattr(repeat_module.plates, "make_repeat_layout", refuse)
+    plan = repeat(called["client"], called["study"])["plan"]
+    assert plan["items"] and plan["n_wells"] == 0 and plan["wells"] == []
+    assert not any(i["on_plate"] for i in plan["items"])
+    assert any("could not be laid out" in w for w in plan["warnings"])
+    quiet = sum(i["consequence"] == "changes_nothing" and bool(i["repeat"]) for i in plan["items"])
+    said = [n for n in plan["notes"] if "change no call" in n]
+    # only the items that change no call are said to be left off the plate for that reason
+    assert len(said) == (1 if quiet else 0)
+    assert not said or said[0].startswith(f"{quiet} item(s) change no call")
+    r = called["client"].get(f"/api/studies/{called['study']}/review/repeat.csv")
+    assert r.status_code == 404
+
+
 def test_names_that_are_not_studies(called):
     c = called["client"]
     assert c.get("/api/studies/nope/review/repeat").status_code == 404
