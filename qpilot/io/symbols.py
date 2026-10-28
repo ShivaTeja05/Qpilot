@@ -17,13 +17,21 @@ status                 meaning
 ``date_mangled``       looks like a date Excel made from a name; ``candidates`` lists every
                        approved symbol whose current or former name Excel turns into that date
 ``number_mangled``     looks like a number Excel made from a name (``2.31E+19``); not reversible
-``non_gene``           a repeat or spike-in assay (Alu, LINE-1, ERCC), deliberately no symbol
+``non_gene``           a repeat or spike-in assay (Alu, LINE-1, ERCC), or a word qPCR files use
+                       as a label (``REF``, ``NTC``, ``STD``, ``CTRL``, ``GOI``, ``Target 2``, a
+                       single letter): deliberately no symbol
 ``unknown``            none of the above (a non-human gene, a custom assay, or a typo)
 =====================  ========================================================================
 
 When a name could mean more than one gene, every candidate is listed (``ambiguous``); nothing
-is chosen silently. The data is the HGNC complete set (CC0), reduced to approved, previous and
-alias symbols in ``qpilot/data/hgnc/`` (see its README for source, date and licence). HGNC is
+is chosen silently. A label is never looked up: ``REF`` is an HGNC alias of ``ALYREF`` and
+``STD`` a previous symbol of two genes, but in a qPCR file they mean "reference" and
+"standard". Only :attr:`SymbolFinding.identifies` evidence names one gene; an alias, a match
+that ignores letter case or several candidates only suggest one, so a rename from them must be
+confirmed by a person (it is never "consistent" on its own).
+
+The data is the HGNC complete set (CC0), reduced to approved, previous and alias symbols in
+``qpilot/data/hgnc/`` (see its README for source, date and licence). HGNC is
 human only: mouse or rat symbols match only by ignoring case (``case_changed``).
 """
 
@@ -100,7 +108,23 @@ _EXCEL_PRONE = re.compile(
     + "|".join(sorted({p for ps in MONTH_PREFIXES.values() for p in ps}, key=len)[::-1])
     + r")\d{1,2}$"
 )
+#: Words qPCR files use as labels, never genes: these also numbered (``REF2``, ``Target_1``) ...
+LABELS: tuple[str, ...] = (
+    "REF", "REFERENCE", "GOI", "TOI", "TARGET", "GENE", "NTC", "NRT", "NTP", "STD", "STANDARD",
+    "CTRL", "CONTROL", "POS", "NEG", "IPC", "BLANK", "CALIBRATOR",
+)  # fmt: skip
+#: ... and these only as written (``HK1`` is hexokinase 1, ``CTL1`` a choline transporter).
+LABELS_AS_WRITTEN: tuple[str, ...] = (
+    "HK", "HKG", "HOUSEKEEPING", "REFGENE", "NAC", "NOTEMPLATE", "CAL", "CTL", "SPIKE", "EMPTY",
+    "WATER", "H2O", "WT", "KO", "MOCK",
+)  # fmt: skip
+_LABEL = re.compile(
+    r"^(?:(?:" + "|".join(LABELS) + r")(?:[\s_-]?\d{1,2})?|" + "|".join(LABELS_AS_WRITTEN) + r")$",
+    re.IGNORECASE,
+)
 _NON_GENE = (
+    (_LABEL, "a word qPCR files use for a reference, a control or a standard, not a gene name"),
+    (re.compile(r"^\w$"), "a single character, not a gene name"),
     (re.compile(r"^ALU", re.IGNORECASE), "an Alu repeat assay, not a gene"),
     (re.compile(r"^(?:LINE[-_ ]?1|L1HS|L1PA\d*)$", re.IGNORECASE), "a LINE-1 repeat assay"),
     (re.compile(r"^ERCC[-_ ]?\d+$", re.IGNORECASE), "an ERCC spike-in control, not a gene"),
@@ -134,6 +158,19 @@ class SymbolFinding:
     def ambiguous(self) -> bool:
         """True when the name could mean more than one approved symbol."""
         return len(self.candidates) > 1
+
+    @property
+    def identifies(self) -> bool:
+        """True when the name itself identifies one approved symbol.
+
+        It does when it is that symbol as written, a previous symbol of one gene, or a date
+        Excel made from one gene's name. An alias (a name other genes or words may share), a
+        match that ignores letter case, or several candidates only suggest a gene: a rename
+        from them is for a person to confirm.
+        """
+        if len(self.candidates) != 1 or self.case_changed:
+            return False
+        return self.status in ("approved", "previous", "date_mangled")
 
     @property
     def resolved(self) -> str | None:
@@ -258,6 +295,9 @@ def check_symbol(name: object, *, table: SymbolTable | None = None) -> SymbolFin
     text = str(name).strip()
     if not text:
         return SymbolFinding(name=text, query=text, status="unknown", note="empty name")
+    label = _label(text)
+    if label is not None:
+        return label
     exact = table.lookup(text)
     query = text if exact else normalise_assay_name(text)
     hits = exact or table.lookup(query)
@@ -287,6 +327,15 @@ def check_symbol(name: object, *, table: SymbolTable | None = None) -> SymbolFin
     )
 
 
+def _label(text: str) -> SymbolFinding | None:
+    """A label or a single character (see :data:`LABELS`), before any lookup; else ``None``."""
+    query = normalise_assay_name(text)
+    for pattern, note in _NON_GENE[:2]:
+        if pattern.match(text) or pattern.match(query):
+            return SymbolFinding(name=text, query=query, status="non_gene", note=note)
+    return None
+
+
 def check_symbols(
     names: Iterable[object], *, table: SymbolTable | None = None
 ) -> list[SymbolFinding]:
@@ -309,7 +358,8 @@ def _finding(
         note = (
             "a previous HGNC symbol; the gene now has another symbol"
             if status == "previous"
-            else "an alias, not the approved HGNC symbol"
+            else "an alias, not the approved HGNC symbol; other genes or words may share an "
+            "alias, so confirm the gene before renaming"
         )
     if case_changed:
         note += " (matched only when letter case is ignored)"
@@ -355,6 +405,8 @@ def _date_finding(text: str, pairs: list[tuple[int, int]], table: SymbolTable) -
 
 
 __all__ = [
+    "LABELS",
+    "LABELS_AS_WRITTEN",
     "MONTH_PREFIXES",
     "SymbolFinding",
     "SymbolStatus",

@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections import Counter
 
 from qpilot.io.datasets import VERMEULEN_SHA256
+from qpilot.io.inputs import input_label, is_converted
 from qpilot.qpcr.confidence_checks import HOLDS_MIN
 from qpilot.report.context import Ctx
 from qpilot.report.model import Citation, MethodsParagraph, MethodsView
@@ -112,9 +113,11 @@ def data(c: Ctx, cite: Cites) -> list[Part]:
     if samples:
         lead += f" ({samples} samples)"
     parts.append(lead + " was read from ")
-    name = c.inputs.source.name if c.inputs.source is not None else None
+    name = input_label(c.inputs.source)  # the person's own file names, never qPilot's
     meta = c.inputs.rdml
-    if name:
+    if name and is_converted(c.inputs.source):
+        parts += ["the instrument export ", Q(name), ", converted to RDML by qPilot,"]
+    elif name:
         parts += ["the RDML file ", Q(name)]
     else:
         parts.append("an RDML file")

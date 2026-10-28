@@ -551,6 +551,13 @@ def build_model(
         raise DesignError("no control genes: set reference_candidates or mark targets as ref")
     inputs = _inputs(curves, settings, extra_excluded)
     matrix = inputs.matrix
+    unmeasured = [gene for gene in settings.candidates if gene not in matrix.columns]
+    if unmeasured:  # e.g. the target of a LightCycler 96's "no target" wells, accepted as ref
+        raise DesignError(
+            f"the reference gene {', '.join(repr(g) for g in unmeasured)} has no value in any "
+            "study sample (no study well measures it), so it cannot normalise them: keep as "
+            "reference genes only targets measured in the study samples"
+        )
     stability = _stability(matrix, settings.candidates)
     groups = labels = None
     specs: tuple[ComparisonSpec, ...] = ()

@@ -72,6 +72,8 @@ class Reaction:
         type_mapped: Whether ``vendor_type`` was recognised (``False`` = treated as ``unkn``).
         cq: The vendor's Cq (``None`` when none or undetermined).
         quantity: A standard's known quantity (``None`` when none).
+        target_type: The target's role as the file declares it: ``ref`` (a reference gene),
+            ``toi`` (a gene of interest), or ``""`` when the file does not say.
         omitted: The vendor software marked the well omitted (recorded, never applied).
         amp: Fluorescence per cycle, or ``None``.
         melt: Fluorescence per temperature, or ``None``.
@@ -88,6 +90,7 @@ class Reaction:
     type_mapped: bool = True
     cq: float | None = None
     quantity: float | None = None
+    target_type: str = ""
     omitted: bool = False
     amp: Curve | None = None
     melt: Curve | None = None

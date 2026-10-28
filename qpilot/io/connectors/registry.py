@@ -186,15 +186,25 @@ def expand(paths: str | Path | Sequence[str | Path]) -> list[Path]:
     return unique
 
 
+DESIGN_TABLE = "tidy.cq.design"
+
+
+def _looked(path: Path, only: str | None) -> tuple[Probe, list[tuple[Connector, Detection]]]:
+    found = probe(path)
+    return found, _sniff(found, only)
+
+
 def _choose(files: list[Path], only: str | None) -> tuple[Connector, list[Source]]:
     """One connector for every file (a mix of vendors is refused)."""
     chosen: Connector | None = None
     sources: list[Source] = []
     skipped: list[str] = []
-    for path in files:
-        found = probe(path)
-        matches = _sniff(found, only)
-        if not matches:
+    looked = [(path, *_looked(path, only)) for path in files]
+    # a person's Cq table naming conditions, beside the export it was typed from, is that
+    # export's sample sheet (``qpilot.web.intake``), not a second kind of export
+    curves = any(m and m[0][1].dialect != DESIGN_TABLE for _, _, m in looked)
+    for path, found, matches in looked:
+        if not matches or (curves and matches[0][1].dialect == DESIGN_TABLE):
             skipped.append(path.name)
             continue
         connector, detection = matches[0]
@@ -353,6 +363,22 @@ def describe(
         meta.warn(
             "DYE_CONFLICT",
             "A target is read with more than one dye; the first dye is recorded for it.",
+        )
+    if notes.role_conflicts:
+        meta.warn(
+            "ROLE_CONFLICT",
+            f"{notes.role_conflicts} targets are called a reference gene in some rows and a "
+            "target in others; qPilot records them as targets. Set their roles in Design.",
+        )
+    declared = sum(1 for r in every if r.target_type == "ref")
+    if declared:
+        refs = sorted({builder.clean_id(r.target, "") for r in every if r.target_type == "ref"})
+        meta.warn(
+            "DECLARED_REFERENCES",
+            f"The table names {len(refs)} reference gene{'s' if len(refs) != 1 else ''} in its "
+            "gene type column; Design proposes "
+            + ("them" if len(refs) != 1 else "it")
+            + " as reference genes for you to confirm.",
         )
     omitted = sum(len(p.vendor_omitted) for p in meta.plates)
     if omitted:

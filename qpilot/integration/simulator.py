@@ -53,6 +53,7 @@ import numpy as np
 import pandas as pd
 
 from qpilot.core.store import StudyStore
+from qpilot.io.inputs import input_label
 
 TOLERANCE = 1e-9  # |log2 fold change| and |p| differences allowed between qsim and qPilot
 AUDIT_DIR_FILES = ("lock.json", "summary.json", "genes.csv", "explain.json", "REPORT.md")
@@ -598,7 +599,7 @@ def audit(
         seed=seed,
         design_draws=design_draws,
         explorer=explorer,
-        source=f"{analysis.source.name} (qPilot study {study_id})",
+        source=f"{input_label(analysis.source) or analysis.source.name} (qPilot study {study_id})",
         prepared=(prepared.study, prepared.space, prepared.space_info, prepared.engine),
     )
     changes, unmapped = chosen_changes(prepared, analysis.inputs.choices)
@@ -614,7 +615,7 @@ def audit(
         "input_sha256": analysis.input_sha256,
         "chain_head": analysis.inputs.chain_head,
         "design_hash": analysis.inputs.design_hash,
-        "source_file": analysis.source.name,
+        "source_file": input_label(analysis.source) or analysis.source.name,  # the person's names
         "scope": prepared.scope,
         "reproduces_qpilot": check,
         "lock_sha256": summary.get("lock_sha256"),
