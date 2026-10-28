@@ -43,6 +43,19 @@ Every per-gene table and figure iterates over the study's comparisons through on
 that compares several pairs (`StudyResult.comparisons`), each comparison gets its rows, its q
 (Benjamini–Hochberg across genes) and Holm-adjusted p, and its own per-unit rows.
 
+## Names
+
+Groups, units, samples and genes keep the names the lab gave them (`LPS + inhibitor`,
+`IL-6/ctrl`, `Day 3 (50 µM)`, `KO#2`, `α-syn`) in every table, figure, report and Prism project:
+the workbook writes them as text cells, every CSV a person opens defuses a formula start with an
+apostrophe, SVG and HTML escape them. A name never becomes a path: a file named after a gene is
+the name itself when it is a plain ASCII file name (`SDHA(1).svg`), else its ASCII slug and the
+first 8 hex digits of its SHA-256 (`syn_efb8d4c7.svg`), so two names never share a file
+(`qpilot/core/names.py`). A name is refused, in words, only when it is empty, longer than 64
+characters, starts or ends with a space, or carries a tab, a line break or an invisible character;
+the Prism tables (whose CSVs Prism reads back as they are) also refuse a group or unit that starts
+with `=`, `+` or `@`.
+
 ## Where
 
 * Page: **Report → Export** (each file is a job; the files written since qPilot started stay
