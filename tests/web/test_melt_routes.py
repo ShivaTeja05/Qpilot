@@ -4,7 +4,7 @@ The LightCycler 96 experiment file of the corpus (``rdml/lightcycler96-lc96p-hmu
 endodontalis hmuY and 16S rRNA, six samples in triplicate, SYBR Green I, melt in 0.2 °C steps)
 is dropped on the page with a sample sheet, as a person would, and walked through Studio. The
 sheet's groups are the depositors' own (their Cq table ``hmuy_cq_values.xlsx``, sheet "Hm vs
-DIP": each of the file's sample ids matches one of its samples by both targets' mean Cq). The
+DIP": each of the file's samples is named as in that table (its RDML description)). The
 mini file (no melt curves) says so in words. Every number is compared with the engine's own.
 """
 
@@ -26,21 +26,17 @@ from tests.web.test_workspaces_capture import drop
 
 CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "corpus"
 LC96P = CORPUS / "rdml" / "lightcycler96-lc96p-hmuy" / "hmuy_hm_vs_dip_r123.lc96p"
-#: The file's sample ids -> the depositors' condition (matched by mean Cq, see the docstring).
+#: The file's samples (named from their RDML description) -> the depositors' condition.
 GROUPS = {
-    "e34dadd5-2903-42a1-abbd-4eb509eb05d5": "Hm",  # Hm_1: 16S 11.73, hmuY 23.46
-    "224dbc24-4578-41f8-bb87-fbe4137fa887": "Hm",  # Hm_2: 11.52, 24.13
-    "7eb138d1-2cb5-4c26-8dd9-ab894a77eb61": "Hm",  # Hm_3: 8.70, 22.63
-    "1c76448f-03d2-453f-8628-d764e1ca1d55": "DIP",  # DIP_1: 8.42, 17.78
-    "4274a0ab-8ef6-4948-815e-d082768eae20": "DIP",  # DIP_2: 13.28, 24.72
-    "be08945d-29c6-47a0-8c49-cc85f693c1a5": "DIP",  # DIP_3: 13.11, 23.96
+    "Hm_1": "Hm",  # 16S 11.73, hmuY 23.46
+    "Hm_2": "Hm",  # 11.52, 24.13
+    "Hm_3": "Hm",  # 8.70, 22.63
+    "DIP_1": "DIP",  # 8.42, 17.78
+    "DIP_2": "DIP",  # 13.28, 24.72
+    "DIP_3": "DIP",  # 13.11, 23.96
 }
 SHEET = "Sample,Group\n" + "".join(f"{k},{v}\n" for k, v in GROUPS.items())
-HMUY, S16, EMPTY = (
-    "sybr_green_i_hmuype",
-    "sybr_green_i_16s_rrna",
-    "sybr_green_i_bafb86db_9289_4f98_94f6_91bacd689ba1",
-)
+HMUY, S16, EMPTY = ("HmuYPe", "16S rRNA", "no target (SYBR Green I)")
 PLATE = "99caca4d-c437-48dc-ad56-7c6954ead2e8"
 
 
@@ -110,7 +106,20 @@ def test_a_sessions_melt_curves_wait_for_its_design(lc96):
     # once the design is confirmed they show, before the curves are (no group is named)
     view = lc96["design_only"]
     assert view["has_melt"] and view["run"] == PLATE and view["study_id"] is None
-    assert "Hm" not in str(view) and "DIP" not in str(view)
+    # no group is named: no group field anywhere, and no value is a group's label (the file's
+    # own sample and target names, Hm_1 or HmuYPe, are not groups)
+    assert not _names_a_group(view, set(GROUPS.values()))
+
+
+def _names_a_group(value, groups: set[str]) -> bool:
+    if isinstance(value, dict):
+        return any(
+            key in ("group", "groups") or key in groups or _names_a_group(item, groups)
+            for key, item in value.items()
+        )
+    if isinstance(value, list):
+        return any(_names_a_group(item, groups) for item in value)
+    return isinstance(value, str) and value in groups
 
 
 def test_the_plates_assays_and_every_wells_call(lc96):
