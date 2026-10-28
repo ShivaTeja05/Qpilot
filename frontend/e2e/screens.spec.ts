@@ -2,7 +2,7 @@
  * Every section of the seeded demo session at every width (1440 / 1024 / 768 / 390), in light
  * and dark: it renders without an error, axe finds nothing serious, the page never scrolls
  * sideways, and a screenshot is saved under e2e/screenshots/<section>/<width>-<theme>.png.
- * A section still showing the development placeholder is `fixme` with its owner.
+ * No section may show the development placeholder.
  */
 import { demoSession, route, type Workspace } from "./support/data";
 import { THEMES, viewportFor, WIDTHS } from "./support/env";
@@ -47,18 +47,14 @@ for (const theme of THEMES) {
           const rest: string[] = [];
           if (section.id === "gene") {
             const gene = demo ? await firstGene(api, demo) : null;
-            test.fixme(
-              !gene,
-              "no gene to open: GET /api/studies/{id}/results is not served yet (owner: api)",
-            );
+            expect(gene, "a gene to open (GET /api/studies/{id}/results)").toBeTruthy();
             rest.push(gene!);
           }
           await app.open(route(demo, section.id, ...rest));
-          const pending = await app.page.getByText(PENDING_TEXT).count();
-          test.fixme(
-            pending > 0,
-            `${section.label} is still the placeholder (owner: ${section.owner})`,
-          );
+          await expect(
+            app.page.getByText(PENDING_TEXT),
+            `${section.label} shows the development placeholder (owner: ${section.owner})`,
+          ).toHaveCount(0);
           await checkState(app, section.id, `${width}-${theme}`);
         });
       }

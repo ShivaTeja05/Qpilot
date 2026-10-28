@@ -6,7 +6,6 @@
 import type { APIRequestContext } from "@playwright/test";
 import { demoSession, literal, route } from "./support/data";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 interface Texts {
   texts: Record<string, { plain: string }>;
@@ -22,8 +21,6 @@ async function getJson<T>(api: APIRequestContext, path: string): Promise<T> {
 const firstClause = (s: string) => s.split(/[.:;]/)[0]!.trim();
 
 test.describe("Trace", () => {
-  test.beforeEach(() => test.fixme(!LANDED.trace, notLanded("trace")));
-
   test("the study overview says what /trace says, with its four lists", async ({ app, api }) => {
     const demo = await demoSession(api);
     const t = await getJson<Texts>(api, `/api/studies/${demo.study_id}/trace`);

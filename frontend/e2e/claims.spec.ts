@@ -6,7 +6,6 @@
 import type { APIRequestContext } from "@playwright/test";
 import { demoSession, route } from "./support/data";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 interface ClaimsReport {
   claims: { id: string; verdict: string; verdict_label: string }[];
@@ -23,8 +22,6 @@ async function check(api: APIRequestContext, studyId: string, text: string): Pro
 }
 
 test.describe("Claims", () => {
-  test.beforeEach(() => test.fixme(!LANDED.claims, notLanded("claims")));
-
   test("a paragraph typed in is checked with the server's verdicts", async ({ app, api }) => {
     const demo = await demoSession(api);
     const ex = await api.get(`/api/studies/${demo.study_id}/claims/examples`);

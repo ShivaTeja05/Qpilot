@@ -8,7 +8,6 @@ import type { APIRequestContext } from "@playwright/test";
 import { demoSession, literal, route, workspaceView } from "./support/data";
 import { E2E } from "./support/env";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 interface Option {
   id: string;
@@ -57,8 +56,6 @@ async function toTop(page: import("@playwright/test").Page) {
 const firstClause = (s: string) => s.split(/[.:;]/)[0]!.trim();
 
 test.describe("Controls", () => {
-  test.beforeEach(() => test.fixme(!LANDED.gate, notLanded("gate")));
-
   test("the page says what /gate says, and a check opens to its reason", async ({ app, api }) => {
     const demo = await demoSession(api);
     const g = await gate(api, demo.study_id!);
@@ -115,7 +112,6 @@ test.describe("Controls", () => {
 
 test.describe("Controls: deciding", () => {
   test.beforeEach(() => {
-    test.fixme(!LANDED.gate, notLanded("gate"));
     test.skip(E2E.readOnly, "E2E_READONLY=1: no writes");
   });
 

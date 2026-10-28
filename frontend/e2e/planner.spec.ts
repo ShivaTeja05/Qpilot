@@ -6,7 +6,6 @@
 import type { APIRequestContext } from "@playwright/test";
 import { demoSession, literal, route } from "./support/data";
 import { expect, test } from "./support/fixtures";
-import { LANDED, notLanded } from "./support/sections";
 
 interface PlannerView {
   groups: { label: string; n: number }[];
@@ -22,8 +21,6 @@ async function planner(api: APIRequestContext, studyId: string): Promise<Planner
 }
 
 test.describe("Plan next", () => {
-  test.beforeEach(() => test.fixme(!LANDED.planner, notLanded("planner")));
-
   test("what the study measured and every gene's noise come from /planner", async ({
     app,
     api,

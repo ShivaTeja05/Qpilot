@@ -29,6 +29,9 @@ export default defineConfig({
     colorScheme: "light",
     locale: "en-GB",
     timezoneId: "Europe/London",
+    // A click that cannot happen fails within a minute (with the page's state), not at the
+    // test's timeout.
+    actionTimeout: 60_000,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     acceptDownloads: true,
