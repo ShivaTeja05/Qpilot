@@ -60,6 +60,24 @@ def _pct(share: float) -> int:
     return int(round(100 * float(share)))
 
 
+def _wells_of(s, col: int):
+    """(Cq, plate, efficiency flag, low-copy flag) of every well of one gene's column.
+
+    One well per sample: the study's own columns. With technical replicates: every real well
+    (:class:`qsim.data.Replicates`), so "wells" counts wells, not samples.
+    """
+    reps = s.replicates
+    if reps is None:
+        return s.cq[:, col], s.run[:, col], s.flag_eff[:, col], s.flag_low[:, col]
+    here = reps.present[:, col, :]
+    return (
+        reps.cq[:, col, :][here],
+        reps.run[:, col, :][here],
+        reps.flag_eff[:, col, :][here],
+        reps.flag_low[:, col, :][here],
+    )
+
+
 class LabViews:
     """Mixed into :class:`qsim.app.Screen`; needs ``engine``, ``space``, ``explain``, ``summary``,
     the group words (``group``, ``rest``, ``rest_short``) and ``stage_text``."""
@@ -265,7 +283,8 @@ class LabViews:
         s = self.engine.study
         col = s.genes.index(gene)
         e = self.explain[gene]
-        cq = s.cq[:, col]
+        well_cq, runs, flag_eff, flag_low = _wells_of(s, col)  # every well, replicates included
+        cq = well_cq
         found = cq[~np.isnan(cq)]
         lates = [o.value for o in self.space.decision("late_cq").options if o.value is not None]
         eff = np.nanmedian(s.eff_assay[:, col])
@@ -286,7 +305,7 @@ class LabViews:
             in_groups += f" ({v_rest} with a value)"
         rows = [
             ("Samples in each group", in_groups),
-            ("Plates for this assay", f"{len(set(s.run[:, col]))}"),
+            ("Plates for this assay", f"{len(set(runs))}"),
             (
                 "Cq, median (lowest to highest)",
                 f"{np.median(found):.1f} ({found.min():.1f} to {found.max():.1f})"
@@ -305,8 +324,8 @@ class LabViews:
                 if np.isfinite(std).any()
                 else "no standard curve on this plate",
             ),
-            ("Wells flagged for efficiency", f"{int(s.flag_eff[:, col].sum())}"),
-            ("Wells flagged as very low copy number", f"{int(s.flag_low[:, col].sum())}"),
+            ("Wells flagged for efficiency", f"{int(flag_eff.sum())}"),
+            ("Wells flagged as very low copy number", f"{int(flag_low.sum())}"),
             ("p-value, planned analysis", f"{e['p']:.2g}"),
         ]
         references = [
@@ -324,7 +343,7 @@ class LabViews:
             "n_rest": n_rest,
             "n_high_value": v_high,
             "n_rest_value": v_rest,
-            "n_plates": len(set(s.run[:, col])),
+            "n_plates": len(set(runs)),
             "cq_median": float(np.median(found)) if found.size else None,
             "cq_min": float(found.min()) if found.size else None,
             "cq_max": float(found.max()) if found.size else None,
@@ -332,8 +351,8 @@ class LabViews:
             "n_nondetect": int(np.isnan(cq).sum()),
             "eff_assay": float(eff),
             "eff_std_curve": float(np.nanmedian(std)) if np.isfinite(std).any() else None,
-            "n_flag_eff": int(s.flag_eff[:, col].sum()),
-            "n_flag_low": int(s.flag_low[:, col].sum()),
+            "n_flag_eff": int(flag_eff.sum()),
+            "n_flag_low": int(flag_low.sum()),
             "p": float(e["p"]),
         }
         return {

@@ -141,6 +141,11 @@ def test_the_audit_of_a_replicate_design_through_the_page(client, hmuy):
     assert audit_points.keys() == engine_points.keys()
     for unit, x in engine_points.items():
         assert audit_points[unit] == pytest.approx(x, abs=1e-9)
+    # the audit's lab view counts wells, not units: its Cq range is the wells' own
+    lab = client.get(f"/api/studies/{hmuy}/audit/lab/{GENE}").json()["numbers"]
+    cqs = [w["cq_value"] for p in _units(client, hmuy).json()["points"] for w in p["wells"]]
+    assert (lab["cq_min"], lab["cq_max"]) == (pytest.approx(min(cqs)), pytest.approx(max(cqs)))
+    assert lab["n_nondetect"] == 0 and lab["n_plates"] == 1
 
 
 def test_the_values_stay_at_the_plan_after_a_card_is_decided(client, web_store, hmuy):
