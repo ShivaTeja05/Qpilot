@@ -9,6 +9,7 @@ import type { CheckStatus, ClaimView, Verdict } from "./api";
 
 export const VERDICT_ORDER: Verdict[] = [
   "contradicted",
+  "mismatch",
   "overstated",
   "choices",
   "unchecked",
@@ -35,6 +36,12 @@ export const CLAIM_VERDICT: Record<Verdict, Mark & { short: string }> = {
     label: "Contradicted",
     short: "Contradicted",
   },
+  mismatch: {
+    shape: "square-alert",
+    tone: "var(--danger)",
+    label: "Not supported: different groups",
+    short: "Different groups",
+  },
   unchecked: { shape: "ring", tone: "var(--none)", label: "Cannot check", short: "Cannot check" },
 };
 
@@ -50,6 +57,7 @@ export const STATUS_WORD: Record<CheckStatus, { word: string; sign: string; tone
 
 export const CHECK_TITLE: Record<string, string> = {
   gene: "The gene",
+  groups: "The groups compared",
   direction: "Direction",
   fold: "Fold change",
   p: "p-value",

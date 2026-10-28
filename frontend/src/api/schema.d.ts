@@ -5101,7 +5101,7 @@ export type components = {
              * Check
              * @enum {string}
              */
-            check: "gene" | "direction" | "fold" | "p" | "significance" | "robust" | "normaliser" | "efficiency" | "n" | "grid" | "audit" | "choices" | "reading";
+            check: "gene" | "groups" | "direction" | "fold" | "p" | "significance" | "robust" | "normaliser" | "efficiency" | "n" | "grid" | "audit" | "choices" | "reading";
             /**
              * Status
              * @enum {string}
@@ -5152,7 +5152,7 @@ export type components = {
              * Intent
              * @enum {string}
              */
-            intent: "supported" | "choices" | "overstated" | "contradicted" | "unchecked";
+            intent: "supported" | "choices" | "overstated" | "contradicted" | "mismatch" | "unchecked";
             /** Text */
             text: string;
             /**
@@ -5268,6 +5268,16 @@ export type components = {
              * @description Control genes named.
              */
             normaliser: string[];
+            /**
+             * Normaliser Scope
+             * @description Where the normaliser was read: in the claim's own sentence, a sentence stating it for all the data, the sentence after the claim referring back, or a sentence naming this gene.
+             */
+            normaliser_scope?: ("own" | "text" | "previous" | "gene") | null;
+            /**
+             * Other Groups
+             * @description Groups the words name that the study does not compare, as written.
+             */
+            other_groups?: string[];
             /**
              * P Adjusted
              * @default false
@@ -5484,7 +5494,7 @@ export type components = {
             sentence: components["schemas"]["TextRange"];
             /**
              * Severity
-             * @description Sort key: contradicted 4 … supported 0.
+             * @description Sort key: contradicted 5, different groups 4 … supported 0.
              */
             severity: number;
             /** Spans */
@@ -5495,7 +5505,7 @@ export type components = {
              * Verdict
              * @enum {string}
              */
-            verdict: "supported" | "choices" | "overstated" | "contradicted" | "unchecked";
+            verdict: "supported" | "choices" | "overstated" | "contradicted" | "mismatch" | "unchecked";
             /** Verdict Label */
             verdict_label: string;
         };

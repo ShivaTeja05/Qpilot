@@ -119,6 +119,30 @@ describe("the claim card and the summary", () => {
     expect(within(card).getByRole("link", { name: `See ${claim.gene}` })).toBeTruthy();
   });
 
+  it("says plainly when a claim compares other groups than the study", () => {
+    const claim = report.claims.find((c) => c.verdict === "mismatch")!;
+    expect(claim.reading.other_groups).toEqual(["MYCN-amplified"]);
+    render(
+      wrap(
+        <ClaimCard
+          text={text}
+          claim={claim}
+          position={1}
+          total={report.claims.length}
+          links={{}}
+          canReplace={false}
+          onReplace={() => {}}
+          onMove={() => {}}
+        />,
+      ),
+    );
+    const card = screen.getByRole("article");
+    expect(within(card).getAllByText("Not supported: different groups").length).toBeGreaterThan(0);
+    expect(card.textContent).toContain(claim.headline.plain);
+    expect(claim.headline.plain).toContain("not MYCN amplification");
+    expect(card.textContent).not.toContain("Supported ");
+  });
+
   it("filters by verdict with counts the API gives", () => {
     const onFilter = vi.fn();
     render(wrap(<SummaryBar report={report} filter={null} onFilter={onFilter} />));
