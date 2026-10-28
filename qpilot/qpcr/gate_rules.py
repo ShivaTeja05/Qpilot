@@ -690,10 +690,17 @@ def std_curve(rule: Rule, ctx: GateContext) -> Iterator[Finding]:
                 f"The fewest replicates at one level is {{{{{f['rep']}}}}} (MIQE 2.0: ideally "
                 "three or more per dilution step)."
             )
-        sentences.append(
-            "In relative quantification this does not taint study samples; it marks the curve as "
-            "an efficiency source."
-        )
+        if is_quantify(ctx.design):
+            sentences.append(
+                "This study quantifies samples: every quantity of this assay on this plate is "
+                "read from this curve, so a curve that fails a check weakens all of them (the "
+                "Quantities view names what MIQE would question)."
+            )
+        else:
+            sentences.append(
+                "In relative quantification this does not taint study samples; it marks the "
+                "curve as an efficiency source."
+            )
         reason = " ".join(sentences)
         yield Finding(
             scope=scope,
@@ -1715,9 +1722,14 @@ def run_gate(
     settings = settings or StudySettings()
     rule_pack = resolve_pack(pack)
     table = design_curves(curves, settings.design) if settings.design is not None else curves
+    given = dict(quantities or {})
+    if is_quantify(settings.design):  # a person's quantities over the file's, as Quantities
+        mine = {s: d.quantity for s, d in settings.design.samples.items() if d.quantity}
+        given = {k: v for k, v in given.items() if k[0] not in mine}
+        given.update({(s, ""): float(q) for s, q in mine.items()})
     ctx = GateContext(
         table=table,
-        quantities=dict(quantities or {}),
+        quantities=given,
         rawness=rawness,
         confirmed_no_controls=frozenset(confirmed_no_controls),
         design=settings.design,
@@ -1726,6 +1738,8 @@ def run_gate(
         melt_params=melt_params(rule_pack),
     )
     evals = evaluate(rule_pack, ctx)
+    if is_quantify(settings.design):  # quantify samples: does a sample's reported result change?
+        return _quantify_report(rule_pack, ctx, evals, curves, settings, quantities, cell)
     model = model or build_model(curves, settings)
     base = core_gate.baseline(core_gate.at_cell(model.space, cell))
     analysed = set(ctx.table.loc[ctx.table["sample_type"] == ANALYSED, "key"])
@@ -1764,6 +1778,85 @@ def run_gate(
         ctx.facts.as_dict(),
         OPTION_LABELS,
         headline,
+    )
+
+
+def is_quantify(design: Any) -> bool:
+    """A study that quantifies samples (:func:`qpilot.qpcr.quantify_study.is_quantify`)."""
+    from qpilot.qpcr.quantify_study import is_quantify as quantify
+
+    return quantify(design)
+
+
+def _quantify_report(
+    rule_pack: RulePack,
+    ctx: GateContext,
+    evals: list[RuleEval],
+    curves: pd.DataFrame,
+    settings: Any,
+    quantities: Mapping[tuple[str, str], float] | None,
+    cell: Mapping[str, Any] | None,
+) -> core_gate.GateReport:
+    """The consequence test of a study that quantifies samples (no groups compared).
+
+    Every rule runs as for any study. For each flagged set of wells the study is quantified
+    again without them, at the analysis in use (``cell``: the amplification rule and the LOQ
+    line a person chose on the quantity cards), and each sample result is compared: ``flip``
+    when its class or its number (more than 2-fold) changes
+    (:func:`qpilot.qpcr.quantify_study.gate_compare`). Standards count as well as study
+    samples: leaving a standard out moves the curve, so every quantity read from it.
+    """
+    from qpilot.qpcr import quantify_study as qs
+    from qpilot.qpcr.designs import design_units
+
+    design = settings.design
+    given = design.reaction_input
+    inputs = qs.Inputs(
+        table=ctx.table,
+        quantities={s: d.quantity for s, d in design.samples.items() if d.quantity},
+        declared={k: (float(v), "") for k, v in (quantities or {}).items()},
+        units=design_units(design) or None,
+        calls=dict(design.well_calls) or None,
+        reaction=qs.ab.ReactionInputs(given.template_ul, given.input_ng, given.unit)
+        if given
+        else None,
+        amp_calls=tuple(design.amp_calls),
+    )
+    amp = str((cell or {}).get("amp_call") or design.amp_calls[0])
+    loq = str((cell or {}).get("loq_cv") or qs.LOQ_OPTIONS[0])
+    items = qs.reported(inputs.at(amp, loq))
+    base = qs.gate_baseline(items)
+    used = set(ctx.table.loc[ctx.table["sample_type"].isin([ANALYSED, "std"]), "key"])
+    left_out = set()
+    if EXCLUDED in ctx.table.columns:
+        left_out = set(ctx.table.loc[ctx.table[EXCLUDED].astype(bool), "key"])
+    params = rule_pack.consequence
+
+    def variant(keys: list[str]) -> Any:
+        if left_out.issuperset(keys):
+            return core_gate.unchanged("", keys, ALREADY_LEFT_OUT, code="already_left_out")
+        if not used.intersection(keys):
+            return core_gate.unchanged(
+                "",
+                keys,
+                "These wells are neither samples nor standards, so no quantity uses them.",
+                code="not_study_samples",
+            )
+        found = qs.reported(inputs.without(keys).at(amp, loq))
+        return qs.gate_compare("", keys, items, found, params.magnitude_log2)
+
+    done = core_gate.run_consequences(
+        evals, base, variant, params.magnitude_log2, params.magnitude_agreement
+    )
+    return core_gate.build_report(
+        rule_pack.ref(),
+        plate_status(evals),
+        evals,
+        done,
+        base,
+        ctx.facts.as_dict(),
+        OPTION_LABELS,
+        [],
     )
 
 

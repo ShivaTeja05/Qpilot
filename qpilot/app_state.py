@@ -38,6 +38,8 @@ FLIPPED_FACT = {
 }
 #: The kinds of a quantification study's cards (``qpilot.qpcr.quantify_study``).
 QUANTITY_PREFIX = "quantity."
+#: ``DesignSummary.note`` of a study that quantifies samples (``qpilot.qpcr.quantify_study``).
+QUANTIFY_NOTE = "quantify samples: no groups compared"
 #: What a card with several comparisons says about deciding it (choices are the study's).
 STUDY_WIDE = (
     "A choice on this card applies to the whole study: every comparison is analysed with the "
@@ -126,6 +128,11 @@ def study_summary(result: StudyResult) -> SummaryView:
 def design_line(result: StudyResult) -> str:
     """How the groups were made, from the engine's design record."""
     design = result.design
+    if design.note == QUANTIFY_NOTE:
+        return (
+            "A quantification: each sample's quantity read from a standard curve; no groups "
+            "compared; technical replicates averaged within each biological unit."
+        )
     if design.note == GROUPS_NOTE:
         return (
             f"Groups from the confirmed design ({design.group_var}): {design.n_hi} vs "

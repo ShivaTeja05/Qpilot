@@ -155,6 +155,7 @@ def quantities_view(
 ) -> QuantitiesView:
     """Every assay with standards: its curves' numbers and how many units it quantified."""
     from qpilot.qpcr.absolute import METHOD_CARD_PATH, REFERENCES
+    from qpilot.qpcr.quantify_study import CLASS_WORDS, CLASSES, class_of
 
     found = computed(store, study_id)
     result = found.result
@@ -162,6 +163,9 @@ def quantities_view(
     assays = []
     for target in sorted({c.target for c in result.curves}):
         curves, units = result.for_target(target)
+        by_class: dict[str, int] = {}
+        for u in units:
+            by_class[class_of(u)] = by_class.get(class_of(u), 0) + 1
         assays.append(
             AssaySummary(
                 target=target,
@@ -169,12 +173,14 @@ def quantities_view(
                 n_units=len(units),
                 n_quantified=sum(1 for u in units if u.log10_quantity is not None),
                 n_flagged=sum(1 for u in units if u.flags),
+                by_class={k: by_class[k] for k in CLASSES if k in by_class},
             )
         )
     not_quantified = [
         NotQuantified(target=t, reason=r) for t, r in sorted(result.not_quantified.items())
     ]
     available = bool(assays)
+    quantify = in_use(store, study_id) is not None
     return QuantitiesView(
         study_id=study_id,
         available=available,
@@ -189,7 +195,28 @@ def quantities_view(
         notes=list(found.notes),
         method_card=METHOD_CARD_PATH,
         references=list(REFERENCES),
+        purpose="quantify" if quantify else "compare",
+        analysis=_analysis_words(store, study_id) if quantify else [],
+        classes=[FlagView(id=k, words=CLASS_WORDS[k]) for k in CLASSES],
     )
+
+
+def _analysis_words(store: StudyStore, study_id: str) -> list[str]:
+    """A quantification study's analysis in use, in words (the cards' options)."""
+    from qpilot.qpcr import quantify_study as qs
+
+    design = store.design(study_id)
+    cards = store.cards(study_id)
+    now = qs.analysis_in_use(design, cards)
+    planned = qs.analysis_in_use(design, [])
+    loq = f"{float(now['loq_cv']) * 100:g} %"
+    out = [
+        f"Wells count as detected by {qs.option_label('amp_call', now['amp_call'])}.",
+        f"The limit of quantification asks for a read-back CV of at most {loq}.",
+    ]
+    if now != planned:
+        out.append("A person chose these on the cards; the analysis as planned is listed there.")
+    return out
 
 
 def assay_view(store: StudyStore, study_id: str, target: str) -> AssayQuantities:
@@ -198,6 +225,8 @@ def assay_view(store: StudyStore, study_id: str, target: str) -> AssayQuantities
     Raises:
         KeyError: The study has no standard curve for this assay.
     """
+    from qpilot.qpcr.quantify_study import CLASS_WORDS, class_of
+
     found = computed(store, study_id)
     result = found.result
     curves, units = result.for_target(target)
@@ -256,6 +285,8 @@ def assay_view(store: StudyStore, study_id: str, target: str) -> AssayQuantities
             per_ul=_num(u.per_ul),
             per_ng=_num(u.per_ng),
             flags=[FlagView(id=f, words=ab.FLAG_WORDS.get(f, f)) for f in u.flags],
+            reported=class_of(u),
+            reported_words=CLASS_WORDS[class_of(u)],
             wells=[
                 UnknownWellView(
                     run_id=w.run_id,

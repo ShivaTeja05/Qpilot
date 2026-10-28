@@ -194,7 +194,18 @@ def _choice(ctx: AppContext, study_id: str) -> dict[str, str] | None:
 
 
 def analysis_choice(store: Any, study_id: str) -> dict[str, str] | None:
-    """:func:`_choice` for a store (the MCP server has no app context)."""
+    """:func:`_choice` for a store (the MCP server has no app context).
+
+    A study that quantifies samples: its quantity cards' options in use, when a person moved
+    them off the planned ones (:func:`qpilot.qpcr.quantify_study.analysis_in_use`).
+    """
+    from qpilot.qpcr.quantify_study import analysis_in_use, is_quantify
+
+    design = store.design(study_id)
+    if is_quantify(design):
+        chosen = analysis_in_use(design, store.cards(study_id))
+        planned = analysis_in_use(design, [])
+        return chosen if chosen != planned else None
     result = store.get(study_id)
     grid = rv.load_grid(store, result)
     if grid is None or grid.planned is None:
@@ -237,12 +248,29 @@ def compute(store: Any, study_id: str, choice: dict[str, str] | None) -> core_ga
     from qpilot.qpcr.curves import analyse_study
     from qpilot.qpcr.designs import design_curves
     from qpilot.qpcr.gate_rules import file_melt, run_gate, study_quantities
+    from qpilot.qpcr.quantify_study import is_quantify
+    from qpilot.qpcr.study import StudySettings
     from qpilot.trace import TraceError, model_for_study
     from qpilot.trace.context import cell_of
 
     source = store.source(study_id)
     if source is None:
         raise JobError("no_source", NO_SOURCE)
+    design = store.design(study_id)
+    if is_quantify(design):  # quantify samples: no relative model to rebuild
+        settings = StudySettings.from_design(design)
+        curves = analyse_study(source, settings.experiment_id, settings.candidates, settings.curves)
+        typed = design_curves(curves, design)
+        quantities = study_quantities(source) if (typed["sample_type"] == "std").any() else {}
+        return run_gate(
+            curves,
+            settings,
+            quantities=quantities,
+            rawness=import_rawness(store, study_id),
+            cell=choice,
+            runs=study_runs(store, study_id, source),
+            melt=file_melt(source, settings.experiment_id),
+        )
     try:
         model = model_for_study(store, study_id)
         cell = cell_of(model, choice) if choice else None
@@ -449,8 +477,15 @@ def _names(items: list[str]) -> str:
 
 
 def _option_text(
-    ev: RuleEval, opt: core_gate.OptionConsequence, facts: dict[str, Fact]
+    ev: RuleEval, opt: core_gate.OptionConsequence, facts: dict[str, Fact], quantify: bool = False
 ) -> FactText:
+    """One option's consequence in words.
+
+    A study that quantifies samples (``quantify``) has no calls: an option changes what is
+    reported for a sample (its class, or its number by more than 2-fold).
+    """
+    if quantify:
+        return _quantity_option_text(ev, opt, facts)
     stem = f"{core_gate.eval_id(ev)}_{opt.option}"
     n = len(opt.excluded)
     lead = f"Leaving {'this' if n == 1 else 'these'} {_t(f'f_gate_nexcl_{stem}')} "
@@ -492,6 +527,42 @@ def _option_text(
             facts,
         )
     return rv.fact_text(f"{lead} changes no call.", facts)
+
+
+def _quantity_option_text(
+    ev: RuleEval, opt: core_gate.OptionConsequence, facts: dict[str, Fact]
+) -> FactText:
+    """:func:`_option_text` for a study that quantifies samples."""
+    stem = f"{core_gate.eval_id(ev)}_{opt.option}"
+    n = len(opt.excluded)
+    lead = f"Leaving {'this' if n == 1 else 'these'} {_t(f'f_gate_nexcl_{stem}')} "
+    lead += "well out" if n == 1 else "wells out"
+    if opt.consequence == "unknown":
+        return rv.plain_text(f"Could not be checked: {opt.reason or 'the analysis did not run'}")
+    if opt.code == "already_left_out":
+        verb = "well is" if n == 1 else "wells are"
+        return rv.fact_text(
+            f"{'This' if n == 1 else 'These'} {_t(f'f_gate_nexcl_{stem}')} {verb} already left "
+            "out of the analysis: a person decided it (the record says who and why).",
+            facts,
+        )
+    if opt.reason:
+        why = opt.reason[:1].lower() + opt.reason[1:]
+        return rv.fact_text(f"{lead} changes no reported quantity: {why}", facts)
+    if opt.n_flipped:
+        results = "sample result" if opt.n_flipped == 1 else "sample results"
+        return rv.fact_text(
+            f"{lead} changes what is reported for {_t(f'f_gate_nflip_{stem}')} {results} (its "
+            f"class, or its number by more than 2-fold): {_names(opt.flipped)}.",
+            facts,
+        )
+    if opt.consequence == "magnitude":
+        return rv.fact_text(
+            f"{lead} changes no sample's class, but moves a quantity by up to "
+            f"{_t(f'f_gate_dlog2_{stem}')} on the log2 scale.",
+            facts,
+        )
+    return rv.fact_text(f"{lead} changes no reported quantity.", facts)
 
 
 def _scope(ev: RuleEval) -> dict[str, Any]:
@@ -838,6 +909,7 @@ def build_view(
     left_out: frozenset[str] = frozenset(),
     links: dict[str, Any] | None = None,
     exports: dict[str, Any] | None = None,
+    quantify: bool = False,
 ) -> GateView:
     """The page's view of one gate report (words, facts in sentences, cards as Results shows).
 
@@ -872,7 +944,7 @@ def build_view(
     by_card = {c.id: c for c in report.cards}
     for c in report.consequences:
         ev = evals[c.eval_key]
-        texts = {o.option: _option_text(ev, o, facts) for o in c.options}
+        texts = {o.option: _option_text(ev, o, facts, quantify) for o in c.options}
         scope = _scope(ev)
         scope.pop("level")
         decision_id = CARD_PREFIX + core_gate.eval_id(ev)
@@ -1020,6 +1092,7 @@ def _session_record(ctx: AppContext, sid: str, study_id: str) -> SessionRecord:
 def get_gate(study_id: str, ctx: Ctx) -> GateView:
     """The controls on every plate, by rule, and whether leaving their wells out changes a call."""
     from qpilot.qpcr.gate_rules import resolve_pack
+    from qpilot.web.views import study_purpose
 
     sid = _visible(ctx, study_id)
     head = ctx.store.chain_head(study_id)
@@ -1041,6 +1114,7 @@ def get_gate(study_id: str, ctx: Ctx) -> GateView:
         left_out=_left_out(ctx.store, study_id),
         links=study_links(ctx.store, study_id),
         exports=study_exports(ctx.store, study_id),
+        quantify=study_purpose(ctx.store, study_id) == "quantify",
     )
     _keep(_views, vkey, view)
     return view
@@ -1122,7 +1196,7 @@ def decide_gate_card(study_id: str, card_id: str, body: GateDecide, ctx: Ctx) ->
     """
     from qpilot.qpcr.gate_rules import resolve_pack
     from qpilot.web.routers.studio import HUMAN, call, changed, ensure_analysis
-    from qpilot.web.views import analysed_study
+    from qpilot.web.views import analysed_study, study_purpose
 
     sid = _visible(ctx, study_id)
     if sid is None:
@@ -1146,7 +1220,17 @@ def decide_gate_card(study_id: str, card_id: str, body: GateDecide, ctx: Ctx) ->
     if choice is None:
         raise api_error(404, "not_found", "There is no control check with this id.")
     record = _session_record(ctx, sid, study_id)
-    view = build_view(report, pack, study_id, sid, head, "", record, _left_out(ctx.store, study_id))
+    view = build_view(
+        report,
+        pack,
+        study_id,
+        sid,
+        head,
+        "",
+        record,
+        _left_out(ctx.store, study_id),
+        quantify=study_purpose(ctx.store, study_id) == "quantify",
+    )
     shown = next(c for c in view.consequences if c.decision_id == card_id)
     if not shown.can_decide:
         raise api_error(409, "studio", NOT_DECIDABLE)

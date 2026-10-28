@@ -104,7 +104,14 @@ class Ctx:
     @cached_property
     def marker_mode(self) -> bool:
         """Groups split by a marker gene's expression (not from a confirmed design's groups)."""
-        return "f_group_a" not in self.facts
+        return "f_group_a" not in self.facts and not self.quantify
+
+    @cached_property
+    def quantify(self) -> bool:
+        """A study that quantifies samples: no groups compared (``qpcr.quantify_study``)."""
+        from qpilot.qpcr.quantify_study import is_quantify_result
+
+        return is_quantify_result(self.result)
 
     @cached_property
     def group_names(self) -> tuple[str, str]:

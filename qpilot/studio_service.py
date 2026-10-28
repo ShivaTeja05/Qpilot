@@ -108,6 +108,10 @@ EXCLUSION_KIND = "prism.exclusion_reason"
 EXCLUDE_KIND = "curve.exclude_well"  # a well left out of (or put back into) the analysis
 TRUST_KIND = "curve.import_trust"  # a person's option on the Import Trust card (qpilot/io/trust.py)
 PURPOSE_KIND = "design.purpose"  # what the study is for (compare groups / quantify samples)
+QUANTIFY_NO_AXES = (
+    "this study quantifies samples: the further choices (efficiency models, normalisers, "
+    "corrections between plates) are about comparing groups; its own choices are on its cards"
+)
 #: Kinds a person accepts only with a reason (a well left out and an Import Trust choice are
 #: never in "Accept all consistent": each is accepted on its own, or by a card's one click).
 REASON_KINDS = (EXCLUSION_KIND, EXCLUDE_KIND, TRUST_KIND)
@@ -1533,6 +1537,8 @@ class Studio:
             )
         design = assembly.design
         assert design is not None  # a confirmed design always assembles
+        if design.purpose == "quantify":
+            raise StudioError(QUANTIFY_NO_AXES)
         tested = tuple((design.axes or {}).get(axis, (axis_primary(axis),)))
         settings = StudySettings.from_design(design)
         curves = analyse_study(

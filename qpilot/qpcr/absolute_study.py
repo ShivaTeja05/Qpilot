@@ -144,6 +144,8 @@ def for_study(
     groups = None
     if design is not None and design.mode == "groups":
         groups = unit_groups(design)
+        if design.purpose == "quantify" and not groups:
+            groups = None  # nothing to sort by: no group column
     elif absolute.unknowns:
         notes.append(LEGACY_GROUPS)
     found = Computed(absolute, groups, notes)

@@ -65,10 +65,10 @@ COMPARISON_KIND = "design.comparison"
 PURPOSE_KIND = "design.purpose"
 #: The design items a person sets on the page (the comparison is written last, see set_design).
 SET_KINDS = (
-    PURPOSE_KIND,
     TARGET_ROLE_KIND,
     ROLE_KIND,
     SERIES_KIND,
+    PURPOSE_KIND,
     GROUP_KIND,
     UNIT_KIND,
     COMPARISON_KIND,

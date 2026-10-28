@@ -508,6 +508,13 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     const quantities = q.length ? `, quantities ${q[0]} to ${q[q.length - 1]}` : "";
     return `Samples ${span} (${names.length} in all, experiment ${str(d.experiment_id)}) form a dilution series ${s}${quantities}`;
   },
+  "design.purpose": (_s, d) => {
+    if (d.purpose === "quantify")
+      return "This study quantifies samples from a standard curve (how much of each target is there); no groups are compared and no reference gene is needed";
+    if (d.purpose === "compare")
+      return "This study compares groups (fold changes between them, normalised to reference genes)";
+    throw new Error("not a purpose");
+  },
   "curve.call_rule": (_s, d) => `Count a well as amplified by ${ruleWords(d.rule)}`,
   "choice.axis": (s, d) => {
     const question = AXIS_QUESTION[s];
@@ -608,6 +615,7 @@ export const KIND_TITLE: Record<Proposal["kind"], string> = {
   "design.comparison": "Comparison",
   "design.pair": "Pairing",
   "design.dilution_series": "Dilution series",
+  "design.purpose": "What the study is for",
   "curve.call_rule": "Amplification rule",
   "curve.well_call": "Well call",
   "curve.exclude_well": "Well exclusion",

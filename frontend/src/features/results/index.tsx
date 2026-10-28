@@ -20,7 +20,7 @@ import { FurtherChoices } from "./FurtherChoices";
 import { GenesPanel, NO_FILTER, isFiltered, matches, type GeneFilter } from "./GenesPanel";
 import { ImportTrustCard } from "./ImportTrust";
 import { MapPanel } from "./MapPanel";
-import { DetectedOnlyLine, QuantitiesPanel } from "./quantities";
+import { DetectedOnlyLine, QuantitiesPanel, QuantifyResults } from "./quantities";
 import { FlipPanel, ReferencesPanel } from "./StudyPanels";
 import { Summary } from "./Summary";
 
@@ -67,12 +67,15 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
   const [, navigate] = useLocation();
   const key = workspace?.key ?? "";
   const studyId = workspace?.results_visible ? workspace.study_id : null;
+  // A study that quantifies samples has no comparison: its result is the quantities.
+  const quantify = workspace?.purpose === "quantify";
+  const relative = quantify ? null : studyId;
   // The comparison the page shows, in a study with several (null: the first, as the API says);
   // shared with Trace and the gene's page.
   const [comparison, setComparison] = useShownComparison(studyId);
-  const results = useResults(key, studyId, comparison);
+  const results = useResults(key, relative, comparison);
   const cards = useCards(key, studyId);
-  const flips = useFlips(key, studyId, comparison);
+  const flips = useFlips(key, relative, comparison);
   const several = (results.data?.comparisons.length ?? 0) > 1;
   const comparisons = useComparisons(key, studyId, several);
   const show = useCallback((id: string) => setComparison(id), [setComparison]);
@@ -140,6 +143,10 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
         {job ? <JobCard id={job.id} className="mt-4" /> : null}
       </div>
     );
+  }
+
+  if (quantify) {
+    return <QuantifyResults workspace={workspace} studyId={studyId} cards={cards} rest={rest} />;
   }
 
   const map = view && (
