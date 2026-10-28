@@ -7,7 +7,7 @@ owned by Dev 2.
 
 from typing import Annotated, Any, Literal, Protocol
 
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, SerializerFunctionWrapHandler, StringConstraints, model_serializer
 
 Conclusion = Literal["up", "down", "none"]
 Actor = Literal["human", "agent", "system"]
@@ -129,8 +129,54 @@ class DecisionCard(BaseModel):
     decided_at: str | None = None
 
 
+class ComparisonOutcome(BaseModel):
+    """One comparison of a study with several (or a paired one): every tested gene's result.
+
+    ``contrasts`` carry the uncorrected p-value; their ``conclusion`` was made from
+    ``p_adjusted`` (Holm across the gene's comparisons; equal to ``p`` without a correction).
+    ``q_value`` is Benjamini-Hochberg across the genes of this comparison (shown, never used for
+    a call). A gene this comparison cannot test (fewer than two values or pairs) is in
+    ``not_tested`` with the reason, and in no other field.
+    """
+
+    id: str
+    group_a: str
+    group_b: str
+    label: str
+    primary: bool = False
+    n_a: int
+    n_b: int
+    n_pairs: int | None = None
+    contrasts: dict[str, ContrastResult]
+    p_adjusted: dict[str, float]
+    q_value: dict[str, float]
+    robustness: dict[str, GeneRobustness]
+    confidence: dict[str, Grade] = {}
+    not_tested: dict[str, str] = {}
+
+
+class ComparisonsResult(BaseModel):
+    """A study's comparisons (``StudyDesign.comparisons``): the test, the correction, each one.
+
+    ``comparisons[0]`` is the primary: the same numbers as ``StudyResult.contrasts``,
+    ``robustness`` and ``confidence``.
+    """
+
+    test: Literal["welch", "paired_t"]
+    correction: Literal["holm", "none"]
+    pattern: str = "chosen"
+    control: str | None = None
+    pair_by: str | None = None
+    comparisons: list[ComparisonOutcome]
+
+
 class StudyResult(BaseModel):
-    """Everything the engine computed for one study."""
+    """Everything the engine computed for one study.
+
+    ``comparisons`` is set only for a design with several comparisons or a paired one, and is
+    left out of the JSON when it is ``None``, so every other study's ``results.json`` is
+    byte-identical to what it was.
+    """
 
     study_id: str
     input_sha256: str
@@ -145,6 +191,14 @@ class StudyResult(BaseModel):
     efficiency: dict[str, float] = {}
     conclusion_rule: dict[str, float] = {"alpha": 0.05, "min_log2fc": 1.0}
     facts: dict[str, Fact] = {}
+    comparisons: ComparisonsResult | None = None
+
+    @model_serializer(mode="wrap")
+    def _drop_absent(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data = handler(self)
+        if data.get("comparisons") is None:
+            data.pop("comparisons", None)
+        return data
 
 
 class DecisionEntry(BaseModel):

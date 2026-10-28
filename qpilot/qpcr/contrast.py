@@ -11,8 +11,18 @@ log2 scale (no equal-variance assumption) and reports:
   **up** if p < 0.05 and the change is at least two-fold, **down** if p < 0.05 and at least
   two-fold lower, otherwise **none** ("no call").
 
+A study with several comparisons (:class:`~qpilot.schemas_studio.ComparisonPlan`) uses the same
+test for each, and corrects for doing several: :func:`holm` adjusts one gene's p-values across
+its comparisons (Holm's step-down method; a call then needs the *corrected* p below the
+threshold), and :func:`bh` gives each comparison's Benjamini-Hochberg q-values across genes (the
+expected share of false findings among the genes called at that q; shown, never used for a
+call). A paired design (``pair_by``) compares the groups within each pair instead:
+:func:`paired_t` is the one-sample t-test of the within-pair differences of log2 relative
+quantity (ΔΔCq within the pair), with n = the number of complete pairs.
+
 Not claimed: no mixed model, no plate effect (the demo has one gene per plate), no prediction
-interval, no multiple-testing correction. The arithmetic follows the validation oracle.
+interval, no simultaneous confidence intervals (each interval is for its comparison alone).
+The arithmetic follows the validation oracle.
 """
 
 from __future__ import annotations
@@ -21,6 +31,7 @@ import math
 from collections.abc import Collection, Sequence
 from dataclasses import asdict, dataclass
 
+import numpy as np
 import pandas as pd
 from scipy import stats
 
@@ -80,6 +91,83 @@ def welch(a: Sequence[float], b: Sequence[float]) -> Welch:
         t_crit=float(stats.t.ppf(0.975, df)),
         df=df,
     )
+
+
+def paired_t(differences: Sequence[float]) -> Welch:
+    """Paired t-test: the one-sample t-test of within-pair differences against zero.
+
+    ``diff`` is the mean difference, ``se`` its standard error (SD / sqrt(n)), ``df = n - 1``;
+    the same fields as :func:`welch` so a paired comparison is reported the same way. It needs
+    at least two pairs.
+    """
+    values = pd.Series(differences, dtype=float)
+    if len(values) < 2:
+        raise ValueError("a paired test needs at least two pairs")
+    n = len(values)
+    diff = float(values.mean())
+    se = float(values.std(ddof=1)) / math.sqrt(n)
+    t = diff / se
+    df = n - 1
+    return Welch(
+        diff=diff,
+        se=se,
+        t=t,
+        p=float(2 * stats.t.sf(abs(t), df)),
+        t_crit=float(stats.t.ppf(0.975, df)),
+        df=float(df),
+    )
+
+
+def holm(p: np.ndarray | Sequence[float], axis: int = 0) -> np.ndarray:
+    """Holm's step-down adjusted p-values along ``axis`` (one family per slice).
+
+    A NaN p-value (no test) is not part of its family and stays NaN; ``m`` is the number of
+    finite p-values in the family. The adjusted value of the i-th smallest of m is
+    ``max_{j <= i} min(1, (m - j + 1) * p_(j))``, as in ``statsmodels``' ``holm``.
+    """
+    values = np.asarray(p, dtype=float)
+    moved = np.moveaxis(values, axis, 0)
+    finite = np.isfinite(moved)
+    m = finite.sum(axis=0)
+    order = np.argsort(np.where(finite, moved, np.inf), axis=0, kind="stable")
+    ranked = np.take_along_axis(moved, order, axis=0)
+    rank = np.arange(moved.shape[0]).reshape((-1,) + (1,) * (moved.ndim - 1))
+    with np.errstate(invalid="ignore"):
+        scaled = np.minimum(1.0, (m - rank) * ranked)
+    scaled = np.where(np.isfinite(ranked), scaled, -np.inf)
+    stepped = np.maximum.accumulate(scaled, axis=0)
+    stepped = np.where(np.isfinite(ranked), stepped, np.nan)
+    out = np.empty_like(moved)
+    np.put_along_axis(out, order, stepped, axis=0)
+    return np.moveaxis(out, 0, axis)
+
+
+def bh(p: np.ndarray | Sequence[float]) -> np.ndarray:
+    """Benjamini-Hochberg q-values of one family (1-D); NaN stays NaN and is not counted.
+
+    The q-value of the i-th smallest of m finite p-values is
+    ``min_{j >= i} min(1, m * p_(j) / j)``, as in ``statsmodels``' ``fdr_bh``.
+    """
+    values = np.asarray(p, dtype=float)
+    out = np.full(values.shape, np.nan)
+    finite = np.flatnonzero(np.isfinite(values))
+    if not len(finite):
+        return out
+    order = finite[np.argsort(values[finite], kind="stable")]
+    m = len(order)
+    scaled = values[order] * m / np.arange(1, m + 1)
+    out[order] = np.minimum(1.0, np.minimum.accumulate(scaled[::-1])[::-1])
+    return out
+
+
+CORRECTION_WORDS = {
+    "holm": "Holm's correction across each gene's comparisons",
+    "none": "no correction for several comparisons",
+}
+TEST_WORDS = {
+    "welch": "Welch's t-test on log2 relative quantities (no equal-variance assumption)",
+    "paired_t": "a paired t-test on the within-pair differences of log2 relative quantity",
+}
 
 
 def conclude(log2fc: float, p: float, rule: ConclusionRule = DEFAULT_RULE) -> Conclusion:
