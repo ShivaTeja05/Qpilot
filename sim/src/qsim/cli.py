@@ -6,6 +6,7 @@ import argparse
 import sys
 
 import pandas as pd
+from qpilot.cli._console import ensure_utf8_output
 
 from qsim.compare import whatif
 from qsim.data import load_study
@@ -69,12 +70,35 @@ def cmd_ask(args: argparse.Namespace) -> int:
     return 0
 
 
+def _needs_a_clone(command: str, *paths: str) -> int | None:
+    """Exit code 2 with a plain message when the validation data is not where it is read from.
+
+    The corpora behind ``validate`` and ``external`` (``sim/data``, 6 MB) live in the repository,
+    not in the wheel, so a pip install cannot run them; a clone's ``sim/`` folder can.
+    """
+    from pathlib import Path
+
+    missing = [p for p in paths if not Path(p).exists()]
+    if not missing:
+        return None
+    print(
+        f"qsim {command}: cannot find {missing[0]}. This command scores the simulator against the "
+        "validation data in qPilot's source repository (sim/data/), which `pip install qpilot` "
+        f"does not carry. Run it from a clone: `cd Qpilot/sim && qsim {command}`; or point it at "
+        "your copy of the data with the options shown by `--help`.",
+        file=sys.stderr,
+    )
+    return 2
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     from pathlib import Path
 
     from qsim import known_answers, nodiff
     from qsim.validate import validate
 
+    if (code := _needs_a_clone("validate", args.data, args.ds380)) is not None:
+        return code
     first = validate(args.data, args.out)
     second = known_answers.validate(Path(args.data).parent, args.out)
     null = nodiff.validate(args.ds380, args.out, draws=args.draws)
@@ -91,6 +115,8 @@ def cmd_external(args: argparse.Namespace) -> int:
 
     from qsim import external
 
+    if (code := _needs_a_clone("external", args.data_dir)) is not None:
+        return code
     result = external.validate(Path(args.data_dir), args.out)
     for line in external.summary_lines(result):
         print(line)
@@ -156,6 +182,7 @@ def cmd_options(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    ensure_utf8_output()  # the narrated demo draws boxes and Greek letters: never crash a pipe
     parser = argparse.ArgumentParser(
         prog="qsim", description="qPilot Decision Simulator. Research use only."
     )

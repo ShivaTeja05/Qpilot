@@ -57,7 +57,10 @@ function SampleTypes({ types }: { types: Record<string, number> }) {
       {entries.map(([t, n]) => (
         <Tooltip key={t} content={`${count(n)} wells declared ${ROLE_WORDS[t] ?? t}`}>
           <Badge tabIndex={0}>
-            {ROLE_SHORT[t] ?? t} <span className="font-mono tabular">{count(n)}</span>
+            {ROLE_SHORT[t] ?? t}{" "}
+            <span className="font-mono tabular">
+              {count(n)} well{n === 1 ? "" : "s"}
+            </span>
           </Badge>
         </Tooltip>
       ))}
@@ -79,7 +82,7 @@ function PlateFacts({ plate, verdict }: { plate: Plate; verdict: string }) {
     ["Shape", plateLine(plate)],
     [plate.targets.length === 1 ? "Target" : "Targets", names(plate.targets)],
     [plate.dyes.length === 1 ? "Dye" : "Dyes", names(plate.dyes)],
-    ["Sample types", <SampleTypes types={plate.sample_types} />],
+    ["Wells by sample type", <SampleTypes types={plate.sample_types} />],
     [
       "Instrument Cq",
       plate.n_with_vendor_cq

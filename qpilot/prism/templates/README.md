@@ -1,19 +1,25 @@
-# Prism templates (made by hand in Prism)
+# Prism templates (optional: only for the Prism scripts)
 
-Step 2.4 of the Studio plan is manual: a person builds each template once in GraphPad Prism,
-and qPilot only supplies data. GraphPad recommends this pattern: build the project in Prism,
-replace the data, and Prism recalculates the analyses and graphs.
+**You do not need a template.** qPilot's default bundle is a Prism project file
+(`qpilot_<study>.pzfx`) that opens in GraphPad Prism as it is: the tables, the table of all genes
+and an Info sheet with the provenance, with plain steps for adding the t test and the graph
+(`docs/prism.md`). This folder is only for people who keep their own Prism templates and want the
+optional scripts (`qpilot export prism --scripts`): `run.pzc` opens a template, imports each
+table and saves one project per gene.
 
-**Status: none of the three template files exists yet.** There is no Prism seat on the
-development machine. Until a template is here, `qpilot export prism` still writes the CSV
-tables, `run.pzc`, `send_back.pzc`, `qpilot_provenance.json` and `README.txt`, and the README
-in the bundle says which template to build. Menu names below follow GraphPad's current user
+GraphPad recommends this pattern for templates: build the project in Prism once, then replace
+the data, and Prism recalculates the analyses and graphs. A person builds each template in
+Prism; qPilot only supplies data.
+
+**Status: none of the three template files exists here.** There is no Prism seat on the
+development machine. Without a template, `--scripts` still writes the scripts (they name the
+template) and the project file works as always. Menu names below follow GraphPad's current user
 guide; anything marked [R] is unverified until plan step 0.1 on a real seat.
 
-| Template | Table type | Analysis | Graph | Exported by qPilot? | Prism version saved in |
+| Template | Table type | Analysis | Graph | Filled by the scripts? | Prism version saved in |
 |---|---|---|---|---|---|
 | `two_groups_log2.pzt` | Column | Welch's unpaired t test on log2 | every point, mean ± 95 % CI | yes (column layout) | not made yet |
-| `many_genes_log2.pzt` | Grouped | multiple unpaired t tests, FDR | one row per gene | not yet (see below) | not made yet |
+| `many_genes_log2.pzt` | Grouped | multiple unpaired t tests, FDR | one row per gene | no (the project's Grouped table is this) | not made yet |
 | `nested_superplot.pzt` | Nested | nested t test | markers by biological unit | yes (nested layout) | not made yet |
 
 ## Rules for every template
@@ -54,7 +60,7 @@ unit's log2 relative quantity is in its group's column; the other cell in its ro
    95 % CI** as error bars. Y axis title: **log2 relative quantity**. Linear Y axis (the values
    are already logs). No bars.
 
-**Manual gate (step 2.4).** Export the demo study with `--genes ODC1`, put this template into
+**Manual gate (step 2.4).** Export the demo study with `--genes ODC1 --scripts`, put this template into
 the bundle folder and run `run.pzc`. Prism's Welch P value for ODC1 must equal the engine's to
 three significant figures. The engine's ODC1 on the demo: fold 3.59× (log2 difference 1.844),
 p 2.29e-08, n 53 vs 294. Record both numbers, the Prism version and a screenshot in
@@ -73,9 +79,11 @@ biological units as side-by-side subcolumns.
    discovery rate** (two-stage step-up method of Benjamini, Krieger and Yekutieli, Q = 5 %).
 3. Graph: a volcano plot (log2 difference against −log10 P) or the default results graph.
 
-**Not exported yet.** The frozen contract (`PrismLayout` in `qpilot/schemas_studio.py`) knows
-only the `column` and `nested` layouts, so `qpilot export prism --template many_genes_log2`
-refuses with a message. A `grouped` layout needs a contract change first.
+**Not filled by the scripts.** The scripts' frozen contract (`PrismLayout` in
+`qpilot/schemas_studio.py`) knows only the `column` and `nested` layouts, so
+`qpilot export prism --scripts --template many_genes_log2` refuses with a message. The Prism
+project does not need it: its Grouped table of all genes is exactly this table (genes as rows,
+units as subcolumns titled with the unit's name), ready for step 2 above.
 
 ## `nested_superplot.pzt`
 

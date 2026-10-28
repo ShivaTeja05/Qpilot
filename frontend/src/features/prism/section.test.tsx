@@ -9,12 +9,22 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/ui";
 import { fold, ofTotal } from "@/lib/format";
 import { describeProposal } from "@/lib/vocab";
-import type { PrismBundleView, PrismPreview, PrismRoutes, ProposalList, Workspace } from "./api";
+import type {
+  PrismBundleView,
+  PrismPreview,
+  PrismRoutes,
+  PrismSent,
+  PrismStatus,
+  ProposalList,
+  Workspace,
+} from "./api";
 import { summaryOf } from "./PrismFigure";
+import { SendOutcome } from "./SendCard";
 import PrismSection from "./index";
 import sessionJson from "./recorded/session.json";
 import prismJson from "./recorded/proposals-prism.json";
 import roundTripJson from "./recorded/proposals-roundtrip.json";
+import sentJson from "./recorded/sent.json";
 
 // The typed client keeps the `fetch` and `Request` it finds when its module loads, so the stub
 // goes in before any import runs; it answers with the recorded JSON (`answer` below).
@@ -45,6 +55,7 @@ const net = vi.hoisted(() => {
 });
 
 const session = sessionJson as unknown as Workspace;
+const sent = sentJson as unknown as PrismSent;
 const recorded = import.meta.glob<{ default: unknown }>("./recorded/prism-*.json", { eager: true });
 
 /** The recorded answer for a request path, or null (404). */
@@ -145,13 +156,64 @@ describe("the Prism section", () => {
       if (c.option_label) expect(screen.getByText(c.option_label)).toBeTruthy();
   });
 
-  it("offers the bundles this launch wrote for the round trip, with their sent-back folder", async () => {
+  it("offers the bundles this launch wrote for the round trip: the saved project, or its folder", async () => {
     show();
     const bundles = recordedJson<{ bundles: PrismBundleView[] }>("bundles").bundles.filter(
       (b) => b.id && b.round_trip,
     );
-    const folder = await screen.findByLabelText("Folder Prism sent the tables back to");
+    const file = await screen.findByLabelText("The project Prism saved (.pzfx)");
+    expect((file as HTMLInputElement).type).toBe("file");
+    expect((file as HTMLInputElement).accept).toBe(".pzfx");
+    const folder = await screen.findByLabelText("Or the folder (or file) it was saved in");
     expect((folder as HTMLInputElement).value).toBe(bundles[0]?.sent_back_folder ?? "");
+  });
+
+  it("keeps a project accepted for an earlier analysis with the same numbers: still current", async () => {
+    const status = recordedJson<PrismStatus>("status");
+    show();
+    if (status.project.still_current) {
+      expect(await screen.findByText("Still current for this analysis")).toBeTruthy();
+      expect(screen.getByText(status.project.drafted_for!, { exact: false })).toBeTruthy();
+      expect(screen.queryByText("Draft the project again for this analysis")).toBeNull();
+      const steps = screen.getByRole("navigation", { name: "Steps to Prism and back" });
+      expect(within(steps).getByText("Still current: the same numbers")).toBeTruthy();
+    }
+  });
+
+  it("lists what the Prism project holds, with no template to make", async () => {
+    const preview = recordedJson<PrismPreview>("preview");
+    show();
+    expect(await screen.findByText("In the Prism project")).toBeTruthy();
+    expect(preview.needs_template).toBe(false);
+    expect(screen.queryByText(/has not been made in Prism yet/)).toBeNull();
+    expect(screen.getAllByText(preview.project_file!, { exact: false }).length).toBeGreaterThan(0);
+  });
+});
+
+describe("a Send to Prism answer", () => {
+  it("says how to open the project on Windows and macOS, never with a command line", () => {
+    const client = new QueryClient();
+    render(
+      <QueryClientProvider client={client}>
+        <TooltipProvider>
+          <SendOutcome result={sent} />
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getAllByText(sent.project!, { exact: false }).length).toBeGreaterThan(0);
+    const open = screen.getByRole("list", { name: /^On (Windows|macOS)$/ });
+    expect(within(open).getAllByRole("listitem").length).toBe(sent.open_steps[0]!.steps.length);
+    const choose = screen.getByRole("radiogroup", { name: "Computer with Prism" });
+    fireEvent.click(within(choose).getByRole("radio", { name: "Windows" }));
+    expect(screen.getByRole("list", { name: "On Windows" }).textContent).toContain("Extract All");
+    fireEvent.click(within(choose).getByRole("radio", { name: "macOS" }));
+    expect(screen.getByRole("list", { name: "On macOS" }).textContent).toContain("Double-click");
+    expect(screen.getByRole("list", { name: "Add the test and the graph" }).textContent).toContain(
+      "Analyze",
+    );
+    const page = document.body.textContent ?? "";
+    for (const gone of ["osascript", "qpilot/prism/templates", "never writes or reads Prism"])
+      expect(page).not.toContain(gone);
   });
 });
 

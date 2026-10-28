@@ -24,20 +24,20 @@ def fixtures_dir() -> Path:
 @pytest.fixture
 def fixture_result() -> StudyResult:
     """The demo study's results as the engine will produce them."""
-    return StudyResult.model_validate_json((FIXTURES / "results.json").read_text())
+    return StudyResult.model_validate_json((FIXTURES / "results.json").read_text(encoding="utf-8"))
 
 
 @pytest.fixture
 def fixture_cards() -> list[DecisionCard]:
     """The demo study's three Decision Cards."""
-    raw = json.loads((FIXTURES / "cards.json").read_text())
+    raw = json.loads((FIXTURES / "cards.json").read_text(encoding="utf-8"))
     return [DecisionCard.model_validate(card) for card in raw]
 
 
 @pytest.fixture
 def fixture_facts() -> dict[str, Fact]:
     """Every number prose may reference, keyed by fact id."""
-    raw = json.loads((FIXTURES / "facts.json").read_text())
+    raw = json.loads((FIXTURES / "facts.json").read_text(encoding="utf-8"))
     return {fid: Fact.model_validate(value) for fid, value in raw.items()}
 
 

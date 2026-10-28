@@ -99,8 +99,9 @@ class SheetTable:
         sheet: Sheet title.
         header_row: 1-based row of the header.
         columns: Canonical field (``sample``, ``group``, ``bio_unit``, ``bio_rep``, ``type``,
-            ``target``, ``quantity``, ``concentration``, ``dilution``, ``replicate``, ``well``)
-            -> 1-based column number. Only the first column recognised for a field is used.
+            ``target``, ``quantity``, ``concentration``, ``dilution``, ``replicate``, ``well``,
+            ``target_role``) -> 1-based column number. Only the first column recognised for a
+            field is used.
             ``quantity`` is a standard's known quantity; ``concentration`` (also an input
             amount) and ``dilution`` describe any sample.
         headers: Column number -> header text (unrecognised headers included).
@@ -263,6 +264,40 @@ HEADER_SYNONYMS: dict[str, tuple[str, ...]] = {
         "replicateno",
     ),
     "well": ("well", "wellposition", "pos", "position", "wellid", "generalpos"),
+    # What a target is (a reference gene, a gene of interest), on the row of that target: the
+    # value is a role word (reference, housekeeping, target, GOI, yes/no) or, for a column such
+    # as "Reference genes", the name of a target that is a reference (see target_roles()).
+    "target_role": (
+        "genetype",
+        "targettype",
+        "targetrole",
+        "generole",
+        "genecategory",
+        "assaytype",
+        "assayrole",
+        "reference",
+        "references",
+        "referencegene",
+        "referencegenes",
+        "refgene",
+        "refgenes",
+        "reftarget",
+        "reftargets",
+        "isreference",
+        "isref",
+        "housekeeping",
+        "housekeepinggene",
+        "housekeepinggenes",
+        "hkg",
+        "endogenouscontrol",
+        "endogenouscontrols",
+        "normaliser",
+        "normalizer",
+        "normalisergene",
+        "normalizergene",
+        "normalisationgene",
+        "normalizationgene",
+    ),
 }
 _HEADER_KEY: dict[str, str] = {
     spelling: name for name, spellings in HEADER_SYNONYMS.items() for spelling in spellings
@@ -729,6 +764,207 @@ def _table_on(read: SheetRead, title: str) -> SheetTable | None:
     return table
 
 
+# ---------------------------------------------------------------------------------------------
+# Target roles (which targets are reference genes): read by the design rules
+# ---------------------------------------------------------------------------------------------
+
+#: Squashed words of a target-role cell -> ``ref`` (a reference gene), ``toi`` (a gene of
+#: interest) or ``ignore`` (left out of the study). ``yes``/``no`` and their kin count only
+#: under a header that asks the question ("Reference", "Housekeeping", "Is reference"), see
+#: :data:`YES_NO_HEADERS`.
+TARGET_ROLE_WORDS: dict[str, str] = {
+    **dict.fromkeys(
+        (
+            "ref",
+            "refs",
+            "reference",
+            "references",
+            "referencegene",
+            "refgene",
+            "referencetarget",
+            "reftarget",
+            "housekeeping",
+            "housekeeper",
+            "housekeepinggene",
+            "hk",
+            "hkg",
+            "endogenous",
+            "endogenouscontrol",
+            "endogenouscontrolgene",
+            "endo",
+            "normaliser",
+            "normalizer",
+            "normalisationgene",
+            "normalizationgene",
+            "internalcontrol",
+            "control",
+            "controlgene",
+            "normalisation",
+            "normalization",
+        ),
+        "ref",
+    ),
+    **dict.fromkeys(
+        (
+            "target",
+            "targets",
+            "targetgene",
+            "goi",
+            "geneofinterest",
+            "genesofinterest",
+            "toi",
+            "targetofinterest",
+            "testgene",
+        ),
+        "toi",
+    ),
+    # a target left out of the study (a spike-in, an empty channel, an assay not used)
+    **dict.fromkeys(
+        ("ignore", "ignored", "leaveout", "leftout", "exclude", "excluded", "notused", "unused"),
+        "ignore",
+    ),
+}
+#: The words that count under a sample's ``Type``/``Role`` column (only on a row naming a
+#: target): never "control" or "target", which a sample-type column uses for samples.
+TYPE_COLUMN_WORDS = frozenset(
+    {
+        "reference",
+        "referencegene",
+        "refgene",
+        "housekeeping",
+        "housekeepinggene",
+        "endogenouscontrol",
+        "endogenouscontrolgene",
+        "normaliser",
+        "normalizer",
+        "goi",
+        "geneofinterest",
+        "targetgene",
+    }
+)
+_YES = frozenset({"yes", "y", "true", "1", "x", "ja", "oui", "si"})
+_NO = frozenset({"no", "n", "false", "0", "nein", "non"})
+#: Squashed headers that ask "is this target a reference?" (their yes/no answers count).
+YES_NO_HEADERS = frozenset(
+    {
+        "reference",
+        "references",
+        "referencegene",
+        "referencegenes",
+        "refgene",
+        "refgenes",
+        "reftarget",
+        "isreference",
+        "isref",
+        "housekeeping",
+        "housekeepinggene",
+        "hkg",
+        "endogenouscontrol",
+        "normaliser",
+        "normalizer",
+    }
+)
+
+
+def target_role_word(text: str, header: str = "") -> str | None:
+    """``ref``, ``toi`` or ``None`` for one target-role cell (case and separator tolerant).
+
+    ``"Reference"``, ``"housekeeping"``, ``"Endogenous control"`` give ``ref``; ``"Target"``,
+    ``"GOI"``, ``"gene of interest"`` give ``toi``. Under a header that asks the question
+    (``header`` in :data:`YES_NO_HEADERS` after squashing), ``yes``/``no`` answer it.
+    """
+    key = squash(text)
+    if not key:
+        return None
+    if key in TARGET_ROLE_WORDS:
+        return TARGET_ROLE_WORDS[key]
+    if squash(header) in YES_NO_HEADERS or any(
+        squash(header).startswith(h) for h in YES_NO_HEADERS if len(h) >= 5
+    ):
+        if key in _YES:
+            return "ref"
+        if key in _NO:
+            return "toi"
+    return None
+
+
+@dataclass
+class TargetRoleCell:
+    """One target-role statement in a sheet: which target, which role, where it was read.
+
+    ``target`` is the text of the row's target cell, or (``named`` True) the cell's own text
+    when the column lists reference genes by name ("Reference genes: GAPDH"); the caller matches
+    it to the file's targets. ``refs`` are the cells it rests on.
+    """
+
+    target: str
+    role: str
+    refs: list[str]
+    named: bool = False
+
+
+def target_roles(source: str | Path | SheetRead) -> list[TargetRoleCell]:
+    """Every target-role statement in a sheet, on every sheet of a workbook, in reading order.
+
+    A header row with a target-role column (``Gene Type``, ``Target role``, ``Reference``,
+    ``Housekeeping``…; see ``HEADER_SYNONYMS["target_role"]``) is found on each sheet, with or
+    without a sample column: a sheet that only lists the targets counts too. Every row under it
+    is read, including rows with no sample (a target list beside the sample list, as the
+    Design page's template writes it). A row whose target-role cell is a role word gives that
+    role to the row's target; a cell that is not a role word is taken as the name of a
+    reference gene (a "Reference genes" column), which the caller matches to the targets.
+    Under a ``Type``/``Role`` column (a sample's type in most sheets) only role words count,
+    and only on a row that names a target. Nothing here decides: the design rules propose.
+    """
+    read = source if isinstance(source, SheetRead) else read_sheet(source)
+    out: list[TargetRoleCell] = []
+    for title in read.sheets:
+        by_row: dict[int, dict[int, Any]] = {}
+        for cell in read.cells:
+            if cell.cell.rsplit("!", 1)[0] == title:
+                by_row.setdefault(cell.row, {})[cell.column] = read.values[cell.cell]
+        header: tuple[int, dict[str, int], dict[int, str]] | None = None
+        for row in sorted(by_row)[:HEADER_SCAN_ROWS]:
+            columns: dict[str, int] = {}
+            texts: dict[int, str] = {}
+            for column, value in sorted(by_row[row].items()):
+                if not isinstance(value, str):
+                    continue
+                texts[column] = value.strip()
+                name = header_field(value)
+                if name is not None and name not in columns:
+                    columns[name] = column
+            if "target_role" in columns or ("target" in columns and "type" in columns):
+                header = (row, columns, texts)
+                break
+        if header is None:
+            continue
+        header_row, columns, texts = header
+        role_column = columns.get("target_role")
+        type_column = columns.get("type") if role_column is None else None
+        target_column = columns.get("target")
+        for row in sorted(r for r in by_row if r > header_row):
+            values = by_row[row]
+            target_text = cell_text(values.get(target_column)).strip() if target_column else ""
+            if role_column is not None:
+                text = cell_text(values.get(role_column)).strip()
+                if not text:
+                    continue
+                role = target_role_word(text, texts.get(role_column, ""))
+                role_ref = cell_ref(title, row, role_column)
+                if role is not None and target_text:
+                    refs = [cell_ref(title, row, target_column), role_ref]  # type: ignore[arg-type]
+                    out.append(TargetRoleCell(target_text, role, refs))
+                elif role is None:
+                    out.append(TargetRoleCell(text, "ref", [role_ref], named=True))
+            elif type_column is not None and target_text:
+                key = squash(cell_text(values.get(type_column)))
+                if key in TYPE_COLUMN_WORDS:
+                    refs = [cell_ref(title, row, target_column), cell_ref(title, row, type_column)]  # type: ignore[arg-type]
+                    out.append(TargetRoleCell(target_text, TARGET_ROLE_WORDS[key], refs))
+    return out
+
+
 __all__ = [
     "HEADER_SYNONYMS",
     "MAX_COLUMNS",
@@ -738,6 +974,8 @@ __all__ = [
     "SheetError",
     "SheetRead",
     "SheetTable",
+    "TARGET_ROLE_WORDS",
+    "TargetRoleCell",
     "cell_ref",
     "cell_text",
     "header_field",
@@ -746,4 +984,6 @@ __all__ = [
     "sheet_sha256",
     "sheet_table",
     "squash",
+    "target_role_word",
+    "target_roles",
 ]

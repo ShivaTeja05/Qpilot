@@ -7,7 +7,7 @@
  */
 import type { SectionProps } from "@/shell/sections";
 import { PageHeader } from "@/ui";
-import { useStageInbox, type Workspace } from "./api";
+import { usePrismStatus, useStageInbox, type Workspace } from "./api";
 import { flowOf } from "./flow";
 import { PreviewCard } from "./PreviewCard";
 import { ProjectCard } from "./ProjectCard";
@@ -29,10 +29,12 @@ export default function PrismSection({ workspace }: SectionProps) {
 function PrismWorkspace({ workspace }: { workspace: Workspace }) {
   const prismInbox = useStageInbox(workspace.key, "prism");
   const roundTripInbox = useStageInbox(workspace.key, "roundtrip");
+  const status = usePrismStatus(workspace.key);
   const flow = flowOf(
     workspace,
     prismInbox.data?.proposals ?? [],
     roundTripInbox.data?.proposals ?? [],
+    status.data,
   );
   return (
     <>

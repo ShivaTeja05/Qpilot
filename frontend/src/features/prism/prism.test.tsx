@@ -3,11 +3,12 @@
  * (`recorded/record.py`).
  */
 import { describe, expect, it } from "vitest";
-import type { ProposalList, Workspace } from "./api";
+import type { PrismStatus, ProposalList, Workspace } from "./api";
 import { flowOf, projectState } from "./flow";
 import sessionJson from "./recorded/session.json";
 import prismJson from "./recorded/proposals-prism.json";
 import roundTripJson from "./recorded/proposals-roundtrip.json";
+import statusJson from "./recorded/prism-status.json";
 import { cellNumber } from "./tables";
 
 const session = sessionJson as unknown as Workspace;
@@ -56,6 +57,82 @@ describe("flow", () => {
     const flow = flowOf(confirmed, prism.proposals, roundTrip.proposals);
     expect(flow.sendBlocked).toBeNull();
     expect(flow.steps.map((s) => s.state)).toEqual(["done", "done", "current", "waiting"]);
+  });
+});
+
+describe("a project accepted for an earlier analysis", () => {
+  const status = statusJson as unknown as PrismStatus;
+  const accepted = prism.proposals.filter(
+    (p) => p.kind === "prism.project" && (p.status === "accepted" || p.status === "edited"),
+  );
+
+  it("holds when the server says its tables hold the same numbers (still current)", () => {
+    const earlier = accepted.at(-1)!;
+    const now = projectState(prism.proposals, "a0a0a0a0a0a0", {
+      status: "accepted",
+      proposal_id: earlier.id,
+      genes: [],
+      still_current: true,
+      drafted_for: String((earlier.payload as { study_id?: string }).study_id),
+      checking: false,
+    });
+    expect(now.accepted?.id).toBe(earlier.id);
+    expect(now.stillCurrent).toBe(true);
+    expect(now.earlier).toBeNull();
+    const confirmed: Workspace = {
+      ...session,
+      study_id: "a0a0a0a0a0a0",
+      stages: session.stages.map((s) => (s.stage === "choices" ? { ...s, confirmed: true } : s)),
+    };
+    const flow = flowOf(confirmed, prism.proposals, roundTrip.proposals, {
+      ...status,
+      project: {
+        ...status.project,
+        status: "accepted",
+        proposal_id: earlier.id,
+        still_current: true,
+      },
+    });
+    expect(flow.sendBlocked).toBeNull();
+    expect(flow.steps[1]!.detail).toBe("Still current: the same numbers");
+  });
+
+  it("asks for a new draft when the numbers changed, and waits while the server compares", () => {
+    const changed = projectState(prism.proposals, "a0a0a0a0a0a0", {
+      status: "none",
+      genes: [],
+      still_current: false,
+      checking: false,
+    });
+    expect(changed.accepted).toBeNull();
+    expect(changed.earlier?.id).toBe(accepted.at(-1)!.id);
+    const checking = projectState(prism.proposals, "a0a0a0a0a0a0", {
+      status: "none",
+      genes: [],
+      still_current: false,
+      checking: true,
+    });
+    expect(checking.checking).toBe(true);
+    const flow = flowOf(
+      {
+        ...session,
+        study_id: "a0a0a0a0a0a0",
+        stages: session.stages.map((s) => (s.stage === "choices" ? { ...s, confirmed: true } : s)),
+      },
+      prism.proposals,
+      roundTrip.proposals,
+      { ...status, project: { status: "none", genes: [], still_current: false, checking: true } },
+    );
+    expect(flow.sendBlocked).toMatch(/Checking whether the project accepted earlier/);
+    expect(flow.steps[1]!.detail).toBe("Checking the earlier project");
+  });
+
+  it("matches the recorded status of the seeded session", () => {
+    const now = projectState(prism.proposals, session.study_id, status.project);
+    expect(now.stillCurrent).toBe(Boolean(status.project.still_current));
+    expect(now.accepted?.id ?? null).toBe(
+      status.project.status === "accepted" ? (status.project.proposal_id ?? null) : null,
+    );
   });
 });
 

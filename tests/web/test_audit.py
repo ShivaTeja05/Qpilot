@@ -565,7 +565,9 @@ def test_before_a_run_the_check_says_what_it_would_cover(seeded, tmp_path):
         body = client.get(f"/api/studies/{study}/audit").json()
         assert body["status"] == "none" and body["checking"] is None
         assert body["check"]["applicable"] is True and body["check"]["reason"] is None
-        assert body["check"]["scope"] == manifest["scope"]
+        scope = dict(body["check"]["scope"])
+        assert scope.pop("technical_replicates") is None  # one well per unit and gene
+        assert scope == manifest["scope"]
     _close(ctx)
 
 

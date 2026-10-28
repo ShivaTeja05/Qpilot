@@ -541,7 +541,20 @@ def symbol_check(target_name: str, symbol: str) -> ProposalCheck:
             "contradicted",
             "D-SYMBOL",
             details,
-            "the target is a repeat or spike-in assay, which has no gene symbol",
+            getattr(named, "note", "")
+            or "the target is a repeat or spike-in assay, which has no gene symbol",
+        )
+    # Not circular: a name that is an alias, matches only ignoring case, or fits several genes
+    # does not name the proposed gene by itself, so the lookup that made the proposal cannot
+    # also confirm it (``SymbolFinding.identifies``, io/symbols.py; absent in older builds).
+    if symbol != target_name and getattr(named, "identifies", None) is False:
+        listed = ", ".join(named.candidates[:5]) or "no gene"
+        return _check(
+            "cannot_check",
+            "D-SYMBOL",
+            details,
+            "the target's name is an alias, or matches only when letter case is ignored; HGNC "
+            f"lists it for {listed}; confirm the gene",
         )
     if named.candidates and symbol not in named.candidates:
         return _check(
@@ -801,7 +814,10 @@ def hard_ban(proposal: Proposal, current: list[Proposal]) -> str | None:
     (b) A ``design.bio_unit`` proposal may not move a sample out of a biological unit a person
     confirmed (an accepted proposal, or the sheet's explicit unit column): that merges or
     splits confirmed units. When the input and its sheet are not known in this process, unit
-    proposals are refused (fail closed) until they are.
+    proposals are refused (fail closed) until they are. The one exception is a person's own
+    change on the Design page (``made_by.kind == "person"``, which only ``actor="human"`` can
+    propose): a person may correct a unit they or their sheet set, with a reason; no rule,
+    model or agent ever can.
 
     A ``design.dilution_series`` must list its samples as an object of sample to quantity; any
     other shape is refused, so no member can slip past (a).
@@ -860,7 +876,7 @@ def hard_ban(proposal: Proposal, current: list[Proposal]) -> str | None:
             return "refused: a dilution series may not include a declared or confirmed control"
     if kind in ("design.group", "design.bio_unit") and is_control(proposal.subject):
         return "refused: a control cannot join a biological group or unit"
-    if kind == "design.bio_unit":
+    if kind == "design.bio_unit" and proposal.made_by.kind != "person":
         unit = payload.get("biological_unit")
         confirmed = dict(declared.sheet_units) if declared else {}
         for p in accepted:
@@ -976,6 +992,16 @@ def check_with_facts(
         if proposal.subject not in known:
             return _check("contradicted", "D-COVER", {}, "no target in the file has this name")
         original = facts.quarantined(facts.target_text_ids[proposal.subject]) or proposal.subject
+        if design_rules.is_placeholder_name(original) or design_rules.is_placeholder_name(
+            proposal.subject
+        ):
+            return _check(
+                "cannot_check",
+                "D-SYMBOL",
+                {"placeholder": True},
+                "the target's name is a placeholder (a role, a control or a dye), not a gene "
+                "name, so no gene symbol can be checked against it",
+            )
         return symbol_check(original, str(payload.get("symbol", "")))
     if kind == "design.comparison":
         groups, units = _groups_and_units(accepted)
@@ -1159,11 +1185,15 @@ def _sample_roles(facts: FileFacts, accepted: list[Proposal]) -> dict[str, str]:
 def _groups_and_units(accepted: list[Proposal]) -> tuple[dict[str, str], dict[str, str]]:
     groups: dict[str, str] = {}
     units: dict[str, str] = {}
-    for p in accepted:
-        if p.kind == "design.group":
-            groups[p.subject] = str(p.effective_payload().get("group"))
-        elif p.kind == "design.bio_unit":
-            units[p.subject] = str(p.effective_payload().get("biological_unit"))
+    for p in accepted:  # a later decision on the same sample wins; None takes the value away
+        if p.kind not in ("design.group", "design.bio_unit"):
+            continue
+        into, key = (groups, "group") if p.kind == "design.group" else (units, "biological_unit")
+        value = p.effective_payload().get(key)
+        if value is None:
+            into.pop(p.subject, None)
+        else:
+            into[p.subject] = str(value)
     return groups, units
 
 

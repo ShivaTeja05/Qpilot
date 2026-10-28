@@ -410,6 +410,30 @@ def launch_command(
     raise PrismExportError(f"platform must be 'windows' or 'macos', not {platform!r}")
 
 
+def open_command(
+    project: str,
+    platform: Platform | None = None,
+    *,
+    prism_exe: str = DEFAULT_PRISM_EXE,
+    app: str = DEFAULT_MAC_APP,
+) -> LaunchCommand:
+    """How to open a project file in Prism (returned, never run here; no script involved).
+
+    Windows: ``"<prism.exe>" "<project.pzfx>"`` (Prism opens a project named on its command
+    line). macOS: ``open -a <Prism> <project.pzfx>`` (no shell; ``argv``). Double-clicking the
+    file does the same on both, which is what a person is told.
+    """
+    platform = platform or host_platform()
+    if not project or any(ch == '"' or ord(ch) < 32 for ch in project):
+        raise PrismExportError("the project path contains a quote or a control character")
+    if platform == "windows":
+        return LaunchCommand(platform, f'"{prism_exe}" "{project}"')
+    if platform == "macos":
+        argv = ("open", "-a", app, project)
+        return LaunchCommand(platform, shlex.join(argv), argv)
+    raise PrismExportError(f"platform must be 'windows' or 'macos', not {platform!r}")
+
+
 __all__ = [
     "DONE_FILE",
     "RUN_SCRIPT",
@@ -422,6 +446,7 @@ __all__ = [
     "host_platform",
     "join",
     "launch_command",
+    "open_command",
     "project_name",
     "run_script",
     "send_back_script",

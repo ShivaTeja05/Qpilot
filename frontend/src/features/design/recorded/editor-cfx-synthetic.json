@@ -1,0 +1,609 @@
+{
+  "head": "3b5013bfe3ddc3b7e8af8d6d310d2e22ec2eac4154a73badf04392f74297e957",
+  "samples": [
+    {
+      "sample": "S1",
+      "text_id": "t_d587e19fa945",
+      "declared_type": "unkn",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/A1",
+        "qpilot-synthetic-raw/A2",
+        "qpilot-synthetic-raw/A3",
+        "qpilot-synthetic-raw/A7",
+        "qpilot-synthetic-raw/A8",
+        "qpilot-synthetic-raw/A9"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "unkn",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.group"
+      ]
+    },
+    {
+      "sample": "S2",
+      "text_id": "t_5058e68dd94f",
+      "declared_type": "unkn",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/A4",
+        "qpilot-synthetic-raw/A5",
+        "qpilot-synthetic-raw/A6",
+        "qpilot-synthetic-raw/A10",
+        "qpilot-synthetic-raw/A11",
+        "qpilot-synthetic-raw/A12"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "unkn",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.group"
+      ]
+    },
+    {
+      "sample": "S3",
+      "text_id": "t_8eede428a76e",
+      "declared_type": "unkn",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/B1",
+        "qpilot-synthetic-raw/B2",
+        "qpilot-synthetic-raw/B3",
+        "qpilot-synthetic-raw/B7",
+        "qpilot-synthetic-raw/B8",
+        "qpilot-synthetic-raw/B9"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "unkn",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.group"
+      ]
+    },
+    {
+      "sample": "S4",
+      "text_id": "t_92a2f68159b8",
+      "declared_type": "unkn",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/B4",
+        "qpilot-synthetic-raw/B5",
+        "qpilot-synthetic-raw/B6",
+        "qpilot-synthetic-raw/B10",
+        "qpilot-synthetic-raw/B11",
+        "qpilot-synthetic-raw/B12"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "unkn",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.group"
+      ]
+    },
+    {
+      "sample": "S5",
+      "text_id": "t_505d61dea0f5",
+      "declared_type": "unkn",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/C1",
+        "qpilot-synthetic-raw/C2",
+        "qpilot-synthetic-raw/C3",
+        "qpilot-synthetic-raw/C7",
+        "qpilot-synthetic-raw/C8",
+        "qpilot-synthetic-raw/C9"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "unkn",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.group"
+      ]
+    },
+    {
+      "sample": "S6",
+      "text_id": "t_01eef938dda4",
+      "declared_type": "unkn",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/C4",
+        "qpilot-synthetic-raw/C5",
+        "qpilot-synthetic-raw/C6",
+        "qpilot-synthetic-raw/C10",
+        "qpilot-synthetic-raw/C11",
+        "qpilot-synthetic-raw/C12"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "unkn",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.group"
+      ]
+    },
+    {
+      "sample": "S7",
+      "text_id": "t_348fd577251b",
+      "declared_type": "unkn",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/D1",
+        "qpilot-synthetic-raw/D2",
+        "qpilot-synthetic-raw/D3",
+        "qpilot-synthetic-raw/D7",
+        "qpilot-synthetic-raw/D8",
+        "qpilot-synthetic-raw/D9"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "unkn",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.group"
+      ]
+    },
+    {
+      "sample": "S8",
+      "text_id": "t_b323763b4f1c",
+      "declared_type": "unkn",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/D4",
+        "qpilot-synthetic-raw/D5",
+        "qpilot-synthetic-raw/D6",
+        "qpilot-synthetic-raw/D10",
+        "qpilot-synthetic-raw/D11",
+        "qpilot-synthetic-raw/D12"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "unkn",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.group"
+      ]
+    },
+    {
+      "sample": "Std1",
+      "text_id": "t_9d109c916d62",
+      "declared_type": "std",
+      "n_wells": 4,
+      "wells": [
+        "qpilot-synthetic-raw/E1",
+        "qpilot-synthetic-raw/E7",
+        "qpilot-synthetic-raw/F1",
+        "qpilot-synthetic-raw/F7"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "std",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.dilution_series",
+        "design.well_role"
+      ]
+    },
+    {
+      "sample": "Std2",
+      "text_id": "t_65d5d44c2a27",
+      "declared_type": "std",
+      "n_wells": 4,
+      "wells": [
+        "qpilot-synthetic-raw/E2",
+        "qpilot-synthetic-raw/E8",
+        "qpilot-synthetic-raw/F2",
+        "qpilot-synthetic-raw/F8"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "std",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.dilution_series",
+        "design.well_role"
+      ]
+    },
+    {
+      "sample": "Std3",
+      "text_id": "t_3bcac95e8f34",
+      "declared_type": "std",
+      "n_wells": 4,
+      "wells": [
+        "qpilot-synthetic-raw/E3",
+        "qpilot-synthetic-raw/E9",
+        "qpilot-synthetic-raw/F3",
+        "qpilot-synthetic-raw/F9"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "std",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.dilution_series",
+        "design.well_role"
+      ]
+    },
+    {
+      "sample": "Std4",
+      "text_id": "t_36192c48984f",
+      "declared_type": "std",
+      "n_wells": 4,
+      "wells": [
+        "qpilot-synthetic-raw/E4",
+        "qpilot-synthetic-raw/E10",
+        "qpilot-synthetic-raw/F4",
+        "qpilot-synthetic-raw/F10"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "std",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.dilution_series",
+        "design.well_role"
+      ]
+    },
+    {
+      "sample": "Std5",
+      "text_id": "t_f36850479851",
+      "declared_type": "std",
+      "n_wells": 4,
+      "wells": [
+        "qpilot-synthetic-raw/E5",
+        "qpilot-synthetic-raw/E11",
+        "qpilot-synthetic-raw/F5",
+        "qpilot-synthetic-raw/F11"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "std",
+      "quantity": null,
+      "series": null,
+      "locked": null,
+      "waiting": [
+        "design.dilution_series",
+        "design.well_role"
+      ]
+    },
+    {
+      "sample": "NTC",
+      "text_id": "t_cf9a1458e03b",
+      "declared_type": "ntc",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/G1",
+        "qpilot-synthetic-raw/G2",
+        "qpilot-synthetic-raw/G3",
+        "qpilot-synthetic-raw/G7",
+        "qpilot-synthetic-raw/G8",
+        "qpilot-synthetic-raw/G9"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "ntc",
+      "quantity": null,
+      "series": null,
+      "locked": "a control (no template, no RT or no amplification) in the file or by a decision; a control keeps its type and joins no group",
+      "waiting": [
+        "design.well_role"
+      ]
+    },
+    {
+      "sample": "NRT",
+      "text_id": "t_2fc3aeb193cf",
+      "declared_type": "nrt",
+      "n_wells": 6,
+      "wells": [
+        "qpilot-synthetic-raw/G4",
+        "qpilot-synthetic-raw/G5",
+        "qpilot-synthetic-raw/G6",
+        "qpilot-synthetic-raw/G10",
+        "qpilot-synthetic-raw/G11",
+        "qpilot-synthetic-raw/G12"
+      ],
+      "targets": [
+        "GOI",
+        "REF"
+      ],
+      "experiments": [
+        "qpilot_import"
+      ],
+      "role": "nrt",
+      "quantity": null,
+      "series": null,
+      "locked": "a control (no template, no RT or no amplification) in the file or by a decision; a control keeps its type and joins no group",
+      "waiting": [
+        "design.well_role"
+      ]
+    }
+  ],
+  "membership": [
+    {
+      "sample": "S1",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "S2",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "S3",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "S4",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "S5",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "S6",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "S7",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "S8",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "Std1",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "Std2",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "Std3",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "Std4",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "Std5",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "NTC",
+      "group": null,
+      "unit": null
+    },
+    {
+      "sample": "NRT",
+      "group": null,
+      "unit": null
+    }
+  ],
+  "targets": [
+    {
+      "target": "REF",
+      "text_id": "t_9256df045475",
+      "declared_type": "toi",
+      "n_wells": 40,
+      "runs": [
+        "qpilot-synthetic-raw"
+      ],
+      "role": null,
+      "waiting": []
+    },
+    {
+      "target": "GOI",
+      "text_id": "t_678bd5d75922",
+      "declared_type": "toi",
+      "n_wells": 40,
+      "runs": [
+        "qpilot-synthetic-raw"
+      ],
+      "role": null,
+      "waiting": []
+    }
+  ],
+  "groups": {},
+  "units": {},
+  "comparison": null,
+  "preset": null,
+  "experiments": [
+    "qpilot_import"
+  ],
+  "needs": [
+    {
+      "code": "reference",
+      "words": "No reference gene yet: mark at least one target as a reference gene (housekeeping gene)",
+      "where": "targets"
+    },
+    {
+      "code": "groups",
+      "words": "Fewer than two groups: put the study samples in their groups (select wells or samples, or paste a sample-to-group list)",
+      "where": "samples"
+    },
+    {
+      "code": "waiting",
+      "words": "16 proposals still wait for a decision: decide them in the inbox, or set the item yourself (your choice settles a waiting proposal on the same item)",
+      "where": "inbox"
+    }
+  ],
+  "waiting": 16,
+  "confirmed": false,
+  "sample_types": [
+    {
+      "value": "unkn",
+      "label": "Study sample",
+      "hint": "measured and compared; it can join a group"
+    },
+    {
+      "value": "std",
+      "label": "Standard",
+      "hint": "a known quantity (copies or a relative dilution) on a standard curve"
+    },
+    {
+      "value": "ntc",
+      "label": "No-template control (NTC)",
+      "hint": "water instead of template; should not amplify"
+    },
+    {
+      "value": "nrt",
+      "label": "No-RT control",
+      "hint": "RNA without reverse transcription; checks for genomic DNA"
+    },
+    {
+      "value": "nac",
+      "label": "No-amplification control",
+      "hint": "no polymerase or no primers; should not amplify"
+    },
+    {
+      "value": "pos",
+      "label": "Positive control",
+      "hint": "a sample known to carry the target"
+    },
+    {
+      "value": "ntp",
+      "label": "No-target-present control",
+      "hint": "a real sample known to lack the target"
+    },
+    {
+      "value": "opt",
+      "label": "Calibrator",
+      "hint": "a calibrator measured on the plate (inter-run or optical); kept out of the groups, and qPilot does not correct between plates with it"
+    }
+  ],
+  "target_roles": [
+    {
+      "value": "ref",
+      "label": "Reference gene",
+      "hint": "the other genes are normalised to it (housekeeping gene)"
+    },
+    {
+      "value": "toi",
+      "label": "Gene of interest",
+      "hint": "compared between the groups"
+    },
+    {
+      "value": "ignore",
+      "label": "Leave out",
+      "hint": "not part of this study: none of its wells is used"
+    }
+  ],
+  "has_sheet": true,
+  "sheet_name": "groups.csv",
+  "template_url": "/api/sessions/bd275bf6e009/design/template.csv"
+}

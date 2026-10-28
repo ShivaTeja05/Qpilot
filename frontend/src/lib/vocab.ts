@@ -338,15 +338,22 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     const role = str(d.role);
     return `Treat sample ${s} as ${ROLE_WORDS[role] ?? `role “${role}”`}`;
   },
-  "design.group": (s, d) => `Put sample ${s} in group “${str(d.group)}”`,
+  "design.group": (s, d) =>
+    d.group == null
+      ? `Take sample ${s} out of every group (it is not compared)`
+      : `Put sample ${s} in group “${str(d.group)}”`,
   "design.bio_unit": (s, d) =>
-    `Sample ${s} belongs to biological unit “${str(d.biological_unit)}”: its wells are technical replicates of that unit and are never counted as separate n`,
+    d.biological_unit == null
+      ? `Sample ${s} is its own biological unit (its wells are technical replicates)`
+      : `Sample ${s} belongs to biological unit “${str(d.biological_unit)}”: its wells are technical replicates of that unit and are never counted as separate n`,
   "design.target_role": (s, d) =>
     d.role === "ref"
       ? `Use target ${s} as a reference gene (other genes are normalised to it)`
       : d.role === "toi"
         ? `Treat target ${s} as a gene of interest`
-        : `Give target ${s} the role “${str(d.role)}”`,
+        : d.role === "ignore"
+          ? `Leave target ${s} out of the study (none of its wells is used)`
+          : `Give target ${s} the role “${str(d.role)}”`,
   "design.gene_symbol": (s, d) => `Target ${s} is the gene with the HGNC symbol ${str(d.symbol)}`,
   "design.comparison": (_s, d) => comparisonWords(d),
   "design.pair": (s, d) =>
@@ -475,6 +482,8 @@ export const CURVE_JUDGE = "qpilot-curve-judge";
 export function makerText(m: Schemas["MadeBy"]): string {
   if (m.kind === "rule") return "Made by a fixed rule in qPilot (no model).";
   if (m.kind === "agent") return `Proposed by an agent over MCP (${m.agent || "unnamed"}).`;
+  if (m.kind === "person")
+    return "Set by a person on the Design page (and accepted in the same act).";
   if (m.provider === CURVE_JUDGE)
     return `Made by the Curve Judge, a local curve classifier (model ${m.model ?? "?"}); it reads only the curve's fluorescence values.`;
   return `Made by the model ${m.provider || "?"} · ${m.model || "?"}${m.prompt_sha256 ? ` · prompt sha256 ${m.prompt_sha256.slice(0, 12)}` : ""}.`;
