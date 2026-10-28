@@ -12,6 +12,7 @@ import {
   CardBody,
   CardHeader,
   ConclusionTag,
+  SegmentedControl,
   Select,
   Table,
   TBody,
@@ -19,9 +20,6 @@ import {
   TH,
   THead,
   TR,
-  Tabs,
-  TabsList,
-  TabsTrigger,
 } from "@/ui";
 import type { ComparisonCell, ComparisonTab, ComparisonsView } from "./api";
 
@@ -64,16 +62,27 @@ export function ComparisonPicker({
         />
       </div>
     );
+  // A choice of what the page below shows, not tabs of panels: one radio group (tabs would
+  // point at panels that do not exist, axe aria-valid-attr-value).
   return (
-    <Tabs value={value} onValueChange={onChange}>
-      <TabsList label="Comparison shown">
-        {tabs.map((t) => (
-          <TabsTrigger key={t.id} value={t.id} count={t.n_up + t.n_down}>
+    <SegmentedControl
+      label="Comparison shown"
+      value={value}
+      onValueChange={onChange}
+      className="max-w-full flex-wrap"
+      options={tabs.map((t) => ({
+        value: t.id,
+        label: (
+          <>
             {t.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </Tabs>
+            <span className="rounded-full bg-bg-subtle px-1.5 text-xs text-muted tabular">
+              {count(t.n_up + t.n_down)}
+            </span>
+          </>
+        ),
+        title: `${t.label}: ${callWords(t)}`,
+      }))}
+    />
   );
 }
 
@@ -134,7 +143,12 @@ export function ComparisonsPanel({
         hint={`Each gene in every comparison, tested with ${view.test_words}, with ${view.correction_words}.${paired} A call: ${view.rule_text}.`}
       />
       <CardBody className="space-y-3">
-        <div className="overflow-x-auto">
+        <div
+          className="overflow-x-auto"
+          tabIndex={0}
+          role="region"
+          aria-label="Every gene across every comparison"
+        >
           <Table caption="Every gene across every comparison: call, fold change, corrected p-value and q-value">
             <THead>
               <TR>

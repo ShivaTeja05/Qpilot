@@ -51,7 +51,12 @@ export function ReferenceComparisonView({ view }: { view: ReferencesView }) {
       </div>
       <p className="text-fg">{view.words}</p>
       {view.rows.length ? (
-        <div className="overflow-x-auto rounded-lg border border-line">
+        <div
+          className="overflow-x-auto rounded-lg border border-line"
+          tabIndex={0}
+          role="region"
+          aria-label="geNorm and NormFinder, gene by gene"
+        >
           <Table caption="Each candidate reference gene under geNorm and NormFinder (lower is steadier)">
             <THead>
               <TR>

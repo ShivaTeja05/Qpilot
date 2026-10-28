@@ -139,7 +139,12 @@ function UnitsTable({
           ]}
         />
       </div>
-      <div className="max-h-[420px] overflow-auto rounded-lg border border-line">
+      <div
+        className="max-h-[420px] overflow-auto rounded-lg border border-line"
+        tabIndex={0}
+        role="region"
+        aria-label={`Each biological unit, per reaction (${unitWords(unit)})`}
+      >
         <Table>
           <THead>
             <TR>

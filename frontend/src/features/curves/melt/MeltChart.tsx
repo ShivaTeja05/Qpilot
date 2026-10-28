@@ -227,7 +227,12 @@ function MeltTable({
 }) {
   if (!series.length) return <p className="text-[13px] text-muted">No melt curve to show.</p>;
   return (
-    <div className="max-h-[420px] overflow-auto rounded-lg border border-line">
+    <div
+      className="max-h-[420px] overflow-auto rounded-lg border border-line"
+      tabIndex={0}
+      role="region"
+      aria-label={`${label}: −dF/dT by temperature`}
+    >
       <Table caption={`${label}: −dF/dT by temperature`}>
         <THead>
           <TR>

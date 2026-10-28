@@ -16,7 +16,12 @@ export function CurveTable({
   const { x, ys } = useMemo(() => align(series, "linear"), [series]);
   if (!series.length) return <p className="text-[13px] text-muted">No curve to show.</p>;
   return (
-    <div className="max-h-[420px] overflow-auto rounded-lg border border-line">
+    <div
+      className="max-h-[420px] overflow-auto rounded-lg border border-line"
+      tabIndex={0}
+      role="region"
+      aria-label={`${label}: fluorescence by cycle`}
+    >
       <Table caption={`${label}: fluorescence by cycle`}>
         <THead>
           <TR>
