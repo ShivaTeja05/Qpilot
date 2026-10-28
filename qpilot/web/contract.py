@@ -32,6 +32,7 @@ from qpilot.schemas_studio import (
     WellCall,
 )
 from qpilot.web.contract_capture import CaptureSummary
+from qpilot.web.contract_compare import CardComparison
 
 # ---- errors and jobs -----------------------------------------------------------------------
 
@@ -868,6 +869,14 @@ class OptionEffect(BaseModel):
     changes_call: bool = Field(description="A different call than the recommended option's.")
 
 
+class OptionComparisonEffects(BaseModel):
+    """One option's consequences in another comparison of a study with several."""
+
+    comparison: str
+    label: str
+    effects: list[OptionEffect]
+
+
 class CardOptionView(BaseModel):
     """One option of a Decision Card."""
 
@@ -878,6 +887,11 @@ class CardOptionView(BaseModel):
     requested: bool = Field(description="An agent asked for this option; it waits for a person.")
     not_recommended: bool = Field(description="E.g. a single control gene (MIQE).")
     effects: list[OptionEffect]
+    by_comparison: list[OptionComparisonEffects] = Field(
+        default=[],
+        description="A study with several comparisons: this option's consequences in each other "
+        "comparison (the first comparison's are `effects`).",
+    )
 
 
 class PendingRequest(BaseModel):
@@ -925,6 +939,14 @@ class CardView(BaseModel):
     )
     place: CardPlace | None = Field(
         default=None, description="A card opened from Trace: the place it is about."
+    )
+    comparisons: list[CardComparison] = Field(
+        default=[],
+        description="A study with several comparisons: what this choice does in each one.",
+    )
+    study_wide: str | None = Field(
+        default=None,
+        description="A study with several comparisons: that deciding applies to every one.",
     )
 
 

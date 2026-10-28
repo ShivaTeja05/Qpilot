@@ -6,7 +6,10 @@ group (sample ``<group>_<donor>``, e.g. ``DrugA_D2``), in triplicate. Targets: `
 Drug B only) and ``TP53`` (no change). Each donor shifts every gene of its samples by the same
 amount (the cDNA input, which the control genes remove) and every target gene by a donor's own
 biology (a donor effect only a paired test removes). With ``missing_well`` the sample
-``DrugB_D4`` has no ``TP53`` well at all (a unit not measured for one gene).
+``DrugB_D4`` has no ``TP53`` well at all (a unit not measured for one gene). With
+``ref_shift`` a control gene comes up later in one group (``{("ACTB", "Drug B"): 2.5}``: the
+drug lowers ACTB), so which control genes normalise changes calls in that group's comparison
+only.
 
 Curves are model curves (exponential growth to a plateau, efficiency 1.9) with a little baseline
 noise from a fixed seed, so the file is identical on every run.
@@ -68,7 +71,12 @@ def _curve(rng: np.random.Generator, crossing: float) -> list[float]:
     return list(base + 1.0 / (1.0 / (n0 * EFFICIENCY**cycles) + 1.0 / PLATEAU))
 
 
-def write_compare_mini(path: str | Path, *, missing_well: bool = False) -> Path:
+def write_compare_mini(
+    path: str | Path,
+    *,
+    missing_well: bool = False,
+    ref_shift: dict[tuple[str, str], float] | None = None,
+) -> Path:
     """Write the synthetic three-group RDML file to ``path`` and return the path."""
     rng = np.random.default_rng(11)
     parts = ['<rdml xmlns:rdml="http://www.rdml.org" xmlns="http://www.rdml.org" version="1.4">']
@@ -94,6 +102,7 @@ def write_compare_mini(path: str | Path, *, missing_well: bool = False) -> Path:
                 react += 3
                 continue
             cq = BASE_CQ[target] + DONOR_SHIFT[donor] - EFFECT.get((target, group), 0.0)
+            cq += (ref_shift or {}).get((target, group), 0.0)
             if target not in ("GAPDH", "ACTB"):
                 cq += WOBBLE[(group, donor)] + DONOR_BIOLOGY[donor]
             for rep in range(3):

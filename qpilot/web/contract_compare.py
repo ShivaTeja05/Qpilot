@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from qpilot.schemas import Conclusion
 
 __all__ = [
+    "CardComparison",
     "ComparisonCell",
     "ComparisonGeneRow",
     "ComparisonInfo",
@@ -111,4 +112,18 @@ class ComparisonsView(BaseModel):
     omnibus_groups: list[str] = Field(
         default=[],
         description="The groups of the per-gene Welch ANOVA (three or more, unpaired designs).",
+    )
+
+
+class CardComparison(BaseModel):
+    """What one Decision Card's choice does in one comparison of a study with several."""
+
+    id: str
+    label: str
+    primary: bool
+    flips: bool = Field(description="A call of this comparison changes with this choice alone.")
+    n_flipped: int = Field(description="How many of its calls change with this choice alone.")
+    genes: list[str] = Field(description="The genes whose call changes (this choice alone).")
+    flips_elsewhere: bool = Field(
+        description="It changes no call here at the planned settings, but does at other ones."
     )

@@ -5163,6 +5163,38 @@ export type components = {
             warnings: components["schemas"]["CaptureNote"][];
         };
         /**
+         * CardComparison
+         * @description What one Decision Card's choice does in one comparison of a study with several.
+         */
+        CardComparison: {
+            /**
+             * Flips
+             * @description A call of this comparison changes with this choice alone.
+             */
+            flips: boolean;
+            /**
+             * Flips Elsewhere
+             * @description It changes no call here at the planned settings, but does at other ones.
+             */
+            flips_elsewhere: boolean;
+            /**
+             * Genes
+             * @description The genes whose call changes (this choice alone).
+             */
+            genes: string[];
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * N Flipped
+             * @description How many of its calls change with this choice alone.
+             */
+            n_flipped: number;
+            /** Primary */
+            primary: boolean;
+        };
+        /**
          * CardOption
          * @description One option on a Decision Card and its consequence for each headline gene.
          */
@@ -5181,6 +5213,12 @@ export type components = {
          * @description One option of a Decision Card.
          */
         CardOptionView: {
+            /**
+             * By Comparison
+             * @description A study with several comparisons: this option's consequences in each other comparison (the first comparison's are `effects`).
+             * @default []
+             */
+            by_comparison: components["schemas"]["OptionComparisonEffects"][];
             /** Chosen */
             chosen: boolean;
             /** Effects */
@@ -5251,6 +5289,12 @@ export type components = {
             card: components["schemas"]["DecisionCard"];
             /** @description The decision in force was carried from an earlier analysis. */
             carried?: components["schemas"]["CarriedFrom"] | null;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: what this choice does in each one.
+             * @default []
+             */
+            comparisons: components["schemas"]["CardComparison"][];
             explanation: components["schemas"]["FactText"];
             /**
              * Genes
@@ -5271,6 +5315,11 @@ export type components = {
             place?: components["schemas"]["CardPlace"] | null;
             /** Status Line */
             status_line: string;
+            /**
+             * Study Wide
+             * @description A study with several comparisons: that deciding applies to every one.
+             */
+            study_wide?: string | null;
             /** Title */
             title: string;
             /** Undo Label */
@@ -6064,7 +6113,7 @@ export type components = {
              * Correction
              * @enum {string}
              */
-            correction: "holm" | "none";
+            correction: "holm" | "none" | "dunnett" | "tukey";
             /** Correction Words */
             correction_words: string;
             /** Genes */
@@ -6108,7 +6157,7 @@ export type components = {
              * Test
              * @enum {string}
              */
-            test: "welch" | "paired_t";
+            test: "welch" | "paired_t" | "pooled_t";
             /** Test Words */
             test_words: string;
         };
@@ -9781,6 +9830,18 @@ export type components = {
             kind: string;
             /** Rank */
             rank: number;
+        };
+        /**
+         * OptionComparisonEffects
+         * @description One option's consequences in another comparison of a study with several.
+         */
+        OptionComparisonEffects: {
+            /** Comparison */
+            comparison: string;
+            /** Effects */
+            effects: components["schemas"]["OptionEffect"][];
+            /** Label */
+            label: string;
         };
         /**
          * OptionEffect

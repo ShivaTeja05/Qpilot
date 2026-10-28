@@ -53,7 +53,7 @@ import pandas as pd
 
 from qpilot.core import robustness
 from qpilot.core.confidence import Cap, grade
-from qpilot.core.decisions import CardSpec, OptionSpec, build_cards, card_impact
+from qpilot.core.decisions import CardSpec, OptionSpec, View, build_cards, card_impact
 from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import atomic_write, dump_json
 from qpilot.io.trust import cap_for, not_measured
@@ -706,12 +706,23 @@ def study_from_curves(
         primary = (base.contrasts, summary, confidence)
         outcomes = _comparison_outcomes(space, every, base, primary, settings, cap)
     headline = [gene for gene in settings.headline if gene in space.items]
-    specs = _card_specs(space, stability, summary, settings, headline, counts)
+    views = _card_views(space, outcomes, grid)
+    others = [view.summary for view in views.values()]
+    specs = _card_specs(space, stability, summary, settings, headline, counts, others)
     if "amp_call" in space.dimensions:
         specs.append(_amp_call_spec(space, grid, summary, headline, inputs.not_amplified))
     if "efficiency" in space.dimensions:
         specs.append(_efficiency_spec(space, grid, summary, headline, model.axis_notes))
-    cards = build_cards(space, summary, specs, headline, settings.autonomy, grid=grid)
+    cards = build_cards(
+        space,
+        summary,
+        specs,
+        headline,
+        settings.autonomy,
+        grid=grid,
+        views=views,
+        primary_view=space.comparisons[0].id if space.comparisons else "primary",
+    )
     ref_flips = refset_flip_counts(grid, space, summary)
     ref_effect = group_effect(matrix, settings.candidates, high, rest)
     cards = [_refset_extras(card, ref_flips, ref_effect) for card in cards]
@@ -741,6 +752,7 @@ def study_from_curves(
         screens=model.screens,
         not_measured=_not_measured_words(inputs.not_measured, settings.candidates),
         comparisons=outcomes,
+        dimensions=tuple(space.dimensions),
     )
     facts = _facts(base, confidence, cards, space, settings, headline, counts, extras)
     update: dict[str, Any] = {"confidence": confidence, "facts": facts.as_dict()}
@@ -748,6 +760,27 @@ def study_from_curves(
         update["comparisons"] = outcomes
     result = base.model_copy(update=update)
     return result, cards, grid
+
+
+def _card_views(
+    space: QpcrSpace, outcomes: ComparisonsResult | None, grid: pd.DataFrame
+) -> dict[str, View]:
+    """The study's other comparisons as views of the cards (none without several).
+
+    A card's choice applies to the whole study, so it is a person's whenever it changes a call
+    in any comparison, not only in the first.
+    """
+    if outcomes is None or len(outcomes.comparisons) < 2:
+        return {}
+    every = grid.attrs[COMPARISON_GRID_ATTR]
+    return {
+        o.id: View(
+            summary=dict(o.robustness),
+            grid=every[every["comparison"] == o.id],
+            space=space.comparison_view(o.id),
+        )
+        for o in outcomes.comparisons[1:]
+    }
 
 
 def _comparison_outcomes(
@@ -1084,10 +1117,12 @@ def _card_specs(
     settings: StudySettings,
     headline: Sequence[str],
     counts: dict[str, int],
+    others: Sequence[dict[str, GeneRobustness]] = (),
 ) -> list[CardSpec]:
     """The cards the qPCR plugin asks the core to build (the core adds impact and rank).
 
-    The cut-off card exists only when the groups are defined from the data.
+    The cut-off card exists only when the groups are defined from the data. ``others`` are
+    the robustness summaries of the study's other comparisons (a flip there counts too).
     """
 
     def option_facts(contexts: list[str]) -> list[str]:
@@ -1105,7 +1140,9 @@ def _card_specs(
     refset_facts += option_facts([ctx for _, ctx in ref_options])
 
     cut_ids = [f"cut_{_pct(cut)}" for cut in settings.cuts]
-    undetermined_flips = card_impact(summary, "undetermined")["flips"]
+    undetermined_flips = any(
+        card_impact(s, "undetermined")["flips"] for s in (summary, *others) if s
+    )
     specs = [
         CardSpec(
             card_id="card_refset",
@@ -1285,6 +1322,11 @@ class _Extras:
     screens: Mapping[str, robustness.AxisScreen] = field(default_factory=dict)
     not_measured: Mapping[str, str] = field(default_factory=dict)
     comparisons: ComparisonsResult | None = None
+    dimensions: tuple[str, ...] = ()
+
+
+#: A grid dimension's name in the flip-count fact ids (``f_n_flipped_refset``, ...).
+FLIP_SUFFIX = {"refs": "refset", "cut": "cutoff"}
 
 
 def _facts(
@@ -1421,6 +1463,11 @@ def _comparison_facts(add: Callable[..., None], extras: _Extras) -> None:
         calls = [c.conclusion for c in outcome.contrasts.values()]
         add(f"f_cmp{i}_n_up", calls.count("up"), path=f"{root}.contrasts")
         add(f"f_cmp{i}_n_down", calls.count("down"), path=f"{root}.contrasts")
+        add(f"f_cmp{i}_n_tested", len(outcome.contrasts), path=f"{root}.contrasts")
+        for dim in extras.dimensions:
+            flipped = robustness.flipped_by(outcome.robustness, dim)
+            fid = f"f_cmp{i}_n_flipped_{FLIP_SUFFIX.get(dim, slug(dim))}"
+            add(fid, len(flipped), path=f"{root}.robustness")
         for gene, contrast in outcome.contrasts.items():
             s, path = slug(gene), f"{root}.contrasts.{gene}"
             add(f"f_cmp{i}_fc_{s}", contrast.fc, FC_FMT, TIMES, f"{path}.fc")

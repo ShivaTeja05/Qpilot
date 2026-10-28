@@ -34,6 +34,39 @@ FLIPPED_FACT = {
     "amp_call": "f_n_flipped_amp_call",
     "numbers.efficiency_model": "f_n_flipped_efficiency",
 }
+#: What a card with several comparisons says about deciding it (choices are the study's).
+STUDY_WIDE = (
+    "A choice on this card applies to the whole study: every comparison is analysed with the "
+    "option you pick."
+)
+
+
+def impact_tokens(card: DecisionCard, facts: Facts) -> str | None:
+    """The card's impact sentence as fact tokens (None: no fact-backed sentence fits).
+
+    With several comparisons it names each comparison whose calls the choice changes and how
+    many (``f_cmp<i>_n_flipped_<dimension>``); otherwise the study's flip count of the card.
+    """
+    flipped = FLIPPED_FACT.get(card.kind)
+    views = card.impact.get("views")
+    if views and flipped:
+        suffix = flipped.removeprefix("f_n_flipped_")
+        parts = []
+        for i, view in enumerate(views, start=1):
+            count, label = f"f_cmp{i}_n_flipped_{suffix}", f"f_cmp{i}_label"
+            if view.get("flips") and count in facts and label in facts:
+                parts.append("{{" + count + "}} in {{" + label + "}}")
+        if parts:
+            return "Calls that change with this choice: " + "; ".join(parts)
+        return None
+    if flipped in facts and "f_n_genes" in facts and card.impact.get("flips"):
+        tokens = "{{" + flipped + "}} of {{f_n_genes}} conclusions change with this choice"
+        if card.kind == "reference_set" and "f_n_flipped_refset_min3" in facts:
+            tokens += "; {{f_n_flipped_refset_min3}} even between sets of three or more genes"
+        return tokens
+    return None
+
+
 #: ``DesignSummary.note`` of a study whose groups come from a confirmed design (sample sheet or
 #: accepted proposals), as written by ``qpilot.qpcr.study``; such a study has no cut-off.
 GROUPS_NOTE = "groups from the confirmed design"
@@ -210,11 +243,8 @@ def card_view(
     except (KeyError, TemplateError):
         explanation_plain = KIND_TITLE.get(card.kind, card.kind)
         explanation_html = esc(explanation_plain)
-    flipped = FLIPPED_FACT.get(card.kind)
-    if flipped in facts and "f_n_genes" in facts and card.impact.get("flips"):
-        tokens = "{{" + flipped + "}} of {{f_n_genes}} conclusions change with this choice"
-        if card.kind == "reference_set" and "f_n_flipped_refset_min3" in facts:
-            tokens += "; {{f_n_flipped_refset_min3}} even between sets of three or more genes"
+    tokens = impact_tokens(card, facts)
+    if tokens is not None:
         impact = to_html(tokens, facts)
     elif card.impact.get("flips") and on_demand and card.impact.get("flipped_genes"):
         changed = ", ".join(esc(g) for g in card.impact["flipped_genes"])
