@@ -206,7 +206,7 @@ CORRECTION_WORDS = {
 TEST_NAMES = {
     "welch": "Welch's t test",
     "paired_t": "paired t test (within pairs)",
-    "pooled_t": "t test with the variance pooled over the groups",
+    "pooled_t": "pooled-variance t test (one variance over the groups)",
 }
 
 

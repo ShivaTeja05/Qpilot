@@ -1,16 +1,16 @@
 {
- "study_id": "d23a72c1164d",
+ "study_id": "7ade8b21e05c",
  "session": null,
- "head": "d181e79b2acd8fe89af4aec1106171eeab2bb6980a81b1d56ba6b34521ec90b3",
+ "head": "78dd8c13f19464ece5d045db7342f447474dee0e123f1e4d80a71f885ce103c7",
  "title": {
-  "plain": "Run Review of study d23a72c1164d: 5 plates, 12 samples, 180 reactions.",
+  "plain": "Run Review of study 7ade8b21e05c: 5 plates, 12 samples, 180 reactions.",
   "segments": [
    {
     "text": "Run Review of study ",
     "fact": null
    },
    {
-    "text": "d23a72c1164d",
+    "text": "7ade8b21e05c",
     "fact": "f_rr_study_id"
    },
    {
@@ -45,8 +45,8 @@
   "facts": [
    {
     "id": "f_rr_study_id",
-    "text": "d23a72c1164d",
-    "value": "d23a72c1164d",
+    "text": "7ade8b21e05c",
+    "value": "7ade8b21e05c",
     "unit": "",
     "path": "review.study_id"
    },
@@ -657,7 +657,7 @@
   }
  ],
  "evidence": {
-  "study_id": "d23a72c1164d",
+  "study_id": "7ade8b21e05c",
   "available": true,
   "source": "kept",
   "note": "",

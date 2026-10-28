@@ -1,7 +1,7 @@
 {
- "study_id": "d23a72c1164d",
+ "study_id": "7ade8b21e05c",
  "session": null,
- "input_sha256": "3598cdeeb626e40c9997d7a7b09fdc8f5270fd204cfadd831f1c7d9d0c491c25",
+ "input_sha256": "d208a444f75eb6ee76df8c20dc0545c1ccfc1b8dceb8b4b7c13114448635a59c",
  "summary": {
   "n_plates": 5,
   "n_reactions": 180,
@@ -292,7 +292,7 @@
  },
  "cards_waiting": 1,
  "pending_requests": 0,
- "head": "d181e79b2acd8fe89af4aec1106171eeab2bb6980a81b1d56ba6b34521ec90b3",
+ "head": "78dd8c13f19464ece5d045db7342f447474dee0e123f1e4d80a71f885ce103c7",
  "audit": {
   "status": "none",
   "verdict_counts": {},
