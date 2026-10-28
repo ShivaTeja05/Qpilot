@@ -46,7 +46,7 @@ describe("the Imported from card", () => {
     render(<ImportCard capture={gapdh} />);
     expect(screen.getByText(plateLine(plate))).toBeTruthy();
     expect(screen.getByRole("region", { name: /^Imported from/ }).textContent).toContain(
-      "Sample 96",
+      "Sample 96 wells",
     );
     expect(screen.getByText(/of 96 reactions \(kept for comparison/)).toBeTruthy();
   });

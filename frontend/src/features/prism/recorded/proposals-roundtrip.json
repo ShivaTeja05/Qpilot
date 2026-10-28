@@ -1,241 +1,897 @@
 {
-  "stage": "roundtrip",
-  "head": "bc831061772eb1ea0980471f59e03b57d340c03df7d300f3abbc46042b1459ea",
-  "proposals": [
+ "stage": "roundtrip",
+ "head": "e3a4a32cae50b894034ea7b167901c52076b07054eb043262ec9183401011f2c",
+ "proposals": [
+  {
+   "id": "p_c22136708f31ac9d",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.value_edit",
+   "subject": "NTRK1/827",
+   "payload": {
+    "action": "restore",
+    "gene": "NTRK1",
+    "question": "This value no longer matches the record. Restore qPilot's value for NTRK1, or record it as a manual edit?",
+    "sample": "827",
+    "well_rep": 0
+   },
+   "evidence": [
     {
-      "id": "p_c452ead2e8a390cd",
-      "study_id": "bc1d233e3866",
-      "kind": "prism.value_edit",
-      "subject": "BIRC5/111",
-      "payload": {
-        "action": "restore",
-        "gene": "BIRC5",
-        "question": "This value no longer matches the record. Restore qPilot's value for BIRC5, or record it as a manual edit?",
-        "sample": "111",
-        "well_rep": 0
-      },
-      "evidence": [
-        {
-          "kind": "cell",
-          "ref": "sent_back/BIRC5.csv!111|MYCN-high",
-          "note": "the cell in the table Prism sent back"
-        },
-        {
-          "kind": "sample",
-          "ref": "111",
-          "note": "the biological unit"
-        },
-        {
-          "kind": "rule",
-          "ref": "prism.diff.changed",
-          "note": "This value no longer matches the record."
-        }
-      ],
-      "alternatives": [],
-      "check": {
-        "status": "cannot_check",
-        "rule_ids": [],
-        "details": {},
-        "note": "no engine check exists for this kind"
-      },
-      "consequence": {
-        "exported": 1.5563229036983888,
-        "returned": 2.5563
-      },
-      "level": "High",
-      "reasons": ["Found by comparing the table Prism sent back with the exported table."],
-      "made_by": {
-        "kind": "rule",
-        "provider": null,
-        "model": null,
-        "prompt_sha256": null,
-        "agent": null
-      },
-      "status": "proposed",
-      "decided_by": null,
-      "decided_at": null,
-      "reason": null,
-      "edits": null,
-      "superseded_by": null,
-      "created_at": "2026-10-20T21:18:32Z"
+     "kind": "cell",
+     "ref": "project:NTRK1!827|rest",
+     "note": "the cell in the project Prism saved"
     },
     {
-      "id": "p_17f0465c1140fe5a",
-      "study_id": "bc1d233e3866",
-      "kind": "prism.exclusion_reason",
-      "subject": "ODC1/1496",
-      "payload": {
-        "action": "exclude",
-        "gene": "ODC1",
-        "question": "Sample 1496 for ODC1 is empty in the table Prism sent back. If you excluded it in Prism: reason? If you deleted it, say so.",
-        "sample": "1496",
-        "well_rep": 0
-      },
-      "evidence": [
-        {
-          "kind": "cell",
-          "ref": "sent_back/ODC1.csv!1496|MYCN-high",
-          "note": "the cell in the table Prism sent back"
-        },
-        {
-          "kind": "sample",
-          "ref": "1496",
-          "note": "the biological unit"
-        },
-        {
-          "kind": "rule",
-          "ref": "prism.diff.missing",
-          "note": "Empty in the table Prism sent back. qPilot cannot yet tell an exclusion from a deletion (how ExportTable writes excluded values is checked in plan step 0.1), so please say which, and why."
-        }
-      ],
-      "alternatives": [],
-      "check": {
-        "status": "cannot_check",
-        "rule_ids": [],
-        "details": {},
-        "note": "no engine check exists for this kind"
-      },
-      "consequence": {
-        "basis": {
-          "accepted": [],
-          "chain_head": "46729c6c7838577e9f6c66bbf2a17ce7323c5c8bedd8c9f47ee50a8c9b14c20d",
-          "study_id": "cf49ccd72052"
-        },
-        "biological_unit": "1496",
-        "changed_genes": [],
-        "conclusion_after": "up",
-        "conclusion_before": "up",
-        "fc_after": 3.3186076821812986,
-        "fc_before": 3.589883053843869,
-        "gene": "ODC1",
-        "log2fc_after": 1.730578087558588,
-        "log2fc_before": 1.843936846725877,
-        "n_conclusions_changed": 0,
-        "n_genes": 58,
-        "n_units_after": [52, 294],
-        "n_units_before": [53, 294],
-        "p_after": 2.065427855257047e-8,
-        "p_before": 2.286597012225778e-8,
-        "rule": {
-          "alpha": 0.05,
-          "min_log2fc": 1.0
-        },
-        "well_rep": 0,
-        "withheld_after": null
-      },
-      "level": "Moderate",
-      "reasons": [
-        "Found by comparing the table Prism sent back with the exported table.",
-        "An empty cell may be an exclusion or a deletion; Mode S cannot tell yet."
-      ],
-      "made_by": {
-        "kind": "rule",
-        "provider": null,
-        "model": null,
-        "prompt_sha256": null,
-        "agent": null
-      },
-      "status": "accepted",
-      "decided_by": "human",
-      "decided_at": "2026-10-20T19:19:51Z",
-      "reason": "failed RNA extraction",
-      "edits": null,
-      "superseded_by": null,
-      "created_at": "2026-10-20T19:19:51Z"
+     "kind": "sample",
+     "ref": "827",
+     "note": "the biological unit"
     },
     {
-      "id": "p_790892afa32334b5",
-      "study_id": "bc1d233e3866",
-      "kind": "prism.exclusion_reason",
-      "subject": "ODC1/111",
-      "payload": {
-        "action": "exclude",
-        "gene": "ODC1",
-        "question": "Sample 111 for ODC1 is empty in the table Prism sent back. If you excluded it in Prism: reason? If you deleted it, say so.",
-        "sample": "111",
-        "well_rep": 0
-      },
-      "evidence": [
-        {
-          "kind": "cell",
-          "ref": "sent_back/ODC1.csv!111|MYCN-high",
-          "note": "the cell in the table Prism sent back"
-        },
-        {
-          "kind": "sample",
-          "ref": "111",
-          "note": "the biological unit"
-        },
-        {
-          "kind": "rule",
-          "ref": "prism.diff.missing",
-          "note": "Empty in the table Prism sent back. qPilot cannot yet tell an exclusion from a deletion (how ExportTable writes excluded values is checked in plan step 0.1), so please say which, and why."
-        }
-      ],
-      "alternatives": [],
-      "check": {
-        "status": "cannot_check",
-        "rule_ids": [],
-        "details": {},
-        "note": "no engine check exists for this kind"
-      },
-      "consequence": {
-        "basis": {
-          "accepted": [],
-          "chain_head": "8fb7ea7f975e5b37e5f1fdc3464a5ce43d5cfd8cd7d2520614d1aabc4f3d8b51",
-          "study_id": "e300000d4f9a"
-        },
-        "biological_unit": "111",
-        "changed_genes": [],
-        "conclusion_after": "up",
-        "conclusion_before": "up",
-        "fc_after": 3.308054635325158,
-        "fc_before": 3.3186076821812986,
-        "gene": "ODC1",
-        "log2fc_after": 1.725983062036924,
-        "log2fc_before": 1.730578087558588,
-        "n_conclusions_changed": 0,
-        "n_genes": 58,
-        "n_units_after": [51, 294],
-        "n_units_before": [52, 294],
-        "p_after": 3.783403646836914e-8,
-        "p_before": 2.065427855257047e-8,
-        "rule": {
-          "alpha": 0.05,
-          "min_log2fc": 1.0
-        },
-        "well_rep": 0,
-        "withheld_after": null
-      },
-      "level": "Moderate",
-      "reasons": [
-        "Found by comparing the table Prism sent back with the exported table.",
-        "An empty cell may be an exclusion or a deletion; Mode S cannot tell yet."
-      ],
-      "made_by": {
-        "kind": "rule",
-        "provider": null,
-        "model": null,
-        "prompt_sha256": null,
-        "agent": null
-      },
-      "status": "accepted",
-      "decided_by": "human",
-      "decided_at": "2026-10-20T21:20:21Z",
-      "reason": "Checked in the UI build: unit left out in Prism to test the round trip.",
-      "edits": null,
-      "superseded_by": null,
-      "created_at": "2026-10-20T21:18:33Z"
+     "kind": "rule",
+     "ref": "prism.diff.changed",
+     "note": "This value no longer matches the record (changed in the saved project)."
     }
-  ],
-  "counts": {
-    "proposed": 1,
-    "cannot_check": 1,
-    "accepted": 2
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "exported": 0.06184106858863636,
+    "returned": 9.5
+   },
+   "level": "High",
+   "reasons": [
+    "Found by comparing the project Prism saved with the exported table."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-28T15:54:22Z"
   },
-  "descriptions": {
-    "p_c452ead2e8a390cd": "The value of sample 111 for BIRC5 was changed in Prism: restore qPilot's value",
-    "p_17f0465c1140fe5a": "Exclude sample 1496 from ODC1, as it is in the table Prism sent back",
-    "p_790892afa32334b5": "Exclude sample 111 from ODC1, as it is in the table Prism sent back"
+  {
+   "id": "p_f38543527ba4c48b",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.exclusion_reason",
+   "subject": "ODC1/111",
+   "payload": {
+    "action": "exclude",
+    "gene": "ODC1",
+    "question": "You excluded sample 111 for ODC1 in Prism. Reason?",
+    "sample": "111",
+    "well_rep": 0
+   },
+   "evidence": [
+    {
+     "kind": "cell",
+     "ref": "project:ODC1!111|MYCN-high",
+     "note": "the cell in the project Prism saved"
+    },
+    {
+     "kind": "sample",
+     "ref": "111",
+     "note": "the biological unit"
+    },
+    {
+     "kind": "rule",
+     "ref": "prism.diff.excluded",
+     "note": "Excluded in Prism (marked as excluded in the saved project)."
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "basis": {
+     "accepted": [],
+     "chain_head": "f92966baf3db07f0166f641e3cfd8683a3522949008cbba9e83ff26cdad7cdd9",
+     "study_id": "e300000d4f9a"
+    },
+    "biological_unit": "111",
+    "changed_genes": [],
+    "conclusion_after": "up",
+    "conclusion_before": "up",
+    "fc_after": 3.308054635325158,
+    "fc_before": 3.3186076821812986,
+    "gene": "ODC1",
+    "log2fc_after": 1.725983062036924,
+    "log2fc_before": 1.730578087558588,
+    "n_conclusions_changed": 0,
+    "n_genes": 58,
+    "n_units_after": [
+     51,
+     294
+    ],
+    "n_units_before": [
+     52,
+     294
+    ],
+    "p_after": 3.783403646836914e-08,
+    "p_before": 2.065427855257047e-08,
+    "rule": {
+     "alpha": 0.05,
+     "min_log2fc": 1.0
+    },
+    "well_rep": 0,
+    "with_all_pending": {
+     "changed_genes": [],
+     "conclusion_after": "up",
+     "conclusion_before": "up",
+     "fc_after": 3.2931073315001957,
+     "fc_before": 3.3186076821812986,
+     "log2fc_after": 1.7194495341317408,
+     "log2fc_before": 1.730578087558588,
+     "n_conclusions_changed": 0,
+     "n_exclusions": 3,
+     "n_units_after": [
+      50,
+      294
+     ],
+     "n_units_before": [
+      52,
+      294
+     ],
+     "p_after": 7.017645074809827e-08,
+     "p_before": 2.065427855257047e-08,
+     "withheld_after": null
+    },
+    "withheld_after": null
+   },
+   "level": "High",
+   "reasons": [
+    "Found by comparing the project Prism saved with the exported table."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-28T15:54:22Z"
+  },
+  {
+   "id": "p_e0b227934d1ce8f2",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.exclusion_reason",
+   "subject": "ODC1/1136",
+   "payload": {
+    "action": "exclude",
+    "gene": "ODC1",
+    "question": "You deleted sample 1136 for ODC1 in Prism. Reason? Accepting leaves the value out of the analysis; rejecting keeps qPilot's value.",
+    "sample": "1136",
+    "well_rep": 0
+   },
+   "evidence": [
+    {
+     "kind": "cell",
+     "ref": "project:ODC1!1136|MYCN-high",
+     "note": "the cell in the project Prism saved"
+    },
+    {
+     "kind": "sample",
+     "ref": "1136",
+     "note": "the biological unit"
+    },
+    {
+     "kind": "rule",
+     "ref": "prism.diff.missing",
+     "note": "Deleted in Prism: the cell is empty in the saved project."
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "basis": {
+     "accepted": [],
+     "chain_head": "f92966baf3db07f0166f641e3cfd8683a3522949008cbba9e83ff26cdad7cdd9",
+     "study_id": "e300000d4f9a"
+    },
+    "biological_unit": "1136",
+    "changed_genes": [],
+    "conclusion_after": "up",
+    "conclusion_before": "up",
+    "fc_after": 3.304112402482015,
+    "fc_before": 3.3186076821812986,
+    "gene": "ODC1",
+    "log2fc_after": 1.7242627665833437,
+    "log2fc_before": 1.730578087558588,
+    "n_conclusions_changed": 0,
+    "n_genes": 58,
+    "n_units_after": [
+     51,
+     294
+    ],
+    "n_units_before": [
+     52,
+     294
+    ],
+    "p_after": 3.862637891072719e-08,
+    "p_before": 2.065427855257047e-08,
+    "rule": {
+     "alpha": 0.05,
+     "min_log2fc": 1.0
+    },
+    "well_rep": 0,
+    "with_all_pending": {
+     "changed_genes": [],
+     "conclusion_after": "up",
+     "conclusion_before": "up",
+     "fc_after": 3.2931073315001957,
+     "fc_before": 3.3186076821812986,
+     "log2fc_after": 1.7194495341317408,
+     "log2fc_before": 1.730578087558588,
+     "n_conclusions_changed": 0,
+     "n_exclusions": 3,
+     "n_units_after": [
+      50,
+      294
+     ],
+     "n_units_before": [
+      52,
+      294
+     ],
+     "p_after": 7.017645074809827e-08,
+     "p_before": 2.065427855257047e-08,
+     "withheld_after": null
+    },
+    "withheld_after": null
+   },
+   "level": "High",
+   "reasons": [
+    "Found by comparing the project Prism saved with the exported table."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-28T15:54:22Z"
+  },
+  {
+   "id": "p_1f60b0b17c0bcdca",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.exclusion_reason",
+   "subject": "BIRC5/1231",
+   "payload": {
+    "action": "exclude",
+    "gene": "BIRC5",
+    "question": "You excluded sample 1231 for BIRC5 in Prism. Reason?",
+    "sample": "1231",
+    "well_rep": 0
+   },
+   "evidence": [
+    {
+     "kind": "cell",
+     "ref": "project:BIRC5!1231|MYCN-high",
+     "note": "the cell in the project Prism saved"
+    },
+    {
+     "kind": "sample",
+     "ref": "1231",
+     "note": "the biological unit"
+    },
+    {
+     "kind": "rule",
+     "ref": "prism.diff.excluded",
+     "note": "Excluded in Prism (marked as excluded in the saved project). In the table of all genes."
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "basis": {
+     "accepted": [],
+     "chain_head": "f92966baf3db07f0166f641e3cfd8683a3522949008cbba9e83ff26cdad7cdd9",
+     "study_id": "e300000d4f9a"
+    },
+    "biological_unit": "1231",
+    "changed_genes": [],
+    "conclusion_after": "up",
+    "conclusion_before": "up",
+    "fc_after": 4.057910641831881,
+    "fc_before": 4.01142868409124,
+    "gene": "BIRC5",
+    "log2fc_after": 2.020737096241586,
+    "log2fc_before": 2.004116148990932,
+    "n_conclusions_changed": 0,
+    "n_genes": 58,
+    "n_units_after": [
+     52,
+     294
+    ],
+    "n_units_before": [
+     53,
+     294
+    ],
+    "p_after": 7.364644580275637e-14,
+    "p_before": 5.043719769792568e-14,
+    "rule": {
+     "alpha": 0.05,
+     "min_log2fc": 1.0
+    },
+    "well_rep": 0,
+    "with_all_pending": {
+     "changed_genes": [],
+     "conclusion_after": "up",
+     "conclusion_before": "up",
+     "fc_after": 4.057910641831881,
+     "fc_before": 4.01142868409124,
+     "log2fc_after": 2.020737096241586,
+     "log2fc_before": 2.004116148990932,
+     "n_conclusions_changed": 0,
+     "n_exclusions": 3,
+     "n_units_after": [
+      52,
+      294
+     ],
+     "n_units_before": [
+      53,
+      294
+     ],
+     "p_after": 7.364644580275637e-14,
+     "p_before": 5.043719769792568e-14,
+     "withheld_after": null
+    },
+    "withheld_after": null
+   },
+   "level": "High",
+   "reasons": [
+    "Found by comparing the project Prism saved with the exported table."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-28T15:54:23Z"
+  },
+  {
+   "id": "p_17f0465c1140fe5a",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.exclusion_reason",
+   "subject": "ODC1/1496",
+   "payload": {
+    "action": "exclude",
+    "gene": "ODC1",
+    "question": "Sample 1496 for ODC1 is empty in the table Prism sent back. If you excluded it in Prism: reason? If you deleted it, say so.",
+    "sample": "1496",
+    "well_rep": 0
+   },
+   "evidence": [
+    {
+     "kind": "cell",
+     "ref": "sent_back/ODC1.csv!1496|MYCN-high",
+     "note": "the cell in the table Prism sent back"
+    },
+    {
+     "kind": "sample",
+     "ref": "1496",
+     "note": "the biological unit"
+    },
+    {
+     "kind": "rule",
+     "ref": "prism.diff.missing",
+     "note": "Empty in the table Prism sent back. qPilot cannot yet tell an exclusion from a deletion (how ExportTable writes excluded values is checked in plan step 0.1), so please say which, and why."
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "basis": {
+     "accepted": [],
+     "chain_head": "46729c6c7838577e9f6c66bbf2a17ce7323c5c8bedd8c9f47ee50a8c9b14c20d",
+     "study_id": "cf49ccd72052"
+    },
+    "biological_unit": "1496",
+    "changed_genes": [],
+    "conclusion_after": "up",
+    "conclusion_before": "up",
+    "fc_after": 3.3186076821812986,
+    "fc_before": 3.589883053843869,
+    "gene": "ODC1",
+    "log2fc_after": 1.730578087558588,
+    "log2fc_before": 1.843936846725877,
+    "n_conclusions_changed": 0,
+    "n_genes": 58,
+    "n_units_after": [
+     52,
+     294
+    ],
+    "n_units_before": [
+     53,
+     294
+    ],
+    "p_after": 2.065427855257047e-08,
+    "p_before": 2.286597012225778e-08,
+    "rule": {
+     "alpha": 0.05,
+     "min_log2fc": 1.0
+    },
+    "well_rep": 0,
+    "withheld_after": null
+   },
+   "level": "Moderate",
+   "reasons": [
+    "Found by comparing the table Prism sent back with the exported table.",
+    "An empty cell may be an exclusion or a deletion; Mode S cannot tell yet."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T19:19:51Z",
+   "reason": "failed RNA extraction",
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T19:19:51Z"
+  },
+  {
+   "id": "p_44a309a5afddc5f5",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.value_edit",
+   "subject": "NTRK1/827",
+   "payload": {
+    "action": "restore",
+    "gene": "NTRK1",
+    "question": "This value no longer matches the record. Restore qPilot's value for NTRK1, or record it as a manual edit?",
+    "sample": "827",
+    "well_rep": 0
+   },
+   "evidence": [
+    {
+     "kind": "cell",
+     "ref": "project:NTRK1!827|rest",
+     "note": "the cell in the project Prism saved"
+    },
+    {
+     "kind": "sample",
+     "ref": "827",
+     "note": "the biological unit"
+    },
+    {
+     "kind": "rule",
+     "ref": "prism.diff.changed",
+     "note": "This value no longer matches the record (changed in the saved project)."
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "exported": 0.06184106858863636,
+    "returned": 9.5
+   },
+   "level": "High",
+   "reasons": [
+    "Found by comparing the project Prism saved with the exported table."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "superseded",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": "p_c22136708f31ac9d",
+   "created_at": "2026-10-28T15:54:00Z"
+  },
+  {
+   "id": "p_686e63dd4db659ae",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.exclusion_reason",
+   "subject": "ODC1/111",
+   "payload": {
+    "action": "exclude",
+    "gene": "ODC1",
+    "question": "You excluded sample 111 for ODC1 in Prism. Reason?",
+    "sample": "111",
+    "well_rep": 0
+   },
+   "evidence": [
+    {
+     "kind": "cell",
+     "ref": "project:ODC1!111|MYCN-high",
+     "note": "the cell in the project Prism saved"
+    },
+    {
+     "kind": "sample",
+     "ref": "111",
+     "note": "the biological unit"
+    },
+    {
+     "kind": "rule",
+     "ref": "prism.diff.excluded",
+     "note": "Excluded in Prism (marked as excluded in the saved project)."
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "basis": {
+     "accepted": [],
+     "chain_head": "f92966baf3db07f0166f641e3cfd8683a3522949008cbba9e83ff26cdad7cdd9",
+     "study_id": "e300000d4f9a"
+    },
+    "biological_unit": "111",
+    "changed_genes": [],
+    "conclusion_after": "up",
+    "conclusion_before": "up",
+    "fc_after": 3.308054635325158,
+    "fc_before": 3.3186076821812986,
+    "gene": "ODC1",
+    "log2fc_after": 1.725983062036924,
+    "log2fc_before": 1.730578087558588,
+    "n_conclusions_changed": 0,
+    "n_genes": 58,
+    "n_units_after": [
+     51,
+     294
+    ],
+    "n_units_before": [
+     52,
+     294
+    ],
+    "p_after": 3.783403646836914e-08,
+    "p_before": 2.065427855257047e-08,
+    "rule": {
+     "alpha": 0.05,
+     "min_log2fc": 1.0
+    },
+    "well_rep": 0,
+    "with_all_pending": {
+     "changed_genes": [],
+     "conclusion_after": "up",
+     "conclusion_before": "up",
+     "fc_after": 3.2931073315001957,
+     "fc_before": 3.3186076821812986,
+     "log2fc_after": 1.7194495341317408,
+     "log2fc_before": 1.730578087558588,
+     "n_conclusions_changed": 0,
+     "n_exclusions": 3,
+     "n_units_after": [
+      50,
+      294
+     ],
+     "n_units_before": [
+      52,
+      294
+     ],
+     "p_after": 7.017645074809827e-08,
+     "p_before": 2.065427855257047e-08,
+     "withheld_after": null
+    },
+    "withheld_after": null
+   },
+   "level": "High",
+   "reasons": [
+    "Found by comparing the project Prism saved with the exported table."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "superseded",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": "p_f38543527ba4c48b",
+   "created_at": "2026-10-28T15:54:00Z"
+  },
+  {
+   "id": "p_8e548d84537811f4",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.exclusion_reason",
+   "subject": "ODC1/1136",
+   "payload": {
+    "action": "exclude",
+    "gene": "ODC1",
+    "question": "You deleted sample 1136 for ODC1 in Prism. Reason? Accepting leaves the value out of the analysis; rejecting keeps qPilot's value.",
+    "sample": "1136",
+    "well_rep": 0
+   },
+   "evidence": [
+    {
+     "kind": "cell",
+     "ref": "project:ODC1!1136|MYCN-high",
+     "note": "the cell in the project Prism saved"
+    },
+    {
+     "kind": "sample",
+     "ref": "1136",
+     "note": "the biological unit"
+    },
+    {
+     "kind": "rule",
+     "ref": "prism.diff.missing",
+     "note": "Deleted in Prism: the cell is empty in the saved project."
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "basis": {
+     "accepted": [],
+     "chain_head": "f92966baf3db07f0166f641e3cfd8683a3522949008cbba9e83ff26cdad7cdd9",
+     "study_id": "e300000d4f9a"
+    },
+    "biological_unit": "1136",
+    "changed_genes": [],
+    "conclusion_after": "up",
+    "conclusion_before": "up",
+    "fc_after": 3.304112402482015,
+    "fc_before": 3.3186076821812986,
+    "gene": "ODC1",
+    "log2fc_after": 1.7242627665833437,
+    "log2fc_before": 1.730578087558588,
+    "n_conclusions_changed": 0,
+    "n_genes": 58,
+    "n_units_after": [
+     51,
+     294
+    ],
+    "n_units_before": [
+     52,
+     294
+    ],
+    "p_after": 3.862637891072719e-08,
+    "p_before": 2.065427855257047e-08,
+    "rule": {
+     "alpha": 0.05,
+     "min_log2fc": 1.0
+    },
+    "well_rep": 0,
+    "with_all_pending": {
+     "changed_genes": [],
+     "conclusion_after": "up",
+     "conclusion_before": "up",
+     "fc_after": 3.2931073315001957,
+     "fc_before": 3.3186076821812986,
+     "log2fc_after": 1.7194495341317408,
+     "log2fc_before": 1.730578087558588,
+     "n_conclusions_changed": 0,
+     "n_exclusions": 3,
+     "n_units_after": [
+      50,
+      294
+     ],
+     "n_units_before": [
+      52,
+      294
+     ],
+     "p_after": 7.017645074809827e-08,
+     "p_before": 2.065427855257047e-08,
+     "withheld_after": null
+    },
+    "withheld_after": null
+   },
+   "level": "High",
+   "reasons": [
+    "Found by comparing the project Prism saved with the exported table."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "superseded",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": "p_e0b227934d1ce8f2",
+   "created_at": "2026-10-28T15:54:00Z"
+  },
+  {
+   "id": "p_118325ff1f76a989",
+   "study_id": "bc1d233e3866",
+   "kind": "prism.exclusion_reason",
+   "subject": "BIRC5/1231",
+   "payload": {
+    "action": "exclude",
+    "gene": "BIRC5",
+    "question": "You excluded sample 1231 for BIRC5 in Prism. Reason?",
+    "sample": "1231",
+    "well_rep": 0
+   },
+   "evidence": [
+    {
+     "kind": "cell",
+     "ref": "project:BIRC5!1231|MYCN-high",
+     "note": "the cell in the project Prism saved"
+    },
+    {
+     "kind": "sample",
+     "ref": "1231",
+     "note": "the biological unit"
+    },
+    {
+     "kind": "rule",
+     "ref": "prism.diff.excluded",
+     "note": "Excluded in Prism (marked as excluded in the saved project). In the table of all genes."
+    }
+   ],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": {
+    "basis": {
+     "accepted": [],
+     "chain_head": "f92966baf3db07f0166f641e3cfd8683a3522949008cbba9e83ff26cdad7cdd9",
+     "study_id": "e300000d4f9a"
+    },
+    "biological_unit": "1231",
+    "changed_genes": [],
+    "conclusion_after": "up",
+    "conclusion_before": "up",
+    "fc_after": 4.057910641831881,
+    "fc_before": 4.01142868409124,
+    "gene": "BIRC5",
+    "log2fc_after": 2.020737096241586,
+    "log2fc_before": 2.004116148990932,
+    "n_conclusions_changed": 0,
+    "n_genes": 58,
+    "n_units_after": [
+     52,
+     294
+    ],
+    "n_units_before": [
+     53,
+     294
+    ],
+    "p_after": 7.364644580275637e-14,
+    "p_before": 5.043719769792568e-14,
+    "rule": {
+     "alpha": 0.05,
+     "min_log2fc": 1.0
+    },
+    "well_rep": 0,
+    "with_all_pending": {
+     "changed_genes": [],
+     "conclusion_after": "up",
+     "conclusion_before": "up",
+     "fc_after": 4.057910641831881,
+     "fc_before": 4.01142868409124,
+     "log2fc_after": 2.020737096241586,
+     "log2fc_before": 2.004116148990932,
+     "n_conclusions_changed": 0,
+     "n_exclusions": 3,
+     "n_units_after": [
+      52,
+      294
+     ],
+     "n_units_before": [
+      53,
+      294
+     ],
+     "p_after": 7.364644580275637e-14,
+     "p_before": 5.043719769792568e-14,
+     "withheld_after": null
+    },
+    "withheld_after": null
+   },
+   "level": "High",
+   "reasons": [
+    "Found by comparing the project Prism saved with the exported table."
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "superseded",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": "p_1f60b0b17c0bcdca",
+   "created_at": "2026-10-28T15:54:01Z"
   }
+ ],
+ "counts": {
+  "proposed": 4,
+  "cannot_check": 4,
+  "accepted": 1,
+  "superseded": 4
+ },
+ "descriptions": {
+  "p_c22136708f31ac9d": "The value of sample 827 for NTRK1 was changed in Prism: restore qPilot's value",
+  "p_f38543527ba4c48b": "Exclude sample 111 from ODC1, as it is in the table Prism sent back",
+  "p_e0b227934d1ce8f2": "Exclude sample 1136 from ODC1, as it is in the table Prism sent back",
+  "p_1f60b0b17c0bcdca": "Exclude sample 1231 from BIRC5, as it is in the table Prism sent back",
+  "p_17f0465c1140fe5a": "Exclude sample 1496 from ODC1, as it is in the table Prism sent back",
+  "p_44a309a5afddc5f5": "The value of sample 827 for NTRK1 was changed in Prism: restore qPilot's value",
+  "p_686e63dd4db659ae": "Exclude sample 111 from ODC1, as it is in the table Prism sent back",
+  "p_8e548d84537811f4": "Exclude sample 1136 from ODC1, as it is in the table Prism sent back",
+  "p_118325ff1f76a989": "Exclude sample 1231 from BIRC5, as it is in the table Prism sent back"
+ }
 }

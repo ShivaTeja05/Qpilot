@@ -1,35 +1,37 @@
 {
-  "session_id": "bc1d233e3866",
-  "bundles": [
-    {
-      "id": "qaskn997",
-      "study_id": "e300000d4f9a",
-      "bundle_sha256": "9281ecd1feeb903a702828dd4f28d1fdea98a0b153a9af4fffdd38d112b9ed59",
-      "at": "2026-10-20T21:15:58Z",
-      "folder": "~/Documents/Wheel Hack/agent-bus/scratch/ui-prism/exports/bc1d233e3866/prism-qaskn997",
-      "exists": true,
-      "current": false,
-      "sent_back_folder": "~/Documents/Wheel Hack/agent-bus/scratch/ui-prism/exports/bc1d233e3866/prism-qaskn997/sent_back",
-      "round_trip": true,
-      "download": {
-        "id": "F1ZsocsfoU2bmkk3bdMFebxi",
-        "url": "/api/downloads/F1ZsocsfoU2bmkk3bdMFebxi",
-        "name": "qpilot-prism-e300000d4f9a-qaskn997.zip",
-        "bytes": 24935,
-        "path": "~/Documents/Wheel Hack/agent-bus/scratch/ui-prism/exports/bc1d233e3866/qpilot-prism-e300000d4f9a-qaskn997.zip"
-      }
-    },
-    {
-      "id": null,
-      "study_id": "cf49ccd72052",
-      "bundle_sha256": "598c9b1ecf24083a78e0e4a7f70f10bbe185ce00bee769dfd3c4fcf838af9fa0",
-      "at": "2026-10-20T19:19:51Z",
-      "folder": "/private/var/folders/s4/21bl378948s28762nbp7c20r0000gn/T/qpilot-studio-check-wf_way0x/bundle",
-      "exists": false,
-      "current": false,
-      "sent_back_folder": "/private/var/folders/s4/21bl378948s28762nbp7c20r0000gn/T/qpilot-studio-check-wf_way0x/sent_back",
-      "round_trip": false,
-      "download": null
-    }
-  ]
+ "session_id": "bc1d233e3866",
+ "bundles": [
+  {
+   "id": "ji1j2int",
+   "study_id": "e300000d4f9a",
+   "bundle_sha256": "f7fb602c8192c30a0fef457a87218d8a262c5bea0869404416261e3e00e3bcf2",
+   "at": "2026-10-28T15:53:43Z",
+   "folder": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/prism-ji1j2int",
+   "exists": true,
+   "current": false,
+   "sent_back_folder": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/prism-ji1j2int/returned/U2a7LydAbghkJTc1.pzfx",
+   "round_trip": true,
+   "download": {
+    "id": "uP5Xq5mnJWpbtBbpzgAHyZgi",
+    "url": "/api/downloads/uP5Xq5mnJWpbtBbpzgAHyZgi",
+    "name": "qpilot-prism-e300000d4f9a-ji1j2int.zip",
+    "bytes": 59455,
+    "path": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/qpilot-prism-e300000d4f9a-ji1j2int.zip"
+   },
+   "project": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/prism-ji1j2int/qpilot_e300000d4f9a.pzfx"
+  },
+  {
+   "id": null,
+   "study_id": "cf49ccd72052",
+   "bundle_sha256": "598c9b1ecf24083a78e0e4a7f70f10bbe185ce00bee769dfd3c4fcf838af9fa0",
+   "at": "2026-10-20T19:19:51Z",
+   "folder": "/private/var/folders/s4/21bl378948s28762nbp7c20r0000gn/T/qpilot-studio-check-wf_way0x/bundle",
+   "exists": false,
+   "current": false,
+   "sent_back_folder": "/private/var/folders/s4/21bl378948s28762nbp7c20r0000gn/T/qpilot-studio-check-wf_way0x/sent_back",
+   "round_trip": false,
+   "download": null,
+   "project": null
+  }
+ ]
 }

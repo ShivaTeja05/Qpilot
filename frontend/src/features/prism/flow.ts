@@ -1,10 +1,11 @@
 /**
- * Where the session stands on its way to Prism, read from the workspace frame (the Studio stages)
- * and the Prism draft inbox: choices locked → project accepted → sent → round trip. The server
- * enforces every step; this only says which one is next and why a button waits.
+ * Where the session stands on its way to Prism, read from the workspace frame (the Studio stages),
+ * the Prism draft inbox and the server's Prism status: choices locked → project accepted → sent →
+ * round trip. The server enforces every step; this only says which one is next and why a button
+ * waits.
  */
 import { effectivePayload } from "@/lib/vocab";
-import type { Proposal, Workspace } from "./api";
+import type { PrismStatus, Proposal, Workspace } from "./api";
 
 export type StepState = "done" | "current" | "waiting";
 
@@ -15,6 +16,15 @@ export interface ProjectState {
   waiting: Proposal | null;
   /** A project accepted for an earlier analysis (the decisions changed since). */
   earlier: Proposal | null;
+  /**
+   * The accepted project was accepted for an earlier analysis whose tables hold exactly the same
+   * numbers (the server compares the tables' content): it holds here, no new draft is needed.
+   */
+  stillCurrent: boolean;
+  /** The earlier analysis it was accepted for, when still current. */
+  draftedFor: string | null;
+  /** The server is comparing an earlier analysis's tables with this one's. */
+  checking: boolean;
 }
 
 export interface Flow {
@@ -40,24 +50,33 @@ function stage(workspace: Workspace, name: string) {
   return workspace.stages.find((s) => s.stage === name);
 }
 
-/** The project proposals of the Prism stage, split by whether they hold for the analysis shown. */
+/**
+ * The project proposals of the Prism stage, split by whether they hold for the analysis shown.
+ * The server's status decides when it is known: it also keeps a project accepted for an earlier
+ * analysis whose tables hold the same numbers (`still_current`), which only it can compare.
+ */
 export function projectState(
   proposals: Proposal[],
   studyId: string | null | undefined,
+  status?: PrismStatus["project"] | null,
 ): ProjectState {
   const projects = proposals.filter((p) => p.kind === "prism.project");
   const forStudy = (p: Proposal) => effectivePayload(p).study_id === studyId;
-  const accepted = projects.filter(
-    (p) => (p.status === "accepted" || p.status === "edited") && forStudy(p),
-  );
-  const waiting = projects.filter((p) => p.status === "proposed");
-  const earlier = projects.filter(
-    (p) => (p.status === "accepted" || p.status === "edited") && !forStudy(p),
-  );
+  const isAccepted = (p: Proposal) => p.status === "accepted" || p.status === "edited";
+  const waiting = projects.filter((p) => p.status === "proposed").at(-1) ?? null;
+  const carried =
+    status?.status === "accepted" && status.still_current
+      ? (projects.find((p) => p.id === status.proposal_id && isAccepted(p)) ?? null)
+      : null;
+  const accepted = carried ?? projects.filter((p) => isAccepted(p) && forStudy(p)).at(-1) ?? null;
+  const earlier = projects.filter((p) => isAccepted(p) && !forStudy(p)).at(-1) ?? null;
   return {
-    accepted: accepted.at(-1) ?? null,
-    waiting: waiting.at(-1) ?? null,
-    earlier: accepted.length ? null : (earlier.at(-1) ?? null),
+    accepted,
+    waiting,
+    earlier: accepted ? null : earlier,
+    stillCurrent: Boolean(carried),
+    draftedFor: carried ? (status?.drafted_for ?? null) : null,
+    checking: !accepted && Boolean(status?.checking),
   };
 }
 
@@ -65,10 +84,11 @@ export function flowOf(
   workspace: Workspace,
   prismInbox: Proposal[],
   roundTripInbox: Proposal[],
+  status?: PrismStatus | null,
 ): Flow {
   const choicesConfirmed = Boolean(stage(workspace, "choices")?.confirmed);
   const sent = Boolean(stage(workspace, "prism")?.confirmed);
-  const project = projectState(prismInbox, workspace.study_id);
+  const project = projectState(prismInbox, workspace.study_id, status?.project);
   const roundTripWaiting = roundTripInbox.filter((p) => p.status === "proposed").length;
 
   const draftBlocked = choicesConfirmed
@@ -80,7 +100,9 @@ export function flowOf(
       ? null
       : project.waiting
         ? "Accept the drafted Prism project first."
-        : "Draft the Prism project and accept it first.";
+        : project.checking
+          ? "Checking whether the project accepted earlier still holds."
+          : "Draft the Prism project and accept it first.";
 
   const at = !choicesConfirmed ? 0 : !project.accepted ? 1 : !sent ? 2 : 3;
   const state = (i: number): StepState => (i < at ? "done" : i === at ? "current" : "waiting");
@@ -96,12 +118,16 @@ export function flowOf(
       title: "Draft the project",
       state: state(1),
       detail: project.accepted
-        ? "Accepted"
+        ? project.stillCurrent
+          ? "Still current: the same numbers"
+          : "Accepted"
         : project.waiting
           ? "Waiting for you"
-          : project.earlier
-            ? "Draft again: the analysis changed"
-            : "Not drafted yet",
+          : project.checking
+            ? "Checking the earlier project"
+            : project.earlier
+              ? "Draft again: the numbers changed"
+              : "Not drafted yet",
     },
     {
       id: "send",

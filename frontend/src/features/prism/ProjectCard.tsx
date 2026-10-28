@@ -46,7 +46,7 @@ export function ProjectCard({
   const running = activeJob(workspace, "prism.draft");
   const shownJob = jobId ?? running?.id ?? null;
   const jobDone = useJob(shownJob).data?.status === "done";
-  const { accepted, waiting, earlier } = flow.project;
+  const { accepted, waiting, earlier, stillCurrent, draftedFor, checking } = flow.project;
 
   const start = () => draft.mutate(undefined, { onSuccess: ({ job }) => setJobId(job.id) });
 
@@ -118,13 +118,26 @@ export function ProjectCard({
           </div>
         ) : accepted ? (
           <div className="flex flex-col gap-3">
-            <ProjectSummary proposal={accepted} />
+            <ProjectSummary
+              proposal={accepted}
+              stillCurrent={stillCurrent}
+              draftedFor={draftedFor}
+            />
             <div className="flex flex-wrap items-center gap-3">
               {draftButton("Draft it again", "secondary")}
               <p className="text-[12px] text-muted">
                 A new draft replaces this one only when you accept it.
               </p>
             </div>
+          </div>
+        ) : checking ? (
+          <div className="flex flex-col gap-2" role="status">
+            <LoadingBlock label="Checking the project accepted earlier" lines={2} />
+            <p className="text-[12.5px] text-muted">
+              A project was accepted for an earlier analysis. qPilot is comparing its tables with
+              this analysis&rsquo;s: when every number is the same, it still holds and needs no new
+              draft.
+            </p>
           </div>
         ) : (
           <EmptyState
@@ -134,7 +147,7 @@ export function ProjectCard({
             action={draftButton("Draft the Prism project")}
           >
             {earlier
-              ? "The project accepted earlier belongs to an earlier analysis of this session: a decided choice or an accepted exclusion has changed the analysis since."
+              ? "The project accepted earlier was for an earlier analysis whose tables hold other numbers: a decided choice or an accepted exclusion changed them since."
               : "qPilot drafts it from this analysis: a table for each headline gene, Welch's t test on log2 values, the graph and a caption whose numbers are facts of this study."}
             {flow.draftBlocked && flow.choicesConfirmed ? (
               <span className="mt-1 block text-faint">{flow.draftBlocked}</span>
@@ -166,13 +179,30 @@ export function ProjectCard({
 }
 
 /** An accepted project in words: genes, template, test and graph, and who made it. */
-export function ProjectSummary({ proposal }: { proposal: Proposal }) {
+export function ProjectSummary({
+  proposal,
+  stillCurrent = false,
+  draftedFor = null,
+}: {
+  proposal: Proposal;
+  stillCurrent?: boolean;
+  draftedFor?: string | null;
+}) {
   const d = effectivePayload(proposal);
   const genes = Array.isArray(d.genes) ? d.genes.map(String) : [];
   const test = described(d.test);
   return (
     <div className="rounded-lg border border-ok/30 bg-ok-soft/40 p-3">
-      <p className="mb-2 text-[13px] font-medium text-fg">Accepted for this analysis</p>
+      <p className="mb-2 text-[13px] font-medium text-fg">
+        {stillCurrent ? "Still current for this analysis" : "Accepted for this analysis"}
+      </p>
+      {stillCurrent ? (
+        <p className="mb-2 text-[12.5px] text-fg">
+          Accepted for the earlier analysis
+          {draftedFor ? <span className="font-mono"> {draftedFor}</span> : null}. Every number in
+          the tables it exports is the same in this analysis, so it needs no new draft.
+        </p>
+      ) : null}
       <KeyValues
         rows={(
           [

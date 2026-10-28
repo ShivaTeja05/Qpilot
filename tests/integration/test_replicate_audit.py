@@ -103,6 +103,6 @@ def test_a_well_a_person_excluded_is_left_out_of_its_unit_only(store):
     # the unit keeps a value from its two other wells
     cell = prepared.space.baseline_index()
     values, _ = prepared.engine.matrix_of(prepared.engine.values_of(cell))
-    unit = prepared.study.samples.index("be08945d-29c6-47a0-8c49-cc85f693c1a5")
+    unit = prepared.study.samples.index("DIP_3")
     assert not math.isnan(values[unit, prepared.study.genes.index(GENE)])
     assert np.isfinite(values).all()

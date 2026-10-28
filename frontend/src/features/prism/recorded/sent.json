@@ -1,0 +1,79 @@
+{
+ "bundle": {
+  "id": "djqjkml3",
+  "study_id": "ea8208bcd21d",
+  "bundle_sha256": "e5b7e4c36312c9a50979b73f25c0d7dbef0d35155d1acbb21f13b913a381252e",
+  "at": "2026-10-28T16:16:46Z",
+  "folder": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/prism-djqjkml3",
+  "exists": true,
+  "current": true,
+  "sent_back_folder": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/prism-djqjkml3",
+  "round_trip": true,
+  "download": {
+   "id": "VwarAsRqFw78N07x2-qrcLXQ",
+   "url": "/api/downloads/VwarAsRqFw78N07x2-qrcLXQ",
+   "name": "qpilot-prism-ea8208bcd21d-djqjkml3.zip",
+   "bytes": 59495,
+   "path": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/qpilot-prism-ea8208bcd21d-djqjkml3.zip"
+  },
+  "project": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/prism-djqjkml3/qpilot_ea8208bcd21d.pzfx"
+ },
+ "n_files": 8,
+ "files": [
+  "BIRC5.csv",
+  "NM23A.csv",
+  "NTRK1.csv",
+  "ODC1.csv",
+  "README.txt",
+  "qpilot_bundle.json",
+  "qpilot_ea8208bcd21d.pzfx",
+  "qpilot_provenance.json"
+ ],
+ "notes": [
+  "the table of all genes has 294 subcolumns (one per biological unit of the largest group): it needs Prism 9 or later (Prism 6 to 8 allow 256); the Column tables open in any version"
+ ],
+ "launched": false,
+ "done": null,
+ "launch_note": "Prism is not installed on this computer: download the bundle and double-click the project file on the computer that has Prism",
+ "project": "qpilot_ea8208bcd21d.pzfx",
+ "replicates_project": null,
+ "this_platform": "macos",
+ "open_steps": [
+  {
+   "platform": "macos",
+   "label": "macOS",
+   "steps": [
+    "Unzip the bundle: double-click the zip. (Skip this when Prism runs on this computer: the folder is already here.)",
+    "Double-click qpilot_ea8208bcd21d.pzfx. GraphPad Prism opens it (or in Prism: File > Open). If another program opens it, Control-click it and choose Open With > GraphPad Prism."
+   ]
+  },
+  {
+   "platform": "windows",
+   "label": "Windows",
+   "steps": [
+    "Unzip the bundle: right-click the zip and choose Extract All. (Skip this when Prism runs on this computer: the folder is already here.)",
+    "Double-click qpilot_ea8208bcd21d.pzfx. GraphPad Prism opens it (or in Prism: File > Open). If another program opens it, right-click it and choose Open with > GraphPad Prism."
+   ]
+  }
+ ],
+ "analyse_steps": [
+  "In Prism, click a gene's table under Data Tables (one table per gene).",
+  "The test: click Analyze, choose 't tests (and nonparametric tests)', OK. Choose Unpaired, Parametric and Welch's correction (do not assume equal SDs), then OK.",
+  "The graph: click New Graph, choose the scatter plot of individual values with 'Mean with 95% CI', then OK."
+ ],
+ "round_trip_steps": [
+  "Leave a value out in Prism with Edit > Exclude (the value shows in blue italics with an asterisk), or change it.",
+  "Save the project: File > Save. If Prism asks for a format, keep Prism XML (.pzfx).",
+  "In qPilot, open Prism > Round trip and choose the saved project file. Each exclusion or change comes back as a question, with what it does to the conclusions."
+ ],
+ "scripts": false,
+ "command_line": "",
+ "send_back_command": "",
+ "download": {
+  "id": "VwarAsRqFw78N07x2-qrcLXQ",
+  "url": "/api/downloads/VwarAsRqFw78N07x2-qrcLXQ",
+  "name": "qpilot-prism-ea8208bcd21d-djqjkml3.zip",
+  "bytes": 59495,
+  "path": "~/Documents/Wheel Hack/agent-bus/scratch/ex-prism/exports/bc1d233e3866/qpilot-prism-ea8208bcd21d-djqjkml3.zip"
+ }
+}

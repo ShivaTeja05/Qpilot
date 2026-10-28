@@ -85,7 +85,7 @@ function Body({
             y={C}
             dy="0.36em"
             textAnchor="middle"
-            fontSize={10}
+            fontSize={s.letter.length > 1 ? 6.6 : 10}
             fontWeight={650}
             style={{ fill: "var(--surface)", fontFamily: "var(--font-sans)" }}
           >

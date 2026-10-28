@@ -120,6 +120,8 @@ export function DesignPlate({
   quotes,
   highlight,
   onShowProposals,
+  selectedKeys,
+  onSelectKeys,
 }: {
   sid: string;
   /** Every plate in the file (from the workspace summary), for the picker. */
@@ -128,6 +130,13 @@ export function DesignPlate({
   /** Which wells the proposal in focus is about (outlined). */
   highlight?: ((w: PlateWell) => boolean) | null;
   onShowProposals?: (w: PlateWell) => void;
+  /**
+   * Selecting for the design editor: the wells (`run_id/well`) of the selected samples, and
+   * what to do when the person selects wells on the map (several at once: Shift-click, a row,
+   * a column). Without it the map shows one well's names.
+   */
+  selectedKeys?: ReadonlySet<string>;
+  onSelectKeys?: (wells: PlateWell[]) => void;
 }) {
   const [run, setRun] = useState<string | null>(null);
   const [clicked, setClicked] = useState<string | null>(null);
@@ -147,7 +156,12 @@ export function DesignPlate({
     () => (highlight ? apiWells.filter(highlight).map((w) => w.well) : []),
     [apiWells, highlight],
   );
-  const chosen = clicked ? (byLabel.get(clicked) ?? null) : null;
+  const chosen = clicked && !onSelectKeys ? (byLabel.get(clicked) ?? null) : null;
+  const picking = Boolean(onSelectKeys);
+  const picked = useMemo(
+    () => (selectedKeys ? apiWells.filter((w) => selectedKeys.has(w.key)).map((w) => w.well) : []),
+    [apiWells, selectedKeys],
+  );
 
   const options = runs.map((r) => ({
     value: r.run_id,
@@ -204,9 +218,14 @@ export function DesignPlate({
               label={`Plate ${data.run.run_id}`}
               rows={data.n_rows}
               columns={data.n_cols}
-              multiple={false}
-              selected={clicked ? [clicked] : lit}
-              onSelectedChange={(sel) => setClicked(sel[sel.length - 1] ?? null)}
+              multiple={picking}
+              selected={picking ? picked : clicked ? [clicked] : lit}
+              onSelectedChange={(sel) => {
+                if (picking) {
+                  const labels = new Set(sel);
+                  onSelectKeys?.(apiWells.filter((w) => labels.has(w.well)));
+                } else setClicked(sel[sel.length - 1] ?? null);
+              }}
               onActivate={(label) => {
                 const w = byLabel.get(label);
                 if (w && onShowProposals) onShowProposals(w);
@@ -217,11 +236,15 @@ export function DesignPlate({
                 return q ? `Name in the file: “${visibleText(q.value).slice(0, 80)}”` : null;
               }}
               caption={
-                clicked
-                  ? "The chosen well is outlined; Escape clears it."
-                  : lit.length
-                    ? `Outlined: the ${count(lit.length)} well${lit.length === 1 ? "" : "s"} the proposal in focus is about.`
-                    : "Choose a well for its names (quoted from the file) and the proposals about it; Enter shows them."
+                picking
+                  ? picked.length
+                    ? `${count(picked.length)} well${picked.length === 1 ? "" : "s"} of the selected samples. Shift-click selects a rectangle, ⌘/Ctrl-click adds a well, a row letter or column number the whole row or column; Escape clears.`
+                    : "Select wells to select their samples in the editor: click, Shift-click for a rectangle, ⌘/Ctrl-click to add, a row letter or column number for the whole row or column."
+                  : clicked
+                    ? "The chosen well is outlined; Escape clears it."
+                    : lit.length
+                      ? `Outlined: the ${count(lit.length)} well${lit.length === 1 ? "" : "s"} the proposal in focus is about.`
+                      : "Choose a well for its names (quoted from the file) and the proposals about it; Enter shows them."
               }
             />
             {chosen ? (

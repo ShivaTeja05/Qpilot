@@ -89,7 +89,7 @@ def table_to_rdml(curves: pd.DataFrame, experiment: str, run_id: str, out: Path)
         lines.append(f"{well}\t{sample}\t{stype}\t{target}\ttoi\tSYBR\t\t{fluor}")
     with tempfile.TemporaryDirectory() as tmp:
         table = Path(tmp) / "plate.tsv"
-        table.write_text("\n".join(lines) + "\n")
+        table.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         plate.import_table(doc, str(table), "amp")
     doc.save(str(out))
     return out
@@ -556,7 +556,9 @@ def validate(data: Path = DATA, out: str | Path = "results") -> dict:
         },
         "x5_competimer": comp,
     }
-    Path(out, "validation_external.json").write_text(json.dumps(result, indent=1, default=float))
+    Path(out, "validation_external.json").write_text(
+        json.dumps(result, indent=1, default=float), encoding="utf-8", newline="\n"
+    )
     return result
 
 

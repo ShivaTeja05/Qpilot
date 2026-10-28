@@ -59,14 +59,14 @@ export function layerOptions(
 export interface RoleStyle {
   /** A CSS colour from the tokens. */
   color: string;
-  /** One letter drawn in the well (none for study samples, the bulk of a plate). */
+  /** A letter or three drawn in the well (none for study samples, the bulk of a plate). */
   letter: string;
   label: string;
 }
 
 const ROLE_STYLE: Record<string, Omit<RoleStyle, "label">> = {
   unkn: { color: "color-mix(in oklab, var(--text-faint) 55%, var(--surface))", letter: "" },
-  std: { color: "var(--info)", letter: "S" },
+  std: { color: "var(--info)", letter: "Std" }, // never "S": it reads as "sample"
   ntc: { color: "var(--warn)", letter: "N" },
   nrt: { color: "var(--v-check)", letter: "R" },
   nac: { color: "var(--v-fragile)", letter: "A" },
