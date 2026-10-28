@@ -114,6 +114,52 @@ class ComparisonSpec:
         return self.pairs is not None
 
 
+@dataclass(frozen=True)
+class DetectedOnly:
+    """A gene measured in both groups but detected in only one of them (or in neither).
+
+    ``group`` is the group it was detected in (``None``: neither); ``absent`` the group none
+    of whose measured units it was detected in. Counts are biological units: ``n_detected``
+    of ``n_group`` in ``group``, none of ``n_absent`` in ``absent``.
+    """
+
+    group: str | None
+    absent: str
+    n_detected: int
+    n_group: int
+    n_absent: int
+
+    def words(self) -> str:
+        """The withheld reason in plain words (no fold change is given)."""
+        if self.group is None:
+            return (
+                f"not detected in any of the {self.n_absent} biological units of {self.absent}: "
+                "there is no fold change to give"
+            )
+        return (
+            f"detected only in {self.group} ({self.n_detected} of {self.n_group} biological "
+            f"units); not detected in any of the {self.n_absent} units of {self.absent}: there "
+            "is no fold change to give (a ratio to nothing), only that it is present in one "
+            "group"
+        )
+
+
+def _detected_only(
+    labels: tuple[str, str], detected: tuple[int, int], measured: tuple[int, int]
+) -> DetectedOnly | None:
+    """The :class:`DetectedOnly` of a withheld gene, or ``None`` when that is not why."""
+    (label_a, label_b), (n_a, n_b), (m_a, m_b) = labels, detected, measured
+    if m_a == 0 or m_b == 0:  # a group without a measured unit: not a detection question
+        return None
+    if n_a == 0 and n_b == 0:
+        return DetectedOnly(None, f"{label_a} or {label_b}", 0, 0, m_a + m_b)
+    if n_a == 0:
+        return DetectedOnly(label_b, label_a, n_b, m_b, m_a)
+    if n_b == 0:
+        return DetectedOnly(label_a, label_b, n_a, m_a, m_b)
+    return None
+
+
 @dataclass(frozen=True, eq=False)
 class _Masks:
     """A comparison over the space's units: group masks, or the pair positions when paired."""
@@ -278,7 +324,12 @@ class QpcrSpace:
         self._cmp: list[_Masks] = [self._spec_masks(spec) for spec in specs]
         if specs and specs[0].paired:  # the primary's masks are its paired units
             self._masks = {None: (self._cmp[0].in_a, self._cmp[0].in_b)}
-        self.withheld = self._withheld(matrix, genes, primary_refs, labels)
+        left_out = None
+        if excluded is not None:
+            left_out = excluded.reindex(index=matrix.index, columns=genes)
+            left_out = left_out.astype("boolean").fillna(False).to_numpy(dtype=bool)
+        self.detected_only: dict[str, DetectedOnly] = {}
+        self.withheld = self._withheld(matrix, genes, primary_refs, labels, left_out)
         self.items: list[str] = [gene for gene in genes if gene not in self.withheld]
         self._excluded: np.ndarray | None = None
         if excluded is not None:
@@ -293,6 +344,7 @@ class QpcrSpace:
             self._given[key] = other.reindex(index=matrix.index, columns=matrix.columns)
         self._by_key: dict[tuple[Any, ...], tuple[np.ndarray, np.ndarray, pd.DataFrame]] = {}
         self._nondetect: dict[tuple[tuple[Any, ...], str], np.ndarray] = {}
+        self._capped: dict[tuple[tuple[Any, ...], str], np.ndarray] = {}
         self._excl_by_key: dict[tuple[Any, ...], np.ndarray] = {}
         self._ref_mean: dict[
             tuple[tuple[str, ...], tuple[Any, ...]], tuple[np.ndarray, np.ndarray]
@@ -398,14 +450,24 @@ class QpcrSpace:
         values, lowest, _ = self._matrix_arrays(key)
         excluded = self._excl_by_key.get(key, self._excluded)
         if rule == "cap":
-            if excluded is None:
-                values = np.where(np.isnan(values), lowest, values)
-            else:  # an excluded value stays out; only undetermined wells are capped
-                values = np.where(np.isnan(values) & ~excluded, lowest, values)
+            capped = np.isnan(values) if excluded is None else np.isnan(values) & ~excluded
+            values = np.where(capped, lowest, values)  # an excluded value stays out
+            self._capped[(key, rule)] = capped & ~np.isnan(values)
         elif rule != "drop":
             raise AxisError(f"unknown undetermined option {rule!r}")
         self._nondetect[(key, rule)] = values
         return values
+
+    def _capped_mask(self, cell: Mapping[str, Any]) -> np.ndarray | None:
+        """Units x items: the values the cell's non-detect rule filled in (``None``: none).
+
+        A group none of whose values was detected (every one of them capped) has no measured
+        amount to compare: the comparison is not tested there, as under ``drop``, instead of a
+        fold change made of the cap (see :attr:`detected_only`).
+        """
+        key = self._matrix_key(cell)
+        self._nondetect_values(key, cell["undetermined"])
+        return self._capped.get((key, cell["undetermined"]))
 
     def _withheld(
         self,
@@ -413,12 +475,23 @@ class QpcrSpace:
         genes: list[str],
         refs: tuple[str, ...],
         labels: tuple[str, str],
+        left_out: np.ndarray | None = None,
     ) -> dict[str, str]:
-        """Genes with fewer than two values in a group in the primary cell, with the reason."""
+        """Genes with fewer than two values in a group in the primary cell, with the reason.
+
+        A gene measured in both groups but not detected in any unit of one of them (every
+        such value undetermined; none excluded or not measured) is "detected only in" the
+        other group, or "not detected in either group": :attr:`detected_only` keeps who, and
+        the reason says it in words. There is no fold change to give for it.
+        """
         values = matrix[genes].to_numpy(dtype=float)
         block = matrix[list(refs)]
         relative = values - block.mean(axis=1).to_numpy(dtype=float)[:, None]
-        valid = block.notna().all(axis=1).to_numpy()[:, None] & ~np.isnan(relative)
+        refs_ok = block.notna().all(axis=1).to_numpy()[:, None]
+        valid = refs_ok & ~np.isnan(relative)
+        measured = refs_ok & np.ones_like(valid)
+        if left_out is not None:
+            measured = measured & ~left_out
         if self.comparisons and self.comparisons[0].paired:
             masks = self._cmp[0]
             pairs = (valid[masks.idx_a] & valid[masks.idx_b]).sum(axis=0)
@@ -430,12 +503,20 @@ class QpcrSpace:
         in_high, in_rest = self._masks[self.primary.get("cut")]
         n_a = (valid & in_high[:, None]).sum(axis=0)
         n_b = (valid & in_rest[:, None]).sum(axis=0)
+        m_a = (measured & in_high[:, None]).sum(axis=0)
+        m_b = (measured & in_rest[:, None]).sum(axis=0)
         out = {}
-        for gene, a, b in zip(genes, n_a, n_b, strict=True):
+        for i, (gene, a, b) in enumerate(zip(genes, n_a, n_b, strict=True)):
             short = [label for label, n in zip(labels, (a, b), strict=True) if n < 2]
-            if short:
+            if not short:
+                continue
+            only = _detected_only(labels, (int(a), int(b)), (int(m_a[i]), int(m_b[i])))
+            if only is None:
                 where = " and ".join(short)
                 out[gene] = f"fewer than two biological units with a value in {where}"
+                continue
+            self.detected_only[gene] = only
+            out[gene] = only.words()
         return out
 
     def _spec_masks(self, spec: ComparisonSpec) -> _Masks:
@@ -489,12 +570,14 @@ class QpcrSpace:
         ref_mean, refs_ok = self._reference(refs, key)
         relative = values - ref_mean[:, None]
         valid = refs_ok[:, None] & ~np.isnan(relative)
+        capped = self._capped.get((key, cell["undetermined"]))
         if self.comparisons:
-            return self._compare(relative, valid, self._cmp)[0].results()
+            return self._compare(relative, valid, self._cmp, capped=capped)[0].results()
         in_high, in_rest = self._masks[cell["cut"] if self.design is not None else None]
         stats_hi = _group_stats(relative, valid & in_high[:, None])
         stats_lo = _group_stats(relative, valid & in_rest[:, None])
-        return _welch_results(self.items, stats_hi, stats_lo, self.rule)
+        untested = _none_detected(valid, capped, in_high, in_rest)
+        return _welch_results(self.items, stats_hi, stats_lo, self.rule, untested)
 
     def conclude(self, result: ContrastResult) -> Conclusion:
         """Up / down / none for a result under this space's conclusion rule.
@@ -519,7 +602,8 @@ class QpcrSpace:
         refs_ok = ~np.isnan(ref_values).any(axis=1)
         relative = values - ref_mean[:, None]
         valid = refs_ok[:, None] & ~np.isnan(relative)
-        arrays = self._compare(relative, valid, self._cmp, with_ci=with_ci)
+        capped = self._capped_mask(cell)
+        arrays = self._compare(relative, valid, self._cmp, with_ci=with_ci, capped=capped)
         return {spec.id: a for spec, a in zip(self.comparisons, arrays, strict=True)}
 
     def evaluate_all(self, cell: Mapping[str, Any]) -> dict[str, dict[str, ContrastResult]]:
@@ -549,19 +633,36 @@ class QpcrSpace:
         masks: Sequence[_Masks],
         *,
         with_ci: bool = True,
+        capped: np.ndarray | None = None,
     ) -> list[ContrastArrays]:
-        """Each comparison's test on the same relative quantities, then the correction."""
+        """Each comparison's test on the same relative quantities, then the correction.
+
+        ``capped`` (units x items) marks the values a non-detect rule filled in: a comparison
+        with a group none of whose values was detected is not tested for that item.
+        """
         out = []
         for spec, m in zip(self.comparisons, masks, strict=True):
             if spec.pairs is None:
                 stats_a = _group_stats(relative, valid & m.in_a[:, None])
                 stats_b = _group_stats(relative, valid & m.in_b[:, None])
-                out.append(welch_arrays(self.items, stats_a, stats_b, self.rule, with_ci=with_ci))
+                untested = _none_detected(valid, capped, m.in_a, m.in_b)
+                out.append(
+                    welch_arrays(
+                        self.items, stats_a, stats_b, self.rule, with_ci=with_ci, untested=untested
+                    )
+                )
             else:
                 differences = relative[m.idx_a] - relative[m.idx_b]
                 complete = valid[m.idx_a] & valid[m.idx_b]
                 stats = _group_stats(differences, complete)
-                out.append(paired_arrays(self.items, stats, self.rule, with_ci=with_ci))
+                untested = None
+                if capped is not None:
+                    seen_a = (complete & ~capped[m.idx_a]).sum(axis=0)
+                    seen_b = (complete & ~capped[m.idx_b]).sum(axis=0)
+                    untested = (seen_a == 0) | (seen_b == 0)
+                out.append(
+                    paired_arrays(self.items, stats, self.rule, with_ci=with_ci, untested=untested)
+                )
         if self.correction == "holm" and len(out) > 1:
             adjusted = holm(np.vstack([a.p for a in out]), axis=0)
             out = [_with_call_p(a, adjusted[i]) for i, a in enumerate(out)]
@@ -610,6 +711,7 @@ class QpcrSpace:
         ref_values: np.ndarray,
         in_high: np.ndarray,
         in_rest: np.ndarray,
+        capped: np.ndarray | None = None,
     ) -> ContrastArrays:
         """Every item's comparison from explicit arrays, with :meth:`evaluate`'s arithmetic.
 
@@ -621,6 +723,8 @@ class QpcrSpace:
             ref_values: Units x control genes ``log2(n0)``.
             in_high: Boolean mask over :attr:`units`, the high group (group A).
             in_rest: Boolean mask over :attr:`units`, the comparison group (group B).
+            capped: Units x :attr:`items`, the values a non-detect rule filled in
+                (:meth:`cell_capped`); ``None``: none were.
 
         Returns:
             The arrays; :meth:`ContrastArrays.results` gives the :class:`ContrastResult` dict.
@@ -630,10 +734,12 @@ class QpcrSpace:
         relative = values - ref_mean[:, None]
         valid = refs_ok[:, None] & ~np.isnan(relative)
         if self.comparisons:
-            return self._compare(relative, valid, self._masks_with(in_high, in_rest))[0]
+            masks = self._masks_with(in_high, in_rest)
+            return self._compare(relative, valid, masks, capped=capped)[0]
         stats_hi = _group_stats(relative, valid & in_high[:, None])
         stats_lo = _group_stats(relative, valid & in_rest[:, None])
-        return welch_arrays(self.items, stats_hi, stats_lo, self.rule)
+        untested = _none_detected(valid, capped, in_high, in_rest)
+        return welch_arrays(self.items, stats_hi, stats_lo, self.rule, untested=untested)
 
     def _masks_with(self, in_high: np.ndarray, in_rest: np.ndarray) -> list[_Masks]:
         """Every comparison's masks with the primary's replaced by ``in_high`` / ``in_rest``.
@@ -677,8 +783,14 @@ class QpcrSpace:
             own_refs if ref_values is None else ref_values,
             own_high if in_high is None else in_high,
             own_rest if in_rest is None else in_rest,
+            self.cell_capped(cell),
         )
         return out.results()
+
+    def cell_capped(self, cell: Mapping[str, Any] | None = None) -> np.ndarray | None:
+        """A copy of the values the cell's non-detect rule filled in (``None``: none were)."""
+        mask = self._capped_mask(self.primary if cell is None else cell)
+        return None if mask is None else mask.copy()
 
 
 @dataclass(frozen=True, eq=False)
@@ -700,11 +812,14 @@ class ContrastArrays:
     conclusion: np.ndarray
     rule: ConclusionRule
     p_call: np.ndarray | None = None  # the p-value the call uses (corrected); None: ``p``
+    untested: np.ndarray | None = None  # a group with no detected value (only capped ones)
 
     @property
     def half_ci(self) -> np.ndarray:
         """Half-width of the 95 % confidence interval on the log2 scale (NaN without a test)."""
         ok = (self.n_hi >= 2) & (self.n_lo >= 2)
+        if self.untested is not None:
+            ok = ok & ~self.untested
         with np.errstate(invalid="ignore"):
             return np.where(ok, self.t_crit * self.se, np.nan)
 
@@ -717,6 +832,7 @@ class ContrastArrays:
             self.n_lo,
             self.rule,
             self.p_call,
+            self.untested,
         )
 
 
@@ -774,6 +890,7 @@ def paired_arrays(
     rule: ConclusionRule,
     *,
     with_ci: bool = True,
+    untested: np.ndarray | None = None,
 ) -> ContrastArrays:
     """The paired t-test per item from the ``(n, mean, var)`` of within-pair differences.
 
@@ -788,6 +905,8 @@ def paired_arrays(
         p = 2 * stats.t.sf(np.abs(t), df)
         t_crit = stats.t.ppf(0.975, df) if with_ci else np.full(np.shape(df), np.nan)
     tested = n >= 2
+    if untested is not None:
+        tested = tested & ~untested
     p = np.where(tested, p, np.nan)
     with np.errstate(invalid="ignore"):
         significant = p < rule.alpha
@@ -796,7 +915,9 @@ def paired_arrays(
         "up",
         np.where(significant & (mean <= -rule.min_log2fc), "down", "none"),
     )
-    return ContrastArrays(tuple(items), mean, se, t, p, t_crit, n, n, call, rule)
+    return ContrastArrays(
+        tuple(items), mean, se, t, p, t_crit, n, n, call, rule, untested=_any(untested)
+    )
 
 
 def comparison_grid(space: QpcrSpace, grid: pd.DataFrame) -> pd.DataFrame:
@@ -849,16 +970,20 @@ def welch_arrays(
     rule: ConclusionRule,
     *,
     with_ci: bool = True,
+    untested: np.ndarray | None = None,
 ) -> ContrastArrays:
     """Welch's test per item from per-group ``(n, mean, var)`` arrays (any common shape).
 
     The arrays may be per item (one analysis) or, broadcast, several analyses at once (rows =
     analyses, columns = items); ``items`` names the last axis. ``with_ci=False`` skips the
     t quantile (``t_crit`` is NaN): faster when only the fold change and the call are needed.
+    ``untested`` marks items with a group none of whose values was detected (p = NaN, "none").
     """
     n_a, n_b = high[0], rest[0]
     diff, se, t, p, t_crit = _welch_core(high, rest, with_ci=with_ci)
     tested = (n_a >= 2) & (n_b >= 2)
+    if untested is not None:
+        tested = tested & ~untested
     p = np.where(tested, p, np.nan)
     with np.errstate(invalid="ignore"):
         significant = p < rule.alpha
@@ -867,7 +992,24 @@ def welch_arrays(
         "up",
         np.where(significant & (diff <= -rule.min_log2fc), "down", "none"),
     )
-    return ContrastArrays(tuple(items), diff, se, t, p, t_crit, n_a, n_b, call, rule)
+    return ContrastArrays(
+        tuple(items), diff, se, t, p, t_crit, n_a, n_b, call, rule, untested=_any(untested)
+    )
+
+
+def _any(mask: np.ndarray | None) -> np.ndarray | None:
+    """``mask`` when it marks anything, else ``None`` (the arrays stay as they always were)."""
+    return mask if mask is not None and bool(np.any(mask)) else None
+
+
+def _none_detected(
+    valid: np.ndarray, capped: np.ndarray | None, in_a: np.ndarray, in_b: np.ndarray
+) -> np.ndarray | None:
+    """Items where group A or group B has values but none detected (all filled in by a cap)."""
+    if capped is None:
+        return None
+    seen = valid & ~capped
+    return _any(~(seen & in_a[:, None]).any(axis=0) | ~(seen & in_b[:, None]).any(axis=0))
 
 
 def group_stats(values: np.ndarray, mask: np.ndarray) -> tuple[np.ndarray, ...]:
@@ -937,8 +1079,9 @@ def _welch_results(
     high: tuple[np.ndarray, ...],
     rest: tuple[np.ndarray, ...],
     rule: ConclusionRule,
+    untested: np.ndarray | None = None,
 ) -> dict[str, ContrastResult]:
-    return _results(genes, _welch_core(high, rest), high[0], rest[0], rule)
+    return _results(genes, _welch_core(high, rest), high[0], rest[0], rule, untested=untested)
 
 
 def _results(
@@ -948,6 +1091,7 @@ def _results(
     n_b: np.ndarray,
     rule: ConclusionRule,
     p_call: np.ndarray | None = None,
+    untested: np.ndarray | None = None,
 ) -> dict[str, ContrastResult]:
     diff, se, t, p, t_crit = welch
     call_p = p if p_call is None else p_call
@@ -955,7 +1099,8 @@ def _results(
     nan = float("nan")
     for i, gene in enumerate(genes):
         d = float(diff[i])
-        if n_a[i] < 2 or n_b[i] < 2:  # no p-value without two values on each side
+        # no p-value without two values on each side, nor for a group with none detected
+        if n_a[i] < 2 or n_b[i] < 2 or (untested is not None and untested[i]):
             out[gene] = ContrastResult(
                 target=gene,
                 log2fc=d,

@@ -767,11 +767,28 @@ class AuditBadge(BaseModel):
     current: bool = Field(default=False, description="Audited at the decision chain head of now.")
 
 
+class DetectedOnlyView(BaseModel):
+    """A withheld gene measured in both groups but detected in one only (or in neither).
+
+    No fold change exists for it (a ratio to nothing); the detected group's ΔCq (the gene's Cq
+    minus the mean Cq of the control genes, per biological unit, then the mean) says how much.
+    """
+
+    group: str | None = Field(description="The group it was detected in; null: in neither.")
+    absent: str = Field(description="The group (or groups) it was detected in no unit of.")
+    n_detected: int
+    n_group: int
+    n_absent: int
+    dcq: float | None = Field(default=None, description="Mean ΔCq of the detected group.")
+    dcq_sd: float | None = None
+
+
 class WithheldGene(BaseModel):
     """A gene the engine compared no fold change for, and why (it is not in ``genes``)."""
 
     gene: str
     reason: str
+    detected_only: DetectedOnlyView | None = None
 
 
 AxisStatus = Literal["off", "swept", "screened_out", "not_applicable", "single_option"]

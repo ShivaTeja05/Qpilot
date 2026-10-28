@@ -731,6 +731,7 @@ def study_from_curves(
         )
     extras = _Extras(
         withheld=space.withheld,
+        detected_only=detected_only_dcq(model),
         screen=screen if settings.studio_facts else None,
         routes=routes,
         groups=labels,
@@ -850,6 +851,49 @@ def _comparison_label(design: StudyDesign | None, comparison_id: str) -> str:
         if comparison.key() == comparison_id:
             return comparison.title()
     return comparison_id
+
+
+def detected_only_dcq(model: StudyModel) -> dict[str, dict[str, Any]]:
+    """Each "detected only in" gene: the group, the counts and that group's ΔCq.
+
+    ΔCq is the engine's Cq of the gene minus the mean Cq of the primary control genes, per
+    biological unit of the group it was detected in (mean Cq of the unit's wells that count as
+    amplified under the primary rule, as the spreadsheet route builds it,
+    :func:`qpilot.qpcr.routes.cq_matrix`), then the mean and SD over those units. No fold change
+    is computed: the other group has no measured amount.
+    """
+    from qpilot.qpcr.routes import cq_matrix
+
+    space = model.space
+    if not space.detected_only:
+        return {}
+    settings, inputs = model.settings, model.inputs
+    calls = settings.design.well_calls if settings.design is not None else None
+    cq = cq_matrix(inputs.table, inputs.units, calls, amp_call=settings.amp_calls[0])
+    refs = [r for r in space.primary["refs"] if r in cq.columns]
+    labels = model.labels or (settings.group_var, "rest")
+    groups = dict(zip(labels, (model.high, model.rest), strict=True))
+    out: dict[str, dict[str, Any]] = {}
+    for gene, only in sorted(space.detected_only.items()):
+        entry: dict[str, Any] = {
+            "group": only.group,
+            "absent": only.absent,
+            "n_detected": only.n_detected,
+            "n_group": only.n_group,
+            "n_absent": only.n_absent,
+            "dcq": None,
+            "dcq_sd": None,
+        }
+        members = groups.get(only.group) if only.group is not None else None
+        if members and gene in cq.columns and refs:
+            rows = cq.loc[cq.index.isin(members)]
+            delta = (rows[gene] - rows[refs].mean(axis=1, skipna=False)).dropna()
+            if len(delta):
+                entry["dcq"] = float(delta.mean())
+            if len(delta) >= 2:
+                entry["dcq_sd"] = float(delta.std(ddof=1))
+        out[gene] = entry
+    return out
 
 
 def _not_measured_words(
@@ -1268,6 +1312,7 @@ class _Extras:
     """Facts beyond the legacy set: withheld genes, the Studio facts, the design's groups."""
 
     withheld: Mapping[str, str]
+    detected_only: Mapping[str, Mapping[str, Any]]
     screen: AmpScreen | None
     routes: Mapping[str, RouteResult] | None
     groups: tuple[str, str] | None
@@ -1524,6 +1569,17 @@ def _extra_facts(add: Callable[..., None], extras: _Extras, settings: StudySetti
         add("f_n_withheld", len(extras.withheld), path="withheld")
         for gene, reason in extras.withheld.items():
             add(f"f_withheld_{slug(gene)}", reason, path=f"withheld.{gene}")
+    for gene, only in extras.detected_only.items():
+        s, path = slug(gene), f"detected_only.{gene}"
+        add(f"f_detected_only_{s}", only["group"] or "neither group", path=f"{path}.group")
+        add(f"f_absent_only_{s}", only["absent"], path=f"{path}.absent")
+        add(f"f_n_detected_only_{s}", only["n_detected"], COUNT_FMT, path=f"{path}.n_detected")
+        add(f"f_n_units_only_{s}", only["n_group"], COUNT_FMT, path=f"{path}.n_group")
+        add(f"f_n_absent_only_{s}", only["n_absent"], COUNT_FMT, path=f"{path}.n_absent")
+        if only.get("dcq") is not None:
+            add(f"f_dcq_only_{s}", only["dcq"], "{:.2f}", path=f"{path}.dcq")
+        if only.get("dcq_sd") is not None:
+            add(f"f_dcq_sd_only_{s}", only["dcq_sd"], "{:.2f}", path=f"{path}.dcq_sd")
     if extras.groups is not None:
         add("f_group_a", extras.groups[0], path="design.comparison.group_a")
         add("f_group_b", extras.groups[1], path="design.comparison.group_b")
