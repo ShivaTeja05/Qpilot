@@ -7,6 +7,7 @@ import { AlertTriangle, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { sectionPath } from "@/shell/sections";
 import { Card, CardBody, CardHeader, ConclusionTag, ErrorPanel, LoadingBlock } from "@/ui";
+import { isWarming, Warming } from "@/ui/proposal";
 import { cn } from "@/lib/cn";
 import { count, ofTotal } from "@/lib/format";
 import { asConclusion, CONCLUSION } from "@/lib/vocab";
@@ -28,7 +29,9 @@ export function RoutesCard({ workspace }: { workspace: Workspace }) {
       />
       <CardBody>
         {routes.isPending ? (
-          <LoadingBlock label="Recomputing the usual routes" lines={4} />
+          <LoadingBlock label="Reading the usual routes" lines={4} />
+        ) : isWarming(routes.error) ? (
+          <Warming message={routes.error.message} />
         ) : routes.error ? (
           <ErrorPanel
             error={routes.error}
