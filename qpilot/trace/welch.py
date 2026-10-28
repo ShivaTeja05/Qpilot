@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
+from functools import partial
 
 import numpy as np
 from scipy import stats
@@ -47,11 +48,17 @@ CALL_NAMES = {UP: "up", NONE: "none", DOWN: "down"}
 
 @dataclass(frozen=True)
 class GroupStats:
-    """Per-gene count, mean and sum of squared deviations of one group (arrays broadcast)."""
+    """Per-gene count, mean and sum of squared deviations of one group (arrays broadcast).
+
+    ``nd`` counts the values that were detected (not filled in by a non-detect rule): a group
+    with values but none detected is not compared, as the decision space does (``None``: every
+    value counts as detected).
+    """
 
     n: np.ndarray
     mean: np.ndarray
     ss: np.ndarray
+    nd: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -86,15 +93,28 @@ class WelchArrays:
         )
 
 
-def group_stats(values: np.ndarray, mask: np.ndarray) -> GroupStats:
-    """Column-wise statistics of ``values`` where ``mask`` is true (two-pass, as the space)."""
+def group_stats(
+    values: np.ndarray, mask: np.ndarray, detected: np.ndarray | None = None
+) -> GroupStats:
+    """Column-wise statistics of ``values`` where ``mask`` is true (two-pass, as the space).
+
+    ``detected`` (same shape): the values not filled in by a non-detect rule, counted in ``nd``.
+    """
     n = mask.sum(axis=0)
     filled = np.where(mask, values, 0.0)
     with np.errstate(divide="ignore", invalid="ignore"):  # n < 2 is reported as p = NaN
         mean = filled.sum(axis=0) / n
         deviations = np.where(mask, values - mean, 0.0)
         ss = (deviations**2).sum(axis=0)
-    return GroupStats(n=n.astype(float), mean=mean, ss=ss)
+    nd = None if detected is None else (mask & detected).sum(axis=0).astype(float)
+    return GroupStats(n=n.astype(float), mean=mean, ss=ss, nd=nd)
+
+
+def none_detected(a: GroupStats, b: GroupStats) -> np.ndarray | None:
+    """Where group A or B has values but none detected: not compared (``None``: not tracked)."""
+    if a.nd is None or b.nd is None:
+        return None
+    return ((a.n > 0) & (a.nd == 0)) | ((b.n > 0) & (b.nd == 0))
 
 
 def calls(diff: np.ndarray, p: np.ndarray, rule: ConclusionRule = DEFAULT_RULE) -> np.ndarray:
@@ -116,6 +136,9 @@ def welch(a: GroupStats, b: GroupStats, rule: ConclusionRule = DEFAULT_RULE) -> 
         t = diff / se
         df = (sa + sb) ** 2 / (sa**2 / (a.n - 1) + sb**2 / (b.n - 1))
         short = (a.n < 2) | (b.n < 2)
+        untested = none_detected(a, b)
+        if untested is not None:
+            short = short | untested
         p = np.where(short, np.nan, 2 * stats.t.sf(np.abs(t), df))
         t_crit = np.where(short, np.nan, stats.t.ppf(0.975, df))
     return WelchArrays(diff=diff, se=se, p=p, df=df, t_crit=t_crit, call=calls(diff, p, rule))
@@ -139,6 +162,9 @@ def fast_calls(
         t = np.abs(diff / se)
         df = (sa + sb) ** 2 / (sa**2 / (a.n - 1) + sb**2 / (b.n - 1))
         short = (a.n < 2) | (b.n < 2) | ~np.isfinite(t) | ~np.isfinite(df)
+        untested = none_detected(a, b)
+        if untested is not None:
+            short = short | untested
     significant = np.zeros(np.shape(diff), dtype=bool)
     ok = ~short
     if ok.any():
@@ -176,22 +202,37 @@ def margin(after: WelchArrays, base_call: np.ndarray, rule: ConclusionRule) -> n
     return np.where(np.isfinite(out), out, np.inf)
 
 
+def _map(s: GroupStats, fn) -> GroupStats:  # noqa: ANN001
+    """``fn`` applied to every field of ``s`` (``nd`` too, when it is tracked)."""
+    return GroupStats(fn(s.n), fn(s.mean), fn(s.ss), None if s.nd is None else fn(s.nd))
+
+
 def _tile(s: GroupStats, shape: tuple[int, ...]) -> GroupStats:
     """The same per-gene statistics repeated for every row of a (rows, genes) perturbation."""
-    return GroupStats(*(np.broadcast_to(v, shape) for v in (s.n, s.mean, s.ss)))
+    return _map(s, lambda v: np.broadcast_to(v, shape))
 
 
-def _remove(s: GroupStats, x: np.ndarray, member: np.ndarray) -> GroupStats:
-    """Statistics after taking ``x`` out where ``member``; unchanged elsewhere."""
+def _remove(
+    s: GroupStats, x: np.ndarray, member: np.ndarray, detected: np.ndarray | None = None
+) -> GroupStats:
+    """Statistics after taking ``x`` out where ``member``; unchanged elsewhere.
+
+    ``detected``: whether the value taken out was detected (``nd`` falls by one where so).
+    """
     with np.errstate(divide="ignore", invalid="ignore"):
         n = s.n - 1
         mean = s.mean - (x - s.mean) / n
         ss = np.maximum(s.ss - (x - s.mean) * (x - mean), 0.0)
     keep = ~member
+    nd = None
+    if s.nd is not None:
+        gone = member if detected is None else member & detected
+        nd = np.where(gone, s.nd - 1, s.nd)
     return GroupStats(
         n=np.where(keep, s.n, n),
         mean=np.where(keep, s.mean, mean),
         ss=np.where(keep, s.ss, ss),
+        nd=nd,
     )
 
 
@@ -206,6 +247,7 @@ def _shift(s: GroupStats, x: np.ndarray, delta: np.ndarray, member: np.ndarray) 
         n=np.broadcast_to(s.n, mean.shape),
         mean=np.where(keep, s.mean, mean),
         ss=np.where(keep, s.ss, ss),
+        nd=None if s.nd is None else np.broadcast_to(s.nd, mean.shape),
     )
 
 
@@ -220,6 +262,7 @@ def _add(s: GroupStats, y: np.ndarray, joining: np.ndarray) -> GroupStats:
         n=np.where(keep, s.n, n),
         mean=np.where(keep, s.mean, mean),
         ss=np.where(keep, s.ss, ss),
+        nd=None if s.nd is None else np.where(keep, s.nd, s.nd + 1),
     )
 
 
@@ -279,6 +322,7 @@ class Comparison:
         in_b: np.ndarray,
         rule: ConclusionRule = DEFAULT_RULE,
         family: Family | None = None,
+        capped: np.ndarray | None = None,
     ) -> None:
         relative = np.asarray(relative, dtype=float)
         valid = np.asarray(valid, dtype=bool) & ~np.isnan(relative)
@@ -299,7 +343,10 @@ class Comparison:
         self.x = np.where(valid, relative, 0.0)
         self.members = [valid & m[:, None] for m in masks]
         self.a, self.b = self.members[self._ia], self.members[self._ib]
-        self.stats = [group_stats(relative, m) for m in self.members]
+        self.capped = None if capped is None else np.asarray(capped, dtype=bool)
+        detected = None if self.capped is None else ~self.capped
+        self.detected = detected
+        self.stats = [group_stats(relative, m, detected) for m in self.members]
         self.stats_a, self.stats_b = self.stats[self._ia], self.stats[self._ib]
         self.base = self._test(self.stats, exact=True)
 
@@ -318,7 +365,7 @@ class Comparison:
         """Each unit set aside from each gene's comparison, one at a time."""
         shape = self.x.shape
         stats = [
-            _remove(_tile(s, shape), self.x, m)
+            _remove(_tile(s, shape), self.x, m, self.detected)
             for s, m in zip(self.stats, self.members, strict=True)
         ]
         return Effect(after=self._test(stats), base=self.base, touched=self.used)
@@ -328,10 +375,14 @@ class Comparison:
         stats = [_column_of(s, j) for s in self.stats]
         for i in rows:
             stats = [
-                _remove(s, self.x[i, j], np.asarray(m[i, j]))
+                _remove(s, self.x[i, j], np.asarray(m[i, j]), self._det(i, j))
                 for s, m in zip(stats, self.members, strict=True)
             ]
         return self._test(stats, exact=True)
+
+    def _det(self, i: int | np.ndarray, j: int) -> np.ndarray | None:
+        """Whether unit(s) ``i``'s value of gene ``j`` was detected (``None``: not tracked)."""
+        return None if self.detected is None else np.asarray(self.detected[i, j])
 
     def pairs(self, j: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Every pair of the units used for gene ``j`` set aside together (calls only).
@@ -350,8 +401,12 @@ class Comparison:
         two = []
         for s, m in zip(self.stats, self.members, strict=True):
             inside = m[rows, j]
-            one = _remove(_repeat(s, j, len(rows)), x, inside)
-            both = _remove(_column(one, shape), col, np.broadcast_to(inside[None, :], shape))
+            det = self._det(rows, j)
+            one = _remove(_repeat(s, j, len(rows)), x, inside, det)
+            det_col = None if det is None else np.broadcast_to(det[None, :], shape)
+            both = _remove(
+                _column(one, shape), col, np.broadcast_to(inside[None, :], shape), det_col
+            )
             two.append(_keep_where(both, _column(one, shape), diagonal))
         if self.family is None:
             diff, _, _, call = fast_calls(two[self._ia], two[self._ib], self.rule)
@@ -399,7 +454,7 @@ class Comparison:
             fa, fb = family.masks()
             if not (np.array_equal(fa, in_a) and np.array_equal(fb, in_b)):
                 family = None  # regrouped (a marker split): no family there
-        return Comparison(relative, valid, in_a, in_b, self.rule, family).base
+        return Comparison(relative, valid, in_a, in_b, self.rule, family, self.capped).base
 
     def smallest_flip(self, j: int, loo: Effect, limit: int = 20) -> FlipSet:
         """The fewest units whose removal together changes gene ``j``'s call.
@@ -442,9 +497,7 @@ class Comparison:
             rows = np.flatnonzero(left)
             x = self.x[rows, j]
             trial = [
-                _remove(
-                    GroupStats(*(np.full(len(rows), v) for v in (s.n, s.mean, s.ss))), x, m[rows, j]
-                )
+                _remove(_map(s, partial(np.full, len(rows))), x, m[rows, j], self._det(rows, j))
                 for s, m in zip(stats, self.members, strict=True)
             ]
             after = self._test(trial)
@@ -454,7 +507,7 @@ class Comparison:
             chosen.append(i)
             left[i] = False
             stats = [
-                _remove(s, self.x[i, j], np.asarray(mm[i, j]))
+                _remove(s, self.x[i, j], np.asarray(mm[i, j]), self._det(i, j))
                 for s, mm in zip(stats, self.members, strict=True)
             ]
             if after.call[pick] != base_call:
@@ -464,19 +517,17 @@ class Comparison:
 
 def _column_of(s: GroupStats, j: int) -> GroupStats:
     """Gene ``j``'s statistics of one group (0-d arrays)."""
-    return GroupStats(*(np.asarray(v[j], dtype=float) for v in (s.n, s.mean, s.ss)))
+    return _map(s, lambda v: np.asarray(v[j], dtype=float))
 
 
 def _repeat(s: GroupStats, j: int, n: int) -> GroupStats:
     """Gene ``j``'s statistics repeated ``n`` times (one copy per unit to remove)."""
-    return GroupStats(*(np.full(n, np.asarray(v)[j], dtype=float) for v in (s.n, s.mean, s.ss)))
+    return _map(s, lambda v: np.full(n, np.asarray(v)[j], dtype=float))
 
 
 def _column(s: GroupStats, shape: tuple[int, int]) -> GroupStats:
     """Per-row statistics (one per first removed unit) repeated along the second axis."""
-    return GroupStats(
-        *(np.broadcast_to(np.asarray(v)[:, None], shape) for v in (s.n, s.mean, s.ss))
-    )
+    return _map(s, lambda v: np.broadcast_to(np.asarray(v)[:, None], shape))
 
 
 def _keep_where(s: GroupStats, other: GroupStats, where: np.ndarray) -> GroupStats:
@@ -484,6 +535,7 @@ def _keep_where(s: GroupStats, other: GroupStats, where: np.ndarray) -> GroupSta
         n=np.where(where, other.n, s.n),
         mean=np.where(where, other.mean, s.mean),
         ss=np.where(where, other.ss, s.ss),
+        nd=None if s.nd is None or other.nd is None else np.where(where, other.nd, s.nd),
     )
 
 
@@ -569,6 +621,9 @@ class Family:
                 diff = sa.mean - sb.mean
                 t = diff / se
                 short = (sa.n < 2) | (sb.n < 2) | ~(dof > 0) | ~np.isfinite(t)
+                untested = none_detected(sa, sb)
+                if untested is not None:
+                    short = short | untested
                 p = np.where(short, np.nan, 2 * stats.t.sf(np.abs(t), dof))
                 t_crit = np.where(short, np.nan, stats.t.ppf(0.975, dof))
             diff = np.broadcast_to(diff, shape)

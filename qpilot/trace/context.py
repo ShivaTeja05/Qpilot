@@ -424,7 +424,14 @@ def build_context(
         engine = space.focus(traced.id).evaluate(cell)
         labels = labels or traced.labels
     values, relative, valid = relative_values(model, cell, matrix, items)
-    comparison_ = Comparison(relative, valid, in_a, in_b, space.rule, family)
+    # the values the cell's non-detect rule filled in: a group none of whose values was
+    # detected is not compared, as the decision space does ("detected only in" a group)
+    capped = space.cell_capped(cell)
+    if capped is not None and capped.shape != relative.shape:
+        raise TraceError(
+            "Trace could not line up the study's undetected values; nothing is traced."
+        )
+    comparison_ = Comparison(relative, valid, in_a, in_b, space.rule, family, capped)
     _check_against_engine(engine, comparison_.base, items)
     names = (
         labels

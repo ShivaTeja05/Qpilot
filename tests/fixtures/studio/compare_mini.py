@@ -9,7 +9,9 @@ biology (a donor effect only a paired test removes). With ``missing_well`` the s
 ``DrugB_D4`` has no ``TP53`` well at all (a unit not measured for one gene). With
 ``ref_shift`` a control gene comes up later in one group (``{("ACTB", "Drug B"): 2.5}``: the
 drug lowers ACTB), so which control genes normalise changes calls in that group's comparison
-only.
+only. With ``silent`` a gene never amplifies in a group (``{("TP53", "Drug B")}``: flat
+curves, so every such well is undetermined: under "cap" the group's values are all filled in,
+and the gene is detected only in the other groups).
 
 Curves are model curves (exponential growth to a plateau, efficiency 1.9) with a little baseline
 noise from a fixed seed, so the file is identical on every run.
@@ -76,6 +78,7 @@ def write_compare_mini(
     *,
     missing_well: bool = False,
     ref_shift: dict[tuple[str, str], float] | None = None,
+    silent: set[tuple[str, str]] | frozenset[tuple[str, str]] = frozenset(),
 ) -> Path:
     """Write the synthetic three-group RDML file to ``path`` and return the path."""
     rng = np.random.default_rng(11)
@@ -110,7 +113,10 @@ def write_compare_mini(
                 crossing = cq + (rep - 1) * 0.05
                 parts.append(f'<react id="{react}"><sample id={quoteattr(name)}/>')
                 parts.append(f"<data><tar id={quoteattr(target)}/>")
-                for cycle, fluor in enumerate(_curve(rng, crossing), start=1):
+                curve = _curve(rng, crossing)
+                if (target, group) in silent:  # never amplifies: the baseline alone
+                    curve = list(0.5 + rng.normal(0.0, 0.002, CYCLES))
+                for cycle, fluor in enumerate(curve, start=1):
                     parts.append(f"<adp><cyc>{cycle}</cyc><fluor>{fluor:.4f}</fluor></adp>")
                 parts.append("</data></react>")
         parts.append("</run>")

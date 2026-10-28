@@ -191,3 +191,43 @@ def test_the_mcp_trace_follows_a_comparison(studies):
     assert out["root"] == {"kind": "gene", "id": "MYC"}
     refused = tools.qpcr_trace(sid, gene="MYC", comparison="nope")
     assert refused["code"] and "no comparison" in str(refused)
+
+
+def test_a_gene_detected_only_in_some_groups_traces_as_the_engine_calls_it(
+    web_store, tmp_path, monkeypatch
+):
+    """TP53 never amplifies in Drug B: under "cap" that group's values are all filled in, so the
+    engine does not compare TP53 in Drug B vs Control, and Holm's family for TP53 is one
+    comparison. Trace (both engines) must say the same, before and after any sample is set
+    aside, and not compare filled-in values."""
+    monkeypatch.setenv("QPILOT_CACHE_DIR", str(tmp_path / "cache"))
+    path = write_compare_mini(tmp_path / "silent.rdml", silent={("TP53", "Drug B")})
+    sid = web_store.ensure_study(path, design())
+    model = model_for_study(web_store, sid)
+    cell = dict(model.space.primary, undetermined="cap")
+    capped = model.space.cell_capped(cell)
+    assert capped is not None and capped.any()
+    for cid in (A, B):
+        engine = model.space.focus(cid).evaluate(cell)
+        ctx = build_context(model, sid, choice={"undetermined": "cap"}, comparison=cid)
+        for j, gene in enumerate(ctx.items):
+            assert CALL_NAMES[int(ctx.base.call[j])] == engine[gene].conclusion
+        tp53 = ctx.items.index("TP53")
+        if cid == B:
+            assert np.isnan(engine["TP53"].p) and np.isnan(ctx.base.p[tp53])
+        space = model.space.focus(cid)
+        values, refs = space.cell_arrays(cell)
+        hi, lo = space.group_masks(cell)
+        for i in np.flatnonzero(ctx.comparison.used.any(axis=1)):
+            h, l_ = hi.copy(), lo.copy()
+            h[i] = l_[i] = False
+            exact = space.evaluate_arrays(values, refs, h, l_, capped=capped)
+            for j in range(len(ctx.items)):
+                if ctx.comparison.used[i, j]:
+                    assert CALL_NAMES[int(ctx.loo.after.call[i, j])] == exact.conclusion[j]
+        where = places_engine.build_context(
+            model.inputs.primary_table, model, cell=cell, comparison=cid
+        )
+        assert where.capped is not None
+        for j, gene in enumerate(where.items):
+            assert where.base.conclusion[j] == engine[gene].conclusion

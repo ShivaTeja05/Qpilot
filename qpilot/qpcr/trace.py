@@ -372,6 +372,8 @@ class TraceContext:
     robustness: Mapping[str, Any] | None = None
     #: The analysis traced: a cell of the decision space (the primary one unless given).
     cell: dict[str, Any] = field(default_factory=dict)
+    #: Units x items: the values the cell's non-detect rule filled in (``None``: none).
+    capped: np.ndarray | None = None
     timings: dict[str, float] = field(default_factory=dict)
     _cache: dict[Any, Any] = field(default_factory=dict)
 
@@ -466,7 +468,12 @@ def build_context(
         labels = tuple(model.labels) if model.labels else ("group A", "group B")
     in_hi, in_lo = space.group_masks(cell)
     values, ref_values = space.cell_arrays(cell)
-    base = space.evaluate_arrays(values, ref_values, in_hi, in_lo)
+    # values the cell's non-detect rule filled in: a group none of whose values was detected
+    # is not compared (as the space does), so every evaluation here is given them
+    capped = space.cell_capped(cell)
+    if capped is not None and not capped.any():
+        capped = None
+    base = space.evaluate_arrays(values, ref_values, in_hi, in_lo, capped=capped)
     half = base.half_ci
     baseline = {
         g: Baseline(float(base.log2fc[j]), str(base.conclusion[j]), float(half[j]))
@@ -477,7 +484,14 @@ def build_context(
     rel = values - ref_values.mean(axis=1)[:, None]
     valid = used[:, None] & ~np.isnan(rel)
     loo_log2fc, loo_call = _loo(
-        rel, valid, in_hi, in_lo, space, base.conclusion, arrays=(values, ref_values)
+        rel,
+        valid,
+        in_hi,
+        in_lo,
+        space,
+        base.conclusion,
+        arrays=(values, ref_values),
+        capped=capped,
     )
     t1 = time.perf_counter()
 
@@ -490,10 +504,12 @@ def build_context(
             if absz[i, r] > TRACE_THRESHOLDS["z"]:
                 s1_flag[int(i)] = r
     shift_log2fc, shift_call = _shift(rel, valid, in_hi, in_lo, dev / max(len(refs), 1), space)
-    if space.comparisons and space.correction != "none":
-        _corrected(space, values, ref_values, in_hi, in_lo, used, expected, loo_log2fc, loo_call)
+    if (space.comparisons and space.correction != "none") or capped is not None:
+        _corrected(
+            space, values, ref_values, in_hi, in_lo, used, expected, loo_log2fc, loo_call, capped
+        )
         _corrected_shift(
-            space, values, ref_values, in_hi, in_lo, expected, shift_log2fc, shift_call
+            space, values, ref_values, in_hi, in_lo, expected, shift_log2fc, shift_call, capped
         )
     t2 = time.perf_counter()
 
@@ -569,6 +585,7 @@ def build_context(
         confounded=confounded,
         robustness=robustness,
         cell=cell,
+        capped=capped,
     )
     matrix = getattr(model, "matrix", None)
     if not planned and _matrix_cell(cell, space):
@@ -648,6 +665,7 @@ def _loo(
     base_calls: np.ndarray,
     *,
     arrays: tuple[np.ndarray, np.ndarray] | None = None,
+    capped: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Leave-one-out log2fc and call for every (unit, item), from centred group sums.
 
@@ -675,7 +693,7 @@ def _loo(
         log2fc = np.where(mask, w.log2fc, log2fc)
         p = np.where(mask, w.p, p)
         call = np.where(mask, w.conclusion, call)
-    _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays)
+    _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays, capped)
     return log2fc, call
 
 
@@ -689,6 +707,7 @@ def _corrected(
     expected: np.ndarray,
     loo_log2fc: np.ndarray,
     loo_call: np.ndarray,
+    capped: np.ndarray | None = None,
 ) -> None:
     """Each unit set aside, exactly: with a correction a call depends on every comparison.
 
@@ -700,7 +719,7 @@ def _corrected(
     for i in np.flatnonzero(used):
         hi, lo = in_hi.copy(), in_lo.copy()
         hi[i] = lo[i] = False
-        exact = space.evaluate_arrays(values, ref_values, hi, lo)
+        exact = space.evaluate_arrays(values, ref_values, hi, lo, capped=capped)
         loo_log2fc[i] = np.where(np.isnan(loo_log2fc[i]), np.nan, exact.log2fc)
         loo_call[i] = np.where(np.isnan(loo_log2fc[i]), loo_call[i], exact.conclusion)
 
@@ -714,6 +733,7 @@ def _corrected_shift(
     expected: np.ndarray,
     shift_log2fc: np.ndarray,
     shift_call: np.ndarray,
+    capped: np.ndarray | None = None,
 ) -> None:
     """One reference value read as expected, exactly (see :func:`_corrected`), in place."""
     rows, cols = np.nonzero(np.isfinite(shift_log2fc).any(axis=2))
@@ -722,7 +742,7 @@ def _corrected_shift(
             continue
         refs = ref_values.copy()
         refs[i, r] = expected[i, r]
-        exact = space.evaluate_arrays(values, refs, in_hi, in_lo)
+        exact = space.evaluate_arrays(values, refs, in_hi, in_lo, capped=capped)
         keep = np.isfinite(shift_log2fc[i, r])
         shift_log2fc[i, r] = np.where(keep, exact.log2fc, np.nan)
         shift_call[i, r] = np.where(keep, exact.conclusion, shift_call[i, r])
@@ -737,7 +757,7 @@ def _near_rule(log2fc: np.ndarray, p: np.ndarray, space: QpcrSpace) -> np.ndarra
     return near_fc | near_p
 
 
-def _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays=None) -> None:
+def _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays=None, capped=None) -> None:
     """Recompute exactly the leave-one-out rows that sit on the call rule's lines."""
     rows = np.flatnonzero((_near_rule(log2fc, p, space) & valid).any(axis=1))
     if not len(rows):
@@ -746,7 +766,7 @@ def _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays=None) -> N
     for i in rows:
         hi, lo = in_hi.copy(), in_lo.copy()
         hi[i] = lo[i] = False
-        exact = space.evaluate_arrays(values, refs, hi, lo)
+        exact = space.evaluate_arrays(values, refs, hi, lo, capped=capped)
         keep = valid[i]
         log2fc[i] = np.where(keep, exact.log2fc, log2fc[i])
         p[i] = np.where(keep, exact.p, p[i])
@@ -819,7 +839,7 @@ def _exact(ctx: TraceContext, key: tuple) -> ContrastArrays:
         (hi if info["group"] == "high" else lo)[row] = True
     else:
         raise ValueError(f"unknown option {kind!r}")
-    out = ctx.space.evaluate_arrays(values, refs, hi, lo)
+    out = ctx.space.evaluate_arrays(values, refs, hi, lo, capped=ctx.capped)
     ctx._cache[key] = out
     return out
 
@@ -1800,7 +1820,7 @@ def _restore_all(ctx: TraceContext, root: str | None) -> dict[str, Any] | None:
             i = ctx.unit_row[unit]
             refs[i, info["ref_col"]] = info["fill"]
             (hi if info["group"] == "high" else lo)[i] = True
-        ctx._cache[ck] = ctx.space.evaluate_arrays(ctx.values, refs, hi, lo)
+        ctx._cache[ck] = ctx.space.evaluate_arrays(ctx.values, refs, hi, lo, capped=ctx.capped)
     cons = classify(ctx.baseline, _option(ctx, ctx._cache[ck]), root)
     n_high = sum(info["group"] == "high" for info in ctx.restorable.values())
     return {**_cons_view(cons), "n_samples": len(ctx.restorable), "n_to_first_group": n_high}
@@ -2754,7 +2774,7 @@ def exclusion_effect(
             continue
         for r in sorted(cols):
             refs[i, r] = ctx.ref_values[i, keep].mean() + _subset_offset(ctx, r, tuple(keep))
-    out = ctx.space.evaluate_arrays(values, refs, hi, lo)
+    out = ctx.space.evaluate_arrays(values, refs, hi, lo, capped=ctx.capped)
     return _option(ctx, out)
 
 
