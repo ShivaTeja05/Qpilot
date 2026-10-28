@@ -27,3 +27,16 @@ It writes twice, both plainly a test: a sign-off read at a head that is not in t
 server answers `409 stale`, nothing enters the chain), and one real sign-off (`discuss`, a
 comment that says it is a test and holds `<b>markup</b>`, so the tests can check that it shows as
 text). Run it only on a copy of a store. Re-running adds another sign-off to that copy.
+
+## The exports (tables, figures)
+
+`figure-info.json`, `figure-info-recommended.json` and `export-csv.json` were recorded on 28 Oct
+2026 by `record_exports.py` (beside this file) from `qpilot app` on port 7946, over a copy of the
+seeded demo store (study `e300000d4f9a`) in which one Decision Card ("Which control genes to
+normalise to") was decided away from its recommended option, so the figure has both analyses:
+
+```bash
+python frontend/src/features/report/recorded/record_exports.py --port 7946 --study e300000d4f9a --gene ODC1
+```
+
+The CSV export's download path is replaced by the file's name (it named this computer's folders).

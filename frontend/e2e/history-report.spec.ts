@@ -78,7 +78,7 @@ test.describe("Report", () => {
     test.setTimeout(300_000);
     const demo = await demoSession(api);
     await app.open(route(demo, "report"));
-    const panel = app.page.getByRole("region", { name: "Write the report as a file" });
+    const panel = app.page.getByRole("region", { name: "Export: numbers, figures and the report" });
     await panel.getByRole("button", { name: "Write the passport" }).click();
     const link = panel.getByRole("link", { name: /download/i }).first();
     await expect(link).toBeVisible({ timeout: 240_000 });

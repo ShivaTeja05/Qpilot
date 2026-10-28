@@ -1,8 +1,9 @@
-"""Excel export: the results table with a Trace column and the "Where to look" sheet.
+"""Excel export: the numbers per gene with a Trace column, and the "Where to look" sheet.
 
 Synthetic tests run in CI on the fixture study (no input file, so Trace does not run) and on
 the Trace toy study (a context built from its per-well table); the ``demo_data`` test checks
-the CAMTA2 row names well K22.
+the CAMTA2 row names well K22. The numeric sheets themselves are tested in
+``tests/report/test_excel_numeric.py``.
 """
 
 import hashlib
@@ -10,7 +11,6 @@ import zipfile
 
 import pytest
 
-from qpilot.app_state import RESULT_COLUMNS, results_table
 from qpilot.cli import main
 from qpilot.core.store import StudyStore
 from qpilot.report.excel import (
@@ -32,10 +32,33 @@ def _sheets(path):
     return {name: list(book[name].iter_rows(values_only=True)) for name in book.sheetnames}
 
 
-def _expected_results(result, trace_cells):
-    table = results_table(result)
-    rows = [tuple(v or None for v in row) for row in table.itertuples(index=False)]
-    return [(*RESULT_COLUMNS, "Trace"), *((*r, c) for r, c in zip(rows, trace_cells, strict=True))]
+SHEETS = [
+    RESULTS_SHEET,
+    "Per unit",
+    "Per well",
+    WHERE_SHEET,
+    "Decisions",
+    "Settings",
+    "Methods",
+    ABOUT_SHEET,
+]
+
+
+def _results(sheet_rows):
+    """``{gene: {header: value}}`` of the Results sheet."""
+    header = sheet_rows[0]
+    return {r[header.index("Gene")]: dict(zip(header, r, strict=True)) for r in sheet_rows[1:]}
+
+
+def _check_results(sheet_rows, result, trace_cells):
+    rows = _results(sheet_rows)
+    assert list(rows) == list(result.contrasts)
+    assert sheet_rows[0][-1] == "Trace"
+    for (gene, con), cell in zip(result.contrasts.items(), trace_cells, strict=True):
+        # openpyxl writes 16 significant digits (Excel keeps 15); the CSV export is exact
+        assert rows[gene]["Fold change (×, A / B)"] == pytest.approx(con.fc, rel=1e-15)
+        assert rows[gene]["p (Welch's t test)"] == pytest.approx(con.p, rel=1e-15)
+        assert rows[gene]["Trace"] == cell
 
 
 @pytest.fixture
@@ -53,10 +76,11 @@ def test_without_the_input_file_the_results_are_written_and_trace_says_why(store
     assert (info.n_results, info.n_places, info.traced) == (58, 0, False)
     assert "input file is not known" in info.note
     sheets = _sheets(info.path)
-    assert list(sheets) == [RESULTS_SHEET, WHERE_SHEET, ABOUT_SHEET]
+    assert list(sheets) == SHEETS
     result = store.get(sid)
-    assert sheets[RESULTS_SHEET] == _expected_results(result, [NOT_TRACED] * 58)
+    _check_results(sheets[RESULTS_SHEET], result, [NOT_TRACED] * 58)
     assert sheets[WHERE_SHEET] == [WHERE_COLUMNS]
+    assert sheets["Per unit"][1][0].startswith("No rows: the study's input file")
     about = dict(sheets[ABOUT_SHEET])
     assert about["study_id"] == sid and about["input_sha256"] == result.input_sha256
     assert about["trace"].startswith("Trace did not run: the study's input file")
@@ -108,10 +132,8 @@ def test_trace_rows_round_trip_with_the_top_place_in_the_results(toy, tmp_path):
     info = export_excel(store, sid, tmp_path / "toy.xlsx", context=ctx)
     traces = {g: T.trace_gene(ctx, g, top=3) for g in result.contrasts}
     sheets = _sheets(info.path)
-    assert sheets[RESULTS_SHEET] == _expected_results(
-        result, [trace_cell(traces[g]) for g in results_table(result)["Gene"]]
-    )
-    down = dict((r[0], r[-1]) for r in sheets[RESULTS_SHEET][1:])["DOWN"]
+    _check_results(sheets[RESULTS_SHEET], result, [trace_cell(traces[g]) for g in result.contrasts])
+    down = _results(sheets[RESULTS_SHEET])["DOWN"]["Trace"]
     assert down.startswith("R1_20260101/") and down.endswith(": changes the call")
     assert sheets[WHERE_SHEET] == [WHERE_COLUMNS, *where_rows(traces)]
     first = dict(zip(WHERE_COLUMNS, sheets[WHERE_SHEET][1], strict=True))
@@ -132,6 +154,7 @@ def test_cli_export_excel(store, monkeypatch, tmp_path, capsys):
     assert main(["export", "excel", "--out", str(out)]) == 0
     printed = capsys.readouterr().out
     assert "58 results and 0 places to look" in printed and "Trace did not run" in printed
+    assert "Results, Per unit, Per well" in printed
     assert _sheets(out)[RESULTS_SHEET][0][-1] == "Trace"
     assert main(["export", "excel", "--out", str(out)]) == 2  # never overwritten
     assert "already exists" in capsys.readouterr().err
@@ -150,7 +173,7 @@ def test_demo_camta2_row_names_k22(demo_rdml_path, tmp_studies_dir, tmp_path):
     info = export_excel(store, sid, tmp_path / "demo.xlsx")
     assert info.traced and info.n_results == 58
     sheets = _sheets(info.path)
-    trace = {row[0]: row[-1] for row in sheets[RESULTS_SHEET][1:]}
+    trace = {g: r["Trace"] for g, r in _results(sheets[RESULTS_SHEET]).items()}
     assert trace["CAMTA2"] == "HMBS_20080318/K22 (2016): changes the call"
     camta2 = [dict(zip(WHERE_COLUMNS, r, strict=True)) for r in sheets[WHERE_SHEET][1:]
               if r[0] == "CAMTA2"]  # fmt: skip

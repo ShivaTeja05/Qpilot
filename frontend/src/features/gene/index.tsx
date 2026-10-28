@@ -37,6 +37,7 @@ import {
   YourSamples,
   type Source,
 } from "./AuditParts";
+import { GeneFigure } from "./GeneFigure";
 import { GeneHeader, GeneNav } from "./GeneHeader";
 import { neighbours, resolveGene } from "./nav";
 import { SampleDetail } from "./SampleDetail";
@@ -351,6 +352,7 @@ function GenePage({
             <GeneCards workspace={workspace} gene={g.gene} cards={geneCards} />
             <AssayWells efficiency={g.efficiency} lab={covered ? lab.data : null} />
             <ReferenceStability gene={g.gene} genorm={references} lab={covered ? lab.data : null} />
+            <GeneFigure workspace={workspace} studyId={scope.studyId} gene={g.gene} />
             {workspace.kind === "session" ? (
               <PrismCard workspace={workspace} gene={g.gene} />
             ) : null}
