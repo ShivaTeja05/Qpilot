@@ -280,10 +280,16 @@ def _build(
             table = curves.analyse_study(path, original, cache_dir=cache_dir)
         except curves.CurveAnalysisError as err:
             log.warning("LinRegPCR failed on an experiment of %s: %s", path.name, err)
-            notes.append(
-                f"LinRegPCR could not analyse experiment {exp_text_id}; its wells are listed "
-                "without Cq or efficiency."
-            )
+            if not any(next(run._node.iter(f"{rdml_io.NS}adp"), None) is not None for run in runs):
+                notes.append(  # a Cq table or a Cq-only RDML: nothing to fit, nothing failed
+                    f"Experiment {exp_text_id} holds Cq values only (no amplification curves), "
+                    "so LinRegPCR has nothing to fit; only those Cq values can be analysed."
+                )
+            else:
+                notes.append(
+                    f"LinRegPCR could not analyse experiment {exp_text_id}; its wells are listed "
+                    "without Cq or efficiency."
+                )
             table = _wells_without_curves(runs, sample_types, target_names)
         table = table.copy()
         table.insert(0, "experiment_id", exp_safe)

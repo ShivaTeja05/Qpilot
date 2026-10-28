@@ -474,7 +474,16 @@ def _xlsx_grids(file: Path, out: SheetRead) -> list[tuple[str, dict[tuple[int, i
         grids = []
         budget = MAX_CELLS  # cells all merged ranges of the workbook may cover together
         for sheet in book.worksheets:
-            grid, merged = _stream_sheet(book, sheet, file.name)
+            try:
+                grid, merged = _stream_sheet(book, sheet, file.name)
+            except SheetError:
+                raise
+            except Exception:  # cells this parser cannot place: read the sheet as Excel shows it
+                grid, merged = _iter_sheet(sheet, file.name), []
+                out.notes.append(
+                    "One sheet of the workbook was read without its merged cells (it holds "
+                    "cells outside the area it declares); check that its table reads right."
+                )
             budget -= _expand_merged(grid, merged, out, sheet.title, budget)
             grids.append((sheet.title, grid))
         return grids
@@ -498,10 +507,15 @@ def _stream_sheet(
     from openpyxl.worksheet._reader import WorkSheetParser
 
     grid: dict[tuple[int, int], Any] = {}
+    # the sheet's own string table: in read-only mode the workbook's stays empty (openpyxl
+    # 3.1 hands the strings to each read-only sheet), so Excel's shared strings were lost
+    strings = getattr(sheet, "_shared_strings", None)
+    if strings is None:
+        strings = book.shared_strings
     with sheet._get_source() as source:
         parser = WorkSheetParser(
             source,
-            book.shared_strings,
+            strings,
             data_only=True,
             epoch=book.epoch,
             date_formats=book._date_formats,
@@ -525,6 +539,21 @@ def _stream_sheet(
             for item in parser.merged_cells.mergeCell:
                 merged.append(_range_bounds(item.ref))
     return grid, list(dict.fromkeys(merged))  # a range listed twice is expanded once
+
+
+def _iter_sheet(sheet: Any, file_name: str) -> dict[tuple[int, int], Any]:
+    """One read-only sheet's values through openpyxl's own reader (its declared area only)."""
+    grid: dict[tuple[int, int], Any] = {}
+    for row_index, row in enumerate(sheet.iter_rows(values_only=True), start=1):
+        for column, value in enumerate(row, start=1):
+            if value is None or (isinstance(value, str) and value.strip() == ""):
+                continue
+            if row_index > MAX_ROWS or column > MAX_COLUMNS:
+                raise SheetError(
+                    f"{file_name}: a value lies outside {MAX_ROWS} rows x {MAX_COLUMNS} columns"
+                )
+            grid[(row_index, column)] = value
+    return grid
 
 
 def _range_bounds(ref: str) -> tuple[int, int, int, int]:

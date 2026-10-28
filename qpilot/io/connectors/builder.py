@@ -116,6 +116,7 @@ class BuildNotes:
     quantity_conflicts: int = 0
     unnamed_wells: int = 0
     dye_conflicts: int = 0
+    role_conflicts: int = 0
     sample_ids: dict[tuple[str, str], str] = field(default_factory=dict)  # (run, well) -> id
 
 
@@ -193,6 +194,7 @@ def build_xml(
     sample_types: dict[str, dict[str, Counter[str]]] = {}
     sample_quantities: dict[str, dict[str, float]] = {}
     target_dyes: dict[str, str] = {}
+    target_types: dict[str, set[str]] = {}
     dyes: list[str] = []
     for plate in plates:
         reactions = sorted(plate.reactions, key=lambda r: (r.row, r.column, clean_id(r.target, "")))
@@ -207,6 +209,8 @@ def build_xml(
             previous = target_dyes.setdefault(target, dye)
             if previous != dye:
                 notes.dye_conflicts += 1
+            if reaction.target_type in ("ref", "toi"):
+                target_types.setdefault(target, set()).add(reaction.target_type)
             sample_types.setdefault(sample, {}).setdefault(target, Counter())[
                 reaction.sample_type
             ] += 1
@@ -243,7 +247,10 @@ def build_xml(
                 _sub(quantity, "unit", "other")
     for target, dye in target_dyes.items():
         element = _sub(root, "target", id=target)
-        _sub(element, "type", "toi")
+        declared = target_types.get(target, set())
+        if len(declared) > 1:
+            notes.role_conflicts += 1
+        _sub(element, "type", "ref" if declared == {"ref"} else "toi")  # the file's own word
         _sub(element, "dyeId", id=dye)
 
     experiment = _sub(root, "experiment", id=experiment_id)

@@ -223,11 +223,10 @@ async def _open_dropped(
         found = intake.sort_dropped(dropped)
     except intake.Refused as err:
         raise api_error(400, err.code, err.message) from err
-    if found.sheets:
-        if sheet_path is not None:
-            names = f"{views.display_name(sheet_path)}, {found.sheets[0].name}"
-            raise api_error(400, "mixed_files", f"Add one sample sheet at a time ({names}).")
-        sheet_path = found.sheets[0].path
+    if found.sheets and sheet_path is not None:
+        names = f"{views.display_name(sheet_path)}, {found.sheets[0].name}"
+        raise api_error(400, "mixed_files", f"Add one sample sheet at a time ({names}).")
+    sheet_path = intake.sheet_for(ctx.store, found, sheet_path)  # a Cq table: its sample columns
     if found.rdml:
         unused = [item.name for item in found.unused]
         return _open_job(ctx, intake.rdml_input(found.rdml[0]), sheet_path, sentence, unused)

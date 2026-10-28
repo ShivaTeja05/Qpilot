@@ -89,7 +89,7 @@ DETECTED = {
     },
     "rdml/cfx-manager-3.0-rdml-1.1-nonstandard-member": {"*": "rdml"},
     "rdml/cfx-manager-3.0-rdml-1.2-rpa": {"*": "rdml"},
-    "rdml/lightcycler96-lc96p-hmuy": {"*": "rdml", "hmuy_cq_values.xlsx": None},
+    "rdml/lightcycler96-lc96p-hmuy": {"*": "rdml", "hmuy_cq_values.xlsx": "tidy"},
     "rdml/lightcycler96-rdml-1.1": {"*": "rdml"},
     "rdml/linregpcr-rdml-1.3-lc480-kphaffii": {"*": "rdml"},
     "rdml/quantstudio7pro-rdml-1.2-edna": {"*": "rdml"},
@@ -489,9 +489,25 @@ def test_a_mix_of_vendors_is_refused_in_words():
 
 
 def test_lc96p_folder_reads_the_experiment_and_leaves_the_depositors_sheet():
-    """The depositors' Cq table names a condition per sample: a sample sheet, not an export."""
+    """The depositors' Cq table names a condition per sample: beside the run it is the sheet."""
     result = capture(folder("rdml/lightcycler96-lc96p-hmuy"))
     assert [s.name for s in result.meta.sources] == ["hmuy_hm_vs_dip_r123.lc96p"]
+
+
+def test_the_depositors_cq_table_alone_is_a_cq_only_export_with_its_reference_gene():
+    result = read("rdml/lightcycler96-lc96p-hmuy", "hmuy_cq_values.xlsx")
+    (p,) = result.meta.plates  # the second sheet repeats Hm_1 ...: another experiment, left out
+    assert (p.n_wells, p.n_with_vendor_cq, p.targets) == (36, 36, ["hmuYPe", "16S rRNA"])
+    assert set(verdicts(result).values()) == {"cq_only"}
+    assert {t["id"]: t["type"] for t in result.doc.targets()} == {
+        "hmuYPe": "toi",
+        "16S rRNA": "ref",  # its "Gene Type" column says Reference
+    }
+    codes = {w.code for w in result.meta.warnings}
+    assert {"DECLARED_REFERENCES", "CQ_ONLY"} <= codes
+    assert any("another experiment" in n for n in reader_notes(result))
+    cqs = sorted(r.cq for r in reactions(result, p.run_id) if r.sample == "Hm_1")
+    assert cqs == [11.67, 11.71, 11.8, 23.4, 23.47, 23.51]  # text in Excel, per well, no mean
 
 
 # ---- RDML files that need a repair to be read (each said in the capture's reader notes) ------
