@@ -5,7 +5,7 @@
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
-import { ApiError, type JobView } from "@/api/client";
+import { ApiError, apiFetch, type JobView } from "@/api/client";
 import type {
   AuditHow,
   AuditOverview,
@@ -35,7 +35,7 @@ async function request<T>(
 ): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await apiFetch(url, {
       method,
       signal,
       credentials: "same-origin",

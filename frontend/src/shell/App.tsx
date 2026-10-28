@@ -11,7 +11,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, Router, useLocation } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import { ApiError, type JobView } from "@/api/client";
-import { onLiveEvent, useLiveEvents } from "@/api/live";
+import { useLiveEvents } from "@/api/live";
 import { cn } from "@/lib/cn";
 import { count } from "@/lib/format";
 import { useHotkeys, useNow } from "@/lib/hooks";
@@ -206,7 +206,6 @@ function useAgentRequestToasts(workspaces: ReturnType<typeof useWorkspaces>["dat
 function Shell() {
   const route = useRoute();
   const [, navigate] = useLocation();
-  const qc = useQueryClient();
   const system = useSystem();
   const workspaces = useWorkspaces();
   const frameQuery = useWorkspaceFrame(route.kind ?? undefined, route.key ?? undefined);
@@ -225,17 +224,7 @@ function Shell() {
       navigate(pathOf(route.kind, route.key, defaultSection(frame)), { replace: true });
   }, [route.bare, route.kind, route.key, frame, navigate]);
 
-  // Running work: keep the bell's list current as jobs report.
-  useEffect(
-    () =>
-      onLiveEvent((e) => {
-        if (e.type === "job.updated") {
-          void qc.invalidateQueries({ queryKey: ["jobs"] });
-          if (e.job?.key) void qc.invalidateQueries({ queryKey: ["w", e.job.key, "jobs"] });
-        }
-      }),
-    [qc],
-  );
+  // Running work: the bell's list is kept current from the jobs' own events (api/live.ts).
 
   // The window title names the section and the study.
   useEffect(() => {
