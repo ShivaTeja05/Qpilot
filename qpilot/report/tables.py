@@ -600,7 +600,7 @@ def build_tables(
         input_sha256=result.input_sha256,
         chain_head=head,
         design_hash=design_hash,
-        source_name=source.name if source is not None else None,
+        source_name=_source_label(source),
         decided=decided,
         recommended=recommended,
         decisions=_decisions(store, study_id, cards),
@@ -611,6 +611,20 @@ def build_tables(
         notes=tuple(notes),
         load_report=lambda: _report_view(store, study_id, session, report),
     )
+
+
+def _source_label(source: Any) -> str | None:
+    """The person's own name for the input (an import's exported files), else the file's name."""
+    if source is None:
+        return None
+    try:  # agent intake's qpilot.io.inputs (the files a converted export came from)
+        from qpilot.io.inputs import input_label  # type: ignore[import-not-found]
+    except ImportError:
+        return source.name
+    try:
+        return str(input_label(source)) or source.name
+    except Exception:  # a label is a courtesy: never a reason to refuse an export
+        return source.name
 
 
 class _AtRecommended:
