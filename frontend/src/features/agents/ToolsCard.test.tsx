@@ -22,6 +22,18 @@ describe("Agents parts", () => {
     expect(heading).toBeTruthy();
   });
 
+  it("groups the tools that write a file and the ones that ask for wells to be set aside", () => {
+    renderWithProviders(<ToolsCard tools={view.tools} simulator={view.simulator} />);
+    const written = view.tools.filter((t) => t.access === "export");
+    expect(written.map((t) => t.name)).toContain("qpcr_export");
+    expect(
+      screen.getByRole("heading", { name: new RegExp(`^Write a file\\s*${written.length}$`) }),
+    ).toBeTruthy();
+    const asking = view.tools.find((t) => t.name === "qpcr_request_set_aside");
+    expect(asking?.access).toBe("request");
+    expect(asking?.effect).toMatch(/Nothing is set aside until a person accepts/);
+  });
+
   it("shows the connect command and the rules, as the server words them", () => {
     renderWithProviders(
       <>

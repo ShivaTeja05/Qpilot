@@ -133,6 +133,29 @@ TOOL_ACCESS: dict[str, tuple[ToolAccess, str]] = {
         "Nothing: the sheet is read, never edited, and its column mapping stays a guess until "
         "a person confirms it.",
     ),
+    "qpcr_comparisons": ("read", "Nothing: every comparison of a study with several, as analysed."),
+    "qpcr_units": (
+        "read",
+        "Nothing: each unit's value of a gene and the wells behind it, as the engine computed it.",
+    ),
+    "qpcr_melt": ("read", "Nothing: the melt curves are read from the file and judged."),
+    "qpcr_repeat_plan": (
+        "read",
+        "Nothing: what to repeat and why, and the repeat plate. Re-running is a person's call.",
+    ),
+    "qpcr_export": (
+        "export",
+        "Writes a new file from the engine's own output (a workbook, tables, figures or a journal "
+        "supplement) into the study's export folder, listed in Report. With a folder named, "
+        "a copy goes there, only inside the shared folders and never over a file. It changes no "
+        "result and decides nothing.",
+    ),
+    "qpcr_request_set_aside": (
+        "request",
+        "Asks a person to set wells aside at a place Trace pointed at: the agent's well "
+        "exclusions wait in the Studio inbox, and Trace shows them at the place. Nothing is set "
+        "aside until a person accepts.",
+    ),
 }
 SIM_EFFECT = "Nothing: it reads the study's verified robustness audit."
 
@@ -142,9 +165,11 @@ RULES = (
     "A choice that can change a conclusion always waits for a person: Approve or Turn down here "
     "or on the Decision Cards.",
     "Agents propose; only a person accepts, edits or rejects a proposal or confirms a stage.",
+    "Setting wells aside is a person's decision: an agent can only ask, and the request waits.",
     "Results stay hidden from agents until a person confirms the design and the curves.",
     "Names from files reach an agent as quoted data, never as instructions.",
-    "Agents open only files inside the folders allowed by QPILOT_DATA_ROOTS.",
+    "Agents open only files inside the folders allowed by QPILOT_DATA_ROOTS, and write only "
+    "new files: into the export folder, or a shared folder, never over a file.",
 )
 
 #: Questions the audit answers best: verdicts, what-if, what to check first.
@@ -501,6 +526,34 @@ PROPOSAL_WORDS = {
 }
 
 
+EXCLUDE_WORDS = {
+    "proposed": "",
+    "accepted": " (a person accepted it)",
+    "edited": " (a person changed it and accepted it)",
+    "rejected": " (a person turned it down)",
+    "superseded": " (replaced by a later request)",
+}
+
+
+def _proposal_summary(p: Any) -> str:
+    """One agent proposal in words; a request about wells says what it asks and where."""
+    if p.kind == "curve.exclude_well":
+        consequence = p.consequence or {}
+        source = (
+            "at a place in Trace"
+            if "trace" in consequence
+            else "on a control check (Controls)"
+            if "gate" in consequence
+            else None
+        )
+        if source is not None:
+            leave = p.effective_payload().get("excluded") is True
+            verb, where = ("leave", "out of") if leave else ("put", "back into")
+            end = EXCLUDE_WORDS.get(p.status, "")
+            return f"Asked to {verb} “{p.subject}” {where} the analysis, {source}{end}"
+    return f"{PROPOSAL_WORDS.get(p.status, 'Proposed')}: {p.kind} for “{p.subject}”"
+
+
 def _session_proposals(places: _Places, sid: str) -> list[AgentActivity]:
     """Proposals an agent made in one session's inbox (results-stage ones only once visible)."""
     from qpilot.web.studio_views import blind_kind
@@ -519,10 +572,10 @@ def _session_proposals(places: _Places, sid: str) -> list[AgentActivity]:
             workspace_kind="session",
             title=title,
             at=p.created_at,
-            summary=f"{PROPOSAL_WORDS.get(p.status, 'Proposed')}: {p.kind} for “{p.subject}”",
+            summary=_proposal_summary(p),
             agent=p.made_by.agent,
             status=p.status,
-            reason=p.reason,
+            reason=p.reason or (p.reasons[0] if p.status == "proposed" and p.reasons else None),
             proposal_id=p.id,
             proposal_kind=p.kind,
             check=p.check.status,

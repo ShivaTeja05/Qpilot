@@ -15,6 +15,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowUpRight,
+  Bot,
   CircleCheck,
   CircleMinus,
   MoveHorizontal,
@@ -58,6 +59,7 @@ import {
   type WhereView,
 } from "./api";
 import { FactText } from "./FactText";
+import { AgentAsked } from "./AgentAsked";
 import { DecidePanel, SetAsideList, decidedToast } from "./SetAside";
 import { TraceWaiting } from "./Waiting";
 import { WELL_INPUT, WHERE_ROLE, WHERE_TONE, cannotWords, checkedWords, placeWords } from "./words";
@@ -571,6 +573,13 @@ function PlaceRow({
   const where = placeWords(place);
   const tone = WHERE_TONE[place.consequence] ?? "neutral";
   const [choosing, setChoosing] = useState(false);
+  // a person's click answered the agent's request waiting here: the panel has done its job
+  const asked = (place.requests ?? []).length;
+  const [seen, setSeen] = useState(asked);
+  if (seen !== asked) {
+    setSeen(asked);
+    if (asked < seen) setChoosing(false);
+  }
   let action: ReactNode;
   if (canApply && place.can_decide && onApply) {
     action = choosing ? null : (
@@ -643,6 +652,11 @@ function PlaceRow({
           >
             {capital(place.consequence_word)}
           </Badge>
+          {(place.requests ?? []).length > 0 ? (
+            <Badge tone="warn" icon={<Bot aria-hidden />}>
+              Agent asked
+            </Badge>
+          ) : null}
         </div>
       </div>
       <p className="mt-1 text-[12px] text-muted">
@@ -673,6 +687,7 @@ function PlaceRow({
           ))}
         </ul>
       </div>
+      <AgentAsked requests={place.requests ?? []} />
       {action ? <div className="mt-3 flex flex-wrap items-center gap-2">{action}</div> : null}
       {choosing && onApply ? (
         <DecidePanel
