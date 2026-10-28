@@ -59,7 +59,7 @@ export function DiffPanel({
   onChange: (from: number, to: number) => void;
   onGene: (gene: string) => void;
 }) {
-  const diff = useHistoryDiff(wkey, view.study_id, from, to);
+  const diff = useHistoryDiff(wkey, view.study_id, from, to, view.comparison ?? null);
   const options = view.steps.map((s) => stepOption(view, s.seq));
   const d = diff.data;
   return (

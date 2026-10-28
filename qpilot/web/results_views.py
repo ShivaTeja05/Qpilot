@@ -26,7 +26,7 @@ from typing import Any
 import pandas as pd
 
 from qpilot.core.store import StudyNotFound, StudyStore
-from qpilot.schemas import DecisionCard, DecisionEntry, Fact, StudyResult
+from qpilot.schemas import ContrastResult, DecisionCard, DecisionEntry, Fact, StudyResult
 from qpilot.web.contract import (
     AskedAgain,
     AtChoices,
@@ -55,6 +55,7 @@ from qpilot.web.contract import (
     GroupCount,
     NotCompared,
     NotComparedReason,
+    OptionComparisonEffects,
     OptionEffect,
     PendingRequest,
     ResultsSummary,
@@ -64,6 +65,7 @@ from qpilot.web.contract import (
     TextSegment,
     WithheldGene,
 )
+from qpilot.web.contract_compare import CardComparison
 
 KIND_DIMENSION = {
     "reference_set": "refs",
@@ -1032,7 +1034,7 @@ def card_view(
     own words as the reason; ``asked`` is a person's earlier decision asked again here.
     """
     from qpilot.ai.explain import KIND_TITLE
-    from qpilot.app_state import FLIPPED_FACT, _status_line, decider_words
+    from qpilot.app_state import STUDY_WIDE, _status_line, decider_words, impact_tokens
     from qpilot.core.validator import names_from_result
     from qpilot.explain.templates import TemplateError, render_template
 
@@ -1053,11 +1055,8 @@ def card_view(
         explanation = fact_text(rendered.tokens, facts)
     except (KeyError, TemplateError):
         explanation = plain_text(KIND_TITLE.get(card.kind, card.kind))
-    flipped = FLIPPED_FACT.get(card.kind)
-    if flipped in facts and "f_n_genes" in facts and card.impact.get("flips"):
-        tokens = "{{" + flipped + "}} of {{f_n_genes}} conclusions change with this choice"
-        if card.kind == "reference_set" and "f_n_flipped_refset_min3" in facts:
-            tokens += "; {{f_n_flipped_refset_min3}} even between sets of three or more genes"
+    tokens = impact_tokens(card, facts)
+    if tokens is not None:
         impact = fact_text(tokens, facts)
     elif card.impact.get("flips"):
         impact = plain_text("Can change a conclusion")
@@ -1067,6 +1066,7 @@ def card_view(
     base = {g: r.conclusion for g, r in recommended.per_gene.items()} if recommended else {}
     not_recommended = set(card.evidence.get("not_recommended", ()) or ())
     requested = {p.option for p in waiting}
+    comparisons, by_option = card_comparisons(card, result)
     options = [
         CardOptionView(
             id=o.id,
@@ -1087,6 +1087,7 @@ def card_view(
                 )
                 for g, r in o.per_gene.items()
             ],
+            by_comparison=by_option.get(o.id, []),
         )
         for o in card.options
     ]
@@ -1116,7 +1117,69 @@ def card_view(
         carried=carried,
         asked_again=asked,
         place=card_place(card),
+        comparisons=comparisons,
+        study_wide=STUDY_WIDE if comparisons else None,
     )
+
+
+def card_comparisons(
+    card: DecisionCard, result: StudyResult
+) -> tuple[list[CardComparison], dict[str, list[OptionComparisonEffects]]]:
+    """What a card's choice does in each comparison, and each option's other-comparison effects.
+
+    Empty for a study with one comparison (the card's ``impact`` then has no ``views``).
+    """
+    views = card.impact.get("views")
+    found = result.comparisons
+    if not views or found is None:
+        return [], {}
+    labels = {o.id: o.label for o in found.comparisons}
+    primary = found.comparisons[0].id
+    summary = [
+        CardComparison(
+            id=str(v["id"]),
+            label=labels.get(str(v["id"]), str(v["id"])),
+            primary=v["id"] == primary,
+            flips=bool(v.get("flips")),
+            n_flipped=int(v.get("n_genes_flipped") or 0),
+            genes=[str(g) for g in v.get("genes") or ()],
+            flips_elsewhere=bool(v.get("flips_anywhere")) and not bool(v.get("flips")),
+        )
+        for v in views
+    ]
+    by_option: dict[str, list[OptionComparisonEffects]] = {}
+    for option in card.options:
+        rows = []
+        for view in views[1:]:
+            cid = str(view["id"])
+            per_option = view.get("per_option") or {}
+            results = {
+                g: ContrastResult.model_validate(r)
+                for g, r in per_option.get(option.id, {}).items()
+            }
+            base = {
+                g: str(r["conclusion"]) for g, r in per_option.get(card.recommended, {}).items()
+            }
+            rows.append(
+                OptionComparisonEffects(
+                    comparison=cid,
+                    label=labels.get(cid, cid),
+                    effects=[
+                        OptionEffect(
+                            gene=g,
+                            fc=r.fc,
+                            log2fc=r.log2fc,
+                            ci=(float(r.ci[0]), float(r.ci[1])),
+                            p=r.p,
+                            conclusion=r.conclusion,
+                            changes_call=g in base and base[g] != r.conclusion,
+                        )
+                        for g, r in results.items()
+                    ],
+                )
+            )
+        by_option[option.id] = rows
+    return summary, by_option
 
 
 #: What deciding a card opened from Trace does, said on the card.

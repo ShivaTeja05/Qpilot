@@ -5,7 +5,8 @@
 import { ArrowLeftRight, GitCompareArrows } from "lucide-react";
 import { useState } from "react";
 import { count } from "@/lib/format";
-import { Button, Select } from "@/ui";
+import { Button, SegmentedControl, Select } from "@/ui";
+import { ComparisonsEditor } from "./ComparisonsEditor";
 import {
   comparisonItem,
   comparisonNow,
@@ -38,6 +39,9 @@ export function ComparisonPanel({
   const [b, setB] = useState<string | undefined>(now?.group_b ?? guessB);
   const groupA = a && groups.has(a) ? a : guessA;
   const groupB = b && groups.has(b) ? b : guessB;
+  // Three or more groups (or a pairing): one comparison, or several set together.
+  const offerSeveral = names.length > 2 || Boolean(view.pair_by && (view.n_paired ?? 0) > 0);
+  const [several, setSeveral] = useState<boolean>(Boolean(view.comparison_plan));
 
   if (names.length < 2) {
     return (
@@ -60,8 +64,34 @@ export function ComparisonPanel({
   }));
   const same = groupA === groupB;
   const isNow = now && now.group_a === groupA && now.group_b === groupB;
+  const mode = offerSeveral ? (
+    <SegmentedControl
+      label="How many comparisons"
+      size="sm"
+      value={several ? "several" : "one"}
+      onValueChange={(v) => setSeveral(v === "several")}
+      options={[
+        { value: "one", label: "One comparison" },
+        { value: "several", label: "Several comparisons" },
+      ]}
+    />
+  ) : null;
+  if (offerSeveral && several)
+    return (
+      <div className="flex flex-col gap-3">
+        {mode}
+        <ComparisonsEditor
+          view={view}
+          draft={draft}
+          onDraft={onDraft}
+          names={names}
+          sizes={groups}
+        />
+      </div>
+    );
   return (
     <div className="flex flex-col gap-3">
+      {mode}
       <p className="max-w-prose text-[13px] text-muted">
         The fold change of every gene is the compared group relative to the reference group (the
         baseline, usually the control). qPilot never chooses this for you.

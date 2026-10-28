@@ -19,7 +19,7 @@ import { cn } from "@/lib/cn";
 import { count, dateTime, plural } from "@/lib/format";
 import { MOD } from "@/lib/hooks";
 import { refreshWorkspace } from "@/shell/writes";
-import { Badge, Button, Kbd, Textarea, toast } from "@/ui";
+import { Badge, Button, KeyHint, Textarea, toast } from "@/ui";
 import {
   usePutBack,
   useSetAside,
@@ -160,10 +160,7 @@ export function DecidePanel({
         <Button size="sm" variant="ghost" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
-        <span className="text-[12px] text-faint">
-          <Kbd>{MOD}</Kbd>
-          <Kbd>Enter</Kbd>
-        </span>
+        <KeyHint keys={[MOD, "Enter"]} />
       </div>
     </div>
   );

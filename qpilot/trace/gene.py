@@ -35,6 +35,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from qpilot.qpcr.contrast import CORRECTION_NAMES, describe_rule
 from qpilot.trace.context import (
     THRESHOLDS,
     TraceContext,
@@ -134,12 +135,16 @@ def call_model(
     used = (ctx.comparison.used if valid is None else valid)[:, j]
     x = ctx.relative[:, j]
     a, b = used & ctx.in_a, used & ctx.in_b
+    corrected = after.p_adj is not None and ctx.correction != "none"
     return TraceCall(
         conclusion=CALL_NAMES[int(after.call[j])],
         log2fc=d,
         fc=float(2**d),
         ci=(float(2 ** (d - half)), float(2 ** (d + half))) if half is not None else (None, None),
         p=finite(after.p[j]),
+        p_adjusted=finite(after.p_adj[j]) if corrected else None,  # type: ignore[index]
+        q=finite(ctx.q[j]) if after is ctx.base and ctx.comparison_id else None,
+        correction=CORRECTION_NAMES.get(ctx.correction) if corrected else None,
         n_a=int(a.sum()),
         n_b=int(b.sum()),
         mean_a=float(x[a].mean()) if a.any() else math.nan,
@@ -289,7 +294,9 @@ def trace_gene(ctx: TraceContext, gene: str, detail: int = DETAIL) -> Traced[Tra
         gene=gene,
         cell=cell_model(ctx),
         labels=ctx.labels,
-        rule=ctx.rule.describe(),
+        rule=describe_rule(ctx.rule, ctx.correction),
+        comparison=ctx.comparison_id,
+        comparison_label=ctx.comparison_label,
         call=call,
         n_used=int(used.sum()),
         n_flip_single=n_flips,
@@ -908,11 +915,23 @@ def _summary(
     g = t.name("gene", gene)
     line = t.tok("rule_fold", float(2**rule.min_log2fc), "{:g}")
     alpha = t.tok("rule_alpha", float(rule.alpha), "{:g}")
-    text = (
+    head = (
         f"{g}: {t.name('call', call_word(call.conclusion))}, {t.change('fc', call.log2fc)} in "
         f"{t.name('group_a', ctx.labels[0])} than {t.name('group_b', ctx.labels[1])} "
-        f"(p {t.p('p', call.p, rule.alpha)}; the rule: at least {line}-fold and p below {alpha})."
     )
+    if call.correction:
+        q = f", q {t.p('q', call.q, rule.alpha)}" if call.q is not None else ""
+        text = head + (
+            f"(corrected p {t.p('p_adj', call.p_adjusted, rule.alpha)} "
+            f"({t.name('correction', call.correction)}){q}; p before correction "
+            f"{t.p('p', call.p, rule.alpha)}; the rule: at least {line}-fold and corrected p "
+            f"below {alpha})."
+        )
+    else:
+        text = head + (
+            f"(p {t.p('p', call.p, rule.alpha)}; the rule: at least {line}-fold and p below "
+            f"{alpha})."
+        )
     if n_flips:
         noun = "sample changes" if n_flips == 1 else "samples each change"
         n = t.count("n_flip_single", n_flips)

@@ -18,6 +18,7 @@ looser.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from pydantic import BaseModel, field_validator
@@ -107,10 +108,17 @@ def card_impact(grid_summary: dict[str, GeneRobustness], dimension: str) -> dict
 
 
 def rank_cards(cards: list[DecisionCard]) -> list[DecisionCard]:
-    """Order cards by genes flipped, then by the largest fold-change shift; renumber ranks 1..n."""
+    """Order cards by calls flipped, then by the largest fold-change shift; renumber ranks 1..n.
+
+    With several views (a study's comparisons) the calls flipped are counted over all of them.
+    """
     ordered = sorted(
         cards,
-        key=lambda c: (-c.impact["n_genes_flipped"], -c.impact["max_delta_log2fc"], c.id),
+        key=lambda c: (
+            -int(c.impact.get("n_calls_flipped", c.impact["n_genes_flipped"])),
+            -c.impact["max_delta_log2fc"],
+            c.id,
+        ),
     )
     return [c.model_copy(update={"rank": i}) for i, c in enumerate(ordered, start=1)]
 
@@ -133,6 +141,79 @@ def _options(space: DecisionSpace, spec: CardSpec, headline_items: list[str]) ->
     return out
 
 
+class View(NamedTuple):
+    """Another reading of the same items under the same choices (e.g. a study's other comparison).
+
+    ``summary`` and ``grid`` are its robustness summary and grid (same cells as the primary
+    grid); ``space`` evaluates it, for each option's consequence.
+    """
+
+    summary: dict[str, GeneRobustness]
+    grid: Any
+    space: DecisionSpace
+
+
+def _view_impact(view_id: str, summary: dict[str, GeneRobustness], anywhere: list[str], dim: str):  # noqa: ANN202
+    from qpilot.core.robustness import flipped_by
+
+    found = card_impact(summary, dim)
+    return {
+        "id": view_id,
+        "flips": found["flips"],
+        "n_genes_flipped": found["n_genes_flipped"],
+        "genes": flipped_by(summary, dim),
+        "flips_anywhere": bool(anywhere),
+        "n_genes_flipped_anywhere": len(anywhere),
+        "max_delta_log2fc": found["max_delta_log2fc"],
+    }
+
+
+def _with_views(
+    impact: dict[str, Any],
+    spec: CardSpec,
+    space: DecisionSpace,
+    grid_summary: dict[str, GeneRobustness],
+    anywhere: list[str],
+    views: Mapping[str, View],
+    primary_view: str,
+    headline_items: list[str],
+) -> dict[str, Any]:
+    """A card's impact over every view: a flip in any of them is a flip.
+
+    ``impact["n_genes_flipped"]`` stays the primary view's; ``impact["views"]`` lists each
+    view's own counts (the primary first) and ``n_calls_flipped`` sums them. Each other view's
+    entry has ``per_option``: option id -> item -> the result (``ContrastResult`` as JSON) for
+    the headline items and every item whose call the choice changes there.
+    """
+    from qpilot.core.robustness import flipped_anywhere
+
+    dim = spec.dimension
+    entries = [_view_impact(primary_view, grid_summary, anywhere, dim)]
+    for view_id, view in views.items():
+        entries.append(_view_impact(view_id, view.summary, flipped_anywhere(view.grid, dim), dim))
+    impact = {
+        **impact,
+        "flips": any(e["flips"] for e in entries),
+        "flips_anywhere": any(e["flips_anywhere"] for e in entries),
+        "n_calls_flipped": sum(e["n_genes_flipped"] for e in entries),
+        "n_calls_flipped_anywhere": sum(e["n_genes_flipped_anywhere"] for e in entries),
+        "max_delta_log2fc": max(e["max_delta_log2fc"] for e in entries),
+        "views": entries,
+    }
+    by_option = {o.id: o for o in spec.options}
+    shown = {  # the headline items, and every item whose call this choice changes in the view
+        e["id"]: list(dict.fromkeys([*headline_items, *e["genes"]])) for e in entries[1:]
+    }
+    for option in spec.options:
+        cell = {**space.primary, dim: by_option[option.id].value}
+        for entry, (view_id, view) in zip(entries[1:], views.items(), strict=True):
+            results = view.space.evaluate(cell)
+            entry.setdefault("per_option", {})[option.id] = {
+                i: results[i].model_dump(mode="json") for i in shown[view_id] if i in results
+            }
+    return impact
+
+
 def build_cards(
     space: DecisionSpace,
     grid_summary: dict[str, GeneRobustness],
@@ -140,6 +221,8 @@ def build_cards(
     headline_items: list[str],
     autonomy: Autonomy = "suggest",
     grid: Any = None,
+    views: Mapping[str, View] | None = None,
+    primary_view: str = "primary",
 ) -> list[DecisionCard]:
     """Build one Decision Card per spec, with each option's consequence, impact and rank.
 
@@ -147,6 +230,11 @@ def build_cards(
     recommended settings; ``impact["flips_anywhere"]`` looks at every combination in the grid,
     so a choice that can change a conclusion at some setting always needs a person when an
     agent asks. ``grid`` is computed from ``space`` when not given.
+
+    ``views`` (other readings of the same items under the same choices, e.g. a study's other
+    comparisons, by id) count too: a choice that flips a conclusion in any of them is a
+    person's, and each option's consequence is given per view (``impact["views"][k]
+    ["per_option"]``: the headline items and every item whose call the choice changes there).
     """
     from qpilot.core.robustness import flipped_anywhere, run_grid
 
@@ -159,6 +247,11 @@ def build_cards(
         anywhere = flipped_anywhere(grid, spec.dimension)
         impact["flips_anywhere"] = bool(anywhere)
         impact["n_genes_flipped_anywhere"] = len(anywhere)
+        options = _options(space, spec, headline_items)
+        if views:
+            impact = _with_views(
+                impact, spec, space, grid_summary, anywhere, views, primary_view, headline_items
+            )
         human_kind = requires_human(spec.kind)
         card = DecisionCard(
             id=spec.card_id,
@@ -166,7 +259,7 @@ def build_cards(
             rank=0,
             impact=impact,
             evidence=spec.evidence,
-            options=_options(space, spec, headline_items),
+            options=options,
             recommended=spec.recommended,
             rationale_template=spec.rationale_template,
             facts=spec.facts,
@@ -178,7 +271,7 @@ def build_cards(
                 update={
                     "status": "auto_decided",
                     "decision": spec.recommended,
-                    "reason": AUTO_REASON_ELSEWHERE if anywhere else AUTO_REASON,
+                    "reason": AUTO_REASON_ELSEWHERE if impact["flips_anywhere"] else AUTO_REASON,
                     "decided_by": "system",
                 }
             )
@@ -214,11 +307,18 @@ def stakes(card: DecisionCard) -> int:
 
 
 def _calls_changed(card: DecisionCard) -> set[str]:
-    """The headline items whose conclusion differs between the card's options."""
+    """The headline items whose conclusion differs between the card's options.
+
+    In a card with several views (comparisons) an item of another view is ``"<view>:<item>"``.
+    """
     calls: dict[str, set[str]] = {}
     for option in card.options:
         for item, result in option.per_gene.items():
             calls.setdefault(item, set()).add(result.conclusion)
+    for view in card.impact.get("views") or ():
+        for results in (view.get("per_option") or {}).values():
+            for item, result in results.items():
+                calls.setdefault(f"{view['id']}:{item}", set()).add(str(result["conclusion"]))
     return {item for item, seen in calls.items() if len(seen) > 1}
 
 
@@ -234,7 +334,12 @@ def asked_again(before: DecisionCard, after: DecisionCard) -> str | None:
         if stakes(after) == 2:
             return "in this analysis the choice can change a conclusion"
         return "in this analysis the choice can change a conclusion at other settings"
-    for key in ("n_genes_flipped", "n_genes_flipped_anywhere"):
+    for key in (
+        "n_genes_flipped",
+        "n_genes_flipped_anywhere",
+        "n_calls_flipped",
+        "n_calls_flipped_anywhere",
+    ):
         if int(after.impact.get(key) or 0) > int(before.impact.get(key) or 0):
             return "in this analysis the choice changes more conclusions"
     if not _calls_changed(after) <= _calls_changed(before):

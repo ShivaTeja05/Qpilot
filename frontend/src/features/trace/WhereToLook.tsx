@@ -162,6 +162,7 @@ export function WhereToLook({
         id: p.root.id,
         rank: p.place.rank,
         expected_head: p.view.head,
+        ...(p.view.comparison ? { comparison: p.view.comparison } : {}),
       }),
     onSuccess: async (done: PlaceOpened) => {
       setNotice(null);
@@ -206,6 +207,7 @@ export function WhereToLook({
         reason: p.reason,
         expected_head: p.view.head,
         expected_inbox: p.view.inbox_head ?? null,
+        ...(p.view.comparison ? { comparison: p.view.comparison } : {}),
       }),
     onSuccess: async (done: TraceDecided) => {
       setNotice(null);
@@ -421,6 +423,11 @@ export function WhereResult({
   return (
     <div className="flex flex-col gap-4" aria-busy={busy}>
       <p className="text-[12px] text-muted">{analysisLine(view)}</p>
+      {view.comparison_note ? (
+        <p className="text-[12px] text-muted" data-testid="where-comparison">
+          {view.comparison_note}
+        </p>
+      ) : null}
       <div className="grid min-w-0 gap-4 @5xl:grid-cols-2 [&>*]:min-w-0">
         <section aria-labelledby={`${ids}-words`}>
           <H id={`${ids}-words`} className="mb-1.5 text-xs font-medium text-muted">
