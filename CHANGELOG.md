@@ -303,6 +303,16 @@ Methods paragraph on them.
   Windows; UTF-8 output through a Windows pipe; the pseudonym key is read as binary.
 
 ### Security
+- **A security review of this round** ([`docs/security-review-2026-10.md`](docs/security-review-2026-10.md),
+  RT-EX-001 to 015, `THREAT_MODEL.md` rows 45–47), each finding shown by a failing test, then
+  fixed: `qpilot quantify --csv` defuses formula-like names (every person-facing CSV now does); a
+  figure of a name the exports refuse is a 409 in words, not a 500; `qpcr_export`'s copy never
+  replaces a file that appeared while the export was written; an MCP path outside the data roots
+  gets one refusal whether it exists or not; uploads are read off the event loop; the release's
+  published files are built by a job that runs no npm, and checkouts keep no token. In the public
+  sandbox (`QPILOT_HOSTED=1`) the Prism round trip reads only qPilot's export folder, a write is
+  refused (507) before the disk fills (`QPILOT_MIN_FREE_MB`), and unpacked XML is capped
+  (`QPILOT_MAX_UNPACKED_MB`).
 - RT-UI-025: every refusal of an RDML file says its own reason, never a traceback.
 - A hostile Prism project (a DOCTYPE, external links, an oversized file) is refused.
 - The new MCP tools obey the blind rule (`results_hidden` until a person confirms the design and

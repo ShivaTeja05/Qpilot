@@ -349,8 +349,9 @@ Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671; raw curves from Ruij
 - The whole analysis runs with the network switched off (`tests/core/test_offline.py`). RDML files are parsed without external entities or network access and with size caps.
 - A model sees facts, never raw curves; it may write numbers only as fact tokens, and a validator rejects any other digit. Text in a file that reads like an instruction is quoted, marked and never obeyed. A remote model sees sample names only as pseudonyms.
 - Instrument serial numbers stay in the local registry; no page view or tool returns them.
+- Names from your files stay text in every file qPilot writes: no workbook cell is a formula, every CSV a person opens defuses `= + - @`, and figures and HTML reports escape every name.
 
-Threats and mitigations: [`THREAT_MODEL.md`](THREAT_MODEL.md). Reporting a vulnerability: [`SECURITY.md`](SECURITY.md).
+Threats and mitigations: [`THREAT_MODEL.md`](THREAT_MODEL.md); the latest review: [`docs/security-review-2026-10.md`](docs/security-review-2026-10.md). Reporting a vulnerability: [`SECURITY.md`](SECURITY.md).
 
 ## Repository layout
 

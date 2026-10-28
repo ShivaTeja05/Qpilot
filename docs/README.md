@@ -36,6 +36,7 @@ connecting an AI agent. The repository's [README](../README.md) is the overview.
 | [release.md](release.md) | how a release is made |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | how to contribute |
 | [../THREAT_MODEL.md](../THREAT_MODEL.md) and [../SECURITY.md](../SECURITY.md) | threats, mitigations, reporting a vulnerability |
+| [security-review-2026-10.md](security-review-2026-10.md) | the October 2026 security review of this round's features (RT-EX-001 to 015) |
 | [../CHANGELOG.md](../CHANGELOG.md) | what changed in each version |
 | [../tests/fixtures/corpus/README.md](../tests/fixtures/corpus/README.md) | the public instrument-file corpus and its rules |
 
