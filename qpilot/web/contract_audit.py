@@ -47,6 +47,20 @@ class AuditReproduction(BaseModel):
     tolerance: float
 
 
+class AuditReplicates(BaseModel):
+    """How a design's technical replicates were audited (several wells per unit and gene)."""
+
+    most_wells_per_value: int = Field(description="The most wells behind one unit's value.")
+    values_with_several_wells: int = Field(description="Unit-and-gene values with 2+ wells.")
+    values: int = Field(description="Unit-and-gene values in the audit.")
+    wells: int = Field(description="Study wells behind them.")
+    rule: Literal["mean"] = Field(description="The planned rule: qPilot's mean of log2 N0.")
+    varied: bool = Field(
+        description="The audit also varied how the wells are combined (three or more wells)."
+    )
+    words: str = Field(description="What was done, in plain words.")
+
+
 class AuditScope(BaseModel):
     """What was audited: the comparison, the samples and the choices varied."""
 
@@ -63,6 +77,11 @@ class AuditScope(BaseModel):
     decisions: dict[str, list[str]] = Field(description="Each choice varied and its options.")
     reference_sets: int
     analyses_in_full_grid: int
+    technical_replicates: AuditReplicates | None = Field(
+        default=None,
+        description="Set when the design has technical replicates (absent with one well per "
+        "unit and gene, as on the demo).",
+    )
 
 
 class AuditYourChoices(BaseModel):
