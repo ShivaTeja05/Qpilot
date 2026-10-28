@@ -403,6 +403,7 @@ def build_context(
     *,
     robustness: Mapping[str, Any] | None = None,
     cell: Mapping[str, Any] | None = None,
+    comparison: str | None = None,
 ) -> TraceContext:
     """Compute everything a trace needs for one study (about a sixth of a second on the demo).
 
@@ -417,12 +418,21 @@ def build_context(
         cell: The analysis to trace, a cell of ``model.space`` (the one page traces the
             analysis in use: each Decision Card's applied option). The primary cell when not
             given. Groups stay the cell's cut-off's, held fixed in every scenario.
+        comparison: A study with several comparisons: the one traced (its id; the first when
+            not given). The space is focused on it (:meth:`QpcrSpace.focus`): its groups are
+            the traced ones, every comparison is still evaluated and corrected together, and a
+            sample set aside is set aside in every comparison. With a correction the
+            leave-one-out and reference what-if calls are computed exactly, not in closed form.
 
     Raises:
-        TraceError: The table lacks a column Trace needs.
+        TraceError: The table lacks a column Trace needs, or the comparison is not the
+            study's.
     """
     t0 = time.perf_counter()
-    space: QpcrSpace = model.space
+    try:
+        space: QpcrSpace = model.space.focus(comparison)
+    except KeyError as err:
+        raise TraceError(f"this study has no comparison {comparison!r}") from err
     cell = dict(space.primary if cell is None else cell)
     planned = cell == space.primary
     inputs = getattr(model, "inputs", None)
@@ -442,6 +452,8 @@ def build_context(
     marker = space.design.marker if space.design is not None else None
     if space.design is not None:
         labels = (space.design.group_var, "rest")
+    elif space.comparisons:
+        labels = space.comparisons[0].labels
     else:
         labels = tuple(model.labels) if model.labels else ("group A", "group B")
     in_hi, in_lo = space.group_masks(cell)
@@ -470,6 +482,11 @@ def build_context(
             if absz[i, r] > TRACE_THRESHOLDS["z"]:
                 s1_flag[int(i)] = r
     shift_log2fc, shift_call = _shift(rel, valid, in_hi, in_lo, dev / max(len(refs), 1), space)
+    if space.comparisons and space.correction != "none":
+        _corrected(space, values, ref_values, in_hi, in_lo, used, expected, loo_log2fc, loo_call)
+        _corrected_shift(
+            space, values, ref_values, in_hi, in_lo, expected, shift_log2fc, shift_call
+        )
     t2 = time.perf_counter()
 
     units_map = getattr(inputs, "units", None)
@@ -648,6 +665,55 @@ def _loo(
         call = np.where(mask, w.conclusion, call)
     _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays)
     return log2fc, call
+
+
+def _corrected(
+    space: QpcrSpace,
+    values: np.ndarray,
+    ref_values: np.ndarray,
+    in_hi: np.ndarray,
+    in_lo: np.ndarray,
+    used: np.ndarray,
+    expected: np.ndarray,
+    loo_log2fc: np.ndarray,
+    loo_call: np.ndarray,
+) -> None:
+    """Each unit set aside, exactly: with a correction a call depends on every comparison.
+
+    The closed form above is one Welch test; with several comparisons and a correction the
+    traced call uses the corrected p, which moves when a unit leaves its group in any of them.
+    Each traced unit is set aside in every comparison and the space evaluates it (in place).
+    """
+    del expected
+    for i in np.flatnonzero(used):
+        hi, lo = in_hi.copy(), in_lo.copy()
+        hi[i] = lo[i] = False
+        exact = space.evaluate_arrays(values, ref_values, hi, lo)
+        loo_log2fc[i] = np.where(np.isnan(loo_log2fc[i]), np.nan, exact.log2fc)
+        loo_call[i] = np.where(np.isnan(loo_log2fc[i]), loo_call[i], exact.conclusion)
+
+
+def _corrected_shift(
+    space: QpcrSpace,
+    values: np.ndarray,
+    ref_values: np.ndarray,
+    in_hi: np.ndarray,
+    in_lo: np.ndarray,
+    expected: np.ndarray,
+    shift_log2fc: np.ndarray,
+    shift_call: np.ndarray,
+) -> None:
+    """One reference value read as expected, exactly (see :func:`_corrected`), in place."""
+    rows, cols = np.nonzero(np.isfinite(shift_log2fc).any(axis=2))
+    for i, r in zip(rows.tolist(), cols.tolist(), strict=True):
+        if not np.isfinite(expected[i, r]):
+            continue
+        refs = ref_values.copy()
+        refs[i, r] = expected[i, r]
+        exact = space.evaluate_arrays(values, refs, in_hi, in_lo)
+        keep = np.isfinite(shift_log2fc[i, r])
+        shift_log2fc[i, r] = np.where(keep, exact.log2fc, np.nan)
+        shift_call[i, r] = np.where(keep, exact.conclusion, shift_call[i, r])
 
 
 def _near_rule(log2fc: np.ndarray, p: np.ndarray, space: QpcrSpace) -> np.ndarray:

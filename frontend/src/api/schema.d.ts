@@ -9820,6 +9820,11 @@ export type components = {
          */
         OpenPlaceBody: {
             /**
+             * Comparison
+             * @description A study with several comparisons: the one the trace was read for.
+             */
+            comparison?: string | null;
+            /**
              * Expected Head
              * @description The chain head the trace was read at (409 stale when it moved).
              */
@@ -13466,6 +13471,11 @@ export type components = {
              * @enum {string}
              */
             conclusion: "up" | "down" | "none";
+            /**
+             * Correction
+             * @description The correction's short name.
+             */
+            correction?: string | null;
             /** Fc */
             fc: number;
             /**
@@ -13491,8 +13501,21 @@ export type components = {
             n_a: number;
             /** N B */
             n_b: number;
-            /** P */
+            /**
+             * P
+             * @description The p-value before any correction for comparisons.
+             */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call uses (Holm, Dunnett or Tukey).
+             */
+            p_adjusted?: number | null;
+            /**
+             * Q
+             * @description Several comparisons: Benjamini-Hochberg q over this comparison's genes (shown, never used for the call).
+             */
+            q?: number | null;
             /**
              * Se
              * @description Standard error of the log2 fold change.
@@ -13566,6 +13589,11 @@ export type components = {
          * @description ``POST …/where-to-look/decide``: a person's option at the place at ``rank`` of a trace.
          */
         TraceDecideBody: {
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one the trace was read for.
+             */
+            comparison?: string | null;
             /**
              * Expected Head
              * @description The chain head the trace was read at (409 stale when it moved).
@@ -13655,6 +13683,13 @@ export type components = {
             cell: components["schemas"]["TraceCell"];
             /** Checked */
             checked: string[];
+            /**
+             * Comparison
+             * @description Several comparisons: the id of the one traced.
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
             flip: components["schemas"]["TraceFlipSet"];
             /** Gene */
             gene: string;
@@ -13729,6 +13764,11 @@ export type components = {
             n_flip_single: number;
             /** P */
             p: number | null;
+            /**
+             * P Adjusted
+             * @description Several comparisons: the corrected p the call uses.
+             */
+            p_adjusted?: number | null;
             /** Rank */
             rank: number;
             /** Top D Log2Fc */
@@ -14064,6 +14104,13 @@ export type components = {
             cell: components["schemas"]["TraceCell"];
             /** Checked */
             checked: string[];
+            /**
+             * Comparison
+             * @description Several comparisons: the id of the one traced.
+             */
+            comparison?: string | null;
+            /** Comparison Label */
+            comparison_label?: string | null;
             /** Genes */
             genes: components["schemas"]["TraceGeneRow"][];
             /** Labels */
@@ -15001,6 +15048,16 @@ export type components = {
             cannot_show: string[];
             /** Checked Nothing Found */
             checked_nothing_found: string[];
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one traced.
+             */
+            comparison?: string | null;
+            /**
+             * Comparison Note
+             * @description A study with several comparisons: which one the consequences are for.
+             */
+            comparison_note?: string | null;
             /** Decide Note */
             decide_note: string;
             /**
@@ -19681,7 +19738,10 @@ export interface operations {
     };
     get_trace_study: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -19712,7 +19772,10 @@ export interface operations {
     };
     get_trace_gene: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -19744,7 +19807,10 @@ export interface operations {
     };
     post_trace_without: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -19815,6 +19881,8 @@ export interface operations {
     get_where: {
         parameters: {
             query?: {
+                /** @description A study with several comparisons: the one to trace (its id; the first). */
+                comparison?: string | null;
                 gene?: string | null;
                 sample?: string | null;
                 top?: number;

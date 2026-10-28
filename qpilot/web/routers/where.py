@@ -115,13 +115,19 @@ _contexts: OrderedDict[tuple[Any, ...], places_engine.TraceContext] = OrderedDic
 # ---- the context at the analysis in use -----------------------------------------------------
 
 
-def _context(ctx: AppContext, study_id: str) -> places_engine.TraceContext:
-    """The place-to-look context for the analysis in use (the kept model loaded first)."""
+def _context(
+    ctx: AppContext, study_id: str, comparison: str | None = None
+) -> places_engine.TraceContext:
+    """The place-to-look context for the analysis in use (the kept model loaded first).
+
+    ``comparison``: a study with several comparisons, the one traced (None: the first).
+    """
     from qpilot.trace.context import cell_of
 
-    page = tr._ready(ctx, study_id)  # the Trace section's context: 409 loading the first time
+    # the Trace section's context: 409 loading the first time
+    page = tr._ready(ctx, study_id, comparison)
     choice, _ = tr._choice(ctx, study_id)
-    key = (study_id, tr._version(ctx, study_id), tuple(sorted((choice or {}).items())))
+    key = (study_id, tr._version(ctx, study_id), tuple(sorted((choice or {}).items())), comparison)
     with _lock:
         if key in _contexts:
             _contexts.move_to_end(key)
@@ -132,10 +138,20 @@ def _context(ctx: AppContext, study_id: str) -> places_engine.TraceContext:
                 return _contexts[key]
         model = tr._model(ctx, study_id)
         result = ctx.store.get(study_id)
+        robust = result.robustness
+        if comparison and result.comparisons is not None:
+            robust = next(
+                (o.robustness for o in result.comparisons.comparisons if o.id == comparison),
+                robust,
+            )
         try:
             cell = cell_of(model, choice)
             built = places_engine.build_context(
-                model.inputs.primary_table, model, robustness=result.robustness, cell=cell
+                model.inputs.primary_table,
+                model,
+                robustness=robust,
+                cell=cell,
+                comparison=comparison,
             )
         except (places_engine.TraceError, ValueError, KeyError) as err:
             raise api_error(409, "not_traceable", f"Nothing is traced: {err}") from err
@@ -192,9 +208,9 @@ def _root(gene: str | None, sample: str | None, well: str | None) -> dict[str, s
 
 
 def _traced(
-    ctx: AppContext, study_id: str, root: dict[str, str], top: int
+    ctx: AppContext, study_id: str, root: dict[str, str], top: int, comparison: str | None = None
 ) -> tuple[places_engine.TraceResult, places_engine.TraceContext]:
-    built = _context(ctx, study_id)
+    built = _context(ctx, study_id, comparison) if comparison else _context(ctx, study_id)
     run = {
         "gene": places_engine.trace_gene,
         "sample": places_engine.trace_sample,
@@ -355,16 +371,28 @@ def _absent_why(entry: dict[str, Any]) -> str:
     return "; ".join(parts) or "it has no value in the comparison"
 
 
+COMPARISON_NOTE = (
+    "Traced in {label}: each place's consequences are for this comparison. Setting a sample "
+    "aside leaves it out of every comparison of the study."
+)
+
+
 def where_view(
-    ctx: AppContext, study_id: str, sid: str | None, root: dict[str, str], top: int
+    ctx: AppContext,
+    study_id: str,
+    sid: str | None,
+    root: dict[str, str],
+    top: int,
+    comparison: str | None = None,
 ) -> WhereView:
-    """One trace as the page shows it."""
+    """One trace as the page shows it (``comparison``: the one traced, of several)."""
     from qpilot.core.validator import names_from_result
     from qpilot.explain.templates import TemplateError
     from qpilot.explain.trace_text import render_trace
 
     head = ctx.store.chain_head(study_id)
-    result, built = _traced(ctx, study_id, root, top)
+    result, built = _traced(ctx, study_id, root, top, comparison)
+    traced = built.space.comparisons[0] if built.space.comparisons else None
     facts = dict(result.facts)
     try:
         rendered = render_trace(result, allowed_names=names_from_result(ctx.store.get(study_id)))
@@ -387,6 +415,10 @@ def where_view(
         planned=built.planned,
         text=text,
         places=[_place(p, opened, built) for p in result.places],
+        comparison=traced.id if traced is not None else None,
+        comparison_note=COMPARISON_NOTE.format(label=f"{traced.labels[0]} vs {traced.labels[1]}")
+        if traced is not None
+        else None,
         n_more=int(result.summary.get("n_more") or 0),
         checked_nothing_found=list(result.checked_nothing_found),
         cannot_show=list(result.cannot_show),
@@ -411,10 +443,12 @@ def get_where(
     sample: str | None = Query(default=None, max_length=200),
     well: str | None = Query(default=None, max_length=200, description="PLATE:WELL"),
     top: int = Query(default=TOP, ge=1, le=MAX_TOP),
+    comparison: tr.ComparisonQuery = None,
 ) -> WhereView:
     """From a gene's result, a sample or a well to the places to look (read-only)."""
     sid = tr._visible(ctx, study_id)
-    return where_view(ctx, study_id, sid, _root(gene, sample, well), top)
+    cid = tr.comparison_of(ctx, study_id, comparison)
+    return where_view(ctx, study_id, sid, _root(gene, sample, well), top, cid)
 
 
 @router.get("/studies/{study_id}/where-to-look/set-aside", response_model=TraceSetAsideView)
@@ -447,7 +481,8 @@ def post_open_place(study_id: str, body: OpenPlaceBody, ctx: Ctx) -> PlaceOpened
     if body.expected_head != head:
         raise api_error(409, "stale", STALE, head=head)
     root = _root(*(body.id if body.kind == k else None for k in ("gene", "sample", "well")))
-    result, _ = _traced(ctx, study_id, root, max(body.rank, TOP))
+    cid = tr.comparison_of(ctx, study_id, body.comparison)
+    result, _ = _traced(ctx, study_id, root, max(body.rank, TOP), cid)
     if body.rank > len(result.places):
         raise api_error(404, "not_found", "This trace has no place at that rank any more.")
     place = result.places[body.rank - 1]
@@ -544,7 +579,8 @@ def post_decide_place(study_id: str, body: TraceDecideBody, ctx: Ctx) -> TraceDe
     if body.expected_head != head:
         raise api_error(409, "stale", STALE, head=head)
     root = _root(*(body.id if body.kind == k else None for k in ("gene", "sample", "well")))
-    result, built = _traced(ctx, study_id, root, max(body.rank, TOP))
+    cid = tr.comparison_of(ctx, study_id, body.comparison)
+    result, built = _traced(ctx, study_id, root, max(body.rank, TOP), cid)
     if body.rank > len(result.places):
         raise api_error(404, "not_found", "This trace has no place at that rank any more.")
     place = result.places[body.rank - 1]

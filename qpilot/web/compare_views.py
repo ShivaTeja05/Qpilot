@@ -21,7 +21,13 @@ import numpy as np
 import pandas as pd
 
 from qpilot.core.store import StudyStore
-from qpilot.qpcr.contrast import CORRECTED, CORRECTION_WORDS, TEST_WORDS, ConclusionRule, bh
+from qpilot.qpcr.contrast import (
+    CORRECTION_WORDS,
+    TEST_WORDS,
+    ConclusionRule,
+    bh,
+    describe_rule,
+)
 from qpilot.schemas import ComparisonOutcome, DecisionCard, Fact, StudyResult
 from qpilot.web.contract_compare import (
     ComparisonCell,
@@ -325,13 +331,7 @@ def rule_words(result: StudyResult, rule: ConclusionRule) -> str:
 
 
 def _rule_text(rule: ConclusionRule, correction: str) -> str:
-    fold = f"{2**rule.min_log2fc:g}"
-    if correction in CORRECTED:
-        return (
-            f"up or down only if the corrected p < {rule.alpha:g} and the change is at least "
-            f"{fold}-fold; otherwise no call"
-        )
-    return rule.describe()
+    return describe_rule(rule, correction)
 
 
 def _single(result: StudyResult) -> ComparisonOutcome:

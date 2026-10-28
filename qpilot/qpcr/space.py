@@ -45,6 +45,7 @@ they return exactly what :meth:`QpcrSpace.evaluate` returns.
 
 from __future__ import annotations
 
+import copy
 import warnings
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -578,6 +579,35 @@ class QpcrSpace:
     def evaluate_all(self, cell: Mapping[str, Any]) -> dict[str, dict[str, ContrastResult]]:
         """Every comparison's results under one cell, by comparison id, the primary first."""
         return {cid: a.results() for cid, a in self.evaluate_all_arrays(cell).items()}
+
+    def focus(self, comparison_id: str | None) -> QpcrSpace:
+        """The same space with ``comparison_id`` first: its groups are the space's groups.
+
+        Every comparison is still evaluated in every cell and corrected together (Holm,
+        Dunnett and Tukey do not depend on the order), so the focused space's
+        :meth:`evaluate`, :meth:`group_masks` and :meth:`evaluate_arrays` describe that
+        comparison exactly as the study's other views show it; a unit set aside through the
+        masks is set aside in every comparison. ``None`` or the first comparison: the space
+        itself. The stage caches are shared (they do not depend on the comparisons).
+
+        Raises:
+            KeyError: An id the space does not have.
+        """
+        if not comparison_id or not self.comparisons or comparison_id == self.comparisons[0].id:
+            return self
+        ids = [spec.id for spec in self.comparisons]
+        if comparison_id not in ids:
+            raise KeyError(f"no comparison {comparison_id!r}")
+        first = ids.index(comparison_id)
+        order = [first, *(i for i in range(len(ids)) if i != first)]
+        other = copy.copy(self)
+        other.comparisons = tuple(self.comparisons[i] for i in order)
+        other._cmp = [self._cmp[i] for i in order]
+        if self._family is not None:
+            other._family = replace(self._family, pairs=tuple(self._family.pairs[i] for i in order))
+        other._masks = {None: (other._cmp[0].in_a, other._cmp[0].in_b)}
+        other._cells = {}
+        return other
 
     def comparison_view(self, comparison_id: str) -> ComparisonView:
         """One comparison as a decision space of its own (same dimensions and cells)."""

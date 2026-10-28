@@ -166,6 +166,13 @@ class WhereView(BaseModel):
     )
     text: list[FactText]
     places: list[WherePlace]
+    comparison: str | None = Field(
+        default=None, description="A study with several comparisons: the one traced."
+    )
+    comparison_note: str | None = Field(
+        default=None,
+        description="A study with several comparisons: which one the consequences are for.",
+    )
     n_more: int = Field(description="Further places found, not shown.")
     checked_nothing_found: list[str]
     cannot_show: list[str]
@@ -198,6 +205,12 @@ class OpenPlaceBody(BaseModel):
         min_length=1,
         max_length=128,
         description="The chain head the trace was read at (409 stale when it moved).",
+    )
+    comparison: str | None = Field(
+        default=None,
+        max_length=200,
+        pattern="^[a-z0-9_]{1,200}$",
+        description="A study with several comparisons: the one the trace was read for.",
     )
 
 
@@ -240,6 +253,12 @@ class TraceDecideBody(BaseModel):
     )
     expected_inbox: str | None = Field(
         default=None, max_length=128, description="The session's inbox head the trace showed."
+    )
+    comparison: str | None = Field(
+        default=None,
+        max_length=200,
+        pattern="^[a-z0-9_]{1,200}$",
+        description="A study with several comparisons: the one the trace was read for.",
     )
 
 
