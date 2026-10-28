@@ -147,6 +147,8 @@ export async function apiFetch(
     seqListeners.forEach((l) => l(seq, startedAt));
   }
   if (response.status === 304 && known) {
+    // Read the (empty) answer, so the browser counts the request as finished, not aborted.
+    await response.arrayBuffer().catch(() => undefined);
     kept.delete(url.href); // most recently used last
     kept.set(url.href, known);
     return new Response(known.body, {
