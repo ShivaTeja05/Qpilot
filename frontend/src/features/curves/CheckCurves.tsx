@@ -6,7 +6,7 @@
 import { ScanLine } from "lucide-react";
 import { useRef, useState } from "react";
 import { api, unwrap, type JobView, type Schemas } from "@/api/client";
-import { count } from "@/lib/format";
+import { plural } from "@/lib/format";
 import { useFocusTarget } from "@/shell/actions";
 import { useWrite } from "@/shell/writes";
 import type { SectionProps } from "@/shell/sections";
@@ -114,16 +114,19 @@ export function CheckCurvesPanel({ state }: { state: CheckCurvesState }) {
   );
 }
 
+/**
+ * What the check found, said once: the server's message already holds the notes and the Curve
+ * Judge's sentence (counts included), so only a report without one is pieced together here.
+ */
 function ReportText({ report }: { report: Report }) {
+  if (report.message) return <p className="text-[13px] text-fg">{report.message}</p>;
   return (
     <div className="flex flex-col gap-1 text-[13px]">
-      {report.message ? <p className="text-fg">{report.message}</p> : null}
       {report.disagreements != null ? (
         <p className="text-muted">
-          The Curve Judge disagrees with LinRegPCR on {count(report.disagreements)} study well
-          {report.disagreements === 1 ? "" : "s"}
+          The Curve Judge disagrees with LinRegPCR on {plural(report.disagreements, "study well")}
           {report.targets_that_matter != null
-            ? `; on ${count(report.targets_that_matter)} target${report.targets_that_matter === 1 ? "" : "s"} resolving them could change a conclusion`
+            ? `; on ${plural(report.targets_that_matter, "target")} resolving them could change a conclusion`
             : ""}
           .
         </p>

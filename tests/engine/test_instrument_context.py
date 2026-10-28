@@ -948,3 +948,24 @@ def test_method_card_lists_real_tests():
     for test in METHOD_CARD["acceptance_tests"]:
         file, _, name = test.partition("::")
         assert f"def {name}(" in (root / file).read_text(encoding="utf-8"), test
+
+
+def test_rdml_run_contexts_are_parsed_once_per_xml_and_handed_out_as_copies(tmp_path):
+    """perf: the analysis, the gate and the evidence read the same file's runs; parse once."""
+    runs = [{"id": "a", "instrument": "LC96SN90001", "runDate": "2014-08-19T11:30:20"}]
+    path = F.write_rdml(tmp_path / "x.rdml", runs)
+    ic._CONTEXTS.clear()
+    calls = []
+    real = ic._parse_rdml_contexts
+    try:
+        ic._parse_rdml_contexts = lambda *a, **k: calls.append(1) or real(*a, **k)
+        first = run_contexts_from_rdml(path)
+        again = run_contexts_from_rdml(path)
+        other = run_contexts_from_rdml(path, source_file="y.rdml")
+    finally:
+        ic._parse_rdml_contexts = real
+    assert len(calls) == 2  # x.rdml once, y.rdml once
+    assert again == first and again[0] is not first[0]
+    again[0].notes.append("changed by a caller")
+    assert run_contexts_from_rdml(path) == first  # a caller's change never reaches the next
+    assert len(other) == len(first) and other != first  # the file's name is part of each

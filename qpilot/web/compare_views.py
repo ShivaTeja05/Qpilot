@@ -330,8 +330,9 @@ def _single(result: StudyResult) -> ComparisonOutcome:
     a = str(facts["f_group_a"].value) if "f_group_a" in facts else None
     b = str(facts["f_group_b"].value) if "f_group_b" in facts else None
     if a is None or b is None:
-        marker = result.design.group_var.removesuffix("_high") or result.design.group_var
-        a, b = f"{marker}-high", "rest"
+        from qpilot.qpcr.design import marker_group_names
+
+        a, b = marker_group_names(result.design.group_var)
     genes = list(result.contrasts)
     q = bh(np.array([result.contrasts[g].p for g in genes], dtype=float))
     return ComparisonOutcome(

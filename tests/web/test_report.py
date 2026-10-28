@@ -1,6 +1,6 @@
 """The study report: every number a fact, MIQE 2.0 on the demo, the reviewer's report, the exports.
 
-The demo tests run on the real demo study (Vermeulen 2013, 64 plates) with a real robustness
+The demo tests run on the real demo study (Vermeulen 2009, 64 plates) with a real robustness
 audit (the Decision Simulator, 99 permutations); every number the report cites is checked against
 the store, the audit or the input file, independently of the report's code. The quick tests use
 the Studio tests' walked mini file: the route, groups from a confirmed design, the blind rule and
@@ -268,6 +268,7 @@ def resolve(path: str, store: StudyStore, study: str, audit_dir: Path, view: dic
         return {
             "/rdml/version": meta.version,
             "/target@len": meta.n_targets,
+            "/run@len": meta.n_runs,
             "/react/data/adp@count": meta.n_reactions_with_curves,
             "/react/vol@distinct": ", ".join(f"{v:g}" for v in meta.volumes),
             "/target/sequences@count": meta.n_targets_with_primers,

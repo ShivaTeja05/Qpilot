@@ -873,6 +873,37 @@ def evidence_for(
     return _assemble(drafts, model.settings.experiment_id)
 
 
+#: The RDML facts of each input file read in this process, by the file's sha256.
+_FILE_EVIDENCE: dict[str, RdmlEvidence] = {}
+FILE_EVIDENCE_KEPT = 16
+
+
+def _file_evidence(source: Any) -> RdmlEvidence:
+    """:func:`rdml_evidence` of an input file, kept by its sha256 (the XML is parsed once).
+
+    Raises:
+        EvidenceError: The file cannot be read again.
+    """
+    from qpilot.core.store import sha256_file
+
+    try:
+        digest = sha256_file(source)
+    except OSError as err:
+        raise EvidenceError(f"the input file cannot be read again: {err}") from err
+    found = _FILE_EVIDENCE.get(digest)
+    if found is not None:
+        return found
+    try:
+        doc = load(source, validate=False)
+    except RdmlLoadError as err:
+        raise EvidenceError(f"the input file cannot be read again: {err}") from err
+    found = rdml_evidence(doc)
+    if len(_FILE_EVIDENCE) >= FILE_EVIDENCE_KEPT:
+        _FILE_EVIDENCE.pop(next(iter(_FILE_EVIDENCE)), None)
+    _FILE_EVIDENCE[digest] = found
+    return found
+
+
 def evidence_store(
     store: Any, study_id: str, *, rawness: Mapping[str, Any] | None = None
 ) -> EvidenceLedger:
@@ -910,11 +941,7 @@ def evidence_store(
     model = build_model(curves, settings)
     if model.stability.model_dump(mode="json") != result.genorm.model_dump(mode="json"):
         raise EvidenceError("re-analysing the input file does not reproduce the stored study")
-    try:
-        doc = load(source, validate=False)
-    except RdmlLoadError as err:
-        raise EvidenceError(f"the input file cannot be read again: {err}") from err
-    ledger = evidence_for(curves, model, design, doc, rawness=rawness)
+    ledger = evidence_for(curves, model, design, _file_evidence(source), rawness=rawness)
     return ledger.model_copy(
         update={"study_id": result.study_id, "input_sha256": result.input_sha256}
     )

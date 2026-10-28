@@ -11,16 +11,26 @@ The page never polls the store. Three sources publish here:
 
 Events are small JSON objects ``{"type": ..., "key": ..., ...}``; the page re-reads what it shows
 for that workspace. Nothing in an event is trusted for display beyond its ids.
+
+One write is told once: an event published by this process about a workspace makes the watcher
+take that workspace's logs as seen (:meth:`StoreWatcher.absorb`), so it does not tell the same
+write again a second later. Every event carries ``store_seq`` (a counter of the changes told so
+far; job progress does not count) and, when a page's request caused it, that tab's ``origin``
+(:data:`ORIGIN`, from the ``x-qpilot-tab`` header), so the tab that wrote — which re-reads by
+itself — and the others each re-read once.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import re
 import stat
 import threading
 import time
-from collections.abc import AsyncIterator
+import uuid
+from collections.abc import AsyncIterator, Callable
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +46,13 @@ WATCHED = {
     "proposals.jsonl": "proposals.changed",
     "studio.json": "proposals.changed",
 }
+#: Events about what is stored (they move ``store_seq``); job progress and model status do not.
+STORE_EVENTS = frozenset(
+    {"study.changed", "proposals.changed", "settings.changed", "instruments.changed"}
+)
+#: The page tab whose request is being answered (``x-qpilot-tab``; None outside a request).
+ORIGIN: ContextVar[str | None] = ContextVar("qpilot_origin", default=None)
+_KEY = re.compile(r"^[0-9a-f]{12,64}\Z")
 
 
 class EventBus:
@@ -46,13 +63,35 @@ class EventBus:
         self._subscribers = set()
         self._lock = threading.Lock()
         self._seq = 0
+        self._store_seq = 0
+        self.boot = uuid.uuid4().hex[:12]  # a restarted server is another stream
+        self._hooks: list[Callable[[dict[str, Any]], None]] = []
+
+    @property
+    def store_seq(self) -> int:
+        """How many store changes were told so far (answers carry it as ``x-qpilot-store-seq``)."""
+        return self._store_seq
+
+    def on_publish(self, hook: Callable[[dict[str, Any]], None]) -> None:
+        """Call ``hook(event)`` for every event, before it is sent (the watcher's absorb)."""
+        self._hooks.append(hook)
 
     def publish(self, event: dict[str, Any]) -> None:
         """Send ``event`` to every subscriber (dropped for a subscriber whose queue is full)."""
+        origin = ORIGIN.get()
         with self._lock:
             self._seq += 1
-            event = {**event, "seq": self._seq, "at": time.time()}
+            if event.get("type") in STORE_EVENTS:
+                self._store_seq += 1
+            event = {**event, "seq": self._seq, "store_seq": self._store_seq, "at": time.time()}
+            if origin and "origin" not in event:
+                event["origin"] = origin
             targets = list(self._subscribers)
+        for hook in self._hooks:
+            try:
+                hook(event)
+            except Exception:  # a hook never stops an event
+                pass
         for loop, queue in targets:
             try:
                 loop.call_soon_threadsafe(_offer, queue, event)
@@ -71,7 +110,7 @@ class EventBus:
             self._subscribers.add((loop, queue))
         try:
             yield "retry: 2000\n\n"
-            yield _sse({"type": "hello"})
+            yield _sse({"type": "hello", "store_seq": self._store_seq, "boot": self.boot})
             while True:
                 try:
                     event = await asyncio.wait_for(queue.get(), timeout=HEARTBEAT_S)
@@ -108,8 +147,11 @@ class StoreWatcher:
         self.bus = bus
         self.interval = interval
         self._seen: dict[Path, tuple[int, int]] = {}
+        self._pending: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
+        self._lock = threading.RLock()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        bus.on_publish(self.absorb)
 
     def start(self) -> None:
         """Start watching on a daemon thread (the first scan only records what is there)."""
@@ -119,6 +161,49 @@ class StoreWatcher:
         self._thread = threading.Thread(target=self._run, name="qpilot-store-watcher", daemon=True)
         self._thread.start()
 
+    def absorb(self, event: dict[str, Any]) -> None:
+        """This process told a change of ``event["key"]``: take that workspace's logs as seen.
+
+        The API publishes after it wrote, so what is on disk now is what the event told; the
+        next scan then sees no change there and does not tell the same write a second time.
+        A write by another process after this moment changes the files again and is told.
+        """
+        key = event.get("key")
+        if (
+            event.get("source") == "disk"
+            or event.get("type") not in WATCHED.values()
+            or not isinstance(key, str)
+            or not _KEY.match(key)
+        ):
+            return
+        with self._lock:
+            for folder in self._folders_of(key):
+                for name in WATCHED:
+                    path = folder / name
+                    try:
+                        st = path.stat()
+                    except OSError:
+                        self._seen.pop(path, None)
+                        continue
+                    self._seen[path] = (st.st_mtime_ns, st.st_size)
+            for pending in [p for p in self._pending if p[1] == key]:
+                del self._pending[pending]
+
+    def _folders_of(self, key: str) -> list[Path]:
+        """The workspace folders a key names: a session's (``sessions/<sha>``) or a study's."""
+        out: list[Path] = []
+        sessions = self.root / "sessions"
+        for base in (self.root, sessions):
+            try:
+                out.extend(
+                    d
+                    for d in base.glob(f"{key}*")
+                    if d.is_dir() and len(d.name) == 64 and d.name != "sessions"
+                )
+            except OSError:
+                continue
+        return out
+
     def stop(self) -> None:
         """Stop the watcher thread."""
         self._stop.set()
@@ -127,40 +212,45 @@ class StoreWatcher:
         # A long write (a bulk decision appends one line per proposal) is told once it settles:
         # a change is published when the next scan sees no further change, or after
         # SETTLE_MAX_S at the latest, so a page re-reads once, not once a second.
-        pending: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
+        pending = self._pending
         while not self._stop.wait(self.interval):
-            try:
-                fresh = self.scan(publish=False)
-            except OSError:  # a workspace moved or removed mid-scan: try again next tick
-                continue
-            now = time.monotonic()
-            seen_now = set()
-            for event in fresh:
-                key = (event["type"], event["key"])
-                seen_now.add(key)
-                first = pending.get(key, (now, event))[0]
-                pending[key] = (first, event)
-            for key, (first, event) in list(pending.items()):
-                if key not in seen_now or now - first >= SETTLE_MAX_S:
-                    self.bus.publish(event)
-                    del pending[key]
+            ready: list[dict[str, Any]] = []
+            with self._lock:
+                try:
+                    fresh = self.scan(publish=False)
+                except OSError:  # a workspace moved or removed mid-scan: try again next tick
+                    continue
+                now = time.monotonic()
+                seen_now = set()
+                for event in fresh:
+                    key = (event["type"], event["key"])
+                    seen_now.add(key)
+                    first = pending.get(key, (now, event))[0]
+                    pending[key] = (first, event)
+                for key, (first, event) in list(pending.items()):
+                    if key not in seen_now or now - first >= SETTLE_MAX_S:
+                        ready.append(event)
+                        del pending[key]
+            for event in ready:
+                self.bus.publish(event)
 
     def scan(self, publish: bool = True) -> list[dict[str, Any]]:
         """Compare the watched files with the last scan; publish (and return) what changed."""
         events: dict[tuple[str, str], dict[str, Any]] = {}
         current: dict[Path, tuple[int, int]] = {}
-        for folder, key in self._folders():
-            for name, kind in WATCHED.items():
-                path = folder / name
-                try:
-                    st = path.stat()
-                except OSError:
-                    continue
-                sig = (st.st_mtime_ns, st.st_size)
-                current[path] = sig
-                if self._seen.get(path) != sig:
-                    events[(kind, key)] = {"type": kind, "key": key, "source": "disk"}
-        self._seen = current
+        with self._lock:
+            for folder, key in self._folders():
+                for name, kind in WATCHED.items():
+                    path = folder / name
+                    try:
+                        st = path.stat()
+                    except OSError:
+                        continue
+                    sig = (st.st_mtime_ns, st.st_size)
+                    current[path] = sig
+                    if self._seen.get(path) != sig:
+                        events[(kind, key)] = {"type": kind, "key": key, "source": "disk"}
+            self._seen = current
         out = list(events.values())
         if publish:
             for event in out:

@@ -53,12 +53,15 @@ from __future__ import annotations
 
 import csv
 import datetime as dt
+import hashlib
 import html
 import io
 import json
 import re
+import threading
 import zipfile
 import zlib
+from collections import OrderedDict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -2037,7 +2040,33 @@ class _RdmlRun:
     member: str
 
 
+#: Run contexts already read in this process, by (digest of the XML, file name, member).
+_CONTEXTS: OrderedDict[tuple[bytes, str, str], tuple[RunContext, ...]] = OrderedDict()
+_CONTEXTS_LOCK = threading.Lock()
+CONTEXTS_KEPT = 16
+
+
 def _rdml_contexts_from_bytes(data: bytes, name: str, *, member: str = "rdml") -> list[RunContext]:
+    """:func:`_parse_rdml_contexts`, kept by the XML's digest (the same bytes, the same runs).
+
+    A study's file is read for its runs by the analysis, the gate and the evidence; each gets
+    its own copies.
+    """
+    key = (hashlib.blake2b(data, digest_size=20).digest(), name, member)
+    with _CONTEXTS_LOCK:
+        kept = _CONTEXTS.get(key)
+        if kept is not None:
+            _CONTEXTS.move_to_end(key)
+    if kept is None:
+        kept = tuple(_parse_rdml_contexts(data, name, member=member))
+        with _CONTEXTS_LOCK:
+            _CONTEXTS[key] = kept
+            while len(_CONTEXTS) > CONTEXTS_KEPT:
+                _CONTEXTS.popitem(last=False)
+    return [context.model_copy(deep=True) for context in kept]
+
+
+def _parse_rdml_contexts(data: bytes, name: str, *, member: str = "rdml") -> list[RunContext]:
     """Stream the RDML XML and keep only each run's header elements (reactions are dropped)."""
     records: list[_RdmlRun] = []
     experiment = ""

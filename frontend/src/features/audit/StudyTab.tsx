@@ -352,7 +352,11 @@ function References({ study }: { study: AuditStudyView }) {
       <CardHeader
         id="audit-refs"
         title="Reference gene stability"
-        hint={`geNorm M of each candidate: lower is steadier, steady below ${study.stable_below}.`}
+        hint={`geNorm M of each candidate: lower is steadier, steady below ${study.stable_below}.${
+          cutoff < 1.5
+            ? ` The audit judges stability against this stricter cut-off (Hellemans et al. 2007, for varied samples such as tumours); Results uses geNorm's usual M 1.5 (Vandesompele et al. 2002): the same M values, two cut-offs.`
+            : ""
+        }`}
       />
       <CardBody className="space-y-3">
         {note ? (

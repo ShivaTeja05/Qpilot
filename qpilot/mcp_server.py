@@ -1090,7 +1090,7 @@ class QpilotTools(CapabilityTools):
 
     def qpcr_plan(
         self,
-        fc: float = 2.0,
+        fc: float | None = None,
         sd_log2: float | None = None,
         n_per_group: int | None = None,
         alpha: float = 0.05,
@@ -1109,8 +1109,11 @@ class QpilotTools(CapabilityTools):
     ) -> dict[str, Any]:
         """Before the first plate: samples per group needed and what a design cannot detect.
 
-        ``sd_log2`` is the SD of log2 normalised expression between biological replicates (not
-        technical Cq SD). Without it you get a message instead of a sample size. The replicate
+        ``fc`` is the smallest change worth finding; without it the plan starts from 2.5×, a
+        quarter above qPilot's 2-fold call rule (a true 2-fold change reaches the rule only
+        about half the time), as the page's Plan next and ``qpilot plan`` do. ``sd_log2`` is
+        the SD of log2 normalised expression between biological replicates (not technical Cq
+        SD). Without it you get a message instead of a sample size. The replicate
         budget: ``sd_rt`` (SD between RT reactions of one subject) and ``sd_well`` (between
         wells of one RT reaction), ``n_rt`` RT reactions per subject and ``n_tech`` wells per RT
         reaction (whole numbers, 1 to 10), and the three costs for the cheapest design. With any
@@ -1140,8 +1143,10 @@ class QpilotTools(CapabilityTools):
         result = out.model_dump(mode="json")
         if out.n_needed is not None:
             # qPilot's own rule (p < 0.05 and at least 2-fold), simulated: what a design calls.
-            from qpilot.qpcr.plan import simulate_calls
+            from qpilot.qpcr.plan import default_fold, simulate_calls
 
+            if fc is None:
+                fc = default_fold()
             # with a replicate budget the subject means vary by the effective SD
             sd = out.budget["sd_effective"] if out.budget else sd_log2
             sims = {"needed": simulate_calls(fc, sd, out.n_needed, alpha)}
@@ -1431,8 +1436,8 @@ class QpilotTools(CapabilityTools):
         itself) or ``sent_back_dir`` (the folder of tables the optional ``send_back.pzc``
         script exported; a ``.pzfx`` file or a folder holding one is read as a project too).
         Any other file type is refused (``unsupported_input``). All of them must be inside
-        ``QPILOT_DATA_ROOTS``. Results stay hidden for a
-        Studio session until a person confirms the design and the curves.
+        ``QPILOT_DATA_ROOTS``. Results stay hidden for a Studio session until a person
+        confirms the design and the curves.
         """
         from qpilot.prism import diff_report
 

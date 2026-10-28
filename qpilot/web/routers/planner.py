@@ -31,6 +31,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
 
+from qpilot.explain.words import plural
 from qpilot.qpcr import layout as lay
 from qpilot.qpcr import plan as qplan
 from qpilot.web.context import AppContext, Ctx, api_error
@@ -617,13 +618,14 @@ def _budget(m: Measured, body: PlannerBody, focus: list[str], refs: list[str]) -
     where = f"{plates} plate{'s' * (plates != 1)} of {body.wells_per_plate} wells"
     if n_fit is None:
         text = (
-            f"{where} cannot hold two samples per group of these {len(focus)} gene(s), "
-            f"{len(refs)} reference gene(s) and controls."
+            f"{where} cannot hold two samples per group of these "
+            f"{plural(len(focus), 'gene')}, {plural(len(refs), 'reference gene')} and controls."
         )
     else:
         text = (
-            f"{where} hold up to {n_fit} samples per group of these {len(focus)} gene(s) with "
-            f"{len(refs)} reference gene(s), {body.replicates} replicate(s) and the controls."
+            f"{where} hold up to {n_fit} samples per group of these {plural(len(focus), 'gene')} "
+            f"with {plural(len(refs), 'reference gene')}, "
+            f"{plural(body.replicates, 'replicate')} and the controls."
         )
     return PlanBudget(plates=plates, n_fit=n_fit, text=text)
 
