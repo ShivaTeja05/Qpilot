@@ -636,9 +636,6 @@ def study_quantities(c: Ctx) -> Any:
     return found.result if found.result.curves else None
 
 
-QUANTITY_NAMES = {"log10", "10^(−1/slope) − 1", "95 % prediction interval", "R²"}
-
-
 def quantities(c: Ctx, cite: Cites) -> list[Part]:
     """Absolute quantification: the standard curves, LOD/LOQ and the unknowns' intervals."""
     result = study_quantities(c)
@@ -662,7 +659,6 @@ def quantities(c: Ctx, cite: Cites) -> list[Part]:
         "name": "from the standards' names",
     }
     told = "; ".join(where.get(s, s.replace("+", " and ")) for s in sorted(sources))
-    c.facts.names |= QUANTITY_NAMES  # how the numbers were computed, not data
     rate = c.num(
         "abs_lod_rate", result.settings.lod_rate, "quantities:/settings/lod_rate", "{:.0%}"
     )
