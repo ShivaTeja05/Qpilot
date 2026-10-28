@@ -30,6 +30,7 @@ import {
   type AuditTarget,
 } from "./api";
 import { HowTab } from "./HowTab";
+import { ComparisonsNote } from "./ComparisonsNote";
 import { ReplicatesNote } from "./ReplicatesNote";
 import { StudyTab } from "./StudyTab";
 import type { AttachedAudit, Changes, ManifestLike, ReadyStatus } from "./types";
@@ -136,6 +137,7 @@ export function AuditReady({
 
       {behind ? <BehindNotice target={target} since={status.decisions_since} /> : null}
       <ReplicatesNote replicates={manifest.scope?.technical_replicates} className="mb-5" />
+      <ComparisonsNote comparisons={manifest.scope?.comparisons} className="mb-5" />
       {loading ? (
         <div className="mb-5 space-y-2">
           <p className="text-[13px] text-muted">

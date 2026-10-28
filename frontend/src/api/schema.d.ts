@@ -3563,6 +3563,28 @@ export type components = {
             spread: number;
         };
         /**
+         * AuditComparisons
+         * @description A study with several comparisons: the one the audit audits, and that it is only that one.
+         */
+        AuditComparisons: {
+            /**
+             * Audited
+             * @description The comparison audited (its id): the study's first.
+             */
+            audited: string;
+            /** Audited Label */
+            audited_label: string;
+            /** Correction */
+            correction: string;
+            /** N Comparisons */
+            n_comparisons: number;
+            /**
+             * Note
+             * @description What the audit audits, in plain words.
+             */
+            note: string;
+        };
+        /**
          * AuditDecision
          * @description One analysis choice the audit varies (the what-if lab's selects).
          */
@@ -4388,6 +4410,8 @@ export type components = {
             amplification_rule: string;
             /** Analyses In Full Grid */
             analyses_in_full_grid: number;
+            /** @description Set for a study with several comparisons: the audit audits the first. */
+            comparisons?: components["schemas"]["AuditComparisons"] | null;
             /** Control Gene Candidates */
             control_gene_candidates: string[];
             /**
@@ -6692,7 +6716,10 @@ export type components = {
          *     ``design.dilution_series`` ``{"experiment_id": str, "samples": {sample: quantity}}``
          *     (subject: the series' name; its samples become standards with these quantities);
          *     ``design.comparison`` ``{"group_a": str, "group_b": str}`` (subject ``comparison``;
-         *     fold change = group_a relative to group_b, the reference group).
+         *     fold change = group_a relative to group_b, the reference group); several comparisons add
+         *     ``comparisons`` (``[{group_a, group_b}, ...]``, the first is ``group_a``/``group_b``),
+         *     ``pattern`` (``vs_control``, ``all_pairs`` or ``chosen``), ``control``, ``correction``
+         *     (``holm``, ``dunnett``, ``tukey`` or ``none``) and ``pair_by`` (the accepted pairing's name).
          */
         DesignEditItem: {
             /**
@@ -6715,6 +6742,13 @@ export type components = {
             /** Comparison */
             comparison?: {
                 [key: string]: string;
+            } | null;
+            /**
+             * Comparison Plan
+             * @description Several comparisons a person set: comparisons, pattern, control, correction and pair_by of the accepted comparison (None: one comparison).
+             */
+            comparison_plan?: {
+                [key: string]: unknown;
             } | null;
             /**
              * Confirmed
@@ -6742,8 +6776,19 @@ export type components = {
              * @description Each sample's group and unit (one entry per sample, in the same order).
              */
             membership: components["schemas"]["EditorMembership"][];
+            /**
+             * N Paired
+             * @description Study samples with a pairing.
+             * @default 0
+             */
+            n_paired: number;
             /** Needs */
             needs: components["schemas"]["DesignNeed"][];
+            /**
+             * Pair By
+             * @description The pairing a person accepted (donor, animal...), if any.
+             */
+            pair_by?: string | null;
             /**
              * Preset
              * @description A built-in design a person accepted (the demo's).
