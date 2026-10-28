@@ -119,9 +119,11 @@ export function ReviewDialog({
             Cancel
           </Button>
           <Button variant="primary" loading={busy} disabled={!ready} onClick={() => void record()}>
-            {writes
+            {toRecord.length
               ? `Record ${count(toRecord.length)} change${toRecord.length === 1 ? "" : "s"}`
-              : "Nothing to record"}
+              : writes
+                ? `Reject ${count(writes)} waiting proposal${writes === 1 ? "" : "s"}`
+                : "Nothing to record"}
           </Button>
         </>
       }

@@ -27,12 +27,15 @@ export function DesignNeeds({
   needs,
   blockers,
   onGo,
+  unrecorded = 0,
 }: {
   /** From the editor's view (each with where it is fixed); `undefined` while it loads. */
   needs: Need[] | undefined;
   /** The design stage's blockers, in the engine's words (shown while the editor loads). */
   blockers: string[];
   onGo: (where: NeedPlace) => void;
+  /** Changes in the editor's draft: they count once they are recorded. */
+  unrecorded?: number;
 }) {
   const list: Need[] =
     needs ?? blockers.map((b) => ({ code: "engine", words: b, where: "engine" as const }));
@@ -48,6 +51,13 @@ export function DesignNeeds({
         <h2 id="design-needs" className="text-sm font-semibold text-fg">
           What the design still needs before it can be confirmed
         </h2>
+        {unrecorded ? (
+          <p className="mt-1 text-[13px] text-muted">
+            Your {unrecorded} change{unrecorded === 1 ? " is" : "s are"} not recorded yet, so
+            {unrecorded === 1 ? " it is" : " they are"} not counted here: review and record{" "}
+            {unrecorded === 1 ? "it" : "them"} below.
+          </p>
+        ) : null}
         <ul className="mt-2 flex flex-col gap-2 text-[13px] text-fg">
           {list.map((n) => {
             const go = GO[n.code];

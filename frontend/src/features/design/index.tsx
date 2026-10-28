@@ -183,7 +183,12 @@ export default function DesignSection({ workspace }: SectionProps) {
       />
 
       {status && !confirmed ? (
-        <DesignNeeds needs={editor.data?.needs} blockers={status.blockers} onGo={goTo} />
+        <DesignNeeds
+          needs={editor.data?.needs}
+          blockers={status.blockers}
+          onGo={goTo}
+          unrecorded={draft.size}
+        />
       ) : null}
 
       {otherJobs.map((j) => (
