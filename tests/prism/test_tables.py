@@ -4,6 +4,7 @@ import csv
 import hashlib
 import io
 import json
+import re
 
 import pytest
 
@@ -206,8 +207,12 @@ def test_file_stems_are_safe():
     assert tables.file_stem("SDHA(1)") == "SDHA(1)"
     assert tables.file_stem("PRKACB bis") == "PRKACB_bis"
     assert tables.file_stem("CON") == "CON_gene"
-    with pytest.raises(PrismExportError):
-        tables.file_stem(".hidden")
+    hidden = tables.file_stem(".hidden")
+    assert hidden.startswith("hidden_") and len(hidden) == len("hidden_") + 8
+    for name in ("α-syn", "IL-6/ctrl", "KO#2", "Day 3 (50 µM)", "-Mar1"):
+        stem = tables.file_stem(name)
+        assert re.fullmatch(r"[a-z0-9_]+_[0-9a-f]{8}", stem), (name, stem)
+    assert tables.file_stem("IL-6/ctrl") != tables.file_stem("IL-6_ctrl")
 
 
 # ---------- sharing ----------

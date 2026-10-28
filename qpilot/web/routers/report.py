@@ -27,6 +27,7 @@ from typing import Any
 
 from fastapi import APIRouter, Query, Response
 
+from qpilot.core.names import NAME_WORDS
 from qpilot.core.record import RecordError, write_record, zip_record
 from qpilot.core.store import StudyNotFound
 from qpilot.report import html as report_html
@@ -112,7 +113,7 @@ OPEN_CARDS = (
 )
 NO_EXPORT_NAME = (
     "No figure: a group, sample or gene of this study has a name the exports cannot write "
-    "(use letters, digits, spaces and _ - . ( ) in names)."
+    f"(a name may use {NAME_WORDS})."
 )
 FIGURE_MEDIA = {"svg": "image/svg+xml", "png": "image/png", "csv": "text/csv; charset=utf-8"}
 

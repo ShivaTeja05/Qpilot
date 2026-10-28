@@ -41,6 +41,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from qpilot.core.names import file_part
 from qpilot.core.store import canonical_json
 from qpilot.qpcr.export import ExportError, ExportInputs, check_label
 from qpilot.schemas_studio import PrismBundle, PrismLayout, PrismTable
@@ -59,9 +60,6 @@ NOT_AFFILIATED = (
 )
 RECORD_REF = re.compile(r"^[A-Za-z0-9_.-]{1,40}\Z")
 CHAIN_HEAD = re.compile(r"^[0-9a-f]{64}\Z")
-_WINDOWS_RESERVED = {"CON", "PRN", "AUX", "NUL"} | {
-    f"{prefix}{i}" for prefix in ("COM", "LPT") for i in range(1, 10)
-}
 
 
 class PrismExportError(ExportError):
@@ -135,13 +133,13 @@ def template_spec(template_id: str) -> TemplateSpec:
 
 
 def file_stem(gene: str) -> str:
-    """A file-safe stem for a gene: letters, digits, ``_ - . ( )``; spaces become ``_``."""
-    stem = re.sub(r"[^\w().-]", "_", gene)
-    if not stem or stem.startswith(".") or not stem.isascii():
-        raise PrismExportError(f"gene name {gene!r} cannot be a file name")
-    if stem.split(".")[0].upper() in _WINDOWS_RESERVED:
-        stem = f"{stem}_gene"
-    return stem
+    """A file-safe stem for a gene (:func:`qpilot.core.names.file_part`).
+
+    A plain ASCII name keeps its letters, digits and ``_ - . ( )`` (spaces become ``_``); any
+    other name (``α-syn``, ``IL-6/ctrl``) is its ASCII slug and a short hash of the name, so the
+    gene keeps its own name in the table and two genes never share a file.
+    """
+    return file_part(gene, "gene")
 
 
 def sequential_pseudonyms(units: Sequence[str]) -> dict[str, str]:

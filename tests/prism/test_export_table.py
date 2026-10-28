@@ -157,7 +157,7 @@ def test_a_unit_in_two_groups_is_refused():
     "change, message",
     [
         ({"groups": {**TOY_GROUPS, "a1": "C"}}, "not in group_order"),
-        ({"group_order": ("A", 'B"; x')}, "unsafe group"),
+        ({"group_order": ("A", "B\u200bx")}, "unsafe group"),  # a zero-width space
         ({"units": {"a1": "bad\nname"}}, "unsafe biological unit"),
         ({"refs": ("R9",)}, "reference genes not in the data"),
     ],
@@ -165,6 +165,16 @@ def test_a_unit_in_two_groups_is_refused():
 def test_bad_inputs_are_refused(change, message):
     with pytest.raises(ExportError, match=message):
         _table(toy_inputs(**change))
+
+
+def test_a_labs_own_group_and_unit_names_are_kept():
+    """``LPS + inhibitor`` and ``IL-6/ctrl`` (and a unit ``KO#2``) were "unsafe" before."""
+    a, b = "LPS + inhibitor", "IL-6/ctrl"
+    groups = {s: (a if g == "A" else b) for s, g in TOY_GROUPS.items()}
+    units = {"a1": "KO#2", "b1": "Day 3 (50 µM)"}
+    table = _table(toy_inputs(groups=groups, group_order=(a, b), units=units))
+    assert list(dict.fromkeys(table["group"])) == [a, b]
+    assert {"KO#2", "Day 3 (50 µM)"} <= set(table["biological_unit"])
 
 
 def test_unknown_gene_is_refused(toy):

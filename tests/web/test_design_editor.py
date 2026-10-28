@@ -241,7 +241,7 @@ def test_a_reason_is_required_and_a_stale_head_is_refused(sclient, cfx_session):
 
 def test_bad_names_and_unknown_subjects_are_refused_in_words(sclient, cfx_session):
     items = items_of(
-        ("design.group", "S1", {"group": "<script>"}),
+        ("design.group", "S1", {"group": "A\u202eB"}),  # a right-to-left override
         ("design.group", "nobody", {"group": "A"}),
         ("design.target_role", "REF", {"role": "boss"}),
         ("design.comparison", "comparison", {"group_a": "A", "group_b": "A"}),
@@ -249,7 +249,7 @@ def test_bad_names_and_unknown_subjects_are_refused_in_words(sclient, cfx_sessio
     plan = sclient.post(f"/api/sessions/{cfx_session}/design/check", json={"items": items}).json()
     refusals = [p["refusal"] for p in plan["items"]]
     assert all(r for r in refusals), plan
-    assert any("letters, digits" in r for r in refusals)
+    assert any("invisible character" in r for r in refusals)
     assert any("no sample" in r for r in refusals)
 
 

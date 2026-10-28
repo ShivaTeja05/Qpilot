@@ -46,7 +46,6 @@ takes only plain mappings (``groups``: sample -> group, ``units``: sample -> bio
 from __future__ import annotations
 
 import math
-import re
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,6 +54,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pandas as pd
 
+from qpilot.core.names import name_problem
 from qpilot.core.store import ON_DEMAND_KINDS
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule, conclude, welch
 from qpilot.qpcr.quant import EXCLUDED, Undetermined, excluded_cells, log2_matrix, relative
@@ -76,7 +76,6 @@ TABLE_COLUMNS: tuple[str, ...] = (
 WELL_COLUMN = "well"  # with ``wells=True``: the well key behind a row ("" for a unit's value)
 Layout = Literal["column", "nested"]
 UNIT_ROW = 0  # ``well_rep`` of a column-layout row: the unit's value, not one well
-SAFE_LABEL = re.compile(r"^[\w()\-. ]{1,64}\Z")  # the rule of ``curves.safe_name``
 DEMO_DESIGN_ID = "vermeulen_expression_defined"
 EXCLUSION_KIND = "prism.exclusion_reason"
 WITHHELD = "withheld"  # an excluded gene's conclusion when the engine then withholds the gene
@@ -293,9 +292,16 @@ def sample_table(
 
 
 def check_label(label: str, kind: str) -> str:
-    """Return ``label`` if it is a plain name (letters, digits, ``_ - . ( )``, spaces, <= 64)."""
-    if not isinstance(label, str) or not SAFE_LABEL.match(label) or label != label.strip():
-        raise ExportError(f"unsafe {kind} name {label!r}: use letters, digits, _ - . ( ) spaces")
+    """Return ``label`` if it can be kept as a person's name (``core.names.name_problem``).
+
+    Any letters, digits, spaces and signs are kept (``LPS + inhibitor``, ``IL-6/ctrl``,
+    ``Day 3 (50 µM)``): every writer escapes or defuses the name where it writes it, and file
+    names are derived separately (:func:`qpilot.core.names.file_part`). Refused: empty, more
+    than 64 characters, a space first or last, a tab, a line break or an invisible character.
+    """
+    problem = name_problem(label)
+    if problem is not None:
+        raise ExportError(f"unsafe {kind} name {label!r}: {problem}")
     return label
 
 

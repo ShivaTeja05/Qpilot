@@ -39,9 +39,10 @@ def test_safe_name_never_returns_a_line_break(name: str) -> None:
 
 
 def test_the_export_label_rule_refuses_a_trailing_newline() -> None:
-    from qpilot.qpcr.export import SAFE_LABEL
+    from qpilot.qpcr.export import ExportError, check_label
 
-    assert not SAFE_LABEL.match("ODC1\n")
+    with pytest.raises(ExportError):
+        check_label("ODC1\n", "group")
 
 
 def test_the_model_label_rule_refuses_a_trailing_newline() -> None:
