@@ -9,6 +9,11 @@ the well's own ``log2 N0`` minus the unit's control-gene mean, so a unit's repli
 average to its value. They are taken at the study's planned analysis, the one its stored result
 (the fold change, CI and p-value on the Gene page) is computed from; the group means' difference
 is checked against that result before anything is shown.
+
+A study with several comparisons shows one at a time (``comparison``, its id; the first by
+default): the units of that comparison's two groups, its stored fold change and CI, the p before
+correction and, when the study corrects for its comparisons, the corrected p and the q-value. A
+paired comparison's fold change is the mean of its within-pair differences, which the check uses.
 """
 
 from __future__ import annotations
@@ -48,6 +53,7 @@ class _Planned:
 
 
 _cache: OrderedDict[tuple[str, str], _Planned] = OrderedDict()
+_by_comparison: OrderedDict[tuple[str, str, str], tuple[ExportInputs, tuple | None]] = OrderedDict()
 _lock = threading.Lock()
 
 
@@ -107,20 +113,71 @@ def _at_plan(store: StudyStore, inputs: ExportInputs) -> ExportInputs:
     )
 
 
-def unit_values(store: StudyStore, study_id: str, gene: str) -> UnitValues:
+def _comparison_inputs(
+    store: StudyStore, study_id: str, inputs: ExportInputs, outcome: Any
+) -> tuple[ExportInputs, tuple | None]:
+    """``inputs`` with one comparison's two groups (and its pairs when it is paired)."""
+    from qpilot.qpcr.study import StudySettings, build_model, comparison_units
+
+    key = (study_id, store.chain_head(study_id), outcome.id)
+    with _lock:
+        if key in _by_comparison:
+            _by_comparison.move_to_end(key)
+            return _by_comparison[key]
+    design = store.design(study_id)
+    settings = StudySettings.from_design(design) if design is not None else StudySettings()
+    model = build_model(inputs.curves, settings)
+    side_a, side_b, pairs = comparison_units(model)[outcome.id]
+    units = inputs.units or {}
+    data = inputs.data
+    samples = sorted(set(data.loc[data["sample_type"] == "unkn", "sample"]))
+    groups = {
+        **{s: outcome.group_a for s in samples if units.get(s, s) in side_a},
+        **{s: outcome.group_b for s in samples if units.get(s, s) in side_b},
+    }
+    found = (
+        dataclasses.replace(inputs, groups=groups, group_order=(outcome.group_a, outcome.group_b)),
+        pairs,
+    )
+    with _lock:
+        _by_comparison[key] = found
+        while len(_by_comparison) > MAX_CACHED:
+            _by_comparison.popitem(last=False)
+    return found
+
+
+def unit_values(
+    store: StudyStore, study_id: str, gene: str, comparison: str | None = None
+) -> UnitValues:
     """One compared gene's biological units at the planned analysis.
 
+    ``comparison``: a study with several comparisons, the one shown (its id; None: the first).
+
     Raises:
-        KeyError: The study does not compare ``gene``.
+        KeyError: The study does not compare ``gene`` (in that comparison).
+        UnknownComparison: A comparison the study does not have.
         UnitsUnavailable: The input file is missing or changed, or the values do not reproduce
             the stored result.
     """
+    from qpilot.web.compare_views import outcome_of
+
     planned = _planned(store, study_id)
     inputs = planned.inputs
     result = inputs.result
-    if gene not in inputs.genes or result is None or gene not in result.contrasts:
+    if result is None:
         raise KeyError(gene)
-    contrast = result.contrasts[gene]
+    outcome = outcome_of(result, comparison)
+    found = result.comparisons
+    shown = outcome or (found.comparisons[0] if found is not None else None)
+    pairs = None
+    if outcome is not None and not outcome.primary:
+        inputs, pairs = _comparison_inputs(store, study_id, inputs, outcome)
+    elif shown is not None and shown.n_pairs is not None:
+        inputs, pairs = _comparison_inputs(store, study_id, inputs, shown)
+    contrasts = shown.contrasts if shown is not None else result.contrasts
+    if gene not in inputs.genes or gene not in contrasts:
+        raise KeyError(gene)
+    contrast = contrasts[gene]
     try:
         column = inputs.table("column", [gene])
         nested = inputs.table("nested", [gene], wells=True)
@@ -133,6 +190,14 @@ def unit_values(store: StudyStore, study_id: str, gene: str) -> UnitValues:
     if not math.isfinite(base):
         base = 0.0
     diff = float(unit_value[group_of == first].mean() - unit_value[group_of == second].mean())
+    if pairs is not None:  # a paired comparison: the mean of the complete pairs' differences
+        steps = [
+            float(unit_value[a] - unit_value[b])
+            for a, b in pairs
+            if a in unit_value.index and b in unit_value.index
+        ]
+        steps = [d for d in steps if math.isfinite(d)]
+        diff = float(np.mean(steps)) if steps else math.nan
     if math.isfinite(contrast.log2fc) and not abs(diff - contrast.log2fc) <= TOLERANCE:
         raise UnitsUnavailable(
             "the per-unit values do not give the stored fold change; nothing is shown rather "
@@ -178,6 +243,7 @@ def unit_values(store: StudyStore, study_id: str, gene: str) -> UnitValues:
         fold_ci=ci,
         fold_ci_text=f"{2 ** ci[0]:.2f}× to {2 ** ci[1]:.2f}×" if ci else None,
         p=contrast.p if math.isfinite(contrast.p) else None,
+        **_corrected(found, shown, gene),
         refs=list(inputs.refs),
         undetermined=inputs.undetermined,
         replicates=most > 1,
@@ -188,6 +254,26 @@ def unit_values(store: StudyStore, study_id: str, gene: str) -> UnitValues:
         line_log2=rule.min_log2fc,
         line=f"{2**rule.min_log2fc:g}×",
     )
+
+
+def _corrected(found: Any, shown: Any, gene: str) -> dict[str, Any]:
+    """The comparison shown, and its corrected p and q (a study with several comparisons)."""
+    from qpilot.qpcr.contrast import CORRECTION_NAMES
+
+    if found is None or shown is None:
+        return {}
+    several = len(found.comparisons) > 1
+    corrected = several and found.correction in CORRECTION_NAMES
+    p_adj = shown.p_adjusted.get(gene) if corrected else None
+    q = shown.q_value.get(gene)
+    return {
+        "comparison": shown.id,
+        "comparison_label": shown.label,
+        "paired": shown.n_pairs is not None,
+        "p_adjusted": p_adj if p_adj is not None and math.isfinite(p_adj) else None,
+        "correction": CORRECTION_NAMES.get(found.correction) if corrected else None,
+        "q": q if q is not None and math.isfinite(q) else None,
+    }
 
 
 def _samples_of(inputs: ExportInputs) -> dict[str, list[str]]:
@@ -317,6 +403,7 @@ def clear_cache() -> None:
     """Forget every cached study (tests)."""
     with _lock:
         _cache.clear()
+        _by_comparison.clear()
 
 
 __all__: list[Any] = ["UnitsUnavailable", "clear_cache", "unit_values"]

@@ -6,6 +6,7 @@
  */
 import { Route } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
+import { useShownComparison } from "@/features/results/comparison";
 import type { SectionProps } from "@/shell/sections";
 import { EmptyState, JobCard } from "@/ui";
 import { scopeOf } from "./api";
@@ -27,7 +28,12 @@ function decoded(segment: string | undefined): string | undefined {
 }
 
 export default function TraceSection({ workspace, rest }: SectionProps) {
-  const scope = useMemo(() => (workspace ? scopeOf(workspace) : null), [workspace]);
+  const studyId = workspace?.study_id ?? (workspace?.kind === "study" ? workspace.key : null);
+  const [comparison] = useShownComparison(studyId);
+  const scope = useMemo(
+    () => (workspace ? scopeOf(workspace, comparison) : null),
+    [workspace, comparison],
+  );
   if (!workspace || !scope) return null;
   const gene = decoded(rest[0]);
   if (!scope.studyId && workspace.results_visible) {

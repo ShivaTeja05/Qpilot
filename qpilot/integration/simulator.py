@@ -24,6 +24,16 @@ baseline reproduces qPilot's result exactly, replicates are never counted as n, 
 also asks whether the call depends on that rule (the ``replicates`` decision: the mean, the
 median well, or the mean after leaving out a well outside G-REP's expected spread).
 
+**Several comparisons.** A study with a comparison plan is audited on its **first comparison**,
+alone (:func:`comparisons_scope`): the simulator varies one comparison of two groups, with its own
+Welch test in every analysis, and its permutations, influence and verdicts are built on that one
+comparison; re-deriving each of them for a family of comparisons and its correction is not a
+cheap addition. The scope says so (``scope["comparisons"]``) and the Audit page shows it. The
+invariant holds for the comparison audited: the audit runs only when the study's correction
+changes none of that comparison's calls at the planned analysis (so the simulator's baseline
+reproduces qPilot's stored calls exactly); a paired comparison or a pooled-variance correction
+(Dunnett, Tukey: another test) is refused in words with :class:`NotApplicable`.
+
 **What does not fit.** A marker split whose cut-offs are not the simulator's 10/15/20 % is
 refused with :class:`NotApplicable`.
 
@@ -167,6 +177,65 @@ class Prepared:
     space_info: dict
     engine: Any  # ExcludingEngine
     scope: dict[str, Any] = field(default_factory=dict)
+
+
+COMPARISONS_NOTE = (
+    "This study has {n} comparisons; the audit audits the first, {label}, alone: each analysis "
+    "calls a gene from that comparison's own p{how}. The other comparisons' calls are on "
+    "Results, Trace and each gene's page."
+)
+COMPARISONS_HOW = {
+    "holm": ", without Holm's correction across each gene's comparisons (at the planned "
+    "analysis it changes none of this comparison's calls)",
+    "none": ", as qPilot does (no correction for the several comparisons was chosen)",
+}
+
+
+def comparisons_scope(result: Any, rule: Any) -> dict[str, Any] | None:
+    """What the audit audits of a study with several comparisons (``None`` without a plan).
+
+    Raises:
+        NotApplicable: The first comparison is paired, the correction pools a variance over the
+            groups (another test than the simulator's), or the correction changes one of the
+            first comparison's calls at the planned analysis (the simulator would not
+            reproduce it).
+    """
+    from qpilot.qpcr.contrast import CORRECTION_WORDS, conclude
+
+    found = getattr(result, "comparisons", None)
+    if found is None:
+        return None
+    first = found.comparisons[0]
+    n = len(found.comparisons)
+    if found.pair_by is not None:
+        raise NotApplicable(
+            f"{first.label} is a paired comparison (by {found.pair_by}); the audit re-runs "
+            "unpaired comparisons of two groups only"
+        )
+    if found.test == "pooled_t":
+        raise NotApplicable(
+            f"this study's calls use {CORRECTION_WORDS[found.correction]}, a test with one "
+            "variance pooled over every group; the audit re-runs one comparison with its own "
+            "Welch test, so it would describe other numbers"
+        )
+    moved = sorted(
+        g for g, c in result.contrasts.items() if conclude(c.log2fc, c.p, rule) != c.conclusion
+    )
+    if moved:
+        genes = ", ".join(moved[:5]) + (f" and {len(moved) - 5} more" if len(moved) > 5 else "")
+        raise NotApplicable(
+            f"{CORRECTION_WORDS[found.correction]} changes the call of {genes} in {first.label} "
+            f"(the study compares {n} pairs of groups); the audit re-runs {first.label} alone, "
+            "without that correction, so it would describe other calls"
+        )
+    how = COMPARISONS_HOW.get(found.correction, "") if n > 1 else ""
+    return {
+        "audited": first.id,
+        "audited_label": first.label,
+        "n_comparisons": n,
+        "correction": found.correction,
+        "note": COMPARISONS_NOTE.format(n=n, label=first.label, how=how),
+    }
 
 
 def _technical_replicates(table: pd.DataFrame, units: Mapping[str, str] | None) -> bool:
@@ -425,6 +494,9 @@ def prepare(analysis: Analysis) -> Prepared:
     }
     if study.replicates is not None:  # absent for one well per unit and gene (the demo)
         scope["technical_replicates"] = _replicate_scope(study, space)
+    several = comparisons_scope(analysis.result, settings.rule)
+    if several is not None:  # absent for a study with one comparison (the demo)
+        scope["comparisons"] = several
     return Prepared(study, space, info, engine, scope)
 
 

@@ -1,7 +1,7 @@
 /** The flip matrix and the reference genes' stability, below the table. */
 import { useCallback, useMemo } from "react";
 import { FlipMatrix, GenormBars } from "@/charts";
-import { count } from "@/lib/format";
+import { count, plural } from "@/lib/format";
 import { Card, CardBody, CardHeader, Skeleton } from "@/ui";
 import type { FlipsView, ResultsView } from "./api";
 import { ReferenceComparison } from "./ReferenceComparison";
@@ -43,7 +43,11 @@ export function FlipPanel({
       <CardHeader
         id="flips-title"
         title="What one choice alone can flip"
-        hint={`${count(flipping)} of ${count(flips.genes.length)} genes change their call when a single decision changes and everything else stays as it is.`}
+        hint={
+          flipping === 0
+            ? "No gene changes its call when a single decision changes and everything else stays as it is."
+            : `${count(flipping)} of ${plural(flips.genes.length, "gene")} ${flipping === 1 ? "changes its" : "change their"} call when a single decision changes and everything else stays as it is.`
+        }
       />
       <CardBody>
         <FlipMatrix

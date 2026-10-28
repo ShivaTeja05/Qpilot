@@ -194,12 +194,30 @@ def welch_anova(groups: Sequence[tuple[np.ndarray, ...]]) -> tuple[np.ndarray, .
 
 CORRECTION_WORDS = {
     "holm": "Holm's correction across each gene's comparisons",
+    "dunnett": "Dunnett's correction for comparing each group with the control",
+    "tukey": "Tukey's correction for comparing every pair of groups (Tukey-Kramer)",
     "none": "no correction for several comparisons",
 }
 TEST_WORDS = {
     "welch": "Welch's t-test on log2 relative quantities (no equal-variance assumption)",
     "paired_t": "a paired t-test on the within-pair differences of log2 relative quantity",
+    "pooled_t": "a t-test on log2 relative quantities with one variance pooled over every "
+    "compared group (equal variances assumed)",
 }
+#: Corrections whose call uses a corrected p-value (every one but "none").
+CORRECTED = ("holm", "dunnett", "tukey")
+#: A correction's short name, as a label next to the corrected p ("corrected p (Holm)").
+CORRECTION_NAMES = {"holm": "Holm", "dunnett": "Dunnett", "tukey": "Tukey"}
+
+
+def describe_rule(rule: ConclusionRule, correction: str = "none") -> str:
+    """The calling rule in words; with a correction the call needs the corrected p."""
+    if correction in CORRECTED:
+        return (
+            f"up or down only if the corrected p < {rule.alpha:g} and the change is at least "
+            f"{2**rule.min_log2fc:g}-fold; otherwise no call"
+        )
+    return rule.describe()
 
 
 def conclude(log2fc: float, p: float, rule: ConclusionRule = DEFAULT_RULE) -> Conclusion:

@@ -40,7 +40,10 @@ class DesignEditItem(BaseModel):
     ``design.dilution_series`` ``{"experiment_id": str, "samples": {sample: quantity}}``
     (subject: the series' name; its samples become standards with these quantities);
     ``design.comparison`` ``{"group_a": str, "group_b": str}`` (subject ``comparison``;
-    fold change = group_a relative to group_b, the reference group).
+    fold change = group_a relative to group_b, the reference group); several comparisons add
+    ``comparisons`` (``[{group_a, group_b}, ...]``, the first is ``group_a``/``group_b``),
+    ``pattern`` (``vs_control``, ``all_pairs`` or ``chosen``), ``control``, ``correction``
+    (``holm``, ``dunnett``, ``tukey`` or ``none``) and ``pair_by`` (the accepted pairing's name).
     """
 
     kind: DesignKind
@@ -189,6 +192,15 @@ class DesignEditorView(BaseModel):
     groups: dict[str, int] = Field(description="Group -> study samples in it.")
     units: dict[str, int] = Field(description="Biological unit -> samples in it.")
     comparison: dict[str, str] | None = None
+    comparison_plan: dict[str, Any] | None = Field(
+        default=None,
+        description="Several comparisons a person set: comparisons, pattern, control, correction "
+        "and pair_by of the accepted comparison (None: one comparison).",
+    )
+    pair_by: str | None = Field(
+        default=None, description="The pairing a person accepted (donor, animal...), if any."
+    )
+    n_paired: int = Field(default=0, description="Study samples with a pairing.")
     preset: str | None = Field(
         default=None, description="A built-in design a person accepted (the demo's)."
     )

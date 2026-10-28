@@ -102,14 +102,17 @@ function StepChange({
   from,
   to,
   onGene,
+  comparison = null,
 }: {
   wkey: string;
   studyId: string;
   from: number;
   to: number;
   onGene: (gene: string) => void;
+  /** A study with several comparisons: the one replayed. */
+  comparison?: string | null;
 }) {
-  const diff = useHistoryDiff(wkey, studyId, from, to);
+  const diff = useHistoryDiff(wkey, studyId, from, to, comparison);
   if (diff.isPending) return <LoadingBlock label="Reading what changed" lines={2} />;
   if (diff.error) return <ErrorPanel error={diff.error} compact onRetry={() => diff.refetch()} />;
   const d = diff.data;
@@ -372,6 +375,7 @@ export function StepPanel({
               from={step.seq - 1}
               to={step.seq}
               onGene={onGene}
+              comparison={view.comparison ?? null}
             />
           ) : (
             <p className="text-[13px] text-muted">

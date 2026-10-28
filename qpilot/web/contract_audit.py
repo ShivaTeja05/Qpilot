@@ -61,6 +61,16 @@ class AuditReplicates(BaseModel):
     words: str = Field(description="What was done, in plain words.")
 
 
+class AuditComparisons(BaseModel):
+    """A study with several comparisons: the one the audit audits, and that it is only that one."""
+
+    audited: str = Field(description="The comparison audited (its id): the study's first.")
+    audited_label: str
+    n_comparisons: int
+    correction: str
+    note: str = Field(description="What the audit audits, in plain words.")
+
+
 class AuditScope(BaseModel):
     """What was audited: the comparison, the samples and the choices varied."""
 
@@ -81,6 +91,10 @@ class AuditScope(BaseModel):
         default=None,
         description="Set when the design has technical replicates (absent with one well per "
         "unit and gene, as on the demo).",
+    )
+    comparisons: AuditComparisons | None = Field(
+        default=None,
+        description="Set for a study with several comparisons: the audit audits the first.",
     )
 
 

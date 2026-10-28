@@ -116,7 +116,7 @@ function Block({
 
 // ---- headline genes --------------------------------------------------------------------------
 
-function Headline({ view }: { view: RunReviewView }) {
+export function Headline({ view }: { view: RunReviewView }) {
   return (
     <Block title="Headline genes">
       {view.headline.length ? (
@@ -131,6 +131,20 @@ function Headline({ view }: { view: RunReviewView }) {
       ) : (
         <p className="text-[13px] text-muted">This study names no headline genes.</p>
       )}
+      {view.comparisons?.length ? (
+        <div className="mt-4" data-testid="review-comparisons">
+          <p className="text-[12.5px] font-medium text-fg">
+            Each comparison of the study (the headline above is the first)
+          </p>
+          <ul className="mt-1.5 flex flex-col gap-1.5" aria-label="Comparisons">
+            {view.comparisons.map((line, i) => (
+              <li key={i} className="text-[13px] leading-relaxed">
+                <FactLine text={line} className="text-muted" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </Block>
   );
 }

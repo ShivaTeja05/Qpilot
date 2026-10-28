@@ -73,7 +73,7 @@ export function figureAlt(info: FigureInfo): string {
   const call =
     info.call === null
       ? "not compared"
-      : `${info.call === "none" ? "no call" : info.call}, ${fold(info.fold_change)}, p ${pValue(info.p)}`;
+      : `${info.call === "none" ? "no call" : info.call}, ${fold(info.fold_change)}, ${info.p_adjusted != null ? `corrected p ${pValue(info.p_adjusted)}` : `p ${pValue(info.p)}`}`;
   return `${info.gene}: log2 relative quantity of each biological unit in ${groups}, with each group's mean and 95 % confidence interval; ${call}.`;
 }
 
@@ -81,13 +81,18 @@ export function GeneFigure({
   workspace,
   studyId,
   gene,
+  comparison: shown,
 }: {
   workspace: Pick<Schemas["WorkspaceView"], "key">;
   studyId: string | null;
   gene: string;
+  /** The comparison the page shows (its id; the figure follows it), when the page picks one. */
+  comparison?: string | null;
 }) {
   const [basis, setBasis] = useState<FigureBasis>("as_decided");
-  const [comparison, setComparison] = useState<string | null>(null);
+  const [own, setComparison] = useState<string | null>(null);
+  const controlled = shown !== undefined;
+  const comparison = controlled ? shown : own;
   const q = useGeneFigure(workspace.key, studyId, gene, basis, comparison);
   if (!studyId) return null;
   const info = q.data;
@@ -113,7 +118,7 @@ export function GeneFigure({
           info={info}
           busy={q.isFetching}
           onBasis={setBasis}
-          onComparison={(c) => setComparison(c)}
+          onComparison={controlled ? undefined : (c) => setComparison(c)}
         />
       )}
     </Panel>
@@ -129,12 +134,14 @@ export function FigureBody({
   info: FigureInfo;
   busy?: boolean;
   onBasis: (b: FigureBasis) => void;
-  onComparison: (c: string) => void;
+  /** Pick the comparison here (none: the page's own picker chooses it). */
+  onComparison?: (c: string) => void;
 }) {
   const head = info.chain_head;
+  const pickHere = Boolean(onComparison) && info.comparisons.length > 1;
   return (
     <div className={cn("flex flex-col gap-3", busy && "opacity-70")} aria-busy={busy}>
-      {info.bases.length > 1 || info.comparisons.length > 1 ? (
+      {info.bases.length > 1 || pickHere ? (
         <div className="flex flex-wrap items-center gap-2">
           {info.bases.length > 1 ? (
             <SegmentedControl
@@ -152,7 +159,7 @@ export function FigureBody({
               }))}
             />
           ) : null}
-          {info.comparisons.length > 1 ? (
+          {pickHere && onComparison ? (
             <Select
               size="sm"
               label="Comparison"
@@ -177,7 +184,10 @@ export function FigureBody({
             {info.call ? <ConclusionTag conclusion={info.call} compact /> : null}
             {info.call ? (
               <span className="font-mono text-[12px] tabular">
-                {fold(info.fold_change)} · p {pValue(info.p)}
+                {fold(info.fold_change)} ·{" "}
+                {info.p_adjusted != null
+                  ? `corrected p ${pValue(info.p_adjusted)}`
+                  : `p ${pValue(info.p)}`}
               </span>
             ) : (
               <span>not compared</span>

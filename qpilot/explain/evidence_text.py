@@ -203,6 +203,37 @@ def headline_lines(facts: Facts) -> list[str]:
     return lines
 
 
+def comparison_lines(facts: Facts) -> list[str]:
+    """One token line per comparison of a study with several (``f_rr_cmp<i>_*`` facts).
+
+    Each line names the comparison and every headline gene's call in it, with the fold change,
+    the p its call used (corrected, when the study corrects for its comparisons) and how often
+    the call holds. Empty for a study with one comparison.
+    """
+    lines = []
+    for i in _numbered(facts, "f_rr_cmp", "_label"):
+        p = f"f_rr_cmp{i}"
+        parts = []
+        for j in _numbered(facts, f"{p}_gene", "_name"):
+            g = f"{p}_gene{j}"
+            _need(facts, (f"{g}_call",), "runreview_v1")
+            part = f"{_t(g + '_name')} {_t(g + '_call')}"
+            extra = [_t(g + "_fc")] if f"{g}_fc" in facts else []
+            if f"{g}_p" in facts:
+                word = "corrected p" if f"{p}_corrected" in facts else "p"
+                extra.append(f"{word} {_t(g + '_p')}")
+            if f"{g}_holds" in facts:
+                extra.append(f"holds in {_t(g + '_holds')}")
+            parts.append(part + (f" ({', '.join(extra)})" if extra else ""))
+        head = f"{_t(p + '_label')}"
+        if f"{p}_first" in facts:
+            head += " (the first comparison)"
+        lines.append(f"{head}: {'; '.join(parts) or 'no headline gene compared'}.")
+    if lines and "f_rr_cmp_correction" in facts:
+        lines.append(f"Correction for the several comparisons: {_t('f_rr_cmp_correction')}.")
+    return lines
+
+
 def signoff_lines(facts: Facts) -> list[str]:
     """One token line per recorded sign-off (``f_rr_review_<seq>_*`` facts), oldest first."""
     lines = []
@@ -293,6 +324,7 @@ def runreview_text(facts: Facts, card: DecisionCard | None = None, gene: str | N
         return REVIEW_NOT_BUILT
     lines = [study_line(facts), PURPOSE]
     lines += headline_lines(facts) or [NO_HEADLINE]
+    lines += comparison_lines(facts)
     lines.append(ledger_summary(facts) or ledger_missing(facts))
     lines += repeat_lines(facts) or [REPEAT_ELSEWHERE]
     lines += gate_plate_lines(facts) or [GATE_ELSEWHERE]

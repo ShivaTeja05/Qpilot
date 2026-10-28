@@ -98,6 +98,11 @@ class RunReviewView(BaseModel):
     title: FactText
     purpose: str
     headline: list[ReviewHeadlineView]
+    comparisons: list[FactText] = Field(
+        default=[],
+        description="A study with several comparisons: each one and its headline genes' calls, "
+        "with the p each call used (corrected when the study corrects), one line each.",
+    )
     evidence: EvidenceView
     sign_offs: list[SignOffView]
     outcomes: list[ReviewOutcomeView]
