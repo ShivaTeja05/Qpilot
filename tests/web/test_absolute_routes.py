@@ -159,3 +159,34 @@ def test_miqe_lod_is_met_when_a_series_reaches_non_detection(walked, monkeypatch
     assert item["status"] == "met" and "95 %" in item["evidence"]["plain"]
     methods = next(p for p in report["methods"]["paragraphs"] if p["id"] == "quantities")
     assert "35 %" in methods["text"]["plain"] and "95 %" in methods["text"]["plain"]
+
+
+def test_a_real_quantstudio_export_end_to_end(sclient):
+    """QuantStudio 3 wastewater plate: standards set on the Design page, then Results."""
+    from tests.web.quant_walk import walk
+
+    done = walk(sclient)
+    study = done["study"]
+    view = _quantities(sclient, study)
+    assays = {a["target"]: a for a in view["assays"]}
+    assert set(assays) == {"Cov2", "PMMoV"} and not view["not_quantified"]
+    cov2 = assays["Cov2"]["curves"][0]
+    assert cov2["quantity_source"] == "design" and cov2["n_levels"] == 5 and cov2["n_wells"] == 15
+    assert -3.45 < cov2["slope"] < -3.2 and cov2["r2"] > 0.99 and not cov2["warnings"]
+    pmmov = assays["PMMoV"]["curves"][0]
+    assert any("outside" in w for w in pmmov["warnings"])  # efficiency far above 110 %
+    detail = sclient.get(f"/api/studies/{study}/quantities/Cov2").json()
+    units = {u["unit"]: u for u in detail["units"]}
+    assert units["PR-231026-DNI-R1"]["group"] == "DNI"
+    assert units["PR-231026-DSI-R1"]["group"] == "DSI"
+    assert units["PR-231026-DCS-R1"]["group"] is None  # not in the comparison
+    neg = units["PR-231026-NEG-R1"]
+    assert neg["quantity"] is None and [f["id"] for f in neg["flags"]] == [
+        "not_detected",
+        "below_lod",
+    ]
+    quantified = [u for u in detail["units"] if u["quantity"] is not None]
+    assert all(u["low"] < u["quantity"] < u["high"] for u in quantified)
+    assert all(10 <= u["quantity"] <= 1e5 for u in quantified)  # inside the person's series
+    results = sclient.get(f"/api/studies/{study}/results").json()
+    assert [g["gene"] for g in results["genes"]] == ["Cov2"]

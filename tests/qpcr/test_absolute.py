@@ -343,7 +343,7 @@ def test_cli_quantify_and_copies(capsys, tmp_path):
     out_csv = tmp_path / "q.csv"
     assert main(["quantify", str(STEPONE), "--csv", str(out_csv)]) == 0
     printed = capsys.readouterr().out
-    assert "RNase P @ Run001" in printed and "efficiency 94.6%" in printed
+    assert "RNase P @ Run001" in printed and "efficiency 94.6 %" in printed
     assert "pop1_RNase P" in printed
     rows = out_csv.read_text(encoding="utf-8").splitlines()
     assert rows[0].startswith("unit,assay") and len(rows) == 3

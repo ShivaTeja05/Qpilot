@@ -624,7 +624,7 @@ def _lod(levels: Sequence[Level], settings: AbsoluteSettings) -> Limit:
             passed = level
         else:
             break
-    rate = f"{settings.lod_rate:.0%}"
+    rate = pct(settings.lod_rate)
     if passed is None:
         return Limit(
             None,
@@ -659,7 +659,7 @@ def _lod_model(points: Sequence[StandardPoint], settings: AbsoluteSettings) -> L
     if not any(0 < r < 1 for r in rates.values()):
         return None
     fitted = logistic_fit([math.log10(p.quantity) for p in points], [p.detected for p in points])
-    rate = f"{settings.lod_rate:.0%}"
+    rate = pct(settings.lod_rate)
     if fitted is None or fitted[1] <= 0:
         return Limit(
             None,
@@ -678,7 +678,7 @@ def _lod_model(points: Sequence[StandardPoint], settings: AbsoluteSettings) -> L
 
 def _loq(levels: Sequence[Level], lod: Limit, settings: AbsoluteSettings) -> Limit:
     """The lowest level at or above the LOD whose back-calculated CV is <= 35 %."""
-    cv = f"{settings.loq_cv:.0%}"
+    cv = pct(settings.loq_cv)
     if lod.quantity is None:
         return Limit(None, "not_determined", "no limit of detection, so no limit of quantification")
     passed = None
@@ -763,7 +763,7 @@ def _curve(
         low, high = EFFICIENCY_RANGE
         if not low <= fit.efficiency <= high:
             warnings.append(
-                f"efficiency {fit.efficiency:.1%} is outside {low:.0%} to {high:.0%} (MIQE)"
+                f"efficiency {pct(fit.efficiency, 1)} is outside {pct(low)} to {pct(high)} (MIQE)"
             )
         if not fit.r2 >= R2_MIN:
             warnings.append(f"R² {fit.r2:.3f} is below {R2_MIN:g} (MIQE)")
@@ -1083,6 +1083,11 @@ def _nd_flags(curves: Sequence[StandardCurve]) -> list[str]:
     return []
 
 
+def pct(fraction: float, decimals: int = 0) -> str:
+    """A fraction as the page writes a percentage: ``0.946`` -> ``94.6 %`` (``decimals=1``)."""
+    return f"{fraction * 100:.{decimals}f} %"
+
+
 def flag_words(flags: Sequence[str]) -> list[str]:
     """Each flag in plain words."""
     return [FLAG_WORDS.get(f, f) for f in flags]
@@ -1094,9 +1099,9 @@ def summary_words(curve: StandardCurve) -> str:
     if fit is None:
         return curve.problem or "no curve"
     low, high = fit.efficiency_ci
-    ci = f" (95 % CI {low:.1%} to {high:.1%})" if math.isfinite(low) else ""
+    ci = f" (95 % CI {pct(low, 1)} to {pct(high, 1)})" if math.isfinite(low) else ""
     return (
-        f"slope {fit.slope:.3f}, efficiency {fit.efficiency:.1%}{ci}, R² {fit.r2:.4f}, "
+        f"slope {fit.slope:.3f}, efficiency {pct(fit.efficiency, 1)}{ci}, R² {fit.r2:.4f}, "
         f"{len({p.quantity for p in curve.points if p.detected})} levels, {fit.n} wells"
     )
 
