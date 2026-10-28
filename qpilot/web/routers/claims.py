@@ -46,9 +46,10 @@ EMPTY = "Paste a sentence or a paragraph about this study's results to check."
 def _record(ctx: AppContext, study_id: str):  # noqa: ANN202 (qpilot.claims.StudyRecord)
     """The study's record, after the results routes' checks (404, 403 ``blind``, warming)."""
     from qpilot.claims import record_of
-    from qpilot.web.routers.results import study
+    from qpilot.web.routers.results import compares_groups, study
 
     study(ctx, study_id)
+    compares_groups(ctx, study_id, "the claim checker")
     return record_of(ctx.store, study_id)
 
 

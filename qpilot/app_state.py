@@ -379,6 +379,10 @@ def decision_counter(cards: Sequence[DecisionCard]) -> str:
     human = sum(1 for c in cards if c.impact.get("flips"))
     auto = sum(1 for c in cards if c.status == "auto_decided")
     noun = "decision" if human == 1 else "decisions"
+    if cards and all(c.kind.startswith(QUANTITY_PREFIX) for c in cards):
+        return (
+            f"{human} {noun} could change what is reported for a sample · {auto} made automatically"
+        )
     return f"{human} {noun} could change a conclusion · {auto} made automatically"
 
 

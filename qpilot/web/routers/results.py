@@ -80,6 +80,25 @@ def study(ctx: AppContext, study_id: str) -> str | None:
     return sid
 
 
+#: A section that compares groups, asked about a study that quantifies samples.
+QUANTIFY_ONLY = (
+    "This study quantifies samples and compares no groups, so {what} has nothing to show: each "
+    "sample's quantity and its wells are on Results (Quantities), its controls on Controls."
+)
+
+
+def compares_groups(ctx: AppContext, study_id: str, what: str) -> None:
+    """409 ``quantify`` for a section about comparing groups, asked about a quantification."""
+    from qpilot.qpcr.quantify_study import is_quantify
+
+    try:
+        design = ctx.store.design(study_id)
+    except (StudyNotFound, OSError, ValueError):
+        return
+    if is_quantify(design):
+        raise api_error(409, "quantify", QUANTIFY_ONLY.format(what=what))
+
+
 def writable(ctx: AppContext, study_id: str) -> str | None:
     """:func:`study`, and for a session's study: it is the analysis of the design of now."""
     from qpilot.web.views import analysed_study

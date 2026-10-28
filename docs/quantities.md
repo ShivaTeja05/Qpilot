@@ -65,5 +65,39 @@ the Decision Cards treat it the same way.
 | `qpilot copies --ng 1 --length 3000 [--kind dsDNA] [--step 10 --levels 6]` | ng to copies |
 | Exports (CSV, Excel, supplement) | tables *Standard curves* and *Quantities* after *Per well*; a Methods paragraph; MIQE 2.0 items 5.13 (LOD) and 5.14 (dynamic range) |
 
-Absolute-only plates (no comparison of groups, e.g. a viral-load run) cannot yet reach Results on
-the page, which needs a comparison; `qpilot quantify` handles them today.
+## A run that only quantifies (no groups compared)
+
+A viral load, a wastewater sample, the copy number of a construct, a sequencing library: many
+runs measure **how much** and compare nothing. On **Design → Set the design on this page**,
+*What is this study for?* says so: **Quantify samples** (the default is *Compare groups*). It is
+your design item, recorded with your reason like any other; the rules propose it when the file
+itself declares the standards' quantities (the run was set up as a standard curve) and no sample
+sheet names groups, and you accept or reject it (it is never in "Accept all consistent").
+
+* **The design needs standards with a quantity, not a comparison.** No reference gene, no
+  groups, no comparison: *What the design still needs* asks instead for standards (at least three
+  levels) with their quantities. Groups, if you set them, only sort and label the samples. A
+  comparison you set earlier is kept aside and comes back if you switch to *Compare groups*.
+* **Curves** as usual (blind).
+* **Results** shows the quantities as the result: how many sample results are *quantified*,
+  *below the limit of quantification*, *below the limit of detection*, *not detected* or
+  extrapolated; the standard curve; each sample's quantity with its 95 % prediction interval and
+  what is reported for it. Click a sample to see its wells: plate, Cq, detected or not, what each
+  well alone reads as, the one more than 2-fold from the others named, and its curve.
+* **The choices that can change what is reported** are Decision Cards: *which wells count as
+  detected* (LinRegPCR's own call or a Cq cut-off at 40, 38 or 35 cycles) and *how precise a
+  quantity must be to be reported* (the LOQ line, CV 35 % or 25 %). qPilot quantifies every
+  sample under every combination; a card waits for you only when another option changes what is
+  reported for at least one sample (its class, or its number by more than 2-fold), and lists
+  each sample it changes. What you choose is what the Quantities view, the report and the
+  exports use. Then confirm the choices.
+* **Controls** runs every rule (NTC, no-RT, positive control, G-STD, G-MELT…) and asks whether
+  leaving a rule's wells out changes what is reported for a sample (a standard counts: it moves
+  the curve). G-STD reads the quantities you gave the standards.
+* **Report**: the summary, Methods (the curves, LOD, LOQ, intervals, and the choices tested),
+  MIQE, limitations and the exports (*Standard curves*, *Quantities*) speak of quantities; the
+  Analysis Record verifies and re-runs like any other.
+* **Not for a quantification run**: Gene, Audit, Trace, Claims, Prism and Plan next compare
+  groups; the rail locks them with the reason, and their API answers `409 quantify`.
+
+The MCP tool `qpcr_quantities(study_id, target=None)` reads the same numbers for an agent.

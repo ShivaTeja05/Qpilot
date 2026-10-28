@@ -209,9 +209,10 @@ def _study_plates(data) -> PlanStudyPlates | None:  # noqa: ANN001 (a pandas fra
 
 def _study(ctx: AppContext, study_id: str) -> None:
     """The id, the study and the blind rule, exactly as Results checks them."""
-    from qpilot.web.routers.results import study
+    from qpilot.web.routers.results import compares_groups, study
 
     study(ctx, study_id)
+    compares_groups(ctx, study_id, "the next-experiment planner")
 
 
 def _spread(values: Sequence[float]) -> PlanSpread | None:

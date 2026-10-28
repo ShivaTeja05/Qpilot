@@ -62,9 +62,11 @@ _choices: OrderedDict[tuple[Any, ...], tuple[dict[str, str] | None, Any]] = Orde
 
 def _visible(ctx: AppContext, study_id: str) -> str | None:
     """The results routes' checks (id, study, blind); returns the study's session, if any."""
-    from qpilot.web.routers.results import study
+    from qpilot.web.routers.results import compares_groups, study
 
-    return study(ctx, study_id)
+    sid = study(ctx, study_id)
+    compares_groups(ctx, study_id, "Trace")
+    return sid
 
 
 def _version(ctx: AppContext, study_id: str) -> tuple[str, int]:

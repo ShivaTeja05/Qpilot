@@ -260,12 +260,18 @@ def _available() -> bool:
 
 
 def require_visible(ctx: AppContext, study_id: str) -> None:
-    """404 for an unknown study; 403 ``blind`` while its Studio session is still blind."""
+    """404 for an unknown study; 403 ``blind`` while its Studio session is still blind.
+
+    409 ``quantify`` for a study that quantifies samples: the audit compares groups.
+    """
+    from qpilot.web.routers.results import compares_groups
+
     check_key(study_id)
     try:
         result = ctx.store.get(study_id)
     except (StudyNotFound, OSError, ValueError) as err:
         raise api_error(404, "not_found", "There is no analysed study with this id.") from err
+    compares_groups(ctx, study_id, "the audit")
     sid = result.input_sha256[:12]
     if not is_session(ctx.store, sid):
         return

@@ -4,12 +4,16 @@
  * well farthest from the others named (the one to look at first when the replicates disagree),
  * and the curve of any well (in a Studio session). Every number is the API's.
  */
-import { useState } from "react";
-import { WellCurveDialog } from "@/features/design/WellCurve";
+import { lazy, Suspense, useState } from "react";
 import { fixed } from "@/lib/format";
 import { Badge, Button } from "@/ui";
 import type { UnitQuantity } from "./api";
 import { fmtQuantity } from "./format";
+
+/** The curve viewer (uPlot) loads only when a person opens a well's curve. */
+const WellCurveDialog = lazy(() =>
+  import("@/features/design/WellCurve").then((m) => ({ default: m.WellCurveDialog })),
+);
 
 /** The detected well whose own quantity is farthest (on the log scale) from the others' mean. */
 export function farthestWell(unit: UnitQuantity): string | null {
@@ -68,7 +72,11 @@ export function UnitWells({ unit, sid }: { unit: UnitQuantity; sid: string | nul
           );
         })}
       </ul>
-      {sid && <WellCurveDialog sid={sid} well={curve} onClose={() => setCurve(null)} />}
+      {sid && curve ? (
+        <Suspense fallback={null}>
+          <WellCurveDialog sid={sid} well={curve} onClose={() => setCurve(null)} />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

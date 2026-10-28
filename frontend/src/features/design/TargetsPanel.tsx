@@ -8,6 +8,7 @@ import { count } from "@/lib/format";
 import { Badge, SegmentedControl, Table, TBody, TD, TH, THead, TR } from "@/ui";
 import { visibleText, type QuoteLookup } from "@/ui/proposal";
 import { targetNow, targetRoleItem, type Draft, type EditItem, type EditorView } from "./draft";
+import { purposeNow } from "./PurposePanel";
 
 type Role = "ref" | "toi" | "ignore";
 const ROLE_LABEL: Record<Role, string> = {
@@ -33,13 +34,23 @@ export function TargetsPanel({
   const everyRef = view.targets.length > 1 && view.targets.every((t) => t.declared_type === "ref");
   return (
     <div className="flex flex-col gap-3">
-      <p className="max-w-prose text-[13px] text-muted">
-        Mark at least one <span className="font-medium text-fg">reference gene</span> (a
-        housekeeping gene the others are normalised to) and the{" "}
-        <span className="font-medium text-fg">genes of interest</span> you compare.{" "}
-        <span className="font-medium text-fg">Leave out</span> takes a target out of the study (an
-        empty channel, a spike-in, an assay not part of this experiment): none of its wells is used.
-      </p>
+      {purposeNow(view, draft) === "quantify" ? (
+        <p className="max-w-prose text-[13px] text-muted">
+          This study quantifies samples: every target with standards is quantified, and no reference
+          gene is needed. <span className="font-medium text-fg">Leave out</span> takes a target out
+          of the study (an empty channel, an assay not part of this experiment): none of its wells
+          is used.
+        </p>
+      ) : (
+        <p className="max-w-prose text-[13px] text-muted">
+          Mark at least one <span className="font-medium text-fg">reference gene</span> (a
+          housekeeping gene the others are normalised to) and the{" "}
+          <span className="font-medium text-fg">genes of interest</span> you compare.{" "}
+          <span className="font-medium text-fg">Leave out</span> takes a target out of the study (an
+          empty channel, a spike-in, an assay not part of this experiment): none of its wells is
+          used.
+        </p>
+      )}
       {everyRef ? (
         <p className="rounded-lg border border-warn/30 bg-warn-soft/40 px-3 py-2 text-[13px] text-fg">
           The file declares every target a reference gene. Some instruments write that for every

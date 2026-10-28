@@ -255,6 +255,13 @@ def next_step(
             section="results",
             action="Decide",
         )
+    if quantify and choices is not None and choices.open and not choices.confirmed:
+        return NextStep(
+            title="Confirm the analysis choices",
+            detail="Every card is decided; confirming records the choices with the analysis.",
+            section="results",
+            action="Confirm the analysis choices…",
+        )
     if quantify:
         return NextStep(
             title="Read the quantities and export the report",

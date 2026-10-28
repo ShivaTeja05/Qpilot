@@ -1,0 +1,190 @@
+{
+ "key": "e1572115c27f",
+ "kind": "session",
+ "title": "2023-11-14_Cov2_Copy_Amplification Data_20240422_155541.csv and 3 more files",
+ "facts": {
+  "file_name": "2023-11-14_Cov2_Copy_Amplification Data_20240422_155541.csv and 3 more files",
+  "input_sha256": "e1572115c27f733224d696c57571933c37e71d54c6a5b85010e082dfe7ad57c1",
+  "sheet_name": null,
+  "n_plates": 2,
+  "n_wells": 186,
+  "n_samples": 36,
+  "n_targets": 2,
+  "declared_types": {
+   "ntc": 4,
+   "std": 5,
+   "unkn": 27
+  }
+ },
+ "stages": [
+  {
+   "stage": "design",
+   "open": true,
+   "confirmed": true,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "curves",
+   "open": true,
+   "confirmed": true,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "choices",
+   "open": true,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "prism",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [],
+   "consistent": 0,
+   "confirm_waiting": false
+  },
+  {
+   "stage": "roundtrip",
+   "open": false,
+   "confirmed": false,
+   "pending": 0,
+   "blockers": [
+    "nothing has been sent to Prism yet"
+   ],
+   "consistent": 0,
+   "confirm_waiting": false
+  }
+ ],
+ "results_visible": true,
+ "study_id": "035292c88520",
+ "proposals_head": "8193c6b6c36b294e34348e3ab243c29926ce0d6cc993cac6113d554d0edc61f2",
+ "decisions_head": "cc8fa4dedc0389e23484b5aa3ed01e86b27fa3270a0b303504c2df9c50aabae5",
+ "next_step": {
+  "title": "Decide 1 analysis choice",
+  "detail": "Each card shows what every option would change; you give the reason.",
+  "section": "results",
+  "action": "Decide"
+ },
+ "active_jobs": [],
+ "has_audit": false,
+ "is_demo": false,
+ "warming": false,
+ "autonomy": "suggest",
+ "capture": {
+  "connector": "quantstudio",
+  "label": "Thermo Fisher QuantStudio / Applied Biosystems export",
+  "dialect": "quantstudio.amplification+quantstudio.results",
+  "sources": [
+   {
+    "name": "2023-11-14_Cov2_Copy_Amplification Data_20240422_155541.csv",
+    "role": "plate",
+    "bytes": 339896
+   },
+   {
+    "name": "2023-11-14_Cov2_Copy_Results_20240422_155540.csv",
+    "role": "plate",
+    "bytes": 20145
+   },
+   {
+    "name": "2023-11-14_PMMoV_VIC_Amplification Data_20240422_155710.csv",
+    "role": "plate",
+    "bytes": 341580
+   },
+   {
+    "name": "2023-11-14_PMMoV_VIC_Results_20240422_155710.csv",
+    "role": "plate",
+    "bytes": 20374
+   }
+  ],
+  "unused": [],
+  "value_kind": "Rn",
+  "value_words": "Rn: reporter divided by the passive reference dye",
+  "layers": {
+   "amplification": true,
+   "melt": false,
+   "cq": true,
+   "sample_types": true,
+   "targets": true,
+   "quantities": false
+  },
+  "plates": [
+   {
+    "run_id": "2023-11-14_Cov2_Copy",
+    "rows": 8,
+    "columns": 12,
+    "n_wells": 93,
+    "n_reactions": 93,
+    "n_cycles": 40,
+    "targets": [
+     "Cov2"
+    ],
+    "dyes": [
+     "FAM"
+    ],
+    "sample_types": {
+     "ntc": 2,
+     "std": 15,
+     "unkn": 76
+    },
+    "n_unmapped_types": 0,
+    "n_with_vendor_cq": 78,
+    "vendor_omitted": [],
+    "value_kind": "Rn",
+    "verdict": "normalized"
+   },
+   {
+    "run_id": "2023-11-14_PMMoV_VIC",
+    "rows": 8,
+    "columns": 12,
+    "n_wells": 93,
+    "n_reactions": 93,
+    "n_cycles": 40,
+    "targets": [
+     "PMMoV"
+    ],
+    "dyes": [
+     "VIC"
+    ],
+    "sample_types": {
+     "ntc": 2,
+     "std": 15,
+     "unkn": 76
+    },
+    "n_unmapped_types": 0,
+    "n_with_vendor_cq": 81,
+    "vendor_omitted": [],
+    "value_kind": "Rn",
+    "verdict": "normalized"
+   }
+  ],
+  "rawness": {
+   "verdict": "normalized",
+   "title": "Normalised to a passive reference (Rn)",
+   "meaning": "The curves are divided by the passive reference dye; the ground phase is kept, so LinRegPCR can still estimate each well's baseline and efficiency.",
+   "linregpcr_ok": true,
+   "import_trust": false
+  },
+  "warnings": [
+   {
+    "code": "UNNAMED_WELLS",
+    "message": "4 reactions have no sample name; each such well is its own sample, named after its plate and well."
+   },
+   {
+    "code": "PASSIVE_REFERENCE",
+    "message": "The curves are passive-reference normalised (Rn); the ground phase is kept, so qPilot can still estimate each well's baseline."
+   }
+  ],
+  "n_quarantined": 63
+ },
+ "purpose": "quantify"
+}

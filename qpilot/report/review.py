@@ -497,6 +497,8 @@ def audit_checks(rv: Review) -> None:
     """The audit: absent, out of date, genes to check first, a clustered plate layout."""
     c = rv.c
     a = c.inputs.audit
+    if a is None and c.quantify:
+        return  # the audit compares groups; a quantification's choices are on its cards
     if a is None:
         rv.flag(
             "no_audit", "note", "No robustness audit yet",
