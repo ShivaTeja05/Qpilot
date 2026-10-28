@@ -29,9 +29,33 @@ def reason_words(text: str, n_cells: int) -> str:
     return text
 
 
-def same_grade(api: dict, grade: Any, n_cells: int) -> None:
+def display_note(note: str, group_var: str | None) -> str:
+    """An engine note in the words the pages show: a marker split's groups by their display name.
+
+    The engine's check notes name the grouping by the design's variable ("derived from the data
+    (MYCN_high)"); every page, report and export shows a marker split's groups as "MYCN-high vs
+    rest" (``qpilot.qpcr.design.marker_group_names``, polish #2f4b5a7), and the views reword the
+    stored note the same way without touching the engine's bytes. Only the name changes: the
+    level, the checks, their order and their numbers are still compared exactly.
+    """
+    if group_var is None or not group_var.endswith("_high"):
+        return note
+    from qpilot.qpcr.design import marker_group_names
+
+    a, b = marker_group_names(group_var)
+    return note.replace(
+        f"Groups are derived from the data ({group_var})",
+        f"Groups are derived from the data ({a} vs {b})",
+    )
+
+
+def same_grade(api: dict, grade: Any, n_cells: int, group_var: str | None = None) -> None:
     """The API's confidence is the engine's: level, checks and their numbers exactly; words as
-    today's (a store analysed before #0286 keeps the older wording, the views may serve it)."""
+    today's (a store analysed before #0286 keeps the older wording, the views may serve it).
+
+    ``group_var`` is the study's design variable (``eng.result.design.group_var``): given, a
+    check note that names a marker split's groups is expected with their display name.
+    """
     assert api["level"] == grade.level
     assert api["min_flip_changes"] == grade.min_flip_changes
     assert [reason_words(r, n_cells) for r in api["reasons"]] == grade.reasons
@@ -40,7 +64,7 @@ def same_grade(api: dict, grade: Any, n_cells: int) -> None:
             (c.id, c.passed) for c in grade.checks
         ]
         for got, want in zip(api["checks"], grade.checks, strict=True):
-            assert reason_words(got["note"], n_cells) == want.note, want.id
+            assert reason_words(got["note"], n_cells) == display_note(want.note, group_var), want.id
             assert set(got["fact_ids"]) <= set(want.fact_ids), want.id
 
 
@@ -149,7 +173,12 @@ def check_gene(view: dict, eng: Engine, gene: str) -> None:
     """One gene's view: its contrast, robustness, confidence and its every grid analysis."""
     assert view["contrast"] == eng.result.contrasts[gene].model_dump(mode="json")
     assert view["robustness"] == eng.result.robustness[gene].model_dump(mode="json")
-    same_grade(view["confidence"], eng.result.confidence[gene], eng.result.robustness[gene].n_cells)
+    same_grade(
+        view["confidence"],
+        eng.result.confidence[gene],
+        eng.result.robustness[gene].n_cells,
+        eng.result.design.group_var,
+    )
     grid = view["grid"]
     assert grid is not None, f"{gene}: no grid"
     assert grid["dimensions"] == list(eng.space.dimensions)
