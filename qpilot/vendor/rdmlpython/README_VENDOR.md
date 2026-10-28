@@ -32,5 +32,8 @@ PyPI's latest release (1.7.2, 2023) cannot read RDML 1.4; the upstream `main` br
 
 `rdml.py` imports matplotlib at module level for melt-curve SVG plots; qPilot never calls those, but matplotlib is a declared dependency so the import works.
 
+## A known limit, worked around outside this directory
+In `Run.linRegPCR` the reaction volume array (`reactVol`) is filled once per `<react>` but read once per `<data>` (per curve), so on a multiplex plate (several dyes in one well) only the first curve of each well gets a volume, and every other dye's `Ncopy` is 0. qPilot does not change `rdml.py`: `qpilot/qpcr/curves.py` analyses each dye of a multiplex plate as a run of its own (`channels`, `_sub_run`), where every reaction has one curve. `tests/engine/test_multiplex.py::test_the_vendored_linregpcr_still_gives_the_other_dyes_no_volume` fails when an upstream update fixes it. Upstream at the pinned commit `fce7a44` is the latest (checked 28 Oct 2026).
+
 ## Updating
 Replace the files from a new upstream commit, update the commit and every hash above and in `THIRD_PARTY_NOTICES.md`, and re-run the validation script (`validation/run_validation.py`) before merging.
