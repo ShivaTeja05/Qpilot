@@ -48,7 +48,7 @@ A workspace is either a Studio
 | Curves (blind) | `…/curves` | session, design confirmed | `…/proposals?stage=curves`, `…/plate` (calls, Cq, efficiency, R²), `…/curve?well=`, `…/curve-calls?gene=` → `Studio.propose_curves/curve/curve_calls` |
 | Results | `…/results` | results visible | `GET /api/studies/{id}/results` (summary, rule, genes with robustness + confidence, the opt-in `axes`), `/flips`, `/cards` (incl. cards opened from Trace, with their `place`), decide/undo/turn down/explain → store + `core.decisions` + `ai.explain`; `GET /api/studies/{id}/evidence` (the Evidence Ledger) → `qpcr.evidence`; `…/proposals?stage=choices`, `POST /api/sessions/{sid}/propose/axis` → `Studio.propose_axis`; `GET /api/studies/{id}/import-trust`, `POST …/import-trust/decide` (session only) → `io.trust` + `Studio.decide_import_trust` (+ the `analyse` job for Cq only) |
 | Controls | `…/gate` | results visible | `GET /api/studies/{id}/gate` (first run a `gate.run` job: 409 `loading` + the job) → `qpcr.gate_rules.run_gate` (rule pack `packs/research-default.yaml`) + `core.gate` (consequence test); `POST /api/studies/{id}/gate/cards/{card_id}/decide` (session only) → `Studio.decide_gate` (curve exclusions) + the `analyse` job; `POST /api/studies/{id}/gate/run-files` (multipart `plate` + `run`), `POST …/gate/run-files/unlink` → `qpcr.run_links` (G-INSTR's run file for a plate; else the export's own, `qpcr.export_runs`) |
-| Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it) + audit gene views when an audit exists |
+| Gene | `…/gene/<GENE>` | results visible | `GET /api/studies/{id}/genes/{gene}` (qPilot contrast, robustness, confidence, cards affecting it), `GET …/genes/{gene}/units` (each unit's value and wells) + audit gene views when an audit exists |
 | Audit | `…/audit` | results visible | `GET|POST /api/studies/{id}/audit` (status / run), `/audit/overview|study|how|gene/{g}|analyses/{g}|effects/{g}|lab/{g}`, `POST /audit/whatif|samples` → `integration.simulator` + qsim `Screen`/`LabViews` |
 | Trace | `…/trace`, `…/trace/<GENE>` | results visible | `GET /api/studies/{id}/trace`, `…/trace/{gene}`, `…/trace/plate?run=`, `POST …/trace/{gene}/without` (first load a `trace.load` job: 409 `loading` + the job) → `qpilot.trace`; **Where to look**: `GET …/where-to-look?gene=|sample=|well=`, `POST …/where-to-look/open` (Decide…) → `qpcr.trace` at the analysis in use + `StudyStore.open_card` |
 | Claims | `…/claims` | results visible | `POST /api/studies/{id}/claims` → `qpilot.claims` |
@@ -347,8 +347,11 @@ never passes or fails a run.
 Header: gene, call (arrow + word), fold [95 % CI], p, n per group, confidence level + reasons,
 verdict (when audited). Then, top to bottom: **What holds** (holds fraction, the analyses strip
 — every reasonable analysis as a dot on the fold axis, coloured by call), **One choice at a
-time** (dot plot per decision option), **Your samples** (beeswarm by group; click a sample →
-its well, its curve), **What changes it / What it leans on / What to do** (audit), **Decision
+time** (dot plot per decision option), **Your samples** (the audit's beeswarm by group when the
+audit covers the gene; otherwise, and for an audited design with technical replicates, each
+biological unit from the engine, `GET /api/studies/{id}/genes/{gene}/units`, its replicate wells
+as small dots on its line, each group's mean with its 95 % CI; click a unit → its wells, its
+curve), **What changes it / What it leans on / What to do** (audit), **Decision
 Cards that affect this gene**, **Assay and wells** (efficiency, Cq range, undetermined), the
 reference-gene stability bars, and the Prism figure for this gene when available. Prev/next gene
 with `[`/`]`.
@@ -356,8 +359,9 @@ with `[`/`]`.
 ### Audit (`features/audit`)
 Not run: what it is ("re-runs your confirmed study under every combination of eight analysis
 decisions — 90,396 analyses on the demo, about 50 s — and gives each gene a verdict"), **Run the
-audit** (job with stages). Refused / not applicable: the reason in words (e.g. technical
-replicates). Done: tabs **Study** (verdict strip with counts, map, calls changed by one choice,
+audit** (job with stages). Refused / not applicable: the reason in words. A design with
+technical replicates is audited (each unit's wells combined as qPilot combines them); the page
+says how, before and after the run. Done: tabs **Study** (verdict strip with counts, map, calls changed by one choice,
 share of spread, reference stability, fix-these-first, issue queue), **What-if lab** (one select
 per decision grouped by tier, dumbbell of every gene planned → chosen, changed genes first),
 **How it works** (stages, verdict rules, known-answer tests, limits), and **Verify** (the audit's
