@@ -526,6 +526,34 @@ PROPOSAL_WORDS = {
 }
 
 
+EXCLUDE_WORDS = {
+    "proposed": "",
+    "accepted": " (a person accepted it)",
+    "edited": " (a person changed it and accepted it)",
+    "rejected": " (a person turned it down)",
+    "superseded": " (replaced by a later request)",
+}
+
+
+def _proposal_summary(p: Any) -> str:
+    """One agent proposal in words; a request about wells says what it asks and where."""
+    if p.kind == "curve.exclude_well":
+        consequence = p.consequence or {}
+        source = (
+            "at a place in Trace"
+            if "trace" in consequence
+            else "on a control check (Controls)"
+            if "gate" in consequence
+            else None
+        )
+        if source is not None:
+            leave = p.effective_payload().get("excluded") is True
+            verb, where = ("leave", "out of") if leave else ("put", "back into")
+            end = EXCLUDE_WORDS.get(p.status, "")
+            return f"Asked to {verb} “{p.subject}” {where} the analysis, {source}{end}"
+    return f"{PROPOSAL_WORDS.get(p.status, 'Proposed')}: {p.kind} for “{p.subject}”"
+
+
 def _session_proposals(places: _Places, sid: str) -> list[AgentActivity]:
     """Proposals an agent made in one session's inbox (results-stage ones only once visible)."""
     from qpilot.web.studio_views import blind_kind
@@ -544,10 +572,10 @@ def _session_proposals(places: _Places, sid: str) -> list[AgentActivity]:
             workspace_kind="session",
             title=title,
             at=p.created_at,
-            summary=f"{PROPOSAL_WORDS.get(p.status, 'Proposed')}: {p.kind} for “{p.subject}”",
+            summary=_proposal_summary(p),
             agent=p.made_by.agent,
             status=p.status,
-            reason=p.reason,
+            reason=p.reason or (p.reasons[0] if p.status == "proposed" and p.reasons else None),
             proposal_id=p.id,
             proposal_kind=p.kind,
             check=p.check.status,

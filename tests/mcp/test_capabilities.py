@@ -828,3 +828,28 @@ def test_every_new_tool_tried_with_every_hostile_argument_decides_nothing(tools,
     assert tree(called["root"]) == before[3]  # nothing was written into the data root
     assert tree(outside) == []
     assert not store.design(study).excluded_wells
+
+
+# ---- the Agents page says what a request about wells asks, and where -----------------------------
+
+
+def test_the_agents_list_says_in_words_what_a_request_about_wells_asks(tools, called):
+    c, study = called["client"], called["study"]
+    place = the_place(tools, called)
+    tools.qpcr_request_set_aside(study, place["card_id"], "set_aside_value", REASON, gene=GENE)
+    body = c.get("/api/agents").json()
+    asked = [a for a in body["activity"] if a["proposal_kind"] == "curve.exclude_well"]
+    assert len(asked) == 3 and {a["status"] for a in asked} == {"proposed"}
+    summaries = sorted(a["summary"] for a in asked)
+    assert summaries[0] == (
+        "Asked to leave “1-Mar_plate/A7” out of the analysis, at a place in Trace"
+    )
+    assert all(a["reason"] == REASON and a["agent"] is None for a in asked)
+    # a person turns it down by keeping: the same entries say so
+    view = decided.where(c, study, gene=GENE)
+    assert decided.decide(c, study, view, "keep", "No.").status_code == 200
+    after = c.get("/api/agents").json()["activity"]
+    kept = [a for a in after if a["proposal_kind"] == "curve.exclude_well" and a["agent"] is None]
+    assert {a["status"] for a in kept} == {"rejected"}
+    asked_in_trace = "out of the analysis, at a place in Trace (a person turned it down)"
+    assert all(a["summary"].endswith(asked_in_trace) for a in kept)
