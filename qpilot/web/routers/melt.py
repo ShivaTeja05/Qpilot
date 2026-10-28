@@ -142,7 +142,7 @@ def _well_view(w: M.WellCall) -> MeltWellView:
             height=round(p.height, 6),
             share=round(s, 6),
             width_c=p.width_c,
-            role="product" if i == 0 else "extra" if p in extra else "minor",
+            role="main" if i == 0 else "extra" if p in extra else "minor",
         )
         for i, (p, s) in enumerate(zip(w.peaks, w.shares, strict=True))
     ]
@@ -166,6 +166,11 @@ def _assay_summary(a: M.AssayMelt, counts: dict[str, int]) -> str:
     flagged = sum(counts.get(s, 0) for s in (*M.STUDY_FLAGS, *M.NTC_FLAGS))
     if a.coarse:
         return "The melt readings are too far apart to place a melting temperature."
+    if a.expected_tm is None and not any(w.sample_type in M.JUDGED for w in a.with_melt):
+        return (
+            "Only no-template controls of this target here: a peak in them is measured against "
+            "the plate's other products."
+        )
     if a.expected_tm is None:
         return (
             "Too few study wells melted here to say where the product melts, and the file "
@@ -221,7 +226,16 @@ def _view(
         "caveat": CAVEAT,
     }
     if not data.has_melt:
-        return MeltView(**base, has_melt=False, message=NO_MELT, plates=[])
+        return MeltView(
+            **base,
+            has_melt=False,
+            message=NO_MELT,
+            plates=[],
+            assays=[],
+            targets=[],
+            calls=[],
+            wells=[],
+        )
     plates = list(dict.fromkeys(a.run_id for a in assays))
     shown = run if run is not None else (plates[0] if plates else None)
     mine = [a for a in assays if a.run_id == shown]

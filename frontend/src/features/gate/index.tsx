@@ -237,6 +237,11 @@ export function GatePage({
             onFilter={setFilter}
             focusId={focus}
             onLinkRun={view.runs.length ? linkRun : undefined}
+            curvesHref={
+              workspace.kind === "session"
+                ? (plate, wells) => sectionPath(workspace, "curves", plate, wells.join(","))
+                : undefined
+            }
           />
           <Consequences view={view} onOpen={open} />
         </div>

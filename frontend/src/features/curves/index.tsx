@@ -1,7 +1,8 @@
 /**
  * Curves (docs/app.md §4) — blind. Check the curves (a job), the Curve Judge's disagreements and
  * the call-rule proposal to decide, then confirm; the plate heatmap (call, Cq, efficiency, R² or
- * sample type, by gene) and the curve viewer for the wells picked on it. Nothing here shows a
+ * sample type, by gene), the curve viewer for the wells picked on it, and their melt curves
+ * (−dF/dT, peaks and the assay's product Tm: rule G-MELT, `./melt`). Nothing here shows a
  * group, a fold change or a p-value: the server withholds them until the design and the curves
  * are confirmed, and the plate map has no group field.
  *
@@ -22,6 +23,7 @@ import { ConfirmStage, StageInbox, useStageProposals, type InboxFilter } from "@
 import { usePlate } from "./api";
 import { CheckCurvesJob, CheckCurvesPanel, useCheckCurves } from "./CheckCurves";
 import { CurvePanel } from "./CurvePanel";
+import { MeltPanel } from "./melt";
 import { ALL_GENES, PlatePanel } from "./PlatePanel";
 import { StageBar } from "./StageBar";
 
@@ -206,7 +208,10 @@ function CurvesStage({
           curveRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" })
         }
       />
-      <div ref={curveRef} className={cn("min-w-0 scroll-mt-20", reviewing && "order-first")}>
+      <div
+        ref={curveRef}
+        className={cn("flex min-w-0 scroll-mt-20 flex-col gap-6", reviewing && "order-first")}
+      >
         <CurvePanel
           sid={sid}
           run={run}
@@ -214,6 +219,12 @@ function CurvesStage({
           onClear={() => setPlace(run, [])}
           waitingProposal={(key) => waitingFor.has(key)}
           onShowProposal={showProposalOf}
+        />
+        <MeltPanel
+          sid={sid}
+          run={run}
+          wells={plate.isPlaceholderData ? [] : wells}
+          onPickWells={(w) => setPlace(run, w)}
         />
       </div>
     </div>

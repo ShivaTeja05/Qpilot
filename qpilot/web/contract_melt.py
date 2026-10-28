@@ -50,8 +50,8 @@ class MeltPeakView(BaseModel):
     height: float = Field(description="−dF/dT at the top (fluorescence per °C).")
     share: float = Field(description="Its share of the well's counted peaks (0 to 1).")
     width_c: float | None = Field(default=None, description="Width at half height (°C).")
-    role: Literal["product", "extra", "minor"] = Field(
-        description="`product`: the well's main peak (its product when it is at the expected "
+    role: Literal["main", "extra", "minor"] = Field(
+        description="`main`: the well's main peak (its product, when one is at the expected "
         "Tm); `extra`: a peak carrying at least the extra-peak share; `minor`: counted, smaller."
     )
 
@@ -80,19 +80,15 @@ class MeltWellView(MeltCallView):
 
     amplified: bool
     cq: float | None = None
-    peaks: list[MeltPeakView] = Field(default_factory=list)
+    peaks: list[MeltPeakView]
     readings_temperature: list[float] = Field(
-        default_factory=list, description="The file's melt readings: temperatures (°C)."
+        description="The file's melt readings: temperatures (°C)."
     )
     readings_fluorescence: list[float | None] = Field(
-        default_factory=list, description="The file's melt readings: fluorescence."
+        description="The file's melt readings: fluorescence."
     )
-    temperature: list[float] = Field(
-        default_factory=list, description="The even grid −dF/dT is computed on (°C)."
-    )
-    derivative: list[float] = Field(
-        default_factory=list, description="−dF/dT on the grid (fluorescence per °C)."
-    )
+    temperature: list[float] = Field(description="The even grid −dF/dT is computed on (°C).")
+    derivative: list[float] = Field(description="−dF/dT on the grid (fluorescence per °C).")
     step_c: float | None = Field(default=None, description="Median step between readings (°C).")
     problem: str = Field(
         default="", description="`too_few_points` or `coarse` when the curve cannot be judged."
@@ -156,7 +152,7 @@ class MeltView(BaseModel):
     pack: str = Field(description="The rule pack the thresholds come from (name and version).")
     method: str = Field(description="The method card, a path in the repository.")
     caveat: str = Field(description="What a melt peak cannot tell (MIQE 2.0).")
-    assays: list[MeltAssayView] = Field(default_factory=list)
-    targets: list[MeltTargetView] = Field(default_factory=list)
-    calls: list[MeltCallView] = Field(default_factory=list)
-    wells: list[MeltWellView] = Field(default_factory=list)
+    assays: list[MeltAssayView]
+    targets: list[MeltTargetView]
+    calls: list[MeltCallView]
+    wells: list[MeltWellView]

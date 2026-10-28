@@ -8283,10 +8283,10 @@ export type components = {
             height: number;
             /**
              * Role
-             * @description `product`: the well's main peak (its product when it is at the expected Tm); `extra`: a peak carrying at least the extra-peak share; `minor`: counted, smaller.
+             * @description `main`: the well's main peak (its product, when one is at the expected Tm); `extra`: a peak carrying at least the extra-peak share; `minor`: counted, smaller.
              * @enum {string}
              */
-            role: "product" | "extra" | "minor";
+            role: "main" | "extra" | "minor";
             /**
              * Share
              * @description Its share of the well's counted peaks (0 to 1).
@@ -8331,9 +8331,9 @@ export type components = {
          */
         MeltView: {
             /** Assays */
-            assays?: components["schemas"]["MeltAssayView"][];
+            assays: components["schemas"]["MeltAssayView"][];
             /** Calls */
-            calls?: components["schemas"]["MeltCallView"][];
+            calls: components["schemas"]["MeltCallView"][];
             /**
              * Caveat
              * @description What a melt peak cannot tell (MIQE 2.0).
@@ -8376,9 +8376,9 @@ export type components = {
             /** Study Id */
             study_id?: string | null;
             /** Targets */
-            targets?: components["schemas"]["MeltTargetView"][];
+            targets: components["schemas"]["MeltTargetView"][];
             /** Wells */
-            wells?: components["schemas"]["MeltWellView"][];
+            wells: components["schemas"]["MeltWellView"][];
         };
         /**
          * MeltWellView
@@ -8393,7 +8393,7 @@ export type components = {
              * Derivative
              * @description −dF/dT on the grid (fluorescence per °C).
              */
-            derivative?: number[];
+            derivative: number[];
             /**
              * Flagged
              * @description G-MELT points at this well.
@@ -8420,7 +8420,7 @@ export type components = {
              */
             offset_c?: number | null;
             /** Peaks */
-            peaks?: components["schemas"]["MeltPeakView"][];
+            peaks: components["schemas"]["MeltPeakView"][];
             /**
              * Problem
              * @description `too_few_points` or `coarse` when the curve cannot be judged.
@@ -8431,12 +8431,12 @@ export type components = {
              * Readings Fluorescence
              * @description The file's melt readings: fluorescence.
              */
-            readings_fluorescence?: (number | null)[];
+            readings_fluorescence: (number | null)[];
             /**
              * Readings Temperature
              * @description The file's melt readings: temperatures (°C).
              */
-            readings_temperature?: number[];
+            readings_temperature: number[];
             /** Run Id */
             run_id: string;
             /** Sample */
@@ -8464,7 +8464,7 @@ export type components = {
              * Temperature
              * @description The even grid −dF/dT is computed on (°C).
              */
-            temperature?: number[];
+            temperature: number[];
             /** Well */
             well: string;
         };

@@ -157,7 +157,7 @@ def test_a_wells_curve_its_peaks_and_readings(lc96):
         assert len(w["temperature"]) == len(w["derivative"]) > 100
         assert len(w["readings_temperature"]) == len(w["readings_fluorescence"])
         assert w["step_c"] == pytest.approx(0.2, abs=0.01)
-        (product,) = (p for p in w["peaks"] if p["role"] == "product")
+        (product,) = (p for p in w["peaks"] if p["role"] == "main")
         assert product["tm"] == w["main_tm"] and product["share"] > 0.9
         assert abs(w["offset_c"]) < 1.0
         top = max(range(len(w["derivative"])), key=w["derivative"].__getitem__)
@@ -207,3 +207,23 @@ def test_a_study_without_melt_curves_says_what_to_export(walked):
     assert session["has_melt"] is False
     r = c.get("/api/studies/nosuchstudy/melt")
     assert r.status_code == 404
+
+
+def test_the_miqe_item_on_specificity_reads_the_melt_curves(lc96):
+    c, study = lc96["client"], lc96["study"]
+    miqe = get(c, f"/api/studies/{study}/report")["miqe"]
+    (item,) = (i for i in miqe["items"] if i["id"] == "5.19")
+    assert item["status"] == "met" and "methods/melt_curve.md" in item["sources"]
+    plain = item["evidence"]["plain"]
+    assert plain.startswith(
+        "qPilot analysed the melt curves of 96 wells (3 assays on their plates)"
+    )
+    assert "The products melt between 82.0 °C and 87.1 °C." in plain
+    assert "G-MELT points at 0 wells" in plain and "(MIQE 2.0)" in plain
+
+
+def test_without_melt_curves_the_miqe_item_says_so(walked):
+    miqe = get(walked["client"], f"/api/studies/{walked['study']}/report")["miqe"]
+    (item,) = (i for i in miqe["items"] if i["id"] == "5.19")
+    assert item["status"] == "cannot_tell"
+    assert item["evidence"]["plain"].startswith("The study's file has no melt curves")
