@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { Schemas } from "@/api/client";
-import { curvesByWell, plateWells } from "../adapters";
+import { curvesByWell, plateWells, plateWellsOneDye } from "../adapters";
 import { PlateMap } from "../PlateMap";
 import recorded from "./recorded/plate-lc96-bACTXY.json";
 
@@ -47,6 +47,18 @@ describe("a plate with several dyes per well", () => {
     expect(d3).not.toContain("filtered out");
     // a gene not measured in a well leaves that position faded (here: an empty channel)
     expect(cell("A1").getAttribute("aria-label")).toMatch(/empty|filtered out/);
+  });
+
+  it("gives the map one entry per well: the picked gene's curve, else the first", () => {
+    const wells = new Set(view.wells.map((w) => w.key)).size;
+    const first = plateWellsOneDye(view, null);
+    expect(first).toHaveLength(wells);
+    expect(new Set(first.map((w) => w.target))).toEqual(new Set(["bACT"]));
+    const y = plateWellsOneDye(view, "Y");
+    expect(y).toHaveLength(wells);
+    expect(y.every((w) => w.target === "Y" && !w.dimmed)).toBe(true);
+    render(<PlateMap wells={y} layer="cq" label="Plate" rows={8} columns={12} />);
+    expect(screen.queryByText(/filtered out/)).toBeNull(); // every well holds Y: nothing faded
   });
 
   it("lists every curve, all dyes, in the table view", () => {

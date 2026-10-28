@@ -4,7 +4,7 @@
  */
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
-import { PlateMap, layerOptions, plateWells, type PlateLayer } from "@/charts/plate";
+import { PlateMap, layerOptions, plateWellsOneDye, type PlateLayer } from "@/charts/plate";
 import { count, plural } from "@/lib/format";
 import { useHotkeys } from "@/lib/hooks";
 import {
@@ -65,9 +65,9 @@ export function PlatePanel({
   const current = plate?.run.run_id ?? null;
   const at = shownRuns.findIndex((r) => r.run_id === current);
 
+  // a multiplex plate: one entry per well, the picked gene's curve (else the well's first)
   const wells = useMemo(
-    () =>
-      plate ? plateWells(plate, gene === ALL_GENES ? {} : { keep: (w) => w.target === gene }) : [],
+    () => (plate ? plateWellsOneDye(plate, gene === ALL_GENES ? null : gene) : []),
     [plate, gene],
   );
 
@@ -90,7 +90,7 @@ export function PlatePanel({
         title="The plate"
         hint={
           plate
-            ? `${plate.run.run_id} · ${plate.n_rows * plate.n_cols} positions · ${plural(plate.wells.length, "well")}${
+            ? `${plate.run.run_id} · ${plate.n_rows * plate.n_cols} positions · ${plural(plate.wells.length, plate.multiplex ? "curve" : "well")}${
                 disagreements ? ` · the Curve Judge disagrees on ${count(disagreements)}` : ""
               }${waiting ? ` · ${count(waiting)} with a proposal waiting` : ""}`
             : "Every well of one plate; pick a well to see its curve."

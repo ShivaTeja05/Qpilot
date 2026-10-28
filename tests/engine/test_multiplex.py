@@ -220,3 +220,14 @@ def test_pairing_with_the_same_wells_reference_differs_only_where_one_dye_has_no
     ]
     d4 = set(mx.well_keys(gap[gap["well"] == "D4"]))
     assert mx.pairing_gaps(gap, ["bACT"], excluded=d4).empty
+
+
+def test_one_call_for_a_multiplex_well_is_contradicted_in_words():
+    from qpilot.qpcr.design_checks import curve_check
+
+    table = curves.analyse_study(LC96, _experiment(LC96), ())
+    run = str(table["run_id"].iloc[0])
+    check = curve_check(f"{run}/D3", {"amplified": False}, table)
+    assert check.status == "contradicted" and check.rule_ids == ["D-CURVE"]
+    assert check.details["targets"] == "IPC, X, Y, bACT"
+    assert "several targets (multiplex)" in check.note

@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api, unwrap, type Schemas } from "@/api/client";
-import { PlateMap, curveName, curvesByWell, plateWells } from "@/charts/plate";
+import { PlateMap, curveName, curvesByWell, plateWellsOneDye } from "@/charts/plate";
 import { count } from "@/lib/format";
 import { ROLE_SHORT, ROLE_WORDS } from "@/lib/vocab";
 import {
@@ -183,9 +183,9 @@ export function DesignPlate({
     if (!data) return [];
     const instructionLike = (id: string | null | undefined) =>
       Boolean(id && quotes(id)?.flags.includes("instruction_like"));
-    return plateWells(data, {
+    // a multiplex plate: one entry per well, the picked target's curve (else the first)
+    return plateWellsOneDye(data, target, {
       flagged: (w) => instructionLike(w.sample_text_id) || instructionLike(w.target_text_id),
-      keep: target ? (w) => w.target === target : undefined,
     });
   }, [data, quotes, target]);
   const lit = useMemo(
