@@ -1,0 +1,277 @@
+{
+ "study_id": "82ebfecdfefc",
+ "session": null,
+ "input_sha256": "6b398378bcfa4666f2daf29ad059f48af8f20f4adc7ee59ba568b143d76408df",
+ "summary": {
+  "n_plates": 5,
+  "n_reactions": 177,
+  "n_samples": 12,
+  "n_genes": 3,
+  "mode": "groups",
+  "group_var": "Drug B vs Control",
+  "groups": [
+   {
+    "label": "Drug B",
+    "n": 4
+   },
+   {
+    "label": "Control",
+    "n": 4
+   }
+  ],
+  "cut": null,
+  "design_line": "Groups from the confirmed design (Drug B vs Control): 4 vs 4 biological units; technical replicates averaged within each unit.",
+  "text": null,
+  "not_compared": {
+   "n": 4,
+   "reasons": [
+    {
+     "reason": "in neither group of the confirmed design",
+     "n": 4,
+     "samples": [
+      "DrugB_D1",
+      "DrugB_D2",
+      "DrugB_D3",
+      "DrugB_D4"
+     ]
+    }
+   ]
+  }
+ },
+ "rule": {
+  "alpha": 0.05,
+  "min_log2fc": 1.0,
+  "min_fold": 2.0,
+  "text": "up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call"
+ },
+ "references": {
+  "used": [
+   "ACTB",
+   "GAPDH"
+  ],
+  "candidates": [
+   "ACTB",
+   "GAPDH"
+  ],
+  "m": {
+   "ACTB": 0.0038722550667664936,
+   "GAPDH": 0.0038722550667664936
+  },
+  "order": [
+   "ACTB",
+   "GAPDH"
+  ],
+  "v": {},
+  "recommended": [
+   "ACTB",
+   "GAPDH"
+  ],
+  "cutoff_m": 1.5,
+  "cutoff_v": 0.15,
+  "stable": [
+   "ACTB",
+   "GAPDH"
+  ]
+ },
+ "genes": [
+  {
+   "gene": "IL6",
+   "headline": true,
+   "conclusion": "up",
+   "fc": 6.87381903906859,
+   "log2fc": 2.7811118716585943,
+   "ci": [
+    2.9269843121259496,
+    16.142685830640247
+   ],
+   "p": 0.0015917467027628265,
+   "n_hi": 4,
+   "n_lo": 4,
+   "holds": 1.0,
+   "n_cells": 6,
+   "level": "Moderate",
+   "reasons": [
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.847639,
+   "at_your_choices": null,
+   "verdict": null,
+   "verdict_label": null,
+   "p_adjusted": 0.002192898261960458,
+   "q": 0.004775240108288479
+  },
+  {
+   "gene": "MYC",
+   "headline": true,
+   "conclusion": "up",
+   "fc": 3.3126957189641106,
+   "log2fc": 1.7280056936386892,
+   "ci": [
+    1.41216882163953,
+    7.770992220110321
+   ],
+   "p": 0.014092156791268337,
+   "n_hi": 4,
+   "n_lo": 4,
+   "holds": 1.0,
+   "n_cells": 6,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.847159,
+   "at_your_choices": null,
+   "verdict": null,
+   "verdict_label": null,
+   "p_adjusted": 0.028184313582536674,
+   "q": 0.021138235186902506
+  },
+  {
+   "gene": "TP53",
+   "headline": false,
+   "conclusion": "none",
+   "fc": 0.8937742706576927,
+   "log2fc": -0.16201758084232631,
+   "ci": [
+    0.2596557888228567,
+    3.0765054401874807
+   ],
+   "p": 0.8044406219076464,
+   "n_hi": 3,
+   "n_lo": 4,
+   "holds": 1.0,
+   "n_cells": 6,
+   "level": "Low",
+   "reasons": [
+    "The 95 % confidence interval crosses the 2-fold line.",
+    "No control gene on this panel is below the commonly used geNorm stability cut-off (M 1.5)."
+   ],
+   "min_flip_changes": 0,
+   "flips_by": [],
+   "efficiency": 1.84988,
+   "at_your_choices": null,
+   "verdict": null,
+   "verdict_label": null,
+   "p_adjusted": 1.0,
+   "q": 0.8044406219076464
+  }
+ ],
+ "withheld": [],
+ "headline": [
+  "IL6",
+  "MYC"
+ ],
+ "counts": {
+  "up": 2,
+  "down": 0,
+  "none": 1
+ },
+ "levels": {
+  "Moderate": 1,
+  "Low": 2
+ },
+ "choices": {
+  "card_refset": "recommended",
+  "card_undetermined": "drop"
+ },
+ "cards_waiting": 0,
+ "pending_requests": 0,
+ "head": "2267530b6e598319f30e52eb46787f94014b739d379675c2fa8538d9cce92ce0",
+ "audit": {
+  "status": "none",
+  "verdict_counts": {},
+  "chain_head": null,
+  "current": false
+ },
+ "axes": [
+  {
+   "name": "efficiency",
+   "title": "Which efficiency turns Cq into quantity",
+   "status": "off",
+   "text": {
+    "plain": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each plate. Testing the other efficiency models adds them as one more choice of the grid; the analysis in use stays the same until a person decides otherwise.",
+    "segments": [
+     {
+      "text": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each plate. Testing the other efficiency models adds them as one more choice of the grid; the analysis in use stays the same until a person decides otherwise.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "options": [
+    {
+     "id": "linregpcr",
+     "label": "LinRegPCR's mean efficiency of the amplicon on each plate",
+     "tier": "primary",
+     "primary": true,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "per_well",
+     "label": "Each well's own efficiency",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "amplicon_mean",
+     "label": "One efficiency per amplicon over all its plates",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "assumed_2",
+     "label": "Efficiency assumed to be 2.0 (100 %)",
+     "tier": "common_practice",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "standard_curve",
+     "label": "Efficiency from the plate's dilution series",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    }
+   ],
+   "card_id": null,
+   "notes": [],
+   "can_propose": false,
+   "command": "qpilot run --efficiency all"
+  }
+ ],
+ "comparison": "drug_b_vs_control",
+ "comparisons": [
+  {
+   "id": "drug_a_vs_control",
+   "label": "Drug A vs Control",
+   "primary": true,
+   "n_up": 1,
+   "n_down": 0
+  },
+  {
+   "id": "drug_b_vs_control",
+   "label": "Drug B vs Control",
+   "primary": false,
+   "n_up": 2,
+   "n_down": 0
+  }
+ ]
+}

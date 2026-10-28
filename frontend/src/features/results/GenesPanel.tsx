@@ -145,6 +145,10 @@ function GeneCards({
                     <span>{fold(g.fc)}</span>
                     <span className="text-muted">{ci(g.ci[0], g.ci[1])}</span>
                     <span className="text-muted">p {pValue(g.p)}</span>
+                    {g.p_adjusted != null && (
+                      <span className="text-muted">corrected p {pValue(g.p_adjusted)}</span>
+                    )}
+                    {g.q != null && <span className="text-muted">q {pValue(g.q)}</span>}
                   </span>
                   <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
                     <span className="text-muted">
@@ -188,6 +192,8 @@ export function GenesPanel({
   onOpen: (gene: string) => void;
 }) {
   const audited = genes.some((g) => g.verdict);
+  const corrected = genes.some((g) => g.p_adjusted != null);
+  const withQ = genes.some((g) => g.q != null);
   const cells = gridSize(genes);
   const shown = genes.filter((g) => matches(g, filter)).length;
   const columns = useMemo<ColumnDef<GeneRow, unknown>[]>(
@@ -265,6 +271,28 @@ export function GenesPanel({
         meta: { numeric: true, width: "5.5rem" },
         cell: ({ row }) => pValue(row.original.p),
       },
+      ...(corrected
+        ? ([
+            {
+              id: "p_adjusted",
+              header: "Corrected p",
+              accessorFn: (g) => g.p_adjusted ?? 2,
+              meta: { numeric: true, width: "6.5rem" },
+              cell: ({ row }) => pValue(row.original.p_adjusted),
+            },
+          ] satisfies ColumnDef<GeneRow, unknown>[])
+        : []),
+      ...(withQ
+        ? ([
+            {
+              id: "q",
+              header: "q (FDR)",
+              accessorFn: (g) => g.q ?? 2,
+              meta: { numeric: true, width: "5.5rem" },
+              cell: ({ row }) => pValue(row.original.q),
+            },
+          ] satisfies ColumnDef<GeneRow, unknown>[])
+        : []),
       {
         id: "why",
         header: "Why this level",
@@ -292,7 +320,7 @@ export function GenesPanel({
         },
       },
     ],
-    [audited, dimLabel, cells],
+    [audited, corrected, withQ, dimLabel, cells],
   );
 
   const set = (patch: Partial<GeneFilter>) => onFilter({ ...filter, ...patch });
@@ -378,7 +406,7 @@ export function GenesPanel({
             data={genes}
             columns={columns}
             getRowId={(g) => g.gene}
-            label={`All genes: call, fold change with its 95 % confidence interval, p, the share ${cells ? `of the ${count(cells)} analyses` : "of the analyses"} qPilot checks that give the same call, and the confidence level`}
+            label={`All genes: call, fold change with its 95 % confidence interval, p${corrected ? ", the corrected p the call uses" : ""}${withQ ? ", the q-value (false discovery rate across genes)" : ""}, the share ${cells ? `of the ${count(cells)} analyses` : "of the analyses"} qPilot checks that give the same call, and the confidence level`}
             rowFilter={rowFilter}
             initialSorting={[{ id: "holds", desc: false }]}
             onRowClick={(g) => onOpen(g.gene)}

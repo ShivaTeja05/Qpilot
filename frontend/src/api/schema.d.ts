@@ -1892,6 +1892,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/comparisons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Comparisons
+         * @description Every comparison of the study side by side: each gene's call, fold change, p and q.
+         */
+        get: operations["get_comparisons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/decisions": {
         parameters: {
             query?: never;
@@ -5527,6 +5547,209 @@ export type components = {
             study_id: string;
         };
         /**
+         * ComparisonCell
+         * @description One gene in one comparison (the engine's numbers at the planned analysis).
+         */
+        ComparisonCell: {
+            /**
+             * At Your Choices
+             * @description The call at the options a person chose on the cards, when they differ from the planned ones.
+             */
+            at_your_choices?: ("up" | "down" | "none") | null;
+            /** Ci */
+            ci: [
+                number,
+                number
+            ];
+            /**
+             * Conclusion
+             * @enum {string}
+             */
+            conclusion: "up" | "down" | "none";
+            /** Fc */
+            fc: number;
+            /**
+             * Holds
+             * @description Share of the grid with the same call.
+             */
+            holds?: number | null;
+            /** Level */
+            level?: string | null;
+            /** Log2Fc */
+            log2fc: number;
+            /** N A */
+            n_a: number;
+            /** N B */
+            n_b: number;
+            /**
+             * P
+             * @description Uncorrected p-value of this comparison's test.
+             */
+            p: number;
+            /**
+             * P Adjusted
+             * @description The p-value the call uses: Holm-corrected across the gene's comparisons (equal to p without a correction).
+             */
+            p_adjusted: number;
+            /**
+             * Q
+             * @description Benjamini-Hochberg q-value across the genes of this comparison.
+             */
+            q: number;
+        };
+        /**
+         * ComparisonGeneRow
+         * @description One gene across every comparison (``cells`` in the order of ``comparisons``).
+         */
+        ComparisonGeneRow: {
+            /**
+             * Cells
+             * @description None where that comparison cannot test the gene.
+             */
+            cells: (components["schemas"]["ComparisonCell"] | null)[];
+            /** Gene */
+            gene: string;
+            /** Headline */
+            headline: boolean;
+            /**
+             * N Called
+             * @description Comparisons in which the gene is called up or down.
+             */
+            n_called: number;
+        };
+        /**
+         * ComparisonInfo
+         * @description One comparison of the study: its groups, sizes and how many genes it calls.
+         */
+        ComparisonInfo: {
+            /** Group A */
+            group_a: string;
+            /** Group B */
+            group_b: string;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * N A
+             * @description Biological units in group A (pairs, when paired).
+             */
+            n_a: number;
+            /**
+             * N B
+             * @description Biological units in group B (pairs, when paired).
+             */
+            n_b: number;
+            /** N Down */
+            n_down: number;
+            /**
+             * N Pairs
+             * @description Complete pairs (paired designs only).
+             */
+            n_pairs?: number | null;
+            /** N Tested */
+            n_tested: number;
+            /** N Up */
+            n_up: number;
+            /**
+             * Not Tested
+             * @description Genes this comparison cannot test, and why.
+             * @default {}
+             */
+            not_tested: {
+                [key: string]: string;
+            };
+            /**
+             * Primary
+             * @description The first comparison: the one the Decision Cards describe.
+             */
+            primary: boolean;
+        };
+        /**
+         * ComparisonNote
+         * @description A plain-words note on what follows the comparisons, and what shows only the first.
+         */
+        ComparisonNote: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "correction" | "paired" | "primary_only" | "not_measured" | "q_value";
+            /** Text */
+            text: string;
+        };
+        /**
+         * ComparisonsView
+         * @description Every comparison of a study, side by side.
+         */
+        ComparisonsView: {
+            /** Comparisons */
+            comparisons: components["schemas"]["ComparisonInfo"][];
+            /** Control */
+            control?: string | null;
+            /**
+             * Correction
+             * @enum {string}
+             */
+            correction: "holm" | "none";
+            /** Correction Words */
+            correction_words: string;
+            /** Genes */
+            genes: components["schemas"]["ComparisonGeneRow"][];
+            /**
+             * Not Measured
+             * @description Gene -> the units it was not measured in (left out of it only).
+             * @default {}
+             */
+            not_measured: {
+                [key: string]: string;
+            };
+            /**
+             * Notes
+             * @default []
+             */
+            notes: components["schemas"]["ComparisonNote"][];
+            /** Pair By */
+            pair_by?: string | null;
+            /** Pattern */
+            pattern: string;
+            /**
+             * Rule Text
+             * @description When a gene is called up or down, in words.
+             */
+            rule_text: string;
+            /**
+             * Several
+             * @description The study has a comparison plan (several, or paired).
+             */
+            several: boolean;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Test
+             * @enum {string}
+             */
+            test: "welch" | "paired_t";
+            /** Test Words */
+            test_words: string;
+        };
+        /**
+         * ComparisonTab
+         * @description One comparison of a study with several, for the page's comparison picker.
+         */
+        ComparisonTab: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** N Down */
+            n_down: number;
+            /** N Up */
+            n_up: number;
+            /** Primary */
+            primary: boolean;
+        };
+        /**
          * ConfirmRequest
          * @description Yes, confirm: accept this confirm step.
          */
@@ -6301,6 +6524,11 @@ export type components = {
          * @description Decisions (rows) × genes (columns): where one decision alone flips a gene's call.
          */
         FlipsView: {
+            /**
+             * Comparison
+             * @description The comparison shown, in a study with several.
+             */
+            comparison?: string | null;
             /** Genes */
             genes: string[];
             /** Planned */
@@ -7052,6 +7280,16 @@ export type components = {
             /** P */
             p: number;
             /**
+             * P Adjusted
+             * @description The corrected p-value the call uses (Holm across the gene's comparisons); None when the study has one comparison (the call uses p).
+             */
+            p_adjusted?: number | null;
+            /**
+             * Q
+             * @description Benjamini-Hochberg q-value across the genes of this comparison (shown, never used for a call).
+             */
+            q?: number | null;
+            /**
              * Reasons
              * @default []
              */
@@ -7078,6 +7316,11 @@ export type components = {
              * @description Decision Cards that can change this gene.
              */
             cards: components["schemas"]["CardView"][];
+            /**
+             * Comparison
+             * @description The comparison shown, in a study with several.
+             */
+            comparison?: string | null;
             confidence?: components["schemas"]["Grade"] | null;
             confidence_text?: components["schemas"]["FactText"] | null;
             contrast: components["schemas"]["ContrastResult"];
@@ -9862,7 +10105,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
+            kind: "design.preset" | "design.well_role" | "design.group" | "design.bio_unit" | "design.target_role" | "design.gene_symbol" | "design.comparison" | "design.pair" | "design.dilution_series" | "curve.call_rule" | "curve.well_call" | "curve.exclude_well" | "curve.import_trust" | "choice.axis" | "prism.project" | "prism.exclusion_reason" | "prism.value_edit" | "stage.confirm";
             /**
              * Level
              * @default Low
@@ -10852,6 +11095,17 @@ export type components = {
             choices: {
                 [key: string]: string;
             };
+            /**
+             * Comparison
+             * @description The comparison shown (its id) in a study with several; None otherwise.
+             */
+            comparison?: string | null;
+            /**
+             * Comparisons
+             * @description Every comparison of a study with several (the primary first).
+             * @default []
+             */
+            comparisons: components["schemas"]["ComparisonTab"][];
             /**
              * Counts
              * @description Genes per conclusion (up / down / none).
@@ -16260,6 +16514,37 @@ export interface operations {
             };
         };
     };
+    get_comparisons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComparisonsView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_decisions: {
         parameters: {
             query?: never;
@@ -16324,7 +16609,10 @@ export interface operations {
     };
     get_flips: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description One comparison of a study with several (its id); default: the first. */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -16492,7 +16780,10 @@ export interface operations {
     };
     get_gene: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description One comparison of a study with several (its id); default: the first. */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 gene: string;
@@ -17032,7 +17323,10 @@ export interface operations {
     };
     get_results: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description One comparison of a study with several (its id); default: the first. */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
