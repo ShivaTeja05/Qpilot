@@ -130,3 +130,29 @@ def test_an_audit_that_would_not_reproduce_is_refused(store, legacy, tmp_path, m
     with pytest.raises(sim.AuditRefused, match="does not reproduce"):
         sim.audit(store, legacy, tmp_path / "never")
     assert not (tmp_path / "never").exists()
+
+
+def test_units_of_three_wells_vary_how_replicates_are_combined(store, legacy, demo_rdml_session):
+    """Real curves in triplicate per unit: three tumours of one group pooled as one unit."""
+    inputs = study_inputs(store, legacy)
+    units = {}
+    for label in ("high", "rest"):
+        members = sorted(
+            s for s, g in inputs.groups.items() if g.endswith("-high") == (label == "high")
+        )
+        units.update(
+            {s: f"{label}{i // 3}" for i, s in enumerate(members[: 3 * (len(members) // 3)])}
+        )
+    study_id = store.ensure_study(demo_rdml_session, design=_groups_design(store, legacy, units))
+    prepared = sim.prepare(sim.load_analysis(store, study_id))
+    check = sim.reproduction(prepared, store.get(study_id))
+    assert check["ok"] and check["genes"] == 59, check  # MYCN is compared too: no marker split
+    reps = prepared.scope["technical_replicates"]
+    assert reps["most_wells_per_value"] == 3 and reps["varied"]
+    assert prepared.space.baseline["replicates"] == "mean"
+    assert prepared.scope["analyses_in_full_grid"] == 90_396  # 30,132 x 3 ways to combine
+    from qsim.compare import whatif
+
+    for option in ("median", "drop_outlier"):
+        table = whatif(prepared.engine, {"replicates": option})
+        assert len(table) == 59 and table["fold"].notna().all()
