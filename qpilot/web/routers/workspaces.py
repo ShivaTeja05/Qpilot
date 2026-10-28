@@ -272,6 +272,7 @@ async def open_file(
     sheet_path = None
     if sheet is not None and sheet.filename:
         sheet_path = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
+        sheet_path = intake.sheet_for(ctx.store, intake.Sorted(), sheet_path)  # a Cq table
     return JobStarted(job=_open_job(ctx, rdml_path, sheet_path, sentence.strip()))
 
 

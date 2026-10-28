@@ -200,3 +200,18 @@ def test_an_imported_export_is_named_by_its_files_not_by_qpilots_copy(sclient, s
         for part in (paragraph["text"].get("parts") or [])
     )
     assert "instrument export" in str(report["methods"]) or "instrument export" in methods
+
+
+def test_a_cq_table_given_as_the_sheet_of_an_rdml_file_is_read_as_its_sample_columns(sclient):
+    lc96 = CORPUS / "rdml" / "lightcycler96-lc96p-hmuy" / "hmuy_hm_vs_dip_r123.lc96p"
+    files = {
+        "rdml": ("hmuy r123.rdml", lc96.read_bytes(), "application/octet-stream"),
+        "sheet": (TABLE.name, TABLE.read_bytes(), "application/octet-stream"),
+    }
+    r = sclient.post("/api/workspaces", files=files)
+    assert r.status_code == 202, r.text
+    job = wait_job(sclient, r.json()["job"])
+    assert job["status"] == "done", job
+    view = sclient.get(f"/api/sessions/{job['result']['key']}").json()
+    assert view["facts"]["sheet_name"] == "hmuy_cq_values (sample columns).csv"
+    assert "23.4" not in sclient.get(f"/api/sessions/{job['result']['key']}/quarantine").text
