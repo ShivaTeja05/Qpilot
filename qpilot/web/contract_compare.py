@@ -76,12 +76,16 @@ class ComparisonGeneRow(BaseModel):
         description="None where that comparison cannot test the gene."
     )
     n_called: int = Field(description="Comparisons in which the gene is called up or down.")
+    omnibus_p: float | None = Field(
+        default=None,
+        description="Welch's one-way ANOVA p across omnibus_groups (orientation, never a call).",
+    )
 
 
 class ComparisonNote(BaseModel):
     """A plain-words note on what follows the comparisons, and what shows only the first."""
 
-    kind: Literal["correction", "paired", "primary_only", "not_measured", "q_value"]
+    kind: Literal["correction", "paired", "primary_only", "not_measured", "q_value", "omnibus"]
     text: str
 
 
@@ -103,4 +107,8 @@ class ComparisonsView(BaseModel):
     notes: list[ComparisonNote] = []
     not_measured: dict[str, str] = Field(
         default={}, description="Gene -> the units it was not measured in (left out of it only)."
+    )
+    omnibus_groups: list[str] = Field(
+        default=[],
+        description="The groups of the per-gene Welch ANOVA (three or more, unpaired designs).",
     )

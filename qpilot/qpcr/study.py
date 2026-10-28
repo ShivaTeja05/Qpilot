@@ -68,7 +68,14 @@ from qpilot.qpcr.amp_call import (
 )
 from qpilot.qpcr.axes import efficiency as eff_axis
 from qpilot.qpcr.confidence_checks import START_LEVEL, checks_for, mde_fold, upgrade_rule
-from qpilot.qpcr.contrast import CORRECTION_WORDS, DEFAULT_RULE, TEST_WORDS, ConclusionRule, bh
+from qpilot.qpcr.contrast import (
+    CORRECTION_WORDS,
+    DEFAULT_RULE,
+    TEST_WORDS,
+    ConclusionRule,
+    bh,
+    welch_anova,
+)
 from qpilot.qpcr.curves import (
     DEMO_EXPERIMENT,
     INSTRUMENT_CQ,
@@ -99,6 +106,7 @@ from qpilot.qpcr.space import (
     MatrixStage,
     QpcrSpace,
     comparison_grid,
+    group_stats,
 )
 from qpilot.schemas import (
     Autonomy,
@@ -110,6 +118,7 @@ from qpilot.schemas import (
     GeneRobustness,
     GenormResult,
     Grade,
+    Omnibus,
     StudyResult,
 )
 from qpilot.schemas_studio import StudyDesign
@@ -789,6 +798,7 @@ def _comparison_outcomes(
                 not_tested={g: reason for g in space.items if g not in set(tested)},
             )
         )
+    groups, omnibus = _omnibus(space, plan.pair_by is None)
     return ComparisonsResult(
         test="paired_t" if plan.pair_by is not None else "welch",
         correction=space.correction,  # type: ignore[arg-type]
@@ -796,7 +806,35 @@ def _comparison_outcomes(
         control=plan.control,
         pair_by=plan.pair_by,
         comparisons=out,
+        omnibus_groups=groups,
+        omnibus=omnibus,
     )
+
+
+def _omnibus(space: QpcrSpace, unpaired: bool) -> tuple[list[str], dict[str, Omnibus]]:
+    """Welch's ANOVA per gene across the compared groups, at the planned analysis.
+
+    Only for an unpaired plan comparing three or more groups (a paired design would need a
+    repeated-measures model, which qPilot does not claim). Genes without a result (fewer than
+    two groups with two values) are left out.
+    """
+    units: dict[str, frozenset[str]] = {}
+    for spec in space.comparisons:
+        units.setdefault(spec.labels[0], spec.group_a)
+        units.setdefault(spec.labels[1], spec.group_b)
+    if not unpaired or len(units) < 3:
+        return [], {}
+    values, ref_values = space.cell_arrays(space.primary)
+    relative = values - ref_values.mean(axis=1)[:, None]
+    valid = ~np.isnan(ref_values).any(axis=1)[:, None] & ~np.isnan(relative)
+    masks = [space.units.isin(members) for members in units.values()]
+    f, df1, df2, p = welch_anova([group_stats(relative, valid & m[:, None]) for m in masks])
+    found = {
+        gene: Omnibus(f=float(f[i]), df1=float(df1[i]), df2=float(df2[i]), p=float(p[i]))
+        for i, gene in enumerate(space.items)
+        if np.isfinite(p[i])
+    }
+    return list(units), found
 
 
 def _comparison_label(design: StudyDesign | None, comparison_id: str) -> str:
@@ -1353,6 +1391,8 @@ def _comparison_facts(add: Callable[..., None], extras: _Extras) -> None:
     if found is None:
         return
     add("f_n_comparisons", len(found.comparisons), path="comparisons.comparisons")
+    for gene, result in found.omnibus.items():
+        add(f"f_anova_p_{slug(gene)}", result.p, "{:.2g}", "", f"comparisons.omnibus.{gene}.p")
     add("f_cmp_test", TEST_WORDS[found.test], path="comparisons.test")
     add("f_cmp_correction", CORRECTION_WORDS[found.correction], path="comparisons.correction")
     if found.pair_by is not None:

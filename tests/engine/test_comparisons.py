@@ -182,6 +182,23 @@ def test_every_comparison_equals_scipy_and_statsmodels(mini, paired):
     assert calls["drug_b_vs_control"] == {"IL6": "up", "MYC": "up", "TP53": "none"}
 
 
+def test_the_omnibus_is_welchs_anova_of_the_engines_values(mini):
+    design = mini_design()
+    found = _run(mini, design)[0].comparisons
+    model = _model(mini, design)
+    assert found.omnibus_groups == ["Drug A", "Control", "Drug B"]
+    by_group = {
+        g: [u for u, s in mini_samples().items() if s[0] == g] for g in found.omnibus_groups
+    }
+    for gene, result in found.omnibus.items():
+        values = _per_unit(model, gene)
+        groups = [values[values.index.isin(units)].to_numpy() for units in by_group.values()]
+        want = stats.f_oneway(*groups, equal_var=False)
+        assert result.f == pytest.approx(want.statistic, rel=1e-9)
+        assert result.p == pytest.approx(want.pvalue, rel=1e-9)
+    assert _run(mini, mini_design(paired=True))[0].comparisons.omnibus == {}  # not for pairs
+
+
 def test_pairing_removes_a_donor_effect(mini):
     unpaired = _run(mini, mini_design(paired=False))[0].comparisons
     paired = _run(mini, mini_design(paired=True))[0].comparisons

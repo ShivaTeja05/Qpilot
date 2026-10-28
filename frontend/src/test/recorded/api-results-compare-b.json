@@ -1,7 +1,7 @@
 {
- "study_id": "82ebfecdfefc",
+ "study_id": "b60bd8e89b0c",
  "session": null,
- "input_sha256": "6b398378bcfa4666f2daf29ad059f48af8f20f4adc7ee59ba568b143d76408df",
+ "input_sha256": "e45a7dd54072125259f3ac292c39ade45f24db019f6c144bcf9793e1b7610a72",
  "summary": {
   "n_plates": 5,
   "n_reactions": 177,
@@ -26,13 +26,13 @@
    "n": 4,
    "reasons": [
     {
-     "reason": "in neither group of the confirmed design",
+     "reason": "in group Drug A, compared in another comparison",
      "n": 4,
      "samples": [
-      "DrugB_D1",
-      "DrugB_D2",
-      "DrugB_D3",
-      "DrugB_D4"
+      "DrugA_D1",
+      "DrugA_D2",
+      "DrugA_D3",
+      "DrugA_D4"
      ]
     }
    ]
@@ -42,7 +42,7 @@
   "alpha": 0.05,
   "min_log2fc": 1.0,
   "min_fold": 2.0,
-  "text": "up or down only if p < 0.05 and the change is at least 2-fold; otherwise no call"
+  "text": "up or down only if the corrected p < 0.05 and the change is at least 2-fold; otherwise no call"
  },
  "references": {
   "used": [
@@ -181,7 +181,7 @@
  },
  "cards_waiting": 0,
  "pending_requests": 0,
- "head": "2267530b6e598319f30e52eb46787f94014b739d379675c2fa8538d9cce92ce0",
+ "head": "4f644364d011a0fa37388e08ec4a44e74e4fd612b81d23b304d3fbf113a0238e",
  "audit": {
   "status": "none",
   "verdict_counts": {},

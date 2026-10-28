@@ -5616,6 +5616,11 @@ export type components = {
              * @description Comparisons in which the gene is called up or down.
              */
             n_called: number;
+            /**
+             * Omnibus P
+             * @description Welch's one-way ANOVA p across omnibus_groups (orientation, never a call).
+             */
+            omnibus_p?: number | null;
         };
         /**
          * ComparisonInfo
@@ -5674,7 +5679,7 @@ export type components = {
              * Kind
              * @enum {string}
              */
-            kind: "correction" | "paired" | "primary_only" | "not_measured" | "q_value";
+            kind: "correction" | "paired" | "primary_only" | "not_measured" | "q_value" | "omnibus";
             /** Text */
             text: string;
         };
@@ -5709,6 +5714,12 @@ export type components = {
              * @default []
              */
             notes: components["schemas"]["ComparisonNote"][];
+            /**
+             * Omnibus Groups
+             * @description The groups of the per-gene Welch ANOVA (three or more, unpaired designs).
+             * @default []
+             */
+            omnibus_groups: string[];
             /** Pair By */
             pair_by?: string | null;
             /** Pattern */

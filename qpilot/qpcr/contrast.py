@@ -160,6 +160,38 @@ def bh(p: np.ndarray | Sequence[float]) -> np.ndarray:
     return out
 
 
+def welch_anova(groups: Sequence[tuple[np.ndarray, ...]]) -> tuple[np.ndarray, ...]:
+    """Welch's one-way ANOVA (unequal variances) from per-group ``(n, mean, var)`` arrays.
+
+    Vectorised over the arrays' common shape (genes). Returns ``(F, df1, df2, p)``; NaN where
+    fewer than two groups have two values, or a group's variance is zero. Equal to
+    ``scipy.stats.f_oneway(..., equal_var=False)`` (Welch 1951).
+    """
+    n = np.array([g[0] for g in groups], dtype=float)
+    mean = np.array([g[1] for g in groups], dtype=float)
+    var = np.array([g[2] for g in groups], dtype=float)
+    used = n >= 2
+    k = used.sum(axis=0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        w = np.where(used, n / var, 0.0)
+        total = w.sum(axis=0)
+        centre = np.where(used, w * mean, 0.0).sum(axis=0) / total
+        between = np.where(used, w * (mean - centre) ** 2, 0.0).sum(axis=0) / (k - 1)
+        spread = np.where(used, (1 - w / total) ** 2 / (n - 1), 0.0).sum(axis=0)
+        f = between / (1 + 2 * (k - 2) / (k**2 - 1) * spread)
+        df2 = (k**2 - 1) / (3 * spread)
+        df1 = k - 1.0
+        p = stats.f.sf(f, df1, df2)
+    bad = (k < 2) | ~np.isfinite(f) | ~np.isfinite(df2)
+    nan = np.full(np.shape(f), np.nan)
+    return (
+        np.where(bad, nan, f),
+        np.where(bad, nan, df1),
+        np.where(bad, nan, df2),
+        np.where(bad, nan, p),
+    )
+
+
 CORRECTION_WORDS = {
     "holm": "Holm's correction across each gene's comparisons",
     "none": "no correction for several comparisons",

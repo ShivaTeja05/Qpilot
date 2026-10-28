@@ -1,5 +1,5 @@
 {
- "study_id": "82ebfecdfefc",
+ "study_id": "b60bd8e89b0c",
  "several": true,
  "test": "welch",
  "test_words": "Welch's t-test on log2 relative quantities (no equal-variance assumption)",
@@ -79,7 +79,8 @@
      "at_your_choices": null
     }
    ],
-   "n_called": 2
+   "n_called": 2,
+   "omnibus_p": 0.002206769077969685
   },
   {
    "gene": "MYC",
@@ -120,7 +121,8 @@
      "at_your_choices": null
     }
    ],
-   "n_called": 1
+   "n_called": 1,
+   "omnibus_p": 0.03298893282076021
   },
   {
    "gene": "TP53",
@@ -161,7 +163,8 @@
      "at_your_choices": null
     }
    ],
-   "n_called": 0
+   "n_called": 0,
+   "omnibus_p": 0.9694844272314049
   }
  ],
  "notes": [
@@ -178,11 +181,20 @@
    "text": "q (false discovery rate) is the share of false findings expected among the genes with that q or lower in one comparison (Benjamini-Hochberg across its genes). It is shown, never used for a call."
   },
   {
+   "kind": "omnibus",
+   "text": "“Any difference” asks whether a gene differs anywhere among Drug A, Control and Drug B: Welch's one-way ANOVA (unequal variances) at the planned analysis. It is for orientation only; the calls are the comparisons'."
+  },
+  {
    "kind": "not_measured",
    "text": "Some biological units were not measured for every gene; each is left out of only the genes it lacks."
   }
  ],
  "not_measured": {
   "TP53": "DrugB_D4"
- }
+ },
+ "omnibus_groups": [
+  "Drug A",
+  "Control",
+  "Drug B"
+ ]
 }

@@ -198,6 +198,11 @@ PRIMARY_ONLY_NOTE = (
     "comparison ({label}); a choice you make on a card applies to every comparison. The gene "
     "table and the robustness map follow the comparison you pick."
 )
+OMNIBUS_NOTE = (
+    "“Any difference” asks whether a gene differs anywhere among {groups}: Welch's one-way "
+    "ANOVA (unequal variances) at the planned analysis. It is for orientation only; the calls "
+    "are the comparisons'."
+)
 NOT_MEASURED_NOTE = (
     "Some biological units were not measured for every gene; each is left out of only the genes "
     "it lacks."
@@ -228,8 +233,15 @@ def comparisons_view(store: StudyStore, study_id: str) -> ComparisonsView:
     for gene in genes:
         cells = [_cell(o, gene, at.get(o.id)) for o in outcomes]
         called = sum(1 for c in cells if c is not None and c.conclusion != "none")
+        omnibus = found.omnibus.get(gene) if found is not None else None
         rows.append(
-            ComparisonGeneRow(gene=gene, headline=gene in headline, cells=cells, n_called=called)
+            ComparisonGeneRow(
+                gene=gene,
+                headline=gene in headline,
+                cells=cells,
+                n_called=called,
+                omnibus_p=omnibus.p if omnibus is not None else None,
+            )
         )
     test = found.test if found is not None else "welch"
     correction = found.correction if found is not None else "none"
@@ -251,6 +263,9 @@ def comparisons_view(store: StudyStore, study_id: str) -> ComparisonsView:
             )
         )
     notes.append(ComparisonNote(kind="q_value", text=Q_NOTE))
+    if found is not None and found.omnibus_groups:
+        groups = ", ".join(found.omnibus_groups[:-1]) + " and " + found.omnibus_groups[-1]
+        notes.append(ComparisonNote(kind="omnibus", text=OMNIBUS_NOTE.format(groups=groups)))
     missing = _not_measured(result.facts)
     if missing:
         notes.append(ComparisonNote(kind="not_measured", text=NOT_MEASURED_NOTE))
@@ -269,6 +284,7 @@ def comparisons_view(store: StudyStore, study_id: str) -> ComparisonsView:
         genes=rows,
         notes=notes,
         not_measured=missing,
+        omnibus_groups=list(found.omnibus_groups) if found is not None else [],
     )
 
 

@@ -1962,6 +1962,8 @@ def _comparisons_view(result: StudyResult) -> dict[str, Any]:
         "correction": found.correction,
         "pair_by": found.pair_by,
         "comparisons": out,
+        "omnibus_groups": list(found.omnibus_groups),
+        "omnibus": {g: o.model_dump(mode="json") for g, o in found.omnibus.items()},
     }
 
 

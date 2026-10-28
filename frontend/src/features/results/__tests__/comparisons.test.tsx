@@ -119,6 +119,10 @@ describe("several comparisons", { timeout: 30_000 }, () => {
     expect(screen.getByText(/corrected with Holm's method/)).toBeTruthy();
     expect(screen.getByText(/never used for a call/)).toBeTruthy();
     expect(screen.getByText(/Not measured for/)).toBeTruthy();
+    // three groups, unpaired: Welch's ANOVA per gene, for orientation only
+    expect(view.omnibus_groups).toHaveLength(3);
+    expect(within(table).getByRole("columnheader", { name: /Any difference/ })).toBeTruthy();
+    expect(screen.getByText(/for orientation only/)).toBeTruthy();
     fireEvent.click(within(table).getByRole("button", { name: /Drug B vs Control/ }));
     expect(onShow).toHaveBeenCalledWith("drug_b_vs_control");
     fireEvent.click(within(table).getByRole("button", { name: /IL6/ }));

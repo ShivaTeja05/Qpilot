@@ -22,13 +22,14 @@ batch in every group), the same questions within each pair.
 | Across genes | Benjamini–Hochberg q-values over the genes of each comparison; shown, never used for a call |
 | Conclusion rule | **up** if corrected p < 0.05 and fc ≥ 2; **down** if corrected p < 0.05 and fc ≤ 0.5; otherwise **no call** |
 | Robustness | Every grid cell evaluates every comparison from the same relative quantities and applies the correction inside the cell; each comparison gets its own "holds" share, flip map and grade |
+| Any difference | Welch's one-way ANOVA per gene across the plan's groups (three or more, unpaired designs), at the planned analysis; for orientation, never a call |
 | Not measured | A unit with no well of a gene is kept for the genes it has and left out of that gene only (`f_not_measured_*` facts); it is never treated as undetermined (never capped) |
 
-**Checked against.** `scipy.stats.ttest_ind(equal_var=False)` and `ttest_rel` on the engine's own
-per-unit values; `statsmodels.stats.multitest.multipletests` (`holm`, `fdr_bh`)
+**Checked against.** `scipy.stats.ttest_ind(equal_var=False)`, `ttest_rel` and
+`f_oneway(equal_var=False)` on the engine's own per-unit values; `statsmodels.stats.multitest.multipletests` (`holm`, `fdr_bh`)
 (`tests/engine/test_comparisons.py`).
 
-**What is not claimed.** No ANOVA or Welch-ANOVA omnibus test; no Dunnett or Tukey procedure
+**What is not claimed.** The omnibus ANOVA gates nothing (no "ANOVA first, then post hoc" rule); no Dunnett or Tukey procedure
 (Holm is valid for any family and conservative for each-vs-control); confidence intervals are
 for each comparison alone (not simultaneous); no mixed model for repeated measures beyond the
 paired difference; the robustness audit (`sim/`), Trace and the Run Review describe the primary

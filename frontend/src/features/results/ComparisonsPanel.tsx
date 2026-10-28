@@ -121,6 +121,7 @@ export function ComparisonsPanel({
   onOpen: (gene: string) => void;
 }) {
   const comparisons = view.comparisons;
+  const omnibus = view.omnibus_groups.length > 0;
   const headline = view.genes.filter((g) => g.headline);
   const rest = view.genes.filter((g) => !g.headline);
   const rows = [...headline, ...rest];
@@ -160,6 +161,15 @@ export function ComparisonsPanel({
                   </TH>
                 ))}
                 <TH numeric>Called in</TH>
+                {omnibus && (
+                  <TH
+                    numeric
+                    title={`Welch's one-way ANOVA across ${view.omnibus_groups.join(", ")}`}
+                  >
+                    Any difference
+                    <span className="block font-normal text-faint">ANOVA p</span>
+                  </TH>
+                )}
               </TR>
             </THead>
             <TBody>
@@ -183,6 +193,7 @@ export function ComparisonsPanel({
                   <TD numeric>
                     {count(g.n_called)} of {count(comparisons.length)}
                   </TD>
+                  {omnibus && <TD numeric>{pValue(g.omnibus_p)}</TD>}
                 </TR>
               ))}
             </TBody>

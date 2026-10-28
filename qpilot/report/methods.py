@@ -376,6 +376,11 @@ def _several(c: Ctx, cite: Cites, found, alpha: str, fold: str) -> list[Part]:  
         cite("bh1995"),
         " across the genes of each comparison are reported; they do not enter the calls.",
     ]
+    if found.omnibus_groups:
+        parts.append(
+            f" Welch's one-way ANOVA across the {len(found.omnibus_groups)} groups is reported "
+            "per gene for orientation; it does not enter the calls."
+        )
     for i in range(1, n + 1):
         if c.has(f"f_cmp{i}_label", f"f_cmp{i}_n_up", f"f_cmp{i}_n_down"):
             parts.append(

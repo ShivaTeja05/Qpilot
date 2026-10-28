@@ -155,11 +155,21 @@ class ComparisonOutcome(BaseModel):
     not_tested: dict[str, str] = {}
 
 
+class Omnibus(BaseModel):
+    """Welch's one-way ANOVA of one gene across a study's groups (for orientation, never a call)."""
+
+    f: float
+    df1: float
+    df2: float
+    p: float
+
+
 class ComparisonsResult(BaseModel):
     """A study's comparisons (``StudyDesign.comparisons``): the test, the correction, each one.
 
     ``comparisons[0]`` is the primary: the same numbers as ``StudyResult.contrasts``,
-    ``robustness`` and ``confidence``.
+    ``robustness`` and ``confidence``. ``omnibus`` is Welch's ANOVA per gene across
+    ``omnibus_groups`` (three or more groups, unpaired designs only), at the planned analysis.
     """
 
     test: Literal["welch", "paired_t"]
@@ -168,6 +178,8 @@ class ComparisonsResult(BaseModel):
     control: str | None = None
     pair_by: str | None = None
     comparisons: list[ComparisonOutcome]
+    omnibus_groups: list[str] = []
+    omnibus: dict[str, Omnibus] = {}
 
 
 class StudyResult(BaseModel):
