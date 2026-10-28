@@ -127,8 +127,16 @@ def candidates(client, sid: str) -> dict[str, list[str]]:
 
 
 def sweep(client, sid: str) -> Iterator[tuple[str, object]]:
-    """Call every GET route of a session with plausible values; yield (url, response)."""
-    return call_all(client, "/api/sessions/{sid}", candidates(client, sid))
+    """Call every GET route of a session with plausible values; yield (url, response).
+
+    A file download (``Content-Disposition: attachment``: the sample-sheet template) is not a
+    page view and not JSON; ``tests/web/test_design_editor.py`` checks it is a text/csv
+    attachment, never a page, with formula-like cells defused.
+    """
+    for url, r in call_all(client, "/api/sessions/{sid}", candidates(client, sid)):
+        if r.headers.get("content-disposition", "").startswith("attachment"):
+            continue
+        yield url, r
 
 
 def reveals(body) -> list[str]:

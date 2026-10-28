@@ -457,3 +457,32 @@ def test_a_whole_96_well_plate_is_set_in_one_act_quickly(web_store):
     assert time.monotonic() - started < 20  # was quadratic (a copy of the inbox per item)
     entries = web_store.proposals(sid).entries()
     assert {e.actor for e in entries} == {"human"}  # proposed and accepted by the person
+
+
+def test_proposing_again_never_asks_what_a_person_already_decided(sclient, cfx_session):
+    sid = cfx_session
+    groups = {f"S{i}": "A" if i <= 4 else "B" for i in range(1, 9)}
+    record(sclient, sid, items_of(*(("design.group", s, {"group": g}) for s, g in groups.items())))
+    assert not [p for p in pending(sclient, sid) if p["kind"] == "design.group"]
+    report = propose_design(sclient, sid)  # the same sheet: the same groups
+    assert not [p for p in pending(sclient, sid) if p["kind"] == "design.group"]
+    assert any("not made again" in n for n in report["notes"]), report
+
+
+def test_the_template_is_a_download_never_a_page_and_defuses_formulas(sclient, mini_rdml):
+    """A sample named like markup or a spreadsheet formula comes back as a CSV cell only."""
+    from tests.fixtures.studio.studio_mini import write_studio_mini
+
+    evil = write_studio_mini(
+        mini_rdml.parent / "evil.rdml", rename={"KO_2": '=HYPERLINK("x")<b>x</b>'}
+    )
+    sid = open_rdml(sclient, evil)
+    r = sclient.get(f"/api/sessions/{sid}/design/template.csv")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/csv")
+    assert r.headers["content-disposition"].startswith("attachment")
+    assert r.headers["x-content-type-options"] == "nosniff"
+    rows = list(csv.reader(io.StringIO(r.content.decode("utf-8-sig"))))
+    names = [row[0] for row in rows[1:] if row[0]]
+    assert '\'=HYPERLINK("x")<b>x</b>' in names  # a leading ' keeps Excel from running it
+    assert not any(n.startswith("=") for n in names)

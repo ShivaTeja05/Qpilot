@@ -566,6 +566,14 @@ class Studio:
             elif why:
                 notes.append(f"the model answered for part of the file only: {why}")
             notes += more
+        fields, makers, repeats = _not_decided(
+            fields, makers, self.store.proposals(session_id).accepted("design.")
+        )
+        if repeats:
+            notes.append(
+                f"{repeats} proposal{'s' * (repeats != 1)} not made again: a person already "
+                "decided the same"
+            )
         outcomes = [
             self._propose(session_id, f, maker) for f, maker in zip(fields, makers, strict=True)
         ]
@@ -2332,6 +2340,28 @@ def _with_lab_defaults(design: StudyDesign, summary: InspectSummary) -> StudyDes
         if 0 < len(targets) <= 12:
             update["headline"] = tuple(targets)
     return design.model_copy(update=update) if update else design
+
+
+def _not_decided(
+    fields: Sequence[DesignField], makers: Sequence[MadeBy], accepted: Sequence[Proposal]
+) -> tuple[list[DesignField], list[MadeBy], int]:
+    """The fields a person has not already decided the same way, and how many were dropped.
+
+    Proposing again (after a sample sheet is attached on the Design page, say) must not ask a
+    person again what they decided: a field whose value equals the latest accepted decision on
+    the same item is left out. A field that differs is proposed, so a new reading is never lost.
+    """
+    decided: dict[tuple[str, str], str] = {}
+    for p in accepted:
+        decided[(p.kind, p.subject)] = json.dumps(p.effective_payload(), sort_keys=True)
+    kept: list[DesignField] = []
+    kept_makers: list[MadeBy] = []
+    for f, maker in zip(fields, makers, strict=True):
+        if decided.get((f.kind, f.subject)) == json.dumps(f.value, sort_keys=True):
+            continue
+        kept.append(f)
+        kept_makers.append(maker)
+    return kept, kept_makers, len(fields) - len(kept)
 
 
 def _fields_and_makers(
