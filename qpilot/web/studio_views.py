@@ -23,7 +23,7 @@ from typing import Any
 import pandas as pd
 
 from qpilot.schemas_studio import Proposal, ProposalOutcome
-from qpilot.studio_service import BLIND_STAGES, CURVE_JUDGE_FILE, Studio
+from qpilot.studio_service import BLIND_STAGES, CURVE_JUDGE_FILE, CURVE_JUDGE_LISTED, Studio
 from qpilot.web.contract import (
     CurveSeries,
     CurveView,
@@ -570,16 +570,35 @@ def report_message(report: dict[str, Any], what: str) -> str:
         )
     if report.get("fallback") is True:
         parts.append("The model was not used; the rules proposed alone.")
+    judged = "disagreements" in report
     for note in map(str, report.get("notes", [])):
+        if judged and note == CURVE_JUDGE_LISTED:
+            continue  # said once below, with the counts
         note = note[:1].upper() + note[1:]
         parts.append(note if note.endswith((".", "!", "?")) else note + ".")
-    if "disagreements" in report:
-        parts.append(
-            f"The Curve Judge disagrees with LinRegPCR on {report['disagreements']} study wells; "
-            f"{report.get('targets_that_matter', 0)} target(s) where that could change a "
-            "conclusion are listed well by well."
-        )
+    if judged:
+        parts.append(curve_judge_sentence(report))
     return " ".join(parts)
+
+
+def curve_judge_sentence(report: dict[str, Any]) -> str:
+    """What the Curve Judge found, once: where it disagrees and what the inbox lists."""
+    n = int(report.get("disagreements") or 0)
+    k = int(report.get("targets_that_matter") or 0)
+    wells = f"{n} study well{'s' * (n != 1)}"
+    if not n:
+        return "The Curve Judge agrees with LinRegPCR on every study well it scored."
+    if not k:
+        return (
+            f"The Curve Judge disagrees with LinRegPCR on {wells}; none of them could change a "
+            "conclusion, so none is listed."
+        )
+    targets = f"{k} target{'s' * (k != 1)}"
+    return (
+        f"The Curve Judge disagrees with LinRegPCR on {wells}; on {targets} that could change a "
+        "conclusion, so those wells are listed one by one for you to decide. The others change "
+        "no conclusion and are not listed."
+    )
 
 
 def outcome_message(outcome: ProposalOutcome, done: str) -> str:

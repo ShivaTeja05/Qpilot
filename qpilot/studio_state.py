@@ -281,7 +281,7 @@ def _d_exclusion(subject: str, d: Mapping[str, Any]) -> str:
     gene, sample = d.get("gene", "?"), d.get("sample") or "an unknown sample"
     if d.get("action") == "restore":
         return f"Keep sample {sample} in {gene} (restore it in the analysis)"
-    return f"Exclude sample {sample} from {gene}, as it is in the table Prism sent back"
+    return f"Exclude sample {sample} from {gene}, as it is excluded in Prism"
 
 
 def _d_value_edit(subject: str, d: Mapping[str, Any]) -> str:
@@ -298,8 +298,9 @@ def _d_confirm(subject: str, d: Mapping[str, Any]) -> str:
     covers = d.get("covers") or []
     label = STAGE_LABELS.get(subject, subject)
     if subject == "choices":
-        return f"Confirm the {label} stage: the Decision Cards of analysis {d.get('study_id', '?')}"
-    return f"Confirm the {label} stage: it covers {len(covers)} accepted proposal(s)"
+        return f"Confirm the {label} stage: the Decision Cards of this analysis"
+    n = len(covers)
+    return f"Confirm the {label} stage: it covers {n} accepted proposal{'s' * (n != 1)}"
 
 
 _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {

@@ -254,7 +254,8 @@ def _walk(studio, rdml, scratch, check, out, verify, write_record) -> None:  # n
         report["disagreements"],
         e["curve_judge_disagreements"],
     )
-    out(f"  {report['targets_that_matter']} target(s) where that could change a conclusion")
+    k = report["targets_that_matter"]
+    out(f"  {k} target{'s' * (k != 1)} where that could change a conclusion")
     check(
         "Curve Judge well calls proposed",
         len(calls) == e["curve_judge_well_calls"],
