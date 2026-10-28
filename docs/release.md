@@ -14,7 +14,7 @@ PyPI uses **Trusted Publishing**: PyPI is told "this GitHub repository, this wor
    * Owner: `ShivaTeja05`, repository: `Qpilot` (the repository that runs the workflow)
    * Workflow filename: `release.yml`
    * Environment name: `pypi`
-3. **GitHub environment.** Repository Settings, Environments, New environment `pypi`. Recommended: tick **Required reviewers** and add yourself, so a tag waits for one click before anything reaches PyPI.
+3. **GitHub environment.** Repository Settings, Environments, New environment `pypi`. Recommended: tick **Required reviewers** and add yourself, so a tag waits for one click before anything reaches PyPI, and under **Deployment branches and tags** choose *Selected branches and tags* with the tag rule `v*`, so only a version tag can publish. Protect the tags too (Settings, Rules, a tag ruleset on `v*`: only maintainers create them), since anyone who can push a `v*` tag starts a release.
 4. **Switch it on.** Settings, Secrets and variables, Actions, **Variables**, New repository variable: `PYPI_PUBLISH` = `true`. (Without it the PyPI job is skipped. Remove it to stop publishing.)
 5. **Rehearsal, optional but wise.** A version number on PyPI can never be used twice, even after deleting the files. Do steps 2 and 3 again on <https://test.pypi.org/manage/account/publishing/> with the environment name `testpypi`, then Actions, release, **Run workflow**, `publish_to` = `testpypi`. It builds, checks, smoke-tests on three systems and uploads to TestPyPI. Install the result with `pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple qpilot`.
 
@@ -29,7 +29,7 @@ PyPI uses **Trusted Publishing**: PyPI is told "this GitHub repository, this wor
    git tag -a v0.2.0 -m "qPilot 0.2.0"
    git push origin v0.2.0
    ```
-6. Watch Actions, release. In order: **build and check** (page identical to its source; `python -m build`; `twine check --strict`; `scripts/check_dist.py`: contents, sizes, versions, tag) then **installed wheel** on Ubuntu, macOS and Windows (`scripts/smoke_installed.py --full`: console scripts, the page and its guarded API, an `.xlsx`, and Studio's end-to-end checks on the pinned demo, 28 today) then, in parallel, **GitHub Release** (both files, generated notes) and **publish to PyPI** (waits for your approval if you set reviewers).
+6. Watch Actions, release. In order: **the committed page** (identical to what its source builds; the only job that runs npm), **build and check** (`python -m build`; `twine check --strict`; `scripts/check_dist.py`: contents, sizes, versions, tag) then **installed wheel** on Ubuntu, macOS and Windows (`scripts/smoke_installed.py --full`: console scripts, the page and its guarded API, an `.xlsx`, and Studio's end-to-end checks on the pinned demo, 28 today) then, in parallel, **GitHub Release** (both files, generated notes) and **publish to PyPI** (waits for your approval if you set reviewers).
 7. Verify like a user, on a clean machine or folder: `pipx install qpilot==0.2.0` (or `uv tool install qpilot==0.2.0`), `qpilot --version`, `qpilot doctor`.
 
 If a job fails before PyPI, fix, delete the tag (`git push origin :refs/tags/v0.2.0`, `git tag -d v0.2.0`), and tag again. If PyPI already has the files, the number is spent: fix forward with the next version, and **yank** the bad one on PyPI (Manage, Options, Yank) so installers skip it.

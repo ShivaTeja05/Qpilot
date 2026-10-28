@@ -211,6 +211,14 @@ def _resolve(raw: Any, missing: str) -> Path:
     try:
         path = Path(raw).expanduser().resolve(strict=True)
     except (OSError, RuntimeError, ValueError) as err:
+        # Missing: "not found" only inside a root, so the answer never says whether a path
+        # elsewhere exists (RT-EX-011).
+        try:
+            loose = Path(raw).expanduser().resolve(strict=False)
+        except (OSError, RuntimeError, ValueError):
+            loose = None
+        if loose is None or not _inside_roots(loose):
+            raise PathRefused("path outside QPILOT_DATA_ROOTS") from err
         raise PathRefused(missing) from err
     if not _inside_roots(path):
         raise PathRefused("path outside QPILOT_DATA_ROOTS")

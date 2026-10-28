@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import threading
 import zipfile
@@ -109,6 +110,20 @@ class LoadNotes:
     renamed: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
+def unpacked_cap(default: int) -> int:
+    """``default``, or less when ``QPILOT_MAX_UNPACKED_MB`` asks for less (a hosted sandbox).
+
+    The XML of a file is read whole: loading it takes about twenty times its size in memory
+    (the demo's 60 MB of XML: 1.35 GB), so a public server sets this to keep one visitor's
+    upload from taking all of it (RT-EX-006). It never raises a cap.
+    """
+    try:
+        mb = int(os.environ.get("QPILOT_MAX_UNPACKED_MB", "") or 0)
+    except ValueError:
+        mb = 0
+    return min(default, mb * 1024 * 1024) if mb > 0 else default
+
+
 def hardened_parser() -> etree.XMLParser:
     """Return an lxml parser that never resolves entities or touches the network."""
     return etree.XMLParser(
@@ -149,7 +164,7 @@ def rdml_member(infos: Iterable[zipfile.ZipInfo], name: str) -> zipfile.ZipInfo:
 
 
 def _check_member(info: zipfile.ZipInfo, name: str) -> None:
-    if info.file_size > MAX_XML_BYTES:
+    if info.file_size > unpacked_cap(MAX_XML_BYTES):
         raise RdmlLoadError(f"{name}: input too large ({info.file_size} bytes of XML)", "too_large")
     if info.compress_size and info.file_size / info.compress_size > MAX_ZIP_RATIO:
         raise RdmlLoadError(
@@ -173,7 +188,7 @@ def _check_size(path: Path) -> None:
     if zipfile.is_zipfile(path):
         with _open_zip(path) as archive:
             _check_member(rdml_member(archive.infolist(), path.name), path.name)
-    elif path.stat().st_size > MAX_XML_BYTES:
+    elif path.stat().st_size > unpacked_cap(MAX_XML_BYTES):
         raise RdmlLoadError(
             f"{path.name}: input too large ({path.stat().st_size} bytes)", "too_large"
         )
@@ -181,7 +196,7 @@ def _check_size(path: Path) -> None:
 
 def _read_capped(stream, name: str, limit: int | None = None) -> bytes:
     """Every byte of ``stream``, refusing more than ``limit`` (default :data:`MAX_XML_BYTES`)."""
-    cap = MAX_XML_BYTES if limit is None else limit
+    cap = unpacked_cap(MAX_XML_BYTES if limit is None else limit)
     parts: list[bytes] = []
     size = 0
     while chunk := stream.read(_CHUNK):
@@ -211,7 +226,7 @@ def read_xml(path: Path) -> tuple[bytes, str]:
                     f"{path.name}: a damaged zip archive ({err})", "damaged"
                 ) from err
         return data, info.filename
-    if path.stat().st_size > MAX_XML_BYTES:
+    if path.stat().st_size > unpacked_cap(MAX_XML_BYTES):
         raise RdmlLoadError(
             f"{path.name}: input too large ({path.stat().st_size} bytes)", "too_large"
         )

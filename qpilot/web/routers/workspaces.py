@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, File, Form, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from qpilot.core.store import StudyNotFound
 from qpilot.io.connectors import CaptureError
@@ -206,31 +207,36 @@ async def _open_dropped(
         problem = intake.suffix_problem(Path(upload.filename or "").name)
         if problem:
             raise api_error(400, "bad_file", problem)
-    dropped: list[intake.Dropped] = []
+    kept_files: list[Path] = []
     for upload in uploads:
         kept = await _keep(ctx, upload, "export", MAX_RDML_BYTES)
-        name = views.display_name(kept) or kept.name
-        if any(d.path == kept for d in dropped):
-            continue  # the same file dropped twice
+        if kept not in kept_files:  # the same file dropped twice
+            kept_files.append(kept)
+    kept_sheet = None
+    if sheet is not None and sheet.filename:
+        kept_sheet = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
+
+    def sort_and_open() -> JobView:  # off the event loop: reading by content takes seconds
+        dropped: list[intake.Dropped] = []
+        for kept in kept_files:
+            try:
+                dropped.append(intake.classify(kept, views.display_name(kept) or kept.name))
+            except intake.Refused as err:
+                raise api_error(400, err.code, err.message) from err
         try:
-            dropped.append(intake.classify(kept, name))
+            found = intake.sort_dropped(dropped)
         except intake.Refused as err:
             raise api_error(400, err.code, err.message) from err
-    sheet_path = None
-    if sheet is not None and sheet.filename:
-        sheet_path = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
-    try:
-        found = intake.sort_dropped(dropped)
-    except intake.Refused as err:
-        raise api_error(400, err.code, err.message) from err
-    if found.sheets and sheet_path is not None:
-        names = f"{views.display_name(sheet_path)}, {found.sheets[0].name}"
-        raise api_error(400, "mixed_files", f"Add one sample sheet at a time ({names}).")
-    sheet_path = intake.sheet_for(ctx.store, found, sheet_path)  # a Cq table: its sample columns
-    if found.rdml:
-        unused = [item.name for item in found.unused]
-        return _open_job(ctx, intake.rdml_input(found.rdml[0]), sheet_path, sentence, unused)
-    return _import_job(ctx, found, sheet_path, sentence)
+        if found.sheets and kept_sheet is not None:
+            names = f"{views.display_name(kept_sheet)}, {found.sheets[0].name}"
+            raise api_error(400, "mixed_files", f"Add one sample sheet at a time ({names}).")
+        sheet_path = intake.sheet_for(ctx.store, found, kept_sheet)  # a Cq table: its columns
+        if found.rdml:
+            unused = [item.name for item in found.unused]
+            return _open_job(ctx, intake.rdml_input(found.rdml[0]), sheet_path, sentence, unused)
+        return _import_job(ctx, found, sheet_path, sentence)
+
+    return await run_in_threadpool(sort_and_open)  # RT-EX-010
 
 
 @router.post("/workspaces", response_model=JobStarted, status_code=202)
@@ -271,8 +277,10 @@ async def open_file(
     rdml_path = await _keep(ctx, rdml, "rdml", MAX_RDML_BYTES)
     sheet_path = None
     if sheet is not None and sheet.filename:
-        sheet_path = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
-        sheet_path = intake.sheet_for(ctx.store, intake.Sorted(), sheet_path)  # a Cq table
+        kept_sheet = await _keep(ctx, sheet, "sheet", MAX_SHEET_BYTES)
+        sheet_path = await run_in_threadpool(  # a Cq table's sample columns, off the loop
+            intake.sheet_for, ctx.store, intake.Sorted(), kept_sheet
+        )
     return JobStarted(job=_open_job(ctx, rdml_path, sheet_path, sentence.strip()))
 
 

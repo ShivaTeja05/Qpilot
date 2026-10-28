@@ -290,7 +290,9 @@ def check_workbook(path: Path) -> None:
         raise CaptureError(f"{path.name}: not a valid .xlsx file") from err
     total = sum(info.file_size for info in infos)
     packed = sum(info.compress_size for info in infos)
-    if total > MAX_UNZIPPED_BYTES:
+    from qpilot.io.rdml_io import unpacked_cap
+
+    if total > unpacked_cap(MAX_UNZIPPED_BYTES):
         raise CaptureError(f"{path.name}: workbook too large ({total} bytes uncompressed)")
     if packed and total / packed > MAX_ZIP_RATIO:
         raise CaptureError(f"{path.name}: workbook too large (compression ratio above 100:1)")

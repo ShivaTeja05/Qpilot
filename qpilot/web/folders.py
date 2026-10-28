@@ -80,7 +80,14 @@ def _links_below(path: Path, root: Path) -> bool:
     return False
 
 
-def allowed_folder(text: str, *, roots: Sequence[Path], store_root: Path) -> Path:
+def _written_inside(path: Path, roots: Sequence[Path]) -> bool:
+    """True when ``path``, as written, is inside a root (as given or resolved); no disk read."""
+    return any(within(path, form) for root in roots for form in (root, root.resolve()))
+
+
+def allowed_folder(
+    text: str, *, roots: Sequence[Path], store_root: Path, outside: str | None = None
+) -> Path:
     """The folder Prism sent the tables back to, if the page may read it; else ``FolderRefused``.
 
     The rules of the old Studio page, stricter: a full path (``~`` is the home folder), with no
@@ -92,6 +99,7 @@ def allowed_folder(text: str, *, roots: Sequence[Path], store_root: Path) -> Pat
         text: The folder as the person typed it.
         roots: The folders a sent-back folder may be inside.
         store_root: The study store, which is never a sent-back folder.
+        outside: What a folder outside ``roots`` is told (default :data:`OUTSIDE`).
 
     Returns:
         The folder, resolved.
@@ -108,6 +116,11 @@ def allowed_folder(text: str, *, roots: Sequence[Path], store_root: Path) -> Pat
         )
     if ".." in path.parts:
         raise FolderRefused("The folder's path may not contain “..”: give its full path.")
+    outside = outside or OUTSIDE
+    # Inside a root as written, before anything is looked up on disk: a path elsewhere gets the
+    # same answer whether or not it exists, so the rule never tells which folders exist (RT-EX-005).
+    if not _written_inside(path, roots):
+        raise FolderRefused(outside)
     if path.is_symlink():
         raise FolderRefused("This folder is a link: give the folder it points to instead.")
     if not path.is_dir():
@@ -125,10 +138,34 @@ def allowed_folder(text: str, *, roots: Sequence[Path], store_root: Path) -> Pat
                     )
                 if within(folder, root.resolve()):
                     return folder
-    raise FolderRefused("The folder must be inside your home folder or qPilot's export folder.")
+    raise FolderRefused(outside)
 
 
-def allowed_returned(text: str, *, roots: Sequence[Path], store_root: Path) -> Path:
+OUTSIDE = "The folder must be inside your home folder or qPilot's export folder."
+OUTSIDE_HOSTED = (
+    "On this public sandbox the folder must be inside qPilot's export folder: upload the "
+    "project Prism saved instead."
+)
+
+
+def returned_rule(exports: Path) -> tuple[tuple[Path, ...], str]:
+    """Where what came back from Prism may be read, and what a folder elsewhere is told.
+
+    On a person's computer: the export folder and the home folder. A hosted sandbox
+    (``QPILOT_HOSTED=1``) reads the export folder only: its home folder is the server's (the
+    app's code and whatever else is there), not a visitor's (RT-EX-004). A visitor uploads the
+    project Prism saved instead (``…/prism/roundtrip/upload``).
+    """
+    from qpilot.web.security import Hosting
+
+    if Hosting.from_env().hosted:
+        return (exports,), OUTSIDE_HOSTED
+    return (exports, Path.home()), OUTSIDE
+
+
+def allowed_returned(
+    text: str, *, roots: Sequence[Path], store_root: Path, outside: str | None = None
+) -> Path:
     """What came back from Prism, if the page may read it; else ``FolderRefused``.
 
     A folder under the rules of :func:`allowed_folder`, or a ``.pzfx`` file (not a link) in
@@ -139,13 +176,17 @@ def allowed_returned(text: str, *, roots: Sequence[Path], store_root: Path) -> P
     if path is not None and path.suffix.lower() == ".pzfx" and path.is_absolute():
         if ".." in path.parts:
             raise FolderRefused("The file's path may not contain “..”: give its full path.")
+        if not _written_inside(path, roots):  # before the disk is asked (RT-EX-005)
+            raise FolderRefused(outside or OUTSIDE)
         if path.is_symlink():
             raise FolderRefused("This file is a link: give the file it points to instead.")
         if not path.is_file():
             raise FolderRefused(f"There is no file {path}.")
-        folder = allowed_folder(str(path.parent), roots=roots, store_root=store_root)
+        folder = allowed_folder(
+            str(path.parent), roots=roots, store_root=store_root, outside=outside
+        )
         return folder / path.name
-    return allowed_folder(text, roots=roots, store_root=store_root)
+    return allowed_folder(text, roots=roots, store_root=store_root, outside=outside)
 
 
 def new_token() -> str:

@@ -1,10 +1,11 @@
 """qPilot on a Hugging Face Space: the one page as a public sandbox (CPU only, no model).
 
 The Space runs qPilot's own FastAPI server (``qpilot.web``) with hosted mode on: this Space's
-host name, framing by huggingface.co, no launch key, a 25 MB upload cap, no language model. The
-store lives in ``/tmp`` and is rebuilt on every start: the public demo study (Vermeulen 2009 /
-Ruijter 2013, CC BY 4.0, SHA-256 pinned) is downloaded, walked through Studio by the scripted
-person of ``qpilot studio demo --check`` and audited, in the background, while the page is up.
+host name, framing by huggingface.co, no launch key, a 25 MB upload cap (128 MB unpacked),
+read-only below 1 GB of free disk, no language model. The store lives in ``/tmp`` and is rebuilt
+on every start: the public demo study (Vermeulen 2009 / Ruijter 2013, CC BY 4.0, SHA-256
+pinned) is downloaded, walked through Studio by the scripted person of ``qpilot studio demo
+--check`` and audited, in the background, while the page is up.
 
 ZeroGPU needs one ``@spaces.GPU`` function to start; qPilot never asks for a GPU, so no quota is
 used.
@@ -29,6 +30,10 @@ ENV = {
     "QPILOT_FRAME_ANCESTORS": "https://huggingface.co",
     "QPILOT_MODEL_PROVIDER": "none",
     "QPILOT_MAX_UPLOAD_MB": "25",
+    # a zipped upload unpacks to at most 128 MB of XML (twice the demo's; loading takes about
+    # 20x that in memory), and the sandbox turns read-only below 1 GB of free disk
+    "QPILOT_MAX_UNPACKED_MB": "128",
+    "QPILOT_MIN_FREE_MB": "1024",
     "QPILOT_CACHE_DIR": str(DATA / "cache"),
     "QPILOT_STUDIES_DIR": str(DATA / "studies"),
     "MPLBACKEND": "Agg",

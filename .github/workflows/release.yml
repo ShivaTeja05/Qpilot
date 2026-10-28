@@ -1,7 +1,8 @@
 name: release
 
-# A tag `vX.Y.Z` builds the wheel and the sdist, checks them, installs the wheel on Windows, macOS
-# and Linux and runs the demo's Studio checks from it, then (1) publishes to PyPI through Trusted
+# A tag `vX.Y.Z` checks that the committed page is what its source builds, builds the wheel and the
+# sdist (in a job that runs no npm), checks them, installs the wheel on Windows, macOS and Linux
+# and runs the demo's Studio checks from it, then (1) publishes to PyPI through Trusted
 # Publishing and (2) attaches both files to a GitHub Release.
 #
 # Nothing is published until you set it up once (docs/release.md, "One-time setup"):
@@ -29,27 +30,38 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 jobs:
-  build:
-    name: build and check
+  # The page inside the wheel is committed, not built at release: it must be what its source
+  # makes. Checked in a job of its own, so no npm package's install script runs where the files
+  # that are published are built (the build job below runs no npm at all).
+  page:
+    name: the committed page is what frontend/ builds
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
-      # The page inside the wheel is committed, not built here: it must be what its source makes.
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - name: The committed page is what frontend/ builds
+      - name: Build the page and compare
         working-directory: frontend
         run: |
           npm ci
           npm run build
           git diff --exit-code -- ../qpilot/web/static
           test -z "$(git status --porcelain -- ../qpilot/web/static)"
+
+  build:
+    name: build and check
+    needs: page
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
       - run: python -m pip install build twine
       - run: python -m build
       - run: twine check --strict dist/*
@@ -83,6 +95,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           sparse-checkout: scripts
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: dist
