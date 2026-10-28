@@ -35,13 +35,13 @@ No code or file from these works is in qPilot; the test fixtures `tests/fixtures
 | filelock | MIT |
 | matplotlib | Matplotlib License (PSF-based, BSD-compatible); required by the vendored rdmlpython import |
 | pyarrow | Apache-2.0; the Decision Simulator's analysis grid is written as parquet |
+| openpyxl | MIT; reads and writes the `.xlsx` files of Studio, Sheet Check and the Excel export |
 
 ## Optional dependencies
 | Package | Extra | Licence |
 |---|---|---|
 | anthropic | `ai` | MIT |
 | httpx | `ai` | BSD-3-Clause |
-| openpyxl | `xlsx` | MIT |
 
 ## The page: npm packages and fonts
 The page is built from `frontend/` (React, TypeScript, Vite, Tailwind CSS) into `qpilot/web/static/`, which is part of the `qpilot` Python package, so installing qPilot never needs Node. Everything the page runs is bundled with it: it loads no script, style, font or image from the internet (its Content-Security-Policy refuses it; see `THREAT_MODEL.md`).

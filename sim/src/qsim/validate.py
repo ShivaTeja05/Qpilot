@@ -393,6 +393,8 @@ def validate(path: str | Path, out: str | Path = "results") -> dict:
         "controls": controls(curves),
     }
     out = Path(out)
-    table.to_csv(out / "validation_untergasser.csv", index=False)
-    (out / "validation_untergasser.json").write_text(json.dumps(result, indent=1))
+    table.to_csv(out / "validation_untergasser.csv", index=False, lineterminator="\n")
+    (out / "validation_untergasser.json").write_text(
+        json.dumps(result, indent=1), encoding="utf-8", newline="\n"
+    )
     return result

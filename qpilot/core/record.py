@@ -367,13 +367,13 @@ def _vendored_commit() -> str:
 def _git_commit() -> str:
     head = _REPO / ".git" / "HEAD"
     try:
-        ref = head.read_text().strip()
+        ref = head.read_text(encoding="utf-8").strip()
         if ref.startswith("ref: "):
             ref_path = _REPO / ".git" / ref[5:]
             if ref_path.exists():
-                return ref_path.read_text().strip()
+                return ref_path.read_text(encoding="utf-8").strip()
             packed = _REPO / ".git" / "packed-refs"
-            for line in packed.read_text().splitlines() if packed.exists() else []:
+            for line in packed.read_text(encoding="utf-8").splitlines() if packed.exists() else []:
                 if line.endswith(ref[5:]):
                     return line.split()[0]
             return "unknown"
@@ -590,7 +590,9 @@ def verify(record_dir: str | Path) -> VerifyReport:
     broken = None
     n_entries = 0
     try:
-        root = StudyResult.model_validate_json((record_dir / "results.json").read_text())
+        root = StudyResult.model_validate_json(
+            (record_dir / "results.json").read_text(encoding="utf-8")
+        )
         entries = read_entries(record_dir / "decisions.jsonl")
         n_entries = len(entries)
         broken = verify_chain(entries, root.input_sha256)
@@ -640,7 +642,7 @@ def _proposal_chain(record_dir: Path, root: StudyResult | None) -> _ProposalChec
     """
     path = record_dir / PROPOSALS_FILE
     try:
-        meta = json.loads((record_dir / "record.json").read_text())
+        meta = json.loads((record_dir / "record.json").read_text(encoding="utf-8"))
         named = meta.get("proposals_head") if isinstance(meta, dict) else None
     except (OSError, ValueError, RecursionError):
         named = None  # _metadata reports an unreadable record.json
@@ -678,7 +680,7 @@ def _studio_files(record_dir: Path, root: StudyResult | None) -> list[str]:
     if quarantine.exists():
         try:
             entries, pseudonymised = read_quarantine(quarantine)
-            meta = json.loads((record_dir / "record.json").read_text())
+            meta = json.loads((record_dir / "record.json").read_text(encoding="utf-8"))
             shared = bool(meta.get("shared")) if isinstance(meta, dict) else False
         except (QuarantineError, OSError, ValueError, RecursionError):
             problems.append(f"{QUARANTINE_FILE} unreadable, or a text_id does not match its text")
@@ -714,7 +716,7 @@ def _artifact_files(record_dir: Path) -> list[str]:
     ``trace_cards.json`` is read as cards by :func:`_consistency`, which reports it unreadable.
     """
     try:
-        meta = json.loads((record_dir / "record.json").read_text())
+        meta = json.loads((record_dir / "record.json").read_text(encoding="utf-8"))
         shared = bool(meta.get("shared")) if isinstance(meta, dict) else False
     except (OSError, ValueError, RecursionError):
         shared = False  # _metadata reports an unreadable record.json
@@ -752,7 +754,7 @@ def _metadata(record_dir: Path, root: StudyResult, entries: list[DecisionEntry])
     """record.json and input.rdml must agree with the chain and results.json."""
     problems = []
     try:
-        meta = json.loads((record_dir / "record.json").read_text())
+        meta = json.loads((record_dir / "record.json").read_text(encoding="utf-8"))
         head = entries[-1].hash if entries else root.input_sha256
         if meta.get("chain_head") != head:
             problems.append("record.json chain_head is not the last entry of the chain")
@@ -780,7 +782,7 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
     """
     problems: list[str] = []
     try:
-        cards = json.loads((record_dir / "cards.json").read_text())
+        cards = json.loads((record_dir / "cards.json").read_text(encoding="utf-8"))
         by_id = {c["id"]: c for c in cards}
         parsed = [DecisionCard.model_validate(c) for c in cards]
     except (OSError, ValueError, TypeError, KeyError, RecursionError):
@@ -789,7 +791,7 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
     on_demand = record_dir / ON_DEMAND_FILE
     if on_demand.exists():
         try:
-            extra = json.loads(on_demand.read_text())
+            extra = json.loads(on_demand.read_text(encoding="utf-8"))
             extra_parsed = [DecisionCard.model_validate(c) for c in extra]
         except (OSError, ValueError, TypeError, KeyError, RecursionError):
             return [f"{ON_DEMAND_FILE} unreadable"]
@@ -840,7 +842,7 @@ def _consistency(record_dir: Path, entries: list[DecisionEntry]) -> list[str]:
         problems.append("choices.json missing")
     else:
         try:
-            choices = json.loads(choices_path.read_text())["cards"]
+            choices = json.loads(choices_path.read_text(encoding="utf-8"))["cards"]
             items = sorted(choices.items())
         except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError):
             return [*problems, "choices.json unreadable"]
@@ -1012,14 +1014,16 @@ def rerun_compare(record_dir: str | Path, out_dir: str | Path | None = None) -> 
             differs.append(name)
     compared.append("cards.json (structure)")
     try:
-        mine = _card_structure(json.loads((record_dir / "cards.json").read_text()))
+        mine = _card_structure(json.loads((record_dir / "cards.json").read_text(encoding="utf-8")))
     except (OSError, ValueError, AttributeError, TypeError, RecursionError):
         mine = ""
     if mine != _card_structure([c.model_dump(mode="json") for c in cards]):
         differs.append("cards.json (structure)")
     note = ""
     try:
-        made_with = json.loads((record_dir / "versions.json").read_text()).get("qpilot_git")
+        made_with = json.loads((record_dir / "versions.json").read_text(encoding="utf-8")).get(
+            "qpilot_git"
+        )
         if made_with and made_with != versions()["qpilot_git"]:
             now = versions()["qpilot_git"]
             note = f"record made with qpilot {made_with[:12]}, re-run with {now[:12]}"
@@ -1067,7 +1071,9 @@ def rerun(record_dir: str | Path, out_dir: str | Path | None = None) -> Path:
     source = record_dir / "input.rdml"
     if not source.exists():
         raise RecordError("this record does not include its input file, so it cannot be re-run")
-    expected = StudyResult.model_validate_json((record_dir / "results.json").read_text())
+    expected = StudyResult.model_validate_json(
+        (record_dir / "results.json").read_text(encoding="utf-8")
+    )
     if sha256_file(source) != expected.input_sha256:
         raise RecordError("input.rdml does not match results.json (sha256 differs)")
     out = Path(out_dir) if out_dir else record_dir.parent / f"{record_dir.name}-rerun"

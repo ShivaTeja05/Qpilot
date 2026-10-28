@@ -145,7 +145,7 @@ def _report(args: argparse.Namespace) -> int:
         if out.suffix.lower() not in (".html", ".htm"):
             return _refuse("report", "--out names an .html file")
         try:
-            out.write_text(page, encoding="utf-8")
+            out.write_text(page, encoding="utf-8", newline="\n")
         except OSError as err:
             return _refuse("report", f"cannot write {out}: {err.strerror or err}")
     if args.json:
