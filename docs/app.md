@@ -96,8 +96,8 @@ audited study the audit's `Asker` — the answer shows which tool answered, who 
 Hero: one sentence of what qPilot does, then three actions: **Drop a file** (an RDML file, or
 what the instrument exported: one file or a whole export set, up to 64 files, from Bio-Rad CFX
 (amplification per dye + Cq results + run information), QuantStudio / StepOne / 7500,
-LightCycler 480, RDES or a tidy table; optional sample sheet; optional one sentence about the
-experiment, ≤ 500 characters), **Open the demo
+LightCycler 480, RDES or a tidy table, or a person's own Excel Cq table; optional sample sheet;
+optional one sentence about the experiment, ≤ 500 characters), **Open the demo
 study** (Vermeulen 2009 / Ruijter 2013, 64 plates, 366 tumours; if not cached: "Download 7 MB
 from the RDML consortium's repository (SHA-256 pinned)" first), **Recent** (workspace cards: title,
 file, plates · samples · genes, stage chips, decisions, pending requests, audit badge, updated
@@ -115,6 +115,10 @@ as not used. A refusal is a sentence (400 while sorting, a failed open job for a
 refusal). An export is staged under the person's own names in the study store
 (`imports/sources/`), written once as deterministic RDML (`imports/capture/<key>.rdml`, cached),
 and the session opens that file; what was read is kept as `capture.json` in the session folder.
+RDML 1.0 to 1.4 opens whatever the zip member is called (`.lc96p` included); a person's Cq table
+(Sample, Gene, Condition, Gene Type, Cq) opens alone or beside the run file, its sample columns
+becoming the sample sheet (never its numbers before both blind stages are confirmed). What each
+corpus set opens as: [`conformance.md`](conformance.md) (`scripts/conformance.py`).
 
 ### Design (`features/design`) — blind
 Left: the inbox (the six-part proposal card, contradicted first). Right (sticky): the **plate
@@ -141,6 +145,18 @@ the blind is lifted. Blind-safe: counts and names only, no sample name, no Cq va
   covers; **Yes, confirm** confirms.
 * Empty: "Ask for proposals on the design" → **Propose the design** (job; the one sentence from
   Open is used).
+* **Set the design on this page** (`features/design/DesignEditor`, `qpilot/studio_design.py`,
+  `routers/design.py`; spec in [`design-editor.md`](design-editor.md)): tabs Targets (reference
+  gene / gene of interest / leave out), Samples (select by click, range, name pattern or plate
+  wells; group, sample type with standards' top quantity and dilution step, biological unit;
+  **From ng to copies…**, `GET /api/tools/copies`), Paste a list, Comparison, Sample sheet
+  (pre-filled template download, attach). A draft, then **Review and record…**
+  (`POST …/design/check`, then `…/design/set`): one reason; every item a person-made proposal
+  accepted by the person in one `decide_together` write; waiting proposals on the same item are
+  accepted or rejected with the reason. Above it, **What the design still needs**, each item
+  linked to the control that gives it. With three or more groups the rules propose a plan of
+  several comparisons (`design.comparison` with `comparisons`, `pattern`, `correction`,
+  `pair_by`) and a donor column proposes `design.pair`.
 
 ### Curves (`features/curves`) — blind
 **Check the curves** (job, ~15 s on the demo) → Curve Judge disagreements as proposal cards
@@ -148,7 +164,11 @@ the blind is lifted. Blind-safe: counts and names only, no sample name, no Cq va
 amplification call (shape + colour), Cq, efficiency or R² (switch), disagreements outlined; a
 gene filter. Click a well → **curve viewer** (uPlot): raw fluorescence by cycle, linear/log
 switch, the Cq marker and baseline when known; neighbouring wells of the same sample overlaid.
-No group labels here. A well left out of (or put back into) the analysis is a `curve.exclude_well`
+No group labels here. A file without curves shows **Your Cq table** instead
+(`CqTablePanel.tsx`, `GET /api/sessions/{sid}/cq-table`, [`cq-tables.md`](cq-tables.md)). **Melt curve** (`features/curves/melt`, `GET /api/sessions/{sid}/melt` once
+the design is confirmed): the picked wells' −dF/dT with their peaks, per assay the product's Tm
+(declared, else the median of its study wells) and the wells G-MELT points at (**Show them**),
+the MIQE 2.0 caveat that one peak is not an identification. A well left out of (or put back into) the analysis is a `curve.exclude_well`
 proposal (subject `run/well`, payload `{"excluded": true|false}`), accepted only with a reason
 and never in "Accept all consistent"; the Controls section makes them from a gate card. Accepted
 after the curves are confirmed, it keeps them confirmed (the confirmation does not cover the
@@ -237,11 +257,39 @@ consistent"; it is outside both blind confirmations (they never re-open for it).
   and **Propose to stop testing them** goes back to the earlier analysis; either way a person's
   choices on the other cards are carried (above). A
   study analysed outside Studio shows `qpilot run --efficiency all` instead. Method card:
-  `methods/efficiency_model.md`.
+  `methods/efficiency_model.md`. **Also test other normalisers** (`normaliser` axis: the chosen
+  reference genes, NormFinder's or geNorm's best pair, the global mean from 50 genes;
+  `qpcr/axes/normaliser.py`) and **Also test corrections between plates** (`interrun` axis:
+  inter-run calibrator, factor correction; `qpcr/interrun.py`) work the same way
+  (`FurtherChoices.tsx`, `web/axes_views.py`, cards `numbers.normaliser` / `numbers.interrun`,
+  the latter only when a correction flips a call).
+* **Comparison shown / All comparisons** (`ComparisonsPanel.tsx`; `?comparison=` on the results
+  routes, `GET /api/studies/{id}/comparisons`): for a design with several comparisons, the
+  comparison the map, table and flip matrix show, and every gene in every comparison with its
+  p, the corrected p the call uses (Holm, Dunnett or Tukey), BH q and Welch's ANOVA across 3+
+  groups (orientation only). Decision Cards count a flip in every comparison (`impact.views`;
+  each option's effect per comparison); Trace, the Gene page (picker, units, the figure with a
+  bracket per comparison) and History follow the comparison picked; the audit audits the first
+  and says so. On the Design page, **Comparison → Several comparisons** sets the plan
+  (`ComparisonsEditor.tsx`). Method card: `methods/comparisons.md`.
+* **Reference genes** (`StudyPanels.tsx` ReferencesPanel + `ReferenceComparison.tsx`,
+  `GET /api/studies/{id}/references`): geNorm's M and V, and geNorm and NormFinder side by side
+  (each candidate's value and rank, the best pair of each, the groups and units NormFinder used
+  and left out with why). The reference-gene card stays the person's choice.
+* **Quantities** (`features/results/quantities/`, `GET /api/studies/{id}/quantities[/{target}]`,
+  `POST …/quantities/reaction`): only when the study has standards with a quantity; an assay
+  picker, the standard curve (Cq vs log quantity, fit, 95 % prediction band, LOD/LOQ, units as
+  diamonds), slope, efficiency [95 % CI], R², LOD, LOQ, every unit's quantity with its 95 %
+  prediction interval and notes, **Set the reaction input…** (per µL / per ng; a
+  `choice.reaction_input` proposal, outside the design hash). Spec:
+  [`quantities.md`](quantities.md).
+* A gene never detected in one group is withheld as **detected only in ⟨group⟩** with that
+  group's ΔCq (`WithheldGene.detected_only`); a group whose values are all capped is not tested.
 
 ### Controls (`features/gate`) — Run Gate
 What the controls on each plate say, and whether any of it changes a call. The shipped rule pack
-(`research-default` 1.1.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR;
+(`research-default` 1.2.0: G-TYPED, G-NTC-1, G-NAC, G-NRT, G-POS, G-STD, G-REP, G-RT, G-INSTR,
+G-MELT;
 thresholds and sources in `packs/research-default.yaml`, science in
 `agent-bus/contracts/scientist-spec-gate.md`) is evaluated on the study's wells; every rule that
 warns or fails and points at wells gets the consequence test: the whole analysis grid is re-run
@@ -317,6 +365,14 @@ one elsewhere).
   check whose wells change no conclusion, and for **a study analysed outside Studio**, which has
   no inbox: its cards are read-only, and the page says plainly that wells are left out by opening
   its file in Studio (Trace follows its calls down to their wells).
+* **G-MELT** (pack 1.2.0, `qpcr/melt.py`, `GET /api/studies/{id}/melt`): for dye assays with melt
+  curves, each amplified study well's call (one product within the tolerance of the assay's Tm,
+  extra peak, Tm off, no peak) and each NTC's (nothing, the product, a primer-dimer, another
+  product; G-NTC-1 grades a dimer as a warning). A G-MELT row opens its wells' melt curves
+  (`gate/Melt.tsx`, the shaded band = expected Tm ± tolerance) with **Open these wells in
+  Curves**. Method card: `methods/melt_curve.md`.
+* **What to repeat** (card): the repeat plan's counts, the repeat plate with **Download the repeat
+  plate (CSV)** and a link to the Run Review.
 * **The rules and where their thresholds come from**: each rule's statement and its sources.
 * A rule check that points at more than 24 wells (a whole run) shows the first ones and folds
   the rest.
@@ -347,9 +403,12 @@ analysed outside Studio, Decide… opens the place as a Decision Card on Results
 says to open the file in Studio to leave the wells out. Method card: `methods/trace.md`.
 
 ### Report (`features/report`)
-Methods, MIQE 2.0, a reviewer's report, the study passport, and **exports** (Markdown, printable
-HTML, passport, and the **Excel workbook**: the results with a "Where to look" sheet, at the
-recommended choices like the Analysis Record). **Run Review** (origin/main's Gradio accordion,
+Methods, MIQE 2.0, a reviewer's report, the study passport, and **Export: numbers, figures and the
+report** (`POST /api/studies/{id}/report/export`, `GET …/report/exports`; spec in
+[`exports.md`](exports.md)): the **Excel workbook**, **CSV tables**, **Figures** (per headline
+gene: SVG, 300-dpi PNG, data, caption) and the **Journal supplement**, each as decided on the
+Decision Cards (plus the recommended analysis where it differs); then the passport, a printable
+page and Markdown. **Run Review** (origin/main's Gradio accordion,
 `report/run_review.py`): the headline genes, the Evidence Ledger, **what to repeat and why**
 (`qpcr/repeat.py`, at the analysis in use: the Run Gate's warnings and failures, the wells a
 person left out with their reason, samples in no comparison, wells with no amplification where
@@ -376,7 +435,9 @@ biological unit from the engine, `GET /api/studies/{id}/genes/{gene}/units`, its
 as small dots on its line, each group's mean with its 95 % CI; click a unit → its wells, its
 curve), **What changes it / What it leans on / What to do** (audit), **Decision
 Cards that affect this gene**, **Assay and wells** (efficiency, Cq range, undetermined), the
-reference-gene stability bars, and the Prism figure for this gene when available. Prev/next gene
+reference-gene stability bars, the **Figure** (`features/gene/GeneFigure.tsx`,
+`GET /api/studies/{id}/report/figure?gene=…&format=svg|png|csv`: the export's figure for this gene as decided, with
+SVG / PNG / CSV downloads and **Copy caption**), and the Prism figure. Prev/next gene
 with `[`/`]`.
 
 ### Audit (`features/audit`)
@@ -393,9 +454,12 @@ checksums and its binding to the record). Gene rows open the Gene section.
 ### Prism (`features/prism`)
 Routes table (how often the usual Excel→Prism routes change a conclusion on this study),
 preview tables and per-gene figure (group means with CI), **Draft the Prism project** (a model
-proposal, accepted like any other), **Send to Prism** (job: bundle zip download link, whether
-Prism was launched), **Round trip** (pick the bundle; give the folder Prism saved into; job;
-the changes come back as proposals with their consequences).
+proposal, accepted like any other; "still current" while no decision changes a number in its
+tables), **Send to Prism** (job: writes the `.pzfx` project, which opens in Prism without a
+template, plus CSV tables and provenance; bundle zip download link; open/analyse steps for this
+platform), **Round trip** (pick the bundle; upload the project Prism saved,
+`POST /api/sessions/{sid}/prism/roundtrip/upload`, or give the folder or file; job; the changes
+come back as proposals with their consequences). Spec: [`prism.md`](prism.md).
 
 ### Record (`features/record`)
 The decision chain as a timeline (seq, card, option, actor icon human/agent/system, reason,

@@ -102,9 +102,9 @@ differs); see also [studio-measured.md](studio-measured.md).
    qPilot checks; the usual route (2^-ΔΔCq per sample, Welch on the linear scale) would change 14 of
    58 conclusions (21 with Student's t test, 4 with ΔΔCq at an assumed efficiency of 2.0).
    Decide the cards, confirm.
-4. **Prism draft.** Draft the project, accept it, press Send to Prism: the bundle (one CSV per
-   gene, `run.pzc`, `send_back.pzc`, provenance) is written into a new folder; Studio starts Prism
-   only when Prism is installed, and otherwise says so and offers the bundle as a zip.
+4. **Prism draft.** Draft the project, accept it, press Send to Prism: the bundle (the Prism
+   project `.pzfx`, which opens in Prism without a template, one CSV per gene, provenance) is
+   written into a new folder and offered as a zip, with the steps to open it on this computer.
 5. **Round trip.** Excluding ODC1's sample 1496 in Prism comes back as one question: "Reason?",
    with its consequence — ODC1 3.590× → 3.319×, still up; 0 of 58 conclusions change. Accepting
    it (with the reason) re-runs the analysis: the page then shows only the new analysis (ODC1
@@ -149,9 +149,9 @@ shows none of its numbers, and cannot be accepted until you read what Prism sent
 
 ## Limits
 
-* Prism itself: the bundle follows GraphPad's documented script language but has **not yet run
-  on a real Prism seat**, and the template files are made once by hand
-  ([prism.md](prism.md)). The graph in the preview is an approximation.
+* Prism itself: the project follows GraphPad's published file format but has **not yet been
+  opened on a real Prism seat** ([prism.md](prism.md)). The graph in the preview is an
+  approximation.
 * "What the model saw" shows the last model call of this qPilot process (kept in memory only);
   the card says when it is that card's own payload.
 * The Curve Judge reads each curve divided by its minimum over cycles 1–40; the curve viewer

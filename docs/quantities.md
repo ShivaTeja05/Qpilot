@@ -34,6 +34,12 @@ card for the study, an assay picker when there are several.
 A study without standards shows no card. Standards without a quantity (QuantStudio's
 `Std 1` … `Std 5` are level numbers, not quantities) are listed with what to do.
 
+> **Check the standard curve's wells.** A standard well counts as detected when it has a Cq and a
+> quantity, even when LinRegPCR calls it "no amplification". On the QuantStudio 7 Pro eDNA curve of
+> the corpus three flat wells enter the fit and give 154 % efficiency, R² 0.41 (87 %, R² 0.996
+> without them). If a curve looks wrong, leave the flat wells out in Curves, with a reason
+> ([science review](science-review-2026-10.md), J1, recommends requiring LinRegPCR's call).
+
 ## Giving the standards their quantities
 
 The file's own quantities are used when it declares them (RDML `<quantity>`; the demo's are in
