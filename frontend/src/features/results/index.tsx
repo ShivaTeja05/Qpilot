@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { type MapEncoding } from "@/charts";
 import { useMediaQuery } from "@/lib/hooks";
 import { sectionPath, type SectionProps } from "@/shell/sections";
-import { Button, EmptyState, ErrorPanel, PageHeader, Skeleton } from "@/ui";
+import { Button, EmptyState, ErrorPanel, JobCard, PageHeader, Skeleton } from "@/ui";
 import { isWarming, useCards, useComparisons, useFlips, useResults, type ResultsView } from "./api";
 import { ChoicesConfirm } from "./ChoicesConfirm";
 import { ComparisonPicker, ComparisonsPanel } from "./ComparisonsPanel";
@@ -126,6 +126,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
   }
   if (!studyId) {
     const analysing = workspace.next_step.section === "results" && workspace.results_visible;
+    const job = workspace.active_jobs.find((j) => j.kind === "analyse");
     return (
       <div className="mx-auto max-w-3xl p-6 lg:p-10">
         <EmptyState
@@ -136,6 +137,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
             ? workspace.next_step.detail
             : "This workspace has no analysed study. Confirm the design and the curves to analyse it."}
         </EmptyState>
+        {job ? <JobCard id={job.id} className="mt-4" /> : null}
       </div>
     );
   }

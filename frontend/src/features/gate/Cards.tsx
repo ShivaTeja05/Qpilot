@@ -17,8 +17,9 @@ import { FactText } from "@/features/results/FactText";
 import { cn } from "@/lib/cn";
 import { dateTime, fold, plural } from "@/lib/format";
 import { MOD } from "@/lib/hooks";
+import { decidedBy } from "@/lib/vocab";
 import { sectionPath } from "@/shell/sections";
-import { Badge, Button, Card, Kbd, Textarea, toast } from "@/ui";
+import { Badge, Button, Card, KeyHint, Textarea, toast } from "@/ui";
 import {
   useGateDecide,
   type Consequence,
@@ -137,10 +138,7 @@ function DecideForm({
             Cancel
           </Button>
         )}
-        <span className="text-[12px] text-faint">
-          <Kbd>{MOD}</Kbd>
-          <Kbd>Enter</Kbd>
-        </span>
+        <KeyHint keys={[MOD, "Enter"]} />
       </div>
     </div>
   );
@@ -212,7 +210,7 @@ export function GateCardView({
               {view.title}
             </h3>
             <Badge tone={status.tone}>
-              {card.status === "decided" && !pending ? "Decided by a person" : status.label}
+              {card.status === "decided" && !pending ? decidedBy(card.decided_by) : status.label}
             </Badge>
           </div>
           {evaluation && (
@@ -407,7 +405,7 @@ function LeftOut({
           <h3 id={titleId} className="text-[15px] font-semibold tracking-tight text-fg">
             {decision.label}
           </h3>
-          <Badge tone="ok">Decided by a person</Badge>
+          <Badge tone="ok">{decidedBy("human")}</Badge>
         </div>
         {evaluation && (
           <p className="flex flex-wrap items-center gap-2 text-[13px] text-muted">

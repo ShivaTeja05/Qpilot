@@ -607,3 +607,24 @@ def test_the_imports_rawness_verdict_replaces_the_cheap_signs(verdict, status):
         table, toy_model(table, design), design, rawness={"study_verdict": "<b>?</b>"}
     )
     assert junk.item("rawness").consequence.code.startswith("rawness_unknown")
+
+
+def test_the_files_rdml_facts_are_read_once_per_file_contents(tmp_path, monkeypatch):
+    """perf: evidence_store parses the input XML once per file sha256 (same facts, same ledger)."""
+    import shutil
+
+    from qpilot.qpcr import evidence as ev
+
+    source = next(Path(__file__).parents[1].joinpath("fixtures").rglob("*.rdml"))
+    copy = tmp_path / "a.rdml"
+    shutil.copy(source, copy)
+    ev._FILE_EVIDENCE.clear()
+    loads: list[object] = []
+    real = ev.load
+    monkeypatch.setattr(ev, "load", lambda *a, **k: loads.append(a) or real(*a, **k))
+    first = ev._file_evidence(copy)
+    assert ev._file_evidence(copy) is first and len(loads) == 1
+    assert first == ev.rdml_evidence(real(copy, validate=False))
+    copy.write_bytes(copy.read_bytes() + b"\n")  # other bytes: read again
+    ev._file_evidence(copy)
+    assert len(loads) == 2

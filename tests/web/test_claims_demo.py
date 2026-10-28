@@ -1,4 +1,4 @@
-"""The Claim Auditor on the real demo study (Vermeulen 2013, 64 plates), analysed once per module.
+"""The Claim Auditor on the real demo study (Vermeulen 2009, 64 plates), analysed once per module.
 
 The paragraph of the Claim Auditor proposal (``qPilot-AI-USE-CASES.md``), written against this
 study's own results: the verdicts follow from its record (calls, intervals, the share of qPilot's

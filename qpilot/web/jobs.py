@@ -26,7 +26,10 @@ JobStatus = Literal["queued", "running", "done", "failed"]
 #: every ``JOB_RESULTS`` registry; see :func:`qpilot.web.openapi.job_results`).
 RESULT_TYPES: dict[str, str] = {}
 MAX_KEPT = 200
-WORKERS = 3
+#: Threads for the work a person (or an agent) asks for, and the jobs the routes start. One
+#: more than the slowest background job can hold (the view preparation's gate run), so a
+#: person's job never queues behind work they did not ask for.
+WORKERS = 4
 
 
 class JobError(Exception):
@@ -98,6 +101,8 @@ class JobRunner:
     def __init__(self, bus: EventBus, workers: int = WORKERS) -> None:
         self.bus = bus
         self._pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="qpilot-job")
+        # Work nobody asked for (preparing views) runs on its own thread, one job at a time.
+        self._background = ThreadPoolExecutor(max_workers=1, thread_name_prefix="qpilot-prep")
         self._jobs: OrderedDict[str, Job] = OrderedDict()
         self._lock = threading.Lock()
 
@@ -111,11 +116,13 @@ class JobRunner:
         typical_s: float | None = None,
         dedupe: bool = True,
         tag: str | None = None,
+        background: bool = False,
     ) -> Job:
         """Run ``fn(progress)`` on the pool; its return value (JSON-ready) is the job's result.
 
         The same ``kind`` for the same ``key`` (and ``tag``, e.g. one proposal) while one runs
-        returns the running job instead of starting it twice.
+        returns the running job instead of starting it twice. ``background`` work (nobody asked
+        for it) runs on its own thread and never takes a worker from the pool.
         """
         with self._lock:
             if dedupe:
@@ -138,7 +145,7 @@ class JobRunner:
             self._jobs[job.id] = job
             self._forget_finished()
         self._publish(job)
-        self._pool.submit(self._run, job, fn)
+        (self._background if background else self._pool).submit(self._run, job, fn)
         return job
 
     def _forget_finished(self) -> None:
@@ -199,6 +206,7 @@ class JobRunner:
     def shutdown(self) -> None:
         """Stop accepting work; running jobs finish on their threads."""
         self._pool.shutdown(wait=False, cancel_futures=True)
+        self._background.shutdown(wait=False, cancel_futures=True)
 
 
 def _plain(err: BaseException) -> str:

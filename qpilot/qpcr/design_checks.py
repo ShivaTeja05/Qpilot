@@ -549,13 +549,15 @@ def symbol_check(target_name: str, symbol: str) -> ProposalCheck:
     # does not name the proposed gene by itself, so the lookup that made the proposal cannot
     # also confirm it (``SymbolFinding.identifies``, io/symbols.py; absent in older builds).
     if symbol != target_name and getattr(named, "identifies", None) is False:
-        listed = ", ".join(named.candidates[:5]) or "no gene"
+        # The genes HGNC lists for the name go in the details (symbols hold digits; notes don't).
+        details = {**details, "name_candidates": list(named.candidates[:5])}
         return _check(
             "cannot_check",
             "D-SYMBOL",
             details,
-            "the target's name is an alias, or matches only when letter case is ignored; HGNC "
-            f"lists it for {listed}; confirm the gene",
+            "the target's name does not by itself name this gene (it is an alias, fits several "
+            "genes, matches only when letter case is ignored, or is not a gene name); a person "
+            "confirms the gene",
         )
     if named.candidates and symbol not in named.candidates:
         return _check(
@@ -593,16 +595,18 @@ def assemble_roles(
         target = by_well if "/" in proposal.subject else by_sample
         target[proposal.subject].add(str(role))
     out: dict[tuple[str, str, str], set[str]] = {}
-    for row in wells[["run_id", "well", "sample", "target"]].itertuples(index=False):
-        well = f"{row.run_id}/{row.well}"
-        key = (row.run_id, row.well, row.target)
+    # Plain lists, not itertuples: on string columns that is ~10x faster (one check per proposal).
+    columns = [wells[c].tolist() for c in ("run_id", "well", "sample", "target")]
+    for run_id, well_id, sample, target_id in zip(*columns, strict=True):
+        well = f"{run_id}/{well_id}"
+        key = (run_id, well_id, target_id)
         if well in by_well:
             roles = set(by_well[well])
-        elif row.sample in by_sample:
-            roles = set(by_sample[row.sample])
+        elif sample in by_sample:
+            roles = set(by_sample[sample])
         else:
-            declared = facts_types.get(row.sample, (("unkn", ""),))
-            specific = {t for t, target in declared if target == row.target}
+            declared = facts_types.get(sample, (("unkn", ""),))
+            specific = {t for t, target in declared if target == target_id}
             roles = specific or {t for t, target in declared if not target} or {"unkn"}
         out.setdefault(key, set()).update(roles)
     return out

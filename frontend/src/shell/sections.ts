@@ -134,7 +134,7 @@ export const SECTIONS: Section[] = [
   {
     id: "audit",
     label: "Audit",
-    hint: "Every combination of eight decisions: one verdict per gene",
+    hint: "A wider, independent re-analysis: one verdict per gene",
     icon: ShieldCheck,
     scope: "workspace",
     needsResults: true,

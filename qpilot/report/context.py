@@ -80,6 +80,23 @@ class Ctx:
         """A derived string's token (a version, a hash: text with digits that is not prose)."""
         return tok(self.facts.derive(name, value, path))
 
+    def reactions_in_file(self, n_in_file: int, n_runs: int) -> str:
+        """Why the file's reaction count differs from the study's (a clause), or "" when equal.
+
+        The RDML file can hold runs the study does not analyse (the demo: 25,491 reactions on
+        67 runs, of which the study analyses the 24,576 on its 64 plates), so a count of the
+        file's curves next to the study's reactions says which is which.
+        """
+        r = self.result
+        if not self.has("f_n_reactions") or n_in_file == r.n_reactions:
+            return ""
+        runs = self.count("rdml_n_runs", n_runs, "input.rdml:/run@len")
+        plates = self.count("n_plates", r.n_plates, "results.json:/n_plates")
+        return (
+            f"on all {runs} runs of the file; this study analyses the {tok('f_n_reactions')} "
+            f"on its {plates} plates"
+        )
+
     # ---- the study ---------------------------------------------------------------------------
 
     @cached_property
@@ -92,9 +109,9 @@ class Ctx:
         """The compared group's name and the reference group's."""
         if not self.marker_mode:
             return str(self.facts.value("f_group_a")), str(self.facts.value("f_group_b"))
-        var = self.result.design.group_var
-        marker = var.removesuffix("_high") or var
-        return f"{marker}-high", "rest"
+        from qpilot.qpcr.design import marker_group_names
+
+        return marker_group_names(self.result.design.group_var)
 
     @cached_property
     def marker(self) -> str | None:

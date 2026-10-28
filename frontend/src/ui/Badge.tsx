@@ -49,6 +49,27 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
   );
 }
 
+/**
+ * A keyboard shortcut beside a control ("⌘ Enter"): hidden on phones and touch screens, where
+ * there is no keyboard to press it with. Decorative (`aria-hidden`): the control has its name.
+ */
+export function KeyHint({ keys, className }: { keys: readonly string[]; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      data-testid="key-hint"
+      className={cn(
+        "inline-flex items-center gap-0.5 text-[12px] text-faint max-sm:hidden pointer-coarse:hidden",
+        className,
+      )}
+    >
+      {keys.map((k) => (
+        <Kbd key={k}>{k}</Kbd>
+      ))}
+    </span>
+  );
+}
+
 /** A status dot with a word for screen readers. */
 export function Dot({
   tone,

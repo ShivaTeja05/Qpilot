@@ -32,9 +32,11 @@ class _Words:
 
 _EFFICIENCY = _Words(
     status={
-        "off": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on "
-        "each plate. Testing the other efficiency models adds them as one more choice of the "
-        "grid; the analysis in use stays the same until a person decides otherwise.",
+        "off": "Not tested in qPilot's grid: every quantity uses LinRegPCR's mean efficiency of "
+        "each assay on each plate. Testing the other efficiency models adds them as one more "
+        "choice of the grid; the analysis in use stays the same until a person decides otherwise. "
+        "The robustness audit varies the efficiency model on its own, so its verdicts already "
+        "include it; qPilot's grid tests it only when you ask here.",
         "swept": "Tested as one more choice of the grid: changing only the efficiency model "
         "changes {{f_n_flipped_efficiency}} of {{f_n_genes}} calls. Its Decision Card says what "
         "each model changes; the analysis in use stays LinRegPCR's mean efficiency until a "
@@ -52,7 +54,8 @@ _EFFICIENCY = _Words(
 )
 _NORMALISER = _Words(
     status={
-        "off": "Not tested: every gene is divided by the reference genes chosen for this study. "
+        "off": "Not tested in qPilot's grid: every gene is divided by the reference genes chosen "
+        "for this study. "
         "Testing NormFinder's and geNorm's best pairs and the global mean adds them as one more "
         "choice of the grid; the reference genes in use stay the same until a person decides "
         "otherwise.",
@@ -72,7 +75,8 @@ _NORMALISER = _Words(
 )
 _INTERRUN = _Words(
     status={
-        "off": "Not tested: no quantity is corrected for differences between plates. Testing "
+        "off": "Not tested in qPilot's grid: no quantity is corrected for differences between "
+        "plates. Testing "
         "the inter-run calibrator and the factor correction adds them as one more choice of "
         "the grid, with a card only when a correction changes a call.",
         "swept": "Tested as one more choice of the grid: correcting between plates changes "

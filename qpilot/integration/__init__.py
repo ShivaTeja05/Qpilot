@@ -8,7 +8,7 @@ This package joins the parts that were built separately, without changing any of
   Judge in blind stages, the analysis choices, the Prism draft, Send to Prism and the round
   trip. The AI proposes, the engine checks, a person decides.
 * **Decision Simulator** (``qsim``, a separate package): the robustness audit of the analysis a
-  person confirmed. Every combination of eight analysis decisions, per-gene verdicts, the
+  person confirmed. Every combination of the audit's analysis decisions, per-gene verdicts, the
   samples a call leans on, the fewest moves that change a call, what to lock in advance.
 * **Analysis Record** (``qpilot.core.record``) and the **MCP server** (``qpilot.mcp_server``).
 

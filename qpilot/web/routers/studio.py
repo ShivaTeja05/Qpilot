@@ -19,6 +19,7 @@ from typing import Annotated, Any, TypeVar
 from fastapi import APIRouter, Query
 
 from qpilot.core.store import StudyNotFound
+from qpilot.explain.words import plural
 from qpilot.schemas_studio import Proposal, ProposalCheck, ProposalOutcome
 from qpilot.studio_service import REASON_KINDS, StudioError
 from qpilot.web import studio_views as sv
@@ -648,7 +649,8 @@ def _confirm_view(ctx: AppContext, sid: str, stage: str, message: str = "") -> C
         still = [c for c in cards if c.status in ("open", "pending_human")]
         if still:
             warnings.append(
-                f"{len(still)} Decision Card(s) are still open: they would be exported at their "
+                f"{plural(len(still), 'Decision Card')} {'is' if len(still) == 1 else 'are'} "
+                "still open: they would be exported at their "
                 "recommended option, and deciding them later re-opens this stage."
             )
     if not message:

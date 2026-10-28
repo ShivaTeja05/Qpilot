@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { HBars, VERDICT_ORDER } from "@/charts";
 import { cn } from "@/lib/cn";
 import { count, plural, shortHash } from "@/lib/format";
+import { GRID_COUNT, GRID_NAME, GRID_WHAT, setsBridge } from "@/lib/vocab";
 import { Badge, Card, CardBody, CardHeader, ErrorPanel, LoadingBlock, VerdictTag } from "@/ui";
 import { type AuditTarget, shownError, useAuditHow } from "./api";
 import type { AuditHow, HowDecision, ManifestLike } from "./types";
@@ -229,6 +230,10 @@ function Reading() {
     [
       "Same call in k of n",
       "How many analyses of the audit's reasonable set give the same call as your planned analysis. qPilot's own robustness check (Results) uses a different set, qPilot's choice grid, so its share can differ.",
+    ],
+    [
+      GRID_NAME,
+      `The ${GRID_COUNT}: ${GRID_WHAT}. It sets each gene's confidence level on Results. ${setsBridge()}`,
     ],
     [
       "Fewest samples that change it",

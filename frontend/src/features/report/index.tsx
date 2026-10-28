@@ -27,6 +27,7 @@ import {
   TH,
   THead,
   TR,
+  SetsNote,
 } from "@/ui";
 import { asExported, useReport, useReportExports, type ReportFormat, type ReportView } from "./api";
 import { Cited } from "./Cited";
@@ -253,6 +254,11 @@ function Document({
                 ) : null;
               })}
             </ul>
+            <SetsNote
+              grid={gridCount(view)}
+              reasonable={view.audit.reasonable}
+              full={view.audit.analyses}
+            />
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted">
               <span>
                 Input <Hash value={h.input_sha256} length={12} />
@@ -328,7 +334,7 @@ function Document({
         <Part
           id="facts"
           title="Every number, and where it comes from"
-          hint="f_… ids are the engine's own facts; f_rpt_… ids are values the report read from the study (the path says where)."
+          hint="Every number this report cites, its value and where it comes from: the engine's own results, or a value the report read from the study's files (the path says which file and where in it)."
         >
           <FactsTable view={view} />
         </Part>
@@ -368,6 +374,12 @@ function Part({
   );
 }
 
+/** qPilot's choice grid, as the report cites it (`f_n_cells`), when the study has one. */
+function gridCount(view: ReportView): number | null {
+  const n = Number(view.facts.f_n_cells?.value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function FactsTable({ view }: { view: ReportView }) {
   const [open, setOpen] = useState(false);
   const facts = useMemo(() => Object.values(view.facts), [view.facts]);
@@ -392,7 +404,9 @@ function FactsTable({ view }: { view: ReportView }) {
           <Table caption="Every fact the report cites, its value and where it comes from">
             <THead>
               <TR>
-                <TH>Fact</TH>
+                <TH title="The number's name in the Analysis Record: f_… is the engine's own; f_rpt_… one the report read from the study's files.">
+                  Name
+                </TH>
                 <TH numeric>Value</TH>
                 <TH>From</TH>
               </TR>
