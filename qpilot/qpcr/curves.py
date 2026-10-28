@@ -567,7 +567,9 @@ def _cached_table(plain: Path, multiplex: Path) -> pd.DataFrame | None:
         shared = bool(table.duplicated(list(WELL_KEY)).any())
         if named and shared == several:
             return table
-        log.warning("cached curve table %s is from an older analysis; analysing again", path.name)
+        # a multiplex table at the plain key was cached before each dye had its own analysis
+        report = log.info if named else log.warning
+        report("cached curve table %s is from an older analysis; analysing again", path.name)
     return None
 
 
