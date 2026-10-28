@@ -28,3 +28,24 @@ export function comparisonState(all: Proposal[]) {
   );
   return { groups: [...groups], ready: groups.size === 2 && !has };
 }
+
+/**
+ * What the waiting proposals say about each sample's group and unit (the latest of each), so
+ * the editor can show it and take it with one click (the review then accepts those proposals).
+ */
+export function proposedValues(all: Proposal[]) {
+  const out = new Map<string, { group?: string | null; unit?: string | null }>();
+  const waiting = all
+    .filter(
+      (p) => p.status === "proposed" && (p.kind === "design.group" || p.kind === "design.bio_unit"),
+    )
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  for (const p of waiting) {
+    const d = { ...p.payload, ...(p.edits ?? {}) } as Record<string, unknown>;
+    const now = out.get(p.subject) ?? {};
+    if (p.kind === "design.group") now.group = (d.group as string | null) ?? null;
+    else now.unit = (d.biological_unit as string | null) ?? null;
+    out.set(p.subject, now);
+  }
+  return out;
+}

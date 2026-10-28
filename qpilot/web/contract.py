@@ -746,6 +746,16 @@ class GeneRow(BaseModel):
     at_your_choices: AtChoices | None = None
     verdict: str | None = Field(default=None, description="The robustness audit's verdict.")
     verdict_label: str | None = None
+    p_adjusted: float | None = Field(
+        default=None,
+        description="The corrected p-value the call uses (Holm across the gene's comparisons); "
+        "None when the study has one comparison (the call uses p).",
+    )
+    q: float | None = Field(
+        default=None,
+        description="Benjamini-Hochberg q-value across the genes of this comparison (shown, "
+        "never used for a call).",
+    )
 
 
 class AuditBadge(BaseModel):
@@ -803,6 +813,16 @@ class AxisView(BaseModel):
     )
 
 
+class ComparisonTab(BaseModel):
+    """One comparison of a study with several, for the page's comparison picker."""
+
+    id: str
+    label: str
+    primary: bool
+    n_up: int
+    n_down: int
+
+
 class ResultsView(BaseModel):
     """Everything the Results section shows about a study (raw numbers; the page formats)."""
 
@@ -826,6 +846,13 @@ class ResultsView(BaseModel):
     audit: AuditBadge
     axes: list[AxisView] = Field(
         default=[], description="Further choices the grid can test on request (opt-in)."
+    )
+    comparison: str | None = Field(
+        default=None,
+        description="The comparison shown (its id) in a study with several; None otherwise.",
+    )
+    comparisons: list[ComparisonTab] = Field(
+        default=[], description="Every comparison of a study with several (the primary first)."
     )
 
 
@@ -1069,6 +1096,9 @@ class FlipsView(BaseModel):
     genes: list[str]
     planned: list[Conclusion]
     rows: list[FlipRow]
+    comparison: str | None = Field(
+        default=None, description="The comparison shown, in a study with several."
+    )
 
 
 class GeneGrid(BaseModel):
@@ -1102,6 +1132,9 @@ class GeneView(BaseModel):
     next_gene: str | None = None
     audit_verdict: str | None = None
     audit_verdict_label: str | None = None
+    comparison: str | None = Field(
+        default=None, description="The comparison shown, in a study with several."
+    )
 
 
 # ---- job results (registered: their models reach the page's types) ---------------------------

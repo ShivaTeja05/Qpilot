@@ -26,7 +26,7 @@ import hashlib
 import io
 import logging
 import re
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +42,7 @@ from qpilot.qpcr.quant import EXCLUDED
 from qpilot.schemas_studio import (
     CONTROL_ROLES,
     Comparison,
+    ComparisonPlan,
     MarkerSplit,
     Proposal,
     SampleDesign,
@@ -56,7 +57,7 @@ LEGACY_DESIGN_ID = "vermeulen_expression_defined"
 MAX_FILE_BYTES = 1 << 20  # design files and sample sheets: 1 MiB is far more than any needs
 APPLIED = frozenset({"accepted", "edited"})  # the only proposal statuses the engine reads
 SHEET_REQUIRED = ("sample", "group")
-SHEET_OPTIONAL = ("biological_unit", "role", "quantity", "rt_replicate")
+SHEET_OPTIONAL = ("biological_unit", "role", "quantity", "rt_replicate", "pair")
 #: The opt-in axes a design (a person's ``choice.axis`` decision) can ask the grid to test.
 DESIGN_AXES: tuple[str, ...] = ("efficiency",)
 _WELL_KEY = re.compile(r"^[^/]+/[^/]+$")
@@ -153,9 +154,90 @@ def check_design(design: StudyDesign) -> StudyDesign:
     if bad_keys:
         problems.append(f"well keys must look like '<run_id>/<well>': {bad_keys[:5]}")
     unit_groups(design, problems)
+    problems.extend(pairing_problems(design))
     if problems:
         raise DesignError("; ".join(problems))
     return design
+
+
+def pairing_problems(design: StudyDesign) -> list[str]:
+    """Why a paired plan's units do not pair up, in plain words (empty when they do)."""
+    plan = design.comparisons
+    if plan is None or plan.pair_by is None:
+        return []
+    try:
+        by_unit = unit_groups(design)
+    except DesignError:
+        return []  # reported by unit_groups itself
+    problems = []
+    for comparison in plan.comparisons:
+        names = (comparison.group_a, comparison.group_b)
+        units = [{u for u, g in by_unit.items() if g == name} for name in names]
+        try:
+            pairs_for(design, units[0], units[1], names, plan.pair_by)
+        except DesignError as err:
+            problems.append(str(err))
+    return problems
+
+
+def unit_pairs(design: StudyDesign) -> dict[str, str]:
+    """Biological unit -> its pair key (:attr:`SampleDesign.pair`), for units that have one.
+
+    All samples of one unit must share the key; a conflict is a :class:`DesignError`.
+    """
+    out: dict[str, str] = {}
+    conflicts = []
+    for sample in design.samples.values():
+        if sample.pair:
+            unit = sample.unit()
+            if out.setdefault(unit, sample.pair) != sample.pair:
+                conflicts.append(unit)
+    if conflicts:
+        raise DesignError(f"units with two different pair keys: {sorted(set(conflicts))[:5]}")
+    return out
+
+
+def pairs_for(
+    design: StudyDesign,
+    units_a: Collection[str],
+    units_b: Collection[str],
+    labels: tuple[str, str],
+    pair_by: str,
+) -> tuple[tuple[tuple[str, str], ...], tuple[str, ...]]:
+    """``((unit in A, unit in B), ...)`` and the pair keys, sorted by key, for a paired test.
+
+    Raises:
+        DesignError: In plain words: a unit with no pair key, a key with two units in one
+            group, or a key in only one of the two groups (a paired test cannot use it).
+    """
+    keys = unit_pairs(design)
+    problems = []
+    no_key = sorted(u for u in (*units_a, *units_b) if not keys.get(u))
+    if no_key:
+        problems.append(f"no {pair_by} for {', '.join(no_key[:5])}")
+    by_key: list[dict[str, list[str]]] = [{}, {}]
+    for side, units in enumerate((units_a, units_b)):
+        for unit in sorted(units):
+            if keys.get(unit):
+                by_key[side].setdefault(keys[unit], []).append(unit)
+    for side, label in enumerate(labels):
+        doubled = {k: v for k, v in by_key[side].items() if len(v) > 1}
+        for key, units in sorted(doubled.items()):
+            problems.append(
+                f"{pair_by} {key} has {len(units)} units in {label} ({', '.join(units)}); "
+                "give them one biological unit or fix the pairing"
+            )
+    only = [(k, 0) for k in by_key[0] if k not in by_key[1]]
+    only += [(k, 1) for k in by_key[1] if k not in by_key[0]]
+    for key, side in sorted(only):
+        problems.append(f"{pair_by} {key} has no unit in {labels[1 - side]}")
+    if problems:
+        raise DesignError(
+            f"a paired comparison of {labels[0]} vs {labels[1]} needs each {pair_by} once in "
+            f"each group: {'; '.join(problems)}"
+        )
+    common = sorted(by_key[0])
+    return tuple((by_key[0][k][0], by_key[1][k][0]) for k in common), tuple(common)
 
 
 def axis_primary(name: str) -> str:
@@ -342,6 +424,8 @@ def read_sample_sheet(path: str | Path) -> dict[str, SampleDesign]:
             fields["role"] = cells["role"].lower()
         if cells.get("rt_replicate"):
             fields["rt_replicate"] = cells["rt_replicate"]
+        if cells.get("pair"):
+            fields["pair"] = cells["pair"]
         if cells.get("quantity"):
             try:
                 fields["quantity"] = float(cells["quantity"])
@@ -382,9 +466,17 @@ def load_design(yaml_path: str | Path, samples_csv: str | Path | None = None) ->
         ("targets", TargetDesign, "target"),
     ):
         data[field] = _named_entries(data.get(field), model, attr, f"{where}: {field}")
-    for field, model in (("marker_split", MarkerSplit), ("comparison", Comparison)):
+    for field, model in (
+        ("marker_split", MarkerSplit),
+        ("comparison", Comparison),
+        ("comparisons", ComparisonPlan),
+    ):
         if data.get(field) is not None:
             _check_keys(data[field], model, f"{where}: {field}")
+    plan = data.get("comparisons")
+    if isinstance(plan, dict) and isinstance(plan.get("comparisons"), list):
+        for i, entry in enumerate(plan["comparisons"]):
+            _check_keys(entry, Comparison, f"{where}: comparisons.comparisons[{i}]")
     if samples_csv is not None:
         sheet = read_sample_sheet(samples_csv)
         both = sorted(set(sheet) & set(data["samples"]))
@@ -537,8 +629,14 @@ def _apply(
             "group_b": payload["group_b"],
             "label": payload.get("label", ""),
         }
+        data["comparisons"] = comparison_plan(payload)
         data["mode"] = "groups"
         data["marker_split"] = None
+    elif kind == "design.pair":
+        pair = payload.get("pair")
+        if pair is not None and not isinstance(pair, str):
+            raise DesignError(f"a pair key is text, not {pair!r}")
+        _sample(data, subject)["pair"] = (pair or "").strip() or None
     elif kind == "design.dilution_series":
         samples = payload["samples"]
         if not isinstance(samples, Mapping) or not samples:
@@ -583,6 +681,40 @@ def _apply(
     elif kind == "prism.exclusion_reason":
         _exclusion(data, payload, curves)
     return data  # prism.project and prism.value_edit do not change the design
+
+
+def comparison_plan(payload: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The :class:`ComparisonPlan` (plain data) a ``design.comparison`` payload asks for.
+
+    ``None`` for the plain ``{"group_a", "group_b"}`` payload, and for a list holding only that
+    comparison, unpaired: one comparison as before. The payload's own comparison is the primary
+    and comes first, whether or not the list repeats it.
+    """
+    primary = (str(payload["group_a"]), str(payload["group_b"]))
+    listed = payload.get("comparisons") or []
+    if isinstance(listed, str | bytes) or not isinstance(listed, Iterable):
+        raise DesignError("comparisons is a list of {group_a, group_b}")
+    comparisons = []
+    for entry in listed:
+        if not isinstance(entry, Mapping):
+            raise DesignError("each comparison is {group_a, group_b}")
+        pair = (str(entry["group_a"]), str(entry["group_b"]))
+        if pair != primary:
+            comparisons.append(
+                {"group_a": pair[0], "group_b": pair[1], "label": entry.get("label", "")}
+            )
+    first = {"group_a": primary[0], "group_b": primary[1], "label": payload.get("label", "")}
+    comparisons.insert(0, first)
+    pair_by = payload.get("pair_by") or None
+    if len(comparisons) == 1 and pair_by is None:
+        return None
+    return {
+        "pattern": payload.get("pattern") or "chosen",
+        "control": payload.get("control") or None,
+        "comparisons": comparisons,
+        "correction": payload.get("correction") or "holm",
+        "pair_by": pair_by,
+    }
 
 
 def _exclusion(data: dict[str, Any], payload: Mapping[str, Any], curves: pd.DataFrame | None):
@@ -685,6 +817,8 @@ def design_curves(curves: pd.DataFrame, design: StudyDesign) -> pd.DataFrame:
       from ``"unkn"`` leaves the matrix of study samples.
     * ``excluded_wells`` are marked in the boolean column ``design_excluded``: they still show
       that the sample was measured, but their values are never used.
+    * targets a person left out of the study (role ``"ignore"``) are dropped, every well of
+      them, before anything else: the engine never sees them.
 
     ``well_calls`` are applied with the amplification rule
     (:func:`qpilot.qpcr.amp_call.apply_rule`), not here.
@@ -694,11 +828,14 @@ def design_curves(curves: pd.DataFrame, design: StudyDesign) -> pd.DataFrame:
             into another role, or names a well that is not in the table.
     """
     out = curves.copy()
-    keys = well_keys(out)
     named = [*design.well_roles, *design.well_calls, *design.excluded_wells]
-    unknown = sorted(set(named) - set(keys))
+    unknown = sorted(set(named) - set(well_keys(out)))
     if unknown:
         raise DesignError(f"wells named in the design but not in the data: {unknown[:5]}")
+    ignored = {t for t, d in design.targets.items() if d.role == "ignore"}
+    if ignored and "target" in out.columns:
+        out = out[~out["target"].isin(ignored)].copy()
+    keys = well_keys(out)
     declared = out["sample_type"]
     roles = {s: d.role for s, d in design.samples.items() if d.role != "unkn"}
     sample_type = out["sample"].map(roles).fillna(declared)

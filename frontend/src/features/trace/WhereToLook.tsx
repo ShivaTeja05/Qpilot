@@ -2,9 +2,13 @@
  * Where to look (`GET …/where-to-look`): from one gene, one sample or one well (`PLATE:WELL`) to
  * the places a person should look, at the analysis in use. The engine's sentences first (every
  * number a cited fact), then each place: what it fails (in words), what each option there does
- * to the calls, and **Decide…** where an option changes a call. Decide… opens the place as a
- * Decision Card on Results (`POST …/where-to-look/open` with the head this view was read at); it
- * writes no decision and changes no number. A view that is out of date (409 `stale`) is read
+ * to the calls, and **Decide…** where an option changes a call. In a Studio session (its current
+ * analysis) Decide… opens the place's options and a reason box: a set-aside leaves the wells out
+ * of the analysis and the study is analysed again (`POST …/where-to-look/decide`, Run Gate's
+ * path; see `SetAside.tsx`), and what a person set aside is listed with Put the wells back. For a
+ * study analysed outside Studio, Decide… opens the place as a Decision Card on Results (`POST
+ * …/where-to-look/open`; recorded, the numbers stay as analysed) and the panel says how to leave
+ * the wells out (open the file in Studio). A view that is out of date (409 `stale`) is read
  * again and says so; a study whose wells are still being read (409 `loading`) follows the job.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,11 +43,13 @@ import {
   toast,
 } from "@/ui";
 import {
+  decidePlace,
   isNotFound,
   loadingJob,
   openPlace,
   useWhere,
   type PlaceOpened,
+  type TraceDecided,
   type TraceScope,
   type WhereKind,
   type WhereOption,
@@ -52,6 +58,7 @@ import {
   type WhereView,
 } from "./api";
 import { FactText } from "./FactText";
+import { DecidePanel, SetAsideList, decidedToast } from "./SetAside";
 import { TraceWaiting } from "./Waiting";
 import { WELL_INPUT, WHERE_ROLE, WHERE_TONE, cannotWords, checkedWords, placeWords } from "./words";
 
@@ -181,6 +188,46 @@ export function WhereToLook({
     },
   });
 
+  const decide = useMutation({
+    mutationFn: (p: {
+      view: WhereView;
+      place: WherePlace;
+      root: WhereRoot;
+      option: string;
+      reason: string;
+    }) =>
+      decidePlace(scope.studyId!, {
+        kind: p.root.kind,
+        id: p.root.id,
+        rank: p.place.rank,
+        option: p.option,
+        reason: p.reason,
+        expected_head: p.view.head,
+        expected_inbox: p.view.inbox_head ?? null,
+      }),
+    onSuccess: async (done: TraceDecided) => {
+      setNotice(null);
+      decidedToast(done);
+      await refreshWorkspace(qc, scope.key);
+    },
+    onError: (error) => {
+      const job = loadingJob(error);
+      if (job) {
+        setOpenJob(job.id);
+        return;
+      }
+      if (error instanceof ApiError && error.stale) {
+        setNotice(error.message);
+        void refreshWorkspace(qc, scope.key);
+        toast.info("Something was decided since this trace was shown", {
+          description: "Here is the trace again; look at it before you decide.",
+        });
+        return;
+      }
+      reportWriteError(qc, error, scope.key);
+    },
+  });
+
   const view = q.data;
   return (
     <Card as="section" aria-labelledby={`${ids}-title`}>
@@ -191,6 +238,7 @@ export function WhereToLook({
         hint="From a gene's result, a sample or a well to the places worth a look, ranked by what each option there does to the calls. Reading it changes nothing."
       />
       <CardBody className="@container flex flex-col gap-4">
+        <SetAsideList scope={scope} heading={level === 2 ? "h3" : "h4"} />
         <form onSubmit={submit} className="flex flex-col gap-3" aria-label="What to trace">
           <SegmentedControl
             label="What to trace"
@@ -310,8 +358,17 @@ export function WhereToLook({
             root={root}
             heading={level === 2 ? "h3" : "h4"}
             busy={q.isFetching}
-            deciding={open.isPending ? (open.variables?.place.rank ?? null) : null}
+            deciding={
+              open.isPending
+                ? (open.variables?.place.rank ?? null)
+                : decide.isPending
+                  ? (decide.variables?.place.rank ?? null)
+                  : null
+            }
             onDecide={(place) => open.mutate({ view, place, root })}
+            onApply={(place, option, reason) =>
+              decide.mutate({ view, place, root, option, reason })
+            }
             onOpenCard={goToCard}
             onMore={(n) => setTop(n)}
             onSample={traceSample}
@@ -332,6 +389,7 @@ export function WhereResult({
   busy,
   deciding,
   onDecide,
+  onApply,
   onOpenCard,
   onMore,
   onSample,
@@ -344,7 +402,10 @@ export function WhereResult({
   busy?: boolean;
   /** The rank whose Decide… is being sent. */
   deciding: number | null;
+  /** Outside Studio: open the place as a Decision Card. */
   onDecide: (place: WherePlace) => void;
+  /** In a Studio session: apply the person's option at the place, with the reason. */
+  onApply?: (place: WherePlace, option: string, reason: string) => void;
   onOpenCard: (cardId: string) => void;
   onMore: (top: number) => void;
   onSample: (sample: string) => void;
@@ -352,7 +413,7 @@ export function WhereResult({
   const ids = useId();
   const checked = checkedWords(view.checked_nothing_found);
   const cannot = cannotWords(view.cannot_show);
-  const decidable = view.places.some((p) => p.can_decide && !p.card_status);
+  const decidable = view.places.some((p) => p.can_decide && (view.can_apply || !p.card_status));
   const total = view.places.length + view.n_more;
   const H4 = H === "h3" ? "h4" : "h5";
   return (
@@ -383,12 +444,14 @@ export function WhereResult({
             <ol className="flex flex-col gap-3" aria-label="Places to look">
               {view.places.map((p) => (
                 <PlaceRow
-                  key={p.rank}
+                  key={`${p.rank}:${p.card_id}`}
                   workspace={workspace}
                   place={p}
                   root={root}
+                  canApply={view.can_apply}
                   deciding={deciding}
                   onDecide={onDecide}
+                  onApply={onApply}
                   onOpenCard={onOpenCard}
                 />
               ))}
@@ -419,6 +482,9 @@ export function WhereResult({
             </div>
           ) : null}
           {decidable ? <p className="mt-3 text-[12px] text-muted">{view.decide_note}</p> : null}
+          {decidable && !view.can_apply && view.apply_note ? (
+            <p className="mt-1 text-[12px] text-muted">{view.apply_note}</p>
+          ) : null}
         </section>
       </div>
 
@@ -487,21 +553,37 @@ function PlaceRow({
   workspace,
   place,
   root,
+  canApply,
   deciding,
   onDecide,
+  onApply,
   onOpenCard,
 }: {
   workspace: Workspace;
   place: WherePlace;
   root: WhereRoot;
+  canApply: boolean;
   deciding: number | null;
   onDecide: (place: WherePlace) => void;
+  onApply?: (place: WherePlace, option: string, reason: string) => void;
   onOpenCard: (cardId: string) => void;
 }) {
   const where = placeWords(place);
   const tone = WHERE_TONE[place.consequence] ?? "neutral";
+  const [choosing, setChoosing] = useState(false);
   let action: ReactNode;
-  if (place.card_status && DECIDED.has(place.card_status)) {
+  if (canApply && place.can_decide && onApply) {
+    action = choosing ? null : (
+      <Button
+        size="sm"
+        disabled={deciding != null}
+        onClick={() => setChoosing(true)}
+        aria-expanded={choosing}
+      >
+        Decide&hellip;<span className="sr-only"> {where}</span>
+      </Button>
+    );
+  } else if (place.card_status && DECIDED.has(place.card_status)) {
     action = (
       <>
         <Badge tone="ok" icon={<CircleCheck aria-hidden />}>
@@ -591,7 +673,15 @@ function PlaceRow({
           ))}
         </ul>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">{action}</div>
+      {action ? <div className="mt-3 flex flex-wrap items-center gap-2">{action}</div> : null}
+      {choosing && onApply ? (
+        <DecidePanel
+          place={place}
+          busy={deciding === place.rank}
+          onDecide={(option, reason) => onApply(place, option, reason)}
+          onCancel={() => setChoosing(false)}
+        />
+      ) : null}
     </li>
   );
 }

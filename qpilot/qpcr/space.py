@@ -24,6 +24,17 @@ conclusion "none" with p = NaN instead of stopping the sweep.
 Evaluation is vectorised over genes (numpy), so a full 186-cell sweep over 58 genes takes a few
 seconds; results equal :func:`qpilot.qpcr.contrast.welch_contrast` cell by cell.
 
+Several comparisons (a confirmed :class:`~qpilot.schemas_studio.ComparisonPlan`): the space is
+given :class:`ComparisonSpec` s, the primary first, and every cell evaluates all of them from the
+same relative quantities (the curve fitting and the matrices are shared; a comparison costs a few
+array operations). With Holm's correction each gene's p-values are adjusted across its
+comparisons inside every cell, and the call uses the adjusted p; :meth:`QpcrSpace.evaluate`
+returns the primary comparison, :meth:`QpcrSpace.evaluate_all` every one, and
+:class:`ComparisonView` presents one comparison as a decision space of its own (same dimensions,
+same cells), so the core's robustness summary works per comparison unchanged. A paired
+comparison tests the within-pair differences (:func:`paired_arrays`). Without comparisons (the
+default) nothing of this runs and every number is what it was.
+
 What-if evaluation with the groups held fixed (used by :mod:`qpilot.qpcr.trace`): the arrays a
 cell is computed from are public through :meth:`QpcrSpace.cell_arrays` and
 :meth:`QpcrSpace.group_masks` (copies), and :meth:`QpcrSpace.evaluate_arrays` /
@@ -56,7 +67,7 @@ from qpilot.qpcr.axes import (
     ordered,
 )
 from qpilot.qpcr.axes import state as axes_state
-from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule, conclude
+from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule, conclude, holm
 from qpilot.qpcr.curves import REFERENCE_TARGETS
 from qpilot.qpcr.design import GroupSpec, groups_by_cut
 from qpilot.qpcr.quant import Undetermined
@@ -80,6 +91,37 @@ class MatrixStage:
 
     values: pd.DataFrame
     excluded: pd.DataFrame | None = None
+
+
+@dataclass(frozen=True)
+class ComparisonSpec:
+    """One comparison of a study: the units of group A against those of group B.
+
+    ``pairs`` (a paired design) lists ``(unit in A, unit in B)`` per pair, in the order of
+    ``pair_keys`` (the donor, animal or passage names); ``None`` for an unpaired comparison.
+    """
+
+    id: str
+    labels: tuple[str, str]
+    group_a: frozenset[str]
+    group_b: frozenset[str]
+    pairs: tuple[tuple[str, str], ...] | None = None
+    pair_keys: tuple[str, ...] = ()
+
+    @property
+    def paired(self) -> bool:
+        """True for a paired comparison."""
+        return self.pairs is not None
+
+
+@dataclass(frozen=True, eq=False)
+class _Masks:
+    """A comparison over the space's units: group masks, or the pair positions when paired."""
+
+    in_a: np.ndarray
+    in_b: np.ndarray
+    idx_a: np.ndarray | None = None
+    idx_b: np.ndarray | None = None
 
 
 def ref_subsets(candidates: Sequence[str]) -> list[tuple[str, ...]]:
@@ -122,6 +164,11 @@ class QpcrSpace:
         option_labels: Axis -> option value -> label, for :attr:`axes` (plain words).
         unavailable: Axis -> option id -> why that option does not apply to this study; such
             options are not offered and are reported in :attr:`axes`.
+        comparisons: Several comparisons (or one paired comparison) from a confirmed design,
+            the primary first; they replace ``groups`` (whose pair is the primary's). Each cell
+            evaluates all of them.
+        correction: ``"holm"`` (each gene's p-values adjusted across its comparisons; the
+            call uses the adjusted p) or ``"none"``. Only read with ``comparisons``.
     """
 
     def __init__(
@@ -143,7 +190,18 @@ class QpcrSpace:
         matrix_source: Callable[[Mapping[str, Any]], pd.DataFrame | MatrixStage] | None = None,
         option_labels: Mapping[str, Mapping[Any, str]] | None = None,
         unavailable: Mapping[str, Mapping[str, str]] | None = None,
+        comparisons: Sequence[ComparisonSpec] | None = None,
+        correction: str = "holm",
     ) -> None:
+        specs = tuple(comparisons or ())
+        if specs:
+            if correction not in ("holm", "none"):
+                raise ValueError(f"correction must be 'holm' or 'none', not {correction!r}")
+            ids = [spec.id for spec in specs]
+            if len(set(ids)) != len(ids):
+                raise ValueError(f"comparison ids repeat: {ids}")
+            groups = (specs[0].group_a, specs[0].group_b)
+            group_labels = specs[0].labels
         marker_mode = groups is None
         design = design or GroupSpec()
         candidates = tuple(candidates)
@@ -215,6 +273,11 @@ class QpcrSpace:
             cut: (self._samples.isin(high), self._samples.isin(rest))
             for cut, (high, rest) in self._groups.items()
         }
+        self.comparisons: tuple[ComparisonSpec, ...] = specs
+        self.correction = correction if specs else "none"
+        self._cmp: list[_Masks] = [self._spec_masks(spec) for spec in specs]
+        if specs and specs[0].paired:  # the primary's masks are its paired units
+            self._masks = {None: (self._cmp[0].in_a, self._cmp[0].in_b)}
         self.withheld = self._withheld(matrix, genes, primary_refs, labels)
         self.items: list[str] = [gene for gene in genes if gene not in self.withheld]
         self._excluded: np.ndarray | None = None
@@ -356,6 +419,14 @@ class QpcrSpace:
         block = matrix[list(refs)]
         relative = values - block.mean(axis=1).to_numpy(dtype=float)[:, None]
         valid = block.notna().all(axis=1).to_numpy()[:, None] & ~np.isnan(relative)
+        if self.comparisons and self.comparisons[0].paired:
+            masks = self._cmp[0]
+            pairs = (valid[masks.idx_a] & valid[masks.idx_b]).sum(axis=0)
+            return {
+                gene: "fewer than two complete pairs (a value in both groups)"
+                for gene, n in zip(genes, pairs, strict=True)
+                if n < 2
+            }
         in_high, in_rest = self._masks[self.primary.get("cut")]
         n_a = (valid & in_high[:, None]).sum(axis=0)
         n_b = (valid & in_rest[:, None]).sum(axis=0)
@@ -366,6 +437,19 @@ class QpcrSpace:
                 where = " and ".join(short)
                 out[gene] = f"fewer than two biological units with a value in {where}"
         return out
+
+    def _spec_masks(self, spec: ComparisonSpec) -> _Masks:
+        """A comparison's masks over the units (and pair positions when paired)."""
+        if spec.pairs is None:
+            return _Masks(self._samples.isin(spec.group_a), self._samples.isin(spec.group_b))
+        where = {unit: i for i, unit in enumerate(self._samples)}
+        kept = [(a, b) for a, b in spec.pairs if a in where and b in where]
+        idx_a = np.array([where[a] for a, _ in kept], dtype=int)
+        idx_b = np.array([where[b] for _, b in kept], dtype=int)
+        in_a = np.zeros(len(self._samples), dtype=bool)
+        in_b = np.zeros(len(self._samples), dtype=bool)
+        in_a[idx_a], in_b[idx_b] = True, True
+        return _Masks(in_a, in_b, idx_a, idx_b)
 
     def groups(self, cut: float | None = None) -> tuple[frozenset[str], frozenset[str]]:
         """The (high, rest) units for a cut-off, fixed from the primary choices.
@@ -405,14 +489,83 @@ class QpcrSpace:
         ref_mean, refs_ok = self._reference(refs, key)
         relative = values - ref_mean[:, None]
         valid = refs_ok[:, None] & ~np.isnan(relative)
+        if self.comparisons:
+            return self._compare(relative, valid, self._cmp)[0].results()
         in_high, in_rest = self._masks[cell["cut"] if self.design is not None else None]
         stats_hi = _group_stats(relative, valid & in_high[:, None])
         stats_lo = _group_stats(relative, valid & in_rest[:, None])
         return _welch_results(self.items, stats_hi, stats_lo, self.rule)
 
     def conclude(self, result: ContrastResult) -> Conclusion:
-        """Up / down / none for a result under this space's conclusion rule."""
+        """Up / down / none for a result under this space's conclusion rule.
+
+        With several comparisons the call is the one the result carries: it was made from the
+        corrected p-value, which a single result cannot recompute.
+        """
+        if self.comparisons:
+            return result.conclusion
         return conclude(result.log2fc, result.p, self.rule)
+
+    # ---- several comparisons ------------------------------------------------------------
+
+    def evaluate_all_arrays(
+        self, cell: Mapping[str, Any], *, with_ci: bool = True
+    ) -> dict[str, ContrastArrays]:
+        """Every comparison under one cell, as arrays over :attr:`items` (calls corrected)."""
+        if not self.comparisons:
+            raise ValueError("this study has one comparison; use evaluate")
+        values, ref_values = self._cell_inputs(cell)
+        ref_mean = ref_values.mean(axis=1)
+        refs_ok = ~np.isnan(ref_values).any(axis=1)
+        relative = values - ref_mean[:, None]
+        valid = refs_ok[:, None] & ~np.isnan(relative)
+        arrays = self._compare(relative, valid, self._cmp, with_ci=with_ci)
+        return {spec.id: a for spec, a in zip(self.comparisons, arrays, strict=True)}
+
+    def evaluate_all(self, cell: Mapping[str, Any]) -> dict[str, dict[str, ContrastResult]]:
+        """Every comparison's results under one cell, by comparison id, the primary first."""
+        return {cid: a.results() for cid, a in self.evaluate_all_arrays(cell).items()}
+
+    def comparison_view(self, comparison_id: str) -> ComparisonView:
+        """One comparison as a decision space of its own (same dimensions and cells)."""
+        if comparison_id not in {spec.id for spec in self.comparisons}:
+            raise KeyError(f"no comparison {comparison_id!r}")
+        return ComparisonView(self, comparison_id)
+
+    def _cell_inputs(self, cell: Mapping[str, Any]) -> tuple[np.ndarray, np.ndarray]:
+        """``(values, ref_values)`` of a cell from the stage caches (no copies)."""
+        amp_call = cell.get("amp_call", self._amp_primary)
+        if amp_call not in self._offered["amp_call"]:
+            raise ValueError(f"unknown amp_call option {amp_call!r}")
+        key = self._matrix_key(cell)
+        values = self._nondetect_values(key, cell["undetermined"])
+        refs = self._matrix_arrays(key)[2][list(cell["refs"])].to_numpy(dtype=float)
+        return values, refs
+
+    def _compare(
+        self,
+        relative: np.ndarray,
+        valid: np.ndarray,
+        masks: Sequence[_Masks],
+        *,
+        with_ci: bool = True,
+    ) -> list[ContrastArrays]:
+        """Each comparison's test on the same relative quantities, then the correction."""
+        out = []
+        for spec, m in zip(self.comparisons, masks, strict=True):
+            if spec.pairs is None:
+                stats_a = _group_stats(relative, valid & m.in_a[:, None])
+                stats_b = _group_stats(relative, valid & m.in_b[:, None])
+                out.append(welch_arrays(self.items, stats_a, stats_b, self.rule, with_ci=with_ci))
+            else:
+                differences = relative[m.idx_a] - relative[m.idx_b]
+                complete = valid[m.idx_a] & valid[m.idx_b]
+                stats = _group_stats(differences, complete)
+                out.append(paired_arrays(self.items, stats, self.rule, with_ci=with_ci))
+        if self.correction == "holm" and len(out) > 1:
+            adjusted = holm(np.vstack([a.p for a in out]), axis=0)
+            out = [_with_call_p(a, adjusted[i]) for i, a in enumerate(out)]
+        return out
 
     # ---- what-if evaluation with fixed groups (public, read-only) ----------------------------
 
@@ -476,9 +629,31 @@ class QpcrSpace:
         refs_ok = ~np.isnan(ref_values).any(axis=1)
         relative = values - ref_mean[:, None]
         valid = refs_ok[:, None] & ~np.isnan(relative)
+        if self.comparisons:
+            return self._compare(relative, valid, self._masks_with(in_high, in_rest))[0]
         stats_hi = _group_stats(relative, valid & in_high[:, None])
         stats_lo = _group_stats(relative, valid & in_rest[:, None])
         return welch_arrays(self.items, stats_hi, stats_lo, self.rule)
+
+    def _masks_with(self, in_high: np.ndarray, in_rest: np.ndarray) -> list[_Masks]:
+        """Every comparison's masks with the primary's replaced by ``in_high`` / ``in_rest``.
+
+        A unit the given masks leave out of the primary's groups is set aside in every
+        comparison (and its pairs dropped), so the correction sees the same units throughout.
+        """
+        own = self._cmp[0]
+        aside = (own.in_a & ~in_high) | (own.in_b & ~in_rest)
+        out = []
+        for i, m in enumerate(self._cmp):
+            if m.idx_a is not None:
+                keep = ~(aside[m.idx_a] | aside[m.idx_b])
+                idx_a, idx_b = m.idx_a[keep], m.idx_b[keep]
+                out.append(_Masks(m.in_a & ~aside, m.in_b & ~aside, idx_a, idx_b))
+            elif i == 0:
+                out.append(_Masks(np.asarray(in_high), np.asarray(in_rest)))
+            else:
+                out.append(_Masks(m.in_a & ~aside, m.in_b & ~aside))
+        return out
 
     def evaluate_with(
         self,
@@ -524,6 +699,7 @@ class ContrastArrays:
     n_lo: np.ndarray
     conclusion: np.ndarray
     rule: ConclusionRule
+    p_call: np.ndarray | None = None  # the p-value the call uses (corrected); None: ``p``
 
     @property
     def half_ci(self) -> np.ndarray:
@@ -540,7 +716,130 @@ class ContrastArrays:
             self.n_hi,
             self.n_lo,
             self.rule,
+            self.p_call,
         )
+
+
+class ComparisonView:
+    """One comparison of a :class:`QpcrSpace` with several, as a decision space of its own.
+
+    It has the space's dimensions, primary cell and items, and evaluates to that comparison's
+    results (calls already corrected), so ``core.robustness`` summarises it unchanged.
+    """
+
+    def __init__(self, space: QpcrSpace, comparison_id: str) -> None:
+        self.space = space
+        self.id = comparison_id
+
+    @property
+    def dimensions(self) -> dict[str, list[Any]]:
+        """The space's dimensions."""
+        return self.space.dimensions
+
+    @property
+    def primary(self) -> dict[str, Any]:
+        """The space's primary cell."""
+        return self.space.primary
+
+    @property
+    def items(self) -> list[str]:
+        """The space's genes."""
+        return self.space.items
+
+    def evaluate(self, cell: dict[str, Any]) -> dict[str, ContrastResult]:
+        """This comparison's results under one cell."""
+        return self.space.evaluate_all_arrays(cell)[self.id].results()
+
+    def conclude(self, result: ContrastResult) -> Conclusion:
+        """The call the result carries (made from the corrected p-value)."""
+        return result.conclusion
+
+
+def _with_call_p(arrays: ContrastArrays, p_call: np.ndarray) -> ContrastArrays:
+    """The arrays with their calls made from ``p_call`` (a corrected p-value)."""
+    rule = arrays.rule
+    with np.errstate(invalid="ignore"):
+        significant = p_call < rule.alpha
+    call = np.where(
+        significant & (arrays.log2fc >= rule.min_log2fc),
+        "up",
+        np.where(significant & (arrays.log2fc <= -rule.min_log2fc), "down", "none"),
+    )
+    return replace(arrays, conclusion=call, p_call=p_call)
+
+
+def paired_arrays(
+    items: Sequence[str],
+    differences: tuple[np.ndarray, ...],
+    rule: ConclusionRule,
+    *,
+    with_ci: bool = True,
+) -> ContrastArrays:
+    """The paired t-test per item from the ``(n, mean, var)`` of within-pair differences.
+
+    ``n_hi`` and ``n_lo`` are both the number of complete pairs; fewer than two give p = NaN
+    and the call "none", as :func:`welch_arrays` does for a group with fewer than two values.
+    """
+    n, mean, var = differences
+    with np.errstate(divide="ignore", invalid="ignore"):
+        se = np.sqrt(var / n)
+        t = mean / se
+        df = n - 1.0
+        p = 2 * stats.t.sf(np.abs(t), df)
+        t_crit = stats.t.ppf(0.975, df) if with_ci else np.full(np.shape(df), np.nan)
+    tested = n >= 2
+    p = np.where(tested, p, np.nan)
+    with np.errstate(invalid="ignore"):
+        significant = p < rule.alpha
+    call = np.where(
+        significant & (mean >= rule.min_log2fc),
+        "up",
+        np.where(significant & (mean <= -rule.min_log2fc), "down", "none"),
+    )
+    return ContrastArrays(tuple(items), mean, se, t, p, t_crit, n, n, call, rule)
+
+
+def comparison_grid(space: QpcrSpace, grid: pd.DataFrame) -> pd.DataFrame:
+    """Every comparison's rows for the cells of ``grid`` (the primary's ``run_grid`` output).
+
+    The same cells in the same order, one block per comparison (primary first): the grid's
+    dimension, index and ``item`` columns, then ``log2fc``, ``fc``, ``p`` (uncorrected),
+    ``p_adjusted`` (the p the call used) and ``conclusion``, with a leading ``comparison``
+    column. The primary's block repeats ``grid``'s numbers.
+    """
+    idx_cols = [c for c in grid.columns if c.endswith(_IDX)]
+    names = [c[: -len(_IDX)] for c in idx_cols]
+    n_items = len(space.items)
+    starts = range(0, len(grid), n_items) if n_items else range(0)
+    collected: dict[str, list[tuple[np.ndarray, ...]]] = {s.id: [] for s in space.comparisons}
+    for start in starts:
+        combo = grid.iloc[start][idx_cols].to_numpy(dtype=int)
+        cell = {n: space.dimensions[n][i] for n, i in zip(names, combo, strict=True)}
+        for cid, a in space.evaluate_all_arrays(cell, with_ci=False).items():
+            p_call = a.p if a.p_call is None else a.p_call
+            collected[cid].append((a.log2fc, a.p, p_call, a.conclusion))
+    base = grid[[*names, *idx_cols, "item"]].reset_index(drop=True)
+    blocks = []
+    for cid, parts in collected.items():
+        block = base.copy()
+        block.insert(0, "comparison", cid)
+        if parts:
+            log2fc, p, p_call, call = (np.concatenate(x) for x in zip(*parts, strict=True))
+        else:
+            log2fc = p = p_call = np.array([], dtype=float)
+            call = np.array([], dtype=object)
+        block["log2fc"] = log2fc
+        block["fc"] = 2.0**log2fc
+        block["p"] = p
+        block["p_adjusted"] = p_call
+        block["conclusion"] = call
+        blocks.append(block)
+    if not blocks:
+        return base.iloc[0:0]
+    return pd.concat(blocks, ignore_index=True)
+
+
+_IDX = "__idx"
 
 
 def welch_arrays(
@@ -648,8 +947,10 @@ def _results(
     n_a: np.ndarray,
     n_b: np.ndarray,
     rule: ConclusionRule,
+    p_call: np.ndarray | None = None,
 ) -> dict[str, ContrastResult]:
     diff, se, t, p, t_crit = welch
+    call_p = p if p_call is None else p_call
     out = {}
     nan = float("nan")
     for i, gene in enumerate(genes):
@@ -677,6 +978,6 @@ def _results(
             t=float(t[i]),
             n_hi=int(n_a[i]),
             n_lo=int(n_b[i]),
-            conclusion=conclude(d, float(p[i]), rule),
+            conclusion=conclude(d, float(call_p[i]), rule),
         )
     return out

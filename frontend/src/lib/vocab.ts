@@ -297,6 +297,37 @@ const AXIS_QUESTION: Record<string, string> = {
 type Payload = Record<string, unknown>;
 const str = (v: unknown) => String(v ?? "?");
 
+/**
+ * A comparison proposal in words: one comparison, or several (each group vs a control, every
+ * pair, or a person's list) with the correction and any pairing. Mirrors qpilot/studio_state.py.
+ */
+export function comparisonWords(d: Payload): string {
+  const a = str(d.group_a);
+  const b = str(d.group_b);
+  let text = `Compare group “${a}” with group “${b}” (fold change = ${a} relative to ${b})`;
+  const listed = Array.isArray(d.comparisons) ? (d.comparisons as Payload[]) : [];
+  const others = listed.filter((c) => c && !(c.group_a === d.group_a && c.group_b === d.group_b));
+  if (others.length) {
+    const head =
+      d.pattern === "vs_control" && d.control
+        ? `Compare each group with the control “${str(d.control)}”`
+        : d.pattern === "all_pairs"
+          ? "Compare every pair of groups"
+          : "Compare these groups";
+    const pairs = [{ group_a: a, group_b: b }, ...others]
+      .map((c) => `${str(c.group_a)} vs ${str(c.group_b)}`)
+      .join("; ");
+    text = `${head} (${others.length + 1} comparisons: ${pairs}; the first is ${a} vs ${b})`;
+    text +=
+      (d.correction ?? "holm") === "holm"
+        ? ", with Holm's correction across each gene's comparisons"
+        : ", with no correction for several comparisons";
+  }
+  if (d.pair_by)
+    text += `, paired by ${str(d.pair_by)} (a paired test within each ${str(d.pair_by)})`;
+  return text;
+}
+
 const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
   "design.preset": (_s, d) => {
     const preset = str(d.preset);
@@ -307,18 +338,28 @@ const DESCRIBERS: Record<string, (subject: string, d: Payload) => string> = {
     const role = str(d.role);
     return `Treat sample ${s} as ${ROLE_WORDS[role] ?? `role “${role}”`}`;
   },
-  "design.group": (s, d) => `Put sample ${s} in group “${str(d.group)}”`,
+  "design.group": (s, d) =>
+    d.group == null
+      ? `Take sample ${s} out of every group (it is not compared)`
+      : `Put sample ${s} in group “${str(d.group)}”`,
   "design.bio_unit": (s, d) =>
-    `Sample ${s} belongs to biological unit “${str(d.biological_unit)}”: its wells are technical replicates of that unit and are never counted as separate n`,
+    d.biological_unit == null
+      ? `Sample ${s} is its own biological unit (its wells are technical replicates)`
+      : `Sample ${s} belongs to biological unit “${str(d.biological_unit)}”: its wells are technical replicates of that unit and are never counted as separate n`,
   "design.target_role": (s, d) =>
     d.role === "ref"
       ? `Use target ${s} as a reference gene (other genes are normalised to it)`
       : d.role === "toi"
         ? `Treat target ${s} as a gene of interest`
-        : `Give target ${s} the role “${str(d.role)}”`,
+        : d.role === "ignore"
+          ? `Leave target ${s} out of the study (none of its wells is used)`
+          : `Give target ${s} the role “${str(d.role)}”`,
   "design.gene_symbol": (s, d) => `Target ${s} is the gene with the HGNC symbol ${str(d.symbol)}`,
-  "design.comparison": (_s, d) =>
-    `Compare group “${str(d.group_a)}” with group “${str(d.group_b)}” (fold change = ${str(d.group_a)} relative to ${str(d.group_b)})`,
+  "design.comparison": (_s, d) => comparisonWords(d),
+  "design.pair": (s, d) =>
+    d.pair
+      ? `Sample ${s} belongs to ${str(d.by ?? "pair")} “${str(d.pair)}”: it is paired with that ${str(d.by ?? "pair")}'s samples in the other groups`
+      : `Sample ${s} is not paired with samples of the other groups`,
   "design.dilution_series": (s, d) => {
     const samples =
       d.samples && typeof d.samples === "object" ? (d.samples as Record<string, unknown>) : {};
@@ -422,6 +463,7 @@ export const KIND_TITLE: Record<Proposal["kind"], string> = {
   "design.target_role": "Target role",
   "design.gene_symbol": "Gene symbol",
   "design.comparison": "Comparison",
+  "design.pair": "Pairing",
   "design.dilution_series": "Dilution series",
   "curve.call_rule": "Amplification rule",
   "curve.well_call": "Well call",
@@ -440,6 +482,8 @@ export const CURVE_JUDGE = "qpilot-curve-judge";
 export function makerText(m: Schemas["MadeBy"]): string {
   if (m.kind === "rule") return "Made by a fixed rule in qPilot (no model).";
   if (m.kind === "agent") return `Proposed by an agent over MCP (${m.agent || "unnamed"}).`;
+  if (m.kind === "person")
+    return "Set by a person on the Design page (and accepted in the same act).";
   if (m.provider === CURVE_JUDGE)
     return `Made by the Curve Judge, a local curve classifier (model ${m.model ?? "?"}); it reads only the curve's fluorescence values.`;
   return `Made by the model ${m.provider || "?"} · ${m.model || "?"}${m.prompt_sha256 ? ` · prompt sha256 ${m.prompt_sha256.slice(0, 12)}` : ""}.`;

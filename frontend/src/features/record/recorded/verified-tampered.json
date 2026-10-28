@@ -1,6 +1,8 @@
 {
  "ok": false,
- "file_name": "qpilot-record-e300000d4f9a-edited.zip",
+ "file_name": "qpilot-record-e300000d4f9a.zip",
+ "outcome": "altered",
+ "headline": "This record was altered or damaged after export: decisions.jsonl.",
  "summary": [
   "changed: decisions.jsonl",
   "decision chain broken at entry 1"
@@ -12,9 +14,10 @@
   ],
   "missing": [],
   "unlisted": [],
+  "damaged": [],
   "chain_broken_at": 1,
   "inconsistent": [],
-  "n_entries": 6,
+  "n_entries": 1,
   "has_proposals": true,
   "proposal_chain_broken_at": null,
   "n_proposal_entries": 494
@@ -22,11 +25,11 @@
  "record": {
   "study_id": "e300000d4f9a",
   "input_sha256": "bc1d233e3866ad4d32736a9feea832ea6261a9c75d82a78e465d31bad554e151",
-  "chain_head": "de016897d02be18dd2131d54fd8bb94075ff5fa657f2ac9c06672847c49fd9fa",
-  "written_at": "2026-10-20T21:06:43Z",
+  "chain_head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+  "written_at": "2026-10-28T15:54:17Z",
   "input_included": true,
   "shared": false,
-  "record_id": "0a4b024294f2e14e684e62005d7e496bd8d0ebf66a7eba9a0ed52f9446c7f47a"
+  "record_id": "e209efc43e4ae6a83bd5b1da1928b5818e7f839a99119fd50863fcb8bbc786c4"
  },
  "audit": {
   "source": "store",

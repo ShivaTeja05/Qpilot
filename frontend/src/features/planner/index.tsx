@@ -100,9 +100,11 @@ function PlannerPage({ workspace }: { workspace: Schemas["WorkspaceView"] }) {
 
 function Planner({ scope, view }: { scope: PlannerScope; view: PlannerView }) {
   const d = view.defaults;
+  // the server's default sits above the call rule's threshold (2.5× for a 2-fold rule)
+  const start = d.fold ?? view.min_fold * 1.25;
   const [state, setState] = useState<ExplorerState>(() => ({
-    foldIndex: nearestStop(FOLD_STOPS, Math.max(d.fold ?? 2, 1 / (d.fold ?? 2))),
-    direction: (d.fold ?? 2) >= 1 ? "up" : "down",
+    foldIndex: nearestStop(FOLD_STOPS, Math.max(start, 1 / start)),
+    direction: start >= 1 ? "up" : "down",
     powerIndex: nearestStop(POWER_STOPS, d.power ?? 0.8),
     autoN: true,
     nIndex: nearestStop(N_STOPS, 12),

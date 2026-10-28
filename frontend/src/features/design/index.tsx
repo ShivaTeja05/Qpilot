@@ -26,8 +26,11 @@ import {
   useStageProposals,
   type InboxFilter,
 } from "@/ui/proposal";
-import { DesignNeeds } from "./DesignNeeds";
-import { comparisonState, concerns } from "./logic";
+import { DesignEditor, EDITOR_ID, type EditorTab } from "./DesignEditor";
+import { DesignNeeds, type NeedPlace } from "./DesignNeeds";
+import { EMPTY_DRAFT, type Draft } from "./draft";
+import { useDesignEditor } from "./editorApi";
+import { comparisonState, concerns, proposedValues } from "./logic";
 import { DesignPlate, type PlateWell } from "./DesignPlate";
 import { FileFacts } from "./FileFacts";
 import { ImportCard } from "./ImportCard";
@@ -44,6 +47,24 @@ export default function DesignSection({ workspace }: SectionProps) {
   const [filter, setFilter] = useState<InboxFilter | null>(null);
   const [proposingComparison, setProposingComparison] = useState(false);
   const [well, setWell] = useState<string | null>(null);
+  const editor = useDesignEditor(sid);
+  const [tab, setTab] = useState<EditorTab>("targets");
+  // The draft and the selection belong to one session (another session starts empty).
+  const [mine, setMine] = useState<{ sid: string | null; draft: Draft; picked: Set<string> }>(
+    () => ({ sid, draft: EMPTY_DRAFT, picked: new Set() }),
+  );
+  const draft = mine.sid === sid ? mine.draft : EMPTY_DRAFT;
+  const picked = useMemo(() => (mine.sid === sid ? mine.picked : new Set<string>()), [mine, sid]);
+  const setDraft = useCallback(
+    (next: Draft) =>
+      setMine((m) => ({ sid, draft: next, picked: m.sid === sid ? m.picked : new Set() })),
+    [sid],
+  );
+  const setPicked = useCallback(
+    (next: Set<string>) =>
+      setMine((m) => ({ sid, draft: m.sid === sid ? m.draft : EMPTY_DRAFT, picked: next })),
+    [sid],
+  );
 
   const all = useMemo(() => list.data?.proposals ?? [], [list.data]);
   const comparison = useMemo(() => comparisonState(all), [all]);
@@ -54,6 +75,31 @@ export default function DesignSection({ workspace }: SectionProps) {
       setFilter({ label: `sample ${w.sample} (well ${w.well})`, match: (p) => concerns(p, w) }),
     [],
   );
+  const proposed = useMemo(() => proposedValues(all), [all]);
+  const pickedKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const s of editor.data?.samples ?? [])
+      if (picked.has(s.sample)) s.wells.forEach((w) => keys.add(w));
+    return keys;
+  }, [editor.data, picked]);
+  const pickWells = useCallback(
+    (wells: PlateWell[]) => setPicked(new Set(wells.map((w) => w.sample))),
+    [setPicked],
+  );
+  const goTo = useCallback((where: NeedPlace) => {
+    if (where === "inbox" || where === "engine") {
+      document
+        .getElementById("design-inbox")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    setTab(where);
+    requestAnimationFrame(() =>
+      document
+        .getElementById(`${EDITOR_ID}-card`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }, []);
   const editOptions = useMemo(() => {
     const groups = new Set<string>();
     const units = new Set<string>();
@@ -136,12 +182,12 @@ export default function DesignSection({ workspace }: SectionProps) {
         }
       />
 
-      {all.length && status && !confirmed ? (
+      {status && !confirmed ? (
         <DesignNeeds
+          needs={editor.data?.needs}
           blockers={status.blockers}
-          proposals={all}
-          onOpen={() => go("home")}
-          onSettings={() => go("settings")}
+          onGo={goTo}
+          unrecorded={draft.size}
         />
       ) : null}
 
@@ -185,6 +231,20 @@ export default function DesignSection({ workspace }: SectionProps) {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
         <div className="flex min-w-0 flex-col gap-4">
+          <DesignEditor
+            sid={sid}
+            view={editor.data}
+            error={editor.error}
+            loading={editor.isPending}
+            quotes={quotes.lookup}
+            tab={tab}
+            onTab={setTab}
+            draft={draft}
+            onDraft={setDraft}
+            selected={picked}
+            onSelect={setPicked}
+            proposed={proposed}
+          />
           {confirmed && all.length ? (
             <Card as="section" aria-labelledby="confirmed-design">
               <CardHeader
@@ -203,6 +263,7 @@ export default function DesignSection({ workspace }: SectionProps) {
               {(result) => <ProposeReportView result={result} />}
             </JobCard>
           ) : null}
+          <div id="design-inbox" className="scroll-mt-24" />
           <StageInbox
             sid={sid}
             stage="design"
@@ -249,6 +310,8 @@ export default function DesignSection({ workspace }: SectionProps) {
             quotes={quotes.lookup}
             highlight={highlight}
             onShowProposals={showWell}
+            selectedKeys={tab === "samples" && editor.data ? pickedKeys : undefined}
+            onSelectKeys={tab === "samples" && editor.data ? pickWells : undefined}
           />
           <FileFacts
             facts={workspace.facts}

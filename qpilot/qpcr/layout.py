@@ -371,7 +371,7 @@ def _batches(
     return out
 
 
-def _positions(spec: LayoutSpec) -> list[str]:
+def _positions(spec: LayoutSpec | RepeatSpec) -> list[str]:
     rows, cols = PLATE_SHAPES[spec.plate_size]
     letters = "ABCDEFGHIJKLMNOP"[:rows]
     return [f"{letters[r]}{c + 1}" for c in range(cols) for r in range(rows)]
@@ -609,10 +609,236 @@ def _warnings(spec: LayoutSpec, shape: Shape, balance: Balance) -> list[str]:
     return out
 
 
+# ---- the repeat plate: the reactions a run review says to re-run ---------------------------------
+
+POS = "POS"
+MAX_REPEAT_REACTIONS = 2_000  # sample x assay pairs on one repeat layout
+
+
+@dataclass(frozen=True)
+class RepeatSpec:
+    """The reactions to re-run after a run, and the controls their plate carries.
+
+    Attributes:
+        reactions: ``(sample, group, target)`` to re-run (the study's own names; group may be "").
+        refs: The reference genes: every repeated sample is run with all of them, on its plate.
+        calibrator: The inter-run calibrator: a sample of the original run, on every plate for
+            every assay, which links the repeat to the original runs (Hellemans 2007).
+        replicates: Technical replicates per sample and assay (the calibrator's too).
+        plate_size: 96 or 384 wells.
+        ntc: No-template control wells per assay per plate.
+        nrt: No-RT control wells per assay per plate.
+        positive: Assays that get a positive control well (``POS``) on every plate they are on.
+        seed: The random order's seed (the same seed gives the same plates).
+    """
+
+    reactions: tuple[tuple[str, str, str], ...]
+    refs: tuple[str, ...]
+    calibrator: str = IRC
+    replicates: int = 2
+    plate_size: int = 96
+    ntc: int = 1
+    nrt: int = 1
+    positive: tuple[str, ...] = ()
+    seed: int = 0
+
+
+@dataclass(frozen=True)
+class RepeatLayout:
+    """The repeat plates: every repeated sample with its reference genes, and the controls."""
+
+    spec: RepeatSpec
+    plates: tuple[Plate, ...]
+    notes: tuple[str, ...]
+    warnings: tuple[str, ...] = field(default_factory=tuple)
+
+    def wells(self) -> list[Well]:
+        """Every well of every plate, plate by plate."""
+        return [w for p in self.plates for w in p.wells]
+
+
+def _repeat_controls(
+    spec: RepeatSpec, assays: Iterable[str]
+) -> list[tuple[str, str, str, str, int]]:
+    """Per assay: the calibrator in replicates, a positive control, the NRT and the NTC wells."""
+    rows: list[tuple[str, str, str, str, int]] = []
+    assays = list(assays)
+    reps = range(1, spec.replicates + 1)
+    rows.extend((spec.calibrator, "", a, "pos", r) for a in assays for r in reps)
+    rows.extend((POS, "", a, "pos", 1) for a in assays if a in spec.positive)
+    rows.extend((NRT, "", a, "nrt", r) for a in assays for r in range(1, spec.nrt + 1))
+    rows.extend((NTC, "", a, "ntc", r) for a in assays for r in range(1, spec.ntc + 1))
+    return rows
+
+
+def make_repeat_layout(spec: RepeatSpec) -> RepeatLayout:
+    """The repeat plates: as few as hold the reactions, each sample whole on one plate.
+
+    Each repeated sample is run for its targets and every reference gene on the same plate (so
+    it is normalised within the plate); each plate carries, per assay on it, the inter-run
+    calibrator, a positive control where the original run had one, the no-RT and the
+    no-template controls. Samples are dealt to plates in a seeded random order (position is
+    not group) and fill the wells down the columns, the plate's controls last, as
+    :func:`make_layout` does.
+
+    Raises:
+        LayoutError: Nothing to repeat, a name a CSV cannot carry, a value out of range, or
+            one sample's reactions and their controls do not fit on one plate.
+    """
+    if spec.plate_size not in PLATE_SHAPES:
+        raise LayoutError("plates have 96 or 384 wells")
+    if not 1 <= spec.replicates <= MAX_REPLICATES:
+        raise LayoutError(f"technical replicates are 1 to {MAX_REPLICATES}")
+    for value, what in ((spec.ntc, "NTC wells per assay"), (spec.nrt, "NRT wells per assay")):
+        if not 0 <= value <= MAX_PER_ASSAY:
+            raise LayoutError(f"{what} are 0 to {MAX_PER_ASSAY}")
+    if not spec.reactions:
+        raise LayoutError("nothing to repeat")
+    if len(spec.reactions) > MAX_REPEAT_REACTIONS:
+        raise LayoutError(f"at most {MAX_REPEAT_REACTIONS:,} reactions in one repeat layout")
+    refs = _unique(_name(r, "The reference gene") for r in spec.refs)
+    calibrator = _name(spec.calibrator, "The calibrator")
+    spec = RepeatSpec(
+        reactions=spec.reactions,
+        refs=refs,
+        calibrator=calibrator,
+        replicates=spec.replicates,
+        plate_size=spec.plate_size,
+        ntc=spec.ntc,
+        nrt=spec.nrt,
+        positive=tuple(spec.positive),
+        seed=int(spec.seed),
+    )
+    targets: dict[str, list[str]] = {}
+    groups: dict[str, str] = {}
+    for sample, group, target in spec.reactions:
+        sample = _name(sample, "The sample")
+        targets.setdefault(sample, [])
+        if target not in refs:
+            targets[sample].append(_name(target, "The gene"))
+        groups[sample] = str(group or "")
+    if calibrator in targets:
+        raise LayoutError("the calibrator is a sample to repeat: choose another sample")
+    blocks = {
+        s: [*_unique(sorted(t)), *refs] if refs else _unique(sorted(t)) for s, t in targets.items()
+    }
+    order = sorted(blocks)
+    rng = random.Random(f"qpilot-repeat:{spec.seed}")
+    rng.shuffle(order)
+    positions = _positions(spec)
+    plates: list[list[str]] = [[]]
+    for sample in order:
+        current = plates[-1]
+        trial = [*current, sample]
+        if _repeat_rows(spec, trial, blocks) > len(positions):
+            if not current:
+                raise LayoutError(
+                    f"sample {sample}'s {len(blocks[sample])} assays in {spec.replicates} "
+                    f"replicate(s) and their controls do not fit on a {spec.plate_size}-well "
+                    "plate: use 384-well plates or fewer replicates"
+                )
+            plates.append([sample])
+            if _repeat_rows(spec, [sample], blocks) > len(positions):
+                raise LayoutError(
+                    f"sample {sample}'s assays and their controls do not fit on a "
+                    f"{spec.plate_size}-well plate: use 384-well plates or fewer replicates"
+                )
+        else:
+            plates[-1] = trial
+    if len(plates) > MAX_PLATES:
+        raise LayoutError(f"the repeat needs more than {MAX_PLATES} plates: repeat fewer samples")
+    built = []
+    for number, members in enumerate(plates, start=1):
+        assays = _unique(a for s in members for a in blocks[s])
+        rows = [
+            (s, groups[s], a, "unkn", r)
+            for s in members
+            for a in blocks[s]
+            for r in range(1, spec.replicates + 1)
+        ]
+        rows += _repeat_controls(spec, assays)
+        wells = tuple(
+            Well(number, pos, sample, group, target, kind, rep)
+            for pos, (sample, group, target, kind, rep) in zip(positions, rows, strict=False)
+        )
+        built.append(
+            Plate(
+                number=number,
+                panel=1,
+                batch=number,
+                genes=tuple(a for a in assays if a not in refs),
+                refs=tuple(refs),
+                samples=tuple(members),
+                wells=wells,
+                size=spec.plate_size,
+            )
+        )
+    return RepeatLayout(
+        spec=spec,
+        plates=tuple(built),
+        notes=tuple(_repeat_notes(spec, built)),
+        warnings=tuple(_repeat_warnings(spec)),
+    )
+
+
+def _repeat_rows(
+    spec: RepeatSpec, members: Sequence[str], blocks: Mapping[str, Sequence[str]]
+) -> int:
+    assays = _unique(a for s in members for a in blocks[s])
+    samples = sum(len(blocks[s]) for s in members) * spec.replicates
+    return samples + len(_repeat_controls(spec, assays))
+
+
+def _repeat_notes(spec: RepeatSpec, plates: Sequence[Plate]) -> list[str]:
+    n_samples = sum(len(p.samples) for p in plates)
+    n_plates, reps = len(plates), spec.replicates
+    lines = [
+        f"{n_plates} plate{'s' * (n_plates != 1)} of {spec.plate_size} wells for "
+        f"{n_samples} sample{'s' * (n_samples != 1)}, each in {reps} "
+        f"replicate{'s' * (reps != 1)} per assay.",
+    ]
+    if spec.refs:
+        lines.append(
+            f"Every repeated sample is run with the reference gene{'s' * (len(spec.refs) != 1)} "
+            f"({', '.join(spec.refs)}) on its own plate, so it is normalised within the plate."
+        )
+    lines.append(
+        f"Every plate carries, for every assay on it, the inter-run calibrator {spec.calibrator} "
+        f"in {reps} replicate{'s' * (reps != 1)}: a sample of the original run, so the repeat "
+        "can be put on the scale of the original runs (Hellemans 2007)."
+    )
+    controls = []
+    if spec.positive:
+        controls.append(f"a positive control ({POS}) where the original run had one")
+    if spec.nrt:
+        controls.append(f"{spec.nrt} no-RT control well{'s' * (spec.nrt != 1)} ({NRT})")
+    if spec.ntc:
+        controls.append(f"{spec.ntc} no-template control well{'s' * (spec.ntc != 1)} ({NTC})")
+    if controls:
+        lines.append("Per assay and plate, too: " + ", ".join(controls) + ".")
+    lines.append(
+        "Samples are dealt to the plates in a random order (seeded); rename the controls in the "
+        "CSV to your own tubes."
+    )
+    return lines
+
+
+def _repeat_warnings(spec: RepeatSpec) -> list[str]:
+    out = []
+    if spec.calibrator == IRC:
+        out.append(
+            "No sample of the original run could be named as the inter-run calibrator: rename IRC "
+            "in the CSV to a sample that was on the original plates."
+        )
+    if spec.ntc == 0:
+        out.append("No NTC wells: contamination of a reagent cannot be seen on these plates.")
+    return out
+
+
 # ---- the CSV -----------------------------------------------------------------------------------
 
 
-def layout_csv(layout: Layout) -> str:
+def layout_csv(layout: Layout | RepeatLayout) -> str:
     """The layout as CSV: plate, well, sample, group, target, type (one row per well)."""
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator="\n")

@@ -23,6 +23,20 @@ Card in the server's store, so do it on a scratch copy) and writes:
 * ``where-gene-opened.json`` -- the gene's trace again (the place now has its card's status).
 
 Then run ``frontend/src/features/results/__tests__/recorded/record_ledger.py`` for the card.
+(``--study`` is a Studio session's current analysis, so its views say ``can_apply``: press
+Decide… with ``--open`` on a study analysed outside Studio, where the place opens as a card.)
+
+With ``--outside STUDY`` it records the gene's trace of a study analysed outside Studio (the demo
+file analysed without a session, e.g. ``StudyStore().ensure_study(<demo rdml>)``):
+
+* ``where-gene-outside.json`` -- Decide… there opens a Decision Card (``can_apply`` false).
+
+With ``--decide`` it applies a person's Decide… in the session (``POST …/where-to-look/decide``
+on the first place of ``where-gene.json``, the option ``--option``; it changes the server's
+store, so do it on a scratch copy), waits for the analysis it starts, and writes:
+
+* ``place-decided.json`` -- the answer (``TraceDecided``);
+* ``set-aside.json`` -- ``GET …/where-to-look/set-aside`` at the new analysis.
 
 With ``--stale`` it presses Decide… with a head the chain is not at (the server refuses it before
 it reads anything else, so nothing is opened) and writes the refusal:
@@ -113,8 +127,42 @@ def main() -> None:
     parser.add_argument("--calm", required=True, help="a gene no place changes")
     parser.add_argument("--open", action="store_true", help="press Decide… once (writes)")
     parser.add_argument("--stale", action="store_true", help="record a refused Decide… only")
+    parser.add_argument("--outside", help="a study analysed outside Studio: its gene's trace")
+    parser.add_argument("--decide", action="store_true", help="apply a Decide… (writes)")
+    parser.add_argument("--option", default="set_aside", help="the option --decide applies")
+    parser.add_argument("--reason", default="The reference well's curve never rose.")
     args = parser.parse_args()
+    if args.outside:
+        write("where-gene-outside.json", where(args.port, args.outside, gene=args.gene))
+        return
     gene = where(args.port, args.study, gene=args.gene)
+    if args.decide:
+        first = next(p for p in gene["places"] if p["can_decide"])
+        done = call(
+            args.port,
+            f"/api/studies/{args.study}/where-to-look/decide",
+            {
+                "kind": "gene",
+                "id": args.gene,
+                "rank": first["rank"],
+                "option": args.option,
+                "reason": args.reason,
+                "expected_head": gene["head"],
+                "expected_inbox": gene["inbox_head"],
+            },
+        )
+        write("place-decided.json", done)
+        job = done.get("job") or {}
+        for _ in range(300):
+            if not job or call(args.port, f"/api/jobs/{job['id']}")["status"] != "running":
+                break
+            time.sleep(1)
+        session = call(args.port, f"/api/sessions/{gene['session']}")
+        write(
+            "set-aside.json",
+            call(args.port, f"/api/studies/{session['study_id']}/where-to-look/set-aside"),
+        )
+        return
     if args.stale:
         rank = next(p["rank"] for p in gene["places"] if p["can_decide"])
         old = "0" * len(gene["head"])

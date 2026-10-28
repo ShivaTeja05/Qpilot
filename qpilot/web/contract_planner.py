@@ -106,8 +106,10 @@ class PlanControls(BaseModel):
 class PlannerBody(BaseModel):
     """What to plan: the change worth finding, the power, and the next experiment's shape."""
 
-    fold: float = Field(
-        default=2.0, description="The smallest fold change worth detecting (e.g. 2, or 0.5)."
+    fold: float | None = Field(
+        default=None,
+        description="The smallest fold change worth detecting (e.g. 2.5, or 0.4); none: a "
+        "quarter above the call rule's threshold (2.5 for a 2-fold rule; plan.default_fold).",
     )
     power: float = Field(default=0.80, ge=0.5, le=0.99)
     alpha: float | None = Field(
@@ -158,6 +160,10 @@ class PlannerView(BaseModel):
     efficiency: PlanEfficiency
     plates: PlanStudyPlates | None
     defaults: PlannerBody
+    fold_note: str = Field(
+        default="",
+        description="How the change worth finding relates to the call rule, in plain words.",
+    )
 
 
 # ---- the plan ---------------------------------------------------------------------------------

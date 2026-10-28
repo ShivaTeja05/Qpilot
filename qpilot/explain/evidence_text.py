@@ -7,7 +7,8 @@ integration to register (this module does not touch the shared registry):
 * ``evidence_v1`` (:func:`evidence_text`): the ledger's summary line and one line per item,
   "title: status. consequence", the consequence chosen by the item's code fact;
 * ``grt_v1`` (:func:`gate_rt_text`): the G-RT line (RT-replicate Cq range);
-* ``runreview_v1`` (:func:`runreview_text`): the thin Run Review (headline, ledger, sign-offs).
+* ``runreview_v1`` (:func:`runreview_text`): the Run Review (headline, ledger, what to repeat
+  and why, the Run Gate per plate, sign-offs).
 
 Every number is a ``{{fact_id}}`` token, and the text passes
 :func:`qpilot.core.validator.validate`. Each function degrades to one digit-free sentence when
@@ -45,15 +46,23 @@ LEDGER_SUMMARY = (
     "applicable. Absent items never change a conclusion or a confidence grade; they say what "
     "this study cannot show."
 )
-NOT_AVAILABLE: tuple[tuple[str, str, str], ...] = (  # (id, title, reason): the thin version
-    ("repeat", "What to repeat and why", "not available yet; the repeat plan is not built."),
-    ("gate", "Run Gate lines per plate", "not available yet; the Run Gate is not built."),
+NOT_AVAILABLE: tuple[tuple[str, str, str], ...] = (  # (id, title, reason): not built yet
     (
         "next_run",
         "What to change next run",
         "not available yet; it needs the replicate planner and the plate-map checks.",
     ),
 )
+#: Said when a Run Review was rendered without its repeat plan (it reads the Run Gate and Trace).
+REPEAT_ELSEWHERE = (
+    "What to repeat and why: in qPilot's Run Review (it reads the Run Gate, the wells a person "
+    "left out and Trace), or with qpilot report run-review --repeat."
+)
+GATE_ELSEWHERE = (
+    "Run Gate lines per plate: in qPilot's Controls section, or with qpilot report run-review "
+    "--repeat."
+)
+NOTHING_TO_REPEAT = "What to repeat and why: nothing points at a reaction to re-run."
 PURPOSE = (
     "qPilot does not pass or fail a run; it shows what the data can and cannot show, and a "
     "person signs off."
@@ -208,6 +217,54 @@ def signoff_lines(facts: Facts) -> list[str]:
     return lines
 
 
+def repeat_lines(facts: Facts) -> list[str]:
+    """The repeat plan as token lines (``f_rr_repeat_*`` facts): a summary, then each item."""
+    if "f_rr_repeat_n_items" not in facts:
+        return []
+    if int(_value(facts, "f_rr_repeat_n_items") or 0) == 0:
+        return [NOTHING_TO_REPEAT]
+    line = (
+        "What to repeat and why: {{f_rr_repeat_n_items}} sample × gene items, "
+        "{{f_rr_repeat_n_changes_call}} of them change a call"
+    )
+    if "f_rr_repeat_n_wells" in facts:
+        line += (
+            "; the repeat plate has {{f_rr_repeat_n_wells}} wells on {{f_rr_repeat_n_plates}} "
+            "plate(s)"
+        )
+        if "f_rr_repeat_calibrator" in facts:
+            line += ", with sample {{f_rr_repeat_calibrator}} as the inter-run calibrator"
+    lines = [line + "."]
+    for i in _numbered(facts, "f_rr_repeat_", "_sample"):
+        p = f"f_rr_repeat_{i}"
+        _need(facts, (f"{p}_target", f"{p}_consequence", f"{p}_why"), "runreview_v1")
+        item = f"{_t(p + '_sample')} × {_t(p + '_target')}: {_t(p + '_consequence')}"
+        if f"{p}_calls" in facts:
+            item += f" ({_t(p + '_calls')})"
+        lines.append(f"{item}. {_t(p + '_why')}")
+    if "f_rr_repeat_n_more" in facts:
+        lines.append("And {{f_rr_repeat_n_more}} more items, in qPilot's Run Review.")
+    return lines
+
+
+def gate_plate_lines(facts: Facts) -> list[str]:
+    """The Run Gate per plate as token lines (``f_rr_gate_*`` facts): plates that warn or fail."""
+    if "f_rr_gate_n_plates" not in facts:
+        return []
+    lines = [
+        "Run Gate per plate: {{f_rr_gate_n_flagged}} of {{f_rr_gate_n_plates}} plates have a "
+        "rule that warns or fails."
+    ]
+    for k in _numbered(facts, "f_rr_gate_", "_plate"):
+        p = f"f_rr_gate_{k}"
+        _need(facts, (f"{p}_worst", f"{p}_n_fail", f"{p}_n_warn"), "runreview_v1")
+        lines.append(
+            f"Plate {_t(p + '_plate')}: {_t(p + '_worst')} ({_t(p + '_n_fail')} failing, "
+            f"{_t(p + '_n_warn')} warning)."
+        )
+    return lines
+
+
 def study_line(facts: Facts) -> str:
     """The Run Review's first line: the study id and, when known, its size."""
     line = "Run Review of study {{f_rr_study_id}}"
@@ -235,6 +292,8 @@ def runreview_text(facts: Facts, card: DecisionCard | None = None, gene: str | N
     lines = [study_line(facts), PURPOSE]
     lines += headline_lines(facts) or [NO_HEADLINE]
     lines.append(ledger_summary(facts) or ledger_missing(facts))
+    lines += repeat_lines(facts) or [REPEAT_ELSEWHERE]
+    lines += gate_plate_lines(facts) or [GATE_ELSEWHERE]
     lines += signoff_lines(facts) or [NO_SIGNOFF]
     lines += [f"{title}: {reason}" for _, title, reason in NOT_AVAILABLE]
     return "\n".join(lines)

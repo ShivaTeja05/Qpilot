@@ -340,7 +340,9 @@ def get_planner(study_id: str, ctx: Ctx) -> PlannerView:
         headline=headline,
         efficiency=eff,
         plates=m.plates,
+        fold_note=qplan.fold_words(rule.min_log2fc, rule.alpha),
         defaults=PlannerBody(
+            fold=qplan.default_fold(rule.min_log2fc),
             alpha=rule.alpha,
             genes=focus,
             refs=list(m.refs),
@@ -424,7 +426,9 @@ def post_planner(study_id: str, body: PlannerBody, ctx: Ctx) -> PlanView:
     m = measured(ctx, study_id)
     rule = _rule(ctx, study_id)
     alpha = body.alpha if body.alpha is not None else rule.alpha
-    fold, power, k = float(body.fold), float(body.power), rule.min_log2fc
+    k = rule.min_log2fc
+    fold = float(body.fold) if body.fold is not None else qplan.default_fold(k)
+    power = float(body.power)
     try:
         qplan.plan(fold, 1.0, None, alpha, power)  # the same input checks as `qpilot plan`
     except ValueError as err:

@@ -3,7 +3,7 @@ import type { Tone } from "@/ui";
 import type { Actor, ChainEntry, EntryStatus } from "./types";
 
 export const ACTOR: Record<Actor, { word: string; filter: string; long: string }> = {
-  human: { word: "Person", filter: "People", long: "decided by a person on this page or the CLI" },
+  human: { word: "You", filter: "You", long: "decided by you, on this page or the CLI" },
   agent: { word: "Agent", filter: "Agents", long: "an AI agent over qPilot's MCP server" },
   system: { word: "qPilot", filter: "qPilot", long: "qPilot itself, by a fixed rule" },
 };

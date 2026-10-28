@@ -1,0 +1,94 @@
+{
+  "head": "3b5013bfe3ddc3b7e8af8d6d310d2e22ec2eac4154a73badf04392f74297e957",
+  "items": [
+    {
+      "kind": "design.target_role",
+      "subject": "REF",
+      "payload": {
+        "role": "ref"
+      },
+      "action": "new",
+      "words": "Use target REF as a reference gene (other genes are normalised to it)",
+      "check": {
+        "status": "cannot_check",
+        "rule_ids": [],
+        "details": {},
+        "note": "no engine check can test a target's role on its own"
+      },
+      "refusal": null,
+      "accept_id": null,
+      "rejects": [],
+      "also_accept": []
+    },
+    {
+      "kind": "design.group",
+      "subject": "S1",
+      "payload": {
+        "group": "A"
+      },
+      "action": "accept",
+      "words": "Put sample S1 in group “A”",
+      "check": {
+        "status": "cannot_check",
+        "rule_ids": [
+          "D-COVER"
+        ],
+        "details": {
+          "sample_found": true
+        },
+        "note": "the sample exists; no engine check can test its group or unit"
+      },
+      "refusal": null,
+      "accept_id": "p_17c82fb71a12e548",
+      "rejects": [],
+      "also_accept": []
+    },
+    {
+      "kind": "design.group",
+      "subject": "S5",
+      "payload": {
+        "group": "Z"
+      },
+      "action": "new",
+      "words": "Put sample S5 in group “Z”",
+      "check": {
+        "status": "cannot_check",
+        "rule_ids": [
+          "D-COVER"
+        ],
+        "details": {
+          "sample_found": true
+        },
+        "note": "the sample exists; no engine check can test its group or unit"
+      },
+      "refusal": null,
+      "accept_id": null,
+      "rejects": [
+        "p_17bccc6063fad273"
+      ],
+      "also_accept": []
+    },
+    {
+      "kind": "design.group",
+      "subject": "NTC",
+      "payload": {
+        "group": "A"
+      },
+      "action": "refused",
+      "words": "Put sample NTC in group “A”",
+      "check": null,
+      "refusal": "A control cannot join a biological group or unit.",
+      "accept_id": null,
+      "rejects": [],
+      "also_accept": []
+    }
+  ],
+  "counts": {
+    "new": 2,
+    "accept": 1,
+    "refused": 1
+  },
+  "n_contradicted": 0,
+  "n_rejects": 1,
+  "message": "3 changes to record; 1 waiting proposal that says otherwise will be rejected; 1 refused."
+}

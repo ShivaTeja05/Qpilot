@@ -1,16 +1,16 @@
 {
  "message": "Signed off (discuss). The decision log keeps it with your name and comment; it changes no result and no Decision Card.",
- "head": "dfccbec9827bb6061eeb1e0e74cc482d864da6ca944c9cdf2fc433d05a64a168",
+ "head": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
  "sign_off": {
   "seq": 2,
   "outcome": "discuss",
   "outcome_word": "discuss",
   "reviewer": "qPilot UI test recorder",
   "comment": "Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.",
-  "at": "2026-10-21T11:36:56Z",
-  "hash": "dfccbec9827bb6061eeb1e0e74cc482d864da6ca944c9cdf2fc433d05a64a168",
+  "at": "2026-10-28T16:45:19Z",
+  "hash": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
   "line": {
-   "plain": "qPilot UI test recorder chose discuss on 2026-10-21T11:36:56Z (decision-log entry 2): “Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.”.",
+   "plain": "qPilot UI test recorder chose discuss on 2026-10-28T16:45:19Z (decision-log entry 2): “Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.”.",
    "segments": [
     {
      "text": "qPilot UI test recorder",
@@ -29,7 +29,7 @@
      "fact": null
     },
     {
-     "text": "2026-10-21T11:36:56Z",
+     "text": "2026-10-28T16:45:19Z",
      "fact": "f_rr_review_2_at"
     },
     {
@@ -70,8 +70,8 @@
     },
     {
      "id": "f_rr_review_2_at",
-     "text": "2026-10-21T11:36:56Z",
-     "value": "2026-10-21T11:36:56Z",
+     "text": "2026-10-28T16:45:19Z",
+     "value": "2026-10-28T16:45:19Z",
      "unit": "",
      "path": "review.reviews[0].at"
     },
@@ -96,7 +96,7 @@
  "review": {
   "study_id": "e300000d4f9a",
   "session": "bc1d233e3866",
-  "head": "dfccbec9827bb6061eeb1e0e74cc482d864da6ca944c9cdf2fc433d05a64a168",
+  "head": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
   "title": {
    "plain": "Run Review of study e300000d4f9a: 64 plates, 366 samples, 24,576 reactions.",
    "segments": [
@@ -1003,10 +1003,10 @@
      "status_word": "unknown",
      "value": "unknown",
      "line": {
-      "plain": "Raw-ness of the curves: unknown. Not judged yet: the raw-ness detector is not built. The cheap signs are consistent with raw curves: 24,576 wells were analysed from their amplification curves and none has a baseline at or below zero.",
+      "plain": "Raw-ness of the curves: unknown. Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and this study's file did not go through it. The cheap signs are consistent with raw curves: 24,576 wells were analysed from their amplification curves and none has a baseline at or below zero.",
       "segments": [
        {
-        "text": "Raw-ness of the curves: unknown. Not judged yet: the raw-ness detector is not built. The cheap signs are consistent with raw curves: ",
+        "text": "Raw-ness of the curves: unknown. Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and this study's file did not go through it. The cheap signs are consistent with raw curves: ",
         "fact": null
        },
        {
@@ -1243,10 +1243,10 @@
     "outcome_word": "discuss",
     "reviewer": "qPilot UI test recorder",
     "comment": "Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.",
-    "at": "2026-10-21T11:36:56Z",
-    "hash": "dfccbec9827bb6061eeb1e0e74cc482d864da6ca944c9cdf2fc433d05a64a168",
+    "at": "2026-10-28T16:45:19Z",
+    "hash": "6092b26876c43a2773d7a39a31728ec90ba4a9a463fd6411bad2c280f6750128",
     "line": {
-     "plain": "qPilot UI test recorder chose discuss on 2026-10-21T11:36:56Z (decision-log entry 2): “Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.”.",
+     "plain": "qPilot UI test recorder chose discuss on 2026-10-28T16:45:19Z (decision-log entry 2): “Recorded by the qPilot UI tests (not a real review): <b>markup</b> in a comment must show as text.”.",
      "segments": [
       {
        "text": "qPilot UI test recorder",
@@ -1265,7 +1265,7 @@
        "fact": null
       },
       {
-       "text": "2026-10-21T11:36:56Z",
+       "text": "2026-10-28T16:45:19Z",
        "fact": "f_rr_review_2_at"
       },
       {
@@ -1306,8 +1306,8 @@
       },
       {
        "id": "f_rr_review_2_at",
-       "text": "2026-10-21T11:36:56Z",
-       "value": "2026-10-21T11:36:56Z",
+       "text": "2026-10-28T16:45:19Z",
+       "value": "2026-10-28T16:45:19Z",
        "unit": "",
        "path": "review.reviews[0].at"
       },
@@ -1348,18 +1348,6 @@
    }
   ],
   "not_built": [
-   {
-    "id": "repeat",
-    "title": "What to repeat and why",
-    "reason": "Not available yet; the repeat plan is not built.",
-    "section": null
-   },
-   {
-    "id": "gate",
-    "title": "Run Gate lines per plate",
-    "reason": "Not on this page yet: Controls shows what each plate's controls say (the Run Gate).",
-    "section": "gate"
-   },
    {
     "id": "next_run",
     "title": "What to change next run",

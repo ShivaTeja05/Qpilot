@@ -22,9 +22,15 @@ kind                        subject            payload
 ``design.well_role``        sample id          ``{"role": WellRole}``
 ``design.group``            sample id          ``{"group": str}``
 ``design.bio_unit``         sample id          ``{"biological_unit": str}``
-``design.target_role``      target             ``{"role": "ref" | "toi"}``
+``design.target_role``      target             ``{"role": "ref" | "toi" | "ignore"}``
 ``design.gene_symbol``      target             ``{"symbol": str}`` (HGNC)
-``design.comparison``       ``comparison``     ``{"group_a": str, "group_b": str}``
+``design.comparison``       ``comparison``     ``{"group_a": str, "group_b": str}`` (the primary);
+                                               optionally ``"comparisons": [{"group_a", "group_b"},
+                                               ...]`` (primary first), ``"pattern"``,
+                                               ``"control"``, ``"correction"`` and ``"pair_by"``:
+                                               a :class:`ComparisonPlan`
+``design.pair``             sample id          ``{"pair": str}``: the donor, animal, passage or
+                                               batch that pairs the sample's unit
 ``design.dilution_series``  series name        ``{"experiment_id": str, "samples": {id: qty}}``
 ``curve.call_rule``         ``amp_call``       ``{"rule": AmpCallRule.id}``
 ``curve.well_call``         ``run_id/well``    ``{"amplified": bool}``
@@ -97,6 +103,7 @@ ProposalKind = Literal[
     "design.target_role",
     "design.gene_symbol",
     "design.comparison",
+    "design.pair",
     "design.dilution_series",
     "curve.call_rule",
     "curve.well_call",
@@ -143,9 +150,14 @@ class ProposalCheck(BaseModel):
 
 
 class MadeBy(BaseModel):
-    """Who produced a proposal: a language model, an MCP agent or a deterministic rule."""
+    """Who produced a proposal: a language model, an MCP agent, a deterministic rule or a person.
 
-    kind: Literal["model", "agent", "rule"]
+    ``person``: a person made the proposal on the Design page and accepted it in the same act
+    (a design item the rules and the model did not propose). Only ``actor="human"`` may propose
+    one (``core/proposals.py``); the engine still checks it like any other proposal.
+    """
+
+    kind: Literal["model", "agent", "rule", "person"]
     provider: str | None = None
     model: str | None = None
     prompt_sha256: str | None = None
@@ -244,7 +256,12 @@ class ProposalOutcome(BaseModel):
 
 WellRole = Literal["unkn", "std", "ntc", "nrt", "nac", "pos", "opt", "ntp"]  # RDML sample types
 CONTROL_ROLES: frozenset[str] = frozenset({"ntc", "nrt", "nac"})  # never demoted (hard ban)
-TargetRole = Literal["toi", "ref"]
+# ---- added by the Design page's person-made proposals (agent design; see docs/studio.md) ----
+#: ``ignore``: a target a person leaves out of the study (a spike-in, an empty channel, an
+#: assay not part of this experiment); :func:`qpilot.qpcr.designs.design_curves` drops its
+#: wells before anything is computed. Absent unless a person chose it, so no hash changes.
+TargetRole = Literal["toi", "ref", "ignore"]
+# ---- end of the Design page's additions ------------------------------------------------------
 
 
 class SampleDesign(BaseModel):
@@ -259,6 +276,11 @@ class SampleDesign(BaseModel):
     G-RT rule (:mod:`qpilot.qpcr.gate_rt`) and the Evidence Ledger read it; the analysis
     averages the samples of a unit as before. ``None`` (the default) is left out of
     :meth:`StudyDesign.canonical`, so existing design hashes do not change.
+
+    ``pair`` names what pairs the sample's biological unit with units of the other groups (the
+    donor, animal, passage or batch it came from); a paired design
+    (:attr:`ComparisonPlan.pair_by`) compares the groups within each pair. ``None`` (the
+    default) is left out of the hash too.
     """
 
     sample: str
@@ -267,6 +289,7 @@ class SampleDesign(BaseModel):
     biological_unit: str | None = None
     quantity: float | None = None  # standards: copies or relative dilution
     rt_replicate: str | None = None  # RT replicate label within the biological unit
+    pair: str | None = None  # donor / animal / passage / batch that pairs units across groups
 
     def unit(self) -> str:
         """The biological unit (the sample itself when none is set)."""
@@ -287,6 +310,80 @@ class Comparison(BaseModel):
     group_a: str
     group_b: str
     label: str = ""
+
+    def key(self) -> str:
+        """A stable id for the comparison: ``"<group a>_vs_<group b>"`` as lower-case slugs."""
+        return f"{_slug(self.group_a)}_vs_{_slug(self.group_b)}"
+
+    def title(self) -> str:
+        """The comparison in words: its label, else ``"<group a> vs <group b>"``."""
+        return self.label or f"{self.group_a} vs {self.group_b}"
+
+
+def _slug(name: str) -> str:
+    out = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+    return out or "group"
+
+
+ComparisonPattern = Literal["vs_control", "all_pairs", "chosen"]
+Correction = Literal["holm", "none"]
+
+
+class ComparisonPlan(BaseModel):
+    """Several comparisons in one study, how their p-values are corrected, and any pairing.
+
+    ``comparisons`` lists every comparison, the primary (``StudyDesign.comparison``) first; the
+    primary is the one the Decision Cards and the grade of each gene describe first.
+    ``pattern`` says how the list was made: each group against one ``control`` group
+    (``vs_control``), every pair of groups (``all_pairs``) or a person's own list (``chosen``).
+
+    ``correction`` is the multiple-comparison correction a person chose: ``holm`` (Holm's
+    step-down correction across one gene's comparisons; a call needs the corrected p below the
+    threshold) or ``none``. ``pair_by`` names the pairing (``"donor"``): when set, each
+    comparison is a paired t-test on the log2 relative quantities within each pair, with the
+    pairs taken from :attr:`SampleDesign.pair`.
+
+    Absent (``StudyDesign.comparisons`` is ``None``, the default) the study has its one
+    comparison, unpaired, exactly as before; a plan with one unpaired comparison is the same
+    analysis and is refused, so each analysis has one spelling and one design hash.
+    """
+
+    pattern: ComparisonPattern = "chosen"
+    control: str | None = None
+    comparisons: tuple[Comparison, ...]
+    correction: Correction = "holm"
+    pair_by: str | None = None
+
+    @model_validator(mode="after")
+    def _consistent(self) -> ComparisonPlan:
+        if not self.comparisons:
+            raise ValueError("a comparison plan lists at least one comparison")
+        if len(self.comparisons) == 1 and self.pair_by is None:
+            raise ValueError("a plan with one unpaired comparison is the design without a plan")
+        seen: set[frozenset[str]] = set()
+        for c in self.comparisons:
+            if c.group_a == c.group_b:
+                raise ValueError(f"comparison {c.title()!r} compares a group with itself")
+            pair = frozenset((c.group_a, c.group_b))
+            if pair in seen:
+                raise ValueError(f"{c.group_a} and {c.group_b} are compared twice")
+            seen.add(pair)
+        keys = [c.key() for c in self.comparisons]
+        if len(set(keys)) != len(keys):
+            raise ValueError("two comparisons have group names that differ only in punctuation")
+        if self.pattern == "vs_control":
+            if not self.control:
+                raise ValueError("pattern 'vs_control' needs the control group")
+            others = [c.title() for c in self.comparisons if c.group_b != self.control]
+            if others:
+                raise ValueError(f"comparisons not against the control {self.control}: {others}")
+        if self.pair_by is not None and not self.pair_by.strip():
+            raise ValueError("pair_by names the pairing, e.g. 'donor'")
+        return self
+
+    def groups(self) -> tuple[str, ...]:
+        """Every group the plan compares, in order of first mention."""
+        return tuple(dict.fromkeys(g for c in self.comparisons for g in (c.group_a, c.group_b)))
 
 
 class MarkerSplit(BaseModel):
@@ -348,6 +445,7 @@ class StudyDesign(BaseModel):
     amp_calls: tuple[str, ...] = ("linregpcr",)
     import_trust: ImportTrust | None = None
     axes: dict[str, tuple[str, ...]] | None = None
+    comparisons: ComparisonPlan | None = None
     note: str = ""
 
     @model_validator(mode="after")
@@ -361,6 +459,8 @@ class StudyDesign(BaseModel):
             missing = {self.comparison.group_a, self.comparison.group_b} - groups
             if missing:
                 raise ValueError(f"comparison groups without samples: {sorted(missing)}")
+        if self.comparisons is not None:
+            self._check_plan(self.comparisons)
         if not self.amp_calls:
             raise ValueError("amp_calls needs at least one option")
         if self.axes is not None:  # one spelling per analysis: no axis is None, not {}
@@ -370,6 +470,23 @@ class StudyDesign(BaseModel):
             if single:
                 raise ValueError(f"axes {single} offer one option; an axis not tested is left out")
         return self
+
+    def _check_plan(self, plan: ComparisonPlan) -> None:
+        if self.mode != "groups" or self.comparison is None:
+            raise ValueError("several comparisons need groups from the design (mode 'groups')")
+        first = plan.comparisons[0]
+        if (first.group_a, first.group_b) != (self.comparison.group_a, self.comparison.group_b):
+            raise ValueError("the plan's first comparison must be the design's comparison")
+        groups = {s.group for s in self.samples.values() if s.group}
+        missing = sorted(set(plan.groups()) - groups)
+        if missing:
+            raise ValueError(f"comparison groups without samples: {missing}")
+
+    def comparison_list(self) -> tuple[Comparison, ...]:
+        """Every comparison of the design, primary first (none in marker-split mode)."""
+        if self.comparisons is not None:
+            return self.comparisons.comparisons
+        return (self.comparison,) if self.comparison is not None else ()
 
     def canonical(self) -> str:
         """The one JSON form that is hashed (sorted keys, no spaces, None fields dropped)."""
@@ -563,6 +680,9 @@ __all__ = [
     "AmpCallRule",
     "CheckStatus",
     "Comparison",
+    "ComparisonPattern",
+    "ComparisonPlan",
+    "Correction",
     "DesignField",
     "DesignProposal",
     "Evidence",

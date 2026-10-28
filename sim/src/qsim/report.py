@@ -142,7 +142,10 @@ def run_all(
     refw = influence.reference_wells(engine, base)
     marg = influence.margins(engine, base).set_index("gene")
     called = [g for g, c in zip(engine.items, base.call, strict=True) if c != 0]
-    dk = pd.DataFrame([influence.drop_k(engine, g, 5, base) for g in called]).set_index("gene")
+    dk = pd.DataFrame(
+        [influence.drop_k(engine, g, 5, base) for g in called],
+        columns=["gene", "k", "samples", "flips_to"],
+    ).set_index("gene")
     timings["influence_s"] = time.perf_counter() - t
 
     t = time.perf_counter()
@@ -312,7 +315,9 @@ def run_all(
             "samples_that_flip_a_gene": int(loo_flips["sample"].nunique()),
             "reference_well_removals": int(len(refw)),
             "reference_well_removals_that_flip": int((refw["genes_flipped"] > 0).sum()),
-            "max_genes_flipped_by_one_reference_well": int(refw["genes_flipped"].max()),
+            "max_genes_flipped_by_one_reference_well": int(refw["genes_flipped"].max())
+            if len(refw)
+            else 0,
             "called_genes": int(called_mask.sum()),
             "called_within_1_se_of_fold_line": int(
                 (genes.loc[called_mask, "fold_margin_in_se"] < 1).sum()
@@ -384,11 +389,11 @@ def _moves_summary(genes: pd.DataFrame, called: pd.Series, value: dict | None) -
 
 
 def _json_default(o):
-    if isinstance(o, (np.integer,)):
+    if isinstance(o, np.integer):
         return int(o)
-    if isinstance(o, (np.floating,)):
+    if isinstance(o, np.floating):
         return float(o)
-    if isinstance(o, (np.bool_,)):
+    if isinstance(o, np.bool_):
         return bool(o)
     return str(o)
 

@@ -92,12 +92,23 @@ def _study(out: dict[str, Any]) -> dict[str, Any]:
         {k: c[k] for k in ("card_id", "kind", "status", "needs_human", "recommended")}
         for c in out["open_cards"]
     ]
-    return {
+    concise = {
         **{k: out[k] for k in (*keep, "imported") if k in out},
         "contrasts": contrasts,
         "open_cards": cards,
         "n_decided_cards": len(out.get("decided_cards") or []),
     }
+    if out.get("comparisons"):  # a study with several comparisons: each one's calls in counts
+        found = out["comparisons"]
+        concise["comparisons"] = {
+            **{k: found[k] for k in ("test", "correction", "pair_by")},
+            "comparisons": [
+                {k: c[k] for k in ("id", "label", "group_a", "group_b", "primary", "n_a", "n_b",
+                                   "n_pairs", "n_up", "n_down")}
+                for c in found["comparisons"]
+            ],
+        }  # fmt: skip
+    return concise
 
 
 def _robustness(out: dict[str, Any]) -> dict[str, Any]:
@@ -105,6 +116,7 @@ def _robustness(out: dict[str, Any]) -> dict[str, Any]:
     confidence = out.get("confidence") or {}
     return {
         **{k: out[k] for k in keep},
+        **{k: out[k] for k in ("comparison", "p_adjusted", "q") if k in out},
         "level": confidence.get("level"),
         "cards_that_can_flip_it": out["cards_that_can_flip_it"],
         "n_open_cards": len(out.get("open_cards") or []),

@@ -52,6 +52,7 @@ const SCOPE_WORDS: Record<BulkMakers, string> = {
 function makerWord(m: Proposal["made_by"]): string {
   if (m.kind === "rule") return "rule";
   if (m.kind === "agent") return m.agent ? `agent ${m.agent}` : "agent";
+  if (m.kind === "person") return "a person, on the page";
   return m.provider === CURVE_JUDGE ? "Curve Judge" : "model";
 }
 
@@ -414,7 +415,9 @@ export function BulkActions({
   );
   const consistent = waiting.filter((p) => p.check.status === "consistent").length;
   const contradicted = waiting.filter((p) => p.check.status === "contradicted");
-  const aiContradicted = contradicted.filter((p) => p.made_by.kind !== "rule").length;
+  const aiContradicted = contradicted.filter(
+    (p) => p.made_by.kind === "model" || p.made_by.kind === "agent",
+  ).length;
   const none = pending === 0;
   return (
     <div className="flex flex-wrap items-center gap-2">

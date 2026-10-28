@@ -11,7 +11,8 @@ import type { Verdict } from "@/lib/vocab";
 import { Button, Card, CardBody, CardHeader, ErrorPanel, JobCard, VerdictTag } from "@/ui";
 import { useInvalidateAudit, useRunAudit, useSeedJob, type AuditTarget } from "./api";
 import type { AuditStatus } from "./types";
-import { DECISION_WORDS } from "./words";
+import { ReplicatesNote } from "./ReplicatesNote";
+import { decisionWords } from "./words";
 
 /** What each verdict means, without the audit's thresholds (they come with the audit). */
 const VERDICT_MEANING: Record<Verdict, string> = {
@@ -60,16 +61,16 @@ export function NotRun({
     if (checked) void invalidate();
   }, [checked, invalidate]);
   const scope = status.check?.scope;
-  const decisions = DECISION_WORDS.join(", ").replace(/, ([^,]*)$/, " and $1");
+  const decisions = decisionWords(Boolean(scope?.technical_replicates?.varied));
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
       <Card as="section" aria-labelledby="audit-what">
         <CardHeader id="audit-what" title="What the audit does" />
         <CardBody className="@container space-y-4 text-sm leading-relaxed text-fg">
           <p>
-            It re-runs your confirmed study under every combination of eight analysis decisions (
-            {decisions}) and gives each gene a verdict: does its call hold whichever analysis in its
-            reasonable set you had picked?
+            It re-runs your confirmed study under every combination of {decisions.count} analysis
+            decisions ({decisions.words}) and gives each gene a verdict: does its call hold
+            whichever analysis in its reasonable set you had picked?
           </p>
           <ul className="grid gap-2 @lg:grid-cols-2 @3xl:grid-cols-3">
             {(Object.keys(VERDICT_MEANING) as Verdict[]).map((v) => (
@@ -123,6 +124,7 @@ export function NotRun({
               {status.typical_s ? `, about ${duration(status.typical_s)} on a laptop` : ""}.
             </p>
           )}
+          <ReplicatesNote replicates={scope?.technical_replicates} className="p-3" />
           {scope?.groups?.length === 2 ? (
             <p className="text-[13px] text-muted">
               Comparing <span className="font-medium text-fg">{scope.groups[0]}</span> with{" "}

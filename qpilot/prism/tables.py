@@ -113,9 +113,9 @@ TEMPLATES: dict[str, TemplateSpec] = {
         test="multiple unpaired t tests with false-discovery-rate control",
         graph="volcano or one row per gene",
         note=(
-            "many_genes_log2 needs one grouped table with genes as rows, which the frozen "
-            "PrismLayout ('column' | 'nested') cannot describe; the README says how to build "
-            "the template, and the export needs a contract change first"
+            "the scripts cannot fill many_genes_log2: it needs one grouped table with genes as "
+            "rows, which the frozen PrismLayout ('column' | 'nested') of the scripts cannot "
+            "describe (a contract change); the Prism project has that grouped table already"
         ),
     ),
 }

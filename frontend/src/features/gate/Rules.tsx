@@ -1,7 +1,8 @@
 /**
  * The rule checks as a scannable list: a verdict chip, the rule and where it looked, how many
  * wells it points at and (for a warn or a fail) what leaving them out changes. Each row opens to
- * the reason in words (every number a cited fact), the wells, and the consequence test's options.
+ * the reason in words (every number a cited fact), the wells (a G-MELT check: their melt
+ * curves), and the consequence test's options.
  * Filters: verdict (problems first by default), rule, and the plate picked in the plate strip.
  */
 import { ChevronDown } from "lucide-react";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/cn";
 import { count, plural } from "@/lib/format";
 import { Badge, Button, Card, CardHeader, SegmentedControl, Select } from "@/ui";
 import type { Consequence, Evaluation, GateView, RunFile } from "./api";
+import { GateMelt } from "./Melt";
 import { ClassChip, VerdictChip } from "./Pieces";
 import {
   VERDICT_WORD,
@@ -102,6 +104,8 @@ function RuleRow({
   open,
   onToggle,
   focus,
+  studyId,
+  curvesHref,
 }: {
   evaluation: Evaluation;
   consequence: Consequence | undefined;
@@ -111,6 +115,10 @@ function RuleRow({
   open: boolean;
   onToggle: () => void;
   focus: boolean;
+  /** The study checked (a G-MELT check shows its wells' melt curves). */
+  studyId?: string;
+  /** Where wells open in Curves (a Studio session only). */
+  curvesHref?: (plate: string, wells: string[]) => string;
 }) {
   const bodyId = useId();
   const ref = useRef<HTMLButtonElement>(null);
@@ -173,6 +181,9 @@ function RuleRow({
               <WellChips wells={e.flagged} />
             </div>
           )}
+          {e.rule_id === "G-MELT" && studyId && (
+            <GateMelt studyId={studyId} evaluation={e} curvesHref={curvesHref} />
+          )}
           {run && (
             <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted">
               <span>Run file read: {runSourceText(run)}.</span>
@@ -197,6 +208,7 @@ export function RuleList({
   onFilter,
   focusId,
   onLinkRun,
+  curvesHref,
 }: {
   view: GateView;
   filter: RuleFilter;
@@ -205,6 +217,8 @@ export function RuleList({
   focusId: string | null;
   /** Link a run file to a plate (G-INSTR's checks offer it). */
   onLinkRun?: (plate: string) => void;
+  /** Where wells open in Curves (a Studio session only; G-MELT's checks offer it). */
+  curvesHref?: (plate: string, wells: string[]) => string;
 }) {
   /** Rows a person opened or closed; the row asked for from elsewhere starts open. */
   const [toggled, setToggled] = useState<ReadonlyMap<string, boolean>>(() => new Map());
@@ -299,6 +313,8 @@ export function RuleList({
               open={isOpen(e.id)}
               onToggle={() => toggle(e.id)}
               focus={focusId === e.id}
+              studyId={view.study_id}
+              curvesHref={curvesHref}
             />
           ))}
         </ul>

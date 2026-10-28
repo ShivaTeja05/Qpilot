@@ -171,9 +171,9 @@ def test_running_again_keeps_the_earlier_audit(seeded, tmp_path, monkeypatch):  
     ("error", "status", "words"),
     [
         (
-            sim.NotApplicable("the design has technical replicates (several wells per unit)"),
+            sim.NotApplicable("the simulator varies the cut-off over (0.1, 0.15, 0.2)"),
             "not_applicable",
-            "The audit does not apply here: the design has technical replicates",
+            "The audit does not apply here: the simulator varies the cut-off",
         ),
         (
             sim.AuditRefused("the simulator's baseline does not reproduce qPilot's stored result"),
@@ -209,56 +209,6 @@ def test_a_refusal_is_said_in_words_and_leaves_nothing(
         assert body["status"] == status and words in body["reason"]
         assert body["manifest"] is None and body["job"]["status"] == "failed"
         assert _leftovers(root) == [] and not (root / "simulator_audits" / study).exists()
-    _close(ctx)
-
-
-@pytest.mark.demo_data
-def test_technical_replicates_are_not_applicable_through_the_page(tmp_path):
-    """A real design the simulator cannot audit: two preparations per biological unit."""
-    from qpilot.qpcr.designs import vermeulen_design
-    from qpilot.qpcr.export import study_inputs
-    from qpilot.schemas_studio import Comparison, SampleDesign, StudyDesign
-    from tests.conftest import DEMO_RDML
-
-    store = StudyStore(tmp_path / "studies")
-    legacy = store.ensure_study(DEMO_RDML)
-    inputs = study_inputs(store, legacy)
-    high = sorted(s for s, g in inputs.groups.items() if g.endswith("-high"))
-    units = {s: f"unit{i // 2}" for i, s in enumerate(high[:6])}
-    samples = {
-        s: SampleDesign(
-            sample=s, group="high" if g.endswith("-high") else "rest", biological_unit=units.get(s)
-        )
-        for s, g in inputs.groups.items()
-    }
-    design = StudyDesign(
-        design_id="demo_with_replicates",
-        experiment_id="biomarker_set",
-        mode="groups",
-        comparison=Comparison(group_a="high", group_b="rest"),
-        samples=samples,
-        reference_candidates=vermeulen_design().reference_candidates,
-        headline=vermeulen_design().headline,
-    )
-    study = store.ensure_study(DEMO_RDML, design=design)
-    ctx, client = _client(store)
-    with client:  # run straight away: the job says why
-        r = client.post(f"/api/studies/{study}/audit", json={}, headers=WRITE)
-        job = _wait(client, r.json()["job"]["id"])
-        body = client.get(f"/api/studies/{study}/audit").json()
-        assert job["status"] == "failed" and body["status"] == "not_applicable"
-        assert "technical replicates" in body["reason"]
-        assert not (store.root / "simulator_audits" / study).exists()
-    _close(ctx)
-    ctx, client = _client(store)
-    with client:  # look first: the pre-check says why before anything runs
-        checking = client.get(f"/api/studies/{study}/audit").json()["checking"]
-        assert _wait(client, checking["id"])["status"] == "done"
-        body = client.get(f"/api/studies/{study}/audit").json()
-        assert body["status"] == "not_applicable" and "technical replicates" in body["reason"]
-        assert body["check"]["applicable"] is False
-        r = client.post(f"/api/studies/{study}/audit", json={}, headers=WRITE)
-        assert r.status_code == 409 and r.json()["error"]["code"] == "not_applicable"
     _close(ctx)
 
 

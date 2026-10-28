@@ -1,0 +1,25 @@
+{
+  "bases": [
+    "as_decided",
+    "recommended"
+  ],
+  "chain_head": "bc6a7ced8cfb834e78d30850e8175b5167a73acd5bcfeeb188a1bc76e7914148",
+  "download": {
+    "bytes": 2118244,
+    "id": "E_qGmlHtVTaunE81f7xyGJid",
+    "name": "qpilot-tables-e300000d4f9a.zip",
+    "path": "qpilot-tables-e300000d4f9a.zip",
+    "url": "/api/downloads/E_qGmlHtVTaunE81f7xyGJid"
+  },
+  "format": "csv",
+  "genes": [],
+  "head_moved": false,
+  "n_facts": 0,
+  "record": null,
+  "study_id": "e300000d4f9a",
+  "title": "The numbers as CSV tables (zip)",
+  "warnings": [
+    "The options chosen on the Decision Cards are not all the recommended ones: the file holds the analysis as decided, and the recommended analysis too (marked 'recommended')."
+  ],
+  "written_at": "2026-10-28T15:51:29Z"
+}

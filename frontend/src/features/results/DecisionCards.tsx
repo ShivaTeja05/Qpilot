@@ -1,8 +1,10 @@
 /**
  * The Decision Cards: the choices that can change a conclusion, ranked by impact. A person picks
  * an option, says why, and decides; an agent's request waits here for Approve or Turn down.
- * A card opened from Trace (Where to look → Decide…) says so, names its place (sample · plate ·
- * well) and what to check there, and its options show only the calls they change.
+ * A card opened from Trace (Where to look → Decide…, for a study analysed outside Studio) says so,
+ * names its place (sample · plate · well) and what to check there, and its options show only the
+ * calls they change; deciding it records the choice. In a Studio session the wells are left out
+ * of the analysis from Trace itself, so the card links there.
  * `j`/`k` move between cards, `Enter` goes to the reason, `⌘Enter` decides.
  */
 import {
@@ -18,6 +20,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { Link } from "wouter";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ApiError, type Schemas } from "@/api/client";
 import { useJob } from "@/api/jobs";
@@ -25,6 +28,7 @@ import { CALLS, Glyph, type CallKey } from "@/charts";
 import { cn } from "@/lib/cn";
 import { count, fold } from "@/lib/format";
 import { MOD, useHotkeys } from "@/lib/hooks";
+import { sectionPath } from "@/shell/sections";
 import { Badge, Button, Card, Kbd, Textarea, toast } from "@/ui";
 import {
   useCardWrite,
@@ -177,9 +181,21 @@ export function placeAddress(place: Pick<CardPlace, "sample" | "plate" | "well">
     .join(" · ");
 }
 
-/** What to check at the place, and what deciding does (the study's numbers stay as analysed). */
-function TracePlace({ place }: { place: CardPlace }) {
+/**
+ * What to check at the place, and what deciding does: recorded here, the numbers stay as
+ * analysed. In a Studio session the wells are left out from Trace (it analyses the study again).
+ */
+function TracePlace({
+  place,
+  workspaceKey,
+  studyId,
+}: {
+  place: CardPlace;
+  workspaceKey: string;
+  studyId: string;
+}) {
   const checks = place.what_to_check ?? [];
+  const session = workspaceKey !== studyId;
   return (
     <div className="space-y-2 rounded-lg border border-line bg-sunken/60 p-3 text-[13px]">
       {checks.length > 0 && (
@@ -193,6 +209,16 @@ function TracePlace({ place }: { place: CardPlace }) {
         </div>
       )}
       <p className="text-[12px] leading-relaxed text-muted">{place.note}</p>
+      {session ? (
+        <p className="text-[12px]">
+          <Link
+            href={sectionPath({ key: workspaceKey, kind: "session" }, "trace")}
+            className="font-medium text-accent underline-offset-4 hover:underline"
+          >
+            Leave the wells out from Trace&rsquo;s Where to look
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -407,7 +433,9 @@ function DecisionCardItem({
                   </span>
                 </p>
               )}
-              {view.place && <TracePlace place={view.place} />}
+              {view.place && (
+                <TracePlace place={view.place} workspaceKey={workspaceKey} studyId={studyId} />
+              )}
               {request && (
                 <div className="flex items-start gap-2 rounded-lg border border-warn/40 bg-warn-soft p-3 text-[13px] text-fg">
                   <Bot className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden />

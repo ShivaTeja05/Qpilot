@@ -3,8 +3,8 @@
  * Studio inbox of the two Prism stages. Every query key starts with ["w", sid] so a live event
  * about the session refreshes it; slow work answers 202 {job} and is followed with `useJob`.
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, unwrap, type JobView, type Schemas } from "@/api/client";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, postForm, unwrap, type JobView, type Schemas } from "@/api/client";
 
 export type Proposal = Schemas["Proposal"];
 export type ProposalList = Schemas["ProposalList"];
@@ -29,6 +29,8 @@ export type FigureGroup = Schemas["GroupPoints"];
 /** An approximation of the template's graph for one gene (Prism draws the real one). */
 export type PrismFigureData = Schemas["PrismFigure"];
 export type PrismTemplate = Schemas["PrismTemplate"];
+/** One table of the Prism project (.pzfx). */
+export type PrismTableView = Schemas["PrismTableView"];
 /** `GET …/prism/preview`: what Send to Prism would write (nothing is written). */
 export type PrismPreview = Schemas["PrismPreview"];
 /** One bundle sent to Prism from this session. */
@@ -55,13 +57,19 @@ export const prismKeys = {
   inbox: (sid: string, stage: "prism" | "roundtrip") => ["w", sid, "proposals", stage] as const,
 };
 
-/** How often the usual Excel→Prism routes change a conclusion on this study. */
+/**
+ * How often the usual Excel→Prism routes change a conclusion on this study. The answer is the
+ * study's stored facts (cached by the server per study), so the last one stays on screen while
+ * it is read again; while the server is still reading the file it answers `warming`, and the
+ * page asks again when it is warm.
+ */
 export function usePrismRoutes(sid: string, enabled = true) {
   return useQuery({
     queryKey: prismKeys.routes(sid),
     enabled,
     queryFn: () => unwrap(api.GET("/api/sessions/{sid}/prism/routes", path(sid))),
     staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -146,6 +154,23 @@ export function useStartRoundTrip(sid: string) {
   return useMutation({
     mutationFn: (body: Schemas["RoundTripRequest"]) =>
       unwrap(api.POST("/api/sessions/{sid}/prism/roundtrip", { ...path(sid), body })),
+    onSuccess,
+  });
+}
+
+/** POST roundtrip/upload: the project a person saved in Prism, uploaded (Prism elsewhere). */
+export function useStartRoundTripUpload(sid: string) {
+  const onSuccess = useStarted();
+  return useMutation({
+    mutationFn: ({ bundle, file }: { bundle: string; file: File }) => {
+      const form = new FormData();
+      form.append("bundle", bundle);
+      form.append("project", file, file.name);
+      return postForm<{ job: JobView }>(
+        `/api/sessions/${encodeURIComponent(sid)}/prism/roundtrip/upload`,
+        form,
+      );
+    },
     onSuccess,
   });
 }

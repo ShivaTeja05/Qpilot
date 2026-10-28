@@ -36,7 +36,7 @@ import { HostedBanner } from "./HostedBanner";
 import { NextStepBanner } from "./NextStep";
 import { G_KEY, Palette } from "./Palette";
 import { BottomBar, Rail } from "./Rail";
-import { pathOf, useRoute, type Route } from "./route";
+import { notFoundWords, pathOf, useRoute, type Route } from "./route";
 import { SECTION, type SectionId } from "./sections";
 import { SectionBoundary } from "./SectionBoundary";
 import { ShortcutSheet } from "./Shortcuts";
@@ -125,26 +125,33 @@ function SectionView({
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const Component = SECTION[route.section].component;
+  const missing =
+    route.notFound ??
+    (route.key && frameError instanceof ApiError && frameError.status === 404
+      ? route.kind === "s"
+        ? "session"
+        : "study"
+      : null);
+  if (missing) {
+    const words = notFoundWords(missing);
+    return (
+      <EmptyState
+        headingLevel={1}
+        className="mx-auto mt-10 max-w-xl"
+        icon={<FolderX />}
+        title={words.title}
+        action={
+          <Button variant="primary" onClick={() => navigate("/")}>
+            Back to Open
+          </Button>
+        }
+      >
+        {words.body}
+      </EmptyState>
+    );
+  }
   if (route.key) {
     if (frameError) {
-      if (frameError instanceof ApiError && frameError.status === 404) {
-        return (
-          <EmptyState
-            headingLevel={1}
-            className="mx-auto mt-10 max-w-xl"
-            icon={<FolderX />}
-            title="This study is not in this qPilot's store"
-            action={
-              <Button variant="primary" onClick={() => navigate("/")}>
-                Open a study
-              </Button>
-            }
-          >
-            The link names a study that this qPilot has not opened (or it was moved aside by “Start
-            a fresh demo”). Open the file again, or pick a study you have.
-          </EmptyState>
-        );
-      }
       return (
         <ErrorPanel
           error={frameError}

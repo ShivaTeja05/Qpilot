@@ -25,7 +25,7 @@ import { DECISION_ORDER } from "./words";
 import { PAGE } from "./layout";
 
 const HINT =
-  "Your confirmed study under every combination of eight analysis decisions, and one verdict per gene.";
+  "Your confirmed study under every combination of its analysis decisions, and one verdict per gene.";
 
 export default function AuditSection({ workspace, rest }: SectionProps) {
   const [, navigate] = useLocation();

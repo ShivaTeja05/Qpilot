@@ -35,19 +35,30 @@ describe("which wells a proposal is about", () => {
   });
 });
 
-describe("the design's blockers", () => {
-  it("says what is missing and where groups can come from when none is waiting", () => {
-    const open = vi.fn();
-    render(
-      <DesignNeeds blockers={design.blockers} proposals={all} onOpen={open} onSettings={vi.fn()} />,
-    );
+describe("the design's needs", () => {
+  it("links every need to the control that fixes it, and says a model is optional", () => {
+    const go = vi.fn();
+    const needs = [
+      { code: "reference", words: "no reference gene yet: mark one", where: "targets" as const },
+      { code: "groups", words: "fewer than two groups", where: "samples" as const },
+      { code: "engine", words: "a design error in the engine's words", where: "engine" as const },
+    ];
+    render(<DesignNeeds needs={needs} blockers={[]} onGo={go} />);
+    expect(screen.getByText("No reference gene yet: mark one.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Choose the reference genes" }));
+    expect(go).toHaveBeenLastCalledWith("targets");
+    fireEvent.click(screen.getByRole("button", { name: "Set the groups" }));
+    expect(go).toHaveBeenLastCalledWith("samples");
+    expect(screen.getByText(/A model is optional/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Use a sample sheet" }));
+    expect(go).toHaveBeenLastCalledWith("sheet");
+    expect(screen.queryByRole("button", { name: /Model settings/ })).toBeNull();
+  });
+
+  it("falls back to the stage's blockers while the editor loads", () => {
+    render(<DesignNeeds needs={undefined} blockers={design.blockers} onGo={vi.fn()} />);
     for (const b of design.blockers)
       expect(screen.getByText(new RegExp(b.slice(1, 30)))).toBeTruthy();
-    expect(
-      screen.getByText(/No proposal for the groups or the reference genes is waiting/),
-    ).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Open with a sample sheet" }));
-    expect(open).toHaveBeenCalled();
   });
 
   it("offers no comparison before two groups are accepted", () => {

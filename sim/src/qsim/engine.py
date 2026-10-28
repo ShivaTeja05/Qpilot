@@ -13,11 +13,19 @@ Conventions, matching qPilot so that the baseline cell reproduces qPilot's resul
   different choice never moves a sample between groups;
 * the fold change and its CI come from the difference of group means on the log2 scale. The
   ``test`` decision changes only the p-value, except Student's test, which also uses the pooled
-  standard error.
+  standard error;
+* technical replicates (a study with :attr:`qsim.data.Study.replicates`): every matrix-stage
+  choice acts on each well, then a sample's wells are combined (``replicates``: the mean
+  ``log2 N0`` of the wells that have a value, qPilot's rule; or their median; or the mean after
+  leaving out a well outside the expected replicate spread, :func:`replicate_outliers`). A
+  value is undetermined only when every well that is not left out is, and left out (never
+  filled in) when every well is. Replicates are never counted as n: the groups compare samples.
 """
 
 from __future__ import annotations
 
+import math
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -30,6 +38,13 @@ from qsim.decisions import Space
 
 UP, NONE, DOWN = 1, 0, -1
 CALL_NAMES = {UP: "up", NONE: "none", DOWN: "down"}
+COMBINE = ("mean", "median", "outlier")  # how a sample's replicate wells become one value
+# G-REP's defaults (packs/research-default.yaml; methods/design_checks.md, D-REP): pipetting CV,
+# the two-cycle floor up to Cq 35, and the Cq above which replicate spread is not judged.
+PIPETTING_CV = 0.15
+COPIES_UNKNOWN_MAX_CQ = 30.0
+LOW_COPY_TOLERANCE = 2.0
+STOCHASTIC_MIN_CQ = 35.0
 
 
 @dataclass
@@ -89,10 +104,23 @@ class Engine:
         }
         self._masks = {o.value: study.group_masks(o.value) for o in space.decision("cut").options}
         # one fluorescence threshold per plate: the Cq = 40 substitute needs it for wells with no Cq
-        runs = pd.Series(study.run.ravel())
-        nq = pd.Series(study.log2_nq.ravel())
-        self._plate_nq = nq.groupby(runs).transform("median").to_numpy().reshape(study.run.shape)
-        self._undetermined = np.isnan(study.cq)
+        wells = study.replicates
+        if wells is None:
+            runs = pd.Series(study.run.ravel())
+            nq = pd.Series(study.log2_nq.ravel())
+            self._plate_nq = (
+                nq.groupby(runs).transform("median").to_numpy().reshape(study.run.shape)
+            )
+            # a cell without any well (a unit not measured for a gene) is left out, never
+            # undetermined: no non-detect rule fills it in
+            self._undetermined = np.isnan(study.cq) & (study.well != "")
+        else:
+            runs = pd.Series(np.where(wells.present, wells.run, "").ravel())
+            nq = pd.Series(np.where(wells.present, wells.log2_nq, np.nan).ravel())
+            self._plate_nq = (
+                nq.groupby(runs).transform("median").to_numpy().reshape(wells.run.shape)
+            )
+            self._undetermined = wells.present & np.isnan(wells.cq)
         self._last: dict[str, tuple[object, object]] = {}
         names = space.names
         stages = [d.stage for d in space.decisions]
@@ -102,6 +130,17 @@ class Engine:
         self._cmp = names.index("test") + 1
 
     # ---- stage 1: the samples x genes log2 quantity matrix -------------------------------
+    def matrix_of(self, v: dict, drop: np.ndarray | None = None):
+        """:meth:`matrix` at a cell's option values (:meth:`values_of`)."""
+        return self.matrix(
+            v["efficiency"],
+            v["flagged"],
+            v["nondetect"],
+            drop,
+            v.get("late_cq"),
+            v.get("replicates"),
+        )
+
     def matrix(
         self,
         efficiency: str,
@@ -109,24 +148,18 @@ class Engine:
         nondetect: str,
         drop: np.ndarray | None = None,
         late: float | None = None,
+        combine: str | None = None,
     ):
+        """``(values, target)``: samples x genes log2 quantities, and the compared genes' after
+        the non-detect rule. ``drop`` marks values (samples x genes) or, with replicates, single
+        wells (samples x genes x wells) to leave out; ``combine`` is how replicates are combined
+        (:data:`COMBINE`; ignored without replicates)."""
+        if self.study.replicates is not None:
+            return self._replicate_matrix(
+                efficiency, flagged, nondetect, drop, late, combine or "mean"
+            )
         s = self.study
-        if efficiency == "assay":
-            values = s.log2_n0.copy()
-            eff = s.eff_assay
-        elif efficiency == "well":
-            with np.errstate(divide="ignore", invalid="ignore"):
-                values = s.log2_nq - s.cq * np.log2(s.eff_well)
-            eff = s.eff_assay
-        elif efficiency == "std":
-            # plates without a usable standard curve keep the LinRegPCR assay mean
-            eff = np.where(np.isnan(s.eff_std), s.eff_assay, s.eff_std)
-            values = s.log2_nq - s.cq * np.log2(eff)
-        elif efficiency == "fixed2":
-            values = s.log2_nq - s.cq
-            eff = np.full_like(s.eff_assay, 2.0)
-        else:
-            raise ValueError(f"unknown efficiency model {efficiency!r}")
+        values, eff = _quantities(s, efficiency)
         missing = np.zeros(values.shape, dtype=bool)
         if flagged in ("eff", "eff_low"):
             missing |= s.flag_eff
@@ -152,6 +185,48 @@ class Engine:
         elif nondetect != "drop":
             raise ValueError(f"unknown non-detect rule {nondetect!r}")
         return values, target
+
+    def _replicate_matrix(self, efficiency, flagged, nondetect, drop, late, combine):
+        """:meth:`matrix` with technical replicates: each choice per well, then per sample."""
+        w = self.study.replicates
+        values, eff = _quantities(w, efficiency)
+        missing = np.zeros(values.shape, dtype=bool)
+        if flagged in ("eff", "eff_low"):
+            missing |= w.flag_eff
+        if flagged == "eff_low":
+            missing |= w.flag_low
+        if drop is not None:
+            missing |= drop if drop.ndim == 3 else drop[:, :, None]
+        missing &= w.present
+        undetermined = self._undetermined.copy()
+        if late is not None:
+            with np.errstate(invalid="ignore"):
+                undetermined |= w.present & ~np.isnan(w.cq) & (w.cq > late)
+        undetermined &= w.present & ~missing
+        usable = w.present & ~missing & ~undetermined & ~np.isnan(values)
+        if combine == "outlier":
+            usable &= ~replicate_outliers(w.cq, w.eff_assay, usable)
+        elif combine not in COMBINE:
+            raise ValueError(f"unknown replicate rule {combine!r}")
+        # undetermined only when no well has a value and one never amplified; a sample whose
+        # every well is left out (flagged, excluded, dropped) has no value and is never filled in
+        unit_und = undetermined.any(axis=2) & ~usable.any(axis=2)
+        combined = _combine(values, usable, "median" if combine == "median" else "mean")
+        items = self._item_cols
+        target = combined[:, items]
+        und = unit_und[:, items]
+        if nondetect == "cap":
+            lowest = np.nanmin(np.where(und, np.nan, target), axis=0)
+            target = np.where(und, lowest[None, :], target)
+        elif nondetect == "cq40":
+            # the spreadsheet shortcut: every undetermined well becomes Cq 40, then the mean
+            with np.errstate(divide="ignore", invalid="ignore"):
+                sub = self._plate_nq - 40.0 * np.log2(eff)
+            filled = np.where(undetermined, sub, values)
+            target = _combine(filled, usable | undetermined, "mean")[:, items]
+        elif nondetect != "drop":
+            raise ValueError(f"unknown non-detect rule {nondetect!r}")
+        return combined, target
 
     # ---- stage 2: normalise by the mean of a reference-gene subset ----------------------
     def relative(self, matrix, refs_id: str):
@@ -217,13 +292,7 @@ class Engine:
         """One cell; ``drop`` removes extra wells (a data perturbation, never cached)."""
         v, ids = self.values_of(cell), self.ids_of(cell)
         if drop is None:
-            matrix = self._stage(
-                "matrix",
-                tuple(cell[: self._m]),
-                lambda: self.matrix(
-                    v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq")
-                ),
-            )
+            matrix = self._stage("matrix", tuple(cell[: self._m]), lambda: self.matrix_of(v))
             rel = self._stage(
                 "rel", tuple(cell[: self._m + 1]), lambda: self.relative(matrix, ids["refs"])
             )
@@ -231,9 +300,7 @@ class Engine:
                 "cmp", tuple(cell[: self._cmp]), lambda: self.compare(rel, v["cut"], v["test"])
             )
         else:
-            matrix = self.matrix(
-                v["efficiency"], v["flagged"], v["nondetect"], drop, v.get("late_cq")
-            )
+            matrix = self.matrix_of(v, drop)
             rel = self.relative(matrix, ids["refs"])
             out = self.compare(rel, v["cut"], v["test"])
         diff, se, lo, hi, p, _ = out
@@ -252,6 +319,80 @@ class Engine:
                 arrays[k][row] = res[k]
             call[row] = res["call"]
         return Grid(self.space, self.items, cells, call=call, rule=self.rule, **arrays)
+
+
+def _quantities(s, efficiency: str) -> tuple[np.ndarray, np.ndarray]:
+    """(log2 N0 under an efficiency model, the efficiency) for a study's or its wells' arrays."""
+    if efficiency == "assay":
+        values = s.log2_n0.copy()
+        eff = s.eff_assay
+    elif efficiency == "well":
+        with np.errstate(divide="ignore", invalid="ignore"):
+            values = s.log2_nq - s.cq * np.log2(s.eff_well)
+        eff = s.eff_assay
+    elif efficiency == "std":
+        # plates without a usable standard curve keep the LinRegPCR assay mean
+        eff = np.where(np.isnan(s.eff_std), s.eff_assay, s.eff_std)
+        values = s.log2_nq - s.cq * np.log2(eff)
+    elif efficiency == "fixed2":
+        values = s.log2_nq - s.cq
+        eff = np.full_like(s.eff_assay, 2.0)
+    else:
+        raise ValueError(f"unknown efficiency model {efficiency!r}")
+    return values, eff
+
+
+def _combine(values: np.ndarray, use: np.ndarray, how: str) -> np.ndarray:
+    """Per sample and gene, the mean (or median) of the wells in ``use``; NaN where none is."""
+    if how == "median":
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)  # all-NaN slices: no value
+            return np.nanmedian(np.where(use, values, np.nan), axis=2)
+    n = use.sum(axis=2)
+    total = np.where(use, values, 0.0).sum(axis=2)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return np.where(n > 0, total / n, np.nan)
+
+
+def range_tolerance(n: np.ndarray, mean_cq: np.ndarray, eff: np.ndarray) -> np.ndarray:
+    """G-REP's expected Cq range of ``n`` replicate wells, without a standard curve.
+
+    The 95th percentile of the range of ``n`` normal values whose SD is pipetting alone
+    (CV 0.15) on the cycle scale, ``q95(n) * 0.15 / ln(E)``; from Cq 30 to 35 at least two
+    cycles, because low copy numbers are possible (``qpilot.qpcr.gate_rules.replicate_spread``).
+    """
+    from qpilot.qpcr.gate_rules import range_quantile
+
+    q = np.zeros(n.shape)
+    for m in np.unique(n[n >= 2]):
+        q[n == m] = range_quantile(int(m))
+    e = np.where(np.isfinite(eff) & (eff > 1.0), eff, 2.0)
+    tol = q * PIPETTING_CV / np.log(e)
+    with np.errstate(invalid="ignore"):
+        low_copy = (mean_cq > COPIES_UNKNOWN_MAX_CQ) & (mean_cq <= STOCHASTIC_MIN_CQ)
+    return np.where(low_copy, np.maximum(tol, LOW_COPY_TOLERANCE), tol)
+
+
+def replicate_outliers(cq: np.ndarray, eff: np.ndarray, use: np.ndarray) -> np.ndarray:
+    """Wells to leave out: per sample and gene with three or more wells in ``use`` whose Cq range
+    is above :func:`range_tolerance`, the well farthest from their median Cq (G-REP's
+    ``drop_outlier_well``). With two wells neither can be called the outlier, and above Cq 35
+    the spread is sampling, so nothing is left out there."""
+    n = use.sum(axis=2)
+    c = np.where(use, cq, np.nan)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        median = np.nanmedian(c, axis=2)
+        spread = np.nanmax(c, axis=2) - np.nanmin(c, axis=2)
+        mean_cq = np.nanmean(c, axis=2)
+        e = np.nanmedian(np.where(use, eff, np.nan), axis=2)
+    with np.errstate(invalid="ignore"):
+        judged = (n >= 3) & (mean_cq <= STOCHASTIC_MIN_CQ)
+        outside = judged & (spread > range_tolerance(n, mean_cq, e))
+    far = np.argmax(np.where(use, np.abs(c - median[:, :, None]), -math.inf), axis=2)
+    out = np.zeros(use.shape, dtype=bool)
+    np.put_along_axis(out, far[:, :, None], outside[:, :, None], axis=2)
+    return out & use
 
 
 def adjust(p: np.ndarray, method: str) -> np.ndarray:

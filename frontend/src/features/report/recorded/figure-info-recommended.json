@@ -1,0 +1,45 @@
+{
+  "bases": [
+    "as_decided",
+    "recommended"
+  ],
+  "basis": "recommended",
+  "basis_label": "Recommended analysis",
+  "call": "up",
+  "caption": "ODC1, MYCN-high versus rest. Each dot is one biological unit's log2 relative quantity (MYCN-high n = 52, rest n = 294); technical replicates are averaged within each unit and never counted as n. Bars: group mean with its 95 % confidence interval (Student's t). Quantities are normalised to the mean log2 quantity of the reference genes ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2); efficiency: LinRegPCR's mean efficiency of the amplicon on each plate; a curve counts as amplified by LinRegPCR's own call (a starting quantity was found); wells with no quantity: drop empty wells. Welch's t test on the per-unit log2 values: fold change 3.32× (95 % CI 2.29× to 4.80×), p = 2.1 × 10⁻⁸; called up under the rule p < 0.05 and at least 2-fold. No correction for multiple testing across the 58 genes compared. Analysis: recommended analysis (every Decision Card at its recommended option).",
+  "chain_head": "bc6a7ced8cfb834e78d30850e8175b5167a73acd5bcfeeb188a1bc76e7914148",
+  "ci95_high": 4.80321624539644,
+  "ci95_low": 2.292871356518271,
+  "comparison": "MYCN-high vs rest",
+  "comparisons": [
+    "MYCN-high vs rest"
+  ],
+  "files": {
+    "csv": "/api/studies/e300000d4f9a/report/figure?gene=ODC1&format=csv&basis=recommended",
+    "png": "/api/studies/e300000d4f9a/report/figure?gene=ODC1&format=png&basis=recommended",
+    "svg": "/api/studies/e300000d4f9a/report/figure?gene=ODC1&format=svg&basis=recommended"
+  },
+  "fold_change": 3.3186076821812986,
+  "gene": "ODC1",
+  "groups": [
+    {
+      "ci_high": 3.162036585214463,
+      "ci_low": 2.125998909806272,
+      "mean": 2.6440177475103677,
+      "n": 52,
+      "name": "MYCN-high"
+    },
+    {
+      "ci_high": 1.0444526708586304,
+      "ci_low": 0.7824266490449256,
+      "mean": 0.913439659951778,
+      "n": 294,
+      "name": "rest"
+    }
+  ],
+  "n_a": 52,
+  "n_b": 294,
+  "note": "",
+  "p": 2.065427855257047e-08,
+  "study_id": "e300000d4f9a"
+}

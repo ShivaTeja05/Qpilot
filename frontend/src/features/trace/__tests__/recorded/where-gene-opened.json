@@ -1,7 +1,7 @@
 {
- "study_id": "e300000d4f9a",
- "session": "bc1d233e3866",
- "head": "63011ae06c81fe00c5805c17a1f9188c0edf0521f7517c8093a4fb282610fc62",
+ "study_id": "bc1d233e3866",
+ "session": null,
+ "head": "f0fa779b770d8fea12ec120e4cf56c76e6e0f6af2bb89c5ddb4360c7c60d3684",
  "root": {
   "kind": "gene",
   "id": "CAMTA2"
@@ -1191,7 +1191,9 @@
      "label": "Keep (no change)",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 0
     },
     {
      "id": "read_from_other_refs",
@@ -1201,7 +1203,9 @@
      "changed_calls": [
       "CAMTA2",
       "IGSF4"
-     ]
+     ],
+     "applies": false,
+     "n_wells": 0
     },
     {
      "id": "set_aside",
@@ -1210,7 +1214,9 @@
      "consequence_word": "changes the call",
      "changed_calls": [
       "CAMTA2"
-     ]
+     ],
+     "applies": true,
+     "n_wells": 64
     }
    ],
    "card_id": "card_trace_2016_hmbs_20080318_k22",
@@ -1240,7 +1246,9 @@
      "label": "Keep (no change)",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 0
     },
     {
      "id": "read_from_other_refs",
@@ -1249,7 +1257,9 @@
      "consequence_word": "changes the call",
      "changed_calls": [
       "CAMTA2"
-     ]
+     ],
+     "applies": false,
+     "n_wells": 0
     },
     {
      "id": "set_aside",
@@ -1258,7 +1268,9 @@
      "consequence_word": "changes nothing here",
      "changed_calls": [
       "IGSF4"
-     ]
+     ],
+     "applies": true,
+     "n_wells": 64
     }
    ],
    "card_id": "card_trace_1924_hprt1_20080303_f23",
@@ -1288,7 +1300,9 @@
      "label": "Keep (no change)",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 0
     },
     {
      "id": "read_from_other_refs",
@@ -1297,14 +1311,18 @@
      "consequence_word": "changes the call",
      "changed_calls": [
       "CAMTA2"
-     ]
+     ],
+     "applies": false,
+     "n_wells": 0
     },
     {
      "id": "set_aside",
      "label": "Set the sample aside (every comparison)",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 64
     }
    ],
    "card_id": "card_trace_1772_ubc_2_20080220_o13",
@@ -1410,5 +1428,9 @@
  ],
  "n_absent": 19,
  "decide_note": "Decide… opens that place as a Decision Card on Results. A choice that can change a conclusion is a person's, and it is kept in the decision chain with its reason; the study's numbers stay as analysed.",
- "method_card": "methods/trace.md"
+ "method_card": "methods/trace.md",
+ "can_apply": false,
+ "apply_note": "This study was analysed outside Studio, so its wells cannot be left out here: Decide… opens the place as a Decision Card on Results, which records your decision with its reason, and the numbers stay as analysed. To leave the wells out of the analysis, open the study's file in Studio (Open), confirm the design and the curves, and decide in Trace there.",
+ "inbox_head": null,
+ "set_aside": []
 }

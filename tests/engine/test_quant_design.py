@@ -8,17 +8,24 @@ import pytest
 
 from qpilot.qpcr.curves import REFERENCE_TARGETS
 from qpilot.qpcr.design import GroupSpec, design_summary, groups_by_cut, marker_groups
-from qpilot.qpcr.quant import QuantError, log2_matrix, relative, samples_common
+from qpilot.qpcr.quant import (
+    QuantError,
+    left_out_cells,
+    log2_matrix,
+    not_measured,
+    not_measured_cells,
+    relative,
+    samples_common,
+)
 
 
 def _wells(rows):
     return pd.DataFrame(rows, columns=["sample", "target", "sample_type", "n0"])
 
 
-@pytest.fixture
-def tiny_matrix():
-    # s1..s3 x {G, R}; s3 has G undetermined; s4 lacks a G well entirely (dropped as incomplete)
-    curves = _wells(
+def _tiny_curves():
+    # s1..s3 x {G, R}; s3 has G undetermined; s4 lacks a G well entirely (not measured for G)
+    return _wells(
         [
             ("s1", "G", "unkn", 8.0), ("s1", "R", "unkn", 2.0),
             ("s2", "G", "unkn", 4.0), ("s2", "R", "unkn", 4.0),
@@ -27,13 +34,36 @@ def tiny_matrix():
             ("std1", "G", "std", 100.0), ("std1", "R", "std", 100.0),
         ]
     )  # fmt: skip
-    return log2_matrix(curves)
 
 
-def test_matrix_keeps_only_complete_study_samples(tiny_matrix):
-    assert samples_common(tiny_matrix) == ["s1", "s2", "s3"]
+@pytest.fixture
+def tiny_matrix():
+    return log2_matrix(_tiny_curves())
+
+
+def test_matrix_keeps_a_unit_missing_a_gene_for_the_genes_it_has(tiny_matrix):
+    # s4 has no G well: it stays (its R counts wherever R is used) and is left out of G only
+    assert samples_common(tiny_matrix) == ["s1", "s2", "s3", "s4"]
     assert list(tiny_matrix.columns) == ["G", "R"]
     assert tiny_matrix.loc["s1", "G"] == 3.0 and math.isnan(tiny_matrix.loc["s3", "G"])
+    assert math.isnan(tiny_matrix.loc["s4", "G"]) and tiny_matrix.loc["s4", "R"] == 0.0
+    missing = not_measured_cells(_tiny_curves())
+    assert missing.loc["s4", "G"] and not missing.loc["s3", "G"] and not missing["R"].any()
+    assert not_measured(_tiny_curves()) == {"G": ["s4"]}
+    assert left_out_cells(_tiny_curves()).equals(missing)
+
+
+def test_a_not_measured_value_is_never_capped(tiny_matrix):
+    left_out = left_out_cells(_tiny_curves())
+    capped = relative(tiny_matrix, "G", ["R"], "cap", left_out)
+    assert sorted(capped.index) == ["s1", "s2", "s3"]  # s3 undetermined -> capped; s4 left out
+    assert relative(tiny_matrix, "G", ["R"], "drop", left_out).to_dict() == {"s1": 2.0, "s2": 0.0}
+
+
+def test_a_complete_table_has_nothing_left_out():
+    curves = _tiny_curves()
+    complete = curves[curves["sample"] != "s4"]
+    assert left_out_cells(complete) is None and not_measured(complete) == {}
 
 
 def test_relative_is_a_log2_subtraction(tiny_matrix):

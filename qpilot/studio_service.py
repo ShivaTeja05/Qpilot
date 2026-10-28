@@ -45,7 +45,7 @@ import subprocess
 import threading
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -236,6 +236,51 @@ class _GatePlan:
     new: list[tuple[str, bool]]  # the changes no waiting proposal already asks for
     settle: list[tuple[str, str]]  # waiting proposals (id, accept | reject)
     elsewhere: list[str]  # left out another way (a Prism round trip): "keep" leaves them
+
+
+# ---- Trace: a person sets wells aside from Where to look (the decide_trace block) -------------
+
+TRACE_MAKER = "qpilot-trace"  # the rule that proposes the exclusions of a Trace decision
+TRACE_MODEL = "trace-v1"
+
+
+@dataclass(frozen=True)
+class TraceChoice:
+    """One option at one place Trace pointed at (built by the server from the trace, never sent).
+
+    The shape :func:`_gate_plan` reads (``card_id``, ``option``, ``wells``, ``universe``):
+    ``wells`` are what the option leaves out (none for ``keep``), ``universe`` every well any
+    set-aside of the place leaves out (what "keep" can put back), ``place_wells`` the place's
+    own wells (recorded when a keep changes nothing). ``matters``: the option (for ``keep``,
+    any option) changes a call at the analysis in use. ``study_id`` is the analysis traced.
+    """
+
+    study_id: str
+    card_id: str
+    option: str
+    label: str
+    where: str
+    sample: str
+    well: str | None
+    checks: tuple[str, ...]
+    wells: tuple[str, ...]
+    universe: tuple[str, ...]
+    place_wells: tuple[str, ...]
+    matters: bool
+
+
+@dataclass
+class TraceSetAside:
+    """Wells a person set aside from one Trace place that are out of the analysis now."""
+
+    card_id: str
+    option: str
+    sample: str
+    well: str | None
+    reason: str
+    decided_at: str
+    matters: bool
+    wells: list[str]
 
 
 @dataclass
@@ -566,6 +611,14 @@ class Studio:
             elif why:
                 notes.append(f"the model answered for part of the file only: {why}")
             notes += more
+        fields, makers, repeats = _not_decided(
+            fields, makers, self.store.proposals(session_id).accepted("design.")
+        )
+        if repeats:
+            notes.append(
+                f"{repeats} proposal{'s' * (repeats != 1)} not made again: a person already "
+                "decided the same"
+            )
         outcomes = [
             self._propose(session_id, f, maker) for f, maker in zip(fields, makers, strict=True)
         ]
@@ -964,9 +1017,13 @@ class Studio:
         accepted = self.store.proposals(session_id).accepted("design.")
         if any(p.kind in ("design.comparison", "design.preset") for p in accepted):
             return None
-        groups = sorted(
-            {str(p.effective_payload().get("group")) for p in accepted if p.kind == "design.group"}
-        )
+        latest: dict[str, Any] = {}  # a later decision on a sample wins (None: no group)
+        for p in accepted:
+            if p.kind == "design.group":
+                latest[p.subject] = p.effective_payload().get("group")
+        groups = sorted({str(g) for g in latest.values() if g is not None})
+        if len(groups) > 2:
+            return self._propose_plan(session_id, groups, accepted)
         if len(groups) != 2:
             return None
         controls = [g for g in groups if _CONTROL_GROUP.search(g)]
@@ -989,6 +1046,54 @@ class Studio:
             alternatives=[{"group_a": reference, "group_b": other}],
             level=level,
             reasons=[f"exactly two groups were accepted; {why}"],
+            made_by=MadeBy(kind="rule"),
+        )
+        return self.store.proposals(session_id).propose(proposal, "system")
+
+    def _propose_plan(
+        self, session_id: str, groups: Sequence[str], accepted: Sequence[Proposal]
+    ) -> ProposalOutcome | None:
+        """Three or more groups: the rule proposes several comparisons, a person decides.
+
+        With exactly one control-like group name (control, vehicle, untreated, WT, mock, 0 h,
+        day 0...) every other group is compared with it ("each group vs <control>", Moderate);
+        otherwise every pair of groups (up to five groups; Low, with "each vs the first group"
+        as the alternative). Holm's correction across each gene's comparisons is proposed either
+        way. When a person accepted pairings (``design.pair``) for the grouped samples, the
+        comparisons are paired by them. A person may edit the list, the control, the correction
+        or the pairing before accepting.
+        """
+        controls = [g for g in groups if _CONTROL_GROUP.search(g) or _TIME_ZERO.search(g)]
+        cites = [e.ref for p in accepted if p.kind == "design.group" for e in p.evidence if e.ref][
+            :20
+        ]
+        pairing = _accepted_pairing(accepted)
+        if len(controls) == 1:
+            control = controls[0]
+            payload = _vs_control(groups, control)
+            alternative = _all_pairs(groups)
+            level, why = "Moderate", f"one group has a control-like name ({control})"
+        elif len(groups) <= MAX_ALL_PAIRS_GROUPS:
+            payload = _all_pairs(groups)
+            alternative = _vs_control(groups, groups[0])
+            level = "Low"
+            why = "no single group name says which is the control, so every pair is compared"
+        else:
+            return None  # too many groups to guess: a person writes the list
+        reasons = [f"{len(groups)} groups were accepted; {why}"]
+        reasons.append("Holm's correction across each gene's comparisons is proposed")
+        if pairing:
+            payload["pair_by"] = alternative["pair_by"] = pairing
+            reasons.append(f"accepted pairings ({pairing}): each comparison is a paired test")
+        proposal = Proposal(
+            study_id=session_id,
+            kind="design.comparison",
+            subject="comparison",
+            payload=payload,
+            evidence=_evidence(cites),
+            alternatives=[alternative],
+            level=level,
+            reasons=reasons,
             made_by=MadeBy(kind="rule"),
         )
         return self.store.proposals(session_id).propose(proposal, "system")
@@ -1060,6 +1165,13 @@ class Studio:
             model = build_model(curves, settings)
         except (DesignError, CurveAnalysisError, ValueError):
             return None
+        if model.space.comparisons:  # several comparisons: every one's calls count
+            every = model.space.evaluate_all(model.space.primary)
+            return {
+                f"{cid}/{gene}": r.conclusion
+                for cid, found in every.items()
+                for gene, r in found.items()
+            }
         results = model.space.evaluate(model.space.primary)
         return {gene: r.conclusion for gene, r in results.items()}
 
@@ -1685,6 +1797,160 @@ class Studio:
                 out.setdefault(card, []).append(proposal)
         return out
 
+    # ---- Trace: a person sets wells aside from Where to look ---------------------------------
+
+    def decide_trace(
+        self,
+        session_id: str,
+        choice: TraceChoice,
+        actor: Actor,
+        reason: str,
+        expected_head: str | None = None,
+    ) -> GateDecision:
+        """A person chooses an option at a place Trace pointed at: the wells become exclusions.
+
+        Run Gate's path (:meth:`decide_gate`), with Trace as the proposer: a set-aside makes one
+        ``curve.exclude_well`` per well it leaves out (made by Trace, accepted by the person with
+        the reason) and puts back the place's other wells a person left out; "keep" puts back
+        the wells a person left out at this place, or, when nothing has to change, records the
+        keep (the place's own wells, Trace's exclusions rejected with the reason). One write to
+        the inbox (all or nothing); a changed design is analysed again (:meth:`study`), and the
+        person's Decision Card choices are carried to it (:meth:`_switch`).
+
+        Only a person; refused while the results are hidden, and ``stale`` when the session's
+        analysis is no longer the one traced (``choice.study_id``) or a person decided anything
+        in the inbox since ``expected_head``.
+        """
+        from qpilot.core.proposals import clean_reason
+
+        _require_human(actor, "decide what Trace's place to look means for the analysis")
+        reason = clean_reason(reason, required=True)
+        assembly, view = self._gate_view(session_id, choice)  # type: ignore[arg-type]
+        if isinstance(assembly, GateDecision):
+            return assembly
+        # What the option can put back: only the wells a person left out from this place (a
+        # well of the sample left out in Curves or from Controls stays as it is).
+        mine = {
+            w
+            for w, p in _latest_exclusions(view).items()
+            if trace_card_of(p) == choice.card_id and leaves_out(p)
+        }
+        choice = replace(choice, universe=tuple(sorted(set(choice.wells) | mine)))
+        # Run Gate's plan: a waiting request from no card (or from Trace) on these wells is
+        # settled by the same click; one tied to a Run Gate card is left for that card.
+        plan = _gate_plan(assembly, view, choice)  # type: ignore[arg-type]
+        new = [(self._trace_proposal(session_id, choice, w, x), "accept") for w, x in plan.new]
+        settle = list(plan.settle)
+        if not new and not settle:
+            if choice.option != GATE_KEEP:
+                raise StudioError("these wells are already left out of the analysis")
+            excluded = set(assembly.design.excluded_wells)  # type: ignore[union-attr]
+            keep = [w for w in choice.place_wells if w not in excluded]
+            if not keep:
+                raise StudioError("nothing to decide: none of these wells is in the analysis")
+            new = [(self._trace_proposal(session_id, choice, w, True), "reject") for w in keep]
+        since = expected_head if expected_head is not None else view.head
+        outcomes = self.store.proposals(session_id).decide_together(
+            new, settle, actor, reason, proposer="system", expected_head=since
+        )
+        first = outcomes[0]
+        if first.status in ("stale", "refused"):
+            return GateDecision(status=first.status, head=first.head, reason=first.reason)
+        decided = [o.proposal for o in outcomes if o.proposal is not None]
+        out = [p.subject for p in decided if p.status != "rejected" and leaves_out(p)]
+        back = [p.subject for p in decided if p.status != "rejected" and not leaves_out(p)]
+        status = "left_out" if out else "put_back" if back else "kept"
+        return GateDecision(
+            status=status,
+            head=outcomes[-1].head,
+            left_out=sorted(set(out)),
+            put_back=sorted(set(back)),
+            not_put_back=list(plan.elsewhere),
+            proposals=decided,
+        )
+
+    def _trace_proposal(
+        self, session_id: str, choice: TraceChoice, well: str, excluded: bool
+    ) -> Proposal:
+        """One well of a Trace choice as a ``curve.exclude_well`` proposal made by Trace.
+
+        Blind-safe like Run Gate's: the consequence says only whether the option changes a
+        call at the analysis in use and which place and option it came from (the sample and
+        its well, never a gene, a direction or a number).
+        """
+        words = "leave it out" if excluded else "put it back"
+        checks = f" ({', '.join(choice.checks)})" if choice.checks else ""
+        return Proposal(
+            study_id=session_id,
+            kind=EXCLUDE_KIND,
+            subject=well,
+            payload={"excluded": excluded},
+            evidence=[
+                Evidence(kind="rule", ref=TRACE_MAKER, note=f"Trace: {choice.where}"),
+                Evidence(kind="well", ref=well, note=f"a well of the place in Trace: {words}"),
+            ],
+            alternatives=[{"excluded": not excluded}],
+            consequence={
+                "matters": choice.matters,
+                "trace": {
+                    "card_id": choice.card_id,
+                    "option": choice.option,
+                    "study_id": choice.study_id,
+                    "sample": choice.sample,
+                    "well": choice.well,
+                },
+            },
+            level="Moderate",
+            reasons=[f"Trace{checks}, {choice.where}: {choice.label}"],
+            made_by=MadeBy(kind="rule", provider=TRACE_MAKER, model=TRACE_MODEL),
+        )
+
+    def trace_record(self, session_id: str) -> dict[str, list[Proposal]]:
+        """Every ``curve.exclude_well`` proposal tied to a place Trace pointed at, by card."""
+        out: dict[str, list[Proposal]] = {}
+        for proposal in self.store.proposals(session_id).proposals(kind_prefix=EXCLUDE_KIND):
+            card = trace_card_of(proposal)
+            if card is not None:
+                out.setdefault(card, []).append(proposal)
+        return out
+
+    def trace_left_out(self, session_id: str) -> dict[str, TraceSetAside]:
+        """The wells a person set aside from Trace that are out of the analysis now, by card.
+
+        A well counts for the card whose acceptance is the person's latest decision on it (a
+        well put back in Curves, or left out again from another place, belongs there now) and
+        only while the confirmed design leaves it out.
+        """
+        assembly, view = self._confirmed_view(session_id)
+        if assembly is None or assembly.design is None:
+            return {}
+        excluded = set(assembly.design.excluded_wells)
+        out: dict[str, TraceSetAside] = {}
+        for well, p in _latest_exclusions(view).items():
+            card = trace_card_of(p)
+            if card is None or not leaves_out(p) or well not in excluded:
+                continue
+            info = (p.consequence or {}).get("trace") or {}
+            found = out.get(card)
+            if found is None:
+                found = out[card] = TraceSetAside(
+                    card_id=card,
+                    option=str(info.get("option") or ""),
+                    sample=str(info.get("sample") or ""),
+                    well=info.get("well") if isinstance(info.get("well"), str) else None,
+                    reason=p.reason or "",
+                    decided_at=p.decided_at or "",
+                    matters=bool((p.consequence or {}).get("matters")),
+                    wells=[],
+                )
+            found.wells.append(well)
+            if (p.decided_at or "") >= found.decided_at:
+                found.reason, found.decided_at = p.reason or "", p.decided_at or ""
+                found.option = str(info.get("option") or found.option)
+        for entry in out.values():
+            entry.wells.sort()
+        return out
+
     # ---- the Import Trust card: what curves processed before export mean --------------------
 
     def decide_import_trust(
@@ -1882,6 +2148,9 @@ class Studio:
                 maker = MadeBy(kind="model", provider=self.client.provider, model=self.client.model)
             self._log_calls(session_id, "studio.prism_draft", getattr(draft, "meta", []))
         payload["study_id"] = study_id
+        digest = self._prism_digest(study_id, payload.get("genes") or None)
+        if digest:  # a later analysis with the same tables keeps this draft (still current)
+            payload["tables_sha256"] = digest
         proposal = Proposal(
             study_id=session_id,
             kind="prism.project",
@@ -1902,18 +2171,99 @@ class Studio:
         from qpilot.prism import preview
 
         study_id = self.study(session_id)
-        project = self._accepted_project(session_id, study_id)
+        found, _, _ = self.prism_project_cached(session_id, study_id)
+        project = found.effective_payload() if found is not None else None
         genes = project.get("genes") if project else None
         template = (project or {}).get("template_id") or "two_groups_log2"
-        return preview(self.store, study_id, genes or None, template, rows=rows)
+        out = preview(self.store, study_id, genes or None, template, rows=rows)
+        digest = (out.get("bundle") or {}).get("info", {}).get("tables_sha256")
+        head = (out.get("bundle") or {}).get("chain_head")
+        if digest and head:  # the preview computed it anyway: the status needs not
+            with _DIGESTS_LOCK:
+                _DIGESTS[(str(self.store.root), study_id, head, tuple(genes or ()))] = digest
+        return out
 
     def _accepted_project(self, session_id: str, study_id: str) -> dict[str, Any] | None:
+        found, _ = self.prism_project(session_id, study_id)
+        return found.effective_payload() if found is not None else None
+
+    def prism_project_cached(
+        self, session_id: str, study_id: str
+    ) -> tuple[Proposal | None, bool, bool]:
+        """:meth:`prism_project` without computing a digest: ``(found, carried, pending)``.
+
+        ``pending`` is True when an earlier analysis's project might still be current but a
+        digest it needs is not computed yet (call :meth:`prism_project` in the background).
+        """
+        return self._prism_project(session_id, study_id, compute=False)
+
+    def prism_project(self, session_id: str, study_id: str) -> tuple[Proposal | None, bool]:
+        """The accepted Prism project that holds for ``study_id``, and whether it is carried.
+
+        A project accepted for this analysis holds. So does the latest one accepted for an
+        earlier analysis whose exported tables hold exactly the same numbers (the digest of
+        the tables, ``tables_sha256``, is equal): a decision that changed no number in the
+        tables does not make a person draft the project again. It is then "still current"
+        (the second value is True). A draft from before digests were kept is compared by the
+        tables its own analysis exports now.
+        """
+        found, carried, _ = self._prism_project(session_id, study_id, compute=True)
+        return found, carried
+
+    def _prism_project(
+        self, session_id: str, study_id: str, *, compute: bool
+    ) -> tuple[Proposal | None, bool, bool]:
         accepted = self.store.proposals(session_id).accepted("prism.project")
         for proposal in reversed(accepted):
-            payload = proposal.effective_payload()
-            if payload.get("study_id") == study_id:
-                return payload
-        return None
+            if proposal.effective_payload().get("study_id") == study_id:
+                return proposal, False, False
+        if not accepted:
+            return None, False, False
+        latest = accepted[-1]
+        payload = latest.effective_payload()
+        genes = payload.get("genes") or None
+        digest = payload.get("tables_sha256") or self._prism_digest(
+            str(payload.get("study_id") or ""), genes, compute=compute
+        )
+        current = self._prism_digest(study_id, genes, compute=compute) if digest else None
+        if digest is _MISSING or current is _MISSING:
+            return None, False, True
+        if digest and current == digest:
+            return latest, True, False
+        return None, False, False
+
+    def _prism_digest(
+        self, study_id: str, genes: Sequence[str] | None, *, compute: bool = True
+    ) -> Any:
+        """The digest of the tables a Prism project of ``study_id`` holds (cached per head).
+
+        ``None`` when it cannot be computed; with ``compute=False``, :data:`_MISSING` when it is
+        not in the cache yet.
+        """
+        from qpilot.prism import project_digest
+        from qpilot.qpcr.export import ExportError
+
+        if not study_id:
+            return None
+        try:
+            key = _digest_key(self.store, study_id, genes)
+        except (StudyNotFound, OSError, ValueError):
+            return None
+        with _DIGESTS_LOCK:
+            if key in _DIGESTS:
+                return _DIGESTS[key]
+        if not compute:
+            return _MISSING
+        try:
+            digest = project_digest(self.store, study_id, genes)
+        except (ExportError, StudyNotFound, OSError, ValueError, KeyError) as err:
+            log.info("no Prism tables digest for %s: %s", study_id, err)
+            return None
+        with _DIGESTS_LOCK:
+            if len(_DIGESTS) > 256:
+                _DIGESTS.clear()
+            _DIGESTS[key] = digest
+        return digest
 
     def exports(self, session_id: str) -> list[dict[str, Any]]:
         """Every bundle sent to Prism from this session: study, folder, bundle sha256, time."""
@@ -1956,18 +2306,25 @@ class Studio:
             "at": _now(),
             "exclusions": [p.id for p in accepted if p.kind == EXCLUSION_KIND],
         }
+        if getattr(result, "project", None) is not None:
+            entry["project"] = result.project.name
         self._edit_meta(session_id, lambda meta: meta.setdefault("exports", []).append(entry))
         return result
 
     def launch_prism(self, result: Any, actor: Actor, wait_s: float = PRISM_WAIT_S) -> dict:
-        """Run the bundle's ``run.pzc`` in the scientist's Prism and wait for its done file.
+        """Open the bundle's project in the scientist's Prism (or run a scripts-only bundle).
 
-        Never runs without a person's click (``actor == "human"``) and never when Prism is not
-        installed: then the bundle stays where it is, to run on the Prism machine.
+        A bundle with a Prism project (the default) is opened in Prism and not waited for: Prism
+        shows it. A scripts-only bundle runs ``run.pzc`` and waits for its done file. Never
+        runs without a person's click (``actor == "human"``) and never when Prism is not
+        installed: then the bundle stays where it is, to open on the Prism machine.
         """
         from qpilot.prism.script import DONE_FILE
 
         _require_human(actor, "launch Prism")
+        project = getattr(result, "project", None)
+        if project is not None:
+            return _open_project(Path(project), Path(result.out_dir))
         command = result.launch
         argv: list[str] | str = list(command.argv)
         if argv:  # macOS: osascript with a fixed argument list
@@ -2325,10 +2682,33 @@ def _with_lab_defaults(design: StudyDesign, summary: InspectSummary) -> StudyDes
             update["experiment_id"] = common.pop()
     if not design.headline:
         refs = set(design.reference_candidates)
-        targets = sorted(t.target for t in summary.targets if t.target not in refs)
+        ignored = {t for t, d in design.targets.items() if d.role == "ignore"}
+        targets = sorted(t.target for t in summary.targets if t.target not in refs | ignored)
         if 0 < len(targets) <= 12:
             update["headline"] = tuple(targets)
     return design.model_copy(update=update) if update else design
+
+
+def _not_decided(
+    fields: Sequence[DesignField], makers: Sequence[MadeBy], accepted: Sequence[Proposal]
+) -> tuple[list[DesignField], list[MadeBy], int]:
+    """The fields a person has not already decided the same way, and how many were dropped.
+
+    Proposing again (after a sample sheet is attached on the Design page, say) must not ask a
+    person again what they decided: a field whose value equals the latest accepted decision on
+    the same item is left out. A field that differs is proposed, so a new reading is never lost.
+    """
+    decided: dict[tuple[str, str], str] = {}
+    for p in accepted:
+        decided[(p.kind, p.subject)] = json.dumps(p.effective_payload(), sort_keys=True)
+    kept: list[DesignField] = []
+    kept_makers: list[MadeBy] = []
+    for f, maker in zip(fields, makers, strict=True):
+        if decided.get((f.kind, f.subject)) == json.dumps(f.value, sort_keys=True):
+            continue
+        kept.append(f)
+        kept_makers.append(maker)
+    return kept, kept_makers, len(fields) - len(kept)
 
 
 def _fields_and_makers(
@@ -2357,6 +2737,22 @@ def gate_card_of(proposal: Proposal) -> str | None:
     """The Run Gate card a ``curve.exclude_well`` proposal came from, if it did."""
     gate = (proposal.consequence or {}).get("gate") if proposal.kind == EXCLUDE_KIND else None
     card = gate.get("card_id") if isinstance(gate, dict) else None
+    return card if isinstance(card, str) else None
+
+
+def _latest_exclusions(view: InboxView) -> dict[str, Proposal]:
+    """Per well, the ``curve.exclude_well`` a person accepted last (decision order)."""
+    latest: dict[str, Proposal] = {}
+    for p in view.accepted:
+        if p.kind == EXCLUDE_KIND:
+            latest[p.subject] = p
+    return latest
+
+
+def trace_card_of(proposal: Proposal) -> str | None:
+    """The Trace place (its card id) a ``curve.exclude_well`` proposal came from, if it did."""
+    found = (proposal.consequence or {}).get("trace") if proposal.kind == EXCLUDE_KIND else None
+    card = found.get("card_id") if isinstance(found, dict) else None
     return card if isinstance(card, str) else None
 
 
@@ -2485,6 +2881,47 @@ def _caption_facts(payload: dict[str, Any]) -> list[str]:
     return sorted(set(re.findall(r"\{\{(f_[a-z0-9_]+)\}\}", text)))[:50]
 
 
+_TIME_ZERO = re.compile(  # a time course's start: "0 h", "0h", "day 0", "t0", "time 0", "0 min"
+    r"(^|[^a-z0-9.])(0\s*(h|hr|hrs|hours?|min|mins|minutes?|d|days?)|day\s*0|t\s*=?\s*0|time\s*0)"
+    r"([^a-z0-9]|$)",
+    re.IGNORECASE,
+)
+MAX_ALL_PAIRS_GROUPS = 5  # 10 comparisons; more groups and a person writes the list
+
+
+def _vs_control(groups: Sequence[str], control: str) -> dict[str, Any]:
+    """Each other group compared with ``control`` (the first, alphabetically, is the primary)."""
+    others = [g for g in groups if g != control]
+    return {
+        "group_a": others[0],
+        "group_b": control,
+        "comparisons": [{"group_a": g, "group_b": control} for g in others],
+        "pattern": "vs_control",
+        "control": control,
+        "correction": "holm",
+    }
+
+
+def _all_pairs(groups: Sequence[str]) -> dict[str, Any]:
+    """Every pair of groups, each later group against each earlier one (sorted names)."""
+    pairs = [{"group_a": b, "group_b": a} for i, a in enumerate(groups) for b in groups[i + 1 :]]
+    return {
+        **pairs[0],
+        "comparisons": pairs,
+        "pattern": "all_pairs",
+        "correction": "holm",
+    }
+
+
+def _accepted_pairing(accepted: Sequence[Proposal]) -> str | None:
+    """The pairing's name when a person accepted ``design.pair`` proposals (else ``None``)."""
+    found = [p for p in accepted if p.kind == "design.pair" and p.effective_payload().get("pair")]
+    if not found:
+        return None
+    names = {str(p.effective_payload().get("by") or "pair") for p in found}
+    return sorted(names)[0] if len(names) == 1 else "pair"
+
+
 _CONTROL_GROUP = re.compile(
     r"(^|[^a-z])(ctrl|control|vehicle|veh|pbs|wt|wild.?type|untreated|baseline|sham|mock|naive)"
     r"([^a-z]|$)",
@@ -2530,8 +2967,73 @@ def _curve_features(path: Path, experiment_id: str | None) -> Any:
     return _FEATURES[key]
 
 
+_DIGESTS: dict[tuple[str, str, str, tuple[str, ...]], str] = {}
+_DIGESTS_LOCK = threading.Lock()
+_MISSING = object()  # a digest not computed yet (see Studio.prism_project_cached)
+
+
+def _digest_key(store: Any, study_id: str, genes: Sequence[str] | None) -> tuple:
+    """The cache key of a study's Prism tables digest: store, study, chain head, genes."""
+    return (str(store.root), study_id, store.chain_head(study_id), tuple(genes or ()))
+
+
+_MAC_APPS = (
+    "/Applications/Prism 11.app",
+    "/Applications/Prism 10.app",
+    "/Applications/Prism 9.app",
+    "/Applications/Prism.app",
+    "/Applications/GraphPad Prism.app",
+)
+
+
+def _mac_prism_app() -> str | None:
+    """Where GraphPad Prism is installed on this Mac, if it is."""
+    return next((p for p in _MAC_APPS if Path(p).is_dir()), None)
+
+
 def _mac_prism_installed() -> bool:
-    return any(Path(p).exists() for p in ("/Applications/Prism 10.app", "/Applications/Prism.app"))
+    return _mac_prism_app() is not None
+
+
+def _windows_prism_exe() -> str | None:
+    """Where GraphPad Prism is installed on this Windows computer, if it is."""
+    roots = [os.environ.get(k) for k in ("ProgramFiles", "ProgramFiles(x86)")]
+    for root in filter(None, roots):
+        base = Path(root) / "GraphPad"
+        if not base.is_dir():
+            continue
+        for folder in sorted(base.glob("Prism*"), reverse=True):
+            exe = folder / "prism.exe"
+            if exe.is_file():
+                return str(exe)
+    return None
+
+
+def _open_project(project: Path, folder: Path) -> dict[str, Any]:
+    """Open a project file in Prism when Prism is installed here (never waits for it)."""
+    import sys
+
+    note = (
+        "Prism is not installed on this computer: download the bundle and double-click the "
+        "project file on the computer that has Prism"
+    )
+    if sys.platform == "darwin":
+        app = _mac_prism_app()
+        if app is None:
+            return {"launched": False, "note": note, "bundle_dir": str(folder)}
+        argv = ["open", "-a", app, str(project)]
+    elif sys.platform.startswith("win"):
+        exe = _windows_prism_exe()
+        if exe is None:
+            return {"launched": False, "note": note, "bundle_dir": str(folder)}
+        argv = [exe, str(project)]
+    else:
+        return {"launched": False, "note": note, "bundle_dir": str(folder)}
+    try:
+        subprocess.Popen(argv, close_fds=True)  # noqa: S603 (no shell; fixed command)
+    except OSError as err:
+        return {"launched": False, "note": f"Prism could not be started: {err}"}
+    return {"launched": True, "done": None, "opened": project.name, "bundle_dir": str(folder)}
 
 
 __all__ = ["BLIND_STAGES", "STAGES", "Assembly", "StageStatus", "Studio", "StudioError"]

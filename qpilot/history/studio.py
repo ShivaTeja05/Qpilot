@@ -35,6 +35,7 @@ KIND_TITLE = {
     "design.target_role": "Target role",
     "design.gene_symbol": "Gene symbol",
     "design.comparison": "Comparison",
+    "design.pair": "Pairing",
     "design.dilution_series": "Dilution series",
     "curve.call_rule": "Amplification rule",
     "curve.well_call": "Well call",

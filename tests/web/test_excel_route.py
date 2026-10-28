@@ -27,11 +27,13 @@ def test_the_workbook_is_a_report_export_with_the_results_and_where_to_look(walk
     assert data.status_code == 200
     zipfile.ZipFile(io.BytesIO(data.content)).testzip()
     book = openpyxl.load_workbook(io.BytesIO(data.content))
-    assert book.sheetnames == ["Results", "Where to look", "About"]
+    assert book.sheetnames[:3] == ["Results", "Per unit", "Per well"]
+    assert "Where to look" in book.sheetnames and book.sheetnames[-1] == "About"
     rows = list(book["Results"].iter_rows(values_only=True))
     assert rows[0][-1] == "Trace" and len(rows) - 1 == len(store.get(study).contrasts)
     about = dict(book["About"].iter_rows(values_only=True))
     assert about["study_id"] == store.get(study).study_id
+    assert out["bases"] == ["as_decided"]
     listed = c.get(f"/api/studies/{study}/report/exports").json()["exports"]
     assert listed[0]["format"] == "xlsx"
 

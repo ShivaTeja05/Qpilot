@@ -908,10 +908,10 @@
     "status_word": "unknown",
     "value": "unknown",
     "line": {
-     "plain": "Raw-ness of the curves: unknown. Not judged yet: the raw-ness detector is not built. The cheap signs are consistent with raw curves: 24,576 wells were analysed from their amplification curves and none has a baseline at or below zero.",
+     "plain": "Raw-ness of the curves: unknown. Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and this study's file did not go through it. The cheap signs are consistent with raw curves: 24,576 wells were analysed from their amplification curves and none has a baseline at or below zero.",
      "segments": [
       {
-       "text": "Raw-ness of the curves: unknown. Not judged yet: the raw-ness detector is not built. The cheap signs are consistent with raw curves: ",
+       "text": "Raw-ness of the curves: unknown. Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and this study's file did not go through it. The cheap signs are consistent with raw curves: ",
        "fact": null
       },
       {
@@ -1160,18 +1160,6 @@
   }
  ],
  "not_built": [
-  {
-   "id": "repeat",
-   "title": "What to repeat and why",
-   "reason": "Not available yet; the repeat plan is not built.",
-   "section": null
-  },
-  {
-   "id": "gate",
-   "title": "Run Gate lines per plate",
-   "reason": "Not on this page yet: Controls shows what each plate's controls say (the Run Gate).",
-   "section": "gate"
-  },
   {
    "id": "next_run",
    "title": "What to change next run",

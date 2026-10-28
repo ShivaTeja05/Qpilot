@@ -167,6 +167,10 @@
   }
  ],
  "n_absent": 1,
- "decide_note": "Decide… opens that place as a Decision Card on Results. A choice that can change a conclusion is a person's, and it is kept in the decision chain with its reason; the study's numbers stay as analysed.",
- "method_card": "methods/trace.md"
+ "decide_note": "Decide… leaves the wells out of the analysis (or puts them back), with your reason, in this session's record, and analyses the study again; your choices on the Decision Cards are carried to the new analysis. A choice that can change a conclusion is a person's.",
+ "method_card": "methods/trace.md",
+ "can_apply": true,
+ "apply_note": "Decide… leaves the wells out of the analysis (or puts them back), with your reason, in this session's record, and analyses the study again; your choices on the Decision Cards are carried to the new analysis. A choice that can change a conclusion is a person's.",
+ "inbox_head": "b27a0111f1164a55ee837e0525bb86597563954bd1f9aed5427ab899f574d95a",
+ "set_aside": []
 }

@@ -116,6 +116,16 @@ describe("the planner", () => {
     expect((last?.body as { fold: number }).fold).toBe(3);
   });
 
+  it("starts above the call rule's threshold and says why in plain words", async () => {
+    show();
+    await screen.findByText(plan.headline);
+    expect(planner.defaults.fold).toBeGreaterThan(planner.min_fold);
+    expect(plan.ceiling).toBeNull();
+    expect(screen.getByText(planner.fold_note)).toBeTruthy();
+    const slider = screen.getByRole("slider", { name: "Change worth finding" });
+    expect(slider.getAttribute("aria-valuetext")).toContain("2.50×");
+  });
+
   it("draws the power curves with a sentence that names the gene in focus", async () => {
     show();
     await screen.findByText(plan.headline);

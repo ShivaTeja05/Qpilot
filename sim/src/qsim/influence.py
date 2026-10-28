@@ -48,7 +48,7 @@ class Baseline:
         cell = space.baseline_index()
         v = engine.values_of(cell)
         ids = engine.ids_of(cell)
-        matrix = engine.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
+        matrix = engine.matrix_of(v)
         self.values, _ = matrix
         self.rel, self.valid = engine.relative(matrix, ids["refs"])
         self.ref_cols = engine._ref_cols[ids["refs"]]
@@ -105,12 +105,27 @@ def leave_one_out(engine: Engine, base: Baseline | None = None) -> pd.DataFrame:
     ).assign(flips=lambda f: f["call"] != f["base_call"])
 
 
+REFERENCE_WELL_COLUMNS = (
+    "sample",
+    "reference",
+    "plate",
+    "well",
+    "max_abs_d_in_se",
+    "genes_flipped",
+    "flipped",
+)
+
+
 def reference_wells(engine: Engine, base: Baseline | None = None) -> pd.DataFrame:
-    """Drop one reference well from one sample's normaliser; effect on every gene at once."""
+    """Drop one reference well from one sample's normaliser; effect on every gene at once.
+
+    With a single reference gene there is nothing left to normalise by, so no row."""
     base = base or Baseline(engine)
     s = engine.study
     ref = base.values[:, base.ref_cols]
     k = ref.shape[1]
+    if k < 2:
+        return pd.DataFrame(columns=list(REFERENCE_WELL_COLUMNS))
     full_mean = ref.mean(axis=1)
     out = []
     n_a, s_a, q_a, n_b, s_b, q_b = base.sums
@@ -140,7 +155,7 @@ def reference_wells(engine: Engine, base: Baseline | None = None) -> pd.DataFram
                     "flipped": ",".join(flipped),
                 }
             )
-    return pd.DataFrame(out)
+    return pd.DataFrame(out, columns=list(REFERENCE_WELL_COLUMNS))
 
 
 def drop_k(engine: Engine, gene: str, k_max: int = 5, base: Baseline | None = None) -> dict:

@@ -81,15 +81,13 @@ DETECTED = {
     "thermofisher/securebio-qs3-design-analysis-2.7": {"*": "quantstudio"},
     "thermofisher/zamanian-stepone-plus-sybr-sections": {
         "*": "quantstudio",
-        # per-filter raw counts and the melt-region tables are not read (yet)
+        # per-filter raw counts are not read (yet); the melt-region tables are (the derivative
+        # is recognised and passed over)
         "raw_data.txt": None,
-        "melt_region_derivative_data.txt": None,
-        "melt_region_normalized_data.txt": None,
-        "melt_region_temperature_data.txt": None,
     },
     "rdml/cfx-manager-3.0-rdml-1.1-nonstandard-member": {"*": "rdml"},
     "rdml/cfx-manager-3.0-rdml-1.2-rpa": {"*": "rdml"},
-    "rdml/lightcycler96-lc96p-hmuy": {"*": "rdml", "hmuy_cq_values.xlsx": None},
+    "rdml/lightcycler96-lc96p-hmuy": {"*": "rdml", "hmuy_cq_values.xlsx": "tidy"},
     "rdml/lightcycler96-rdml-1.1": {"*": "rdml"},
     "rdml/linregpcr-rdml-1.3-lc480-kphaffii": {"*": "rdml"},
     "rdml/quantstudio7pro-rdml-1.2-edna": {"*": "rdml"},
@@ -336,8 +334,17 @@ def test_zamanian_stepone_section_files_are_one_plate():
     assert (p.n_wells, p.n_reactions, p.n_cycles) == (57, 57, 40)
     assert p.sample_types == {"ntc": 3, "unkn": 54}
     assert p.n_with_vendor_cq == 57 - 2
-    assert {s.role for s in result.meta.sources} == {"plate"}
+    roles = {s.name: s.role for s in result.meta.sources}
+    assert set(roles.values()) == {"plate", "melt", "ignored"}
+    assert roles["melt_region_derivative_data.txt"] == "ignored"
     assert verdicts(result) == {p.run_id: "normalized"}  # Rn = normalized
+    # the melt region: each well's 14 temperatures and normalized readings, paired by reading
+    assert result.meta.layers.melt
+    melted = [r for plate in result.plates for r in plate.reactions if r.melt is not None]
+    assert len(melted) == 57 and {len(r.melt.x) for r in melted} == {14}
+    a1 = next(r for r in melted if r.well == "A1" and r.target == "GAPDH")
+    assert (a1.melt.x[0], a1.melt.y[0]) == (60.2008, 67173.8203)  # Reading 1 in both files
+    assert (a1.melt.x[-1], a1.melt.y[-1]) == (93.677, -592.6323)  # Reading 14
 
 
 ALLOTROPY = "thermofisher/allotropy-quantstudio-rtpcr-txt"
@@ -470,13 +477,7 @@ def test_quantstudio7pro_rdml_plates_one_at_a_time():
 
 @pytest.mark.parametrize(
     ("slug", "words"),
-    [
-        ("rdml/quantstudio7pro-rdml-1.2-edna", "one RDML file at a time"),
-        ("rdml/cfx-manager-3.0-rdml-1.1-nonstandard-member", "no rdml_data.xml"),
-        ("rdml/rdml-1.2-cq-only-soybean", "no rdml_data.xml"),
-        ("rdml/stepone-2.3-rdml-1.0", "fails the RDML schema"),
-        ("rdml/linregpcr-rdml-1.3-lc480-kphaffii", "fails the RDML schema"),
-    ],
+    [("rdml/quantstudio7pro-rdml-1.2-edna", "one RDML file at a time")],
 )
 def test_unreadable_or_mixed_input_is_refused_in_words(slug, words):
     with pytest.raises(CaptureError) as err:
@@ -495,34 +496,92 @@ def test_a_mix_of_vendors_is_refused_in_words():
 
 
 def test_lc96p_folder_reads_the_experiment_and_leaves_the_depositors_sheet():
-    """The depositors' Cq table names a condition per sample: a sample sheet, not an export."""
+    """The depositors' Cq table names a condition per sample: beside the run it is the sheet."""
     result = capture(folder("rdml/lightcycler96-lc96p-hmuy"))
     assert [s.name for s in result.meta.sources] == ["hmuy_hm_vs_dip_r123.lc96p"]
 
 
-@pytest.mark.parametrize(
-    "slug",
-    [
-        "rdml/cfx-manager-3.0-rdml-1.1-nonstandard-member",
-        "rdml/rdml-1.2-cq-only-soybean",
-    ],
-)
-@pytest.mark.xfail(
-    strict=True,
-    reason="rdml_io.load reads only an archive member named rdml_data.xml; these archives hold "
-    "one XML member under another name (CFX Manager 3.0; a figshare deposit)",
-)
-def test_rdml_archives_with_another_member_name_are_read(slug):
-    assert capture(folder(slug)).meta.plates
+def test_the_depositors_cq_table_alone_is_a_cq_only_export_with_its_reference_gene():
+    result = read("rdml/lightcycler96-lc96p-hmuy", "hmuy_cq_values.xlsx")
+    (p,) = result.meta.plates  # the second sheet repeats Hm_1 ...: another experiment, left out
+    assert (p.n_wells, p.n_with_vendor_cq, p.targets) == (36, 36, ["hmuYPe", "16S rRNA"])
+    assert set(verdicts(result).values()) == {"cq_only"}
+    assert {t["id"]: t["type"] for t in result.doc.targets()} == {
+        "hmuYPe": "toi",
+        "16S rRNA": "ref",  # its "Gene Type" column says Reference
+    }
+    codes = {w.code for w in result.meta.warnings}
+    assert {"DECLARED_REFERENCES", "CQ_ONLY"} <= codes
+    assert any("another experiment" in n for n in reader_notes(result))
+    cqs = sorted(r.cq for r in reactions(result, p.run_id) if r.sample == "Hm_1")
+    assert cqs == [11.67, 11.71, 11.8, 23.4, 23.47, 23.51]  # text in Excel, per well, no mean
 
 
-@pytest.mark.parametrize(
-    "slug", ["rdml/stepone-2.3-rdml-1.0", "rdml/linregpcr-rdml-1.3-lc480-kphaffii"]
-)
-@pytest.mark.xfail(
-    strict=True,
-    reason="rdml_io.load validates against the RDML schema: StepOne 2.3's RDML 1.0 and "
-    "LinRegPCR's RDML 1.3 put elements out of schema order (dye; Ncopy) and are refused",
-)
-def test_rdml_files_out_of_schema_order_are_read(slug):
-    assert capture(folder(slug)).meta.plates
+# ---- RDML files that need a repair to be read (each said in the capture's reader notes) ------
+
+
+def reader_notes(result: Capture) -> list[str]:
+    return [w.message for w in result.meta.warnings if w.code == "READER_NOTE"]
+
+
+def test_cfx_manager_rdml_whose_member_is_named_after_the_file_is_read():
+    result = read("rdml/cfx-manager-3.0-rdml-1.1-nonstandard-member")
+    # "2 runs, 60 reacts, 41 cycles, melt 61 points, 26 Cq"
+    plates = result.meta.plates
+    assert [p.run_id for p in plates] == ["Amp Step 3_FAM", "Amp Step 3_Cy5"]
+    assert sum(p.n_reactions for p in plates) == 60 and {p.n_cycles for p in plates} == {41}
+    assert sum(p.n_with_vendor_cq for p in plates) == 26
+    assert {len(r.melt.x) for p in plates for r in reactions(result, p.run_id) if r.melt} == {61}
+    notes = reader_notes(result)
+    assert any("not named rdml_data.xml" in n for n in notes)
+    assert not any("BioRad_qPCR_melt" in n for n in notes)  # the member's name is file text
+
+
+def test_cq_only_rdml_with_another_member_name_is_read():
+    result = read("rdml/rdml-1.2-cq-only-soybean")
+    plates = result.meta.plates
+    # "3 experiments, 17 runs, 1,428 reactions, 1,291 Cq; sample types unkn, nrt, ntc"
+    assert len(plates) == 17 and sum(p.n_reactions for p in plates) == 1428
+    assert sum(p.n_with_vendor_cq for p in plates) == 1291
+    assert {t for p in plates for t in p.sample_types} == {"unkn", "nrt", "ntc"}
+    assert set(verdicts(result).values()) == {"cq_only"}
+
+
+def test_stepone_rdml_1_0_is_upgraded_and_keeps_its_well_names():
+    result = read("rdml/stepone-2.3-rdml-1.0")
+    (p,) = result.meta.plates
+    # "1 run, 24 reacts, 40 cycles; sample types ntc, unkn, std (625-10000 copies)"
+    assert (p.n_reactions, p.n_cycles, p.targets) == (24, 40, ["RNase P"])
+    assert set(p.sample_types) == {"ntc", "unkn", "std"}
+    # RDML 1.0 named the wells A1 ... C8: numbered on a 48-well plate, every name kept
+    assert (p.rows, p.columns) == (6, 8)
+    wells = sorted({r.well for r in reactions(result, p.run_id)}, key=lambda w: (w[0], int(w[1:])))
+    assert wells == [f"{row}{col}" for row in "ABC" for col in range(1, 9)]
+    quantities = {r.quantity for r in reactions(result, p.run_id) if r.sample_type == "std"}
+    assert quantities == {625.0, 1250.0, 2500.0, 5000.0, 10000.0}
+    notes = " ".join(reader_notes(result))
+    assert "RDML 1.0" in notes and "48-well plate" in notes and "No value changed" in notes
+
+
+def test_linregpcr_rdml_1_3_is_read_with_its_reference_genes():
+    result = read("rdml/linregpcr-rdml-1.3-lc480-kphaffii")
+    plates = result.meta.plates
+    # "6 runs (one per target), 432 reactions, 40 cycles, melt 175 points/curve"
+    assert len(plates) == 6 and sum(p.n_reactions for p in plates) == 432
+    assert {p.n_cycles for p in plates} == {40}
+    melts = [r.melt for p in plates for r in reactions(result, p.run_id)]
+    assert all(m is not None and 170 <= len(m.x) <= 180 for m in melts)  # ~175 points each
+    types = {t["id"]: t["type"] for t in result.doc.targets()}
+    assert {k for k, v in types.items() if v == "ref"} == {"ACT1", "TFC1"}  # "typed 'ref'"
+    assert any("outside the RDML namespace (Ncopy)" in n for n in reader_notes(result))
+
+
+def test_lightcycler96_names_come_from_the_file_not_its_ids():
+    result = read("rdml/lightcycler96-lc96p-hmuy", "hmuy_hm_vs_dip_r123.lc96p")
+    (p,) = result.meta.plates
+    assert p.targets == ["HmuYPe", "16S rRNA", "no target (SYBR Green I)"]
+    assert p.dyes == ["SYBR Green I"]  # the dye is kept, beside the target
+    samples = {r.sample for r in reactions(result, p.run_id) if r.sample_type == "unkn"}
+    assert samples == {"Hm_1", "Hm_2", "Hm_3", "DIP_1", "DIP_2", "DIP_3"}
+    other = read("rdml/lightcycler96-rdml-1.1").meta.plates[0]
+    assert {"bACT", "X", "Y", "IPC"} <= set(other.targets)

@@ -141,10 +141,14 @@ def _d_role(subject: str, d: Mapping[str, Any]) -> str:
 
 
 def _d_group(subject: str, d: Mapping[str, Any]) -> str:
+    if d["group"] is None:
+        return f"Take sample {subject} out of every group (it is not compared)"
     return f"Put sample {subject} in group “{d['group']}”"
 
 
 def _d_unit(subject: str, d: Mapping[str, Any]) -> str:
+    if d["biological_unit"] is None:
+        return f"Sample {subject} is its own biological unit (its wells are technical replicates)"
     return (
         f"Sample {subject} belongs to biological unit “{d['biological_unit']}”: its wells are "
         "technical replicates of that unit and are never counted as separate n"
@@ -157,6 +161,8 @@ def _d_target_role(subject: str, d: Mapping[str, Any]) -> str:
         return f"Use target {subject} as a reference gene (other genes are normalised to it)"
     if role == "toi":
         return f"Treat target {subject} as a gene of interest"
+    if role == "ignore":
+        return f"Leave target {subject} out of the study (none of its wells is used)"
     return f"Give target {subject} the role {role!r}"
 
 
@@ -166,7 +172,41 @@ def _d_symbol(subject: str, d: Mapping[str, Any]) -> str:
 
 def _d_comparison(subject: str, d: Mapping[str, Any]) -> str:
     a, b = d["group_a"], d["group_b"]
-    return f"Compare group “{a}” with group “{b}” (fold change = {a} relative to {b})"
+    text = f"Compare group “{a}” with group “{b}” (fold change = {a} relative to {b})"
+    listed = [c for c in d.get("comparisons") or [] if isinstance(c, Mapping)]
+    others = [c for c in listed if (c.get("group_a"), c.get("group_b")) != (a, b)]
+    if others:
+        pattern = d.get("pattern")
+        if pattern == "vs_control" and d.get("control"):
+            head = f"Compare each group with the control “{d['control']}”"
+        elif pattern == "all_pairs":
+            head = "Compare every pair of groups"
+        else:
+            head = "Compare these groups"
+        pairs = "; ".join(
+            f"{c.get('group_a')} vs {c.get('group_b')}"
+            for c in [{"group_a": a, "group_b": b}, *others]
+        )
+        text = f"{head} ({len(others) + 1} comparisons: {pairs}; the first is {a} vs {b})"
+        correction = d.get("correction") or "holm"
+        text += (
+            ", with Holm's correction across each gene's comparisons"
+            if correction == "holm"
+            else ", with no correction for several comparisons"
+        )
+    if d.get("pair_by"):
+        text += f", paired by {d['pair_by']} (a paired test within each {d['pair_by']})"
+    return text
+
+
+def _d_pair(subject: str, d: Mapping[str, Any]) -> str:
+    pair, by = d.get("pair"), d.get("by") or "pair"
+    if not pair:
+        return f"Sample {subject} is not paired with samples of the other groups"
+    return (
+        f"Sample {subject} belongs to {by} “{pair}”: it is paired with that {by}'s samples in "
+        "the other groups"
+    )
 
 
 def _d_series(subject: str, d: Mapping[str, Any]) -> str:
@@ -276,6 +316,7 @@ _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
     "design.target_role": _d_target_role,
     "design.gene_symbol": _d_symbol,
     "design.comparison": _d_comparison,
+    "design.pair": _d_pair,
     "design.dilution_series": _d_series,
     "curve.call_rule": _d_rule,
     "curve.well_call": _d_well,
@@ -643,6 +684,8 @@ def maker_text(made_by: MadeBy) -> str:
         return "Made by a fixed rule in qPilot (no model)."
     if made_by.kind == "agent":
         return f"Proposed by an agent over MCP ({made_by.agent or 'unnamed'})."
+    if made_by.kind == "person":
+        return "Set by a person on the Design page (and accepted in the same act)."
     if made_by.provider == CURVE_JUDGE:
         return (
             f"Made by the Curve Judge, a local curve classifier (model {made_by.model}); it reads "

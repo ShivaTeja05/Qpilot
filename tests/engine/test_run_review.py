@@ -86,14 +86,16 @@ def test_review_of_the_fixture_study_with_a_ledger(stored, toy_ledger):
     }  # fmt: skip
     assert review.headline[2].conclusion == "down"
     assert [r.outcome for r in review.reviews] == ["accept"]
-    assert [n.id for n in review.not_available] == ["repeat", "gate", "next_run"]
+    assert [n.id for n in review.not_available] == ["next_run"]
     tokens = review.tokens()
     assert validate(tokens, review.facts).ok
     text = render_text(review)
     assert "ODC1: called up, 3.6× (Moderate confidence; holds in 100% of 186 analyses)." in text
     assert "NTRK1: called down" in text
     assert "Dr Rossi chose accept on 2026-10-18T09:15:00Z (decision-log entry 5)" in text
-    assert "What to repeat and why: not available yet" in text
+    assert "What to repeat and why: in qPilot's Run Review" in text  # rendered without a plan
+    assert "Run Gate lines per plate: in qPilot's Controls section" in text
+    assert "not built" not in text and "not available yet; the repeat" not in text
     for item in ITEMS:
         assert review.facts[f"f_ev_{item}_status"].value == toy_ledger.item(item).status
 

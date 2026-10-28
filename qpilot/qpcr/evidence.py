@@ -573,7 +573,12 @@ def _efficiency(table: pd.DataFrame, study: pd.DataFrame) -> _Draft:
         draft.put("n_wells", len(study), COUNT_FMT)
         draft.put("n_wells_with_eff", 0, COUNT_FMT)
         return draft
-    per_gene = table.dropna(subset=["eff_target"]).groupby("target")["eff_target"].median()
+    # LinRegPCR writes -1 as a gene's mean efficiency on a plate when it cannot compute one
+    # (no well in its window of linearity): a sentinel, never an efficiency, so it is left out
+    # of the gene medians (an amplification factor is always above zero).
+    eff = pd.to_numeric(table["eff_target"], errors="coerce")
+    measured_gene = table.assign(eff_target=eff)[eff.notna() & (eff > 0)]
+    per_gene = measured_gene.groupby("target")["eff_target"].median()
     std = table[table["sample_type"] == "std"]
     levels = std.groupby("run_id")["sample"].nunique()
     n_series = int((levels >= STD_MIN_LEVELS).sum())

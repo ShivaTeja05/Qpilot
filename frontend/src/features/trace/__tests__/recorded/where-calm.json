@@ -1095,21 +1095,27 @@
      "label": "Keep (no change)",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 0
     },
     {
      "id": "read_from_other_refs",
      "label": "Read this well from the sample's other reference wells",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": false,
+     "n_wells": 0
     },
     {
      "id": "set_aside",
      "label": "Set the sample aside (every comparison)",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 64
     }
    ],
    "card_id": "card_trace_2768_hprt1_20080303_j18",
@@ -1139,7 +1145,9 @@
      "label": "Keep (no change)",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 0
     },
     {
      "id": "read_from_other_refs",
@@ -1148,7 +1156,9 @@
      "consequence_word": "changes nothing here",
      "changed_calls": [
       "CAMTA2"
-     ]
+     ],
+     "applies": false,
+     "n_wells": 0
     },
     {
      "id": "set_aside",
@@ -1157,7 +1167,9 @@
      "consequence_word": "changes nothing here",
      "changed_calls": [
       "IGSF4"
-     ]
+     ],
+     "applies": true,
+     "n_wells": 64
     }
    ],
    "card_id": "card_trace_1924_hprt1_20080303_f23",
@@ -1187,7 +1199,9 @@
      "label": "Keep (no change)",
      "consequence": "changes_nothing",
      "consequence_word": "changes nothing here",
-     "changed_calls": []
+     "changed_calls": [],
+     "applies": true,
+     "n_wells": 0
     },
     {
      "id": "read_from_other_refs",
@@ -1197,7 +1211,9 @@
      "changed_calls": [
       "CAMTA2",
       "IGSF4"
-     ]
+     ],
+     "applies": false,
+     "n_wells": 0
     },
     {
      "id": "set_aside",
@@ -1206,7 +1222,9 @@
      "consequence_word": "changes nothing here",
      "changed_calls": [
       "CAMTA2"
-     ]
+     ],
+     "applies": true,
+     "n_wells": 64
     }
    ],
    "card_id": "card_trace_2016_hmbs_20080318_k22",
@@ -1313,10 +1331,14 @@
   },
   {
    "sample": "1496",
-   "why": "ODC1"
+   "why": "a person left its ODC1 wells out of the analysis (plate ODC1_20080226, well A3)"
   }
  ],
  "n_absent": 20,
- "decide_note": "Decide… opens that place as a Decision Card on Results. A choice that can change a conclusion is a person's, and it is kept in the decision chain with its reason; the study's numbers stay as analysed.",
- "method_card": "methods/trace.md"
+ "decide_note": "Decide… leaves the wells out of the analysis (or puts them back), with your reason, in this session's record, and analyses the study again; your choices on the Decision Cards are carried to the new analysis. A choice that can change a conclusion is a person's.",
+ "method_card": "methods/trace.md",
+ "can_apply": true,
+ "apply_note": "Decide… leaves the wells out of the analysis (or puts them back), with your reason, in this session's record, and analyses the study again; your choices on the Decision Cards are carried to the new analysis. A choice that can change a conclusion is a person's.",
+ "inbox_head": "b27a0111f1164a55ee837e0525bb86597563954bd1f9aed5427ab899f574d95a",
+ "set_aside": []
 }

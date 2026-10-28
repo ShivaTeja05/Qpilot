@@ -63,7 +63,7 @@ from qpilot.core.decisions import DecisionError, apply_decision, check_request, 
 from qpilot.core.proposals import STATUSES, SYSTEM_ONLY_KINDS, ProposalError
 from qpilot.core.store import SUGGEST_REASON, StudyNotFound, StudyStore
 from qpilot.qpcr.plan import plan
-from qpilot.schemas import DecisionCard
+from qpilot.schemas import DecisionCard, StudyResult
 from qpilot.schemas_studio import PROPOSAL_KINDS, MadeBy, Proposal
 
 log = logging.getLogger(__name__)
@@ -337,11 +337,14 @@ def study_ledger(store: StudyStore, study_id: str) -> tuple[Any, str]:
         return None, f"the input file cannot be analysed again ({type(err).__name__})"
 
 
-def study_review(store: StudyStore, study_id: str, *, comments: bool = True) -> Any:
+def study_review(
+    store: StudyStore, study_id: str, *, comments: bool = True, repeat: Any = None
+) -> Any:
     """The Run Review of a stored study with its recorded sign-offs (read-only).
 
     ``comments=False`` leaves out what reviewers typed (the view an agent gets); the outcome,
-    the reviewer and the time stay.
+    the reviewer and the time stay. ``repeat``: the study's repeat plan, for what to repeat and
+    why and the Run Gate per plate (:func:`qpilot.report.run_review.repeat_plan_store`).
     """
     from qpilot.report.run_review import HEADLINE_GENES, build_review
 
@@ -353,7 +356,7 @@ def study_review(store: StudyStore, study_id: str, *, comments: bool = True) -> 
     if not comments:
         entries = [{**e, "reason": ""} for e in entries]
     return build_review(result, headline=headline, ledger=ledger, ledger_note=note,
-                        reviews=entries)  # fmt: skip
+                        reviews=entries, repeat=repeat)  # fmt: skip
 
 
 def stored_run_map(store: StudyStore, study_id: str) -> dict[str, str] | None:
@@ -599,6 +602,12 @@ class QpilotTools:
             out["imported"] = _import_view(imported)
         if trust_card is not None:
             out["import_trust"] = trust_card
+        if result.comparisons is not None:
+            out["comparisons"] = _comparisons_view(result)
+            out["contrasts_are_for"] = (
+                "the recommended choices, in the first comparison "
+                f"({result.comparisons.comparisons[0].label}); every comparison is in comparisons"
+            )
         return shape("qpcr_study", out, response_format)
 
     def qpcr_robustness(
@@ -606,6 +615,7 @@ class QpilotTools:
         study_id: str,
         gene: str,
         response_format: Literal["concise", "detailed"] = "detailed",
+        comparison: str | None = None,
     ) -> dict[str, Any]:
         """How robust one gene's conclusion is across every reasonable analysis.
 
@@ -613,7 +623,9 @@ class QpilotTools:
         grid that agrees (``holds_fraction``), which single choices could flip it, its
         confidence level with named reasons, the open cards that can change it, and the fact id
         of each number. ``response_format="concise"`` leaves out the interval, p, the impact of
-        each choice and the reasons.
+        each choice and the reasons. In a study with several comparisons, ``comparison`` (an id
+        from ``qpcr_study``'s ``comparisons``) picks one; the default is the first, and the
+        reply adds the corrected p (``p_adjusted``) and the q-value.
         """
         bad = check_format(response_format)
         if bad:
@@ -622,6 +634,31 @@ class QpilotTools:
             result = self.store.get(study_id)
         except StudyNotFound:
             return refuse(Code.UNKNOWN_STUDY, UNKNOWN_STUDY)
+        outcome = None
+        if result.comparisons is not None:
+            wanted = comparison or result.comparisons.comparisons[0].id
+            outcome = next((o for o in result.comparisons.comparisons if o.id == wanted), None)
+            if outcome is None:
+                known = ", ".join(o.id for o in result.comparisons.comparisons)
+                return refuse(
+                    Code.UNKNOWN_ITEM,
+                    f"no comparison {wanted!r} in this study (it has: {known})",
+                    field="comparison",
+                )
+            if not outcome.primary:  # that comparison's numbers; the cards stay the study's
+                result = result.model_copy(
+                    update={
+                        "contrasts": outcome.contrasts,
+                        "robustness": outcome.robustness,
+                        "confidence": outcome.confidence,
+                    }
+                )
+        elif comparison:
+            return refuse(
+                Code.INVALID_ARGUMENT,
+                "this study has one comparison; leave comparison out",
+                field="comparison",
+            )
         if not isinstance(gene, str):
             return refuse(Code.INVALID_ARGUMENT, "gene must be a gene name", field="gene")
         name = next((g for g in result.contrasts if g.lower() == gene.strip().lower()), None)
@@ -660,6 +697,12 @@ class QpilotTools:
                 for k, v in gene_fact_ids(fact_index(result.facts), name).items()
             },
         }
+        if outcome is not None:
+            out["comparison"] = outcome.id
+            out["p_adjusted"] = outcome.p_adjusted.get(name)
+            out["q"] = outcome.q_value.get(name)
+            if not outcome.primary:  # the primary's fact ids would be the wrong numbers
+                out["fact_ids"] = _comparison_fact_ids(result.facts, outcome.id, name)
         return shape("qpcr_robustness", out, response_format)
 
     def qpcr_decide(
@@ -1865,6 +1908,66 @@ _STUDIO_CODES: tuple[tuple[tuple[str, ...], Code], ...] = (
     ),
 )
 _STAGE_NOT_READY = re.compile(r"^the \w+ stage (is not open yet|still has proposals waiting)")
+
+
+def _comparison_fact_ids(facts: dict, comparison: str, gene: str) -> dict[str, str]:
+    """Field -> fact id of one gene's numbers in one comparison (found by the fact's path)."""
+    index = {f.path: fid for fid, f in facts.items()}
+    root = f"comparisons.{comparison}"
+    paths = {
+        "fc": f"{root}.contrasts.{gene}.fc",
+        "p": f"{root}.contrasts.{gene}.p",
+        "p_adjusted": f"{root}.p_adjusted.{gene}",
+        "q": f"{root}.q_value.{gene}",
+        "holds_fraction": f"{root}.robustness.{gene}.holds",
+    }
+    return {field: index[path] for field, path in paths.items() if path in index}
+
+
+def _comparisons_view(result: StudyResult) -> dict[str, Any]:
+    """``qpcr_study``'s ``comparisons``: the test, the correction and each comparison's genes."""
+    found = result.comparisons
+    assert found is not None
+    out = []
+    for o in found.comparisons:
+        calls = [c.conclusion for c in o.contrasts.values()]
+        out.append(
+            {
+                "id": o.id,
+                "label": o.label,
+                "group_a": o.group_a,
+                "group_b": o.group_b,
+                "primary": o.primary,
+                "n_a": o.n_a,
+                "n_b": o.n_b,
+                "n_pairs": o.n_pairs,
+                "n_up": calls.count("up"),
+                "n_down": calls.count("down"),
+                "contrasts": {
+                    g: {
+                        "conclusion": c.conclusion,
+                        "fc": c.fc,
+                        "ci": list(c.ci),
+                        "p": c.p,
+                        "p_adjusted": o.p_adjusted.get(g),
+                        "q": o.q_value.get(g),
+                        "holds": o.robustness[g].holds if g in o.robustness else None,
+                        "level": o.confidence[g].level if g in o.confidence else None,
+                        "fact_ids": _comparison_fact_ids(result.facts, o.id, g),
+                    }
+                    for g, c in o.contrasts.items()
+                },
+                "not_tested": dict(o.not_tested),
+            }
+        )
+    return {
+        "test": found.test,
+        "correction": found.correction,
+        "pair_by": found.pair_by,
+        "comparisons": out,
+        "omnibus_groups": list(found.omnibus_groups),
+        "omnibus": {g: o.model_dump(mode="json") for g, o in found.omnibus.items()},
+    }
 
 
 def _studio_refusal(err: Exception) -> dict[str, Any]:

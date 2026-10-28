@@ -82,7 +82,8 @@ flowchart LR
   S[stored study] --> R[rebuild read-only: study_inputs + build_model]
   R -->|re-analysis differs| X1[refused]
   R --> Q[simulator study: table after design and rule, groups, control genes, exclusion mask]
-  Q -->|technical replicates| X2[not applicable]
+  Q -->|technical replicates| W[every well kept; samples named by their biological unit]
+  W --> C
   Q --> C{baseline = qPilot? every gene: fold change, p, call within 1e-9}
   C -->|no| X3[refused, nothing written]
   C -->|yes| RUN[run_all: lock.json first, 90,396 analyses]
@@ -97,6 +98,22 @@ flowchart LR
   rule removed is undetermined in both tools (its Cq is cleared).
 * **Two named groups.** The simulator's cut-off decision becomes one option, the design's
   comparison (30,132 analyses).
+* **Technical replicates.** A design with several wells per biological unit and gene (replicate
+  wells, or several samples of one animal or patient) is audited the way qPilot analysed it. Each
+  study sample is named by its biological unit; the simulator keeps every well
+  (`qsim.data.Replicates`, samples × genes × wells), applies each choice to each well (efficiency
+  model, flagged wells, late Cq, a person's exclusion) and then combines a unit's wells with
+  qPilot's own rule: the mean `log2 N0` of the wells that have a quantity, undetermined only when
+  every well is, left out (never filled in) when every well is excluded or flagged. So the
+  baseline still reproduces qPilot (tested on the LightCycler 96 hmuY triplicate plate of the
+  corpus, max |Δ log2 FC| 3.6e-15, and on the demo with units of two preparations, 5.3e-15), and
+  replicates are never counted as n. With three or more wells per value the audit varies a ninth
+  decision, `replicates`: the mean (planned), the median well, or the mean after leaving out the
+  one well outside G-REP's expected Cq range (`q95(n) × 0.15 / ln E`, at least 2 cycles from
+  Cq 30 to 35, not judged above Cq 35; the Run Gate flags the same well on the hmuY plate). With
+  at most two wells per value the median is the mean and no well is an outlier, so it is not
+  varied. The manifest's `scope.technical_replicates` says what was done; the page and
+  `python -m qpilot.integration audit` print it.
 * **The person's choices** on the Decision Cards are mapped to simulator options and compared
   with the prespecified analysis (`your_choices.csv`): control genes → `refs`, cut-off → `cut`,
   empty wells → `nondetect`, Cq ≤ 35 / 38 → `late_cq`. Cq ≤ 40 and the learned call have no
@@ -111,7 +128,7 @@ flowchart LR
 ```mermaid
 flowchart TB
   IN[qPilot adapter or an RDML file] --> ST[study as arrays: Cq, log2 N0, log2 Nq, efficiencies, flags, plate, well]
-  SP[8 decisions: efficiency 4, flagged 3, late Cq 3, non-detects 3, control genes 31, cut-off 3, test 3, multiple testing 3] --> LK[lock.json, before any alternative]
+  SP[8 decisions: efficiency 4, flagged 3, late Cq 3, non-detects 3, control genes 31, cut-off 3, test 3, multiple testing 3; with 3+ replicate wells a 9th, replicates 3] --> LK[lock.json, before any alternative]
   ST --> E1
   LK --> E1
   subgraph engine[staged engine, prefix cache]
@@ -152,8 +169,10 @@ sequenceDiagram
 * `test_engines_agree.py`: qPilot's grid and the simulator agree on all 558 shared analyses
   (31 control-gene sets × 3 cut-offs × 2 empty-well rules × 3 amplification rules), for every gene,
   before and after the Prism exclusion.
-* `test_simulator_adapter.py`: two named groups, technical replicates (not applicable), a
-  person's Cq ≤ 35 choice, a refused audit writes nothing.
+* `test_simulator_adapter.py`: two named groups, biological units of two preparations (audited,
+  reproduces qPilot), a person's Cq ≤ 35 choice, a refused audit writes nothing.
+* `test_replicate_audit.py` (no demo data): the real LightCycler 96 triplicate plate end to end
+  (reproduction, the `replicates` decision, a person's excluded well, the command line).
 * `test_mcp_tools.py`: the tools are read-only, serve verified audits only, and return errors as
   data; `sim_findings` pages, filters by gene, and refuses a changed, linked or oversized file.
 * `test_mcp_stdio.py`: an agent over a real stdio connection, through `python -m qpilot.integration
@@ -187,6 +206,7 @@ folder, refuses a file over 4 MB, and returns at most 200 rows per call.
 ## Not yet integrated
 
 * The simulator's validation branches (dPCR truth, null plate, efficiency calibration).
-* Designs with technical replicates (the simulator needs one well per sample and gene).
+* G-REP's Poisson term in the audit's outlier option: it uses the high-copy tolerance, as G-REP
+  does on a plate without a standard curve.
 * `qpilot workflow` in the frozen CLI registry (it runs as `python -m qpilot.integration`).
 * Prism on a real seat (plan step 0.1).
