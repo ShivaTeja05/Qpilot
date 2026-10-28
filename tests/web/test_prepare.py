@@ -123,3 +123,17 @@ def test_warm_all_with_the_app_prepares_recent_studies(web_ctx, study, monkeypat
     job = warm.warm_all(web_ctx, create_app(web_ctx))
     assert wait_job(client, job.view())["status"] == "done"
     assert asked == [[]]
+
+
+def test_a_fresh_demo_does_not_wait_for_views_being_prepared(client, web_ctx, study):
+    """Only work that writes holds a fresh demo back; preparing a view only reads."""
+    import threading
+
+    release = threading.Event()
+    web_ctx.jobs.submit("gate.run", lambda progress: release.wait(30), title="t", key=study)
+    try:
+        r = client.post("/api/demo/fresh")
+        assert r.status_code == 200, r.text
+        assert web_ctx.store.list_studies() == []
+    finally:
+        release.set()
