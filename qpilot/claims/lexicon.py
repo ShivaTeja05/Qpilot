@@ -78,14 +78,30 @@ class GroupFound:
 # Groupings that are not the study's comparison (pattern, what they group by). "gene status"
 # (``ALK-mutated``) counts only when its first word is an HGNC symbol or a study gene.
 _STATUS_WORDS = (
-    r"(?:non[\s-]?)?amplified|amplification|mutant|mutated|mutation|deleted|deletion"
-    r"|positive|negative|translocated|rearranged|wild[\s-]?type"
+    r"(?:non[\s-]?)?amplified|amplifications?|mutant|mutated|mutations?|deleted|deletions?"
+    r"|positive|negative|translocated|translocations?|rearranged|rearrangements?|wild[\s-]?type"
 )
+_ARM = r"(?:\d{1,2}|X|Y)[pq](?:\d{1,2}(?:\.\d{1,2})?)?"  # a chromosome arm or band: 1p, 11q23
 OTHER_GROUPS: tuple[tuple[str, str], ...] = (
     (r"(?:high|low|intermediate)[\s-]risk", "risk group"),
     (r"stage[\s-]?(?:[1-4][SsAaBb]?|IV|I{1,3}|4S)(?![\w])", "tumour stage"),
-    (r"(?:non[\s-]?)?metastatic|relapsed|relapsing|recurrent", "clinical course"),
+    (
+        r"(?:non[\s-]?)?metastatic|relapsed|relapsing|recurrent"
+        r"|(?:un)?favou?rable\s+(?:histology|outcome|prognosis)|(?:poor|good)\s+(?:outcome|prognosis)"
+        r"|died|deceased|(?:non[\s-]?)?survivors",
+        "clinical course",
+    ),
+    (
+        r"(?:older|younger)\s+than\s+\d+(?:\.\d+)?\s*(?:months?|years?|weeks?|days?)"
+        r"|aged\s+(?:over|under|above|below)\s+\d+",
+        "age",
+    ),
     (r"(?:male|female)(?=\s+(?:patients|mice|subjects|donors|animals|individuals))", "sex"),
+    (
+        rf"{_ARM}[\s-]?(?:deleted|deletions?|loss|gain(?:ed)?|amplified|LOH)"
+        rf"|(?:loss|gain|deletion)\s+of\s+(?:chromosome\s+)?{_ARM}",
+        "a chromosomal change",
+    ),
     (rf"[A-Z][A-Z0-9]{{1,9}}[\s-](?:{_STATUS_WORDS})", "gene status"),
     (r"[A-Z][A-Z0-9]{1,9}[\s-]?(?:high|low)(?:[\s-]expressing)?", "gene status"),
 )
@@ -96,6 +112,10 @@ EXPERIMENT_GROUPS: tuple[tuple[str, str], ...] = (
         r"KO|WT|knock[\s-]?(?:out|down)|wild[\s-]?type|transgenic|transfected|treated|untreated"
         r"|vehicle[\s-]treated|si[\s-]?RNA|sh[\s-]?RNA",
         "an experimental treatment or genotype",
+    ),
+    (
+        r"hypoxi[ac]|normoxi[ac]|(?:un)?stimulated|(?:un)?infected|(?:un)?exposed",
+        "an experimental condition",
     ),
 )
 
@@ -230,12 +250,13 @@ class Lexicon:
             for match in self._groups.finditer(text, start, end):
                 which = "a" if match.lastgroup == "a" else "b"
                 out.append(GroupFound(match.start(), match.end(), match.group(0), which))  # type: ignore[arg-type]
-        taken = [(g.start, g.end) for g in out]
         labels = {x.casefold() for x in (self.group_a, self.group_b) if x and x != "rest"}
         for pattern, what in self._others:
             for match in pattern.finditer(text, start, end):
                 s, e = match.span()
-                if any(a < e and s < b for a, b in taken):
+                touching = [g for g in out if g.start < e and s < g.end]
+                # "MYCN-high" itself, or a phrase another grouping already holds: nothing new
+                if any(g.which == "other" or (g.start <= s and e <= g.end) for g in touching):
                     continue
                 words = {w.casefold() for w in re.findall(r"[\w+]+", match.group(0))}
                 if words & labels:  # "TP53-mutant" in a study whose groups are "mutant" / "WT"
@@ -247,8 +268,10 @@ class Lexicon:
                     if symbol in NOT_GENES or not known:
                         continue
                     label = f"{symbol} status"
+                # a longer phrase that names another grouping is that grouping: "high MYCN copy
+                # number" is not the group "high MYCN"
+                out = [g for g in out if g not in touching]
                 out.append(GroupFound(s, e, match.group(0), "other", label))
-                taken.append((s, e))
         return sorted(out, key=lambda g: g.start)
 
 
@@ -331,7 +354,7 @@ def marker_other_groups(marker: str) -> list[tuple[str, str]]:
         (rf"{m}[\s-]?(?:non[\s-]?)?amplif(?:ied|ication)|(?:non[\s-]?)?amplif(?:ied|ication)"
          rf"\s+(?:of\s+)?{m}", f"{short} amplification"),
         (rf"{m}[\s-]?(?:copy[\s-]number|gain|deleted|deletion)", f"{short} copy number"),
-        (rf"{m}[\s-]?(?:mutant|mutated|mutation)|(?:mutant|mutated)\s+{m}", f"{short} mutation"),
+        (rf"{m}[\s-]?(?:mutant|mutated|mutations?)|(?:mutant|mutated)\s+{m}", f"{short} mutation"),
         (rf"{m}[\s-]?(?:knock[\s-]?(?:out|down|ed[\s-]down)|silenced|depleted|deficient|null)",
          f"{short} knock-down or knock-out"),
         (rf"{m}[\s-]?wild[\s-]?type|wild[\s-]?type\s+{m}", f"{short} genotype"),
