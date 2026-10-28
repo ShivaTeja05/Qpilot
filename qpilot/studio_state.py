@@ -189,11 +189,13 @@ def _d_comparison(subject: str, d: Mapping[str, Any]) -> str:
         )
         text = f"{head} ({len(others) + 1} comparisons: {pairs}; the first is {a} vs {b})"
         correction = d.get("correction") or "holm"
-        text += (
-            ", with Holm's correction across each gene's comparisons"
-            if correction == "holm"
-            else ", with no correction for several comparisons"
-        )
+        text += {
+            "holm": ", with Holm's correction across each gene's comparisons",
+            "dunnett": ", with Dunnett's correction (each group against the control; one "
+            "variance pooled over the groups)",
+            "tukey": ", with Tukey's correction (every pair of groups; one variance pooled over "
+            "the groups)",
+        }.get(correction, ", with no correction for several comparisons")
     if d.get("pair_by"):
         text += f", paired by {d['pair_by']} (a paired test within each {d['pair_by']})"
     return text

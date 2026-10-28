@@ -95,6 +95,7 @@ from qpilot.qpcr.designs import (
     study_key,
     unit_groups,
 )
+from qpilot.qpcr.multiplicity import CORRECTIONS_POOLED
 from qpilot.qpcr.quant import EXCLUDED, Undetermined, left_out_cells, log2_matrix
 from qpilot.qpcr.quant import not_measured as units_not_measured
 from qpilot.qpcr.refgenes import RefGroupEffect, genorm, group_effect
@@ -580,7 +581,8 @@ def build_model(
         group_labels=labels,
     )
     if specs:
-        options.update(comparisons=specs, correction=settings.design.comparisons.correction)
+        plan = settings.design.comparisons
+        options.update(comparisons=specs, correction=plan.correction, control=plan.control)
     efficiency, eff_notes, tables = _efficiency_axis(inputs, settings)
     space = QpcrSpace(
         matrix, stability, spec, amp_alternatives=inputs.alternatives, **options, **efficiency
@@ -807,7 +809,7 @@ def _comparison_outcomes(
         )
     groups, omnibus = _omnibus(space, plan.pair_by is None)
     return ComparisonsResult(
-        test="paired_t" if plan.pair_by is not None else "welch",
+        test=test_of(plan.pair_by, space.correction),
         correction=space.correction,  # type: ignore[arg-type]
         pattern=plan.pattern,
         control=plan.control,
@@ -816,6 +818,13 @@ def _comparison_outcomes(
         omnibus_groups=groups,
         omnibus=omnibus,
     )
+
+
+def test_of(pair_by: str | None, correction: str) -> str:
+    """The test each comparison uses: paired, pooled-variance (Dunnett, Tukey) or Welch's."""
+    if pair_by is not None:
+        return "paired_t"
+    return "pooled_t" if correction in CORRECTIONS_POOLED else "welch"
 
 
 def _omnibus(space: QpcrSpace, unpaired: bool) -> tuple[list[str], dict[str, Omnibus]]:

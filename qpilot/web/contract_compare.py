@@ -94,9 +94,9 @@ class ComparisonsView(BaseModel):
 
     study_id: str
     several: bool = Field(description="The study has a comparison plan (several, or paired).")
-    test: Literal["welch", "paired_t"]
+    test: Literal["welch", "paired_t", "pooled_t"]
     test_words: str
-    correction: Literal["holm", "none"]
+    correction: Literal["holm", "none", "dunnett", "tukey"]
     correction_words: str
     pattern: str
     control: str | None = None

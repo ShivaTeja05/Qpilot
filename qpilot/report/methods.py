@@ -56,6 +56,15 @@ REFERENCES: dict[str, str] = {
         "Holm S. A simple sequentially rejective multiple test procedure. Scand J Stat. "
         "1979;6(2):65–70."
     ),
+    "dunnett1955": (
+        "Dunnett CW. A multiple comparison procedure for comparing several treatments with a "
+        "control. J Am Stat Assoc. 1955;50(272):1096–1121. doi:10.1080/01621459.1955.10501294"
+    ),
+    "tukey1953": (
+        "Tukey JW. The problem of multiple comparisons. Unpublished manuscript, Princeton "
+        "University; 1953. Kramer CY. Extension of multiple range tests to group means with "
+        "unequal numbers of replications. Biometrics. 1956;12(3):307–310. doi:10.2307/3001469"
+    ),
     "bh1995": (
         "Benjamini Y, Hochberg Y. Controlling the false discovery rate: a practical and powerful "
         "approach to multiple testing. J R Stat Soc B. 1995;57(1):289–300."
@@ -355,6 +364,11 @@ def _several(c: Ctx, cite: Cites, found, alpha: str, fold: str) -> list[Part]:  
             "the within-pair differences of per-unit log2 normalised quantities (n = complete "
             "pairs); "
         ]
+    elif found.correction in ("dunnett", "tukey"):
+        parts.append(
+            "Each comparison is a t-test on per-unit log2 normalised quantities with one "
+            "variance per gene pooled over every compared group (equal variances assumed); "
+        )
     else:
         parts += ["Each comparison is a Welch's t-test ", cite("welch1947")]
         parts.append(" on per-unit log2 normalised quantities; ")
@@ -366,6 +380,20 @@ def _several(c: Ctx, cite: Cites, found, alpha: str, fold: str) -> list[Part]:  
             cite("holm1979"),
             f"; a gene is called up or down in a comparison only if its corrected p < {alpha} "
             f"and the change is at least {fold}-fold; otherwise it has no call.",
+        ]
+    elif n > 1 and found.correction in ("dunnett", "tukey"):
+        name, key, what = (
+            ("Dunnett's", "dunnett1955", "each group against the control")
+            if found.correction == "dunnett"
+            else ("Tukey's (Tukey–Kramer)", "tukey1953", "every pair of groups")
+        )
+        parts += [
+            f"Each gene's p-values were corrected with {name} single-step test for comparing "
+            f"{what} ",
+            cite(key),
+            "; the multivariate probabilities were integrated numerically by fixed Gauss "
+            f"quadrature. A gene is called up or down in a comparison only if its corrected p < "
+            f"{alpha} and the change is at least {fold}-fold; otherwise it has no call.",
         ]
     else:
         if n > 1:

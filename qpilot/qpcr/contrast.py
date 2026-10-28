@@ -194,12 +194,18 @@ def welch_anova(groups: Sequence[tuple[np.ndarray, ...]]) -> tuple[np.ndarray, .
 
 CORRECTION_WORDS = {
     "holm": "Holm's correction across each gene's comparisons",
+    "dunnett": "Dunnett's correction for comparing each group with the control",
+    "tukey": "Tukey's correction for comparing every pair of groups (Tukey-Kramer)",
     "none": "no correction for several comparisons",
 }
 TEST_WORDS = {
     "welch": "Welch's t-test on log2 relative quantities (no equal-variance assumption)",
     "paired_t": "a paired t-test on the within-pair differences of log2 relative quantity",
+    "pooled_t": "a t-test on log2 relative quantities with one variance pooled over every "
+    "compared group (equal variances assumed)",
 }
+#: Corrections whose call uses a corrected p-value (every one but "none").
+CORRECTED = ("holm", "dunnett", "tukey")
 
 
 def conclude(log2fc: float, p: float, rule: ConclusionRule = DEFAULT_RULE) -> Conclusion:

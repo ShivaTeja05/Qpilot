@@ -196,10 +196,18 @@ def comparisons(
 CORRECTION_WORDS = {
     "holm": "Holm's correction within each gene across its comparisons (p adjusted); q: "
     "Benjamini–Hochberg across genes within each comparison",
+    "dunnett": "Dunnett's correction for each group against the control (p adjusted; one "
+    "variance pooled over the groups); q: Benjamini–Hochberg across genes within each comparison",
+    "tukey": "Tukey's correction for every pair of groups (Tukey–Kramer; p adjusted; one variance "
+    "pooled over the groups); q: Benjamini–Hochberg across genes within each comparison",
     "none": "No correction across comparisons; q: Benjamini–Hochberg across genes within each "
     "comparison",
 }
-TEST_NAMES = {"welch": "Welch's t test", "paired_t": "paired t test (within pairs)"}
+TEST_NAMES = {
+    "welch": "Welch's t test",
+    "paired_t": "paired t test (within pairs)",
+    "pooled_t": "t test with the variance pooled over the groups",
+}
 
 
 def stored_comparisons(

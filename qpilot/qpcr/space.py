@@ -70,6 +70,12 @@ from qpilot.qpcr.axes import state as axes_state
 from qpilot.qpcr.contrast import DEFAULT_RULE, ConclusionRule, conclude, holm
 from qpilot.qpcr.curves import REFERENCE_TARGETS
 from qpilot.qpcr.design import GroupSpec, groups_by_cut
+from qpilot.qpcr.multiplicity import (
+    CORRECTIONS_POOLED,
+    dunnett_adjusted,
+    pooled,
+    tukey_adjusted,
+)
 from qpilot.qpcr.quant import Undetermined
 from qpilot.schemas import Conclusion, ContrastResult, GenormResult
 
@@ -112,6 +118,16 @@ class ComparisonSpec:
     def paired(self) -> bool:
         """True for a paired comparison."""
         return self.pairs is not None
+
+
+MAX_KEPT_CELLS = 20_000  # cells kept by a space with a pooled correction (a few kB each)
+
+
+def _cell_key(cell: Mapping[str, Any]) -> tuple[Any, ...]:
+    """A hashable key of a cell (lists become tuples)."""
+    return tuple(
+        sorted((k, tuple(v) if isinstance(v, list | tuple) else v) for k, v in cell.items())
+    )
 
 
 @dataclass(frozen=True, eq=False)
@@ -168,7 +184,11 @@ class QpcrSpace:
             the primary first; they replace ``groups`` (whose pair is the primary's). Each cell
             evaluates all of them.
         correction: ``"holm"`` (each gene's p-values adjusted across its comparisons; the
-            call uses the adjusted p) or ``"none"``. Only read with ``comparisons``.
+            call uses the adjusted p), ``"dunnett"`` (each group against ``control``) or
+            ``"tukey"`` (every pair of groups): both pool the variance over every compared
+            group (:mod:`qpilot.qpcr.multiplicity`); or ``"none"``. Only read with
+            ``comparisons``.
+        control: The control group's label, for ``"dunnett"``.
     """
 
     def __init__(
@@ -192,11 +212,14 @@ class QpcrSpace:
         unavailable: Mapping[str, Mapping[str, str]] | None = None,
         comparisons: Sequence[ComparisonSpec] | None = None,
         correction: str = "holm",
+        control: str | None = None,
     ) -> None:
         specs = tuple(comparisons or ())
         if specs:
-            if correction not in ("holm", "none"):
-                raise ValueError(f"correction must be 'holm' or 'none', not {correction!r}")
+            if correction not in ("holm", "none", *CORRECTIONS_POOLED):
+                raise ValueError(
+                    f"correction must be 'holm', 'dunnett', 'tukey' or 'none', not {correction!r}"
+                )
             ids = [spec.id for spec in specs]
             if len(set(ids)) != len(ids):
                 raise ValueError(f"comparison ids repeat: {ids}")
@@ -276,6 +299,8 @@ class QpcrSpace:
         self.comparisons: tuple[ComparisonSpec, ...] = specs
         self.correction = correction if specs else "none"
         self._cmp: list[_Masks] = [self._spec_masks(spec) for spec in specs]
+        self._family = _Family.of(specs, self.correction, control) if specs else None
+        self._cells: dict[tuple[Any, ...], list[ContrastArrays]] = {}
         if specs and specs[0].paired:  # the primary's masks are its paired units
             self._masks = {None: (self._cmp[0].in_a, self._cmp[0].in_b)}
         self.withheld = self._withheld(matrix, genes, primary_refs, labels)
@@ -490,7 +515,7 @@ class QpcrSpace:
         relative = values - ref_mean[:, None]
         valid = refs_ok[:, None] & ~np.isnan(relative)
         if self.comparisons:
-            return self._compare(relative, valid, self._cmp)[0].results()
+            return self._cell_compare(cell, relative, valid)[0].results()
         in_high, in_rest = self._masks[cell["cut"] if self.design is not None else None]
         stats_hi = _group_stats(relative, valid & in_high[:, None])
         stats_lo = _group_stats(relative, valid & in_rest[:, None])
@@ -514,13 +539,41 @@ class QpcrSpace:
         """Every comparison under one cell, as arrays over :attr:`items` (calls corrected)."""
         if not self.comparisons:
             raise ValueError("this study has one comparison; use evaluate")
-        values, ref_values = self._cell_inputs(cell)
-        ref_mean = ref_values.mean(axis=1)
-        refs_ok = ~np.isnan(ref_values).any(axis=1)
-        relative = values - ref_mean[:, None]
-        valid = refs_ok[:, None] & ~np.isnan(relative)
-        arrays = self._compare(relative, valid, self._cmp, with_ci=with_ci)
+        arrays = self._cells.get(_cell_key(cell))
+        if arrays is None:
+            values, ref_values = self._cell_inputs(cell)
+            ref_mean = ref_values.mean(axis=1)
+            refs_ok = ~np.isnan(ref_values).any(axis=1)
+            relative = values - ref_mean[:, None]
+            valid = refs_ok[:, None] & ~np.isnan(relative)
+            arrays = self._cell_compare(cell, relative, valid, with_ci=with_ci)
         return {spec.id: a for spec, a in zip(self.comparisons, arrays, strict=True)}
+
+    def _cell_compare(
+        self,
+        cell: Mapping[str, Any],
+        relative: np.ndarray,
+        valid: np.ndarray,
+        *,
+        with_ci: bool = True,
+    ) -> list[ContrastArrays]:
+        """A cell's comparisons, kept (with intervals) so the grid's second pass is free.
+
+        A pooled correction (Dunnett, Tukey) integrates a distribution per gene and cell; the
+        grid and the per-comparison grid read every cell twice, so each cell is kept once.
+        """
+        key = _cell_key(cell)
+        found = self._cells.get(key)
+        if found is not None:
+            return found
+        out = self._compare(relative, valid, self._cmp, with_ci=with_ci or self._pooled)
+        if self._pooled and len(self._cells) < MAX_KEPT_CELLS:
+            self._cells[key] = out
+        return out
+
+    @property
+    def _pooled(self) -> bool:
+        return self.correction in CORRECTIONS_POOLED
 
     def evaluate_all(self, cell: Mapping[str, Any]) -> dict[str, dict[str, ContrastResult]]:
         """Every comparison's results under one cell, by comparison id, the primary first."""
@@ -551,6 +604,8 @@ class QpcrSpace:
         with_ci: bool = True,
     ) -> list[ContrastArrays]:
         """Each comparison's test on the same relative quantities, then the correction."""
+        if self._family is not None and self._family.pooled:
+            return self._family.compare(self.items, relative, valid, masks, self.rule, with_ci)
         out = []
         for spec, m in zip(self.comparisons, masks, strict=True):
             if spec.pairs is None:
@@ -718,6 +773,111 @@ class ContrastArrays:
             self.rule,
             self.p_call,
         )
+
+
+@dataclass(frozen=True, eq=False)
+class _Family:
+    """A study's comparisons as pairs of groups, for a correction that pools their variance.
+
+    ``groups`` are the plan's groups in order of first mention, ``pairs`` each comparison's
+    ``(group a, group b)`` positions in it and ``control`` the control's position (Dunnett).
+    """
+
+    correction: str
+    groups: tuple[str, ...]
+    pairs: tuple[tuple[int, int], ...]
+    control: int | None
+
+    @property
+    def pooled(self) -> bool:
+        """True for Dunnett's and Tukey's corrections (one pooled variance per gene)."""
+        return self.correction in CORRECTIONS_POOLED
+
+    @classmethod
+    def of(cls, specs: Sequence[ComparisonSpec], correction: str, control: str | None) -> _Family:
+        groups = tuple(dict.fromkeys(label for spec in specs for label in spec.labels))
+        pairs = tuple((groups.index(s.labels[0]), groups.index(s.labels[1])) for s in specs)
+        family = cls(correction, groups, pairs, None)
+        if not family.pooled:
+            return family
+        if any(spec.paired for spec in specs):
+            raise ValueError(f"{correction} pools unpaired groups; a paired plan uses holm or none")
+        if correction == "dunnett":
+            if control not in groups or any(groups[b] != control for _, b in pairs):
+                raise ValueError("dunnett compares each group with the control (vs_control)")
+            return cls(correction, groups, pairs, groups.index(control))
+        every = {frozenset((i, j)) for i in range(len(groups)) for j in range(i + 1, len(groups))}
+        if {frozenset(p) for p in pairs} != every:
+            raise ValueError("tukey compares every pair of the groups (all_pairs)")
+        return family
+
+    def compare(
+        self,
+        items: Sequence[str],
+        relative: np.ndarray,
+        valid: np.ndarray,
+        masks: Sequence[_Masks],
+        rule: ConclusionRule,
+        with_ci: bool,
+    ) -> list[ContrastArrays]:
+        """Each comparison's pooled-variance t-test, then Dunnett's or Tukey's adjusted p."""
+        found: dict[int, np.ndarray] = {}
+        for (a, b), m in zip(self.pairs, masks, strict=True):
+            found.setdefault(a, m.in_a)  # a unit set aside is out of every comparison's masks
+            found.setdefault(b, m.in_b)
+        stats_by_group = [
+            _group_stats(relative, valid & found[g][:, None]) for g in range(len(self.groups))
+        ]
+        var, df = pooled(stats_by_group)
+        arrays = [
+            pooled_arrays(items, stats_by_group[a], stats_by_group[b], var, df, rule, with_ci)
+            for a, b in self.pairs
+        ]
+        t = np.vstack([a.t for a in arrays])
+        if self.correction == "dunnett":
+            n_treated = np.vstack([stats_by_group[a][0] for a, _ in self.pairs])
+            n_control = stats_by_group[self.control][0]  # type: ignore[index]
+            adjusted = dunnett_adjusted(t, n_treated, n_control, df)
+        else:
+            k = sum((s[0] >= 2).astype(float) for s in stats_by_group)
+            adjusted = tukey_adjusted(t, k, df)
+        return [_with_call_p(a, adjusted[i]) for i, a in enumerate(arrays)]
+
+
+def pooled_arrays(
+    items: Sequence[str],
+    group_a: tuple[np.ndarray, ...],
+    group_b: tuple[np.ndarray, ...],
+    var: np.ndarray,
+    df: np.ndarray,
+    rule: ConclusionRule,
+    with_ci: bool = True,
+) -> ContrastArrays:
+    """A t-test of group A against group B with the variance pooled over every group.
+
+    ``var`` and ``df`` are the pooled variance and its degrees of freedom per item
+    (:func:`qpilot.qpcr.multiplicity.pooled`). Fewer than two values in either group gives
+    p = NaN, t = NaN and the call "none", as :func:`welch_arrays` does.
+    """
+    n_a, mean_a, _ = group_a
+    n_b, mean_b, _ = group_b
+    with np.errstate(divide="ignore", invalid="ignore"):
+        se = np.sqrt(var * (1 / n_a + 1 / n_b))
+        diff = mean_a - mean_b
+        t = diff / se
+        p = 2 * stats.t.sf(np.abs(t), df)
+        t_crit = stats.t.ppf(0.975, df) if with_ci else np.full(np.shape(df), np.nan)
+    tested = (n_a >= 2) & (n_b >= 2) & (df > 0) & np.isfinite(t)
+    p = np.where(tested, p, np.nan)
+    t = np.where(tested, t, np.nan)
+    with np.errstate(invalid="ignore"):
+        significant = p < rule.alpha
+    call = np.where(
+        significant & (diff >= rule.min_log2fc),
+        "up",
+        np.where(significant & (diff <= -rule.min_log2fc), "down", "none"),
+    )
+    return ContrastArrays(tuple(items), diff, se, t, p, t_crit, n_a, n_b, call, rule)
 
 
 class ComparisonView:

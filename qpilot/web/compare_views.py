@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from qpilot.core.store import StudyStore
-from qpilot.qpcr.contrast import CORRECTION_WORDS, TEST_WORDS, ConclusionRule, bh
+from qpilot.qpcr.contrast import CORRECTED, CORRECTION_WORDS, TEST_WORDS, ConclusionRule, bh
 from qpilot.schemas import ComparisonOutcome, DecisionCard, Fact, StudyResult
 from qpilot.web.contract_compare import (
     ComparisonCell,
@@ -181,6 +181,16 @@ CORRECTION_NOTE = {
     "holm": "Each gene is compared {n} times, so its p-values are corrected with Holm's method "
     "across those {n} comparisons: a gene is called only when its corrected p is below {alpha:g} "
     "and the change is at least {fold:g}-fold. Each 95 % interval is for its comparison alone.",
+    "dunnett": "Each group is compared with the control, so each gene's p-values are corrected "
+    "with Dunnett's test across those {n} comparisons: a gene is called only when its corrected "
+    "p is below {alpha:g} and the change is at least {fold:g}-fold. Dunnett's test pools one "
+    "variance per gene over every compared group (it assumes equal variances on the log2 scale). "
+    "Each 95 % interval is for its comparison alone.",
+    "tukey": "Every pair of groups is compared, so each gene's p-values are corrected with "
+    "Tukey's test (Tukey-Kramer) across those {n} comparisons: a gene is called only when its "
+    "corrected p is below {alpha:g} and the change is at least {fold:g}-fold. Tukey's test pools "
+    "one variance per gene over every group (it assumes equal variances on the log2 scale). Each "
+    "95 % interval is for its comparison alone.",
     "none": "No correction for comparing each gene {n} times was chosen: each call uses its own "
     "p-value, so with {n} comparisons per gene some calls are expected by chance alone.",
 }
@@ -316,7 +326,7 @@ def rule_words(result: StudyResult, rule: ConclusionRule) -> str:
 
 def _rule_text(rule: ConclusionRule, correction: str) -> str:
     fold = f"{2**rule.min_log2fc:g}"
-    if correction == "holm":
+    if correction in CORRECTED:
         return (
             f"up or down only if the corrected p < {rule.alpha:g} and the change is at least "
             f"{fold}-fold; otherwise no call"
