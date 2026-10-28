@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections import Counter
 
+from qpilot.explain.sets import verdict_differs
 from qpilot.qpcr.confidence_checks import HOLDS_MIN
 from qpilot.report.context import Ctx, dim_label
 from qpilot.report.model import Limitation, ReviewCheck, ReviewFinding, ReviewView, Severity
@@ -26,6 +27,14 @@ def _names(names: list[str]) -> str:
     if len(names) <= 1:
         return "".join(names)
     return ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def _reasonable(c: Ctx) -> str | None:
+    """The audit's reasonable set, as a fact token (None without that count)."""
+    try:
+        return c.audit_num("reasonable", "summary.json", "multiverse", "defensible", "cells")
+    except (KeyError, TypeError):
+        return None
 
 
 def _holds(c: Ctx) -> str:
@@ -306,6 +315,8 @@ def disclosure(rv: Review) -> None:
             rule="R8",
         )
     if meta.n_reactions_with_curves:
+        clause = c.reactions_in_file(meta.n_reactions_with_curves, meta.n_runs)
+        where = f" ({clause})" if clause else ""
         n = c.count(
             "rdml_n_curves",
             meta.n_reactions_with_curves,
@@ -315,7 +326,7 @@ def disclosure(rv: Review) -> None:
         rv.ok(
             "raw_curves",
             "Raw curves can be deposited",
-            [f"The RDML file holds the raw fluorescence of {n} reactions."],
+            [f"The RDML file holds the raw fluorescence of {n} reactions{where}."],
         )
 
 
@@ -356,6 +367,8 @@ def headline_genes(rv: Review) -> None:
         parts.append(".")
         if verdict:
             parts += [" The audit's verdict: ", Q(_label(c, verdict)), "."]
+            if weak and verdict not in DOUBTFUL:
+                parts.append(" " + verdict_differs(_reasonable(c)))
         major = weak or verdict in DOUBTFUL
         rv.flag(
             f"headline_{s}",

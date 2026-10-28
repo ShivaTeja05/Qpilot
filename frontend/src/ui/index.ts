@@ -15,6 +15,7 @@
  * Labels & tags
  *   Badge           tone neutral|accent|ok|warn|danger|info · icon
  *   Kbd             a keyboard key
+ *   KeyHint         a shortcut hint beside a button (keys); hidden on phones and touch screens
  *   Dot             status dot: tone · label (screen readers) · pulse
  *   ConclusionTag   ▲ up / ▼ down / — no call: conclusion · compact · long
  *   LevelTag        High/Moderate/Low/Very low with 4/3/2/1 bars: level · hideWord
@@ -45,7 +46,7 @@
  * Tables
  *   Table, THead, TBody, TR, TH (numeric), TD (numeric)   semantic dense table primitives
  *   NumberCell      mono tabular number content · muted
- *   DataTable       virtualised sortable table: data · columns (TanStack ColumnDef, meta: ColumnMeta)
+ *   DataTable       virtualised sortable table: data · columns (TanStack ColumnDef, meta: ColumnMeta: numeric · width · className · help = the header's tooltip)
  *                   · getRowId · label · height · rowHeight · initialSorting · globalFilter · rowFilter
  *                   · onRowClick · selectedId · empty
  * States
@@ -57,6 +58,9 @@
  *   errorMessage    an error's plain words; errorHeading: a heading from its code
  *   TickText        text with `backticks` shown as code (server messages): text
  *   JobCard         id (followed with useJob) or job · children(result, job) once done · onDismiss
+ * Words
+ *   SetsNote        the two robustness counts (qPilot's grid, the audit's reasonable set) and why
+ *                   they differ: grid · reasonable · full · decisions · efficiencyInGrid
  * Copy
  *   CopyButton      text · label · showLabel · size
  *   Hash            short mono hash, click copies the full value: value · length · prefix
@@ -76,7 +80,7 @@ export {
   type IconButtonProps,
 } from "./Button";
 export { Card, CardBody, CardHeader, KeyValues, PageHeader, SectionTitle } from "./Card";
-export { Badge, Dot, Kbd, type Tone } from "./Badge";
+export { Badge, Dot, KeyHint, Kbd, type Tone } from "./Badge";
 export { CheckTag, ConclusionTag, LevelBars, LevelTag, VerdictTag } from "./tags";
 export { Glyph, GlyphMark, ShapeBody, ShapeGlyph, type ShapeBodyProps } from "./Glyph";
 export {
@@ -128,4 +132,5 @@ export { EmptyState, LoadingBlock, ProgressBar, Skeleton } from "./feedback";
 export { ErrorPanel, TickText, errorHeading, errorMessage } from "./ErrorPanel";
 export { JobCard } from "./JobCard";
 export { CommandLine, CopyButton, Hash } from "./Copy";
+export { SetsNote, type SetsNoteProps } from "./SetsNote";
 export { Toaster, toast } from "./Toaster";

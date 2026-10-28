@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from qpilot.core.store import StudyNotFound, StudyStore
+from qpilot.explain.sets import AUDIT_DOES
 from qpilot.studio_service import Studio, StudioError
 from qpilot.web.contract import (
     FileFacts,
@@ -252,7 +253,7 @@ def next_step(
     if not has_audit:
         return NextStep(
             title="Run the robustness audit",
-            detail="Every combination of eight analysis decisions, one verdict per gene.",
+            detail=AUDIT_DOES,
             section="audit",
             action="Run the audit",
         )
@@ -435,7 +436,9 @@ def study_summary(store: StudyStore, study_id: str) -> WorkspaceSummary:
 
 def _title(file_name: str | None, sha: str) -> str:
     if sha == demo_sha():
-        return "Vermeulen 2013 neuroblastoma study (demo)"
+        # Vermeulen et al. 2009 (Lancet Oncol) is the study; Ruijter et al. 2013 (Methods)
+        # published its raw curves as this RDML file. The year names the study, as cited.
+        return "Vermeulen 2009 neuroblastoma study (demo)"
     return file_name or f"Study {sha[:12]}"
 
 

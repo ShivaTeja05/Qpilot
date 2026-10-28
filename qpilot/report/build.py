@@ -138,7 +138,14 @@ def _summary(c: Ctx):  # noqa: ANN202 - ReportText
     if isinstance(counts, dict) and "solid" in counts and "fragile" in counts:
         solid = c.audit_num("verdict_solid", "audit_manifest.json", "verdict_counts", "solid")
         fragile = c.audit_num("verdict_fragile", "audit_manifest.json", "verdict_counts", "fragile")
-        parts.append(f" The audit finds {solid} genes solid and {fragile} fragile.")
+        try:
+            reasonable = c.audit_num(
+                "reasonable", "summary.json", "multiverse", "defensible", "cells"
+            )
+            among = f" in its {reasonable} reasonable analyses"
+        except (KeyError, TypeError):
+            among = ""
+        parts.append(f" The audit finds {solid} genes solid and {fragile} fragile{among}.")
     return c.t(*parts)
 
 
@@ -166,6 +173,14 @@ def _key_numbers(c: Ctx) -> list[KeyNumber]:
             fmt="{:,}",
         )
         out.append(KeyNumber(label="analyses in the audit", fact=fid))
+        reasonable = ((a.summary.get("multiverse") or {}).get("defensible") or {}).get("cells")
+        if isinstance(reasonable, int) and not isinstance(reasonable, bool):
+            fid = c.facts.derive(
+                "audit_reasonable",
+                reasonable,
+                "audit:summary.json:/multiverse/defensible/cells",
+            )
+            out.append(KeyNumber(label="reasonable analyses behind its verdicts", fact=fid))
     for k in out:
         if k.fact not in c.facts.cited:
             c.facts.cited.append(k.fact)

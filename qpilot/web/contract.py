@@ -765,6 +765,20 @@ class AuditBadge(BaseModel):
     verdict_counts: dict[str, int] = {}
     chain_head: str | None = None
     current: bool = Field(default=False, description="Audited at the decision chain head of now.")
+    analyses: int | None = Field(
+        default=None, description="Every analysis the audit ran (90,396 on the demo)."
+    )
+    reasonable: int | None = Field(
+        default=None,
+        description="The audit's reasonable set its verdicts count (144 on the demo); not "
+        "qPilot's choice grid (GeneRow.n_cells).",
+    )
+    decisions: list[str] = Field(
+        default=[],
+        description="The audit's decision ids (efficiency, flagged, late_cq, nondetect, refs, "
+        "cut, test, multiplicity, replicates): what it varies, to say how it differs from "
+        "qPilot's grid.",
+    )
 
 
 class WithheldGene(BaseModel):
