@@ -136,7 +136,7 @@ def _report(args: argparse.Namespace) -> int:
         if plan is None or not plan.wells:
             return _refuse("report", "nothing points at a reaction to re-run: no plate written")
         try:
-            Path(args.repeat_csv).write_text(plan.csv(), encoding="utf-8")
+            Path(args.repeat_csv).write_text(plan.csv(), encoding="utf-8", newline="\n")
         except OSError as err:
             return _refuse("report", f"cannot write {args.repeat_csv}: {err.strerror or err}")
         print(f"wrote {args.repeat_csv}", file=sys.stderr)
