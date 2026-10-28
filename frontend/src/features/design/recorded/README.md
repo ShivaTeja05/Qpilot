@@ -21,3 +21,15 @@ throwaway store (FastAPI TestClient over the real app, no model):
   sheets qPilot does not read);
 - `import-lc480-cp-table.json`: `roche/sanger-lc480-cp-table/qPCR.txt` (a LightCycler 480 Cp
   table: Cq only, standards, five omitted wells).
+
+## The Design editor (`editor-*.json`, `plan-*.json`)
+
+`python frontend/src/features/design/recorded/record_editor.py` (from the repository root; no
+download, no model): the synthetic CFX Manager export of the corpus
+(`synthetic/cfx-manager-raw-vs-baseline-subtracted`, raw RFU) opened through
+`POST /api/workspaces` with `files` and a two-column group sheet, the rules' proposals made, then
+
+- `editor-cfx-synthetic.json`: `GET /api/sessions/{sid}/design/editor`;
+- `plan-cfx-synthetic.json`: `POST /api/sessions/{sid}/design/check` for a draft (REF a reference
+  gene; S1 in group A, which the sheet proposed; S5 in group Z, the sheet said B; the NTC in a
+  group, which the hard ban refuses).

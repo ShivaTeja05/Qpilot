@@ -80,12 +80,17 @@ export function FileFacts({
         <KeyValues rows={rows} />
         {types.length ? (
           <div>
-            <p className="mb-1.5 text-xs font-medium text-muted">Sample types declared</p>
+            <p className="mb-1.5 text-xs font-medium text-muted">
+              Samples by declared type (samples, not wells)
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {types.map(([t, n]) => (
-                <Tooltip key={t} content={ROLE_WORDS[t] ?? t}>
+                <Tooltip key={t} content={`${plural(n, "sample")} declared ${ROLE_WORDS[t] ?? t}`}>
                   <Badge tabIndex={0}>
-                    {ROLE_SHORT[t] ?? t} <span className="font-mono tabular">{count(n)}</span>
+                    {ROLE_SHORT[t] ?? t}{" "}
+                    <span className="font-mono tabular">
+                      {count(n)} sample{n === 1 ? "" : "s"}
+                    </span>
                   </Badge>
                 </Tooltip>
               ))}
