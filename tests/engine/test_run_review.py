@@ -90,7 +90,10 @@ def test_review_of_the_fixture_study_with_a_ledger(stored, toy_ledger):
     tokens = review.tokens()
     assert validate(tokens, review.facts).ok
     text = render_text(review)
-    assert "ODC1: called up, 3.6× (Moderate confidence; holds in 100% of 186 analyses)." in text
+    assert (
+        "ODC1: called up, 3.6× (Moderate confidence; holds in 100% of the 186 analyses "
+        "qPilot checks)." in text
+    )
     assert "NTRK1: called down" in text
     assert "Dr Rossi chose accept on 2026-10-18T09:15:00Z (decision-log entry 5)" in text
     assert "What to repeat and why: in qPilot's Run Review" in text  # rendered without a plan
@@ -240,7 +243,10 @@ def test_demo_run_review(tmp_studies_dir, demo_rdml_path):
         "Evidence Ledger: 3 of 11 items present, 6 absent, 1 unknown and 1 not applicable" in text
     )
     assert "RT variability not measured" in text
-    assert "NM23A: called up, 2.2× (Very low confidence; holds in 65% of 186 analyses)." in text
+    assert (
+        "NM23A: called up, 2.2× (Very low confidence; holds in 65% of the 186 analyses "
+        "qPilot checks)." in text
+    )
     page = render_html(review)
     assert banned_words(visible(page)) == [] and banned_words(text) == []
     assert validate(review.tokens(), review.facts).ok

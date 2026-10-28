@@ -136,9 +136,7 @@ describe("StageInbox", () => {
       .getAllByRole("button", { expanded: false })
       .find((b) => b.textContent?.includes(`“${rejected.reason}”`))!;
     expect(row.textContent).toContain(decidedLine(rejected));
-    expect(decidedLine(rejected)).toMatch(
-      /^Rejected by a person · \d{1,2} \w{3} \d{4}, \d{2}:\d{2} \(/,
-    );
+    expect(decidedLine(rejected)).toMatch(/^Rejected by you · \d{1,2} \w{3} \d{4}, \d{2}:\d{2} \(/);
     // Only the decisions: filtering by "Rejected" leaves the rejected ones.
     fireEvent.click(screen.getByRole("button", { name: /^Rejected \d/, pressed: false }));
     const rows = screen.getAllByText(/^— reason:/);

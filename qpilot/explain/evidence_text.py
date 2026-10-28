@@ -194,7 +194,9 @@ def headline_lines(facts: Facts) -> list[str]:
         if f"f_level_{g}" in facts:
             parts.append(f"{_t(f'f_level_{g}')} confidence")
         if f"f_holds_{g}" in facts and "f_n_cells" in facts:
-            parts.append(f"holds in {_t(f'f_holds_{g}')} of {_t('f_n_cells')} analyses")
+            parts.append(
+                f"holds in {_t(f'f_holds_{g}')} of the {_t('f_n_cells')} analyses qPilot checks"
+            )
         if parts:
             line += f" ({'; '.join(parts)})"
         lines.append(line + ".")
@@ -261,7 +263,7 @@ def repeat_lines(facts: Facts) -> list[str]:
     if "f_rr_repeat_n_wells" in facts:
         line += (
             "; the repeat plate has {{f_rr_repeat_n_wells}} wells on {{f_rr_repeat_n_plates}} "
-            "plate(s)"
+            + ("plate" if _value(facts, "f_rr_repeat_n_plates") == 1 else "plates")
         )
         if "f_rr_repeat_calibrator" in facts:
             line += ", with sample {{f_rr_repeat_calibrator}} as the inter-run calibrator"
@@ -297,8 +299,8 @@ def gate_plate_lines(facts: Facts) -> list[str]:
 
 
 def study_line(facts: Facts) -> str:
-    """The Run Review's first line: the study id and, when known, its size."""
-    line = "Run Review of study {{f_rr_study_id}}"
+    """The Run Review's first line: the study and, when known, its size (the id is a fact)."""
+    line = "Run Review of this study"
     if all(fid in facts for fid in ("f_n_plates", "f_n_samples", "f_n_reactions")):
         line += ": {{f_n_plates}} plates, {{f_n_samples}} samples, {{f_n_reactions}} reactions"
     return line + "."

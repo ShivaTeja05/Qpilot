@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from qpilot.cli._types import Command
+from qpilot.explain.words import plural
 from qpilot.io.datasets import (
     BENCHMARK_TABLES,
     VERMEULEN_BYTES,
@@ -337,7 +338,8 @@ def _print_comparisons(result, settings) -> None:  # noqa: ANN001
         words += f"; {CORRECTION_WORDS[found.correction]}"
     if found.pair_by:
         words += f"; paired by {found.pair_by}"
-    print(f"{len(found.comparisons)} comparison(s): {words} (the first is the one the cards use)")
+    n = plural(len(found.comparisons), "comparison")
+    print(f"{n}: {words} (the first is the one the cards use)")
     for outcome in found.comparisons:
         calls = [c.conclusion for c in outcome.contrasts.values()]
         n = (

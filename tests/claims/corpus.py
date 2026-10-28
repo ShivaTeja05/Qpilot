@@ -1,6 +1,6 @@
 """Tricky results sentences about the demo study, each with the verdict the record supports.
 
-The study (Vermeulen 2013, 64 plates) compares neuroblastoma tumours by MYCN **expression**: the
+The study (Vermeulen 2009, 64 plates) compares neuroblastoma tumours by MYCN **expression**: the
 top 15 % by MYCN expression (MYCN-high) against the rest. Its record: BIRC5 (survivin) and ODC1
 up, NTRK1 (TrkA), CD44, DDC and MAPT down, NM23A up but not robust, CAMTA2 significant but under
 the 2-fold line (no call), ARHGEF7 unchanged; the controls are ALUsq, HMBS, HPRT1, SDHA and UBC;

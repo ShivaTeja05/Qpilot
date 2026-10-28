@@ -17,7 +17,9 @@ import {
   TabsTrigger,
   Tooltip,
   JobCard,
+  SetsNote,
 } from "@/ui";
+import { useResults } from "@/features/results/api";
 import type { JobView } from "@/api/client";
 import { useJob } from "@/api/jobs";
 import {
@@ -85,6 +87,12 @@ export function AuditReady({
     !attached &&
     (status.current != null ? !status.current : Boolean(audited && head && audited !== head));
   const analyses = manifest.analyses ?? overview.data?.study.analyses;
+  // qPilot's own count, to say beside the audit's which is which (only for this study's audit).
+  const results = useResults(workspace.key, ownStudy ? target.studyId : null);
+  const grid = results.data?.genes.find((g) => g.n_cells)?.n_cells ?? null;
+  const efficiencyInGrid = Boolean(
+    results.data?.axes?.some((a) => a.name === "efficiency" && a.status === "swept"),
+  );
   const dir = system.data?.studies_dir
     ? `${system.data.studies_dir}/simulator_audits/${target.studyId}`
     : null;
@@ -135,6 +143,16 @@ export function AuditReady({
         }
       />
 
+      {overview.data ? (
+        <SetsNote
+          className="-mt-3 mb-5 max-w-3xl"
+          grid={grid}
+          reasonable={overview.data.study.reasonable}
+          full={analyses}
+          decisions={overview.data.decisions.map((d) => d.id)}
+          efficiencyInGrid={efficiencyInGrid}
+        />
+      ) : null}
       {behind ? <BehindNotice target={target} since={status.decisions_since} /> : null}
       <ReplicatesNote replicates={manifest.scope?.technical_replicates} className="mb-5" />
       <ComparisonsNote comparisons={manifest.scope?.comparisons} className="mb-5" />

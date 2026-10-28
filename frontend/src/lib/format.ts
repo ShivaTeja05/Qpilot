@@ -191,6 +191,14 @@ export function shortHash(hash: string | null | undefined, n = 8): string {
   return hash.slice(0, n);
 }
 
+/**
+ * A plate as every page names it: its run as the file names it (`CAMTA2_20080227`), the name a
+ * scientist finds in the instrument's software and in Curves, Trace, the audit and the report.
+ */
+export function plateLabel(run: string | null | undefined): string {
+  return run ? String(run).trim() : "";
+}
+
 /** `1 plate` / `64 plates`. */
 export function plural(n: number | null | undefined, one: string, many = `${one}s`): string {
   return `${count(n)} ${n === 1 ? one : many}`;

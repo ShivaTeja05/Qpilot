@@ -483,8 +483,22 @@ lines. Theme. Fresh demo. The never-does lines and the version.
   `bad_request` (422), `too_large` (413), `cross_origin` (403).
 * Writes carry `expected_head` (the head the view showed); the answer carries the new head.
 * Slow work answers `202 {"job": JobView}`; follow with `useJob(id)`; the result is on the job.
+* A view still being prepared answers `409 loading` / `503 warming` with the job preparing it.
+  The page asks with `Prefer: respond-async` and gets the same body as `202` (original status in
+  `x-qpilot-status`), so the browser logs no failed load; `apiFetch` hands it on as the same
+  `ApiError` (`error.warming` is true). Clients without that header still get 409 / 503.
+* Every JSON `GET` carries a weak `ETag`; `If-None-Match` with it answers `304` (no body).
+  `apiFetch` (`src/api/client.ts`) re-validates every read and keeps the bodies in memory, so a
+  re-read after a decision costs bytes only for what the decision changed. Large answers are
+  gzipped. Every answer carries `x-qpilot-store-seq`; every request the page sends carries its
+  tab id (`x-qpilot-tab`), which comes back as the `origin` of the events it causes.
 * Query keys: `["system"]`, `["workspaces"]`, `["job", id]`, `["w", key, …]` — every query about
-  a workspace starts with `["w", key]` so live events can invalidate it (see `src/api/live.ts`).
+  a workspace starts with `["w", key]` so live events can invalidate it (see `src/api/live.ts`:
+  one re-read per query per change; a query read after the event, or still reading, is not
+  re-read twice; job progress updates the job caches in place). Raw `fetch` to `/api` goes
+  through `apiFetch`.
+* After the start-up read, the server prepares the recent studies' heavy views in the
+  background (`qpilot/web/warm.py`), and a new study's as soon as it is analysed.
 
 ## 7. Who builds what
 

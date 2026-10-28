@@ -6,6 +6,7 @@
  */
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/api/client";
+import { refresherOf } from "@/api/live";
 import { errorHeading, errorMessage, toast } from "@/ui";
 
 export interface WriteToast {
@@ -27,15 +28,15 @@ export interface WriteOptions<V, R> {
   onError?: (error: unknown, vars: V) => void;
 }
 
-/** Re-read every query about one workspace (and the workspace list). */
+/**
+ * Re-read every query about one workspace (and the workspace list). The events this write
+ * caused are then covered: live.ts does not re-read the same views again for them.
+ */
 export function refreshWorkspace(
   qc: QueryClient,
   key: string | null | undefined,
 ): Promise<unknown> {
-  return Promise.all([
-    key ? qc.invalidateQueries({ predicate: (q) => q.queryKey.includes(key) }) : Promise.resolve(),
-    qc.invalidateQueries({ queryKey: ["workspaces"] }),
-  ]);
+  return refresherOf(qc).refreshNow(key);
 }
 
 /** Say a failed write in words; on `stale`, re-read the workspace first. */

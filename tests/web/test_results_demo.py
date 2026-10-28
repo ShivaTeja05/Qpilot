@@ -1,4 +1,4 @@
-"""Results routes on the real demo study (Vermeulen 2013, 64 plates), analysed once per module.
+"""Results routes on the real demo study (Vermeulen 2009, 64 plates), analysed once per module.
 
 The views find the planned analysis and each card option in the robustness grid by value; here
 they are checked against the numbers the engine stored on the cards themselves.

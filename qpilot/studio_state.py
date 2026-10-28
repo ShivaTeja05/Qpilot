@@ -37,6 +37,7 @@ from qpilot.ai.prompts import SYSTEM_INTERPRET
 from qpilot.app_state import conclusion_word, esc
 from qpilot.core.facts import slug
 from qpilot.explain.templates import to_html
+from qpilot.explain.words import plural
 from qpilot.schemas import Fact
 from qpilot.schemas_studio import TEXT_ID, InspectSummary, MadeBy, Proposal, QuarantineEntry
 from qpilot.studio_service import BLIND_STAGES, STAGES
@@ -289,7 +290,7 @@ def _d_exclusion(subject: str, d: Mapping[str, Any]) -> str:
     gene, sample = d.get("gene", "?"), d.get("sample") or "an unknown sample"
     if d.get("action") == "restore":
         return f"Keep sample {sample} in {gene} (restore it in the analysis)"
-    return f"Exclude sample {sample} from {gene}, as it is in the table Prism sent back"
+    return f"Exclude sample {sample} from {gene}, as it is excluded in Prism"
 
 
 def _d_value_edit(subject: str, d: Mapping[str, Any]) -> str:
@@ -306,8 +307,9 @@ def _d_confirm(subject: str, d: Mapping[str, Any]) -> str:
     covers = d.get("covers") or []
     label = STAGE_LABELS.get(subject, subject)
     if subject == "choices":
-        return f"Confirm the {label} stage: the Decision Cards of analysis {d.get('study_id', '?')}"
-    return f"Confirm the {label} stage: it covers {len(covers)} accepted proposal(s)"
+        return f"Confirm the {label} stage: the Decision Cards of this analysis"
+    n = len(covers)
+    return f"Confirm the {label} stage: it covers {n} accepted proposal{'s' * (n != 1)}"
 
 
 _DESCRIBERS: dict[str, Callable[[str, Mapping[str, Any]], str]] = {
@@ -401,7 +403,7 @@ def details_rows(details: Mapping[str, Any]) -> list[tuple[str, str]]:
                     rows.append((esc(rule), text))
             continue
         if isinstance(value, Mapping | list | tuple) and not _scalars(value):
-            rows.append((label, _folded(value, f"{len(value)} item(s)")))
+            rows.append((label, _folded(value, plural(len(value), "item"))))
         elif isinstance(value, list | tuple):
             shown = ", ".join(_value_text(v) for v in value[:12])
             more = f" … ({len(value)} in all)" if len(value) > 12 else ""
@@ -784,7 +786,8 @@ def card_html(
         what.append(f"<p>As edited by a person: {esc(describe(p, p.effective_payload()))}</p>")
     if p.alternatives:
         alts = "; ".join(esc(describe(p, alt)) for alt in p.alternatives[:6])
-        what.append(f'<p class="qs-alt">Other reading(s): {alts}</p>')
+        head = "Other reading" if len(p.alternatives) == 1 else "Other readings"
+        what.append(f'<p class="qs-alt">{head}: {alts}</p>')
     what.append(
         f'<p class="qs-meta"><code>{esc(p.kind)}</code> · '
         f"{esc(STATUS_WORDS.get(p.status, p.status))} · <span class='qs-id'>{esc(p.id)}</span></p>"

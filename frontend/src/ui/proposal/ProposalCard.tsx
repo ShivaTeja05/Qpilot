@@ -33,6 +33,7 @@ import { relativeTime } from "@/lib/format";
 import {
   KIND_TITLE,
   STATUS_WORDS,
+  deciderWords,
   describeProposal,
   effectivePayload,
   isBlindKind,
@@ -619,7 +620,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
         {!pending ? (
           <p className="mt-2 text-[13px] text-muted">
             {STATUS_WORDS[p.status]}
-            {p.decided_by === "human" ? " by a person" : ""}
+            {p.decided_by === "human" ? ` by ${deciderWords("human")}` : ""}
             {p.decided_at ? ` · ${relativeTime(p.decided_at)}` : ""}
             {p.reason ? (
               <>
@@ -820,7 +821,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                 <Button variant="ghost" onClick={close} disabled={Boolean(busy)}>
                   Cancel
                 </Button>
-                <span className="ml-auto hidden text-xs text-faint sm:inline">
+                <span className="ml-auto hidden text-xs text-faint sm:inline pointer-coarse:hidden">
                   <Kbd>⌘</Kbd>
                   <Kbd>↵</Kbd> to confirm · <Kbd>Esc</Kbd> to cancel
                 </span>
@@ -861,7 +862,7 @@ export const ProposalCard = forwardRef<ProposalCardHandle, ProposalCardProps>(fu
                 </Button>
               ) : null}
               {focused ? (
-                <span className="ml-auto hidden items-center gap-1 text-xs text-faint sm:inline-flex">
+                <span className="ml-auto hidden items-center gap-1 text-xs text-faint sm:inline-flex pointer-coarse:hidden">
                   <Kbd>a</Kbd> accept <Kbd>e</Kbd> edit <Kbd>x</Kbd> reject
                 </span>
               ) : null}

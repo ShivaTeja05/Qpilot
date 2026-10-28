@@ -85,6 +85,7 @@ from qpilot.core.consequence import (
 )
 from qpilot.core.facts import FactRegistry, slug
 from qpilot.core.store import dump_json
+from qpilot.qpcr.design import marker_group_names
 from qpilot.qpcr.quant import EXCLUDED, unit_map
 from qpilot.qpcr.space import ContrastArrays, QpcrSpace, group_stats, welch_arrays
 from qpilot.schemas import CardOption, DecisionCard, Fact
@@ -451,7 +452,7 @@ def build_context(
     refs = tuple(cell["refs"])
     marker = space.design.marker if space.design is not None else None
     if space.design is not None:
-        labels = (space.design.group_var, "rest")
+        labels = marker_group_names(space.design.group_var)
     elif space.comparisons:
         labels = space.comparisons[0].labels
     else:

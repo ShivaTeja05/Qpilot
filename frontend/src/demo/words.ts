@@ -6,7 +6,7 @@ export const GITHUB = "https://github.com/ShivaTeja05/Qpilot";
 export const QUICKSTART = `${GITHUB}#quickstart`;
 
 export const STUDY =
-  "the public Vermeulen 2013 neuroblastoma study (Vermeulen et al. 2009, Ruijter et al. 2013; CC BY 4.0)";
+  "the public Vermeulen 2009 neuroblastoma study (Vermeulen et al. 2009, Lancet Oncol; raw curves as RDML from Ruijter et al. 2013, Methods; CC BY 4.0)";
 
 export const READ_ONLY = `This online demo is read-only. Install qPilot to analyse your own files: ${QUICKSTART}`;
 

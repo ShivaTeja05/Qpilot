@@ -54,7 +54,7 @@ import hashlib
 import json
 import math
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -630,8 +630,12 @@ def audit(
     bench_trials: int = 0,
     design_draws: int = 0,
     explorer: bool = False,
+    progress: Callable[[int, int], None] | None = None,
 ) -> AuditResult:
     """Audit one stored study with the Decision Simulator and write the bound audit folder.
+
+    ``progress(done, total)``, when given, is told as the full grid's analyses run (its longest
+    stage; the simulator has no hook, so the engine's evaluations are counted).
 
     ``bench_trials`` (planted faults), ``design_draws`` (small-experiment draws) and
     ``explorer`` (cheaper-search check) are the simulator's method checks; they are off by
@@ -663,6 +667,8 @@ def audit(
     if out.exists() and any(out.iterdir()):
         raise FileExistsError(f"{out} is not empty; give a new folder for the audit")
     out.mkdir(parents=True, exist_ok=True)
+    if progress is not None:
+        _count_grid(prepared.engine, int(np.prod(prepared.space.levels)), progress)
     summary = run_all(
         str(analysis.source),
         out,
@@ -721,6 +727,28 @@ def audit(
         your_choices=table,
         seconds=time.perf_counter() - started,
     )
+
+
+def _count_grid(engine: Any, total: int, progress: Callable[[int, int], None]) -> None:
+    """Tell ``progress(done, total)`` about every hundredth analysis of the full grid.
+
+    Wraps this engine's ``evaluate`` (this audit's own engine only); evaluations with dropped
+    wells (the later single-sample stage) and any past ``total`` are not counted.
+    """
+    inner = engine.evaluate
+    every = max(1, total // 100)
+    done = 0
+
+    def counted(cell: tuple[int, ...], drop: Any = None) -> Any:
+        nonlocal done
+        result = inner(cell, drop)
+        if drop is None and done < total:
+            done += 1
+            if done % every == 0 or done == total:
+                progress(done, total)
+        return result
+
+    engine.evaluate = counted
 
 
 def _qpilot_version() -> str:

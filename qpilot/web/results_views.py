@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import threading
 from collections import OrderedDict
 from collections.abc import Iterable, Mapping, Sequence
@@ -153,12 +154,20 @@ OLD_WORDS = (
 )
 
 
+#: A marker split's design variable in a stored note ("derived from the data (MYCN_high)").
+_DERIVED_GROUPS = re.compile(r"(Groups are derived from the data \()([^()\s]+?)_high\)")
+
+
 def reworded(text: str, n_cells: int | None) -> str:
-    """A confidence reason stored before the wording named qPilot's grid, in today's words."""
+    """A confidence reason stored before the wording named qPilot's grid, in today's words.
+
+    A stored note that names the groups by the design's variable (``MYCN_high``) names them as
+    every page does (``MYCN-high vs rest``); the engine's stored bytes are unchanged.
+    """
     for old, new in OLD_WORDS:
         if old in text and (n_cells or "{n}" not in new):
             text = text.replace(old, new.format(n=n_cells))
-    return text
+    return _DERIVED_GROUPS.sub(lambda m: f"{m[1]}{m[2]}-high vs rest)", text)
 
 
 def grade_now(grade: Any, n_cells: int | None) -> Any:
@@ -515,11 +524,24 @@ def audit_badge(store: StudyStore, study_id: str) -> AuditBadge:
     except (OSError, ValueError):
         return AuditBadge(status="none")
     head = manifest.get("chain_head")
+    try:
+        summary = json.loads((folder / "summary.json").read_text(encoding="utf-8"))
+        reasonable = ((summary.get("multiverse") or {}).get("defensible") or {}).get("cells")
+    except (OSError, ValueError, AttributeError):
+        reasonable = None
+    scope = manifest.get("scope") or {}
+    varied = list((scope.get("decisions") or {}).keys())
+    if scope.get("reference_sets") and "refs" not in varied:
+        varied.insert(varied.index("cut") if "cut" in varied else len(varied), "refs")
+    analyses = manifest.get("analyses")
     return AuditBadge(
         status="ready",
         verdict_counts={str(k): int(v) for k, v in (manifest.get("verdict_counts") or {}).items()},
         chain_head=head,
         current=bool(head) and head == store.chain_head(study_id),
+        analyses=analyses if isinstance(analyses, int) else None,
+        reasonable=reasonable if isinstance(reasonable, int) else None,
+        decisions=[str(d) for d in varied],
     )
 
 
@@ -647,11 +669,10 @@ def groups(result: StudyResult) -> list[GroupCount]:
             GroupCount(label=str(facts["f_group_a"].value), n=design.n_hi),
             GroupCount(label=str(facts["f_group_b"].value), n=design.n_lo),
         ]
-    marker = design.group_var.removesuffix("_high") or design.group_var
-    return [
-        GroupCount(label=f"{marker}-high", n=design.n_hi),
-        GroupCount(label="rest", n=design.n_lo),
-    ]
+    from qpilot.qpcr.design import marker_group_names
+
+    a, b = marker_group_names(design.group_var)
+    return [GroupCount(label=a, n=design.n_hi), GroupCount(label=b, n=design.n_lo)]
 
 
 def _row(
@@ -706,9 +727,11 @@ def _row(
 
 
 AXIS_WORDS = {
-    "off": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each "
-    "plate. Testing the other efficiency models adds them as one more choice of the grid; the "
-    "analysis in use stays the same until a person decides otherwise.",
+    "off": "Not tested in qPilot's grid: every quantity uses LinRegPCR's mean efficiency of each "
+    "assay on each plate. Testing the other efficiency models adds them as one more choice of the "
+    "grid; the analysis in use stays the same until a person decides otherwise. The robustness "
+    "audit varies the efficiency model on its own, so its verdicts already include it; qPilot's "
+    "grid tests it only when you ask here.",
     "swept": "Tested as one more choice of the grid: changing only the efficiency model changes "
     "{{f_n_flipped_efficiency}} of {{f_n_genes}} calls. Its Decision Card says what each model "
     "changes; the analysis in use stays LinRegPCR's mean efficiency until a person decides.",
@@ -1067,8 +1090,8 @@ def card_view(
     if carried is not None and card.status == "decided":
         chosen = labels.get(card.decision or "", card.decision or "")
         status = (
-            f"Decided by {decider_words(card.decided_by)}: {chosen}, carried from the earlier "
-            f"analysis {carried.study_id}. Reason: {carried.reason}"
+            f"Decided by {decider_words(card.decided_by)}: {chosen}, carried over from your "
+            f"decision on the earlier analysis of these data. Reason: {carried.reason}"
         )
     try:
         rendered = render_template(
@@ -1389,10 +1412,14 @@ def gene_view(
         _flip_rows(result, grid, cards, [gene], primary_grid) if gene in result.robustness else []
     )
     links, report = CarryLinks(store, result.input_sha256), carry_report(store, study_id)
+    # Every card the page lists for this gene (a row of "one choice at a time" or a card that
+    # flips it) comes with its full view, so its status line says who decided it and why.
+    listed = {r.card_id for r in effects if r.card_id}
     affecting = [
         card_view(c, result, entries, pending, *card_carry(store, c, entries, links, report))
         for c in cards
-        if result.robustness.get(gene)
+        if c.id in listed
+        or result.robustness.get(gene)
         and result.robustness[gene].impact.get(KIND_DIMENSION.get(c.kind, ""), {}).get("flips")
         or any(gene in o.per_gene for o in c.options)
     ]

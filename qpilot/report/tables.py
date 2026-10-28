@@ -784,8 +784,9 @@ def _stored_groups(result: StudyResult) -> tuple[str, str]:
         b = result.facts.get("f_group_b")
         if a is not None and b is not None:
             return str(a.value), str(b.value)
-    marker = result.design.group_var.removesuffix("_high") or result.design.group_var
-    return f"{marker}-high", "rest"
+    from qpilot.qpcr.design import marker_group_names
+
+    return marker_group_names(result.design.group_var)
 
 
 def _stored_withheld(result: StudyResult) -> dict[str, str]:

@@ -12,9 +12,11 @@ export function DemoBanner() {
     >
       <Eye className="size-3.5 shrink-0 text-accent-strong" aria-hidden />
       <p className="min-w-0 flex-1">
-        <span className="font-semibold">Read-only demo</span> on the public Vermeulen 2013
+        <span className="font-semibold">Read-only demo</span> on the public Vermeulen 2009
         neuroblastoma study{" "}
-        <span className="text-muted">(Vermeulen et al. 2009, Ruijter et al. 2013; CC BY 4.0)</span>{" "}
+        <span className="text-muted">
+          (Vermeulen et al. 2009; raw curves from Ruijter et al. 2013; CC BY 4.0)
+        </span>{" "}
         —{" "}
         <a
           href={QUICKSTART}
