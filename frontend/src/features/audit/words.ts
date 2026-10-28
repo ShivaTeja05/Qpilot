@@ -4,12 +4,17 @@
  * Wording follows qsim's own (`app.py`, `app_lab.py`) and docs/integration.md.
  */
 
-/** The eight analysis decisions the audit varies, in lab order (ids as the engine names them). */
+/**
+ * The analysis decisions the audit varies, in lab order (ids as the engine names them): eight, and
+ * a ninth (`replicates`, how a unit's replicate wells are combined) for a design with three or
+ * more wells per unit and gene.
+ */
 export const DECISION_ORDER = [
   "efficiency",
   "flagged",
   "late_cq",
   "nondetect",
+  "replicates",
   "refs",
   "cut",
   "test",
@@ -27,6 +32,24 @@ export const DECISION_WORDS = [
   "the statistical test",
   "the multiple-testing correction",
 ];
+
+/** The ninth decision, varied only for a design with three or more wells per unit and gene. */
+export const REPLICATE_DECISION_WORDS = "how replicate wells are combined";
+
+/** The decisions a study's audit varies, in words, and how many ("eight" or "nine"). */
+export function decisionWords(replicates: boolean): { count: string; words: string } {
+  const list = replicates
+    ? [...DECISION_WORDS.slice(0, 4), REPLICATE_DECISION_WORDS, ...DECISION_WORDS.slice(4)]
+    : DECISION_WORDS;
+  return {
+    count: replicates ? "nine" : "eight",
+    words: list.join(", ").replace(/, ([^,]*)$/, " and $1"),
+  };
+}
+
+/** How the audit treats technical replicates (the method; the study's own numbers come from the API). */
+export const REPLICATES_METHOD =
+  "Technical replicates are combined per biological unit exactly as qPilot combines them (the mean of the wells' log2 amounts, wells without a value left out) and are never counted as samples. With three or more wells per value, the audit also tries the middle well and leaving out one well outside the expected replicate spread (the Run Gate's G-REP rule).";
 
 /** The option tiers, in the order the what-if lab groups them. */
 export const TIERS = [
@@ -59,7 +82,7 @@ export const AUDIT_STEPS = [
   },
   {
     title: "Every combination",
-    text: "Every combination of the eight decisions' options is run, and each gene's call is read in each.",
+    text: "Every combination of the decisions' options is run, and each gene's call is read in each.",
   },
   {
     title: "Verdicts",
@@ -75,7 +98,7 @@ export const AUDIT_STEPS = [
 export const LIMITS = [
   "A verdict is only as broad as the choices varied: the Cq method, baseline correction and paired designs are not varied.",
   "Analysis choices are audited exhaustively; the plate itself is not re-simulated. Agreement across analyses does not fix small-sample noise.",
-  "Designs with technical replicates are not audited: the audit needs one well per sample and gene.",
+  REPLICATES_METHOD,
   "The audit describes the study as it was when it ran. A decision made after it is not in it until the audit is run again.",
   "Research use only. Common shortcuts are shown but kept out of the verdicts.",
 ];

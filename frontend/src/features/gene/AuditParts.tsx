@@ -537,10 +537,9 @@ export function AuditInvite({
         </>
       }
     >
-      The robustness audit re-runs your confirmed study under every combination of eight analysis
+      The robustness audit re-runs your confirmed study under every combination of its analysis
       decisions (about 50 s on the demo) and gives each gene a verdict. Here it adds its reasonable
-      analyses (no shortcuts), one choice at a time across eight decisions, each sample's value and
-      what to do.
+      analyses (no shortcuts), one choice at a time, which samples carry the call and what to do.
       {error ? <ErrorPanel compact className="mt-3 text-left" error={error} /> : null}
     </EmptyState>
   );
