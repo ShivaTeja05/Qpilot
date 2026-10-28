@@ -24,6 +24,7 @@ import {
   type TraceScope,
   type Well,
 } from "./api";
+import { TraceComparisons } from "./Comparisons";
 import { Dependency } from "./Dependency";
 import { FactText } from "./FactText";
 import {
@@ -133,12 +134,14 @@ export function GeneTracePage({
       </div>
     </nav>
   );
+  const picker = <TraceComparisons scope={scope} rule={trace?.rule} />;
 
   if (!data || !trace) {
     if (q.error && !loadingJob(q.error)) {
       return (
         <>
           {nav}
+          {picker}
           {isNotFound(q.error) ? (
             <ErrorPanel title={`${gene} has no call to trace`} error={q.error}>
               <p className="mt-2 text-[13px] text-muted">
@@ -154,6 +157,7 @@ export function GeneTracePage({
     return (
       <>
         {nav}
+        {picker}
         <div className="flex flex-col gap-4">
           <Skeleton className="h-9 w-56" />
           <Skeleton className="h-4 w-[36rem] max-w-full" />
@@ -172,6 +176,7 @@ export function GeneTracePage({
   return (
     <>
       {nav}
+      {picker}
       <div
         className={cn("transition-opacity duration-150", q.isPlaceholderData && "opacity-60")}
         aria-busy={q.isFetching}

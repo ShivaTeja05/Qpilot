@@ -114,7 +114,17 @@ class TraceCall(BaseModel):
     log2fc: float
     fc: float
     ci: tuple[float | None, float | None] = Field(description="95 % CI of the fold change.")
-    p: float | None
+    p: float | None = Field(description="The p-value before any correction for comparisons.")
+    p_adjusted: float | None = Field(
+        default=None,
+        description="Several comparisons: the corrected p the call uses (Holm, Dunnett or Tukey).",
+    )
+    q: float | None = Field(
+        default=None,
+        description="Several comparisons: Benjamini-Hochberg q over this comparison's genes "
+        "(shown, never used for the call).",
+    )
+    correction: str | None = Field(default=None, description="The correction's short name.")
     n_a: int
     n_b: int
     mean_a: float = Field(description="Mean relative value (log2) of the first group.")
@@ -248,6 +258,10 @@ class TraceGene(BaseModel):
     labels: tuple[str, str]
     rule: str
     call: TraceCall
+    comparison: str | None = Field(
+        default=None, description="Several comparisons: the id of the one traced."
+    )
+    comparison_label: str | None = None
     n_used: int
     n_flip_single: int = Field(
         description="Samples that each change the call when set aside alone."
@@ -279,6 +293,9 @@ class TraceGeneRow(BaseModel):
     log2fc: float
     fc: float
     p: float | None
+    p_adjusted: float | None = Field(
+        default=None, description="Several comparisons: the corrected p the call uses."
+    )
     margin_log2: float
     n_flip_single: int
     flip_k: int | None
@@ -329,6 +346,10 @@ class TraceStudy(BaseModel):
     cell: TraceCell
     labels: tuple[str, str]
     rule: str
+    comparison: str | None = Field(
+        default=None, description="Several comparisons: the id of the one traced."
+    )
+    comparison_label: str | None = None
     n_units: int
     n_compared: int
     n_genes: int

@@ -372,6 +372,8 @@ class TraceContext:
     robustness: Mapping[str, Any] | None = None
     #: The analysis traced: a cell of the decision space (the primary one unless given).
     cell: dict[str, Any] = field(default_factory=dict)
+    #: Units x items: the values the cell's non-detect rule filled in (``None``: none).
+    capped: np.ndarray | None = None
     timings: dict[str, float] = field(default_factory=dict)
     _cache: dict[Any, Any] = field(default_factory=dict)
 
@@ -404,6 +406,7 @@ def build_context(
     *,
     robustness: Mapping[str, Any] | None = None,
     cell: Mapping[str, Any] | None = None,
+    comparison: str | None = None,
 ) -> TraceContext:
     """Compute everything a trace needs for one study (about a sixth of a second on the demo).
 
@@ -418,12 +421,21 @@ def build_context(
         cell: The analysis to trace, a cell of ``model.space`` (the one page traces the
             analysis in use: each Decision Card's applied option). The primary cell when not
             given. Groups stay the cell's cut-off's, held fixed in every scenario.
+        comparison: A study with several comparisons: the one traced (its id; the first when
+            not given). The space is focused on it (:meth:`QpcrSpace.focus`): its groups are
+            the traced ones, every comparison is still evaluated and corrected together, and a
+            sample set aside is set aside in every comparison. With a correction the
+            leave-one-out and reference what-if calls are computed exactly, not in closed form.
 
     Raises:
-        TraceError: The table lacks a column Trace needs.
+        TraceError: The table lacks a column Trace needs, or the comparison is not the
+            study's.
     """
     t0 = time.perf_counter()
-    space: QpcrSpace = model.space
+    try:
+        space: QpcrSpace = model.space.focus(comparison)
+    except KeyError as err:
+        raise TraceError(f"this study has no comparison {comparison!r}") from err
     cell = dict(space.primary if cell is None else cell)
     planned = cell == space.primary
     if not planned:  # a best pair is traced as the control genes it is
@@ -450,11 +462,18 @@ def build_context(
     marker = space.design.marker if space.design is not None else None
     if space.design is not None:
         labels = marker_group_names(space.design.group_var)
+    elif space.comparisons:
+        labels = space.comparisons[0].labels
     else:
         labels = tuple(model.labels) if model.labels else ("group A", "group B")
     in_hi, in_lo = space.group_masks(cell)
     values, ref_values = space.cell_arrays(cell)
-    base = space.evaluate_arrays(values, ref_values, in_hi, in_lo)
+    # values the cell's non-detect rule filled in: a group none of whose values was detected
+    # is not compared (as the space does), so every evaluation here is given them
+    capped = space.cell_capped(cell)
+    if capped is not None and not capped.any():
+        capped = None
+    base = space.evaluate_arrays(values, ref_values, in_hi, in_lo, capped=capped)
     half = base.half_ci
     baseline = {
         g: Baseline(float(base.log2fc[j]), str(base.conclusion[j]), float(half[j]))
@@ -465,7 +484,14 @@ def build_context(
     rel = values - ref_values.mean(axis=1)[:, None]
     valid = used[:, None] & ~np.isnan(rel)
     loo_log2fc, loo_call = _loo(
-        rel, valid, in_hi, in_lo, space, base.conclusion, arrays=(values, ref_values)
+        rel,
+        valid,
+        in_hi,
+        in_lo,
+        space,
+        base.conclusion,
+        arrays=(values, ref_values),
+        capped=capped,
     )
     t1 = time.perf_counter()
 
@@ -478,6 +504,13 @@ def build_context(
             if absz[i, r] > TRACE_THRESHOLDS["z"]:
                 s1_flag[int(i)] = r
     shift_log2fc, shift_call = _shift(rel, valid, in_hi, in_lo, dev / max(len(refs), 1), space)
+    if (space.comparisons and space.correction != "none") or capped is not None:
+        _corrected(
+            space, values, ref_values, in_hi, in_lo, used, expected, loo_log2fc, loo_call, capped
+        )
+        _corrected_shift(
+            space, values, ref_values, in_hi, in_lo, expected, shift_log2fc, shift_call, capped
+        )
     t2 = time.perf_counter()
 
     units_map = getattr(inputs, "units", None)
@@ -552,6 +585,7 @@ def build_context(
         confounded=confounded,
         robustness=robustness,
         cell=cell,
+        capped=capped,
     )
     matrix = getattr(model, "matrix", None)
     if not planned and _matrix_cell(cell, space):
@@ -631,6 +665,7 @@ def _loo(
     base_calls: np.ndarray,
     *,
     arrays: tuple[np.ndarray, np.ndarray] | None = None,
+    capped: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Leave-one-out log2fc and call for every (unit, item), from centred group sums.
 
@@ -658,8 +693,59 @@ def _loo(
         log2fc = np.where(mask, w.log2fc, log2fc)
         p = np.where(mask, w.p, p)
         call = np.where(mask, w.conclusion, call)
-    _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays)
+    _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays, capped)
     return log2fc, call
+
+
+def _corrected(
+    space: QpcrSpace,
+    values: np.ndarray,
+    ref_values: np.ndarray,
+    in_hi: np.ndarray,
+    in_lo: np.ndarray,
+    used: np.ndarray,
+    expected: np.ndarray,
+    loo_log2fc: np.ndarray,
+    loo_call: np.ndarray,
+    capped: np.ndarray | None = None,
+) -> None:
+    """Each unit set aside, exactly: with a correction a call depends on every comparison.
+
+    The closed form above is one Welch test; with several comparisons and a correction the
+    traced call uses the corrected p, which moves when a unit leaves its group in any of them.
+    Each traced unit is set aside in every comparison and the space evaluates it (in place).
+    """
+    del expected
+    for i in np.flatnonzero(used):
+        hi, lo = in_hi.copy(), in_lo.copy()
+        hi[i] = lo[i] = False
+        exact = space.evaluate_arrays(values, ref_values, hi, lo, capped=capped)
+        loo_log2fc[i] = np.where(np.isnan(loo_log2fc[i]), np.nan, exact.log2fc)
+        loo_call[i] = np.where(np.isnan(loo_log2fc[i]), loo_call[i], exact.conclusion)
+
+
+def _corrected_shift(
+    space: QpcrSpace,
+    values: np.ndarray,
+    ref_values: np.ndarray,
+    in_hi: np.ndarray,
+    in_lo: np.ndarray,
+    expected: np.ndarray,
+    shift_log2fc: np.ndarray,
+    shift_call: np.ndarray,
+    capped: np.ndarray | None = None,
+) -> None:
+    """One reference value read as expected, exactly (see :func:`_corrected`), in place."""
+    rows, cols = np.nonzero(np.isfinite(shift_log2fc).any(axis=2))
+    for i, r in zip(rows.tolist(), cols.tolist(), strict=True):
+        if not np.isfinite(expected[i, r]):
+            continue
+        refs = ref_values.copy()
+        refs[i, r] = expected[i, r]
+        exact = space.evaluate_arrays(values, refs, in_hi, in_lo, capped=capped)
+        keep = np.isfinite(shift_log2fc[i, r])
+        shift_log2fc[i, r] = np.where(keep, exact.log2fc, np.nan)
+        shift_call[i, r] = np.where(keep, exact.conclusion, shift_call[i, r])
 
 
 def _near_rule(log2fc: np.ndarray, p: np.ndarray, space: QpcrSpace) -> np.ndarray:
@@ -671,7 +757,7 @@ def _near_rule(log2fc: np.ndarray, p: np.ndarray, space: QpcrSpace) -> np.ndarra
     return near_fc | near_p
 
 
-def _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays=None) -> None:
+def _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays=None, capped=None) -> None:
     """Recompute exactly the leave-one-out rows that sit on the call rule's lines."""
     rows = np.flatnonzero((_near_rule(log2fc, p, space) & valid).any(axis=1))
     if not len(rows):
@@ -680,7 +766,7 @@ def _recheck(rel, valid, in_hi, in_lo, space, log2fc, p, call, arrays=None) -> N
     for i in rows:
         hi, lo = in_hi.copy(), in_lo.copy()
         hi[i] = lo[i] = False
-        exact = space.evaluate_arrays(values, refs, hi, lo)
+        exact = space.evaluate_arrays(values, refs, hi, lo, capped=capped)
         keep = valid[i]
         log2fc[i] = np.where(keep, exact.log2fc, log2fc[i])
         p[i] = np.where(keep, exact.p, p[i])
@@ -753,7 +839,7 @@ def _exact(ctx: TraceContext, key: tuple) -> ContrastArrays:
         (hi if info["group"] == "high" else lo)[row] = True
     else:
         raise ValueError(f"unknown option {kind!r}")
-    out = ctx.space.evaluate_arrays(values, refs, hi, lo)
+    out = ctx.space.evaluate_arrays(values, refs, hi, lo, capped=ctx.capped)
     ctx._cache[key] = out
     return out
 
@@ -1605,6 +1691,21 @@ def _nothing_found(ran: Iterable[str], found: Iterable[str], ntc: Mapping[str, d
     return sorted(out)
 
 
+def _corrected_p(ctx: TraceContext, j: int) -> dict[str, Any]:
+    """Several comparisons with a correction: the corrected p the call uses, and its name.
+
+    Nothing for a study with one comparison (or without a correction), so its summary and words
+    are what they were.
+    """
+    from qpilot.qpcr.contrast import CORRECTION_NAMES
+
+    space = ctx.space
+    name = CORRECTION_NAMES.get(space.correction)
+    if not space.comparisons or name is None or ctx.base.p_call is None:
+        return {}
+    return {"p_adjusted": float(ctx.base.p_call[j]), "correction": name}
+
+
 def _by_class(places: Sequence[PlaceToLook]) -> dict[str, int]:
     return {c: sum(p.consequence == c for p in places) for c in CLASSES}
 
@@ -1659,6 +1760,7 @@ def trace_gene(ctx: TraceContext, gene: str, *, top: int = 3) -> TraceResult:
         "fold": 2 ** abs(b.log2fc),
         "direction": "lower" if b.log2fc < 0 else "higher",
         "p": ctx.base.p[j],
+        **_corrected_p(ctx, j),
         "call": b.call,
         "half_ci_log2": b.half_ci,
         "ci": [2 ** (b.log2fc - b.half_ci), 2 ** (b.log2fc + b.half_ci)],
@@ -1718,7 +1820,7 @@ def _restore_all(ctx: TraceContext, root: str | None) -> dict[str, Any] | None:
             i = ctx.unit_row[unit]
             refs[i, info["ref_col"]] = info["fill"]
             (hi if info["group"] == "high" else lo)[i] = True
-        ctx._cache[ck] = ctx.space.evaluate_arrays(ctx.values, refs, hi, lo)
+        ctx._cache[ck] = ctx.space.evaluate_arrays(ctx.values, refs, hi, lo, capped=ctx.capped)
     cons = classify(ctx.baseline, _option(ctx, ctx._cache[ck]), root)
     n_high = sum(info["group"] == "high" for info in ctx.restorable.values())
     return {**_cons_view(cons), "n_samples": len(ctx.restorable), "n_to_first_group": n_high}
@@ -2275,6 +2377,7 @@ def _facts(result: TraceResult) -> dict[str, Fact]:
         ("fc", FOLD_FMT, TIMES),
         ("fold", FOLD_FMT, ""),
         ("p", P_FMT, ""),
+        ("p_adjusted", P_FMT, ""),
         ("half_ci_log2", LOG2_FMT, ""),
         ("distance_to_line_log2", LOG2_FMT, ""),
         ("max_single_effect_log2", SIGNED_FMT, ""),
@@ -2289,6 +2392,8 @@ def _facts(result: TraceResult) -> dict[str, Fact]:
         distance = abs(s["distance_to_line_log2"])
         book.add("distance_abs_log2", distance, LOG2_FMT, path="summary.distance_to_line_log2")
         book.add("distance_fold", 2**distance, FOLD_FMT, TIMES, path="summary")
+    if isinstance(s.get("correction"), str):
+        book.add("correction", s["correction"], path="summary.correction")
     for name in (
         "n_loo_flips",
         "n_places",
@@ -2669,7 +2774,7 @@ def exclusion_effect(
             continue
         for r in sorted(cols):
             refs[i, r] = ctx.ref_values[i, keep].mean() + _subset_offset(ctx, r, tuple(keep))
-    out = ctx.space.evaluate_arrays(values, refs, hi, lo)
+    out = ctx.space.evaluate_arrays(values, refs, hi, lo, capped=ctx.capped)
     return _option(ctx, out)
 
 
@@ -2690,8 +2795,11 @@ def trace_store(
     sample: str | None = None,
     well: str | None = None,
     top: int = 3,
+    comparison: str | None = None,
 ) -> TraceResult:
     """Trace a stored study, read-only: exactly one of ``gene``, ``sample`` or ``well``.
+
+    ``comparison``: a study with several comparisons, the one traced (its id; the first).
 
     The settings come from the study's confirmed design (the demo settings without one), the
     per-well table from the curve cache (nothing is written when it is absent) and the model
@@ -2707,7 +2815,7 @@ def trace_store(
     if len(given) != 1 or not isinstance(given[0][1], str):
         raise TraceError("give exactly one of gene, sample or well (PLATE:WELL)")
     _check_top(top)
-    ctx = _store_context(store, study_id)
+    ctx = _store_context(store, study_id, comparison=comparison)
     kind, value = given[0]
     if kind == "gene":
         return trace_gene(ctx, value, top=top)
@@ -2717,7 +2825,10 @@ def trace_store(
 
 
 def _store_context(
-    store: StudyStore, study_id: str, choice: Mapping[str, str] | None = None
+    store: StudyStore,
+    study_id: str,
+    choice: Mapping[str, str] | None = None,
+    comparison: str | None = None,
 ) -> TraceContext:
     """Trace's context for a stored study: the planned analysis, or the one ``choice`` names.
 
@@ -2754,12 +2865,18 @@ def _store_context(
         (primary[g].fc, primary[g].p) != (stored[g].fc, stored[g].p) for g in primary
     ):
         raise TraceError("a re-analysis does not reproduce the stored results; nothing traced")
+    robust = result.robustness
+    found = result.comparisons
+    if comparison:
+        if found is None or comparison not in {o.id for o in found.comparisons}:
+            raise TraceError(f"this study has no comparison {comparison!r}")
+        robust = next(o.robustness for o in found.comparisons if o.id == comparison)
     if choice:
         from qpilot.trace.context import cell_of
 
         cell = cell_of(model, choice)
-        return build_context(curves, model, robustness=result.robustness, cell=cell)
-    return build_context(curves, model, robustness=result.robustness)
+        return build_context(curves, model, robustness=robust, cell=cell, comparison=comparison)
+    return build_context(curves, model, robustness=robust, comparison=comparison)
 
 
 def trace_all_genes(ctx: TraceContext, *, top: int = 3) -> dict[str, TraceResult]:
