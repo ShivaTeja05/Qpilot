@@ -1659,6 +1659,21 @@ def _nothing_found(ran: Iterable[str], found: Iterable[str], ntc: Mapping[str, d
     return sorted(out)
 
 
+def _corrected_p(ctx: TraceContext, j: int) -> dict[str, Any]:
+    """Several comparisons with a correction: the corrected p the call uses, and its name.
+
+    Nothing for a study with one comparison (or without a correction), so its summary and words
+    are what they were.
+    """
+    from qpilot.qpcr.contrast import CORRECTION_NAMES
+
+    space = ctx.space
+    name = CORRECTION_NAMES.get(space.correction)
+    if not space.comparisons or name is None or ctx.base.p_call is None:
+        return {}
+    return {"p_adjusted": float(ctx.base.p_call[j]), "correction": name}
+
+
 def _by_class(places: Sequence[PlaceToLook]) -> dict[str, int]:
     return {c: sum(p.consequence == c for p in places) for c in CLASSES}
 
@@ -1713,6 +1728,7 @@ def trace_gene(ctx: TraceContext, gene: str, *, top: int = 3) -> TraceResult:
         "fold": 2 ** abs(b.log2fc),
         "direction": "lower" if b.log2fc < 0 else "higher",
         "p": ctx.base.p[j],
+        **_corrected_p(ctx, j),
         "call": b.call,
         "half_ci_log2": b.half_ci,
         "ci": [2 ** (b.log2fc - b.half_ci), 2 ** (b.log2fc + b.half_ci)],
@@ -2329,6 +2345,7 @@ def _facts(result: TraceResult) -> dict[str, Fact]:
         ("fc", FOLD_FMT, TIMES),
         ("fold", FOLD_FMT, ""),
         ("p", P_FMT, ""),
+        ("p_adjusted", P_FMT, ""),
         ("half_ci_log2", LOG2_FMT, ""),
         ("distance_to_line_log2", LOG2_FMT, ""),
         ("max_single_effect_log2", SIGNED_FMT, ""),
@@ -2343,6 +2360,8 @@ def _facts(result: TraceResult) -> dict[str, Fact]:
         distance = abs(s["distance_to_line_log2"])
         book.add("distance_abs_log2", distance, LOG2_FMT, path="summary.distance_to_line_log2")
         book.add("distance_fold", 2**distance, FOLD_FMT, TIMES, path="summary")
+    if isinstance(s.get("correction"), str):
+        book.add("correction", s["correction"], path="summary.correction")
     for name in (
         "n_loo_flips",
         "n_places",

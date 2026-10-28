@@ -157,6 +157,9 @@ def test_where_to_look_follows_the_comparison(client, studies):
     view = r.json()
     assert view["comparison"] == BA and "Drug B vs Drug A" in view["comparison_note"]
     assert "every comparison" in view["comparison_note"]
+    words = " ".join(t["plain"] for t in view["text"])
+    assert "corrected p = " in words and "(Tukey); p before correction = " in words
+    assert "corrected p below" in words
     first = client.get(f"/api/studies/{sid}/where-to-look", params={"gene": "MYC"}).json()
     assert first["comparison"] == A
     no_html(view)
