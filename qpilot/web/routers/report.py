@@ -102,6 +102,10 @@ BOTH_BASES = (
     "The options chosen on the Decision Cards are not all the recommended ones: the file holds "
     "the analysis as decided, and the recommended analysis too (marked 'recommended')."
 )
+FIGURES_ONE_BASIS = (
+    "The options chosen on the Decision Cards are not all the recommended ones: these figures "
+    "show one analysis (named in each caption); the Gene section's Figure panel shows the other."
+)
 OPEN_CARDS = (
     "Some Decision Cards are still open: the file counts them at their recommended option and "
     "says so."
@@ -284,7 +288,7 @@ def _write_tables(
             write_atomic(path, csv_zip(tables))
         elif fmt == "figures":
             progress("Drawing the figures", 0.4)
-            data, figures = figures_zip(tables, body.genes, body.basis)
+            data, figures = figures_zip(tables, body.genes, body.basis or "as_decided")
             write_atomic(path, data)
             genes = list(figures.genes)
             warnings += [f"{g} was not drawn: {why}" for g, why in figures.skipped]
@@ -320,8 +324,8 @@ def _write_tables(
     except (ExcelError, BundleError, RecordError, StudyNotFound, OSError, ValueError) as err:
         shutil.rmtree(folder, ignore_errors=True)
         raise JobError("cannot_export", f"The file could not be written: {err}") from err
-    if tables.recommended is not None and fmt != "figures":
-        warnings.append(BOTH_BASES)
+    if tables.recommended is not None:
+        warnings.append(FIGURES_ONE_BASIS if fmt == "figures" else BOTH_BASES)
     elif tables.n_open:
         warnings.append(OPEN_CARDS)
     head = tables.chain_head if record is None else record.chain_head
@@ -342,10 +346,10 @@ def _write_tables(
         record=record,
         head_moved=moved,
         warnings=warnings,
-        bases=[body.basis] if fmt == "figures" else list(tables.bases),
+        bases=[body.basis or "as_decided"] if fmt == "figures" else list(tables.bases),
         genes=genes,
     )
-    (folder / EXPORT_FILE).write_text(exported.model_dump_json(), encoding="utf-8")
+    (folder / EXPORT_FILE).write_text(exported.model_dump_json(), encoding="utf-8", newline="\n")
     return exported.model_dump(mode="json")
 
 

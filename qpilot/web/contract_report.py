@@ -59,10 +59,11 @@ class ReportExportBody(BaseModel):
     expected_head: str | None = Field(
         default=None, description="The chain head the page showed (warns when it moved since)."
     )
-    basis: Basis = Field(
-        default="as_decided",
+    basis: Basis | None = Field(
+        default=None,
         description=(
-            "figures: draw the analysis as decided on the Decision Cards (default) or the "
+            "figures: draw the analysis as decided on the Decision Cards (default, also when "
+            "left out) or the "
             "recommended one. The tables always hold the analysis as decided, and the "
             "recommended one too when it differs."
         ),

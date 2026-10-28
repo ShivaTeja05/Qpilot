@@ -8,7 +8,8 @@ schema requires:
 
 * ``cq``: the Cq of qPilot's curve analysis (LinRegPCR's TD0), as LinRegPCR writes it back;
 * ``N0``, ``ampEffMet`` (``LinRegPCR``) and ``ampEff`` (the assay's mean efficiency on the
-  plate): RDML 1.3 and later only (older versions have no such elements);
+  plate): RDML 1.3 and later only (older versions have no such elements, so a 1.0–1.2 file gets
+  the Cq and the exclusions);
 * ``excl``: for a well a person left out, ``qPilot: left out by a person: <their reason>``,
   after any exclusion text the file already had.
 
@@ -69,9 +70,11 @@ class WriteBack:
 
     def describe(self) -> str:
         """One line for a README."""
-        what = ["Cq", "N0 and efficiency"] if self.quantities else ["exclusions only"]
-        if not self.quantities and self.n_cq:
-            what = ["Cq"]
+        what = ["Cq"] if self.n_cq else []
+        if self.quantities:
+            what.append("N0 and efficiency")
+        if not what:
+            what = ["exclusions only"]
         return (
             f"RDML {self.version}: {self.n_wells} reactions matched; written: "
             f"{', '.join(what)}; {self.n_excluded} wells marked left out (excl)."
@@ -166,7 +169,7 @@ def write_back(
     if version not in DATA_ORDER:
         raise RdmlOutError(f"RDML version {version!r} is not one qPilot can write into")
     order = DATA_ORDER[version]
-    quant = quantities and version in QUANT_VERSIONS
+    quant = quantities and version in QUANT_VERSIONS  # N0 and efficiency exist from RDML 1.3
     n_wells = n_cq = n_n0 = n_excl = 0
     for experiment in (c for c in root if _local(c) == "experiment"):
         if experiment_id is not None and experiment.get("id") != experiment_id:
@@ -195,11 +198,11 @@ def write_back(
                     if row is None:
                         continue
                     n_wells += 1
+                    cq = _number(row.get("cq")) if quantities else None
+                    if cq is not None:
+                        _set(data, "cq", cq, order)
+                        n_cq += 1
                     if quant:
-                        cq = _number(row.get("cq"))
-                        if cq is not None:
-                            _set(data, "cq", cq, order)
-                            n_cq += 1
                         n0 = _number(row.get("n0"))
                         eff = _number(row.get("efficiency"))
                         if n0 is not None:

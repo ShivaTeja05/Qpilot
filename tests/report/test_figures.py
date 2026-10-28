@@ -46,7 +46,7 @@ def test_dots_are_units_and_the_numbers_are_the_engines(walked, tables):
         "WT n = 2",
         "never counted as n",
         "Welch's t test",
-        "No correction for multiple testing across the 1 genes compared",
+        "One gene was compared, so no correction for multiple testing applies",
         "reference genes GAPDH",
         "efficiency: LinRegPCR",
         "Analysis: as decided",

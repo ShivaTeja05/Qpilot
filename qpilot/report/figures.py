@@ -249,11 +249,12 @@ def _with_caption(fig: GeneFigure, tables: StudyTables, basis: str) -> GeneFigur
     else:
         parts.append(f" The engine did not compare this gene: {fig.note}.")
     correction = comp.correction
-    parts.append(
-        f" {correction}."
-        if correction
-        else f" No correction for multiple testing across the {n_genes} genes compared."
-    )
+    if correction:
+        parts.append(f" {correction}.")
+    elif n_genes == 1:
+        parts.append(" One gene was compared, so no correction for multiple testing applies.")
+    else:
+        parts.append(f" No correction for multiple testing across the {n_genes} genes compared.")
     parts.append(f" Analysis: {analysis.words.split(':')[0].lower()} ({_basis_tail(analysis)}).")
     return replace(fig, caption="".join(parts))
 
@@ -447,6 +448,15 @@ def layout(fig: GeneFigure, x0: float = 0.0, y0: float = 0.0) -> list:
     many = max((g.n for g in fig.groups), default=0)
     r = 2.6 if many <= 40 else 2.0 if many <= 120 else 1.5
     for g, cx in zip(fig.groups, centres, strict=True):
+        # The bar first, the dots over it: every unit stays visible, even on the CI line.
+        if g.mean is not None:
+            half = band * 0.26
+            items.append(Line(cx - half, y(g.mean), cx + half, y(g.mean), INK, 1.8, "mean"))
+        if g.ci_lo is not None and g.ci_hi is not None:
+            cap = band * 0.09
+            items.append(Line(cx, y(g.ci_lo), cx, y(g.ci_hi), INK, 1.1, "ci"))
+            for v in (g.ci_lo, g.ci_hi):
+                items.append(Line(cx - cap, y(v), cx + cap, y(v), INK, 1.1, "ci"))
         pts = sorted(g.points, key=lambda p: (p[1], str(p[0])))
         offsets = swarm([y(v) for _, v in pts], r, band * 0.36)
         for (unit, v), dx in zip(pts, offsets, strict=True):
@@ -461,14 +471,6 @@ def layout(fig: GeneFigure, x0: float = 0.0, y0: float = 0.0) -> list:
                     f"{unit}: log2 RQ {v:.3f}",
                 )
             )
-        if g.mean is not None:
-            half = band * 0.26
-            items.append(Line(cx - half, y(g.mean), cx + half, y(g.mean), INK, 1.8, "mean"))
-        if g.ci_lo is not None and g.ci_hi is not None:
-            cap = band * 0.09
-            items.append(Line(cx, y(g.ci_lo), cx, y(g.ci_hi), INK, 1.1, "ci"))
-            for v in (g.ci_lo, g.ci_hi):
-                items.append(Line(cx - cap, y(v), cx + cap, y(v), INK, 1.1, "ci"))
         items.append(Text(cx, bottom + 15, ((g.name, ""),), 8.5, "middle", INK, cls="group"))
         items.append(Text(cx, bottom + 27, ((f"n = {g.n}", ""),), 7.5, "middle", MUTED))
     items.append(Text(x0 + 6, y0 + 15, ((fig.gene, ""),), 10.5, "start", INK, True, cls="gene"))

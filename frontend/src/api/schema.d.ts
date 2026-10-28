@@ -10654,11 +10654,9 @@ export type components = {
         ReportExportBody: {
             /**
              * Basis
-             * @description figures: draw the analysis as decided on the Decision Cards (default) or the recommended one. The tables always hold the analysis as decided, and the recommended one too when it differs.
-             * @default as_decided
-             * @enum {string}
+             * @description figures: draw the analysis as decided on the Decision Cards (default, also when left out) or the recommended one. The tables always hold the analysis as decided, and the recommended one too when it differs.
              */
-            basis: "as_decided" | "recommended";
+            basis?: ("as_decided" | "recommended") | null;
             /**
              * Expected Head
              * @description The chain head the page showed (warns when it moved since).
