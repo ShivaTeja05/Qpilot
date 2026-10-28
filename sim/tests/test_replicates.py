@@ -272,3 +272,18 @@ def test_excluded_wells_are_marked_per_well():
     assert int(study.replicates.excluded.sum()) == 1
     # the summary leaves the excluded well out, as qPilot's matrix does
     assert study.log2_n0[0, 0] == pytest.approx(np.mean([log2_n0(20.1), log2_n0(20.2)]))
+
+
+def test_a_value_without_any_well_is_left_out_never_filled_in():
+    """A unit not measured for a gene (no well at all) is not undetermined: cap never fills it."""
+    rows = [r for s, cqs in BASE.items() for t in ("GOI", "REF") for r in wells(s, t, cqs[:1])]
+    table = pd.DataFrame(rows)
+    study = study_of(table)
+    gone = study.samples.index("b1"), study.genes.index("GOI")
+    cq, log2_n0, well = study.cq.copy(), study.log2_n0.copy(), study.well.copy()
+    cq[gone], log2_n0[gone], well[gone] = np.nan, np.nan, ""  # as a reindexed pivot leaves it
+    absent = dataclasses.replace(study, cq=cq, log2_n0=log2_n0, well=well)
+    engine = engine_of(absent)
+    assert math.isnan(unit_values(engine, nondetect="cap_min")["b1"])
+    undetermined = dataclasses.replace(study, cq=cq, log2_n0=log2_n0)  # a well that never rose
+    assert not math.isnan(unit_values(engine_of(undetermined), nondetect="cap_min")["b1"])

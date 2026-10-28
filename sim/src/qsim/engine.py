@@ -111,7 +111,9 @@ class Engine:
             self._plate_nq = (
                 nq.groupby(runs).transform("median").to_numpy().reshape(study.run.shape)
             )
-            self._undetermined = np.isnan(study.cq)
+            # a cell without any well (a unit not measured for a gene) is left out, never
+            # undetermined: no non-detect rule fills it in
+            self._undetermined = np.isnan(study.cq) & (study.well != "")
         else:
             runs = pd.Series(np.where(wells.present, wells.run, "").ravel())
             nq = pd.Series(np.where(wells.present, wells.log2_nq, np.nan).ravel())
