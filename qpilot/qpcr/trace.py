@@ -504,7 +504,7 @@ def build_context(
             if absz[i, r] > TRACE_THRESHOLDS["z"]:
                 s1_flag[int(i)] = r
     shift_log2fc, shift_call = _shift(rel, valid, in_hi, in_lo, dev / max(len(refs), 1), space)
-    if (space.comparisons and space.correction != "none") or capped is not None:
+    if not _closed_form(space) or capped is not None:
         _corrected(
             space, values, ref_values, in_hi, in_lo, used, expected, loo_log2fc, loo_call, capped
         )
@@ -660,37 +660,14 @@ def _closed_form(space: QpcrSpace) -> bool:
     """Whether a unit's what-if is the one-comparison Welch update the closed forms compute.
 
     Not for a paired comparison (it tests within-pair differences, and a unit set aside takes
-    its pair with it), nor with Holm's correction over several comparisons (the call uses the
+    its pair with it), nor with a correction over several comparisons (the call uses the
     corrected p, which moves when a unit leaves its group in any of them): those are evaluated
-    exactly, unit by unit, by :meth:`QpcrSpace.evaluate_arrays`.
+    exactly, unit by unit (:func:`_corrected`, :func:`_corrected_shift`).
     """
     specs = space.comparisons
     if not specs:
         return True
-    return not (specs[0].paired or (space.correction == "holm" and len(specs) > 1))
-
-
-def _exact_rows(
-    rel: np.ndarray,
-    in_hi: np.ndarray,
-    in_lo: np.ndarray,
-    space: QpcrSpace,
-    row: int,
-    shift: float | None = None,
-) -> ContrastArrays:
-    """The space's own evaluation with unit ``row`` set aside (or its values moved by ``shift``).
-
-    ``rel`` is the cell's relative values; with a zero normaliser :meth:`evaluate_arrays`
-    reads them as they are (a unit without control genes has NaN there already).
-    """
-    zero = np.zeros((rel.shape[0], 1))
-    if shift is None:
-        hi, lo = in_hi.copy(), in_lo.copy()
-        hi[row] = lo[row] = False
-        return space.evaluate_arrays(rel, zero, hi, lo)
-    moved = rel.copy()
-    moved[row] = moved[row] + shift
-    return space.evaluate_arrays(moved, zero, in_hi, in_lo)
+    return not (specs[0].paired or (space.correction != "none" and len(specs) > 1))
 
 
 def _loo(
@@ -709,16 +686,8 @@ def _loo(
     Dropping x from a group of n with mean m and squared deviations D: mean m - e/(n-1),
     deviations D - e^2 n/(n-1), with e = x - m. Units not used for an item get NaN and the
     baseline call. Results within ``boundary_tol`` of the call rule are recomputed exactly; a
-    paired or Holm-corrected study is evaluated exactly throughout (:func:`_closed_form`).
+    paired or corrected study is then evaluated exactly throughout (:func:`_closed_form`).
     """
-    if not _closed_form(space):
-        log2fc = np.full(rel.shape, np.nan)
-        call = np.broadcast_to(base_calls, rel.shape).astype(object)
-        for i in np.flatnonzero(valid.any(axis=1)):
-            exact = _exact_rows(rel, in_hi, in_lo, space, int(i))
-            log2fc[i] = np.where(valid[i], exact.log2fc, np.nan)
-            call[i] = np.where(valid[i], exact.conclusion, call[i])
-        return log2fc, call
     mask_hi, mask_lo = valid & in_hi[:, None], valid & in_lo[:, None]
     hi = group_stats(rel, mask_hi)
     lo = group_stats(rel, mask_lo)
@@ -758,7 +727,8 @@ def _corrected(
     """Each unit set aside, exactly: with a correction a call depends on every comparison.
 
     The closed form above is one Welch test; with several comparisons and a correction the
-    traced call uses the corrected p, which moves when a unit leaves its group in any of them.
+    traced call uses the corrected p, which moves when a unit leaves its group in any of them,
+    and a paired comparison tests within-pair differences (the unit's pair leaves with it).
     Each traced unit is set aside in every comparison and the space evaluates it (in place).
     """
     del expected
@@ -833,22 +803,12 @@ def _shift(
     ``pull[u, r]`` (deviation / k). Changing x by d in a group of n with mean m and squared
     deviations D: mean m + d/n, deviations D + 2d(x - m) + d^2 (1 - 1/n). Shape units x refs x
     items; NaN where the unit is not in the S1 population or has no value. A paired or
-    Holm-corrected study is evaluated exactly (:func:`_closed_form`).
+    corrected study is then evaluated exactly (:func:`_closed_form`).
     """
     n_units, n_items = rel.shape
     out = np.full((n_units, pull.shape[1], n_items), np.nan)
     call = np.full(out.shape, "none", dtype=object)
     if not pull.shape[1]:
-        return out, call
-    if not _closed_form(space):
-        in_group = in_hi | in_lo
-        for i, r in zip(*np.nonzero(np.isfinite(pull) & in_group[:, None]), strict=True):
-            keep = valid[i]
-            if not keep.any():
-                continue
-            exact = _exact_rows(rel, in_hi, in_lo, space, int(i), float(pull[i, r]))
-            out[i, r] = np.where(keep, exact.log2fc, np.nan)
-            call[i, r] = np.where(keep, exact.conclusion, "none")
         return out, call
     d = pull[:, :, None]
     x = rel[:, None, :]
