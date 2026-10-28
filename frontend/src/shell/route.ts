@@ -16,6 +16,12 @@ export interface Route {
   rest: string[];
   /** True when the workspace path named no section (the shell picks one). */
   bare: boolean;
+  /**
+   * The link names something that cannot be (a session or study id that is not one, a page
+   * that does not exist): the shell says so instead of quietly showing Open. A well-formed id
+   * this qPilot does not have is found out when its frame answers 404.
+   */
+  notFound: "session" | "study" | "page" | null;
   path: string;
 }
 
@@ -32,8 +38,9 @@ export function parseRoute(path: string): Route {
         return p;
       }
     });
-  const base = { kind: null, key: null, rest: [], bare: false, path };
-  if (parts.length === 0) return { ...base, section: "home" };
+  const base = { kind: null, key: null, rest: [], bare: false, notFound: null, path };
+  if (parts.length === 0 || (parts.length === 1 && parts[0] === "home"))
+    return { ...base, section: "home" };
   if (parts[0] && parts[0] !== "home" && SECTION[parts[0] as SectionId]?.scope === "global")
     return { ...base, section: parts[0] as SectionId, rest: parts.slice(1) };
   if ((parts[0] === "s" || parts[0] === "r") && parts[1] && /^[0-9a-f]{6,64}$/i.test(parts[1])) {
@@ -46,10 +53,29 @@ export function parseRoute(path: string): Route {
       key: key!,
       rest: known ? rest : [],
       bare: !known,
+      notFound: null,
       path,
     };
   }
-  return { ...base, section: "home" };
+  // a workspace link whose id is not one, or a page that does not exist
+  const notFound = parts[0] === "s" ? "session" : parts[0] === "r" ? "study" : "page";
+  return { ...base, section: "home", notFound };
+}
+
+/** What a link that leads nowhere says, and the way back. */
+export function notFoundWords(what: "session" | "study" | "page"): {
+  title: string;
+  body: string;
+} {
+  if (what === "page")
+    return {
+      title: "This page was not found (the link may be old or mistyped)",
+      body: "qPilot has no page at this address. Go back to Open to pick a study or a session.",
+    };
+  return {
+    title: `This ${what} was not found (it may have been moved or the link is old)`,
+    body: `The link names a ${what} this qPilot does not have: it may have been moved aside (by “Start a fresh demo”, say), opened in another qPilot, or the link was copied incompletely. Open the file again, or pick a ${what === "session" ? "session" : "study"} you have.`,
+  };
 }
 
 /** The current route. */
