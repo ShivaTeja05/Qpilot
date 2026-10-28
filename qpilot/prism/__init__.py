@@ -256,11 +256,10 @@ def export_study(
         mode="xml",
     )
     entries = _decision_entries(store, study_id)
-    bundle = bundle.model_copy(
-        update={
-            "info": {**bundle.info, **write_projects(bundle, inputs, directory, entries=entries)}
-        }
+    written_info = write_projects(
+        bundle, inputs, directory, entries=entries, labels=_option_labels(store, study_id)
     )
+    bundle = bundle.model_copy(update={"info": {**bundle.info, **written_info}})
     undecided = [c.card_id for c in inputs.choices if c.actor is None]
     if undecided:
         notes.append(
@@ -325,6 +324,14 @@ def _decision_entries(store: StudyStore, study_id: str) -> list[Any]:
         return list(store.entries(study_id))
     except (OSError, ValueError, KeyError):
         return []
+
+
+def _option_labels(store: StudyStore, study_id: str) -> dict[str, dict[str, str]]:
+    """Each Decision Card's options in words (for the Info sheet); empty when unreadable."""
+    try:
+        return {c.id: {o.id: o.label for o in c.options} for c in store.cards(study_id)}
+    except (OSError, ValueError, KeyError, AttributeError):
+        return {}
 
 
 def _export_scripts_only(

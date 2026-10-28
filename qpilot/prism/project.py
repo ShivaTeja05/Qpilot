@@ -66,7 +66,7 @@ CARD_WORDS = {
 }
 ACTOR_WORDS = {
     "human": "decided by a person",
-    "system": "set by qPilot (it changes no conclusion)",
+    "system": "set by qPilot: it changes no conclusion",
     None: "not decided yet: the recommended option",
 }
 
@@ -306,10 +306,18 @@ def _reasons(entries: Sequence[Any]) -> dict[str, str]:
 
 
 def info_sheet(
-    bundle: PrismBundle, inputs: ExportInputs, entries: Sequence[Any] = ()
+    bundle: PrismBundle,
+    inputs: ExportInputs,
+    entries: Sequence[Any] = (),
+    labels: dict[str, dict[str, str]] | None = None,
 ) -> pzfx.ProjectInfo:
-    """The Info sheet: qPilot's provenance as constants (key facts) and notes (sentences)."""
+    """The Info sheet: qPilot's provenance as constants (key facts) and notes (sentences).
+
+    ``labels`` gives each card's options in words (card id -> option id -> label), from the
+    study's Decision Cards; without it the option ids are shown.
+    """
     reasons = _reasons(entries)
+    labels = labels or {}
     constants: list[tuple[str, str]] = [
         ("qPilot study", bundle.study_id),
         ("qPilot record", bundle.record_ref),
@@ -333,12 +341,13 @@ def info_sheet(
     for choice in inputs.choices:
         title = CARD_WORDS.get(choice.card_id, choice.card_id.removeprefix("card_"))
         who = ACTOR_WORDS.get(choice.actor, f"decided by {choice.actor}")
-        value = f"{choice.option} ({who})"
-        constants.append((f"Choice: {title}", value))
+        words = labels.get(choice.card_id, {})
+        option = words.get(choice.option, choice.option)
+        constants.append((f"Choice: {title}", f"{option} ({who})"))
         reason = reasons.get(choice.card_id)
-        note = f"{title}: {choice.option}, {who}"
+        note = f"{title}: {option}, {who}"
         if choice.option != choice.recommended:
-            note += f" (qPilot recommended {choice.recommended})"
+            note += f" (qPilot recommended {words.get(choice.recommended, choice.recommended)})"
         notes.append(note + (f". Reason: {reason}" if reason and choice.actor else "."))
     caption = bundle.info.get("caption")
     if caption:
@@ -374,6 +383,7 @@ def write_projects(
     out_dir: str | Path,
     *,
     entries: Sequence[Any] = (),
+    labels: dict[str, dict[str, str]] | None = None,
 ) -> dict[str, str]:
     """Write the project file(s) into ``out_dir``; return the ``info`` entries that name them.
 
@@ -385,7 +395,7 @@ def write_projects(
     directory = Path(out_dir)
     texts = {t.csv: (directory / t.csv).read_text(encoding="utf-8") for t in bundle.tables}
     main, nested = project_tables(bundle, texts)
-    info = info_sheet(bundle, inputs, entries)
+    info = info_sheet(bundle, inputs, entries, labels)
     written: dict[str, str] = {}
     try:
         data = pzfx.write_project(main, info, version=_version())

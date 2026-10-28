@@ -211,6 +211,13 @@ function ProjectSteps({ result, project }: { result: PrismSent; project: string 
           ) : null}
         </div>
         {steps ? <Steps steps={steps.steps} label={`On ${steps.label}`} /> : null}
+        {result.replicates_project ? (
+          <p className="text-[12.5px] text-muted">
+            The technical replicates are in{" "}
+            <span className="font-mono text-fg">{result.replicates_project}</span> (one Nested table
+            per gene, for Prism&rsquo;s nested t test): open it the same way.
+          </p>
+        ) : null}
       </section>
       <section aria-labelledby="prism-analyse-title" className="flex flex-col gap-1.5">
         <h3 id="prism-analyse-title" className="text-[13px] font-semibold text-fg">
