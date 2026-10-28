@@ -366,6 +366,7 @@ def prepare_curve_check(ctx: AppContext, sid: str) -> Any:
 
 
 CURVES_S = 15.0  # the demo's curves read for the Curve Judge, measured
+FOLLOW_S = 0.5  # events are gathered this long before what they make next is prepared
 
 
 def follow_new_studies(ctx: AppContext, app: Any) -> None:
@@ -406,7 +407,7 @@ def follow_new_studies(ctx: AppContext, app: Any) -> None:
 
     def later() -> None:
         if not timer:
-            t = threading.Timer(2.0, run)
+            t = threading.Timer(FOLLOW_S, run)
             t.daemon = True
             timer.append(t)
             t.start()
