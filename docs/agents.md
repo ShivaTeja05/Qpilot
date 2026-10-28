@@ -116,7 +116,7 @@ The page's **Agents** section (`GET /api/agents`) is where a person sees what ag
 * **Recent agent activity**, newest first: requests and choices on Decision Cards, and proposals in Studio inboxes, with what happened to each. For a Studio session whose design and curves are not both confirmed, the requests and entries are counted but not listed (the page is blind there, as for any result).
 * **What an agent may do on its own** is a setting of each study, changed with the autonomy switch in the study's top bar (`PUT /api/studies/{id}/autonomy`): *Suggest* (the default; every request waits) or *Decide and tell me* (a choice that cannot change any conclusion is applied and the person is told). Each change is kept beside the decision chain, recorded as a person's.
 
-[`user-guide.md`](user-guide.md#12-agents) describes the section for scientists.
+[`user-guide.md`](user-guide.md#21-agents) describes the section for scientists.
 
 ### The Decision Simulator's tools (when it is installed)
 With the simulator installed (`pip install -e '.[sim]'` from a clone), the same server also serves five read-only `sim_*` tools

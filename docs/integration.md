@@ -8,7 +8,7 @@ Research use only.
 
 The audit is part of the one page: its **Audit** section runs it (a job with stages), shows the
 verdicts, the what-if lab and the checks, and writes to the same place as the command line below
-(`<study store>/simulator_audits/<study id>/`). [user-guide.md](user-guide.md#9-audit) describes the
+(`<study store>/simulator_audits/<study id>/`). [user-guide.md](user-guide.md#13-audit) describes the
 section; this document describes what runs behind it.
 
 ```bash
