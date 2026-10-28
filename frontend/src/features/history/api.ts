@@ -37,14 +37,24 @@ export function isWarming(q: { failureReason: Error | null }): boolean {
   return q.failureReason instanceof ApiError && q.failureReason.code === "warming";
 }
 
-export function useHistory(key: string, studyId: string | null | undefined) {
+/** The comparison replayed, as the routes' `?comparison=` (none: the study's first). */
+const shown = (comparison: string | null | undefined) => (comparison ? { comparison } : {});
+
+/** The chain replayed (a study with several comparisons: the calls of `comparison`). */
+export function useHistory(
+  key: string,
+  studyId: string | null | undefined,
+  comparison: string | null = null,
+) {
   return useQuery({
-    queryKey: ["w", key, "history", studyId],
+    queryKey: ["w", key, "history", studyId, comparison],
     enabled: Boolean(studyId),
     ...warmingRetry,
     queryFn: () =>
       unwrap(
-        api.GET("/api/studies/{study_id}/history", { params: { path: { study_id: studyId! } } }),
+        api.GET("/api/studies/{study_id}/history", {
+          params: { path: { study_id: studyId! }, query: shown(comparison) },
+        }),
       ),
   });
 }
@@ -54,15 +64,19 @@ export function useHistoryDiff(
   studyId: string | null | undefined,
   from: number | null,
   to: number | null,
+  comparison: string | null = null,
 ) {
   return useQuery({
-    queryKey: ["w", key, "history-diff", studyId, from, to],
+    queryKey: ["w", key, "history-diff", studyId, from, to, comparison],
     enabled: Boolean(studyId) && from != null && to != null,
     ...warmingRetry,
     queryFn: () =>
       unwrap(
         api.GET("/api/studies/{study_id}/history/diff", {
-          params: { path: { study_id: studyId! }, query: { from: from!, to: to! } },
+          params: {
+            path: { study_id: studyId! },
+            query: { from: from!, to: to!, ...shown(comparison) },
+          },
         }),
       ),
   });

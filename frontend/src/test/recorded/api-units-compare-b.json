@@ -1,0 +1,462 @@
+{
+ "study_id": "d7884e436570",
+ "gene": "MYC",
+ "points": [
+  {
+   "unit": "DrugB_D1",
+   "group": "high",
+   "samples": [
+    "DrugB_D1"
+   ],
+   "x": 3.747940417700874,
+   "value": "13.44× higher",
+   "capped": false,
+   "n_wells": 3,
+   "cq_range": 0.1,
+   "wells": [
+    {
+     "plate": "MYC_plate",
+     "well": "C1",
+     "sample": "DrugB_D1",
+     "cq": "23.0",
+     "cq_value": 23.0134,
+     "x": 3.7901350153359625,
+     "value": "13.83× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "C2",
+     "sample": "DrugB_D1",
+     "cq": "23.1",
+     "cq_value": 23.0584,
+     "x": 3.750243354754321,
+     "value": "13.46× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "C3",
+     "sample": "DrugB_D1",
+     "cq": "23.1",
+     "cq_value": 23.1113,
+     "x": 3.7034428830123356,
+     "value": "13.03× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    }
+   ]
+  },
+  {
+   "unit": "DrugB_D2",
+   "group": "high",
+   "samples": [
+    "DrugB_D2"
+   ],
+   "x": 2.416400574136325,
+   "value": "5.34× higher",
+   "capped": false,
+   "n_wells": 3,
+   "cq_range": 0.08,
+   "wells": [
+    {
+     "plate": "MYC_plate",
+     "well": "C4",
+     "sample": "DrugB_D2",
+     "cq": "25.7",
+     "cq_value": 25.7112,
+     "x": 2.4546847965927365,
+     "value": "5.48× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "C5",
+     "sample": "DrugB_D2",
+     "cq": "25.8",
+     "cq_value": 25.7561,
+     "x": 2.414934166699694,
+     "value": "5.33× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "C6",
+     "sample": "DrugB_D2",
+     "cq": "25.8",
+     "cq_value": 25.7961,
+     "x": 2.379582759116541,
+     "value": "5.20× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    }
+   ]
+  },
+  {
+   "unit": "DrugB_D3",
+   "group": "high",
+   "samples": [
+    "DrugB_D3"
+   ],
+   "x": 2.0381715714327586,
+   "value": "4.11× higher",
+   "capped": false,
+   "n_wells": 3,
+   "cq_range": 0.11,
+   "wells": [
+    {
+     "plate": "MYC_plate",
+     "well": "C7",
+     "sample": "DrugB_D3",
+     "cq": "27.0",
+     "cq_value": 27.0388,
+     "x": 2.0866045729475764,
+     "value": "4.25× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "C8",
+     "sample": "DrugB_D3",
+     "cq": "27.1",
+     "cq_value": 27.0916,
+     "x": 2.0398344865025915,
+     "value": "4.11× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "C9",
+     "sample": "DrugB_D3",
+     "cq": "27.1",
+     "cq_value": 27.15,
+     "x": 1.9880756548481116,
+     "value": "3.97× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    }
+   ]
+  },
+  {
+   "unit": "DrugB_D4",
+   "group": "high",
+   "samples": [
+    "DrugB_D4"
+   ],
+   "x": 3.2303920039572698,
+   "value": "9.39× higher",
+   "capped": false,
+   "n_wells": 3,
+   "cq_range": 0.08,
+   "wells": [
+    {
+     "plate": "MYC_plate",
+     "well": "C10",
+     "sample": "DrugB_D4",
+     "cq": "26.6",
+     "cq_value": 26.6186,
+     "x": 3.266378735087574,
+     "value": "9.62× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "C11",
+     "sample": "DrugB_D4",
+     "cq": "26.7",
+     "cq_value": 26.6563,
+     "x": 3.2329813707172224,
+     "value": "9.40× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "C12",
+     "sample": "DrugB_D4",
+     "cq": "26.7",
+     "cq_value": 26.7028,
+     "x": 3.1918159060670095,
+     "value": "9.14× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    }
+   ]
+  },
+  {
+   "unit": "Control_D1",
+   "group": "rest",
+   "samples": [
+    "Control_D1"
+   ],
+   "x": 0.6377054278577456,
+   "value": "1.56× higher",
+   "capped": false,
+   "n_wells": 3,
+   "cq_range": 0.14,
+   "wells": [
+    {
+     "plate": "MYC_plate",
+     "well": "A1",
+     "sample": "Control_D1",
+     "cq": "25.2",
+     "cq_value": 25.2216,
+     "x": 0.6960739927128432,
+     "value": "1.62× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "A2",
+     "sample": "Control_D1",
+     "cq": "25.3",
+     "cq_value": 25.277,
+     "x": 0.6470609745135447,
+     "value": "1.57× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "A3",
+     "sample": "Control_D1",
+     "cq": "25.4",
+     "cq_value": 25.364,
+     "x": 0.5699813163468508,
+     "value": "1.48× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    }
+   ]
+  },
+  {
+   "unit": "Control_D2",
+   "group": "rest",
+   "samples": [
+    "Control_D2"
+   ],
+   "x": -0.3062160167693695,
+   "value": "1.24× lower",
+   "capped": false,
+   "n_wells": 3,
+   "cq_range": 0.08,
+   "wells": [
+    {
+     "plate": "MYC_plate",
+     "well": "A4",
+     "sample": "Control_D2",
+     "cq": "27.5",
+     "cq_value": 27.5325,
+     "x": -0.27093117483587514,
+     "value": "1.21× lower",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "A5",
+     "sample": "Control_D2",
+     "cq": "27.6",
+     "cq_value": 27.5761,
+     "x": -0.3094948020211157,
+     "value": "1.24× lower",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "A6",
+     "sample": "Control_D2",
+     "cq": "27.6",
+     "cq_value": 27.6086,
+     "x": -0.33822207345111943,
+     "value": "1.26× lower",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    }
+   ]
+  },
+  {
+   "unit": "Control_D3",
+   "group": "rest",
+   "samples": [
+    "Control_D3"
+   ],
+   "x": -0.7460427206145401,
+   "value": "1.68× lower",
+   "capped": false,
+   "n_wells": 3,
+   "cq_range": 0.1,
+   "wells": [
+    {
+     "plate": "MYC_plate",
+     "well": "A7",
+     "sample": "Control_D3",
+     "cq": "28.9",
+     "cq_value": 28.9172,
+     "x": -0.7053791377825047,
+     "value": "1.63× lower",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "A8",
+     "sample": "Control_D3",
+     "cq": "29.0",
+     "cq_value": 28.9583,
+     "x": -0.7417275666993004,
+     "value": "1.67× lower",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "A9",
+     "sample": "Control_D3",
+     "cq": "29.0",
+     "cq_value": 29.0139,
+     "x": -0.7910214573618153,
+     "value": "1.73× lower",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    }
+   ]
+  },
+  {
+   "unit": "Control_D4",
+   "group": "rest",
+   "samples": [
+    "Control_D4"
+   ],
+   "x": 0.414553309526164,
+   "value": "1.33× higher",
+   "capped": false,
+   "n_wells": 3,
+   "cq_range": 0.1,
+   "wells": [
+    {
+     "plate": "MYC_plate",
+     "well": "A10",
+     "sample": "Control_D4",
+     "cq": "28.5",
+     "cq_value": 28.5099,
+     "x": 0.4569713959292865,
+     "value": "1.37× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "A11",
+     "sample": "Control_D4",
+     "cq": "28.6",
+     "cq_value": 28.5566,
+     "x": 0.41557587016826103,
+     "value": "1.33× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    },
+    {
+     "plate": "MYC_plate",
+     "well": "A12",
+     "sample": "Control_D4",
+     "cq": "28.6",
+     "cq_value": 28.6069,
+     "x": 0.3711126624809462,
+     "value": "1.29× higher",
+     "state": "used",
+     "late": false,
+     "flagged": false
+    }
+   ]
+  }
+ ],
+ "groups": {
+  "high": {
+   "label": "Drug B",
+   "n": 4,
+   "missing": 0,
+   "mean": 2.858226141806807,
+   "ci": [
+    1.626424045536848,
+    4.090028238076766
+   ],
+   "mean_text": "7.25× higher",
+   "ci_text": "3.09× higher to 17.03× higher"
+  },
+  "rest": {
+   "label": "Control",
+   "n": 4,
+   "missing": 0,
+   "mean": 0.0,
+   "ci": [
+    -1.0184120929028464,
+    1.0184120929028464
+   ],
+   "mean_text": "1.00× higher",
+   "ci_text": "2.03× lower to 2.03× higher"
+  }
+ },
+ "fold": "7.25× higher",
+ "fold_log2": 2.858226141806807,
+ "fold_ci": [
+  1.6187418399077502,
+  4.097710443705863
+ ],
+ "fold_ci_text": "3.07× to 17.12×",
+ "p": 0.0014298841227623575,
+ "refs": [
+  "ACTB",
+  "GAPDH"
+ ],
+ "undetermined": "drop",
+ "replicates": true,
+ "most_wells": 3,
+ "late_cut": "35",
+ "at_plan": true,
+ "how": [
+  "Each large dot is one biological unit: the amount of MYC divided by the mean of its control genes (ACTB, GAPDH), from each well's curve and efficiency, shown relative to the mean of Control.",
+  "The small dots on a unit's line are its replicate wells. The unit's value is the mean of their log2 amounts, so replicate wells are never counted as samples: the groups compare units.",
+  "The bar is each group's mean and the band its 95 % confidence interval, from the units' values (not the wells)."
+ ],
+ "line_log2": 1.0,
+ "line": "2×",
+ "comparison": "drug_b_vs_control",
+ "comparison_label": "Drug B vs Control",
+ "paired": false,
+ "p_adjusted": 0.002859768245524715,
+ "correction": "Holm",
+ "q": 0.002144826184143536
+}

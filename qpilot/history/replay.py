@@ -15,6 +15,11 @@ state after the *k*-th entry of ``decisions.jsonl``. At every step:
 
 Nothing is estimated: a step whose analysis the grid does not hold is reported as not
 replayable, with the reason.
+
+A study with several comparisons replays one at a time (``comparison``, its id; the first by
+default): the choices in force are the study's (a card's choice applies to every comparison),
+read from the study's grid as always, and each step's calls are that comparison's rows of
+``grid_comparisons.csv`` at the same analysis (its stored contrasts at the planned one).
 """
 
 from __future__ import annotations
@@ -54,6 +59,10 @@ MAX_CACHED = 4
 NOT_REPLAYABLE = (
     "This study's grid of analyses does not hold its planned analysis, so only the analysis as "
     "planned can be shown, not what each decision changed."
+)
+COMPARISON_NOTE = (
+    "This study has several comparisons. A choice on a Decision Card applies to every one; the "
+    "calls shown at each step are the comparison picked here."
 )
 NO_GRID = (
     "This study has no grid of analyses (grid.csv), so only the analysis as planned can be "
@@ -95,6 +104,7 @@ class Chain:
     step_analysis: list[int | None]  # step k -> index into analyses
     analyses: list[Analysis]
     note: str | None
+    comparison: str | None = None  # the comparison replayed (None: the study's first)
 
     @property
     def head(self) -> str:
@@ -203,17 +213,31 @@ def _at_recommended(cards: Sequence[DecisionCard]) -> bool:
     return all(c.decision is None or c.decision == c.recommended for c in cards)
 
 
-def load_chain(store: StudyStore, study_id: str) -> Chain:
-    """Read a study's chain, cards, results and grid, and replay every step."""
-    result = store.get(study_id)
+def load_chain(store: StudyStore, study_id: str, comparison: str | None = None) -> Chain:
+    """Read a study's chain, cards, results and grid, and replay every step.
+
+    ``comparison``: a study with several comparisons, the one replayed (``UnknownComparison``
+    for an id the study does not have).
+    """
+    from qpilot.web.compare_views import comparison_grid, outcome_of, shown_result
+
+    stored = store.get(study_id)
+    outcome = outcome_of(stored, comparison)
     cards = store.cards(study_id)
     entries = store.entries(study_id)
-    root = result.input_sha256
+    root = stored.input_sha256
     broken = verify_chain(entries, root)
-    grid = rv.load_grid(store, result)
+    grid = rv.load_grid(store, stored)  # the choices in force are read from the study's grid
     replayable = grid is not None and grid.planned is not None
     mapped = rv.card_options(grid, cards) if replayable else {}
     note = None if replayable else (NO_GRID if grid is None else NOT_REPLAYABLE)
+    shown = None if outcome is None or outcome.primary else outcome.id
+    result = shown_result(stored, outcome)
+    calls_grid = grid
+    if shown is not None and grid is not None:  # that comparison's rows at the same analyses
+        calls_grid = comparison_grid(store, study_id, shown, grid)
+        if calls_grid is None:
+            replayable, note = False, NO_GRID
 
     analyses: list[Analysis] = []
     by_key: dict[tuple, int] = {}
@@ -233,7 +257,9 @@ def load_chain(store: StudyStore, study_id: str) -> Chain:
             step_analysis.append(None)
             continue
         if key not in by_key:
-            genes = _planned_genes(result) if planned else _cell_genes(result, grid, choice)  # type: ignore[arg-type]
+            genes = (
+                _planned_genes(result) if planned else _cell_genes(result, calls_grid, choice)  # type: ignore[arg-type]
+            )
             by_key[key] = len(analyses)
             analyses.append(Analysis(len(analyses), planned, choice, genes))
         step_analysis.append(by_key[key])
@@ -251,6 +277,7 @@ def load_chain(store: StudyStore, study_id: str) -> Chain:
         step_analysis=step_analysis,
         analyses=analyses,
         note=note,
+        comparison=shown,
     )
 
 
@@ -429,11 +456,17 @@ def carry_note(store: StudyStore, study_id: str, cards: Sequence[DecisionCard]) 
     )
 
 
-def history_view(store: StudyStore, study_id: str, session: str | None = None) -> HistoryView:
-    """Every step of a study's decision chain with the analysis in force and its calls."""
-    from qpilot.history.studio import studio_context
+def history_view(
+    store: StudyStore, study_id: str, session: str | None = None, comparison: str | None = None
+) -> HistoryView:
+    """Every step of a study's decision chain with the analysis in force and its calls.
 
-    chain = load_chain(store, study_id)
+    ``comparison``: a study with several comparisons, the one whose calls are replayed.
+    """
+    from qpilot.history.studio import studio_context
+    from qpilot.web.compare_views import tabs
+
+    chain = load_chain(store, study_id, comparison)
     result = chain.result
     genes = list(result.contrasts)
     audit = _audit_mark(chain)
@@ -527,6 +560,9 @@ def history_view(store: StudyStore, study_id: str, session: str | None = None) -
         related=related,
         carry=carry_note(store, study_id, chain.cards),
         audit=audit,
+        comparison=chain.comparison or (tabs(result)[0]["id"] if tabs(result) else None),
+        comparisons=tabs(store.get(study_id)),
+        comparison_note=COMPARISON_NOTE if tabs(result) else None,
     )
 
 
@@ -619,9 +655,11 @@ def change_sentence(calls: Sequence[GeneChange], n_moved: int) -> str:
     return f"{_plural(len(calls), 'call')} changed ({names}); {folds} moved."
 
 
-def diff_steps(store: StudyStore, study_id: str, from_seq: int, to_seq: int) -> HistoryDiff:
+def diff_steps(
+    store: StudyStore, study_id: str, from_seq: int, to_seq: int, comparison: str | None = None
+) -> HistoryDiff:
     """What changed between two steps of a study's chain (``HistoryError`` when it cannot say)."""
-    chain = load_chain(store, study_id)
+    chain = load_chain(store, study_id, comparison)
     before = chain.analysis_at(from_seq)
     after = chain.analysis_at(to_seq)
     if before is None or after is None:

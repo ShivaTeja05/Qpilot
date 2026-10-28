@@ -1,6 +1,6 @@
 {
- "study_id": "bf527c87b280",
- "head": "c2ee4862fab8d48bf0dc944303953aa63d994e262ec2303efa8ff0ccca5df196",
+ "study_id": "d7884e436570",
+ "head": "e4317e94fd472dbe5cba03ee10a12195f875bf748917e3cf17615eda5953c1e1",
  "cards": [
   {
    "card": {
@@ -1118,7 +1118,7 @@
     "decision": "drop",
     "reason": "Decided automatically: no option on this card changes any conclusion.",
     "decided_by": "system",
-    "decided_at": "2026-10-28T17:56:45Z"
+    "decided_at": "2026-10-28T18:30:50Z"
    },
    "title": "What to do with wells that never amplified",
    "status_line": "Decided automatically: no option on this card changes any conclusion.",

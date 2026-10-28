@@ -8412,6 +8412,22 @@ export type components = {
             summary: string;
         };
         /**
+         * HistoryComparisonTab
+         * @description One comparison of a study with several (the History's picker).
+         */
+        HistoryComparisonTab: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** N Down */
+            n_down: number;
+            /** N Up */
+            n_up: number;
+            /** Primary */
+            primary: boolean;
+        };
+        /**
          * HistoryDiff
          * @description What changed between two steps of the chain (or two analyses of the same file).
          */
@@ -8593,6 +8609,19 @@ export type components = {
             carry?: components["schemas"]["CarryNote"] | null;
             /** Chain Intact */
             chain_intact: boolean;
+            /**
+             * Comparison
+             * @description A study with several comparisons: the one replayed (its id).
+             */
+            comparison?: string | null;
+            /** Comparison Note */
+            comparison_note?: string | null;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: every one (the picker).
+             * @default []
+             */
+            comparisons: components["schemas"]["HistoryComparisonTab"][];
             /**
              * Created At
              * @description When this analysis was made.
@@ -12980,6 +13009,12 @@ export type components = {
              * @description False for an analysis a Studio session has moved on from (sign off the current one); why_not says so.
              */
             can_sign_off: boolean;
+            /**
+             * Comparisons
+             * @description A study with several comparisons: each one and its headline genes' calls, with the p each call used (corrected when the study corrects), one line each.
+             * @default []
+             */
+            comparisons: components["schemas"]["FactText"][];
             evidence: components["schemas"]["qpilot__web__contract_evidence__EvidenceView"];
             /**
              * Head
@@ -19218,7 +19253,10 @@ export interface operations {
     };
     get_history: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description A study with several comparisons: the one replayed (its id; the first). */
+                comparison?: string | null;
+            };
             header?: never;
             path: {
                 study_id: string;
@@ -19284,6 +19322,8 @@ export interface operations {
     get_history_diff: {
         parameters: {
             query?: {
+                /** @description A study with several comparisons: the one replayed (its id; the first). */
+                comparison?: string | null;
                 /** @description The earlier step (0: as analysed). */
                 from?: number | null;
                 /** @description The later step. */

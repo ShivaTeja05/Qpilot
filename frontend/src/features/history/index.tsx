@@ -30,6 +30,8 @@ import { DiffPanel } from "./DiffPanel";
 import { StepPanel } from "./StepPanel";
 import { StudioLog } from "./StudioLog";
 import { Timeline } from "./Timeline";
+import { useShownComparison } from "@/features/results/comparison";
+import { ComparisonPicker } from "@/features/results/ComparisonsPanel";
 import { isWarming, useHistory, type HistoryView } from "./api";
 import {
   buildTrack,
@@ -304,7 +306,9 @@ export default function HistorySection({ workspace }: SectionProps) {
   const [, navigate] = useLocation();
   const key = workspace?.key ?? "";
   const studyId = workspace?.results_visible ? workspace.study_id : null;
-  const history = useHistory(key, studyId);
+  // A study with several comparisons replays one at a time (shared with Results and Trace).
+  const [comparison, setComparison] = useShownComparison(studyId);
+  const history = useHistory(key, studyId, comparison);
   const view = history.data;
   const prior = view ? earlierStudy(view) : null;
   const earlier = useHistory(key, prior?.study_id ?? null);
@@ -361,6 +365,20 @@ export default function HistorySection({ workspace }: SectionProps) {
         >
           {view.note}
         </p>
+      ) : null}
+      {(view.comparisons ?? []).length > 1 ? (
+        <div className="mb-4 flex flex-col gap-1.5" data-testid="history-comparisons">
+          <ComparisonPicker
+            tabs={view.comparisons}
+            value={view.comparison ?? view.comparisons[0]!.id}
+            onChange={setComparison}
+          />
+          {view.comparison_note ? (
+            <p className="text-[12.5px] text-muted" role="status">
+              {view.comparison_note}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       <HistoryBody
         wkey={key}
