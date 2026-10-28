@@ -355,7 +355,7 @@ def _set_aside(plan: _Plan, left_out: Mapping[str, LeftOut]) -> None:
             unit,
             target,
             wells=[key],
-            reason=_left_out_reason(rec, "it"),
+            reason=_left_out_reason(rec, "this well"),
             consequence=_matters(rec),
             repeat=[target],
         )
@@ -366,7 +366,7 @@ def _set_aside(plan: _Plan, left_out: Mapping[str, LeftOut]) -> None:
             unit,
             None,
             wells=keys,
-            reason=_left_out_reason(rec, "the whole sample"),
+            reason=_left_out_reason(rec, "the whole sample (every well)"),
             consequence=_matters(rec),
             repeat=[target] if target else [],
             scope="sample",
@@ -374,9 +374,9 @@ def _set_aside(plan: _Plan, left_out: Mapping[str, LeftOut]) -> None:
 
 
 def _left_out_reason(rec: LeftOut, what: str) -> RepeatReason:
-    by = f" from {rec.by}" if rec.by and rec.by != "the design" else ""
-    words = f"A person left {what} out of the analysis{by}"
-    words += f": “{rec.reason}”." if rec.reason else " (the design leaves it out)."
+    by = f", from {rec.by}" if rec.by and rec.by != "the design" else ""
+    words = f"{what}{by}"
+    words += f", because: “{rec.reason}”" if rec.reason else " (the design leaves it out)."
     return RepeatReason(source="set_aside", code="left_out", words=words)
 
 
@@ -402,18 +402,15 @@ def _absent(plan: _Plan) -> None:
                 continue
             keys = [f"{r['plate']}/{r['well']}"] if r.get("plate") and r.get("well") else []
             if r.get("reason") == "not_measured_for_every_gene":
-                words = f"Sample {unit} is in no comparison: it was not measured for {target}."
+                words = f"it was not measured for {target}, so it is in no comparison."
             else:
                 what = "reference" if r.get("reason") == "empty_reference_well" else "marker"
                 where = f" (plate {r['plate']}, well {r['well']})" if keys else ""
-                words = (
-                    f"Sample {unit} is in no comparison: its {target} {what} well{where} has no "
-                    "value"
-                )
+                words = f"its {target} {what} well{where} has no value"
                 codes = r.get("note_codes") or ()
-                words += (
-                    ": LinRegPCR found no amplification." if "no_amplification" in codes else "."
-                )
+                if "no_amplification" in codes:
+                    words += " (LinRegPCR found no amplification)"
+                words += ", so the sample is in no comparison."
             if effect is not None:
                 words += " Read from the sample's other reference wells, bringing it back " + (
                     f"changes the call of {', '.join(changed)}." if changed else "changes no call."
@@ -456,8 +453,8 @@ def _no_amplification(plan: _Plan) -> None:
             if others / n_other < EXPECTED_SHARE:
                 continue  # the gene often does not amplify: that may be the biology
             words = (
-                f"No amplification in {target} for sample {unit}, while it amplified in {others} "
-                f"of the {n_other} other compared samples"
+                f"{target} did not amplify in this sample, while it amplified in {others} of the "
+                f"{n_other} other compared samples"
             )
             words += (
                 ": its value is set to the lowest one seen (capped)."
@@ -467,8 +464,8 @@ def _no_amplification(plan: _Plan) -> None:
             cons = "unknown" if capped else "no_value"
         else:
             words = (
-                f"{len(keys)} of sample {unit}'s {n_wells} {target} replicate wells did not "
-                "amplify while the others did."
+                f"{len(keys)} of the sample's {n_wells} {target} replicate wells did not amplify "
+                "while the others did."
             )
             cons = "unknown"
         plan.add(
@@ -509,12 +506,12 @@ def _trace(plan: _Plan) -> set[str]:
                 words = trace_engine.CHECKS.get(code)
                 if words is None:
                     continue
-                at = f"plate {place.plate}, well {place.well}" if place.well else "the tube"
+                at = f"plate {place.plate}, well {place.well}" if place.well else "the sample"
                 reason = RepeatReason(
                     source="trace",
                     code=code,
                     words=(
-                        f"Trace ({at}): looks like {words['looks_like']}; consistent with "
+                        f"at {at}, it looks like {words['looks_like']}; consistent with "
                         f"{words['consistent_with']}."
                     ),
                     what_to_check=words["what_to_check"],
@@ -723,6 +720,11 @@ def build_plan(
                 "value for every repeated gene, nothing points at it); any sample of the original "
                 "plates works."
             )
+    elif any(i.repeat for i in items):
+        notes.append(
+            "No item changes a call or lacks a value, so the plate is empty: put every item on "
+            "it to re-run them anyway."
+        )
     else:
         notes.append("Nothing points at a reaction to re-run.")
     left = [i for i in items if i.repeat and not i.on_plate]

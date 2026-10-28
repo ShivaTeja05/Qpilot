@@ -61,7 +61,7 @@ from qpilot.qpcr.evidence import (
     EvidenceLedger,
     evidence_store,
 )
-from qpilot.qpcr.repeat import CONSEQUENCE_WORDS, RepeatPlan
+from qpilot.qpcr.repeat import CONSEQUENCE_WORDS, SOURCE_WORDS, RepeatPlan
 from qpilot.schemas import Conclusion, Fact, StudyResult
 
 REVIEW_VERSION = 1
@@ -294,7 +294,8 @@ def _repeat_facts(plan: RepeatPlan, add: Any) -> None:
         add(f"{p}_consequence", CONSEQUENCE_WORDS[item.consequence], path=f"{path}.consequence")
         if item.changed_calls:
             add(f"{p}_calls", ", ".join(item.changed_calls), path=f"{path}.changed_calls")
-        why = item.reasons[0].words if item.reasons else ""
+        first = item.reasons[0] if item.reasons else None
+        why = f"{SOURCE_WORDS.get(first.source, first.source)}: {first.words}" if first else ""
         if len(item.reasons) > 1:
             why += f" (and {len(item.reasons) - 1} more reason(s))"
         add(f"{p}_why", why, path=f"{path}.reasons")
