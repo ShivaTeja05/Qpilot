@@ -25,21 +25,26 @@ export function usePlate(sid: string, run: string | null) {
   });
 }
 
-function curveQuery(sid: string, key: string) {
+function curveQuery(sid: string, key: string, target: string | null) {
   return {
-    queryKey: ["w", sid, "curve", key],
+    queryKey: ["w", sid, "curve", key, target ?? ""],
     queryFn: () =>
       unwrap(
-        api.GET("/api/sessions/{sid}/curve", { params: { path: { sid }, query: { well: key } } }),
+        api.GET("/api/sessions/{sid}/curve", {
+          params: { path: { sid }, query: target ? { well: key, target } : { well: key } },
+        }),
       ),
     staleTime: 60_000,
   };
 }
 
-/** Several wells' curves (`run_id/well` keys), fetched side by side. */
-export function useCurves(sid: string, keys: readonly string[]) {
+/**
+ * Several wells' curves (`run_id/well` keys), fetched side by side. `target` picks the curve of
+ * one target in a multiplex well (one curve per dye); without it a well shows its first curve.
+ */
+export function useCurves(sid: string, keys: readonly string[], target: string | null = null) {
   return useQueries({
-    queries: keys.map((k) => curveQuery(sid, k)),
+    queries: keys.map((k) => curveQuery(sid, k, target)),
     combine: (results) => ({
       data: results.map((r) => r.data).filter((d): d is CurveView => d != null),
       pending: results.some((r) => r.isPending),

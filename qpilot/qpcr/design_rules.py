@@ -50,6 +50,7 @@ from typing import TYPE_CHECKING, Any
 from qpilot.io.sheets import SheetRead, SheetTable, sheet_table, squash, target_roles
 from qpilot.io.symbols import check_symbol
 from qpilot.qpcr.curves import safe_name
+from qpilot.qpcr.multiplex import is_internal_control_name
 from qpilot.schemas_studio import (
     CONTROL_ROLES,
     DesignField,
@@ -636,6 +637,23 @@ def propose_from_names(
         if stated:
             declared = target.declared_type
             fields.append(_sheet_role_field(target.target, target.text_id, declared, stated))
+        elif is_internal_control_name(target.target):
+            fields.append(
+                DesignField(
+                    kind="design.target_role",
+                    subject=target.target,
+                    value={"role": "ignore"},
+                    cites=[target.text_id],
+                    alternatives=[{"role": "toi"}, {"role": "ref"}],
+                    level="Moderate",
+                    reasons=[
+                        "the name says it is an internal positive control: a control added to "
+                        "every reaction to check it, not a gene to compare between groups",
+                        "left out of the comparison, it is still read by the Run Gate (G-IPC: "
+                        "a much later control suggests inhibition)",
+                    ],
+                )
+            )
         elif target.declared_type == "ref" and every_ref:
             fields.append(
                 DesignField(

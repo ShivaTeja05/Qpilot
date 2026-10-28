@@ -216,6 +216,7 @@ function CurvesStage({
           sid={sid}
           run={run}
           wells={wells}
+          gene={plate.data?.multiplex && shownGene !== ALL_GENES ? shownGene : null}
           onClear={() => setPlace(run, [])}
           waitingProposal={(key) => waitingFor.has(key)}
           onShowProposal={showProposalOf}

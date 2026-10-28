@@ -68,6 +68,9 @@ class FileFacts:
         sample_text_ids: Safe sample id -> ``text_id`` of its original id.
         target_text_ids: Engine target name -> ``text_id`` of its original id.
         sheet: The sample sheet as read, or ``None``.
+        target_dyes: Engine target name -> the dye it is read in (RDML ``dyeId``, as a safe
+            identifier; absent when the file names none): the curves of a multiplex well differ
+            by dye.
     """
 
     path: Path
@@ -81,6 +84,7 @@ class FileFacts:
     sample_text_ids: dict[str, str] = field(default_factory=dict)
     target_text_ids: dict[str, str] = field(default_factory=dict)
     sheet: SheetRead | None = None
+    target_dyes: dict[str, str] = field(default_factory=dict)
 
     def quarantined(self, text_id: str) -> str | None:
         """The original text behind a ``text_id`` (for deterministic rules, never for prompts)."""
@@ -222,6 +226,7 @@ def _build(
     target_types: dict[str, str] = {}
     target_text_ids: dict[str, str] = {}
     target_order: list[tuple[str, str]] = []  # (engine name, original id)
+    target_dyes: dict[str, str] = {}
     for target in doc.targets():
         original = str(target["id"])
         safe, text_id = names.name("target", "rdml:target.id", original)
@@ -231,6 +236,9 @@ def _build(
         target_types.setdefault(engine, str(target["type"] or "toi"))
         target_text_ids.setdefault(engine, text_id)
         target_order.append((engine, original))
+        dye = str(target["dyeId"] or "").strip()
+        if dye:
+            target_dyes.setdefault(engine, curves.safe_name(dye, "dye"))
 
     sample_types: dict[str, tuple[tuple[str, str], ...]] = {}
     sample_quantities: dict[str, tuple[tuple[float, str, str], ...]] = {}
@@ -356,6 +364,7 @@ def _build(
         sample_text_ids=sample_text_ids,
         target_text_ids=target_text_ids,
         sheet=sheet,
+        target_dyes=target_dyes,
     )
 
 

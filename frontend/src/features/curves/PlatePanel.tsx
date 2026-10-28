@@ -201,6 +201,11 @@ export function PlatePanel({
                   {!plate.run.in_design
                     ? "This plate is not in the experiment the design analyses. "
                     : null}
+                  {plate.multiplex
+                    ? gene === ALL_GENES
+                      ? "Each well holds several dyes, one curve per gene: pick a gene to see its curves. "
+                      : `Each well holds several dyes; shown: ${gene}. `
+                    : null}
                   Click a well for its curve; ⌘/Ctrl-click or Shift-click to compare several; arrow
                   keys move, Space selects, Enter opens.
                 </>
