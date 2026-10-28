@@ -116,6 +116,46 @@ class ImportView(_Open):
     warnings: list[ImportNote]
 
 
+class ComparisonGeneView(_Open):
+    """One gene in one comparison of a study with several (the engine's numbers)."""
+
+    conclusion: str
+    fc: Num
+    ci: list[Num] | None = None
+    p: Num = None
+    p_adjusted: Num = Field(None, description="The corrected p-value the call uses (Holm).")
+    q: Num = Field(None, description="Benjamini-Hochberg q-value across the genes.")
+    holds: Num = None
+    level: str | None = None
+    fact_ids: dict[str, str] | None = None
+
+
+class ComparisonView(_Open):
+    """One comparison of a study with several (the first is the one ``contrasts`` describe)."""
+
+    id: str
+    label: str
+    group_a: str
+    group_b: str
+    primary: bool
+    n_a: int
+    n_b: int
+    n_pairs: int | None = None
+    n_up: int
+    n_down: int
+    contrasts: dict[str, ComparisonGeneView] | None = None
+    not_tested: dict[str, str] | None = None
+
+
+class ComparisonsOut(_Open):
+    """A study's comparisons: the test, the correction, the pairing, and each comparison."""
+
+    test: str
+    correction: str
+    pair_by: str | None = None
+    comparisons: list[ComparisonView]
+
+
 class StudyOut(_Open):
     """``qpcr_study``: the analysed study."""
 
@@ -141,6 +181,9 @@ class StudyOut(_Open):
     imported: ImportView | None = None
     evidence: dict[str, str] | None = Field(
         None, description="Evidence Ledger item id -> status, when the study kept a ledger."
+    )
+    comparisons: ComparisonsOut | None = Field(
+        None, description="Every comparison of a study with several (absent otherwise)."
     )
     response_format: ResponseFormat = "detailed"
 
@@ -169,6 +212,11 @@ class RobustnessOut(_Open):
     open_cards: list[str] | None = None
     n_open_cards: int | None = None
     fact_ids: dict[str, str] | None = None
+    comparison: str | None = Field(
+        None, description="The comparison described, in a study with several (its id)."
+    )
+    p_adjusted: Num = Field(None, description="The corrected p-value the call uses (Holm).")
+    q: Num = Field(None, description="Benjamini-Hochberg q-value across the genes.")
     response_format: ResponseFormat = "detailed"
 
 

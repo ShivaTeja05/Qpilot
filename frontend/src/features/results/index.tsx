@@ -238,7 +238,7 @@ export default function ResultsSection({ workspace, rest }: SectionProps) {
               <ComparisonPicker tabs={view.comparisons} value={shownId} onChange={show} />
               <p className="text-[12.5px] text-muted" role="status">
                 Showing {shownLabel ?? "the first comparison"}: the summary, the map, every gene and
-                the flip matrix below are this comparison&apos;s. The Decision Cards and a
+                the flip matrix below are this comparison&apos;s. The Decision Cards, Trace and a
                 gene&apos;s own page describe the first comparison; a choice on a card applies to
                 every comparison.
               </p>

@@ -310,6 +310,7 @@ def _print_study(result, cards, settings) -> None:
             f"{gene}: {c.fc:.2f}x [{c.ci[0]:.2f}-{c.ci[1]:.2f}] {c.conclusion}; "
             f"holds in {r.holds * 100:.0f} % of {n_cells} analyses; confidence {level}"
         )
+    _print_comparisons(result, settings)
     print("Decision cards, most impact first:")
     for card in cards:
         flipped = card.impact["n_genes_flipped"]
@@ -318,6 +319,37 @@ def _print_study(result, cards, settings) -> None:
         else:
             what = f"changes {flipped} of {n_items} conclusions; needs a human"
         print(f"  {card.rank}. {card.kind}: {what}")
+
+
+def _print_comparisons(result, settings) -> None:  # noqa: ANN001
+    """Every comparison of a study with several (or a paired one): its calls and headline genes."""
+    found = result.comparisons
+    if found is None:
+        return
+    from qpilot.qpcr.contrast import CORRECTION_WORDS, TEST_WORDS
+
+    words = TEST_WORDS[found.test]
+    if len(found.comparisons) > 1:
+        words += f"; {CORRECTION_WORDS[found.correction]}"
+    if found.pair_by:
+        words += f"; paired by {found.pair_by}"
+    print(f"{len(found.comparisons)} comparison(s): {words} (the first is the one the cards use)")
+    for outcome in found.comparisons:
+        calls = [c.conclusion for c in outcome.contrasts.values()]
+        n = (
+            f"{outcome.n_pairs} pairs"
+            if outcome.n_pairs is not None
+            else f"{outcome.n_a} vs {outcome.n_b}"
+        )
+        print(f"  {outcome.label} ({n}): {calls.count('up')} up, {calls.count('down')} down")
+        for gene in settings.headline:
+            c = outcome.contrasts.get(gene)
+            if c is None:
+                continue
+            print(
+                f"    {gene}: {c.fc:.2f}x [{c.ci[0]:.2f}-{c.ci[1]:.2f}] {c.conclusion}; "
+                f"corrected p {outcome.p_adjusted[gene]:.2g}, q {outcome.q_value[gene]:.2g}"
+            )
 
 
 def _explain_arguments(parser: argparse.ArgumentParser) -> None:

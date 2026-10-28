@@ -291,6 +291,13 @@ def tabs(result: StudyResult) -> list[dict]:
     return out
 
 
+def rule_words(result: StudyResult, rule: ConclusionRule) -> str:
+    """The calling rule of a study in words (the corrected p when several comparisons use it)."""
+    found = result.comparisons
+    several = found is not None and len(found.comparisons) > 1
+    return _rule_text(rule, found.correction if several else "none")  # type: ignore[union-attr]
+
+
 def _rule_text(rule: ConclusionRule, correction: str) -> str:
     fold = f"{2**rule.min_log2fc:g}"
     if correction == "holm":

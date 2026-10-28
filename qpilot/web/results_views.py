@@ -525,21 +525,24 @@ _nc_lock = threading.Lock()
 _not_compared: OrderedDict[tuple[str, int], NotCompared | None] = OrderedDict()
 
 
-def not_compared(store: StudyStore, result: StudyResult) -> NotCompared | None:
+def not_compared(
+    store: StudyStore, result: StudyResult, comparison: str | None = None
+) -> NotCompared | None:
     """The study's samples in neither group, by reason, from the engine's model of the study.
 
     The model is rebuilt from the cached curve analysis (about a second on the demo) once per
-    study and kept; None when the input file is not there to rebuild it.
+    study and kept; None when the input file is not there to rebuild it. ``comparison`` is the
+    comparison shown in a study with several: units of its other groups are named as such.
     """
     path = store.workspace(result.study_id) / "results.json"
     try:
-        key = (str(path), path.stat().st_mtime_ns)
+        key = (str(path), path.stat().st_mtime_ns, comparison)
     except OSError:
         return None
     with _nc_lock:
         if key in _not_compared:
             return _not_compared[key]
-    value = _rebuild_not_compared(store, result)
+    value = _rebuild_not_compared(store, result, comparison)
     with _nc_lock:
         _not_compared[key] = value
         while len(_not_compared) > MAX_GRIDS:
@@ -547,8 +550,11 @@ def not_compared(store: StudyStore, result: StudyResult) -> NotCompared | None:
     return value
 
 
-def _rebuild_not_compared(store: StudyStore, result: StudyResult) -> NotCompared | None:
+def _rebuild_not_compared(
+    store: StudyStore, result: StudyResult, comparison: str | None = None
+) -> NotCompared | None:
     from qpilot.qpcr.curves import analyse_study
+    from qpilot.qpcr.designs import unit_groups
     from qpilot.qpcr.study import StudySettings, build_model
 
     source = store.source(result.study_id)
@@ -563,6 +569,13 @@ def _rebuild_not_compared(store: StudyStore, result: StudyResult) -> NotCompared
         return None
     matrix = model.matrix
     grouped = model.high | model.rest
+    elsewhere: dict[str, str] = {}  # unit -> its group, compared in another comparison
+    specs = {spec.id: spec for spec in model.space.comparisons}
+    if specs and settings.design is not None:
+        spec = specs.get(comparison or "", model.space.comparisons[0])
+        grouped = spec.group_a | spec.group_b
+        compared = {g for s in specs.values() for g in s.labels}
+        elsewhere = {u: g for u, g in unit_groups(settings.design).items() if g in compared}
     refs = [r for r in model.space.primary["refs"] if r in matrix.columns]
     marker = None if model.labels is not None else settings.marker
     by_reason: dict[str, list[str]] = {}
@@ -576,6 +589,8 @@ def _rebuild_not_compared(store: StudyStore, result: StudyResult) -> NotCompared
         elif missing:
             names = ", ".join(missing)
             reason = f"no value for the control gene{'s' * (len(missing) > 1)} {names}"
+        elif str(sample) in elsewhere:
+            reason = f"in group {elsewhere[str(sample)]}, compared in another comparison"
         elif model.labels is not None:
             reason = "in neither group of the confirmed design"
         else:
@@ -850,13 +865,13 @@ def results_view(
             cut=None if "f_group_a" in result.facts else design.cut,
             design_line=design_line(result),
             text=summary_text,
-            not_compared=not_compared(store, result),
+            not_compared=not_compared(store, stored, outcome.id if outcome is not None else None),
         ),
         rule=RuleView(
             alpha=rule.alpha,
             min_log2fc=rule.min_log2fc,
             min_fold=2**rule.min_log2fc,
-            text=rule.describe(),
+            text=cv.rule_words(stored, rule),
         ),
         references=GenormView(
             used=list(design.refs_primary),
