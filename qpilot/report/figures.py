@@ -238,8 +238,10 @@ def _with_caption(fig: GeneFigure, tables: StudyTables, basis: str) -> GeneFigur
         f"{_lower(analysis.undetermined)}.",
     ]
     if fig.call is not None:
+        test = comp.test or "Welch's t test"
         parts.append(
-            f" Welch's t test on the per-unit log2 values: fold change {fmt.fold(fig.fc)} "
+            f" {test[:1].upper()}{test[1:]} on the per-unit log2 values: fold change "
+            f"{fmt.fold(fig.fc)} "
             f"(95 % CI {fmt.fold(fig.ci_lo)} to {fmt.fold(fig.ci_hi)}), {_plain(p_words(fig.p))}; "
             f"{_call_sentence(fig)} under the rule "
             f"p < {_rule(tables)[0]:g} and at least {_rule(tables)[1]:g}-fold."

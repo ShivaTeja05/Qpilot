@@ -163,6 +163,10 @@ class Comparison:
     withheld: Mapping[str, str] = field(default_factory=dict)
     q: Mapping[str, float] | None = None
     correction: str | None = None
+    p_adjusted: Mapping[str, float] | None = None
+    test: str | None = None
+    note: str = ""
+    units: Mapping[str, str] | None = None  # sample -> group, when not the study's two groups
 
     @property
     def genes(self) -> list[str]:
@@ -187,6 +191,68 @@ def comparisons(
         name=f"{a} vs {b}", group_a=a, group_b=b, contrasts=contrasts, withheld=withheld or {}
     )
     return (first, *extra)
+
+
+CORRECTION_WORDS = {
+    "holm": "Holm's correction within each gene across its comparisons (p adjusted); q: "
+    "Benjamini–Hochberg across genes within each comparison",
+    "none": "No correction across comparisons; q: Benjamini–Hochberg across genes within each "
+    "comparison",
+}
+TEST_NAMES = {"welch": "Welch's t test", "paired_t": "paired t test (within pairs)"}
+
+
+def stored_comparisons(
+    result: StudyResult,
+    first: Comparison,
+    *,
+    at_primary: bool,
+    groups_of: Mapping[str, str] | None = None,
+) -> tuple[Comparison, ...]:
+    """``first`` with the engine's multiplicity numbers, then the study's other comparisons.
+
+    Reads ``StudyResult.comparisons`` (several comparisons of one design, agent compare's
+    contract v1) when the study has them: the primary comparison gets its Holm-adjusted p and
+    its q-values (when ``first`` is at the recommended options, the only analysis they were
+    computed for), and every other comparison comes as stored, at the recommended options
+    (labelled so in its ``note`` when ``first`` is not). ``groups_of`` maps each sample to its
+    group, for the other comparisons' per-unit rows. A study without them: ``(first,)``.
+    """
+    block = getattr(result, "comparisons", None)
+    outcomes = list(getattr(block, "comparisons", None) or ())
+    if not outcomes:
+        return (first,)
+    correction = CORRECTION_WORDS.get(str(getattr(block, "correction", "")))
+    test = TEST_NAMES.get(str(getattr(block, "test", "")))
+    out = []
+    for o in outcomes:
+        q = {g: v for g, v in (getattr(o, "q_value", None) or {}).items() if v is not None}
+        adj = {g: v for g, v in (getattr(o, "p_adjusted", None) or {}).items() if v is not None}
+        if getattr(o, "primary", False):
+            if at_primary:
+                first = replace(
+                    first, q=q or None, p_adjusted=adj or None, correction=correction, test=test
+                )
+            else:
+                first = replace(first, test=test, correction=correction)
+            continue
+        a, b = str(o.group_a), str(o.group_b)
+        out.append(
+            Comparison(
+                name=str(getattr(o, "label", None) or f"{a} vs {b}"),
+                group_a=a,
+                group_b=b,
+                contrasts=dict(o.contrasts),
+                withheld=dict(getattr(o, "not_tested", None) or {}),
+                q=q or None,
+                p_adjusted=adj or None,
+                correction=correction,
+                test=test,
+                note="" if at_primary else "at the recommended options",
+                units={s: g for s, g in (groups_of or {}).items() if g in (a, b)},
+            )
+        )
+    return (first, *out)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -392,7 +458,8 @@ RESULT_COLUMNS: tuple[Column, ...] = (
     Column("assay_efficiency", "Assay efficiency (amplification per cycle)", "eff"),
     Column("note", "Note"),
 )
-Q_COLUMN = Column("q", "q (corrected for many genes)", "p")
+Q_COLUMN = Column("q", "q (Benjamini–Hochberg across genes)", "p")
+P_ADJUSTED_COLUMN = Column("p_adjusted", "p adjusted (Holm, across comparisons)", "p")
 PER_UNIT_COLUMNS: tuple[Column, ...] = (
     Column("comparison", "Comparison"),
     Column("gene", "Gene"),
@@ -577,7 +644,10 @@ def _analysis(
         withheld = _stored_withheld(result)
     else:
         contrasts, withheld = Reanalysis(inputs).results()
-    comps = comparisons(inputs.group_order, contrasts, withheld)
+    (first,) = comparisons(inputs.group_order, contrasts, withheld)
+    comps = stored_comparisons(
+        result, first, at_primary=inputs.at_primary, groups_of=_design_groups(inputs.design)
+    )
     choices = _choices(inputs.choices, cards)
     words = _choice_words(inputs, choices)
     table = inputs.table("column")
@@ -590,6 +660,29 @@ def _analysis(
         per_well=_per_well_table(basis, inputs, reasons),
         refs=tuple(inputs.refs),
         **words,
+    )
+
+
+def _design_groups(design: Any) -> dict[str, str]:
+    """Sample -> group from a confirmed design (empty for a marker split)."""
+    samples = getattr(design, "samples", None) or {}
+    return {s: str(d.group) for s, d in samples.items() if getattr(d, "group", None)}
+
+
+def _comparison_table(comp: Comparison, table: pd.DataFrame, inputs: Any) -> pd.DataFrame:
+    """The per-unit table of one comparison (the study's own for the first)."""
+    if not comp.units:
+        return table
+    from qpilot.qpcr.export import sample_table
+
+    return sample_table(
+        inputs.data,
+        refs=inputs.refs,
+        undetermined=inputs.undetermined,
+        groups=dict(comp.units),
+        units=inputs.units,
+        group_order=(comp.group_a, comp.group_b),
+        genes=list(comp.contrasts) or None,
     )
 
 
@@ -773,9 +866,13 @@ def _results_table(
 ) -> Table:
     lead = set(headline)
     with_q = any(c.q for c in comps)
+    with_adj = any(c.p_adjusted for c in comps)
     columns = list(RESULT_COLUMNS)
+    at = [c.key for c in columns].index("p") + 1
     if with_q:
-        columns.insert(columns.index(next(c for c in columns if c.key == "p")) + 1, Q_COLUMN)
+        columns.insert(at, Q_COLUMN)
+    if with_adj:
+        columns.insert(at, P_ADJUSTED_COLUMN)
     rows = []
     for comp in comps:
         for gene in comp.genes:
@@ -784,6 +881,9 @@ def _results_table(
             grade = result.confidence.get(gene)
             stored = result.contrasts.get(gene)
             same = None
+            primary = comp is comps[0]
+            if not primary:  # the grid and the confidence levels are the primary comparison's
+                rob, grade, stored = None, None, None
             if rob is not None and con is not None and stored is not None:
                 if con.conclusion == stored.conclusion:  # the grid's share is of the planned call
                     same = _num(rob.holds)
@@ -792,6 +892,8 @@ def _results_table(
                 note = f"withheld: {comp.withheld.get(gene, 'too few values in a group')}"
             elif grid_only:
                 note = "from qPilot's choice grid (no input file: no CI or n here)"
+            elif comp.note:
+                note = comp.note
             row: dict[str, Any] = {
                 "comparison": comp.name,
                 "group_a": comp.group_a,
@@ -805,6 +907,7 @@ def _results_table(
                 "log2_fold_change": _num(con.log2fc) if con else None,
                 "p": _num(con.p) if con else None,
                 "q": _num((comp.q or {}).get(gene)) if with_q else None,
+                "p_adjusted": _num((comp.p_adjusted or {}).get(gene)) if with_adj else None,
                 "n_a": (con.n_hi or None) if con else None,
                 "n_b": (con.n_lo or None) if con else None,
                 "same_call_share": same,
@@ -828,7 +931,6 @@ def _unit_wells(inputs: Any) -> pd.DataFrame:
 
     data = inputs.data
     keep = data["sample_type"] == "unkn"
-    keep &= data["sample"].isin(list(inputs.groups))
     keep &= data["n0"].notna()
     if EXCLUDED in data.columns:
         keep &= ~data[EXCLUDED].fillna(False).astype(bool)
@@ -855,7 +957,8 @@ def _per_unit_table(
             ref_cq[unit] = float(np.mean(values))
     rows = []
     for comp in comps:
-        sub = table[table["gene"].isin(set(comp.genes))]
+        own = _comparison_table(comp, table, inputs)
+        sub = own[own["gene"].isin(set(comp.genes))]
         columns = (sub[k].to_numpy() for k in ("gene", "group", "biological_unit", "log2_rq"))
         for gene, group, unit, value in zip(*columns, strict=True):
             gene, unit = str(gene), str(unit)
@@ -918,7 +1021,7 @@ def _per_well_table(basis: Basis, inputs: Any, reasons: Mapping[str, str]) -> Ta
         raw_n0 = dict(zip(map(tuple, raw[key].to_numpy()), raw["n0"].to_numpy(), strict=True))
     units = inputs.units or {}
     refs = set(inputs.refs)
-    groups = inputs.groups
+    groups = {**_design_groups(inputs.design), **inputs.groups}
     n = len(data)
     excluded = (
         data[EXCLUDED].fillna(False).astype(bool).to_numpy()
@@ -1162,7 +1265,14 @@ def _settings(
             None,
         ),
         ("Technical replicates", REPLICATE_WORDS, None, None),
-        ("Test", TEST_WORDS, None, None),
+        (
+            "Test",
+            TEST_WORDS
+            if decided.comparisons[0].test in (None, TEST_NAMES["welch"])
+            else TEST_WORDS.replace("Welch's t test", decided.comparisons[0].test or ""),
+            None,
+            None,
+        ),
         (
             "Conclusion rule",
             f"up or down only if p < {alpha:g} and the change is at least {fold:g}-fold; "

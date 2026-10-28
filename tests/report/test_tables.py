@@ -170,3 +170,55 @@ def test_the_tables_iterate_over_every_comparison(walked):
         r["q"] for r in table.records() if r["comparison"] != "KO vs WT"
     } == {0.5}
     assert all(math.isfinite(r["fold_change"]) for r in table.records())
+
+
+def test_the_engine_s_several_comparisons_are_read_from_the_result(walked):
+    """Agent compare's contract v1: ``StudyResult.comparisons`` (read by duck type)."""
+    from types import SimpleNamespace
+
+    from qpilot.qpcr.export import study_inputs
+    from qpilot.report.tables import _per_unit_table, stored_comparisons
+
+    store, study = walked["store"], walked["study"]
+    result = store.get(study)
+    genes = list(result.contrasts)
+    outcome = lambda primary, a, b: SimpleNamespace(  # noqa: E731
+        id=f"{a}_vs_{b}",
+        group_a=a,
+        group_b=b,
+        label=f"{a} vs {b}",
+        primary=primary,
+        contrasts=result.contrasts,
+        p_adjusted={g: 0.2 for g in genes},
+        q_value={g: 0.3 for g in genes},
+        not_tested={},
+    )
+    block = SimpleNamespace(
+        test="welch",
+        correction="holm",
+        comparisons=[outcome(True, "KO", "WT"), outcome(False, "WT", "KO")],
+    )
+    (first,) = comparisons(("KO", "WT"), result.contrasts)
+    groups = {"WT_1": "WT", "WT_2": "WT", "KO_1": "KO", "KO_2": "KO"}
+    comps = stored_comparisons(SimpleNamespace(comparisons=block), first, at_primary=True,
+                               groups_of=groups)  # fmt: skip
+    assert [c.name for c in comps] == ["KO vs WT", "WT vs KO"]
+    assert comps[0].q == {g: 0.3 for g in genes} and comps[0].p_adjusted == {g: 0.2 for g in genes}
+    assert "Holm" in comps[0].correction and comps[1].units == groups
+    later = stored_comparisons(SimpleNamespace(comparisons=block), first, at_primary=False)
+    assert later[0].q is None and later[1].note == "at the recommended options"
+    from qpilot.report.tables import _results_table
+
+    table = _results_table(AS_DECIDED, comps, result, ())
+    assert {"q", "p_adjusted"} <= set(table.keys())
+    second = [r for r in table.records() if r["comparison"] == "WT vs KO"]
+    assert second and all(r["same_call_share"] is None for r in second)
+    inputs = study_inputs(store, study, read_only=True)
+    units = _per_unit_table(AS_DECIDED, comps, inputs.table("column"), inputs).records()
+    swapped = {(u["biological_unit"], u["group"]) for u in units if u["comparison"] == "WT vs KO"}
+    assert swapped == {("WT_1", "WT"), ("WT_2", "WT"), ("KO_1", "KO"), ("KO_2", "KO")}
+    a = {(u["gene"], u["biological_unit"]): u["log2_rq"] for u in units
+         if u["comparison"] == "KO vs WT"}  # fmt: skip
+    b = {(u["gene"], u["biological_unit"]): u["log2_rq"] for u in units
+         if u["comparison"] == "WT vs KO"}  # fmt: skip
+    assert a == b  # a unit's value does not depend on the comparison it is in
