@@ -265,9 +265,12 @@ consistent"; it is outside both blind confirmations (they never re-open for it).
 * **Comparison shown / All comparisons** (`ComparisonsPanel.tsx`; `?comparison=` on the results
   routes, `GET /api/studies/{id}/comparisons`): for a design with several comparisons, the
   comparison the map, table and flip matrix show, and every gene in every comparison with its
-  p, Holm-corrected p (the call's), BH q and Welch's ANOVA across 3+ groups (orientation only).
-  Cards, Trace, the Gene page's units and the audit read the first comparison and say so.
-  Method card: `methods/comparisons.md`.
+  p, the corrected p the call uses (Holm, Dunnett or Tukey), BH q and Welch's ANOVA across 3+
+  groups (orientation only). Decision Cards count a flip in every comparison (`impact.views`;
+  each option's effect per comparison); Trace, the Gene page (picker, units, the figure with a
+  bracket per comparison) and History follow the comparison picked; the audit audits the first
+  and says so. On the Design page, **Comparison → Several comparisons** sets the plan
+  (`ComparisonsEditor.tsx`). Method card: `methods/comparisons.md`.
 * **Reference genes** (`StudyPanels.tsx` ReferencesPanel + `ReferenceComparison.tsx`,
   `GET /api/studies/{id}/references`): geNorm's M and V, and geNorm and NormFinder side by side
   (each candidate's value and rank, the best pair of each, the groups and units NormFinder used

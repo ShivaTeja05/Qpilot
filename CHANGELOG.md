@@ -82,6 +82,22 @@ Methods paragraph on them.
   orientation only (never a call). Results has a comparison picker and every gene across every
   comparison; Methods, MCP, the CLI and the Analysis Record follow (`grid_comparisons.csv`).
   Method card [`methods/comparisons.md`](methods/comparisons.md).
+- **Several comparisons in every section**: a Decision Card counts a changed call in every
+  comparison, so a choice that changes a call only in a later comparison waits for a person (it
+  names the comparison and shows each option's effect per comparison; the choice applies to the
+  whole study); an opt-in choice enters the grid when it matters in any comparison. Trace and
+  Where to look (`?comparison=`, MCP `qpcr_trace(comparison=…)`), a gene's page
+  (`/genes/{gene}/units?comparison=`; the figure draws every group with a bracket per
+  comparison) and History follow the comparison picked, with the corrected p the call uses; the
+  Run Review names each comparison. The robustness audit audits the first comparison and says
+  so; it refuses, in words, a paired or pooled-variance comparison or one whose correction
+  changes a call. Studies with one comparison are unchanged.
+- **Dunnett's and Tukey's corrections** (`qpilot/qpcr/multiplicity.py`): a person's choice beside
+  Holm and none: Dunnett for each group against a control, Tukey(–Kramer) for every pair, each a
+  single-step adjusted p from a t-test with the spread pooled over the plan's groups (equal
+  spread on the log2 scale assumed; unpaired designs only).
+- **Several comparisons on the Design page**: Design → Comparison → **Several comparisons**: each
+  group against a control, every pair of groups, or your own list, and the correction.
 - **The robustness audit runs on designs with technical replicates** (`sim/`, `qpilot/integration/`):
   each biological unit's wells are combined as qPilot combines them (the mean of their log2
   amounts), so the audit reproduces qPilot at its baseline; with three or more wells per value it

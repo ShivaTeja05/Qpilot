@@ -162,7 +162,7 @@ No model? Use **Set the design on this page** on the Design screen. You choose w
 * **How do I say which samples are the same animal or donor?** Select them and press **One biological unit** (or **Each its own unit**). Samples of one biological unit are averaged and count once.
 * **How do I mark controls and standards?** Select them and choose a **Sample type** (study sample, standard, NTC, no-RT, no-amplification, positive control, no-target-present, calibrator). For **Standard**, give the highest quantity and the dilution step; the quantities follow in plate order. **From ng to copies…** works the highest quantity out from a mass and the amplicon's length (dsDNA, ssDNA or RNA).
 * **How do I paste my sample list?** Open **Paste a list** and paste two columns copied from Excel (sample, group; a third column is the biological unit). The names are matched to the file's.
-* **How do I choose what is compared?** Open **Comparison** and choose the compared group and the reference group (the baseline the fold change is relative to). With three or more groups, the rules propose a plan of several comparisons; see [section 9](#9-comparisons).
+* **How do I choose what is compared?** Open **Comparison**. **One comparison**: choose the compared group and the reference group (the baseline the fold change is relative to). **Several comparisons** (three or more groups): each group against a control, every pair of groups, or your own list, and the correction; see [section 9](#9-comparisons).
 * **Can I fill in a sheet instead?** **Sample sheet** downloads a template pre-filled with this plate's sample and target names; fill it in Excel and attach it to this session (no need to open the files again). A target-role column (Gene Type, Reference, Housekeeping, …) is read too. The rules then propose from it.
 
 Changes collect in a draft ("3 changes not recorded yet"). **Review and record…** shows, before anything is written, what each change does and the engine's check of it, which waiting proposals it settles, and what is refused. One reason covers the act and is kept with every item. A waiting proposal that says what you set is accepted (so who proposed it stays on record); one that says something else is rejected with your reason. A declared control (NTC, no-RT, no-amplification) never gets another type or a group: such a change is refused in words and nothing is written. A whole 96-well plate records in about a second.
@@ -223,17 +223,29 @@ Each works the same way: **Propose testing …** adds a proposal to this stage (
 
 ## 9. Comparisons
 
-A study can compare more than two groups. With three or more groups, the rules propose a **plan of several comparisons** when you propose the design: each group against a control (when a group's name says it is the control), otherwise every pair. A column of your sample sheet that names a donor, an animal or a passage proposes **pairings** (`design.pair`), and the plan then uses a paired t-test within each pair. Accept the plan, **Edit** it (for example to choose your own list of pairs, or to switch the correction off) or reject it, with a reason, like any proposal.
+A study can compare more than two groups. **How do I set it up?** On **Design → Set the design on this page → Comparison**, choose **Several comparisons**, then which ones:
+
+* **Each group against a control** (choose the control group),
+* **Every pair of groups**, or
+* **My own list** (each pair of groups at most once).
+
+Then choose the **correction for comparing each gene several times**:
+
+* **Holm** (any pattern): each gene's p-values are corrected across its comparisons; each comparison keeps its own Welch's t-test (no equal-spread assumption).
+* **Dunnett** (each group against a control) and **Tukey** (every pair): one t-test with the spread pooled over every group, corrected for the comparisons made. Both assume equal spread on the log2 scale, and neither is offered with a pairing.
+* **No correction.**
+
+When you propose the design, the rules may propose such a plan themselves (each group against a group whose name says it is the control, otherwise every pair, Holm-corrected); accept, edit or reject it like any proposal. A column of your sample sheet that names a donor, an animal or a passage proposes **pairings**, and the plan then uses a paired t-test within each pair.
 
 How the numbers work:
 
-* Each comparison is its own Welch's t-test (paired t-test for a paired design) on log2 relative quantities.
-* **Holm's method** corrects each gene's p-values across its comparisons; the call uses the corrected p ("p < 0.05 and at least 2-fold"). The page shows both p and the corrected p.
+* The call uses the corrected p: "corrected p < 0.05 and at least 2-fold". The page shows both p and the corrected p.
 * **q-values** (Benjamini–Hochberg) across genes are shown for each comparison, for reference; they do not change a call.
 * With three or more groups, **Welch's one-way ANOVA** is shown per gene, for orientation only: it never makes a call.
 * A sample missing one gene is dropped from that gene only.
+* **A Decision Card counts a changed call in every comparison.** A choice that changes a call only in a later comparison still waits for you; the card names the comparison and shows each option's effect per comparison. Your choice applies to the whole study.
 
-On Results, **Comparison shown** picks the comparison the map, the table and the flip matrix show, and **All comparisons** lists each gene in every comparison side by side. The Methods paragraph, the exports (one table per comparison), the MCP tool `qpcr_comparisons` and the Analysis Record (`grid_comparisons.csv`) carry every comparison. Today the robustness audit, the Decision Cards' counts, a gene's per-unit values and Trace follow the **first** comparison, and the page says so. Method card: [methods/comparisons.md](../methods/comparisons.md).
+**Where it shows.** On Results, **Comparison shown** picks the comparison the map, the table and the flip matrix show, and **All comparisons** lists each gene in every comparison side by side. The comparison you pick is followed in Trace (with the corrected call), on a gene's page (its figure draws every group, with a bracket per comparison) and in History; the Run Review names each comparison. The Methods paragraph, the exports (one table per comparison), the MCP tools `qpcr_comparisons` and `qpcr_trace`, and the Analysis Record (`grid_comparisons.csv`) carry every comparison. The robustness audit audits the first comparison and says so ([section 13](#13-audit)). A study with one comparison looks exactly as before. Method card: [methods/comparisons.md](../methods/comparisons.md).
 
 ## 10. Quantities
 
@@ -277,7 +289,7 @@ Rules label; a person decides. For every rule that warns or fails and points at 
 
 ## 12. Gene
 
-Open a gene from the Results map or table, or from **Go to a gene** (⌘K). `[` and `]` go to the previous and next gene. Without a gene in the address, the page lists every compared gene to choose from.
+Open a gene from the Results map or table, or from **Go to a gene** (⌘K). `[` and `]` go to the previous and next gene. Without a gene in the address, the page lists every compared gene to choose from. With several comparisons, a picker chooses the comparison the page follows.
 
 The header gives the gene's name (with a **Headline gene** badge for the study's headline genes), the fold change with its 95 % confidence interval, the p-value, the number of units per group, the **confidence** level with its reasons, and the **audit verdict** ("Not audited yet" before the audit has run). **Copy summary** puts a plain-text summary on your clipboard.
 
@@ -295,8 +307,8 @@ The audit re-runs your **confirmed** study under every combination of eight anal
 
 * **Not run yet:** the page explains what the audit does and shows what it will cover (analyses, genes compared, samples, sets of reference genes), with **Run the audit** (a job with stages; its longest stage says how far it has come). Running it again keeps the earlier audit.
 * **Technical replicates:** each biological unit's wells are combined as qPilot combines them (the mean of their log2 amounts); with three or more wells per value the audit also tries the median well and leaving out one well outside the expected spread. The page says how, before and after the run.
-* **Several comparisons:** the audit audits the first comparison and says so.
-* **Cannot run:** an install without the Decision Simulator, or a marker split whose cut-offs are not 10/15/20 %. The page says which, in words.
+* **Several comparisons:** the audit audits the first comparison and says so. It runs only when the correction changes none of that comparison's calls (so its baseline reproduces qPilot's), and it does not audit a paired comparison or a pooled-variance one (Dunnett, Tukey).
+* **Cannot run:** an install without the Decision Simulator, a marker split whose cut-offs are not 10/15/20 %, or a comparison it does not audit (above). The page says which, in words.
 * **Done:** four tabs, **Study**, **What-if lab**, **How it works** and **Verify**.
   * **Study:** the verdict counts, the map, the calls that one choice changes, how much of the spread each decision explains, reference-gene stability, "fix these first", and the queue of data issues it found; an issue about a choice offers **Try this choice in the What-if lab**.
   * **What-if lab:** one menu per decision, with the options grouped by how defensible they are; every gene is shown from the planned analysis to your chosen one, changed genes first. Nothing is stored and nothing is decided here.
@@ -308,7 +320,7 @@ The audit re-runs your **confirmed** study under every combination of eight anal
 
 **Trace** follows any call down to the samples, wells and plates behind it. Every number is the engine's, recomputed exactly with samples set aside; reading it changes nothing. The overview says how many calls change when one or two samples are set aside, and which samples have a control-gene well far from what their other control genes predict.
 
-**Where to look** follows a gene's result, one sample or one well (`PLATE:WELL`) back through the normaliser and the reference wells to the plate controls, and lists the places to look first: the sample, plate and well, what is unusual there (for example "one reference well disagrees with the sample's other reference wells"), what to check, and what each option would do: keep it, read that well from the sample's other reference wells (a what-if, shown, never chosen), or set the value or the whole sample aside. Places are ranked by what their options do: change a call, move a fold change beyond its confidence interval, or change nothing.
+**Where to look** follows a gene's result, one sample or one well (`PLATE:WELL`) back through the normaliser and the reference wells to the plate controls, and lists the places to look first: the sample, plate and well, what is unusual there (for example "one reference well disagrees with the sample's other reference wells"), what to check, and what each option would do: keep it, read that well from the sample's other reference wells (a what-if, shown, never chosen), or set the value or the whole sample aside. Places are ranked by what their options do: change a call, move a fold change beyond its confidence interval, or change nothing. With several comparisons, Trace follows the comparison you pick, and its call is the corrected one.
 
 * **How do I leave out the well Trace points at?** On a place where an option **changes a call**, press **Decide…**, choose the option and say why. In a Studio session the wells leave the analysis (one entry per well in the session's record), the study is analysed again and Trace waits for it; your Decision Card choices are carried. **Set aside from Trace** lists what you set aside, each with **Put the wells back** (with a reason).
 * **A study analysed outside Studio** has no inbox: Decide… records your decision on a card and the numbers stay as analysed. Open the file in Studio to apply it.
@@ -331,7 +343,7 @@ Each claim comes back **Supported**, or not, with the study's own numbers and wh
 
 ## 16. History
 
-**History** replays every decision and shows what each one changed. The **timeline** lists every point of this analysis's history (the design and curves stages, the choices, Prism, and earlier analyses of the same file); pick one, or use ← and →, and the robustness map shows the calls in force at that point, read from the study's own grid of analyses. **Replay from the start** steps through it. Each step says who chose what and when ("qPilot (automatic) chose …", "Decided by you"), and whether it changed a call. The chain's head and whether every hash checks out are shown at the top.
+**History** replays every decision and shows what each one changed. The **timeline** lists every point of this analysis's history (the design and curves stages, the choices, Prism, and earlier analyses of the same file); pick one, or use ← and →, and the robustness map shows the calls in force at that point, read from the study's own grid of analyses. **Replay from the start** steps through it. Each step says who chose what and when ("qPilot (automatic) chose …", "Decided by you"), and whether it changed a call. The chain's head and whether every hash checks out are shown at the top. With several comparisons, History replays the comparison you pick.
 
 ## 17. Report: Methods, MIQE, the Run Review and exports
 
@@ -344,7 +356,7 @@ Each claim comes back **Supported**, or not, with the study's own numbers and wh
 * **MIQE 2.0 checklist**: each item answered from the study, or marked as missing.
 * **Limitations**, the **Study passport**, and **Every number**: each number the report cites, its value and where it comes from.
 
-**The Run Review** is one page for whoever reviews someone else's run: the headline genes, what the data cannot show, **what to repeat and why**, the Run Gate per plate, and every sign-off so far. qPilot never passes or fails a run.
+**The Run Review** is one page for whoever reviews someone else's run: the headline genes (with several comparisons, each comparison named), what the data cannot show, **what to repeat and why**, the Run Gate per plate, and every sign-off so far. qPilot never passes or fails a run.
 
 * **What to repeat** lists each sample × gene worth re-running, ranked by what it does to the calls (changes a call, beyond the CI, no value, not known, changes nothing), with every reason in words: the Run Gate's warnings and failures, wells a person left out and why, samples in no comparison, no amplification where the gene amplified in most other samples, Trace's places. **The repeat plate** puts every repeated sample on a plate with all its reference genes, and per assay an inter-run calibrator, no-RT and no-template controls; **Download the repeat plate (CSV)** gives the planner's plate format (plate, well, sample, group, target, type) for a plate-setup program or a pipetting robot. Items that change no call go on the plate only when you ask. Re-running is your call. *On the demo:* 182 items, 5 of which change a call.
 * **Sign off** with **Accept**, **Repeat** or **Discuss**, a comment and your name: it goes into the decision record as yours and changes no result. If something was decided while you were reading, the review is shown again and you sign off on what is there now.
@@ -457,7 +469,7 @@ Everything can also be done with the Tab key, and every control shows where the 
 | A file is refused on Open | qPilot could not read it, or it is not a qPCR run (for example an isothermal plate read), or two RDML files were dropped together | The refusal says why; open one RDML file at a time; [conformance.md](conformance.md) lists what is read |
 | Every gene is capped at Moderate | The export's curves were most likely baseline-subtracted (or qPilot could not tell) | Decide the Import Trust card on Results |
 | "The demo study is not downloaded yet" | The demo is not on this computer | Click **Download 7.0 MB and open** on Open, or run `qpilot fetch-demo` |
-| The audit is refused | Its baseline does not reproduce qPilot, or the design is one it cannot audit yet | The page gives the reason in words |
+| The audit is refused | Its baseline does not reproduce qPilot, or the comparison is one it cannot audit yet (paired, Dunnett or Tukey, or a correction that changes a call) | The page gives the reason in words |
 | No Quantities on Results | The plate's standards have no quantity yet | Give them on Design → Samples (Standard, top quantity, dilution step) |
 | The model chip says "not answering" | The model is configured but does not answer; hover for the reason | Rules answer alone meanwhile; check the endpoint and name |
 | The live dot is not green | The page lost its connection to qPilot | It reconnects by itself; if not, is `qpilot app` still running? |
