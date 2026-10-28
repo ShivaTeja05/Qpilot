@@ -531,10 +531,13 @@ def _headline(report: core_gate.GateReport, facts: dict[str, Fact]) -> FactText:
         facts[fid] = Fact(id=fid, value=value, fmt="{}", path=f"gate/headline/{fid[7:-6]}")
     parts = []
     if plates - gated:
+        are = "is" if plates - gated == 1 else "are"
         parts.append(
-            f"{_t('f_gate_nungated_study')} of {_t('f_gate_nplates_study')} plates are ungated: "
+            f"{_t('f_gate_nungated_study')} of {_t('f_gate_nplates_study')} plates {are} ungated: "
             "no wells there are typed as controls."
         )
+    elif plates == 1:
+        parts.append("The plate is gated.")
     else:
         parts.append(f"All {_t('f_gate_nplates_study')} plates are gated.")
     hits = report.counts["fail"] + report.counts["warn"]

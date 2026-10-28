@@ -466,8 +466,8 @@ def groups(rv: Review) -> None:
 def multiplicity(rv: Review) -> None:
     """No correction for multiple testing (and what the audit says about it)."""
     c = rv.c
-    if not c.has("f_n_genes"):
-        return
+    if not c.has("f_n_genes") or c.facts.value("f_n_genes") == 1:
+        return  # one gene compared: there is nothing to correct across
     audit = c.inputs.audit
     alone = (audit.summary.get("question_choices_flip_alone") or {}) if audit else {}
     alpha = f"{c.result.conclusion_rule.get('alpha', 0.05):g}"
@@ -636,7 +636,7 @@ def limitations(c: Ctx) -> list[Limitation]:
                 ],
             )
         )
-    if c.has("f_n_genes"):
+    if c.has("f_n_genes") and c.facts.value("f_n_genes") != 1:
         out.append(
             (
                 "multiplicity",
