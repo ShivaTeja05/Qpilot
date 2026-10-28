@@ -84,7 +84,7 @@ describe("several comparisons", { timeout: 30_000 }, () => {
     expect(screen.getByRole("radiogroup", { name: "Comparison shown" })).toBeTruthy();
     const tabs = screen.getAllByRole("radio");
     expect(tabs.map((t) => t.textContent)).toEqual(
-      results.comparisons.map((c) => `${c.label}${c.n_up + c.n_down}`),
+      results.comparisons.map((c) => `${c.label} ${c.n_up + c.n_down}`),
     );
     expect(tabs[0]!.getAttribute("aria-checked")).toBe("true");
     fireEvent.click(tabs[1]!);

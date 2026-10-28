@@ -74,7 +74,7 @@ export function ComparisonPicker({
         value: t.id,
         label: (
           <>
-            {t.label}
+            {t.label}{" "}
             <span className="rounded-full bg-bg-subtle px-1.5 text-xs text-muted tabular">
               {count(t.n_up + t.n_down)}
             </span>
