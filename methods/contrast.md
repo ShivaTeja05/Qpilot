@@ -17,4 +17,6 @@
 
 **On the demo study (recommended control set, top 15 %, drop):** ODC1 3.59× [2.42–5.33] up; BIRC5 4.01× [2.93–5.49] up; NTRK1 0.07× [0.03–0.14] down; NM23A 2.19× up, which becomes 1.62× "no call" with HMBS alone.
 
+**Several comparisons or a paired design.** See [comparisons.md](comparisons.md): the same test per comparison, Holm's correction across a gene's comparisons, Benjamini–Hochberg q-values across genes, and the paired t-test.
+
 **Why the rule is a choice.** Two-fold and p < 0.05 are conventions, not laws. qPilot states the rule wherever a conclusion appears and treats it as a candidate dimension of the robustness grid (roadmap).

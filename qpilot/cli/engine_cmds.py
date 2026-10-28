@@ -299,7 +299,11 @@ def _print_study(result, cards, settings) -> None:
         f"recommended: {', '.join(result.genorm.recommended)}; "
         f"below geNorm M {result.genorm.cutoff_M:g}: {', '.join(stable) or 'none'}"
     )
-    print(f"Rule: {settings.rule.describe()}")
+    rule = settings.rule.describe()
+    found = result.comparisons
+    if found is not None and len(found.comparisons) > 1 and found.correction == "holm":
+        rule = rule.replace("only if p <", "only if the corrected p <")
+    print(f"Rule: {rule}")
     _print_efficiency(result)
     for gene in settings.headline:
         if gene not in result.contrasts:
