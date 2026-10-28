@@ -579,16 +579,18 @@ def assemble_roles(
         target = by_well if "/" in proposal.subject else by_sample
         target[proposal.subject].add(str(role))
     out: dict[tuple[str, str, str], set[str]] = {}
-    for row in wells[["run_id", "well", "sample", "target"]].itertuples(index=False):
-        well = f"{row.run_id}/{row.well}"
-        key = (row.run_id, row.well, row.target)
+    # Plain lists, not itertuples: on string columns that is ~10x faster (one check per proposal).
+    columns = [wells[c].tolist() for c in ("run_id", "well", "sample", "target")]
+    for run_id, well_id, sample, target_id in zip(*columns, strict=True):
+        well = f"{run_id}/{well_id}"
+        key = (run_id, well_id, target_id)
         if well in by_well:
             roles = set(by_well[well])
-        elif row.sample in by_sample:
-            roles = set(by_sample[row.sample])
+        elif sample in by_sample:
+            roles = set(by_sample[sample])
         else:
-            declared = facts_types.get(row.sample, (("unkn", ""),))
-            specific = {t for t, target in declared if target == row.target}
+            declared = facts_types.get(sample, (("unkn", ""),))
+            specific = {t for t, target in declared if target == target_id}
             roles = specific or {t for t, target in declared if not target} or {"unkn"}
         out.setdefault(key, set()).update(roles)
     return out
