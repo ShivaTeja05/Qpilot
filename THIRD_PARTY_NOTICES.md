@@ -7,6 +7,16 @@ qPilot is licensed under the Apache License 2.0 (see `LICENSE`). It vendors, dep
 |---|---|---|---|---|
 | rdmlpython (`rdml.py`, LinRegPCR implementation) and the RDML schemas | `rdml.py`, `LICENSE`: RDML-consortium/rdmlpython @ `fce7a44e8b47b90759c646b557de568f7af77e75` (2 May 2026); `schema/*.xsd`, `schema/LICENSE`: RDML-consortium/rdml-schema @ `e127cd010c5cf535f63db0ea2d28064851ef8b91` (the submodule pinned by that commit) | MIT, Copyright (c) 2019 the RDML-consortium (code); MIT, Copyright (c) 2008-2022 the RDML-consortium (schemas) | `qpilot/vendor/rdmlpython/` | Copied verbatim; not modified; hashes in `README_VENDOR.md`. Cite Ruijter et al. 2009 and Untergasser et al. 2021. |
 
+## File formats learned from (no code copied)
+| Work | Licence | What qPilot used it for |
+|---|---|---|
+| GraphPad Prism XML schema and style sheet (KB 1638) and FAQ 913 | GraphPad's published documentation | The structure of the plain-XML data part of `.pzfx` that `qpilot/prism/pzfx.py` writes and reads (element and attribute names, table types). |
+| `pzfx` R package (Yue Jiang), its test files | MIT | Read to learn how real Prism 6–8 files encode tables, excluded values (`Excluded="1"`), empty cells and comma decimals. |
+| `pzfx_parser` (Python, ulido) | MIT | Read to learn which table types and namespaces readers meet. |
+| `prismWriter` (Python, smestern), its Prism 10 template | MIT (per its README) | Read to learn the Prism 10 grouped-table structure (`SubColumnTitles OwnSet="1"`, `ExtTableType`). |
+
+No code or file from these works is in qPilot; the test fixtures `tests/fixtures/prism/prism*_style_*.pzfx` were written by hand.
+
 ## Runtime dependencies (installed, not vendored)
 | Package | Licence |
 |---|---|

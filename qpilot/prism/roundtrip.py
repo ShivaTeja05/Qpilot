@@ -30,6 +30,14 @@ exclusions, also what all of them do together), and a changed value into a ``pri
 proposal ("this value no longer matches the record", action ``restore`` by default). They are
 made by a rule, never accepted here: only a person accepts a proposal.
 
+**From the Prism project itself** (the default bundle): :func:`read_returned` reads the
+``.pzfx`` file(s) the scientist saved in Prism (a file, or a folder holding them) with
+:func:`qpilot.prism.pzfx.read_project`, finds each exported table by its exact title, and turns
+it into the same strict cells as a sent-back CSV, with Prism's own exclusion mark
+(``Excluded="1"``). There an empty cell is a deletion and a marked one an exclusion, so the
+question names which. A value excluded in the Grouped table of all genes is the same value as
+in that gene's Column table and is reported once, as that table's cell.
+
 A value of the nested layout is one technical replicate. Its proposal names the replicate in
 its subject (``gene/unit/rep n``, so two replicates of one unit never supersede each other) and
 question, and carries the exact well behind that row of the exported table (``"well":
@@ -51,7 +59,8 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
-from qpilot.prism.tables import REPLICATE_COLUMN, row_titles
+from qpilot.prism import pzfx
+from qpilot.prism.tables import REPLICATE_COLUMN, ROW_TITLE_COLUMN, row_titles
 from qpilot.qpcr.export import (
     ExportError,
     ExportInputs,
@@ -82,6 +91,18 @@ MISSING_NOTE = (
     "and why."
 )
 EXCLUDED_NOTE = "Excluded in Prism (marked in the table Prism sent back)."
+DELETED_NOTE = "Deleted in Prism: the cell is empty in the saved project."
+EXCLUDED_PROJECT_NOTE = "Excluded in Prism (marked as excluded in the saved project)."
+SOURCE_SENT_BACK = "sent_back"
+SOURCE_PROJECT = "project"
+MAX_PROJECT_FILES = 20
+CHANGED_PROJECT_NOTE = "This value no longer matches the record (changed in the saved project)."
+IN_GROUPED = " In the table of all genes."
+_PROJECT_NOTES = {  # a sent-back note -> the same finding in a saved project
+    "missing": DELETED_NOTE,
+    "excluded": EXCLUDED_PROJECT_NOTE,
+    "changed": CHANGED_PROJECT_NOTE,
+}
 CHANGED_NOTE = "This value no longer matches the record."
 NOT_THE_EXPORT = (
     "the study's wells no longer give the exported table, so the well behind this replicate is "
@@ -280,6 +301,323 @@ def _read_file(
     except UnicodeDecodeError:
         return SentBackTable(name=path.stem, file=file, problem="not UTF-8 text")
     return parse_table(text, file, exclusion_suffix=exclusion_suffix, budget=budget)
+
+
+# ---------------------------------------------------------------------------------------------
+# Reading the project Prism saved (.pzfx)
+# ---------------------------------------------------------------------------------------------
+
+
+@dataclass
+class Returned:
+    """What came back from Prism, ready for :func:`diff`: tables by the bundle's table names.
+
+    ``grouped`` holds the differences found in the Grouped table of all genes, already as the
+    gene's Column-table cells; ``files`` the project files read (newest wins for a table found
+    in two); ``source`` says where it came from (a saved project, or ``send_back.pzc``'s CSVs).
+    """
+
+    tables: dict[str, SentBackTable] = field(default_factory=dict)
+    grouped: pzfx.ProjectTable | None = None
+    files: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
+    source: str = SOURCE_SENT_BACK
+    skipped: set[str] = field(default_factory=set)  # tables of project files not given
+
+
+def is_project_path(path: str | Path) -> bool:
+    """True for a ``.pzfx`` file, or a folder that holds one (the project route)."""
+    target = Path(path)
+    if target.is_file():
+        return target.suffix.lower() == ".pzfx"
+    if target.is_dir() and not target.is_symlink():
+        return any(
+            e.name.lower().endswith(".pzfx") and not e.name.startswith(".")
+            for e in os.scandir(target)
+        )
+    return False
+
+
+def _project_files(path: Path) -> list[Path]:
+    if path.is_symlink():
+        raise RoundTripError(f"a link, not read: {path.name}")
+    if path.is_file():
+        if path.suffix.lower() != ".pzfx":
+            raise RoundTripError("choose the project Prism saved (a .pzfx file)")
+        return [path]
+    if not path.is_dir():
+        raise RoundTripError(f"not a file or folder: {path}")
+    found = sorted(
+        Path(e.path)
+        for e in os.scandir(path)
+        if e.name.lower().endswith(".pzfx")
+        and not e.name.startswith(".")
+        and e.is_file(follow_symlinks=False)
+    )
+    if len(found) > MAX_PROJECT_FILES:
+        raise RoundTripError(f"more than {MAX_PROJECT_FILES} .pzfx files here; choose the file")
+    return found
+
+
+def read_returned(
+    path: str | Path,
+    bundle: PrismBundle,
+    bundle_dir: str | Path,
+) -> Returned:
+    """Read the project file(s) Prism saved and match their tables to the exported ones.
+
+    Raises:
+        RoundTripError: Nothing readable was given, or no exported table is in it.
+    """
+    from qpilot.prism.project import (
+        GROUPED_NAME,
+        INFO_GROUPED_TITLE,
+        INFO_PROJECT,
+        INFO_PROJECT_SHA,
+        INFO_REPLICATES,
+        INFO_REPLICATES_SHA,
+    )
+
+    files = _project_files(Path(path))
+    if not files:
+        raise RoundTripError("no Prism project (.pzfx) here; choose the file Prism saved")
+    names = {t.title: t.name for t in bundle.tables}
+    grouped_title = bundle.info.get(INFO_GROUPED_TITLE)
+    if grouped_title:
+        names[grouped_title] = GROUPED_NAME
+    written = {
+        bundle.info.get(INFO_PROJECT_SHA): bundle.info.get(INFO_PROJECT),
+        bundle.info.get(INFO_REPLICATES_SHA): bundle.info.get(INFO_REPLICATES),
+    }
+    out = Returned(source=SOURCE_PROJECT)
+    found: dict[str, tuple[float, str, pzfx.ProjectTable]] = {}
+    other = 0
+    for file in files:
+        if file.stat().st_size > pzfx.MAX_PROJECT_BYTES:
+            out.notes.append(f"{_file_label(file.name)}: too large, not read")
+            continue
+        with open(file, "rb") as fh:
+            data = fh.read(pzfx.MAX_PROJECT_BYTES + 1)
+        digest = hashlib.sha256(data).hexdigest()
+        if written.get(digest):
+            out.notes.append(
+                f"{_file_label(file.name)} is the project exactly as qPilot wrote it: nothing "
+                "was saved in Prism since (save the project in Prism first)"
+            )
+        try:
+            project = pzfx.read_project(data)
+        except pzfx.PzfxError as err:
+            out.notes.append(f"{_file_label(file.name)}: {err}")
+            continue
+        out.files.append(_file_label(file.name))
+        out.notes += [f"{_file_label(file.name)}: {p}" for p in project.problems]
+        mtime = file.stat().st_mtime
+        for table in project.tables:
+            name = names.get(table.title)
+            if name is None:
+                other += 1
+                continue
+            if name not in found or mtime > found[name][0]:
+                found[name] = (mtime, file.name, table)
+    if not found:
+        raise RoundTripError(
+            "none of the tables qPilot wrote is in this project (were they renamed?); choose "
+            "the project qPilot wrote, saved in Prism"
+        )
+    if other:
+        out.notes.append(
+            f"{other} table{'s' * (other != 1)} qPilot did not write (added or renamed in "
+            "Prism) were left alone"
+        )
+    exported = exported_tables(bundle, bundle_dir)
+    read_names = {name for name in found}
+    replicates = [t.name for t in bundle.tables if t.layout == "nested"]
+    if replicates and not read_names & set(replicates):
+        out.skipped |= set(replicates)
+        out.notes.append(
+            "the replicates project was not given, so its Nested tables were not compared"
+        )
+    if not read_names & {t.name for t in bundle.tables if t.layout == "column"}:
+        out.skipped |= {t.name for t in bundle.tables if t.layout == "column"}
+    budget = _Budget(MAX_CELLS)
+    for table in bundle.tables:
+        if table.name in out.skipped:
+            continue
+        if table.name not in found:
+            out.tables[table.name] = SentBackTable(
+                name=table.name,
+                file=table.name,
+                problem="not in the saved project (renamed or deleted in Prism?)",
+            )
+            continue
+        _, file, returned = found[table.name]
+        out.tables[table.name] = _project_cells(
+            returned, exported[table.name], f"{file}!{table.name}", budget
+        )
+    if GROUPED_NAME in found:
+        out.grouped = found[GROUPED_NAME][2]
+    return out
+
+
+def _project_cells(
+    returned: pzfx.ProjectTable, mine: SentBackTable, file: str, budget: _Budget
+) -> SentBackTable:
+    """A saved project's table as the strict cells of a sent-back CSV, named like the export.
+
+    A Nested table's subcolumns are named by position within their data set (the export's
+    ``group/unit`` names), since Prism may drop or rename subcolumn titles.
+    """
+    grid = returned.grid()
+    header = [cell.text for cell in grid[0]]
+    if returned.kind == "nested":
+        by_group: dict[str, list[str]] = {}
+        for column in mine.columns():
+            group = column.split("/", 1)[0]
+            by_group.setdefault(group, []).append(column)
+        header = [REPLICATE_COLUMN]
+        for ds in returned.data_sets:
+            known = by_group.get(ds.title, [])
+            for k in range(len(ds.subcolumns)):
+                header.append(known[k] if k < len(known) else f"{ds.title}/added_{k + 1}")
+    elif returned.kind == "column":
+        header = [ROW_TITLE_COLUMN, *header[1:]]
+    table = SentBackTable(name=mine.name, file=file)
+    rows = [[PzRaw(text=h) for h in header], *[[PzRaw.of(c) for c in row] for row in grid[1:]]]
+    n = sum(len(r) for r in rows)
+    if n > budget.left:
+        table.problem = f"more than {MAX_CELLS} cells sent back in all"
+        return table
+    budget.left -= n
+    width = len(header)
+    for r, row in enumerate(rows):
+        row = (row + [PzRaw()] * width)[:width]
+        cells = []
+        for c, raw in enumerate(row):
+            cell = _cell(raw.text, cell_ref(r, c), file, r == 0 or c == 0, None, table)
+            if raw.excluded and cell.value is not None:
+                cell = replace(cell, excluded=True)
+            elif raw.excluded and cell.empty:
+                cell = replace(cell, excluded=True)
+            cells.append(cell)
+        if r == 0:
+            table.header = cells
+        else:
+            table.rows.append(cells)
+    while table.rows and all(cell.empty for cell in table.rows[-1]):
+        table.rows.pop()  # Prism may keep empty rows at the end of a table
+    return table
+
+
+@dataclass(frozen=True)
+class PzRaw:
+    """A saved project's cell before it is checked: its text, and Prism's exclusion mark.
+
+    A comma decimal separator (``3,5``, written by Prism in some locales) reads as a point.
+    """
+
+    text: str = ""
+    excluded: bool = False
+
+    @classmethod
+    def of(cls, cell: pzfx.PzCell) -> PzRaw:
+        """The raw form of a project cell."""
+        return cls(text=pzfx.number_text(cell.text), excluded=cell.excluded)
+
+
+def grouped_items(
+    returned: Returned, bundle: PrismBundle, bundle_dir: str | Path
+) -> list[PrismDiffItem]:
+    """Values excluded, deleted or changed in the Grouped table, as their Column-table cells.
+
+    Row ``r`` is a gene, data set a group, subcolumn ``k`` a unit (its subcolumn title when it
+    names one, else the export's order). Rows or data sets qPilot did not write are left alone.
+    """
+    from qpilot.prism.project import project_tables
+
+    grouped = returned.grouped
+    if grouped is None:
+        return []
+    exported = exported_tables(bundle, bundle_dir)
+    primary = [t for t in bundle.tables if t.layout == "column" and "__" not in t.name]
+    by_gene = {t.gene: t for t in primary}
+    texts = {t.csv: (Path(bundle_dir) / t.csv).read_text(encoding="utf-8") for t in primary}
+    sub = bundle.model_copy(update={"tables": primary})
+    mine = next((t for t in project_tables(sub, texts)[0] if t.kind == "grouped"), None)
+    if mine is None:
+        return []
+    order = {ds.title: list(ds.subcolumn_titles) for ds in mine.data_sets}
+    items = []
+    for r, gene in enumerate(grouped.row_titles):
+        table = by_gene.get(gene)
+        if table is None:
+            continue
+        columns = exported[table.name].columns()
+        rows = dict(zip(exported[table.name].titles(), exported[table.name].rows, strict=True))
+        for ds in grouped.data_sets:
+            if ds.title not in order or ds.title not in columns:
+                continue
+            c = columns.index(ds.title) + 1
+            for k, cells in enumerate(ds.subcolumns):
+                known = order[ds.title]
+                title = ds.subcolumn_titles[k] if k < len(ds.subcolumn_titles) else ""
+                unit = title if title in rows else (known[k] if k < len(known) else "")
+                if unit not in rows or r >= len(cells):
+                    continue
+                raw = PzRaw.of(cells[r])
+                ref = f"{GROUPED_FILE}!{cell_ref(r + 1, k + 1)}"
+                placeholder = SentBackTable(name=table.name, file=GROUPED_FILE)
+                theirs = _cell(raw.text, ref, GROUPED_FILE, False, None, placeholder)
+                if raw.excluded:
+                    theirs = replace(theirs, excluded=True)
+                found = _compare(rows[unit][c], theirs)
+                if found is None or found[0] == "unreadable":
+                    continue
+                kind, note = found
+                items.append(
+                    PrismDiffItem(
+                        kind=kind,
+                        table=table.name,
+                        gene=table.gene,
+                        row=unit,
+                        column=ds.title,
+                        exported=rows[unit][c].value,
+                        returned=theirs.value,
+                        note=_PROJECT_NOTES.get(kind, note) + IN_GROUPED,
+                    )
+                )
+    return items
+
+
+GROUPED_FILE = "all_genes"
+
+
+def diff_returned(
+    bundle: PrismBundle, returned: Returned, *, bundle_dir: str | Path
+) -> list[PrismDiffItem]:
+    """:func:`diff` for a saved project: Column and Nested tables, then the Grouped table.
+
+    An empty cell is a deletion and a marked one an exclusion (the notes say which); a value
+    found changed in two tables is reported once (its own table's cell first).
+    """
+    kept = bundle.model_copy(
+        update={"tables": [t for t in bundle.tables if t.name not in returned.skipped]}
+    )
+    items = diff(kept, returned.tables, bundle_dir=bundle_dir)
+    seen = {(i.kind, i.table, i.row, i.column) for i in items}
+    for item in grouped_items(returned, bundle, bundle_dir):
+        key = (item.kind, item.table, item.row, item.column)
+        if key not in seen:
+            seen.add(key)
+            items.append(item)
+    out = []
+    for item in items:
+        note = item.note or ""
+        if item.kind in _PROJECT_NOTES and not _from_project(item):
+            base = {"missing": MISSING_NOTE, "excluded": EXCLUDED_NOTE, "changed": CHANGED_NOTE}
+            rest = note[len(base[item.kind]) :] if note.startswith(base[item.kind]) else ""
+            item = item.model_copy(update={"note": _PROJECT_NOTES[item.kind] + rest})
+        out.append(item)
+    return out
 
 
 # ---------------------------------------------------------------------------------------------
@@ -729,8 +1067,12 @@ def _payload(here: _Located, action: str, question: str) -> dict[str, Any]:
 
 def _evidence(here: _Located) -> list[Evidence]:
     item, unit = here.item, here.unit
-    cell = f"sent_back/{item.table}.csv!{item.row or ''}|{item.column or ''}"
-    out = [Evidence(kind="cell", ref=cell, note="the cell in the table Prism sent back")]
+    if _from_project(item):
+        cell = f"project:{item.table}!{item.row or ''}|{item.column or ''}"
+        out = [Evidence(kind="cell", ref=cell, note="the cell in the project Prism saved")]
+    else:
+        cell = f"sent_back/{item.table}.csv!{item.row or ''}|{item.column or ''}"
+        out = [Evidence(kind="cell", ref=cell, note="the cell in the table Prism sent back")]
     if unit is not None:
         out.append(Evidence(kind="sample", ref=unit, note="the biological unit"))
     if here.well:
@@ -744,8 +1086,14 @@ def _exclusion(
     here: _Located, study_id: str, consequence: dict[str, Any] | None, problem: str
 ) -> Proposal:
     item = here.item
+    deleted = item.kind != "excluded" and _from_project(item)
     if item.kind == "excluded":
         question = f"You excluded {_what(here, capital=False)} in Prism. Reason?"
+    elif deleted:
+        question = (
+            f"You deleted {_what(here, capital=False)} in Prism. Reason? Accepting leaves the "
+            "value out of the analysis; rejecting keeps qPilot's value."
+        )
     else:
         question = (
             f"{_what(here)} is empty in the table Prism sent back. If you excluded it in Prism: "
@@ -762,8 +1110,11 @@ def _exclusion(
         }
     elif problem:
         note = f"The consequence could not be computed: {problem}"
-    reasons = ["Found by comparing the table Prism sent back with the exported table."]
-    if item.kind != "excluded":
+    if _from_project(item):
+        reasons = ["Found by comparing the project Prism saved with the exported table."]
+    else:
+        reasons = ["Found by comparing the table Prism sent back with the exported table."]
+    if item.kind != "excluded" and not deleted:
         reasons.append("An empty cell may be an exclusion or a deletion; Mode S cannot tell yet.")
     return Proposal(
         id=_proposal_id(study_id, item),
@@ -779,7 +1130,7 @@ def _exclusion(
             note=note,
         ),
         consequence=consequence,
-        level="High" if item.kind == "excluded" else "Moderate",
+        level="High" if item.kind == "excluded" or deleted else "Moderate",
         reasons=reasons,
         made_by=MadeBy(kind="rule"),
     )
@@ -804,24 +1155,40 @@ def _value_edit(here: _Located, study_id: str) -> Proposal:
         ),
         consequence={"exported": item.exported, "returned": item.returned},
         level="High",
-        reasons=["Found by comparing the table Prism sent back with the exported table."],
+        reasons=[
+            "Found by comparing the project Prism saved with the exported table."
+            if _from_project(item)
+            else "Found by comparing the table Prism sent back with the exported table."
+        ],
         made_by=MadeBy(kind="rule"),
     )
 
 
+def _from_project(item: PrismDiffItem) -> bool:
+    """True for a difference read from a saved project (its note says so), not from a CSV."""
+    note = item.note or ""
+    return note.startswith((DELETED_NOTE, EXCLUDED_PROJECT_NOTE, CHANGED_PROJECT_NOTE))
+
+
 __all__ = [
+    "DELETED_NOTE",
+    "EXCLUDED_PROJECT_NOTE",
     "MAX_CELLS",
     "MAX_FILES",
     "MAX_FILE_BYTES",
     "REPLICATE_COLUMN",
     "Cell",
+    "Returned",
     "RoundTripError",
     "SentBackTable",
     "diff",
+    "diff_returned",
     "diff_to_proposals",
     "exported_tables",
+    "is_project_path",
     "parse_number",
     "parse_table",
+    "read_returned",
     "read_sent_back",
     "round_trip_proposals",
     "same_as_shown",

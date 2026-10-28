@@ -44,6 +44,19 @@ class PrismProject(BaseModel):
     template_id: str | None = None
     genes: list[str] = []
     made_by: str | None = Field(default=None, description="rule, model or agent")
+    still_current: bool = Field(
+        default=False,
+        description="Accepted for an earlier analysis whose exported tables hold exactly the "
+        "same numbers (equal tables digest): it holds for this one, no new draft is needed.",
+    )
+    drafted_for: str | None = Field(
+        default=None, description="The analysis it was accepted for, when still current."
+    )
+    checking: bool = Field(
+        default=False,
+        description="A project accepted for an earlier analysis may still hold: its tables are "
+        "being compared with this analysis's (the page hears when it is done).",
+    )
 
 
 class PrismStatus(BaseModel):
@@ -63,14 +76,27 @@ class PrismStatus(BaseModel):
 
 
 class PrismTemplate(BaseModel):
-    """The Prism template the bundle uses."""
+    """The test and graph the project is drafted for (a template is only for the scripts)."""
 
     id: str
     file: str
-    available: bool = Field(description="False: not made in Prism yet (the README says how).")
+    available: bool = Field(
+        description="A hand-made template is here (only the optional Prism scripts use one; "
+        "the project file needs none)."
+    )
     layout: str
     test: str
     graph: str
+
+
+class PrismTableView(BaseModel):
+    """One table of the Prism project (``.pzfx``)."""
+
+    name: str
+    gene: str = Field(description="Empty for the grouped table of all genes.")
+    kind: Literal["column", "nested", "grouped"]
+    title: str = Field(description="The table's title in Prism (record ref and chain head).")
+    n_rows: int
 
 
 class PreviewTable(BaseModel):
@@ -144,6 +170,15 @@ class PrismPreview(BaseModel):
     project: PrismProject
     choices_confirmed: bool
     not_affiliated: str
+    project_file: str | None = Field(
+        default=None, description="The Prism project Send writes (opens in Prism as it is)."
+    )
+    project_tables: list[PrismTableView] = []
+    replicates_file: str | None = Field(
+        default=None, description="The project of Nested tables, when units have replicates."
+    )
+    replicates_tables: list[PrismTableView] = []
+    needs_template: bool = False
 
 
 # ---- Prism: how the usual routes would change the conclusions ------------------------------------
@@ -197,6 +232,11 @@ class PrismBundleView(BaseModel):
     )
     round_trip: bool = Field(description="A round trip can be started from this page.")
     download: DownloadLink | None = None
+    project: str | None = Field(
+        default=None,
+        description="The project file in the bundle folder (where Prism saves it back), for a "
+        "bundle with a project; None for a scripts-only bundle.",
+    )
 
 
 class PrismBundles(BaseModel):
@@ -204,6 +244,17 @@ class PrismBundles(BaseModel):
 
     session_id: str
     bundles: list[PrismBundleView]
+
+
+Platform = Literal["windows", "macos"]
+
+
+class OpenSteps(BaseModel):
+    """How to open the project on one operating system, in plain words (no command line)."""
+
+    platform: Platform
+    label: str = Field(description="Windows or macOS.")
+    steps: list[str]
 
 
 class PrismSent(BaseModel):
@@ -214,11 +265,35 @@ class PrismSent(BaseModel):
     files: list[str] = Field(description="Every file of the bundle, relative to its folder.")
     notes: list[str]
     launched: bool
-    done: bool | None = Field(default=None, description="Prism finished run.pzc (when launched).")
+    done: bool | None = Field(
+        default=None, description="Prism finished run.pzc (scripts-only bundles, when launched)."
+    )
     launch_note: str | None = None
-    command_line: str = Field(description="What to run on the computer with Prism.")
-    send_back_command: str
+    project: str | None = Field(default=None, description="The project file (opens in Prism).")
+    replicates_project: str | None = None
+    this_platform: Platform = Field(description="The operating system of this computer.")
+    open_steps: list[OpenSteps] = Field(
+        default=[], description="How to open the project, this computer's system first."
+    )
+    analyse_steps: list[str] = Field(
+        default=[], description="The clicks that add the t test and the graph in Prism."
+    )
+    round_trip_steps: list[str] = Field(
+        default=[], description="How to bring changes made in Prism back to qPilot."
+    )
+    scripts: bool = Field(default=False, description="The optional Prism scripts were written.")
+    command_line: str = Field(
+        default="",
+        description="Only for the optional scripts: what runs run.pzc. Empty for a project.",
+    )
+    send_back_command: str = ""
     download: DownloadLink
+
+
+class PrismChecked(BaseModel):
+    """The result of the background check whether an earlier project still holds."""
+
+    still_current: bool
 
 
 class PrismDrafted(BaseModel):
@@ -231,10 +306,14 @@ class PrismDrafted(BaseModel):
 
 
 class RoundTripRequest(BaseModel):
-    """Which bundle came back, and the folder Prism saved the tables into."""
+    """Which bundle came back, and where: the project Prism saved, or the sent-back folder."""
 
     bundle: str = Field(description="A bundle id from `…/prism/bundles`.")
-    folder: str = Field(max_length=4096, description="The full path of the sent-back folder.")
+    folder: str = Field(
+        max_length=4096,
+        description="The full path of the project Prism saved (a .pzfx file), of the folder "
+        "holding it (the bundle folder, by default), or of send_back.pzc's sent_back folder.",
+    )
 
 
 class RoundTripRefused(BaseModel):
@@ -257,6 +336,10 @@ class PrismRoundTrip(BaseModel):
         default=None, description="What all the proposed exclusions do together."
     )
     message: str
+    source: Literal["project", "sent_back"] = Field(
+        default="sent_back",
+        description="project: read from the project Prism saved; sent_back: from send_back.pzc.",
+    )
 
 
 # ---- the Analysis Record -------------------------------------------------------------------------

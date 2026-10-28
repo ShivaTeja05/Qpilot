@@ -1106,9 +1106,36 @@ export type paths = {
         put?: never;
         /**
          * Prism Roundtrip
-         * @description Compare what Prism sent back with the bundle; each change becomes a proposal.
+         * @description Compare what came back from Prism with the bundle; each change becomes a proposal.
+         *
+         *     What came back is the project Prism saved (a ``.pzfx`` file, or the folder holding it:
+         *     the bundle folder when Prism runs on this computer) or ``send_back.pzc``'s CSV folder.
          */
         post: operations["prism_roundtrip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/{sid}/prism/roundtrip/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prism Roundtrip Upload
+         * @description The round trip from an uploaded project: the ``.pzfx`` a person saved in Prism.
+         *
+         *     For Prism on another computer: the file is kept inside the bundle's folder
+         *     (``returned/``) and compared like a project saved there. The blind gate answers before
+         *     the form is checked (both fields are required).
+         */
+        post: operations["prism_roundtrip_upload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1125,6 +1152,9 @@ export type paths = {
         /**
          * Prism Routes
          * @description How often the usual Excel→Prism routes would change a conclusion on this study.
+         *
+         *     The answer is the study's stored facts, so it is kept per study and results file (its
+         *     size and time): only the blind gate runs again on a warm request.
          */
         get: operations["prism_routes"];
         put?: never;
@@ -4895,6 +4925,19 @@ export type components = {
              * @description Optional sample sheet.
              */
             sheet?: string | null;
+        };
+        /** Body_prism_roundtrip_upload */
+        Body_prism_roundtrip_upload: {
+            /**
+             * Bundle
+             * @description A bundle id from `…/prism/bundles`.
+             */
+            bundle?: string | null;
+            /**
+             * Project
+             * @description The project Prism saved (.pzfx).
+             */
+            project?: string | null;
         };
         /** Body_read_run */
         Body_read_run: {
@@ -9783,6 +9826,24 @@ export type components = {
             rank: number;
         };
         /**
+         * OpenSteps
+         * @description How to open the project on one operating system, in plain words (no command line).
+         */
+        OpenSteps: {
+            /**
+             * Label
+             * @description Windows or macOS.
+             */
+            label: string;
+            /**
+             * Platform
+             * @enum {string}
+             */
+            platform: "windows" | "macos";
+            /** Steps */
+            steps: string[];
+        };
+        /**
          * OptionEffect
          * @description One option's consequence for one gene (the other choices as planned).
          */
@@ -10833,6 +10894,11 @@ export type components = {
              */
             id: string | null;
             /**
+             * Project
+             * @description The project file in the bundle folder (where Prism saves it back), for a bundle with a project; None for a scripts-only bundle.
+             */
+            project?: string | null;
+            /**
              * Round Trip
              * @description A round trip can be started from this page.
              */
@@ -10844,6 +10910,14 @@ export type components = {
             sent_back_folder?: string | null;
             /** Study Id */
             study_id: string;
+        };
+        /**
+         * PrismChecked
+         * @description The result of the background check whether an earlier project still holds.
+         */
+        PrismChecked: {
+            /** Still Current */
+            still_current: boolean;
         };
         /**
          * PrismChoice
@@ -10976,9 +11050,34 @@ export type components = {
             };
             /** Genes */
             genes: string[];
+            /**
+             * Needs Template
+             * @default false
+             */
+            needs_template: boolean;
             /** Not Affiliated */
             not_affiliated: string;
             project: components["schemas"]["PrismProject"];
+            /**
+             * Project File
+             * @description The Prism project Send writes (opens in Prism as it is).
+             */
+            project_file?: string | null;
+            /**
+             * Project Tables
+             * @default []
+             */
+            project_tables: components["schemas"]["PrismTableView"][];
+            /**
+             * Replicates File
+             * @description The project of Nested tables, when units have replicates.
+             */
+            replicates_file?: string | null;
+            /**
+             * Replicates Tables
+             * @default []
+             */
+            replicates_tables: components["schemas"]["PrismTableView"][];
             /** Session Id */
             session_id: string;
             /** Study Id */
@@ -11000,6 +11099,17 @@ export type components = {
          */
         PrismProject: {
             /**
+             * Checking
+             * @description A project accepted for an earlier analysis may still hold: its tables are being compared with this analysis's (the page hears when it is done).
+             * @default false
+             */
+            checking: boolean;
+            /**
+             * Drafted For
+             * @description The analysis it was accepted for, when still current.
+             */
+            drafted_for?: string | null;
+            /**
              * Genes
              * @default []
              */
@@ -11017,6 +11127,12 @@ export type components = {
              * @enum {string}
              */
             status: "accepted" | "waiting" | "none";
+            /**
+             * Still Current
+             * @description Accepted for an earlier analysis whose exported tables hold exactly the same numbers (equal tables digest): it holds for this one, no new draft is needed.
+             * @default false
+             */
+            still_current: boolean;
             /** Template Id */
             template_id?: string | null;
         };
@@ -11048,6 +11164,13 @@ export type components = {
             proposed: string[];
             /** Refused */
             refused: components["schemas"]["RoundTripRefused"][];
+            /**
+             * Source
+             * @description project: read from the project Prism saved; sent_back: from send_back.pzc.
+             * @default sent_back
+             * @enum {string}
+             */
+            source: "project" | "sent_back";
             /** Study Id */
             study_id: string;
         };
@@ -11115,15 +11238,22 @@ export type components = {
          * @description The result of a Send to Prism job.
          */
         PrismSent: {
+            /**
+             * Analyse Steps
+             * @description The clicks that add the t test and the graph in Prism.
+             * @default []
+             */
+            analyse_steps: string[];
             bundle: components["schemas"]["PrismBundleView"];
             /**
              * Command Line
-             * @description What to run on the computer with Prism.
+             * @description Only for the optional scripts: what runs run.pzc. Empty for a project.
+             * @default
              */
             command_line: string;
             /**
              * Done
-             * @description Prism finished run.pzc (when launched).
+             * @description Prism finished run.pzc (scripts-only bundles, when launched).
              * @default null
              */
             done: boolean | null;
@@ -11144,8 +11274,46 @@ export type components = {
             n_files: number;
             /** Notes */
             notes: string[];
-            /** Send Back Command */
+            /**
+             * Open Steps
+             * @description How to open the project, this computer's system first.
+             * @default []
+             */
+            open_steps: components["schemas"]["OpenSteps"][];
+            /**
+             * Project
+             * @description The project file (opens in Prism).
+             * @default null
+             */
+            project: string | null;
+            /**
+             * Replicates Project
+             * @default null
+             */
+            replicates_project: string | null;
+            /**
+             * Round Trip Steps
+             * @description How to bring changes made in Prism back to qPilot.
+             * @default []
+             */
+            round_trip_steps: string[];
+            /**
+             * Scripts
+             * @description The optional Prism scripts were written.
+             * @default false
+             */
+            scripts: boolean;
+            /**
+             * Send Back Command
+             * @default
+             */
             send_back_command: string;
+            /**
+             * This Platform
+             * @description The operating system of this computer.
+             * @enum {string}
+             */
+            this_platform: "windows" | "macos";
         };
         /**
          * PrismStatus
@@ -11203,13 +11371,38 @@ export type components = {
             title: string;
         };
         /**
+         * PrismTableView
+         * @description One table of the Prism project (``.pzfx``).
+         */
+        PrismTableView: {
+            /**
+             * Gene
+             * @description Empty for the grouped table of all genes.
+             */
+            gene: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "column" | "nested" | "grouped";
+            /** N Rows */
+            n_rows: number;
+            /** Name */
+            name: string;
+            /**
+             * Title
+             * @description The table's title in Prism (record ref and chain head).
+             */
+            title: string;
+        };
+        /**
          * PrismTemplate
-         * @description The Prism template the bundle uses.
+         * @description The test and graph the project is drafted for (a template is only for the scripts).
          */
         PrismTemplate: {
             /**
              * Available
-             * @description False: not made in Prism yet (the README says how).
+             * @description A hand-made template is here (only the optional Prism scripts use one; the project file needs none).
              */
             available: boolean;
             /** File */
@@ -12636,7 +12829,7 @@ export type components = {
         };
         /**
          * RoundTripRequest
-         * @description Which bundle came back, and the folder Prism saved the tables into.
+         * @description Which bundle came back, and where: the project Prism saved, or the sent-back folder.
          */
         RoundTripRequest: {
             /**
@@ -12646,7 +12839,7 @@ export type components = {
             bundle: string;
             /**
              * Folder
-             * @description The full path of the sent-back folder.
+             * @description The full path of the project Prism saved (a .pzfx file), of the folder holding it (the bundle folder, by default), or of send_back.pzc's sent_back folder.
              */
             folder: string;
         };
@@ -16934,6 +17127,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RoundTripRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prism_roundtrip_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_prism_roundtrip_upload"];
             };
         };
         responses: {
