@@ -183,8 +183,8 @@ CONSEQUENCES: dict[str, str] = {
         "{{f_ev_efficiency_assumed}}."
     ),
     "rawness_cq_only": (
-        "Not applicable: this file has Cq values only, so there are no curves whose processing "
-        "before export could be checked."
+        "This file has Cq values only, so there are no curves whose processing before export "
+        "could be checked."
     ),
     "rawness_unknown_consistent": (
         "Not judged: qPilot's raw-ness check reads an instrument export when it is opened, and "

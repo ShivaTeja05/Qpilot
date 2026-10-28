@@ -147,13 +147,13 @@ def data(c: Ctx, cite: Cites) -> list[Part]:
     parts: list[Part] = []
     reactions = tok("f_n_reactions") if c.has("f_n_reactions") else None
     samples = tok("f_n_samples") if c.has("f_n_samples") else None
-    lead = "Raw fluorescence"
+    lead = "Cq values" if c.has("f_cq_only") else "Raw fluorescence"  # no curves: Cq only
     if reactions:
         lead += f" of {reactions} reactions"
     lead += f" on {plates} {noun(r.n_plates, 'plate')}"
     if samples:
         lead += f" ({samples} samples)"
-    parts.append(lead + " was read from ")
+    parts.append(lead + (" were" if c.has("f_cq_only") else " was") + " read from ")
     name = input_label(c.inputs.source)  # the person's own file names, never qPilot's
     meta = c.inputs.rdml
     if name and is_converted(c.inputs.source):

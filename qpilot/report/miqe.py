@@ -598,11 +598,16 @@ def dynamic_range(m: MiqeCtx) -> Outcome:
                 "one was evaluated."
             ]
         )
+    source = (
+        "the file holds Cq values only, and no assay has a dilution series"
+        if m.ctx.has("f_cq_only")
+        else "quantities come from each curve's own efficiency"
+    )
     return Fill(
         "No",
         [
-            "No standard curve is evaluated (quantities come from each curve's own efficiency); "
-            "change this answer if the range was determined elsewhere."
+            f"No standard curve is evaluated ({source}); change this answer if the range was "
+            "determined elsewhere."
         ],
     )
 

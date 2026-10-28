@@ -241,10 +241,15 @@ def test_the_evidence_ledger_and_the_report_say_no_curves_were_available(hmuy_st
     page, study = hmuy_study["page"], hmuy_study["study"]
     items = {i["id"]: i for i in page.get(f"/api/studies/{study}/evidence")["items"]}
     assert items["rawness"]["status"] == "not_applicable"
-    assert items["rawness"]["line"]["plain"].endswith(NOT_APPLICABLE["rawness"])
+    assert items["rawness"]["line"]["plain"] == (
+        "Raw-ness of the curves: not applicable. This file has Cq values only, so there are no "
+        "curves whose processing before export could be checked."
+    )
     assert items["efficiency"]["status"] == "absent"
     assert "has Cq values only" in items["efficiency"]["line"]["plain"]
     report = page.get(f"/api/studies/{study}/report")
+    data = next(p for p in report["methods"]["paragraphs"] if p["id"] == "data")
+    assert data["text"]["plain"].startswith("Cq values of 36 reactions on 1 plate")
     curves = next(p for p in report["methods"]["paragraphs"] if p["id"] == "curves")
     assert curves["text"]["plain"].startswith("The file holds Cq values only")
     assert "LinRegPCR" not in curves["text"]["plain"]
