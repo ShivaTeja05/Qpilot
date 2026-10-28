@@ -307,7 +307,7 @@ Decisions are a hash chain: each entry carries the hash of the one before, so an
 |---|---|
 | RDML export from the instrument | ✔ RDML 1.0 to 1.4, including zipped files whatever their member is called (LightCycler 96 `.lc96p`, CFX Manager), StepOne's RDML 1.0 and LinRegPCR-written RDML; every RDML file of the public corpus opens, one file at a time ([`docs/conformance.md`](docs/conformance.md)) |
 | Instrument exports (Bio-Rad CFX, QuantStudio / StepOne / 7500, LightCycler 480, tidy tables) | ◐ dropped on the page's Open (one file or a whole export set), read by content and converted once into RDML; every real qPCR export set of the corpus opens (an isothermal plate read is refused: it is not a PCR run). The page says how raw the curves are, and a baseline-subtracted or unknown export is analysed with every confidence grade capped until a person decides |
-| My own Excel Cq table (Sample, Gene, Condition, Gene Type, Cq) | ◐ opens alone or beside the run file; its Gene Type column proposes the reference genes and its condition column becomes the sample sheet. Analysing from Cq values alone, with no curves, is not offered yet (it is through the Import Trust card of an export that also has curves) |
+| My own Excel Cq table (Sample, Gene, Condition, Gene Type, Cq), or an RDML file without curves | ✔ opens alone or beside the run file (its Gene Type column proposes the reference genes, its condition column becomes the sample sheet) and is analysed end to end from the Cq values: efficiency from the plate's dilution series, else assumed 2.0, with confidence capped at Low or Moderate because no curve could be checked ([`docs/cq-tables.md`](docs/cq-tables.md)) |
 | QuantStudio `.eds` | ◐ for the analysis, export the curves with Thermo's own tools first; `qpilot instrument inspect` reads the file's calibration dates, run state and log events (synthetic test files only) |
 | Offline on a laptop, no account | ✔ (macOS: full analysis tested with the network off; Linux: tests in CI; Windows: in CI, tests and the installed wheel, not yet used on an instrument PC) |
 | Reproduces my lab's numbers | ◐ reproduces the published benchmark above; your own instrument is untested. Melt: 96 of 96 wells of a CFX96 SYBR plate within 0.5 °C of CFX Manager's Tm |
@@ -336,7 +336,8 @@ Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671; raw curves from Ruij
 - Curve analysis (N0, Cq, dilution bias) is validated against published results on the standards of one study from one instrument platform (LightCycler 480, SYBR Green I). The later steps (geNorm, NormFinder, the contrast, robustness) are tested against reproduced numbers, not a published benchmark; NormFinder has not been checked against the paper's own example (its data are not redistributed).
 - The call rule uses no correction for testing many genes (Benjamini–Hochberg q-values are shown beside p for reference); with several comparisons, each gene's p-values are corrected across its comparisons (Holm, Dunnett or Tukey, a person's choice). The robustness check measures sensitivity to analysis choices, not significance.
 - With several comparisons, the robustness audit audits the first one and says so, and refuses a paired or pooled-variance (Dunnett, Tukey) comparison or one whose correction changes a call; MCP `qpcr_units` serves the first comparison (the others are in `qpcr_export`'s Per unit table).
-- A file with Cq values and no curves opens and its design can be set, but an analysis from Cq values alone is offered only through the Import Trust card of an export that also has curves.
+- A file with Cq values and no curves is analysed from its Cq values; what needs a curve (LinRegPCR's per-well fit, the Curve Judge, melt) does not apply, and its confidence is capped.
+- Absolute quantification counts a standard well that has a quantity even when LinRegPCR calls it "no amplification": on one real eDNA standard curve three flat wells give 154 % efficiency (87 % without them). Check a standard curve's wells and leave flat ones out in Curves ([science review](docs/science-review-2026-10.md), J1).
 - A plate with standards and no group comparison (a viral load) cannot reach Results on the page; `qpilot quantify` gives its quantities. No MCP tool reads quantities yet.
 - Outside Studio, a Trace decision is recorded only; open the file in Studio to apply it.
 - The Prism project has not yet been opened in a real Prism seat; the table of all genes needs Prism 9 or later.
@@ -351,7 +352,7 @@ Vermeulen J *et al.* (2009) *Lancet Oncology* 10:663–671; raw curves from Ruij
 - Instrument serial numbers stay in the local registry; no page view or tool returns them.
 - Names from your files stay text in every file qPilot writes: no workbook cell is a formula, every CSV a person opens defuses `= + - @`, and figures and HTML reports escape every name.
 
-Threats and mitigations: [`THREAT_MODEL.md`](THREAT_MODEL.md); the latest review: [`docs/security-review-2026-10.md`](docs/security-review-2026-10.md). Reporting a vulnerability: [`SECURITY.md`](SECURITY.md).
+Threats and mitigations: [`THREAT_MODEL.md`](THREAT_MODEL.md); the latest review: [`docs/security-review-2026-10.md`](docs/security-review-2026-10.md) (and of the science: [`docs/science-review-2026-10.md`](docs/science-review-2026-10.md)). Reporting a vulnerability: [`SECURITY.md`](SECURITY.md).
 
 ## Repository layout
 
@@ -388,6 +389,7 @@ tests/                      unit, integration, page API and demo-data tests
 | [`docs/conformance.md`](docs/conformance.md) | which instrument files qPilot reads, set by set |
 | [`docs/design-editor.md`](docs/design-editor.md) | setting the design on the page, with no model |
 | [`docs/quantities.md`](docs/quantities.md) | absolute quantification: standard curves, LOD, LOQ, copies |
+| [`docs/cq-tables.md`](docs/cq-tables.md) | analysing a table of Cq values (no curves): what works, what does not |
 | [`docs/exports.md`](docs/exports.md) | what the workbook, CSV tables, figures and supplement hold |
 | [`docs/app.md`](docs/app.md) | the page's build spec: sections, API, design system |
 | [`docs/studio.md`](docs/studio.md) | qPilot Studio, step by step |
@@ -429,7 +431,6 @@ For the analysis-and-statistics step, Clarida's Lab plan is listed at €4,800�
 
 ## Roadmap (not built)
 
-- An analysis from Cq values alone (a Cq table or a Cq-only RDML file), with its own confidence cap
 - The Prism project opened and round-tripped in a real Prism seat
 - The robustness audit for every comparison, paired and pooled-variance designs included, not only the first
 - Quantities on the page for a plate with no group comparison, and an MCP tool for them

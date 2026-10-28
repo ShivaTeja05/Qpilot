@@ -13,6 +13,7 @@ connecting an AI agent. The repository's [README](../README.md) is the overview.
 | [conformance.md](conformance.md) | which instrument files qPilot reads, set by set, from a corpus of real lab files |
 | [design-editor.md](design-editor.md) | setting the design on the page with no model: targets, samples, a pasted list, the comparison, the sample sheet |
 | [quantities.md](quantities.md) | absolute quantification: standard curves, LOD, LOQ and copies |
+| [cq-tables.md](cq-tables.md) | analysing a table of Cq values without curves: what works, what does not, why curves are better |
 | [exports.md](exports.md) | what the workbook, the CSV tables, the figures and the journal supplement hold |
 | [prism.md](prism.md) | the Prism project (`.pzfx`) and its round trip |
 | [studio.md](studio.md) | qPilot Studio, from the instrument export to Prism, step by step |
@@ -24,6 +25,7 @@ connecting an AI agent. The repository's [README](../README.md) is the overview.
 | [engine.md](engine.md) | the engine's steps, its method cards and its limits |
 | [integration.md](integration.md) | the nine-stage workflow, the robustness audit and their numbers |
 | [studio-measured.md](studio-measured.md) | model runs measured on the demo, 7B to 32B |
+| [science-review-2026-10.md](science-review-2026-10.md) | the October 2026 science review: every new method against an independent oracle, and the judgement calls left to you |
 | [../validation/validation_table.md](../validation/validation_table.md) | the published benchmark the engine reproduces |
 | [../sim/README.md](../sim/README.md) | the Decision Simulator (the robustness audit) |
 

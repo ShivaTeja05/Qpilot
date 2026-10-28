@@ -32,6 +32,15 @@ Methods paragraph on them.
   the sample sheet, and its numbers are never shown before the design and curves are confirmed.
   Every refusal of an RDML file says its own reason in words; reports and exports name a person's
   own files, never qPilot's hashed copy.
+- **A table of Cq values, analysed without curves** (`qpilot/qpcr/cq_only.py`,
+  `GET /api/sessions/{sid}/cq-table`, [`docs/cq-tables.md`](docs/cq-tables.md)): a Cq table
+  (Excel or CSV) or an RDML file without amplification curves goes through the same Studio
+  stages, engine and Analysis Record. Each well's N0 is E^−Cq, with E from the assay's dilution
+  series when the plate has one, else assumed 2.0 (then the log2 fold change is exactly −ΔΔCq);
+  the Curves stage shows **Your Cq table** to confirm instead of curves; what needs a curve
+  (LinRegPCR's fit, the Curve Judge, Import Trust, melt, two efficiency models) is said not to
+  apply; confidence is capped at Low while an efficiency is assumed, Moderate when every assay's
+  comes from its series.
 - **Instrument exports on Open** (`qpilot/io/connectors/`, `qpilot/web/intake.py`): drop a Bio-Rad
   CFX export set, a QuantStudio / StepOne / 7500 export, a LightCycler 480 raw-data text or Cp
   table, an RDES or a tidy table; qPilot sorts the files by content, reads them once into
@@ -267,6 +276,12 @@ Methods paragraph on them.
   `scripts/demo_fingerprint.json` (the locked demo numbers, checked end to end).
 
 ### Changed
+- **A science review of this round** ([`docs/science-review-2026-10.md`](docs/science-review-2026-10.md)):
+  every new method recomputed by an independent oracle on real lab files (`validation/excellence/`,
+  `tests/science/`): Welch, paired t, Holm, BH and Welch's ANOVA to 1e-15, Dunnett and Tukey,
+  NormFinder, inter-run calibration and factor correction against the papers, melt against CFX
+  Manager's own −dF/dT, the audit's replicate rules. Its judgement calls (thresholds set without a
+  source, which wells count as detected on a standard curve) are listed for a person to decide.
 - **Plan next starts at 2.5×**, above the 2-fold call line, and says why; plans are faster.
   `qpilot plan` and MCP `qpcr_plan` default to 2.5× too. `qpilot plan --cq/--expected-cq
   [--cq-one-copy]` sets the well noise from Poisson sampling at that Cq
@@ -292,6 +307,11 @@ Methods paragraph on them.
   allow-list; the version is read from `qpilot/__init__.py`.
 
 ### Fixed
+- Trace's what-ifs on a paired or Holm-corrected study are the engine's own evaluation (they were
+  an unpaired Welch update), so Trace's call is the engine's corrected call.
+- The Claim Auditor checks a claim about another of the study's comparisons against that
+  comparison, not the first; a phrase naming another grouping is no longer read as the study's
+  group inside it (9 of 20 such sentences came back "Supported"; now 1 of 20).
 - Excel-saved sample sheets were read without their text.
 - The gene-symbol gate never reads a qPCR label as a gene (`REF` was proposed as ALYREF).
 - The Evidence Ledger no longer shows LinRegPCR's "-1" (no mean efficiency) as a gene median.

@@ -10,6 +10,7 @@ The page runs on your computer. It sends nothing anywhere unless you press a but
 |---|---|
 | install qPilot | [install.md](install.md) |
 | open my own file (RDML, an instrument export, my Excel Cq table) | [4. Open](#4-open) |
+| analyse a table of Cq values when I have no curves | [4. Open](#4-open), [cq-tables.md](cq-tables.md) |
 | say which genes are references and which samples are in which group, with no model | [6. Set the design yourself](#6-set-the-design-yourself) |
 | compare more than two groups, or paired samples | [9. Comparisons](#9-comparisons) |
 | get copies per reaction from my standard curve | [10. Quantities](#10-quantities) |
@@ -120,7 +121,7 @@ The first screen. It says what qPilot does in four steps (the AI proposes; the e
 * **Open your file.** Drop it on the box, or press **Choose a file…** (⌘O does the same anywhere). qPilot takes:
   * **an RDML file** (`.rdml`, `.xml`, or a zipped file such as a LightCycler 96 `.lc96p`; RDML 1.0 to 1.4), the instrument-neutral format most qPCR software can write;
   * **what your instrument exported**: one file or a whole export set (up to 64 files) from Bio-Rad CFX Manager / Maestro, QuantStudio / StepOne / 7500, LightCycler 480 (raw-data text or a Cp table), or a tidy table. qPilot reads the files by their content, not their names, writes them once into RDML, and names back what it cannot take (a vendor project file such as `.eds` or `.pcrd` says how to export it);
-  * **your own Excel Cq table** (columns such as Sample, Gene, Condition, Gene Type, Cq), alone or next to the run file: qPilot uses its sample columns as the sample sheet (the Condition column gives the groups, the Gene Type column proposes the reference genes) and never shows its numbers before you confirm the design and the curves.
+  * **your own Excel Cq table** (columns such as Sample, Gene, Condition, Gene Type, Cq), alone or next to the run file: qPilot uses its sample columns as the sample sheet (the Condition column gives the groups, the Gene Type column proposes the reference genes) and never shows its numbers before you confirm the design and the curves. A Cq table, or an RDML file without curves, is analysed from its Cq values: each assay's efficiency comes from its dilution series on the plate, else is assumed to be 2.0, and confidence is capped (Low while an efficiency is assumed, Moderate otherwise) because no curve could be checked. Curves are better when you can export them: [cq-tables.md](cq-tables.md).
 
   You may add a **sample sheet** (`.xlsx` or `.csv`) and **one sentence about the experiment**, for example "LPS versus PBS, three mice each" (at most 500 characters; the rules and a model read it when they propose the design, and it is never obeyed as an instruction). Then press **Open this file**. Opening reads the file and quarantines every name in it; it analyses nothing and proposes nothing yet, and the file stays on this computer. Which files from which instruments open, and what qPilot reads from each, is listed in [conformance.md](conformance.md).
 * **Open the demo study.** A public neuroblastoma study (Vermeulen et al. 2009; raw curves from Ruijter et al. 2013), to see every step on real data before you open your own. The card shows the study, its licence and its SHA-256. If the file is not on your computer yet, the button reads **Download 7.0 MB and open**, and the card says where it comes from (the RDML consortium's repository, at a pinned commit, checked against its SHA-256 before it is used). That is the only thing this screen downloads, and only when you click. Once the demo has been opened the card says **Continue the demo study**; to start again from a clean study, use **Start a fresh demo** in Settings.
@@ -175,6 +176,8 @@ Opens when the design is confirmed (until then it is locked: "Confirm the design
 * **The plate** shows every well of one plate. Choose the **Gene** and the **Plate** (`[` and `]` step through the plates), and colour the wells by *Amplification call*, *Cq*, *Efficiency*, *R²* or *Sample type*. Pick one well, or several (⌘/Ctrl-click or Shift-click).
 * **The curve** shows the raw fluorescence by cycle of the wells you picked, with a linear/log switch, and for one well its Cq, efficiency, R² and baseline and how it is called under each amplification rule.
 * **Melt curve** (files with melt curves, such as SYBR Green assays): the −dF/dT of the wells you picked, each peak's Tm, and per assay where its product melts (the Tm the file declares, else the median of its study wells) with the wells the Run Gate's G-MELT rule points at ([section 11](#11-controls-the-run-gate-and-melt-curves)). A single peak at the expected temperature does not guarantee that it is the intended amplicon.
+
+**A file without curves** (a Cq table) has nothing to fit: **Check the curves** proposes the amplification rule ("a well counts when the file gives it a Cq"), and **Your Cq table** shows each sample's Cq per well and plate, the wells without a Cq, the replicate sets wider than G-REP expects and each assay's efficiency, for you to confirm instead of curves.
 
 There is no group, fold change or p-value anywhere on this screen.
 
@@ -256,6 +259,8 @@ How the numbers work:
 * **The numbers**: slope, efficiency with its 95 % confidence interval, R², the levels, the **limit of detection** (the lowest level detected in at least 95 % of its wells; a logistic fit when levels are partly detected), the **limit of quantification** (the lowest level whose back-calculated quantities have a CV of at most 35 %), and where the quantities came from.
 * **Every biological unit**: wells detected, mean Cq, the quantity per reaction with its **95 % prediction interval**, and notes in words when it is extrapolated, below the LOQ or LOD, or not detected. **Flagged** lists only those.
 * **Per µL or per ng**: **Set the reaction input…** records what one reaction held (µL of template, ng of input), with a reason. No fold change, call or Decision Card changes.
+
+**Check the standard curve's wells.** A standard well counts when it has a quantity, even if LinRegPCR calls it "no amplification". On one real eDNA standard curve three flat wells gave 154 % efficiency (87 % without them): if the efficiency or R² looks wrong, open the standards in Curves and leave the flat wells out, with a reason ([science review](science-review-2026-10.md), J1).
 
 *On a real QuantStudio 3 export* of the corpus (SARS-CoV-2 in wastewater, five ten-fold standards): slope −3.327, efficiency 99.8 % (95 % CI 94.4–105.8 %), R² 0.9954. `qpilot quantify FILE…` gives the same from the terminal, for a plate with no groups too (such a plate cannot reach Results on the page yet), and `qpilot copies --ng 1 --length 3000` converts a mass to copies. Method card: [methods/absolute_quantification.md](../methods/absolute_quantification.md).
 

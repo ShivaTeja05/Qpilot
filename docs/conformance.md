@@ -27,7 +27,8 @@ Last generated on 28 Oct 2026 (qPilot 0.2.0).
   * *baseline-subtracted* or *could not tell*: the study is analysed with every gene's confidence
     capped at Moderate until a person decides the **Import Trust** card on Results (re-export the
     raw curves, analyse them as they are, or use the instrument's Cq values only).
-  * *Cq values only*: there are no curves to fit (see the note below).
+  * *Cq values only*: there are no curves to fit; the Cq values are analysed as they are
+    ([cq-tables.md](cq-tables.md)).
   * An RDML file does not go through this check; the Evidence Ledger says so.
 * **Melt curves**: wells whose melt curve `qpilot melt` reads (G-MELT in Controls, the melt panel
   in Curves). "none in the files" means the files hold no melt data.
@@ -80,8 +81,8 @@ Last generated on 28 Oct 2026 (qPilot 0.2.0).
   Curve analysis itself (N0, Cq, efficiency) is validated against a published benchmark on one
   instrument platform only (LightCycler 480, SYBR Green I; see the README's Validation section).
 * **Cq values only.** A file without curves (a Cq table, `rdml-1.2-cq-only-soybean`, the
-  QuantStudio `.txt` results) opens and its design can be set, but an analysis from Cq values
-  alone is reached today only through the Import Trust card of an export that also has curves.
+  QuantStudio `.txt` results) is analysed from its Cq values, with an efficiency from the plate's
+  dilution series or assumed, and a confidence cap ([cq-tables.md](cq-tables.md)).
 * **Truncated and simulated sources.** The allotropy QuantStudio files are truncated parser
   fixtures (few wells or 3 cycles), the CFX Maestro set comes from Bio-Rad's instrument
   simulator, and the two `synthetic/` sets are generated from the vendors' documented layouts

@@ -164,7 +164,8 @@ the blind is lifted. Blind-safe: counts and names only, no sample name, no Cq va
 amplification call (shape + colour), Cq, efficiency or R² (switch), disagreements outlined; a
 gene filter. Click a well → **curve viewer** (uPlot): raw fluorescence by cycle, linear/log
 switch, the Cq marker and baseline when known; neighbouring wells of the same sample overlaid.
-No group labels here. **Melt curve** (`features/curves/melt`, `GET /api/sessions/{sid}/melt` once
+No group labels here. A file without curves shows **Your Cq table** instead
+(`CqTablePanel.tsx`, `GET /api/sessions/{sid}/cq-table`, [`cq-tables.md`](cq-tables.md)). **Melt curve** (`features/curves/melt`, `GET /api/sessions/{sid}/melt` once
 the design is confirmed): the picked wells' −dF/dT with their peaks, per assay the product's Tm
 (declared, else the median of its study wells) and the wells G-MELT points at (**Show them**),
 the MIQE 2.0 caveat that one peak is not an identification. A well left out of (or put back into) the analysis is a `curve.exclude_well`
