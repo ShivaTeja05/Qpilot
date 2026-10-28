@@ -39,7 +39,7 @@ import numpy as np
 import pandas as pd
 
 from qpilot.claims.extract import Claim, extract
-from qpilot.claims.lexicon import Lexicon
+from qpilot.claims.lexicon import PLAN_GROUP, Lexicon, plan_groups
 from qpilot.claims.models import (
     VERDICT_LABEL,
     VERDICT_RULE,
@@ -600,6 +600,38 @@ def _mismatch(book: Book, claim: Claim, cid: str, gene: str) -> Outcome:
     )
 
 
+def _corrected_p(record: StudyRecord, gene: str) -> tuple[float, str] | None:
+    """The first comparison's corrected p and its words, when the study corrects (else None)."""
+    found = record.result.comparisons
+    if found is None or found.correction == "none" or len(found.comparisons) < 2:
+        return None
+    value = found.comparisons[0].p_adjusted.get(gene)
+    if value is None or not math.isfinite(value):
+        return None
+    return float(value), "corrected p"
+
+
+def _other_comparison(book: Book, claim: Claim, cid: str, gene: str) -> Outcome:
+    """A claim naming a group of the study's other comparisons: not read against the first.
+
+    The record's contrasts are the first comparison's; reading a claim about another group
+    against them would call it supported, overstated or contradicted on the wrong numbers.
+    """
+    record = book.record
+    a, b = record.phrases
+    written = next(w for w, what in claim.other_groups if what == PLAN_GROUP)
+    mark = next((m for m in claim.marks if m.role == "group" and m.written == written), None)
+    quoted = book.quote(cid, "group", mark.span.start, mark.span.end) if mark else written
+    names = [gene, a, b, written, *plan_groups(record.result)]
+    text = book.say(
+        f"This study has several comparisons and your words name {quoted}, a group of another "
+        f"of them. The Claim Auditor checks a claim against the first comparison only ({a} "
+        f"against {b}), so it does not check this one: {written}'s numbers are on Results.",
+        names,
+    )
+    return Outcome("unchecked", [_check("groups", "unknown", text)], text, gene=gene)
+
+
 def _normaliser_source(book: Book, claim: Claim, cid: str) -> str:
     """Where a claim's normaliser was read, when not in its own sentence (with a quotation)."""
     if claim.normaliser_from is None or claim.normaliser_scope in (None, "own"):
@@ -627,6 +659,8 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
             [gene],
         )
         return Outcome("unchecked", [_check("reading", "unknown", text)], text, gene=gene)
+    if any(what == PLAN_GROUP for _, what in claim.other_groups):
+        return _other_comparison(book, claim, cid, gene)
     if claim.other_groups and not claim.names_groups:
         return _mismatch(book, claim, cid, gene)
     a, b = record.phrases
@@ -635,6 +669,18 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
     reading = reading_of(claim, contrast)
     names = [gene, *claim.normaliser]
     checks: list[ClaimCheck] = []
+    if not claim.names_groups and plan_groups(record.result):
+        checks.append(
+            _check(
+                "groups",
+                "note",
+                book.say(
+                    "This study has several comparisons; with no group named, the claim is "
+                    f"read against the first, {a} against {b}.",
+                    [*names, a, b],
+                ),
+            )
+        )
     if claim.other_groups:  # "MYCN-high (MYCN-amplified) tumours": read as the study's groups
         words, extra = _groups_words(book, claim, cid)
         names += extra
@@ -775,18 +821,26 @@ def check_gene(book: Book, claim: Claim, cid: str) -> Outcome:
             )
         checks.append(_check("p", status, book.say(text, names)))
     if claim.significance is not None and not (claim.p is not None and not claim.p.adjusted):
-        below = contrast.p < record.alpha
+        p_used, p_words, p_token = contrast.p, "p", f["p"]
+        corrected = _corrected_p(record, gene)
+        if corrected is not None:  # the call uses the corrected p: so does "significant"
+            p_used, p_words = corrected
+            p_token = book.add(
+                f"f_claims_padj_{slug(gene)}", p_used, "{:.2g}", "",
+                f"comparisons.comparisons[0].p_adjusted.{gene}", "result",
+            )  # fmt: skip
+        below = p_used < record.alpha
         level = f"its significance level {record.alpha:g}"
         if claim.significance == "significant":
             status = "ok" if below else "stronger"
             text = (
-                f"The study's p for {gene}, {f['p']}, is "
+                f"The study's {p_words} for {gene}, {p_token}, is "
                 f"{'below' if below else 'not below'} {level}."
             )
         else:
             status = "weaker" if below else "ok"
             text = (
-                f"The study's p for {gene}, {f['p']}, is "
+                f"The study's {p_words} for {gene}, {p_token}, is "
                 f"{'below' if below else 'not below'} {level}."
             )
         checks.append(_check("significance", status, book.say(text, names)))
