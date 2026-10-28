@@ -3,8 +3,8 @@
 Śmiga M, Olczak T (2025), Zenodo doi:10.5281/zenodo.14965510 (CC BY 4.0; the corpus set
 ``rdml/lightcycler96-lc96p-hmuy``): bacteria grown in heme (Hm) or after a passage with the iron
 chelator 2,2'-dipyridyl (DIP), three biological replicates each, hmuY and 16S rRNA in triplicate
-wells (36 study wells on one 96-well run). The file names its samples by id; their names are
-the samples' ``<description>`` in the RDML (Hm_1 ... DIP_3).
+wells (36 study wells on one 96-well run). qPilot names the file's samples
+from their ``<description>`` in the RDML (Hm_1 ... DIP_3), not their ids.
 """
 
 from __future__ import annotations
@@ -17,17 +17,10 @@ HMUY = (
     Path(__file__).resolve().parents[1]
     / "fixtures/corpus/rdml/lightcycler96-lc96p-hmuy/hmuy_hm_vs_dip_r123.lc96p"
 )
-GENE = "sybr_green_i_hmuype"
-REFERENCE = "sybr_green_i_16s_rrna"
+GENE = "HmuYPe"
+REFERENCE = "16S rRNA"
 RUN = "99caca4d-c437-48dc-ad56-7c6954ead2e8"
-NAMES = {
-    "e34dadd5-2903-42a1-abbd-4eb509eb05d5": "Hm_1",
-    "224dbc24-4578-41f8-bb87-fbe4137fa887": "Hm_2",
-    "7eb138d1-2cb5-4c26-8dd9-ab894a77eb61": "Hm_3",
-    "1c76448f-03d2-453f-8628-d764e1ca1d55": "DIP_1",
-    "4274a0ab-8ef6-4948-815e-d082768eae20": "DIP_2",
-    "be08945d-29c6-47a0-8c49-cc85f693c1a5": "DIP_3",
-}
+NAMES = {name: name for name in ("Hm_1", "Hm_2", "Hm_3", "DIP_1", "DIP_2", "DIP_3")}
 
 
 def hmuy_design(excluded_wells: tuple[str, ...] = ()) -> StudyDesign:

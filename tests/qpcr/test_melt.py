@@ -424,14 +424,14 @@ def test_a_lightcycler_96_file_with_two_assays():
     experiment = "0311a87d-a929-434b-a01f-c9f5af1d20af"
     assays = judge(analyse_study(path, experiment, (), use_cache=False), data)
     by = {a.target: Counter(w.status for w in a.wells) for a in assays}
-    assert by["sybr_green_i_hmuype"] == {"one_product": 18}
-    assert by["sybr_green_i_16s_rrna"] == {"one_product": 18}
+    assert by["HmuYPe"] == {"one_product": 18}
+    assert by["16S rRNA"] == {"one_product": 18}
     (empty,) = (a for a in assays if not a.reference)
     assert by[empty.target] == {"no_product": 60}
     heights = [a.reference_height for a in assays if a.reference]
     assert empty.reference_height == pytest.approx(float(np.median(heights)))
     tm = {a.target: round(a.expected_tm, 1) for a in assays if a.expected_tm is not None}
-    assert tm == {"sybr_green_i_hmuype": 82.0, "sybr_green_i_16s_rrna": 87.1}
+    assert tm == {"HmuYPe": 82.0, "16S rRNA": 87.1}
 
 
 def test_a_file_without_melt_readings_is_not_parsed(monkeypatch, fixtures_dir):

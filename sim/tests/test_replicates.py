@@ -250,7 +250,7 @@ def test_the_outlier_option_leaves_out_the_wells_g_rep_flags_on_a_real_plate():
     """LightCycler 96, P. endodontalis hmuY / 16S rRNA in triplicate (Śmiga & Olczak 2025)."""
     from qpilot.qpcr.curves import analyse_study
 
-    curves = analyse_study(HMUY, None, ("sybr_green_i_16s_rrna",))
+    curves = analyse_study(HMUY, None, ("16S rRNA",))
     ctx = GateContext(table=curves)
     flagged = {
         well
