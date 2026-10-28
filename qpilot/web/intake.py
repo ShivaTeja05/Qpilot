@@ -242,6 +242,92 @@ def sort_dropped(items: list[Dropped]) -> Sorted:
     return out
 
 
+#: Why an RDML file is refused (``RdmlLoadError.kind``) -> what the person reads after
+#: "<file> could not be read:" (``{detail}``: the loader's own short reason).
+UNREADABLE: dict[str, str] = {
+    "too_large": "it is too large ({detail}).",
+    "compression": (
+        "it is too large when unpacked ({detail}); qPilot refuses it before unpacking. "
+        "Export the RDML file again."
+    ),
+    "damaged": (
+        "the zip archive is damaged (what it holds does not match what it says it holds); "
+        "copy the file again, or export RDML again from your instrument's software."
+    ),
+    "no_member": (
+        "it is a zip archive with no RDML data in it (no rdml_data.xml, no XML file). Export "
+        "RDML again from your instrument's software."
+    ),
+    "ambiguous": (
+        "{detail}. Export RDML again from your instrument's software, or keep only the RDML "
+        "file in the archive."
+    ),
+    "version": (
+        "it is written in an RDML version qPilot does not know (it reads RDML 1.0 to 1.4). "
+        "Export RDML again from your instrument's software."
+    ),
+    "schema": "{detail}. Export RDML again from your instrument's software.",
+    "entities": (
+        "it declares XML entities, which qPilot refuses (they can make a file pull in other "
+        "files). Export RDML again from your instrument's software."
+    ),
+    "not_xml_rdml": (
+        "it is an XML file, but not RDML (its first element is not <rdml>). Export RDML from "
+        "your instrument's software, then open that file."
+    ),
+    "not_rdml": (
+        "it is not a valid RDML file. Export RDML again from your instrument's software, then "
+        "open that file."
+    ),
+}
+
+
+def _declares_entities(path: Path | None) -> bool:
+    """True when a plain XML file declares entities (the hardened parser refuses those)."""
+    if path is None:
+        return False
+    try:
+        with path.open("rb") as fh:
+            head = fh.read(64 * 1024)
+    except OSError:
+        return False
+    return b"<!ENTITY" in head
+
+
+def unreadable(name: str, err: Exception, path: Path | None = None) -> str:
+    """Why an RDML file cannot be read, in the person's words, one sentence per refusal kind.
+
+    ``err`` is the loader's :class:`~qpilot.io.rdml_io.RdmlLoadError` (its ``kind``); any other
+    error, or one without a kind, is read from its message as before.
+    """
+    why = str(err)
+    kind = getattr(err, "kind", "")
+    detail = why.split(": ", 1)[1] if ": " in why else why
+    if kind in ("too_large", "compression"):
+        detail = detail.split("input too large", 1)[-1].strip(" ()") or "over the limit"
+        if kind == "compression":
+            detail = f"its {detail}"
+    elif kind == "schema":
+        detail = detail.replace("fails the RDML schema: the file ", "it ", 1)
+    if not kind or kind == "not_rdml":
+        if _declares_entities(path) and "not a valid RDML or XML" in why:
+            kind = "entities"
+        elif "Root element is not" in why:
+            kind = "not_xml_rdml"
+        elif "too large" in why:
+            kind = "compression" if "compression ratio" in why else "too_large"
+            detail = why.split("input too large", 1)[-1].strip(" ()") or "over the limit"
+            detail = f"its {detail}" if kind == "compression" else detail
+        elif "no rdml_data.xml" in why:
+            kind = "no_member"
+        elif "fails the RDML schema" in why or "unsupported RDML" in why:
+            kind = "schema"
+        else:
+            kind = "not_rdml"
+    sentence = UNREADABLE.get(kind, UNREADABLE["not_rdml"]).format(detail=detail.rstrip("."))
+    return f"{name} could not be read: {sentence}"
+
+
 def rdml_input(item: Dropped) -> Path:
     """The RDML file to open: the kept copy, under an ``.rdml``/``.xml`` name (``.lc96p`` …)."""
     if item.path.suffix.lower() in (".rdml", ".xml"):
@@ -456,4 +542,5 @@ __all__ = [
     "suffix_problem",
     "summary",
     "title",
+    "unreadable",
 ]
