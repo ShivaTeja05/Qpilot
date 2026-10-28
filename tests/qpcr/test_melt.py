@@ -414,7 +414,8 @@ def test_ten_assays_on_one_cfx_plate():
 
 def test_a_lightcycler_96_file_with_two_assays():
     """LightCycler 96 (0.2 °C steps): hmuY and 16S rRNA melt as one product each; its 60 wells
-    without a target are typed no-template with no product temperature to compare."""
+    without a target are typed no-template and, measured against the plate's products (their
+    own assay has none), nothing melted in them."""
     from qpilot.io.connectors import materialise
     from qpilot.qpcr.curves import analyse_study
 
@@ -425,6 +426,10 @@ def test_a_lightcycler_96_file_with_two_assays():
     by = {a.target: Counter(w.status for w in a.wells) for a in assays}
     assert by["sybr_green_i_hmuype"] == {"one_product": 18}
     assert by["sybr_green_i_16s_rrna"] == {"one_product": 18}
+    (empty,) = (a for a in assays if not a.reference)
+    assert by[empty.target] == {"no_product": 60}
+    heights = [a.reference_height for a in assays if a.reference]
+    assert empty.reference_height == pytest.approx(float(np.median(heights)))
     tm = {a.target: round(a.expected_tm, 1) for a in assays if a.expected_tm is not None}
     assert tm == {"sybr_green_i_hmuype": 82.0, "sybr_green_i_16s_rrna": 87.1}
 

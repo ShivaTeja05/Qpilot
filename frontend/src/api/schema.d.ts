@@ -875,6 +875,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions/{sid}/melt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Session Melt
+         * @description A session's melt curves, judged on its confirmed design (409 until it is confirmed).
+         */
+        get: operations["get_session_melt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions/{sid}/model-seen": {
         parameters: {
             query?: never;
@@ -2183,6 +2203,26 @@ export type paths = {
          * @description Which of the study's conclusions used the instrument in the window, and what changes.
          */
         post: operations["run_lookback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/melt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Study Melt
+         * @description A study's melt curves: one plate's assays and calls, and the curves of the wells asked.
+         */
+        get: operations["get_study_melt"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -8088,6 +8128,345 @@ export type components = {
             message: string;
             /** Proposal Id */
             proposal_id: string;
+        };
+        /**
+         * MeltAssayView
+         * @description One target on one plate: where its product melts and how its wells were called.
+         */
+        MeltAssayView: {
+            /**
+             * Counts
+             * @description Wells per call.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Expected Source
+             * @description `file`: the target's melting temperature the file declares; `median`: the median main-peak Tm of the plate's amplified study wells; none: not known.
+             */
+            expected_source?: ("file" | "median") | null;
+            /**
+             * Expected Tm
+             * @description Where the product is expected to melt (°C).
+             */
+            expected_tm?: number | null;
+            /**
+             * Flagged
+             * @description The wells G-MELT points at (`plate/well`).
+             */
+            flagged: string[];
+            /** Max Tm */
+            max_tm?: number | null;
+            /** Median Tm */
+            median_tm?: number | null;
+            /** Min Tm */
+            min_tm?: number | null;
+            /**
+             * N Reference
+             * @description Study wells the median and the noise floor come from.
+             */
+            n_reference: number;
+            /**
+             * N Wells
+             * @description Wells of this target on the plate with a melt curve.
+             */
+            n_wells: number;
+            /**
+             * Noise Floor
+             * @description Peaks lower than this (−dF/dT) are not counted.
+             */
+            noise_floor?: number | null;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Spread C
+             * @description Highest minus lowest of those Tm.
+             */
+            spread_c?: number | null;
+            /** Step C */
+            step_c?: number | null;
+            /**
+             * Summary
+             * @description The assay in one plain sentence.
+             */
+            summary: string;
+            /** Target */
+            target: string;
+        };
+        /**
+         * MeltCallView
+         * @description One well's melt call (no curve): what the plate list and the gate's wells show.
+         */
+        MeltCallView: {
+            /**
+             * Flagged
+             * @description G-MELT points at this well.
+             */
+            flagged: boolean;
+            /**
+             * Key
+             * @description `plate/well`.
+             */
+            key: string;
+            /**
+             * Main Tm
+             * @description The main peak's Tm (°C).
+             */
+            main_tm?: number | null;
+            /**
+             * N Peaks
+             * @default 0
+             */
+            n_peaks: number;
+            /**
+             * Offset C
+             * @description The main peak's Tm minus the expected Tm (°C).
+             */
+            offset_c?: number | null;
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Sample Type */
+            sample_type: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "one_product" | "extra_peak" | "tm_off" | "no_peak" | "not_amplified" | "no_product" | "product" | "dimer" | "other_product" | "unclassified" | "not_judged" | "unreadable" | "no_melt";
+            /**
+             * Status Text
+             * @description The call in plain words.
+             */
+            status_text: string;
+            /** Target */
+            target: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * MeltParamsView
+         * @description The thresholds the calls were made with (the pack's G-MELT parameters).
+         */
+        MeltParamsView: {
+            /**
+             * Extra Peak Share
+             * @description An extra peak counts when it carries at least this share of the peaks.
+             */
+            extra_peak_share: number;
+            /**
+             * Min Wells
+             * @description Study wells needed to take the expected Tm from them.
+             */
+            min_wells: number;
+            /**
+             * Noise Share
+             * @description A peak lower than this share of the assay's typical product peak is noise.
+             */
+            noise_share: number;
+            /**
+             * Tm Tolerance C
+             * @description How far (°C) a product may melt from the expected.
+             */
+            tm_tolerance_c: number;
+        };
+        /**
+         * MeltPeakView
+         * @description One counted peak of a well's −dF/dT.
+         */
+        MeltPeakView: {
+            /**
+             * Height
+             * @description −dF/dT at the top (fluorescence per °C).
+             */
+            height: number;
+            /**
+             * Role
+             * @description `product`: the well's main peak (its product when it is at the expected Tm); `extra`: a peak carrying at least the extra-peak share; `minor`: counted, smaller.
+             * @enum {string}
+             */
+            role: "product" | "extra" | "minor";
+            /**
+             * Share
+             * @description Its share of the well's counted peaks (0 to 1).
+             */
+            share: number;
+            /**
+             * Tm
+             * @description Its melting temperature (°C): the top of the peak.
+             */
+            tm: number;
+            /**
+             * Width C
+             * @description Width at half height (°C).
+             */
+            width_c?: number | null;
+        };
+        /**
+         * MeltTargetView
+         * @description One target over every plate: its product's median Tm and range.
+         */
+        MeltTargetView: {
+            /** Max Tm */
+            max_tm?: number | null;
+            /** Median Tm */
+            median_tm?: number | null;
+            /** Min Tm */
+            min_tm?: number | null;
+            /** N Plates */
+            n_plates: number;
+            /** N Wells */
+            n_wells: number;
+            /** Target */
+            target: string;
+        };
+        /**
+         * MeltView
+         * @description The melt curves of a study or a session: one plate's assays and calls, some wells' curves.
+         *
+         *     ``has_melt`` false: the file holds no melt curve (``message`` says what to export).
+         *     ``calls`` are every well of the plate ``run`` with a melt curve; ``wells`` the curves of the
+         *     wells asked for (at most twelve).
+         */
+        MeltView: {
+            /** Assays */
+            assays?: components["schemas"]["MeltAssayView"][];
+            /** Calls */
+            calls?: components["schemas"]["MeltCallView"][];
+            /**
+             * Caveat
+             * @description What a melt peak cannot tell (MIQE 2.0).
+             */
+            caveat: string;
+            /** Has Melt */
+            has_melt: boolean;
+            /**
+             * Key
+             * @description The session id or the study id asked about.
+             */
+            key: string;
+            /**
+             * Message
+             * @description What to do when there is nothing to show.
+             * @default
+             */
+            message: string;
+            /**
+             * Method
+             * @description The method card, a path in the repository.
+             */
+            method: string;
+            /**
+             * Pack
+             * @description The rule pack the thresholds come from (name and version).
+             */
+            pack: string;
+            params: components["schemas"]["MeltParamsView"];
+            /**
+             * Plates
+             * @description The plates with melt curves.
+             */
+            plates: string[];
+            /**
+             * Run
+             * @description The plate shown.
+             */
+            run?: string | null;
+            /** Study Id */
+            study_id?: string | null;
+            /** Targets */
+            targets?: components["schemas"]["MeltTargetView"][];
+            /** Wells */
+            wells?: components["schemas"]["MeltWellView"][];
+        };
+        /**
+         * MeltWellView
+         * @description One well's melt curve: the readings, −dF/dT on an even grid, and its counted peaks.
+         */
+        MeltWellView: {
+            /** Amplified */
+            amplified: boolean;
+            /** Cq */
+            cq?: number | null;
+            /**
+             * Derivative
+             * @description −dF/dT on the grid (fluorescence per °C).
+             */
+            derivative?: number[];
+            /**
+             * Flagged
+             * @description G-MELT points at this well.
+             */
+            flagged: boolean;
+            /**
+             * Key
+             * @description `plate/well`.
+             */
+            key: string;
+            /**
+             * Main Tm
+             * @description The main peak's Tm (°C).
+             */
+            main_tm?: number | null;
+            /**
+             * N Peaks
+             * @default 0
+             */
+            n_peaks: number;
+            /**
+             * Offset C
+             * @description The main peak's Tm minus the expected Tm (°C).
+             */
+            offset_c?: number | null;
+            /** Peaks */
+            peaks?: components["schemas"]["MeltPeakView"][];
+            /**
+             * Problem
+             * @description `too_few_points` or `coarse` when the curve cannot be judged.
+             * @default
+             */
+            problem: string;
+            /**
+             * Readings Fluorescence
+             * @description The file's melt readings: fluorescence.
+             */
+            readings_fluorescence?: (number | null)[];
+            /**
+             * Readings Temperature
+             * @description The file's melt readings: temperatures (°C).
+             */
+            readings_temperature?: number[];
+            /** Run Id */
+            run_id: string;
+            /** Sample */
+            sample: string;
+            /** Sample Type */
+            sample_type: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "one_product" | "extra_peak" | "tm_off" | "no_peak" | "not_amplified" | "no_product" | "product" | "dimer" | "other_product" | "unclassified" | "not_judged" | "unreadable" | "no_melt";
+            /**
+             * Status Text
+             * @description The call in plain words.
+             */
+            status_text: string;
+            /**
+             * Step C
+             * @description Median step between readings (°C).
+             */
+            step_c?: number | null;
+            /** Target */
+            target: string;
+            /**
+             * Temperature
+             * @description The even grid −dF/dT is computed on (°C).
+             */
+            temperature?: number[];
+            /** Well */
+            well: string;
         };
         /**
          * MethodsParagraph
@@ -14522,6 +14901,42 @@ export interface operations {
             };
         };
     };
+    get_session_melt: {
+        parameters: {
+            query?: {
+                /** @description The plate to show. */
+                run?: string | null;
+                /** @description Wells of that plate, e.g. `A1,B2`. */
+                wells?: string | null;
+            };
+            header?: never;
+            path: {
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeltView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_model_seen: {
         parameters: {
             query?: {
@@ -16711,6 +17126,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_study_melt: {
+        parameters: {
+            query?: {
+                /** @description The plate to show. */
+                run?: string | null;
+                /** @description Wells of that plate, e.g. `A1,B2`. */
+                wells?: string | null;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeltView"];
                 };
             };
             /** @description Validation Error */

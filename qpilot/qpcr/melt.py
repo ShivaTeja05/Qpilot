@@ -582,12 +582,15 @@ def judge_assay(
     rows: pd.DataFrame,
     melt: MeltData,
     params: MeltParams | None = None,
+    plate_height: float | None = None,
 ) -> AssayMelt:
     """The melt calls of one target on one plate (``rows``: its wells of the per-well table).
 
     ``rows`` carries ``well``, ``sample``, ``sample_type``, ``amplification`` and ``cq`` (the
     engine's call: a well amplified when LinRegPCR says so and gives it a Cq). Sample types are
-    the confirmed design's when the table was re-typed by it.
+    the confirmed design's when the table was re-typed by it. ``plate_height`` is the typical
+    product peak of the plate's other assays: the noise floor of an assay none of whose study
+    wells amplified (its wells are then measured against a real product, not their own noise).
     """
     params = params or MeltParams()
     entries: list[tuple[dict[str, Any], WellMelt | None]] = []
@@ -616,6 +619,8 @@ def judge_assay(
         expected, source = None, None
     reference_height = _median(p.prominence for _, p in ref)
     if reference_height is None:
+        reference_height = plate_height
+    if reference_height is None:  # no product anywhere on the plate: its tallest peak
         tallest = [m.peaks[0].prominence for _, m in readable]
         reference_height = max(tallest) if tallest else None
     floor = params.noise_share * reference_height if reference_height is not None else None
@@ -717,11 +722,22 @@ def judge(table: pd.DataFrame, melt: MeltData, params: MeltParams | None = None)
     if not melt.has_melt or table.empty:
         return []
     with_melt = {(run_id, target) for run_id, _, target in melt.wells}
-    out = []
-    for (run_id, target), rows in table.groupby(["run_id", "target"], sort=False):
-        if (str(run_id), str(target)) in with_melt:
-            out.append(judge_assay(str(run_id), str(target), rows, melt, params))
-    return out
+    groups = [
+        (str(run_id), str(target), rows)
+        for (run_id, target), rows in table.groupby(["run_id", "target"], sort=False)
+        if (str(run_id), str(target)) in with_melt
+    ]
+    out = [judge_assay(run_id, target, rows, melt, params) for run_id, target, rows in groups]
+    heights: dict[str, list[float]] = {}
+    for a in out:
+        if a.reference and a.reference_height is not None:
+            heights.setdefault(a.run_id, []).append(a.reference_height)
+    return [
+        judge_assay(g[0], g[1], g[2], melt, params, _median(heights.get(a.run_id, ())))
+        if not a.reference and a.run_id in heights
+        else a
+        for g, a in zip(groups, out, strict=True)
+    ]
 
 
 @dataclass(frozen=True)
