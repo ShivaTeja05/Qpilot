@@ -48,8 +48,8 @@ flowchart TB
   RDML --> UI
   SHEET --> UI
   SCI --> UI
-  PRISM -. CSV + run.pzc .-> GP[GraphPad Prism, the scientist's licence]
-  GP -. CSV back .-> PRISM
+  PRISM -. project .pzfx + CSV .-> GP[GraphPad Prism, the scientist's licence]
+  GP -. saved project or CSV back .-> PRISM
   AGENT[AI agent] <-->|stdio| MCP
   LLM -. opt-in, pseudonymised .-> REMOTE[remote model]
 ```
@@ -63,7 +63,7 @@ flowchart TB
 | 3 | Curves, blind | Curve Judge: 166 disagreements, 110 that matter | LinRegPCR contradicts each (`D-CURVE`) | keeps LinRegPCR, confirms | the design's call rule |
 | 4 | Choices | — | 744 analyses; ODC1 3.590× up; the Excel route changes 14 of 58 | decides each card | `results.json`, `decisions.jsonl` |
 | 5 | Simulator (the page's Audit section) | — | 90,396 analyses; baseline = qPilot to 5e-15 | reads verdicts | `simulator_audits/<study id>/` |
-| 6 | Prism | the draft | log2 per unit; provenance | accepts, Send to Prism | CSVs, `run.pzc`, `send_back.pzc` |
+| 6 | Prism | the draft | log2 per unit; provenance | accepts, Send to Prism | the `.pzfx` project, CSVs, provenance |
 | 7 | Round trip | — | ODC1 #1496 missing: 3.590× → 3.319×, 0 of 58 change | gives the reason, decides again | new study, re-audit |
 | 8 | Record | — | export, verify, bind the audit | — | Analysis Record |
 | 9 | Agents | an agent asks over MCP | `qpcr_decide` → `pending_human` | answers in the app | the request in the chain |
@@ -150,9 +150,9 @@ sequenceDiagram
   participant Q as Simulator
   P->>St: Send to Prism
   St->>St: rebuild; refuse if numbers differ
-  St->>Pr: one CSV per gene, run.pzc, send_back.pzc, provenance
+  St->>Pr: the .pzfx project, one CSV per gene, provenance
   P->>Pr: leaves out ODC1 sample 1496
-  Pr->>St: send_back.pzc exports the tables as CSV
+  Pr->>St: the saved project (or the tables as CSV)
   St-->>P: "Reason?" ODC1 3.590× → 3.319×, 0 of 58 change
   P->>St: "failed RNA extraction"
   St->>St: new design → new study; cards reopen
