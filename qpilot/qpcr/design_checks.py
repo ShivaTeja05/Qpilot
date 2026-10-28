@@ -1211,7 +1211,7 @@ def curve_check(subject: str, payload: Mapping[str, Any], wells: pd.DataFrame) -
     claim = payload.get("amplified")
     if not isinstance(claim, bool):
         return _check("contradicted", "D-CURVE", {}, "a well call is amplified true or false")
-    if rows["target"].nunique() > 1:  # a multiplex well: one call would set every dye's call
+    if "target" in rows.columns and rows["target"].nunique() > 1:  # a multiplex well
         targets = sorted(set(rows["target"].astype(str)))
         return _check(
             "contradicted",
