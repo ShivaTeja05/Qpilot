@@ -1,0 +1,118 @@
+{
+ "study_id": "e300000d4f9a",
+ "candidates": [
+  "ALUsq(Eurogentec)",
+  "HMBS",
+  "HPRT1",
+  "SDHA(1)",
+  "UBC(2)"
+ ],
+ "used": [
+  "ALUsq(Eurogentec)",
+  "HMBS",
+  "HPRT1",
+  "SDHA(1)",
+  "UBC(2)"
+ ],
+ "rows": [
+  {
+   "gene": "ALUsq(Eurogentec)",
+   "used": true,
+   "genorm_m": 1.6815868417246653,
+   "genorm_rank": 1,
+   "normfinder": 0.11300759817888473,
+   "normfinder_rank": 1,
+   "within_sd": 0.772959434407775,
+   "shift": {
+    "MYCN-high": 0.024648832649695862,
+    "rest": -0.024648832649699415
+   }
+  },
+  {
+   "gene": "HMBS",
+   "used": true,
+   "genorm_m": 1.9577268390849065,
+   "genorm_rank": 3,
+   "normfinder": 0.33701771259016233,
+   "normfinder_rank": 5,
+   "within_sd": 1.8728860389204294,
+   "shift": {
+    "MYCN-high": 0.21744453964319455,
+    "rest": -0.2174445396431981
+   }
+  },
+  {
+   "gene": "HPRT1",
+   "used": true,
+   "genorm_m": 1.6348541505971745,
+   "genorm_rank": 2,
+   "normfinder": 0.22670563394892904,
+   "normfinder_rank": 2,
+   "within_sd": 0.9870639211452265,
+   "shift": {
+    "MYCN-high": -0.1351414075797024,
+    "rest": 0.1351414075797006
+   }
+  },
+  {
+   "gene": "SDHA(1)",
+   "used": true,
+   "genorm_m": 1.9886431897382821,
+   "genorm_rank": 4,
+   "normfinder": 0.23153991974021515,
+   "normfinder_rank": 3,
+   "within_sd": 1.5170276051250378,
+   "shift": {
+    "MYCN-high": 0.08165758063597117,
+    "rest": -0.08165758063597472
+   }
+  },
+  {
+   "gene": "UBC(2)",
+   "used": true,
+   "genorm_m": 2.027457232121438,
+   "genorm_rank": 5,
+   "normfinder": 0.3044536305709541,
+   "normfinder_rank": 4,
+   "within_sd": 1.6731197389211345,
+   "shift": {
+    "MYCN-high": -0.18860954534916985,
+    "rest": 0.1886095453491663
+   }
+  }
+ ],
+ "genorm_pair": {
+  "genes": [
+   "ALUsq(Eurogentec)",
+   "HPRT1"
+  ],
+  "value": null
+ },
+ "normfinder_pair": {
+  "genes": [
+   "ALUsq(Eurogentec)",
+   "HPRT1"
+  ],
+  "value": 0.11907700436339666
+ },
+ "verdict": "agree",
+ "words": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+ "choice_note": "Which reference genes the analysis divides by stays your choice, on the reference-gene card; this panel only compares the two rankings.",
+ "grouped": true,
+ "groups": {
+  "MYCN-high": 53,
+  "rest": 294
+ },
+ "n_units": 347,
+ "n_left_out": 19,
+ "left_out_reasons": {
+  "no value for every candidate control gene": 17,
+  "not in a group": 2
+ },
+ "warnings": [],
+ "unavailable": null,
+ "sources": [
+  "Vandesompele et al., Genome Biol 2002; 3:research0034",
+  "Andersen, Jensen & Ørntoft, Cancer Res 2004; 64:5245-5250"
+ ]
+}

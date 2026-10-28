@@ -1,0 +1,180 @@
+{
+ "study_id": "e300000d4f9a",
+ "session": "bc1d233e3866",
+ "axes": [
+  {
+   "name": "efficiency",
+   "title": "Which efficiency turns Cq into quantity",
+   "status": "off",
+   "text": {
+    "plain": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each plate. Testing the other efficiency models adds them as one more choice of the grid; the analysis in use stays the same until a person decides otherwise.",
+    "segments": [
+     {
+      "text": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each plate. Testing the other efficiency models adds them as one more choice of the grid; the analysis in use stays the same until a person decides otherwise.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "options": [
+    {
+     "id": "linregpcr",
+     "label": "LinRegPCR's mean efficiency of the amplicon on each plate",
+     "tier": "primary",
+     "primary": true,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "per_well",
+     "label": "Each well's own efficiency",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "amplicon_mean",
+     "label": "One efficiency per amplicon over all its plates",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "assumed_2",
+     "label": "Efficiency assumed to be 2.0 (100 %)",
+     "tier": "common_practice",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "standard_curve",
+     "label": "Efficiency from the plate's dilution series",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    }
+   ],
+   "card_id": null,
+   "notes": [],
+   "can_propose": true,
+   "command": null
+  },
+  {
+   "name": "normaliser",
+   "title": "What to normalise each gene to",
+   "status": "off",
+   "text": {
+    "plain": "Not tested: every gene is divided by the reference genes chosen for this study. Testing NormFinder's and geNorm's best pairs and the global mean adds them as one more choice of the grid; the reference genes in use stay the same until a person decides otherwise.",
+    "segments": [
+     {
+      "text": "Not tested: every gene is divided by the reference genes chosen for this study. Testing NormFinder's and geNorm's best pairs and the global mean adds them as one more choice of the grid; the reference genes in use stay the same until a person decides otherwise.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "options": [
+    {
+     "id": "planned",
+     "label": "The reference genes chosen for this study",
+     "tier": "primary",
+     "primary": true,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "normfinder_pair",
+     "label": "NormFinder's best pair of reference genes",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "genorm_pair",
+     "label": "geNorm's best pair of reference genes",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "global_mean",
+     "label": "The mean of every gene measured (global mean)",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    }
+   ],
+   "card_id": null,
+   "notes": [],
+   "can_propose": true,
+   "command": null
+  },
+  {
+   "name": "interrun",
+   "title": "How to correct differences between plates",
+   "status": "off",
+   "text": {
+    "plain": "Not tested: no quantity is corrected for differences between plates. Testing the inter-run calibrator and the factor correction adds them as one more choice of the grid, with a card only when a correction changes a call.",
+    "segments": [
+     {
+      "text": "Not tested: no quantity is corrected for differences between plates. Testing the inter-run calibrator and the factor correction adds them as one more choice of the grid, with a card only when a correction changes a call.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "options": [
+    {
+     "id": "none",
+     "label": "No correction between plates",
+     "tier": "primary",
+     "primary": true,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "calibrator",
+     "label": "Inter-run calibration: the same calibrator sample on every plate",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "factor",
+     "label": "Factor correction from the measurements plates share",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    }
+   ],
+   "card_id": null,
+   "notes": [],
+   "can_propose": true,
+   "command": null
+  }
+ ]
+}

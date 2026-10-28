@@ -1452,6 +1452,14 @@ def _normaliser_spec(
         norm_axis.METHOD_CARD_PATH,
     )
     own = notes.get("normaliser", {})
+    pairs = own.get("refs") or {}
+    options = [
+        o.model_copy(update={"label": f"{o.label} ({', '.join(pairs[o.id])})"})
+        if o.id in pairs
+        else o
+        for o in card.options
+    ]
+    card = card.model_copy(update={"options": options})
     extra = [
         *(["f_nf_best_pair", "f_nf_pair_stability"] if own.get("normfinder") else []),
         *(["f_genorm_best_pair"] if own.get("genorm_pair") else []),

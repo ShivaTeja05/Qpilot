@@ -1,0 +1,312 @@
+{
+ "study_id": "086e8e8272fc",
+ "session": "bc1d233e3866",
+ "axes": [
+  {
+   "name": "efficiency",
+   "title": "Which efficiency turns Cq into quantity",
+   "status": "off",
+   "text": {
+    "plain": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each plate. Testing the other efficiency models adds them as one more choice of the grid; the analysis in use stays the same until a person decides otherwise.",
+    "segments": [
+     {
+      "text": "Not tested: every quantity uses LinRegPCR's mean efficiency of each assay on each plate. Testing the other efficiency models adds them as one more choice of the grid; the analysis in use stays the same until a person decides otherwise.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "options": [
+    {
+     "id": "linregpcr",
+     "label": "LinRegPCR's mean efficiency of the amplicon on each plate",
+     "tier": "primary",
+     "primary": true,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "per_well",
+     "label": "Each well's own efficiency",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "amplicon_mean",
+     "label": "One efficiency per amplicon over all its plates",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "assumed_2",
+     "label": "Efficiency assumed to be 2.0 (100 %)",
+     "tier": "common_practice",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "standard_curve",
+     "label": "Efficiency from the plate's dilution series",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    }
+   ],
+   "card_id": null,
+   "notes": [],
+   "can_propose": true,
+   "command": null
+  },
+  {
+   "name": "normaliser",
+   "title": "What to normalise each gene to",
+   "status": "swept",
+   "text": {
+    "plain": "Tested as one more choice of the grid: changing only the normaliser changes 19 of 58 calls. Its Decision Card says what each one changes; the reference genes in use stay the same until a person decides.",
+    "segments": [
+     {
+      "text": "Tested as one more choice of the grid: changing only the normaliser changes ",
+      "fact": null
+     },
+     {
+      "text": "19",
+      "fact": "f_n_flipped_normaliser"
+     },
+     {
+      "text": " of ",
+      "fact": null
+     },
+     {
+      "text": "58",
+      "fact": "f_n_genes"
+     },
+     {
+      "text": " calls. Its Decision Card says what each one changes; the reference genes in use stay the same until a person decides.",
+      "fact": null
+     }
+    ],
+    "facts": [
+     {
+      "id": "f_n_flipped_normaliser",
+      "text": "19",
+      "value": 19,
+      "unit": "",
+      "path": "study"
+     },
+     {
+      "id": "f_n_genes",
+      "text": "58",
+      "value": 58,
+      "unit": "",
+      "path": "study"
+     }
+    ],
+    "source": "template"
+   },
+   "options": [
+    {
+     "id": "planned",
+     "label": "The reference genes chosen for this study",
+     "tier": "primary",
+     "primary": true,
+     "tested": true,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "normfinder_pair",
+     "label": "NormFinder's best pair of reference genes",
+     "tier": "defensible",
+     "primary": false,
+     "tested": true,
+     "flips": {
+      "id": "f_n_flipped_norm_normfinder_pair",
+      "text": "3",
+      "value": 3,
+      "unit": "",
+      "path": "cards.card_normaliser.evidence.n_flipped_by_option.normfinder_pair"
+     },
+     "unavailable": null
+    },
+    {
+     "id": "genorm_pair",
+     "label": "geNorm's best pair of reference genes",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": "geNorm's best pair (ALUsq(Eurogentec) and HPRT1) is NormFinder's best pair too"
+    },
+    {
+     "id": "global_mean",
+     "label": "The mean of every gene measured (global mean)",
+     "tier": "defensible",
+     "primary": false,
+     "tested": true,
+     "flips": {
+      "id": "f_n_flipped_norm_global_mean",
+      "text": "19",
+      "value": 19,
+      "unit": "",
+      "path": "cards.card_normaliser.evidence.n_flipped_by_option.global_mean"
+     },
+     "unavailable": null
+    }
+   ],
+   "card_id": "card_normaliser",
+   "notes": [
+    {
+     "plain": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+     "segments": [
+      {
+       "text": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+       "fact": "f_nf_agreement"
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_nf_agreement",
+       "text": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+       "value": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+       "unit": "",
+       "path": "axes.normaliser.agreement"
+      }
+     ],
+     "source": "template"
+    },
+    {
+     "plain": "The global mean is the mean of 64 genes. It is valid only when the genes measured were not chosen for this comparison.",
+     "segments": [
+      {
+       "text": "The global mean is the mean of ",
+       "fact": null
+      },
+      {
+       "text": "64",
+       "fact": "f_gm_n_genes"
+      },
+      {
+       "text": " genes. It is valid only when the genes measured were not chosen for this comparison.",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_gm_n_genes",
+       "text": "64",
+       "value": 64,
+       "unit": "",
+       "path": "axes.normaliser.global_mean.n_genes"
+      }
+     ],
+     "source": "template"
+    },
+    {
+     "plain": "Against the reference genes in use, the global mean differs 0.71× between the groups (p 5.6e-06).",
+     "segments": [
+      {
+       "text": "Against the reference genes in use, the global mean differs ",
+       "fact": null
+      },
+      {
+       "text": "0.71×",
+       "fact": "f_gm_shift_fold"
+      },
+      {
+       "text": " between the groups (p ",
+       "fact": null
+      },
+      {
+       "text": "5.6e-06",
+       "fact": "f_gm_shift_p"
+      },
+      {
+       "text": ").",
+       "fact": null
+      }
+     ],
+     "facts": [
+      {
+       "id": "f_gm_shift_fold",
+       "text": "0.71×",
+       "value": 0.705501437502268,
+       "unit": "×",
+       "path": "axes.normaliser.global_mean.group_shift.fold"
+      },
+      {
+       "id": "f_gm_shift_p",
+       "text": "5.6e-06",
+       "value": 5.6227514571421975e-06,
+       "unit": "",
+       "path": "axes.normaliser.global_mean.group_shift.p"
+      }
+     ],
+     "source": "template"
+    }
+   ],
+   "can_propose": true,
+   "command": null
+  },
+  {
+   "name": "interrun",
+   "title": "How to correct differences between plates",
+   "status": "off",
+   "text": {
+    "plain": "Not tested: no quantity is corrected for differences between plates. Testing the inter-run calibrator and the factor correction adds them as one more choice of the grid, with a card only when a correction changes a call.",
+    "segments": [
+     {
+      "text": "Not tested: no quantity is corrected for differences between plates. Testing the inter-run calibrator and the factor correction adds them as one more choice of the grid, with a card only when a correction changes a call.",
+      "fact": null
+     }
+    ],
+    "facts": [],
+    "source": "template"
+   },
+   "options": [
+    {
+     "id": "none",
+     "label": "No correction between plates",
+     "tier": "primary",
+     "primary": true,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "calibrator",
+     "label": "Inter-run calibration: the same calibrator sample on every plate",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    },
+    {
+     "id": "factor",
+     "label": "Factor correction from the measurements plates share",
+     "tier": "defensible",
+     "primary": false,
+     "tested": false,
+     "flips": null,
+     "unavailable": null
+    }
+   ],
+   "card_id": null,
+   "notes": [],
+   "can_propose": true,
+   "command": null
+  }
+ ]
+}

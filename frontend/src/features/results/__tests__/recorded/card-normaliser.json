@@ -1,0 +1,650 @@
+{
+ "card": {
+  "id": "card_normaliser",
+  "kind": "numbers.normaliser",
+  "rank": 2,
+  "impact": {
+   "flips": true,
+   "flips_anywhere": true,
+   "max_delta_log2fc": 0.518196051435698,
+   "n_genes_flipped": 19,
+   "n_genes_flipped_anywhere": 36
+  },
+  "evidence": {
+   "agreement": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+   "genorm_pair": [
+    "ALUsq(Eurogentec)",
+    "HPRT1"
+   ],
+   "global_mean": {
+    "group_shift": {
+     "fold": 0.705501437502268,
+     "log2_shift": -0.5032790724825684,
+     "p": 5.6227514571421975e-06
+    },
+    "min_genes": 50,
+    "min_genes_per_unit": 37,
+    "n_genes": 64,
+    "panel_note": "The global mean assumes the genes measured were not chosen for this comparison: a panel of genes picked because they differ between the groups moves its own mean, and every fold change with it.",
+    "source": "Mestdagh et al., Genome Biol 2009; 10:R64 (global mean normalisation); D'haene et al., Methods Mol Biol 2012; 822:261-272 (each gene weighted equally)",
+    "threshold_note": "qPilot offers the global mean from 50 genes. This is qPilot's own default, not a published number: Mestdagh et al. (2009) say the global mean is only valid when a large number of genes is profiled (they profiled 366 to 448) and give no minimum."
+   },
+   "method_card": "methods/normfinder.md",
+   "n_flipped_by_option": {
+    "global_mean": 19,
+    "normfinder_pair": 3,
+    "planned": 0
+   },
+   "normfinder": {
+    "best": "ALUsq(Eurogentec)",
+    "best_pair": [
+     "ALUsq(Eurogentec)",
+     "HPRT1"
+    ],
+    "candidates": [
+     "ALUsq(Eurogentec)",
+     "HMBS",
+     "HPRT1",
+     "SDHA(1)",
+     "UBC(2)"
+    ],
+    "clamped": [],
+    "gamma2": 0.02689504485149408,
+    "grouped": true,
+    "groups": {
+     "high": 53,
+     "rest": 294
+    },
+    "intergroup": {
+     "ALUsq(Eurogentec)": {
+      "high": 0.024648832649695862,
+      "rest": -0.024648832649699415
+     },
+     "HMBS": {
+      "high": 0.21744453964319455,
+      "rest": -0.2174445396431981
+     },
+     "HPRT1": {
+      "high": -0.1351414075797024,
+      "rest": 0.1351414075797006
+     },
+     "SDHA(1)": {
+      "high": 0.08165758063597117,
+      "rest": -0.08165758063597472
+     },
+     "UBC(2)": {
+      "high": -0.18860954534916985,
+      "rest": 0.1886095453491663
+     }
+    },
+    "intragroup": {
+     "ALUsq(Eurogentec)": 0.5974662872399875,
+     "HMBS": 3.5077021147830565,
+     "HPRT1": 0.9742951844265898,
+     "SDHA(1)": 2.3013727547114073,
+     "UBC(2)": 2.7993296607675253
+    },
+    "left_out": {
+     "1542": "no value for every candidate control gene",
+     "1803": "no value for every candidate control gene",
+     "1846": "no value for every candidate control gene",
+     "1853": "no value for every candidate control gene",
+     "1854": "no value for every candidate control gene",
+     "1892": "not in a group",
+     "1931": "no value for every candidate control gene",
+     "2069": "not in a group",
+     "2070": "no value for every candidate control gene",
+     "2661": "no value for every candidate control gene",
+     "2709": "no value for every candidate control gene",
+     "2713": "no value for every candidate control gene",
+     "2715": "no value for every candidate control gene",
+     "2718": "no value for every candidate control gene",
+     "2746": "no value for every candidate control gene",
+     "2764": "no value for every candidate control gene",
+     "2770": "no value for every candidate control gene",
+     "2772": "no value for every candidate control gene",
+     "2786": "no value for every candidate control gene"
+    },
+    "n_units": 347,
+    "order": [
+     "ALUsq(Eurogentec)",
+     "HPRT1",
+     "SDHA(1)",
+     "UBC(2)",
+     "HMBS"
+    ],
+    "pair_stability": 0.11907700436339666,
+    "pairs": [
+     {
+      "genes": [
+       "ALUsq(Eurogentec)",
+       "HPRT1"
+      ],
+      "stability": 0.11907700436339666
+     },
+     {
+      "genes": [
+       "ALUsq(Eurogentec)",
+       "SDHA(1)"
+      ],
+      "stability": 0.1374977391632022
+     },
+     {
+      "genes": [
+       "HPRT1",
+       "SDHA(1)"
+      ],
+      "stability": 0.13820973259764963
+     },
+     {
+      "genes": [
+       "HMBS",
+       "HPRT1"
+      ],
+      "stability": 0.1468439272021947
+     },
+     {
+      "genes": [
+       "ALUsq(Eurogentec)",
+       "UBC(2)"
+      ],
+      "stability": 0.15225543936375682
+     },
+     {
+      "genes": [
+       "HMBS",
+       "UBC(2)"
+      ],
+      "stability": 0.16009300867572931
+     },
+     {
+      "genes": [
+       "SDHA(1)",
+       "UBC(2)"
+      ],
+      "stability": 0.1644651240472082
+     },
+     {
+      "genes": [
+       "ALUsq(Eurogentec)",
+       "HMBS"
+      ],
+      "stability": 0.18903416452467195
+     },
+     {
+      "genes": [
+       "HPRT1",
+       "UBC(2)"
+      ],
+      "stability": 0.21997064995457338
+     },
+     {
+      "genes": [
+       "HMBS",
+       "SDHA(1)"
+      ],
+      "stability": 0.22527625846627497
+     }
+    ],
+    "source": "Andersen, Jensen & Ørntoft, Cancer Res 2004; 64:5245-5250",
+    "stability": {
+     "ALUsq(Eurogentec)": 0.11300759817888473,
+     "HMBS": 0.33701771259016233,
+     "HPRT1": 0.22670563394892904,
+     "SDHA(1)": 0.23153991974021515,
+     "UBC(2)": 0.3044536305709541
+    },
+    "warnings": []
+   },
+   "planned": [
+    "ALUsq(Eurogentec)",
+    "HMBS",
+    "HPRT1",
+    "SDHA(1)",
+    "UBC(2)"
+   ],
+   "refs": {
+    "normfinder_pair": [
+     "ALUsq(Eurogentec)",
+     "HPRT1"
+    ]
+   },
+   "title": "What to normalise each gene to",
+   "unavailable": {
+    "genorm_pair": "geNorm's best pair (ALUsq(Eurogentec) and HPRT1) is NormFinder's best pair too"
+   },
+   "wording": "The answer depends on what each gene is divided by: the reference genes chosen for this study, the pair NormFinder or geNorm ranks steadiest, or the mean of every gene measured. The reference genes in use stay a person's choice."
+  },
+  "options": [
+   {
+    "id": "planned",
+    "label": "The reference genes chosen for this study",
+    "per_gene": {}
+   },
+   {
+    "id": "normfinder_pair",
+    "label": "NormFinder's best pair of reference genes (ALUsq(Eurogentec), HPRT1)",
+    "per_gene": {}
+   },
+   {
+    "id": "global_mean",
+    "label": "The mean of every gene measured (global mean)",
+    "per_gene": {}
+   }
+  ],
+  "recommended": "planned",
+  "rationale_template": "normaliser_v1",
+  "facts": [
+   "f_n_flipped_normaliser",
+   "f_n_genes",
+   "f_norm_label_planned",
+   "f_norm_label_normfinder_pair",
+   "f_norm_label_global_mean",
+   "f_n_flipped_norm_planned",
+   "f_n_flipped_norm_normfinder_pair",
+   "f_n_flipped_norm_global_mean",
+   "f_fc_odc1_planned",
+   "f_fc_birc5_planned",
+   "f_fc_ntrk1_planned",
+   "f_fc_nm23a_planned",
+   "f_fc_odc1_normfinder_pair",
+   "f_fc_birc5_normfinder_pair",
+   "f_fc_ntrk1_normfinder_pair",
+   "f_fc_nm23a_normfinder_pair",
+   "f_fc_odc1_global_mean",
+   "f_fc_birc5_global_mean",
+   "f_fc_ntrk1_global_mean",
+   "f_fc_nm23a_global_mean",
+   "f_nf_best_pair",
+   "f_nf_pair_stability",
+   "f_genorm_best_pair",
+   "f_nf_agreement",
+   "f_gm_n_genes",
+   "f_gm_min_genes"
+  ],
+  "autonomy": "suggest",
+  "effective_autonomy": "suggest",
+  "status": "open",
+  "decision": null,
+  "reason": null,
+  "decided_by": null,
+  "decided_at": null
+ },
+ "title": "What to normalise each gene to",
+ "status_line": "Your decision: this choice can change a conclusion.",
+ "impact": {
+  "plain": "19 of 58 conclusions change with this choice",
+  "segments": [
+   {
+    "text": "19",
+    "fact": "f_n_flipped_normaliser"
+   },
+   {
+    "text": " of ",
+    "fact": null
+   },
+   {
+    "text": "58",
+    "fact": "f_n_genes"
+   },
+   {
+    "text": " conclusions change with this choice",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_n_flipped_normaliser",
+    "text": "19",
+    "value": 19,
+    "unit": "",
+    "path": "study"
+   },
+   {
+    "id": "f_n_genes",
+    "text": "58",
+    "value": 58,
+    "unit": "",
+    "path": "study"
+   }
+  ],
+  "source": "template"
+ },
+ "explanation": {
+  "plain": "What each gene is divided by is a choice: the reference genes chosen for this study, another pair a stability ranking prefers, or the mean of every gene measured. This analysis divides by the reference genes chosen for this study. geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1. Changing only this choice: with the mean of every gene measured (global mean), 19 of 58 genes change their conclusion; with NormFinder's best pair of reference genes (ALUsq(Eurogentec), HPRT1), 3 of 58 genes change their conclusion. The global mean is the mean of 64 genes; it is valid only when the genes measured were not chosen for this comparison. 19 genes out of 58 change their conclusion with this choice alone, so a person makes it.",
+  "segments": [
+   {
+    "text": "What each gene is divided by is a choice: the reference genes chosen for this study, another pair a stability ranking prefers, or the mean of every gene measured. This analysis divides by the reference genes chosen for this study. ",
+    "fact": null
+   },
+   {
+    "text": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+    "fact": "f_nf_agreement"
+   },
+   {
+    "text": " Changing only this choice: with ",
+    "fact": null
+   },
+   {
+    "text": "the mean of every gene measured (global mean)",
+    "fact": "f_norm_label_global_mean"
+   },
+   {
+    "text": ", ",
+    "fact": null
+   },
+   {
+    "text": "19",
+    "fact": "f_n_flipped_norm_global_mean"
+   },
+   {
+    "text": " of ",
+    "fact": null
+   },
+   {
+    "text": "58",
+    "fact": "f_n_genes"
+   },
+   {
+    "text": " genes change their conclusion; with ",
+    "fact": null
+   },
+   {
+    "text": "NormFinder's best pair of reference genes (ALUsq(Eurogentec), HPRT1)",
+    "fact": "f_norm_label_normfinder_pair"
+   },
+   {
+    "text": ", ",
+    "fact": null
+   },
+   {
+    "text": "3",
+    "fact": "f_n_flipped_norm_normfinder_pair"
+   },
+   {
+    "text": " of ",
+    "fact": null
+   },
+   {
+    "text": "58",
+    "fact": "f_n_genes"
+   },
+   {
+    "text": " genes change their conclusion. The global mean is the mean of ",
+    "fact": null
+   },
+   {
+    "text": "64",
+    "fact": "f_gm_n_genes"
+   },
+   {
+    "text": " genes; it is valid only when the genes measured were not chosen for this comparison. ",
+    "fact": null
+   },
+   {
+    "text": "19",
+    "fact": "f_n_flipped_normaliser"
+   },
+   {
+    "text": " genes out of ",
+    "fact": null
+   },
+   {
+    "text": "58",
+    "fact": "f_n_genes"
+   },
+   {
+    "text": " change their conclusion with this choice alone, so a person makes it.",
+    "fact": null
+   }
+  ],
+  "facts": [
+   {
+    "id": "f_nf_agreement",
+    "text": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+    "value": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1.",
+    "unit": "",
+    "path": "axes.normaliser.agreement"
+   },
+   {
+    "id": "f_norm_label_global_mean",
+    "text": "the mean of every gene measured (global mean)",
+    "value": "the mean of every gene measured (global mean)",
+    "unit": "",
+    "path": "cards.card_normaliser.global_mean.label"
+   },
+   {
+    "id": "f_n_flipped_norm_global_mean",
+    "text": "19",
+    "value": 19,
+    "unit": "",
+    "path": "cards.card_normaliser.evidence.n_flipped_by_option.global_mean"
+   },
+   {
+    "id": "f_n_genes",
+    "text": "58",
+    "value": 58,
+    "unit": "",
+    "path": "study"
+   },
+   {
+    "id": "f_norm_label_normfinder_pair",
+    "text": "NormFinder's best pair of reference genes (ALUsq(Eurogentec), HPRT1)",
+    "value": "NormFinder's best pair of reference genes (ALUsq(Eurogentec), HPRT1)",
+    "unit": "",
+    "path": "cards.card_normaliser.normfinder_pair.label"
+   },
+   {
+    "id": "f_n_flipped_norm_normfinder_pair",
+    "text": "3",
+    "value": 3,
+    "unit": "",
+    "path": "cards.card_normaliser.evidence.n_flipped_by_option.normfinder_pair"
+   },
+   {
+    "id": "f_gm_n_genes",
+    "text": "64",
+    "value": 64,
+    "unit": "",
+    "path": "axes.normaliser.global_mean.n_genes"
+   },
+   {
+    "id": "f_n_flipped_normaliser",
+    "text": "19",
+    "value": 19,
+    "unit": "",
+    "path": "study"
+   }
+  ],
+  "source": "template"
+ },
+ "needs_human": true,
+ "genes": [
+  "BIRC5",
+  "NM23A",
+  "NTRK1",
+  "ODC1"
+ ],
+ "options": [
+  {
+   "id": "planned",
+   "label": "The reference genes chosen for this study",
+   "recommended": true,
+   "chosen": false,
+   "requested": false,
+   "not_recommended": false,
+   "effects": [
+    {
+     "gene": "BIRC5",
+     "fc": 4.01142868409124,
+     "log2fc": 2.004116148990932,
+     "ci": [
+      2.933476511654864,
+      5.485491369580537
+     ],
+     "p": 5.043719769792568e-14,
+     "conclusion": "up",
+     "changes_call": false
+    },
+    {
+     "gene": "NM23A",
+     "fc": 2.1878561042496822,
+     "log2fc": 1.1295178548982436,
+     "ci": [
+      1.754371668359274,
+      2.7284494039847518
+     ],
+     "p": 1.2380920536773977e-09,
+     "conclusion": "up",
+     "changes_call": false
+    },
+    {
+     "gene": "NTRK1",
+     "fc": 0.0664778367884075,
+     "log2fc": -3.9109827526937413,
+     "ci": [
+      0.031684262938106326,
+      0.13947942524965912
+     ],
+     "p": 1.348097591946546e-09,
+     "conclusion": "down",
+     "changes_call": false
+    },
+    {
+     "gene": "ODC1",
+     "fc": 3.3186076821812986,
+     "log2fc": 1.730578087558588,
+     "ci": [
+      2.292871356518271,
+      4.80321624539644
+     ],
+     "p": 2.065427855257047e-08,
+     "conclusion": "up",
+     "changes_call": false
+    }
+   ]
+  },
+  {
+   "id": "normfinder_pair",
+   "label": "NormFinder's best pair of reference genes (ALUsq(Eurogentec), HPRT1)",
+   "recommended": false,
+   "chosen": false,
+   "requested": false,
+   "not_recommended": false,
+   "effects": [
+    {
+     "gene": "BIRC5",
+     "fc": 4.330725478480963,
+     "log2fc": 2.114608723920939,
+     "ci": [
+      3.0040151561648267,
+      6.243371685883427
+     ],
+     "p": 9.05442198230603e-12,
+     "conclusion": "up",
+     "changes_call": false
+    },
+    {
+     "gene": "NM23A",
+     "fc": 2.3620023986717555,
+     "log2fc": 1.2400104298282495,
+     "ci": [
+      1.8240153587259023,
+      3.058666860803282
+     ],
+     "p": 9.118658937344123e-09,
+     "conclusion": "up",
+     "changes_call": false
+    },
+    {
+     "gene": "NTRK1",
+     "fc": 0.06994662702722579,
+     "log2fc": -3.8376017004822085,
+     "ci": [
+      0.034021483983993794,
+      0.14380709068386432
+     ],
+     "p": 1.02897725406616e-09,
+     "conclusion": "down",
+     "changes_call": false
+    },
+    {
+     "gene": "ODC1",
+     "fc": 3.6245904805626865,
+     "log2fc": 1.8578180033934673,
+     "ci": [
+      2.377116793131083,
+      5.526718834239956
+     ],
+     "p": 9.572064519509019e-08,
+     "conclusion": "up",
+     "changes_call": false
+    }
+   ]
+  },
+  {
+   "id": "global_mean",
+   "label": "The mean of every gene measured (global mean)",
+   "recommended": false,
+   "chosen": false,
+   "requested": false,
+   "not_recommended": false,
+   "effects": [
+    {
+     "gene": "BIRC5",
+     "fc": 5.685925599660203,
+     "log2fc": 2.5073952214734927,
+     "ci": [
+      3.981626328660317,
+      8.119734815936159
+     ],
+     "p": 3.96689588312484e-15,
+     "conclusion": "up",
+     "changes_call": false
+    },
+    {
+     "gene": "NM23A",
+     "fc": 3.1011362811612275,
+     "log2fc": 1.632796927380813,
+     "ci": [
+      2.420065743339583,
+      3.973878090213943
+     ],
+     "p": 5.785845131697987e-13,
+     "conclusion": "up",
+     "changes_call": false
+    },
+    {
+     "gene": "NTRK1",
+     "fc": 0.09074848068504636,
+     "log2fc": -3.4619827001263648,
+     "ci": [
+      0.04664072793068887,
+      0.17656857240483897
+     ],
+     "p": 2.059599203115192e-09,
+     "conclusion": "down",
+     "changes_call": false
+    },
+    {
+     "gene": "ODC1",
+     "fc": 4.695952384921486,
+     "log2fc": 2.2314177801715793,
+     "ci": [
+      3.1345815346315087,
+      7.035059882097515
+     ],
+     "p": 2.4387117621859645e-10,
+     "conclusion": "up",
+     "changes_call": false
+    }
+   ]
+  }
+ ],
+ "pending": [],
+ "undo_option": null,
+ "undo_label": null,
+ "carried": null,
+ "asked_again": null,
+ "place": null
+}

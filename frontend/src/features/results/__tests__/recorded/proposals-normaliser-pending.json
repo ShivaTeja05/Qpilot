@@ -1,0 +1,135 @@
+{
+ "stage": "choices",
+ "head": "4266bf457715c9d9204e0ec3c64019e966ded1992664a96d69efd82e9262e294",
+ "proposals": [
+  {
+   "id": "p_ae83285fe1e50a07",
+   "study_id": "bc1d233e3866",
+   "kind": "choice.axis",
+   "subject": "normaliser",
+   "payload": {
+    "options": [
+     "planned",
+     "normfinder_pair",
+     "global_mean"
+    ]
+   },
+   "evidence": [
+    {
+     "kind": "rule",
+     "ref": "normaliser",
+     "note": "method card methods/normfinder.md: NormFinder, geNorm's best pair and the global mean"
+    },
+    {
+     "kind": "pattern",
+     "ref": "NormFinder and geNorm",
+     "note": "geNorm and NormFinder agree on the best pair: ALUsq(Eurogentec) and HPRT1. NormFinder ran with the study's groups (stability value 0.119)."
+    },
+    {
+     "kind": "pattern",
+     "ref": "the global mean",
+     "note": "64 genes have values; qPilot offers the global mean from 50 genes. This is qPilot's own default, not a published number: Mestdagh et al. (2009) say the global mean is only valid when a large number of genes is profiled (they profiled 366 to 448) and give no minimum."
+    }
+   ],
+   "alternatives": [
+    {
+     "options": [
+      "planned"
+     ]
+    }
+   ],
+   "check": {
+    "status": "consistent",
+    "rule_ids": [
+     "D-AXIS"
+    ],
+    "details": {
+     "genes_with_study_wells": 66,
+     "global_mean_min_genes": 50,
+     "options": [
+      "planned",
+      "normfinder_pair",
+      "global_mean"
+     ],
+     "reference_genes_accepted": null
+    },
+    "note": "each option is the choice's own and the file has what it needs; which options apply to the analysed experiment is said again when the study is analysed"
+   },
+   "consequence": null,
+   "level": "Moderate",
+   "reasons": [
+    "qPilot divides each gene by the reference genes chosen for this study; testing NormFinder's and geNorm's best pairs and the global mean shows which conclusions depend on that choice. The reference genes in use stay the same until a person decides otherwise on the card it raises; what a person decided on the other cards is carried to it, unless that choice matters more there.",
+    "not offered: geNorm's best pair of reference genes (geNorm's best pair (ALUsq(Eurogentec) and HPRT1) is NormFinder's best pair too)"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-28T18:28:55Z"
+  },
+  {
+   "id": "p_1dda8f37467680d1",
+   "study_id": "bc1d233e3866",
+   "kind": "stage.confirm",
+   "subject": "choices",
+   "payload": {
+    "chain_head": "46729c6c7838577e9f6c66bbf2a17ce7323c5c8bedd8c9f47ee50a8c9b14c20d",
+    "covers": [],
+    "decisions": {
+     "card_amp_call": "linregpcr",
+     "card_cutoff": "cut_15",
+     "card_refset": "recommended",
+     "card_undetermined": "drop"
+    },
+    "design_hash": "2000023796a66143d52b9131d191dca0c4ac1d6181790f5b5e42a4252c07186a",
+    "stage": "choices",
+    "study_id": "cf49ccd72052"
+   },
+   "evidence": [],
+   "alternatives": [],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": null,
+   "level": "Moderate",
+   "reasons": [
+    "every choices proposal is settled; a person confirms the stage"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "accepted",
+   "decided_by": "human",
+   "decided_at": "2026-10-20T19:19:50Z",
+   "reason": "checked",
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-20T19:19:50Z"
+  }
+ ],
+ "counts": {
+  "proposed": 1,
+  "consistent": 1,
+  "accepted": 1
+ },
+ "descriptions": {
+  "p_ae83285fe1e50a07": "Also test what to normalise each gene to: NormFinder's best pair of reference genes; the mean of every gene measured (global mean) (besides the reference genes chosen for this study, the analysis in use)",
+  "p_1dda8f37467680d1": "Confirm the Choices stage: the Decision Cards of analysis cf49ccd72052"
+ }
+}
