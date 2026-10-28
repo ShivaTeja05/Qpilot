@@ -1,0 +1,66 @@
+{
+ "stage": "curves",
+ "head": "2373ae03fd2951a294184d6b9a4aa6286dab749ea113a8d32575c1d852ea32e1",
+ "proposals": [
+  {
+   "id": "p_a4d2536fdca45cdd",
+   "study_id": "3e231e2ed42c",
+   "kind": "curve.call_rule",
+   "subject": "amp_call",
+   "payload": {
+    "basis": "cq",
+    "rule": "linregpcr"
+   },
+   "evidence": [
+    {
+     "kind": "rule",
+     "ref": "linregpcr",
+     "note": "the engine's default call: a well counts when the file gives it a Cq"
+    }
+   ],
+   "alternatives": [
+    {
+     "rule": "cq_le_40"
+    },
+    {
+     "rule": "cq_le_38"
+    },
+    {
+     "rule": "cq_le_35"
+    }
+   ],
+   "check": {
+    "status": "cannot_check",
+    "rule_ids": [],
+    "details": {},
+    "note": "no engine check exists for this kind"
+   },
+   "consequence": null,
+   "level": "High",
+   "reasons": [
+    "This file has Cq values only, so a well counts as amplified when the file gives it a Cq (the instrument software's call); the Cq cut-offs are kept as choices whose consequences are shown later"
+   ],
+   "made_by": {
+    "kind": "rule",
+    "provider": null,
+    "model": null,
+    "prompt_sha256": null,
+    "agent": null
+   },
+   "status": "proposed",
+   "decided_by": null,
+   "decided_at": null,
+   "reason": null,
+   "edits": null,
+   "superseded_by": null,
+   "created_at": "2026-10-28T20:17:59Z"
+  }
+ ],
+ "counts": {
+  "proposed": 1,
+  "cannot_check": 1
+ },
+ "descriptions": {
+  "p_a4d2536fdca45cdd": "Count a well as amplified by the file's own Cq (a well counts when the file gives it a Cq; Cq values only)"
+ }
+}

@@ -1,0 +1,581 @@
+{
+ "key": "3e231e2ed42c",
+ "cq_only": true,
+ "shown": true,
+ "message": "This file has Cq values only, so there is no curve to judge: confirm the Cq table instead. Each sample's wells are listed with the Cq the file gives them; look at the wells without a Cq and the replicates whose spread is wider than expected, then confirm the curves stage.",
+ "not_applicable": [
+  "Not applicable: this file has Cq values only, so there is no curve for LinRegPCR to fit (no baseline, no efficiency of its own and no fit quality per well).",
+  "Not applicable: this file has Cq values only, so there is no curve for the Curve Judge to read.",
+  "Not applicable: this file has Cq values only, so there are no curves whose processing before export could be checked.",
+  "Not applicable: this file has Cq values only, so it has no melt curves."
+ ],
+ "efficiencies": [
+  {
+   "target": "16S rRNA",
+   "efficiency": 2.0,
+   "source": "assumed",
+   "words": "16S rRNA: efficiency assumed to be 2.0 (100 %), every cycle doubling the product: no dilution series of this assay."
+  },
+  {
+   "target": "hmuYPe",
+   "efficiency": 2.0,
+   "source": "assumed",
+   "words": "hmuYPe: efficiency assumed to be 2.0 (100 %), every cycle doubling the product: no dilution series of this assay."
+  }
+ ],
+ "counts": {
+  "n_wells": 36,
+  "n_with_cq": 36,
+  "n_without_cq": 0,
+  "n_study_without_cq": 0,
+  "n_sets": 12,
+  "n_outside": 1,
+  "n_late": 0,
+  "n_controls_with_cq": 0
+ },
+ "sets": [
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "Hm_1",
+   "sample_text_id": "t_ad087de67f75",
+   "target": "hmuYPe",
+   "target_text_id": "t_b6c8774bea37",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/A1",
+     "well": "A1",
+     "cq": 23.4,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/A2",
+     "well": "A2",
+     "cq": 23.51,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/A3",
+     "well": "A3",
+     "cq": 23.47,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 23.459999999999997,
+   "range_cq": 0.11000000000000298,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.11 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "Hm_1",
+   "sample_text_id": "t_ad087de67f75",
+   "target": "16S rRNA",
+   "target_text_id": "t_a9a865792923",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/A4",
+     "well": "A4",
+     "cq": 11.67,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/A5",
+     "well": "A5",
+     "cq": 11.8,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/A6",
+     "well": "A6",
+     "cq": 11.71,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 11.726666666666667,
+   "range_cq": 0.13000000000000078,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.13 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "DIP_1",
+   "sample_text_id": "t_b9ebd5832b78",
+   "target": "hmuYPe",
+   "target_text_id": "t_b6c8774bea37",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/A7",
+     "well": "A7",
+     "cq": 17.69,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/A8",
+     "well": "A8",
+     "cq": 17.8,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/A9",
+     "well": "A9",
+     "cq": 17.85,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 17.78,
+   "range_cq": 0.16000000000000014,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.16 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "DIP_1",
+   "sample_text_id": "t_b9ebd5832b78",
+   "target": "16S rRNA",
+   "target_text_id": "t_a9a865792923",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/A10",
+     "well": "A10",
+     "cq": 8.4,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/A11",
+     "well": "A11",
+     "cq": 8.41,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/A12",
+     "well": "A12",
+     "cq": 8.45,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 8.42,
+   "range_cq": 0.049999999999998934,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.05 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "Hm_2",
+   "sample_text_id": "t_e573a15956c0",
+   "target": "hmuYPe",
+   "target_text_id": "t_b6c8774bea37",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/B1",
+     "well": "B1",
+     "cq": 23.89,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/B2",
+     "well": "B2",
+     "cq": 24.26,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/B3",
+     "well": "B3",
+     "cq": 24.25,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 24.133333333333336,
+   "range_cq": 0.370000000000001,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.37 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "Hm_2",
+   "sample_text_id": "t_e573a15956c0",
+   "target": "16S rRNA",
+   "target_text_id": "t_a9a865792923",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/B4",
+     "well": "B4",
+     "cq": 11.46,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/B5",
+     "well": "B5",
+     "cq": 11.64,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/B6",
+     "well": "B6",
+     "cq": 11.47,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 11.523333333333333,
+   "range_cq": 0.17999999999999972,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.18 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "DIP_2",
+   "sample_text_id": "t_de830085e53e",
+   "target": "hmuYPe",
+   "target_text_id": "t_b6c8774bea37",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/B7",
+     "well": "B7",
+     "cq": 24.56,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/B8",
+     "well": "B8",
+     "cq": 24.83,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/B9",
+     "well": "B9",
+     "cq": 24.78,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 24.723333333333333,
+   "range_cq": 0.2699999999999996,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.27 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "DIP_2",
+   "sample_text_id": "t_de830085e53e",
+   "target": "16S rRNA",
+   "target_text_id": "t_a9a865792923",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/B10",
+     "well": "B10",
+     "cq": 13.26,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/B11",
+     "well": "B11",
+     "cq": 13.35,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/B12",
+     "well": "B12",
+     "cq": 13.24,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 13.283333333333333,
+   "range_cq": 0.10999999999999943,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.11 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "Hm_3",
+   "sample_text_id": "t_2126abb5c3f2",
+   "target": "hmuYPe",
+   "target_text_id": "t_b6c8774bea37",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/C1",
+     "well": "C1",
+     "cq": 22.25,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/C2",
+     "well": "C2",
+     "cq": 22.79,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/C3",
+     "well": "C3",
+     "cq": 22.84,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 22.626666666666665,
+   "range_cq": 0.5899999999999999,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.59 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "Hm_3",
+   "sample_text_id": "t_2126abb5c3f2",
+   "target": "16S rRNA",
+   "target_text_id": "t_a9a865792923",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/C4",
+     "well": "C4",
+     "cq": 8.79,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/C5",
+     "well": "C5",
+     "cq": 8.62,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/C6",
+     "well": "C6",
+     "cq": 8.68,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 8.696666666666665,
+   "range_cq": 0.16999999999999993,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.17 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "DIP_3",
+   "sample_text_id": "t_2cf52f8f27c3",
+   "target": "hmuYPe",
+   "target_text_id": "t_b6c8774bea37",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/C7",
+     "well": "C7",
+     "cq": 23.79,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/C8",
+     "well": "C8",
+     "cq": 24.61,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/C9",
+     "well": "C9",
+     "cq": 23.47,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 23.956666666666667,
+   "range_cq": 1.1400000000000006,
+   "tolerance": 0.7172703921241775,
+   "spread": "outside",
+   "spread_words": "The 3 replicate wells span 1.14 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": [
+    "replicate spread wider than expected (G-REP)"
+   ]
+  },
+  {
+   "run_id": "hmuy Hm vs DIP",
+   "sample": "DIP_3",
+   "sample_text_id": "t_2cf52f8f27c3",
+   "target": "16S rRNA",
+   "target_text_id": "t_a9a865792923",
+   "role": "unkn",
+   "wells": [
+    {
+     "key": "hmuy Hm vs DIP/C10",
+     "well": "C10",
+     "cq": 13.09,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/C11",
+     "well": "C11",
+     "cq": 13.14,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    },
+    {
+     "key": "hmuy Hm vs DIP/C12",
+     "well": "C12",
+     "cq": 13.1,
+     "used": true,
+     "left_out": false,
+     "file_excluded": "",
+     "late": false
+    }
+   ],
+   "n_wells": 3,
+   "n_with_cq": 3,
+   "mean_cq": 13.11,
+   "range_cq": 0.05000000000000071,
+   "tolerance": 0.7172703921241775,
+   "spread": "within",
+   "spread_words": "The 3 replicate wells span 0.05 cycles; the expected range for this copy number is up to 0.72 cycles.",
+   "flags": []
+  }
+ ],
+ "rule": "The Cq range of n replicate wells is compared with the 95th percentile of the range of n normal values whose SD combines pipetting (CV c) and Poisson sampling (1/N copies): sqrt(c^2 + 1/N) / ln(E). Copies come from a standard curve on the plate; without one, only pipetting counts up to Cq 30, a two-cycle floor applies up to Cq 35, and later groups are not evaluated. Outside the range is a warning; the consequence test decides."
+}

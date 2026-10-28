@@ -49,11 +49,14 @@ export function StageBar({
   workspace,
   check,
   onShowPlate,
+  cqOnly = false,
 }: {
   workspace: NonNullable<SectionProps["workspace"]>;
   check: CheckCurvesState;
   /** Open a plate with its waiting proposals (filters the inbox to it). */
   onShowPlate: (run: string) => void;
+  /** A file of Cq values only: the rule reads the file's own Cq (docs/cq-tables.md). */
+  cqOnly?: boolean;
 }) {
   const sid = workspace.key;
   const stage = workspace.stages.find((s) => s.stage === "curves");
@@ -69,8 +72,10 @@ export function StageBar({
     (p) => p.kind === "curve.call_rule" && (p.status === "accepted" || p.status === "edited"),
   );
   const ruleText = rule
-    ? ruleWords(effectivePayload(rule).rule)
-    : "LinRegPCR’s call, the engine’s default, until a rule is accepted";
+    ? ruleWords(effectivePayload(rule).rule, cqOnly || effectivePayload(rule).basis === "cq")
+    : cqOnly
+      ? "the file’s own Cq, the engine’s default, until a rule is accepted"
+      : "LinRegPCR’s call, the engine’s default, until a rule is accepted";
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface px-4 py-3">

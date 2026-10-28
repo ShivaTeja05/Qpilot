@@ -740,9 +740,14 @@ def software(c: Ctx, cite: Cites) -> list[Part]:
     py = c.version("python")
     if py:
         text += f" on Python {py}"
+    curves = (  # a file of Cq values only: no curve analysis, so no LinRegPCR
+        "; no curve analysis (the file holds Cq values only), geNorm"
+        if c.has("f_cq_only")
+        else "; LinRegPCR from rdmlpython (MIT licence), geNorm"
+    )
     text += (
-        "; LinRegPCR from rdmlpython (MIT licence), geNorm reimplemented from its paper and "
-        "Welch's test from SciPy's t distribution"
+        curves
+        + " reimplemented from its paper and Welch's test from SciPy's t distribution"
         + (", NormFinder reimplemented from its paper" if c.has("f_nf_best_pair") else "")
     )
     if c.inputs.audit is not None:

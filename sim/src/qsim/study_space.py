@@ -24,6 +24,8 @@ from collections import Counter
 from dataclasses import replace
 from math import comb
 
+import numpy as np
+
 from qpilot.qpcr.contrast import DEFAULT_RULE
 from qpilot.qpcr.quant import log2_matrix
 from qpilot.qpcr.refgenes import genorm, group_effect
@@ -116,6 +118,12 @@ def space_for(study: Study) -> tuple[Space, dict]:
                 notes.append(
                     f"Mann-Whitney removed: its smallest possible p at {n1} vs {n2} is {min_p:.3g}, above alpha"
                 )
+        if d.id == "efficiency" and not np.isfinite(study.eff_well).any():
+            # a file of Cq values only (qpilot.qpcr.cq_only): no curve, so no well's own efficiency
+            d = replace(d, options=tuple(o for o in d.options if o.id != "per_well"))
+            notes.append(
+                "each well's own efficiency removed: the file has Cq values only (no curves)"
+            )
         decisions.append(d)
     space = Space(tuple(decisions), base.baseline, notes=tuple(notes))
     if study.replicates is not None and study.replicates.most >= 3:

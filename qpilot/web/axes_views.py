@@ -202,7 +202,7 @@ def _cq_unavailable(facts: Mapping) -> dict[str, str]:
     """A Cq-only study's efficiency models that do not apply, from its facts (asked or not)."""
     from qpilot.qpcr.cq_only import NOT_APPLICABLE
 
-    out = {"per_well": NOT_APPLICABLE["per_well"], "amplicon_mean": NOT_APPLICABLE["amplicon_mean"]}
+    out = {o: NOT_APPLICABLE[o].rstrip(".") for o in ("per_well", "amplicon_mean")}
     if _n(facts, "f_n_eff_series"):
         out["standard_curve"] = (
             "the analysis in use already takes each assay's efficiency from its dilution series"
@@ -275,6 +275,7 @@ def axis_view(
     except (KeyError, TypeError, ValueError):
         notes = []
     card = next((c for c in cards if c.kind == axis.card_kind), None)
+    nothing_else = cq_values and said == "off_assumed"  # a Cq-only file without a series
     return AxisView(
         name=name,
         title=axis.title,
@@ -283,8 +284,8 @@ def axis_view(
         options=options,
         card_id=card.id if card is not None else None,
         notes=notes,
-        can_propose=session is not None,
-        command=None if session is not None else words.command,
+        can_propose=session is not None and not nothing_else,
+        command=None if session is not None or nothing_else else words.command,
     )
 
 

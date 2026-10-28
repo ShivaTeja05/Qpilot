@@ -100,11 +100,13 @@ function designRows(accepted: Proposal[]): [string, ReactNode][] {
 function curveRows(accepted: Proposal[]): [string, ReactNode][] {
   const rows: [string, ReactNode][] = [];
   const rule = accepted.find((p) => p.kind === "curve.call_rule");
-  if (rule)
+  if (rule) {
+    const payload = effectivePayload(rule);
     rows.push([
       "Amplification call",
-      `A well counts as amplified by ${ruleWords(effectivePayload(rule).rule)}`,
+      `A well counts as amplified by ${ruleWords(payload.rule, payload.basis === "cq")}`,
     ]);
+  }
   const calls = accepted
     .filter((p) => p.kind === "curve.well_call")
     .map((p) => effectivePayload(p).amplified === true);

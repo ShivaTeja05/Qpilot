@@ -258,7 +258,7 @@ def not_measured(plan: EfficiencyPlan) -> dict[str, str]:
     """
     if not plan.assays:
         return {}
-    out = {"per_well": NOT_APPLICABLE["per_well"], "amplicon_mean": NOT_APPLICABLE["amplicon_mean"]}
+    out = {o: NOT_APPLICABLE[o].rstrip(".") for o in ("per_well", "amplicon_mean")}
     if plan.measured:
         out["standard_curve"] = _IN_USE_SERIES
     else:
