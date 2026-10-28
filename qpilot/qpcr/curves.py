@@ -535,13 +535,13 @@ def analyse_study(
             key = (file_sha256(path), experiment_id, references, settings, directory)
             names = names_key(path)
             cached = (cache_path(*key, names), cache_path(*key, names, multiplex=True))
-            found = _cached_table(*cached)
-            if found is not None:
-                return found
+            hit = _cached_table(*cached)
+            if hit is not None:
+                return hit
         doc = load(path)
-    found_runs = runs(doc, experiment_id)
-    _check_run_ids([str(run["id"]) for run in found_runs])
-    plates = [analyse_run(run, settings) for run in found_runs]
+    found = runs(doc, experiment_id)
+    _check_run_ids([str(run["id"]) for run in found])
+    plates = [analyse_run(run, settings) for run in found]
     if not plates:
         raise CurveAnalysisError(f"experiment {experiment_id!r} has no runs")
     table = _tidy(pd.concat(plates, ignore_index=True), references)
