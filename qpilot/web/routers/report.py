@@ -206,7 +206,7 @@ def export_report(study_id: str, body: ReportExportBody, ctx: Ctx) -> JobStarted
                 text = report_html.document(view, passport=fmt == "passport", record=record)
             stem = "qpilot-passport" if fmt == "passport" else "qpilot-report"
             path = folder / f"{stem}-{study_id}.{EXTENSIONS[fmt]}"
-            path.write_text(text, encoding="utf-8")
+            path.write_text(text, encoding="utf-8", newline="\n")
         except (RecordError, StudyNotFound, OSError, ValueError) as err:
             shutil.rmtree(folder, ignore_errors=True)
             raise JobError("cannot_export", f"The file could not be written: {err}") from err
@@ -238,7 +238,9 @@ def export_report(study_id: str, body: ReportExportBody, ctx: Ctx) -> JobStarted
             head_moved=moved,
             warnings=warnings,
         )
-        (folder / EXPORT_FILE).write_text(exported.model_dump_json(), encoding="utf-8")
+        (folder / EXPORT_FILE).write_text(
+            exported.model_dump_json(), encoding="utf-8", newline="\n"
+        )
         return exported.model_dump(mode="json")
 
     job = ctx.jobs.submit(

@@ -72,6 +72,8 @@ def walk(tmp_path_factory):
     with pytest.MonkeyPatch.context() as mp:
         mp.setenv("QPILOT_STUDIES_DIR", str(root / "studies"))
         mp.setattr("qpilot.studio_service._mac_prism_installed", lambda: False)
+        mp.setattr("qpilot.studio_service._mac_prism_app", lambda: None)
+        mp.setattr("qpilot.studio_service._windows_prism_exe", lambda: None)
         store = StudyStore(root / "studies")
         studio = Studio(store, client=ModelClient(backend=NoneBackend()))
         ctx = make_context(store, studio, token=TOKEN, watch=False)
@@ -180,7 +182,10 @@ def test_the_preview_writes_nothing_and_shows_every_unit(walk):
     assert r.status_code == 200, r.text
     body = r.json()
     assert sorted(p.relative_to(exports).as_posix() for p in exports.rglob("*")) == before
-    assert body["writes_nothing"] is True and "run.pzc" in body["would_write"]
+    assert body["writes_nothing"] is True and body["project_file"] in body["would_write"]
+    assert body["needs_template"] is False and body["project_file"].endswith(".pzfx")
+    assert [t["kind"] for t in body["project_tables"]][-1] == "grouped"
+    assert "run.pzc" not in body["would_write"]
     assert body["genes"] and [t["gene"] for t in body["tables"]] == body["genes"]
     engine = studio.preview_prism(sid, rows=100_000)
     for table in body["tables"]:
@@ -236,7 +241,8 @@ def test_send_writes_the_bundle_into_exports_and_offers_its_zip(walk, sent, tmp_
     assert Path(sent["download"]["path"]).parent == folder.parent  # the zip beside its folder
     assert bundle["study_id"] == log["study"]
     assert sent["launched"] is False and "not installed" in sent["launch_note"]
-    assert "run.pzc" in sent["command_line"] and "send_back.pzc" in sent["send_back_command"]
+    assert sent["command_line"] == "" and sent["project"] == f"qpilot_{log['study']}.pzfx"
+    assert sent["open_steps"] and sent["analyse_steps"] and sent["round_trip_steps"]
     r = client.get(sent["download"]["url"])
     assert r.status_code == 200
     assert r.headers["content-type"] == "application/zip"
@@ -329,3 +335,45 @@ def test_bundles_outlive_the_server(walk, sent):
         r = client.get(mine["download"]["url"])
         assert r.status_code == 200 and len(r.content) == sent["download"]["bytes"]
         assert client.get(f"/api/sessions/{sid}/prism").json()["bundles"] >= 1
+
+
+def test_the_round_trip_reads_the_demo_project_prism_saved(walk, sent, tmp_path):
+    """The docs' oracle through the project route: leaving out ODC1's highest tumour."""
+    from lxml import etree
+
+    from qpilot.prism import pzfx
+
+    client, _, studio, sid, _ = walk
+    folder = Path(sent["bundle"]["folder"])
+    saved = tmp_path / "ODC1 checked.pzfx"
+    root = etree.fromstring((folder / sent["project"]).read_bytes())
+    ns = {"p": pzfx.NAMESPACE}
+    table = next(
+        t for t in root.findall("p:Table", ns) if t.find("p:Title", ns).text.startswith("ODC1 ")
+    )
+    units = [d.text for d in table.findall("p:RowTitlesColumn/p:Subcolumn/p:d", ns)]
+    high = table.findall("p:YColumn", ns)[0].findall("p:Subcolumn/p:d", ns)
+    values = {units[i]: float(d.text) for i, d in enumerate(high) if d.text}
+    top = max(values, key=values.get)
+    high[units.index(top)].set("Excluded", "1")
+    saved.write_bytes(etree.tostring(root, xml_declaration=True, encoding="UTF-8"))
+    with saved.open("rb") as fh:
+        r = client.post(
+            f"/api/sessions/{sid}/prism/roundtrip/upload",
+            data={"bundle": sent["bundle"]["id"]},
+            files={"project": (saved.name, fh, "application/xml")},
+        )
+    job = wait(client, r)
+    assert job["status"] == "done", job
+    result = job["result"]
+    assert result["source"] == "project"
+    assert [(i["kind"], i["row"]) for i in result["items"]] == [("excluded", top)]
+    (pid,) = result["proposed"]
+    proposal = next(p for p in studio.inbox(sid, "roundtrip", "proposed") if p.id == pid)
+    consequence = proposal.consequence
+    assert proposal.payload["question"] == f"You excluded sample {top} for ODC1 in Prism. Reason?"
+    assert consequence["conclusion_before"] == consequence["conclusion_after"] == "up"
+    assert (
+        round(consequence["fc_before"], 3) == 3.590 and round(consequence["fc_after"], 3) == 3.319
+    )
+    assert consequence["n_conclusions_changed"] == 0

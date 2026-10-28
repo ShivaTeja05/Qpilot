@@ -51,7 +51,7 @@ def studies_env(demo_study, monkeypatch):
 
 
 @pytest.mark.demo_data
-def test_export_prism_writes_the_bundle_and_verify_passes(studies_env, tmp_path, capsys):
+def test_export_prism_writes_the_project_and_verify_passes(studies_env, tmp_path, capsys):
     _, study_id = studies_env
     out = tmp_path / "bundle"
     code = main(
@@ -59,22 +59,50 @@ def test_export_prism_writes_the_bundle_and_verify_passes(studies_env, tmp_path,
     )
     assert code == 0
     printed = capsys.readouterr().out
-    assert "two_groups_log2" in printed and "Run in Prism" in printed
+    assert f"Open in Prism: double-click qpilot_{study_id}.pzfx" in printed
+    assert "Run in Prism" not in printed and "osascript" not in printed
     names = {p.name for p in out.iterdir()}
     assert {
+        f"qpilot_{study_id}.pzfx",
         "ODC1.csv",
         "NTRK1.csv",
-        "run.pzc",
-        "send_back.pzc",
         "qpilot_provenance.json",
         "qpilot_bundle.json",
         "README.txt",
-        "sent_back",
-    } <= names
+    } == names
     readme = (out / "README.txt").read_text()
     assert "Not affiliated with or endorsed by GraphPad Software" in readme
-    assert "two_groups_log2.pzt is NOT here yet" in readme
+    assert "NOT here yet" not in readme and "qpilot/prism/templates" not in readme
     assert main(["prism", "verify", "--bundle", str(out)]) == 0
+
+
+@pytest.mark.demo_data
+def test_export_prism_scripts_are_an_extra(studies_env, tmp_path, capsys):
+    _, study_id = studies_env
+    out = tmp_path / "bundle"
+    args = ["export", "prism", "--study", study_id, "--genes", "ODC1", "--out", str(out)]
+    assert main([*args, "--scripts"]) == 0
+    names = {p.name for p in out.iterdir()}
+    assert {"run.pzc", "send_back.pzc", "sent_back", f"qpilot_{study_id}.pzfx"} <= names
+    old = tmp_path / "old"
+    assert (
+        main(
+            [
+                "export",
+                "prism",
+                "--study",
+                study_id,
+                "--genes",
+                "ODC1",
+                "--out",
+                str(old),
+                "--scripts-only",
+            ]
+        )
+        == 0
+    )
+    assert "Run in Prism" in capsys.readouterr().out
+    assert not any(p.suffix == ".pzfx" for p in old.iterdir())
 
 
 @pytest.mark.demo_data
@@ -90,7 +118,22 @@ def test_export_refuses_a_non_empty_folder_and_a_bad_gene(studies_env, tmp_path,
     assert code == 2
     assert not empty.exists()
     assert "not analysed genes" in capsys.readouterr().err
-    code = main(["export", "prism", "--study", study_id, "--graphs", "svg", "--out", str(empty)])
+    code = main(["export", "prism", "--study", study_id, "--graphs", "pdf", "--out", str(empty)])
+    assert code == 2 and not empty.exists()
+    assert "only apply to the Prism scripts" in capsys.readouterr().err
+    code = main(
+        [
+            "export",
+            "prism",
+            "--study",
+            study_id,
+            "--scripts",
+            "--graphs",
+            "svg",
+            "--out",
+            str(empty),
+        ]
+    )
     assert code == 2 and not empty.exists()
     code = main(
         [
@@ -100,6 +143,7 @@ def test_export_refuses_a_non_empty_folder_and_a_bad_gene(studies_env, tmp_path,
             study_id,
             "--template",
             "many_genes_log2",
+            "--scripts",
             "--out",
             str(empty),
         ]
@@ -113,6 +157,7 @@ def test_prism_diff_prints_items_and_proposals(studies_env, tmp_path, capsys):
     _, study_id = studies_env
     out = tmp_path / "bundle"
     assert main(["export", "prism", "--study", study_id, "--genes", "ODC1", "--out", str(out)]) == 0
+    (out / "sent_back").mkdir()
     lines = (out / "ODC1.csv").read_text().splitlines()
     edited = []
     for line in lines:
@@ -153,7 +198,7 @@ def test_prism_diff_refuses_a_tampered_bundle(studies_env, tmp_path, capsys):
     _, study_id = studies_env
     out = tmp_path / "bundle"
     assert main(["export", "prism", "--study", study_id, "--genes", "ODC1", "--out", str(out)]) == 0
-    (out / "run.pzc").write_text('SetPath "/elsewhere"\n')
+    (out / "ODC1.csv").write_text("Sample,MYCN-high,rest\n1496,1.0,\n")
     code = main(
         [
             "prism",
@@ -162,8 +207,8 @@ def test_prism_diff_refuses_a_tampered_bundle(studies_env, tmp_path, capsys):
             study_id,
             "--bundle",
             str(out),
-            "--sent-back",
-            str(out / "sent_back"),
+            "--returned",
+            str(out),
         ]
     )
     assert code == 2
@@ -187,5 +232,7 @@ def test_preview_writes_nothing(studies_env, tmp_path, monkeypatch):
     assert [t["gene"] for t in bundle["tables"]] == ["ODC1", "NTRK1"]
     assert bundle["bundle_sha256"] == ""
     assert result["tables"]["ODC1"]["head"][0] == "Sample,MYCN-high,rest"
-    assert "run.pzc" in result["would_write"]
+    assert f"qpilot_{study_id}.pzfx" in result["would_write"]
+    assert result["project"]["needs_template"] is False
+    assert [t["kind"] for t in result["project"]["tables"]] == ["column", "column", "grouped"]
     json.dumps(result)  # JSON-ready for the MCP tool

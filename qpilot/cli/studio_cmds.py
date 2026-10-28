@@ -348,11 +348,11 @@ def _walk(studio, rdml, scratch, check, out, verify, write_record) -> None:  # n
         shutil.copy(bundle / table.csv, sent_back / Path(table.csv).name)
     odc1_csv = sent_back / "ODC1.csv"
     unit = e["excluded_unit"]
-    lines = odc1_csv.read_text().split("\n")
+    lines = odc1_csv.read_text(encoding="utf-8").split("\n")
     lines = [
         ",".join([ln.split(",")[0], "", ""]) if ln.startswith(f"{unit},") else ln for ln in lines
     ]
-    odc1_csv.write_text("\n".join(lines))
+    odc1_csv.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     trip = studio.round_trip(sid, bundle, sent_back)
     items = [(i["kind"], i["gene"], i["row"]) for i in trip["items"]]
     check(

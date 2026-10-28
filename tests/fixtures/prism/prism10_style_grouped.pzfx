@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GraphPadPrismFile xmlns="http://graphpad.com/prism/Prism.htm" PrismXMLVersion="5.00">
+<Created><OriginalVersion CreatedByProgram="GraphPad Prism" CreatedByVersion="10.2.2.397"/></Created>
+<TableSequence Selected="1"><Ref ID="Table1" Selected="1"/></TableSequence>
+<HugeTable ID="Table1" XFormat="none" YFormat="replicates" Replicates="2" TableType="TwoWay" EVFormat="AsteriskAfterNumber">
+<Title>group_example</Title>
+<RowTitlesColumn Width="125"><Subcolumn><d>row1</d><d>row2</d></Subcolumn></RowTitlesColumn>
+<SubColumnTitles OwnSet="1">
+<Subcolumn><d><TextAlign align="Center">s1</TextAlign></d><d>s3</d></Subcolumn>
+<Subcolumn><d/><d>s4</d></Subcolumn>
+</SubColumnTitles>
+<YColumn Width="250" Decimals="1" Subcolumns="2"><Title>test1</Title>
+<Subcolumn><d>3,5</d><d>1</d></Subcolumn><Subcolumn><d>2</d><d/></Subcolumn></YColumn>
+<YColumn Width="250" Decimals="1" Subcolumns="2"><Title>test2</Title>
+<Subcolumn><d>5</d><d>6</d></Subcolumn><Subcolumn><d>7</d><d>8</d></Subcolumn></YColumn>
+</HugeTable>
+<Template dt:dt="bin.base64" xmlns:dt="urn:schemas-microsoft-com:datatypes">QUJD</Template>
+</GraphPadPrismFile>

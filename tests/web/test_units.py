@@ -63,7 +63,7 @@ def test_each_unit_is_the_mean_of_its_replicate_wells(client, web_store, hmuy):
 
 def test_dip_3s_wide_triplicate_is_visible_well_by_well(client, hmuy):
     view = _units(client, hmuy).json()
-    (dip3,) = (p for p in view["points"] if p["unit"] == "be08945d-29c6-47a0-8c49-cc85f693c1a5")
+    (dip3,) = (p for p in view["points"] if p["unit"] == "DIP_3")
     assert [w["well"] for w in dip3["wells"]] == ["F1", "F2", "F3"]
     cqs = [w["cq_value"] for w in dip3["wells"]]
     assert dip3["cq_range"] == round(max(cqs) - min(cqs), 2)
@@ -74,7 +74,7 @@ def test_an_excluded_well_is_listed_but_not_used(client, web_store):
     units_views.clear_cache()
     study_id = web_store.ensure_study(HMUY, design=hmuy_design((f"{RUN}/F2",)))
     view = _units(client, study_id).json()
-    (dip3,) = (p for p in view["points"] if p["unit"] == "be08945d-29c6-47a0-8c49-cc85f693c1a5")
+    (dip3,) = (p for p in view["points"] if p["unit"] == "DIP_3")
     assert [w["state"] for w in dip3["wells"]] == ["used", "excluded", "used"]
     assert dip3["n_wells"] == 2 and dip3["wells"][1]["x"] is None
     stored = web_store.get(study_id).contrasts[GENE]

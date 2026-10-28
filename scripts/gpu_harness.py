@@ -107,7 +107,7 @@ def main() -> int:
         "OLLAMA_NUM_PARALLEL": "2",
         "OLLAMA_MAX_LOADED_MODELS": str(len(models)),
     }
-    with open(out / "ollama.log", "w") as log:
+    with open(out / "ollama.log", "w", encoding="utf-8", newline="\n") as log:
         server = subprocess.Popen(["ollama", "serve"], env=env, stdout=log, stderr=log)
     for _ in range(60):
         if subprocess.run(f"curl -sf {OLLAMA}/api/tags", shell=True).returncode == 0:
@@ -116,13 +116,13 @@ def main() -> int:
     for model in models:
         sh(f"OLLAMA_HOST={OLLAMA} ollama pull {model}")
     script = out / "harness_one.py"
-    script.write_text(HARNESS)
+    script.write_text(HARNESS, encoding="utf-8", newline="\n")
     runs = {}
     for model in models:
         folder = out / _slug(model)
         folder.mkdir(parents=True, exist_ok=True)
         run_env = {**os.environ, "QPILOT_STUDIES_DIR": str(folder / "studies")}
-        with open(folder / "harness.log", "w") as log:
+        with open(folder / "harness.log", "w", encoding="utf-8", newline="\n") as log:
             runs[model] = subprocess.Popen(
                 [sys.executable, str(script), model, str(args.timeout), str(folder)],
                 env=run_env,
@@ -138,9 +138,12 @@ def main() -> int:
     server.terminate()
     for model in models:
         card = out / _slug(model) / "scorecard.md"
-        print(card.read_text() if card.exists() else f"(no scorecard for {model})", flush=True)
+        print(
+            card.read_text(encoding="utf-8") if card.exists() else f"(no scorecard for {model})",
+            flush=True,
+        )
     summary = {m: str(out / _slug(m)) for m in models}
-    (out / "SUMMARY.json").write_text(json.dumps(summary, indent=2))
+    (out / "SUMMARY.json").write_text(json.dumps(summary, indent=2), encoding="utf-8", newline="\n")
     say("ALL DONE")
     return 1 if failed else 0
 

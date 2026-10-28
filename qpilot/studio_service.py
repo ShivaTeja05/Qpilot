@@ -558,7 +558,7 @@ class Studio:
         )
         if lines:
             with FileLock(str(folder / ".lock"), timeout=30):
-                with open(folder / AI_CALLS_FILE, "a", encoding="utf-8") as fh:
+                with open(folder / AI_CALLS_FILE, "a", encoding="utf-8", newline="\n") as fh:
                     fh.write(lines)
 
     # ---- stage 1: the design ----------------------------------------------------------------
@@ -2148,6 +2148,9 @@ class Studio:
                 maker = MadeBy(kind="model", provider=self.client.provider, model=self.client.model)
             self._log_calls(session_id, "studio.prism_draft", getattr(draft, "meta", []))
         payload["study_id"] = study_id
+        digest = self._prism_digest(study_id, payload.get("genes") or None)
+        if digest:  # a later analysis with the same tables keeps this draft (still current)
+            payload["tables_sha256"] = digest
         proposal = Proposal(
             study_id=session_id,
             kind="prism.project",
@@ -2168,18 +2171,99 @@ class Studio:
         from qpilot.prism import preview
 
         study_id = self.study(session_id)
-        project = self._accepted_project(session_id, study_id)
+        found, _, _ = self.prism_project_cached(session_id, study_id)
+        project = found.effective_payload() if found is not None else None
         genes = project.get("genes") if project else None
         template = (project or {}).get("template_id") or "two_groups_log2"
-        return preview(self.store, study_id, genes or None, template, rows=rows)
+        out = preview(self.store, study_id, genes or None, template, rows=rows)
+        digest = (out.get("bundle") or {}).get("info", {}).get("tables_sha256")
+        head = (out.get("bundle") or {}).get("chain_head")
+        if digest and head:  # the preview computed it anyway: the status needs not
+            with _DIGESTS_LOCK:
+                _DIGESTS[(str(self.store.root), study_id, head, tuple(genes or ()))] = digest
+        return out
 
     def _accepted_project(self, session_id: str, study_id: str) -> dict[str, Any] | None:
+        found, _ = self.prism_project(session_id, study_id)
+        return found.effective_payload() if found is not None else None
+
+    def prism_project_cached(
+        self, session_id: str, study_id: str
+    ) -> tuple[Proposal | None, bool, bool]:
+        """:meth:`prism_project` without computing a digest: ``(found, carried, pending)``.
+
+        ``pending`` is True when an earlier analysis's project might still be current but a
+        digest it needs is not computed yet (call :meth:`prism_project` in the background).
+        """
+        return self._prism_project(session_id, study_id, compute=False)
+
+    def prism_project(self, session_id: str, study_id: str) -> tuple[Proposal | None, bool]:
+        """The accepted Prism project that holds for ``study_id``, and whether it is carried.
+
+        A project accepted for this analysis holds. So does the latest one accepted for an
+        earlier analysis whose exported tables hold exactly the same numbers (the digest of
+        the tables, ``tables_sha256``, is equal): a decision that changed no number in the
+        tables does not make a person draft the project again. It is then "still current"
+        (the second value is True). A draft from before digests were kept is compared by the
+        tables its own analysis exports now.
+        """
+        found, carried, _ = self._prism_project(session_id, study_id, compute=True)
+        return found, carried
+
+    def _prism_project(
+        self, session_id: str, study_id: str, *, compute: bool
+    ) -> tuple[Proposal | None, bool, bool]:
         accepted = self.store.proposals(session_id).accepted("prism.project")
         for proposal in reversed(accepted):
-            payload = proposal.effective_payload()
-            if payload.get("study_id") == study_id:
-                return payload
-        return None
+            if proposal.effective_payload().get("study_id") == study_id:
+                return proposal, False, False
+        if not accepted:
+            return None, False, False
+        latest = accepted[-1]
+        payload = latest.effective_payload()
+        genes = payload.get("genes") or None
+        digest = payload.get("tables_sha256") or self._prism_digest(
+            str(payload.get("study_id") or ""), genes, compute=compute
+        )
+        current = self._prism_digest(study_id, genes, compute=compute) if digest else None
+        if digest is _MISSING or current is _MISSING:
+            return None, False, True
+        if digest and current == digest:
+            return latest, True, False
+        return None, False, False
+
+    def _prism_digest(
+        self, study_id: str, genes: Sequence[str] | None, *, compute: bool = True
+    ) -> Any:
+        """The digest of the tables a Prism project of ``study_id`` holds (cached per head).
+
+        ``None`` when it cannot be computed; with ``compute=False``, :data:`_MISSING` when it is
+        not in the cache yet.
+        """
+        from qpilot.prism import project_digest
+        from qpilot.qpcr.export import ExportError
+
+        if not study_id:
+            return None
+        try:
+            key = _digest_key(self.store, study_id, genes)
+        except (StudyNotFound, OSError, ValueError):
+            return None
+        with _DIGESTS_LOCK:
+            if key in _DIGESTS:
+                return _DIGESTS[key]
+        if not compute:
+            return _MISSING
+        try:
+            digest = project_digest(self.store, study_id, genes)
+        except (ExportError, StudyNotFound, OSError, ValueError, KeyError) as err:
+            log.info("no Prism tables digest for %s: %s", study_id, err)
+            return None
+        with _DIGESTS_LOCK:
+            if len(_DIGESTS) > 256:
+                _DIGESTS.clear()
+            _DIGESTS[key] = digest
+        return digest
 
     def exports(self, session_id: str) -> list[dict[str, Any]]:
         """Every bundle sent to Prism from this session: study, folder, bundle sha256, time."""
@@ -2222,18 +2306,25 @@ class Studio:
             "at": _now(),
             "exclusions": [p.id for p in accepted if p.kind == EXCLUSION_KIND],
         }
+        if getattr(result, "project", None) is not None:
+            entry["project"] = result.project.name
         self._edit_meta(session_id, lambda meta: meta.setdefault("exports", []).append(entry))
         return result
 
     def launch_prism(self, result: Any, actor: Actor, wait_s: float = PRISM_WAIT_S) -> dict:
-        """Run the bundle's ``run.pzc`` in the scientist's Prism and wait for its done file.
+        """Open the bundle's project in the scientist's Prism (or run a scripts-only bundle).
 
-        Never runs without a person's click (``actor == "human"``) and never when Prism is not
-        installed: then the bundle stays where it is, to run on the Prism machine.
+        A bundle with a Prism project (the default) is opened in Prism and not waited for: Prism
+        shows it. A scripts-only bundle runs ``run.pzc`` and waits for its done file. Never
+        runs without a person's click (``actor == "human"``) and never when Prism is not
+        installed: then the bundle stays where it is, to open on the Prism machine.
         """
         from qpilot.prism.script import DONE_FILE
 
         _require_human(actor, "launch Prism")
+        project = getattr(result, "project", None)
+        if project is not None:
+            return _open_project(Path(project), Path(result.out_dir))
         command = result.launch
         argv: list[str] | str = list(command.argv)
         if argv:  # macOS: osascript with a fixed argument list
@@ -2876,8 +2967,73 @@ def _curve_features(path: Path, experiment_id: str | None) -> Any:
     return _FEATURES[key]
 
 
+_DIGESTS: dict[tuple[str, str, str, tuple[str, ...]], str] = {}
+_DIGESTS_LOCK = threading.Lock()
+_MISSING = object()  # a digest not computed yet (see Studio.prism_project_cached)
+
+
+def _digest_key(store: Any, study_id: str, genes: Sequence[str] | None) -> tuple:
+    """The cache key of a study's Prism tables digest: store, study, chain head, genes."""
+    return (str(store.root), study_id, store.chain_head(study_id), tuple(genes or ()))
+
+
+_MAC_APPS = (
+    "/Applications/Prism 11.app",
+    "/Applications/Prism 10.app",
+    "/Applications/Prism 9.app",
+    "/Applications/Prism.app",
+    "/Applications/GraphPad Prism.app",
+)
+
+
+def _mac_prism_app() -> str | None:
+    """Where GraphPad Prism is installed on this Mac, if it is."""
+    return next((p for p in _MAC_APPS if Path(p).is_dir()), None)
+
+
 def _mac_prism_installed() -> bool:
-    return any(Path(p).exists() for p in ("/Applications/Prism 10.app", "/Applications/Prism.app"))
+    return _mac_prism_app() is not None
+
+
+def _windows_prism_exe() -> str | None:
+    """Where GraphPad Prism is installed on this Windows computer, if it is."""
+    roots = [os.environ.get(k) for k in ("ProgramFiles", "ProgramFiles(x86)")]
+    for root in filter(None, roots):
+        base = Path(root) / "GraphPad"
+        if not base.is_dir():
+            continue
+        for folder in sorted(base.glob("Prism*"), reverse=True):
+            exe = folder / "prism.exe"
+            if exe.is_file():
+                return str(exe)
+    return None
+
+
+def _open_project(project: Path, folder: Path) -> dict[str, Any]:
+    """Open a project file in Prism when Prism is installed here (never waits for it)."""
+    import sys
+
+    note = (
+        "Prism is not installed on this computer: download the bundle and double-click the "
+        "project file on the computer that has Prism"
+    )
+    if sys.platform == "darwin":
+        app = _mac_prism_app()
+        if app is None:
+            return {"launched": False, "note": note, "bundle_dir": str(folder)}
+        argv = ["open", "-a", app, str(project)]
+    elif sys.platform.startswith("win"):
+        exe = _windows_prism_exe()
+        if exe is None:
+            return {"launched": False, "note": note, "bundle_dir": str(folder)}
+        argv = [exe, str(project)]
+    else:
+        return {"launched": False, "note": note, "bundle_dir": str(folder)}
+    try:
+        subprocess.Popen(argv, close_fds=True)  # noqa: S603 (no shell; fixed command)
+    except OSError as err:
+        return {"launched": False, "note": f"Prism could not be started: {err}"}
+    return {"launched": True, "done": None, "opened": project.name, "bundle_dir": str(folder)}
 
 
 __all__ = ["BLIND_STAGES", "STAGES", "Assembly", "StageStatus", "Studio", "StudioError"]

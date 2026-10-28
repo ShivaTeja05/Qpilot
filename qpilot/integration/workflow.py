@@ -346,7 +346,7 @@ def exclude_demo_sample(sent_back: Path) -> dict[str, str]:
     odc1 = sent_back / "ODC1.csv"
     lines = odc1.read_text(encoding="utf-8").split("\n")
     lines = [",".join([ln.split(",")[0], "", ""]) if ln.startswith("1496,") else ln for ln in lines]
-    odc1.write_text("\n".join(lines), encoding="utf-8")
+    odc1.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     return {"gene": "ODC1", "row": "1496", "edit": "value removed in Prism"}
 
 
@@ -984,9 +984,9 @@ def _agents_stage(rec: Recorder, store: Any, study: str, report: WorkflowReport)
 
 def _write_report(report: WorkflowReport, out_dir: Path) -> None:
     (out_dir / "workflow.json").write_text(
-        json.dumps(report.as_dict(), indent=1, default=str), encoding="utf-8"
+        json.dumps(report.as_dict(), indent=1, default=str), encoding="utf-8", newline="\n"
     )
-    (out_dir / "WORKFLOW.md").write_text(render_markdown(report), encoding="utf-8")
+    (out_dir / "WORKFLOW.md").write_text(render_markdown(report), encoding="utf-8", newline="\n")
 
 
 def render_markdown(report: WorkflowReport) -> str:

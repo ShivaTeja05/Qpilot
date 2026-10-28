@@ -90,7 +90,7 @@ def to_rdml(csv: str | Path = DATA / "ds_380.csv", out: str | Path = DATA / "ds_
         lines.append(f"{well}\t{sample}\t{stype}\tMYCN\ttoi\tSYBR\t\t{fluor}")
     with tempfile.TemporaryDirectory() as tmp:
         table = Path(tmp) / "ds_380.tsv"
-        table.write_text("\n".join(lines) + "\n")
+        table.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         plate.import_table(doc, str(table), "amp")
     doc.save(str(out))
     return Path(out)
@@ -258,5 +258,7 @@ def validate(
         and result["pass"]["robust_filter"]
         and result["pass"]["median_abs_log2fc"]
     )
-    (Path(out) / "validation_nodiff.json").write_text(json.dumps(result, indent=1))
+    (Path(out) / "validation_nodiff.json").write_text(
+        json.dumps(result, indent=1), encoding="utf-8", newline="\n"
+    )
     return result
