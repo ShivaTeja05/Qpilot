@@ -2393,6 +2393,46 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/review/repeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Repeat
+         * @description What to repeat and why, ranked by consequence, and the repeat plate (read-only).
+         */
+        get: operations["get_repeat"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/studies/{study_id}/review/repeat.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Repeat Csv
+         * @description The repeat plate as the planner's CSV (plate, well, sample, group, target, type).
+         */
+        get: operations["get_repeat_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/review/sign-off": {
         parameters: {
             query?: never;
@@ -6728,6 +6768,25 @@ export type components = {
             worst: "pass" | "warn" | "fail" | "not_applicable";
         };
         /**
+         * GatePlateLine
+         * @description What the Run Gate says about one plate: verdict counts and the rules that warn or fail.
+         */
+        GatePlateLine: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Findings */
+            findings: components["schemas"]["RepeatReason"][];
+            /** Plate */
+            plate: string;
+            /**
+             * Worst
+             * @description fail, warn, pass or not_applicable (the worst verdict).
+             */
+            worst: string;
+        };
+        /**
          * GateRequestView
          * @description An agent's request on a Run Gate card, waiting for a person (curve exclusions).
          */
@@ -10504,6 +10563,181 @@ export type components = {
             design_hash?: string | null;
             /** N Entries */
             n_entries: number;
+            /** Study Id */
+            study_id: string;
+        };
+        /**
+         * RepeatItem
+         * @description One sample x gene to re-run (``target`` None: the whole sample), with why and what for.
+         */
+        RepeatItem: {
+            /** Changed Calls */
+            changed_calls: string[];
+            /**
+             * Consequence
+             * @enum {string}
+             */
+            consequence: "changes_call" | "beyond_ci" | "no_value" | "unknown" | "changes_nothing";
+            /** Consequence Words */
+            consequence_words: string;
+            /**
+             * Group
+             * @default
+             */
+            group: string;
+            /**
+             * On Plate
+             * @description Its reactions are on the repeat plate.
+             * @default false
+             */
+            on_plate: boolean;
+            /** Plates */
+            plates: string[];
+            /**
+             * Rank
+             * @default 0
+             */
+            rank: number;
+            /** Reasons */
+            reasons: components["schemas"]["RepeatReason"][];
+            /**
+             * Repeat
+             * @description Genes it re-runs (the refs are added on the plate).
+             */
+            repeat: string[];
+            /** Sample */
+            sample: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "reaction" | "sample";
+            /** Target */
+            target: string | null;
+            /** Wells */
+            wells: string[];
+        };
+        /**
+         * RepeatPlan
+         * @description What to repeat and why, ranked; the repeat plate; what was looked at and needs no repeat.
+         */
+        RepeatPlan: {
+            /** Calibrator */
+            calibrator?: string | null;
+            /**
+             * Counts
+             * @description Items by consequence.
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Gate Lines
+             * @description The Run Gate per plate (none unread).
+             */
+            gate_lines: components["schemas"]["GatePlateLine"][];
+            /** Items */
+            items: components["schemas"]["RepeatItem"][];
+            /** N Plates */
+            n_plates: number;
+            /**
+             * N Reactions
+             * @description Sample x assay pairs on the repeat plates (refs too).
+             */
+            n_reactions: number;
+            /** N Samples */
+            n_samples: number;
+            /** N Wells */
+            n_wells: number;
+            /** Not Repeated */
+            not_repeated: components["schemas"]["RepeatReason"][];
+            /** Notes */
+            notes: string[];
+            /** Plate Size */
+            plate_size: number;
+            /** Replicates */
+            replicates: number;
+            /** Study Id */
+            study_id: string;
+            /** Warnings */
+            warnings: string[];
+            /** Wells */
+            wells: components["schemas"]["RepeatPlateWell"][];
+        };
+        /**
+         * RepeatPlateWell
+         * @description One well of the repeat plate, as the planner's CSV writes it.
+         */
+        RepeatPlateWell: {
+            /** Group */
+            group: string;
+            /** Plate */
+            plate: number;
+            /** Sample */
+            sample: string;
+            /** Target */
+            target: string;
+            /** Type */
+            type: string;
+            /** Well */
+            well: string;
+        };
+        /**
+         * RepeatReason
+         * @description One reason to re-run a reaction (or a reason that needs no repeat), in plain words.
+         */
+        RepeatReason: {
+            /**
+             * Code
+             * @description The rule id (G-NTC-1), the check (S1) or the kind of reason.
+             */
+            code: string;
+            /**
+             * Source
+             * @description run_gate, set_aside, no_comparison, no_amplification, trace.
+             */
+            source: string;
+            /**
+             * What To Check
+             * @default
+             */
+            what_to_check: string;
+            /** Words */
+            words: string;
+        };
+        /**
+         * RepeatView
+         * @description ``GET /studies/{id}/review/repeat``: what to repeat and why, ranked, and the repeat plate.
+         *
+         *     Read at the analysis in use from the Run Gate, the wells a person left out, the samples in
+         *     no comparison, wells with no amplification where one was expected and Trace's places to
+         *     look (:mod:`qpilot.qpcr.repeat`). ``plan.gate_lines`` are the Run Gate's lines per plate.
+         *     Read-only; the plate downloads as CSV from ``…/review/repeat.csv``.
+         */
+        RepeatView: {
+            /**
+             * Csv Name
+             * @description The file name the CSV downloads as.
+             */
+            csv_name: string;
+            /**
+             * Csv Url
+             * @description Where the repeat plate downloads as CSV (GET).
+             */
+            csv_url: string;
+            /**
+             * Include
+             * @enum {string}
+             */
+            include: "consequential" | "all";
+            /**
+             * Note
+             * @description What the plan is and is not, in words.
+             */
+            note: string;
+            plan: components["schemas"]["RepeatPlan"];
+            /** Session */
+            session?: string | null;
             /** Study Id */
             study_id: string;
         };
@@ -17313,6 +17547,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunReviewView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_repeat: {
+        parameters: {
+            query?: {
+                include?: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RepeatView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_repeat_csv: {
+        parameters: {
+            query?: {
+                include?: string;
+            };
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The repeat plate as CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
                 };
             };
             /** @description Validation Error */

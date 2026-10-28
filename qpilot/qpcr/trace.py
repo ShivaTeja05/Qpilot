@@ -2545,6 +2545,37 @@ def place_wells(ctx: TraceContext, place: PlaceToLook) -> tuple[str, ...]:
     return tuple(_study_wells_of(ctx, place.sample, place.target))
 
 
+def restore_effect(ctx: TraceContext, unit: str) -> dict[str, Any] | None:
+    """What bringing back a sample in no comparison would do, or ``None`` when it cannot be.
+
+    Its one empty reference well is read from the sample's other references, groups fixed. The
+    consequence view: ``class``, ``changed_calls``, ``max_abs_delta``.
+    """
+    if unit not in ctx.restorable:
+        return None
+    return _cons_view(_consequence(ctx, ("restore", ctx.unit_row[unit]), None))
+
+
+def cell_effect(ctx: TraceContext, unit: str, target: str) -> dict[str, Any] | None:
+    """What leaving one sample x gene value out does to the calls (exact, groups fixed).
+
+    A target gene's value left out; a reference gene's value left out takes the sample out of
+    every comparison (its normaliser needs every reference). A sample in no comparison changes
+    nothing. ``None`` for a gene the comparison does not use that way (the marker, say). The
+    consequence view: ``class``, ``changed_calls``, ``max_abs_delta``.
+    """
+    i = ctx.unit_row.get(unit)
+    if i is None or not ctx.used[i]:
+        return _cons_view(NOTHING)
+    if target in ctx.item_col:
+        key: tuple = ("value", i, ctx.item_col[target])
+    elif target in ctx.refs:
+        key = ("drop", i)
+    else:
+        return None
+    return _cons_view(_consequence(ctx, key, None))
+
+
 def place_universe(ctx: TraceContext, place: PlaceToLook) -> tuple[str, ...]:
     """Every well any set-aside option of the place leaves out (what "keep" can put back)."""
     found: set[str] = set()
@@ -2673,7 +2704,14 @@ def trace_store(
     return trace_well(ctx, value, top=top)
 
 
-def _store_context(store: StudyStore, study_id: str) -> TraceContext:
+def _store_context(
+    store: StudyStore, study_id: str, choice: Mapping[str, str] | None = None
+) -> TraceContext:
+    """Trace's context for a stored study: the planned analysis, or the one ``choice`` names.
+
+    ``choice``: the options in use as the robustness grid writes them
+    (:func:`qpilot.trace.context.cell_of`).
+    """
     from qpilot.core.store import sha256_file
     from qpilot.io.datasets import default_cache_dir
     from qpilot.qpcr.curves import analyse_study, cache_path
@@ -2704,6 +2742,11 @@ def _store_context(store: StudyStore, study_id: str) -> TraceContext:
         (primary[g].fc, primary[g].p) != (stored[g].fc, stored[g].p) for g in primary
     ):
         raise TraceError("a re-analysis does not reproduce the stored results; nothing traced")
+    if choice:
+        from qpilot.trace.context import cell_of
+
+        cell = cell_of(model, choice)
+        return build_context(curves, model, robustness=result.robustness, cell=cell)
     return build_context(curves, model, robustness=result.robustness)
 
 

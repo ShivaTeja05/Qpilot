@@ -1,4 +1,4 @@
-"""Run Review: one page per run, for the person who reviews someone else's work (thin version).
+"""Run Review: one page per run, for the person who reviews someone else's work.
 
 The page composes parts that already exist; it adds no maths:
 
@@ -6,12 +6,15 @@ The page composes parts that already exist; it adds no maths:
   conclusion holds across the robustness grid (all from the stored results);
 * the Evidence Ledger (:mod:`qpilot.qpcr.evidence`): what the data can show and what nobody
   recorded;
+* what to repeat and why, and the Run Gate per plate, when it is given the study's repeat plan
+  (:mod:`qpilot.qpcr.repeat`, which reads the Run Gate, the wells a person left out and Trace):
+  the most consequential items, each with its first reason, and the plates a rule warns or
+  fails on; without the plan the page says where to see them;
 * the sign-offs a person recorded (decision-log entries of kind ``review``, outcome
   ``accept``, ``repeat`` or ``discuss``). This module only renders the entries it is given;
   writing one is the store's job (``StudyStore.append_review``, actor ``human`` only).
 
-The parts of the full Run Review that do not exist yet (what to repeat and why, the Run Gate
-line per plate, what to change next run) are listed as not available, never filled in.
+What to change next run does not exist yet: it is listed as not available, never filled in.
 
 The page never judges the run: it does not say a run passed, failed or is fit for anything.
 Every number on it is a ``{{fact_id}}`` token checked by :func:`qpilot.core.validator.validate`
@@ -29,16 +32,20 @@ from pydantic import BaseModel
 from qpilot.core.facts import slug
 from qpilot.core.validator import render_tokens
 from qpilot.explain.evidence_text import (
+    GATE_ELSEWHERE,
     NO_HEADLINE,
     NO_SIGNOFF,
     NOT_AVAILABLE,
     PURPOSE,
+    REPEAT_ELSEWHERE,
     STATUS_WORDS,
+    gate_plate_lines,
     headline_lines,
     item_line,
     ledger_missing,
     ledger_summary,
     render_facts,
+    repeat_lines,
     runreview_text,
     signoff_lines,
     study_line,
@@ -54,6 +61,7 @@ from qpilot.qpcr.evidence import (
     EvidenceLedger,
     evidence_store,
 )
+from qpilot.qpcr.repeat import CONSEQUENCE_WORDS, RepeatPlan
 from qpilot.schemas import Conclusion, Fact, StudyResult
 
 REVIEW_VERSION = 1
@@ -72,6 +80,7 @@ SIGNOFF_NOTE = (
     "sign-offs recorded there."
 )
 EVIDENCE_FILE = "evidence.json"  # the store artifact the ledger is kept in, once written
+REPEAT_SHOWN = 15  # repeat items the page lists (the rest are counted)
 
 
 class RunReviewError(ValueError):
@@ -124,6 +133,7 @@ class RunReview(BaseModel):
     headline: list[HeadlineGene]
     reviews: list[SignOff]
     not_available: list[Unavailable]
+    repeat: RepeatPlan | None = None
     facts: dict[str, Fact]
 
     def tokens(self) -> str:
@@ -174,6 +184,7 @@ def build_review(
     ledger: EvidenceLedger | None = None,
     ledger_note: str = "",
     reviews: Iterable[Any] = (),
+    repeat: RepeatPlan | None = None,
 ) -> RunReview:
     """The Run Review of a study from its stored results (pure; nothing is read or written).
 
@@ -184,6 +195,8 @@ def build_review(
         ledger_note: Why the ledger is not available (shown on the page).
         reviews: Decision-log entries of kind ``review`` (mappings or models with ``seq``,
             ``outcome`` (or ``option``), ``reviewer``, ``reason``, ``at``, ``hash``).
+        repeat: The study's repeat plan (:func:`qpilot.qpcr.repeat.build_plan`), for what to
+            repeat and why and the Run Gate per plate; ``None``: the page says where to see them.
 
     Raises:
         RunReviewError: An entry is not a review entry, two share a sequence number, or the
@@ -232,6 +245,10 @@ def build_review(
         facts.update(ledger.facts)
     elif ledger_note:
         add("f_rr_ledger_note", ledger_note, path="review.ledger_note")
+    if repeat is not None:
+        if repeat.study_id != result.study_id:
+            raise RunReviewError("the repeat plan belongs to another study")
+        _repeat_facts(repeat, add)
     signoffs = sorted((_sign_off(entry) for entry in reviews), key=lambda o: o.seq)
     seqs = [o.seq for o in signoffs]
     if len(set(seqs)) != len(seqs):
@@ -256,8 +273,44 @@ def build_review(
         headline=shown,
         reviews=signoffs,
         not_available=[Unavailable(id=i, title=t, reason=r) for i, t, r in NOT_AVAILABLE],
+        repeat=repeat,
         facts=dict(sorted(facts.items())),
     )
+
+
+def _repeat_facts(plan: RepeatPlan, add: Any) -> None:
+    """The repeat plan's facts: counts, the shown items (names are string facts) and the gate."""
+    add("f_rr_repeat_n_items", len(plan.items), "{:,}", "repeat.items@len")
+    add("f_rr_repeat_n_changes_call", plan.counts.get("changes_call", 0), "{:,}", "repeat.counts")
+    if plan.wells:
+        add("f_rr_repeat_n_wells", plan.n_wells, "{:,}", "repeat.n_wells")
+        add("f_rr_repeat_n_plates", plan.n_plates, "{:,}", "repeat.n_plates")
+        if plan.calibrator:
+            add("f_rr_repeat_calibrator", plan.calibrator, path="repeat.calibrator")
+    for i, item in enumerate(plan.items[:REPEAT_SHOWN], start=1):
+        p, path = f"f_rr_repeat_{i}", f"repeat.items[{i - 1}]"
+        add(f"{p}_sample", item.sample, path=f"{path}.sample")
+        add(f"{p}_target", item.target or "every gene", path=f"{path}.target")
+        add(f"{p}_consequence", CONSEQUENCE_WORDS[item.consequence], path=f"{path}.consequence")
+        if item.changed_calls:
+            add(f"{p}_calls", ", ".join(item.changed_calls), path=f"{path}.changed_calls")
+        why = item.reasons[0].words if item.reasons else ""
+        if len(item.reasons) > 1:
+            why += f" (and {len(item.reasons) - 1} more reason(s))"
+        add(f"{p}_why", why, path=f"{path}.reasons")
+    if len(plan.items) > REPEAT_SHOWN:
+        add("f_rr_repeat_n_more", len(plan.items) - REPEAT_SHOWN, "{:,}", "repeat.items@len")
+    if not plan.gate_lines:
+        return
+    flagged = [line for line in plan.gate_lines if line.worst in ("fail", "warn")]
+    add("f_rr_gate_n_plates", len(plan.gate_lines), "{:,}", "repeat.gate_lines@len")
+    add("f_rr_gate_n_flagged", len(flagged), "{:,}", "repeat.gate_lines")
+    for k, line in enumerate(flagged, start=1):
+        p, path = f"f_rr_gate_{k}", f"repeat.gate_lines[{k - 1}]"
+        add(f"{p}_plate", line.plate, path=f"{path}.plate")
+        add(f"{p}_worst", "fails" if line.worst == "fail" else "warns", path=f"{path}.worst")
+        add(f"{p}_n_fail", line.counts.get("fail", 0), "{:,}", f"{path}.counts.fail")
+        add(f"{p}_n_warn", line.counts.get("warn", 0), "{:,}", f"{path}.counts.warn")
 
 
 def _stored_ledger(store: Any, study_id: str) -> EvidenceLedger | None:
@@ -278,6 +331,7 @@ def run_review(
     *,
     reviews: Iterable[Any] = (),
     ledger: EvidenceLedger | None = None,
+    repeat: RepeatPlan | None = None,
 ) -> RunReview:
     """The Run Review of a stored study (read-only).
 
@@ -289,6 +343,8 @@ def run_review(
         ledger: The Evidence Ledger to show. By default the one the store kept
             (``evidence.json``), else one rebuilt from the input file; when neither is
             possible the page says the ledger is not available and why.
+        repeat: The study's repeat plan (:func:`repeat_plan_store` builds it);
+            ``None``: the page says where to see what to repeat and the Run Gate per plate.
 
     Raises:
         StudyNotFound: No such study.
@@ -306,7 +362,36 @@ def run_review(
         except EvidenceError as err:
             note = str(err)
     return build_review(result, headline=headline, ledger=ledger, ledger_note=note,
-                        reviews=reviews)  # fmt: skip
+                        reviews=reviews, repeat=repeat)  # fmt: skip
+
+
+def repeat_plan_store(
+    store: Any, study_id: str, *, include: Literal["consequential", "all"] = "consequential"
+) -> RepeatPlan:
+    """The repeat plan of a stored study at the analysis in use (read-only).
+
+    Reads what the page reads: Trace's context and the Run Gate at each Decision Card's applied
+    option (the gate is computed here: about half a minute on the demo the first time), and, for
+    a study of a Studio session, the session's record of the wells a person left out.
+
+    Raises:
+        StudyNotFound: No such study.
+        qpilot.qpcr.trace.TraceError: The input file is missing or changed, or the re-analysis
+            does not reproduce the stored results.
+        qpilot.qpcr.repeat.RepeatError: The repeat plate cannot be laid out.
+    """
+    from qpilot.qpcr import trace as trace_engine
+    from qpilot.qpcr.gate_rules import resolve_pack
+    from qpilot.qpcr.repeat import build_plan, left_out_from_inbox
+    from qpilot.web.results_views import session_of_study
+    from qpilot.web.routers.gate import analysis_choice, report_for
+
+    study_id = store.get(study_id).study_id
+    ctx = trace_engine._store_context(store, study_id, analysis_choice(store, study_id))
+    gate = report_for(store, study_id)
+    sid = session_of_study(store, study_id)
+    left = left_out_from_inbox(store.proposals(sid).accepted(), ctx) if sid else {}
+    return build_plan(study_id, ctx, gate=gate, pack=resolve_pack(), left_out=left, include=include)
 
 
 # ---------- rendering ----------
@@ -364,6 +449,12 @@ def render_text(review: RunReview) -> str:
     out += ["", "Evidence Ledger", show(_ledger_head(review))]
     if review.ledger is not None:
         out += [f"- {show(line)}" for item in ITEMS if (line := item_line(facts, item))]
+    out += ["", "What to repeat and why"]
+    lines = repeat_lines(facts)
+    out += [f"- {show(line)}" for line in lines] if lines else [show(REPEAT_ELSEWHERE)]
+    out += ["", "Run Gate per plate"]
+    lines = gate_plate_lines(facts)
+    out += [f"- {show(line)}" for line in lines] if lines else [show(GATE_ELSEWHERE)]
     out += ["", "Sign-off"]
     out += [f"- {show(line)}" for line in signoff_lines(facts) or [NO_SIGNOFF]]
     out += ["", "Not available yet"]
@@ -444,6 +535,13 @@ def render_html(review: RunReview) -> str:
             )
         body.append("</tbody></table></div>")
         body.append(f'<p class="muted">{show(MIQE_NOTE)}</p>')
+    for title, lines, missing in (
+        ("What to repeat and why", repeat_lines(facts), REPEAT_ELSEWHERE),
+        ("Run Gate per plate", gate_plate_lines(facts), GATE_ELSEWHERE),
+    ):
+        body.append(f"<h2>{title}</h2>")
+        items = "".join(f"<li>{show(line)}</li>" for line in lines)
+        body.append(f"<ul>{items}</ul>" if lines else f"<p>{show(missing)}</p>")
     body.append("<h2>Sign-off</h2>")
     lines = signoff_lines(facts)
     items = "".join(f"<li>{show(line)}</li>" for line in lines)

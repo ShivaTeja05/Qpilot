@@ -59,7 +59,7 @@ function scrollTo(id: PartId) {
   el.focus({ preventScroll: true });
 }
 
-export default function ReportSection({ workspace }: SectionProps) {
+export default function ReportSection({ workspace, rest }: SectionProps) {
   const key = workspace?.key ?? "";
   const studyId = workspace?.study_id ?? null;
   const readable = studyId && workspace?.results_visible !== false ? studyId : null;
@@ -78,6 +78,13 @@ export default function ReportSection({ workspace }: SectionProps) {
 
   const files = exports.data?.exports ?? [];
   const passport = files.find((f) => f.format === "passport" && f.record) ?? null;
+
+  // A deep link to one part (`report/run-review`, from Controls' "What to repeat") lands on it.
+  const part = PARTS.find((x) => x.id === rest?.[0])?.id ?? null;
+  const loaded = Boolean(report.data);
+  useEffect(() => {
+    if (part && loaded) requestAnimationFrame(() => scrollTo(part));
+  }, [part, loaded]);
 
   const header = (
     <PageHeader

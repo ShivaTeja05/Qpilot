@@ -114,8 +114,10 @@ def test_the_review_shows_the_ledger_headline_and_no_sign_off_yet(walked):
     _numbers_are_facts(body["title"])
     for gene in body["headline"]:
         _numbers_are_facts(gene["line"])
-    assert {n["id"] for n in body["not_built"]} >= {"gate", "next_run"}
-    assert {n["section"] for n in body["not_built"] if n["section"]} == {"gate", "planner"}
+    # what to repeat and the Run Gate per plate are built (``…/review/repeat``): only what to
+    # change next run is still another section's
+    assert [n["id"] for n in body["not_built"]] == ["next_run"]
+    assert {n["section"] for n in body["not_built"] if n["section"]} == {"planner"}
 
 
 def test_a_sign_off_writes_one_review_entry_always_as_a_person(walked, tmp_path):

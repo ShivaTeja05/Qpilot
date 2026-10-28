@@ -1,0 +1,6886 @@
+{
+ "study_id": "e300000d4f9a",
+ "session": "bc1d233e3866",
+ "include": "consequential",
+ "plan": {
+  "study_id": "e300000d4f9a",
+  "items": [
+   {
+    "rank": 1,
+    "sample": "2016",
+    "target": "HMBS",
+    "scope": "reaction",
+    "group": "MYCN_high",
+    "plates": [
+     "HMBS_20080318"
+    ],
+    "wells": [
+     "HMBS_20080318/K22"
+    ],
+    "reasons": [
+     {
+      "source": "trace",
+      "code": "S1",
+      "words": "Trace (plate HMBS_20080318, well K22): looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
+      "what_to_check": "re-run that well and look at its curve"
+     }
+    ],
+    "consequence": "changes_call",
+    "consequence_words": "changes a call",
+    "changed_calls": [
+     "CAMTA2",
+     "IGSF4"
+    ],
+    "repeat": [
+     "HMBS"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 2,
+    "sample": "1542",
+    "target": "SDHA(1)",
+    "scope": "reaction",
+    "group": "",
+    "plates": [
+     "SDHA(1)_20080220"
+    ],
+    "wells": [
+     "SDHA(1)_20080220/E1"
+    ],
+    "reasons": [
+     {
+      "source": "no_comparison",
+      "code": "S7",
+      "words": "Sample 1542 is in no comparison: its SDHA(1) reference well (plate SDHA(1)_20080220, well E1) has no value: LinRegPCR found no amplification. Read from the sample's other reference wells, bringing it back changes the call of PAICS.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "changes_call",
+    "consequence_words": "changes a call",
+    "changed_calls": [
+     "PAICS"
+    ],
+    "repeat": [
+     "SDHA(1)"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 3,
+    "sample": "1772",
+    "target": "UBC(2)",
+    "scope": "reaction",
+    "group": "MYCN_high",
+    "plates": [
+     "UBC(2)_20080220"
+    ],
+    "wells": [
+     "UBC(2)_20080220/O13"
+    ],
+    "reasons": [
+     {
+      "source": "trace",
+      "code": "S1",
+      "words": "Trace (plate UBC(2)_20080220, well O13): looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
+      "what_to_check": "re-run that well and look at its curve"
+     }
+    ],
+    "consequence": "changes_call",
+    "consequence_words": "changes a call",
+    "changed_calls": [
+     "CAMTA2"
+    ],
+    "repeat": [
+     "UBC(2)"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 4,
+    "sample": "1924",
+    "target": "HPRT1",
+    "scope": "reaction",
+    "group": "MYCN_high",
+    "plates": [
+     "HPRT1_20080303"
+    ],
+    "wells": [
+     "HPRT1_20080303/F23"
+    ],
+    "reasons": [
+     {
+      "source": "trace",
+      "code": "S1",
+      "words": "Trace (plate HPRT1_20080303, well F23): looks like one reference well disagrees with the sample's other reference wells; consistent with that well: pipetting, evaporation, the seal or a failed reaction.",
+      "what_to_check": "re-run that well and look at its curve"
+     }
+    ],
+    "consequence": "changes_call",
+    "consequence_words": "changes a call",
+    "changed_calls": [
+     "CAMTA2"
+    ],
+    "repeat": [
+     "HPRT1"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 5,
+    "sample": "2770",
+    "target": "HMBS",
+    "scope": "reaction",
+    "group": "",
+    "plates": [
+     "HMBS_20080318"
+    ],
+    "wells": [
+     "HMBS_20080318/J22"
+    ],
+    "reasons": [
+     {
+      "source": "no_comparison",
+      "code": "S7",
+      "words": "Sample 2770 is in no comparison: its HMBS reference well (plate HMBS_20080318, well J22) has no value: LinRegPCR found no amplification. Read from the sample's other reference wells, bringing it back changes the call of DPYSL3.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "changes_call",
+    "consequence_words": "changes a call",
+    "changed_calls": [
+     "DPYSL3"
+    ],
+    "repeat": [
+     "HMBS"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 6,
+    "sample": "1136",
+    "target": "NTRK1",
+    "scope": "reaction",
+    "group": "MYCN_high",
+    "plates": [
+     "NTRK1_20080318"
+    ],
+    "wells": [
+     "NTRK1_20080318/D6"
+    ],
+    "reasons": [
+     {
+      "source": "no_amplification",
+      "code": "no_amplification",
+      "words": "No amplification in NTRK1 for sample 1136, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "no_value",
+    "consequence_words": "the sample has no value there: repeating it adds the sample back",
+    "changed_calls": [],
+    "repeat": [
+     "NTRK1"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 7,
+    "sample": "1231",
+    "target": "PTPRH",
+    "scope": "reaction",
+    "group": "MYCN_high",
+    "plates": [
+     "PTPRH_20080228"
+    ],
+    "wells": [
+     "PTPRH_20080228/D8"
+    ],
+    "reasons": [
+     {
+      "source": "no_amplification",
+      "code": "no_amplification",
+      "words": "No amplification in PTPRH for sample 1231, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "no_value",
+    "consequence_words": "the sample has no value there: repeating it adds the sample back",
+    "changed_calls": [],
+    "repeat": [
+     "PTPRH"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 8,
+    "sample": "1716",
+    "target": "CDH5",
+    "scope": "reaction",
+    "group": "rest",
+    "plates": [
+     "CDH5_20080305"
+    ],
+    "wells": [
+     "CDH5_20080305/G7"
+    ],
+    "reasons": [
+     {
+      "source": "no_amplification",
+      "code": "no_amplification",
+      "words": "No amplification in CDH5 for sample 1716, while it amplified in 341 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "no_value",
+    "consequence_words": "the sample has no value there: repeating it adds the sample back",
+    "changed_calls": [],
+    "repeat": [
+     "CDH5"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 9,
+    "sample": "1751",
+    "target": "DDC",
+    "scope": "reaction",
+    "group": "MYCN_high",
+    "plates": [
+     "DDC_20080310"
+    ],
+    "wells": [
+     "DDC_20080310/K21"
+    ],
+    "reasons": [
+     {
+      "source": "no_amplification",
+      "code": "no_amplification",
+      "words": "No amplification in DDC for sample 1751, while it amplified in 342 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "no_value",
+    "consequence_words": "the sample has no value there: repeating it adds the sample back",
+    "changed_calls": [],
+    "repeat": [
+     "DDC"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 10,
+    "sample": "1776",
+    "target": "PLAT",
+    "scope": "reaction",
+    "group": "MYCN_high",
+    "plates": [
+     "PLAT_20080311"
+    ],
+    "wells": [
+     "PLAT_20080311/J1"
+    ],
+    "reasons": [
+     {
+      "source": "no_amplification",
+      "code": "no_amplification",
+      "words": "No amplification in PLAT for sample 1776, while it amplified in 344 of the 346 other compared samples: the sample is missing from this gene's comparison.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "no_value",
+    "consequence_words": "the sample has no value there: repeating it adds the sample back",
+    "changed_calls": [],
+    "repeat": [
+     "PLAT"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 11,
+    "sample": "1803",
+    "target": "HMBS",
+    "scope": "reaction",
+    "group": "",
+    "plates": [
+     "HMBS_20080318"
+    ],
+    "wells": [
+     "HMBS_20080318/N1"
+    ],
+    "reasons": [
+     {
+      "source": "no_comparison",
+      "code": "S7",
+      "words": "Sample 1803 is in no comparison: its HMBS reference well (plate HMBS_20080318, well N1) has no value: LinRegPCR found no amplification.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "no_value",
+    "consequence_words": "the sample has no value there: repeating it adds the sample back",
+    "changed_calls": [],
+    "repeat": [
+     "HMBS"
+    ],
+    "on_plate": true
+   },
+   {
+    "rank": 12,
+    "sample": "1803",
+    "target": "MYCN(4)",
+    "scope": "reaction",
+    "group": "",
+    "plates": [
+     "MYCN(4)_20080222"
+    ],
+    "wells": [
+     "MYCN(4)_20080222/N1"
+    ],
+    "reasons": [
+     {
+      "source": "no_comparison",
+      "code": "S7",
+      "words": "Sample 1803 is in no comparison: its MYCN(4) marker well (plate MYCN(4)_20080222, well N1) has no value: LinRegPCR found no amplification.",
+      "what_to_check": ""
+     }
+    ],
+    "consequence": "no_value",
+    "consequence_words": "the sample has no value there: repeating it adds the sample back",
+    "changed_calls": [],
+    "repeat": [
+     "MYCN(4)"
+    ],
+    "on_plate": true
+   }
+  ],
+  "not_repeated": [
+   {
+    "source": "run_gate",
+    "code": "G-NTC-1",
+    "words": "G-NTC-1 (No-template control amplification near the study samples) warns on plate CAMTA1_20080307, target CAMTA1: 2 of 3 no-template wells amplified, the earliest at Cq 43.10; every study sample amplified at least 5 cycles earlier (the earliest 22.12 cycles before it). It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-NTC-1",
+    "words": "G-NTC-1 (No-template control amplification near the study samples) warns on plate FYN_20080311, target FYN: 1 of 3 no-template wells amplified, the earliest at Cq 42.31; every study sample amplified at least 5 cycles earlier (the earliest 20.34 cycles before it). It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-NTC-1",
+    "words": "G-NTC-1 (No-template control amplification near the study samples) warns on plate GNB1_20080228, target GNB1: 2 of 3 no-template wells amplified, the earliest at Cq 46.62; every study sample amplified at least 5 cycles earlier (the earliest 24.19 cycles before it). It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-NTC-1",
+    "words": "G-NTC-1 (No-template control amplification near the study samples) warns on plate NM23A_20080306, target NM23A: 2 of 3 no-template wells amplified, the earliest at Cq 38.07; every study sample amplified at least 5 cycles earlier (the earliest 19.35 cycles before it). It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-STD",
+    "words": "G-STD (Standard curve) fails on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec): Standard curve over 5 levels: efficiency 479.9% (95 % confidence interval 251.8% to 1748.5%), R² 0.694, slope -1.310. The same wells' own mean efficiency (LinRegPCR, per curve) is 95.4%; the difference is evidence, not a failure. The efficiency is outside the pack's window. R² is below the pack's minimum. In relative quantification this does not taint study samples; it marks the curve as an efficiency source. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-STD",
+    "words": "G-STD (Standard curve) fails on plate CAMTA1_20080307, target CAMTA1: Standard curve over 5 levels: efficiency 87.4% (95 % confidence interval 83.2% to 92.1%), R² 0.996, slope -3.666. The same wells' own mean efficiency (LinRegPCR, per curve) is 87.7%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-STD",
+    "words": "G-STD (Standard curve) fails on plate CDKN3_20080311, target CDKN3: Standard curve over 5 levels: efficiency 87.3% (95 % confidence interval 84.5% to 90.2%), R² 0.998, slope -3.670. The same wells' own mean efficiency (LinRegPCR, per curve) is 88.2%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-STD",
+    "words": "G-STD (Standard curve) fails on plate MCM2_20080306, target MCM2: Standard curve over 5 levels: efficiency 88.9% (95 % confidence interval 83.3% to 95.2%), R² 0.993, slope -3.621. The same wells' own mean efficiency (LinRegPCR, per curve) is 86.2%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-STD",
+    "words": "G-STD (Standard curve) fails on plate NTRK1_20080318, target NTRK1: Standard curve over 5 levels: efficiency 88.0% (95 % confidence interval 85.4% to 90.8%), R² 0.999, slope -3.648. The same wells' own mean efficiency (LinRegPCR, per curve) is 86.5%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-STD",
+    "words": "G-STD (Standard curve) fails on plate PMP22_20080227, target PMP22: Standard curve over 5 levels: efficiency 89.0% (95 % confidence interval 86.1% to 92.2%), R² 0.998, slope -3.616. The same wells' own mean efficiency (LinRegPCR, per curve) is 89.2%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-STD",
+    "words": "G-STD (Standard curve) fails on plate TYMS_20080305, target TYMS: Standard curve over 5 levels: efficiency 87.8% (95 % confidence interval 84.9% to 91.0%), R² 0.998, slope -3.653. The same wells' own mean efficiency (LinRegPCR, per curve) is 86.7%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-REP",
+    "words": "G-REP (Technical replicate spread) warns on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec), sample STD_15000: The 3 replicate wells span 1.19 cycles; the expected range for this copy number is up to 0.80 cycles. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-REP",
+    "words": "G-REP (Technical replicate spread) warns on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec), sample STD_1500: The 3 replicate wells span 1.86 cycles; the expected range for this copy number is up to 1.09 cycles. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-REP",
+    "words": "G-REP (Technical replicate spread) warns on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec), sample STD_150: The 3 replicate wells span 4.37 cycles; the expected range for this copy number is up to 0.97 cycles. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   },
+   {
+    "source": "run_gate",
+    "code": "G-REP",
+    "words": "G-REP (Technical replicate spread) warns on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec): 60% of replicate groups here are outside their expected range: a systematic workflow problem is more likely than single bad wells. It points at no study well, so no sample's value rests on it.",
+    "what_to_check": ""
+   }
+  ],
+  "gate_lines": [
+   {
+    "plate": "AHCY_20080229",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "AKR1C1_20080307",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "ALUsq(Eurogentec)_20080228",
+    "worst": "fail",
+    "counts": {
+     "pass": 3,
+     "fail": 2,
+     "not_applicable": 4,
+     "warn": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) fails on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec): 3 of 3 no-template wells amplified, the earliest at Cq 23.94. 2 study wells amplified less than 5 cycles before it, so their positive call and quantity are in doubt (MIQE 2.0). If the control's signal were template, it could be up to 9.1% of theirs. Without melt data the control's product is unclassified (contamination or primer-dimer) and is treated as possible contamination.",
+      "what_to_check": ""
+     },
+     {
+      "source": "run_gate",
+      "code": "G-STD",
+      "words": "G-STD (Standard curve) fails on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec): Standard curve over 5 levels: efficiency 479.9% (95 % confidence interval 251.8% to 1748.5%), R² 0.694, slope -1.310. The same wells' own mean efficiency (LinRegPCR, per curve) is 95.4%; the difference is evidence, not a failure. The efficiency is outside the pack's window. R² is below the pack's minimum. In relative quantification this does not taint study samples; it marks the curve as an efficiency source.",
+      "what_to_check": ""
+     },
+     {
+      "source": "run_gate",
+      "code": "G-REP",
+      "words": "G-REP (Technical replicate spread) warns on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec), sample STD_15000: The 3 replicate wells span 1.19 cycles; the expected range for this copy number is up to 0.80 cycles.",
+      "what_to_check": ""
+     },
+     {
+      "source": "run_gate",
+      "code": "G-REP",
+      "words": "G-REP (Technical replicate spread) warns on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec), sample STD_1500: The 3 replicate wells span 1.86 cycles; the expected range for this copy number is up to 1.09 cycles.",
+      "what_to_check": ""
+     },
+     {
+      "source": "run_gate",
+      "code": "G-REP",
+      "words": "G-REP (Technical replicate spread) warns on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec), sample STD_150: The 3 replicate wells span 4.37 cycles; the expected range for this copy number is up to 0.97 cycles.",
+      "what_to_check": ""
+     },
+     {
+      "source": "run_gate",
+      "code": "G-REP",
+      "words": "G-REP (Technical replicate spread) warns on plate ALUsq(Eurogentec)_20080228, target ALUsq(Eurogentec): 60% of replicate groups here are outside their expected range: a systematic workflow problem is more likely than single bad wells.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "ARHGEF7_20080225",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "BIRC5_20080229",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "CAMTA1_20080307",
+    "worst": "fail",
+    "counts": {
+     "pass": 6,
+     "warn": 1,
+     "not_applicable": 4,
+     "fail": 1
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) warns on plate CAMTA1_20080307, target CAMTA1: 2 of 3 no-template wells amplified, the earliest at Cq 43.10; every study sample amplified at least 5 cycles earlier (the earliest 22.12 cycles before it).",
+      "what_to_check": ""
+     },
+     {
+      "source": "run_gate",
+      "code": "G-STD",
+      "words": "G-STD (Standard curve) fails on plate CAMTA1_20080307, target CAMTA1: Standard curve over 5 levels: efficiency 87.4% (95 % confidence interval 83.2% to 92.1%), R² 0.996, slope -3.666. The same wells' own mean efficiency (LinRegPCR, per curve) is 87.7%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "CAMTA2_20080227",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "fail": 1,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) fails on plate CAMTA2_20080227, target CAMTA2: 2 of 3 no-template wells amplified, the earliest at Cq 43.44. 4 study wells amplified less than 5 cycles before it, so their positive call and quantity are in doubt (MIQE 2.0). 1 of them amplified no earlier than the control: their whole signal could be what the control shows. Without melt data the control's product is unclassified (contamination or primer-dimer) and is treated as possible contamination.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "CD44_20080311",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "CDCA5_20080225",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "CDH5_20080305",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "CDKN3_20080311",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "not_applicable": 4,
+     "fail": 1
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-STD",
+      "words": "G-STD (Standard curve) fails on plate CDKN3_20080311, target CDKN3: Standard curve over 5 levels: efficiency 87.3% (95 % confidence interval 84.5% to 90.2%), R² 0.998, slope -3.670. The same wells' own mean efficiency (LinRegPCR, per curve) is 88.2%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "CLSTN1_20080227",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "CPSG3_20080306",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "DDC_20080310",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "DPYSL3_20080226",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "fail": 1,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) fails on plate DPYSL3_20080226, target DPYSL3: 3 of 3 no-template wells amplified, the earliest at Cq 38.79. 1 study well amplified less than 5 cycles before it, so its positive call and quantity are in doubt (MIQE 2.0). If the control's signal were template, it could be up to 29.4% of theirs. Without melt data the control's product is unclassified (contamination or primer-dimer) and is treated as possible contamination.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "ECEL1_20080225",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "ELAVL4_20080310",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "EPB41L3_20080228",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "EPHA5_20080305",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "EPN2_20080304",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "FYN_20080311",
+    "worst": "warn",
+    "counts": {
+     "pass": 7,
+     "warn": 1,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) warns on plate FYN_20080311, target FYN: 1 of 3 no-template wells amplified, the earliest at Cq 42.31; every study sample amplified at least 5 cycles earlier (the earliest 20.34 cycles before it).",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "GNB1_20080228",
+    "worst": "warn",
+    "counts": {
+     "pass": 7,
+     "warn": 1,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) warns on plate GNB1_20080228, target GNB1: 2 of 3 no-template wells amplified, the earliest at Cq 46.62; every study sample amplified at least 5 cycles earlier (the earliest 24.19 cycles before it).",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "HIVEP2_20080304",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "HMBS_20080318",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "HPRT1_20080303",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "IGSF4_20080311",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "INPP1_20080303",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "MAP2K4_20080306",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "fail": 1,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) fails on plate MAP2K4_20080306, target MAP2K4: 1 of 3 no-template wells amplified, the earliest at Cq 38.78. 2 study wells amplified less than 5 cycles before it, so their positive call and quantity are in doubt (MIQE 2.0). 1 of them amplified no earlier than the control: their whole signal could be what the control shows. Without melt data the control's product is unclassified (contamination or primer-dimer) and is treated as possible contamination.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "MAP7_20080229",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "MAPT_20080229",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "MCM2_20080306",
+    "worst": "fail",
+    "counts": {
+     "pass": 6,
+     "fail": 2,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) fails on plate MCM2_20080306, target MCM2: 3 of 3 no-template wells amplified, the earliest at Cq 39.12. 5 study wells amplified less than 5 cycles before it, so their positive call and quantity are in doubt (MIQE 2.0). 1 of them amplified no earlier than the control: their whole signal could be what the control shows. Without melt data the control's product is unclassified (contamination or primer-dimer) and is treated as possible contamination.",
+      "what_to_check": ""
+     },
+     {
+      "source": "run_gate",
+      "code": "G-STD",
+      "words": "G-STD (Standard curve) fails on plate MCM2_20080306, target MCM2: Standard curve over 5 levels: efficiency 88.9% (95 % confidence interval 83.3% to 95.2%), R² 0.993, slope -3.621. The same wells' own mean efficiency (LinRegPCR, per curve) is 86.2%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "MRPL3_20080222",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "MTSS1_20080227",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "MYCN(4)_20080222",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "NHLH2_20080222",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "NM23A_20080306",
+    "worst": "warn",
+    "counts": {
+     "pass": 7,
+     "warn": 1,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) warns on plate NM23A_20080306, target NM23A: 2 of 3 no-template wells amplified, the earliest at Cq 38.07; every study sample amplified at least 5 cycles earlier (the earliest 19.35 cycles before it).",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "NRCAM_20080228",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "NTRK1_20080318",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "not_applicable": 4,
+     "fail": 1
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-STD",
+      "words": "G-STD (Standard curve) fails on plate NTRK1_20080318, target NTRK1: Standard curve over 5 levels: efficiency 88.0% (95 % confidence interval 85.4% to 90.8%), R² 0.999, slope -3.648. The same wells' own mean efficiency (LinRegPCR, per curve) is 86.5%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "ODC1_20080226",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PAICS_20080311",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "fail": 1,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) fails on plate PAICS_20080311, target PAICS: 3 of 3 no-template wells amplified, the earliest at Cq 36.65. 5 study wells amplified less than 5 cycles before it, so their positive call and quantity are in doubt (MIQE 2.0). If the control's signal were template, it could be up to 8.6% of theirs. Without melt data the control's product is unclassified (contamination or primer-dimer) and is treated as possible contamination.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "PDE4DIP_20080305",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PIK3R1_20080306",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PLAGL1_20080226",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PLAT_20080311",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PMP22_20080227",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "not_applicable": 4,
+     "fail": 1
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-STD",
+      "words": "G-STD (Standard curve) fails on plate PMP22_20080227, target PMP22: Standard curve over 5 levels: efficiency 89.0% (95 % confidence interval 86.1% to 92.2%), R² 0.998, slope -3.616. The same wells' own mean efficiency (LinRegPCR, per curve) is 89.2%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "PRAME_20080310",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PRDM2_20080306",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PRKACB_20080311_bis",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PRKCZ_20080307",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PTN_20080227",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PTPRF_20080225",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PTPRH_20080228",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "PTPRN2_20080303",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "QPCT_20080228",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "SCG2_20080311",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "SDHA(1)_20080220",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "SLC25A5_20080229",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "SLC6A8_20080306",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "SNAPC1_20080227",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "TNFRSF_20080307",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "TYMS_20080305",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "not_applicable": 4,
+     "fail": 1
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-STD",
+      "words": "G-STD (Standard curve) fails on plate TYMS_20080305, target TYMS: Standard curve over 5 levels: efficiency 87.8% (95 % confidence interval 84.9% to 91.0%), R² 0.998, slope -3.653. The same wells' own mean efficiency (LinRegPCR, per curve) is 86.7%; the difference is evidence, not a failure. The efficiency is outside the pack's window. In relative quantification this does not taint study samples; it marks the curve as an efficiency source.",
+      "what_to_check": ""
+     }
+    ]
+   },
+   {
+    "plate": "UBC(2)_20080220",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "ULK2_20080229",
+    "worst": "pass",
+    "counts": {
+     "pass": 8,
+     "not_applicable": 4
+    },
+    "findings": []
+   },
+   {
+    "plate": "WSB1_20080310",
+    "worst": "fail",
+    "counts": {
+     "pass": 7,
+     "fail": 1,
+     "not_applicable": 4
+    },
+    "findings": [
+     {
+      "source": "run_gate",
+      "code": "G-NTC-1",
+      "words": "G-NTC-1 (No-template control amplification near the study samples) fails on plate WSB1_20080310, target WSB1: 1 of 3 no-template wells amplified, the earliest at Cq 40.43. 1 study well amplified less than 5 cycles before it, so its positive call and quantity are in doubt (MIQE 2.0). 1 of them amplified no earlier than the control: their whole signal could be what the control shows. Without melt data the control's product is unclassified (contamination or primer-dimer) and is treated as possible contamination.",
+      "what_to_check": ""
+     }
+    ]
+   }
+  ],
+  "calibrator": "1842",
+  "replicates": 2,
+  "plate_size": 384,
+  "n_samples": 43,
+  "n_reactions": 276,
+  "n_wells": 708,
+  "n_plates": 2,
+  "wells": [
+   {
+    "plate": 1,
+    "well": "A1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "CDCA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "CDCA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L1",
+    "sample": "1898",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M1",
+    "sample": "2746",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N1",
+    "sample": "2746",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O1",
+    "sample": "2746",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P1",
+    "sample": "2746",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A2",
+    "sample": "2746",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B2",
+    "sample": "2746",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C2",
+    "sample": "2746",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D2",
+    "sample": "2746",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E2",
+    "sample": "2746",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F2",
+    "sample": "2746",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G2",
+    "sample": "2746",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H2",
+    "sample": "2746",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I2",
+    "sample": "1716",
+    "group": "rest",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J2",
+    "sample": "1716",
+    "group": "rest",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K2",
+    "sample": "1716",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L2",
+    "sample": "1716",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M2",
+    "sample": "1716",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N2",
+    "sample": "1716",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O2",
+    "sample": "1716",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P2",
+    "sample": "1716",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A3",
+    "sample": "1716",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B3",
+    "sample": "1716",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C3",
+    "sample": "1716",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D3",
+    "sample": "1716",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "CDCA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "CDCA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P3",
+    "sample": "1897",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A4",
+    "sample": "1897",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B4",
+    "sample": "1897",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P4",
+    "sample": "2711",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A5",
+    "sample": "2711",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B5",
+    "sample": "2711",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C5",
+    "sample": "194",
+    "group": "rest",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D5",
+    "sample": "194",
+    "group": "rest",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E5",
+    "sample": "194",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F5",
+    "sample": "194",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G5",
+    "sample": "194",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H5",
+    "sample": "194",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I5",
+    "sample": "194",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J5",
+    "sample": "194",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K5",
+    "sample": "194",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L5",
+    "sample": "194",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M5",
+    "sample": "194",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N5",
+    "sample": "194",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O5",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P5",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J6",
+    "sample": "1136",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K6",
+    "sample": "2714",
+    "group": "rest",
+    "target": "CDCA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L6",
+    "sample": "2714",
+    "group": "rest",
+    "target": "CDCA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M6",
+    "sample": "2714",
+    "group": "rest",
+    "target": "ECEL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N6",
+    "sample": "2714",
+    "group": "rest",
+    "target": "ECEL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O6",
+    "sample": "2714",
+    "group": "rest",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P6",
+    "sample": "2714",
+    "group": "rest",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "HIVEP2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "HIVEP2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "PTPRN2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "PTPRN2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N7",
+    "sample": "2714",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O7",
+    "sample": "2757",
+    "group": "rest",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P7",
+    "sample": "2757",
+    "group": "rest",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J8",
+    "sample": "2757",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K8",
+    "sample": "2759",
+    "group": "rest",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L8",
+    "sample": "2759",
+    "group": "rest",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M8",
+    "sample": "2759",
+    "group": "rest",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N8",
+    "sample": "2759",
+    "group": "rest",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O8",
+    "sample": "2759",
+    "group": "rest",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P8",
+    "sample": "2759",
+    "group": "rest",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J9",
+    "sample": "2759",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K9",
+    "sample": "1852",
+    "group": "rest",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L9",
+    "sample": "1852",
+    "group": "rest",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M9",
+    "sample": "1852",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N9",
+    "sample": "1852",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O9",
+    "sample": "1852",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P9",
+    "sample": "1852",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A10",
+    "sample": "1852",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B10",
+    "sample": "1852",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C10",
+    "sample": "1852",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D10",
+    "sample": "1852",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E10",
+    "sample": "1852",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F10",
+    "sample": "1852",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P10",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A11",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B11",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C11",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D11",
+    "sample": "2015",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "EPN2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "EPN2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P11",
+    "sample": "2719",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "WSB1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "WSB1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L12",
+    "sample": "1831",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M12",
+    "sample": "2748",
+    "group": "rest",
+    "target": "ECEL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N12",
+    "sample": "2748",
+    "group": "rest",
+    "target": "ECEL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O12",
+    "sample": "2748",
+    "group": "rest",
+    "target": "EPN2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P12",
+    "sample": "2748",
+    "group": "rest",
+    "target": "EPN2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "HIVEP2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "HIVEP2",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "PTPRF",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "PTPRF",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "SLC6A8",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "SLC6A8",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P13",
+    "sample": "2748",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A14",
+    "sample": "2070",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B14",
+    "sample": "2070",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C14",
+    "sample": "2070",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D14",
+    "sample": "2070",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E14",
+    "sample": "2070",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F14",
+    "sample": "2070",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G14",
+    "sample": "2070",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H14",
+    "sample": "2070",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I14",
+    "sample": "2070",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J14",
+    "sample": "2070",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K14",
+    "sample": "2070",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L14",
+    "sample": "2070",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M14",
+    "sample": "2710",
+    "group": "rest",
+    "target": "PLAT",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N14",
+    "sample": "2710",
+    "group": "rest",
+    "target": "PLAT",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O14",
+    "sample": "2710",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P14",
+    "sample": "2710",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A15",
+    "sample": "2710",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B15",
+    "sample": "2710",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C15",
+    "sample": "2710",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D15",
+    "sample": "2710",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E15",
+    "sample": "2710",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F15",
+    "sample": "2710",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G15",
+    "sample": "2710",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H15",
+    "sample": "2710",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I15",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J15",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K15",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L15",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M15",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N15",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O15",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P15",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A16",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B16",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C16",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D16",
+    "sample": "1231",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "EPHA5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P16",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A17",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B17",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C17",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D17",
+    "sample": "2659",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P17",
+    "sample": "1938",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A18",
+    "sample": "1803",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B18",
+    "sample": "1803",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C18",
+    "sample": "1803",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D18",
+    "sample": "1803",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E18",
+    "sample": "1803",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F18",
+    "sample": "1803",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G18",
+    "sample": "1803",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H18",
+    "sample": "1803",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I18",
+    "sample": "1803",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J18",
+    "sample": "1803",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K18",
+    "sample": "1803",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "L18",
+    "sample": "1803",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "M18",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "N18",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "O18",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "P18",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "A19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "B19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "C19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "D19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "E19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "F19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "G19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "H19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "I19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "J19",
+    "sample": "2785",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 1,
+    "well": "K19",
+    "sample": "1842",
+    "group": "",
+    "target": "CDCA5",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "L19",
+    "sample": "1842",
+    "group": "",
+    "target": "CDCA5",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "M19",
+    "sample": "1842",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "N19",
+    "sample": "1842",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "O19",
+    "sample": "1842",
+    "group": "",
+    "target": "HMBS",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "P19",
+    "sample": "1842",
+    "group": "",
+    "target": "HMBS",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "A20",
+    "sample": "1842",
+    "group": "",
+    "target": "HPRT1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "B20",
+    "sample": "1842",
+    "group": "",
+    "target": "HPRT1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "C20",
+    "sample": "1842",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "D20",
+    "sample": "1842",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "E20",
+    "sample": "1842",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "F20",
+    "sample": "1842",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "G20",
+    "sample": "1842",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "H20",
+    "sample": "1842",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "I20",
+    "sample": "1842",
+    "group": "",
+    "target": "CDH5",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "J20",
+    "sample": "1842",
+    "group": "",
+    "target": "CDH5",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "K20",
+    "sample": "1842",
+    "group": "",
+    "target": "PLAGL1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "L20",
+    "sample": "1842",
+    "group": "",
+    "target": "PLAGL1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "M20",
+    "sample": "1842",
+    "group": "",
+    "target": "EPHA5",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "N20",
+    "sample": "1842",
+    "group": "",
+    "target": "EPHA5",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "O20",
+    "sample": "1842",
+    "group": "",
+    "target": "PTPRH",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "P20",
+    "sample": "1842",
+    "group": "",
+    "target": "PTPRH",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "A21",
+    "sample": "1842",
+    "group": "",
+    "target": "NTRK1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "B21",
+    "sample": "1842",
+    "group": "",
+    "target": "NTRK1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "C21",
+    "sample": "1842",
+    "group": "",
+    "target": "ECEL1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "D21",
+    "sample": "1842",
+    "group": "",
+    "target": "ECEL1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "E21",
+    "sample": "1842",
+    "group": "",
+    "target": "HIVEP2",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "F21",
+    "sample": "1842",
+    "group": "",
+    "target": "HIVEP2",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "G21",
+    "sample": "1842",
+    "group": "",
+    "target": "PTPRN2",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "H21",
+    "sample": "1842",
+    "group": "",
+    "target": "PTPRN2",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "I21",
+    "sample": "1842",
+    "group": "",
+    "target": "DDC",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "J21",
+    "sample": "1842",
+    "group": "",
+    "target": "DDC",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "K21",
+    "sample": "1842",
+    "group": "",
+    "target": "EPN2",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "L21",
+    "sample": "1842",
+    "group": "",
+    "target": "EPN2",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "M21",
+    "sample": "1842",
+    "group": "",
+    "target": "WSB1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "N21",
+    "sample": "1842",
+    "group": "",
+    "target": "WSB1",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "O21",
+    "sample": "1842",
+    "group": "",
+    "target": "PTPRF",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "P21",
+    "sample": "1842",
+    "group": "",
+    "target": "PTPRF",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "A22",
+    "sample": "1842",
+    "group": "",
+    "target": "SLC6A8",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "B22",
+    "sample": "1842",
+    "group": "",
+    "target": "SLC6A8",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "C22",
+    "sample": "1842",
+    "group": "",
+    "target": "PLAT",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "D22",
+    "sample": "1842",
+    "group": "",
+    "target": "PLAT",
+    "type": "pos"
+   },
+   {
+    "plate": 1,
+    "well": "E22",
+    "sample": "NRT",
+    "group": "",
+    "target": "CDCA5",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "F22",
+    "sample": "NRT",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "G22",
+    "sample": "NRT",
+    "group": "",
+    "target": "HMBS",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "H22",
+    "sample": "NRT",
+    "group": "",
+    "target": "HPRT1",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "I22",
+    "sample": "NRT",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "J22",
+    "sample": "NRT",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "K22",
+    "sample": "NRT",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "L22",
+    "sample": "NRT",
+    "group": "",
+    "target": "CDH5",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "M22",
+    "sample": "NRT",
+    "group": "",
+    "target": "PLAGL1",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "N22",
+    "sample": "NRT",
+    "group": "",
+    "target": "EPHA5",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "O22",
+    "sample": "NRT",
+    "group": "",
+    "target": "PTPRH",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "P22",
+    "sample": "NRT",
+    "group": "",
+    "target": "NTRK1",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "A23",
+    "sample": "NRT",
+    "group": "",
+    "target": "ECEL1",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "B23",
+    "sample": "NRT",
+    "group": "",
+    "target": "HIVEP2",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "C23",
+    "sample": "NRT",
+    "group": "",
+    "target": "PTPRN2",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "D23",
+    "sample": "NRT",
+    "group": "",
+    "target": "DDC",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "E23",
+    "sample": "NRT",
+    "group": "",
+    "target": "EPN2",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "F23",
+    "sample": "NRT",
+    "group": "",
+    "target": "WSB1",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "G23",
+    "sample": "NRT",
+    "group": "",
+    "target": "PTPRF",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "H23",
+    "sample": "NRT",
+    "group": "",
+    "target": "SLC6A8",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "I23",
+    "sample": "NRT",
+    "group": "",
+    "target": "PLAT",
+    "type": "nrt"
+   },
+   {
+    "plate": 1,
+    "well": "J23",
+    "sample": "NTC",
+    "group": "",
+    "target": "CDCA5",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "K23",
+    "sample": "NTC",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "L23",
+    "sample": "NTC",
+    "group": "",
+    "target": "HMBS",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "M23",
+    "sample": "NTC",
+    "group": "",
+    "target": "HPRT1",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "N23",
+    "sample": "NTC",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "O23",
+    "sample": "NTC",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "P23",
+    "sample": "NTC",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "A24",
+    "sample": "NTC",
+    "group": "",
+    "target": "CDH5",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "B24",
+    "sample": "NTC",
+    "group": "",
+    "target": "PLAGL1",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "C24",
+    "sample": "NTC",
+    "group": "",
+    "target": "EPHA5",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "D24",
+    "sample": "NTC",
+    "group": "",
+    "target": "PTPRH",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "E24",
+    "sample": "NTC",
+    "group": "",
+    "target": "NTRK1",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "F24",
+    "sample": "NTC",
+    "group": "",
+    "target": "ECEL1",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "G24",
+    "sample": "NTC",
+    "group": "",
+    "target": "HIVEP2",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "H24",
+    "sample": "NTC",
+    "group": "",
+    "target": "PTPRN2",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "I24",
+    "sample": "NTC",
+    "group": "",
+    "target": "DDC",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "J24",
+    "sample": "NTC",
+    "group": "",
+    "target": "EPN2",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "K24",
+    "sample": "NTC",
+    "group": "",
+    "target": "WSB1",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "L24",
+    "sample": "NTC",
+    "group": "",
+    "target": "PTPRF",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "M24",
+    "sample": "NTC",
+    "group": "",
+    "target": "SLC6A8",
+    "type": "ntc"
+   },
+   {
+    "plate": 1,
+    "well": "N24",
+    "sample": "NTC",
+    "group": "",
+    "target": "PLAT",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "A1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "ECEL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "ECEL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "PLAT",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "PLAT",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P1",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A2",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B2",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C2",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D2",
+    "sample": "2768",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "PTPRH",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P2",
+    "sample": "2712",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "QPCT",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "QPCT",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L3",
+    "sample": "2788",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M3",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N3",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O3",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P3",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A4",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B4",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C4",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D4",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E4",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F4",
+    "sample": "1772",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "NTRK1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P4",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A5",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B5",
+    "sample": "1823",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "ECEL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "ECEL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N5",
+    "sample": "1859",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O5",
+    "sample": "2069",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P5",
+    "sample": "2069",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A6",
+    "sample": "2069",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B6",
+    "sample": "2069",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C6",
+    "sample": "2069",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D6",
+    "sample": "2069",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E6",
+    "sample": "2069",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F6",
+    "sample": "2069",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G6",
+    "sample": "2069",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H6",
+    "sample": "2069",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I6",
+    "sample": "2069",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J6",
+    "sample": "2069",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K6",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L6",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M6",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N6",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O6",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P6",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A7",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B7",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C7",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D7",
+    "sample": "2016",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "WSB1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "WSB1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P7",
+    "sample": "1816",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A8",
+    "sample": "2770",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B8",
+    "sample": "2770",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C8",
+    "sample": "2770",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D8",
+    "sample": "2770",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E8",
+    "sample": "2770",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F8",
+    "sample": "2770",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G8",
+    "sample": "2770",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H8",
+    "sample": "2770",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I8",
+    "sample": "2770",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J8",
+    "sample": "2770",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K8",
+    "sample": "1892",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L8",
+    "sample": "1892",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M8",
+    "sample": "1892",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N8",
+    "sample": "1892",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O8",
+    "sample": "1892",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P8",
+    "sample": "1892",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A9",
+    "sample": "1892",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B9",
+    "sample": "1892",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C9",
+    "sample": "1892",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D9",
+    "sample": "1892",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E9",
+    "sample": "1892",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F9",
+    "sample": "1892",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "ODC1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "ODC1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P9",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A10",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B10",
+    "sample": "1496",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "AKR1C1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "AKR1C1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "PLAGL1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P10",
+    "sample": "2660",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "PLAT",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "PLAT",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L11",
+    "sample": "1776",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M11",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N11",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O11",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P11",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A12",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B12",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C12",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D12",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E12",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F12",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G12",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H12",
+    "sample": "1824",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I12",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J12",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "CDH5",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K12",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L12",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M12",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N12",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O12",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P12",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A13",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B13",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C13",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D13",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E13",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F13",
+    "sample": "2784",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "QPCT",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "QPCT",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P13",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A14",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B14",
+    "sample": "1909",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "HIVEP2",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "HIVEP2",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N14",
+    "sample": "2743",
+    "group": "rest",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O14",
+    "sample": "1542",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P14",
+    "sample": "1542",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A15",
+    "sample": "1542",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B15",
+    "sample": "1542",
+    "group": "",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C15",
+    "sample": "1542",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D15",
+    "sample": "1542",
+    "group": "",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E15",
+    "sample": "1542",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F15",
+    "sample": "1542",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G15",
+    "sample": "1542",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H15",
+    "sample": "1542",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I15",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J15",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "DDC",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K15",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L15",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M15",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N15",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O15",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "P15",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "A16",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "B16",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "C16",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "D16",
+    "sample": "1751",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "E16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "F16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "ALUsq(Eurogentec)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "G16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "H16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "HMBS",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "I16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "J16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "HPRT1",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "K16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "L16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "SDHA(1)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "M16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "N16",
+    "sample": "1924",
+    "group": "MYCN_high",
+    "target": "UBC(2)",
+    "type": "unkn"
+   },
+   {
+    "plate": 2,
+    "well": "O16",
+    "sample": "1842",
+    "group": "",
+    "target": "DDC",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "P16",
+    "sample": "1842",
+    "group": "",
+    "target": "DDC",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "A17",
+    "sample": "1842",
+    "group": "",
+    "target": "ECEL1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "B17",
+    "sample": "1842",
+    "group": "",
+    "target": "ECEL1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "C17",
+    "sample": "1842",
+    "group": "",
+    "target": "PLAGL1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "D17",
+    "sample": "1842",
+    "group": "",
+    "target": "PLAGL1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "E17",
+    "sample": "1842",
+    "group": "",
+    "target": "PLAT",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "F17",
+    "sample": "1842",
+    "group": "",
+    "target": "PLAT",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "G17",
+    "sample": "1842",
+    "group": "",
+    "target": "PTPRH",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "H17",
+    "sample": "1842",
+    "group": "",
+    "target": "PTPRH",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "I17",
+    "sample": "1842",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "J17",
+    "sample": "1842",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "K17",
+    "sample": "1842",
+    "group": "",
+    "target": "HMBS",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "L17",
+    "sample": "1842",
+    "group": "",
+    "target": "HMBS",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "M17",
+    "sample": "1842",
+    "group": "",
+    "target": "HPRT1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "N17",
+    "sample": "1842",
+    "group": "",
+    "target": "HPRT1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "O17",
+    "sample": "1842",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "P17",
+    "sample": "1842",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "A18",
+    "sample": "1842",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "B18",
+    "sample": "1842",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "C18",
+    "sample": "1842",
+    "group": "",
+    "target": "QPCT",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "D18",
+    "sample": "1842",
+    "group": "",
+    "target": "QPCT",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "E18",
+    "sample": "1842",
+    "group": "",
+    "target": "NTRK1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "F18",
+    "sample": "1842",
+    "group": "",
+    "target": "NTRK1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "G18",
+    "sample": "1842",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "H18",
+    "sample": "1842",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "I18",
+    "sample": "1842",
+    "group": "",
+    "target": "WSB1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "J18",
+    "sample": "1842",
+    "group": "",
+    "target": "WSB1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "K18",
+    "sample": "1842",
+    "group": "",
+    "target": "ODC1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "L18",
+    "sample": "1842",
+    "group": "",
+    "target": "ODC1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "M18",
+    "sample": "1842",
+    "group": "",
+    "target": "AKR1C1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "N18",
+    "sample": "1842",
+    "group": "",
+    "target": "AKR1C1",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "O18",
+    "sample": "1842",
+    "group": "",
+    "target": "CDH5",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "P18",
+    "sample": "1842",
+    "group": "",
+    "target": "CDH5",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "A19",
+    "sample": "1842",
+    "group": "",
+    "target": "HIVEP2",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "B19",
+    "sample": "1842",
+    "group": "",
+    "target": "HIVEP2",
+    "type": "pos"
+   },
+   {
+    "plate": 2,
+    "well": "C19",
+    "sample": "NRT",
+    "group": "",
+    "target": "DDC",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "D19",
+    "sample": "NRT",
+    "group": "",
+    "target": "ECEL1",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "E19",
+    "sample": "NRT",
+    "group": "",
+    "target": "PLAGL1",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "F19",
+    "sample": "NRT",
+    "group": "",
+    "target": "PLAT",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "G19",
+    "sample": "NRT",
+    "group": "",
+    "target": "PTPRH",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "H19",
+    "sample": "NRT",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "I19",
+    "sample": "NRT",
+    "group": "",
+    "target": "HMBS",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "J19",
+    "sample": "NRT",
+    "group": "",
+    "target": "HPRT1",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "K19",
+    "sample": "NRT",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "L19",
+    "sample": "NRT",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "M19",
+    "sample": "NRT",
+    "group": "",
+    "target": "QPCT",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "N19",
+    "sample": "NRT",
+    "group": "",
+    "target": "NTRK1",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "O19",
+    "sample": "NRT",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "P19",
+    "sample": "NRT",
+    "group": "",
+    "target": "WSB1",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "A20",
+    "sample": "NRT",
+    "group": "",
+    "target": "ODC1",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "B20",
+    "sample": "NRT",
+    "group": "",
+    "target": "AKR1C1",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "C20",
+    "sample": "NRT",
+    "group": "",
+    "target": "CDH5",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "D20",
+    "sample": "NRT",
+    "group": "",
+    "target": "HIVEP2",
+    "type": "nrt"
+   },
+   {
+    "plate": 2,
+    "well": "E20",
+    "sample": "NTC",
+    "group": "",
+    "target": "DDC",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "F20",
+    "sample": "NTC",
+    "group": "",
+    "target": "ECEL1",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "G20",
+    "sample": "NTC",
+    "group": "",
+    "target": "PLAGL1",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "H20",
+    "sample": "NTC",
+    "group": "",
+    "target": "PLAT",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "I20",
+    "sample": "NTC",
+    "group": "",
+    "target": "PTPRH",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "J20",
+    "sample": "NTC",
+    "group": "",
+    "target": "ALUsq(Eurogentec)",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "K20",
+    "sample": "NTC",
+    "group": "",
+    "target": "HMBS",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "L20",
+    "sample": "NTC",
+    "group": "",
+    "target": "HPRT1",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "M20",
+    "sample": "NTC",
+    "group": "",
+    "target": "SDHA(1)",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "N20",
+    "sample": "NTC",
+    "group": "",
+    "target": "UBC(2)",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "O20",
+    "sample": "NTC",
+    "group": "",
+    "target": "QPCT",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "P20",
+    "sample": "NTC",
+    "group": "",
+    "target": "NTRK1",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "A21",
+    "sample": "NTC",
+    "group": "",
+    "target": "MYCN(4)",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "B21",
+    "sample": "NTC",
+    "group": "",
+    "target": "WSB1",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "C21",
+    "sample": "NTC",
+    "group": "",
+    "target": "ODC1",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "D21",
+    "sample": "NTC",
+    "group": "",
+    "target": "AKR1C1",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "E21",
+    "sample": "NTC",
+    "group": "",
+    "target": "CDH5",
+    "type": "ntc"
+   },
+   {
+    "plate": 2,
+    "well": "F21",
+    "sample": "NTC",
+    "group": "",
+    "target": "HIVEP2",
+    "type": "ntc"
+   }
+  ],
+  "notes": [
+   "2 plates of 384 wells for 43 samples, each in 2 replicates per assay.",
+   "Every repeated sample is run with the reference genes (ALUsq(Eurogentec), HMBS, HPRT1, SDHA(1), UBC(2)) on its own plate, so it is normalised within the plate.",
+   "Every plate carries, for every assay on it, the inter-run calibrator 1842 in 2 replicates: a sample of the original run, so the repeat can be put on the scale of the original runs (Hellemans 2007).",
+   "Per assay and plate, too: 1 no-RT control well (NRT), 1 no-template control well (NTC).",
+   "Samples are dealt to the plates in a random order (seeded); rename the controls in the CSV to your own tubes.",
+   "The original run had 1 well(s) per sample and gene; the repeat runs 2, so a single well that is off can be told from the sample.",
+   "Suggested inter-run calibrator: sample 1842 (compared in this study, a value for every repeated gene, nothing points at it); any sample of the original plates works.",
+   "110 item(s) change no call: they are listed but not on the plate (put every item on it to re-run them too).",
+   "2 item(s) point at a sample's tube, not a well: check the tube first (input, extraction); the plate carries it only for the calls it changes."
+  ],
+  "warnings": [],
+  "counts": {
+   "changes_call": 5,
+   "beyond_ci": 0,
+   "no_value": 64,
+   "unknown": 1,
+   "changes_nothing": 112
+  }
+ },
+ "csv_url": "/api/studies/e300000d4f9a/review/repeat.csv?include=consequential",
+ "csv_name": "qpilot-repeat-e300000d4f9a.csv",
+ "note": "What the checks point at, per sample and gene, most consequential first: the Run Gate's warnings and failures, the wells a person left out, samples in no comparison, wells with no amplification where the gene amplified in nearly every other sample, and Trace's places to look. Re-running is your call: the plan changes nothing in the analysis."
+}

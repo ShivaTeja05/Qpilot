@@ -7,6 +7,12 @@
   kept in memory (never written: every GET writes nothing).
 * ``GET /studies/{id}/review`` → :class:`RunReviewView`: the Run Review
   (:mod:`qpilot.report.run_review`): headline genes, the ledger and every recorded sign-off.
+* ``GET /studies/{id}/review/repeat`` → :class:`RepeatView`: what to repeat and why (per sample
+  x gene, every reason in words, whether it changes a call, ranked by consequence), the Run
+  Gate's lines per plate, and the repeat plate (:mod:`qpilot.qpcr.repeat`), read at the
+  analysis in use; ``…/review/repeat.csv`` downloads the plate in the planner's
+  instrument-agnostic CSV. It reads the Run Gate and Trace, so a first read answers
+  ``409 loading`` with their job (as Controls and Trace do). Read-only.
 * ``POST /studies/{id}/review/sign-off`` → a person signs off (accept, repeat or discuss, a
   comment and a name): one ``review`` entry in the decision chain
   (:meth:`~qpilot.core.store.StudyStore.append_review`), always ``actor="human"`` (the server
@@ -24,7 +30,8 @@ import threading
 from collections import OrderedDict
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from fastapi.responses import Response
 
 from qpilot.core.decisions import DecisionError
 from qpilot.core.store import MAX_REVIEWER, StaleReview, StudyNotFound
@@ -47,6 +54,7 @@ from qpilot.web.contract_evidence import (
     EvidenceItemView,
     EvidenceView,
     NotBuiltView,
+    RepeatView,
     ReviewHeadlineView,
     ReviewOutcomeView,
     RunReviewView,
@@ -94,18 +102,22 @@ NOT_CURRENT = (
 
 #: Parts of the full Run Review not on this page yet that another section already shows.
 ELSEWHERE: dict[str, tuple[str, str]] = {
-    "gate": (
-        "gate",
-        "Not on this page yet: Controls shows what each plate's controls say (the Run Gate).",
-    ),
     "next_run": (
         "planner",
         "Not on this page yet: Plan next sizes the next run from this study's own noise.",
     ),
 }
 
+REPEAT_NOTE = (
+    "What the checks point at, per sample and gene, most consequential first: the Run Gate's "
+    "warnings and failures, the wells a person left out, samples in no comparison, wells with "
+    "no amplification where the gene amplified in nearly every other sample, and Trace's places "
+    "to look. Re-running is your call: the plan changes nothing in the analysis."
+)
+
 _lock = threading.Lock()
 _rebuilt: OrderedDict[tuple[str, str, int], tuple[EvidenceLedger | None, str]] = OrderedDict()
+_plans: OrderedDict[tuple[Any, ...], Any] = OrderedDict()
 
 
 # ---- the ledger -----------------------------------------------------------------------------
@@ -182,9 +194,10 @@ def ledger_of(ctx: AppContext, study_id: str) -> tuple[EvidenceLedger | None, st
 
 
 def clear() -> None:
-    """Forget every rebuilt ledger (tests; a fresh demo)."""
+    """Forget every rebuilt ledger and repeat plan (tests; a fresh demo)."""
     with _lock:
         _rebuilt.clear()
+        _plans.clear()
 
 
 def checked(key: str, tokens: str, facts: dict[str, Any], fallback: str) -> FactText:
@@ -396,4 +409,95 @@ def post_sign_off(study_id: str, body: SignOffBody, ctx: Ctx) -> SignOffDone:
         head=entry.hash,
         sign_off=sign_off,
         review=review,
+    )
+
+
+# ---- what to repeat and why ------------------------------------------------------------------
+
+
+def repeat_plan(ctx: AppContext, study_id: str, sid: str | None, include: str) -> Any:
+    """The study's repeat plan at the analysis in use (kept per state; 409 while it loads)."""
+    from qpilot.qpcr.gate_rules import resolve_pack
+    from qpilot.qpcr.repeat import RepeatError, build_plan, left_out_from_inbox
+    from qpilot.web.routers import gate as gate_router
+    from qpilot.web.routers import where as where_router
+
+    inbox = ctx.studio.head(sid) if sid else None
+    key = (
+        *_version(ctx, study_id),
+        ctx.store.chain_head(study_id),
+        inbox,
+        gate_router.links_version(ctx.store, study_id),
+        include,
+    )
+    with _lock:
+        if key in _plans:
+            _plans.move_to_end(key)
+            return _plans[key]
+    built = where_router._context(ctx, study_id)  # 409 loading: Trace reads the wells first
+    report = gate_router._report(ctx, study_id, gate_router._choice(ctx, study_id))
+    left = left_out_from_inbox(ctx.store.proposals(sid).accepted(), built) if sid else {}
+    try:
+        plan = build_plan(
+            study_id,
+            built,
+            gate=report,
+            pack=resolve_pack(),
+            left_out=left,
+            include="all" if include == "all" else "consequential",
+        )
+    except RepeatError as err:
+        raise api_error(
+            409, "repeat", f"The repeat plate cannot be laid out: {_sentence(str(err))}"
+        ) from err
+    with _lock:
+        _plans[key] = plan
+        while len(_plans) > KEEP:
+            _plans.popitem(last=False)
+    return plan
+
+
+def _csv_name(study_id: str) -> str:
+    return f"qpilot-repeat-{study_id}.csv"
+
+
+@router.get("/studies/{study_id}/review/repeat", response_model=RepeatView)
+def get_repeat(
+    study_id: str,
+    ctx: Ctx,
+    include: str = Query(default="consequential", pattern="^(consequential|all)$"),
+) -> RepeatView:
+    """What to repeat and why, ranked by consequence, and the repeat plate (read-only)."""
+    sid = _study(ctx, study_id)
+    plan = repeat_plan(ctx, study_id, sid, include)
+    return RepeatView(
+        study_id=study_id,
+        session=sid,
+        include="all" if include == "all" else "consequential",
+        plan=plan,
+        csv_url=f"/api/studies/{study_id}/review/repeat.csv?include={include}",
+        csv_name=_csv_name(study_id),
+        note=REPEAT_NOTE,
+    )
+
+
+@router.get(
+    "/studies/{study_id}/review/repeat.csv",
+    response_class=Response,
+    responses={200: {"content": {"text/csv": {}}, "description": "The repeat plate as CSV."}},
+)
+def get_repeat_csv(
+    study_id: str,
+    ctx: Ctx,
+    include: str = Query(default="consequential", pattern="^(consequential|all)$"),
+) -> Response:
+    """The repeat plate as the planner's CSV (plate, well, sample, group, target, type)."""
+    sid = _study(ctx, study_id)
+    plan = repeat_plan(ctx, study_id, sid, include)
+    if not plan.wells:
+        raise api_error(404, "not_found", "Nothing points at a reaction to re-run.")
+    return Response(
+        content=plan.csv(),
+        media_type="text/csv; charset=utf-8",
+        headers={"content-disposition": f'attachment; filename="{_csv_name(study_id)}"'},
     )
