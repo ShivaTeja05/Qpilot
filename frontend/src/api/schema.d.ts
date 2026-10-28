@@ -2083,6 +2083,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/studies/{study_id}/genes/{gene}/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Gene Units
+         * @description One compared gene's biological units, with their wells, at the planned analysis.
+         */
+        get: operations["get_gene_units"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/studies/{study_id}/history": {
         parameters: {
             query?: never;
@@ -3925,6 +3945,48 @@ export type components = {
             m_value?: number | null;
         };
         /**
+         * AuditReplicates
+         * @description How a design's technical replicates were audited (several wells per unit and gene).
+         */
+        AuditReplicates: {
+            /**
+             * Most Wells Per Value
+             * @description The most wells behind one unit's value.
+             */
+            most_wells_per_value: number;
+            /**
+             * Rule
+             * @description The planned rule: qPilot's mean of log2 N0.
+             * @constant
+             */
+            rule: "mean";
+            /**
+             * Values
+             * @description Unit-and-gene values in the audit.
+             */
+            values: number;
+            /**
+             * Values With Several Wells
+             * @description Unit-and-gene values with 2+ wells.
+             */
+            values_with_several_wells: number;
+            /**
+             * Varied
+             * @description The audit also varied how the wells are combined (three or more wells).
+             */
+            varied: boolean;
+            /**
+             * Wells
+             * @description Study wells behind them.
+             */
+            wells: number;
+            /**
+             * Words
+             * @description What was done, in plain words.
+             */
+            words: string;
+        };
+        /**
          * AuditReproduction
          * @description The audit's contract: its planned analysis reproduces qPilot's stored result.
          */
@@ -4099,6 +4161,8 @@ export type components = {
             prespecified_control_genes: string[];
             /** Reference Sets */
             reference_sets: number;
+            /** @description Set when the design has technical replicates (absent with one well per unit and gene, as on the demo). */
+            technical_replicates?: components["schemas"]["AuditReplicates"] | null;
             /** Undetermined Aligned */
             undetermined_aligned: number;
             /** Wells Excluded By A Person */
@@ -13256,6 +13320,91 @@ export type components = {
             reason: string;
         };
         /**
+         * UnitGroup
+         * @description One group: its label, its units with a value, those without, and its mean with CI.
+         */
+        UnitGroup: {
+            /**
+             * Ci
+             * @description 95 % confidence interval of the mean (t, n - 1 degrees of freedom); null with fewer than two units.
+             */
+            ci: [
+                number,
+                number
+            ] | null;
+            /** Ci Text */
+            ci_text?: string | null;
+            /** Label */
+            label: string;
+            /** Mean */
+            mean: number | null;
+            /** Mean Text */
+            mean_text?: string | null;
+            /**
+             * Missing
+             * @description Units of the group without a value for this gene.
+             */
+            missing: number;
+            /**
+             * N
+             * @description Biological units with a value (the n of the comparison).
+             */
+            n: number;
+        };
+        /**
+         * UnitGroups
+         * @description The two groups (``high`` is the first group, ``rest`` the second).
+         */
+        UnitGroups: {
+            high: components["schemas"]["UnitGroup"];
+            rest: components["schemas"]["UnitGroup"];
+        };
+        /**
+         * UnitPoint
+         * @description One biological unit: its value of the gene and the wells behind it.
+         */
+        UnitPoint: {
+            /**
+             * Capped
+             * @description Every well was undetermined and the planned analysis sets the value to the lowest amount detected for the gene.
+             */
+            capped: boolean;
+            /**
+             * Cq Range
+             * @description Highest minus lowest Cq of the used wells (cycles); null with one well.
+             */
+            cq_range: number | null;
+            /**
+             * Group
+             * @enum {string}
+             */
+            group: "high" | "rest";
+            /**
+             * N Wells
+             * @description Wells used in the value.
+             */
+            n_wells: number;
+            /**
+             * Samples
+             * @description The samples of this unit (one, or several preparations).
+             */
+            samples: string[];
+            /** Unit */
+            unit: string;
+            /**
+             * Value
+             * @description ``x`` in words.
+             */
+            value: string;
+            /** Wells */
+            wells: components["schemas"]["UnitWell"][];
+            /**
+             * X
+             * @description The unit's relative amount (log2), relative to the second group's mean: the mean of its used wells.
+             */
+            x: number;
+        };
+        /**
          * UnitValue
          * @description One biological unit's value in a Prism table (log2 relative quantity).
          */
@@ -13264,6 +13413,132 @@ export type components = {
             unit: string;
             /** Value */
             value: number;
+        };
+        /**
+         * UnitValues
+         * @description One gene's biological units, as the engine computed them.
+         */
+        UnitValues: {
+            /**
+             * At Plan
+             * @description The Decision Cards are at the planned options (else the Prism export, which follows the cards, differs from these values).
+             */
+            at_plan: boolean;
+            /**
+             * Fold
+             * @description The fold change between the group means, in words.
+             */
+            fold: string;
+            /**
+             * Fold Ci
+             * @description The stored result's 95 % CI of the fold change (log2).
+             */
+            fold_ci: [
+                number,
+                number
+            ] | null;
+            /** Fold Ci Text */
+            fold_ci_text?: string | null;
+            /** Fold Log2 */
+            fold_log2: number | null;
+            /** Gene */
+            gene: string;
+            groups: components["schemas"]["UnitGroups"];
+            /**
+             * How
+             * @description How the values were computed, in plain sentences.
+             */
+            how: string[];
+            /** Late Cut */
+            late_cut: string;
+            /** Line */
+            line: string;
+            /**
+             * Line Log2
+             * @description The fold change a call needs (log2).
+             */
+            line_log2: number;
+            /**
+             * Most Wells
+             * @description The most wells behind one unit's value.
+             */
+            most_wells: number;
+            /** P */
+            p: number | null;
+            /** Points */
+            points: components["schemas"]["UnitPoint"][];
+            /**
+             * Refs
+             * @description The control genes each unit is divided by.
+             */
+            refs: string[];
+            /**
+             * Replicates
+             * @description Some unit has more than one well for this gene.
+             */
+            replicates: boolean;
+            /** Study Id */
+            study_id: string;
+            /**
+             * Undetermined
+             * @description The planned rule for a unit whose wells are all undetermined.
+             * @enum {string}
+             */
+            undetermined: "drop" | "cap";
+        };
+        /**
+         * UnitWell
+         * @description One well behind a unit's value (one technical replicate).
+         */
+        UnitWell: {
+            /**
+             * Cq
+             * @description The well's Cq, to one decimal; null when it has none.
+             */
+            cq: string | null;
+            /**
+             * Cq Value
+             * @description The well's Cq, unrounded.
+             */
+            cq_value: number | null;
+            /**
+             * Flagged
+             * @description LinRegPCR flagged the well (efficiency or very low copy).
+             */
+            flagged: boolean;
+            /**
+             * Late
+             * @description Cq above the late line (``late_cut``).
+             */
+            late: boolean;
+            /**
+             * Plate
+             * @description The well's run (plate) id in the file.
+             */
+            plate: string;
+            /**
+             * Sample
+             * @description The sample the well belongs to (a unit may have several).
+             */
+            sample: string;
+            /**
+             * State
+             * @description ``used`` in the unit's value; ``no_value``: the well never gave a usable curve (undetermined); ``excluded``: a person left it out.
+             * @enum {string}
+             */
+            state: "used" | "no_value" | "excluded";
+            /**
+             * Value
+             * @description ``x`` in words ("1.9× higher").
+             */
+            value: string | null;
+            /** Well */
+            well: string;
+            /**
+             * X
+             * @description The well's relative amount (log2, the unit's control-gene mean removed), relative to the second group's mean; null when the well has no value.
+             */
+            x: number | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -17115,6 +17390,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeneView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_gene_units: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gene: string;
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitValues"];
                 };
             };
             /** @description Validation Error */

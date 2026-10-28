@@ -12,6 +12,10 @@ The tier of an option should not be a matter of taste. Three rules use the study
   study's group sizes is above alpha (at 3 vs 3 it is 0.1). Keeping it would build "no call" in.
 * **The cut-off** defines the question, not the analysis. It is reported separately and held
   at the prespecified value in the defensible view.
+
+A study with technical replicates (:attr:`qsim.data.Study.replicates`) also varies how a
+sample's replicate wells are combined (:data:`qsim.decisions.REPLICATES`); a study with one well
+per sample and gene does not, so its space is unchanged.
 """
 
 from __future__ import annotations
@@ -25,15 +29,30 @@ from qpilot.qpcr.quant import log2_matrix
 from qpilot.qpcr.refgenes import genorm, group_effect
 
 from qsim.data import Study
-from qsim.decisions import Decision, Option, Space, qpcr_space, ref_label
+from qsim.decisions import Decision, Option, Space, qpcr_space, ref_label, with_replicates
 
 M_STABLE = 1.0
 
 
+def stability_m(matrix, candidates) -> dict[str, float]:
+    """Each control-gene candidate's stability M, as qPilot computes it for this many genes.
+
+    geNorm's M for three or more candidates; with two, the SD of their log2 ratio (the same for
+    both); with one, none (qPilot's ``qpcr.study._stability``).
+    """
+    candidates = list(candidates)
+    if len(candidates) >= 3:
+        return dict(genorm(matrix, candidates).M_initial)
+    if len(candidates) == 2:
+        a, b = candidates
+        sd = float((matrix[a] - matrix[b]).dropna().std(ddof=1))
+        return {a: sd, b: sd}
+    return {}
+
+
 def reference_tiers(study: Study, cut: float = 0.15) -> tuple[dict[str, tuple[str, str]], dict]:
     matrix = log2_matrix(study.curves)
-    stability = genorm(matrix, list(study.candidates))
-    m_values = stability.M_initial
+    m_values = stability_m(matrix, study.candidates)
     stable = [g for g in study.candidates if m_values.get(g, 99) < M_STABLE]
     high, rest = study.groups[cut]
     flagged = group_effect(matrix, list(study.candidates), high, rest).flagged
@@ -99,7 +118,9 @@ def space_for(study: Study) -> tuple[Space, dict]:
                 )
         decisions.append(d)
     space = Space(tuple(decisions), base.baseline, notes=tuple(notes))
+    if study.replicates is not None and study.replicates.most >= 3:
+        space = with_replicates(space)
     return space, {"reference_tiers": {k: v[1] for k, v in tiers.items()}, **info, "notes": notes}
 
 
-__all__ = ["Decision", "Option", "ref_label", "reference_tiers", "space_for"]
+__all__ = ["Decision", "Option", "ref_label", "reference_tiers", "space_for", "stability_m"]

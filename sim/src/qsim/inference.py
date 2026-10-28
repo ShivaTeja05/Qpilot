@@ -60,7 +60,7 @@ def joint_test(
             tuple(key) + (space.baseline_index()[cut_pos],) + space.baseline_index()[cut_pos + 1 :]
         )
         v, ids = engine.values_of(cell), engine.ids_of(cell)
-        m = engine.matrix(v["efficiency"], v["flagged"], v["nondetect"], late=v.get("late_cq"))
+        m = engine.matrix_of(v)
         rel, valid = engine.relative(m, ids["refs"])
         rels.append(np.where(valid, rel, 0.0))
         valids.append(valid.astype(float))

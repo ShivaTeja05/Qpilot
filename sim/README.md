@@ -36,6 +36,10 @@ It is built on [qPilot](https://github.com/ShivaTeja05/Qpilot)'s validated engin
 .venv/bin/pytest -q
 ```
 
+## Technical replicates
+
+A study with several wells per sample and gene (triplicates, or several samples of one biological unit that qPilot's adapter names by their unit) keeps every well (`qsim.data.Replicates`). Each choice acts on each well, then a sample's wells become one value with qPilot's rule: the mean `log2 N0` of the wells that have one, undetermined only when every well is. The baseline therefore still reproduces qPilot, and replicates are never counted as n. With three or more wells per value a ninth decision, `replicates`, tries the median well and leaving out the one well outside the Run Gate's G-REP range (`qsim.engine.replicate_outliers`). A study with one well per sample and gene (the benchmark) is unchanged. `tests/test_replicates.py` checks each case by hand and the outlier rule against G-REP on a real LightCycler 96 plate.
+
 ## Results screen
 
 `qsim app` serves a lab-facing screen from `127.0.0.1` only. It loads no web assets, runs offline and needs only Python's standard library. Charts are plain SVG with hover details, in light and dark mode (a switch in the top bar, or the system's theme), down to phone width.
