@@ -48,6 +48,8 @@ def test_legacy_space_reports_every_axis(toy):
         "undetermined": "swept",
         "amp_call": "single_option",
         "efficiency": "single_option",
+        "normaliser": "single_option",
+        "interrun": "single_option",
     }
     assert space.axes["undetermined"].primary.id == "drop"
     assert [o.id for o in space.axes["undetermined"].options] == ["drop", "cap"]

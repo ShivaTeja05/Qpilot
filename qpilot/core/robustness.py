@@ -16,6 +16,11 @@ Definitions (they match the oracle, ``planning/verification/verify.py``):
 - **rests on**: the dimensions whose change alone, from the primary cell, flips an item's
   conclusion (:func:`fragility_by_axis`), i.e. which choice the answer depends on.
 
+A space may also say that some cells repeat another analysis (an optional ``redundant(cell)``,
+e.g. a qPCR normaliser that does not read the control-gene choice): those cells are left out of
+the grid, its counts and its sample, so "holds" counts each distinct analysis once. A space
+without that method has the full product, exactly as before.
+
 Keeping big grids affordable (W3 §4.2): :func:`screen_axis` varies one dimension alone from the
 primary cell so a plugin can leave out an optional axis that changes nothing that matters, and
 ``run_grid(space, max_cells=N)`` evaluates, when the full product is larger than ``N``, the
@@ -41,19 +46,44 @@ IDX_SUFFIX = "__idx"
 RESULT_COLUMNS = ["item", "log2fc", "fc", "p", "conclusion"]
 
 
+def _redundant(space: DecisionSpace):
+    """The space's ``redundant(cell)`` when it has one, else ``None`` (the full product)."""
+    return getattr(space, "redundant", None)
+
+
 def cells(space: DecisionSpace) -> Iterator[dict[str, Any]]:
-    """Yield every combination of options, one value per dimension, in a fixed order."""
+    """Yield every combination of options, one value per dimension, in a fixed order.
+
+    Cells the space calls redundant (an analysis another cell repeats) are left out.
+    """
     names = list(space.dimensions)
+    skip = _redundant(space)
     for combo in itertools.product(*(space.dimensions[n] for n in names)):
-        yield dict(zip(names, combo, strict=True))
+        cell = dict(zip(names, combo, strict=True))
+        if skip is None or not skip(cell):
+            yield cell
 
 
 def n_cells(space: DecisionSpace) -> int:
-    """Number of cells in the grid (product of the number of options per dimension)."""
+    """Number of cells in the grid (product of the options per dimension, less redundant ones)."""
+    if _redundant(space) is not None:
+        return sum(1 for _ in cells(space))
     total = 1
     for options in space.dimensions.values():
         total *= len(options)
     return total
+
+
+def _kept(space: DecisionSpace, names: list[str], combos):
+    """``combos`` (index tuples) without the cells the space calls redundant."""
+    skip = _redundant(space)
+    if skip is None:
+        return combos
+    return [
+        c
+        for c in combos
+        if not skip({n: space.dimensions[n][i] for n, i in zip(names, c, strict=True)})
+    ]
 
 
 def _primary_index(space: DecisionSpace) -> dict[str, int]:
@@ -76,9 +106,17 @@ def _sampled_combos(
         for i in range(size):
             must.add(base[:d] + (i,) + base[d + 1 :])
     total = math.prod(sizes)
+    must = set(_kept(space, names, sorted(must)))
     flat_must = {int(np.ravel_multi_index(c, sizes)) for c in must}
     room = max(0, max_cells - len(flat_must))
     rest = np.setdiff1d(np.arange(total, dtype=np.int64), np.fromiter(flat_must, np.int64))
+    if _redundant(space) is not None:
+        unravelled = zip(*np.unravel_index(rest, sizes), strict=True)
+        keep = set(_kept(space, names, [tuple(int(i) for i in c) for c in unravelled]))
+        rest = np.array(
+            [f for f in rest if tuple(int(i) for i in np.unravel_index(f, sizes)) in keep],
+            dtype=np.int64,
+        )
     rng = np.random.default_rng(seed)
     picked = rng.choice(rest, size=min(room, len(rest)), replace=False) if room else rest[:0]
     flat = np.sort(np.concatenate([np.fromiter(flat_must, np.int64), picked]))
@@ -118,10 +156,12 @@ def run_grid(space: DecisionSpace, *, max_cells: int | None = None, seed: int = 
     names = list(space.dimensions)
     rows: list[dict[str, Any]] = []
     sizes = [len(space.dimensions[n]) for n in names]
-    if max_cells is not None and math.prod(sizes) > max_cells:
+    if max_cells is not None and n_cells(space) > max_cells:
         index_combos: Any = _sampled_combos(space, names, sizes, max_cells, seed)
     else:
         index_combos = itertools.product(*(range(size) for size in sizes))
+        if _redundant(space) is not None:
+            index_combos = _kept(space, names, list(index_combos))
     for idx_combo in index_combos:
         cell = {n: space.dimensions[n][i] for n, i in zip(names, idx_combo, strict=True)}
         results = space.evaluate(cell)
