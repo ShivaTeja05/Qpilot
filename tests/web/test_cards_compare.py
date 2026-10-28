@@ -121,3 +121,22 @@ def test_a_study_with_one_comparison_keeps_its_cards(studies):
     for card in store.cards(one):
         assert "views" not in card.impact and "n_calls_flipped" not in card.impact
     assert not any(k.startswith("f_cmp") for k in store.get(one).facts)
+
+
+def test_an_axis_that_matters_only_in_another_comparison_enters_the_grid(tmp_path, monkeypatch):
+    """Screening an opt-in axis (efficiency, normaliser, inter-run, amplification rule) varies it
+    alone from the planned analysis; with several comparisons it must look at every one, or a
+    choice that changes a call only in Drug B vs Control would be left out of the grid."""
+    from qpilot.core import robustness
+    from qpilot.qpcr.curves import analyse_study
+    from qpilot.qpcr.study import StudySettings, _screen_every, build_model
+
+    monkeypatch.setenv("QPILOT_CACHE_DIR", str(tmp_path / "cache"))
+    path = write_compare_mini(tmp_path / "shift.rdml", ref_shift=SHIFT)
+    settings = StudySettings.from_design(design())
+    model = build_model(analyse_study(path, settings.experiment_id, settings.candidates), settings)
+    first = robustness.screen_axis(model.space, "refs")
+    every = _screen_every(model.space, "refs")
+    assert not any(first.flipped.values())  # the first comparison: nothing flips
+    assert "TP53" in {g for genes in every.flipped.values() for g in genes}
+    assert every.admitted and every.max_delta_log2fc >= first.max_delta_log2fc

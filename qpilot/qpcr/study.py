@@ -633,16 +633,18 @@ def build_model(
     if inputs.alternatives:
         dims = space.dimensions["amp_call"]
         screen = screen_amp_call(space.evaluate, space.primary, dims, space.items)
+        if not screen.admitted and _admitted_elsewhere(space, "amp_call"):
+            screen = replace(screen, admitted=True)  # it matters in another comparison
         if not screen.admitted:  # the choice changes nothing that matters: no axis in the grid
             space.hold("amp_call", "screened_out", SCREENED_REASON)
     screens = {}
     for name in ("efficiency", "normaliser"):
         if name in space.dimensions:
-            screens[name] = robustness.screen_axis(space, name)
+            screens[name] = _screen_every(space, name)
             if not screens[name].admitted:
                 space.hold(name, "screened_out", SCREENED_REASON)
     if "interrun" in space.dimensions:  # a card only when a correction flips a call
-        screen = robustness.screen_axis(space, "interrun")
+        screen = _screen_every(space, "interrun")
         screens["interrun"] = replace(screen, admitted=any(screen.flipped.values()))
         if not screens["interrun"].admitted:
             space.hold("interrun", "screened_out", INTERRUN_SCREENED_REASON)
@@ -774,6 +776,36 @@ def _normaliser_axis(
         "unavailable": {"normaliser": plan.unavailable},
     }
     return keywords, notes
+
+
+def _screen_every(space: QpcrSpace, name: str) -> robustness.AxisScreen:
+    """:func:`robustness.screen_axis` over every comparison of the study (the first alone else).
+
+    An axis enters the grid when an option alone flips a call or moves a fold change in any
+    comparison, not only in the first: the choice applies to every comparison. The flipped
+    genes and the largest shift are those of every comparison together.
+    """
+    found = robustness.screen_axis(space, name)
+    if len(space.comparisons) < 2:
+        return found
+    flipped = {k: set(v) for k, v in found.flipped.items()}
+    largest = found.max_delta_log2fc
+    for spec in space.comparisons[1:]:
+        other = robustness.screen_axis(space.comparison_view(spec.id), name)
+        for option, genes in other.flipped.items():
+            flipped.setdefault(option, set()).update(genes)
+        largest = max(largest, other.max_delta_log2fc)
+    merged = {k: tuple(sorted(v)) for k, v in flipped.items()}
+    admitted = any(merged.values()) or largest > found.min_log2fc
+    return replace(found, flipped=merged, max_delta_log2fc=float(largest), admitted=admitted)
+
+
+def _admitted_elsewhere(space: QpcrSpace, name: str) -> bool:
+    """True when an option of ``name`` alone matters in a comparison other than the first."""
+    return any(
+        robustness.screen_axis(space.comparison_view(spec.id), name).admitted
+        for spec in space.comparisons[1:]
+    )
 
 
 def _efficiency_axis(inputs: _Inputs, settings: StudySettings) -> tuple[dict, dict, CellTables]:
